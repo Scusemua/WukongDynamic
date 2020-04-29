@@ -281,7 +281,7 @@ class User {
 		// hard-coded the input array.
 		int[] numbers = DivideandConquerMergeSort.values;
 
-		//If the INPUT_THRESHOLD equals the size of the entire input array, then there is no need to 
+		// If the INPUT_THRESHOLD equals the size of the entire input array, then there is no need to 
 		// copy the entire input array as we already initialized values to the input array.
 		int size = problem.to - problem.from +1; 
 		if (size != DivideandConquerMergeSort.values.length)

@@ -370,3 +370,36 @@ class User (object):
         # The Fan-out task will assign these child sub-arrays to the corresponding child problem.
         subproblems[0].numbers = right_array
         subproblems[1].numbers = left_array
+
+    @staticmethod
+    def sequential(
+        problem : ProblemType,
+        result : ResultType
+    ):
+    """
+        User provides method to sequentially solve a problem.
+    """
+    numbers = problem.numbers 
+    _from = 0
+    to = len(numbers) - 1
+
+    logger.debug("sequential sort: {} to {}".format(_from, to))
+
+    # for(int i = _from + 1; i <= to; i++)
+    for i in range(_from + 1, to + 1):
+        current = numbers[i]
+        j = i - 1
+        while (_from <= j and current <= numbers[j]):
+            numbers[j+1] = numbers[j]
+            j = j - 1
+        numbers[j+1] = current 
+    
+    result.numbers = numbers 
+    result._from = problem._from 
+    result.to = problem.to
+
+    @staticmethod
+    def output_result():
+        result = FanInSynchronizer.resultMap[DivideandConquerMergeSort.root_problem_ID]
+
+        # MemoizationController.getInstance().stopThread();
