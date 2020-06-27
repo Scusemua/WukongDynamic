@@ -1,5 +1,6 @@
 import logging 
 import threading 
+import time 
 
 logger = logging.getLogger(__name__)
 
@@ -366,7 +367,7 @@ class User (object):
         except Exception as ex:
             logger.error(ex)
             exit(1) 
-        
+         
         # The Fan-out task will assign these child sub-arrays to the corresponding child problem.
         subproblems[0].numbers = right_array
         subproblems[1].numbers = left_array
@@ -376,30 +377,104 @@ class User (object):
         problem : ProblemType,
         result : ResultType
     ):
-    """
-        User provides method to sequentially solve a problem.
-    """
-    numbers = problem.numbers 
-    _from = 0
-    to = len(numbers) - 1
+        numbers = problem.numbers 
+        _from = 0
+        to = len(numbers) - 1
 
-    logger.debug("sequential sort: {} to {}".format(_from, to))
+        logger.debug("sequential sort: {} to {}".format(_from, to))
 
-    # for(int i = _from + 1; i <= to; i++)
-    for i in range(_from + 1, to + 1):
-        current = numbers[i]
-        j = i - 1
-        while (_from <= j and current <= numbers[j]):
-            numbers[j+1] = numbers[j]
-            j = j - 1
-        numbers[j+1] = current 
-    
-    result.numbers = numbers 
-    result._from = problem._from 
-    result.to = problem.to
+        # for(int i = _from + 1; i <= to; i++)
+        for i in range(_from + 1, to + 1):
+            current = numbers[i]
+            j = i - 1
+            while (_from <= j and current <= numbers[j]):
+                numbers[j+1] = numbers[j]
+                j = j - 1
+            numbers[j+1] = current 
+        
+        result.numbers = numbers 
+        result._from = problem._from 
+        result.to = problem.to
 
     @staticmethod
     def output_result():
         result = FanInSynchronizer.resultMap[DivideandConquerMergeSort.root_problem_ID]
 
         # MemoizationController.getInstance().stopThread();
+        _str = "Sorted ( {} - {} ): ".format(result._from, result.to)
+        for num in result.numbers:
+            _str = _str + str(num) + " "
+        logger.debug(_str)
+
+        _str = "Expected      :"
+        for x in DivideandConquerMergeSort.expected_order:
+            _str = _str + str(x) + " "
+        logger.debug(_str)
+
+        try:
+            time.sleep(1)
+        except Exception as ex:
+            raise ex 
+        
+        error = False 
+        for val in DivideandConquerMergeSort.values:
+            if result.numbers[i] != DivideandConquerMergeSort.expected_order[i]:
+                logger.debug("Error in expected value: result.numbers[{}] {} != expected_order[{}] {}".format(
+                    i, result.numbers[i], i, DivideandConquerMergeSort.expected_order[i]
+                ))
+                error = True 
+        if not error:
+            logger.debug("Verified.")
+
+class DivideandConquerMergeSort(object):
+    values = [9, -3, 5, 0, 1, 2, -1, 4, 11, 10, 13, 12, 15, 14, 17, 16] # Size 16
+    expected_order = [-3, -1, 0, 1, 2, 4, 5, 9, 10, 11, 12, 13, 14, 15, 16, 17]
+
+    root_problem_ID = "root"
+
+# Main method, so to speak.
+if __name__ == "__main__":
+    logger.debug("Running DivideandConquerMergeSort")
+    logger.debug("INPUT_THRESHOLD is: {}".format(WukongProblem.INPUT_THRESHOLD))
+    logger.debug("OUTPUT_THRESHOLD is: {}".format(WukongProblem.OUTPUT_THRESHOLD))
+    logger.debug("SEQUENTIAL_THRESHOLD is: {}".format(ProblemType.SEQUENTIAL_THRESHOLD))
+
+    # Assert 
+    seq = None 
+    try:
+        seq = getattr(ProblemType, "SEQUENTIAL_THRESHOLD", None)
+    except Exception:
+        pass 
+
+    if seq is None:
+        logger.error("Error: ProblemType.SEQUENTIAL_THRESHOLD must be defined.")
+        exit(1)
+    
+    # Assert 
+    if len(values) < ProblemType.SEQUENTIAL_THRESHOLD:
+        logger.error("Internal Error: unsorted array must have length at least SEQUENTIAL_THRESHOLD, which is the base case.")
+        exit(1)
+    
+    logger.debug("Numbers: ")
+    _str = ""
+    for num in values:
+        _str = _str + str(num) + " "
+    logger.debug(_str)
+
+    rootID = str(0) + "x" + str(len(values) - 1)
+    fanin_stack = list()
+
+    root_problem = ProblemType()
+    root_problem.numbers = None 
+    root_problem._from = 0
+    root_problem.to = len(values) - 1
+
+    logger.debug(root_problem)
+
+    root_problem.fanin_stack = fanin_stack
+    root_problem.problemID = root_problem_ID
+
+    root = DivideAndConquerExecutor(root_problem)
+
+    root.run()
+
