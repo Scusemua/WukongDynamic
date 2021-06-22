@@ -57,13 +57,13 @@ class WukongProblem(object):
     #
     # Using MAX_VALUE so the default will be greater than SEQUENTIAL_THRESHOLD. We should never reach level Integer.MAX_VALUE
     # when making recursive calls!
-    OUTPUT_THRESHOLD = Integer.MAX_VALUE
+    OUTPUT_THRESHOLD = sys.maxint
     
     memoize = False
     
     # For fan-in use serverless networking where invoked executor sends result to become executor,
     # or use redis-like shared storage to write and read results.
-    USESERVERLESSNETWORKING = True
+    USESERVERLESSNETWORKING = False
     #becomeExecutor = False
     
     # Identifies the SubProblem used as a key for Wukong Storage, where the value is a sorted subsegment of the array
@@ -73,57 +73,57 @@ class WukongProblem(object):
     
     def __init__(self):
         self.didInput = False 
-        self.becomeExecutor = True
+        self.becomeExecutor = False
         self.problemID = None 
         self.FanInStack = list() 
 
-    # If users supply constants, use them, else use default values.
-    def static_init():
-        #Field IT = None
-        IT = False 
-        try:
-            #IT = ProblemType.class.getDeclaredField("INPUT_THRESHOLD")
-			IT = hasattr(ProblemType, "INPUT_THRESHOLD")
-        except Exception as nsfe: # (NoSuchFieldException nsfe) {
-            # intentionally ignored
-            pass 
+    # # If users supply constants, use them, else use default values.
+    # def static_init():
+    #     #Field IT = None
+    #     IT = False 
+    #     try:
+    #         #IT = ProblemType.class.getDeclaredField("INPUT_THRESHOLD")
+	# 		IT = hasattr(ProblemType, "INPUT_THRESHOLD")
+    #     except Exception as nsfe: # (NoSuchFieldException nsfe) {
+    #         # intentionally ignored
+    #         pass 
 
-        if IT:
-            try:
-                INPUT_THRESHOLD =  ProblemType.INPUT_THRESHOLD #  IT # .getInt(INPUT_THRESHOLD)
-            except Exception as e:
-                logger.error(repr(e))
+    #     if IT:
+    #         try:
+    #             INPUT_THRESHOLD =  ProblemType.INPUT_THRESHOLD #  IT # .getInt(INPUT_THRESHOLD)
+    #         except Exception as e:
+    #             logger.error(repr(e))
         
-        #Field OT = None
-        OT = False 
-        try:
-            #OT = ProblemType.class.getDeclaredField("OUTPUT_THRESHOLD")
-			OT = hasattr(ProblemType, "OUTPUT_THRESHOLD")
-        except Exception as nsfe:
-            logger.warn("Ignoring NoSuchFieldException for \"OUTPUT_THRESHOLD\"")
+    #     #Field OT = None
+    #     OT = False 
+    #     try:
+    #         #OT = ProblemType.class.getDeclaredField("OUTPUT_THRESHOLD")
+	# 		OT = hasattr(ProblemType, "OUTPUT_THRESHOLD")
+    #     except Exception as nsfe:
+    #         logger.warn("Ignoring NoSuchFieldException for \"OUTPUT_THRESHOLD\"")
 
-        if OT:
-            try:
-                OUTPUT_THRESHOLD =  ProblemType.OUTPUT_THRESHOLD #  IT # .getInt(INPUT_THRESHOLD)
-            except Exception as e:
-                logger.error(repr(e))
+    #     if OT:
+    #         try:
+    #             OUTPUT_THRESHOLD =  ProblemType.OUTPUT_THRESHOLD #  IT # .getInt(INPUT_THRESHOLD)
+    #         except Exception as e:
+    #             logger.error(repr(e))
             
         
-        #Field m = None
-        m = None 
-        try:
-            m = ProblemType.class.getDeclaredField("memoize")
-        except Exception as nsfe:
-            # intentionally ignored
-            logger.warn("Ignoring NoSuchFieldException for \"memoize\"")
-            pass 
+    #     #Field m = None
+    #     m = None 
+    #     try:
+    #         m = ProblemType.class.getDeclaredField("memoize")
+    #     except Exception as nsfe:
+    #         # intentionally ignored
+    #         logger.warn("Ignoring NoSuchFieldException for \"memoize\"")
+    #         pass 
 
-        if (m != None):
-            try:
-                memoize = ProblemType.memoize #  IT # .getInt(INPUT_THRESHOLD)
-            except Exception as e:
-                logger.error(repr(e))
-    # end static
+    #     if (m != None):
+    #         try:
+    #             memoize = ProblemType.memoize #  IT # .getInt(INPUT_THRESHOLD)
+    #         except Exception as e:
+    #             logger.error(repr(e))
+    # # end static
 
     @staticmethod
     def ProcessBaseCase(problem : ProblemType, result : ResultType, ServerlessNetworkingMemoizer : ServerlessNetworkingClientServer):
@@ -613,7 +613,7 @@ class WukongProblem(object):
                     # This executor continues to do Fan-In operations with the new problem result.
                 
             # end we are second executor
-# rhc: end Fan-In task 
+        # rhc: end Fan-In task 
 
             # Instead of doing all of the work for sorting as we unwind the recursion and call merge(),
             # we let the executors "unwind" the recursion using the explicit FanIn stack.

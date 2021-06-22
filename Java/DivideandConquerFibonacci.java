@@ -9,8 +9,6 @@ import java.util.ArrayList;
 import java.lang.reflect.*;
 import java.lang.reflect.Field;
 
- 
-/*
 //class ProblemType provided by User.
 class ProblemType extends WukongProblem {
 	// Fibonacci has no non-parallel algorithm. Base case is values <= 1.
@@ -220,7 +218,6 @@ class User {
 			System.out.flush();
 		}
 
-		
 		// As in:
 		// int fib(int n) {
 		//	 if(n<=1)
@@ -325,7 +322,6 @@ class User {
 		}
 	}
 }
-*/
 
 public class DivideandConquerFibonacci {
 
