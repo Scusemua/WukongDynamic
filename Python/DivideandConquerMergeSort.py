@@ -398,7 +398,7 @@ class User (object):
 
     @staticmethod
     def output_result():
-        result = FanInSynchronizer.resultMap[DivideandConquerMergeSort.root_problem_ID]
+        result = FanInSychronizer.resultMap[DivideandConquerMergeSort.root_problem_ID]
 
         # MemoizationController.getInstance().stopThread();
         _str = "Sorted ( {} - {} ): ".format(result._from, result.to)

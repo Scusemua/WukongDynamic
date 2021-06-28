@@ -3,12 +3,46 @@ import logging
 import threading 
 import time 
 
+from WukongProblem import WukongProblem, FanInSychronizer, WukongResult
+from UserProgram import UserProgram
+
 import DivideAndConquerExecutor
-from DivideAndConquerExecutor import WukongProblem, MemoizationController
+#from DivideAndConquerExecutor import WukongProblem, MemoizationController, DivideAndConquerExecutor
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
 
+if logger.handlers:
+   for handler in logger.handlers:
+      handler.setFormatter(formatter)
+
+root = logging.getLogger()
+if root.handlers:
+    for handler in root.handlers:
+       handler.setFormatter(formatter)
+       
 debug_lock = threading.Lock() 
+
+class ResultType(WukongResult):
+    def __init__(self):
+        super(ResultType, self).__init__()
+        self.value = 0
+    
+    def copy(self):
+        """
+	    Make copy of Problem. Shallow copy works here. This is needed only for the non-Wukong, case, i.e., 
+        with no network, since Java is passing local references around among the threads.
+	    For Wukong, problems and results will be copied/serialized and sent over the network, so no local copies are needed.
+        """
+        _copy = ResultType()
+        _copy.value = self.value
+
+        return _copy 
+
+    def __str__(self):
+        parent_to_string = super(ResultType, self).__str__()
+        return "(parent: " + parent_to_string + ", ID: " + str(self.problemID) + ", value: " + str(self.value) + ")"
 
 class ProblemType(WukongProblem):
     """ class ProblemType provided by User. """
@@ -27,41 +61,20 @@ class ProblemType(WukongProblem):
     memoize = False 
 
     def __init__(self):
-        # self.numbers = list()
-        # self._from = 0
-        # self.to = 0 
+        super(ProblemType, self).__init__()
         self.value = 0 
     
     def __str__(self):
-        return "(ID: " + self.problemID + ", value: " + self.value + ")"
+        return "(ID: " + str(self.problemID) + ", value: " + str(self.value) + ")"
 
     def __repr__(self):
         return self.__str__()
 
-class ResultType(WukongProblem):
-    def __init__(self):
-        self.value = 0
-    
-    def copy(self):
-        """
-	    Make copy of Problem. Shallow copy works here. This is needed only for the non-Wukong, case, i.e., 
-        with no network, since Java is passing local references around among the threads.
-	    For Wukong, problems and results will be copied/serialized and sent over the network, so no local copies are needed.
-        """
-        _copy = ResultType()
-        _copy.value = self.value
-
-        return _copy 
-
-    def __str__(self):
-        parent_to_string = super(ResultType, self).__str__()
-        return "(parent: " + parent_to_string + ", ID: " + self.problemID + ", value: " + self.value + ")"
-
-class User(object):
+class FibbonaciProgram(UserProgram):
     """ class User provided by User. """
 
-    @staticmethod
-    def base_case(problem : ProblemType) -> bool:
+    #@staticmethod
+    def base_case(self, problem : ProblemType) -> bool:
         """ 
         No non-parallel algorithm for Fibonacci. 
         SEQUENTIAL_THRESHOL must be 1. 
@@ -90,8 +103,8 @@ class User(object):
     #   return n;
     #   return fib(n-1) + fib(n-2);
     # }
-    @staticmethod
-    def preprocess(problem : ProblemType) -> bool:
+    #@staticmethod
+    def preprocess(self, problem : ProblemType) -> bool:
         """
         Some problems may use a pre-processing step before anything else is done.
 
@@ -105,8 +118,8 @@ class User(object):
         """
         pass 
 
-    @staticmethod
-    def trim_problem(problem : ProblemType):
+    #@staticmethod
+    def trim_problem(self, problem : ProblemType):
         """
         A problem P is by default passed to the executors that will be executing the child subproblems of P. One of these
         executors will execute method combine() for these subproblems. In some cases, it is easier to write combine() when 
@@ -116,16 +129,22 @@ class User(object):
         So if some of the parent data is not needed for combine() it should be deleted from the parent problem.
 
         The field of a problem that will definitely be used is the problemID. Do not trim the problemID. 
-        The FanInStack (in parent class WukongProblem) is not needed by the DivideandConquer framework and 
+        The FanInStack (in parent class DivideAndConquerExecutor.WukongProblem) is not needed by the DivideandConquer framework and 
         can/should be trimmed. 
-        One option is to create a trimProblem() method in call WukongProblem and always call this method (in method
+        One option is to create a trimProblem() method in call DivideAndConquerExecutor.WukongProblem and always call this method (in method
         Fanout) in addition to calling User.trimProblem(), where User.tribProblem may be empty.
         """
         # We are including a parent's stack when we create a child's stack, and we do not need the parent's stack anymore.
-        problem.FanInStack = None # Defined in class WukongProblem
+        problem.FanInStack = None # Defined in class DivideAndConquerExecutor.WukongProblem
 
-    @staticmethod 
-    def problem_labeler(
+    def inputProblem(self, problem : ProblemType):
+        """
+        Not used for Fibonacci.
+        """
+        pass 
+
+    #@staticmethod 
+    def problem_labeler(self, 
         subproblem : ProblemType, 
         childID : int, 
         parent_problem : ProblemType, 
@@ -167,8 +186,8 @@ class User(object):
 
         return str(subproblem.value)
         
-    @staticmethod
-    def memoize_IDLabeler(problem : ProblemType) -> str:
+    #@staticmethod
+    def memoize_IDLabeler(self, problem : ProblemType) -> str:
         """
         Used for getting the memoized result of (sub)problem (for get(memoizedLabel, result)).
         """   
@@ -188,8 +207,8 @@ class User(object):
         
         return memoizedID
     
-    @staticmethod
-    def divide(
+    #@staticmethod
+    def divide(self, 
         problem : ProblemType,
         subproblems : list 
     ):
@@ -230,8 +249,8 @@ class User(object):
         subproblems.append(minus_2)
         subproblems.append(minus_1)
 
-    @staticmethod
-    def combine(
+    #@staticmethod
+    def combine(self, 
         subproblem_results : list,
         combination : ResultType
     ):
@@ -267,8 +286,8 @@ class User(object):
         with debug_lock:
             logger.debug("combine: firstValue: " + str(first_value) + " secondValue: " + str(second_value) + " combination.value: " + combination.value)
     
-    @staticmethod
-    def input_problem(problem : ProblemType):
+    #@staticmethod
+    def input_problem(self, problem : ProblemType):
         """
         The problem data must be obtained from Wukong storage. Here, we are getting a specific subsegment of the input array, which is the segment from-to.
 
@@ -282,8 +301,8 @@ class User(object):
         """
         pass 
 
-    @staticmethod
-    def compute_inputs_of_subproblems(
+    #@staticmethod
+    def compute_inputs_of_subproblems(self, 
         problem : ProblemType,
         subproblems : list
     ):
@@ -296,8 +315,8 @@ class User(object):
         """
         pass 
 
-    @staticmethod
-    def sequential(
+    #@staticmethod
+    def sequential(self, 
         problem : ProblemType,
         result : ResultType
     ):
@@ -306,8 +325,8 @@ class User(object):
         with debug_lock:
             logger.debug("sequential: " + str(problem.problemID) + " result.value: " + str(result.value))
 
-    @staticmethod
-    def output_result():
+    #@staticmethod
+    def output_result(self):
         """
         User provides method to output the problem result.
         We only call this for the final result, and this method verifies the final result.
@@ -316,9 +335,9 @@ class User(object):
 		the final result since we create a new result object after every combine. The final result 
 		is the value in "root".
         """
-        result = FanInSynchronizer.resultMap[DivideandConquerFibonacci.root_problem_id]
+        result = FanInSychronizer.resultMap[DivideandConquerFibonacci.root_problem_id]
 
-        MemoizationController.getInstance().stopThread()
+        DivideAndConquerExecutor.MemoizationController.getInstance().stopThread()
 
         logger.debug("Fibonacci(" + DivideandConquerFibonacci.n + ") = " + str(result.value))
         logger.debug("Verifying...")
@@ -341,38 +360,38 @@ class DivideandConquerFibonacci(object):
     root_problem_id = "root"
 
 # Main method, so to speak.
-if __name__ == "__main__":
-    logger.debug("Running DivideandConquerFibonacci")
-    logger.debug("INPUT_THRESHOLD is: {}".format(WukongProblem.INPUT_THRESHOLD))
-    logger.debug("OUTPUT_THRESHOLD is: {}".format(WukongProblem.OUTPUT_THRESHOLD))
-    logger.debug("SEQUENTIAL_THRESHOLD is: {}".format(ProblemType.SEQUENTIAL_THRESHOLD))
-    logger.debug("memoize is: " + str(ProblemType.memoize))
+# if __name__ == "__main__":
+#     logger.debug("Running DivideandConquerFibonacci")
+#     logger.debug("INPUT_THRESHOLD is: {}".format(WukongProblem.INPUT_THRESHOLD))
+#     logger.debug("OUTPUT_THRESHOLD is: {}".format(WukongProblem.OUTPUT_THRESHOLD))
+#     logger.debug("SEQUENTIAL_THRESHOLD is: {}".format(ProblemType.SEQUENTIAL_THRESHOLD))
+#     logger.debug("memoize is: " + str(ProblemType.memoize))
 
-    # Assert 
-    seq = None 
-    try:
-        seq = getattr(ProblemType, "SEQUENTIAL_THRESHOLD", None)
-    except Exception:
-        pass 
+#     # Assert 
+#     seq = None 
+#     try:
+#         seq = getattr(ProblemType, "SEQUENTIAL_THRESHOLD", None)
+#     except Exception:
+#         pass 
 
-    if seq is None:
-        logger.fatal("ProblemType.SEQUENTIAL_THRESHOLD must be defined.")
+#     if seq is None:
+#         logger.fatal("ProblemType.SEQUENTIAL_THRESHOLD must be defined.")
         
-    logger.debug("n: " + str(DivideandConquerFibonacci.n))
+#     logger.debug("n: " + str(DivideandConquerFibonacci.n))
     
-    rootID = str(DivideandConquerFibonacci.n)
-    FanInStack = list() 
-    rootProblem = ProblemType()
+#     rootID = str(DivideandConquerFibonacci.n)
+#     FanInStack = list() 
+#     rootProblem = ProblemType()
 
-    rootProblem.n = DivideandConquerFibonacci.n
+#     rootProblem.n = DivideandConquerFibonacci.n
 
-    logger.debug("Root Problem: " + str(rootProblem))
+#     logger.debug("Root Problem: " + str(rootProblem))
 
-    rootProblem.FanInStack = FanInStack
-    rootProblem.problemID = DivideandConquerFibonacci.root_problem_id
+#     rootProblem.FanInStack = FanInStack
+#     rootProblem.problemID = DivideandConquerFibonacci.root_problem_id
 
-    root = DivideAndConquerExecutor()
-    root.run()
+#     root = DivideAndConquerExecutor.DivideAndConquerExecutor(rootProblem)
+#     root.run()
 
 """
 
@@ -417,7 +436,7 @@ main: n: 4
 
 
 main: (ID:root/value:4)
-root: Executor: root call pair on MemoizationController
+root: Executor: root call pair on DivideAndConquerExecutor.MemoizationController
 root: channelMap keySet:root,
 root: Executor: memoized send1: PROMISEVALUE: problem.problemID root memoizedLabel: root
 root: Executor: memoized rcv1: problem.problemID root receiving ack.
@@ -444,7 +463,7 @@ root:  labler: parent stack:
 root: labler: generated subProblem Label: 3
 root: Fanout: ID: root becoming left executor: root-3
 
-root-2: Executor: root-2 call pair on MemoizationController
+root-2: Executor: root-2 call pair on DivideAndConquerExecutor.MemoizationController
 root-2: channelMap keySet:root,root-2,
 root-2: Executor: memoized send1: PROMISEVALUE: problem.problemID root-2 memoizedLabel: 2
 root-2: Executor: memoized rcv1: problem.problemID root-2 receiving ack.
@@ -471,7 +490,7 @@ root-2:  labler: parent stack: (ID:root/value:4)
 root-2: labler: generated subProblem Label: 1
 root-2: Fanout: ID: root-2 becoming left executor: root-2-1
 
-root-3: Executor: root-3 call pair on MemoizationController
+root-3: Executor: root-3 call pair on DivideAndConquerExecutor.MemoizationController
 root-3: channelMap keySet:root-3,root,root-2,
 root-3: Executor: memoized send1: PROMISEVALUE: problem.problemID root-3 memoizedLabel: 3
 root-3: Executor: memoized rcv1: problem.problemID root-3 receiving ack.
@@ -498,7 +517,7 @@ root-3:  labler: parent stack: (ID:root/value:4)
 root-3: labler: generated subProblem Label: 2
 root-3: Fanout: ID: root-3 becoming left executor: root-3-2
 
-root-2-0: Executor: root-2-0 call pair on MemoizationController
+root-2-0: Executor: root-2-0 call pair on DivideAndConquerExecutor.MemoizationController
 root-2-0: channelMap keySet:root-3,root-2-0,root,root-2,
 root-2-0: Executor: memoized send1: PROMISEVALUE: problem.problemID root-2-0 memoizedLabel: 0
 root-2-0: Executor: memoized rcv1: problem.problemID root-2-0 receiving ack.
@@ -521,14 +540,14 @@ root-2-0: Fan-In: ID: root-2-0: FanInID: root-2: is not become Executor  and its
 
 
 // Note: Does not reflect interleaving of calls to MC, e.g., 3-2's pair below occurred before this 2-1 pair
-root-2-1: Executor: root-2-1 call pair on MemoizationController
+root-2-1: Executor: root-2-1 call pair on DivideAndConquerExecutor.MemoizationController
 root-2-1: channelMap keySet:root-3,root-2-1,root-2-0,root,root-3-1,root-2,
 root-2-1: Executor: memoized send1: PROMISEVALUE: problem.problemID root-2-1 memoizedLabel: 1
 root-2-1: Executor: memoized rcv1: problem.problemID root-2-1 receiving ack.
 root-2-1: Executor: memoized rcv1: problem.problemID root-2-1 ack was stop.
 
 // Note: Calling pair() again due to previous "Stop" on PROMISEVALUE
-root-2-1: Executor: root-2-1 call pair on MemoizationController
+root-2-1: Executor: root-2-1 call pair on DivideAndConquerExecutor.MemoizationController
 root-2-1: channelMap keySet:root-3,root-2-1,root-2-0,root-3-2,root,root-3-1,root-2,
 root-2-1: Executor: memoized send1: PROMISEVALUE: problem.problemID root-2-1 memoizedLabel: 1
 root-2-1: Executor: memoized rcv1: problem.problemID root-2-1 receiving ack.
@@ -557,7 +576,7 @@ root-2-1: Fan-in: ID: root-2-1 problem.becomeExecutor: true parentProblem.become
 root-2-1: Fan-In: ID: root-2-1: FanInID: root was not FanInExecutor:  result sent:(ID:root-2-1: (ID:root-2-1/value:1)
 root-2-1: Fan-In: ID: root-2-1: FanInID: root: is not become Executor  and its value was: (ID:root-2-1: (ID:root-2-1/value:1) and after put is null
 
-root-3-1: Executor: root-3-1 call pair on MemoizationController
+root-3-1: Executor: root-3-1 call pair on DivideAndConquerExecutor.MemoizationController
 root-3-1: channelMap keySet:root-3,root-2-1,root-2-0,root,root-3-1,root-2,
 root-3-1: Executor: memoized send1: PROMISEVALUE: problem.problemID root-3-1 memoizedLabel: 1
 root-3-1: Executor: memoized rcv1: problem.problemID root-3-1 receiving ack.
@@ -580,13 +599,13 @@ root-3-1: Fan-in: ID: root-3-1 problem.becomeExecutor: false parentProblem.becom
 root-3-1: Fan-In: ID: root-3-1: FanInID: root-3 was not FanInExecutor:  result sent:(ID:root-3-1: (ID:root-3-1/value:1)
 root-3-1: Fan-In: ID: root-3-1: FanInID: root-3: is not become Executor  and its value was: (ID:root-3-1: (ID:root-3-1/value:1) and after put is null
 
-root-3-2: Executor: root-3-2 call pair on MemoizationController
+root-3-2: Executor: root-3-2 call pair on DivideAndConquerExecutor.MemoizationController
 root-3-2: channelMap keySet:root-3,root-2-1,root-2-0,root-3-2,root,root-3-1,root-2,
 root-3-2: Executor: memoized send1: PROMISEVALUE: problem.problemID root-3-2 memoizedLabel: 2
 root-3-2: Executor: memoized rcv1: problem.problemID root-3-2 receiving ack.
 root-3-2: Executor: memoized rcv1: problem.problemID root-3-2 received ack.
 root-3-2: Executor: memoized rcv1: problem.problemID root-3-2 ack was stop.
-root-3-2: Executor: root-3-2 call pair on MemoizationController
+root-3-2: Executor: root-3-2 call pair on DivideAndConquerExecutor.MemoizationController
 root-3-2: channelMap keySet:root-3,root-2-1,root-2-0,root-3-2,root,root-3-1,root-2,
 root-3-2: Executor: memoized send1: PROMISEVALUE: problem.problemID root-3-2 memoizedLabel: 2
 root-3-2: Executor: memoized rcv1: problem.problemID root-3-2 receiving ack.
