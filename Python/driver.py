@@ -40,9 +40,10 @@ if __name__ == "__main__":
 
     rootID = str(DivideandConquerFibonacci.n)
     FanInStack = list() 
-    rootProblem = ProblemType()
-
-    rootProblem.n = DivideandConquerFibonacci.n
+    rootProblem = ProblemType(
+        value = DivideandConquerFibonacci.n,
+        UserProgram = FibbonaciProgram()
+    )
 
     logger.debug("Root Problem: " + str(rootProblem))
 

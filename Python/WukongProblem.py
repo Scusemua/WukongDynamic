@@ -14,7 +14,7 @@ root = logging.getLogger()
 if root.handlers:
     for handler in root.handlers:
        handler.setFormatter(formatter)
-       
+
 debug_lock = threading.Lock()
 
 class WukongProblem(object):
@@ -52,12 +52,12 @@ class WukongProblem(object):
     # Stack of storage keys from root to leaf node (where there is a leaf node for each base case).
     #Stack<DivideandConquerFibonacci.ProblemType> FanInStack
     
-    def __init__(self):
+    def __init__(self, UserProgram = None):
         self.didInput = False 
         self.becomeExecutor = False
         self.problemID = None 
         self.FanInStack = list()
-        self.UserProgram = None 
+        self.UserProgram = UserProgram 
 
     # # If DivideandConquerFibonacci.Users supply constants, use them, else use default values.
     # def static_init():
@@ -156,7 +156,7 @@ class WukongProblem(object):
         # Note: If using the size of the subproblem instead of the level, use this if-statement:
         #   if ((problem.to - problem.from + 1) <= WukongProblem.INPUT_THRESHOLD)
         #
-        if (problem.FanInStack.size() >= WukongProblem.INPUT_THRESHOLD):
+        if (len(problem.FanInStack) >= WukongProblem.INPUT_THRESHOLD):
             self.UserProgram.computeInputsOfSubproblems(problem, subProblems)
         
         # In General:
@@ -180,8 +180,9 @@ class WukongProblem(object):
 
         #For a fan-out of N, invoke N-1 executors and become 1
         #for (int i=0 i< subProblems.size()-1 i++) {
+        print("len(subProblems): " + str(len(subProblems)))
         for i in range(len(subProblems) - 1):
-            invokedSubproblem = subProblems.get(i)
+            invokedSubproblem = subProblems[i]
 
             # Generate the executor/storage label for the subproblem
             # Supply all: problem, subProblems, subProblem, i in case they are needed.
@@ -198,21 +199,20 @@ class WukongProblem(object):
             # TODO: Convert this to Python.
             with debug_lock:
                 logger.info("fanout: push on childFanInStack: problem: " + str(problem))
-                childFanInStack.add(problem)
+                childFanInStack.append(problem)
 
             invokedSubproblem.FanInStack = childFanInStack
 
-            # TODO: Convert this to Python.
             with debug_lock:
-                logger.debug("fanout: parent stack: ")
+                logger.debug("fanout: parent stack (len = {}): ".format(len(invokedSubproblem.FanInStack)))
                 #for (int j=0 j< problem.FanInStack.size() j++) {
-                for j in range(len(invokedSubproblem.FanInStack)):
-                    logger.debug(problem.FanInStack.get(j) + " ")
+                for j in range(0, len(problem.FanInStack)):
+                    logger.debug(str(problem.FanInStack[j]) + " ")
                 logger.debug("")
-                logger.debug("fanout: subProblem stack: ")
+                logger.debug("fanout: subProblem stack (len = {}): ".format(len(invokedSubproblem.FanInStack)))
                 #for (int j=0 j< invokedSubproblem.FanInStack.size() j++) {
                 for j in range(len(invokedSubproblem.FanInStack)):
-                    logger.debug(invokedSubproblem.FanInStack.get(j) + " ")
+                    logger.debug(str(invokedSubproblem.FanInStack[j]) + " ")
                 logger.debug("")
             
             # If parent input was done then we will grab part of the parent's values and the child's input can be considered done too.
@@ -230,8 +230,13 @@ class WukongProblem(object):
                 
                 ack = ServerlessNetworkingMemoizer.rcv1()
             
+            from DivideAndConquerExecutor import DivideAndConquerExecutor
             # New subproblem
-            newExecutor = DivideAndConquerExecutor(invokedSubproblem)
+
+            logger.info("Creating new DivideAndConquerExecutor object now...")
+            newExecutor = DivideAndConquerExecutor(
+                invokedSubproblem,
+                user_program = self.UserProgram)
 
             # TODO: Convert this to Python.
             #synchronized(FanInSychronizer.getPrintLock()) {
@@ -258,11 +263,11 @@ class WukongProblem(object):
             # Note: no joins for the executor threads - when they become leaf node executors, they will perform all of the 
             # combine() operations and then return, which unwinds the recursion with nothing else to do.
         # Do the same for the become executor
-        becomeSubproblem = subProblems.get(subProblems.size()-1) # DivideandConquerFibonacci.ProblemType
+        becomeSubproblem = subProblems[len(subProblems)-1] # DivideandConquerFibonacci.ProblemType
         
         # Generate the executor/storage label for the subproblem
         # Supply all: problem, subProblems, subProblem, i in case they are needed.
-        ID = self.UserProgram.problemLabeler(becomeSubproblem,subProblems.size()-1, problem, subProblems) # String
+        ID = self.UserProgram.problemLabeler(becomeSubproblem, len(subProblems) - 1, problem, subProblems) # String
         
         # If two different subProblems in the divide and conquer tree can have the same label, then there would
         # be a problem since these labels are also used to label fan-in tasks and we cannot have two fan-in tasks
@@ -282,7 +287,9 @@ class WukongProblem(object):
         
         # If parent input was done then we will grab part of the parent's values and the child's input can be considered done too.
         becomeSubproblem.didInput = problem.didInput
-        become = DivideAndConquerExecutor(becomeSubproblem)
+        become = DivideAndConquerExecutor(
+            becomeSubproblem,
+            user_program = self.UserProgram)
         #synchronized(FanInSychronizer.getPrintLock()) {
         #    System.out.println("Fanout: ID: " + problem.problemID  + " becoming left executor: "  + becomeSubproblem.problemID)
         with debug_lock:
@@ -393,7 +400,7 @@ class WukongProblem(object):
         if (WukongProblem.USESERVERLESSNETWORKING):
             FanInExecutor = problem.becomeExecutor
 
-        while (problem.FanInStack.size() != 0):
+        while (len(problem.FanInStack) != 0):
             
             # Stop combining results when the results reach a certain size, and the communication delay for passing
             # the results is much larger than the time to combine them. The remaining combines can be done on one
@@ -404,10 +411,10 @@ class WukongProblem(object):
             # other subproblems are small ones that get merged with the large one.
 
             #if (size >= WukongProblem.OUTPUT_THRESHOLD) { 
-            if (problem.FanInStack.size() == WukongProblem.OUTPUT_THRESHOLD):
+            if (len(problem.FanInStack) == WukongProblem.OUTPUT_THRESHOLD):
                 with debug_lock:
                     logger.debug("Exector: " + str(problem.problemID) + " Reached OUTPUT_THRESHOLD for result: " + str(result.problemID)
-                        + " with problem.FanInStack.size(): " + str(problem.FanInStack.size())
+                        + " with problem.FanInStack.size(): " + str(len(problem.FanInStack))
                         + " and WukongProblem.OUTPUT_THRESHOLD: " + str(WukongProblem.OUTPUT_THRESHOLD))
                     logger.debug(result) 
                     # return False so we are not considered to be the final Executor that displays final results. There will
@@ -474,7 +481,7 @@ class WukongProblem(object):
                 #        + " and its value was: " + result + " and after put is " + (FanInSychronizer.resultMap.get(parentProblem.problemID)))
                 #    System.out.flush()
                 #}
-                logger.debug("Fan-In: ID: " + str(problem.problemID) + ": FanInID: " + str(parentProblem.problemID) + ": is not become Executor " + " and its value was: " + str(result) + " and after put is " + str((FanInSychronizer.resultMap.get(parentProblem.problemID))))
+                logger.debug("Fan-In: ID: " + str(problem.problemID) + ": FanInID: " + str(parentProblem.problemID) + ": is not become Executor " + " and its value was: " + str(result) + " and after put is " + str((FanInSychronizer.resultMap[parentProblem.problemID])))
                 
                 #if (problem.FanInStack.size() < WukongProblem.OUTPUT_THRESHOLD) {
                 #    synchronized(FanInSychronizer.getPrintLock()) {
@@ -488,11 +495,11 @@ class WukongProblem(object):
                 #}
                 
                 #if (size >= WukongProblem.OUTPUT_THRESHOLD) { 
-                if (problem.FanInStack.size() == WukongProblem.OUTPUT_THRESHOLD):
+                if (len(problem.FanInStack) == WukongProblem.OUTPUT_THRESHOLD):
                     # TODO: Convert to Python
                     with debug_lock:
                         logger.debug("Exector: " + str(problem.problemID) + " Reached OUTPUT_THRESHOLD for result: " + str(result.problemID)
-                            + " with problem.FanInStack.size(): " + str(problem.FanInStack.size())
+                            + " with problem.FanInStack.size(): " + str(len(problem.FanInStack))
                             + " and WukongProblem.OUTPUT_THRESHOLD: " + str(WukongProblem.OUTPUT_THRESHOLD))
                         logger.debug(result) 
                         # return False so we are not considered to be the final Executor that displays final results. There will
@@ -517,7 +524,7 @@ class WukongProblem(object):
                 with debug_lock:
                     logger.debug("FanIn: ID: " + problem.problemID + ": FanInID: " + parentProblem.problemID + ": " 
                         + ": Returned from put: executor isLastFanInExecutor ")
-                    logger.debug(subproblemResults.get(0))
+                    logger.debug(subproblemResults[0])
             
                     logger.debug("ID: " + str(problem.problemID) + ": call combine ***************")
                 

@@ -21,7 +21,7 @@ root = logging.getLogger()
 if root.handlers:
     for handler in root.handlers:
        handler.setFormatter(formatter)
-       
+
 debug_lock = threading.Lock() 
 
 class ResultType(WukongResult):
@@ -60,9 +60,9 @@ class ProblemType(WukongProblem):
     # Memoize the problem results or not.
     memoize = False 
 
-    def __init__(self):
-        super(ProblemType, self).__init__()
-        self.value = 0 
+    def __init__(self, value = 0, UserProgram = None):
+        super(ProblemType, self).__init__(UserProgram = UserProgram)
+        self.value = value
     
     def __str__(self):
         return "(ID: " + str(self.problemID) + ", value: " + str(self.value) + ")"
@@ -93,7 +93,40 @@ class FibbonaciProgram(UserProgram):
 
         value = problem.value 
         return value <= ProblemType.SEQUENTIAL_THRESHOLD
-    
+
+    def problemLabeler(self, subProblem : ProblemType, childId : int, parentProblem : ProblemType, subProblems : list) -> str:
+        """
+        User must specify how subproblems are labeled. The problem label is used as a key into Wukong Storage,
+        where the value in the key-value pair is (eventually) the problem's result. Also used for Serverless
+        Networking pairing names.
+
+        Note: we could have used level-order IDs like:
+            1            2**0 children starting with child 2**0 (at level 0)
+            2     3         2**1 children starting with child 2**! (at level 1)
+        4    5  6   7      2**2 children starting with child 2**2 (at level 2)
+        This simplifies things since it is easy to compute the parent ID from the child's ID. With this ID scheme
+        we would not need to stack the problem IDs as we recurse; however, the stack makes it easy to get the level
+        since the level is just the size of the stack. 
+        We'll have to see if this scheme would work in general,
+        i.e., for different numbers of children, when the number of children may vary for parent nodes, etc. There has to be a 
+        way to recover the parent ID from a child, either by using a formula like above, or by stacking the IDs as we recurse.
+        """
+        with debug_lock:
+            logger.debug("labeler: subProblem ID: " + str(subProblem.problemID) + " parent ID: " + str(parentProblem.problemID))
+
+            for i in range(0, len(parentProblem.FanInStack)):
+                logger.debug(str(parentProblem.FanInStack[i]) + " ")
+            
+        label = str(subProblem.value)
+
+        with debug_lock:
+            logger.debug("Label: " + label)
+        
+        return label
+
+    def computeInputsOfSubproblems(self, problem : ProblemType, subProblems : list):
+        pass
+
     # ------
     # As in:
     # ------
@@ -233,7 +266,6 @@ class FibbonaciProgram(UserProgram):
             for x in problem.FanInStack:
                 logger.debug(str(x) + " ")
 
-            logger.debug("Divide: merge sort run: from: {} to: {}".format(problem._from, problem.to))
             logger.debug("Divide: problemID: {}".format(problem.problemID))
 
         minus_1 = ProblemType()
@@ -243,8 +275,8 @@ class FibbonaciProgram(UserProgram):
         minus_2.value = problem.value - 2
 
         with debug_lock:
-            logger.debug("divide: minus_1: " + minus_1)
-            logger.debug("divide: minus_2: " + minus_2)
+            logger.debug("divide: minus_1: " + str(minus_1))
+            logger.debug("divide: minus_2: " + str(minus_2))
             
         subproblems.append(minus_2)
         subproblems.append(minus_1)

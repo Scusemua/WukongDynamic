@@ -2,7 +2,7 @@ import sys
 import threading
 
 from threading import Thread 
-from WukongProblem import WukongProblem
+import WukongProblem
 
 import logging
 logger = logging.getLogger(__name__)
@@ -17,7 +17,7 @@ root = logging.getLogger()
 if root.handlers:
     for handler in root.handlers:
        handler.setFormatter(formatter)
-       
+
 debug_lock = threading.Lock() 
 
 class UniChannel(object):
@@ -105,12 +105,14 @@ class DivideAndConquerExecutor(Thread):
     def run(self):
         ServerlessNetworkingMemoizer = None 
         # Start fan-out task.
-        if (WukongProblem.memoize and WukongProblem.USESERVERLESSNETWORKING):
+        if (WukongProblem.WukongProblem.memoize and WukongProblem.WukongProblem.USESERVERLESSNETWORKING):
             ServerlessNetworkingMemoizer = MemoizationController.getInstance().pair(self.problem.problemID)
             ack = ServerlessNetworkingMemoizer.rcv1()
 
+        logger.debug("Preprocessing the problem now...")
         # Pre-process problem, if required.
         self.user_program.preprocess(self.problem)
+        logger.debug("Processing completed.")
 
         # We do not necessarily input the entire initial problem at once. We may input several sub-problems instead.
         # Note: The level of Problems is FanInStack.size(). Root problem has empty stack, 2 children of root have
@@ -127,7 +129,7 @@ class DivideAndConquerExecutor(Thread):
         result = None # first and only set result is by sequentialSort when the baseCase is reached.
         memoizedResult = False
 
-        if WukongProblem.memoize:
+        if WukongProblem.WukongProblem.memoize:
             # Here, we want to get the value previously computed for this subproblem
             # as opposed to below where we put a computed value for a subProblem
             # Note that the problem ID may be "4-3-2" or "4-2" but the memoized
@@ -185,11 +187,11 @@ class DivideAndConquerExecutor(Thread):
             logger.debug("memoized get: problem.problemID " + str(self.problem.problemID) + " memoizedLabel: " + str(memoizedLabel) + " memoized result: " + str(result))
             #}
         
-        if not WukongProblem.memoize or (WukongProblem.memoize and result is None):
+        if not WukongProblem.WukongProblem.memoize or (WukongProblem.WukongProblem.memoize and result is None):
             result = self.result_type()
 
             # rhc: Can we do this if also doing Memoization? I think so.
-            if (len(self.problem.FanInStack) == WukongProblem.INPUT_THRESHOLD and self.problem.didInput == False):
+            if (len(self.problem.FanInStack) == WukongProblem.WukongProblem.INPUT_THRESHOLD and self.problem.didInput == False):
                 self.user_program.inputProblem(self.problem)
                 self.problem.didInput = True
                 # Debug output is for Merge/Quick Sort only.
@@ -224,7 +226,7 @@ class DivideAndConquerExecutor(Thread):
                     logger.debug("problem.SEQUENTIAL_THRESHOLD: " + str(self.problem.SEQUENTIAL_THRESHOLD) + " problem.INPUT_THRESHOLD: " + str(self.problem.INPUT_THRESHOLD))
                     exit(1)
                 
-                self.user_program.sequential(self.problem,result)
+                self.user_program.sequential(self.problem, result)
 
                 logger.debug("base case: result before ProcessBaseCase(): " + str(result))
                 self.problem.ProcessBaseCase(self.problem, result, ServerlessNetworkingMemoizer)
@@ -233,6 +235,7 @@ class DivideAndConquerExecutor(Thread):
             else: # not baseCase
                 # rhc: start Fan-Out task
                 subProblems = list()
+                logger.debug("Calling problem.divide()")
                 self.user_program.divide(self.problem, subProblems)
 
                 # rhc: end Fan-Out task
@@ -241,6 +244,7 @@ class DivideAndConquerExecutor(Thread):
                 # Makes recursive call to run() for one subproblem and a new executor for the other(s).
                 # Calls self.user_program.computeInputsOfSubproblems(problem,subProblems) when level == DivideandConquerFibonacci.ProblemType.INPUT_THRESHOLD
                 # and then divides the input of parent into the two inputs of the children. 
+                logger.debug("Calling problem.Fanout()")
                 self.problem.Fanout(self.problem, subProblems, ServerlessNetworkingMemoizer)
                 # rhc: end Fan-Out operation
 
@@ -276,7 +280,7 @@ class DivideAndConquerExecutor(Thread):
             logger.info("Thread is exiting right before call to `FanInOperationAndTask()`")
             return 
 
-        finalRemainingExecutor = WukongProblem.FanInOperationandTask(self.problem,result,memoizedResult,ServerlessNetworkingMemoizer)
+        finalRemainingExecutor = self.problem.FanInOperationandTask(self.problem,result,memoizedResult,ServerlessNetworkingMemoizer)
         #rhc: end Fan-In operation and Fan-In task.
 
         # The executor that is the last fan-in task of the final fan-in outputs the result. the
