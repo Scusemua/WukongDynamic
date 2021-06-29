@@ -3,7 +3,9 @@ import threading
 
 from threading import Thread 
 import WukongProblem
+import importlib
 
+import yaml 
 import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -89,18 +91,24 @@ class DivideAndConquerExecutor(Thread):
         group=None, 
         target=None, 
         name=None,
-        #args=(), 
-        #kwargs=None, 
-        #verbose=None,
-        problem_type = None,
-        result_type = None,
-        user_program = None
+        problem_type = None, 
+        result_type = None
     ):
         super(DivideAndConquerExecutor, self).__init__(group=group, target=target, name=name)
         self.problem = problem              # refers to an INSTANCE of the user-provided ProblemType class
-        self.problem_type = problem_type    # refers to a class provided by user, e.g., ProblemType
-        self.result_type = result_type      # refers to a class provided by user, e.g., ResultType
-        self.user_program = user_program    # refers to a class provided by user, e.g., FibbonaciProgram
+
+        with open("wukong-divide-and-conquer.yaml") as f:
+            config = yaml.load(f, Loader = yaml.FullLoader)
+            
+            source_path = config["source-path"]
+            source_module = config["source-module"]
+            logger.debug("Importing user-defined module \"" + source_module + "\" from file \"" + source_path + "\" now...")
+            spec = importlib.util.spec_from_file_location(source_module, source_path)
+            user_module = foo = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(user_module)
+
+            self.problem_type = user_module.ProblemType    # refers to a class provided by user, e.g., ProblemType
+            self.result_type = user_module.ResultType      # refers to a class provided by user, e.g., ResultType
     
     def run(self):
         ServerlessNetworkingMemoizer = None 
@@ -111,7 +119,7 @@ class DivideAndConquerExecutor(Thread):
 
         logger.debug("Preprocessing the problem now...")
         # Pre-process problem, if required.
-        self.user_program.preprocess(self.problem)
+        self.problem.UserProgram.preprocess(self.problem)
         logger.debug("Processing completed.")
 
         # We do not necessarily input the entire initial problem at once. We may input several sub-problems instead.
@@ -144,7 +152,7 @@ class DivideAndConquerExecutor(Thread):
             promiseMsg.didInput = self.problem.didInput
             
             # e.g., if problem.problemID is "4-3", memoizedLabel is "3"
-            memoizedLabel = self.user_program.memoizeIDLabeler(self.problem) 
+            memoizedLabel = self.problem.UserProgram.memoizeIDLabeler(self.problem) 
             promiseMsg.memoizationLabel = memoizedLabel
             promiseMsg.result = None    
             promiseMsg.FanInStack = self.problem.FanInStack
@@ -192,7 +200,7 @@ class DivideAndConquerExecutor(Thread):
 
             # rhc: Can we do this if also doing Memoization? I think so.
             if (len(self.problem.FanInStack) == WukongProblem.WukongProblem.INPUT_THRESHOLD and self.problem.didInput == False):
-                self.user_program.inputProblem(self.problem)
+                self.problem.UserProgram.inputProblem(self.problem)
                 self.problem.didInput = True
                 # Debug output is for Merge/Quick Sort only.
                 # synchronized(FanInSychronizer.getPrintLock()) {
@@ -209,7 +217,7 @@ class DivideAndConquerExecutor(Thread):
             # are not always the same. Since using <=, must also check whether we have already input numbers,
             # i.e., once < it will stay less than but we cannot keep inputing numbers.
             # if (size <= WukongProblem.INPUT_THRESHOLD and problem.didInput == False) {
-            #     self.user_program.inputProblem(problem) 
+            #     self.problem.UserProgram.inputProblem(problem) 
             #     synchronized(FanInSychronizer.getPrintLock()) {
             #         System.out.println("inputProblemNew: problem.from: " + problem.from + " problem.to: " + problem.to 
             #             + " problem.FanInStack.size(): " + problem.FanInStack.size() + " size: " + size)
@@ -220,13 +228,13 @@ class DivideAndConquerExecutor(Thread):
             # }
         
             # Base case is a sequential algorithm though possibly on a problem of size 1
-            if (self.user_program.base_case(self.problem)):
+            if (self.problem.UserProgram.base_case(self.problem)):
                 if (not self.problem.didInput):
                     logger.debug("Error: SEQUENTIAL_THRESHOLD reached before INPUT_THRESHOLD, but we cannot sort the numbers until we input them.")
                     logger.debug("problem.SEQUENTIAL_THRESHOLD: " + str(self.problem.SEQUENTIAL_THRESHOLD) + " problem.INPUT_THRESHOLD: " + str(self.problem.INPUT_THRESHOLD))
                     exit(1)
                 
-                self.user_program.sequential(self.problem, result)
+                self.problem.UserProgram.sequential(self.problem, result)
 
                 logger.debug("base case: result before ProcessBaseCase(): " + str(result))
                 self.problem.ProcessBaseCase(self.problem, result, ServerlessNetworkingMemoizer)
@@ -236,13 +244,13 @@ class DivideAndConquerExecutor(Thread):
                 # rhc: start Fan-Out task
                 subProblems = list()
                 logger.debug("Calling problem.divide()")
-                self.user_program.divide(self.problem, subProblems)
+                self.problem.UserProgram.divide(self.problem, subProblems)
 
                 # rhc: end Fan-Out task
 
                 # rhc: start Fan-Out operation
                 # Makes recursive call to run() for one subproblem and a new executor for the other(s).
-                # Calls self.user_program.computeInputsOfSubproblems(problem,subProblems) when level == DivideandConquerFibonacci.ProblemType.INPUT_THRESHOLD
+                # Calls self.problem.UserProgram.computeInputsOfSubproblems(problem,subProblems) when level == DivideandConquerFibonacci.ProblemType.INPUT_THRESHOLD
                 # and then divides the input of parent into the two inputs of the children. 
                 logger.debug("Calling problem.Fanout()")
                 self.problem.Fanout(self.problem, subProblems, ServerlessNetworkingMemoizer)
@@ -288,6 +296,6 @@ class DivideAndConquerExecutor(Thread):
 
         # Need to output the value having key "root"
         if (finalRemainingExecutor):
-            self.user_program.outputResult()
+            self.problem.UserProgram.outputResult()
         
         return

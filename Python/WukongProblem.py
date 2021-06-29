@@ -59,6 +59,9 @@ class WukongProblem(object):
         self.FanInStack = list()
         self.UserProgram = UserProgram 
 
+        # TODO: When creating new DivideAndConquerExecutor objects, we do not supply the result type and problem type arguments.
+        #       Also, the existing classes that are passed around to possibly several threads are not thread safe, I think.
+
     # # If DivideandConquerFibonacci.Users supply constants, use them, else use default values.
     # def static_init():
     #     #Field IT = None
@@ -217,6 +220,7 @@ class WukongProblem(object):
             
             # If parent input was done then we will grab part of the parent's values and the child's input can be considered done too.
             invokedSubproblem.didInput = problem.didInput
+            invokedSubproblem.UserProgram = self.UserProgram
             
             if (WukongProblem.memoize and WukongProblem.USESERVERLESSNETWORKING):
                 addPairingNameMsgForInvoke = MemoizationMessage()
@@ -234,9 +238,7 @@ class WukongProblem(object):
             # New subproblem
 
             logger.info("Creating new DivideAndConquerExecutor object now...")
-            newExecutor = DivideAndConquerExecutor(
-                invokedSubproblem,
-                user_program = self.UserProgram)
+            newExecutor = DivideAndConquerExecutor(invokedSubproblem)
 
             # TODO: Convert this to Python.
             #synchronized(FanInSychronizer.getPrintLock()) {
@@ -287,9 +289,8 @@ class WukongProblem(object):
         
         # If parent input was done then we will grab part of the parent's values and the child's input can be considered done too.
         becomeSubproblem.didInput = problem.didInput
-        become = DivideAndConquerExecutor(
-            becomeSubproblem,
-            user_program = self.UserProgram)
+        becomeSubproblem.UserProgram = self.UserProgram
+        become = DivideAndConquerExecutor(becomeSubproblem)
         #synchronized(FanInSychronizer.getPrintLock()) {
         #    System.out.println("Fanout: ID: " + problem.problemID  + " becoming left executor: "  + becomeSubproblem.problemID)
         with debug_lock:

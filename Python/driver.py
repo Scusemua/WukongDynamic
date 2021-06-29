@@ -52,7 +52,7 @@ if __name__ == "__main__":
 
     root = DivideAndConquerExecutor(
         problem = rootProblem,
-        problem_type = ProblemType,
-        result_type = ResultType,
-        user_program = FibbonaciProgram())
+        problem_type = ProblemType, # ProblemType is a user-provided class.
+        result_type = ResultType   # ProblemType is a user-provided class.
+        )
     root.run()

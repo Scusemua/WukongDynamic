@@ -73,6 +73,24 @@ class ProblemType(WukongProblem):
 class FibbonaciProgram(UserProgram):
     """ class User provided by User. """
 
+    def trimProblem(self, problem : ProblemType):
+        """
+        A problem P is by default passed to the executors that will be executing the child subproblems of P. One of these
+        executors will execute method combine() for these subproblems. In some cases, it is easier to write combine() when 
+        the subproblem's parent problem data is available; however, this parent data will also be sent and retrieved from 
+        storage if the parent data is part of the ProblemType data. (That is, problem P's parent data will be sent 
+        as part of problem P since the parent data will be on the stack of subProblems (representing the call stack) for P.) 
+        So if some of the parent data is not needed for combine() it should be deleted from the parent problem.
+        
+        The field of a problem that will definitely be used is the problemID. Do not trim the problemID.  
+        The FanInStack (in parent class WukongProblem) is not needed by the DivideandConquer framework and 
+        can/should be trimmed. 
+        One option is to create a trimProblem() method in call WukongProblem and always call this method (in method
+        Fanout) in addition to calling User.trimProblem(), where User.tribProblem may be empty..
+        """
+        # We are cloning a parent's stack when we create a child's stack, and we do not need the parent's stack anymore.
+        problem.FanInStack = None 
+
     #@staticmethod
     def base_case(self, problem : ProblemType) -> bool:
         """ 
