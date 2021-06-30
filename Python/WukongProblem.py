@@ -1,6 +1,8 @@
 import sys
 import threading 
 
+from memoization import MemoizationController, MemoizationMessage
+
 import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -201,18 +203,18 @@ class WukongProblem(object):
 
             # TODO: Convert this to Python.
             with debug_lock:
-                logger.info("fanout: push on childFanInStack: problem: " + str(problem))
+                logger.info(str(problem.problemID) + ": Fanout: push on childFanInStack: (parent) problem: " + str(problem))
                 childFanInStack.append(problem)
 
             invokedSubproblem.FanInStack = childFanInStack
 
             with debug_lock:
-                logger.debug("fanout: parent stack (len = {}): ".format(len(invokedSubproblem.FanInStack)))
+                logger.debug("{}: Fanout: parent stack (len = {}): ".format(problem.problemID, len(invokedSubproblem.FanInStack)))
                 #for (int j=0 j< problem.FanInStack.size() j++) {
                 for j in range(0, len(problem.FanInStack)):
                     logger.debug(str(problem.FanInStack[j]) + " ")
                 logger.debug("")
-                logger.debug("fanout: subProblem stack (len = {}): ".format(len(invokedSubproblem.FanInStack)))
+                logger.debug("{}: Fanout: subProblem stack (len = {}): ".format(problem.problemID, len(invokedSubproblem.FanInStack)))
                 #for (int j=0 j< invokedSubproblem.FanInStack.size() j++) {
                 for j in range(len(invokedSubproblem.FanInStack)):
                     logger.debug(str(invokedSubproblem.FanInStack[j]) + " ")
@@ -237,13 +239,13 @@ class WukongProblem(object):
             from DivideAndConquerExecutor import DivideAndConquerExecutor
             # New subproblem
 
-            logger.info("Creating new DivideAndConquerExecutor object now...")
+            #logger.info("Creating new DivideAndConquerExecutor object now...")
             newExecutor = DivideAndConquerExecutor(invokedSubproblem)
 
             # TODO: Convert this to Python.
             #synchronized(FanInSychronizer.getPrintLock()) {
                 #System.out.println("Fanout: ID: " + problem.problemID + " invoking new right executor: "  + invokedSubproblem.problemID)
-            logger.debug("Fanout: ID: " + str(problem.problemID) + " invoking new right executor: "  + str(invokedSubproblem.problemID))
+            logger.debug(problem.problemID + ": Fanout: ID: " + str(problem.problemID) + " invoking new right executor: "  + str(invokedSubproblem.problemID))
             #}
             # start the executor
             
@@ -294,11 +296,10 @@ class WukongProblem(object):
         #synchronized(FanInSychronizer.getPrintLock()) {
         #    System.out.println("Fanout: ID: " + problem.problemID  + " becoming left executor: "  + becomeSubproblem.problemID)
         with debug_lock:
-            logger.debug("Fanout: ID: " + str(problem.problemID)  + " becoming left executor: "  + str(becomeSubproblem.problemID))
+            logger.debug(problem.problemID + ": Fanout: ID: " + str(problem.problemID)  + " becoming left executor: "  + str(becomeSubproblem.problemID))
         #}
         
         if (WukongProblem.memoize and WukongProblem.USESERVERLESSNETWORKING):
-
             addPairingNameMsgForBecomes = MemoizationMessage() # MemoizationMessage
             addPairingNameMsgForBecomes.messageType = MemoizationController.MemoizationMessageType.ADDPAIRINGNAME
             addPairingNameMsgForBecomes.senderID = problem.problemID
