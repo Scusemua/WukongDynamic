@@ -284,9 +284,9 @@ class DivideAndConquerExecutor(Thread):
 
         #rhc: start Fan-In operation and possibly  perform Fan-In task.
 
-        if True:
-            logger.info("Thread is exiting right before call to `FanInOperationAndTask()`")
-            return 
+        # if True:
+        #     logger.info("Thread is exiting right before call to `FanInOperationAndTask()`")
+        #     return 
 
         finalRemainingExecutor = self.problem.FanInOperationandTask(self.problem,result,memoizedResult,ServerlessNetworkingMemoizer)
         #rhc: end Fan-In operation and Fan-In task.

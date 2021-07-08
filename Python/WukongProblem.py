@@ -360,7 +360,7 @@ class WukongProblem(object):
         
         #synchronized(FanInSychronizer.getPrintLock()) {
         #    System.out.println("isLastFanInExecutor: Writing to " + FanInID + " the value " + copyOfResult) # result)
-        logger.debug("isLastFanInExecutor: Writing to " + FanInID + " the value " + str(copyOfResult)) # result))
+        logger.debug("parentProblem.problemID: isLastFanInExecutor: Writing to " + FanInID + " the value " + str(copyOfResult)) # result))
         #}
         siblingResult = FanInSychronizer.resultMap.put(FanInID,result) 
         
@@ -383,7 +383,7 @@ class WukongProblem(object):
         with debug_lock:
             logger.debug("**********************Start Fanin operation:")
             logger.debug("Fan-in: ID: " + problem.problemID)
-            logger.debug("Fan-in: becomeExecutor: " + problem.becomeExecutor)
+            logger.debug("Fan-in: becomeExecutor: " + str(problem.becomeExecutor))
             logger.debug("Fan-in: FanInStack: ")            
             for i in range(len(problem.FanInStack)):
                 logger.debug("{} ".format(problem.FanInStack[i]))
@@ -471,6 +471,9 @@ class WukongProblem(object):
                     #}
                     logger.debug("Fan-In: ID: " + str(problem.problemID) + ": FanInID: " + str(parentProblem.problemID) + " was not FanInExecutor:  result sent:" + str(result))
             else:
+                logger.debug("parentProblem ID: " + str(parentProblem.problemID) + ", calling isLastFanInExector() now...")
+                return 
+
                 # When return we either have our result and sibling result or or our result and None. For latter, we were first
                 # Executor to fan-in so we stop.
                 FanInExecutor = WukongProblem.isLastFanInExecutor(parentProblem, result, subproblemResults)
@@ -617,15 +620,54 @@ class WukongResult(object):
 
 class FanInSychronizer(object):
 
-    print_lock = threading.Lock()
+    lock = threading.Lock()
+
+    result_map = dict()
+    memoization_map = dict()
 
     def __init__(self):
         pass 
-
-    #@staticmethod
+ 
+    @staticmethod
     def put(fanin_id : str, result):
-        pass 
+        """
+        If nothing already in the map, return None.
+        If something already in the map, return whatever was already in the map.        
 
-    #@staticmethod
+        Get and put atomically.
+
+        Put memoized copy of result.
+        """
+        copy_of_result = result.copy()
+        copy_of_result.problemID = result.problemID 
+
+        copy_of_return = None 
+
+        with FanInSychronizer.lock:
+            # Attempt to grab the existing value.
+            copy_of_return = FanInSychronizer.memoization_map[fanin_id]
+
+            if copy_of_return is not None:
+                # If the existing value is not none, copy it.
+                copy_of_return = copy_of_return.copy() 
+
+                # Update the problemID field.
+                copy_of_return.problemID = FanInSychronizer.memoization_map[fanin_id].problemID
+
+            # Now we update the map itself.
+            FanInSychronizer.memoization_map[fanin_id] = result
+        
+        return copy_of_return
+
+    @staticmethod
     def get(fanin_id : str):
-        pass 
+        copy = None 
+        
+        with FanInSychronizer.lock:
+            result = FanInSychronizer.memoization_map[fanin_id]
+
+            if result is not None:
+                copy = result.copy() 
+                copy.problemID = result.problemID
+        
+        return copy 

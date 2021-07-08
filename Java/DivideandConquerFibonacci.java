@@ -9,9 +9,11 @@ import java.util.ArrayList;
 import java.lang.reflect.*;
 import java.lang.reflect.Field;
 
+ 
+ 
 //class ProblemType provided by User.
 class ProblemType extends WukongProblem {
-	// Fibonacci has no non-parallel algorithm. Base case is values <= 1.
+	// Fibonacci has no non-parallel algorithm, i.e., switch to sequential algorithm for speedup. Base case is values <= 1.
 	static final int SEQUENTIAL_THRESHOLD = 1; // must be 1
 	// Get input arrays when the size of the arrays reaches the INPUT_THRESHOLD, e.g., don't grab the initial 256MB array,
 	// wait until you have 256gMB/1MB arrays of size 1MB. 
@@ -31,11 +33,11 @@ class ProblemType extends WukongProblem {
 	// we use INPUT_THRESHOLD = 0, i.e., input at start at root; and OUTPUT_THRESHOLD = Integer.MAX_VALUE;
 	
 	// memoize the problem results or not.
-	static final Boolean memoize = true;
+	static final Boolean memoize = false;
 	
-	int value;
+	int value; // only value for fibonacci
 	
-	// Just to keep mergesort and quicksort happy
+	// Just to keep mergesort and quicksort happy, i.e., so they compile 
 	int[] numbers;
 	int from;
 	int to;
@@ -51,7 +53,7 @@ class ProblemType extends WukongProblem {
 
 //class ResultType provided by User, often same as ProblemType.
 class ResultType extends WukongResult {
-	int value;
+	int value; // same as problemType
 	
 	// Make copy of Problem. Shallow copy works here.
 	// This is needed only for the non-Wukong, case, i.e., with no network,
@@ -83,7 +85,9 @@ class ResultType extends WukongResult {
 //class User provided by User.
 class User {
 	
-	// No non-parallel algorithm for Fibonacci. SEQUENTIAL_THRESHOL must be 1. 
+	// No non-parallel algorithm for Fibonacci, i.e., no switch to sequential algorithm for speedup. 
+	// SEQUENTIAL_THRESHOLD must be 1. 
+	// This returns true/false, it does not do the base case. Base case done by sequential()
 	static boolean baseCase(ProblemType problem) {
 		if (ProblemType.SEQUENTIAL_THRESHOLD != 1) {
 			// Should be dead code.
@@ -97,12 +101,12 @@ class User {
 	// As in:
 	// int fib(int n) {
 	//	 if(n<=1)
-	//		return n;
-	//		return fib(n-1) + fib(n-2);
+	//		return n; // base case
+	//	 return fib(n-1) + fib(n-2);
 	//  }
 	//
 	
-	// Some problems may use a preprocessing step before anything else is done.
+	// Some problems may use a pre-processing step before anything else is done.
 	// For example, could be used for memoization to get result of previously saved problem.
 	static void preprocess(ProblemType problem) {
 
@@ -118,7 +122,7 @@ class User {
 	// The field of a problem that will definitely be used is the problemID. Do not trim the problemID.  
 	// The FanInStack (in parent class WukongProblem) is not needed by the DivideandConquer framework and 
 	// can/should be trimmed. 
-	// One option is to create a trimProblem() method in call WukongProblem and always call this method (in method
+	// One option is to create a trimProblem() method in class WukongProblem and always call this method (in method
 	// Fanout) in addition to calling User.trimProblem(), where User.tribProblem may be empty..
 	static void trimProblem(ProblemType problem) {
 		// No big value to trim for Fibonacci
@@ -148,35 +152,36 @@ class User {
 		// Called by WukongProblem.FanOut when an executor is forked for the subProblem.
 		
 		// For Fibonacci n, label is: path to n, e.g., For Fibonacci(5), the path (on stack) to Fibonacci(1) could be "5-4-2-1"
-		//Note: the label for a subproblem must be unique. For example, for Fib(5), we create Fib(4) and Fib(3) and both
+		// Note: the label for a subproblem must be unique. For example, for Fib(5), we create Fib(4) and Fib(3) and both
 		// create Fib(2). These Fib(2)'s will be involved in separate fan-outs/fan-ins, and we need them to save their results in
 		// different locations, etc. So we base their label on their *paths from the root*, which are unique, e.g. 5-4-2
-		// and 5-3-2.
+		// and 5-3-2. Fan-out will call this and appen the value we return here to the parent's label, e.g., append "-2" to "5-4"
 		StringBuffer b = new StringBuffer();
 		
 		synchronized(FanInSychronizer.getPrintLock()) {
-		System.out.println("labeler: subProblem ID: " + subProblem.problemID + " parent ID: " + parentProblem.problemID);
-		//System.out.println(" subProblem stack: ");
-		//for (int i=0;i< subProblem.FanInStack.size(); i++) {
-		//	System.out.print(subProblem.FanInStack.get(i) + " ");
-		//}
-		System.out.println();
-		System.out.println(" parent stack: ");
-		for (int i=0; i< parentProblem.FanInStack.size(); i++) {
-			System.out.print(parentProblem.FanInStack.get(i) + " ");
-		}
-		System.out.println();
-		//System.out.println("labeler: subProblem stack: ");
-		//for (int i=0; i< subProblem.FanInStack.size(); i++) {
-		//	System.out.print(subProblem.FanInStack.get(i) + " ");
-		//}
-		//System.out.println();
+		// subProblem.problemID assigned after divide() in Fan-out
+			System.out.println(parentProblem.problemID + ": label subProblem ID (assigned in Fan-out): " + subProblem.problemID + " parent ID: " + parentProblem.problemID);
+			//System.out.println(" subProblem stack: ");
+			//for (int i=0;i< subProblem.FanInStack.size(); i++) {
+			//	System.out.print(subProblem.FanInStack.get(i) + " ");
+			//}
+			//System.out.println();
+			System.out.print(parentProblem.problemID + ":  labler: parent stack: ");
+			for (int i=0; i< parentProblem.FanInStack.size(); i++) {
+				System.out.print(parentProblem.FanInStack.get(i) + " ");
+			}
+			System.out.println();
+			//System.out.println("labeler: subProblem stack: ");
+			//for (int i=0; i< subProblem.FanInStack.size(); i++) {
+			//	System.out.print(subProblem.FanInStack.get(i) + " ");
+			//}
+			//System.out.println();
 		}
 
- 		// label of subproblem is its value
+ 		// label of subproblem is its stringified value
 		b.append(String.valueOf(subProblem.value));
 		synchronized(FanInSychronizer.getPrintLock()) {
-			System.out.println("Label: " + b.toString());
+			System.out.println(parentProblem.problemID + ": labler: generated subProblem Label: " + b.toString());
 		}
 		//}
 		
@@ -185,6 +190,9 @@ class User {
 	
 	//
 	// Used for getting the memoized result of (sub)problem (for get(memoizedLabel, result)).
+	// For example, When computing Fibonacci(4), Fibonacci 3's label will be "4-3" so memoized label is "3", i.e.,
+	// we will store the result for Fibonacci(3) under the key "3". We will store the result for
+	// Fibonacci(4) under the key "4".
 	//
 	static String memoizeIDLabeler(ProblemType problem) {
 		String memoizedID = null;
@@ -198,7 +206,7 @@ class User {
 			memoizedID = label;
 		}
 		else {
-			// e.g., for Fibonacci(4), problem label for Fibonacci(3) is "4-3", which has '-' so memoize label is "3"
+			// e.g., for computing Fibonacci(4), problem label for Fibonacci(3) will be "4-3", which has '-' so memoize label is "3"
 			// which is the problem label for Fibonacci(3).
 			memoizedID = label.substring(lastIndex+1, label.length());
 		}
@@ -209,15 +217,16 @@ class User {
 	static void divide(ProblemType problem, ArrayList<ProblemType> subProblems) {
 
 		synchronized(FanInSychronizer.getPrintLock()) {
-			System.out.println("Divide: fibonacci run: value: " + problem.value);
-			System.out.println("Divide: problemID: " + problem.problemID);
-			System.out.print("Divide: FanInStack: ");
+			System.out.println(problem.problemID+ ": Divide: fibonacci run: value: " + problem.value);
+			System.out.println(problem.problemID+ ": Divide: problemID: " + problem.problemID);
+			System.out.print(problem.problemID+ ": Divide: FanInStack: ");
 			for (int i=0; i<problem.FanInStack.size(); i++)
 				System.out.print(problem.FanInStack.get(i) + " ");
 			System.out.println();
 			System.out.flush();
 		}
 
+		
 		// As in:
 		// int fib(int n) {
 		//	 if(n<=1)
@@ -232,33 +241,29 @@ class User {
 		minus_2.value = problem.value-2;
 		
 		synchronized(FanInSychronizer.getPrintLock()) {
-		System.out.println("divide: minus_1: " + minus_1);
-		System.out.println("divide: minus_2: " + minus_2);
+			System.out.println(problem.problemID+ ": Divide: minus_1: " + minus_1);
+			System.out.println(problem.problemID+ ": Divide: minus_2: " + minus_2);
 		}
 		
-		subProblems.add(minus_2);
-		subProblems.add(minus_1);
+		// add right then left; order is up to user, become executore will be for last subprolem, which here is left
+		subProblems.add(minus_2); // right
+		subProblems.add(minus_1); // left
 
 	} // divide
 
 	// Combine the subproblem results. 
-	static void combine(ArrayList<ResultType> subproblemResults, ResultType combination) {
-		// Ignores from/to values for the subproblems, as it always starts merging from position 0
-		// and finishes in the last positions of the arrays,
-		// The from/to values of a subproblem are w.r.t the original input array.
-		//
-		// Simple merge: place left array values before right array values., but we don't know
-		// which subproblem is left and which is right, so check their first values.
-
-		ResultType firstResult = subproblemResults.get(0);
-		ResultType secondResult = subproblemResults.get(1);
+	static void combine(ArrayList<ResultType> subproblemResults, ResultType combination, String problem_problemID) {
+		// add the two results, problem.problemID for debugging
+		
+		ResultType firstResult = subproblemResults.get(0);  // left
+		ResultType secondResult = subproblemResults.get(1); // right
 
 		int firstValue = firstResult.value;
 		int secondValue = secondResult.value;
 		
-		combination.value = firstValue + secondValue;
+		combination.value = firstValue + secondValue;   // return value (parameter)
 		synchronized(FanInSychronizer.getPrintLock()) {
-			System.out.println("combine: firstValue: " + firstValue + " secondValue: " + secondValue 
+			System.out.println(problem_problemID + ": Combine: firstValue: " + firstValue + " secondValue: " + secondValue 
 				+ " combination.value: " + combination.value);
 		}
 	}
@@ -284,16 +289,20 @@ class User {
 
 	// User provides method to sequentially solve a problem
 	// This is the base case computation.
+	// As in:
+	//if (User.baseCase(problem)) {
+	//    User.sequential(problem,result);
 	static void sequential(ProblemType problem, ResultType result) { //  int from, int to) {
 		result.value = problem.value;
 		synchronized(FanInSychronizer.getPrintLock()) {
-			System.out.println("sequential: " + problem.problemID + " result.value: " + result.value);
+			System.out.println(problem.problemID + ": Sequential: " + problem.problemID + " result.value: " + result.value);
 		}
 	}
 
 	// User provides method to output the problem result.
 	// We only call this for the final result, and this method verifies the final result.
-	static void outputResult() {
+	static void outputResult(String problem_problemID) {
+		// problem.problemID passed for debug
 		// Note: Used to be a result parameter but that was result at topof template, which is no longer
 		// the final result since we create a new result object after every combine. The final result 
 		// is the value in "root".
@@ -306,9 +315,9 @@ class User {
 		MemoizationController.getInstance().stopThread();
 		
 		System.out.println();
-		System.out.print("Fibonacci("+DivideandConquerFibonacci.n+") = " + result.value);
+		System.out.print(problem_problemID + ": Fibonacci("+DivideandConquerFibonacci.n+") = " + result.value);
 		System.out.println();
-		System.out.print("Verifying ....... ");
+		System.out.print(problem_problemID + ": Verifying ....... ");
 		// Let other executors finish printing their output before we print result
 		try {Thread.sleep(2000);} catch (InterruptedException e) {} 
 		boolean error = false;
@@ -323,6 +332,7 @@ class User {
 	}
 }
 
+// run as java DivideandConquerFibonacci
 public class DivideandConquerFibonacci {
 
 	// 0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144,
@@ -332,11 +342,11 @@ public class DivideandConquerFibonacci {
 
 
 	public static void main(String[] args) {
-		System.out.println("Running DivideandConquerFibonacci.");
-		System.out.println("INPUT_THRESHOLD is: " + WukongProblem.INPUT_THRESHOLD);
-		System.out.println("OUTPUT_THRESHOLD is: " + WukongProblem.OUTPUT_THRESHOLD);
-		System.out.println("SEQUENTIAL_THRESHOLD is: " + ProblemType.SEQUENTIAL_THRESHOLD);
-		System.out.println("memoize is: " + ProblemType.memoize);
+		System.out.println("main: Running DivideandConquerFibonacci.");
+		System.out.println("main: INPUT_THRESHOLD is: " + WukongProblem.INPUT_THRESHOLD);
+		System.out.println("main: OUTPUT_THRESHOLD is: " + WukongProblem.OUTPUT_THRESHOLD);
+		System.out.println("main: SEQUENTIAL_THRESHOLD (base_case) is: " + ProblemType.SEQUENTIAL_THRESHOLD);
+		System.out.println("main: memoize is: " + ProblemType.memoize);
 		
 		// Assert:
 		Field seq = null;
@@ -347,7 +357,7 @@ public class DivideandConquerFibonacci {
 		}
 
 		if (seq == null) {
-			System.out.println("Error: ProblemType.SEQUENTIAL_THRESHOLD must be defined.");
+			System.out.println("main: Error: ProblemType.SEQUENTIAL_THRESHOLD must be defined.");
 			System.exit(1);
 		} 
 		
@@ -365,7 +375,7 @@ public class DivideandConquerFibonacci {
 		//	System.exit(1);
 		//}
 
-		System.out.println("n: " + n);
+		System.out.println("main: n: " + n);
 		System.out.println();
 
 		String rootID = String.valueOf(n);
@@ -373,11 +383,12 @@ public class DivideandConquerFibonacci {
 		//ProblemType rootProblem = new ProblemType(null, 0, values.length-1);
 		ProblemType rootProblem = new ProblemType();
 		rootProblem.value = n;
+		rootProblem.problemID = rootProblemID;
 		
-		System.out.println(rootProblem);
+		System.out.println("main: " + rootProblem);
 		
 		rootProblem.FanInStack = FanInStack;
-		rootProblem.problemID = rootProblemID;
+		rootProblem.problemID = rootProblemID; // "root"
 		DivideAndConquerExecutor root = new DivideAndConquerExecutor(rootProblem);
 		root.run();
 		
@@ -394,3 +405,319 @@ public class DivideandConquerFibonacci {
 		//}
 	}
 }
+
+/*
+main: Running DivideandConquerFibonacci.
+main: INPUT_THRESHOLD is: 0
+main: OUTPUT_THRESHOLD is: 2147483647
+main: SEQUENTIAL_THRESHOLD (base_case) is: 1
+main: memoize is: true
+main: n: 4
+
+//        root           where root=Fibonacci(4)
+//     3         2
+//  2     1   1     0
+//1   0
+
+// Note: This does not reflect how the Fan-ins were processed - only the values returned by the Fan-ins
+// root-2-0 returns 0
+// root-3-1 returns 1
+// root-2-1 returns 1, a memoized result from 3-1
+// root-2 returns 1+0=1
+// root-3-2 returns memoized result from root-2, which was 1 + 0 = 1
+//  so root-3-2-1 and root-3-2-0 never called/computed
+// root-3 returns 1+1=2
+// root returns 2 + 1 = 3
+
+// Note: Fan-in task is always Left child
+
+// Fan-in processing:
+// root-3-1 delivered 1, but was not Fan-in task for root-3 since root-3-1 is a Right child of root-3
+// root-3-2 got stop since root-2 promised to compute result for problem "2" before root-3-2 promised; then
+//  upon restart root-3-2 got memoized result 1 delivered by root-2; then was (the Left) fan-in task for root 3
+//  with result 1+1=2; then was (the Left) fan-in task for root with result 2+1=3. 
+// root-2-0 delivered 0, but was not fan-in task for root-2 since root-2-0 is a Right child of root-2
+// root-2-1 got stop and upon restart got 1 from memoized 3-1; then was (Left) fan-in task for root-2 with result = 1 + 0 = 1,
+//  but was not fan-in task for root since root-2 it is Right child of root
+
+
+main: (ID:root/value:4)
+root: Executor: root call pair on MemoizationController
+root: channelMap keySet:root,
+root: Executor: memoized send1: PROMISEVALUE: problem.problemID root memoizedLabel: root
+root: Executor: memoized rcv1: problem.problemID root receiving ack.
+root: Executor: memoized rcv1: problem.problemID root received ack.
+root: Executor: memoized rcv1: problem.problemID root ack was null_result.
+root: Executor: memoized rcv1: problem.problemID root memoizedLabel: root memoized result: null
+root: Divide: fibonacci run: value: 4
+root: Divide: problemID: root
+root: Divide: FanInStack: 
+root: Divide: minus_1: (ID:null/value:3)
+root: Divide: minus_2: (ID:null/value:2)
+root: Fanout: get subProblemID for non-become task.
+root: label subProblem ID (assigned in Fan-out): null parent ID: root
+root:  labeler: parent stack: 
+root: labler: generated subProblem Label: 2
+root: Fanout: push on childFanInStack: (poarent) problem: (ID:root/value:4)
+root: Fanout: parent stack: 
+root: Fanout: subProblem stack: (ID:root/value:4) 
+root: Fanout: send ADDPAIRINGNAME message.
+root: Fanout: ID: root invoking new right executor: root-2
+root: Fanout: get subProblemID for become task.
+root: label subProblem ID (assigned in Fan-out): null parent ID: root
+root:  labler: parent stack:
+root: labler: generated subProblem Label: 3
+root: Fanout: ID: root becoming left executor: root-3
+
+root-2: Executor: root-2 call pair on MemoizationController
+root-2: channelMap keySet:root,root-2,
+root-2: Executor: memoized send1: PROMISEVALUE: problem.problemID root-2 memoizedLabel: 2
+root-2: Executor: memoized rcv1: problem.problemID root-2 receiving ack.
+root-2: Executor: memoized rcv1: problem.problemID root-2 received ack.
+root-2: Executor: memoized rcv1: problem.problemID root-2 ack was null_result.
+root-2: Executor: memoized rcv1: problem.problemID root-2 memoizedLabel: 2 memoized result: null   // Q"correct place for this?
+root-2: Divide: fibonacci run: value: 2
+root-2: Divide: problemID: root-2
+root-2: Divide: FanInStack: (ID:root/value:4) 
+root-2: Divide: minus_1: (ID:null/value:1)
+root-2: Divide: minus_2: (ID:null/value:0)
+root-2: Fanout: get subProblemID for non-become task.
+root-2: label subProblem ID (assigned in Fan-out): null parent ID: root-2
+root-2:  labler: parent stack: (ID:root/value:4) 
+root-2: labler: generated subProblem Label: 0
+root-2: Fanout: push on childFanInStack: (poarent) problem: (ID:root-2/value:2)
+root-2: Fanout: parent stack: (ID:root/value:4) 
+root-2: Fanout: subProblem stack: (ID:root/value:4) (ID:root-2/value:2) 
+root-2: Fanout: send ADDPAIRINGNAME message.
+root-2: Fanout: ID: root-2 invoking new right executor: root-2-0
+root-2: Fanout: get subProblemID for become task.
+root-2: label subProblem ID (assigned in Fan-out): null parent ID: root-2
+root-2:  labler: parent stack: (ID:root/value:4) 
+root-2: labler: generated subProblem Label: 1
+root-2: Fanout: ID: root-2 becoming left executor: root-2-1
+
+root-3: Executor: root-3 call pair on MemoizationController
+root-3: channelMap keySet:root-3,root,root-2,
+root-3: Executor: memoized send1: PROMISEVALUE: problem.problemID root-3 memoizedLabel: 3
+root-3: Executor: memoized rcv1: problem.problemID root-3 receiving ack.
+root-3: Executor: memoized rcv1: problem.problemID root-3 received ack.
+root-3: Executor: memoized rcv1: problem.problemID root-3 ack was null_result.
+root-3: Executor: memoized rcv1: problem.problemID root-3 memoizedLabel: 3 memoized result: null
+root-3: Divide: fibonacci run: value: 3
+root-3: Divide: problemID: root-3
+root-3: Divide: FanInStack: (ID:root/value:4) 
+root-3: Divide: minus_1: (ID:null/value:2)
+root-3: Divide: minus_2: (ID:null/value:1)
+root-3: Fanout: get subProblemID for non-become task.
+root-3: label subProblem ID (assigned in Fan-out): null parent ID: root-3
+root-3:  labler: parent stack: (ID:root/value:4) 
+root-3: labler: generated subProblem Label: 1
+root-3: Fanout: push on childFanInStack: (poarent) problem: (ID:root-3/value:3)
+root-3: Fanout: parent stack: (ID:root/value:4) 
+root-3: Fanout: subProblem stack: (ID:root/value:4) (ID:root-3/value:3) 
+root-3: Fanout: send ADDPAIRINGNAME message.
+root-3: Fanout: ID: root-3 invoking new right executor: root-3-1
+root-3: Fanout: get subProblemID for become task.
+root-3: label subProblem ID (assigned in Fan-out): null parent ID: root-3
+root-3:  labler: parent stack: (ID:root/value:4) 
+root-3: labler: generated subProblem Label: 2
+root-3: Fanout: ID: root-3 becoming left executor: root-3-2
+
+root-2-0: Executor: root-2-0 call pair on MemoizationController
+root-2-0: channelMap keySet:root-3,root-2-0,root,root-2,
+root-2-0: Executor: memoized send1: PROMISEVALUE: problem.problemID root-2-0 memoizedLabel: 0
+root-2-0: Executor: memoized rcv1: problem.problemID root-2-0 receiving ack.
+root-2-0: Executor: memoized rcv1: problem.problemID root-2-0 received ack.
+root-2-0: Executor: memoized rcv1: problem.problemID root-2-0 ack was null_result.
+root-2-0: Sequential: root-2-0 result.value: 0
+root-2-0: Executor: base case: result before ProcessBaseCase(): (ID:null: (ID:null/value:0)
+root-2-0: Executor: ProcessBaseCase result: (ID:root-2-0: (ID:root-2-0/value:0)
+root-2-0: **********************Start Fanin operation:
+root-2-0: Fan-in: ID: root-2-0
+root-2-0: Fan-in: becomeExecutor: false
+root-2-0: Fan-in: FanInStack: (ID:root/value:4) (ID:root-2/value:2) 
+root-2-0: Deliver starting Executors for promised Results:
+root-2-0: Deliver end promised Results:
+root-2-0: Fan-in: ID: root-2-0 parentProblem ID: root-2
+root-2-0: Fan-in: ID: root-2-0 problem.becomeExecutor: false parentProblem.becomeExecutor: false
+root-2-0: Fan-In: ID: root-2-0: FanInID: root-2 was not FanInExecutor:  result sent:(ID:root-2-0: (ID:root-2-0/value:0)
+root-2-0: Fan-In: ID: root-2-0: FanInID: root-2: is not become Executor  and its value was: (ID:root-2-0: (ID:root-2-0/value:0) and after put is null
+
+
+
+// Note: Does not reflect interleaving of calls to MC, e.g., 3-2's pair below occurred before this 2-1 pair
+root-2-1: Executor: root-2-1 call pair on MemoizationController
+root-2-1: channelMap keySet:root-3,root-2-1,root-2-0,root,root-3-1,root-2,
+root-2-1: Executor: memoized send1: PROMISEVALUE: problem.problemID root-2-1 memoizedLabel: 1
+root-2-1: Executor: memoized rcv1: problem.problemID root-2-1 receiving ack.
+root-2-1: Executor: memoized rcv1: problem.problemID root-2-1 ack was stop.
+
+// Note: Calling pair() again due to previous "Stop" on PROMISEVALUE
+root-2-1: Executor: root-2-1 call pair on MemoizationController
+root-2-1: channelMap keySet:root-3,root-2-1,root-2-0,root-3-2,root,root-3-1,root-2,
+root-2-1: Executor: memoized send1: PROMISEVALUE: problem.problemID root-2-1 memoizedLabel: 1
+root-2-1: Executor: memoized rcv1: problem.problemID root-2-1 receiving ack.
+root-2-1: Executor: memoized rcv1: problem.problemID root-2-1 received ack.
+root-2-1: Executor: memoized rcv1: problem.problemID root-2-1 memoizedLabel: 1 memoized result: (ID:root-2-1: (ID:root-2-1/value:1)
+root-2-1: Executor: else in template: For Problem: (ID:root-2-1/value:0); Memoized result: (ID:root-2-1: (ID:root-2-1/value:1)
+
+root-2-1: **********************Start Fanin operation:
+root-2-1: Fan-in: ID: root-2-1
+root-2-1: Fan-in: becomeExecutor: true
+root-2-1: Fan-in: FanInStack: (ID:root/value:4) (ID:root-2/value:2) 
+root-2-1: Fan-in: ID: root-2-1 parentProblem ID: root-2
+root-2-1: Fan-in: ID: root-2-1 problem.becomeExecutor: true parentProblem.becomeExecutor: false
+root-2-1: Fan-in: root-3-2,root-2-1: ID: root-2-1: FanIn: root-2 was FanInExecutor: result received:(ID:root-2-0: (ID:root-2-0/value:0)
+root-2-1: FanIn: ID: root-2-1: FanInID: root-2: : Returned from put: executor isLastFanInExecutor 
+root-2-1: (ID:root-2-0: (ID:root-2-0/value:0)
+root-2-1: ID: root-2-1: call combine ***************
+root-2-1: Combine: firstValue: 0 secondValue: 1 combination.value: 1
+
+root-2-1: Exector: result.problemID: root-2-1 put memoizedLabel: 2 result: ID:root-2-1: (ID:root-2-1/value:1)
+root-2-1: Deliver starting Executors for promised Results:
+root-2-1: Deliver starting Executor for: root-3-2 problem.becomeExecutor: true problem.didInput: true
+root-2-1: Deliver end promised Results:
+root-2-1: Fan-in: ID: root-2-1 parentProblem ID: root
+root-2-1: Fan-in: ID: root-2-1 problem.becomeExecutor: true parentProblem.becomeExecutor: false
+root-2-1: Fan-In: ID: root-2-1: FanInID: root was not FanInExecutor:  result sent:(ID:root-2-1: (ID:root-2-1/value:1)
+root-2-1: Fan-In: ID: root-2-1: FanInID: root: is not become Executor  and its value was: (ID:root-2-1: (ID:root-2-1/value:1) and after put is null
+
+root-3-1: Executor: root-3-1 call pair on MemoizationController
+root-3-1: channelMap keySet:root-3,root-2-1,root-2-0,root,root-3-1,root-2,
+root-3-1: Executor: memoized send1: PROMISEVALUE: problem.problemID root-3-1 memoizedLabel: 1
+root-3-1: Executor: memoized rcv1: problem.problemID root-3-1 receiving ack.
+root-3-1: Executor: memoized rcv1: problem.problemID root-3-1 received ack.
+root-3-1: Executor: memoized rcv1: problem.problemID root-3-1 ack was null_result.
+root-3-1: Executor: memoized rcv1: problem.problemID root-3-1 memoizedLabel: 1 memoized result: null
+
+root-3-1: Sequential: root-3-1 result.value: 1
+root-3-1: Executor: base case: result before ProcessBaseCase(): (ID:null: (ID:null/value:1)
+root-3-1: Executor: ProcessBaseCase result: ID:root-3-1: (ID:root-3-1/value:1)
+root-3-1: Deliver starting Executors for promised Results:
+root-3-1: Deliver starting Executor for: root-2-1 problem.becomeExecutor: true problem.didInput: true
+root-3-1: Deliver end promised Results:
+root-3-1: **********************Start Fanin operation:
+root-3-1: Fan-in: ID: root-3-1
+root-3-1: Fan-in: becomeExecutor: false
+root-3-1: Fan-in: FanInStack: (ID:root/value:4) (ID:root-3/value:3) 
+root-3-1: Fan-in: ID: root-3-1 parentProblem ID: root-3
+root-3-1: Fan-in: ID: root-3-1 problem.becomeExecutor: false parentProblem.becomeExecutor: true
+root-3-1: Fan-In: ID: root-3-1: FanInID: root-3 was not FanInExecutor:  result sent:(ID:root-3-1: (ID:root-3-1/value:1)
+root-3-1: Fan-In: ID: root-3-1: FanInID: root-3: is not become Executor  and its value was: (ID:root-3-1: (ID:root-3-1/value:1) and after put is null
+
+root-3-2: Executor: root-3-2 call pair on MemoizationController
+root-3-2: channelMap keySet:root-3,root-2-1,root-2-0,root-3-2,root,root-3-1,root-2,
+root-3-2: Executor: memoized send1: PROMISEVALUE: problem.problemID root-3-2 memoizedLabel: 2
+root-3-2: Executor: memoized rcv1: problem.problemID root-3-2 receiving ack.
+root-3-2: Executor: memoized rcv1: problem.problemID root-3-2 received ack.
+root-3-2: Executor: memoized rcv1: problem.problemID root-3-2 ack was stop.
+root-3-2: Executor: root-3-2 call pair on MemoizationController
+root-3-2: channelMap keySet:root-3,root-2-1,root-2-0,root-3-2,root,root-3-1,root-2,
+root-3-2: Executor: memoized send1: PROMISEVALUE: problem.problemID root-3-2 memoizedLabel: 2
+root-3-2: Executor: memoized rcv1: problem.problemID root-3-2 receiving ack.
+root-3-2: Executor: memoized rcv1: problem.problemID root-3-2 received ack.
+root-3-2: Executor: memoized rcv1: problem.problemID root-3-2 memoizedLabel: 2 memoized result: (ID:root-3-2: (ID:root-3-2/value:1)
+root-3-2: Executor: else in template: For Problem: (ID:root-3-2/value:0); Memoized result: (ID:root-3-2: (ID:root-3-2/value:1)
+root-3-2: **********************Start Fanin operation:
+root-3-2: Fan-in: ID: root-3-2
+root-3-2: Fan-in: becomeExecutor: true
+root-3-2: Fan-in: FanInStack: (ID:root/value:4) (ID:root-3/value:3) 
+root-3-2: Fan-in: ID: root-3-2 parentProblem ID: root-3
+root-3-2: Fan-in: ID: root-3-2 problem.becomeExecutor: true parentProblem.becomeExecutor: true
+root-3-2: ID: root-3-2: FanIn: root-3 was FanInExecutor: starting receive.
+root-3-2: ID: root-3-2: FanIn: root-3 was FanInExecutor: result received:(ID:root-3-1: (ID:root-3-1/value:1)
+root-3-2: FanIn: ID: root-3-2: FanInID: root-3: : Returned from put: executor isLastFanInExecutor 
+root-3-2: (ID:root-3-1: (ID:root-3-1/value:1)
+root-3-2: ID: root-3-2: call combine ***************
+root-3-2: Combine: firstValue: 1 secondValue: 1 combination.value: 2
+root-3-2: Exector: result.problemID: root-3-2 put memoizedLabel: 3 result: ID:root-3-2: (ID:root-3-2/value:2)
+// Note: May be that no Exeutors are waiting for the results
+root-3-2: Deliver starting Executors for promised Results:
+root-3-2: Deliver end promised Results:
+root-3-2: Fan-in: ID: root-3-2 parentProblem ID: root
+root-3-2: Fan-in: ID: root-3-2 problem.becomeExecutor: true parentProblem.becomeExecutor: false
+root-3-2: ID: root-3-2: FanIn: root was FanInExecutor: starting receive.
+root-3-2: ID: root-3-2: FanIn: root was FanInExecutor: result received:(ID:root-2-1: (ID:root-2-1/value:1)
+root-3-2: FanIn: ID: root-3-2: FanInID: root: : Returned from put: executor isLastFanInExecutor 
+root-3-2: (ID:root-2-1: (ID:root-2-1/value:1)
+root-3-2: ID: root-3-2: call combine ***************
+root-3-2: Combine: firstValue: 1 secondValue: 2 combination.value: 3
+root-3-2: Exector: result.problemID: root-3-2 put memoizedLabel: root result: (ID:root-3-2: (ID:root-3-2/value:3)
+root-3-2: Deliver starting Executors for promised Results:
+root-3-2: Deliver end promised Results:
+root-3-2: Executor: Writing the final value to root: (ID:root-3-2: (ID:root-3-2/value:3)
+
+MemoizationThread: Interrupted: returning.
+
+root-3-2: Fibonacci(4) = 3
+root-3-2: Verifying ....... 
+
+Verified.
+
+
+***************** MemoizationThread Trace:******************
+root: MemoizationThread: pair: pairingName: root
+root: MemoizationThread: promise by: root
+
+root: MemoizationThread: add pairing name: root-2
+root: MemoizationThread: ADDPAIRINGNAME: pairing names after add: root,root-2,
+
+root: MemoizationThread: add pairing name: root-3
+root: MemoizationThread: ADDPAIRINGNAME: pairing names after add: root-3,root,root-2,
+
+root: MemoizationThread: remove pairing name: root pairingNames.size: 3
+root: MemoizationThread: pairing names after remove rootroot-3,root-2,root-2: 
+
+
+root-2: MemoizationThread: pair: pairingName: root-2
+root-2: MemoizationThread: promise by: root-2
+root-2: MemoizationThread: add pairing name: root-2-0
+root-2: MemoizationThread: ADDPAIRINGNAME: pairing names after add: root-3,root-2-0,root-2,
+root-2: MemoizationThread: add pairing name: root-2-1
+root-2: MemoizationThread: ADDPAIRINGNAME: pairing names after add: root-3,root-2-1,root-2-0,root-2,
+root-2: MemoizationThread: remove pairing name: root-2 pairingNames.size: 5
+root-2: MemoizationThread: pairing names after remove root-2root-3,root-2-1,root-2-0,root-3-1,root-2-0: Executor: memoized rcv1: problem.problemID root-2-0 memoizedLabel: 0 memoized result: null
+
+root-3: MemoizationThread: pair: pairingName: root-3
+root-3: MemoizationThread: promise by: root-3
+root-3: MemoizationThread: add pairing name: root-3-1
+root-3: MemoizationThread: ADDPAIRINGNAME: pairing names after add: root-3,root-2-1,root-2-0,root-3-1,root-2,
+root-3: MemoizationThread: add pairing name: root-3-2
+root-3: MemoizationThread: ADDPAIRINGNAME: pairing names after add: root-3,root-2-1,root-2-0,root-3-2,root-3-1,
+root-3: MemoizationThread: pairing names after remove root-3root-2-1,root-2-0,root-3-2,root-3-1,root-2-1: Executor: memoized rcv1: problem.problemID root-2-1 received ack.
+
+root-2-0: MemoizationThread: pair: pairingName: root-2-0
+root-2-0: MemoizationThread: promise by: root-2-0
+root-2-0: MemoizationThread: DELIVEREDVALUE: r2: type: PROMISEDVALUE
+root-2-0: MemoizationThread: DELIVEREDVALUE: info: sender: root-2-0 problem/result ID root-2-0 memoizationLabel: 0 delivered result: (ID:root-2-0: (ID:root-2-0/value:0)
+root-2-0: MemoizationThread: remove pairing name: root-2-0 pairingNames.size: 4
+root-2-0: MemoizationThread: pairing names after remove root-2-0root-2-1,root-3-2,root-3-1,root-3-2: MemoizationThread: duplicate promise by: root-3-2
+
+root-2-1: MemoizationThread: pair: pairingName: root-2-1
+root-2-1: MemoizationThread: duplicate promise by: root-2-1
+// repairing after restart
+root-2-1: MemoizationThread: pair: pairingName: root-2-1  
+root-2-1: MemoizationThread: promised and already delivered so deliver on promise to: root-2-1
+root-2-1: MemoizationThread: DELIVEREDVALUE: r2: type: PROMISEDVALUE
+root-2-1: MemoizationThread: DELIVEREDVALUE: info: sender: root-2-1 problem/result ID root-2-1 memoizationLabel: 2 delivered result: (ID:root-2-1: (ID:root-2-1/value:1)
+root-2-1: MemoizationThread: remove pairing name: root-2-1 pairingNames.size: 2
+root-2-1: MemoizationThread: pairing names after remove root-2-1root-3-2,root-3-2: MemoizationThread: promised and already delivered so deliver on promise to: root-3-2
+
+root-3: MemoizationThread: remove pairing name: root-3 pairingNames.size: 5
+
+root-3-1: MemoizationThread: pair: pairingName: root-3-1
+root-3-1: MemoizationThread: promise by: root-3-1
+root-3-1: MemoizationThread: remove pairing name: root-3-1 pairingNames.size: 3
+root-3-1: MemoizationThread: pairing names after remove root-3-1root-2-1: ID: root-2-1: FanIn: root-2 was FanInExecutor: starting receive.
+
+root-3-2: MemoizationThread: pair: pairingName: root-3-2
+root-3-2: MemoizationThread: pair: pairingName: root-3-2
+root-3-2: MemoizationThread: DELIVEREDVALUE: r2: type: PROMISEDVALUE
+root-3-2: MemoizationThread: DELIVEREDVALUE: info: sender: root-3-2 problem/result ID root-3-2 memoizationLabel: 3 delivered result: (ID:root-3-2: (ID:root-3-2/value:2)
+root-3-2: MemoizationThread: DELIVEREDVALUE: r2: type: PROMISEDVALUE
+root-3-2: MemoizationThread: DELIVEREDVALUE: info: sender: root-3-2 problem/result ID root-3-2 memoizationLabel: root delivered result: (ID:root-3-2: (ID:root-3-2/value:3)
+root-3-2: MemoizationThread: remove pairing name: root-3-2 pairingNames.size: 1
+root-3-2: MemoizationThread: pairing names after remove root-3-2
+
+
+*/
