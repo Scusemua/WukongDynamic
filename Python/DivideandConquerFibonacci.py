@@ -112,6 +112,27 @@ class FibbonaciProgram(UserProgram):
         value = problem.value 
         return value <= ProblemType.SEQUENTIAL_THRESHOLD
 
+    def outputResult(self, problem_problemID : str):
+        result = None 
+
+        with debug_lock:
+            result = FanInSychronizer.resultMap["root"]
+        
+        logger.debug("")
+        logger.debug(problem_problemID + ": Fibonacci(" + str(DivideandConquerFibonacci.n) + ") = " + str(result.value))
+        logger.debug("")
+
+        logger.debug(problem_problemID + ": Verifying ....... ")
+        time.sleep(2)
+        error = False 
+        if result.value != DivideandConquerFibonacci.expected_value:
+            error = True 
+        
+        if not error:
+            logger.debug("Verified.")
+        else:
+            logger.debug("Error. Expected value: %s, actual value: %s" % (str(DivideandConquerFibonacci.expected_value), str(result.value)))
+
     def problemLabeler(self, subProblem : ProblemType, childId : int, parentProblem : ProblemType, subProblems : list) -> str:
         """
         User must specify how subproblems are labeled. The problem label is used as a key into Wukong Storage,

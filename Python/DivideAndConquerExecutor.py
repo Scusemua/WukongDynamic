@@ -296,6 +296,6 @@ class DivideAndConquerExecutor(Thread):
 
         # Need to output the value having key "root"
         if (finalRemainingExecutor):
-            self.problem.UserProgram.outputResult()
+            self.problem.UserProgram.outputResult(self.problem.problemID)
         
         return

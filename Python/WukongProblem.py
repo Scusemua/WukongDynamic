@@ -1,5 +1,6 @@
 import sys
 import threading 
+import time
 
 from memoization import MemoizationController, MemoizationMessage
 
@@ -539,7 +540,8 @@ class WukongProblem(object):
         self.UserProgram.combine(subproblemResults, result, problem.problemID)
 
         logger.debug(problem.problemID + ": FanIn: ID: " + problem.problemID + ", result: " + str(result))
-        return 
+
+        #logger.debug(problem.problemID + ": Thread exiting...")
         
         # Note: It's possible that we got a memoized value, e.g., 1 and we added 1+0 to get 1 and we are now
         # memoizing 1, which we do not need to do. 
@@ -641,14 +643,16 @@ class FanInSychronizer(object):
 
         with FanInSychronizer.lock:
             # Attempt to grab the existing value.
-            copy_of_return = FanInSychronizer.memoizationMap[fanin_id]
+            copy_of_return = None 
 
-            if copy_of_return is not None:
+            if fanin_id in FanInSychronizer.memoizationMap:
+                copy_of_return = FanInSychronizer.memoizationMap[fanin_id]
+
                 # If the existing value is not none, copy it.
                 copy_of_return = copy_of_return.copy() 
 
                 # Update the problemID field.
-                copy_of_return.problemID = FanInSychronizer.memoizationMap[fanin_id].problemID
+                copy_of_return.problemID = FanInSychronizer.memoizationMap[fanin_id].problemID                
 
             # Now we update the map itself.
             FanInSychronizer.memoizationMap[fanin_id] = result
@@ -660,7 +664,10 @@ class FanInSychronizer(object):
         copy = None 
         
         with FanInSychronizer.lock:
-            result = FanInSychronizer.memoizationMap[fanin_id]
+            result = None 
+            
+            if fanin_id in FanInSychronizer.memoizationMap:
+                result = FanInSychronizer.memoizationMap[fanin_id]
 
             if result is not None:
                 copy = result.copy() 
