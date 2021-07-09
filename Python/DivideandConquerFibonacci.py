@@ -302,14 +302,15 @@ class FibbonaciProgram(UserProgram):
             Nothing 
         """
         with debug_lock:
-            logger.debug("Divide: fibonacci run: value: " + str(problem.value))
-            logger.debug("Divide: problemID: " + str(problem.problemID))
-            logger.debug("Divide: FanInStack:")
-
+            logger.debug(problem.problemID + ": Divide: fibonacci run: value: " + str(problem.value))
+            logger.debug(problem.problemID + ": Divide: problemID: " + str(problem.problemID))
+            stack_string = problem.problemID + ": Divide: FanInStack:"
             for x in problem.FanInStack:
-                logger.debug(str(x) + " ")
+                stack_string += str(x) + " "
+            
+            logger.debug(stack_string)
 
-            logger.debug("Divide: problemID: {}".format(problem.problemID))
+            logger.debug(problem.problemID + ": Divide: problemID: {}".format(problem.problemID))
 
         minus_1 = ProblemType()
         minus_1.value = problem.value - 1
@@ -318,8 +319,8 @@ class FibbonaciProgram(UserProgram):
         minus_2.value = problem.value - 2
 
         with debug_lock:
-            logger.debug("divide: minus_1: " + str(minus_1))
-            logger.debug("divide: minus_2: " + str(minus_2))
+            logger.debug(problem.problemID + ": divide: minus_1: " + str(minus_1))
+            logger.debug(problem.problemID + ": divide: minus_2: " + str(minus_2))
             
         subproblems.append(minus_2)
         subproblems.append(minus_1)
