@@ -349,8 +349,8 @@ class WukongProblem(object):
     # This is a special case for MergeSort, which always has only two Fan-In executors.
 
     # subproblemResults was previously ArrayList<DivideandConquerFibonacci.ResultType> 
-    #@staticmethod
-    def isLastFanInExecutor(self, parentProblem, result, subproblemResults: list) -> bool:
+    @staticmethod
+    def isLastFanInExecutor(parentProblem, result, subproblemResults: list) -> bool:
         # store result and check if we are the last executor to do this.
         # Add all of the other subproblem results to subproblemResults. We will add our sibling result later (before we call combine().)
         FanInID = parentProblem.problemID # String 
@@ -360,9 +360,16 @@ class WukongProblem(object):
         
         #synchronized(FanInSychronizer.getPrintLock()) {
         #    System.out.println("isLastFanInExecutor: Writing to " + FanInID + " the value " + copyOfResult) # result)
-        logger.debug("parentProblem.problemID: isLastFanInExecutor: Writing to " + FanInID + " the value " + str(copyOfResult)) # result))
+        logger.debug("isLastFanInExecutor: Writing to " + FanInID + " the value " + str(copyOfResult)) # result))
         #}
-        siblingResult = FanInSychronizer.resultMap.put(FanInID,result) 
+
+        with debug_lock:
+            siblingResult = None 
+
+            if FanInID in FanInSychronizer.resultMap:
+                siblingResult = FanInSychronizer.resultMap[FanInID]
+            
+            FanInSychronizer.resultMap[FanInID] = result
         
         # firstFanInResult may be None
         if (siblingResult == None):
@@ -371,7 +378,7 @@ class WukongProblem(object):
             copyOfSiblingResult = siblingResult.copy()
             copyOfSiblingResult.problemID = siblingResult.problemID
             
-            subproblemResults.add(copyOfSiblingResult)
+            subproblemResults.append(copyOfSiblingResult)
             return True
 
     # Perform Fan-in and possibly the Fan-in task 
@@ -381,13 +388,13 @@ class WukongProblem(object):
         # and we don't want to memoize this result, which would be redundant.
         #rhc: start Fan-In operation
         with debug_lock:
-            logger.debug("**********************Start Fanin operation:")
-            logger.debug("Fan-in: ID: " + problem.problemID)
-            logger.debug("Fan-in: becomeExecutor: " + str(problem.becomeExecutor))
-            logger.debug("Fan-in: FanInStack: ")            
+            logger.debug(problem.problemID + ": **********************Start Fanin operation:")
+            logger.debug(problem.problemID + ": Fan-in: ID: " + problem.problemID)
+            logger.debug(problem.problemID + ": Fan-in: becomeExecutor: " + str(problem.becomeExecutor))
+            fan_in_stack_string = problem.problemID + ": Fan-in: FanInStack: "
             for i in range(len(problem.FanInStack)):
-                logger.debug("{} ".format(problem.FanInStack[i]))
-            logger.debug("")
+                fan_in_stack_string += str(problem.FanInStack[i]) + " "
+            logger.debug(fan_in_stack_string)
         
         # Each started executor eventually executes a base case (sequential sort) or gets a memoized
         # result for a duplicate subProblem, and then the executor competes with its sibling(s) at a Fan-In 
@@ -415,7 +422,7 @@ class WukongProblem(object):
             #if (size >= WukongProblem.OUTPUT_THRESHOLD) { 
             if (len(problem.FanInStack) == WukongProblem.OUTPUT_THRESHOLD):
                 with debug_lock:
-                    logger.debug("Exector: " + str(problem.problemID) + " Reached OUTPUT_THRESHOLD for result: " + str(result.problemID)
+                    logger.debug(problem.problemID + ": Exector: " + str(problem.problemID) + " Reached OUTPUT_THRESHOLD for result: " + str(result.problemID)
                         + " with problem.FanInStack.size(): " + str(len(problem.FanInStack))
                         + " and WukongProblem.OUTPUT_THRESHOLD: " + str(WukongProblem.OUTPUT_THRESHOLD))
                     logger.debug(result) 
@@ -426,8 +433,8 @@ class WukongProblem(object):
             parentProblem = problem.FanInStack.pop()
             
             with debug_lock:
-                logger.debug("Fan-in: ID: " + str(problem.problemID) + " parentProblem ID: " + str(parentProblem.problemID))
-                logger.debug("Fan-in: ID: " + str(problem.problemID) + " problem.becomeExecutor: " + str(problem.becomeExecutor) + " parentProblem.becomeExecutor: " + str(parentProblem.becomeExecutor))
+                logger.debug(problem.problemID + ": Fan-in: ID: " + str(problem.problemID) + " parentProblem ID: " + str(parentProblem.problemID))
+                logger.debug(problem.problemID + ": Fan-in: ID: " + str(problem.problemID) + " problem.becomeExecutor: " + str(problem.becomeExecutor) + " parentProblem.becomeExecutor: " + str(parentProblem.becomeExecutor))
                 logger.debug("")
                 
             # The last task to fan-in will become the Fan-In task executor. The actual executor needs to save its Merge output 
@@ -471,8 +478,7 @@ class WukongProblem(object):
                     #}
                     logger.debug("Fan-In: ID: " + str(problem.problemID) + ": FanInID: " + str(parentProblem.problemID) + " was not FanInExecutor:  result sent:" + str(result))
             else:
-                logger.debug("parentProblem ID: " + str(parentProblem.problemID) + ", calling isLastFanInExector() now...")
-                return 
+                logger.debug(problem.problemID + ": parentProblem ID: " + str(parentProblem.problemID) + ", calling isLastFanInExector() now...") 
 
                 # When return we either have our result and sibling result or or our result and None. For latter, we were first
                 # Executor to fan-in so we stop.
@@ -480,28 +486,12 @@ class WukongProblem(object):
             
             # If we are not the last task to Fan-In then unwind recursion and we are done
         
+            # TODO: Two threads are thinking they're a fan-in executor.
             if not FanInExecutor:
-                #synchronized(FanInSychronizer.getPrintLock()) {
-                #    System.out.println("Fan-In: ID: " + problem.problemID + ": FanInID: " + parentProblem.problemID + ": is not become Executor "
-                #        + " and its value was: " + result + " and after put is " + (FanInSychronizer.resultMap.get(parentProblem.problemID)))
-                #    System.out.flush()
-                #}
-                logger.debug("Fan-In: ID: " + str(problem.problemID) + ": FanInID: " + str(parentProblem.problemID) + ": is not become Executor " + " and its value was: " + str(result) + " and after put is " + str((FanInSychronizer.resultMap[parentProblem.problemID])))
+                with debug_lock:
+                    logger.debug("Fan-In: ID: " + str(problem.problemID) + ": FanInID: " + str(parentProblem.problemID) + ": is not become Executor " + " and its value was: " + str(result) + " and after put is " + str((FanInSychronizer.resultMap[parentProblem.problemID])))
                 
-                #if (problem.FanInStack.size() < WukongProblem.OUTPUT_THRESHOLD) {
-                #    synchronized(FanInSychronizer.getPrintLock()) {
-                #        System.out.println("Exector: !lastFanInExecutor: " + problem.problemID + " Reached OUTPUT_THRESHOLD for result: " + result.problemID 
-                #            + " with problem.FanInStack.size(): " + problem.FanInStack.size()
-                #            + " and WukongProblem.OUTPUT_THRESHOLD: " + WukongProblem.OUTPUT_THRESHOLD)                        System.out.println(result) 
-                #        # return False so we are not considered to be the final Executor that displays final results. There will
-                #        # be many executors that reach the OUPUT_THRESHOLD and stop.
-                #        return False
-                #    }
-                #}
-                
-                #if (size >= WukongProblem.OUTPUT_THRESHOLD) { 
                 if (len(problem.FanInStack) == WukongProblem.OUTPUT_THRESHOLD):
-                    # TODO: Convert to Python
                     with debug_lock:
                         logger.debug("Exector: " + str(problem.problemID) + " Reached OUTPUT_THRESHOLD for result: " + str(result.problemID)
                             + " with problem.FanInStack.size(): " + str(len(problem.FanInStack))
@@ -525,13 +515,12 @@ class WukongProblem(object):
                 # Unwind recursion but real executor could simply terminate instead.
                 return False
             else:  # we are last Executor and first executor's result is in previousValue.
-                # TODO: Convert to Python
                 with debug_lock:
-                    logger.debug("FanIn: ID: " + problem.problemID + ": FanInID: " + parentProblem.problemID + ": " 
+                    logger.debug(problem.problemID + ": FanIn: ID: " + problem.problemID + ": FanInID: " + parentProblem.problemID + ": " 
                         + ": Returned from put: executor isLastFanInExecutor ")
                     logger.debug(subproblemResults[0])
             
-                    logger.debug("ID: " + str(problem.problemID) + ": call combine ***************")
+                    logger.debug(problem.problemID + ": ID: " + str(problem.problemID) + ": call combine ***************")
                 
                 # combine takes the result for this executor and the results for the sibling subproblems obtained by
                 # the sibling executors to produce the result for this problem.
@@ -547,20 +536,23 @@ class WukongProblem(object):
         #rhc: end Fan-In operation
 
         # rhc: start Fan-In task 
-        self.UserProgram.combine(subproblemResults, result)
+        self.UserProgram.combine(subproblemResults, result, problem.problemID)
+
+        logger.debug(problem.problemID + ": FanIn: ID: " + problem.problemID + ", result: " + str(result))
+        return 
         
         # Note: It's possible that we got a memoized value, e.g., 1 and we added 1+0 to get 1 and we are now
         # memoizing 1, which we do not need to do. 
         # Option: Track locally the memoized values we get and put so we don't put duplicates, since get/put is expensive
         # when memoized storage is remote.
-                            
+
         if (WukongProblem.memoize):
             memoizedLabel = self.UserProgram.memoizeIDLabeler(parentProblem)
             # put will memoize a copy of result
             # rhc: store result with subProblem
             memoizationResult = FanInSychronizer.put(memoizedLabel,result)
             #synchronized(FanInSychronizer.getPrintLock()) {
-            logger.debug("Exector: result.problemID: " + str(result.problemID) + " put memoizedLabel: " + str(memoizedLabel) + " result: " + str(result))
+            logger.debug(problem.problemID + ": Exector: result.problemID: " + str(result.problemID) + " put memoizedLabel: " + str(memoizedLabel) + " result: " + str(result))
             #}
         
         if (WukongProblem.USESERVERLESSNETWORKING and WukongProblem.memoize):
@@ -582,7 +574,7 @@ class WukongProblem(object):
                 # synchronized(FanInSychronizer.getPrintLock()) {
                 #     System.out.println("Executor: Writing the final value to root: " + result) # result)
                 # }
-                logger.debug("Executor: Writing the final value to root: " + str(result))
+                logger.debug(problem.problemID + ": Executor: Writing the final value to root: " + str(result))
                 siblingResult = FanInSychronizer.resultMap.put("root",result) 
 
             FanInExecutor = parentProblem.becomeExecutor
@@ -617,13 +609,17 @@ class WukongResult(object):
     """
     def __init__(self):
         self.problemID = None
+    
+    def __str__(self):
+        return str(self.problemID)
+        #return "WukongResult <problemID: " + str(self.problemID) + ">"
 
 class FanInSychronizer(object):
 
     lock = threading.Lock()
 
-    result_map = dict()
-    memoization_map = dict()
+    resultMap = dict()
+    memoizationMap = dict()
 
     def __init__(self):
         pass 
@@ -645,17 +641,17 @@ class FanInSychronizer(object):
 
         with FanInSychronizer.lock:
             # Attempt to grab the existing value.
-            copy_of_return = FanInSychronizer.memoization_map[fanin_id]
+            copy_of_return = FanInSychronizer.memoizationMap[fanin_id]
 
             if copy_of_return is not None:
                 # If the existing value is not none, copy it.
                 copy_of_return = copy_of_return.copy() 
 
                 # Update the problemID field.
-                copy_of_return.problemID = FanInSychronizer.memoization_map[fanin_id].problemID
+                copy_of_return.problemID = FanInSychronizer.memoizationMap[fanin_id].problemID
 
             # Now we update the map itself.
-            FanInSychronizer.memoization_map[fanin_id] = result
+            FanInSychronizer.memoizationMap[fanin_id] = result
         
         return copy_of_return
 
@@ -664,7 +660,7 @@ class FanInSychronizer(object):
         copy = None 
         
         with FanInSychronizer.lock:
-            result = FanInSychronizer.memoization_map[fanin_id]
+            result = FanInSychronizer.memoizationMap[fanin_id]
 
             if result is not None:
                 copy = result.copy() 

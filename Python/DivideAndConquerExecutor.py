@@ -102,7 +102,7 @@ class DivideAndConquerExecutor(Thread):
             
             source_path = config["source-path"]
             source_module = config["source-module"]
-            logger.debug("Importing user-defined module \"" + source_module + "\" from file \"" + source_path + "\" now...")
+            logger.debug(self.problem.problemID + ": Importing user-defined module \"" + source_module + "\" from file \"" + source_path + "\" now...")
             spec = importlib.util.spec_from_file_location(source_module, source_path)
             user_module = foo = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(user_module)
@@ -117,10 +117,10 @@ class DivideAndConquerExecutor(Thread):
             ServerlessNetworkingMemoizer = MemoizationController.getInstance().pair(self.problem.problemID)
             ack = ServerlessNetworkingMemoizer.rcv1()
 
-        logger.debug("Preprocessing the problem now...")
+        #logger.debug("{}, Preprocessing the problem now...".format(self.problem.problemID))
         # Pre-process problem, if required.
         self.problem.UserProgram.preprocess(self.problem)
-        logger.debug("Processing completed.")
+        #logger.debug("{}, Processing completed.".format(self.problem.problemID))
 
         # We do not necessarily input the entire initial problem at once. We may input several sub-problems instead.
         # Note: The level of Problems is FanInStack.size(). Root problem has empty stack, 2 children of root have
@@ -236,14 +236,14 @@ class DivideAndConquerExecutor(Thread):
                 
                 self.problem.UserProgram.sequential(self.problem, result)
 
-                logger.debug("base case: result before ProcessBaseCase(): " + str(result))
+                logger.debug("%s base case: result before ProcessBaseCase(): %s" % (self.problem.problemID, str(result)))
                 self.problem.ProcessBaseCase(self.problem, result, ServerlessNetworkingMemoizer)
 
                 # rhc: At this point, the recursion stops and we begin the Fan-In operations for this leaf node executor.
             else: # not baseCase
                 # rhc: start Fan-Out task
                 subProblems = list()
-                logger.debug("Calling problem.divide()")
+                logger.debug("%s Calling problem.divide()" % self.problem.problemID)
                 self.problem.UserProgram.divide(self.problem, subProblems)
 
                 # rhc: end Fan-Out task
@@ -252,7 +252,7 @@ class DivideAndConquerExecutor(Thread):
                 # Makes recursive call to run() for one subproblem and a new executor for the other(s).
                 # Calls self.problem.UserProgram.computeInputsOfSubproblems(problem,subProblems) when level == DivideandConquerFibonacci.ProblemType.INPUT_THRESHOLD
                 # and then divides the input of parent into the two inputs of the children. 
-                logger.debug("Calling problem.Fanout()")
+                logger.debug("%s Calling problem.Fanout()" % self.problem.problemID)
                 self.problem.Fanout(self.problem, subProblems, ServerlessNetworkingMemoizer)
                 # rhc: end Fan-Out operation
 

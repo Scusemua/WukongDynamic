@@ -42,7 +42,7 @@ class ResultType(WukongResult):
 
     def __str__(self):
         parent_to_string = super(ResultType, self).__str__()
-        return "(parent: " + parent_to_string + ", ID: " + str(self.problemID) + ", value: " + str(self.value) + ")"
+        return parent_to_string + ": (ID: " + str(self.problemID) + "/value: " + str(self.value) + ")"
 
 class ProblemType(WukongProblem):
     """ class ProblemType provided by User. """
@@ -130,15 +130,19 @@ class FibbonaciProgram(UserProgram):
         way to recover the parent ID from a child, either by using a formula like above, or by stacking the IDs as we recurse.
         """
         with debug_lock:
-            logger.debug("labeler: subProblem ID: " + str(subProblem.problemID) + " parent ID: " + str(parentProblem.problemID))
+            #logger.debug("labeler: subProblem ID: " + str(subProblem.problemID) + " parent ID: " + str(parentProblem.problemID))
+            logger.debug(str(parentProblem.problemID) + ": label subProblem ID (assigned in Fan-out): " + str(subProblem.problemID) + " parent ID: " + str(parentProblem.problemID))
 
+            logger.debug(parentProblem.problemID + ":  labler: parent stack: ")
+            stack_string = ""
             for i in range(0, len(parentProblem.FanInStack)):
-                logger.debug(str(parentProblem.FanInStack[i]) + " ")
+                stack_string += str(parentProblem.FanInStack[i]) + " "
+            logger.debug(stack_string)
             
         label = str(subProblem.value)
 
         with debug_lock:
-            logger.debug("Label: " + label)
+            logger.debug(parentProblem.problemID + ": labler: generated subProblem Label: " + label)
         
         return label
 
@@ -302,7 +306,8 @@ class FibbonaciProgram(UserProgram):
     #@staticmethod
     def combine(self, 
         subproblem_results : list,
-        combination : ResultType
+        combination : ResultType,
+        problemID : str
     ):
         """
             Combine the subproblem results. 
@@ -325,8 +330,8 @@ class FibbonaciProgram(UserProgram):
             --------
                 Nothing
         """
-        first_result = subproblem_results.get(0)
-        second_result = subproblem_results.get(1)
+        first_result = subproblem_results[0]
+        second_result = subproblem_results[1]
 
         first_value = first_result.value 
         second_value = second_result.value 
@@ -334,7 +339,7 @@ class FibbonaciProgram(UserProgram):
         combination.value = first_value + second_value
 
         with debug_lock:
-            logger.debug("combine: firstValue: " + str(first_value) + " secondValue: " + str(second_value) + " combination.value: " + combination.value)
+            logger.debug(problemID + ": combine: firstValue: " + str(first_value) + " secondValue: " + str(second_value) + " combination.value: " + str(combination.value))
     
     #@staticmethod
     def input_problem(self, problem : ProblemType):
@@ -373,7 +378,7 @@ class FibbonaciProgram(UserProgram):
         result.value = problem.value 
         
         with debug_lock:
-            logger.debug("sequential: " + str(problem.problemID) + " result.value: " + str(result.value))
+            logger.debug(str(problem.problemID) + ": Sequential: " + str(problem.problemID) + " result.value: " + str(result.value))
 
     #@staticmethod
     def output_result(self):
