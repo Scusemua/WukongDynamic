@@ -43,7 +43,7 @@ class WukongProblem(object):
     # when making recursive calls!
     OUTPUT_THRESHOLD = sys.maxsize
     
-    memoize = False
+    # memoize = False
     
     # For fan-in use serverless networking where invoked executor sends result to become executor,
     # or use redis-like shared storage to write and read results.
@@ -65,53 +65,9 @@ class WukongProblem(object):
         # TODO: When creating new DivideAndConquerExecutor objects, we do not supply the result type and problem type arguments.
         #       Also, the existing classes that are passed around to possibly several threads are not thread safe, I think.
 
-    # # If DivideandConquerFibonacci.Users supply constants, use them, else use default values.
-    # def static_init():
-    #     #Field IT = None
-    #     IT = False 
-    #     try:
-    #         #IT = DivideandConquerFibonacci.ProblemType.class.getDeclaredField("INPUT_THRESHOLD")
-	# 		IT = hasattr(DivideandConquerFibonacci.ProblemType, "INPUT_THRESHOLD")
-    #     except Exception as nsfe: # (NoSuchFieldException nsfe) {
-    #         # intentionally ignored
-    #         pass 
-
-    #     if IT:
-    #         try:
-    #             INPUT_THRESHOLD =  DivideandConquerFibonacci.ProblemType.INPUT_THRESHOLD #  IT # .getInt(INPUT_THRESHOLD)
-    #         except Exception as e:
-    #             logger.error(repr(e))
-        
-    #     #Field OT = None
-    #     OT = False 
-    #     try:
-    #         #OT = DivideandConquerFibonacci.ProblemType.class.getDeclaredField("OUTPUT_THRESHOLD")
-	# 		OT = hasattr(DivideandConquerFibonacci.ProblemType, "OUTPUT_THRESHOLD")
-    #     except Exception as nsfe:
-    #         logger.warn("Ignoring NoSuchFieldException for \"OUTPUT_THRESHOLD\"")
-
-    #     if OT:
-    #         try:
-    #             OUTPUT_THRESHOLD =  DivideandConquerFibonacci.ProblemType.OUTPUT_THRESHOLD #  IT # .getInt(INPUT_THRESHOLD)
-    #         except Exception as e:
-    #             logger.error(repr(e))
-            
-        
-    #     #Field m = None
-    #     m = None 
-    #     try:
-    #         m = DivideandConquerFibonacci.ProblemType.class.getDeclaredField("memoize")
-    #     except Exception as nsfe:
-    #         # intentionally ignored
-    #         logger.warn("Ignoring NoSuchFieldException for \"memoize\"")
-    #         pass 
-
-    #     if (m != None):
-    #         try:
-    #             memoize = DivideandConquerFibonacci.ProblemType.memoize #  IT # .getInt(INPUT_THRESHOLD)
-    #         except Exception as e:
-    #             logger.error(repr(e))
-    # # end static
+    @property
+    def memoize():
+        return True
 
     def ProcessBaseCase(self, problem, result, ServerlessNetworkingMemoizer):
         # memoizedResult True means that we got a memoized result (either at the base case or for a non-base case)
@@ -134,7 +90,7 @@ class WukongProblem(object):
         # we only compute base case if we don't get memoized result for the base case. (If we get memoized
         # result, we unwind by fan-in to parent of current problem.
         # if (WukongProblem.USESERVERLESSNETWORKING and not memoizedResult and WukongProblem.memoize) {
-        if (WukongProblem.USESERVERLESSNETWORKING and WukongProblem.memoize):
+        if (problem.memoize):
             deliverResultMsg = MemoizationMessage()
             deliverResultMsg.messageType = MemoizationController.MemoizationMessageType.DELIVEREDVALUE
             deliverResultMsg.senderID = problem.problemID
@@ -223,7 +179,7 @@ class WukongProblem(object):
             invokedSubproblem.didInput = problem.didInput
             invokedSubproblem.UserProgram = self.UserProgram
             
-            if (WukongProblem.memoize and WukongProblem.USESERVERLESSNETWORKING):
+            if (problem.memoize):
                 addPairingNameMsgForInvoke = MemoizationMessage()
                 addPairingNameMsgForInvoke.messageType = MemoizationController.MemoizationMessageType.ADDPAIRINGNAME
                 addPairingNameMsgForInvoke.senderID = problem.problemID
@@ -298,7 +254,7 @@ class WukongProblem(object):
             logger.debug(problem.problemID + ": Fanout: ID: " + str(problem.problemID)  + " becoming left executor: "  + str(becomeSubproblem.problemID))
         #}
         
-        if (WukongProblem.memoize and WukongProblem.USESERVERLESSNETWORKING):
+        if (problem.memoize):
             addPairingNameMsgForBecomes = MemoizationMessage() # MemoizationMessage
             addPairingNameMsgForBecomes.messageType = MemoizationController.MemoizationMessageType.ADDPAIRINGNAME
             addPairingNameMsgForBecomes.senderID = problem.problemID
@@ -499,7 +455,7 @@ class WukongProblem(object):
                         # be many executors that reach the OUPUT_THRESHOLD and stop.
                         return False
                 
-                if (WukongProblem.memoize and WukongProblem.USESERVERLESSNETWORKING):
+                if (problem.memoize):
                     removePairingNameMsgForParent = MemoizationMessage()
                     removePairingNameMsgForParent.messageType = MemoizationController.MemoizationMessageType.REMOVEPAIRINGNAME
                     removePairingNameMsgForParent.senderID = problem.problemID
@@ -544,7 +500,7 @@ class WukongProblem(object):
                 # Option: Track locally the memoized values we get and put so we don't put duplicates, since get/put is expensive
                 # when memoized storage is remote.
 
-                if (WukongProblem.memoize):
+                if (problem.memoize):
                     memoizedLabel = self.UserProgram.memoizeIDLabeler(parentProblem)
                     # put will memoize a copy of result
                     # rhc: store result with subProblem
@@ -553,7 +509,7 @@ class WukongProblem(object):
                     logger.debug(problem.problemID + ": Exector: result.problemID: " + str(result.problemID) + " put memoizedLabel: " + str(memoizedLabel) + " result: " + str(result))
                     #}
                 
-                if (WukongProblem.USESERVERLESSNETWORKING and WukongProblem.memoize):
+                if (WukongProblem.USESERVERLESSNETWORKING and problem.memoize):
                     deliverResultMsg = MemoizationMessage()
                     deliverResultMsg.messageType = MemoizationController.MemoizationMessageType.DELIVEREDVALUE
                     deliverResultMsg.senderID = problem.problemID
@@ -587,7 +543,7 @@ class WukongProblem(object):
         # end while (stack not empty)
         
         # Assuming that we are done with all problems and so done talking to Memoization Controller
-        if (WukongProblem.memoize and WukongProblem.USESERVERLESSNETWORKING):
+        if (problem.memoize):
             removePairingNameMsgForParent = MemoizationMessage() # MemoizationMessage
             removePairingNameMsgForParent.messageType = MemoizationController.MemoizationMessageType.REMOVEPAIRINGNAME
             removePairingNameMsgForParent.senderID = problem.problemID

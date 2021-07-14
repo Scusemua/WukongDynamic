@@ -58,7 +58,7 @@ class ProblemType(WukongProblem):
     # OUTPUT_THRESHOLD = 1
 
     # Memoize the problem results or not.
-    memoize = False 
+    # memoize = False 
 
     def __init__(self, value = 0, UserProgram = None):
         super(ProblemType, self).__init__(UserProgram = UserProgram)
@@ -69,6 +69,10 @@ class ProblemType(WukongProblem):
 
     def __repr__(self):
         return self.__str__()
+
+    @property
+    def memoize():
+        return True        
 
 class FibbonaciProgram(UserProgram):
     """ class User provided by User. """
