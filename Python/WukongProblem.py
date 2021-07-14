@@ -66,7 +66,8 @@ class WukongProblem(object):
         #       Also, the existing classes that are passed around to possibly several threads are not thread safe, I think.
 
     @property
-    def memoize():
+    def memoize(self):
+        print("WukongProblem memoize")
         return True
 
     def ProcessBaseCase(self, problem, result, ServerlessNetworkingMemoizer):

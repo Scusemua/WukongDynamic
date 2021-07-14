@@ -113,7 +113,7 @@ class DivideAndConquerExecutor(Thread):
     def run(self):
         ServerlessNetworkingMemoizer = None 
         # Start fan-out task.
-        if (WukongProblem.WukongProblem.memoize and WukongProblem.WukongProblem.USESERVERLESSNETWORKING):
+        if (self.problem.memoize):
             ServerlessNetworkingMemoizer = MemoizationController.getInstance().pair(self.problem.problemID)
             ack = ServerlessNetworkingMemoizer.rcv1()
 
@@ -137,7 +137,7 @@ class DivideAndConquerExecutor(Thread):
         result = None # first and only set result is by sequentialSort when the baseCase is reached.
         memoizedResult = False
 
-        if WukongProblem.WukongProblem.memoize:
+        if self.problem.memoize:
             # Here, we want to get the value previously computed for this subproblem
             # as opposed to below where we put a computed value for a subProblem
             # Note that the problem ID may be "4-3-2" or "4-2" but the memoized
@@ -195,7 +195,7 @@ class DivideAndConquerExecutor(Thread):
             logger.debug("memoized get: problem.problemID " + str(self.problem.problemID) + " memoizedLabel: " + str(memoizedLabel) + " memoized result: " + str(result))
             #}
         
-        if not WukongProblem.WukongProblem.memoize or (WukongProblem.WukongProblem.memoize and result is None):
+        if not self.problem.memoize or (self.problem.memoize and result is None):
             result = self.result_type()
 
             # rhc: Can we do this if also doing Memoization? I think so.

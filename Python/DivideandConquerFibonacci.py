@@ -71,8 +71,9 @@ class ProblemType(WukongProblem):
         return self.__str__()
 
     @property
-    def memoize():
-        return False        
+    def memoize(self):
+        print("ProblemType memoize")
+        return False    
 
 class FibbonaciProgram(UserProgram):
     """ class User provided by User. """
