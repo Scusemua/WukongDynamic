@@ -72,7 +72,7 @@ class ProblemType(WukongProblem):
 
     @property
     def memoize():
-        return True        
+        return False        
 
 class FibbonaciProgram(UserProgram):
     """ class User provided by User. """
