@@ -20,8 +20,24 @@ class MemoizationMessage(object):
         self.did_input = did_input         
 
 class MemoizationRecord(object):
-    def __init__(self):
-        pass 
+    def __init__(
+        self,
+        type = None,
+        result_id = None,
+        memoization_label = None,
+        result = None,
+        promised_results = None,
+        promised_results_temp = None
+    ):
+        self.type = type,
+        self.result_id = result_id,
+        self.memoization_label = memoization_label,
+        self.result = result,
+        self.promised_results = promised_results,
+        self.promised_results_temp = promised_results_temp
+    
+    def __str__(self):
+        return "type: " + str(type)
 
 class MemoizationController(object):
     def __init__(self):
