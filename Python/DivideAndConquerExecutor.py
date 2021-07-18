@@ -6,6 +6,10 @@ from threading import Thread
 import WukongProblem
 import importlib
 
+from memoization import memoization_controller
+from memoization.util import MemoizationMessage, MemoizationRecord, MemoizationMessageType
+from channel import BiChannel, UniChannel
+
 import yaml 
 import logging
 logger = logging.getLogger(__name__)
@@ -23,32 +27,8 @@ if root.handlers:
 
 debug_lock = threading.Lock() 
 
-class UniChannel(object):
-    pass
-
-class MemoizationMessage(object):
-    def __init__(self):
-        self.senderID = ""
-        self.problemOrResultID = "" 
-        self.memoizationLabel = "" 
-        self.result = None 
-        self.FanInStack = [] 
-        self.becomeExecutor = False 
-        self.didInput = False 
-
-class MemoizationRecord(object):
-    def __init__(self):
-        pass 
 
 class promisedResult(object):
-    def __init__(self):
-        pass 
-
-class MemoizationController(object):
-    def __init__(self):
-        pass 
-
-class MemoizationThread(Thread):
     def __init__(self):
         pass 
 
@@ -69,21 +49,6 @@ class ServerLessNetworkingUniSenderHelper(object):
 
 class ServerLessNetworkingUniReceiverHelper(object):
     pass
-
-class ServerlessNetworkingClientServer(object):
-    def __init__(
-        self,
-        connections,
-        client_channel
-    ):
-        self.connections = connections
-        self.client_channel = client_channel
-    
-    def send1(
-        self,
-        msg : MemoizationMessage
-    ):
-        pass #connections.send1(msg)
 
 class DivideAndConquerExecutor(Thread):
     def __init__(
@@ -148,7 +113,7 @@ class DivideAndConquerExecutor(Thread):
             # we have memoizedLabeler().
 
             promiseMsg = MemoizationMessage()
-            promiseMsg.messageType = MemoizationController.MemoizationMessageType.PROMISEVALUE
+            promiseMsg.messageType = MemoizationMessageType.PROMISEVALUE
             promiseMsg.senderID = self.problem.problemID
             promiseMsg.problemOrResultID = self.problem.problemID
             promiseMsg.becomeExecutor = self.problem.becomeExecutor
@@ -179,12 +144,12 @@ class DivideAndConquerExecutor(Thread):
             logger.debug("memoized get: problem.problemID " + str(self.problem.problemID) + " got ack.")
             #}
             
-            if (result == MemoizationController.nullResult):
+            if (result == memoization_controller.NullResult):
                 # no memoized result
                 #System.out.println("memoized get: problem.problemID " + problem.problemID + " ack was None result.")
                 logger.debug("memoized get: problem.problemID " + str(self.problem.problemID) + " ack was None result.")
                 result = None
-            elif (result == MemoizationController.stopResult):
+            elif (result == memoization_controller.StopResult):
                 # end executor, to be "restarted" later when subproblem result becomes available
                 #System.out.println("memoized get: problem.problemID " + problem.problemID + " ack was stop.")
                 logger.debug("memoized get: problem.problemID " + str(self.problem.problemID) + " ack was stop.")

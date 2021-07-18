@@ -1,5 +1,8 @@
+from DivideAndConquer.Python.channel import UniChannel
 from channel import BiChannel
 from memoization_thread import MemoizationThread
+
+from ServerlessNetworkingClientServer import ServerlessNetworkingClientServer
 
 import threading
 import importlib
@@ -16,10 +19,36 @@ MemoizationRecords = dict()         # Mapping from String -> MemoizationRecord
 ChannelMap = dict()                 # Map from String -> UniChannel
 ChannelMapLock = threading.Lock()   # Controls access to the ChannelMap.
 
+print_lock = threading.Lock()
+
 myThread = MemoizationThread()      # Memoization Controller runs, like a Lambda
 
 NullResult = None # Serves as an Ack.
 StopResult = None # Serves as an Ack.
+
+__initialized = False 
+
+def Pair(pairingName : str) -> ServerlessNetworkingClientServer:
+    assert(__initialized)
+
+    if PairingNames[pairingName] == None:
+        logger.error("MemoizationController: Sender: pairing but receiver does not have pairing name " + pairingName)
+        exit(1) 
+    
+    clientChannel = UniChannel("pairingName")
+    with ChannelMapLock:
+        ChannelMap[pairingName] = clientChannel
+    
+    logger.debug("MemoizationController: pair: " + pairingName)
+
+    with print_lock:
+        logger.debug("channelMap keySet:")
+        for name in ChannelMap:
+            logger.debug(name)
+    
+    clientChannel.send(NullResult)
+    connections = ServerlessNetworkingClientServer(BiChannelForMemoization, clientChannel)
+    return connections
 
 def StartController(config):
     """
@@ -31,10 +60,12 @@ def StartController(config):
         memoization_config (dict):
             Contains information such as whether or not memoization is enabled and the initial pairing name.
     """
+    global NullResult
+    global StopResult
+    global __initialized
+    
     memoization_config = config["memoization"]
     sources_config = config["sources"]
-
-    assert(memoization_config["enabled"] == True)
     
     initial_pairing_name = memoization_config["initial-pairing-name"]
     logger.debug("Initial pairing name: \"" + initial_pairing_name + "\"")
@@ -48,6 +79,8 @@ def StartController(config):
 
     NullResult = user_module.ResultType() # Serves as an Ack.
     StopResult = user_module.ResultType() # Serves as an Ack.
+
+    __initialized = True 
 
     PairingNames.add(initial_pairing_name)
     myThread.start()

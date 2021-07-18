@@ -47,5 +47,9 @@ class MemoizationThread(Thread):
             elif (msg.messageType == MemoizationMessageType.DELIVEREDVALUE):
                 r2 = MemoizationRecords[msg.memoizationLabel]
                 logger.debug("MemoizationThread: r2: " + str(r2))
+
+                with ChannelMapLock:
+                    queueDeliver = ChannelMap[msg.problemOrResultID]
+                    queueDeliver.send(NullResult)
             else:
                 pass 
