@@ -1,3 +1,5 @@
+from enum import Enum
+
 class MemoizationMessage(object):
     def __init__(
         self,
@@ -39,6 +41,13 @@ class MemoizationRecord(object):
     def __str__(self):
         return "type: " + str(type)
 
-class MemoizationController(object):
-    def __init__(self):
-        pass 
+class MemoizationRecordType(Enum):
+    PROMISEDVALUE = 0
+    DELIVEREDVALUE = 1
+
+class MemoizationMessageType(Enum):
+    ADDPAIRINGNAME = 0
+    REMOVEPAIRINGNAME = 1 
+    PROMISEVALUE = 2
+    DELIVEREDVALUE = 3
+    PAIR = 4
