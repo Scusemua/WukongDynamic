@@ -149,14 +149,24 @@ class FibonacciProgram(object):
             logger.debug("Error. Expected value: %s, actual value: %s" % (str(expected_value), str(result.value)))
 
     def memoizeIDLabeler(self, problem : ProblemType) -> str:
+        """
+        Used for getting the memoized result of (sub)problem (for get(memoizedLabel, result)).
+
+        For example, When computing Fibonacci(4), Fibonacci 3's label will be "4-3" so memoized label is "3", i.e.,
+        we will store the result for Fibonacci(3) under the key "3". We will store the result for Fibonacci(4) under the key "4".
+        """
         label = problem.problemID
 
+        # Grab last token in: token1 - token2 - .... - tokenLast
         last_index = -1
         try:
             label.rindex('-')
 
+            # e.g., for computing Fibonacci(4), problem label for Fibonacci(3) will be "4-3", which has '-' so memoize label is "3"
+            # which is the problem label for Fibonacci(3).
             memoizedID = label[last_index + 1, len(label)]
         except:
+            # no '-', e.g., for Fibonacci(4), problem label is "4", which has no '-' so memoize label is also "4"
             memoizedID = label
         
         return memoizedID
