@@ -1,5 +1,6 @@
-sources:
-  source-module: "DivideandConquerFibonacci"
-  source-path: "./DivideandConquerFibonacci.py"
+# sources:
+#   source-module: "DivideandConquerFibonacci"
+#   source-path: "./DivideandConquerFibonacci.py"
+#   user-program-name: "FibonacciProgram"
 memoization:
   initial-pairing-name: "root"

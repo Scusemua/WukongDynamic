@@ -3,12 +3,12 @@ import sys
 import threading
 
 from threading import Thread 
-import WukongProblem
-import importlib
+from wukong.wukong_problem import WukongProblem
+import importlib 
 
-from memoization import memoization_controller
-from memoization.util import MemoizationMessage, MemoizationRecord, MemoizationMessageType
-from channel import BiChannel, UniChannel
+from .memoization import memoization_controller
+from .memoization.util import MemoizationMessage, MemoizationRecord, MemoizationMessageType
+#from .channel import BiChannel, UniChannel
 
 import yaml 
 import logging
@@ -58,31 +58,38 @@ class DivideAndConquerExecutor(Thread):
         target=None, 
         name=None,
         problem_type = None, 
-        result_type = None
+        result_type = None,
+        null_result = None,
+        stop_result = None,
+        config_file_path = "wukong-divide-and-conquer.yaml"
     ):
         super(DivideAndConquerExecutor, self).__init__(group=group, target=target, name=name)
         self.problem = problem              # refers to an INSTANCE of the user-provided ProblemType class
-
-        with open("wukong-divide-and-conquer.yaml") as f:
+        self.problem_type = problem_type
+        self.result_type = result_type
+        self.null_result = null_result
+        self.stop_result = stop_result
+        with open(config_file_path) as f:
             config = yaml.load(f, Loader = yaml.FullLoader)
-            sources_config = config["sources"]
-            memoization_config = config["memoization"]
-            
-            source_path = sources_config["source-path"]
-            source_module = sources_config["source-module"]
-            logger.debug(self.problem.problemID + ": Importing user-defined module \"" + source_module + "\" from file \"" + source_path + "\" now...")
-            spec = importlib.util.spec_from_file_location(source_module, source_path)
-            user_module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(user_module)
+            self.config = config 
+        #     sources_config = config["sources"]
+        #     memoization_config = config["memoization"]
+        #     source_path = sources_config["source-path"]
+        #     source_module = sources_config["source-module"]
+        #     logger.debug(self.problem.problemID + ": Importing user-defined module \"" + source_module + "\" from file \"" + source_path + "\" now...")
+        #     spec = importlib.util.spec_from_file_location(source_module, source_path)
+        #     user_module = importlib.util.module_from_spec(spec)
+        #     spec.loader.exec_module(user_module)
 
-            self.problem_type = user_module.ProblemType    # refers to a class provided by user, e.g., ProblemType
-            self.result_type = user_module.ResultType      # refers to a class provided by user, e.g., ResultType
+        #     self.problem_type = user_module.ProblemType    # refers to a class provided by user, e.g., ProblemType
+        #     self.result_type = user_module.ResultType      # refers to a class provided by user, e.g., ResultType
     
     def run(self):
         ServerlessNetworkingMemoizer = None 
+        memoization_controller.StartController(self.config, null_result = self.null_result, stop_result = self.stop_result)
         # Start fan-out task.
         if (self.problem.memoize):
-            ServerlessNetworkingMemoizer = MemoizationController.getInstance().pair(self.problem.problemID)
+            ServerlessNetworkingMemoizer = memoization_controller.Pair(self.problem.problemID)
             ack = ServerlessNetworkingMemoizer.rcv1()
 
         #logger.debug("{}, Preprocessing the problem now...".format(self.problem.problemID))
@@ -167,7 +174,7 @@ class DivideAndConquerExecutor(Thread):
             result = self.result_type()
 
             # rhc: Can we do this if also doing Memoization? I think so.
-            if (len(self.problem.FanInStack) == WukongProblem.WukongProblem.INPUT_THRESHOLD and self.problem.didInput == False):
+            if (len(self.problem.FanInStack) == WukongProblem.INPUT_THRESHOLD and self.problem.didInput == False):
                 self.problem.UserProgram.inputProblem(self.problem)
                 self.problem.didInput = True
                 # Debug output is for Merge/Quick Sort only.

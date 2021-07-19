@@ -2,7 +2,10 @@ import sys
 import threading 
 import time
 
-from memoization import MemoizationController, MemoizationMessage
+#from .memoization.memoization_controller import MemoizationThread
+from .memoization.util import MemoizationMessage, MemoizationMessageType, MemoizationRecord, MemoizationRecordType
+
+#from memoization import memoization_controller 
 
 import logging
 logger = logging.getLogger(__name__)
@@ -93,7 +96,7 @@ class WukongProblem(object):
         # if (WukongProblem.USESERVERLESSNETWORKING and not memoizedResult and WukongProblem.memoize) {
         if (problem.memoize):
             deliverResultMsg = MemoizationMessage()
-            deliverResultMsg.messageType = MemoizationController.MemoizationMessageType.DELIVEREDVALUE
+            deliverResultMsg.messageType = MemoizationMessageType.DELIVEREDVALUE
             deliverResultMsg.senderID = problem.problemID
             deliverResultMsg.problemOrResultID = result.problemID
             #System.out.println("result: " + result)
@@ -182,7 +185,7 @@ class WukongProblem(object):
             
             if (problem.memoize):
                 addPairingNameMsgForInvoke = MemoizationMessage()
-                addPairingNameMsgForInvoke.messageType = MemoizationController.MemoizationMessageType.ADDPAIRINGNAME
+                addPairingNameMsgForInvoke.messageType = MemoizationMessageType.ADDPAIRINGNAME
                 addPairingNameMsgForInvoke.senderID = problem.problemID
                 addPairingNameMsgForInvoke.problemOrResultID = invokedSubproblem.problemID
                 addPairingNameMsgForInvoke.memoizationLabel = None
@@ -257,7 +260,7 @@ class WukongProblem(object):
         
         if (problem.memoize):
             addPairingNameMsgForBecomes = MemoizationMessage() # MemoizationMessage
-            addPairingNameMsgForBecomes.messageType = MemoizationController.MemoizationMessageType.ADDPAIRINGNAME
+            addPairingNameMsgForBecomes.messageType = MemoizationMessageType.ADDPAIRINGNAME
             addPairingNameMsgForBecomes.senderID = problem.problemID
             addPairingNameMsgForBecomes.problemOrResultID = becomeSubproblem.problemID
             addPairingNameMsgForBecomes.memoizationLabel = None
@@ -268,7 +271,7 @@ class WukongProblem(object):
             ack1 = ServerlessNetworkingMemoizer.rcv1() # DivideandConquerFibonacci.ResultType
 
             removePairingNameMsgForParent = MemoizationMessage() # MemoizationMessage
-            removePairingNameMsgForParent.messageType = MemoizationController.MemoizationMessageType.REMOVEPAIRINGNAME
+            removePairingNameMsgForParent.messageType = MemoizationMessageType.REMOVEPAIRINGNAME
             removePairingNameMsgForParent.senderID = problem.problemID
             removePairingNameMsgForParent.problemOrResultID = problem.problemID
             removePairingNameMsgForParent.memoizationLabel = None
@@ -458,7 +461,7 @@ class WukongProblem(object):
                 
                 if (problem.memoize):
                     removePairingNameMsgForParent = MemoizationMessage()
-                    removePairingNameMsgForParent.messageType = MemoizationController.MemoizationMessageType.REMOVEPAIRINGNAME
+                    removePairingNameMsgForParent.messageType = MemoizationMessageType.REMOVEPAIRINGNAME
                     removePairingNameMsgForParent.senderID = problem.problemID
                     removePairingNameMsgForParent.problemOrResultID = problem.problemID
                     removePairingNameMsgForParent.memoizationLabel = None
@@ -512,7 +515,7 @@ class WukongProblem(object):
                 
                 if (WukongProblem.USESERVERLESSNETWORKING and problem.memoize):
                     deliverResultMsg = MemoizationMessage()
-                    deliverResultMsg.messageType = MemoizationController.MemoizationMessageType.DELIVEREDVALUE
+                    deliverResultMsg.messageType = MemoizationMessageType.DELIVEREDVALUE
                     deliverResultMsg.senderID = problem.problemID
                     deliverResultMsg.problemOrResultID = result.problemID
                     memoizedLabel = self.UserProgram.memoizeIDLabeler(parentProblem)
@@ -546,7 +549,7 @@ class WukongProblem(object):
         # Assuming that we are done with all problems and so done talking to Memoization Controller
         if (problem.memoize):
             removePairingNameMsgForParent = MemoizationMessage() # MemoizationMessage
-            removePairingNameMsgForParent.messageType = MemoizationController.MemoizationMessageType.REMOVEPAIRINGNAME
+            removePairingNameMsgForParent.messageType = MemoizationMessageType.REMOVEPAIRINGNAME
             removePairingNameMsgForParent.senderID = problem.problemID
             removePairingNameMsgForParent.problemOrResultID = problem.problemID
             removePairingNameMsgForParent.memoizationLabel = None

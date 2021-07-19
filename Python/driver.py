@@ -1,3 +1,5 @@
+import importlib
+import yaml 
 
 import logging
 logging.basicConfig()
@@ -14,12 +16,30 @@ if root.handlers:
     for handler in root.handlers:
        handler.setFormatter(formatter)
 
-from WukongProblem import WukongProblem
-from DivideAndConquerExecutor import DivideAndConquerExecutor
-from DivideandConquerFibonacci import DivideandConquerFibonacci, FibbonaciProgram, ProblemType, ResultType
+from wukong.wukong_problem import WukongProblem
+from wukong.dc_executor import DivideAndConquerExecutor
+from fibonnaci_program import ResultType, ProblemType, FibonacciProgram
+
+import fibonnaci_program
 
 # Main method, so to speak.
 if __name__ == "__main__":
+    # with open("wukong-divide-and-conquer.yaml") as f:
+    #     config = yaml.load(f, Loader = yaml.FullLoader)
+    #     config = config 
+    #     sources_config = config["sources"]
+    #     memoization_config = config["memoization"]
+        
+    #     source_path = sources_config["source-path"]
+    #     source_module = sources_config["source-module"]
+    #     spec = importlib.util.spec_from_file_location(source_module, source_path)
+    #     user_module = importlib.util.module_from_spec(spec)
+    #     spec.loader.exec_module(user_module)
+
+    #     ProblemType = user_module.ProblemType    # refers to a class provided by user, e.g., ProblemType
+    #     ResultType = user_module.ResultType      # refers to a class provided by user, e.g., ResultType
+    #     UserProgram = getattr(user_module, sources_config["user-program-name"])
+
     logger.debug("Running DivideandConquerFibonacci")
     logger.debug("INPUT_THRESHOLD is: {}".format(WukongProblem.INPUT_THRESHOLD))
     logger.debug("OUTPUT_THRESHOLD is: {}".format(WukongProblem.OUTPUT_THRESHOLD))
@@ -36,23 +56,26 @@ if __name__ == "__main__":
     if seq is None:
         logger.fatal("ProblemType.SEQUENTIAL_THRESHOLD must be defined.")
         
-    logger.debug("n: " + str(DivideandConquerFibonacci.n))
+    logger.debug("n: " + str(fibonnaci_program.n))
 
-    rootID = str(DivideandConquerFibonacci.n)
+    rootID = str(fibonnaci_program.n)
     FanInStack = list() 
     rootProblem = ProblemType(
-        value = DivideandConquerFibonacci.n,
-        UserProgram = FibbonaciProgram()
+        value = fibonnaci_program.n,
+        UserProgram = FibonacciProgram()
     )
 
     logger.debug("Root Problem: " + str(rootProblem))
 
     rootProblem.FanInStack = FanInStack
-    rootProblem.problemID = DivideandConquerFibonacci.root_problem_id
+    rootProblem.problemID = fibonnaci_program.root_problem_id
 
     root = DivideAndConquerExecutor(
         problem = rootProblem,
         problem_type = ProblemType, # ProblemType is a user-provided class.
-        result_type = ResultType   # ProblemType is a user-provided class.
-        )
+        result_type = ResultType,   # ProblemType is a user-provided class.
+        null_result = ResultType(),
+        stop_result = ResultType(),
+        config_file_path = "./wukong-divide-and-conquer.yaml"
+    )
     root.run()

@@ -3,10 +3,11 @@ import logging
 import threading 
 import time 
 
-from WukongProblem import WukongProblem, FanInSychronizer, WukongResult
-from UserProgram import UserProgram
+from wukong.wukong_problem import WukongProblem, FanInSychronizer, WukongResult
 
-import DivideAndConquerExecutor
+from wukong.util import ClassGetter
+
+import wukong.dc_executor as dc_executor
 #from DivideAndConquerExecutor import WukongProblem, MemoizationController, DivideAndConquerExecutor
 
 logger = logging.getLogger(__name__)
@@ -24,6 +25,10 @@ if root.handlers:
 
 debug_lock = threading.Lock() 
 
+n = 4
+expected_value = 3
+root_problem_id = "root"
+
 class ResultType(WukongResult):
     def __init__(self):
         super(ResultType, self).__init__()
@@ -39,6 +44,11 @@ class ResultType(WukongResult):
         _copy.value = self.value
 
         return _copy 
+
+    # def __reduce__(self):
+    #     print("REDUCE")
+    #     state = self.__dict__.copy()
+    #     return (ClassGetter, (ResultType, self.__class__.__name__, ))
 
     def __str__(self):
         parent_to_string = super(ResultType, self).__str__()
@@ -73,9 +83,9 @@ class ProblemType(WukongProblem):
     @property
     def memoize(self):
         print("ProblemType memoize")
-        return False    
+        return True     
 
-class FibbonaciProgram(UserProgram):
+class FibonacciProgram(object):
     """ class User provided by User. """
 
     def trimProblem(self, problem : ProblemType):
@@ -124,19 +134,32 @@ class FibbonaciProgram(UserProgram):
             result = FanInSychronizer.resultMap["root"]
         
         logger.debug("")
-        logger.debug(problem_problemID + ": Fibonacci(" + str(DivideandConquerFibonacci.n) + ") = " + str(result.value))
+        logger.debug(problem_problemID + ": Fibonacci(" + str(n) + ") = " + str(result.value))
         logger.debug("")
 
         logger.debug(problem_problemID + ": Verifying ....... ")
         time.sleep(2)
         error = False 
-        if result.value != DivideandConquerFibonacci.expected_value:
+        if result.value != expected_value:
             error = True 
         
         if not error:
             logger.debug("Verified.")
         else:
-            logger.debug("Error. Expected value: %s, actual value: %s" % (str(DivideandConquerFibonacci.expected_value), str(result.value)))
+            logger.debug("Error. Expected value: %s, actual value: %s" % (str(expected_value), str(result.value)))
+
+    def memoizeIDLabeler(self, problem : ProblemType) -> str:
+        label = problem.problemID
+
+        last_index = -1
+        try:
+            label.rindex('-')
+
+            memoizedID = label[last_index + 1, len(label)]
+        except:
+            memoizedID = label
+        
+        return memoizedID
 
     def problemLabeler(self, subProblem : ProblemType, childId : int, parentProblem : ProblemType, subProblems : list) -> str:
         """
@@ -417,29 +440,24 @@ class FibbonaciProgram(UserProgram):
 		the final result since we create a new result object after every combine. The final result 
 		is the value in "root".
         """
-        result = FanInSychronizer.resultMap[DivideandConquerFibonacci.root_problem_id]
+        result = FanInSychronizer.resultMap[root_problem_id]
 
-        DivideAndConquerExecutor.MemoizationController.getInstance().stopThread()
+        dc_executor.MemoizationController.getInstance().stopThread()
 
-        logger.debug("Fibonacci(" + DivideandConquerFibonacci.n + ") = " + str(result.value))
+        logger.debug("Fibonacci(" + n + ") = " + str(result.value))
         logger.debug("Verifying...")
 
         time.sleep(2)
 
         error = False 
 
-        if result.value != DivideandConquerFibonacci.expected_value:
+        if result.value != expected_value:
             error = True 
         
         if not error:
             logger.debug("Verified.")
         else:
             logger.error("Error. Unexpected final result.")
-
-class DivideandConquerFibonacci(object):
-    n = 4
-    expected_value = 3
-    root_problem_id = "root"
 
 # Main method, so to speak.
 # if __name__ == "__main__":

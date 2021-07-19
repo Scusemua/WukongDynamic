@@ -15,7 +15,7 @@ class UniChannel(object):
     def send(self, result):
         self.queue.put(result)
     
-    def recv(self):
+    def rcv(self):
         return self.queue.get()
 
 class BiChannel(object):
