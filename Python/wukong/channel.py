@@ -1,5 +1,10 @@
 import multiprocessing
 
+import logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
+
 class UniChannel(object):
     """
         Unidirectional Channel 
@@ -60,22 +65,22 @@ class BiChannel(object):
     
     def rcv1(self, timeout = None):
         """
-        Attempt to get a message from queue1.
-
-        Key-Word Arguments:
-        -------------------
-            timeout (int or float):
-                Number of seconds to wait before raising the Empty exception.
-        """        
-        return self.queue1.get(timeout = timeout)
-
-    def rcv2(self, timeout = None):
-        """
         Attempt to get a message from queue2.
 
         Key-Word Arguments:
         -------------------
             timeout (int or float):
                 Number of seconds to wait before raising the Empty exception.
-        """
+        """        
         return self.queue2.get(timeout = timeout)
+
+    def rcv2(self, timeout = None):
+        """
+        Attempt to get a message from queue1.
+
+        Key-Word Arguments:
+        -------------------
+            timeout (int or float):
+                Number of seconds to wait before raising the Empty exception.
+        """
+        return self.queue1.get(timeout = timeout)

@@ -39,7 +39,9 @@ class MemoizationThread(Thread):
             # TODO: This is normally in a try-catch with an interrupted exception (in the Java version).
             msg = None 
             try:
+                logger.debug(">> Memoization Thread awaiting message...")
                 msg = BiChannelForMemoization.rcv2(timeout = 2)
+                logger.debug(">> Memoization Thread received message: " + str(msg))
             except:
                 time.sleep( 0.0001 )
                 continue 
@@ -57,15 +59,16 @@ class MemoizationThread(Thread):
                     queuePair = ChannelMap[msg.problemOrResultID]
                     queuePair.send(NullResult)
             elif (msg.messageType == MemoizationMessageType.PROMISEVALUE):
-                r1 = MemoizationRecords[msg.memoizationLabel]
-                logger.debug("MemoizationThread: r1: " + str(r2))
+                # r1 = MemoizationRecords[msg.memoizationLabel]
+                # logger.debug("MemoizationThread: r1: " + str(r1))
 
                 with ChannelMapLock:
                     queuePromise = ChannelMap[msg.problemOrResultID]
+                    logger.debug(">> Memoization Thread sending NullResult now...")
                     queuePromise.send(NullResult)
             elif (msg.messageType == MemoizationMessageType.DELIVEREDVALUE):
-                r2 = MemoizationRecords[msg.memoizationLabel]
-                logger.debug("MemoizationThread: r2: " + str(r2))
+                # r2 = MemoizationRecords[msg.memoizationLabel]
+                # logger.debug("MemoizationThread: r2: " + str(r2))
 
                 with ChannelMapLock:
                     queueDeliver = ChannelMap[msg.problemOrResultID]
