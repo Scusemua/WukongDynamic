@@ -30,20 +30,52 @@ class BiChannel(object):
         self.queue2 = multiprocessing.Queue(maxsize = 1)
         self.id = id
     
-    def send1(self, result):
+    def send1(self, msg, timeout = None):
         """
-        Blocking.
-        """        
-        self.queue1.put(result)
-    
-    def send2(self, result):
-        """
-        Blocking.
-        """
-        self.queue2.put(result)
-    
-    def rcv1(self):
-        return self.queue1.get()
+        Blocking. Attempt to put a message into queue1.
 
-    def rcv2(self):
-        return self.queue2.get()        
+        Key-Word Arguments:
+        -------------------
+            msg (ResultType):
+                The object to place into the queue.
+                    
+            timeout (int or float):
+                Number of seconds to wait before raising the Full exception.
+        """        
+        self.queue1.put(msg, timeout = timeout)
+    
+    def send2(self, msg, timeout = None):
+        """
+        Blocking. Attempt to put a message into queue2.
+
+        Key-Word Arguments:
+        -------------------
+            msg (ResultType):
+                The object to place into the queue.
+            
+            timeout (int or float):
+                Number of seconds to wait before raising the Full exception.
+        """
+        self.queue2.put(msg, timeout = timeout)
+    
+    def rcv1(self, timeout = None):
+        """
+        Attempt to get a message from queue1.
+
+        Key-Word Arguments:
+        -------------------
+            timeout (int or float):
+                Number of seconds to wait before raising the Empty exception.
+        """        
+        return self.queue1.get(timeout = timeout)
+
+    def rcv2(self, timeout = None):
+        """
+        Attempt to get a message from queue2.
+
+        Key-Word Arguments:
+        -------------------
+            timeout (int or float):
+                Number of seconds to wait before raising the Empty exception.
+        """
+        return self.queue2.get(timeout = timeout)

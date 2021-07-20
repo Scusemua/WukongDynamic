@@ -86,9 +86,12 @@ class DivideAndConquerExecutor(Thread):
     
     def run(self):
         ServerlessNetworkingMemoizer = None 
+        logger.debug(">> Starting Memoization Controller now...")
         memoization_controller.StartController(self.config, null_result = self.null_result, stop_result = self.stop_result)
+        
         # Start fan-out task.
         if (self.problem.memoize):
+            logger.debug(">> Attempting to pair now using the pairing name \"" + self.problem.problemID + "\"...")
             ServerlessNetworkingMemoizer = memoization_controller.Pair(self.problem.problemID)
             ack = ServerlessNetworkingMemoizer.rcv1()
 

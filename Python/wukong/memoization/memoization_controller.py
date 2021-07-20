@@ -6,6 +6,7 @@ from .util import MemoizationMessageType
 
 from threading import Thread
 
+import time
 import threading
 import importlib
 
@@ -32,9 +33,16 @@ class MemoizationThread(Thread):
         self.active = False 
 
     def run(self):
+        logger.debug(">> Memoization Thread has started running...")
+
         while self.active:
             # TODO: This is normally in a try-catch with an interrupted exception (in the Java version).
-            msg = BiChannelForMemoization.rcv2() 
+            msg = None 
+            try:
+                msg = BiChannelForMemoization.rcv2(timeout = 2)
+            except:
+                time.sleep( 0.0001 )
+                continue 
 
             if (msg.messageType == MemoizationMessageType.PAIR):
                 with ChannelMapLock:
@@ -144,3 +152,5 @@ def StartController(config, null_result = None, stop_result = None):
 
     PairingNames.add(initial_pairing_name)
     myThread.start()
+
+    logger.debug(">> Memoization Controller started successfully!")
