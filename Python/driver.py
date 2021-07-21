@@ -78,4 +78,6 @@ if __name__ == "__main__":
         stop_result = fibonnaci_program.StopResult,
         config_file_path = "./wukong-divide-and-conquer.yaml"
     )
-    root.run()
+    root.start()
+
+    root.join()

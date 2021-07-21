@@ -99,10 +99,8 @@ class WukongProblem(object):
             deliverResultMsg.messageType = MemoizationMessageType.DELIVEREDVALUE
             deliverResultMsg.senderID = problem.problemID
             deliverResultMsg.problemOrResultID = result.problemID
-            #System.out.println("result: " + result)
-            logger.debug("result: ", str(result))
+            logger.debug("result: " + str(result))
             memoizedLabel = self.UserProgram.memoizeIDLabeler(problem)
-            #String memoizedLabel = self.UserProgram.memoizeIDLabeler(result)
             deliverResultMsg.memoizationLabel = memoizedLabel
             deliverResultMsg.result = result
             deliverResultMsg.FanInStack = None
@@ -198,8 +196,17 @@ class WukongProblem(object):
             from .dc_executor import DivideAndConquerExecutor
             # New subproblem
 
+            logger.debug(">> Type of current thread: " + str(type(threading.current_thread())))
+
             #logger.info("Creating new DivideAndConquerExecutor object now...")
-            newExecutor = DivideAndConquerExecutor(invokedSubproblem)
+            newExecutor = DivideAndConquerExecutor(
+                problem = invokedSubproblem,
+                problem_type = threading.current_thread().problem_type,
+                result_type = threading.current_thread().result_type,
+                null_result = threading.current_thread().null_result,
+                stop_result = threading.current_thread().stop_result,
+                config_file_path = threading.current_thread().config_file_path
+            )
 
             # TODO: Convert this to Python.
             #synchronized(FanInSychronizer.getPrintLock()) {
@@ -251,7 +258,14 @@ class WukongProblem(object):
         # If parent input was done then we will grab part of the parent's values and the child's input can be considered done too.
         becomeSubproblem.didInput = problem.didInput
         becomeSubproblem.UserProgram = self.UserProgram
-        become = DivideAndConquerExecutor(becomeSubproblem)
+        logger.debug(">> Type of current thread: " + str(type(threading.current_thread())))
+        become = DivideAndConquerExecutor(
+            problem = becomeSubproblem,
+            problem_type = threading.current_thread().problem_type,
+            result_type = threading.current_thread().result_type,
+            null_result = threading.current_thread().null_result,
+            stop_result = threading.current_thread().stop_result,
+            config_file_path = threading.current_thread().config_file_path)
         #synchronized(FanInSychronizer.getPrintLock()) {
         #    System.out.println("Fanout: ID: " + problem.problemID  + " becoming left executor: "  + becomeSubproblem.problemID)
         with debug_lock:

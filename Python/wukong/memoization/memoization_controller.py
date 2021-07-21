@@ -97,9 +97,9 @@ __initialized = False
 def Pair(pairingName : str) -> ServerlessNetworkingClientServer:
     assert(__initialized)
 
-    if pairingName not in PairingNames:
-        logger.error("MemoizationController: Sender: pairing but receiver does not have pairing name " + pairingName)
-        exit(1) 
+    #if pairingName not in PairingNames:
+    #    logger.error("MemoizationController: Sender: pairing but receiver does not have pairing name " + pairingName)
+    #    exit(1) 
     
     clientChannel = UniChannel("pairingName")
     with ChannelMapLock:

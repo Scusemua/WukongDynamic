@@ -69,6 +69,7 @@ class DivideAndConquerExecutor(Thread):
         self.result_type = result_type
         self.null_result = null_result
         self.stop_result = stop_result
+        self.config_file_path = config_file_path
         with open(config_file_path) as f:
             config = yaml.load(f, Loader = yaml.FullLoader)
             self.config = config 
@@ -172,7 +173,7 @@ class DivideAndConquerExecutor(Thread):
             logger.debug("memoized get: problem.problemID " + str(self.problem.problemID) + " memoizedLabel: " + str(memoizedLabel) + " memoized result: " + str(result))
         
         if not self.problem.memoize or (self.problem.memoize and result is None):
-            result = self.result_type()
+            result = self.result_type() # result_type is a class, so let's instantiate it 
 
             # rhc: Can we do this if also doing Memoization? I think so.
             if (len(self.problem.FanInStack) == WukongProblem.INPUT_THRESHOLD and self.problem.didInput == False):
