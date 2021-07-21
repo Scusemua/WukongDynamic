@@ -30,9 +30,17 @@ expected_value = 3
 root_problem_id = "root"
 
 class ResultType(WukongResult):
-    def __init__(self):
+    """
+    If type is 1, ResultType is a normal result.
+    If type is 0, ResultType is a stopResult.
+    If type is -1, ResultType is a nullResult.
+    """
+    def __init__(self, value = 0, type = 1):
         super(ResultType, self).__init__()
-        self.value = 0
+        self.value = value
+        self.type = type 
+
+        assert(self.type >= -1 and self.type <= 1)
     
     def copy(self):
         """
@@ -44,6 +52,14 @@ class ResultType(WukongResult):
         _copy.value = self.value
 
         return _copy 
+    
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            if self.type != other.type:
+                return False 
+            return self.value == other.value and self.problemID == other.problemID 
+        else:
+            return False 
 
     # def __reduce__(self):
     #     print("REDUCE")
@@ -52,7 +68,13 @@ class ResultType(WukongResult):
 
     def __str__(self):
         parent_to_string = super(ResultType, self).__str__()
-        return parent_to_string + ": (ID: " + str(self.problemID) + "/value: " + str(self.value) + ")"
+
+        if self.type == 0:
+            return parent_to_string + ": STOP RESULT"
+        elif self.type == -1:
+            return parent_to_string + ": NULL RESULT"
+        else:
+            return parent_to_string + ": (ID: " + str(self.problemID) + "/value: " + str(self.value) + ")"
 
 class ProblemType(WukongProblem):
     """ class ProblemType provided by User. """
@@ -87,7 +109,6 @@ class ProblemType(WukongProblem):
 
 class FibonacciProgram(object):
     """ class User provided by User. """
-
     def trimProblem(self, problem : ProblemType):
         """
         A problem P is by default passed to the executors that will be executing the child subproblems of P. One of these
@@ -468,6 +489,10 @@ class FibonacciProgram(object):
             logger.debug("Verified.")
         else:
             logger.error("Error. Unexpected final result.")
+
+# Global Constants.
+NullResult = ResultType(value = -1, type = -1)
+StopResult = ResultType(value = -1, type = 0)
 
 # Main method, so to speak.
 # if __name__ == "__main__":

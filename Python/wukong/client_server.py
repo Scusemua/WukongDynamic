@@ -2,17 +2,19 @@ from .channel import UniChannel, BiChannel
 import yaml 
 import importlib
 
-# with open("wukong-divide-and-conquer.yaml") as f:
-#     config = yaml.load(f, Loader = yaml.FullLoader)
-#     config = config 
-#     sources_config = config["sources"]
-#     memoization_config = config["memoization"]
-    
-#     source_path = sources_config["source-path"]
-#     source_module = sources_config["source-module"]
-#     spec = importlib.util.spec_from_file_location(source_module, source_path)
-#     user_module = importlib.util.module_from_spec(spec)
-#     spec.loader.exec_module(user_module) 
+import logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
+
+if logger.handlers:
+   for handler in logger.handlers:
+      handler.setFormatter(formatter)
+
+root = logging.getLogger()
+if root.handlers:
+    for handler in root.handlers:
+       handler.setFormatter(formatter)
 
 class ServerlessNetworkingClientServer(object):
     def __init__(self, connections : BiChannel, client_channel : UniChannel):
@@ -23,4 +25,11 @@ class ServerlessNetworkingClientServer(object):
         self.connections.send1(msg)
         
     def rcv1(self):
-        return self.client_channel.rcv()
+        """
+        This will return an object of type `ResultType`. This will be a user-defined/user-supplied object.
+        """
+        res = self.client_channel.rcv()
+
+        #logger.debug(">> ServerlessNetworkingClientServer.recv1(): type(res): " + str(type(res)) + ", value of res object: " + str(res))
+
+        return res 

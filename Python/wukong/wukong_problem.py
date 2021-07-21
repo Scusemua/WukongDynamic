@@ -195,7 +195,7 @@ class WukongProblem(object):
                 
                 ack = ServerlessNetworkingMemoizer.rcv1()
             
-            from DivideAndConquerExecutor import DivideAndConquerExecutor
+            from .dc_executor import DivideAndConquerExecutor
             # New subproblem
 
             #logger.info("Creating new DivideAndConquerExecutor object now...")
@@ -565,8 +565,11 @@ class WukongResult(object):
     """
         problemID is of type string.
     """
-    def __init__(self):
-        self.problemID = None
+    def __init__(self, problemID = None):
+        """
+            problemID (str)
+        """
+        self.problemID = problemID
     
     def __str__(self):
         return str(self.problemID)

@@ -65,6 +65,8 @@ class MemoizationThread(Thread):
                 with ChannelMapLock:
                     queuePromise = ChannelMap[msg.problemOrResultID]
                     logger.debug(">> Memoization Thread sending NullResult now...")
+                    logger.debug(">> NullResult type: " + str(type(NullResult)))
+                    logger.debug(">> NullResult value: " + str(NullResult))
                     queuePromise.send(NullResult)
             elif (msg.messageType == MemoizationMessageType.DELIVEREDVALUE):
                 # r2 = MemoizationRecords[msg.memoizationLabel]
@@ -120,6 +122,11 @@ def StartController(config, null_result = None, stop_result = None):
     
     Arguments:
     ----------
+        null_result (ResultType):
+            Instance of the user-defined ResultType object.
+        
+        stop_result (ResultType):
+            Instance of the user-defined ResultType object.
 
         memoization_config (dict):
             Contains information such as whether or not memoization is enabled and the initial pairing name.

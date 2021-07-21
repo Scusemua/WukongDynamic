@@ -74,8 +74,8 @@ if __name__ == "__main__":
         problem = rootProblem,
         problem_type = ProblemType, # ProblemType is a user-provided class.
         result_type = ResultType,   # ProblemType is a user-provided class.
-        null_result = ResultType(),
-        stop_result = ResultType(),
+        null_result = fibonnaci_program.NullResult,
+        stop_result = fibonnaci_program.StopResult,
         config_file_path = "./wukong-divide-and-conquer.yaml"
     )
     root.run()

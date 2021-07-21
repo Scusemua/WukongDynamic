@@ -156,22 +156,20 @@ class DivideAndConquerExecutor(Thread):
             
             if (result == memoization_controller.NullResult):
                 # no memoized result
-                #System.out.println("memoized get: problem.problemID " + problem.problemID + " ack was None result.")
                 logger.debug("memoized get: problem.problemID " + str(self.problem.problemID) + " ack was None result.")
                 result = None
             elif (result == memoization_controller.StopResult):
                 # end executor, to be "restarted" later when subproblem result becomes available
-                #System.out.println("memoized get: problem.problemID " + problem.problemID + " ack was stop.")
                 logger.debug("memoized get: problem.problemID " + str(self.problem.problemID) + " ack was stop.")
                 return 
             else:
                 # got a memoized result for problem, but the result's ID is the ID of the problem whose result 
                 # was memoized, which is not the problem we are working on here. So set ID to proper ID.
-                result.problemID = self.problem.problemID    
-            #synchronized(FanInSychronizer.getPrintLock()) {
-                #System.out.println("memoized get: problem.problemID " + problem.problemID + " memoizedLabel: " + memoizedLabel + " memoized result: " + result)
+                #logger.debug(">> memoized get: problem.problemID" + str(self.problem.problemID) + " was neither stop nor null.")
+                #logger.debug(">> result type: " + str(type(result)))
+                result.problemID = self.problem.problemID
+            
             logger.debug("memoized get: problem.problemID " + str(self.problem.problemID) + " memoizedLabel: " + str(memoizedLabel) + " memoized result: " + str(result))
-            #}
         
         if not self.problem.memoize or (self.problem.memoize and result is None):
             result = self.result_type()
