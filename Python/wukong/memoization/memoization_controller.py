@@ -15,6 +15,15 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
 
+BiChannelForMemoization = BiChannel("MemoizationController")
+PairingNames = set()                # Set of strings.
+MemoizationRecords = dict()         # Mapping from String -> MemoizationRecord 
+
+ChannelMap = dict()                 # Map from String -> UniChannel
+ChannelMapLock = threading.Lock()   # Controls access to the ChannelMap.
+
+print_lock = threading.Lock()
+
 class MemoizationThread(Thread):
     def __init__(
         self,
@@ -47,20 +56,56 @@ class MemoizationThread(Thread):
                 continue 
 
             if (msg.messageType == MemoizationMessageType.PAIR):
+                if msg.problemOrResultID not in PairingNames:
+                    logger.error("MemoizationController: Sender: pairing but receiver does not have pairingName " + str(msg.problemOrResultID))
+                    exit(1)
+                
+                logger.debug("MemoizationController: pair: " + str(msg.problemOrResultID))
+
                 with ChannelMapLock:
                     queuePair = ChannelMap[msg.problemOrResultID]
                     queuePair.send(NullResult)
             elif (msg.messageType == MemoizationMessageType.ADDPAIRINGNAME):
+                if msg.problemOrResultID in PairingNames:
+                    logger.error("Internal Error: MemoizationThread: Adding a pairing name that already exists: " + str(msg.problemOrResultID))
+                    exit(1)
+                
+                logger.debug("MemoizationController: add pairing name: " + msg.problemOrResultID)
+                PairingNames.add(msg.problemOrResultID)
+
+                with print_lock:
+                    logger.debug("MemoizationController: pairing names after add")
+                    for name in PairingNames:
+                        logger.debug("\tMemoizationController: " + name)
+
                 with ChannelMapLock:
                     queuePair = ChannelMap[msg.senderID]
                     queuePair.send(NullResult)
             elif (msg.messageType == MemoizationMessageType.REMOVEPAIRINGNAME):
+                if msg.problemOrResultID not in PairingNames:
+                    logger.error("Internal Error: MemoizationThread: Removing a pairing name that does not exist: " + str(msg.problemOrResultID))
+                    exit(1)
+                
+                PairingNames.remove(msg.problemOrResultID)
+
+                with print_lock:
+                    logger.debug("MemoizationController: pairing names after remove")
+                    for name in PairingNames:
+                        logger.debug("\tMemoization Controller: " + str(name))
+                
+                logger.debug("MemoizationController: remove pairing name: " + msg.problemOrResultID 
+                    + " pairingNames.size: " + str(len(PairingNames)))
+
                 with ChannelMapLock:
                     queuePair = ChannelMap[msg.problemOrResultID]
                     queuePair.send(NullResult)
             elif (msg.messageType == MemoizationMessageType.PROMISEVALUE):
                 # r1 = MemoizationRecords[msg.memoizationLabel]
-                # logger.debug("MemoizationThread: r1: " + str(r1))
+                
+                # if r1 is None:
+                #     pass 
+                # else:
+                #     pass 
 
                 with ChannelMapLock:
                     queuePromise = ChannelMap[msg.problemOrResultID]
@@ -77,15 +122,6 @@ class MemoizationThread(Thread):
                     queueDeliver.send(NullResult)
             else:
                 pass 
-
-BiChannelForMemoization = BiChannel("MemoizationController")
-PairingNames = set()                # Set of strings.
-MemoizationRecords = dict()         # Mapping from String -> MemoizationRecord 
-
-ChannelMap = dict()                 # Map from String -> UniChannel
-ChannelMapLock = threading.Lock()   # Controls access to the ChannelMap.
-
-print_lock = threading.Lock()
 
 myThread = MemoizationThread()      # Memoization Controller runs, like a Lambda
 

@@ -505,7 +505,7 @@ class WukongProblem(object):
                 # stores the result of add as
                 #rhc: end Fan-In operation
 
-                logger.debug(problem.problemID + ":CALLING COMBINE NOW...")
+                logger.debug(problem.problemID + ": CALLING COMBINE NOW...")
                 # rhc: start Fan-In task 
                 self.UserProgram.combine(subproblemResults, result, problem.problemID)
 
