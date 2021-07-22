@@ -1,8 +1,10 @@
+from DivideAndConquer.Python.wukong.dc_executor import DivideAndConquerExecutor
+from DivideAndConquer.Python.fibonnaci_program import ProblemType
 from wukong.channel import BiChannel, UniChannel
 
 from wukong.client_server import ServerlessNetworkingClientServer
 
-from .util import MemoizationMessageType
+from .util import MemoizationMessageType, MemoizationRecord, MemoizationRecordType, PromisedResult
 
 from threading import Thread
 
@@ -100,26 +102,107 @@ class MemoizationThread(Thread):
                     queuePair = ChannelMap[msg.problemOrResultID]
                     queuePair.send(NullResult)
             elif (msg.messageType == MemoizationMessageType.PROMISEVALUE):
-                # r1 = MemoizationRecords[msg.memoizationLabel]
+                r1 = MemoizationRecords[msg.memoizationLabel]
                 
-                # if r1 is None:
-                #     pass 
-                # else:
-                #     pass 
+                if r1 is None:
+                    promise = MemoizationRecord(
+                        result_id = msg.problemOrResultID,
+                        type = MemoizationRecordType.PROMISEDVALUE,
+                        promised_results = [],
+                        promised_results_temp = [])
+                        
+                    MemoizationRecords[msg.memoizationLabel] = promise
 
-                with ChannelMapLock:
-                    queuePromise = ChannelMap[msg.problemOrResultID]
-                    logger.debug(">> Memoization Thread sending NullResult now...")
-                    logger.debug(">> NullResult type: " + str(type(NullResult)))
-                    logger.debug(">> NullResult value: " + str(NullResult))
-                    queuePromise.send(NullResult)
+                    with ChannelMapLock:
+                        queuePromise = ChannelMap[msg.problemOrResultID]
+                        logger.debug("MemoizationThread: promise by: " + str(msg.problemOrResultID))
+                        queuePromise.send(NullResult)                    
+                else:
+                    # This is not first promise for msg.memoizationLabel, executor will stop and when 
+                    # the result is delivered a new one will be created to get result and continue fan-ins.
+                    if r1.type == MemoizationRecordType.PROMISEDVALUE:
+                        logger.debug("MemoizationThread: duplicate promise by: " + str(msg.problemOrResultID))
+
+                        promise = PromisedResult(
+                            problem_result_or_id = msg.problemOrResultID,
+                            fan_in_stack = msg.FanInStack,
+                            become_executor = msg.becomeExecutor,
+                            did_input = msg.didInput
+                        )
+
+                        r1.promised_results.add(promise)
+                        r1.promised_results_temp.add(msg.problemOrResultID)
+
+                        with ChannelMapLock:
+                            queuePromise = ChannelMap[msg.problemOrResultID]
+                            logger.debug("MemoizationThread: promise by: " + str(msg.problemOrResultID))
+                            queuePromise.send(StopResult)  
+                    elif r1.type == MemoizationRecordType.DELIVEREDVALUE:
+                        with ChannelMapLock:
+                            queuePromise = ChannelMap[msg.problemOrResultID]
+
+                            copy_of_return = r1.result.copy()
+                            copy_of_return.problemID = r1.result.problemID
+
+                            logger.debug("MemoizationThread: promised and delivered so deliver to: " + msg.problemOrResultID)
+                            queuePromise.send(copy_of_return) 
+
             elif (msg.messageType == MemoizationMessageType.DELIVEREDVALUE):
-                # r2 = MemoizationRecords[msg.memoizationLabel]
-                # logger.debug("MemoizationThread: r2: " + str(r2))
+                r2 = MemoizationRecords[msg.memoizationLabel]
+                logger.debug("MemoizationThread: r2: " + str(r2))
+
+                if r2 is None:
+                    # This is the first delivery of this result - there should be a promise record.
+                    logger.error("Internal Error: MemoizationThread Delivered: Result Delivered but no previous promise.")
+                    exit(1)
+                
+                # Assert:
+                if r2.type == MemoizationRecordType.DELIVEREDVALUE:
+                    logger.error("Internal Error: MemoizationThread: sender: " + str(msg.senderID) + 
+                            " problem/result ID " + str(msg.problemOrResultID) + " memoizationLabel: " 
+                            + str(msg.memoizationLabel) + " delivered result: " + str(msg.result) 
+                            + " delivered twice.")
+                    exit(1)
+                
+                """
+                Must be a PROMISEDVALUE, so deliver it ...
+                
+                Q: Do we need to create the problem that will be given to executor(s), i.e.,
+                create the problem that is getting the memoized result and give this problem the 
+                stack, so passing to executor as usual a ProblemType?
+
+                If so, need to pass the problem as part of the message to get the memoized result?
+                But lots of data? but passed result when we delivered result .. No: don't need 
+                value since we are not computing result we are grabbing result, so we can 
+                trim the problem and push it on the stack.
+                
+                So don't need data to be passed to get possible memoized result, so pass copy of problem
+                without its data? but user need to trim? but we have a trim
+                Push problem on stack? then pop it before calling executor to unwind stack?
+
+                This may not be the first duplicate promise for msg.memoizationLabel, i.e., other executors 
+                may have been promised the result for this subproblem; so 0, 1, or more executors need to 
+                be created to deliver this result All of these executors are in r2.promisedResults.                 
+                """
+                r2.resultID = msg.problemOrResultID
+                r2.type = MemoizationRecordType.DELIVEREDVALUE
+
+                # Note: do not create new lists of promisedResults, as we are 
+                # here going to deliver the current promisedResults.
+                copy_of_return = msg.result.copy()
+                copy_of_return.problemID = msg.result.problemID 
+
+                r2.result = copy_of_return
+                MemoizationRecords[msg.memoizationLabel] = r2
+
+                logger.debug("MemoizationThread: sender: " + str(msg.senderID) + " problem/result ID " 
+                                + str(msg.problemOrResultID) + " memoizationLabel: " + str(msg.memoizationLabel)
+                                + " delivered result: " + str(msg.result))
 
                 with ChannelMapLock:
                     queueDeliver = ChannelMap[msg.problemOrResultID]
                     queueDeliver.send(NullResult)
+                    deliver(r2.promisedResults)
             else:
                 pass 
 
@@ -129,6 +212,40 @@ NullResult = None # Serves as an Ack.
 StopResult = None # Serves as an Ack.
 
 __initialized = False 
+
+def Deliver(promised_results : list):
+    # Create a new Executor to handle the promised result.
+    logger.debug("MemoizationController: Deliver starting Executors for promised Results: ")
+
+    for i in range(0, len(promised_results)):
+        executor = promised_results[i]
+
+        queueDeliver = ChannelMap[executor.problemOrResultID]
+
+        problem = ProblemType()
+        problem.problemID = executor.problemOrResultID
+        problem.FanInStack = executor.FanInStack
+        problem.becomeExecutor = executor.becomeExecutor
+        problem.didInput = executor.didInput 
+
+        new_executor = DivideAndConquerExecutor(
+            problem = problem,
+            problem_type = threading.current_thread().problem_type,
+            result_type = threading.current_thread().result_type,
+            null_result = threading.current_thread().null_result,
+            stop_result = threading.current_thread().stop_result,
+            config_file_path = threading.current_thread().config_file_path
+        )
+
+        logger.debug("Deliver starting Executor for: " + problem.problemID
+					+ " problem.becomeExecutor: " + problem.becomeExecutor 
+					+ " problem.didInput: " + problem.didInput)
+        
+        new_executor.start()
+
+        logger.debug("Deliver end promised Results: ")
+        
+        promised_results.clear()
 
 def StopThread():
     assert(myThread is not None)

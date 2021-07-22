@@ -27,11 +27,6 @@ if root.handlers:
 
 debug_lock = threading.Lock() 
 
-
-class promisedResult(object):
-    def __init__(self):
-        pass 
-
 class testBiChannel(object):
     pass
 

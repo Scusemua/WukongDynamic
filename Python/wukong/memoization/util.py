@@ -51,3 +51,16 @@ class MemoizationMessageType(Enum):
     PROMISEVALUE = 2
     DELIVEREDVALUE = 3
     PAIR = 4
+
+class PromisedResult(object):
+    def __init__(
+        self, 
+        problem_result_or_id = None, 
+        fan_in_stack = None, 
+        become_executor = False, 
+        did_input = False
+    ):
+        self.problem_result_or_id = problem_result_or_id
+        self.fan_in_stack = fan_in_stack
+        self.become_executor = become_executor
+        self.did_input = did_input
