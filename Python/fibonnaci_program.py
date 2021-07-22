@@ -8,6 +8,7 @@ from wukong.wukong_problem import WukongProblem, FanInSychronizer, WukongResult
 from wukong.util import ClassGetter
 
 import wukong.dc_executor as dc_executor
+import wukong.memoization.memoization_controller as memoization_controller
 #from DivideAndConquerExecutor import WukongProblem, MemoizationController, DivideAndConquerExecutor
 
 logger = logging.getLogger(__name__)
@@ -147,27 +148,6 @@ class FibonacciProgram(object):
 
         value = problem.value 
         return value <= ProblemType.SEQUENTIAL_THRESHOLD
-
-    def outputResult(self, problem_problemID : str):
-        result = None 
-
-        with debug_lock:
-            result = FanInSychronizer.resultMap["root"]
-        
-        logger.debug("")
-        logger.debug(problem_problemID + ": Fibonacci(" + str(n) + ") = " + str(result.value))
-        logger.debug("")
-
-        logger.debug(problem_problemID + ": Verifying ....... ")
-        time.sleep(2)
-        error = False 
-        if result.value != expected_value:
-            error = True 
-        
-        if not error:
-            logger.debug("Verified.")
-        else:
-            logger.debug("Error. Expected value: %s, actual value: %s" % (str(expected_value), str(result.value)))
 
     def memoizeIDLabeler(self, problem : ProblemType) -> str:
         """
@@ -462,7 +442,7 @@ class FibonacciProgram(object):
             logger.debug(str(problem.problemID) + ": Sequential: " + str(problem.problemID) + " result.value: " + str(result.value))
 
     #@staticmethod
-    def output_result(self):
+    def output_result(self, problem_problemID : str):
         """
         User provides method to output the problem result.
         We only call this for the final result, and this method verifies the final result.
@@ -471,24 +451,28 @@ class FibonacciProgram(object):
 		the final result since we create a new result object after every combine. The final result 
 		is the value in "root".
         """
-        result = FanInSychronizer.resultMap[root_problem_id]
+        result = None 
 
-        dc_executor.MemoizationController.getInstance().stopThread()
+        with debug_lock:
+            result = FanInSychronizer.resultMap["root"]
+        
+        logger.debug("Disabling memoization thread now...")
+        memoization_controller.StopThread()
 
-        logger.debug("Fibonacci(" + n + ") = " + str(result.value))
-        logger.debug("Verifying...")
+        logger.debug("")
+        logger.debug(problem_problemID + ": Fibonacci(" + str(n) + ") = " + str(result.value))
+        logger.debug("")
 
+        logger.debug(problem_problemID + ": Verifying ....... ")
         time.sleep(2)
-
         error = False 
-
         if result.value != expected_value:
             error = True 
         
         if not error:
             logger.debug("Verified.")
         else:
-            logger.error("Error. Unexpected final result.")
+            logger.debug("Error. Expected value: %s, actual value: %s" % (str(expected_value), str(result.value)))
 
 # Global Constants.
 NullResult = ResultType(value = -1, type = -1)

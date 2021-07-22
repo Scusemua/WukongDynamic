@@ -130,6 +130,13 @@ StopResult = None # Serves as an Ack.
 
 __initialized = False 
 
+def StopThread():
+    assert(myThread is not None)
+
+    myThread.disableThread()
+
+    logger.debug("MemoizationThread disabled.")
+
 def Pair(pairingName : str) -> ServerlessNetworkingClientServer:
     assert(__initialized)
 
