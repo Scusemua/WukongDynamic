@@ -141,12 +141,12 @@ def Pair(pairingName : str) -> ServerlessNetworkingClientServer:
     with ChannelMapLock:
         ChannelMap[pairingName] = clientChannel
     
-    logger.debug("MemoizationController: pair: " + pairingName)
+        logger.debug("MemoizationController: pair: " + pairingName)
 
-    with print_lock:
-        logger.debug("channelMap keySet:")
-        for name in ChannelMap:
-            logger.debug(name)
+        with print_lock:
+            logger.debug("channelMap keySet:")
+            for name in ChannelMap:
+                logger.debug(name)
     
     clientChannel.send(NullResult)
     connections = ServerlessNetworkingClientServer(BiChannelForMemoization, clientChannel)
