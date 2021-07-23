@@ -58,7 +58,7 @@ class ResultType(WukongResult):
         if isinstance(other, self.__class__):
             if self.type != other.type:
                 return False 
-            return self.value == other.value and self.problemID == other.problemID 
+            return self.value == other.value and self.problem_id == other.problem_id 
         else:
             return False 
 
@@ -75,7 +75,7 @@ class ResultType(WukongResult):
         elif self.type == -1:
             return parent_to_string + ": NULL RESULT"
         else:
-            return parent_to_string + ": (ID: " + str(self.problemID) + "/value: " + str(self.value) + ")"
+            return parent_to_string + ": (ID: " + str(self.problem_id) + "/value: " + str(self.value) + ")"
 
 class ProblemType(WukongProblem):
     """ class ProblemType provided by User. """
@@ -98,7 +98,7 @@ class ProblemType(WukongProblem):
         self.value = value
     
     def __str__(self):
-        return "(ID: " + str(self.problemID) + ", value: " + str(self.value) + ")"
+        return "(ID: " + str(self.problem_id) + ", value: " + str(self.value) + ")"
 
     def __repr__(self):
         return self.__str__()
@@ -119,14 +119,14 @@ class FibonacciProgram(object):
         as part of problem P since the parent data will be on the stack of subProblems (representing the call stack) for P.) 
         So if some of the parent data is not needed for combine() it should be deleted from the parent problem.
         
-        The field of a problem that will definitely be used is the problemID. Do not trim the problemID.  
-        The FanInStack (in parent class WukongProblem) is not needed by the DivideandConquer framework and 
+        The field of a problem that will definitely be used is the problem_id. Do not trim the problem_id.  
+        The fan_in_stack (in parent class WukongProblem) is not needed by the DivideandConquer framework and 
         can/should be trimmed. 
         One option is to create a trimProblem() method in call WukongProblem and always call this method (in method
         Fanout) in addition to calling User.trimProblem(), where User.tribProblem may be empty..
         """
         # We are cloning a parent's stack when we create a child's stack, and we do not need the parent's stack anymore.
-        problem.FanInStack = None 
+        problem.fan_in_stack = None 
 
     #@staticmethod
     def base_case(self, problem : ProblemType) -> bool:
@@ -156,7 +156,7 @@ class FibonacciProgram(object):
         For example, When computing Fibonacci(4), Fibonacci 3's label will be "4-3" so memoized label is "3", i.e.,
         we will store the result for Fibonacci(3) under the key "3". We will store the result for Fibonacci(4) under the key "4".
         """
-        label = problem.problemID
+        label = problem.problem_id
 
         # Grab last token in: token1 - token2 - .... - tokenLast
         last_index = -1
@@ -190,19 +190,19 @@ class FibonacciProgram(object):
         way to recover the parent ID from a child, either by using a formula like above, or by stacking the IDs as we recurse.
         """
         with debug_lock:
-            #logger.debug("labeler: subProblem ID: " + str(subProblem.problemID) + " parent ID: " + str(parentProblem.problemID))
-            logger.debug(str(parentProblem.problemID) + ": label subProblem ID (assigned in Fan-out): " + str(subProblem.problemID) + " parent ID: " + str(parentProblem.problemID))
+            #logger.debug("labeler: subProblem ID: " + str(subProblem.problem_id) + " parent ID: " + str(parentProblem.problem_id))
+            logger.debug(str(parentProblem.problem_id) + ": label subProblem ID (assigned in Fan-out): " + str(subProblem.problem_id) + " parent ID: " + str(parentProblem.problem_id))
 
-            logger.debug(parentProblem.problemID + ":  labler: parent stack: ")
+            logger.debug(parentProblem.problem_id + ":  labler: parent stack: ")
             stack_string = ""
-            for i in range(0, len(parentProblem.FanInStack)):
-                stack_string += str(parentProblem.FanInStack[i]) + " "
+            for i in range(0, len(parentProblem.fan_in_stack)):
+                stack_string += str(parentProblem.fan_in_stack[i]) + " "
             logger.debug(stack_string)
             
         label = str(subProblem.value)
 
         with debug_lock:
-            logger.debug(parentProblem.problemID + ": labler: generated subProblem Label: " + label)
+            logger.debug(parentProblem.problem_id + ": labler: generated subProblem Label: " + label)
         
         return label
 
@@ -243,14 +243,14 @@ class FibonacciProgram(object):
         as part of problem P since the parent data will be on the stack of subProblems (representing the call stack) for P.) 
         So if some of the parent data is not needed for combine() it should be deleted from the parent problem.
 
-        The field of a problem that will definitely be used is the problemID. Do not trim the problemID. 
-        The FanInStack (in parent class DivideAndConquerExecutor.WukongProblem) is not needed by the DivideandConquer framework and 
+        The field of a problem that will definitely be used is the problem_id. Do not trim the problem_id. 
+        The fan_in_stack (in parent class DivideAndConquerExecutor.WukongProblem) is not needed by the DivideandConquer framework and 
         can/should be trimmed. 
         One option is to create a trimProblem() method in call DivideAndConquerExecutor.WukongProblem and always call this method (in method
         Fanout) in addition to calling User.trimProblem(), where User.tribProblem may be empty.
         """
         # We are including a parent's stack when we create a child's stack, and we do not need the parent's stack anymore.
-        problem.FanInStack = None # Defined in class DivideAndConquerExecutor.WukongProblem
+        problem.fan_in_stack = None # Defined in class DivideAndConquerExecutor.WukongProblem
 
     def inputProblem(self, problem : ProblemType):
         """
@@ -293,11 +293,11 @@ class FibonacciProgram(object):
             str
         """
         with debug_lock:
-            logger.debug("labeler: subProblem ID: " + subproblem.problemID + ", parent ID: " + parent_problem.problemID)
+            logger.debug("labeler: subProblem ID: " + subproblem.problem_id + ", parent ID: " + parent_problem.problem_id)
 
             logger.debug("Parent stack:")
-            for i in range(len(parent_problem.FanInStack)):
-                logger.debug(parent_problem.FanInStack[i] + " ")
+            for i in range(len(parent_problem.fan_in_stack)):
+                logger.debug(parent_problem.fan_in_stack[i] + " ")
 
         return str(subproblem.value)
         
@@ -307,7 +307,7 @@ class FibonacciProgram(object):
         Used for getting the memoized result of (sub)problem (for get(memoizedLabel, result)).
         """   
         memoizedID = None 
-        label = problem.problemID
+        label = problem.problem_id
 
         # Grab the last token in token1 - token2 - ... - tokenLast.
         lastIndex = label.rindex('-')
@@ -341,15 +341,15 @@ class FibonacciProgram(object):
             Nothing 
         """
         with debug_lock:
-            logger.debug(problem.problemID + ": Divide: fibonacci run: value: " + str(problem.value))
-            logger.debug(problem.problemID + ": Divide: problemID: " + str(problem.problemID))
-            stack_string = problem.problemID + ": Divide: FanInStack:"
-            for x in problem.FanInStack:
+            logger.debug(problem.problem_id + ": Divide: fibonacci run: value: " + str(problem.value))
+            logger.debug(problem.problem_id + ": Divide: problem_id: " + str(problem.problem_id))
+            stack_string = problem.problem_id + ": Divide: fan_in_stack:"
+            for x in problem.fan_in_stack:
                 stack_string += str(x) + " "
             
             logger.debug(stack_string)
 
-            logger.debug(problem.problemID + ": Divide: problemID: {}".format(problem.problemID))
+            logger.debug(problem.problem_id + ": Divide: problem_id: {}".format(problem.problem_id))
 
         minus_1 = ProblemType()
         minus_1.value = problem.value - 1
@@ -358,8 +358,8 @@ class FibonacciProgram(object):
         minus_2.value = problem.value - 2
 
         with debug_lock:
-            logger.debug(problem.problemID + ": divide: minus_1: " + str(minus_1))
-            logger.debug(problem.problemID + ": divide: minus_2: " + str(minus_2))
+            logger.debug(problem.problem_id + ": divide: minus_1: " + str(minus_1))
+            logger.debug(problem.problem_id + ": divide: minus_2: " + str(minus_2))
             
         subproblems.append(minus_2)
         subproblems.append(minus_1)
@@ -368,7 +368,7 @@ class FibonacciProgram(object):
     def combine(self, 
         subproblem_results : list,
         combination : ResultType,
-        problemID : str
+        problem_id : str
     ):
         """
             Combine the subproblem results. 
@@ -400,7 +400,7 @@ class FibonacciProgram(object):
         combination.value = first_value + second_value
 
         with debug_lock:
-            logger.debug(problemID + ": combine: firstValue: " + str(first_value) + " secondValue: " + str(second_value) + " combination.value: " + str(combination.value))
+            logger.debug(problem_id + ": combine: firstValue: " + str(first_value) + " secondValue: " + str(second_value) + " combination.value: " + str(combination.value))
     
     #@staticmethod
     def input_problem(self, problem : ProblemType):
@@ -439,7 +439,7 @@ class FibonacciProgram(object):
         result.value = problem.value 
         
         with debug_lock:
-            logger.debug(str(problem.problemID) + ": Sequential: " + str(problem.problemID) + " result.value: " + str(result.value))
+            logger.debug(str(problem.problem_id) + ": Sequential: " + str(problem.problem_id) + " result.value: " + str(result.value))
 
     #@staticmethod
     def output_result(self, problem_problemID : str):
@@ -499,15 +499,15 @@ StopResult = ResultType(value = -1, type = 0)
 #     logger.debug("n: " + str(DivideandConquerFibonacci.n))
     
 #     rootID = str(DivideandConquerFibonacci.n)
-#     FanInStack = list() 
+#     fan_in_stack = list() 
 #     rootProblem = ProblemType()
 
 #     rootProblem.n = DivideandConquerFibonacci.n
 
 #     logger.debug("Root Problem: " + str(rootProblem))
 
-#     rootProblem.FanInStack = FanInStack
-#     rootProblem.problemID = DivideandConquerFibonacci.root_problem_id
+#     rootProblem.fan_in_stack = fan_in_stack
+#     rootProblem.problem_id = DivideandConquerFibonacci.root_problem_id
 
 #     root = DivideAndConquerExecutor.DivideAndConquerExecutor(rootProblem)
 #     root.run()
@@ -557,14 +557,14 @@ main: n: 4
 main: (ID:root/value:4)
 root: Executor: root call pair on DivideAndConquerExecutor.MemoizationController
 root: channelMap keySet:root,
-root: Executor: memoized send1: PROMISEVALUE: problem.problemID root memoizedLabel: root
-root: Executor: memoized rcv1: problem.problemID root receiving ack.
-root: Executor: memoized rcv1: problem.problemID root received ack.
-root: Executor: memoized rcv1: problem.problemID root ack was null_result.
-root: Executor: memoized rcv1: problem.problemID root memoizedLabel: root memoized result: null
+root: Executor: memoized send1: PROMISEVALUE: problem.problem_id root memoizedLabel: root
+root: Executor: memoized rcv1: problem.problem_id root receiving ack.
+root: Executor: memoized rcv1: problem.problem_id root received ack.
+root: Executor: memoized rcv1: problem.problem_id root ack was null_result.
+root: Executor: memoized rcv1: problem.problem_id root memoizedLabel: root memoized result: null
 root: Divide: fibonacci run: value: 4
-root: Divide: problemID: root
-root: Divide: FanInStack:
+root: Divide: problem_id: root
+root: Divide: fan_in_stack:
 root: Divide: minus_1: (ID:null/value:3)
 root: Divide: minus_2: (ID:null/value:2)
 root: Fanout: get subProblemID for non-become task.
@@ -584,14 +584,14 @@ root: Fanout: ID: root becoming left executor: root-3
 
 root-2: Executor: root-2 call pair on DivideAndConquerExecutor.MemoizationController
 root-2: channelMap keySet:root,root-2,
-root-2: Executor: memoized send1: PROMISEVALUE: problem.problemID root-2 memoizedLabel: 2
-root-2: Executor: memoized rcv1: problem.problemID root-2 receiving ack.
-root-2: Executor: memoized rcv1: problem.problemID root-2 received ack.
-root-2: Executor: memoized rcv1: problem.problemID root-2 ack was null_result.
-root-2: Executor: memoized rcv1: problem.problemID root-2 memoizedLabel: 2 memoized result: null   // Q"correct place for this?
+root-2: Executor: memoized send1: PROMISEVALUE: problem.problem_id root-2 memoizedLabel: 2
+root-2: Executor: memoized rcv1: problem.problem_id root-2 receiving ack.
+root-2: Executor: memoized rcv1: problem.problem_id root-2 received ack.
+root-2: Executor: memoized rcv1: problem.problem_id root-2 ack was null_result.
+root-2: Executor: memoized rcv1: problem.problem_id root-2 memoizedLabel: 2 memoized result: null   // Q"correct place for this?
 root-2: Divide: fibonacci run: value: 2
-root-2: Divide: problemID: root-2
-root-2: Divide: FanInStack: (ID:root/value:4)
+root-2: Divide: problem_id: root-2
+root-2: Divide: fan_in_stack: (ID:root/value:4)
 root-2: Divide: minus_1: (ID:null/value:1)
 root-2: Divide: minus_2: (ID:null/value:0)
 root-2: Fanout: get subProblemID for non-become task.
@@ -611,14 +611,14 @@ root-2: Fanout: ID: root-2 becoming left executor: root-2-1
 
 root-3: Executor: root-3 call pair on DivideAndConquerExecutor.MemoizationController
 root-3: channelMap keySet:root-3,root,root-2,
-root-3: Executor: memoized send1: PROMISEVALUE: problem.problemID root-3 memoizedLabel: 3
-root-3: Executor: memoized rcv1: problem.problemID root-3 receiving ack.
-root-3: Executor: memoized rcv1: problem.problemID root-3 received ack.
-root-3: Executor: memoized rcv1: problem.problemID root-3 ack was null_result.
-root-3: Executor: memoized rcv1: problem.problemID root-3 memoizedLabel: 3 memoized result: null
+root-3: Executor: memoized send1: PROMISEVALUE: problem.problem_id root-3 memoizedLabel: 3
+root-3: Executor: memoized rcv1: problem.problem_id root-3 receiving ack.
+root-3: Executor: memoized rcv1: problem.problem_id root-3 received ack.
+root-3: Executor: memoized rcv1: problem.problem_id root-3 ack was null_result.
+root-3: Executor: memoized rcv1: problem.problem_id root-3 memoizedLabel: 3 memoized result: null
 root-3: Divide: fibonacci run: value: 3
-root-3: Divide: problemID: root-3
-root-3: Divide: FanInStack: (ID:root/value:4)
+root-3: Divide: problem_id: root-3
+root-3: Divide: fan_in_stack: (ID:root/value:4)
 root-3: Divide: minus_1: (ID:null/value:2)
 root-3: Divide: minus_2: (ID:null/value:1)
 root-3: Fanout: get subProblemID for non-become task.
@@ -638,17 +638,17 @@ root-3: Fanout: ID: root-3 becoming left executor: root-3-2
 
 root-2-0: Executor: root-2-0 call pair on DivideAndConquerExecutor.MemoizationController
 root-2-0: channelMap keySet:root-3,root-2-0,root,root-2,
-root-2-0: Executor: memoized send1: PROMISEVALUE: problem.problemID root-2-0 memoizedLabel: 0
-root-2-0: Executor: memoized rcv1: problem.problemID root-2-0 receiving ack.
-root-2-0: Executor: memoized rcv1: problem.problemID root-2-0 received ack.
-root-2-0: Executor: memoized rcv1: problem.problemID root-2-0 ack was null_result.
+root-2-0: Executor: memoized send1: PROMISEVALUE: problem.problem_id root-2-0 memoizedLabel: 0
+root-2-0: Executor: memoized rcv1: problem.problem_id root-2-0 receiving ack.
+root-2-0: Executor: memoized rcv1: problem.problem_id root-2-0 received ack.
+root-2-0: Executor: memoized rcv1: problem.problem_id root-2-0 ack was null_result.
 root-2-0: Sequential: root-2-0 result.value: 0
 root-2-0: Executor: base case: result before ProcessBaseCase(): (ID:null: (ID:null/value:0)
 root-2-0: Executor: ProcessBaseCase result: (ID:root-2-0: (ID:root-2-0/value:0)
 root-2-0: **********************Start Fanin operation:
 root-2-0: Fan-in: ID: root-2-0
 root-2-0: Fan-in: becomeExecutor: false
-root-2-0: Fan-in: FanInStack: (ID:root/value:4) (ID:root-2/value:2)
+root-2-0: Fan-in: fan_in_stack: (ID:root/value:4) (ID:root-2/value:2)
 root-2-0: Deliver starting Executors for promised Results:
 root-2-0: Deliver end promised Results:
 root-2-0: Fan-in: ID: root-2-0 parentProblem ID: root-2
@@ -661,23 +661,23 @@ root-2-0: Fan-In: ID: root-2-0: FanInID: root-2: is not become Executor  and its
 // Note: Does not reflect interleaving of calls to MC, e.g., 3-2's pair below occurred before this 2-1 pair
 root-2-1: Executor: root-2-1 call pair on DivideAndConquerExecutor.MemoizationController
 root-2-1: channelMap keySet:root-3,root-2-1,root-2-0,root,root-3-1,root-2,
-root-2-1: Executor: memoized send1: PROMISEVALUE: problem.problemID root-2-1 memoizedLabel: 1
-root-2-1: Executor: memoized rcv1: problem.problemID root-2-1 receiving ack.
-root-2-1: Executor: memoized rcv1: problem.problemID root-2-1 ack was stop.
+root-2-1: Executor: memoized send1: PROMISEVALUE: problem.problem_id root-2-1 memoizedLabel: 1
+root-2-1: Executor: memoized rcv1: problem.problem_id root-2-1 receiving ack.
+root-2-1: Executor: memoized rcv1: problem.problem_id root-2-1 ack was stop.
 
 // Note: Calling pair() again due to previous "Stop" on PROMISEVALUE
 root-2-1: Executor: root-2-1 call pair on DivideAndConquerExecutor.MemoizationController
 root-2-1: channelMap keySet:root-3,root-2-1,root-2-0,root-3-2,root,root-3-1,root-2,
-root-2-1: Executor: memoized send1: PROMISEVALUE: problem.problemID root-2-1 memoizedLabel: 1
-root-2-1: Executor: memoized rcv1: problem.problemID root-2-1 receiving ack.
-root-2-1: Executor: memoized rcv1: problem.problemID root-2-1 received ack.
-root-2-1: Executor: memoized rcv1: problem.problemID root-2-1 memoizedLabel: 1 memoized result: (ID:root-2-1: (ID:root-2-1/value:1)
+root-2-1: Executor: memoized send1: PROMISEVALUE: problem.problem_id root-2-1 memoizedLabel: 1
+root-2-1: Executor: memoized rcv1: problem.problem_id root-2-1 receiving ack.
+root-2-1: Executor: memoized rcv1: problem.problem_id root-2-1 received ack.
+root-2-1: Executor: memoized rcv1: problem.problem_id root-2-1 memoizedLabel: 1 memoized result: (ID:root-2-1: (ID:root-2-1/value:1)
 root-2-1: Executor: else in template: For Problem: (ID:root-2-1/value:0); Memoized result: (ID:root-2-1: (ID:root-2-1/value:1)
 
 root-2-1: **********************Start Fanin operation:
 root-2-1: Fan-in: ID: root-2-1
 root-2-1: Fan-in: becomeExecutor: true
-root-2-1: Fan-in: FanInStack: (ID:root/value:4) (ID:root-2/value:2)
+root-2-1: Fan-in: fan_in_stack: (ID:root/value:4) (ID:root-2/value:2)
 root-2-1: Fan-in: ID: root-2-1 parentProblem ID: root-2
 root-2-1: Fan-in: ID: root-2-1 problem.becomeExecutor: true parentProblem.becomeExecutor: false
 root-2-1: Fan-in: root-3-2,root-2-1: ID: root-2-1: FanIn: root-2 was FanInExecutor: result received:(ID:root-2-0: (ID:root-2-0/value:0)
@@ -686,7 +686,7 @@ root-2-1: (ID:root-2-0: (ID:root-2-0/value:0)
 root-2-1: ID: root-2-1: call combine ***************
 root-2-1: Combine: firstValue: 0 secondValue: 1 combination.value: 1
 
-root-2-1: Exector: result.problemID: root-2-1 put memoizedLabel: 2 result: ID:root-2-1: (ID:root-2-1/value:1)
+root-2-1: Exector: result.problem_id: root-2-1 put memoizedLabel: 2 result: ID:root-2-1: (ID:root-2-1/value:1)
 root-2-1: Deliver starting Executors for promised Results:
 root-2-1: Deliver starting Executor for: root-3-2 problem.becomeExecutor: true problem.didInput: true
 root-2-1: Deliver end promised Results:
@@ -697,11 +697,11 @@ root-2-1: Fan-In: ID: root-2-1: FanInID: root: is not become Executor  and its v
 
 root-3-1: Executor: root-3-1 call pair on DivideAndConquerExecutor.MemoizationController
 root-3-1: channelMap keySet:root-3,root-2-1,root-2-0,root,root-3-1,root-2,
-root-3-1: Executor: memoized send1: PROMISEVALUE: problem.problemID root-3-1 memoizedLabel: 1
-root-3-1: Executor: memoized rcv1: problem.problemID root-3-1 receiving ack.
-root-3-1: Executor: memoized rcv1: problem.problemID root-3-1 received ack.
-root-3-1: Executor: memoized rcv1: problem.problemID root-3-1 ack was null_result.
-root-3-1: Executor: memoized rcv1: problem.problemID root-3-1 memoizedLabel: 1 memoized result: null
+root-3-1: Executor: memoized send1: PROMISEVALUE: problem.problem_id root-3-1 memoizedLabel: 1
+root-3-1: Executor: memoized rcv1: problem.problem_id root-3-1 receiving ack.
+root-3-1: Executor: memoized rcv1: problem.problem_id root-3-1 received ack.
+root-3-1: Executor: memoized rcv1: problem.problem_id root-3-1 ack was null_result.
+root-3-1: Executor: memoized rcv1: problem.problem_id root-3-1 memoizedLabel: 1 memoized result: null
 
 root-3-1: Sequential: root-3-1 result.value: 1
 root-3-1: Executor: base case: result before ProcessBaseCase(): (ID:null: (ID:null/value:1)
@@ -712,7 +712,7 @@ root-3-1: Deliver end promised Results:
 root-3-1: **********************Start Fanin operation:
 root-3-1: Fan-in: ID: root-3-1
 root-3-1: Fan-in: becomeExecutor: false
-root-3-1: Fan-in: FanInStack: (ID:root/value:4) (ID:root-3/value:3)
+root-3-1: Fan-in: fan_in_stack: (ID:root/value:4) (ID:root-3/value:3)
 root-3-1: Fan-in: ID: root-3-1 parentProblem ID: root-3
 root-3-1: Fan-in: ID: root-3-1 problem.becomeExecutor: false parentProblem.becomeExecutor: true
 root-3-1: Fan-In: ID: root-3-1: FanInID: root-3 was not FanInExecutor:  result sent:(ID:root-3-1: (ID:root-3-1/value:1)
@@ -720,21 +720,21 @@ root-3-1: Fan-In: ID: root-3-1: FanInID: root-3: is not become Executor  and its
 
 root-3-2: Executor: root-3-2 call pair on DivideAndConquerExecutor.MemoizationController
 root-3-2: channelMap keySet:root-3,root-2-1,root-2-0,root-3-2,root,root-3-1,root-2,
-root-3-2: Executor: memoized send1: PROMISEVALUE: problem.problemID root-3-2 memoizedLabel: 2
-root-3-2: Executor: memoized rcv1: problem.problemID root-3-2 receiving ack.
-root-3-2: Executor: memoized rcv1: problem.problemID root-3-2 received ack.
-root-3-2: Executor: memoized rcv1: problem.problemID root-3-2 ack was stop.
+root-3-2: Executor: memoized send1: PROMISEVALUE: problem.problem_id root-3-2 memoizedLabel: 2
+root-3-2: Executor: memoized rcv1: problem.problem_id root-3-2 receiving ack.
+root-3-2: Executor: memoized rcv1: problem.problem_id root-3-2 received ack.
+root-3-2: Executor: memoized rcv1: problem.problem_id root-3-2 ack was stop.
 root-3-2: Executor: root-3-2 call pair on DivideAndConquerExecutor.MemoizationController
 root-3-2: channelMap keySet:root-3,root-2-1,root-2-0,root-3-2,root,root-3-1,root-2,
-root-3-2: Executor: memoized send1: PROMISEVALUE: problem.problemID root-3-2 memoizedLabel: 2
-root-3-2: Executor: memoized rcv1: problem.problemID root-3-2 receiving ack.
-root-3-2: Executor: memoized rcv1: problem.problemID root-3-2 received ack.
-root-3-2: Executor: memoized rcv1: problem.problemID root-3-2 memoizedLabel: 2 memoized result: (ID:root-3-2: (ID:root-3-2/value:1)
+root-3-2: Executor: memoized send1: PROMISEVALUE: problem.problem_id root-3-2 memoizedLabel: 2
+root-3-2: Executor: memoized rcv1: problem.problem_id root-3-2 receiving ack.
+root-3-2: Executor: memoized rcv1: problem.problem_id root-3-2 received ack.
+root-3-2: Executor: memoized rcv1: problem.problem_id root-3-2 memoizedLabel: 2 memoized result: (ID:root-3-2: (ID:root-3-2/value:1)
 root-3-2: Executor: else in template: For Problem: (ID:root-3-2/value:0); Memoized result: (ID:root-3-2: (ID:root-3-2/value:1)
 root-3-2: **********************Start Fanin operation:
 root-3-2: Fan-in: ID: root-3-2
 root-3-2: Fan-in: becomeExecutor: true
-root-3-2: Fan-in: FanInStack: (ID:root/value:4) (ID:root-3/value:3)
+root-3-2: Fan-in: fan_in_stack: (ID:root/value:4) (ID:root-3/value:3)
 root-3-2: Fan-in: ID: root-3-2 parentProblem ID: root-3
 root-3-2: Fan-in: ID: root-3-2 problem.becomeExecutor: true parentProblem.becomeExecutor: true
 root-3-2: ID: root-3-2: FanIn: root-3 was FanInExecutor: starting receive.
@@ -743,7 +743,7 @@ root-3-2: FanIn: ID: root-3-2: FanInID: root-3: : Returned from put: executor is
 root-3-2: (ID:root-3-1: (ID:root-3-1/value:1)
 root-3-2: ID: root-3-2: call combine ***************
 root-3-2: Combine: firstValue: 1 secondValue: 1 combination.value: 2
-root-3-2: Exector: result.problemID: root-3-2 put memoizedLabel: 3 result: ID:root-3-2: (ID:root-3-2/value:2)
+root-3-2: Exector: result.problem_id: root-3-2 put memoizedLabel: 3 result: ID:root-3-2: (ID:root-3-2/value:2)
 // Note: May be that no Exeutors are waiting for the results
 root-3-2: Deliver starting Executors for promised Results:
 root-3-2: Deliver end promised Results:
@@ -755,7 +755,7 @@ root-3-2: FanIn: ID: root-3-2: FanInID: root: : Returned from put: executor isLa
 root-3-2: (ID:root-2-1: (ID:root-2-1/value:1)
 root-3-2: ID: root-3-2: call combine ***************
 root-3-2: Combine: firstValue: 1 secondValue: 2 combination.value: 3
-root-3-2: Exector: result.problemID: root-3-2 put memoizedLabel: root result: (ID:root-3-2: (ID:root-3-2/value:3)
+root-3-2: Exector: result.problem_id: root-3-2 put memoizedLabel: root result: (ID:root-3-2: (ID:root-3-2/value:3)
 root-3-2: Deliver starting Executors for promised Results:
 root-3-2: Deliver end promised Results:
 root-3-2: Executor: Writing the final value to root: (ID:root-3-2: (ID:root-3-2/value:3)
@@ -789,7 +789,7 @@ root-2: MemoizationThread: ADDPAIRINGNAME: pairing names after add: root-3,root-
 root-2: MemoizationThread: add pairing name: root-2-1
 root-2: MemoizationThread: ADDPAIRINGNAME: pairing names after add: root-3,root-2-1,root-2-0,root-2,
 root-2: MemoizationThread: remove pairing name: root-2 pairingNames.size: 5
-root-2: MemoizationThread: pairing names after remove root-2root-3,root-2-1,root-2-0,root-3-1,root-2-0: Executor: memoized rcv1: problem.problemID root-2-0 memoizedLabel: 0 memoized result: null
+root-2: MemoizationThread: pairing names after remove root-2root-3,root-2-1,root-2-0,root-3-1,root-2-0: Executor: memoized rcv1: problem.problem_id root-2-0 memoizedLabel: 0 memoized result: null
 
 root-3: MemoizationThread: pair: pairingName: root-3
 root-3: MemoizationThread: promise by: root-3
@@ -797,7 +797,7 @@ root-3: MemoizationThread: add pairing name: root-3-1
 root-3: MemoizationThread: ADDPAIRINGNAME: pairing names after add: root-3,root-2-1,root-2-0,root-3-1,root-2,
 root-3: MemoizationThread: add pairing name: root-3-2
 root-3: MemoizationThread: ADDPAIRINGNAME: pairing names after add: root-3,root-2-1,root-2-0,root-3-2,root-3-1,
-root-3: MemoizationThread: pairing names after remove root-3root-2-1,root-2-0,root-3-2,root-3-1,root-2-1: Executor: memoized rcv1: problem.problemID root-2-1 received ack.
+root-3: MemoizationThread: pairing names after remove root-3root-2-1,root-2-0,root-3-2,root-3-1,root-2-1: Executor: memoized rcv1: problem.problem_id root-2-1 received ack.
 
 root-2-0: MemoizationThread: pair: pairingName: root-2-0
 root-2-0: MemoizationThread: promise by: root-2-0

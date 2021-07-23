@@ -1,5 +1,3 @@
-from DivideAndConquer.Python.wukong.dc_executor import DivideAndConquerExecutor
-from DivideAndConquer.Python.fibonnaci_program import ProblemType
 from wukong.channel import BiChannel, UniChannel
 
 from wukong.client_server import ServerlessNetworkingClientServer
@@ -26,10 +24,15 @@ ChannelMapLock = threading.Lock()   # Controls access to the ChannelMap.
 
 print_lock = threading.Lock()
 
+# User-defined ProblemType class.
+UserProblemType = None 
+
 class MemoizationThread(Thread):
+    """
+    Runs 'within' the MemoizationController.
+    """
     def __init__(
         self,
-        problem = None,
         group=None, 
         target=None, 
         name=None
@@ -48,32 +51,31 @@ class MemoizationThread(Thread):
 
         while self.active:
             # TODO: This is normally in a try-catch with an interrupted exception (in the Java version).
-            msg = None 
             try:
                 logger.debug(">> Memoization Thread awaiting message...")
                 msg = BiChannelForMemoization.rcv2(timeout = 2)
                 logger.debug(">> Memoization Thread received message: " + str(msg))
             except:
                 time.sleep( 0.0001 )
-                continue 
-
-            if (msg.messageType == MemoizationMessageType.PAIR):
-                if msg.problemOrResultID not in PairingNames:
-                    logger.error("MemoizationController: Sender: pairing but receiver does not have pairingName " + str(msg.problemOrResultID))
+                continue
+            
+            if (msg.message_type == MemoizationMessageType.PAIR):
+                if msg.problem_or_result_id not in PairingNames:
+                    logger.error("MemoizationController: Sender: pairing but receiver does not have pairingName " + str(msg.problem_or_result_id))
                     exit(1)
                 
-                logger.debug("MemoizationController: pair: " + str(msg.problemOrResultID))
+                logger.debug("MemoizationController: pair: " + str(msg.problem_or_result_id))
 
                 with ChannelMapLock:
-                    queuePair = ChannelMap[msg.problemOrResultID]
+                    queuePair = ChannelMap[msg.problem_or_result_id]
                     queuePair.send(NullResult)
-            elif (msg.messageType == MemoizationMessageType.ADDPAIRINGNAME):
-                if msg.problemOrResultID in PairingNames:
-                    logger.error("Internal Error: MemoizationThread: Adding a pairing name that already exists: " + str(msg.problemOrResultID))
+            elif (msg.message_type == MemoizationMessageType.ADDPAIRINGNAME):
+                if msg.problem_or_result_id in PairingNames:
+                    logger.error("Internal Error: MemoizationThread: Adding a pairing name that already exists: " + str(msg.problem_or_result_id))
                     exit(1)
                 
-                logger.debug("MemoizationController: add pairing name: " + msg.problemOrResultID)
-                PairingNames.add(msg.problemOrResultID)
+                logger.debug("MemoizationController: add pairing name: " + msg.problem_or_result_id)
+                PairingNames.add(msg.problem_or_result_id)
 
                 with print_lock:
                     logger.debug("MemoizationController: pairing names after add")
@@ -81,74 +83,77 @@ class MemoizationThread(Thread):
                         logger.debug("\tMemoizationController: " + name)
 
                 with ChannelMapLock:
-                    queuePair = ChannelMap[msg.senderID]
+                    queuePair = ChannelMap[msg.sender_id]
                     queuePair.send(NullResult)
-            elif (msg.messageType == MemoizationMessageType.REMOVEPAIRINGNAME):
-                if msg.problemOrResultID not in PairingNames:
-                    logger.error("Internal Error: MemoizationThread: Removing a pairing name that does not exist: " + str(msg.problemOrResultID))
+            elif (msg.message_type == MemoizationMessageType.REMOVEPAIRINGNAME):
+                if msg.problem_or_result_id not in PairingNames:
+                    logger.error("Internal Error: MemoizationThread: Removing a pairing name that does not exist: " + str(msg.problem_or_result_id))
                     exit(1)
                 
-                PairingNames.remove(msg.problemOrResultID)
+                PairingNames.remove(msg.problem_or_result_id)
 
                 with print_lock:
                     logger.debug("MemoizationController: pairing names after remove")
                     for name in PairingNames:
                         logger.debug("\tMemoization Controller: " + str(name))
                 
-                logger.debug("MemoizationController: remove pairing name: " + msg.problemOrResultID 
+                logger.debug("MemoizationController: remove pairing name: " + msg.problem_or_result_id 
                     + " pairingNames.size: " + str(len(PairingNames)))
 
                 with ChannelMapLock:
-                    queuePair = ChannelMap[msg.problemOrResultID]
+                    queuePair = ChannelMap[msg.problem_or_result_id]
                     queuePair.send(NullResult)
-            elif (msg.messageType == MemoizationMessageType.PROMISEVALUE):
-                r1 = MemoizationRecords[msg.memoizationLabel]
+            elif (msg.message_type == MemoizationMessageType.PROMISEVALUE):
+                r1 = MemoizationRecords.get(msg.memoization_label, None)
                 
                 if r1 is None:
                     promise = MemoizationRecord(
-                        result_id = msg.problemOrResultID,
-                        type = MemoizationRecordType.PROMISEDVALUE,
+                        result_id = msg.problem_or_result_id,
+                        record_type = MemoizationRecordType.PROMISEDVALUE,
                         promised_results = [],
                         promised_results_temp = [])
                         
-                    MemoizationRecords[msg.memoizationLabel] = promise
+                    MemoizationRecords[msg.memoization_label] = promise
 
                     with ChannelMapLock:
-                        queuePromise = ChannelMap[msg.problemOrResultID]
-                        logger.debug("MemoizationThread: promise by: " + str(msg.problemOrResultID))
+                        queuePromise = ChannelMap[msg.problem_or_result_id]
+                        logger.debug("MemoizationThread: promise by: " + str(msg.problem_or_result_id))
                         queuePromise.send(NullResult)                    
                 else:
-                    # This is not first promise for msg.memoizationLabel, executor will stop and when 
+                    # This is not first promise for msg.memoization_label, executor will stop and when 
                     # the result is delivered a new one will be created to get result and continue fan-ins.
-                    if r1.type == MemoizationRecordType.PROMISEDVALUE:
-                        logger.debug("MemoizationThread: duplicate promise by: " + str(msg.problemOrResultID))
+                    if r1.record_type == MemoizationRecordType.PROMISEDVALUE:
+                        logger.debug("MemoizationThread: duplicate promise by: " + str(msg.problem_or_result_id))
 
                         promise = PromisedResult(
-                            problem_result_or_id = msg.problemOrResultID,
+                            problem_result_or_id = msg.problem_or_result_id,
                             fan_in_stack = msg.FanInStack,
                             become_executor = msg.becomeExecutor,
                             did_input = msg.didInput
                         )
 
+                        logger.debug(">> type(r1.promised_results) = " + str(type(r1.promised_results)))
+
                         r1.promised_results.add(promise)
-                        r1.promised_results_temp.add(msg.problemOrResultID)
+                        r1.promised_results_temp.add(msg.problem_or_result_id)
 
                         with ChannelMapLock:
-                            queuePromise = ChannelMap[msg.problemOrResultID]
-                            logger.debug("MemoizationThread: promise by: " + str(msg.problemOrResultID))
+                            queuePromise = ChannelMap[msg.problem_or_result_id]
+                            logger.debug("MemoizationThread: promise by: " + str(msg.problem_or_result_id))
                             queuePromise.send(StopResult)  
-                    elif r1.type == MemoizationRecordType.DELIVEREDVALUE:
+                    elif r1.record_type == MemoizationRecordType.DELIVEREDVALUE:
+                        # The first promised result has been delivered, so grab the delivered result.
                         with ChannelMapLock:
-                            queuePromise = ChannelMap[msg.problemOrResultID]
+                            queuePromise = ChannelMap[msg.problem_or_result_id]
 
                             copy_of_return = r1.result.copy()
-                            copy_of_return.problemID = r1.result.problemID
+                            copy_of_return.problem_id = r1.result.problem_id
 
-                            logger.debug("MemoizationThread: promised and delivered so deliver to: " + msg.problemOrResultID)
+                            logger.debug("MemoizationThread: promised and delivered so deliver to: " + msg.problem_or_result_id)
                             queuePromise.send(copy_of_return) 
 
-            elif (msg.messageType == MemoizationMessageType.DELIVEREDVALUE):
-                r2 = MemoizationRecords[msg.memoizationLabel]
+            elif (msg.message_type == MemoizationMessageType.DELIVEREDVALUE):
+                r2 = MemoizationRecords.get(msg.memoization_label, None)
                 logger.debug("MemoizationThread: r2: " + str(r2))
 
                 if r2 is None:
@@ -157,10 +162,10 @@ class MemoizationThread(Thread):
                     exit(1)
                 
                 # Assert:
-                if r2.type == MemoizationRecordType.DELIVEREDVALUE:
-                    logger.error("Internal Error: MemoizationThread: sender: " + str(msg.senderID) + 
-                            " problem/result ID " + str(msg.problemOrResultID) + " memoizationLabel: " 
-                            + str(msg.memoizationLabel) + " delivered result: " + str(msg.result) 
+                if r2.record_type == MemoizationRecordType.DELIVEREDVALUE:
+                    logger.error("Internal Error: MemoizationThread: sender: " + str(msg.sender_id) + 
+                            " problem/result ID " + str(msg.problem_or_result_id) + " memoization_label: " 
+                            + str(msg.memoization_label) + " delivered result: " + str(msg.result) 
                             + " delivered twice.")
                     exit(1)
                 
@@ -180,31 +185,37 @@ class MemoizationThread(Thread):
                 without its data? but user need to trim? but we have a trim
                 Push problem on stack? then pop it before calling executor to unwind stack?
 
-                This may not be the first duplicate promise for msg.memoizationLabel, i.e., other executors 
+                This may not be the first duplicate promise for msg.memoization_label, i.e., other executors 
                 may have been promised the result for this subproblem; so 0, 1, or more executors need to 
                 be created to deliver this result All of these executors are in r2.promisedResults.                 
                 """
-                r2.resultID = msg.problemOrResultID
-                r2.type = MemoizationRecordType.DELIVEREDVALUE
+                r2.resultID = msg.problem_or_result_id
+                r2.record_type = MemoizationRecordType.DELIVEREDVALUE
 
                 # Note: do not create new lists of promisedResults, as we are 
                 # here going to deliver the current promisedResults.
                 copy_of_return = msg.result.copy()
-                copy_of_return.problemID = msg.result.problemID 
+                copy_of_return.problem_id = msg.result.problem_id 
 
                 r2.result = copy_of_return
-                MemoizationRecords[msg.memoizationLabel] = r2
+                MemoizationRecords[msg.memoization_label] = r2
 
-                logger.debug("MemoizationThread: sender: " + str(msg.senderID) + " problem/result ID " 
-                                + str(msg.problemOrResultID) + " memoizationLabel: " + str(msg.memoizationLabel)
+                logger.debug("MemoizationThread: sender: " + str(msg.sender_id) + " problem/result ID " 
+                                + str(msg.problem_or_result_id) + " memoization_label: " + str(msg.memoization_label)
                                 + " delivered result: " + str(msg.result))
 
                 with ChannelMapLock:
-                    queueDeliver = ChannelMap[msg.problemOrResultID]
+                    queueDeliver = ChannelMap[msg.problem_or_result_id]
                     queueDeliver.send(NullResult)
-                    deliver(r2.promisedResults)
+
+                    # if self.problem is not None:
+                    #     print("self.problem.__class__: " + str(self.problem.__class__))
+                    #     print("Type of self.problem.__class__: " + str(type(self.problem.__class__)))
+
+                    Deliver(r2.promised_results)
             else:
-                pass 
+                logger.error("Unknown message type: " + str(msg.message_type))
+                exit(1)
 
 myThread = MemoizationThread()      # Memoization Controller runs, like a Lambda
 
@@ -214,16 +225,26 @@ StopResult = None # Serves as an Ack.
 __initialized = False 
 
 def Deliver(promised_results : list):
+    """
+    Arguments:
+    ----------
+        promised_results (list):
+    """
+    from wukong.dc_executor import DivideAndConquerExecutor
+
     # Create a new Executor to handle the promised result.
     logger.debug("MemoizationController: Deliver starting Executors for promised Results: ")
+
+    logger.debug(">> Promised Results list: " + str(promised_results))
+    logger.debug(">> type(promised_results): " + str(type(promised_results)))
 
     for i in range(0, len(promised_results)):
         executor = promised_results[i]
 
-        queueDeliver = ChannelMap[executor.problemOrResultID]
+        logger.debug(">> 'executor' variable: " + str(executor))
 
-        problem = ProblemType()
-        problem.problemID = executor.problemOrResultID
+        problem = UserProblemType()
+        problem.problem_id = executor.problem_or_result_id
         problem.FanInStack = executor.FanInStack
         problem.becomeExecutor = executor.becomeExecutor
         problem.didInput = executor.didInput 
@@ -237,7 +258,7 @@ def Deliver(promised_results : list):
             config_file_path = threading.current_thread().config_file_path
         )
 
-        logger.debug("Deliver starting Executor for: " + problem.problemID
+        logger.debug("Deliver starting Executor for: " + problem.problem_id
 					+ " problem.becomeExecutor: " + problem.becomeExecutor 
 					+ " problem.didInput: " + problem.didInput)
         
@@ -276,7 +297,12 @@ def Pair(pairingName : str) -> ServerlessNetworkingClientServer:
     connections = ServerlessNetworkingClientServer(BiChannelForMemoization, clientChannel)
     return connections
 
-def StartController(config, null_result = None, stop_result = None):
+def StartController(
+    config = None, 
+    user_problem_type = None,
+    null_result = None, 
+    stop_result = None
+):
     """
     Start the Memoization Controller.
     
@@ -293,11 +319,14 @@ def StartController(config, null_result = None, stop_result = None):
     """
     global NullResult
     global StopResult
+    global UserProblemType
     global __initialized
 
     if (__initialized):
         logger.warn("MemoizationController already initialized.")
         return 
+    
+    logger.debug(">> Starting Memoization Controller now...")
 
     memoization_config = config["memoization"]
     # sources_config = config["sources"]
@@ -315,6 +344,7 @@ def StartController(config, null_result = None, stop_result = None):
     # NullResult = user_module.ResultType() # Serves as an Ack.
     # StopResult = user_module.ResultType() # Serves as an Ack.
 
+    UserProblemType = user_problem_type
     NullResult = null_result
     StopResult = stop_result
 

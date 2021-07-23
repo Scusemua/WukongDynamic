@@ -72,7 +72,7 @@ class DivideAndConquerExecutor(Thread):
         #     memoization_config = config["memoization"]
         #     source_path = sources_config["source-path"]
         #     source_module = sources_config["source-module"]
-        #     logger.debug(self.problem.problemID + ": Importing user-defined module \"" + source_module + "\" from file \"" + source_path + "\" now...")
+        #     logger.debug(self.problem.problem_id + ": Importing user-defined module \"" + source_module + "\" from file \"" + source_path + "\" now...")
         #     spec = importlib.util.spec_from_file_location(source_module, source_path)
         #     user_module = importlib.util.module_from_spec(spec)
         #     spec.loader.exec_module(user_module)
@@ -82,26 +82,29 @@ class DivideAndConquerExecutor(Thread):
     
     def run(self):
         ServerlessNetworkingMemoizer = None 
-        logger.debug(">> Starting Memoization Controller now...")
-        memoization_controller.StartController(self.config, null_result = self.null_result, stop_result = self.stop_result)
+        memoization_controller.StartController(
+            config = self.config, 
+            user_problem_type = self.problem_type,
+            null_result = self.null_result, 
+            stop_result = self.stop_result)
         
         # Start fan-out task.
         if (self.problem.memoize):
-            logger.debug(">> Attempting to pair now using the pairing name \"" + self.problem.problemID + "\"...")
-            ServerlessNetworkingMemoizer = memoization_controller.Pair(self.problem.problemID)
+            logger.debug(">> Attempting to pair now using the pairing name \"" + self.problem.problem_id + "\"...")
+            ServerlessNetworkingMemoizer = memoization_controller.Pair(self.problem.problem_id)
             ack = ServerlessNetworkingMemoizer.rcv1()
 
-        #logger.debug("{}, Preprocessing the problem now...".format(self.problem.problemID))
+        #logger.debug("{}, Preprocessing the problem now...".format(self.problem.problem_id))
         # Pre-process problem, if required.
         self.problem.UserProgram.preprocess(self.problem)
-        #logger.debug("{}, Processing completed.".format(self.problem.problemID))
+        #logger.debug("{}, Processing completed.".format(self.problem.problem_id))
 
         # We do not necessarily input the entire initial problem at once. We may input several sub-problems instead.
-        # Note: The level of Problems is FanInStack.size(). Root problem has empty stack, 2 children of root have
+        # Note: The level of Problems is fan_in_stack.size(). Root problem has empty stack, 2 children of root have
         # root Problem on their stacks, so level 1, etc.
 
-        # Note: Probably easier to use the level of problem, which is easy to compute based on the problem's FanInStack
-        # i.e., level of problems is FanInStack.size(), instead of size of problem. Then two sibling problems would have the 
+        # Note: Probably easier to use the level of problem, which is easy to compute based on the problem's fan_in_stack
+        # i.e., level of problems is fan_in_stack.size(), instead of size of problem. Then two sibling problems would have the 
         # same level, while they might not have the same sizes. You could then run the problem for n levels on a server, capture the subProblems, and 
         # send them to the executors who will ask for them (supplying their problem ID, which is a "task" ID)) when they 
         # get to level n.
@@ -118,67 +121,73 @@ class DivideAndConquerExecutor(Thread):
             # result is 2 in both cases. So in addition to problemLabeler(),
             # we have memoizedLabeler().
 
-            promiseMsg = MemoizationMessage()
-            promiseMsg.messageType = MemoizationMessageType.PROMISEVALUE
-            promiseMsg.senderID = self.problem.problemID
-            promiseMsg.problemOrResultID = self.problem.problemID
-            promiseMsg.becomeExecutor = self.problem.becomeExecutor
-            promiseMsg.didInput = self.problem.didInput
+            promiseMsg = MemoizationMessage(
+                message_type = MemoizationMessageType.PROMISEVALUE,
+                sender_id = self.problem.problem_id,
+                problem_or_result_id = self.problem.problem_id,
+                become_executor = self.problem.become_executor,
+                did_input = self.problem.did_input
+            )
+            # promiseMsg.messageType = MemoizationMessageType.PROMISEVALUE
+            # promiseMsg.senderID = self.problem.problem_id
+            # promiseMsg.problemOrResultID = self.problem.problem_id
+            # promiseMsg.become_executor = self.problem.become_executor
+            # promiseMsg.did_input = self.problem.did_input
             
-            # e.g., if problem.problemID is "4-3", memoizedLabel is "3"
-            memoizedLabel = self.problem.UserProgram.memoizeIDLabeler(self.problem) 
-            promiseMsg.memoizationLabel = memoizedLabel
+            # e.g., if problem.problem_id is "4-3", memoized_label is "3"
+            memoized_label = self.problem.UserProgram.memoizeIDLabeler(self.problem) 
+            promiseMsg.memoization_label = memoized_label
             promiseMsg.result = None    
-            promiseMsg.FanInStack = self.problem.FanInStack
+            promiseMsg.fan_in_stack = self.problem.fan_in_stack
             
             #synchronized(FanInSychronizer.getPrintLock()) {
-                #System.out.println("memoized send1: problem.problemID " + problem.problemID + " memoizedLabel: " + memoizedLabel)
-            logger.debug("memoized send1: problem.problemID " + str(self.problem.problemID) + " memoizedLabel: " + str(memoizedLabel))
+                #System.out.println("memoized send1: problem.problem_id " + problem.problem_id + " memoized_label: " + memoized_label)
+            logger.debug("memoized send1: problem.problem_id " + str(self.problem.problem_id) + " memoized_label: " + str(memoized_label))
             #}
             
             ServerlessNetworkingMemoizer.send1(promiseMsg)
             
             #synchronized(FanInSychronizer.getPrintLock()) {
-                #System.out.println("memoized get: problem.problemID " + problem.problemID + " getting ack.")
-            logger.debug("memoized get: problem.problemID " + str(self.problem.problemID) + " getting ack.")
+                #System.out.println("memoized get: problem.problem_id " + problem.problem_id + " getting ack.")
+            logger.debug("memoized get: problem.problem_id " + str(self.problem.problem_id) + " getting ack.")
             #}
             
             result = ServerlessNetworkingMemoizer.rcv1()
             
             #synchronized(FanInSychronizer.getPrintLock()) {
-                #System.out.println("memoized get: problem.problemID " + problem.problemID + " got ack.")
-            logger.debug("memoized get: problem.problemID " + str(self.problem.problemID) + " got ack.")
+                #System.out.println("memoized get: problem.problem_id " + problem.problem_id + " got ack.")
+            logger.debug("memoized get: problem.problem_id " + str(self.problem.problem_id) + " got ack.")
             #}
             
             if (result == memoization_controller.NullResult):
                 # no memoized result
-                logger.debug("memoized get: problem.problemID " + str(self.problem.problemID) + " ack was None result.")
+                logger.debug("memoized get: problem.problem_id " + str(self.problem.problem_id) + " ack was None result.")
                 result = None
             elif (result == memoization_controller.StopResult):
                 # end executor, to be "restarted" later when subproblem result becomes available
-                logger.debug("memoized get: problem.problemID " + str(self.problem.problemID) + " ack was stop.")
+                logger.debug("memoized get: problem.problem_id " + str(self.problem.problem_id) + " ack was stop.")
                 return 
             else:
                 # got a memoized result for problem, but the result's ID is the ID of the problem whose result 
                 # was memoized, which is not the problem we are working on here. So set ID to proper ID.
-                #logger.debug(">> memoized get: problem.problemID" + str(self.problem.problemID) + " was neither stop nor null.")
+                #logger.debug(">> memoized get: problem.problem_id" + str(self.problem.problem_id) + " was neither stop nor null.")
                 #logger.debug(">> result type: " + str(type(result)))
-                result.problemID = self.problem.problemID
+                result.problem_id = self.problem.problem_id
             
-            logger.debug("memoized get: problem.problemID " + str(self.problem.problemID) + " memoizedLabel: " + str(memoizedLabel) + " memoized result: " + str(result))
+            logger.debug("memoized get: problem.problem_id " + str(self.problem.problem_id) + " memoized_label: " + str(memoized_label) + " memoized result: " + str(result))
         
         if not self.problem.memoize or (self.problem.memoize and result is None):
             result = self.result_type() # result_type is a class, so let's instantiate it 
 
             # rhc: Can we do this if also doing Memoization? I think so.
-            if (len(self.problem.FanInStack) == WukongProblem.INPUT_THRESHOLD and self.problem.didInput == False):
+            if (len(self.problem.fan_in_stack) == WukongProblem.INPUT_THRESHOLD and self.problem.did_input == False):
                 self.problem.UserProgram.inputProblem(self.problem)
-                self.problem.didInput = True
+                self.problem.did_input = True
                 # Debug output is for Merge/Quick Sort only.
                 # synchronized(FanInSychronizer.getPrintLock()) {
                 #     int size = problem.to - problem.from + 1
                 #     System.out.println("inputProblemNew: problem.from: " + problem.from + " problem.to: " + problem.to 
-                #         + " problem.FanInStack.size(): " + problem.FanInStack.size() + " size: " + size)
+                #         + " problem.fan_in_stack.size(): " + problem.fan_in_stack.size() + " size: " + size)
                 #     for (int i=0 i<problem.numbers.length i++)
                 #         System.out.print(problem.numbers[i] + " ")
                 #     System.out.println()
@@ -188,11 +197,11 @@ class DivideAndConquerExecutor(Thread):
             # Using <= and not just == since for odd sized arrays to be sorted, the sizes of subproblems
             # are not always the same. Since using <=, must also check whether we have already input numbers,
             # i.e., once < it will stay less than but we cannot keep inputing numbers.
-            # if (size <= WukongProblem.INPUT_THRESHOLD and problem.didInput == False) {
+            # if (size <= WukongProblem.INPUT_THRESHOLD and problem.did_input == False) {
             #     self.problem.UserProgram.inputProblem(problem) 
             #     synchronized(FanInSychronizer.getPrintLock()) {
             #         System.out.println("inputProblemNew: problem.from: " + problem.from + " problem.to: " + problem.to 
-            #             + " problem.FanInStack.size(): " + problem.FanInStack.size() + " size: " + size)
+            #             + " problem.fan_in_stack.size(): " + problem.fan_in_stack.size() + " size: " + size)
             #         for (int i=0 i<problem.numbers.length i++)
             #             System.out.print(problem.numbers[i] + " ")
             #         System.out.println()
@@ -201,21 +210,21 @@ class DivideAndConquerExecutor(Thread):
         
             # Base case is a sequential algorithm though possibly on a problem of size 1
             if (self.problem.UserProgram.base_case(self.problem)):
-                if (not self.problem.didInput):
+                if (not self.problem.did_input):
                     logger.debug("Error: SEQUENTIAL_THRESHOLD reached before INPUT_THRESHOLD, but we cannot sort the numbers until we input them.")
                     logger.debug("problem.SEQUENTIAL_THRESHOLD: " + str(self.problem.SEQUENTIAL_THRESHOLD) + " problem.INPUT_THRESHOLD: " + str(self.problem.INPUT_THRESHOLD))
                     exit(1)
                 
                 self.problem.UserProgram.sequential(self.problem, result)
 
-                logger.debug("%s base case: result before ProcessBaseCase(): %s" % (self.problem.problemID, str(result)))
+                logger.debug("%s base case: result before ProcessBaseCase(): %s" % (self.problem.problem_id, str(result)))
                 self.problem.ProcessBaseCase(self.problem, result, ServerlessNetworkingMemoizer)
 
                 # rhc: At this point, the recursion stops and we begin the Fan-In operations for this leaf node executor.
             else: # not baseCase
                 # rhc: start Fan-Out task
                 subProblems = list()
-                logger.debug("%s Calling problem.divide()" % self.problem.problemID)
+                logger.debug("%s Calling problem.divide()" % self.problem.problem_id)
                 self.problem.UserProgram.divide(self.problem, subProblems)
 
                 # rhc: end Fan-Out task
@@ -224,7 +233,7 @@ class DivideAndConquerExecutor(Thread):
                 # Makes recursive call to run() for one subproblem and a new executor for the other(s).
                 # Calls self.problem.UserProgram.computeInputsOfSubproblems(problem,subProblems) when level == DivideandConquerFibonacci.ProblemType.INPUT_THRESHOLD
                 # and then divides the input of parent into the two inputs of the children. 
-                logger.debug("%s Calling problem.Fanout()" % self.problem.problemID)
+                logger.debug("%s Calling problem.Fanout()" % self.problem.problem_id)
                 self.problem.Fanout(self.problem, subProblems, ServerlessNetworkingMemoizer)
                 # rhc: end Fan-Out operation
 
@@ -268,6 +277,6 @@ class DivideAndConquerExecutor(Thread):
 
         # Need to output the value having key "root"
         if (finalRemainingExecutor):
-            self.problem.UserProgram.output_result(self.problem.problemID)
+            self.problem.UserProgram.output_result(self.problem.problem_id)
         
         return

@@ -59,7 +59,7 @@ if __name__ == "__main__":
     logger.debug("n: " + str(fibonnaci_program.n))
 
     rootID = str(fibonnaci_program.n)
-    FanInStack = list() 
+    fan_in_stack = list() 
     rootProblem = ProblemType(
         value = fibonnaci_program.n,
         UserProgram = FibonacciProgram()
@@ -67,8 +67,8 @@ if __name__ == "__main__":
 
     logger.debug("Root Problem: " + str(rootProblem))
 
-    rootProblem.FanInStack = FanInStack
-    rootProblem.problemID = fibonnaci_program.root_problem_id
+    rootProblem.fan_in_stack = fan_in_stack
+    rootProblem.problem_id = fibonnaci_program.root_problem_id
 
     root = DivideAndConquerExecutor(
         problem = rootProblem,

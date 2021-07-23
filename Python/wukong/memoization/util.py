@@ -19,24 +19,30 @@ class MemoizationMessage(object):
         self.result = result 
         self.fan_in_stack = fan_in_stack 
         self.become_executor = become_executor 
-        self.did_input = did_input         
+        self.did_input = did_input
+    
+    def __str__(self):
+        return "MemoizationMessage < message_type = " + str(self.message_type) + ", sender_id = " + str(self.sender_id) + ", problem_or_result_id = " + str(self.problem_or_result_id) + ", memoization_label: " + str(self.memoization_label) + ">"
 
 class MemoizationRecord(object):
     def __init__(
         self,
-        type = None,
+        record_type = None,
         result_id = None,
         memoization_label = None,
         result = None,
         promised_results = None,
         promised_results_temp = None
     ):
-        self.type = type,
+        self.record_type = record_type,
         self.result_id = result_id,
         self.memoization_label = memoization_label,
         self.result = result,
         self.promised_results = promised_results,
         self.promised_results_temp = promised_results_temp
+
+        assert(type(promised_results) is list)
+        assert(type(promised_results_temp) is list)
     
     def __str__(self):
         return "type: " + str(type)

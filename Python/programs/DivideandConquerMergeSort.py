@@ -102,7 +102,7 @@ class User (object):
         as part of problem P since the parent data will be on the stack of subProblems (representing the call stack) for P.) 
         So if some of the parent data is not needed for combine() it should be deleted from the parent problem.
 
-        The field of a problem that will definitely be used is the problemID. Do not trim the problemID. 
+        The field of a problem that will definitely be used is the problem_id. Do not trim the problem_id. 
         The FanInStack (in parent class WukongProblem) is not needed by the DivideandConquer framework and 
         can/should be trimmed. 
         One option is to create a trimProblem() method in call WukongProblem and always call this method (in method
@@ -190,7 +190,7 @@ class User (object):
         """
         with debug_lock:
             logger.debug("Divide: merge sort run: from: {} to: {}".format(problem._from, problem.to))
-            logger.debug("Divide: problemID: {}".format(problem.problemID))
+            logger.debug("Divide: problem_id: {}".format(problem.problem_id))
             
             msg = "Divide: FanInStack:"
             for problem_type in problem.fanin_stack:
@@ -200,7 +200,7 @@ class User (object):
         size = problem.to - problem._from + 1
         mid = problem._from + ((problem.to - problem._from) // 2) 
 
-        logger.debug("Divide: ID: {}, mid: {}. mid + 1: {}, to: {}".format(problem.problemID, mid, (mid + 1), problem.to))
+        logger.debug("Divide: ID: {}, mid: {}. mid + 1: {}, to: {}".format(problem.problem_id, mid, (mid + 1), problem.to))
 
         right = ProblemType()
         right.numbers = problem.numbers
@@ -341,7 +341,7 @@ class User (object):
         mid_array = 0 + ((len(problem.numbers) - 1) // 2)
 
         logger.debug("compute_inputs_of_subproblems ( {} INPUT_THRESHOLD) : ID: {}, mid_array: {}, to: {} "
-            .format(">=" if (len(problem.FanInStack) >= WukongProblem.INPUT_THRESHOLD) else "<", problem.problemID, mid_array, problem.to))
+            .format(">=" if (len(problem.FanInStack) >= WukongProblem.INPUT_THRESHOLD) else "<", problem.problem_id, mid_array, problem.to))
         
         left_array = None 
         right_array = None 
@@ -349,14 +349,14 @@ class User (object):
         try:
             with debug_lock:
                 logger.debug("compute_inputs_of_subproblems: problem.numbers: {}".format(problem.numbers))
-                logger.debug("compute_inputs_of_subproblems: ID: {}, len(numbers): {}, numbers: {}".format(problem.problemID, len(problem.numbers), numbers))
+                logger.debug("compute_inputs_of_subproblems: ID: {}, len(numbers): {}, numbers: {}".format(problem.problem_id, len(problem.numbers), numbers))
                 
                 # Assuming that inputNumbers returns the problem's actual from-to subsegment of the complete input.
                 # Copies are made from the parent problem's sub-segment of the input array, are a prefix of parent's copy, and start with 0
-                logger.debug("compute_inputs_of_subproblems: ID: {} size < threshold, make left copy: from: 0, mid_array + 1: {}".format(problem.problemID, mid_array + 1))    
+                logger.debug("compute_inputs_of_subproblems: ID: {} size < threshold, make left copy: from: 0, mid_array + 1: {}".format(problem.problem_id, mid_array + 1))    
                 left_array = problem.numbers.copy()[0: mid_array + 1]
             
-                logger.debug("compute_inputs_of_subproblems: ID: {}, size < threshold, make right copy: mid_array + 1: {}, to+1: {}".format(problem.problemID, mid_array + 1, len(problem.numbers)))
+                logger.debug("compute_inputs_of_subproblems: ID: {}, size < threshold, make right copy: mid_array + 1: {}, to+1: {}".format(problem.problem_id, mid_array + 1, len(problem.numbers)))
                 right_array = problem.numbers.copy()[mid_array + 1, len(problem.numbers)]
 
                 # Assert:
@@ -472,7 +472,7 @@ if __name__ == "__main__":
     logger.debug(root_problem)
 
     root_problem.fanin_stack = fanin_stack
-    root_problem.problemID = root_problem_ID
+    root_problem.problem_id = root_problem_ID
 
     root = DivideAndConquerExecutor(root_problem)
 
