@@ -132,8 +132,6 @@ class MemoizationThread(Thread):
                             did_input = msg.didInput
                         )
 
-                        logger.debug(">> type(r1.promised_results) = " + str(type(r1.promised_results)))
-
                         r1.promised_results.add(promise)
                         r1.promised_results_temp.add(msg.problem_or_result_id)
 
@@ -234,9 +232,6 @@ def Deliver(promised_results : list):
 
     # Create a new Executor to handle the promised result.
     logger.debug("MemoizationController: Deliver starting Executors for promised Results: ")
-
-    logger.debug(">> Promised Results list: " + str(promised_results))
-    logger.debug(">> type(promised_results): " + str(type(promised_results)))
 
     for i in range(0, len(promised_results)):
         executor = promised_results[i]

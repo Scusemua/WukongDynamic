@@ -31,21 +31,21 @@ class MemoizationRecord(object):
         result_id = None,
         memoization_label = None,
         result = None,
-        promised_results = None,
-        promised_results_temp = None
+        promised_results = [],
+        promised_results_temp = []
     ):
-        self.record_type = record_type,
-        self.result_id = result_id,
-        self.memoization_label = memoization_label,
-        self.result = result,
-        self.promised_results = promised_results,
+        self.record_type = record_type
+        self.result_id = result_id
+        self.memoization_label = memoization_label
+        self.result = result
+        self.promised_results = promised_results
         self.promised_results_temp = promised_results_temp
 
-        assert(type(promised_results) is list)
-        assert(type(promised_results_temp) is list)
+        assert(isinstance(self.promised_results, list))
+        assert(isinstance(self.promised_results_temp, list))
     
     def __str__(self):
-        return "type: " + str(type)
+        return "MemoizationRecord <record_type: " + str(self.record_type) + ", result_id: " + str(self.result_id) + ", memoization_label: " + str(self.memoization_label) + ", result: " + str(self.result) + ", promised_results = " + str(self.promised_results) + ">" 
 
 class MemoizationRecordType(Enum):
     PROMISEDVALUE = 0
