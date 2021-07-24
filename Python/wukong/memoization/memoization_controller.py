@@ -154,11 +154,10 @@ class MemoizationThread(Thread):
 
                         with ChannelMapLock:
                             queuePromise = ChannelMap[msg.problem_or_result_id]
-                            logger.debug("MemoizationThread: promise by: " + str(msg.problem_or_result_id))
+                            logger.debug(">> MemoizationThread: sending StopResult for " + str(msg.problem_or_result_id))
                             queuePromise.send(StopResult)  
                     elif r1.record_type == MemoizationRecordType.DELIVEREDVALUE:
                         logger.debug(">> MemoizationThread: returning memoized result...")
-                        exit(0)
 
                         # The first promised result has been delivered, so grab the delivered result.
                         with ChannelMapLock:

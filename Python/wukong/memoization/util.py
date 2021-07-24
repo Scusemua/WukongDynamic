@@ -70,3 +70,6 @@ class PromisedResult(object):
         self.fan_in_stack = fan_in_stack
         self.become_executor = become_executor
         self.did_input = did_input
+    
+    def __str__(self):
+        return "PromisedResult < problem_or_result_id = " + str(self.problem_or_result_id) + ", become_executor = " + str(self.become_executor) + ", did_input = " + str(self.did_input) + ">"

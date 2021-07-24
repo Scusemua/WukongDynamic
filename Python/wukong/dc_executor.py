@@ -149,25 +149,16 @@ class DivideAndConquerExecutor(Thread):
             promiseMsg.memoization_label = memoized_label
             promiseMsg.result = None    
             promiseMsg.fan_in_stack = self.problem.fan_in_stack
-            
-            #synchronized(FanInSychronizer.getPrintLock()) {
-                #System.out.println("memoized send1: problem.problem_id " + problem.problem_id + " memoized_label: " + memoized_label)
+
             logger.debug("memoized send1: problem.problem_id " + str(self.problem.problem_id) + " memoized_label: " + str(memoized_label))
-            #}
             
             ServerlessNetworkingMemoizer.send1(promiseMsg)
             
-            #synchronized(FanInSychronizer.getPrintLock()) {
-                #System.out.println("memoized get: problem.problem_id " + problem.problem_id + " getting ack.")
             logger.debug("memoized get: problem.problem_id " + str(self.problem.problem_id) + " getting ack.")
-            #}
             
             result = ServerlessNetworkingMemoizer.rcv1()
             
-            #synchronized(FanInSychronizer.getPrintLock()) {
-                #System.out.println("memoized get: problem.problem_id " + problem.problem_id + " got ack.")
             logger.debug("memoized get: problem.problem_id " + str(self.problem.problem_id) + " got ack.")
-            #}
             
             if (result == memoization_controller.NullResult):
                 # no memoized result
@@ -178,10 +169,9 @@ class DivideAndConquerExecutor(Thread):
                 logger.debug("memoized get: problem.problem_id " + str(self.problem.problem_id) + " ack was stop.")
                 return 
             else:
+                logger.debug(">> memoized get: problem.problem_id " + str(self.problem.problem_id) + " was memoized result")
                 # got a memoized result for problem, but the result's ID is the ID of the problem whose result 
                 # was memoized, which is not the problem we are working on here. So set ID to proper ID.
-                #logger.debug(">> memoized get: problem.problem_id" + str(self.problem.problem_id) + " was neither stop nor null.")
-                #logger.debug(">> result type: " + str(type(result)))
                 result.problem_id = self.problem.problem_id
             
             logger.debug("memoized get: problem.problem_id " + str(self.problem.problem_id) + " memoized_label: " + str(memoized_label) + " memoized result: " + str(result))

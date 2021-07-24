@@ -5006,3 +5006,406 @@ ut): None parent ID: root-3
 [2021-07-23 20:07:10,970] DEBUG: >> msg.memoization_label: 1
 [2021-07-23 20:07:10,970] DEBUG: >> Keys of MemoizationRecords (5): ['0', '1', '2', '3', 'root']
 [2021-07-23 20:07:10,970] DEBUG: >> MemoizationThread: returning memoized result...
+[2021-07-23 20:15:29,178] DEBUG: Running DivideandConquerFibonacci
+[2021-07-23 20:15:29,178] DEBUG: INPUT_THRESHOLD is: 0
+[2021-07-23 20:15:29,179] DEBUG: OUTPUT_THRESHOLD is: 9223372036854775807
+[2021-07-23 20:15:29,179] DEBUG: SEQUENTIAL_THRESHOLD is: 1
+[2021-07-23 20:15:29,179] DEBUG: memoize is: <property object at 0x0000023F91555D60>
+[2021-07-23 20:15:29,179] DEBUG: n: 4
+[2021-07-23 20:15:29,179] DEBUG: Root Problem: (ID: None, value: 4)
+[2021-07-23 20:15:29,180] DEBUG: >> Starting Memoization Controller now...
+[2021-07-23 20:15:29,180] DEBUG: Initial pairing name: "root"
+[2021-07-23 20:15:29,180] DEBUG: >> Memoization Thread has started running...
+[2021-07-23 20:15:29,180] DEBUG: >> Memoization Controller started successfully!
+[2021-07-23 20:15:29,181] DEBUG: >> Memoization Thread awaiting message...
+[2021-07-23 20:15:29,181] DEBUG: >> Attempting to pair now using the pairing name "root"...
+[2021-07-23 20:15:29,181] DEBUG: MemoizationController: pair: root
+[2021-07-23 20:15:29,181] DEBUG: channelMap keySet:
+[2021-07-23 20:15:29,181] DEBUG: root
+[2021-07-23 20:15:29,181] DEBUG: >> Memoize ID Labeler returning: "root"
+[2021-07-23 20:15:29,181] DEBUG: memoized send1: problem.problem_id root memoized_label: root
+[2021-07-23 20:15:29,182] DEBUG: memoized get: problem.problem_id root getting ack.
+[2021-07-23 20:15:29,182] DEBUG: >> Memoization Thread received message: MemoizationMessage < message_type = MemoizationMessageType.PROMISEVALUE, sender_id = root, problem_or_result_id = root, memoization_label: root>
+[2021-07-23 20:15:29,182] DEBUG: >> msg.memoization_label: root
+[2021-07-23 20:15:29,182] DEBUG: >> Keys of MemoizationRecords (0): []
+[2021-07-23 20:15:29,182] DEBUG: MemoizationThread: promise by: root
+[2021-07-23 20:15:29,182] DEBUG: >> Memoization Thread awaiting message...
+[2021-07-23 20:15:29,182] DEBUG: memoized get: problem.problem_id root got ack.
+[2021-07-23 20:15:29,182] DEBUG: memoized get: problem.problem_id root ack was None result.
+[2021-07-23 20:15:29,183] DEBUG: memoized get: problem.problem_id root memoized_label: root memoized result: None
+[2021-07-23 20:15:29,183] DEBUG: root Calling problem.divide()
+[2021-07-23 20:15:29,183] DEBUG: root: Divide: fibonacci run: value: 4
+[2021-07-23 20:15:29,183] DEBUG: root: Divide: problem_id: root
+[2021-07-23 20:15:29,183] DEBUG: root: Divide: fan_in_stack:
+[2021-07-23 20:15:29,183] DEBUG: root: Divide: problem_id: root
+[2021-07-23 20:15:29,183] DEBUG: root: divide: minus_1: (ID: None, value: 3)
+[2021-07-23 20:15:29,183] DEBUG: root: divide: minus_2: (ID: None, value: 2)
+[2021-07-23 20:15:29,183] DEBUG: root Calling problem.Fanout()
+[2021-07-23 20:15:29,183] DEBUG: root: label subProblem ID (assigned in Fan-out): None parent ID: root
+[2021-07-23 20:15:29,183] DEBUG: root:  labler: parent stack: 
+[2021-07-23 20:15:29,184] DEBUG: 
+[2021-07-23 20:15:29,184] DEBUG: root: labler: generated subProblem Label: 2
+[2021-07-23 20:15:29,184] INFO: root: Fanout: push on childFanInStack: (parent) problem: (ID: root, value: 4)
+[2021-07-23 20:15:29,184] DEBUG: root: Fanout: parent stack (len = 0): 
+[2021-07-23 20:15:29,184] DEBUG: root: Fanout: subProblem stack (len = 1): (ID: root, value: 4) 
+[2021-07-23 20:15:29,184] DEBUG: >> Memoization Thread received message: MemoizationMessage < message_type = MemoizationMessageType.ADDPAIRINGNAME, sender_id = root, problem_or_result_id = root-2, memoization_label: None>
+[2021-07-23 20:15:29,184] DEBUG: MemoizationController: add pairing name: root-2
+[2021-07-23 20:15:29,184] DEBUG: MemoizationController: pairing names after add
+[2021-07-23 20:15:29,184] DEBUG: 	MemoizationController: root
+[2021-07-23 20:15:29,184] DEBUG: 	MemoizationController: root-2
+[2021-07-23 20:15:29,185] DEBUG: >> Memoization Thread awaiting message...
+[2021-07-23 20:15:29,185] DEBUG: root: Fanout: ID: root invoking new right executor: root-2
+[2021-07-23 20:15:29,186] WARNING: MemoizationController already initialized.
+[2021-07-23 20:15:29,186] DEBUG: root: label subProblem ID (assigned in Fan-out): None parent ID: root
+[2021-07-23 20:15:29,186] DEBUG: root:  labler: parent stack: 
+[2021-07-23 20:15:29,187] DEBUG: 
+ Attempting to pair now using the pairing name "root-2"...
+[2021-07-23 20:15:29,188] DEBUG: root: labler: generated subProblem Label: 3
+[2021-07-23 20:15:29,188] DEBUG: MemoizationController: pair: root-2
+[2021-07-23 20:15:29,188] DEBUG: root: Fanout: ID: root becoming left executor: root-3
+[2021-07-23 20:15:29,189] DEBUG: channelMap keySet:
+[2021-07-23 20:15:29,189] DEBUG: root
+[2021-07-23 20:15:29,189] DEBUG: >> Memoization Thread received message: MemoizationMessage < message_type = MemoizationMessageType.ADDPAIRINGNAME, sender_id = root, problem_or_result_id = root-3, memoization_label: None>
+[2021-07-23 20:15:29,190] DEBUG: root-2
+[2021-07-23 20:15:29,190] DEBUG: MemoizationController: add pairing name: root-3
+[2021-07-23 20:15:29,191] DEBUG: MemoizationController: pairing names after add
+[2021-07-23 20:15:29,191] DEBUG: 	MemoizationController: root-3
+[2021-07-23 20:15:29,191] DEBUG: >> Label: "root-2", Last index: 4
+[2021-07-23 20:15:29,195] DEBUG: >> Extracting substring [5, 6] from string "root-2" now...
+[2021-07-23 20:15:29,195] DEBUG: 	MemoizationController: root
+[2021-07-23 20:15:29,195] DEBUG: >> Memoize ID Labeler returning: "2"
+[2021-07-23 20:15:29,195] DEBUG: 	MemoizationController: root-2
+[2021-07-23 20:15:29,196] DEBUG: memoized send1: problem.problem_id root-2 memoized_label: 2
+[2021-07-23 20:15:29,196] DEBUG: >> Memoization Thread awaiting message...
+[2021-07-23 20:15:29,197] DEBUG: memoized get: problem.problem_id root-2 getting ack.
+[2021-07-23 20:15:29,197] DEBUG: >> Memoization Thread received message: MemoizationMessage < message_type = MemoizationMessageType.REMOVEPAIRINGNAME, sender_id = root, problem_or_result_id = root, memoization_label: None>
+[2021-07-23 20:15:29,197] DEBUG: MemoizationController: pairing names after remove
+[2021-07-23 20:15:29,198] DEBUG: 	Memoization Controller: root-3
+[2021-07-23 20:15:29,198] DEBUG: 	Memoization Controller: root-2
+[2021-07-23 20:15:29,198] DEBUG: MemoizationController: remove pairing name: root pairingNames.size: 2
+[2021-07-23 20:15:29,199] DEBUG: >> Memoization Thread awaiting message...
+[2021-07-23 20:15:29,199] WARNING: MemoizationController already initialized.
+[2021-07-23 20:15:29,199] DEBUG: >> Memoization Thread received message: MemoizationMessage < message_type = MemoizationMessageType.PROMISEVALUE, sender_id = root-2, problem_or_result_id = root-2, memoization_label: 2>
+[2021-07-23 20:15:29,200] DEBUG: >> Attempting to pair now using the pairing name "root-3"...
+[2021-07-23 20:15:29,200] DEBUG: >> msg.memoization_label: 2
+[2021-07-23 20:15:29,201] DEBUG: >> Keys of MemoizationRecords (1): ['root']
+[2021-07-23 20:15:29,201] DEBUG: MemoizationController: pair: root-3
+[2021-07-23 20:15:29,202] DEBUG: channelMap keySet:
+[2021-07-23 20:15:29,202] DEBUG: root
+[2021-07-23 20:15:29,202] DEBUG: root-2
+[2021-07-23 20:15:29,203] DEBUG: root-3
+[2021-07-23 20:15:29,203] DEBUG: MemoizationThread: promise by: root-2
+[2021-07-23 20:15:29,203] DEBUG: >> Memoization Thread awaiting message...
+[2021-07-23 20:15:29,204] DEBUG: >> Label: "root-3", Last index: 4
+[2021-07-23 20:15:29,203] DEBUG: memoized get: problem.problem_id root-2 got ack.
+[2021-07-23 20:15:29,205] DEBUG: memoized get: problem.problem_id root-2 ack was None result.
+[2021-07-23 20:15:29,205] DEBUG: >> Extracting substring [5, 6] from string "root-3" now...
+[2021-07-23 20:15:29,205] DEBUG: memoized get: problem.problem_id root-2 memoized_label: 2 memoized result: None
+[2021-07-23 20:15:29,205] DEBUG: >> Memoize ID Labeler returning: "3"
+[2021-07-23 20:15:29,206] DEBUG: memoized send1: problem.problem_id root-3 memoized_label: 3
+[2021-07-23 20:15:29,209] DEBUG: >> Memoization Thread received message: MemoizationMessage < message_type = MemoizationMessageType.PROMISEVALUE, sender_id = root-3, problem_or_result_id = root-3, memoization_label: 3>
+[2021-07-23 20:15:29,209] DEBUG: root-2 Calling problem.divide()
+[2021-07-23 20:15:29,209] DEBUG: memoized get: problem.problem_id root-3 getting ack.
+[2021-07-23 20:15:29,210] DEBUG: root-2: Divide: fibonacci run: value: 2
+[2021-07-23 20:15:29,211] DEBUG: >> Keys of MemoizationRecords (2): ['2', 'root']
+[2021-07-23 20:15:29,211] DEBUG: root-2: Divide: problem_id: root-2
+[2021-07-23 20:15:29,211] DEBUG: MemoizationThread: promise by: root-3
+[2021-07-23 20:15:29,211] DEBUG: root-2: Divide: fan_in_stack:(ID: root, value: 4) 
+[2021-07-23 20:15:29,212] DEBUG: >> Memoization Thread awaiting message...
+[2021-07-23 20:15:29,212] DEBUG: root-2: Divide: problem_id: root-2
+[2021-07-23 20:15:29,212] DEBUG: memoized get: problem.problem_id root-3 got ack.
+[2021-07-23 20:15:29,213] DEBUG: memoized get: problem.problem_id root-3 ack was None result.
+[2021-07-23 20:15:29,213] DEBUG: root-2: divide: minus_1: (ID: None, value: 1)
+[2021-07-23 20:15:29,214] DEBUG: root-2: divide: minus_2: (ID: None, value: 0)
+[2021-07-23 20:15:29,214] DEBUG: memoized get: problem.problem_id root-3 memoized_label: 3 memoized result: None
+[2021-07-23 20:15:29,214] DEBUG: root-2 Calling problem.Fanout()
+[2021-07-23 20:15:29,215] DEBUG: root-2: label subProblem ID (assigned in Fan-out): None parent ID: root-2
+[2021-07-23 20:15:29,216] DEBUG: root-3 Calling problem.divide()
+[2021-07-23 20:15:29,217] DEBUG: root-2:  labler: parent stack: 
+[2021-07-23 20:15:29,217] DEBUG: (ID: root, value: 4) 
+[2021-07-23 20:15:29,217] DEBUG: root-2: labler: generated subProblem Label: 0
+[2021-07-23 20:15:29,217] INFO: root-2: Fanout: push on childFanInStack: (parent) problem: (ID: root-2, value: 2)
+[2021-07-23 20:15:29,218] DEBUG: root-3: Divide: fibonacci run: value: 3
+[2021-07-23 20:15:29,218] DEBUG: root-2: Fanout: parent stack (len = 1): (ID: root, value: 4) 
+[2021-07-23 20:15:29,219] DEBUG: root-2: Fanout: subProblem stack (len = 2): (ID: root, value: 4) (ID: root-2, value: 2) 
+[2021-07-23 20:15:29,219] DEBUG: root-3: Divide: problem_id: root-3
+[2021-07-23 20:15:29,219] DEBUG: root-3: Divide: fan_in_stack:(ID: root, value: 4) 
+[2021-07-23 20:15:29,220] DEBUG: >> Memoization Thread received message: MemoizationMessage < message_type = MemoizationMessageType.ADDPAIRINGNAME, sender_id = root-2, problem_or_result_id = root-2-0, memoization_label: None>
+[2021-07-23 20:15:29,220] DEBUG: MemoizationController: add pairing name: root-2-0
+[2021-07-23 20:15:29,220] DEBUG: root-3: Divide: problem_id: root-3
+[2021-07-23 20:15:29,221] DEBUG: root-3: divide: minus_1: (ID: None, value: 2)
+[2021-07-23 20:15:29,221] DEBUG: MemoizationController: pairing names after add
+[2021-07-23 20:15:29,222] DEBUG: 	MemoizationController: root-3
+[2021-07-23 20:15:29,222] DEBUG: root-3: divide: minus_2: (ID: None, value: 1)
+[2021-07-23 20:15:29,222] DEBUG: 	MemoizationController: root-2
+[2021-07-23 20:15:29,222] DEBUG: root-3 Calling problem.Fanout()
+[2021-07-23 20:15:29,225] DEBUG: 	MemoizationController: root-2-0
+[2021-07-23 20:15:29,225] DEBUG: root-3: label subProblem ID (assigned in Fan-out): None parent ID: root-3
+[2021-07-23 20:15:29,225] DEBUG: >> Memoization Thread awaiting message...
+[2021-07-23 20:15:29,226] DEBUG: root-2: Fanout: ID: root-2 invoking new right executor: root-2-0
+[2021-07-23 20:15:29,226] DEBUG: root-3:  labler: parent stack: 
+[2021-07-23 20:15:29,227] DEBUG: (ID: root, value: 4) 
+[2021-07-23 20:15:29,227] WARNING: MemoizationController already initialized.
+[2021-07-23 20:15:29,228] DEBUG: root-3: labler: generated subProblem Label: 1
+[2021-07-23 20:15:29,228] INFO: root-3: Fanout: push on childFanInStack: (parent) problem: (ID: root-3, value: 3)
+[2021-07-23 20:15:29,228] DEBUG: >> Attempting to pair now using the pairing name "root-2-0"...
+[2021-07-23 20:15:29,228] DEBUG: root-2: label subProblem ID (assigned in Fan-out): None parent ID: root-2
+[2021-07-23 20:15:29,229] DEBUG: MemoizationController: pair: root-2-0
+[2021-07-23 20:15:29,228] DEBUG: root-3: Fanout: parent stack (len = 1): (ID: root, value: 4) 
+[2021-07-23 20:15:29,229] DEBUG: root-2:  labler: parent stack: 
+[2021-07-23 20:15:29,230] DEBUG: channelMap keySet:
+[2021-07-23 20:15:29,230] DEBUG: root-3: Fanout: subProblem stack (len = 2): (ID: root, value: 4) (ID: root-3, value: 3) 
+[2021-07-23 20:15:29,230] DEBUG: (ID: root, value: 4) 
+[2021-07-23 20:15:29,231] DEBUG: root
+[2021-07-23 20:15:29,231] DEBUG: root-2: labler: generated subProblem Label: 1
+[2021-07-23 20:15:29,232] DEBUG: root-2
+[2021-07-23 20:15:29,232] DEBUG: >> Memoization Thread received message: MemoizationMessage < message_type = MemoizationMessageType.ADDPAIRINGNAME, sender_id = root-3, problem_or_result_id = root-3-1, memoization_label: None>
+[2021-07-23 20:15:29,232] DEBUG: root-2: Fanout: ID: root-2 becoming left executor: root-2-1
+[2021-07-23 20:15:29,232] DEBUG: root-3
+[2021-07-23 20:15:29,233] DEBUG: MemoizationController: add pairing name: root-3-1
+[2021-07-23 20:15:29,233] DEBUG: root-2-0
+[2021-07-23 20:15:29,234] DEBUG: MemoizationController: pairing names after add
+[2021-07-23 20:15:29,235] DEBUG: 	MemoizationController: root-2-0
+[2021-07-23 20:15:29,235] DEBUG: 	MemoizationController: root-3-1
+[2021-07-23 20:15:29,235] DEBUG: >> Label: "root-2-0", Last index: 6
+[2021-07-23 20:15:29,236] DEBUG: >> Extracting substring [7, 8] from string "root-2-0" now...
+[2021-07-23 20:15:29,236] DEBUG: 	MemoizationController: root-3
+[2021-07-23 20:15:29,237] DEBUG: >> Memoize ID Labeler returning: "0"
+[2021-07-23 20:15:29,237] DEBUG: 	MemoizationController: root-2
+[2021-07-23 20:15:29,237] DEBUG: memoized send1: problem.problem_id root-2-0 memoized_label: 0
+[2021-07-23 20:15:29,238] DEBUG: >> Memoization Thread awaiting message...
+[2021-07-23 20:15:29,238] DEBUG: root-3: Fanout: ID: root-3 invoking new right executor: root-3-1
+[2021-07-23 20:15:29,240] DEBUG: memoized get: problem.problem_id root-2-0 getting ack.
+[2021-07-23 20:15:29,240] DEBUG: >> Memoization Thread received message: MemoizationMessage < message_type = MemoizationMessageType.ADDPAIRINGNAME, sender_id = root-2, problem_or_result_id = root-2-1, memoization_label: None>
+[2021-07-23 20:15:29,240] DEBUG: root-3: label subProblem ID (assigned in Fan-out): None parent ID: root-3
+[2021-07-23 20:15:29,240] WARNING: MemoizationController already initialized.
+[2021-07-23 20:15:29,242] DEBUG: root-3:  labler: parent stack: 
+[2021-07-23 20:15:29,241] DEBUG: MemoizationController: add pairing name: root-2-1
+[2021-07-23 20:15:29,242] DEBUG: (ID: root, value: 4) 
+[2021-07-23 20:15:29,242] DEBUG: >> Attempting to pair now using the pairing name "root-3-1"...
+[2021-07-23 20:15:29,243] DEBUG: MemoizationController: pairing names after add
+[2021-07-23 20:15:29,243] DEBUG: root-3: labler: generated subProblem Label: 2
+[2021-07-23 20:15:29,244] DEBUG: MemoizationController: pair: root-3-1
+[2021-07-23 20:15:29,244] DEBUG: root-3: Fanout: ID: root-3 becoming left executor: root-3-2
+[2021-07-23 20:15:29,244] DEBUG: 	MemoizationController: root-2-0
+[2021-07-23 20:15:29,245] DEBUG: 	MemoizationController: root-3-1
+[2021-07-23 20:15:29,246] DEBUG: 	MemoizationController: root-2-1
+[2021-07-23 20:15:29,246] DEBUG: 	MemoizationController: root-3
+[2021-07-23 20:15:29,246] DEBUG: 	MemoizationController: root-2
+[2021-07-23 20:15:29,247] DEBUG: channelMap keySet:
+[2021-07-23 20:15:29,247] DEBUG: root
+[2021-07-23 20:15:29,247] DEBUG: root-2
+[2021-07-23 20:15:29,248] DEBUG: root-3
+[2021-07-23 20:15:29,248] DEBUG: root-2-0
+[2021-07-23 20:15:29,249] DEBUG: root-3-1
+[2021-07-23 20:15:29,249] DEBUG: >> Memoization Thread awaiting message...
+[2021-07-23 20:15:29,249] DEBUG: >> Memoization Thread received message: MemoizationMessage < message_type = MemoizationMessageType.PROMISEVALUE, sender_id = root-2-0, problem_or_result_id = root-2-0, memoization_label: 0>
+[2021-07-23 20:15:29,250] DEBUG: >> Label: "root-3-1", Last index: 6
+[2021-07-23 20:15:29,250] DEBUG: >> msg.memoization_label: 0
+[2021-07-23 20:15:29,250] DEBUG: >> Extracting substring [7, 8] from string "root-3-1" now...
+[2021-07-23 20:15:29,251] DEBUG: >> Keys of MemoizationRecords (3): ['2', '3', 'root']
+[2021-07-23 20:15:29,251] DEBUG: >> Memoize ID Labeler returning: "1"
+[2021-07-23 20:15:29,251] DEBUG: MemoizationThread: promise by: root-2-0
+[2021-07-23 20:15:29,252] DEBUG: memoized send1: problem.problem_id root-3-1 memoized_label: 1
+[2021-07-23 20:15:29,252] DEBUG: >> Memoization Thread awaiting message...
+[2021-07-23 20:15:29,252] DEBUG: memoized get: problem.problem_id root-2-0 got ack.
+[2021-07-23 20:15:29,255] DEBUG: memoized get: problem.problem_id root-2-0 ack was None result.
+[2021-07-23 20:15:29,255] DEBUG: >> Memoization Thread received message: MemoizationMessage < message_type = MemoizationMessageType.ADDPAIRINGNAME, sender_id = root-3, problem_or_result_id = root-3-2, memoization_label: None>
+[2021-07-23 20:15:29,255] DEBUG: memoized get: problem.problem_id root-2-0 memoized_label: 0 memoized result: None
+[2021-07-23 20:15:29,256] DEBUG: MemoizationController: add pairing name: root-3-2
+[2021-07-23 20:15:29,257] DEBUG: MemoizationController: pairing names after add
+[2021-07-23 20:15:29,257] DEBUG: root-2-0: Sequential: root-2-0 result.value: 0
+[2021-07-23 20:15:29,258] DEBUG: root-2-0 base case: result before ProcessBaseCase(): None: (ID: None/value: 0)
+[2021-07-23 20:15:29,257] DEBUG: 	MemoizationController: root-2-0
+[2021-07-23 20:15:29,258] DEBUG: 	MemoizationController: root-3-1
+[2021-07-23 20:15:29,259] DEBUG: result: root-2-0: (ID: root-2-0/value: 0)
+[2021-07-23 20:15:29,259] DEBUG: 	MemoizationController: root-2-1
+[2021-07-23 20:15:29,259] DEBUG: >> Label: "root-2-0", Last index: 6
+[2021-07-23 20:15:29,260] DEBUG: 	MemoizationController: root-3
+[2021-07-23 20:15:29,260] DEBUG: 	MemoizationController: root-2
+[2021-07-23 20:15:29,260] DEBUG: >> Extracting substring [7, 8] from string "root-2-0" now...
+[2021-07-23 20:15:29,261] DEBUG: 	MemoizationController: root-3-2
+[2021-07-23 20:15:29,261] DEBUG: >> Memoize ID Labeler returning: "0"
+[2021-07-23 20:15:29,261] DEBUG: >> Memoization Thread awaiting message...
+[2021-07-23 20:15:29,262] DEBUG: >> Memoization Thread received message: MemoizationMessage < message_type = MemoizationMessageType.REMOVEPAIRINGNAME, sender_id = root-2, problem_or_result_id = root-2, memoization_label: None>
+[2021-07-23 20:15:29,262] DEBUG: memoized get: problem.problem_id root-3-1 getting ack.
+[2021-07-23 20:15:29,263] DEBUG: MemoizationController: pairing names after remove
+[2021-07-23 20:15:29,263] DEBUG: 	Memoization Controller: root-2-0
+[2021-07-23 20:15:29,263] DEBUG: 	Memoization Controller: root-3-1
+[2021-07-23 20:15:29,264] DEBUG: 	Memoization Controller: root-2-1
+[2021-07-23 20:15:29,264] DEBUG: 	Memoization Controller: root-3
+[2021-07-23 20:15:29,264] DEBUG: 	Memoization Controller: root-3-2
+[2021-07-23 20:15:29,265] DEBUG: MemoizationController: remove pairing name: root-2 pairingNames.size: 5
+[2021-07-23 20:15:29,265] DEBUG: >> Memoization Thread awaiting message...
+[2021-07-23 20:15:29,265] WARNING: MemoizationController already initialized.
+[2021-07-23 20:15:29,265] DEBUG: >> Memoization Thread received message: MemoizationMessage < message_type = MemoizationMessageType.PROMISEVALUE, sender_id = root-3-1, problem_or_result_id = root-3-1, memoization_label: 1>
+[2021-07-23 20:15:29,266] DEBUG: >> Attempting to pair now using the pairing name "root-2-1"...
+[2021-07-23 20:15:29,266] DEBUG: >> msg.memoization_label: 1
+[2021-07-23 20:15:29,267] DEBUG: MemoizationController: pair: root-2-1
+[2021-07-23 20:15:29,267] DEBUG: >> Keys of MemoizationRecords (4): ['0', '2', '3', 'root']
+[2021-07-23 20:15:29,268] DEBUG: channelMap keySet:
+[2021-07-23 20:15:29,268] DEBUG: root
+[2021-07-23 20:15:29,269] DEBUG: root-2
+[2021-07-23 20:15:29,271] DEBUG: root-3
+[2021-07-23 20:15:29,271] DEBUG: root-2-0
+[2021-07-23 20:15:29,271] DEBUG: root-3-1
+[2021-07-23 20:15:29,272] DEBUG: root-2-1
+[2021-07-23 20:15:29,272] DEBUG: MemoizationThread: promise by: root-3-1
+[2021-07-23 20:15:29,273] DEBUG: >> Memoization Thread awaiting message...
+[2021-07-23 20:15:29,273] DEBUG: memoized get: problem.problem_id root-3-1 got ack.
+[2021-07-23 20:15:29,273] DEBUG: >> Label: "root-2-1", Last index: 6
+[2021-07-23 20:15:29,273] DEBUG: >> Memoization Thread received message: MemoizationMessage < message_type = MemoizationMessageType.REMOVEPAIRINGNAME, sender_id = root-3, problem_or_result_id = root-3, memoization_label: None>
+[2021-07-23 20:15:29,274] DEBUG: memoized get: problem.problem_id root-3-1 ack was None result.
+[2021-07-23 20:15:29,275] DEBUG: MemoizationController: pairing names after remove
+[2021-07-23 20:15:29,274] DEBUG: >> Extracting substring [7, 8] from string "root-2-1" now...
+[2021-07-23 20:15:29,275] DEBUG: memoized get: problem.problem_id root-3-1 memoized_label: 1 memoized result: None
+[2021-07-23 20:15:29,275] DEBUG: 	Memoization Controller: root-2-0
+[2021-07-23 20:15:29,275] DEBUG: >> Memoize ID Labeler returning: "1"
+[2021-07-23 20:15:29,276] DEBUG: 	Memoization Controller: root-3-1
+[2021-07-23 20:15:29,277] DEBUG: memoized send1: problem.problem_id root-2-1 memoized_label: 1
+[2021-07-23 20:15:29,277] DEBUG: root-3-1: Sequential: root-3-1 result.value: 1
+[2021-07-23 20:15:29,277] DEBUG: 	Memoization Controller: root-2-1
+[2021-07-23 20:15:29,278] DEBUG: root-3-1 base case: result before ProcessBaseCase(): None: (ID: None/value: 1)
+[2021-07-23 20:15:29,278] DEBUG: 	Memoization Controller: root-3-2
+[2021-07-23 20:15:29,279] DEBUG: result: root-3-1: (ID: root-3-1/value: 1)
+[2021-07-23 20:15:29,279] DEBUG: MemoizationController: remove pairing name: root-3 pairingNames.size: 4
+[2021-07-23 20:15:29,280] DEBUG: >> Label: "root-3-1", Last index: 6
+[2021-07-23 20:15:29,280] DEBUG: >> Memoization Thread awaiting message...
+[2021-07-23 20:15:29,280] WARNING: MemoizationController already initialized.
+[2021-07-23 20:15:29,281] DEBUG: >> Extracting substring [7, 8] from string "root-3-1" now...
+[2021-07-23 20:15:29,281] DEBUG: memoized get: problem.problem_id root-2-1 getting ack.
+[2021-07-23 20:15:29,281] DEBUG: >> Memoization Thread received message: MemoizationMessage < message_type = MemoizationMessageType.DELIVEREDVALUE, sender_id = root-2-0, problem_or_result_id = root-2-0, memoization_label: 0>
+[2021-07-23 20:15:29,282] DEBUG: >> Attempting to pair now using the pairing name "root-3-2"...
+[2021-07-23 20:15:29,283] DEBUG: >> Memoize ID Labeler returning: "1"
+[2021-07-23 20:15:29,283] DEBUG: MemoizationThread: r2: MemoizationRecord <record_type: MemoizationRecordType.PROMISEDVALUE, result_id: root-2-0, memoization_label: None, result: None, promised_results = []>
+[2021-07-23 20:15:29,284] DEBUG: MemoizationController: pair: root-3-2
+[2021-07-23 20:15:29,284] DEBUG: MemoizationThread: sender: root-2-0 problem/result ID root-2-0 memoization_label: 0 delivered result: root-2-0: (ID: root-2-0/value: 0)
+[2021-07-23 20:15:29,284] DEBUG: channelMap keySet:
+[2021-07-23 20:15:29,285] DEBUG: root
+[2021-07-23 20:15:29,287] DEBUG: root-2
+[2021-07-23 20:15:29,287] DEBUG: root-3
+[2021-07-23 20:15:29,288] DEBUG: root-2-0
+[2021-07-23 20:15:29,288] DEBUG: root-3-1
+[2021-07-23 20:15:29,288] DEBUG: root-2-1
+[2021-07-23 20:15:29,289] DEBUG: root-3-2
+[2021-07-23 20:15:29,289] DEBUG: root-2-0: **********************Start Fanin operation:
+[2021-07-23 20:15:29,289] DEBUG: MemoizationController: Deliver starting Executors for 0 promised results: 
+[2021-07-23 20:15:29,290] DEBUG: root-2-0: Fan-in: ID: root-2-0
+[2021-07-23 20:15:29,290] DEBUG: >> Label: "root-3-2", Last index: 6
+[2021-07-23 20:15:29,290] DEBUG: >> Memoization Thread awaiting message...
+[2021-07-23 20:15:29,291] DEBUG: root-2-0: Fan-in: become_executor: False
+[2021-07-23 20:15:29,291] DEBUG: >> Extracting substring [7, 8] from string "root-3-2" now...
+[2021-07-23 20:15:29,292] DEBUG: >> Memoization Thread received message: MemoizationMessage < message_type = MemoizationMessageType.PROMISEVALUE, sender_id = root-2-1, problem_or_result_id = root-2-1, memoization_label: 1>
+[2021-07-23 20:15:29,292] DEBUG: root-2-0: Fan-in: fan_in_stack: (ID: root, value: 4) (ID: root-2, value: 2) 
+[2021-07-23 20:15:29,292] DEBUG: >> Memoize ID Labeler returning: "2"
+[2021-07-23 20:15:29,293] DEBUG: >> msg.memoization_label: 1
+[2021-07-23 20:15:29,293] DEBUG: root-2-0: Fan-in: ID: root-2-0 parentProblem ID: root-2
+[2021-07-23 20:15:29,293] DEBUG: memoized send1: problem.problem_id root-3-2 memoized_label: 2
+[2021-07-23 20:15:29,294] DEBUG: >> Keys of MemoizationRecords (5): ['0', '1', '2', '3', 'root']
+[2021-07-23 20:15:29,294] DEBUG: root-2-0: Fan-in: ID: root-2-0 problem.become_executor: False parentProblem.become_executor: False
+[2021-07-23 20:15:29,295] DEBUG: 
+[2021-07-23 20:15:29,295] DEBUG: MemoizationThread: duplicate promise by: root-2-1
+[2021-07-23 20:15:29,295] DEBUG: root-2-0: parentProblem ID: root-2, calling isLastFanInExector() now...
+[2021-07-23 20:15:29,295] DEBUG: MemoizationThread: promise by: root-2-1
+[2021-07-23 20:15:29,296] DEBUG: isLastFanInExecutor: Writing to root-2 the value root-2-0: (ID: root-2-0/value: 0)
+[2021-07-23 20:15:29,296] DEBUG: >> Memoization Thread awaiting message...
+[2021-07-23 20:15:29,296] DEBUG: memoized get: problem.problem_id root-2-1 got ack.
+[2021-07-23 20:15:29,297] DEBUG: Fan-In: ID: root-2-0: FanInID: root-2: is not become Executor  and its value was: root-2-0: (ID: root-2-0/value: 0) and after put is root-2-0: (ID: root-2-0/value: 0)
+[2021-07-23 20:15:29,297] DEBUG: >> Memoization Thread received message: MemoizationMessage < message_type = MemoizationMessageType.DELIVEREDVALUE, sender_id = root-3-1, problem_or_result_id = root-3-1, memoization_label: 1>
+[2021-07-23 20:15:29,297] DEBUG: memoized get: problem.problem_id root-3-2 getting ack.
+[2021-07-23 20:15:29,298] DEBUG: MemoizationThread: r2: MemoizationRecord <record_type: MemoizationRecordType.PROMISEDVALUE, result_id: root-3-1, memoization_label: None, result: None, promised_results = [<wukong.memoization.util.PromisedResult object at 0x0000023F91579700>]>
+[2021-07-23 20:15:29,297] DEBUG: memoized get: problem.problem_id root-2-1 ack was stop.
+[2021-07-23 20:15:29,299] DEBUG: MemoizationThread: sender: root-3-1 problem/result ID root-3-1 memoization_label: 1 delivered result: root-3-1: (ID: root-3-1/value: 1)
+[2021-07-23 20:15:29,299] DEBUG: MemoizationController: Deliver starting Executors for 1 promised results: 
+[2021-07-23 20:15:29,299] DEBUG: root-3-1: **********************Start Fanin operation:
+[2021-07-23 20:15:29,300] DEBUG: Deliver starting Executor for: root-2-1 problem.become_executor: True problem.did_input: True
+[2021-07-23 20:15:29,300] DEBUG: root-3-1: Fan-in: ID: root-3-1
+[2021-07-23 20:15:29,303] WARNING: MemoizationController already initialized.
+[2021-07-23 20:15:29,301] DEBUG: root-3-1: Fan-in: become_executor: False
+[2021-07-23 20:15:29,303] DEBUG: Deliver end promised Results: 
+[2021-07-23 20:15:29,304] DEBUG: root-3-1: Fan-in: fan_in_stack: (ID: root, value: 4) (ID: root-3, value: 3) 
+[2021-07-23 20:15:29,304] DEBUG: >> Memoization Thread awaiting message...
+[2021-07-23 20:15:29,304] DEBUG: >> Attempting to pair now using the pairing name "root-2-1"...
+[2021-07-23 20:15:29,305] DEBUG: root-3-1: Fan-in: ID: root-3-1 parentProblem ID: root-3
+[2021-07-23 20:15:29,305] DEBUG: >> Memoization Thread received message: MemoizationMessage < message_type = MemoizationMessageType.PROMISEVALUE, sender_id = root-3-2, problem_or_result_id = root-3-2, memoization_label: 2>
+[2021-07-23 20:15:29,305] DEBUG: MemoizationController: pair: root-2-1
+[2021-07-23 20:15:29,306] DEBUG: root-3-1: Fan-in: ID: root-3-1 problem.become_executor: False parentProblem.become_executor: True
+[2021-07-23 20:15:29,306] DEBUG: >> msg.memoization_label: 2
+[2021-07-23 20:15:29,307] DEBUG: 
+[2021-07-23 20:15:29,307] DEBUG: >> Keys of MemoizationRecords (5): ['0', '1', '2', '3', 'root']
+[2021-07-23 20:15:29,308] DEBUG: MemoizationThread: duplicate promise by: root-3-2
+[2021-07-23 20:15:29,308] DEBUG: root-3-1: parentProblem ID: root-3, calling isLastFanInExector() now...
+[2021-07-23 20:15:29,308] DEBUG: channelMap keySet:
+[2021-07-23 20:15:29,308] DEBUG: isLastFanInExecutor: Writing to root-3 the value root-3-1: (ID: root-3-1/value: 1)
+[2021-07-23 20:15:29,309] DEBUG: root
+[2021-07-23 20:15:29,309] DEBUG: Fan-In: ID: root-3-1: FanInID: root-3: is not become Executor  and its value was: root-3-1: (ID: root-3-1/value: 1) and after put is root-3-1: (ID: root-3-1/value: 1)
+[2021-07-23 20:15:29,309] DEBUG: root-2
+[2021-07-23 20:15:29,310] DEBUG: root-3
+[2021-07-23 20:15:29,311] DEBUG: root-2-0
+[2021-07-23 20:15:29,311] DEBUG: root-3-1
+[2021-07-23 20:15:29,311] DEBUG: root-2-1
+[2021-07-23 20:15:29,312] DEBUG: root-3-2
+[2021-07-23 20:15:29,312] DEBUG: MemoizationThread: promise by: root-3-2
+[2021-07-23 20:15:29,312] DEBUG: >> Memoization Thread awaiting message...
+[2021-07-23 20:15:29,313] DEBUG: >> Label: "root-2-1", Last index: 6
+[2021-07-23 20:15:29,313] DEBUG: >> Memoization Thread received message: MemoizationMessage < message_type = MemoizationMessageType.REMOVEPAIRINGNAME, sender_id = root-2-0, problem_or_result_id = root-2-0, memoization_label: None>
+[2021-07-23 20:15:29,313] DEBUG: memoized get: problem.problem_id root-3-2 got ack.
+[2021-07-23 20:15:29,314] DEBUG: >> Extracting substring [7, 8] from string "root-2-1" now...
+[2021-07-23 20:15:29,314] DEBUG: MemoizationController: pairing names after remove
+[2021-07-23 20:15:29,314] DEBUG: memoized get: problem.problem_id root-3-2 ack was stop.
+[2021-07-23 20:15:29,315] DEBUG: >> Memoize ID Labeler returning: "1"
+[2021-07-23 20:15:29,315] DEBUG: 	Memoization Controller: root-3-1
+[2021-07-23 20:15:29,316] DEBUG: memoized send1: problem.problem_id root-2-1 memoized_label: 1
+[2021-07-23 20:15:29,316] DEBUG: 	Memoization Controller: root-2-1
+[2021-07-23 20:15:29,316] DEBUG: 	Memoization Controller: root-3-2
+[2021-07-23 20:15:29,317] DEBUG: MemoizationController: remove pairing name: root-2-0 pairingNames.size: 3
+[2021-07-23 20:15:29,319] DEBUG: >> Memoization Thread awaiting message...
+[2021-07-23 20:15:29,320] DEBUG: >> Memoization Thread received message: MemoizationMessage < message_type = MemoizationMessageType.REMOVEPAIRINGNAME, sender_id = root-3-1, problem_or_result_id = root-3-1, memoization_label: None>
+[2021-07-23 20:15:29,320] DEBUG: memoized get: problem.problem_id root-2-1 getting ack.
+[2021-07-23 20:15:29,320] DEBUG: MemoizationController: pairing names after remove
+[2021-07-23 20:15:29,321] DEBUG: 	Memoization Controller: root-2-1
+[2021-07-23 20:15:29,321] DEBUG: 	Memoization Controller: root-3-2
+[2021-07-23 20:15:29,321] DEBUG: MemoizationController: remove pairing name: root-3-1 pairingNames.size: 2
+[2021-07-23 20:15:29,322] DEBUG: >> Memoization Thread awaiting message...
+[2021-07-23 20:15:29,322] DEBUG: >> Memoization Thread received message: MemoizationMessage < message_type = MemoizationMessageType.PROMISEVALUE, sender_id = root-2-1, problem_or_result_id = root-2-1, memoization_label: 1>
+[2021-07-23 20:15:29,322] DEBUG: >> msg.memoization_label: 1
+[2021-07-23 20:15:29,323] DEBUG: >> Keys of MemoizationRecords (5): ['0', '1', '2', '3', 'root']
+[2021-07-23 20:15:29,323] DEBUG: >> MemoizationThread: returning memoized result...
+[2021-07-23 20:15:29,323] DEBUG: MemoizationThread: promised and delivered so deliver to: root-2-1
+[2021-07-23 20:15:29,324] DEBUG: >> Memoization Thread awaiting message...
+[2021-07-23 20:15:29,324] DEBUG: memoized get: problem.problem_id root-2-1 got ack.
+[2021-07-23 20:15:29,325] DEBUG: memoized get: problem.problem_id root-2-1 memoized_label: 1 memoized result: root-2-1: (ID: root-2-1/value: 1)
+[2021-07-23 20:15:29,326] DEBUG: else in template: For Problem: (ID: root-2-1, value: 0) Memoized result: root-2-1: (ID: root-2-1/value: 1)
+[2021-07-23 20:15:29,326] DEBUG: root-2-1: **********************Start Fanin operation:
+[2021-07-23 20:15:29,326] DEBUG: root-2-1: Fan-in: ID: root-2-1
+[2021-07-23 20:15:29,327] DEBUG: root-2-1: Fan-in: become_executor: True
+[2021-07-23 20:15:29,327] DEBUG: root-2-1: Fan-in: fan_in_stack: (ID: root, value: 4) (ID: root-2, value: 2) 
+[2021-07-23 20:15:29,327] DEBUG: root-2-1: Fan-in: ID: root-2-1 parentProblem ID: root-2
+[2021-07-23 20:15:29,328] DEBUG: root-2-1: Fan-in: ID: root-2-1 problem.become_executor: True parentProblem.become_executor: False
+[2021-07-23 20:15:29,328] DEBUG: 
+[2021-07-23 20:15:29,328] DEBUG: root-2-1: parentProblem ID: root-2, calling isLastFanInExector() now...
+[2021-07-23 20:15:29,329] DEBUG: isLastFanInExecutor: Writing to root-2 the value root-2-1: (ID: root-2-1/value: 1)
+[2021-07-23 20:15:29,329] DEBUG: root-2-1: FanIn: ID: root-2-1: FanInID: root-2: : Returned from put: executor isLastFanInExecutor 
+[2021-07-23 20:15:29,329] DEBUG: root-2-0: (ID: root-2-0/value: 0)
+[2021-07-23 20:15:29,330] DEBUG: root-2-1: ID: root-2-1: call combine ***************
+[2021-07-23 20:15:29,330] DEBUG: root-2-1: CALLING COMBINE NOW...
+[2021-07-23 20:15:29,330] DEBUG: root-2-1: combine: firstValue: 0 secondValue: 1 combination.value: 1
+[2021-07-23 20:15:29,331] DEBUG: root-2-1: FanIn: ID: root-2-1, result: root-2-1: (ID: root-2-1/value: 1)
+[2021-07-23 20:15:29,332] DEBUG: >> Label: "root-2", Last index: 4
+[2021-07-23 20:15:29,332] DEBUG: >> Extracting substring [5, 6] from string "root-2" now...
+[2021-07-23 20:15:29,333] DEBUG: >> Memoize ID Labeler returning: "2"
+[2021-07-23 20:15:29,335] DEBUG: root-2-1: Exector: result.problem_id: root-2-1 put memoizedLabel: 2 result: root-2-1: (ID: root-2-1/value: 1)
+[2021-07-23 20:15:29,335] DEBUG: root-2-1: Fan-in: ID: root-2-1 parentProblem ID: root
+[2021-07-23 20:15:29,335] DEBUG: root-2-1: Fan-in: ID: root-2-1 problem.become_executor: True parentProblem.become_executor: False
+[2021-07-23 20:15:29,336] DEBUG: 
+[2021-07-23 20:15:29,336] DEBUG: root-2-1: parentProblem ID: root, calling isLastFanInExector() now...
+[2021-07-23 20:15:29,337] DEBUG: isLastFanInExecutor: Writing to root the value root-2-1: (ID: root-2-1/value: 1)
+[2021-07-23 20:15:29,337] DEBUG: Fan-In: ID: root-2-1: FanInID: root: is not become Executor  and its value was: root-2-1: (ID: root-2-1/value: 1) and after put is root-2-1: (ID: root-2-1/value: 1)
+[2021-07-23 20:15:29,338] DEBUG: >> Memoization Thread received message: MemoizationMessage < message_type = MemoizationMessageType.REMOVEPAIRINGNAME, sender_id = root-2-1, problem_or_result_id = root-2-1, memoization_label: None>
+[2021-07-23 20:15:29,338] DEBUG: MemoizationController: pairing names after remove
+[2021-07-23 20:15:29,338] DEBUG: 	Memoization Controller: root-3-2
+[2021-07-23 20:15:29,339] DEBUG: MemoizationController: remove pairing name: root-2-1 pairingNames.size: 1
+[2021-07-23 20:15:29,339] DEBUG: >> Memoization Thread awaiting message...
+[2021-07-23 20:15:31,356] DEBUG: >> Memoization Thread awaiting message...
+[2021-07-23 20:15:33,375] DEBUG: >> Memoization Thread awaiting message...
+[2021-07-23 20:15:35,399] DEBUG: >> Memoization Thread awaiting message...
