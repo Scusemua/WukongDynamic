@@ -38,7 +38,7 @@ if root.handlers:
 debug_lock = threading.Lock() 
 
 n = 4
-expected_value = 55
+expected_value = 3
 root_problem_id = "root"
 
 class ResultType(WukongResult):
@@ -174,18 +174,18 @@ class FibonacciProgram(object):
         try:
             last_index = label.rindex('-')
 
-            logger.debug(">> Label: \"%s\", Last index: %d" % (label, last_index))
+            #logger.debug(">> Label: \"%s\", Last index: %d" % (label, last_index))
 
             # e.g., for computing Fibonacci(4), problem label for Fibonacci(3) will be "4-3", which has '-' so memoize label is "3"
             # which is the problem label for Fibonacci(3).
             memoizedID = label[last_index + 1:len(label)]
 
-            logger.debug(">> Extracting substring [%d, %d] from string \"%s\" now..." % (last_index + 1, len(label), label))
+            #logger.debug(">> Extracting substring [%d, %d] from string \"%s\" now..." % (last_index + 1, len(label), label))
         except ValueError:
             # no '-', e.g., for Fibonacci(4), problem label is "4", which has no '-' so memoize label is also "4"
             memoizedID = label
         
-        logger.debug(">> Memoize ID Labeler returning: \"%s\"" % memoizedID)
+        #logger.debug(">> Memoize ID Labeler returning: \"%s\"" % memoizedID)
         return memoizedID
 
     def problemLabeler(self, subProblem : ProblemType, childId : int, parentProblem : ProblemType, subProblems : list) -> str:

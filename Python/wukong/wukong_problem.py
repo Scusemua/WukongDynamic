@@ -536,15 +536,22 @@ class WukongProblem(object):
                     logger.debug(problem.problem_id + ": Exector: result.problem_id: " + str(result.problem_id) + " put memoizedLabel: " + str(memoizedLabel) + " result: " + str(result))
                     #}
                 
-                if (WukongProblem.USESERVERLESSNETWORKING and problem.memoize):
-                    deliverResultMsg = MemoizationMessage()
-                    deliverResultMsg.message_type = MemoizationMessageType.DELIVEREDVALUE
-                    deliverResultMsg.sender_id = problem.problem_id
-                    deliverResultMsg.problem_or_result_id = result.problem_id
-                    memoizedLabel = self.UserProgram.memoizeIDLabeler(parentProblem)
-                    deliverResultMsg.memoization_label = memoizedLabel
-                    deliverResultMsg.result = result
-                    deliverResultMsg.fan_in_stack = None
+                if (problem.memoize):
+                    deliverResultMsg = MemoizationMessage(
+                        message_type = MemoizationMessageType.DELIVEREDVALUE,
+                        sender_id = problem.problem_id,
+                        problem_or_result_id = result.problem_id,
+                        memoization_label = self.UserProgram.memoizeIDLabeler(parentProblem),
+                        result = result,
+                        fan_in_stack = None
+                    )
+                    # deliverResultMsg.message_type = MemoizationMessageType.DELIVEREDVALUE
+                    # deliverResultMsg.sender_id = problem.problem_id
+                    # deliverResultMsg.problem_or_result_id = result.problem_id
+                    # memoizedLabel = self.UserProgram.memoizeIDLabeler(parentProblem)
+                    # deliverResultMsg.memoization_label = memoizedLabel
+                    # deliverResultMsg.result = result
+                    # deliverResultMsg.fan_in_stack = None
                     ServerlessNetworkingMemoizer.send1(deliverResultMsg)
                     
                     ack = ServerlessNetworkingMemoizer.rcv1()
@@ -571,13 +578,20 @@ class WukongProblem(object):
         
         # Assuming that we are done with all problems and so done talking to Memoization Controller
         if (problem.memoize):
-            removePairingNameMsgForParent = MemoizationMessage() # MemoizationMessage
-            removePairingNameMsgForParent.message_type = MemoizationMessageType.REMOVEPAIRINGNAME
-            removePairingNameMsgForParent.sender_id = problem.problem_id
-            removePairingNameMsgForParent.problem_or_result_id = problem.problem_id
-            removePairingNameMsgForParent.memoization_label = None
-            removePairingNameMsgForParent.result = None
-            removePairingNameMsgForParent.fan_in_stack = None
+            removePairingNameMsgForParent = MemoizationMessage(
+                message_type = MemoizationMessageType.REMOVEPAIRINGNAME,
+                sender_id = problem.problem_id,
+                problem_or_result_id = problem.problem_id,
+                memoization_label = None,
+                result = None,
+                fan_in_stack = None
+            ) # MemoizationMessage
+            # removePairingNameMsgForParent.message_type = MemoizationMessageType.REMOVEPAIRINGNAME
+            # removePairingNameMsgForParent.sender_id = problem.problem_id
+            # removePairingNameMsgForParent.problem_or_result_id = problem.problem_id
+            # removePairingNameMsgForParent.memoization_label = None
+            # removePairingNameMsgForParent.result = None
+            # removePairingNameMsgForParent.fan_in_stack = None
             ServerlessNetworkingMemoizer.send1(removePairingNameMsgForParent)
             ack = ServerlessNetworkingMemoizer.rcv1() # DivideandConquerFibonacci.ResultType
         

@@ -97,6 +97,8 @@ class DivideAndConquerExecutor(Thread):
             user_program_class = self.problem.UserProgram.__class__,
             null_result = self.null_result, 
             stop_result = self.stop_result)
+
+        logger.debug(">>>> Executor for Problem ID " + self.problem.problem_id + " has started running!")
         
         # Start fan-out task.
         if (self.problem.memoize):
@@ -104,10 +106,8 @@ class DivideAndConquerExecutor(Thread):
             ServerlessNetworkingMemoizer = memoization_controller.Pair(self.problem.problem_id)
             ack = ServerlessNetworkingMemoizer.rcv1()
 
-        #logger.debug("{}, Preprocessing the problem now...".format(self.problem.problem_id))
         # Pre-process problem, if required.
         self.problem.UserProgram.preprocess(self.problem)
-        #logger.debug("{}, Processing completed.".format(self.problem.problem_id))
 
         # We do not necessarily input the entire initial problem at once. We may input several sub-problems instead.
         # Note: The level of Problems is fan_in_stack.size(). Root problem has empty stack, 2 children of root have

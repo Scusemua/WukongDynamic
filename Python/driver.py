@@ -53,7 +53,6 @@ if __name__ == "__main__":
     logger.debug("INPUT_THRESHOLD is: {}".format(WukongProblem.INPUT_THRESHOLD))
     logger.debug("OUTPUT_THRESHOLD is: {}".format(WukongProblem.OUTPUT_THRESHOLD))
     logger.debug("SEQUENTIAL_THRESHOLD is: {}".format(ProblemType.SEQUENTIAL_THRESHOLD))
-    logger.debug("memoize is: " + str(ProblemType.memoize))
 
     # Assert 
     seq = None 
@@ -73,6 +72,8 @@ if __name__ == "__main__":
         value = fibonnaci_program.n,
         UserProgram = FibonacciProgram()
     )
+
+    logger.debug("memoize is: " + str(rootProblem.memoize))
 
     logger.debug("Root Problem: " + str(rootProblem))
 

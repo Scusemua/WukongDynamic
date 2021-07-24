@@ -157,7 +157,7 @@ class MemoizationThread(Thread):
                             logger.debug(">> MemoizationThread: sending StopResult for " + str(msg.problem_or_result_id))
                             queuePromise.send(StopResult)  
                     elif r1.record_type == MemoizationRecordType.DELIVEREDVALUE:
-                        logger.debug(">> MemoizationThread: returning memoized result...")
+                        logger.debug(">> MemoizationThread: returning memoized result to problem-or-result-id: " + msg.problem_or_result_id + ", r1.result.problem_id = " + str(r1.result.problem_id)) 
 
                         # The first promised result has been delivered, so grab the delivered result.
                         with ChannelMapLock:
@@ -300,9 +300,11 @@ def Pair(pairingName : str) -> ServerlessNetworkingClientServer:
         logger.debug("MemoizationController: pair: " + pairingName)
 
         with print_lock:
-            logger.debug("channelMap keySet:")
+            print_me = "channelMap keySet: "
             for name in ChannelMap:
-                logger.debug(name)
+                print_me = print_me + ". "
+            
+            logger.debug(print_me)
     
     clientChannel.send(NullResult)
     connections = ServerlessNetworkingClientServer(BiChannelForMemoization, clientChannel)
