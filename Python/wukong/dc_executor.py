@@ -1,6 +1,7 @@
 import multiprocessing
 import sys
 import threading
+import yaml
 
 from threading import Thread 
 from wukong.wukong_problem import WukongProblem
@@ -10,11 +11,19 @@ from .memoization import memoization_controller
 from .memoization.util import MemoizationMessage, MemoizationRecord, MemoizationMessageType
 #from .channel import BiChannel, UniChannel
 
-import yaml 
 import logging
+from logging.handlers import RotatingFileHandler
+from logging import handlers
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
+ch = logging.StreamHandler(sys.stdout)
+ch.setFormatter(formatter)
+logger.addHandler(ch)
+
+fh = handlers.RotatingFileHandler("divide_and_conquer.log", maxBytes=(1048576*5), backupCount=7)
+fh.setFormatter(formatter)
+logger.addHandler(fh)
 
 if logger.handlers:
    for handler in logger.handlers:
@@ -65,9 +74,9 @@ class DivideAndConquerExecutor(Thread):
         self.null_result = null_result
         self.stop_result = stop_result
         self.config_file_path = config_file_path
-        with open(config_file_path) as f:
-            config = yaml.load(f, Loader = yaml.FullLoader)
-            self.config = config 
+        # with open(config_file_path) as f:
+        #     config = yaml.load(f, Loader = yaml.FullLoader)
+        #     self.config = config 
         #     sources_config = config["sources"]
         #     memoization_config = config["memoization"]
         #     source_path = sources_config["source-path"]
@@ -83,8 +92,9 @@ class DivideAndConquerExecutor(Thread):
     def run(self):
         ServerlessNetworkingMemoizer = None 
         memoization_controller.StartController(
-            config = self.config, 
+            #config = self.config, 
             user_problem_type = self.problem_type,
+            user_program_class = self.problem.UserProgram.__class__,
             null_result = self.null_result, 
             stop_result = self.stop_result)
         

@@ -2,6 +2,7 @@
 import logging 
 import threading 
 import time 
+import sys
 
 from wukong.wukong_problem import WukongProblem, FanInSychronizer, WukongResult
 
@@ -11,9 +12,19 @@ import wukong.dc_executor as dc_executor
 import wukong.memoization.memoization_controller as memoization_controller
 #from DivideAndConquerExecutor import WukongProblem, MemoizationController, DivideAndConquerExecutor
 
+import logging
+from logging.handlers import RotatingFileHandler
+from logging import handlers
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
+ch = logging.StreamHandler(sys.stdout)
+ch.setFormatter(formatter)
+logger.addHandler(ch)
+
+fh = handlers.RotatingFileHandler("divide_and_conquer.log", maxBytes=(1048576*5), backupCount=7)
+fh.setFormatter(formatter)
+logger.addHandler(fh)
 
 if logger.handlers:
    for handler in logger.handlers:
@@ -27,7 +38,7 @@ if root.handlers:
 debug_lock = threading.Lock() 
 
 n = 4
-expected_value = 3
+expected_value = 55
 root_problem_id = "root"
 
 class ResultType(WukongResult):
@@ -161,15 +172,20 @@ class FibonacciProgram(object):
         # Grab last token in: token1 - token2 - .... - tokenLast
         last_index = -1
         try:
-            label.rindex('-')
+            last_index = label.rindex('-')
+
+            logger.debug(">> Label: \"%s\", Last index: %d" % (label, last_index))
 
             # e.g., for computing Fibonacci(4), problem label for Fibonacci(3) will be "4-3", which has '-' so memoize label is "3"
             # which is the problem label for Fibonacci(3).
-            memoizedID = label[last_index + 1, len(label)]
-        except:
+            memoizedID = label[last_index + 1:len(label)]
+
+            logger.debug(">> Extracting substring [%d, %d] from string \"%s\" now..." % (last_index + 1, len(label), label))
+        except ValueError:
             # no '-', e.g., for Fibonacci(4), problem label is "4", which has no '-' so memoize label is also "4"
             memoizedID = label
         
+        logger.debug(">> Memoize ID Labeler returning: \"%s\"" % memoizedID)
         return memoizedID
 
     def problemLabeler(self, subProblem : ProblemType, childId : int, parentProblem : ProblemType, subProblems : list) -> str:

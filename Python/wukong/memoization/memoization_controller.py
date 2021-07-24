@@ -9,11 +9,21 @@ from threading import Thread
 import time
 import threading
 import importlib
+import sys
 
 import logging
+from logging.handlers import RotatingFileHandler
+from logging import handlers
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
+ch = logging.StreamHandler(sys.stdout)
+ch.setFormatter(formatter)
+logger.addHandler(ch)
+
+fh = handlers.RotatingFileHandler("divide_and_conquer.log", maxBytes=(1048576*5), backupCount=7)
+fh.setFormatter(formatter)
+logger.addHandler(fh)
 
 BiChannelForMemoization = BiChannel("MemoizationController")
 PairingNames = set()                # Set of strings.
@@ -26,6 +36,8 @@ print_lock = threading.Lock()
 
 # User-defined ProblemType class.
 UserProblemType = None 
+UserResultType = None 
+UserProgramClass = None
 
 class MemoizationThread(Thread):
     """
@@ -105,7 +117,12 @@ class MemoizationThread(Thread):
                     queuePair.send(NullResult)
             elif (msg.message_type == MemoizationMessageType.PROMISEVALUE):
                 r1 = MemoizationRecords.get(msg.memoization_label, None)
-                
+
+                with print_lock:
+                    logger.debug(">> msg.memoization_label: " + str(msg.memoization_label))
+                    sorted_keys = sorted(MemoizationRecords.keys())
+                    logger.debug(">> Keys of MemoizationRecords (%d): %s" % (len(MemoizationRecords), str(sorted_keys)))
+                    
                 if r1 is None:
                     promise = MemoizationRecord(
                         result_id = msg.problem_or_result_id,
@@ -126,20 +143,23 @@ class MemoizationThread(Thread):
                         logger.debug("MemoizationThread: duplicate promise by: " + str(msg.problem_or_result_id))
 
                         promise = PromisedResult(
-                            problem_result_or_id = msg.problem_or_result_id,
-                            fan_in_stack = msg.FanInStack,
-                            become_executor = msg.becomeExecutor,
-                            did_input = msg.didInput
+                            problem_or_result_id = msg.problem_or_result_id,
+                            fan_in_stack = msg.fan_in_stack,
+                            become_executor = msg.become_executor,
+                            did_input = msg.did_input
                         )
 
-                        r1.promised_results.add(promise)
-                        r1.promised_results_temp.add(msg.problem_or_result_id)
+                        r1.promised_results.append(promise)
+                        r1.promised_results_temp.append(msg.problem_or_result_id)
 
                         with ChannelMapLock:
                             queuePromise = ChannelMap[msg.problem_or_result_id]
                             logger.debug("MemoizationThread: promise by: " + str(msg.problem_or_result_id))
                             queuePromise.send(StopResult)  
                     elif r1.record_type == MemoizationRecordType.DELIVEREDVALUE:
+                        logger.debug(">> MemoizationThread: returning memoized result...")
+                        exit(0)
+
                         # The first promised result has been delivered, so grab the delivered result.
                         with ChannelMapLock:
                             queuePromise = ChannelMap[msg.problem_or_result_id]
@@ -231,31 +251,28 @@ def Deliver(promised_results : list):
     from wukong.dc_executor import DivideAndConquerExecutor
 
     # Create a new Executor to handle the promised result.
-    logger.debug("MemoizationController: Deliver starting Executors for promised Results: ")
+    logger.debug("MemoizationController: Deliver starting Executors for " + str(len(promised_results)) + " promised results: ")
 
     for i in range(0, len(promised_results)):
         executor = promised_results[i]
 
-        logger.debug(">> 'executor' variable: " + str(executor))
-
-        problem = UserProblemType()
+        problem = UserProblemType(UserProgram = UserProgramClass())
         problem.problem_id = executor.problem_or_result_id
-        problem.FanInStack = executor.FanInStack
-        problem.becomeExecutor = executor.becomeExecutor
-        problem.didInput = executor.didInput 
+        problem.fan_in_stack = executor.fan_in_stack
+        problem.become_executor = executor.become_executor
+        problem.did_input = executor.did_input 
 
         new_executor = DivideAndConquerExecutor(
             problem = problem,
-            problem_type = threading.current_thread().problem_type,
-            result_type = threading.current_thread().result_type,
-            null_result = threading.current_thread().null_result,
-            stop_result = threading.current_thread().stop_result,
-            config_file_path = threading.current_thread().config_file_path
+            problem_type = UserProblemType,
+            result_type = UserResultType,
+            null_result = NullResult,
+            stop_result = StopResult
         )
 
-        logger.debug("Deliver starting Executor for: " + problem.problem_id
-					+ " problem.becomeExecutor: " + problem.becomeExecutor 
-					+ " problem.didInput: " + problem.didInput)
+        logger.debug("Deliver starting Executor for: " + str(problem.problem_id)
+					+ " problem.become_executor: " + str(problem.become_executor)
+					+ " problem.did_input: " + str(problem.did_input))
         
         new_executor.start()
 
@@ -295,6 +312,8 @@ def Pair(pairingName : str) -> ServerlessNetworkingClientServer:
 def StartController(
     config = None, 
     user_problem_type = None,
+    user_result_type = None,
+    user_program_class = None,
     null_result = None, 
     stop_result = None
 ):
@@ -315,6 +334,8 @@ def StartController(
     global NullResult
     global StopResult
     global UserProblemType
+    global UserResultType
+    global UserProgramClass
     global __initialized
 
     if (__initialized):
@@ -323,10 +344,10 @@ def StartController(
     
     logger.debug(">> Starting Memoization Controller now...")
 
-    memoization_config = config["memoization"]
+    # memoization_config = config["memoization"]
     # sources_config = config["sources"]
     
-    initial_pairing_name = memoization_config["initial-pairing-name"]
+    initial_pairing_name = "root" #memoization_config["initial-pairing-name"]
     logger.debug("Initial pairing name: \"" + initial_pairing_name + "\"")
 
     # source_path = sources_config["source-path"]
@@ -340,6 +361,8 @@ def StartController(
     # StopResult = user_module.ResultType() # Serves as an Ack.
 
     UserProblemType = user_problem_type
+    UserResultType = user_result_type
+    UserProgramClass = user_program_class
     NullResult = null_result
     StopResult = stop_result
 

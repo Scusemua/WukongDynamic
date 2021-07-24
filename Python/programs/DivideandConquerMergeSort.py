@@ -103,7 +103,7 @@ class User (object):
         So if some of the parent data is not needed for combine() it should be deleted from the parent problem.
 
         The field of a problem that will definitely be used is the problem_id. Do not trim the problem_id. 
-        The FanInStack (in parent class WukongProblem) is not needed by the DivideandConquer framework and 
+        The fan_in_stack (in parent class WukongProblem) is not needed by the DivideandConquer framework and 
         can/should be trimmed. 
         One option is to create a trimProblem() method in call WukongProblem and always call this method (in method
         Fanout) in addition to calling User.trimProblem(), where User.tribProblem may be empty.
@@ -112,7 +112,7 @@ class User (object):
         problem.numbers = None 
 
         # We are including a parent's stack when we create a child's stack, and we do not need the parent's stack anymore.
-        problem.FanInStack = None # Defined in class WukongProblem
+        problem.fan_in_stack = None # Defined in class WukongProblem
 
     @staticmethod 
     def problem_labeler(
@@ -192,7 +192,7 @@ class User (object):
             logger.debug("Divide: merge sort run: from: {} to: {}".format(problem._from, problem.to))
             logger.debug("Divide: problem_id: {}".format(problem.problem_id))
             
-            msg = "Divide: FanInStack:"
+            msg = "Divide: fan_in_stack:"
             for problem_type in problem.fanin_stack:
                 msg = msg + "{} ".format(problem_type)
             logger.debug(msg)
@@ -341,7 +341,7 @@ class User (object):
         mid_array = 0 + ((len(problem.numbers) - 1) // 2)
 
         logger.debug("compute_inputs_of_subproblems ( {} INPUT_THRESHOLD) : ID: {}, mid_array: {}, to: {} "
-            .format(">=" if (len(problem.FanInStack) >= WukongProblem.INPUT_THRESHOLD) else "<", problem.problem_id, mid_array, problem.to))
+            .format(">=" if (len(problem.fan_in_stack) >= WukongProblem.INPUT_THRESHOLD) else "<", problem.problem_id, mid_array, problem.to))
         
         left_array = None 
         right_array = None 

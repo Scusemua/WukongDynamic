@@ -1,11 +1,21 @@
 from .channel import UniChannel, BiChannel
 import yaml 
 import importlib
+import sys
 
 import logging
+from logging.handlers import RotatingFileHandler
+from logging import handlers
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
+ch = logging.StreamHandler(sys.stdout)
+ch.setFormatter(formatter)
+logger.addHandler(ch)
+
+fh = handlers.RotatingFileHandler("divide_and_conquer.log", maxBytes=(1048576*5), backupCount=7)
+fh.setFormatter(formatter)
+logger.addHandler(fh)
 
 if logger.handlers:
    for handler in logger.handlers:

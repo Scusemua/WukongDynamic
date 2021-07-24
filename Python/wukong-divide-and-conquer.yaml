@@ -2,5 +2,5 @@
 #   source-module: "DivideandConquerFibonacci"
 #   source-path: "./DivideandConquerFibonacci.py"
 #   user-program-name: "FibonacciProgram"
-memoization:
-  initial-pairing-name: "root"
+# memoization:
+#   initial-pairing-name: "root"
