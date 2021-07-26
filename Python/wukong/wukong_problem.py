@@ -597,6 +597,42 @@ class WukongProblem(object):
         
         # Only the final executor, i.e., the last executor to execute the final Fan-in task, makes it to here.
         return True
+    
+    def fanout_problem_labeler(
+        self,
+        parent_problem_label = None,
+        fanout_child_index = None,
+    ) -> str:
+        """
+        This function will be called once for each downstream task in a fan-out operation.
+
+        This function will take the parent label and concatenate [`fanout_child_index`, `size`]. 
+
+        As an example, the "root" task would be "[0,1]". If "root" forked three children, the problem 
+        labels of the three children would be "[0,1][0,3]", "[0,1][1,3]", and "[0,1][2,3]".
+        
+        Keyword Arguments:
+            parent_problem_label (str): Label of the parent problem. This is of the form L[x,y][u,v], where L can be empty.
+
+            fanout_child_index (int): The index of the downstream task (i.e., this is child #1, #2, etc.).
+        """
+        pass 
+
+    def fanin_problem_labeler(
+        self,
+        parent_problem_label = None,
+    ) -> str:
+        """
+        The parent label is of the form L[x,y][u,v]. This function returns L[x + y, y]. 
+        That is, this replaces the [x,y][u,v] with [x+y,y].
+
+        Let's say we have "[0,1][0,3][1,3]" (i.e., two fork/fan-out operations). 
+        The fan-in would be "[0,1][3,3]".
+
+        Keyword Arguments:
+            parent_problem_label (str): Label of the parent problem. This is of the form L[x,y][u,v], where L can be empty.
+        """
+        pass 
 
 class WukongResult(object):
     """
