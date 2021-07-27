@@ -602,6 +602,7 @@ class WukongProblem(object):
         self,
         parent_problem_label = None,
         fanout_child_index = None,
+        num_child_problems = None
     ) -> str:
         """
         This function will be called once for each downstream task in a fan-out operation.
@@ -612,25 +613,46 @@ class WukongProblem(object):
         labels of the three children would be "[0,1][0,3]", "[0,1][1,3]", and "[0,1][2,3]".
         
         Keyword Arguments:
-            parent_problem_label (str): Label of the parent problem. This is of the form L[x,y][u,v], where L can be empty.
+            parent_problem_label (str): Label of the parent problem. This is of the form L[x,y][u,v], 
+                                        where L can be empty.
 
             fanout_child_index (int): The index of the downstream task (i.e., this is child #1, #2, etc.).
+
+            num_child_problems (int): The number of child/downstream tasks in this fan-out operation.
         """
-        pass 
+        return parent_problem_label + "[%d,%d]" % (fanout_child_index, num_child_problems)
 
     def fanin_problem_labeler(
         self,
         parent_problem_label = None,
     ) -> str:
         """
-        The parent label is of the form L[x,y][u,v]. This function returns L[x + y, y]. 
-        That is, this replaces the [x,y][u,v] with [x+y,y].
+        The parent label is of the form L[x,y][u,v]. This function returns L[<x + y>, y]. 
+        That is, this replaces the [x,y][u,v] with [x+y,y]. So the resulting string is of the form
+        [z,y] where z = x + y.
 
         Let's say we have "[0,1][0,3][1,3]" (i.e., two fork/fan-out operations). 
         The fan-in would be "[0,1][3,3]".
 
         Keyword Arguments:
             parent_problem_label (str): Label of the parent problem. This is of the form L[x,y][u,v], where L can be empty.
+        """
+        # Indexing by `[:-1]` leaves off just the last character.
+        second_right_bracket_index = parent_problem_label[:-1].rindex("]")
+        associated_left_bracket_index = parent_problem_label.rindex("[", 0, second_right_bracket_index)
+        comma_index = parent_problem_label.index(",", associated_left_bracket_index, second_right_bracket_index)
+
+        x = int(parent_problem_label[associated_left_bracket_index+1:comma_index])
+        y = int(parent_problem_label[comma_index+1:second_right_bracket_index])
+
+        return parent_problem_label[0:associated_left_bracket_index] + "[%d,%d]" % (x + y, y)
+
+    def __extract_last_brackets(self, label):
+        """
+        Given a string `label` of the form "[a,b][c,d]...[y,z]" where the letters are integers, this returns
+        a 2-tuple (i.e., a tuple) where the first element is the string "[a,b][c,d]...[w,x]" and the second
+        element is another 2-tuple where the first element is the integer y and the second element is the
+        integer z.
         """
         pass 
 
