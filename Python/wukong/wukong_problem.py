@@ -159,7 +159,11 @@ class WukongProblem(object):
 
             # Generate the executor/storage label for the subproblem
             # Supply all: problem, subProblems, subProblem, i in case they are needed.
-            ID = self.UserProgram.problemLabeler(invokedSubproblem,i, problem, subProblems)
+            # ID = self.UserProgram.problemLabeler(invokedSubproblem,i, problem, subProblems)
+            ID = self.UserProgram.fanout_problem_labeler(
+                parent_problem_label = problem.problem_id, 
+                fanout_child_index = i, 
+                num_child_problems = len(subProblems))
 
             invokedSubproblem.problem_id = problem.problem_id + "-" + ID
             #invokedSubproblem.problem_id = ID
@@ -246,7 +250,11 @@ class WukongProblem(object):
         
         # Generate the executor/storage label for the subproblem
         # Supply all: problem, subProblems, subProblem, i in case they are needed.
-        ID = self.UserProgram.problemLabeler(becomeSubproblem, len(subProblems) - 1, problem, subProblems) # String
+        # ID = self.UserProgram.problemLabeler(becomeSubproblem, len(subProblems) - 1, problem, subProblems) # String
+        ID = self.UserProgram.fanout_problem_labeler(
+            parent_problem_label = problem.problem_id, 
+            fanout_child_index = len(subProblems) - 1, 
+            num_child_problems = len(subProblems))        
         
         # If two different subProblems in the divide and conquer tree can have the same label, then there would
         # be a problem since these labels are also used to label fan-in tasks and we cannot have two fan-in tasks
@@ -332,10 +340,10 @@ class WukongProblem(object):
 
     # subproblemResults was previously ArrayList<DivideandConquerFibonacci.ResultType> 
     @staticmethod
-    def isLastFanInExecutor(parentProblem, result, subproblemResults: list) -> bool:
+    def isLastFanInExecutor(FanInID : str, result, subproblemResults: list) -> bool:
         # store result and check if we are the last executor to do this.
         # Add all of the other subproblem results to subproblemResults. We will add our sibling result later (before we call combine().)
-        FanInID = parentProblem.problem_id # String 
+        #FanInID = parentProblem.problem_id # String 
 
         copyOfResult = result.copy() # DivideandConquerFibonacci.ResultType
         copyOfResult.problem_id = result.problem_id
@@ -411,10 +419,14 @@ class WukongProblem(object):
                     # be many executors that reach the OUPUT_THRESHOLD and stop.
                     return False
 
-            parentProblem = problem.fan_in_stack.pop()
+            # parentProblem = problem.fan_in_stack.pop()
+
+            parentProblemID = self.fanin_problem_labeler(
+                parent_problem_label = problem.problem_id
+            )
             
             with debug_lock:
-                logger.debug(problem.problem_id + ": Fan-in: ID: " + str(problem.problem_id) + " parentProblem ID: " + str(parentProblem.problem_id))
+                logger.debug(problem.problem_id + ": Fan-in: ID: " + str(problem.problem_id) + " parentProblem ID: " + parentProblemID)
                 logger.debug(problem.problem_id + ": Fan-in: ID: " + str(problem.problem_id) + " problem.become_executor: " + str(problem.become_executor) + " parentProblem.become_executor: " + str(parentProblem.become_executor))
                 logger.debug("")
                 
@@ -459,18 +471,18 @@ class WukongProblem(object):
                     #}
                     logger.debug("Fan-In: ID: " + str(problem.problem_id) + ": FanInID: " + str(parentProblem.problem_id) + " was not FanInExecutor:  result sent:" + str(result))
             else:
-                logger.debug(problem.problem_id + ": parentProblem ID: " + str(parentProblem.problem_id) + ", calling isLastFanInExector() now...") 
+                logger.debug(problem.problem_id + ": parentProblem ID: " + parentProblemID + ", calling isLastFanInExector() now...") 
 
                 # When return we either have our result and sibling result or or our result and None. For latter, we were first
                 # Executor to fan-in so we stop.
-                FanInExecutor = WukongProblem.isLastFanInExecutor(parentProblem, result, subproblemResults)
+                FanInExecutor = WukongProblem.isLastFanInExecutor(parentProblemID, result, subproblemResults)
             
             # If we are not the last task to Fan-In then unwind recursion and we are done
         
             # TODO: Two threads are thinking they're a fan-in executor.
             if not FanInExecutor:
                 with debug_lock:
-                    logger.debug("Fan-In: ID: " + str(problem.problem_id) + ": FanInID: " + str(parentProblem.problem_id) + ": is not become Executor " + " and its value was: " + str(result) + " and after put is " + str((FanInSychronizer.resultMap[parentProblem.problem_id])))
+                    logger.debug("Fan-In: ID: " + str(problem.problem_id) + ": FanInID: " + parentProblemID + ": is not become Executor " + " and its value was: " + str(result) + " and after put is " + str((FanInSychronizer.resultMap[parentProblem.problem_id])))
                 
                 if (len(problem.fan_in_stack) == WukongProblem.OUTPUT_THRESHOLD):
                     with debug_lock:
