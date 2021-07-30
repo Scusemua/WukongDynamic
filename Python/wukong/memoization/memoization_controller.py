@@ -348,7 +348,7 @@ def StartController(
     # memoization_config = config["memoization"]
     # sources_config = config["sources"]
     
-    initial_pairing_name = "root" #memoization_config["initial-pairing-name"]
+    initial_pairing_name = "[0,1]" #memoization_config["initial-pairing-name"]
     logger.debug("Initial pairing name: \"" + initial_pairing_name + "\"")
 
     # source_path = sources_config["source-path"]

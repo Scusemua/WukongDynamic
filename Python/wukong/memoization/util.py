@@ -22,7 +22,7 @@ class MemoizationMessage(object):
         self.did_input = did_input
     
     def __str__(self):
-        return "MemoizationMessage < message_type = " + str(self.message_type) + ", sender_id = " + str(self.sender_id) + ", problem_or_result_id = " + str(self.problem_or_result_id) + ", memoization_label: " + str(self.memoization_label) + ">"
+        return "MemoizationMessage < message_type = " + str(self.message_type) + ", sender_id = \"" + str(self.sender_id) + "\", problem_or_result_id = \"" + str(self.problem_or_result_id) + "\", memoization_label: \"" + str(self.memoization_label) + "\">"
 
 class MemoizationRecord(object):
     def __init__(

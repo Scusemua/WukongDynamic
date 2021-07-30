@@ -39,7 +39,8 @@ debug_lock = threading.Lock()
 
 n = 4
 expected_value = 3
-root_problem_id = "root"
+root_problem_id = "[0,1]" #"root"
+final_result_id = "[1,1]"
 
 class ResultType(WukongResult):
     """
@@ -120,6 +121,12 @@ class ProblemType(WukongProblem):
         return True     
 
 class FibonacciProgram(object):
+    def __init__(self):
+        global final_result_id
+        global root_problem_id
+        self.root_problem_id = root_problem_id
+        self.final_result_id = final_result_id
+
     """ class User provided by User. """
     def trimProblem(self, problem : ProblemType):
         """
@@ -162,6 +169,20 @@ class FibonacciProgram(object):
 
     def memoizeIDLabeler(self, problem : ProblemType) -> str:
         """
+        This is the NEW version of this function.
+
+        Used for getting the memoized result of (sub)problem (for get(memoizedLabel, result)).
+
+        For example, When computing Fibonacci(4), Fibonacci 3's label will be "4-3" so memoized label is "3", i.e.,
+        we will store the result for Fibonacci(3) under the key "3". We will store the result for Fibonacci(4) under the key "4".
+        """
+        logger.debug(">> %s: returning memoization label: \"%s\"" % (problem.problem_id, str(problem.value)))
+        return str(problem.value)
+    
+    def __memoizeIDLabeler(self, problem : ProblemType) -> str:
+        """
+        This is the OLD version of this function.
+
         Used for getting the memoized result of (sub)problem (for get(memoizedLabel, result)).
 
         For example, When computing Fibonacci(4), Fibonacci 3's label will be "4-3" so memoized label is "3", i.e.,
@@ -172,20 +193,15 @@ class FibonacciProgram(object):
         # Grab last token in: token1 - token2 - .... - tokenLast
         last_index = -1
         try:
-            last_index = label.rindex('-')
-
-            #logger.debug(">> Label: \"%s\", Last index: %d" % (label, last_index))
+            last_index = label.rindex('-') # Find the last index of the '-' character; the `rindex()` function is right-index.
 
             # e.g., for computing Fibonacci(4), problem label for Fibonacci(3) will be "4-3", which has '-' so memoize label is "3"
             # which is the problem label for Fibonacci(3).
             memoizedID = label[last_index + 1:len(label)]
-
-            #logger.debug(">> Extracting substring [%d, %d] from string \"%s\" now..." % (last_index + 1, len(label), label))
         except ValueError:
             # no '-', e.g., for Fibonacci(4), problem label is "4", which has no '-' so memoize label is also "4"
             memoizedID = label
         
-        #logger.debug(">> Memoize ID Labeler returning: \"%s\"" % memoizedID)
         return memoizedID
 
     def problemLabeler(self, subProblem : ProblemType, childId : int, parentProblem : ProblemType, subProblems : list) -> str:
@@ -206,7 +222,6 @@ class FibonacciProgram(object):
         way to recover the parent ID from a child, either by using a formula like above, or by stacking the IDs as we recurse.
         """
         with debug_lock:
-            #logger.debug("labeler: subProblem ID: " + str(subProblem.problem_id) + " parent ID: " + str(parentProblem.problem_id))
             logger.debug(str(parentProblem.problem_id) + ": label subProblem ID (assigned in Fan-out): " + str(subProblem.problem_id) + " parent ID: " + str(parentProblem.problem_id))
 
             logger.debug(parentProblem.problem_id + ":  labler: parent stack: ")
@@ -470,7 +485,7 @@ class FibonacciProgram(object):
         result = None 
 
         with debug_lock:
-            result = FanInSychronizer.resultMap["root"]
+            result = FanInSychronizer.resultMap[final_result_id]
         
         logger.debug("Disabling memoization thread now...")
         memoization_controller.StopThread()
@@ -489,6 +504,8 @@ class FibonacciProgram(object):
             logger.debug("Verified.")
         else:
             logger.debug("Error. Expected value: %s, actual value: %s" % (str(expected_value), str(result.value)))
+
+            FanInSychronizer.debug_print_maps()
 
 # Global Constants.
 NullResult = ResultType(value = -1, type = -1)

@@ -104,15 +104,15 @@ class WukongProblem(object):
         # result, we unwind by fan-in to parent of current problem.
         # if (WukongProblem.USESERVERLESSNETWORKING and not memoizedResult and WukongProblem.memoize) {
         if (problem.memoize):
-            deliverResultMsg = MemoizationMessage()
-            deliverResultMsg.message_type = MemoizationMessageType.DELIVEREDVALUE
-            deliverResultMsg.sender_id = problem.problem_id
-            deliverResultMsg.problem_or_result_id = result.problem_id
+            deliverResultMsg = MemoizationMessage(
+                message_type = MemoizationMessageType.DELIVEREDVALUE,
+                sender_id = problem.problem_id,
+                problem_or_result_id = result.problem_id,
+                memoization_label = self.UserProgram.memoizeIDLabeler(problem),
+                result = result,
+                fan_in_stack = None
+            )
             logger.debug("result: " + str(result))
-            memoizedLabel = self.UserProgram.memoizeIDLabeler(problem)
-            deliverResultMsg.memoization_label = memoizedLabel
-            deliverResultMsg.result = result
-            deliverResultMsg.fan_in_stack = None
             ServerlessNetworkingMemoizer.send1(deliverResultMsg)
 
             ack = ServerlessNetworkingMemoizer.rcv1()
@@ -160,13 +160,15 @@ class WukongProblem(object):
             # Generate the executor/storage label for the subproblem
             # Supply all: problem, subProblems, subProblem, i in case they are needed.
             # ID = self.UserProgram.problemLabeler(invokedSubproblem,i, problem, subProblems)
-            ID = self.UserProgram.fanout_problem_labeler(
+            ID = self.fanout_problem_labeler(
                 parent_problem_label = problem.problem_id, 
                 fanout_child_index = i, 
                 num_child_problems = len(subProblems))
 
-            invokedSubproblem.problem_id = problem.problem_id + "-" + ID
-            #invokedSubproblem.problem_id = ID
+            logger.debug(">> %s: generated fan-out ID \"%s\"" % (problem.problem_id, ID))
+
+            #invokedSubproblem.problem_id = problem.problem_id + "-" + ID
+            invokedSubproblem.problem_id = ID
             
             invokedSubproblem.become_executor = False
             
@@ -195,13 +197,14 @@ class WukongProblem(object):
             invokedSubproblem.UserProgram = self.UserProgram
             
             if (problem.memoize):
-                addPairingNameMsgForInvoke = MemoizationMessage()
-                addPairingNameMsgForInvoke.message_type = MemoizationMessageType.ADDPAIRINGNAME
-                addPairingNameMsgForInvoke.sender_id = problem.problem_id
-                addPairingNameMsgForInvoke.problem_or_result_id = invokedSubproblem.problem_id
-                addPairingNameMsgForInvoke.memoization_label = None
-                addPairingNameMsgForInvoke.result = None
-                addPairingNameMsgForInvoke.fan_in_stack = None
+                addPairingNameMsgForInvoke = MemoizationMessage(
+                    message_type = MemoizationMessageType.ADDPAIRINGNAME,
+                    sender_id = problem.problem_id,
+                    problem_or_result_id = invokedSubproblem.problem_id,
+                    memoization_label = None,
+                    result = None,
+                    fan_in_stack = None
+                )
                 ServerlessNetworkingMemoizer.send1(addPairingNameMsgForInvoke)
                 
                 ack = ServerlessNetworkingMemoizer.rcv1()
@@ -251,7 +254,7 @@ class WukongProblem(object):
         # Generate the executor/storage label for the subproblem
         # Supply all: problem, subProblems, subProblem, i in case they are needed.
         # ID = self.UserProgram.problemLabeler(becomeSubproblem, len(subProblems) - 1, problem, subProblems) # String
-        ID = self.UserProgram.fanout_problem_labeler(
+        ID = self.fanout_problem_labeler(
             parent_problem_label = problem.problem_id, 
             fanout_child_index = len(subProblems) - 1, 
             num_child_problems = len(subProblems))        
@@ -261,10 +264,14 @@ class WukongProblem(object):
         # with the same label. We make sure labels are unique by using the path of labels from the root to this 
         # subproblem, e.g., instead of "3" and "2" we use "4-3" and "4-2" where "4" is the label of the 
         # root and subProblem's "#" and "4" are children of the root (as in Fibonacci).
-        becomeSubproblem.problem_id = problem.problem_id + "-" + ID
+        becomeSubproblem.problem_id = ID #problem.problem_id + "-" + ID
 
         becomeSubproblem.become_executor = True
         
+        logger.debug(">> %s: Become fanout ID: %s" % (problem.problem_id, ID))
+        #logger.debug("Exiting after call to fanout_problem_labeler()")
+        #exit(0)
+
         # No need to clone the problem stack for the become subproblem as we clones the stacks for the other subProblems  
         #@SuppressWarnings("unchecked")
         #Stack<DivideandConquerFibonacci.ProblemType> childFanInStack = (Stack<DivideandConquerFibonacci.ProblemType>) problem.fan_in_stack.clone()
@@ -290,24 +297,27 @@ class WukongProblem(object):
         #}
         
         if (problem.memoize):
-            addPairingNameMsgForBecomes = MemoizationMessage() # MemoizationMessage
-            addPairingNameMsgForBecomes.message_type = MemoizationMessageType.ADDPAIRINGNAME
-            addPairingNameMsgForBecomes.sender_id = problem.problem_id
-            addPairingNameMsgForBecomes.problem_or_result_id = becomeSubproblem.problem_id
-            addPairingNameMsgForBecomes.memoization_label = None
-            addPairingNameMsgForBecomes.result = None
-            addPairingNameMsgForBecomes.fan_in_stack = None
+            addPairingNameMsgForBecomes = MemoizationMessage(
+                message_type = MemoizationMessageType.ADDPAIRINGNAME,
+                sender_id = problem.problem_id,
+                problem_or_result_id = becomeSubproblem.problem_id,
+                memoization_label = None,
+                result = None,
+                fan_in_stack = None
+            ) # MemoizationMessage
+
             ServerlessNetworkingMemoizer.send1(addPairingNameMsgForBecomes)
             
             ack1 = ServerlessNetworkingMemoizer.rcv1() # DivideandConquerFibonacci.ResultType
 
-            removePairingNameMsgForParent = MemoizationMessage() # MemoizationMessage
-            removePairingNameMsgForParent.message_type = MemoizationMessageType.REMOVEPAIRINGNAME
-            removePairingNameMsgForParent.sender_id = problem.problem_id
-            removePairingNameMsgForParent.problem_or_result_id = problem.problem_id
-            removePairingNameMsgForParent.memoization_label = None
-            removePairingNameMsgForParent.result = None
-            removePairingNameMsgForParent.fan_in_stack = None
+            removePairingNameMsgForParent = MemoizationMessage(
+                message_type = MemoizationMessageType.REMOVEPAIRINGNAME,
+                sender_id = problem.problem_id,
+                problem_or_result_id = problem.problem_id,
+                memoization_label = None,
+                result = None,
+                fan_in_stack = None
+            ) # MemoizationMessage
             ServerlessNetworkingMemoizer.send1(removePairingNameMsgForParent)
             
             ack2 = ServerlessNetworkingMemoizer.rcv1() # DivideandConquerFibonacci.ResultType
@@ -379,7 +389,7 @@ class WukongProblem(object):
         #rhc: start Fan-In operation
         with debug_lock:
             logger.debug(problem.problem_id + ": **********************Start Fanin operation:")
-            logger.debug(problem.problem_id + ": Fan-in: ID: " + problem.problem_id)
+            logger.debug(problem.problem_id + ": Fan-in: problem ID: " + problem.problem_id)
             logger.debug(problem.problem_id + ": Fan-in: become_executor: " + str(problem.become_executor))
             fan_in_stack_string = problem.problem_id + ": Fan-in: fan_in_stack: "
             for i in range(len(problem.fan_in_stack)):
@@ -419,15 +429,13 @@ class WukongProblem(object):
                     # be many executors that reach the OUPUT_THRESHOLD and stop.
                     return False
 
-            # parentProblem = problem.fan_in_stack.pop()
-
-            parentProblemID = self.fanin_problem_labeler(
-                parent_problem_label = problem.problem_id
-            )
+            parentProblem = problem.fan_in_stack.pop()
+            faninId = self.fanin_problem_labeler(parent_problem_label = parentProblem.problem_id)
             
             with debug_lock:
-                logger.debug(problem.problem_id + ": Fan-in: ID: " + str(problem.problem_id) + " parentProblem ID: " + parentProblemID)
-                logger.debug(problem.problem_id + ": Fan-in: ID: " + str(problem.problem_id) + " problem.become_executor: " + str(problem.become_executor) + " parentProblem.become_executor: " + str(parentProblem.become_executor))
+                logger.debug(problem.problem_id + ": Fan-in: problem ID: " + str(problem.problem_id) + " parentProblem ID: " + parentProblem.problem_id)
+                logger.debug(problem.problem_id + ": faninId: " + faninId)
+                logger.debug(problem.problem_id + ": Fan-in: problem ID: " + str(problem.problem_id) + " problem.become_executor: " + str(problem.become_executor) + " parentProblem.become_executor: " + str(parentProblem.become_executor))
                 logger.debug("")
                 
             # The last task to fan-in will become the Fan-In task executor. The actual executor needs to save its Merge output 
@@ -444,7 +452,7 @@ class WukongProblem(object):
             if (WukongProblem.USESERVERLESSNETWORKING):
                 FanIn = parentProblem.problem_id
                 if (FanInExecutor):
-                    logger.debug("ID: " + problem.problem_id + ": FanIn: " + parentProblem.problem_id + " was FanInExecutor: starting receive.")
+                    logger.debug("ID: " + problem.problem_id + ": FanIn: " + faninId + " was FanInExecutor: starting receive.")
                     h = ServerLessNetworkingUniReceiverHelper(FanIn)
                     h.start()
                     try:
@@ -456,7 +464,7 @@ class WukongProblem(object):
                     subproblemResults.append(copyOfSentResult)
                     #synchronized(FanInSychronizer.getPrintLock()) {
                     #    System.out.println("ID: " + problem.problem_id + ": FanIn: " + parentProblem.problem_id + " was FanInExecutor: result received:" + copyOfSentResult)
-                    logger.debug("ID: " + str(problem.problem_id) + ": FanIn: " + str(parentProblem.problem_id) + " was FanInExecutor: result received:" + str(copyOfSentResult))
+                    logger.debug("ID: " + str(problem.problem_id) + ": FanIn: " + faninId + " was FanInExecutor: result received:" + str(copyOfSentResult))
                     #}
                 else:
                     # pair and send message
@@ -469,20 +477,20 @@ class WukongProblem(object):
                     #synchronized(FanInSychronizer.getPrintLock()) {
                     #    System.out.println("Fan-In: ID: " + problem.problem_id + ": FanInID: " + parentProblem.problem_id + " was not FanInExecutor:  result sent:" + result)
                     #}
-                    logger.debug("Fan-In: ID: " + str(problem.problem_id) + ": FanInID: " + str(parentProblem.problem_id) + " was not FanInExecutor:  result sent:" + str(result))
+                    logger.debug("Fan-In: ID: " + str(problem.problem_id) + ": FanInID: " + faninId + " was not FanInExecutor: result sent:" + str(result))
             else:
-                logger.debug(problem.problem_id + ": parentProblem ID: " + parentProblemID + ", calling isLastFanInExector() now...") 
+                logger.debug(problem.problem_id + ": parentProblem ID: " + parentProblem.problem_id + ", calling isLastFanInExector() now...") 
 
                 # When return we either have our result and sibling result or or our result and None. For latter, we were first
                 # Executor to fan-in so we stop.
-                FanInExecutor = WukongProblem.isLastFanInExecutor(parentProblemID, result, subproblemResults)
+                FanInExecutor = WukongProblem.isLastFanInExecutor(faninId, result, subproblemResults)
             
             # If we are not the last task to Fan-In then unwind recursion and we are done
         
             # TODO: Two threads are thinking they're a fan-in executor.
             if not FanInExecutor:
                 with debug_lock:
-                    logger.debug("Fan-In: ID: " + str(problem.problem_id) + ": FanInID: " + parentProblemID + ": is not become Executor " + " and its value was: " + str(result) + " and after put is " + str((FanInSychronizer.resultMap[parentProblem.problem_id])))
+                    logger.debug("Fan-In: ID: " + str(problem.problem_id) + ": FanInID: " + faninId + ": is not become Executor and its value was: " + str(result) + " and after put is " + str((FanInSychronizer.resultMap[faninId])))
                 
                 if (len(problem.fan_in_stack) == WukongProblem.OUTPUT_THRESHOLD):
                     with debug_lock:
@@ -495,13 +503,15 @@ class WukongProblem(object):
                         return False
                 
                 if (problem.memoize):
-                    removePairingNameMsgForParent = MemoizationMessage()
-                    removePairingNameMsgForParent.message_type = MemoizationMessageType.REMOVEPAIRINGNAME
-                    removePairingNameMsgForParent.sender_id = problem.problem_id
-                    removePairingNameMsgForParent.problem_or_result_id = problem.problem_id
-                    removePairingNameMsgForParent.memoization_label = None
-                    removePairingNameMsgForParent.result = None
-                    removePairingNameMsgForParent.fan_in_stack = None
+                    removePairingNameMsgForParent = MemoizationMessage(
+                        message_type = MemoizationMessageType.REMOVEPAIRINGNAME,
+                        sender_id = problem.problem_id,
+                        problem_or_result_id = problem.problem_id,
+                        memoization_label = None,
+                        result = None,
+                        fan_in_stack = None
+                    )
+
                     ServerlessNetworkingMemoizer.send1(removePairingNameMsgForParent)
                     ack = ServerlessNetworkingMemoizer.rcv1()
                 
@@ -509,7 +519,7 @@ class WukongProblem(object):
                 return False
             else:  # we are last Executor and first executor's result is in previousValue.
                 with debug_lock:
-                    logger.debug(problem.problem_id + ": FanIn: ID: " + problem.problem_id + ": FanInID: " + parentProblem.problem_id + ": " + ": Returned from put: executor isLastFanInExecutor ")
+                    logger.debug(problem.problem_id + ": FanIn: ID: " + problem.problem_id + ": FanInID: " + faninId + ": " + ": Returned from put: executor isLastFanInExecutor ")
                     logger.debug(subproblemResults[0])
                     logger.debug(problem.problem_id + ": ID: " + str(problem.problem_id) + ": call combine ***************")
                 
@@ -570,12 +580,9 @@ class WukongProblem(object):
                 
                 if (WukongProblem.USESERVERLESSNETWORKING):
                     FanInID = parentProblem.problem_id
-                    if (FanInID.equals("root")):
-                        # synchronized(FanInSychronizer.getPrintLock()) {
-                        #     System.out.println("Executor: Writing the final value to root: " + result) # result)
-                        # }
+                    if (FanInID == "[1,1]"):
                         logger.debug(problem.problem_id + ": Executor: Writing the final value to root: " + str(result))
-                        siblingResult = FanInSychronizer.resultMap.put("root",result) 
+                        siblingResult = FanInSychronizer.resultMap.put("[1,1]", result) 
 
                     FanInExecutor = parentProblem.become_executor
                     # This executor continues to do Fan-In operations with the new problem result.
@@ -643,12 +650,19 @@ class WukongProblem(object):
         That is, this replaces the [x,y][u,v] with [x+y,y]. So the resulting string is of the form
         [z,y] where z = x + y.
 
+        Note that the root problem is a special case because it is of the form [0,1].
+
         Let's say we have "[0,1][0,3][1,3]" (i.e., two fork/fan-out operations). 
         The fan-in would be "[0,1][3,3]".
 
         Keyword Arguments:
             parent_problem_label (str): Label of the parent problem. This is of the form L[x,y][u,v], where L can be empty.
         """
+        # The root problem is a special case because it is of the form [0,1].
+        if parent_problem_label == self.UserProgram.root_problem_id:
+            logger.debug(">> returning hard-coded [1,1] for fanin problem label (parent_problem_label = %s)" % parent_problem_label)
+            return "[1,1]"
+
         # Indexing by `[:-1]` leaves off just the last character.
         second_right_bracket_index = parent_problem_label[:-1].rindex("]")
         associated_left_bracket_index = parent_problem_label.rindex("[", 0, second_right_bracket_index)
@@ -657,7 +671,11 @@ class WukongProblem(object):
         x = int(parent_problem_label[associated_left_bracket_index+1:comma_index])
         y = int(parent_problem_label[comma_index+1:second_right_bracket_index])
 
-        return parent_problem_label[0:associated_left_bracket_index] + "[%d,%d]" % (x + y, y)
+        fanin_label = parent_problem_label[0:associated_left_bracket_index] + "[%d,%d]" % (x + y, y)
+
+        logger.debug(">> returning fanin label \"%s\", parent problem label = \"%s\", x = %d, y = %d" % (fanin_label, parent_problem_label, x, y))
+
+        return fanin_label
 
     def __extract_last_brackets(self, label):
         """
@@ -692,6 +710,20 @@ class FanInSychronizer(object):
     def __init__(self):
         pass 
  
+    @staticmethod
+    def debug_print_maps():
+        with FanInSychronizer.lock:
+            logger.debug("=-=-=-= RESULT MAP =-=-=-=")
+
+            for k,v in FanInSychronizer.resultMap.items():
+                logger.debug("\t%s: %s" % (str(k), str(v)))
+            
+            logger.debug("")
+            logger.debug("=-=-=-= MEMOIZATION MAP =-=-=-=")
+            
+            for k,v in FanInSychronizer.memoizationMap.items():
+                logger.debug("\t%s: %s" % (str(k), str(v)))
+
     @staticmethod
     def put(fanin_id : str, result):
         """
