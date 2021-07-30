@@ -430,7 +430,7 @@ class WukongProblem(object):
                     return False
 
             parentProblem = problem.fan_in_stack.pop()
-            faninId = self.fanin_problem_labeler(parent_problem_label = parentProblem.problem_id)
+            faninId = self.fanin_problem_labeler(problem_label = problem.problem_id)
             
             with debug_lock:
                 logger.debug(problem.problem_id + ": Fan-in: problem ID: " + str(problem.problem_id) + " parentProblem ID: " + parentProblem.problem_id)
@@ -643,7 +643,7 @@ class WukongProblem(object):
 
     def fanin_problem_labeler(
         self,
-        parent_problem_label = None,
+        problem_label = None,
     ) -> str:
         """
         The parent label is of the form L[x,y][u,v]. This function returns L[<x + y>, y]. 
@@ -656,24 +656,24 @@ class WukongProblem(object):
         The fan-in would be "[0,1][3,3]".
 
         Keyword Arguments:
-            parent_problem_label (str): Label of the parent problem. This is of the form L[x,y][u,v], where L can be empty.
+            problem_label (str): Label of the problem. This is of the form L[x,y][u,v], where L can be empty.
         """
         # The root problem is a special case because it is of the form [0,1].
-        if parent_problem_label == self.UserProgram.root_problem_id:
-            logger.debug(">> returning hard-coded [1,1] for fanin problem label (parent_problem_label = %s)" % parent_problem_label)
+        if problem_label == self.UserProgram.root_problem_id:
+            logger.debug(">> returning hard-coded [1,1] for fanin problem label (problem_label = %s)" % problem_label)
             return "[1,1]"
 
         # Indexing by `[:-1]` leaves off just the last character.
-        second_right_bracket_index = parent_problem_label[:-1].rindex("]")
-        associated_left_bracket_index = parent_problem_label.rindex("[", 0, second_right_bracket_index)
-        comma_index = parent_problem_label.index(",", associated_left_bracket_index, second_right_bracket_index)
+        second_right_bracket_index = problem_label[:-1].rindex("]")
+        associated_left_bracket_index = problem_label.rindex("[", 0, second_right_bracket_index)
+        comma_index = problem_label.index(",", associated_left_bracket_index, second_right_bracket_index)
 
-        x = int(parent_problem_label[associated_left_bracket_index+1:comma_index])
-        y = int(parent_problem_label[comma_index+1:second_right_bracket_index])
+        x = int(problem_label[associated_left_bracket_index+1:comma_index])
+        y = int(problem_label[comma_index+1:second_right_bracket_index])
 
-        fanin_label = parent_problem_label[0:associated_left_bracket_index] + "[%d,%d]" % (x + y, y)
+        fanin_label = problem_label[0:associated_left_bracket_index] + "[%d,%d]" % (x + y, y)
 
-        logger.debug(">> returning fanin label \"%s\", parent problem label = \"%s\", x = %d, y = %d" % (fanin_label, parent_problem_label, x, y))
+        logger.debug(">> returning fanin label \"%s\", parent problem label = \"%s\", x = %d, y = %d" % (fanin_label, problem_label, x, y))
 
         return fanin_label
 
