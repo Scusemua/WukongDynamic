@@ -117,7 +117,7 @@ class ProblemType(WukongProblem):
 
     @property
     def memoize(self):
-        print("ProblemType memoize")
+        #print("ProblemType memoize")
         return True     
 
 class FibonacciProgram(object):

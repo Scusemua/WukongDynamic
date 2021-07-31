@@ -408,6 +408,9 @@ class WukongProblem(object):
         # the become, and the others are invoke.
         if (WukongProblem.USESERVERLESSNETWORKING):
             FanInExecutor = problem.become_executor
+        
+        local_problem_label = problem.problem_id
+        logger.debug(">> Local problem label start of Fanin: \"%s\"" % local_problem_label)
 
         while (len(problem.fan_in_stack) != 0):
             # Stop combining results when the results reach a certain size, and the communication delay for passing
@@ -430,7 +433,7 @@ class WukongProblem(object):
                     return False
 
             parentProblem = problem.fan_in_stack.pop()
-            faninId = self.fanin_problem_labeler(problem_label = problem.problem_id)
+            faninId = self.fanin_problem_labeler(problem_label = local_problem_label)
             
             with debug_lock:
                 logger.debug(problem.problem_id + ": Fan-in: problem ID: " + str(problem.problem_id) + " parentProblem ID: " + parentProblem.problem_id)
@@ -592,6 +595,12 @@ class WukongProblem(object):
 
                     # Instead of doing all of the work for sorting as we unwind the recursion and call merge(),
                     # we let the executors "unwind" the recursion using the explicit FanIn stack.
+            
+            with debug_lock:
+                left_bracket_index = local_problem_label.rindex("[")
+                logger.debug(problem.problem_id + ": Local problem label BEFORE chopping: \"%s\"" % local_problem_label)
+                local_problem_label = local_problem_label[0:left_bracket_index]
+                logger.debug(problem.problem_id + ": Local problem label AFTER chopping: \"%s\"" % local_problem_label)
 
         # end while (stack not empty)
         
