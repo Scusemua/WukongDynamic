@@ -64,12 +64,14 @@ class PromisedResult(object):
         problem_or_result_id = None, 
         fan_in_stack = None, 
         become_executor = False, 
-        did_input = False
+        did_input = False,
+        memoization_label_on_restart = None
     ):
         self.problem_or_result_id = problem_or_result_id
         self.fan_in_stack = fan_in_stack
         self.become_executor = become_executor
         self.did_input = did_input
+        self.memoization_label_on_restart = memoization_label_on_restart
     
     def __str__(self):
-        return "PromisedResult < problem_or_result_id = " + str(self.problem_or_result_id) + ", become_executor = " + str(self.become_executor) + ", did_input = " + str(self.did_input) + ">"
+        return "PromisedResult < problem_or_result_id = " + str(self.problem_or_result_id) + ", become_executor = " + str(self.become_executor) + ", did_input = " + str(self.did_input) + ", memoization_label_on_restart = " + self.memoization_label_on_restart + ">"

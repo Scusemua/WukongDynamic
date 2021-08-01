@@ -67,15 +67,27 @@ class WukongProblem(object):
     # Stack of storage keys from root to leaf node (where there is a leaf node for each base case).
     #Stack<DivideandConquerFibonacci.ProblemType> fan_in_stack
     
-    def __init__(self, UserProgram = None):
-        self.did_input = False 
-        self.become_executor = False
-        self.problem_id = None 
-        self.fan_in_stack = list()
+    def __init__(
+        self, 
+        did_input = False,
+        become_executor = False,
+        problem_id = None,
+        fan_in_stack = [],
+        memoization_label_on_restart = None,
+        UserProgram = None
+    ):
+        self.did_input = did_input 
+        self.become_executor = become_executor
+        self.problem_id = problem_id 
+        self.fan_in_stack = fan_in_stack
         self.UserProgram = UserProgram 
+        self.memoization_label_on_restart = memoization_label_on_restart
 
         # TODO: When creating new DivideAndConquerExecutor objects, we do not supply the result type and problem type arguments.
         #       Also, the existing classes that are passed around to possibly several threads are not thread safe, I think.
+
+    def __str__(self):
+        return "WukongProblem < memoization_label_on_restart = " + str(self.memoization_label_on_restart) + ">"
 
     @property
     def memoize(self):

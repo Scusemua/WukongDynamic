@@ -138,14 +138,15 @@ class DivideAndConquerExecutor(Thread):
                 become_executor = self.problem.become_executor,
                 did_input = self.problem.did_input
             )
-            # promiseMsg.messageType = MemoizationMessageType.PROMISEVALUE
-            # promiseMsg.senderID = self.problem.problem_id
-            # promiseMsg.problemOrResultID = self.problem.problem_id
-            # promiseMsg.become_executor = self.problem.become_executor
-            # promiseMsg.did_input = self.problem.did_input
             
-            # e.g., if problem.problem_id is "4-3", memoized_label is "3"
-            memoized_label = self.problem.UserProgram.memoizeIDLabeler(self.problem) 
+            if self.problem.memoization_label_on_restart is None:
+                # e.g., if problem.problem_id is "4-3", memoized_label is "3"
+                logger.debug("%s: >> Creating memoization label via `memoizeIDLabeler()`" % self.problem.problem_id)
+                memoized_label = self.problem.UserProgram.memoizeIDLabeler(self.problem) 
+            else:
+                logger.debug("%s: >> Using `memoization_label_on_restart` for memoization label." % self.problem.problem_id)
+                memoized_label = self.problem.memoization_label_on_restart
+            
             promiseMsg.memoization_label = memoized_label
             promiseMsg.result = None    
             promiseMsg.fan_in_stack = self.problem.fan_in_stack

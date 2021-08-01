@@ -110,7 +110,8 @@ class ProblemType(WukongProblem):
         self.value = value
     
     def __str__(self):
-        return "(ID: " + str(self.problem_id) + ", value: " + str(self.value) + ")"
+        return "(ID: %s, value: %s, < %s >)" % (str(self.problem_id), str(self.value), super(ProblemType, self).__str__())
+        # return "(ID: " + str(self.problem_id) + ", value: " + str(self.value) + ", )"
 
     def __repr__(self):
         return self.__str__()
@@ -118,7 +119,7 @@ class ProblemType(WukongProblem):
     @property
     def memoize(self):
         #print("ProblemType memoize")
-        return True     
+        return False     
 
 class FibonacciProgram(object):
     def __init__(self):
