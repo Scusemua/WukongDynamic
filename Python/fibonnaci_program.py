@@ -6,14 +6,9 @@ import sys
 
 from wukong.wukong_problem import WukongProblem, FanInSychronizer, WukongResult
 
-from wukong.util import ClassGetter
-
-import wukong.dc_executor as dc_executor
 import wukong.memoization.memoization_controller as memoization_controller
-#from DivideAndConquerExecutor import WukongProblem, MemoizationController, DivideAndConquerExecutor
 
 import logging
-from logging.handlers import RotatingFileHandler
 from logging import handlers
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -73,11 +68,6 @@ class ResultType(WukongResult):
             return self.value == other.value and self.problem_id == other.problem_id 
         else:
             return False 
-
-    # def __reduce__(self):
-    #     print("REDUCE")
-    #     state = self.__dict__.copy()
-    #     return (ClassGetter, (ResultType, self.__class__.__name__, ))
 
     def __str__(self):
         parent_to_string = super(ResultType, self).__str__()
