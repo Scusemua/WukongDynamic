@@ -1,18 +1,14 @@
-import multiprocessing
 import sys
 import threading
-import yaml
 
 from threading import Thread 
 from wukong.wukong_problem import WukongProblem
-import importlib 
 
 from .memoization import memoization_controller
-from .memoization.util import MemoizationMessage, MemoizationRecord, MemoizationMessageType
+from .memoization.util import MemoizationMessage, MemoizationMessageType
 #from .channel import BiChannel, UniChannel
 
 import logging
-from logging.handlers import RotatingFileHandler
 from logging import handlers
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)

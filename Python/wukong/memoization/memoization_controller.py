@@ -12,7 +12,6 @@ import importlib
 import sys
 
 import logging
-from logging.handlers import RotatingFileHandler
 from logging import handlers
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
