@@ -6,7 +6,6 @@ from wukong.wukong_problem import WukongProblem
 
 from .memoization import memoization_controller
 from .memoization.util import MemoizationMessage, MemoizationMessageType
-#from .channel import BiChannel, UniChannel
 
 import logging
 from logging import handlers
@@ -31,24 +30,6 @@ if root.handlers:
        handler.setFormatter(formatter)
 
 debug_lock = threading.Lock() 
-
-class testBiChannel(object):
-    pass
-
-class testReceiver(Thread):
-    pass
-
-class testSender(Thread):
-    pass
-
-class ServerlessNetwork(object):
-    pass
-
-class ServerLessNetworkingUniSenderHelper(object):
-    pass
-
-class ServerLessNetworkingUniReceiverHelper(object):
-    pass
 
 class DivideAndConquerExecutor(Thread):
     def __init__(
@@ -180,30 +161,6 @@ class DivideAndConquerExecutor(Thread):
             if (len(self.problem.fan_in_stack) == WukongProblem.INPUT_THRESHOLD and self.problem.did_input == False):
                 self.problem.UserProgram.inputProblem(self.problem)
                 self.problem.did_input = True
-                # Debug output is for Merge/Quick Sort only.
-                # synchronized(FanInSychronizer.getPrintLock()) {
-                #     int size = problem.to - problem.from + 1
-                #     System.out.println("inputProblemNew: problem.from: " + problem.from + " problem.to: " + problem.to 
-                #         + " problem.fan_in_stack.size(): " + problem.fan_in_stack.size() + " size: " + size)
-                #     for (int i=0 i<problem.numbers.length i++)
-                #         System.out.print(problem.numbers[i] + " ")
-                #     System.out.println()
-                # }
-        
-            # If using size instead of level:
-            # Using <= and not just == since for odd sized arrays to be sorted, the sizes of subproblems
-            # are not always the same. Since using <=, must also check whether we have already input numbers,
-            # i.e., once < it will stay less than but we cannot keep inputing numbers.
-            # if (size <= WukongProblem.INPUT_THRESHOLD and problem.did_input == False) {
-            #     self.problem.UserProgram.inputProblem(problem) 
-            #     synchronized(FanInSychronizer.getPrintLock()) {
-            #         System.out.println("inputProblemNew: problem.from: " + problem.from + " problem.to: " + problem.to 
-            #             + " problem.fan_in_stack.size(): " + problem.fan_in_stack.size() + " size: " + size)
-            #         for (int i=0 i<problem.numbers.length i++)
-            #             System.out.print(problem.numbers[i] + " ")
-            #         System.out.println()
-            #     }
-            # }
         
             # Base case is a sequential algorithm though possibly on a problem of size 1
             if (self.problem.UserProgram.base_case(self.problem)):
@@ -261,10 +218,6 @@ class DivideAndConquerExecutor(Thread):
         # merge/result.
 
         #rhc: start Fan-In operation and possibly  perform Fan-In task.
-
-        # if True:
-        #     logger.info("Thread is exiting right before call to `FanInOperationAndTask()`")
-        #     return 
 
         finalRemainingExecutor = self.problem.FanInOperationandTask(self.problem,result,memoizedResult,ServerlessNetworkingMemoizer)
         #rhc: end Fan-In operation and Fan-In task.

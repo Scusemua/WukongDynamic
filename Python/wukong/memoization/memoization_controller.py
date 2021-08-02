@@ -24,6 +24,16 @@ fh = handlers.RotatingFileHandler("divide_and_conquer.log", maxBytes=(1048576*5)
 fh.setFormatter(formatter)
 logger.addHandler(fh)
 
+"""
+
+Ordinarily, the MemoizationController would be a singleton. Here, we opt to implement the
+MemoizationController as a self-contained module. The MemoizationThread class defined within
+this module is used only by the MemoizationController.
+
+https://stackoverflow.com/questions/31875/is-there-a-simple-elegant-way-to-define-singletons
+
+"""
+
 BiChannelForMemoization = BiChannel("MemoizationController")
 PairingNames = set()                # Set of strings.
 MemoizationRecords = dict()         # Mapping from String -> MemoizationRecord 

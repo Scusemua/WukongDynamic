@@ -2,13 +2,9 @@ import sys
 import threading 
 import time
 
-#from .memoization.memoization_controller import MemoizationThread
-from .memoization.util import MemoizationMessage, MemoizationMessageType, MemoizationRecord, MemoizationRecordType
-
-#from memoization import memoization_controller 
+from .memoization.util import MemoizationMessage, MemoizationMessageType
 
 import logging
-from logging.handlers import RotatingFileHandler
 from logging import handlers
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -349,7 +345,7 @@ class WukongProblem(object):
         # Option: create method WukongProblem.trimProblem() that sets WukongProblem.fan_in_stack.None and call 
         # WukongProblem.trimProblem() here before calling self.UserProgram.trimProblem(problem) I believe that problem's
         # fan_in_stack is no longer needed and can always be trimmed, though it might be helpful for debugging.
-        self.UserProgram.trimProblem(problem)
+        self.UserProgram.trim_problem(problem)
         #rhc: end Fan-Out operation
 
         # Recursion unwinds - nothing happens along the way.
@@ -711,18 +707,23 @@ class WukongResult(object):
     """
         problem_id is of type string.
     """
-    def __init__(self, problem_id = None):
+    def __init__(
+        self, 
+        problem_id = None
+    ):
         """
             problem_id (str)
         """
         self.problem_id = problem_id
-    
-    def __str__(self):
-        return str(self.problem_id)
-        #return "WukongResult <problem_id: " + str(self.problem_id) + ">"
+
+class UserProgram(object):
+    def __init__(self):
+        pass 
+
+    def trim_problem(self, problem : WukongProblem):
+        pass 
 
 class FanInSychronizer(object):
-
     lock = threading.Lock()
 
     resultMap = dict()

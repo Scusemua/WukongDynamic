@@ -4,7 +4,7 @@ import threading
 import time 
 import sys
 
-from wukong.wukong_problem import WukongProblem, FanInSychronizer, WukongResult
+from wukong.wukong_problem import WukongProblem, FanInSychronizer, WukongResult, UserProgram
 
 import wukong.memoization.memoization_controller as memoization_controller
 
@@ -37,6 +37,7 @@ expected_value = 3
 root_problem_id = "[0,1]" #"root"
 final_result_id = "[1,1]"
 
+# TODO: Does the user need to provide this class? How would it differ across different problems?
 class ResultType(WukongResult):
     """
     If type is 1, ResultType is a normal result.
@@ -45,8 +46,8 @@ class ResultType(WukongResult):
     """
     def __init__(self, value = 0, type = 1):
         super(ResultType, self).__init__()
-        self.value = value
         self.type = type 
+        self.value = value
 
         assert(self.type >= -1 and self.type <= 1)
     
@@ -60,24 +61,26 @@ class ResultType(WukongResult):
         _copy.value = self.value
 
         return _copy 
-    
+
     def __eq__(self, other):
         if isinstance(other, self.__class__):
             if self.type != other.type:
                 return False 
-            return self.value == other.value and self.problem_id == other.problem_id 
+            return self.problem_id == other.problem_id 
         else:
             return False 
-
+    
     def __str__(self):
-        parent_to_string = super(ResultType, self).__str__()
-
-        if self.type == 0:
-            return parent_to_string + ": STOP RESULT"
-        elif self.type == -1:
-            return parent_to_string + ": NULL RESULT"
+        if self.type == -1:
+            return "WukongResult: Null Result"
+        elif self.type == 0:
+            return "WukongResult: Stop Result"
+        # If type is not `1`, then this is either a Stop result or a Null result, 
+        # in which case we do not need to add anything to the toString().
+        elif self.type == 1:
+            return "Wukong Result: (ID: %s /value: %s)" % (self.problem_id, str(self.value))
         else:
-            return parent_to_string + ": (ID: " + str(self.problem_id) + "/value: " + str(self.value) + ")"
+            raise ValueError("Invalid type for WukongResult: " + str(self.type))
 
 class ProblemType(WukongProblem):
     """ class ProblemType provided by User. """
@@ -108,36 +111,15 @@ class ProblemType(WukongProblem):
 
     @property
     def memoize(self):
-        #print("ProblemType memoize")
         return True     
 
-class FibonacciProgram(object):
+class FibonacciProgram(UserProgram):
     def __init__(self):
         global final_result_id
         global root_problem_id
         self.root_problem_id = root_problem_id
         self.final_result_id = final_result_id
 
-    """ class User provided by User. """
-    def trimProblem(self, problem : ProblemType):
-        """
-        A problem P is by default passed to the executors that will be executing the child subproblems of P. One of these
-        executors will execute method combine() for these subproblems. In some cases, it is easier to write combine() when 
-        the subproblem's parent problem data is available; however, this parent data will also be sent and retrieved from 
-        storage if the parent data is part of the ProblemType data. (That is, problem P's parent data will be sent 
-        as part of problem P since the parent data will be on the stack of subProblems (representing the call stack) for P.) 
-        So if some of the parent data is not needed for combine() it should be deleted from the parent problem.
-        
-        The field of a problem that will definitely be used is the problem_id. Do not trim the problem_id.  
-        The fan_in_stack (in parent class WukongProblem) is not needed by the DivideandConquer framework and 
-        can/should be trimmed. 
-        One option is to create a trimProblem() method in call WukongProblem and always call this method (in method
-        Fanout) in addition to calling User.trimProblem(), where User.tribProblem may be empty..
-        """
-        # We are cloning a parent's stack when we create a child's stack, and we do not need the parent's stack anymore.
-        problem.fan_in_stack = None 
-
-    #@staticmethod
     def base_case(self, problem : ProblemType) -> bool:
         """ 
         No non-parallel algorithm for Fibonacci. 
@@ -240,7 +222,6 @@ class FibonacciProgram(object):
     #   return n;
     #   return fib(n-1) + fib(n-2);
     # }
-    #@staticmethod
     def preprocess(self, problem : ProblemType) -> bool:
         """
         Some problems may use a pre-processing step before anything else is done.
@@ -255,7 +236,6 @@ class FibonacciProgram(object):
         """
         pass 
 
-    #@staticmethod
     def trim_problem(self, problem : ProblemType):
         """
         A problem P is by default passed to the executors that will be executing the child subproblems of P. One of these
@@ -280,7 +260,6 @@ class FibonacciProgram(object):
         """
         pass 
 
-    #@staticmethod 
     def problem_labeler(self, 
         subproblem : ProblemType, 
         childID : int, 
@@ -323,7 +302,6 @@ class FibonacciProgram(object):
 
         return str(subproblem.value)
         
-    #@staticmethod
     def memoize_IDLabeler(self, problem : ProblemType) -> str:
         """
         Used for getting the memoized result of (sub)problem (for get(memoizedLabel, result)).
@@ -344,7 +322,6 @@ class FibonacciProgram(object):
         
         return memoizedID
     
-    #@staticmethod
     def divide(self, 
         problem : ProblemType,
         subproblems : list 
@@ -386,7 +363,6 @@ class FibonacciProgram(object):
         subproblems.append(minus_2)
         subproblems.append(minus_1)
 
-    #@staticmethod
     def combine(self, 
         subproblem_results : list,
         combination : ResultType,
@@ -424,7 +400,6 @@ class FibonacciProgram(object):
         with debug_lock:
             logger.debug(problem_id + ": combine: firstValue: " + str(first_value) + " secondValue: " + str(second_value) + " combination.value: " + str(combination.value))
     
-    #@staticmethod
     def input_problem(self, problem : ProblemType):
         """
         The problem data must be obtained from Wukong storage. Here, we are getting a specific subsegment of the input array, which is the segment from-to.
@@ -439,7 +414,6 @@ class FibonacciProgram(object):
         """
         pass 
 
-    #@staticmethod
     def compute_inputs_of_subproblems(self, 
         problem : ProblemType,
         subproblems : list
@@ -453,7 +427,6 @@ class FibonacciProgram(object):
         """
         pass 
 
-    #@staticmethod
     def sequential(self, 
         problem : ProblemType,
         result : ResultType
@@ -463,7 +436,6 @@ class FibonacciProgram(object):
         with debug_lock:
             logger.debug(str(problem.problem_id) + ": Sequential: " + str(problem.problem_id) + " result.value: " + str(result.value))
 
-    #@staticmethod
     def output_result(self, problem_problemID : str):
         """
         User provides method to output the problem result.
@@ -499,42 +471,8 @@ class FibonacciProgram(object):
             FanInSychronizer.debug_print_maps()
 
 # Global Constants.
-NullResult = ResultType(value = -1, type = -1)
-StopResult = ResultType(value = -1, type = 0)
-
-# Main method, so to speak.
-# if __name__ == "__main__":
-#     logger.debug("Running DivideandConquerFibonacci")
-#     logger.debug("INPUT_THRESHOLD is: {}".format(WukongProblem.INPUT_THRESHOLD))
-#     logger.debug("OUTPUT_THRESHOLD is: {}".format(WukongProblem.OUTPUT_THRESHOLD))
-#     logger.debug("SEQUENTIAL_THRESHOLD is: {}".format(ProblemType.SEQUENTIAL_THRESHOLD))
-#     logger.debug("memoize is: " + str(ProblemType.memoize))
-
-#     # Assert 
-#     seq = None 
-#     try:
-#         seq = getattr(ProblemType, "SEQUENTIAL_THRESHOLD", None)
-#     except Exception:
-#         pass 
-
-#     if seq is None:
-#         logger.fatal("ProblemType.SEQUENTIAL_THRESHOLD must be defined.")
-        
-#     logger.debug("n: " + str(DivideandConquerFibonacci.n))
-    
-#     rootID = str(DivideandConquerFibonacci.n)
-#     fan_in_stack = list() 
-#     rootProblem = ProblemType()
-
-#     rootProblem.n = DivideandConquerFibonacci.n
-
-#     logger.debug("Root Problem: " + str(rootProblem))
-
-#     rootProblem.fan_in_stack = fan_in_stack
-#     rootProblem.problem_id = DivideandConquerFibonacci.root_problem_id
-
-#     root = DivideAndConquerExecutor.DivideAndConquerExecutor(rootProblem)
-#     root.run()
+NullResult = ResultType(type = -1, value = -1)
+StopResult = ResultType(type = 0, value = -1)
 
 """
 

@@ -1,5 +1,3 @@
-import importlib
-import yaml 
 import sys
 
 import logging
@@ -32,22 +30,6 @@ import fibonnaci_program
 
 # Main method, so to speak.
 if __name__ == "__main__":
-    # with open("wukong-divide-and-conquer.yaml") as f:
-    #     config = yaml.load(f, Loader = yaml.FullLoader)
-    #     config = config 
-    #     sources_config = config["sources"]
-    #     memoization_config = config["memoization"]
-        
-    #     source_path = sources_config["source-path"]
-    #     source_module = sources_config["source-module"]
-    #     spec = importlib.util.spec_from_file_location(source_module, source_path)
-    #     user_module = importlib.util.module_from_spec(spec)
-    #     spec.loader.exec_module(user_module)
-
-    #     ProblemType = user_module.ProblemType    # refers to a class provided by user, e.g., ProblemType
-    #     ResultType = user_module.ResultType      # refers to a class provided by user, e.g., ResultType
-    #     UserProgram = getattr(user_module, sources_config["user-program-name"])
-
     logger.debug("Running DivideandConquerFibonacci")
     logger.debug("INPUT_THRESHOLD is: {}".format(WukongProblem.INPUT_THRESHOLD))
     logger.debug("OUTPUT_THRESHOLD is: {}".format(WukongProblem.OUTPUT_THRESHOLD))
