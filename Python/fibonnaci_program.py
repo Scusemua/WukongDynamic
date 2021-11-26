@@ -38,6 +38,9 @@ root_problem_id = "[0,1]" #"root"
 final_result_id = "[1,1]"
 
 # TODO: Does the user need to provide this class? How would it differ across different problems?
+# The difference is the member variables, e.g., for Fibonacci, the result is just an int, but
+# for mergesort the result is a sorted array.
+# So the methods below may change since the member variables change
 class ResultType(WukongResult):
     """
     If type is 1, ResultType is a normal result.
@@ -177,6 +180,7 @@ class FibonacciProgram(UserProgram):
         
         return memoizedID
 
+    # TODO: This is old, the new one is after the FanOut method
     def problemLabeler(self, subProblem : ProblemType, childId : int, parentProblem : ProblemType, subProblems : list) -> str:
         """
         User must specify how subproblems are labeled. The problem label is used as a key into Wukong Storage,
@@ -301,7 +305,8 @@ class FibonacciProgram(UserProgram):
                 logger.debug(parent_problem.fan_in_stack[i] + " ")
 
         return str(subproblem.value)
-        
+
+    # TODO: This is old too? 
     def memoize_IDLabeler(self, problem : ProblemType) -> str:
         """
         Used for getting the memoized result of (sub)problem (for get(memoizedLabel, result)).
