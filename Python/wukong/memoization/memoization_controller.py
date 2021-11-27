@@ -250,7 +250,6 @@ class MemoizationThread(Thread):
         logger.debug(">> Memoization Thread has started running...")
 
         while self.active:
-            # TODO: This is normally in a try-catch with an interrupted exception (in the Java version).
             try:
                 logger.debug(">> Memoization Thread awaiting message...")
                 msg = BiChannelForMemoization.rcv2(timeout = 2)
