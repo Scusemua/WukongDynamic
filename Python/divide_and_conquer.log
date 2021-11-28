@@ -7553,3 +7553,80 @@ e_type = MemoizationMessageType.PROMISEVALUE, sender_id = "[0,1][1,2][0,2]", pro
 [2021-11-26 13:54:25,057] DEBUG: 
 [2021-11-26 13:54:25,057] DEBUG: [0,1][1,2][1,2]: Verifying ....... 
 [2021-11-26 13:54:27,059] DEBUG: Verified.
+[2021-11-28 14:17:58,237] DEBUG: Running DivideandConquerFibonacci
+[2021-11-28 14:17:58,239] DEBUG: INPUT_THRESHOLD is: 0
+[2021-11-28 14:17:58,252] DEBUG: OUTPUT_THRESHOLD is: 9223372036854775807
+[2021-11-28 14:17:58,252] DEBUG: SEQUENTIAL_THRESHOLD is: 1
+[2021-11-28 14:17:58,252] DEBUG: n: 4
+[2021-11-28 14:17:58,252] DEBUG: memoize is: False
+[2021-11-28 14:17:58,252] DEBUG: Root Problem: (ID: None, value: 4, < WukongProblem < memoization_label_on_restart = None> >)
+[2021-11-28 14:18:38,122] DEBUG: Running DivideandConquerFibonacci
+[2021-11-28 14:18:38,122] DEBUG: INPUT_THRESHOLD is: 0
+[2021-11-28 14:18:38,122] DEBUG: OUTPUT_THRESHOLD is: 9223372036854775807
+[2021-11-28 14:18:38,123] DEBUG: SEQUENTIAL_THRESHOLD is: 1
+[2021-11-28 14:18:38,123] DEBUG: n: 4
+[2021-11-28 14:18:38,123] DEBUG: memoize is: False
+[2021-11-28 14:18:38,123] DEBUG: Root Problem: (ID: None, value: 4, < WukongProblem < memoization_label_on_restart = None> >)
+[2021-11-28 14:19:19,996] DEBUG: Running DivideandConquerFibonacci
+[2021-11-28 14:19:19,997] DEBUG: INPUT_THRESHOLD is: 0
+[2021-11-28 14:19:19,997] DEBUG: OUTPUT_THRESHOLD is: 9223372036854775807
+[2021-11-28 14:19:19,997] DEBUG: SEQUENTIAL_THRESHOLD is: 1
+[2021-11-28 14:19:19,997] DEBUG: n: 4
+[2021-11-28 14:19:19,997] DEBUG: memoize is: False
+[2021-11-28 14:19:19,997] DEBUG: Root Problem: (ID: None, value: 4, < WukongProblem < memoization_label_on_restart = None> >)
+[2021-11-28 14:22:12,585] DEBUG: Running DivideandConquerFibonacci
+[2021-11-28 14:22:12,585] DEBUG: INPUT_THRESHOLD is: 0
+[2021-11-28 14:22:12,585] DEBUG: OUTPUT_THRESHOLD is: 9223372036854775807
+[2021-11-28 14:22:12,585] DEBUG: SEQUENTIAL_THRESHOLD is: 1
+[2021-11-28 14:22:12,585] DEBUG: n: 4
+[2021-11-28 14:22:12,585] DEBUG: memoize is: False
+[2021-11-28 14:22:12,585] DEBUG: Root Problem: (ID: None, value: 4, < WukongProblem < memoization_label_on_restart = None> >)
+[2021-11-28 14:22:27,391] DEBUG: Running DivideandConquerFibonacci
+[2021-11-28 14:22:27,391] DEBUG: INPUT_THRESHOLD is: 0
+[2021-11-28 14:22:27,391] DEBUG: OUTPUT_THRESHOLD is: 9223372036854775807
+[2021-11-28 14:22:27,391] DEBUG: SEQUENTIAL_THRESHOLD is: 1
+[2021-11-28 14:22:27,391] DEBUG: n: 4
+[2021-11-28 14:22:27,391] DEBUG: memoize is: False
+[2021-11-28 14:22:27,391] DEBUG: Root Problem: (ID: None, value: 4, < WukongProblem < memoization_label_on_restart = None> >)
+[2021-11-28 14:24:06,871] DEBUG: Running DivideandConquerFibonacci
+[2021-11-28 14:24:06,871] DEBUG: INPUT_THRESHOLD is: 0
+[2021-11-28 14:24:06,871] DEBUG: OUTPUT_THRESHOLD is: 9223372036854775807
+[2021-11-28 14:24:06,871] DEBUG: SEQUENTIAL_THRESHOLD is: 1
+[2021-11-28 14:24:06,871] DEBUG: n: 4
+[2021-11-28 14:24:06,872] DEBUG: memoize is: False
+[2021-11-28 14:24:06,872] DEBUG: Root Problem: (ID: None, value: 4, < WukongProblem < memoization_label_on_restart = None> >)
+[2021-11-28 14:24:13,288] DEBUG: Running DivideandConquerFibonacci
+[2021-11-28 14:24:13,288] DEBUG: INPUT_THRESHOLD is: 0
+[2021-11-28 14:24:13,289] DEBUG: OUTPUT_THRESHOLD is: 9223372036854775807
+[2021-11-28 14:24:13,289] DEBUG: SEQUENTIAL_THRESHOLD is: 1
+[2021-11-28 14:24:13,290] DEBUG: n: 4
+[2021-11-28 14:24:13,290] DEBUG: memoize is: False
+[2021-11-28 14:24:13,290] DEBUG: Root Problem: (ID: None, value: 4, < WukongProblem < memoization_label_on_restart = None> >)
+[2021-11-28 14:25:19,363] DEBUG: Running DivideandConquerFibonacci
+[2021-11-28 14:25:19,363] DEBUG: INPUT_THRESHOLD is: 0
+[2021-11-28 14:25:19,363] DEBUG: OUTPUT_THRESHOLD is: 9223372036854775807
+[2021-11-28 14:25:19,363] DEBUG: SEQUENTIAL_THRESHOLD is: 1
+[2021-11-28 14:25:19,363] DEBUG: n: 4
+[2021-11-28 14:25:19,363] DEBUG: memoize is: False
+[2021-11-28 14:25:19,363] DEBUG: Root Problem: (ID: None, value: 4, < WukongProblem < memoization_label_on_restart = None> >)
+[2021-11-28 14:26:06,552] DEBUG: Running DivideandConquerFibonacci
+[2021-11-28 14:26:06,552] DEBUG: INPUT_THRESHOLD is: 0
+[2021-11-28 14:26:06,553] DEBUG: OUTPUT_THRESHOLD is: 9223372036854775807
+[2021-11-28 14:26:06,553] DEBUG: SEQUENTIAL_THRESHOLD is: 1
+[2021-11-28 14:26:06,553] DEBUG: n: 4
+[2021-11-28 14:26:06,553] DEBUG: memoize is: False
+[2021-11-28 14:26:06,553] DEBUG: Root Problem: (ID: None, value: 4, < WukongProblem < memoization_label_on_restart = None> >)
+[2021-11-28 14:27:43,742] DEBUG: Running DivideandConquerFibonacci
+[2021-11-28 14:27:43,742] DEBUG: INPUT_THRESHOLD is: 0
+[2021-11-28 14:27:43,743] DEBUG: OUTPUT_THRESHOLD is: 9223372036854775807
+[2021-11-28 14:27:43,744] DEBUG: SEQUENTIAL_THRESHOLD is: 1
+[2021-11-28 14:27:43,744] DEBUG: n: 4
+[2021-11-28 14:27:43,744] DEBUG: memoize is: False
+[2021-11-28 14:27:43,745] DEBUG: Root Problem: (ID: None, value: 4, < WukongProblem < memoization_label_on_restart = None> >)
+[2021-11-28 14:28:37,143] DEBUG: Running DivideandConquerFibonacci
+[2021-11-28 14:28:37,143] DEBUG: INPUT_THRESHOLD is: 0
+[2021-11-28 14:28:37,143] DEBUG: OUTPUT_THRESHOLD is: 9223372036854775807
+[2021-11-28 14:28:37,143] DEBUG: SEQUENTIAL_THRESHOLD is: 1
+[2021-11-28 14:28:37,143] DEBUG: n: 4
+[2021-11-28 14:28:37,144] DEBUG: memoize is: False
+[2021-11-28 14:28:37,144] DEBUG: Root Problem: (ID: None, value: 4, < WukongProblem < memoization_label_on_restart = None> >)

@@ -41,8 +41,7 @@ class DivideAndConquerExecutor(Thread):
         problem_type = None, 
         result_type = None,
         null_result = None,
-        stop_result = None,
-        config_file_path = "wukong-divide-and-conquer.yaml"
+        stop_result = None
     ):
         super(DivideAndConquerExecutor, self).__init__(group=group, target=target, name=name)
         self.problem = problem              # refers to an INSTANCE of the user-provided ProblemType class
@@ -50,21 +49,6 @@ class DivideAndConquerExecutor(Thread):
         self.result_type = result_type
         self.null_result = null_result
         self.stop_result = stop_result
-        self.config_file_path = config_file_path
-        # with open(config_file_path) as f:
-        #     config = yaml.load(f, Loader = yaml.FullLoader)
-        #     self.config = config 
-        #     sources_config = config["sources"]
-        #     memoization_config = config["memoization"]
-        #     source_path = sources_config["source-path"]
-        #     source_module = sources_config["source-module"]
-        #     logger.debug(self.problem.problem_id + ": Importing user-defined module \"" + source_module + "\" from file \"" + source_path + "\" now...")
-        #     spec = importlib.util.spec_from_file_location(source_module, source_path)
-        #     user_module = importlib.util.module_from_spec(spec)
-        #     spec.loader.exec_module(user_module)
-
-        #     self.problem_type = user_module.ProblemType    # refers to a class provided by user, e.g., ProblemType
-        #     self.result_type = user_module.ResultType      # refers to a class provided by user, e.g., ResultType
     
     def run(self):
         ServerlessNetworkingMemoizer = None 
@@ -98,14 +82,14 @@ class DivideAndConquerExecutor(Thread):
         # Levels might also be better to use with WukongProblem.OUTPUT_THRESHOLD since size doesn't work well when sibling
         # subproblems have unequal sizes, like for Quicksort.
 
-        result = None # first and only set result is by sequentialSort when the baseCase is reached.
+        result = None # first and only set result is by sequential when the baseCase is reached.
         memoizedResult = False
 
         if self.problem.memoize:
             # Here, we want to get the value previously computed for this subproblem
             # as opposed to below where we put a computed value for a subProblem
-            # Note that the problem ID may be "4-3-2" or "4-2" but the memoized
-            # result is 2 in both cases. So in addition to problemLabeler(),
+            # Note that different problem tasks will have different problem IDs but the memoized
+            # result may be e.g., "2" in both cases. So in addition to problemLabeler(),
             # we have memoizedLabeler().
 
             promiseMsg = MemoizationMessage(
@@ -117,7 +101,7 @@ class DivideAndConquerExecutor(Thread):
             )
             
             if self.problem.memoization_label_on_restart is None:
-                # e.g., if problem.problem_id is "4-3", memoized_label is "3"
+                # e.g., for Fibonacci, Fibonacci(2) has memoized_label "2"
                 logger.debug("%s: >> Creating memoization label via `memoizeIDLabeler()`" % self.problem.problem_id)
                 memoized_label = self.problem.UserProgram.memoizeIDLabeler(self.problem) 
             else:
@@ -149,7 +133,7 @@ class DivideAndConquerExecutor(Thread):
             else:
                 logger.debug(">> memoized get: problem.problem_id " + str(self.problem.problem_id) + " was memoized result")
                 # got a memoized result for problem, but the result's ID is the ID of the problem whose result 
-                # was memoized, which is not the problem we are working on here. So set ID to proper ID.
+                # was memoized and sent to us, which is not the problem we are working on here. So set ID to proper ID, which is us
                 result.problem_id = self.problem.problem_id
             
             logger.debug("memoized get: problem.problem_id " + str(self.problem.problem_id) + " memoized_label: " + str(memoized_label) + " memoized result: " + str(result))
@@ -162,7 +146,7 @@ class DivideAndConquerExecutor(Thread):
                 self.problem.UserProgram.inputProblem(self.problem)
                 self.problem.did_input = True
         
-            # Base case is a sequential algorithm though possibly on a problem of size 1
+            # Base case is a sequential algorithm though possibly on a problem, e.g., for Fibonacci, of size 1
             if (self.problem.UserProgram.base_case(self.problem)):
                 if (not self.problem.did_input):
                     logger.debug("Error: SEQUENTIAL_THRESHOLD reached before INPUT_THRESHOLD, but we cannot sort the numbers until we input them.")

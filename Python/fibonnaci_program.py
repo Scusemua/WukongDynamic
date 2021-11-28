@@ -3,11 +3,13 @@ import logging
 import threading 
 import time 
 import sys
+import cloudpickle
 
 from wukong.wukong_problem import WukongProblem, FanInSychronizer, WukongResult, UserProgram
 
 import wukong.memoization.memoization_controller as memoization_controller
 
+import redis 
 import logging
 from logging import handlers
 logger = logging.getLogger(__name__)
@@ -20,6 +22,8 @@ logger.addHandler(ch)
 fh = handlers.RotatingFileHandler("divide_and_conquer.log", maxBytes=(1048576*5), backupCount=7)
 fh.setFormatter(formatter)
 logger.addHandler(fh)
+
+redis_client = redis.Redis(host = "52.91.26.59", port = 6379)
 
 if logger.handlers:
    for handler in logger.handlers:
@@ -114,7 +118,8 @@ class ProblemType(WukongProblem):
 
     @property
     def memoize(self):
-        return True     
+        return False
+        #return True     
 
 class FibonacciProgram(UserProgram):
     def __init__(self):
@@ -453,7 +458,8 @@ class FibonacciProgram(UserProgram):
         result = None 
 
         with debug_lock:
-            result = FanInSychronizer.resultMap[final_result_id]
+            #result = FanInSychronizer.resultMap[final_result_id]
+            result = cloudpickle.loads(FanInSychronizer.get(redis_client))
         
         logger.debug("Disabling memoization thread now...")
         memoization_controller.StopThread()

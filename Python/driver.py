@@ -1,6 +1,9 @@
 import sys
 
 import logging
+
+from wukong.invoker import invoke_lambda
+
 from logging import handlers
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -61,14 +64,24 @@ if __name__ == "__main__":
     rootProblem.fan_in_stack = fan_in_stack
     rootProblem.problem_id = fibonnaci_program.root_problem_id
 
-    root = DivideAndConquerExecutor(
-        problem = rootProblem,
-        problem_type = ProblemType, # ProblemType is a user-provided class.
-        result_type = ResultType,   # ProblemType is a user-provided class.
-        null_result = fibonnaci_program.NullResult,
-        stop_result = fibonnaci_program.StopResult,
-        config_file_path = "./wukong-divide-and-conquer.yaml"
-    )
-    root.start()
+    # root = DivideAndConquerExecutor(
+    #     problem = rootProblem,
+    #     problem_type = ProblemType, # ProblemType is a user-provided class.
+    #     result_type = ResultType,   # ProblemType is a user-provided class.
+    #     null_result = fibonnaci_program.NullResult,
+    #     stop_result = fibonnaci_program.StopResult
+    # )
 
-    root.join()
+    payload = {
+        "problem": rootProblem,
+        "problem_type": ProblemType,
+        "result_type": ResultType,
+        "null_result": fibonnaci_program.NullResult,
+        "stop_result": fibonnaci_program.StopResult
+    }
+
+    invoke_lambda(payload = payload)
+
+    # root.start()
+
+    # root.join()

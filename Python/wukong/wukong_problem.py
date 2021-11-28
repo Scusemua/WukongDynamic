@@ -1,9 +1,12 @@
 import sys
 import threading 
 import time
+import cloudpickle 
 
 from .memoization.util import MemoizationMessage, MemoizationMessageType
+from .invoker import invoke_lambda
 
+import redis 
 import logging
 from logging import handlers
 logger = logging.getLogger(__name__)
@@ -27,6 +30,8 @@ if root.handlers:
        handler.setFormatter(formatter)
 
 debug_lock = threading.Lock()
+
+redis_client = redis.Redis(host = "52.91.26.59", port = 6379)
 
 class WukongProblem(object):
     # Get input arrays when the level reaches the INPUT_THRESHOLD, e.g., don't grab the initial 256MB array,
@@ -183,7 +188,6 @@ class WukongProblem(object):
             # Add label to stack of labels from root to subproblem
             childFanInStack = problem.fan_in_stack.copy() # Stack<DivideandConquerFibonacci.ProblemType>
 
-            # TODO: Convert this to Python.
             with debug_lock:
                 logger.info(str(problem.problem_id) + ": Fanout: push on childFanInStack: (parent) problem: " + str(problem))
                 childFanInStack.append(problem)
@@ -223,22 +227,27 @@ class WukongProblem(object):
             # logger.debug(">> Type of current thread: " + str(type(threading.current_thread())))
 
             #logger.info("Creating new DivideAndConquerExecutor object now...")
-            newExecutor = DivideAndConquerExecutor(
-                problem = invokedSubproblem,
-                problem_type = threading.current_thread().problem_type,
-                result_type = threading.current_thread().result_type,
-                null_result = threading.current_thread().null_result,
-                stop_result = threading.current_thread().stop_result,
-                config_file_path = threading.current_thread().config_file_path
-            )
+            # newExecutor = DivideAndConquerExecutor(
+            #     problem = invokedSubproblem,
+            #     problem_type = threading.current_thread().problem_type,
+            #     result_type = threading.current_thread().result_type,
+            #     null_result = threading.current_thread().null_result,
+            #     stop_result = threading.current_thread().stop_result
+            # )
 
-            # TODO: Convert this to Python.
-            #synchronized(FanInSychronizer.getPrintLock()) {
-                #System.out.println("Fanout: ID: " + problem.problem_id + " invoking new right executor: "  + invokedSubproblem.problem_id)
             logger.debug(problem.problem_id + ": Fanout: ID: " + str(problem.problem_id) + " invoking new right executor: "  + str(invokedSubproblem.problem_id))
-            #}
             # start the executor
             
+            payload = {
+                "problem": invokedSubproblem,
+                "problem_type": threading.current_thread().problem_type,
+                "result_type": threading.current_thread().result_type,
+                "null_result": threading.current_thread().null_result,
+                "stop_result": threading.current_thread().stop_result
+            }
+
+            invoke_lambda(payload = payload)
+
             # where:
             #enum MemoizationMessageType {ADDPAIRINGNAME, REMOVEPAIRINGNAME, PROMISEDVALUE, DELIVEREDVALUE}
     
@@ -253,7 +262,7 @@ class WukongProblem(object):
             #    boolean did_input
             #}
             
-            newExecutor.start()
+            #newExecutor.start()
             # Note: no joins for the executor threads - when they become leaf node executors, they will perform all of the 
             # combine() operations and then return, which unwinds the recursion with nothing else to do.
         # Do the same for the become executor
@@ -290,19 +299,26 @@ class WukongProblem(object):
         # If parent input was done then we will grab part of the parent's values and the child's input can be considered done too.
         becomeSubproblem.did_input = problem.did_input
         becomeSubproblem.UserProgram = self.UserProgram
-        # logger.debug(">> Type of current thread: " + str(type(threading.current_thread())))
-        become = DivideAndConquerExecutor(
-            problem = becomeSubproblem,
-            problem_type = threading.current_thread().problem_type,
-            result_type = threading.current_thread().result_type,
-            null_result = threading.current_thread().null_result,
-            stop_result = threading.current_thread().stop_result,
-            config_file_path = threading.current_thread().config_file_path)
-        #synchronized(FanInSychronizer.getPrintLock()) {
-        #    System.out.println("Fanout: ID: " + problem.problem_id  + " becoming left executor: "  + becomeSubproblem.problem_id)
+
+        payload = {
+            "problem": becomeSubproblem,
+            "problem_type": threading.current_thread().problem_type,
+            "result_type": threading.current_thread().result_type,
+            "null_result": threading.current_thread().null_result,
+            "stop_result": threading.current_thread().stop_result
+        }
+
+        invoke_lambda(payload = payload)
+
+        # become = DivideAndConquerExecutor(
+        #     problem = becomeSubproblem,
+        #     problem_type = threading.current_thread().problem_type,
+        #     result_type = threading.current_thread().result_type,
+        #     null_result = threading.current_thread().null_result,
+        #     stop_result = threading.current_thread().stop_result)
+        
         with debug_lock:
             logger.debug(problem.problem_id + ": Fanout: ID: " + str(problem.problem_id)  + " becoming left executor: "  + str(becomeSubproblem.problem_id))
-        #}
         
         if (problem.memoize):
             addPairingNameMsgForBecomes = MemoizationMessage(
@@ -336,7 +352,8 @@ class WukongProblem(object):
         #      /   \
         #     1     2    # Executors 1 and 2 have a Fan-In at 1-2. One of executors 1 or 2 will merge input 1 and input 2 
         # and the other will stop by executing return, which will unwind its recursion. 
-        become.run()  
+        # become.run()  
+
         
         # Problem was pushed on subProblem stacks and stacks will be passed to invoked Executor. Here, self.UserProgram has a chance to 
         # trim any data in problem that is no longer needed (e.g., input array of problem) so less data is passed to 
@@ -372,12 +389,19 @@ class WukongProblem(object):
         #}
 
         with debug_lock:
-            siblingResult = None 
+            # Atomic get-set. We pass 'True' for the `get` kwarg, so we get the old value.
+            # Previously, the debug lock ensured atomocity of the whole get/set/exists operations.
+            # Since we're using multiple Lambdas, the debug log doesn't do anything anymore. So, we 
+            # need atomic get-set operation.
+            #
+            # This will need to be generalized to support fan-ins involving more than two executors.
+            # It will NOT work in its current form if there are more than two executors fanning in.
+            siblingResult = redis_client.set(FanInID, cloudpickle.dumps(result), get = True)
 
-            if FanInID in FanInSychronizer.resultMap:
-                siblingResult = FanInSychronizer.resultMap[FanInID]
-            
-            FanInSychronizer.resultMap[FanInID] = result
+            # if FanInID in FanInSychronizer.resultMap:
+            #    siblingResult = FanInSychronizer.resultMap[FanInID]
+            # else:
+            #     FanInSychronizer.resultMap[FanInID] = result
         
         # firstFanInResult may be None
         if (siblingResult == None):
@@ -495,13 +519,24 @@ class WukongProblem(object):
                 # When return we either have our result and sibling result or or our result and None. For latter, we were first
                 # Executor to fan-in so we stop.
                 FanInExecutor = WukongProblem.isLastFanInExecutor(faninId, result, subproblemResults)
+
+                # Specific to Fibonnaci-2.
+                # if result == 0:
+                #     logger.debug("Fan-In: ID: " + str(problem.problem_id) + ": FanInID: " + faninId + ": Result is 0, so setting FanInExecutor to False.")
+                #     FanInExecutor = False 
+                # else:
+                #     logger.debug("Fan-In: ID: " + str(problem.problem_id) + ": FanInID: " + faninId + ": Result is NOT 0, so setting FanInExecutor to True.")
+                #     FanInExecutor = True
+                #     subproblemResults.append()
             
             # If we are not the last task to Fan-In then unwind recursion and we are done
         
             # TODO: Two threads are thinking they're a fan-in executor.
             if not FanInExecutor:
                 with debug_lock:
-                    logger.debug("Fan-In: ID: " + str(problem.problem_id) + ": FanInID: " + faninId + ": is not become Executor and its value was: " + str(result) + " and after put is " + str((FanInSychronizer.resultMap[faninId])))
+                    #value = FanInSychronizer.resultMap[faninId]
+                    value = cloudpickle.loads(redis_client.get(faninId))
+                    logger.debug("Fan-In: ID: " + str(problem.problem_id) + ": FanInID: " + faninId + ": is not become Executor and its value was: " + str(result) + " and after put is " + str((value)))
                 
                 if (len(problem.fan_in_stack) == WukongProblem.OUTPUT_THRESHOLD):
                     with debug_lock:
