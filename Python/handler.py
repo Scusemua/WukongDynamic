@@ -20,11 +20,11 @@ if root.handlers:
 def lambda_handler(event, context): 
     logger.debug("Invocation received.")
 
-    problem = base64.b64decode(cloudpickle.loads(event["problem"]))
-    problem_type = base64.b64decode(cloudpickle.loads(event["problem_type"]))
-    result_type = base64.b64decode(cloudpickle.loads(event["result_type"]))
-    null_result = base64.b64decode(cloudpickle.loads(event["null_result"]))
-    stop_result = base64.b64decode(cloudpickle.loads(event["stop_result"]))
+    problem = cloudpickle.loads(base64.b64decode(event["problem"]))
+    problem_type = cloudpickle.loads(base64.b64decode(event["problem_type"]))
+    result_type = cloudpickle.loads(base64.b64decode(event["result_type"]))
+    null_result = cloudpickle.loads(base64.b64decode(event["null_result"]))
+    stop_result = cloudpickle.loads(base64.b64decode(event["stop_result"]))
 
     logger.debug("Problem:", str(problem))
     logger.debug("Problem type:", str(problem_type))
@@ -41,7 +41,5 @@ def lambda_handler(event, context):
     )    
 
     logger.debug("Starting executor.")
-    executor.start()
-    logger.debug("Joining executor.")
-    executor.join()
+    executor.run()
     logger.debug("Executor finished.")

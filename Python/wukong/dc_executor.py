@@ -4,8 +4,8 @@ import threading
 from threading import Thread 
 from wukong.wukong_problem import WukongProblem
 
-from .memoization import memoization_controller
-from .memoization.util import MemoizationMessage, MemoizationMessageType
+# from .memoization import memoization_controller
+# from .memoization.util import MemoizationMessage, MemoizationMessageType
 
 import logging
 from logging import handlers
@@ -15,10 +15,6 @@ formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
 ch = logging.StreamHandler(sys.stdout)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
-
-fh = handlers.RotatingFileHandler("divide_and_conquer.log", maxBytes=(1048576*5), backupCount=7)
-fh.setFormatter(formatter)
-logger.addHandler(fh)
 
 if logger.handlers:
    for handler in logger.handlers:
@@ -31,7 +27,7 @@ if root.handlers:
 
 debug_lock = threading.Lock() 
 
-class DivideAndConquerExecutor(Thread):
+class DivideAndConquerExecutor():
     def __init__(
         self,
         problem = None,
@@ -52,20 +48,21 @@ class DivideAndConquerExecutor(Thread):
     
     def run(self):
         ServerlessNetworkingMemoizer = None 
-        memoization_controller.StartController(
-            #config = self.config, 
-            user_problem_type = self.problem_type,
-            user_program_class = self.problem.UserProgram.__class__,
-            null_result = self.null_result, 
-            stop_result = self.stop_result)
+
+        # memoization_controller.StartController(
+        #     #config = self.config, 
+        #     user_problem_type = self.problem_type,
+        #     user_program_class = self.problem.UserProgram.__class__,
+        #     null_result = self.null_result, 
+        #     stop_result = self.stop_result)
 
         logger.debug(">>>> Executor for Problem ID " + self.problem.problem_id + " has started running!")
         
         # Start fan-out task.
-        if (self.problem.memoize):
-            logger.debug(">> Attempting to pair now using the pairing name \"" + self.problem.problem_id + "\"...")
-            ServerlessNetworkingMemoizer = memoization_controller.Pair(self.problem.problem_id)
-            ack = ServerlessNetworkingMemoizer.rcv1()
+        # if (self.problem.memoize):
+        #     logger.debug(">> Attempting to pair now using the pairing name \"" + self.problem.problem_id + "\"...")
+        #     ServerlessNetworkingMemoizer = memoization_controller.Pair(self.problem.problem_id)
+        #     ack = ServerlessNetworkingMemoizer.rcv1()
 
         # Pre-process problem, if required.
         self.problem.UserProgram.preprocess(self.problem)
@@ -85,58 +82,58 @@ class DivideAndConquerExecutor(Thread):
         result = None # first and only set result is by sequential when the baseCase is reached.
         memoizedResult = False
 
-        if self.problem.memoize:
-            # Here, we want to get the value previously computed for this subproblem
-            # as opposed to below where we put a computed value for a subProblem
-            # Note that different problem tasks will have different problem IDs but the memoized
-            # result may be e.g., "2" in both cases. So in addition to problemLabeler(),
-            # we have memoizedLabeler().
+        # if self.problem.memoize:
+        #     # Here, we want to get the value previously computed for this subproblem
+        #     # as opposed to below where we put a computed value for a subProblem
+        #     # Note that different problem tasks will have different problem IDs but the memoized
+        #     # result may be e.g., "2" in both cases. So in addition to problemLabeler(),
+        #     # we have memoizedLabeler().
 
-            promiseMsg = MemoizationMessage(
-                message_type = MemoizationMessageType.PROMISEVALUE,
-                sender_id = self.problem.problem_id,
-                problem_or_result_id = self.problem.problem_id,
-                become_executor = self.problem.become_executor,
-                did_input = self.problem.did_input
-            )
+        #     promiseMsg = MemoizationMessage(
+        #         message_type = MemoizationMessageType.PROMISEVALUE,
+        #         sender_id = self.problem.problem_id,
+        #         problem_or_result_id = self.problem.problem_id,
+        #         become_executor = self.problem.become_executor,
+        #         did_input = self.problem.did_input
+        #     )
             
-            if self.problem.memoization_label_on_restart is None:
-                # e.g., for Fibonacci, Fibonacci(2) has memoized_label "2"
-                logger.debug("%s: >> Creating memoization label via `memoizeIDLabeler()`" % self.problem.problem_id)
-                memoized_label = self.problem.UserProgram.memoizeIDLabeler(self.problem) 
-            else:
-                logger.debug("%s: >> Using `memoization_label_on_restart` for memoization label." % self.problem.problem_id)
-                memoized_label = self.problem.memoization_label_on_restart
+        #     if self.problem.memoization_label_on_restart is None:
+        #         # e.g., for Fibonacci, Fibonacci(2) has memoized_label "2"
+        #         logger.debug("%s: >> Creating memoization label via `memoizeIDLabeler()`" % self.problem.problem_id)
+        #         memoized_label = self.problem.UserProgram.memoizeIDLabeler(self.problem) 
+        #     else:
+        #         logger.debug("%s: >> Using `memoization_label_on_restart` for memoization label." % self.problem.problem_id)
+        #         memoized_label = self.problem.memoization_label_on_restart
             
-            promiseMsg.memoization_label = memoized_label
-            promiseMsg.result = None    
-            promiseMsg.fan_in_stack = self.problem.fan_in_stack
+        #     promiseMsg.memoization_label = memoized_label
+        #     promiseMsg.result = None    
+        #     promiseMsg.fan_in_stack = self.problem.fan_in_stack
 
-            logger.debug("memoized send1: problem.problem_id " + str(self.problem.problem_id) + " memoized_label: " + str(memoized_label))
+        #     logger.debug("memoized send1: problem.problem_id " + str(self.problem.problem_id) + " memoized_label: " + str(memoized_label))
             
-            ServerlessNetworkingMemoizer.send1(promiseMsg)
+        #     ServerlessNetworkingMemoizer.send1(promiseMsg)
             
-            logger.debug("memoized get: problem.problem_id " + str(self.problem.problem_id) + " getting ack.")
+        #     logger.debug("memoized get: problem.problem_id " + str(self.problem.problem_id) + " getting ack.")
             
-            result = ServerlessNetworkingMemoizer.rcv1()
+        #     result = ServerlessNetworkingMemoizer.rcv1()
             
-            logger.debug("memoized get: problem.problem_id " + str(self.problem.problem_id) + " got ack.")
+        #     logger.debug("memoized get: problem.problem_id " + str(self.problem.problem_id) + " got ack.")
             
-            if (result == memoization_controller.NullResult):
-                # no memoized result
-                logger.debug("memoized get: problem.problem_id " + str(self.problem.problem_id) + " ack was None result.")
-                result = None
-            elif (result == memoization_controller.StopResult):
-                # end executor, to be "restarted" later when subproblem result becomes available
-                logger.debug("memoized get: problem.problem_id " + str(self.problem.problem_id) + " ack was stop.")
-                return 
-            else:
-                logger.debug(">> memoized get: problem.problem_id " + str(self.problem.problem_id) + " was memoized result")
-                # got a memoized result for problem, but the result's ID is the ID of the problem whose result 
-                # was memoized and sent to us, which is not the problem we are working on here. So set ID to proper ID, which is us
-                result.problem_id = self.problem.problem_id
+        #     if (result == memoization_controller.NullResult):
+        #         # no memoized result
+        #         logger.debug("memoized get: problem.problem_id " + str(self.problem.problem_id) + " ack was None result.")
+        #         result = None
+        #     elif (result == memoization_controller.StopResult):
+        #         # end executor, to be "restarted" later when subproblem result becomes available
+        #         logger.debug("memoized get: problem.problem_id " + str(self.problem.problem_id) + " ack was stop.")
+        #         return 
+        #     else:
+        #         logger.debug(">> memoized get: problem.problem_id " + str(self.problem.problem_id) + " was memoized result")
+        #         # got a memoized result for problem, but the result's ID is the ID of the problem whose result 
+        #         # was memoized and sent to us, which is not the problem we are working on here. So set ID to proper ID, which is us
+        #         result.problem_id = self.problem.problem_id
             
-            logger.debug("memoized get: problem.problem_id " + str(self.problem.problem_id) + " memoized_label: " + str(memoized_label) + " memoized result: " + str(result))
+        #     logger.debug("memoized get: problem.problem_id " + str(self.problem.problem_id) + " memoized_label: " + str(memoized_label) + " memoized result: " + str(result))
         
         if not self.problem.memoize or (self.problem.memoize and result is None):
             result = self.result_type() # result_type is a class, so let's instantiate it 

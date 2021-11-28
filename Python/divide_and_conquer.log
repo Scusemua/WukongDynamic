@@ -7630,3 +7630,10 @@ e_type = MemoizationMessageType.PROMISEVALUE, sender_id = "[0,1][1,2][0,2]", pro
 [2021-11-28 14:28:37,143] DEBUG: n: 4
 [2021-11-28 14:28:37,144] DEBUG: memoize is: False
 [2021-11-28 14:28:37,144] DEBUG: Root Problem: (ID: None, value: 4, < WukongProblem < memoization_label_on_restart = None> >)
+[2021-11-28 14:31:06,217] DEBUG: Running DivideandConquerFibonacci
+[2021-11-28 14:31:06,217] DEBUG: INPUT_THRESHOLD is: 0
+[2021-11-28 14:31:06,217] DEBUG: OUTPUT_THRESHOLD is: 9223372036854775807
+[2021-11-28 14:31:06,217] DEBUG: SEQUENTIAL_THRESHOLD is: 1
+[2021-11-28 14:31:06,217] DEBUG: n: 4
+[2021-11-28 14:31:06,217] DEBUG: memoize is: False
+[2021-11-28 14:31:06,217] DEBUG: Root Problem: (ID: None, value: 4, < WukongProblem < memoization_label_on_restart = None> >)

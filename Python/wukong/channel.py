@@ -10,9 +10,9 @@ ch = logging.StreamHandler(sys.stdout)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
-fh = handlers.RotatingFileHandler("divide_and_conquer.log", maxBytes=(1048576*5), backupCount=7)
-fh.setFormatter(formatter)
-logger.addHandler(fh)
+# fh = handlers.RotatingFileHandler("divide_and_conquer.log", maxBytes=(1048576*5), backupCount=7)
+# fh.setFormatter(formatter)
+# logger.addHandler(fh)
 
 class UniChannel(object):
     """
