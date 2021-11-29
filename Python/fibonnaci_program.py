@@ -36,8 +36,8 @@ if root.handlers:
 
 debug_lock = threading.Lock() 
 
-n = 2
-expected_value = 1
+n = 4
+expected_value = 3
 root_problem_id = "[0,1]" #"root"
 final_result_id = "[1,1]"
 

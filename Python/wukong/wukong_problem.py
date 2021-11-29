@@ -168,7 +168,7 @@ class WukongProblem(object):
 
         #For a fan-out of N, invoke N-1 executors and become 1
         #for (int i=0 i< subProblems.size()-1 i++) {
-        print("len(subProblems): " + str(len(subProblems)))
+        logger.debug("len(subProblems): " + str(len(subProblems)))
         for i in range(len(subProblems) - 1):
             invokedSubproblem = subProblems[i]
 
@@ -548,7 +548,9 @@ class WukongProblem(object):
             if not FanInExecutor:
                 with debug_lock:
                     #value = FanInSychronizer.resultMap[faninId]
-                    value = cloudpickle.loads(redis_client.get(faninId))
+                    valueEncoded = redis_client.get(faninId)
+                    valueSerialized = decode_base64(valueEncoded)
+                    value = cloudpickle.loads(valueSerialized)
                     logger.debug("Fan-In: ID: " + str(problem.problem_id) + ": FanInID: " + faninId + ": is not become Executor and its value was: " + str(result) + " and after put is " + str((value)))
                 
                 if (len(problem.fan_in_stack) == WukongProblem.OUTPUT_THRESHOLD):

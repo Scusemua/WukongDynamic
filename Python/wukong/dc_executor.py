@@ -82,6 +82,7 @@ class DivideAndConquerExecutor(Thread):
         result = None # first and only set result is by sequential when the baseCase is reached.
         memoizedResult = False
 
+        # UNCOMMENT FOR SERVERLESS IF WE WANT TO START MEMOIZING.
         # if self.problem.memoize:
         #     # Here, we want to get the value previously computed for this subproblem
         #     # as opposed to below where we put a computed value for a subProblem
