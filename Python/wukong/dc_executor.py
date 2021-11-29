@@ -14,7 +14,7 @@ logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
 ch = logging.StreamHandler(sys.stdout)
 ch.setFormatter(formatter)
-logger.addHandler(ch)
+#logger.addHandler(ch)
 
 if logger.handlers:
    for handler in logger.handlers:
@@ -27,7 +27,7 @@ if root.handlers:
 
 debug_lock = threading.Lock() 
 
-class DivideAndConquerExecutor():
+class DivideAndConquerExecutor(Thread):
     def __init__(
         self,
         problem = None,

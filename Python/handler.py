@@ -1,5 +1,6 @@
 import logging 
 import base64
+import re 
 
 import cloudpickle
 from wukong.dc_executor import DivideAndConquerExecutor
@@ -26,11 +27,11 @@ def lambda_handler(event, context):
     null_result = cloudpickle.loads(base64.b64decode(event["null_result"]))
     stop_result = cloudpickle.loads(base64.b64decode(event["stop_result"]))
 
-    logger.debug("Problem:", str(problem))
-    logger.debug("Problem type:", str(problem_type))
-    logger.debug("Result type:", str(result_type))
-    logger.debug("Null result:", str(null_result))
-    logger.debug("Stop result:", str(stop_result))
+    logger.debug("Problem: " + str(problem))
+    logger.debug("Problem type: " + str(problem_type))
+    logger.debug("Result type: " + str(result_type))
+    logger.debug("Null result: " + str(null_result))
+    logger.debug("Stop result: " + str(stop_result))
 
     executor = DivideAndConquerExecutor(
         problem = problem,
@@ -41,5 +42,6 @@ def lambda_handler(event, context):
     )    
 
     logger.debug("Starting executor.")
-    executor.run()
+    executor.start()
+    executor.join()
     logger.debug("Executor finished.")

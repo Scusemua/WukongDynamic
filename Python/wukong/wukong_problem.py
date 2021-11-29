@@ -1,7 +1,9 @@
+import base64
+import cloudpickle
+import re
 import sys
 import threading 
-import time
-import cloudpickle 
+import time 
 
 from .memoization.util import MemoizationMessage, MemoizationMessageType
 from .invoker import invoke_lambda
@@ -14,7 +16,7 @@ logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
 ch = logging.StreamHandler(sys.stdout)
 ch.setFormatter(formatter)
-logger.addHandler(ch)
+#logger.addHandler(ch)
 
 # fh = handlers.RotatingFileHandler("divide_and_conquer.log", maxBytes=(1048576*5), backupCount=7)
 # fh.setFormatter(formatter)
@@ -31,7 +33,7 @@ if root.handlers:
 
 debug_lock = threading.Lock()
 
-redis_client = redis.Redis(host = "52.91.26.59", port = 6379)
+redis_client = redis.Redis(host = "34.207.129.88", port = 6379)
 
 class WukongProblem(object):
     # Get input arrays when the level reaches the INPUT_THRESHOLD, e.g., don't grab the initial 256MB array,
@@ -88,7 +90,7 @@ class WukongProblem(object):
         #       Also, the existing classes that are passed around to possibly several threads are not thread safe, I think.
 
     def __str__(self):
-        return "WukongProblem < memoization_label_on_restart = " + str(self.memoization_label_on_restart) + ">"
+        return "WukongProblem(memoization_label_on_restart=" + str(self.memoization_label_on_restart) + ")"
 
     @property
     def memoize(self):
@@ -396,7 +398,20 @@ class WukongProblem(object):
             #
             # This will need to be generalized to support fan-ins involving more than two executors.
             # It will NOT work in its current form if there are more than two executors fanning in.
-            siblingResult = redis_client.set(FanInID, cloudpickle.dumps(result), get = True)
+            #siblingResult = redis_client.set(FanInID, cloudpickle.dumps(result), get = True)
+            resultSerialized = cloudpickle.dumps(result)
+            resultEncoded = base64.b64encode(resultSerialized)
+            logger.debug("Result (to be written to Redis) encoded: '" + str(resultEncoded) + "'")
+            siblingResultEncoded = redis_client.getset(FanInID, resultEncoded)
+
+            # Data in Redis is stored as base64-encoded strings. Specifically, we first pickle the
+            # data with cloudpickle, after which we encode it in base64. Thus, we must decode
+            # and deserialize (in that order) the data after reading it from Redis.
+            if siblingResultEncoded is not None:
+                logger.debug("Obtained the following encoded String from Redis: '" + str(siblingResultEncoded) + "'")
+                siblingResultSerialized = decode_base64(siblingResultEncoded)
+                print("Encoded sibling result: '" + str(siblingResultSerialized) + "'")
+                siblingResult = cloudpickle.loads(siblingResultSerialized)
 
             # if FanInID in FanInSychronizer.resultMap:
             #    siblingResult = FanInSychronizer.resultMap[FanInID]
@@ -829,3 +844,21 @@ class FanInSychronizer(object):
                 copy.problem_id = result.problem_id
         
         return copy 
+
+def decode_base64(original_data, altchars=b'+/'):
+    """Decode base64, padding being optional.
+
+    :param data: Base64 data as an ASCII byte string
+    :returns: The decoded byte string.
+
+    """
+    # data = re.sub(rb'[^a-zA-Z0-9%s]+' % altchars, b'', original_data)  # normalize
+    # missing_padding = len(data) % 4
+    # logger.debug("Original data length: " + str(len(original_data)) + ", normalized data length: " + str(len(data)) + ", missing padding: " + str(missing_padding))
+    # if missing_padding > 0:
+    #     data += b'='* (4 - missing_padding)
+    #     logger.debug("Length of data after adjustment: " + str(len(data)))
+    # else:
+    #     logger.debug("Length of (normalized) data is multiple of 4; no adjustment required.")
+    original_data += b'==='
+    return base64.b64decode(original_data, altchars)

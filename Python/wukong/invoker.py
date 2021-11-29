@@ -4,7 +4,6 @@ import boto3
 import cloudpickle
 import json
 import base64
-base64.encodestring = base64.encodebytes
 
 import logging 
 logger = logging.getLogger(__name__)
@@ -29,11 +28,12 @@ def invoke_lambda(
     """
     _payload = {}
     for k,v in payload.items():
-        _payload[k] = base64.encodestring(cloudpickle.dumps(v)).decode('utf-8')
+        _payload[k] = base64.b64encode(cloudpickle.dumps(v)).decode('utf-8')
 
     logger.debug("Invoking AWS Lambda function '" + function_name + "' with payload containing " + str(len(payload)) + " key(s).")
     #lambda_invocation_payload_serialized = cloudpickle.dumps()
-    lambda_client.invoke(
+    status_code = lambda_client.invoke(
         FunctionName = function_name, 
         InvocationType = 'Event',
-        Payload = json.dumps(_payload))
+        Payload = json.dumps(_payload)) #json.dumps(_payload))
+    logger.debug("Invoked AWS Lambda function '" + function_name + "'. Status code: " + str(status_code) + ".")

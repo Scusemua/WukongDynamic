@@ -8,7 +8,7 @@ logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
 ch = logging.StreamHandler(sys.stdout)
 ch.setFormatter(formatter)
-logger.addHandler(ch)
+#logger.addHandler(ch)
 
 # fh = handlers.RotatingFileHandler("divide_and_conquer.log", maxBytes=(1048576*5), backupCount=7)
 # fh.setFormatter(formatter)

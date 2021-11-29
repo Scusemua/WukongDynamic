@@ -1,4 +1,4 @@
-
+import base64
 import logging 
 import threading 
 import time 
@@ -7,7 +7,7 @@ import cloudpickle
 
 from wukong.wukong_problem import WukongProblem, FanInSychronizer, WukongResult, UserProgram
 
-import wukong.memoization.memoization_controller as memoization_controller
+# import wukong.memoization.memoization_controller as memoization_controller
 
 import redis 
 import logging
@@ -17,13 +17,13 @@ logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
 ch = logging.StreamHandler(sys.stdout)
 ch.setFormatter(formatter)
-logger.addHandler(ch)
+#logger.addHandler(ch)
 
 # fh = handlers.RotatingFileHandler("divide_and_conquer.log", maxBytes=(1048576*5), backupCount=7)
 # fh.setFormatter(formatter)
 # logger.addHandler(fh)
 
-redis_client = redis.Redis(host = "52.91.26.59", port = 6379)
+redis_client = redis.Redis(host = "34.207.129.88", port = 6379)
 
 if logger.handlers:
    for handler in logger.handlers:
@@ -127,6 +127,9 @@ class FibonacciProgram(UserProgram):
         global root_problem_id
         self.root_problem_id = root_problem_id
         self.final_result_id = final_result_id
+
+    def __str__(self):
+        return "FibonacciProgram(root_problem_id=" + str(self.root_problem_id) + ", final_result_id=" + self.final_result_id + ")"
 
     def base_case(self, problem : ProblemType) -> bool:
         """ 
@@ -459,10 +462,19 @@ class FibonacciProgram(UserProgram):
 
         with debug_lock:
             #result = FanInSychronizer.resultMap[final_result_id]
-            result = cloudpickle.loads(FanInSychronizer.get(redis_client))
+            resultEncoded = redis_client.get(final_result_id)
+
+            if resultEncoded is None:
+                logger.error("Final result (stored under key '" + str(final_result_id) + "' is Null")
+            else:
+                resultSerialized = decode_base64(resultEncoded)
+                result = cloudpickle.loads(resultSerialized)
+
+            logger.debug("Final result encoded: " + str(resultEncoded))
+            result = cloudpickle.loads(base64.b64decode(resultEncoded))
         
-        logger.debug("Disabling memoization thread now...")
-        memoization_controller.StopThread()
+        # logger.debug("Disabling memoization thread now...")
+        # memoization_controller.StopThread()
 
         logger.debug("")
         logger.debug(problem_problemID + ": Fibonacci(" + str(n) + ") = " + str(result.value))
@@ -484,6 +496,24 @@ class FibonacciProgram(UserProgram):
 # Global Constants.
 NullResult = ResultType(type = -1, value = -1)
 StopResult = ResultType(type = 0, value = -1)
+
+def decode_base64(original_data, altchars=b'+/'):
+    """Decode base64, padding being optional.
+
+    :param data: Base64 data as an ASCII byte string
+    :returns: The decoded byte string.
+
+    """
+    # data = re.sub(rb'[^a-zA-Z0-9%s]+' % altchars, b'', original_data)  # normalize
+    # missing_padding = len(data) % 4
+    # logger.debug("Original data length: " + str(len(original_data)) + ", normalized data length: " + str(len(data)) + ", missing padding: " + str(missing_padding))
+    # if missing_padding > 0:
+    #     data += b'='* (4 - missing_padding)
+    #     logger.debug("Length of data after adjustment: " + str(len(data)))
+    # else:
+    #     logger.debug("Length of (normalized) data is multiple of 4; no adjustment required.")
+    original_data += b'==='
+    return base64.b64decode(original_data, altchars)
 
 """
 
