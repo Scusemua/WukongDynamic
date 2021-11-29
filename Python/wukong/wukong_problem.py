@@ -302,22 +302,22 @@ class WukongProblem(object):
         becomeSubproblem.did_input = problem.did_input
         becomeSubproblem.UserProgram = self.UserProgram
 
-        payload = {
-            "problem": becomeSubproblem,
-            "problem_type": threading.current_thread().problem_type,
-            "result_type": threading.current_thread().result_type,
-            "null_result": threading.current_thread().null_result,
-            "stop_result": threading.current_thread().stop_result
-        }
+        # payload = {
+        #     "problem": becomeSubproblem,
+        #     "problem_type": threading.current_thread().problem_type,
+        #     "result_type": threading.current_thread().result_type,
+        #     "null_result": threading.current_thread().null_result,
+        #     "stop_result": threading.current_thread().stop_result
+        # }
 
-        invoke_lambda(payload = payload)
+        # invoke_lambda(payload = payload)
 
-        # become = DivideAndConquerExecutor(
-        #     problem = becomeSubproblem,
-        #     problem_type = threading.current_thread().problem_type,
-        #     result_type = threading.current_thread().result_type,
-        #     null_result = threading.current_thread().null_result,
-        #     stop_result = threading.current_thread().stop_result)
+        become = DivideAndConquerExecutor(
+            problem = becomeSubproblem,
+            problem_type = threading.current_thread().problem_type,
+            result_type = threading.current_thread().result_type,
+            null_result = threading.current_thread().null_result,
+            stop_result = threading.current_thread().stop_result)
         
         with debug_lock:
             logger.debug(problem.problem_id + ": Fanout: ID: " + str(problem.problem_id)  + " becoming left executor: "  + str(becomeSubproblem.problem_id))
@@ -354,7 +354,7 @@ class WukongProblem(object):
         #      /   \
         #     1     2    # Executors 1 and 2 have a Fan-In at 1-2. One of executors 1 or 2 will merge input 1 and input 2 
         # and the other will stop by executing return, which will unwind its recursion. 
-        # become.run()  
+        become.run()  
 
         
         # Problem was pushed on subProblem stacks and stacks will be passed to invoked Executor. Here, self.UserProgram has a chance to 
@@ -385,11 +385,9 @@ class WukongProblem(object):
         copyOfResult = result.copy() # DivideandConquerFibonacci.ResultType
         copyOfResult.problem_id = result.problem_id
         
-        #synchronized(FanInSychronizer.getPrintLock()) {
-        #    System.out.println("isLastFanInExecutor: Writing to " + FanInID + " the value " + copyOfResult) # result)
         logger.debug("isLastFanInExecutor: Writing to " + FanInID + " the value " + str(copyOfResult)) # result))
-        #}
 
+        siblingResult = None
         with debug_lock:
             # Atomic get-set. We pass 'True' for the `get` kwarg, so we get the old value.
             # Previously, the debug lock ensured atomocity of the whole get/set/exists operations.
@@ -421,7 +419,7 @@ class WukongProblem(object):
         # firstFanInResult may be None
         if (siblingResult == None):
             return False
-        else:    
+        else:
             copyOfSiblingResult = siblingResult.copy()
             copyOfSiblingResult.problem_id = siblingResult.problem_id
             
