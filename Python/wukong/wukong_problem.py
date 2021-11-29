@@ -579,10 +579,9 @@ class WukongProblem(object):
                 # Unwind recursion but real executor could simply terminate instead.
                 return False
             else:  # we are last Executor and first executor's result is in previousValue.
-                with debug_lock:
-                    logger.debug(problem.problem_id + ": FanIn: ID: " + problem.problem_id + ": FanInID: " + faninId + ": " + ": Returned from put: executor isLastFanInExecutor ")
-                    logger.debug(subproblemResults[0])
-                    logger.debug(problem.problem_id + ": ID: " + str(problem.problem_id) + ": call combine ***************")
+                logger.debug(problem.problem_id + ": FanIn: ID: " + problem.problem_id + ": FanInID: " + faninId + ": " + ": Returned from put: executor isLastFanInExecutor ")
+                logger.debug(subproblemResults[0])
+                logger.debug(problem.problem_id + ": ID: " + str(problem.problem_id) + ": call combine ***************")
                 
                 # combine takes the result for this executor and the results for the sibling subproblems obtained by
                 # the sibling executors to produce the result for this problem.
@@ -601,7 +600,7 @@ class WukongProblem(object):
                 # rhc: start Fan-In task 
                 self.UserProgram.combine(subproblemResults, result, problem.problem_id)
 
-                logger.debug(problem.problem_id + ": FanIn: ID: " + problem.problem_id + ", result: " + str(result))
+                logger.debug(problem.problem_id + ": FanIn: ID: " + problem.problem_id + ", FanInId: " + faninId + ", result: " + str(result))
 
                 #logger.debug(problem.problem_id + ": Thread exiting...")
                 
@@ -639,9 +638,12 @@ class WukongProblem(object):
                     
                     ack = ServerlessNetworkingMemoizer.rcv1()
                 
+                if (faninId == "[1,1]"):
+                    logger.debug(problem.problem_id + ": Executor: Writing the final value to root: " + str(result))
+                    redis_client.set("[1,1]", base64.b64encode(cloudpickle.dumps(result)))
+
                 if (WukongProblem.USESERVERLESSNETWORKING):
-                    FanInID = parentProblem.problem_id
-                    if (FanInID == "[1,1]"):
+                    if (faninId == "[1,1]"):
                         logger.debug(problem.problem_id + ": Executor: Writing the final value to root: " + str(result))
                         siblingResult = FanInSychronizer.resultMap.put("[1,1]", result) 
 
