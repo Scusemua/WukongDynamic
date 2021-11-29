@@ -36,8 +36,8 @@ if root.handlers:
 
 debug_lock = threading.Lock() 
 
-n = 5
-expected_value = 5
+n = 6
+expected_value = 8
 root_problem_id = "[0,1]" #"root"
 final_result_id = "[1,1]"
 
@@ -486,7 +486,6 @@ class FibonacciProgram(UserProgram):
         logger.debug("")
 
         logger.debug(problem_problemID + ": Verifying ....... ")
-        time.sleep(2)
         error = False 
         if result.value != expected_value:
             error = True 
