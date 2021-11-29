@@ -36,10 +36,15 @@ if root.handlers:
 
 debug_lock = threading.Lock() 
 
-n = 4
-expected_value = 3
+n = 5
+expected_value = 5
 root_problem_id = "[0,1]" #"root"
 final_result_id = "[1,1]"
+
+def ResetRedis():
+    print("Flushing Redis DB now.")
+    redis_client.flushdb()
+    redis_client.flushall()
 
 # TODO: Does the user need to provide this class? How would it differ across different problems?
 # The difference is the member variables, e.g., for Fibonacci, the result is just an int, but

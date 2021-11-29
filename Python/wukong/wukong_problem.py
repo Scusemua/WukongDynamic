@@ -400,6 +400,19 @@ class WukongProblem(object):
             resultSerialized = cloudpickle.dumps(result)
             resultEncoded = base64.b64encode(resultSerialized)
             logger.debug("Result (to be written to Redis) encoded: '" + str(resultEncoded) + "'")
+            # with redis_client.pipeline() as p:
+            #     while True:
+            #         try:
+            #             p.watch(FanInID)
+            #             siblingResultEncoded = p.get(FanInID) 
+            #             p.multi()
+            #             if siblingResultEncoded is None:
+            #                 p.set(FanInID, resultEncoded)
+            #             p.execute()
+            #             break
+            #         except redis.WatchError:
+            #             continue
+
             siblingResultEncoded = redis_client.getset(FanInID, resultEncoded)
 
             # Data in Redis is stored as base64-encoded strings. Specifically, we first pickle the

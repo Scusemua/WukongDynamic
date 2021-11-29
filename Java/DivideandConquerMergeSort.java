@@ -303,6 +303,9 @@ class User {
 	// data values. For example, if the parent array has values for 0-14, the left array has values for 0-7 and the 
 	// right array has values for 8-14. The right array will be passed (as an Lambda invocation argument or 
 	// written to Wukong storage) to a new executor for this subproblem.
+	//
+	//
+	// NOTE: Do not need to translate this problem...
 	static void computeInputsOfSubproblems(ProblemType problem, ArrayList<ProblemType> subProblems) {
 		int size = problem.to - problem.from + 1;
 		int midArray =  0 + Math.floorDiv((problem.numbers.length-1) - 0, 2);

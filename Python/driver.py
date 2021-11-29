@@ -80,6 +80,8 @@ if __name__ == "__main__":
         "stop_result": fibonnaci_program.StopResult
     }
 
+    fibonnaci_program.ResetRedis()
+
     invoke_lambda(payload = payload)
 
     # root.start()
