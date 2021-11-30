@@ -70,8 +70,8 @@ class ResultType(WukongResult):
     If type is 0, ResultType is a stopResult.
     If type is -1, ResultType is a nullResult.
     """    
-    def __init__(self, numbers = [], from_idx = -1, to_idx = -1, result_type = 0, value = -1, UserProgram = None):
-        super(ResultType, self).__init__(UserProgram = UserProgram)
+    def __init__(self, numbers = [], from_idx = -1, to_idx = -1, result_type = 0, value = -1):
+        super(ResultType, self).__init__()
         self.numbers = numbers
         self.from_idx = from_idx
         self.to_idx = to_idx
@@ -92,7 +92,7 @@ class ResultType(WukongResult):
 
 class MergesortProgram(UserProgram):
     def __init__(self):
-        super(MergesortProgram, self).__init__(UserProgram = UserProgram)
+        super(MergesortProgram, self).__init__()
         global final_result_id
         global root_problem_id
         self.root_problem_id = root_problem_id
@@ -275,8 +275,50 @@ class MergesortProgram(UserProgram):
         else:
             problem_result.from_idx = second_result.from_idx
             problem_result.to_idx = first_result.to_idx 
-    
+
+    def computeInputsOfSubproblems(self, problem: ProblemType, subproblems: list):
+        """
+        User provides method to generate subproblem values, e.g., sub-array to be sorted, from problems.
+        The Problem Labels identify a (sub)problem, but we still need a way to generate the subproblem
+        data values. For example, if the parent array has values for 0-14, the left array has values for 0-7 and the 
+        right array has values for 8-14. The right array will be passed (as an Lambda invocation argument or 
+        written to Wukong storage) to a new executor for this subproblem.
+        """
+        problem_size = problem.to_idx - problem.from_idx + 1
+        midArray = 0 + ((len(problem.numbers) - 1) // 2)
+
+        if len(problem.fan_in_stack) >= WukongProblem.INPUT_THRESHOLD:
+            logger.debug("computeInputsOfSubproblems ( >= INPUT_THRESHOLD): ID: " + str(problem.problem_id) + ", midArray: " + str(midArray) + ", to: " + str(problem.to_idx))
+        else:
+            logger.debug("computeInputsOfSubproblems ( < INPUT_THRESHOLD): ID: " + str(problem.problem_id) + ", midArray: " + str(midArray) + ", to: " + str(problem.to_idx))
+        
+        left_array = []
+        right_array = []
+
+        try:
+            logger.debug("computeInputsOfSubproblems: problem.numbers: " + str(problem.numbers))
+            logger.debug("computeInputsOfSubproblems: ID: " + str(problem.problem_id) + ", len(numbers): " + str(len(problem.numbers)) + ", numbers: " + str(problem.numbers))
+            # Assuming that inputNumbers returns the problem's actual from-to subsegment of the complete input.
+            
+            # Copies are made from the parent problem's sub-segment of the input array, are a prefix of parent's copy, and start with 0.
+            logger.debug("computeInputsOfSubproblems: ID: " + str(problem.problem_id) + " size < threshold, make left copy: from: 0 midArray+1 " + str((midArray+1)))
+            leftArray = problem.numbers[0:midArray + 1]
+            logger.debug("computeInputsOfSubproblems: ID: " + str(problem.problem_id) + " size < threshold, make right copy: midArray+1: " + str((midArray+1)) + " to+1 " + len(problem.numbers))
+            right_array = problem.numbers[midArray + 1: len(problem.numbers)]
+        except Exception as ex:
+            logger.error("Exception encountered during 'computeInputsOfSubproblems()':", ex)
+            exit(1)
+        
+        subproblems[0].numbers = right_array
+        subproblems[1].numbers = left_array
+
     def input_problem(self, problem: ProblemType):
+        """
+        Alias for 'inputProblem()'
+        """
+        self.inputProblem(problem)
+
+    def inputProblem(self, problem: ProblemType):
         """
         The problem data must be obtained from Wukong storage. Here, we are getting a specific subsegment of the input array,
         which is the segment from-to.

@@ -4,6 +4,7 @@ import logging
 import base64 
 import time 
 import cloudpickle
+from mergesort_program import MergesortProgram
 
 from wukong.invoker import invoke_lambda
 
@@ -75,8 +76,8 @@ if __name__ == "__main__":
     rootProblem = ProblemType(
         numbers = numbers,
         from_idx = 0,
-        to_idx = len(numbers) - 1
-    )
+        to_idx = len(numbers) - 1,
+        UserProgram = MergesortProgram())
 
     logger.debug("memoize is: " + str(rootProblem.memoize))
     logger.debug("Root Problem: " + str(rootProblem))
