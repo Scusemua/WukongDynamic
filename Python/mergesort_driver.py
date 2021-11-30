@@ -41,9 +41,9 @@ if __name__ == "__main__":
 
     if seq is None:
         logger.fatal("ProblemType.SEQUENTIAL_THRESHOLD must be defined.")
-        
-    numbers = [9, -3, 5, 0, 1, 2, -1, 4, 11, 10, 13, 12, 15, 14, 17, 16]
-    expected_order = [-3, -1, 0, 1, 2, 4, 5, 9, 10, 11, 12, 13, 14, 15, 16, 17]
+
+    numbers = mergesort_program.NUMBERS
+    expected_order = mergesort_program.EXPECTED_ORDER
 
     print("Input array (numbers): " + str(numbers))
     print("Expected output array: " + str(expected_order))

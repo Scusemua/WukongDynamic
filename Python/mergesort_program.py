@@ -38,6 +38,9 @@ def ResetRedis():
     redis_client.flushdb()
     redis_client.flushall()
 
+NUMBERS = [9, -3, 5, 0, 1, 2, -1, 4, 11, 10, 13, 12, 15, 14, 17, 16]
+EXPECTED_ORDER = [-3, -1, 0, 1, 2, 4, 5, 9, 10, 11, 12, 13, 14, 15, 16, 17]
+
 class ProblemType(WukongProblem):
 	# The threshold at which we switch to a sequential algorithm.
     SEQUENTIAL_THRESHOLD = 2
@@ -256,6 +259,22 @@ class MergesortProgram(UserProgram):
         else:
             problem_result.from_idx = second_result.from_idx
             problem_result.to_idx = first_result.to_idx 
+    
+    def input_problem(problem: ProblemType):
+        """
+        The problem data must be obtained from Wukong storage. Here, we are getting a specific subsegment of the input array,
+        which is the segment from-to.
+        """
+        logger.debug("inputNumbers")
+        
+        numbers = [x for x in NUMBERS]
+
+        problem_size = problem.to_idx - problem.from_idx + 1
+
+        if problem_size != len(numbers):
+            numbers = numbers[problem.from_idx, problem.to_idx + 1]
+        
+        problem.numbers = numbers
 
 NullResult = ResultType(type = -1, value = -1)
 StopResult = ResultType(type = 0, value = -1)
