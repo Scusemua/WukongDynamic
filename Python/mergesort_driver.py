@@ -1,6 +1,9 @@
 import sys
 
 import logging
+import base64 
+import time 
+import cloudpickle
 
 from wukong.invoker import invoke_lambda
 
@@ -21,10 +24,29 @@ if root.handlers:
     for handler in root.handlers:
        handler.setFormatter(formatter)
 
+import redis
+from constants import REDIS_IP_PUBLIC
+redis_client = redis.Redis(host = REDIS_IP_PUBLIC, port = 6379)
+
 from wukong.wukong_problem import WukongProblem
 from wukong.dc_executor import DivideAndConquerExecutor
-from mergesort_program import ResultType, ProblemType, MergesortProgram
+from mergesort_program import ResultType, ProblemType
 import mergesort_program
+
+def decode_base64(original_data, altchars=b'+/'):
+    """Decode base64, padding being optional.
+
+    :param data: Base64 data as an ASCII byte string
+    :returns: The decoded byte string.
+
+    """
+    original_data += b'==='
+    return base64.b64decode(original_data, altchars)
+
+def ResetRedis():
+    print("Flushing Redis DB now.")
+    redis_client.flushdb()
+    redis_client.flushall()
 
 if __name__ == "__main__":
     logger.debug("Running Mergesort")
@@ -78,9 +100,25 @@ if __name__ == "__main__":
         "stop_result": mergesort_program.StopResult
     }
 
-    mergesort_program.ResetRedis()
-
+    ResetRedis()
+    
+    start_time = time.time()
     invoke_lambda(payload = payload)
+
+    while True:
+        answer_exists = redis_client.exists("solution")
+
+        if (answer_exists):
+            end_time = time.time()
+            logger.debug("Answer found in Redis!")
+            logger.debug("Time elapsed: %f seconds." % (end_time - start_time))
+            answerEncoded = redis_client.get("solution")
+            answerSerialized = decode_base64(answerEncoded)
+            answer = cloudpickle.loads(answerSerialized)
+            logger.debug("Solution: " + str(answer))
+            break
+        else:
+            time.sleep(0.1)
 
     # root.start()
 

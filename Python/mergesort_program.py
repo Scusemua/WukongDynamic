@@ -11,7 +11,7 @@ from wukong.wukong_problem import WukongProblem, FanInSychronizer, WukongResult,
 
 import redis 
 import logging
-from .constants import REDIS_IP
+from constants import REDIS_IP_PRIVATE
 from logging import handlers
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -20,7 +20,7 @@ ch = logging.StreamHandler(sys.stdout)
 ch.setFormatter(formatter)
 #logger.addHandler(ch)
 
-redis_client = redis.Redis(host = REDIS_IP, port = 6379)
+redis_client = redis.Redis(host = REDIS_IP_PRIVATE, port = 6379)
 
 if logger.handlers:
    for handler in logger.handlers:
@@ -33,10 +33,9 @@ if root.handlers:
 
 debug_lock = threading.Lock() 
 
-def ResetRedis():
-    print("Flushing Redis DB now.")
-    redis_client.flushdb()
-    redis_client.flushall()
+root_problem_id = "root"
+rootProblemID = "root"
+final_result_id = "root"
 
 NUMBERS = [9, -3, 5, 0, 1, 2, -1, 4, 11, 10, 13, 12, 15, 14, 17, 16]
 EXPECTED_ORDER = [-3, -1, 0, 1, 2, 4, 5, 9, 10, 11, 12, 13, 14, 15, 16, 17]
@@ -51,7 +50,8 @@ class ProblemType(WukongProblem):
 	# To input the first two subProblems, use 1. Etc.
     INPUT_THRESHOLD = 1
 
-    def __init__(self, numbers = [], from_idx = -1, to_idx = -1, value = -1):
+    def __init__(self, numbers = [], from_idx = -1, to_idx = -1, value = -1, UserProgram = None):
+        super(ProblemType, self).__init__(UserProgram = UserProgram)
         self.numbers = numbers
         self.from_idx = from_idx
         self.to_idx = to_idx
@@ -65,11 +65,20 @@ class ProblemType(WukongProblem):
         return False    
 
 class ResultType(WukongResult):
-    def __init__(self, numbers = [], from_idx = -1, to_idx = -1, value = -1):
+    """
+    If type is 1, ResultType is a normal result.
+    If type is 0, ResultType is a stopResult.
+    If type is -1, ResultType is a nullResult.
+    """    
+    def __init__(self, numbers = [], from_idx = -1, to_idx = -1, result_type = 0, value = -1, UserProgram = None):
+        super(ResultType, self).__init__(UserProgram = UserProgram)
         self.numbers = numbers
         self.from_idx = from_idx
         self.to_idx = to_idx
+        self.type = result_type
         self.value = value     # just to keep Fibonacci happy.
+
+        assert(self.type >= -1 and self.type <= 1)
 
     def copy(self):
         return ResultType(
@@ -82,6 +91,13 @@ class ResultType(WukongResult):
         return "ResultType(from=" + str(self.from_idx) + ", to=" + str(self.to_idx) + ", numbers=" + str(self.numbers) + ")"
 
 class MergesortProgram(UserProgram):
+    def __init__(self):
+        super(MergesortProgram, self).__init__(UserProgram = UserProgram)
+        global final_result_id
+        global root_problem_id
+        self.root_problem_id = root_problem_id
+        self.final_result_id = final_result_id
+
     def base_case(self, problem: ProblemType):
         """
         The baseCase is always a sequential sort (though it could be on an array of length 1, if that is the sequential threshold.)
@@ -301,6 +317,8 @@ class MergesortProgram(UserProgram):
         resultSerialized = decode_base64(resultEncoded)
         result = cloudpickle.loads(resultSerialized)
 
+        redis_client.set("solution", resultEncoded)
+
         logger.debug("Unsorted: " + str(NUMBERS))
 
         logger.debug("Sorted: " + str(result.numbers))
@@ -318,8 +336,8 @@ class MergesortProgram(UserProgram):
         if not error_occurred:
             logger.debug("Verified.")
 
-NullResult = ResultType(type = -1, value = -1)
-StopResult = ResultType(type = 0, value = -1)
+NullResult = ResultType(result_type = -1, value = -1)
+StopResult = ResultType(result_type = 0, value = -1)
 
 def decode_base64(original_data, altchars=b'+/'):
     """Decode base64, padding being optional.

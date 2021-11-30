@@ -5,9 +5,11 @@ import sys
 import threading 
 import time 
 
+sys.path.append("..")
+
 from .memoization.util import MemoizationMessage, MemoizationMessageType
 from .invoker import invoke_lambda
-from ..constants import REDIS_IP
+from constants import REDIS_IP_PRIVATE
 
 import redis 
 import logging
@@ -34,7 +36,7 @@ if root.handlers:
 
 debug_lock = threading.Lock()
 
-redis_client = redis.Redis(host = REDIS_IP, port = 6379)
+redis_client = redis.Redis(host = REDIS_IP_PRIVATE, port = 6379)
 
 class WukongProblem(object):
     # Get input arrays when the level reaches the INPUT_THRESHOLD, e.g., don't grab the initial 256MB array,
@@ -652,14 +654,14 @@ class WukongProblem(object):
                     
                     ack = ServerlessNetworkingMemoizer.rcv1()
                 
-                if (faninId == "[1,1]"):
+                if (faninId == self.UserProgram.final_result_id):
                     logger.debug(problem.problem_id + ": Executor: Writing the final value to root: " + str(result))
-                    redis_client.set("[1,1]", base64.b64encode(cloudpickle.dumps(result)))
+                    redis_client.set(self.UserProgram.final_result_id, base64.b64encode(cloudpickle.dumps(result)))
 
                 if (WukongProblem.USESERVERLESSNETWORKING):
-                    if (faninId == "[1,1]"):
+                    if (faninId == self.UserProgram.final_result_id):
                         logger.debug(problem.problem_id + ": Executor: Writing the final value to root: " + str(result))
-                        siblingResult = FanInSychronizer.resultMap.put("[1,1]", result) 
+                        siblingResult = FanInSychronizer.resultMap.put(self.UserProgram.final_result_id, result) 
 
                     FanInExecutor = parentProblem.become_executor
                     # This executor continues to do Fan-In operations with the new problem result.
@@ -743,8 +745,8 @@ class WukongProblem(object):
         """
         # The root problem is a special case because it is of the form [0,1].
         if problem_label == self.UserProgram.root_problem_id:
-            logger.debug(">> returning hard-coded [1,1] for fanin problem label (problem_label = %s)" % problem_label)
-            return "[1,1]"
+            logger.debug(">> returning hard-coded " + str(self.UserProgram.final_result_id) + " for fanin problem label (problem_label = %s)" % problem_label)
+            return self.UserProgram.final_result_id
 
         # Indexing by `[:-1]` leaves off just the last character.
         second_right_bracket_index = problem_label[:-1].rindex("]")
