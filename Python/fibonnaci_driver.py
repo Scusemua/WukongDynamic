@@ -73,7 +73,6 @@ if __name__ == "__main__":
         
     logger.debug("n: " + str(fibonnaci_program.n))
 
-    rootID = str(fibonnaci_program.n)
     fan_in_stack = list() 
     rootProblem = ProblemType(
         value = fibonnaci_program.n,

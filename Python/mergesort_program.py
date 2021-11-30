@@ -56,6 +56,9 @@ class ProblemType(WukongProblem):
         self.to_idx = to_idx
         self.value = value     # just to keep Fibonacci happy.
 
+    def __repr__(self):
+        return self.__str__()
+
     def __str__(self):
         return "ProblemType(from=" + str(self.from_idx) + ", to=" + str(self.to_idx) + ", numbers=" + str(self.numbers) + ")"
     
@@ -79,6 +82,9 @@ class ResultType(WukongResult):
 
         assert(self.type >= -1 and self.type <= 1)
 
+    def __repr__(self):
+        return self.__str__()
+
     def copy(self):
         return ResultType(
             value = self.value,
@@ -96,6 +102,9 @@ class MergesortProgram(UserProgram):
         global root_problem_id
         self.root_problem_id = root_problem_id
         self.final_result_id = final_result_id
+
+    def __repr__(self):
+        return self.__str__()
 
     def base_case(self, problem: ProblemType):
         """
@@ -204,7 +213,7 @@ class MergesortProgram(UserProgram):
         #size = problem.to_idx - problem.from_idx + 1
         mid = problem.from_idx + ((problem.to_idx - problem.from_idx) // 2)
 
-        logger.debug("Divide: ID: " + str(problem.problem_id + ", mid: " + str(mid) + ", mid+1: " + str(mid+1) + ", to: " + str(problem.to_idx)))
+        logger.debug("Divide: ID: " + str(problem.problem_id) + ", mid: " + str(mid) + ", mid+1: " + str(mid+1) + ", to: " + str(problem.to_idx))
 
         # At some point, we'll want to stop passing the entire array around, as the subproblems only work with a sub-array.
         right_problem = ProblemType(
@@ -216,6 +225,9 @@ class MergesortProgram(UserProgram):
             numbers = problem.numbers,
             from_idx = problem.from_idx,
             to_idx = mid)
+        
+        logger.debug("Divide: ID: " + str(problem.problem_id) + ": RightProblem: " + str(right_problem))
+        logger.debug("Divide: ID: " + str(problem.problem_id) + ": LeftProblem: " + str(left_problem))
 
         subproblems.append(right_problem)
         subproblems.append(left_problem)
@@ -302,9 +314,15 @@ class MergesortProgram(UserProgram):
             
             # Copies are made from the parent problem's sub-segment of the input array, are a prefix of parent's copy, and start with 0.
             logger.debug("computeInputsOfSubproblems: ID: " + str(problem.problem_id) + " size < threshold, make left copy: from: 0 midArray+1 " + str((midArray+1)))
-            leftArray = problem.numbers[0:midArray + 1]
+            left_array = problem.numbers[0:midArray + 1]
             logger.debug("computeInputsOfSubproblems: ID: " + str(problem.problem_id) + " size < threshold, make right copy: midArray+1: " + str((midArray+1)) + " to+1 " + str(len(problem.numbers)))
             right_array = problem.numbers[midArray + 1: len(problem.numbers)]
+
+            # Assert 
+            if problem_size != len(problem.numbers):
+                logger.error("Internal Error: computeInput: size != len(numbers)-1")
+                logger.error("computeInputsOfSubproblems: size: " + str(problem_size) + " problem.numbers.length-1: " + str(len(problem.numbers) - 1))
+                exit(1)
         except Exception as ex:
             logger.error("Exception encountered during 'computeInputsOfSubproblems()': " + str(ex))
             exit(1)
@@ -346,7 +364,7 @@ class MergesortProgram(UserProgram):
         result.from_idx = problem.from_idx
         result.to_idx = problem.to_idx
 
-    def output_result(self):
+    def output_result(self, problem_problemID : str):
         """
         User provides method to output the problem result.
         We only call this for the final result, and this method verifies the final result.
@@ -355,11 +373,17 @@ class MergesortProgram(UserProgram):
         the final result since we create a new result object after every combine. The final result 
         is the value in "root".
         """
-        resultEncoded = redis_client.get("root")
-        resultSerialized = decode_base64(resultEncoded)
-        result = cloudpickle.loads(resultSerialized)
-
+        resultEncoded = redis_client.get(final_result_id)
         redis_client.set("solution", resultEncoded)
+
+        if resultEncoded is None:
+            logger.error("Final result (stored under key '" + str(final_result_id) + "' is Null")
+            exit(1)
+        else:
+            resultSerialized = decode_base64(resultEncoded)
+            result = cloudpickle.loads(resultSerialized)
+
+        logger.debug("MergeSort Output - ProblemID: " + str(problem_problemID))
 
         logger.debug("Unsorted: " + str(NUMBERS))
 
@@ -372,7 +396,7 @@ class MergesortProgram(UserProgram):
         error_occurred = False
         for i in range(0, len(NUMBERS)):
             if result.numbers[i] != EXPECTED_ORDER[i]:
-                logger.error("Error in expected value: result.numbers[" + str(i) + "]: " + str(result.numbers[i] + " != expectedOrder[" + str(i) + "]: " + EXPECTED_ORDER[i]))
+                logger.error("Error in expected value: result.numbers[" + str(i) + "]: " + str(result.numbers[i]) + " != expectedOrder[" + str(i) + "]: " + str(EXPECTED_ORDER[i]))
                 error_occurred = True 
 
         if not error_occurred:

@@ -71,7 +71,6 @@ if __name__ == "__main__":
     print("Input array (numbers): " + str(numbers))
     print("Expected output array: " + str(expected_order))
 
-    rootID = "root"
     fan_in_stack = list() 
     rootProblem = ProblemType(
         numbers = numbers,
@@ -83,7 +82,7 @@ if __name__ == "__main__":
     logger.debug("Root Problem: " + str(rootProblem))
 
     rootProblem.fan_in_stack = fan_in_stack
-    rootProblem.problem_id = rootID
+    rootProblem.problem_id = mergesort_program.root_problem_id
 
     # root = DivideAndConquerExecutor(
     #     problem = rootProblem,

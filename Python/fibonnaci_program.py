@@ -477,9 +477,7 @@ class FibonacciProgram(UserProgram):
         # logger.debug("Disabling memoization thread now...")
         # memoization_controller.StopThread()
 
-        logger.debug("")
         logger.debug(problem_problemID + ": Fibonacci(" + str(n) + ") = " + str(result.value))
-        logger.debug("")
 
         logger.debug(problem_problemID + ": Verifying ....... ")
         error = False 
