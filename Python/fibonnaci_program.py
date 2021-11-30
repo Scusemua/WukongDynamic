@@ -22,8 +22,8 @@ ch.setFormatter(formatter)
 # fh = handlers.RotatingFileHandler("divide_and_conquer.log", maxBytes=(1048576*5), backupCount=7)
 # fh.setFormatter(formatter)
 # logger.addHandler(fh)
-
-redis_client = redis.Redis(host = "34.207.129.88", port = 6379)
+from .constants import REDIS_IP
+redis_client = redis.Redis(host = REDIS_IP, port = 6379)
 
 if logger.handlers:
    for handler in logger.handlers:

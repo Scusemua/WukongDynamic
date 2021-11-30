@@ -7,6 +7,7 @@ import time
 
 from .memoization.util import MemoizationMessage, MemoizationMessageType
 from .invoker import invoke_lambda
+from ..constants import REDIS_IP
 
 import redis 
 import logging
@@ -33,7 +34,7 @@ if root.handlers:
 
 debug_lock = threading.Lock()
 
-redis_client = redis.Redis(host = "34.207.129.88", port = 6379)
+redis_client = redis.Redis(host = REDIS_IP, port = 6379)
 
 class WukongProblem(object):
     # Get input arrays when the level reaches the INPUT_THRESHOLD, e.g., don't grab the initial 256MB array,
