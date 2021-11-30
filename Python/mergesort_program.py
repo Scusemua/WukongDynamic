@@ -202,11 +202,12 @@ class MergesortProgram(UserProgram):
         logger.debug("Divide: problemID: " + str(problem.problem_id))
         logger.debug("Divide: FanInStack: " + str(problem.fan_in_stack))
 
-        size = problem.to_idx - problem.from_idx + 1
+        #size = problem.to_idx - problem.from_idx + 1
         mid = problem.from_idx + ((problem.to_idx - problem.from_idx) // 2)
 
         logger.debug("Divide: ID: " + str(problem.problem_id + ", mid: " + str(mid) + ", mid+1: " + str(mid+1) + ", to: " + str(problem.to_idx)))
 
+        # At some point, we'll want to stop passing the entire array around, as the subproblems only work with a sub-array.
         right_problem = ProblemType(
             numbers = problem.numbers,
             from_idx = mid + 1,
@@ -220,7 +221,7 @@ class MergesortProgram(UserProgram):
         subproblems.append(right_problem)
         subproblems.append(left_problem)
     
-    def combine(self, subproblem_results: list, problem_result: ResultType):
+    def combine(self, subproblem_results: list, problem_result: ResultType, problem_id: str):
         """
         Combine the subproblem results. 
 
@@ -246,7 +247,7 @@ class MergesortProgram(UserProgram):
         while (li < len(first_array) and ri < len(second_array)):
             logger.debug("li: " + str(li) + ", len(first_array): " + str(len(first_array)) + ", ri: " + str(ri) + ", len(second_array): " + str(len(second_array)))
 
-            if first_array[li] < second_array[li]:
+            if first_array[li] < second_array[ri]:
                 values[from_idx] = first_array[li]
                 from_idx += 1
                 li += 1
@@ -303,10 +304,10 @@ class MergesortProgram(UserProgram):
             # Copies are made from the parent problem's sub-segment of the input array, are a prefix of parent's copy, and start with 0.
             logger.debug("computeInputsOfSubproblems: ID: " + str(problem.problem_id) + " size < threshold, make left copy: from: 0 midArray+1 " + str((midArray+1)))
             leftArray = problem.numbers[0:midArray + 1]
-            logger.debug("computeInputsOfSubproblems: ID: " + str(problem.problem_id) + " size < threshold, make right copy: midArray+1: " + str((midArray+1)) + " to+1 " + len(problem.numbers))
+            logger.debug("computeInputsOfSubproblems: ID: " + str(problem.problem_id) + " size < threshold, make right copy: midArray+1: " + str((midArray+1)) + " to+1 " + str(len(problem.numbers)))
             right_array = problem.numbers[midArray + 1: len(problem.numbers)]
         except Exception as ex:
-            logger.error("Exception encountered during 'computeInputsOfSubproblems()':", ex)
+            logger.error("Exception encountered during 'computeInputsOfSubproblems()': " + str(ex))
             exit(1)
         
         subproblems[0].numbers = right_array
