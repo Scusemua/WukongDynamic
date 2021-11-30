@@ -200,6 +200,62 @@ class MergesortProgram(UserProgram):
 
         subproblems.append(right_problem)
         subproblems.append(left_problem)
+    
+    def combine(subproblem_results: list, problem_result: ResultType):
+        """
+        Combine the subproblem results. 
+
+        This is merge, which ignores from/to values for the subproblems, as it always starts merging from position 0
+        and finishes in the last positions of the arrays. The from/to values of a subproblem are w.r.t the original input array.
+        """
+        first_result = subproblem_results[0]
+        second_result = subproblem_results[1]
+
+        first_array = first_result.numbers
+        second_array = second_result.numbers
+
+        values = []
+        from_idx = 0
+
+        logger.debug("combine: values.length for merged arrays: " + str(len(first_array) + len(second_array)))
+        logger.debug("first array: " + str(first_array))
+        logger.debug("second array: " + str(second_array))
+
+        li, ri = 0, 0
+
+        # Merge.
+        while (li < len(first_array) and ri < len(second_array)):
+            logger.debug("li: " + str(li) + ", len(first_array): " + str(len(first_array)) + ", ri: " + str(ri) + ", len(second_array): " + str(len(second_array)))
+
+            if first_array[li] < second_array[li]:
+                values[from_idx] = first_array[li]
+                from_idx += 1
+                li += 1
+            else:
+                values[from_idx] = second_array[ri]
+                from_idx += 1
+                ri += 1
+        
+        while (li < len(first_array)):
+            values[from_idx] = first_array[li]
+            from_idx += 1
+            li += 1
+        
+        while (ri < len(second_array)):
+            values[from_idx] = second_array[ri]
+            from_idx += 1
+            ri += 1
+        
+        logger.debug("combine result: values.length: " + str(len(values)) + ", values: ")
+
+        problem_result.numbers = values 
+
+        if first_result.from_idx < second_result.from_idx:
+            problem_result.from_idx = first_result.from_idx
+            problem_result.to_idx = second_result.to_idx 
+        else:
+            problem_result.from_idx = second_result.from_idx
+            problem_result.to_idx = first_result.to_idx 
 
 NullResult = ResultType(type = -1, value = -1)
 StopResult = ResultType(type = 0, value = -1)
