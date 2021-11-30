@@ -82,20 +82,20 @@ class ResultType(WukongResult):
         return "ResultType(from=" + str(self.from_idx) + ", to=" + str(self.to_idx) + ", numbers=" + str(self.numbers) + ")"
 
 class MergesortProgram(UserProgram):
-    def base_case(problem: ProblemType):
+    def base_case(self, problem: ProblemType):
         """
         The baseCase is always a sequential sort (though it could be on an array of length 1, if that is the sequential threshold.)
         """
         size = problem.to_idx - problem.from_idx + 1
         return size <= ProblemType.SEQUENTIAL_THRESHOLD
     
-    def preprocess(problem: ProblemType):
+    def preprocess(self, problem: ProblemType):
         """
         Some problems may use a pre-processing step before anything else is done.
         """
         pass 
 
-    def trim_problem(problem: ProblemType):
+    def trim_problem(self, problem: ProblemType):
         """
         A problem P is by default passed to the executors that will be executing the child subproblems of P. One of these
         executors will execute method combine() for these subproblems. In some cases, it is easier to write combine() when 
@@ -204,7 +204,7 @@ class MergesortProgram(UserProgram):
         subproblems.append(right_problem)
         subproblems.append(left_problem)
     
-    def combine(subproblem_results: list, problem_result: ResultType):
+    def combine(self, subproblem_results: list, problem_result: ResultType):
         """
         Combine the subproblem results. 
 
@@ -260,7 +260,7 @@ class MergesortProgram(UserProgram):
             problem_result.from_idx = second_result.from_idx
             problem_result.to_idx = first_result.to_idx 
     
-    def input_problem(problem: ProblemType):
+    def input_problem(self, problem: ProblemType):
         """
         The problem data must be obtained from Wukong storage. Here, we are getting a specific subsegment of the input array,
         which is the segment from-to.
@@ -275,6 +275,36 @@ class MergesortProgram(UserProgram):
             numbers = numbers[problem.from_idx, problem.to_idx + 1]
         
         problem.numbers = numbers
+    
+    def output_result(self):
+        """
+        User provides method to output the problem result.
+        We only call this for the final result, and this method verifies the final result.
+
+        Note: Used to be a result parameter but that was result at top of template, which is no longer
+        the final result since we create a new result object after every combine. The final result 
+        is the value in "root".
+        """
+        resultEncoded = redis_client.get("root")
+        resultSerialized = decode_base64(resultEncoded)
+        result = cloudpickle.loads(resultSerialized)
+
+        logger.debug("Unsorted: " + str(NUMBERS))
+
+        logger.debug("Sorted: " + str(result.numbers))
+
+        logger.debug("Expected: " + str(EXPECTED_ORDER))
+
+        logger.debug("Verifying...")
+
+        error_occurred = False
+        for i in range(0, len(NUMBERS)):
+            if result.numbers[i] != EXPECTED_ORDER[i]:
+                logger.error("Error in expected value: result.numbers[" + str(i) + "]: " + str(result.numbers[i] + " != expectedOrder[" + str(i) + "]: " + EXPECTED_ORDER[i]))
+                error_occurred = True 
+
+        if not error_occurred:
+            logger.debug("Verified.")
 
 NullResult = ResultType(type = -1, value = -1)
 StopResult = ResultType(type = 0, value = -1)
