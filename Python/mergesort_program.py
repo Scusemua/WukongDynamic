@@ -33,9 +33,8 @@ if root.handlers:
 
 debug_lock = threading.Lock() 
 
-root_problem_id = "root"
-rootProblemID = "root"
-final_result_id = "root"
+root_problem_id = "[0,1]"
+final_result_id = "[1,1]"
 
 NUMBERS = [9, -3, 5, 0, 1, 2, -1, 4, 11, 10, 13, 12, 15, 14, 17, 16]
 EXPECTED_ORDER = [-3, -1, 0, 1, 2, 4, 5, 9, 10, 11, 12, 13, 14, 15, 16, 17]
@@ -234,7 +233,7 @@ class MergesortProgram(UserProgram):
         first_array = first_result.numbers
         second_array = second_result.numbers
 
-        values = []
+        values = [None for i in range(len(first_array) + len(second_array))]
         from_idx = 0
 
         logger.debug("combine: values.length for merged arrays: " + str(len(first_array) + len(second_array)))
