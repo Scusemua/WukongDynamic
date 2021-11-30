@@ -276,6 +276,18 @@ class MergesortProgram(UserProgram):
         
         problem.numbers = numbers
     
+    def sequential(self, problem: ProblemType, result: ResultType): 
+        """
+        User provides method to sequentially solve a problem
+        Insertion sort
+        """
+        # QUESTION: Can I just call the built-in 'sorted' function here?
+        # Or am I missing something by doing this (and thus I need to implement insertion sort explicitly)?
+        problem.numbers = sorted(problem.numbers)
+        result.numbers = problem.numbers
+        result.from_idx = problem.from_idx
+        result.to_idx = problem.to_idx
+
     def output_result(self):
         """
         User provides method to output the problem result.
