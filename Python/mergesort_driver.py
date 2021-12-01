@@ -50,6 +50,11 @@ def ResetRedis():
     redis_client.flushdb()
     redis_client.flushall()
 
+NUMBERS = [-81, 72, 63, -51, 96, -6, -73, -33, -63, -18, 31, 50, -88, -3, -5, 22, -56, -100, 48, -76, -4, -97, 82, 41, -65, -30, -30, 99, -94, 77, 92, 45, 99, -17, -47, -44, 46, -85, -59, 42, -69, -54, -40, -87, 45, -34, 79, 87, 83, -94, 60, -91, 78, 30, 9, 3, -77, -3, -55, 86, -33, -59, 21, 28, 16, -94, -82, 47, -79, 34, 76, 35, -30, 19, -90, -14, 41, 90, 17, 2, 18, -1, -77, -8, 36, 16, 26, 70, -70, 92, -6, -93, -52, 25, -49, -30, -40, 64, -36, 9]
+# [9, -3, 5, 0, 1, 2, -1, 4, 11, 10, 13, 12, 15, 14, 17, 16]
+EXPECTED_ORDER = [-100, -97, -94, -94, -94, -93, -91, -90, -88, -87, -85, -82, -81, -79, -77, -77, -76, -73, -70, -69, -65, -63, -59, -59, -56, -55, -54, -52, -51, -49, -47, -44, -40, -40, -36, -34, -33, -33, -30, -30, -30, -30, -18, -17, -14, -8, -6, -6, -5, -4, -3, -3, -1, 2, 3, 9, 9, 16, 16, 17, 18, 19, 21, 22, 25, 26, 28, 30, 31, 34, 35, 36, 41, 41, 42, 45, 45, 46, 47, 48, 50, 60, 63, 64, 70, 72, 76, 77, 78, 79, 82, 83, 86, 87, 90, 92, 92, 96, 99, 99]
+# [-3, -1, 0, 1, 2, 4, 5, 9, 10, 11, 12, 13, 14, 15, 16, 17]
+
 if __name__ == "__main__":
     logger.debug("Running Mergesort")
     logger.debug("INPUT_THRESHOLD is: {}".format(WukongProblem.INPUT_THRESHOLD))
@@ -66,8 +71,8 @@ if __name__ == "__main__":
     if seq is None:
         logger.fatal("ProblemType.SEQUENTIAL_THRESHOLD must be defined.")
 
-    numbers = mergesort_program.NUMBERS
-    expected_order = mergesort_program.EXPECTED_ORDER
+    numbers = NUMBERS
+    expected_order = EXPECTED_ORDER
 
     print("Input array (numbers): " + str(numbers))
     print("Expected output array: " + str(expected_order))
@@ -94,6 +99,8 @@ if __name__ == "__main__":
     }
 
     ResetRedis()
+
+    redis_client.set("input", base64.b64encode(cloudpickle.dumps(NUMBERS)))
     
     start_time = time.time()
     invoke_lambda(payload = payload)

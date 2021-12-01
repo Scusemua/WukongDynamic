@@ -31,13 +31,20 @@ if root.handlers:
     for handler in root.handlers:
        handler.setFormatter(formatter)
 
+def decode_base64(original_data, altchars=b'+/'):
+    """Decode base64, padding being optional.
+
+    :param data: Base64 data as an ASCII byte string
+    :returns: The decoded byte string.
+
+    """
+    original_data += b'==='
+    return base64.b64decode(original_data, altchars)
+
 debug_lock = threading.Lock() 
 
 root_problem_id = "[0,1]"
 final_result_id = "[1,1]"
-
-NUMBERS = [9, -3, 5, 0, 1, 2, -1, 4, 11, 10, 13, 12, 15, 14, 17, 16]
-EXPECTED_ORDER = [-3, -1, 0, 1, 2, 4, 5, 9, 10, 11, 12, 13, 14, 15, 16, 17]
 
 class ProblemType(WukongProblem):
 	# The threshold at which we switch to a sequential algorithm.
@@ -343,7 +350,10 @@ class MergesortProgram(UserProgram):
         """
         logger.debug("inputNumbers")
         
-        numbers = [x for x in NUMBERS]
+        problem_input_encoded = redis_client.get("input")
+        problem_input_serialized = decode_base64(problem_input_encoded)
+
+        numbers = cloudpickle.loads(problem_input_serialized)
 
         problem_size = problem.to_idx - problem.from_idx + 1
 
@@ -385,40 +395,22 @@ class MergesortProgram(UserProgram):
 
         logger.debug("MergeSort Output - ProblemID: " + str(problem_problemID))
 
-        logger.debug("Unsorted: " + str(NUMBERS))
+        # logger.debug("Unsorted: " + str(NUMBERS))
 
         logger.debug("Sorted: " + str(result.numbers))
 
-        logger.debug("Expected: " + str(EXPECTED_ORDER))
+        # logger.debug("Expected: " + str(EXPECTED_ORDER))
 
-        logger.debug("Verifying...")
+        # logger.debug("Verifying...")
 
-        error_occurred = False
-        for i in range(0, len(NUMBERS)):
-            if result.numbers[i] != EXPECTED_ORDER[i]:
-                logger.error("Error in expected value: result.numbers[" + str(i) + "]: " + str(result.numbers[i]) + " != expectedOrder[" + str(i) + "]: " + str(EXPECTED_ORDER[i]))
-                error_occurred = True 
+        # error_occurred = False
+        # for i in range(0, len(NUMBERS)):
+        #     if result.numbers[i] != EXPECTED_ORDER[i]:
+        #         logger.error("Error in expected value: result.numbers[" + str(i) + "]: " + str(result.numbers[i]) + " != expectedOrder[" + str(i) + "]: " + str(EXPECTED_ORDER[i]))
+        #         error_occurred = True 
 
-        if not error_occurred:
-            logger.debug("Verified.")
+        # if not error_occurred:
+        #     logger.debug("Verified.")
 
 NullResult = ResultType(result_type = -1, value = -1)
 StopResult = ResultType(result_type = 0, value = -1)
-
-def decode_base64(original_data, altchars=b'+/'):
-    """Decode base64, padding being optional.
-
-    :param data: Base64 data as an ASCII byte string
-    :returns: The decoded byte string.
-
-    """
-    # data = re.sub(rb'[^a-zA-Z0-9%s]+' % altchars, b'', original_data)  # normalize
-    # missing_padding = len(data) % 4
-    # logger.debug("Original data length: " + str(len(original_data)) + ", normalized data length: " + str(len(data)) + ", missing padding: " + str(missing_padding))
-    # if missing_padding > 0:
-    #     data += b'='* (4 - missing_padding)
-    #     logger.debug("Length of data after adjustment: " + str(len(data)))
-    # else:
-    #     logger.debug("Length of (normalized) data is multiple of 4; no adjustment required.")
-    original_data += b'==='
-    return base64.b64decode(original_data, altchars)
