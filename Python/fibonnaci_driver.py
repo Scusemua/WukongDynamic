@@ -168,7 +168,9 @@ if __name__ == "__main__":
             durations = redis_client.lrange("durations",  0, -1)
             durations = [float(x) for x in durations]
             logger.info("Number of Lambdas used: " + str(len(durations)))
-            logger.info("Average: %f\nMin: %f\nMax: %f" % (np.mean(durations), np.min(durations), np.max(durations)))
+            logger.info("Average: %f" % np.mean(durations))
+            logger.info("Min: %f" % np.min(durations))
+            logger.info("Max: %f" % np.max(durations))
             aggregated_duration = np.sum(durations)
             logger.info("Aggregate duration: %f" % aggregated_duration)
             

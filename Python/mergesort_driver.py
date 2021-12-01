@@ -3,6 +3,7 @@ import sys
 import logging
 import base64 
 import time 
+import numpy as np
 import cloudpickle
 from mergesort_program import MergesortProgram
 
@@ -84,14 +85,6 @@ if __name__ == "__main__":
     rootProblem.fan_in_stack = fan_in_stack
     rootProblem.problem_id = mergesort_program.root_problem_id
 
-    # root = DivideAndConquerExecutor(
-    #     problem = rootProblem,
-    #     problem_type = ProblemType, # ProblemType is a user-provided class.
-    #     result_type = ResultType,   # ProblemType is a user-provided class.
-    #     null_result = fibonnaci_program.NullResult,
-    #     stop_result = fibonnaci_program.StopResult
-    # )
-
     payload = {
         "problem": rootProblem,
         "problem_type": ProblemType,
@@ -116,11 +109,36 @@ if __name__ == "__main__":
             answerSerialized = decode_base64(answerEncoded)
             answer = cloudpickle.loads(answerSerialized)
             logger.debug("Solution: " + str(answer))
+
+            error_occurred = False
+            for i in range(0, len(numbers)):
+                if answer.numbers[i] != expected_order[i]:
+                    logger.error("Error in expected value: result.numbers[" + str(i) + "]: " + str(answer.numbers[i]) + " != expectedOrder[" + str(i) + "]: " + str(expected_order[i]))
+                    error_occurred = True 
+
+            if not error_occurred:
+                logger.debug("Verified.")
+
+            logger.debug("Retrieving durations...")
+            time.sleep(2)
+            durations = redis_client.lrange("durations",  0, -1)
+            durations = [float(x) for x in durations]
+            logger.info("Number of Lambdas used: " + str(len(durations)))
+            logger.info("Average: %f" % np.mean(durations))
+            logger.info("Min: %f" % np.min(durations))
+            logger.info("Max: %f" % np.max(durations))
+            aggregated_duration = np.sum(durations)
+            logger.info("Aggregate duration: %f" % aggregated_duration)
+            
+            cost_128mb = 0.0000000021
+            func_size = 256
+            scale = func_size / 128.0
+            cost_per_hr = cost_128mb * scale 
+            duration_hour = aggregated_duration / 60.0
+            estimated_cost = duration_hour * cost_per_hr
+            logger.info("Estimated cost: $" + str(estimated_cost))
+            logger.info(durations)
             break
         else:
             time.sleep(0.1)
-
-    # root.start()
-
-    # root.join()
 
