@@ -6,6 +6,7 @@ import numpy as np
 import base64
 import cloudpickle
 import time
+from functools import reduce
 
 sys.path.append("..")
 
@@ -70,8 +71,17 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    fib = lambda n:reduce(lambda x,n:[x[1],x[0]+x[1]], range(n),[0,1])[0]
+
     n = args.n
     expected_value = args.expected_value
+
+    if (expected_value == -1):
+        logger.warning("Calculating expected value manually...")
+        expected_value = fib(n)
+        logger.debug("Calculated expected value to be: " + str(expected_value))
+    else:
+        logger.debug("Expected value: " + str(expected_value))
 
     # Assert 
     seq = None 
@@ -157,10 +167,10 @@ if __name__ == "__main__":
             time.sleep(2)
             durations = redis_client.lrange("durations",  0, -1)
             durations = [float(x) for x in durations]
-            print("Number of Lambdas used: " + str(len(durations)))
-            print("Average: %f\nMin: %f\nMax: %f" % (np.mean(durations), np.min(durations), np.max(durations)))
+            logger.info("Number of Lambdas used: " + str(len(durations)))
+            logger.info("Average: %f\nMin: %f\nMax: %f" % (np.mean(durations), np.min(durations), np.max(durations)))
             aggregated_duration = np.sum(durations)
-            print("Aggregate duration: %f" % aggregated_duration)
+            logger.info("Aggregate duration: %f" % aggregated_duration)
             
             cost_128mb = 0.0000000021
             func_size = 256
@@ -168,8 +178,8 @@ if __name__ == "__main__":
             cost_per_hr = cost_128mb * scale 
             duration_hour = aggregated_duration / 60.0
             estimated_cost = duration_hour * cost_per_hr
-            print("Estimated cost: $" + str(estimated_cost))
-            print(durations)
+            logger.info("Estimated cost: $" + str(estimated_cost))
+            logger.info(durations)
             break
         else:
             time.sleep(0.1)
