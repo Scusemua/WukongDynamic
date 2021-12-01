@@ -1,5 +1,5 @@
 import sys
-
+import argparse 
 import json
 import logging
 import base64
@@ -63,8 +63,14 @@ if __name__ == "__main__":
     logger.debug("OUTPUT_THRESHOLD is: {}".format(WukongProblem.OUTPUT_THRESHOLD))
     logger.debug("SEQUENTIAL_THRESHOLD is: {}".format(ProblemType.SEQUENTIAL_THRESHOLD))
 
-    n = 6
-    expected_value = 8
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-n", type = int, default = 5, help = "This application computes fibonacci(n), so this is the n value.")
+    parser.add_argument("-e", "--expected-value", default = 5, type = int, dest = "expected_value", help = "The expected solution of the application. Used for testing/debugging.")
+
+    args = parser.parse_args()
+
+    n = args.n
+    expected_value = args.expected_value
 
     # Assert 
     seq = None 
