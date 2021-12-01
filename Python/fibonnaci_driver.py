@@ -204,7 +204,7 @@ if __name__ == "__main__":
         
         output_file = args.output
         if output_file is None:
-            output_file = "./fibonacci_%d_bench.csv" % n
+            output_file = "./data/fibonacci/fibonacci_%d_bench.csv" % n
 
         logger.info("Writing benchmark results to file %s now..." % output_file)
         time.sleep(1.0)

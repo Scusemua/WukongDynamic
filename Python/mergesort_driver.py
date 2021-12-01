@@ -52,9 +52,9 @@ def ResetRedis():
     redis_client.flushdb()
     redis_client.flushall()
 
-NUMBERS = [-81, 72, 63, -51, 96, -6, -73, -33, -63, -18, 31, 50, -88, -3, -5, 22, -56, -100, 48, -76, -4, -97, 82, 41, -65, -30, -30, 99, -94, 77, 92, 45, 99, -17, -47, -44, 46, -85, -59, 42, -69, -54, -40, -87, 45, -34, 79, 87, 83, -94, 60, -91, 78, 30, 9, 3, -77, -3, -55, 86, -33, -59, 21, 28, 16, -94, -82, 47, -79, 34, 76, 35, -30, 19, -90, -14, 41, 90, 17, 2, 18, -1, -77, -8, 36, 16, 26, 70, -70, 92, -6, -93, -52, 25, -49, -30, -40, 64, -36, 9]
+#NUMBERS = [-81, 72, 63, -51, 96, -6, -73, -33, -63, -18, 31, 50, -88, -3, -5, 22, -56, -100, 48, -76, -4, -97, 82, 41, -65, -30, -30, 99, -94, 77, 92, 45, 99, -17, -47, -44, 46, -85, -59, 42, -69, -54, -40, -87, 45, -34, 79, 87, 83, -94, 60, -91, 78, 30, 9, 3, -77, -3, -55, 86, -33, -59, 21, 28, 16, -94, -82, 47, -79, 34, 76, 35, -30, 19, -90, -14, 41, 90, 17, 2, 18, -1, -77, -8, 36, 16, 26, 70, -70, 92, -6, -93, -52, 25, -49, -30, -40, 64, -36, 9]
 # [9, -3, 5, 0, 1, 2, -1, 4, 11, 10, 13, 12, 15, 14, 17, 16]
-EXPECTED_ORDER = [-100, -97, -94, -94, -94, -93, -91, -90, -88, -87, -85, -82, -81, -79, -77, -77, -76, -73, -70, -69, -65, -63, -59, -59, -56, -55, -54, -52, -51, -49, -47, -44, -40, -40, -36, -34, -33, -33, -30, -30, -30, -30, -18, -17, -14, -8, -6, -6, -5, -4, -3, -3, -1, 2, 3, 9, 9, 16, 16, 17, 18, 19, 21, 22, 25, 26, 28, 30, 31, 34, 35, 36, 41, 41, 42, 45, 45, 46, 47, 48, 50, 60, 63, 64, 70, 72, 76, 77, 78, 79, 82, 83, 86, 87, 90, 92, 92, 96, 99, 99]
+#EXPECTED_ORDER = [-100, -97, -94, -94, -94, -93, -91, -90, -88, -87, -85, -82, -81, -79, -77, -77, -76, -73, -70, -69, -65, -63, -59, -59, -56, -55, -54, -52, -51, -49, -47, -44, -40, -40, -36, -34, -33, -33, -30, -30, -30, -30, -18, -17, -14, -8, -6, -6, -5, -4, -3, -3, -1, 2, 3, 9, 9, 16, 16, 17, 18, 19, 21, 22, 25, 26, 28, 30, 31, 34, 35, 36, 41, 41, 42, 45, 45, 46, 47, 48, 50, 60, 63, 64, 70, 72, 76, 77, 78, 79, 82, 83, 86, 87, 90, 92, 92, 96, 99, 99]
 # [-3, -1, 0, 1, 2, 4, 5, 9, 10, 11, 12, 13, 14, 15, 16, 17]
 
 def run(numbers: list, expected_order: list):
@@ -84,7 +84,7 @@ def run(numbers: list, expected_order: list):
 
     ResetRedis()
 
-    redis_client.set("input", base64.b64encode(cloudpickle.dumps(NUMBERS)))
+    redis_client.set("input", base64.b64encode(cloudpickle.dumps(numbers)))
     
     start_time = time.time()
     invoke_lambda(payload = payload)
@@ -142,7 +142,6 @@ def run(numbers: list, expected_order: list):
         else:
             time.sleep(0.1)
 
-
 if __name__ == "__main__":
     logger.debug("Running Mergesort")
     logger.debug("INPUT_THRESHOLD is: {}".format(WukongProblem.INPUT_THRESHOLD))
@@ -150,6 +149,7 @@ if __name__ == "__main__":
     logger.debug("SEQUENTIAL_THRESHOLD is: {}".format(ProblemType.SEQUENTIAL_THRESHOLD))
 
     parser = argparse.ArgumentParser()
+    parser.add_argument("-n", type = int, default = 16, help = "Randomly generate an array of this size, then sort it.")
     parser.add_argument("--benchmark", action = "store_true", help = "Run a benchmark rather than a single test.")
     parser.add_argument("-t", "--trials", type = int, default = 10, help = "Number of trials to run during a benchmark.")
     parser.add_argument("-o", "--output", type = str, default = None, help = "Output file for benchmark results.")
@@ -180,9 +180,14 @@ if __name__ == "__main__":
         
         output_file = args.output
         if output_file is None:
-            output_file = "./mergesort_%d_bench.csv" % len(numbers)
+            output_file = "./data/mergesort/mergesort_%d_bench.csv" % len(numbers)
 
         logger.info("Writing benchmark results to file %s now..." % output_file)
         time.sleep(1.0)
         df = pd.DataFrame(results)
         df.to_csv(output_file)
+
+        # Save the input array so we can reuse it when doing comparison against SoCC Wukong.
+        with open("./data/mergesort/mergesort_%d.txt" % len(numbers), "w") as handle:
+            handle.write(str(numbers))
+
