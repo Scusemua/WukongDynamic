@@ -1,5 +1,6 @@
 import sys
 
+import json
 import logging
 import base64
 import cloudpickle
@@ -34,7 +35,6 @@ if root.handlers:
        handler.setFormatter(formatter)
 
 from wukong.wukong_problem import WukongProblem
-from wukong.dc_executor import DivideAndConquerExecutor
 from fibonnaci_program import ResultType, ProblemType, FibonacciProgram
 
 import fibonnaci_program
@@ -46,6 +46,8 @@ def decode_base64(original_data, altchars=b'+/'):
     :returns: The decoded byte string.
 
     """
+    if type(original_data) is str:
+        original_data = original_data.encode('utf-8') # Convert to bytes.
     original_data += b'==='
     return base64.b64decode(original_data, altchars)
 
@@ -61,6 +63,9 @@ if __name__ == "__main__":
     logger.debug("OUTPUT_THRESHOLD is: {}".format(WukongProblem.OUTPUT_THRESHOLD))
     logger.debug("SEQUENTIAL_THRESHOLD is: {}".format(ProblemType.SEQUENTIAL_THRESHOLD))
 
+    n = 6
+    expected_value = 8
+
     # Assert 
     seq = None 
     try:
@@ -71,11 +76,11 @@ if __name__ == "__main__":
     if seq is None:
         logger.fatal("ProblemType.SEQUENTIAL_THRESHOLD must be defined.")
         
-    logger.debug("n: " + str(fibonnaci_program.n))
+    logger.debug("n: " + str(n))
 
     fan_in_stack = list() 
     rootProblem = ProblemType(
-        value = fibonnaci_program.n,
+        value = n,
         UserProgram = FibonacciProgram()
     )
 
@@ -116,10 +121,31 @@ if __name__ == "__main__":
             end_time = time.time()
             logger.debug("Answer found in Redis!")
             logger.debug("Time elapsed: %f seconds." % (end_time - start_time))
-            answerEncoded = redis_client.get("solution")
-            answerSerialized = decode_base64(answerEncoded)
-            answer = cloudpickle.loads(answerSerialized)
-            logger.debug("Solution: " + str(answer))
+            resultPayloadJson = redis_client.get("solution")
+
+            resultPayload = json.loads(resultPayloadJson)
+
+            problem_id = resultPayload["problem_id"]
+            resultEncoded = resultPayload["solution"]
+
+            resultSerialized = decode_base64(resultEncoded)
+            result = cloudpickle.loads(resultSerialized)
+
+            logger.debug("Solution: " + str(result))
+
+            logger.debug(problem_id + ": Fibonacci(" + str(n) + ") = " + str(result.value))
+
+            logger.debug(problem_id + ": Verifying ....... ")
+            error = False 
+            if result.value != expected_value:
+                error = True 
+            
+            if not error:
+                logger.debug("Verified.")
+            else:
+                logger.error("ERROR: Final answer differs from expected answer.")
+                logger.error("Final answer: " + str(result.value) + ", expected solution: " + str(expected_value))
+
             break
         else:
             time.sleep(0.1)

@@ -2,6 +2,7 @@ import base64
 import logging 
 import threading 
 import time 
+import json
 import sys
 import cloudpickle
 
@@ -36,8 +37,8 @@ if root.handlers:
 
 debug_lock = threading.Lock() 
 
-n = 5
-expected_value = 5
+#n = 10
+#expected_value = 5
 root_problem_id = "[0,1]" #"root"
 final_result_id = "[1,1]"
 
@@ -458,38 +459,33 @@ class FibonacciProgram(UserProgram):
 		the final result since we create a new result object after every combine. The final result 
 		is the value in "root".
         """
-        result = None 
+        resultEncoded = redis_client.get(final_result_id).decode('utf-8')
 
-        with debug_lock:
-            #result = FanInSychronizer.resultMap[final_result_id]
-            resultEncoded = redis_client.get(final_result_id)
-            redis_client.set("solution", resultEncoded)
+        solution_payload = {
+            "problem_id": problem_problemID,
+            "solution": resultEncoded
+        }
 
-            if resultEncoded is None:
-                logger.error("Final result (stored under key '" + str(final_result_id) + "' is Null")
-            else:
-                resultSerialized = decode_base64(resultEncoded)
-                result = cloudpickle.loads(resultSerialized)
-
-            logger.debug("Final result encoded: " + str(resultEncoded))
-            result = cloudpickle.loads(base64.b64decode(resultEncoded))
+        redis_client.set("solution", json.dumps(solution_payload))
         
+        logger.debug("Wrote final result to Redis.")
+
         # logger.debug("Disabling memoization thread now...")
         # memoization_controller.StopThread()
 
-        logger.debug(problem_problemID + ": Fibonacci(" + str(n) + ") = " + str(result.value))
+        # logger.debug(problem_problemID + ": Fibonacci(" + str(n) + ") = " + str(result.value))
 
-        logger.debug(problem_problemID + ": Verifying ....... ")
-        error = False 
-        if result.value != expected_value:
-            error = True 
+        # logger.debug(problem_problemID + ": Verifying ....... ")
+        # error = False 
+        # if result.value != expected_value:
+        #     error = True 
         
-        if not error:
-            logger.debug("Verified.")
-        else:
-            logger.debug("Error. Expected value: %s, actual value: %s" % (str(expected_value), str(result.value)))
+        # if not error:
+        #     logger.debug("Verified.")
+        # else:
+        #     logger.debug("Error. Expected value: %s, actual value: %s" % (str(expected_value), str(result.value)))
 
-            FanInSychronizer.debug_print_maps()
+        #     FanInSychronizer.debug_print_maps()
 
 # Global Constants.
 NullResult = ResultType(type = -1, value = -1)
