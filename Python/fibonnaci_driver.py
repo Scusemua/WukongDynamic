@@ -2,6 +2,7 @@ import sys
 import argparse 
 import json
 import logging
+import numpy as np
 import base64
 import cloudpickle
 import time
@@ -152,6 +153,23 @@ if __name__ == "__main__":
                 logger.error("ERROR: Final answer differs from expected answer.")
                 logger.error("Final answer: " + str(result.value) + ", expected solution: " + str(expected_value))
 
+            logger.debug("Retrieving durations...")
+            time.sleep(2)
+            durations = redis_client.lrange("durations",  0, -1)
+            durations = [float(x) for x in durations]
+            print("Number of Lambdas used: " + str(len(durations)))
+            print("Average: %f\nMin: %f\nMax: %f" % (np.mean(durations), np.min(durations), np.max(durations)))
+            aggregated_duration = np.sum(durations)
+            print("Aggregate duration: %f" % aggregated_duration)
+            
+            cost_128mb = 0.0000000021
+            func_size = 256
+            scale = func_size / 128.0
+            cost_per_hr = cost_128mb * scale 
+            duration_hour = aggregated_duration / 60.0
+            estimated_cost = duration_hour * cost_per_hr
+            print("Estimated cost: $" + str(estimated_cost))
+            print(durations)
             break
         else:
             time.sleep(0.1)

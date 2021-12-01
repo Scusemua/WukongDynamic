@@ -1,9 +1,12 @@
 import logging 
 import base64
 import re 
+import time 
+import redis 
 
 import cloudpickle
 from wukong.dc_executor import DivideAndConquerExecutor
+from constants import REDIS_IP_PRIVATE
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -19,6 +22,8 @@ if root.handlers:
        handler.setFormatter(formatter)
 
 def lambda_handler(event, context): 
+    start_time = time.time()
+    rc = redis.Redis(host = REDIS_IP_PRIVATE, port = 6379)
     logger.debug("Invocation received.")
 
     problem = cloudpickle.loads(base64.b64decode(event["problem"]))
@@ -44,4 +49,7 @@ def lambda_handler(event, context):
     logger.debug("Starting executor.")
     executor.start()
     executor.join()
-    logger.debug("Executor finished.")
+    end_time = time.time()
+    duration = end_time - start_time
+    logger.debug("Executor finished. Time elapsed: %f seconds." % duration)
+    rc.lpush("durations", duration)
