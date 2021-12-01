@@ -3,11 +3,13 @@ import sys
 import logging
 import base64 
 import time 
+import argparse 
 import numpy as np
 import cloudpickle
 from mergesort_program import MergesortProgram
-
+import pandas as pd
 from wukong.invoker import invoke_lambda
+import random
 
 from logging import handlers
 logger = logging.getLogger(__name__)
@@ -55,25 +57,7 @@ NUMBERS = [-81, 72, 63, -51, 96, -6, -73, -33, -63, -18, 31, 50, -88, -3, -5, 22
 EXPECTED_ORDER = [-100, -97, -94, -94, -94, -93, -91, -90, -88, -87, -85, -82, -81, -79, -77, -77, -76, -73, -70, -69, -65, -63, -59, -59, -56, -55, -54, -52, -51, -49, -47, -44, -40, -40, -36, -34, -33, -33, -30, -30, -30, -30, -18, -17, -14, -8, -6, -6, -5, -4, -3, -3, -1, 2, 3, 9, 9, 16, 16, 17, 18, 19, 21, 22, 25, 26, 28, 30, 31, 34, 35, 36, 41, 41, 42, 45, 45, 46, 47, 48, 50, 60, 63, 64, 70, 72, 76, 77, 78, 79, 82, 83, 86, 87, 90, 92, 92, 96, 99, 99]
 # [-3, -1, 0, 1, 2, 4, 5, 9, 10, 11, 12, 13, 14, 15, 16, 17]
 
-if __name__ == "__main__":
-    logger.debug("Running Mergesort")
-    logger.debug("INPUT_THRESHOLD is: {}".format(WukongProblem.INPUT_THRESHOLD))
-    logger.debug("OUTPUT_THRESHOLD is: {}".format(WukongProblem.OUTPUT_THRESHOLD))
-    logger.debug("SEQUENTIAL_THRESHOLD is: {}".format(ProblemType.SEQUENTIAL_THRESHOLD))
-
-    # Assert 
-    seq = None 
-    try:
-        seq = getattr(ProblemType, "SEQUENTIAL_THRESHOLD", None)
-    except Exception:
-        pass 
-
-    if seq is None:
-        logger.fatal("ProblemType.SEQUENTIAL_THRESHOLD must be defined.")
-
-    numbers = NUMBERS
-    expected_order = EXPECTED_ORDER
-
+def run(numbers: list, expected_order: list):
     print("Input array (numbers): " + str(numbers))
     print("Expected output array: " + str(expected_order))
 
@@ -145,7 +129,60 @@ if __name__ == "__main__":
             estimated_cost = duration_hour * cost_per_hr
             logger.info("Estimated cost: $" + str(estimated_cost))
             logger.info(durations)
-            break
+
+            return {
+                "time": end_time - start_time,
+                "cost": estimated_cost,
+                "num_lambdas": len(durations),
+                "aggregate_duration": aggregated_duration,
+                "min_duration": np.min(durations),
+                "max_duration": np.max(durations),
+                "avg_duration": np.mean(durations)
+            }
         else:
             time.sleep(0.1)
 
+
+if __name__ == "__main__":
+    logger.debug("Running Mergesort")
+    logger.debug("INPUT_THRESHOLD is: {}".format(WukongProblem.INPUT_THRESHOLD))
+    logger.debug("OUTPUT_THRESHOLD is: {}".format(WukongProblem.OUTPUT_THRESHOLD))
+    logger.debug("SEQUENTIAL_THRESHOLD is: {}".format(ProblemType.SEQUENTIAL_THRESHOLD))
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--benchmark", action = "store_true", help = "Run a benchmark rather than a single test.")
+    parser.add_argument("-t", "--trials", type = int, default = 10, help = "Number of trials to run during a benchmark.")
+    parser.add_argument("-o", "--output", type = str, default = None, help = "Output file for benchmark results.")
+
+    args = parser.parse_args()
+
+    # Assert 
+    seq = None 
+    try:
+        seq = getattr(ProblemType, "SEQUENTIAL_THRESHOLD", None)
+    except Exception:
+        pass 
+
+    if seq is None:
+        logger.fatal("ProblemType.SEQUENTIAL_THRESHOLD must be defined.")
+
+    numbers = [random.randint(-1000, 1000) for _ in range(0, 100)]
+    expected_order = sorted(numbers)
+
+    if not args.benchmark:
+        run(numbers, expected_order)
+    else:
+        results = []
+        for i in range(args.trials):
+            logger.info("===== Trial %d/%d =====" % (i+1, args.trials))
+            result = run(numbers, expected_order)
+            results.append(result)
+        
+        output_file = args.output
+        if output_file is None:
+            output_file = "./mergesort_%d_bench.csv" % len(numbers)
+
+        logger.info("Writing benchmark results to file %s now..." % output_file)
+        time.sleep(1.0)
+        df = pd.DataFrame(results)
+        df.to_csv(output_file)
