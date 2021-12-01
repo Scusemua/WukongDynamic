@@ -176,7 +176,7 @@ if __name__ == "__main__":
     parser.add_argument("-e", "--expected-value", default = 5, type = int, dest = "expected_value", help = "The expected solution of the application. Used for testing/debugging.")
     parser.add_argument("--benchmark", action = "store_true", help = "Run a benchmark rather than a single test.")
     parser.add_argument("-t", "--trials", type = int, default = 10, help = "Number of trials to run during a benchmark.")
-    parser.add_argument("-o", "--output", type = str, default = "./fibonacci_bench.csv", help = "Output file for benchmark results.")
+    parser.add_argument("-o", "--output", type = str, default = None, help = "Output file for benchmark results.")
 
     args = parser.parse_args()
 
@@ -202,7 +202,11 @@ if __name__ == "__main__":
             result = run(n, expected_value)
             results.append(result)
         
-        logger.info("Writing benchmark results to file %s now..." % args.output)
+        output_file = args.output
+        if output_file is None:
+            output_file = "./fibonacci_%d_bench.csv" % n
+
+        logger.info("Writing benchmark results to file %s now..." % output_file)
         time.sleep(1.0)
         df = pd.DataFrame(results)
-        df.to_csv(args.output)
+        df.to_csv(output_file)
