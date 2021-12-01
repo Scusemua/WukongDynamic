@@ -4,6 +4,7 @@ import json
 import logging
 import numpy as np
 import base64
+import pandas as pd
 import cloudpickle
 import time
 from functools import reduce
@@ -58,31 +59,7 @@ def ResetRedis():
     redis_client.flushdb()
     redis_client.flushall()
 
-# Main method, so to speak.
-if __name__ == "__main__":
-    logger.debug("Running DivideandConquerFibonacci")
-    logger.debug("INPUT_THRESHOLD is: {}".format(WukongProblem.INPUT_THRESHOLD))
-    logger.debug("OUTPUT_THRESHOLD is: {}".format(WukongProblem.OUTPUT_THRESHOLD))
-    logger.debug("SEQUENTIAL_THRESHOLD is: {}".format(ProblemType.SEQUENTIAL_THRESHOLD))
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-n", type = int, default = 5, help = "This application computes fibonacci(n), so this is the n value.")
-    parser.add_argument("-e", "--expected-value", default = 5, type = int, dest = "expected_value", help = "The expected solution of the application. Used for testing/debugging.")
-
-    args = parser.parse_args()
-
-    fib = lambda n:reduce(lambda x,n:[x[1],x[0]+x[1]], range(n),[0,1])[0]
-
-    n = args.n
-    expected_value = args.expected_value
-
-    if (expected_value == -1):
-        logger.warning("Calculating expected value manually...")
-        expected_value = fib(n)
-        logger.debug("Calculated expected value to be: " + str(expected_value))
-    else:
-        logger.debug("Expected value: " + str(expected_value))
-
+def run(n: int, expected_value: int):
     # Assert 
     seq = None 
     try:
@@ -107,14 +84,6 @@ if __name__ == "__main__":
 
     rootProblem.fan_in_stack = fan_in_stack
     rootProblem.problem_id = fibonnaci_program.root_problem_id
-
-    # root = DivideAndConquerExecutor(
-    #     problem = rootProblem,
-    #     problem_type = ProblemType, # ProblemType is a user-provided class.
-    #     result_type = ResultType,   # ProblemType is a user-provided class.
-    #     null_result = fibonnaci_program.NullResult,
-    #     stop_result = fibonnaci_program.StopResult
-    # )
 
     payload = {
         "problem": rootProblem,
@@ -182,6 +151,58 @@ if __name__ == "__main__":
             estimated_cost = duration_hour * cost_per_hr
             logger.info("Estimated cost: $" + str(estimated_cost))
             logger.info(durations)
-            break
+            
+            return {
+                "time": end_time - start_time,
+                "cost": estimated_cost,
+                "num_lambdas": len(durations),
+                "aggregate_duration": aggregated_duration,
+                "min_duration": np.min(durations),
+                "max_duration": np.max(durations),
+                "avg_duration": np.mean(durations)
+            }
         else:
             time.sleep(0.1)
+    
+# Main method, so to speak.
+if __name__ == "__main__":
+    logger.debug("Running DivideandConquerFibonacci")
+    logger.debug("INPUT_THRESHOLD is: {}".format(WukongProblem.INPUT_THRESHOLD))
+    logger.debug("OUTPUT_THRESHOLD is: {}".format(WukongProblem.OUTPUT_THRESHOLD))
+    logger.debug("SEQUENTIAL_THRESHOLD is: {}".format(ProblemType.SEQUENTIAL_THRESHOLD))
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-n", type = int, default = 5, help = "This application computes fibonacci(n), so this is the n value.")
+    parser.add_argument("-e", "--expected-value", default = 5, type = int, dest = "expected_value", help = "The expected solution of the application. Used for testing/debugging.")
+    parser.add_argument("--benchmark", action = "store_true", help = "Run a benchmark rather than a single test.")
+    parser.add_argument("-t", "--trials", type = int, default = 10, help = "Number of trials to run during a benchmark.")
+    parser.add_argument("-o", "--output", type = str, default = "./fibonacci_bench.csv", help = "Output file for benchmark results.")
+
+    args = parser.parse_args()
+
+    fib = lambda n:reduce(lambda x,n:[x[1],x[0]+x[1]], range(n),[0,1])[0]
+
+    n = args.n
+    expected_value = args.expected_value
+    benchmark = args.benchmark
+
+    if (expected_value == -1):
+        logger.warning("Calculating expected value manually...")
+        expected_value = fib(n)
+        logger.debug("Calculated expected value to be: " + str(expected_value))
+    else:
+        logger.debug("Expected value: " + str(expected_value))
+    
+    if not benchmark:
+        run(n, expected_value)
+    else:
+        results = []
+        for i in range(args.trials):
+            logger.info("===== Trial %d/%d =====" % (i+1, args.trials))
+            result = run(n, expected_value)
+            results.append(result)
+        
+        logger.info("Writing benchmark results to file %s now..." % args.output)
+        time.sleep(1.0)
+        df = pd.DataFrame(results)
+        df.to_csv(args.output)
