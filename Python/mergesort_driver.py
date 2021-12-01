@@ -166,7 +166,7 @@ if __name__ == "__main__":
     if seq is None:
         logger.fatal("ProblemType.SEQUENTIAL_THRESHOLD must be defined.")
 
-    numbers = [random.randint(-1000, 1000) for _ in range(0, 100)]
+    numbers = [random.randint(-1000, 1000) for _ in range(0, args.n)]
     expected_order = sorted(numbers)
 
     if not args.benchmark:
@@ -186,6 +186,8 @@ if __name__ == "__main__":
         time.sleep(1.0)
         df = pd.DataFrame(results)
         df.to_csv(output_file)
+
+        logger.debug("DataFrame:\n%s" % str(df))
 
         # Save the input array so we can reuse it when doing comparison against SoCC Wukong.
         with open("./data/mergesort/mergesort_%d.txt" % len(numbers), "w") as handle:
