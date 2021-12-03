@@ -169,6 +169,9 @@ if __name__ == "__main__":
     numbers = [random.randint(-1000, 1000) for _ in range(0, args.n)]
     expected_order = sorted(numbers)
 
+    if len(numbers) > 32000:
+        logger.fatal("Problem size is far too large: " + str(len(numbers)))
+
     if not args.benchmark:
         run(numbers, expected_order)
     else:

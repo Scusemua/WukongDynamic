@@ -193,6 +193,9 @@ if __name__ == "__main__":
     else:
         logger.debug("Expected value: " + str(expected_value))
     
+    if n > 25:
+        logger.fatal("Problem size is far too large: " + str(n))
+
     if not benchmark:
         run(n, expected_value)
     else:
