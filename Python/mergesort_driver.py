@@ -58,8 +58,8 @@ def ResetRedis():
 # [-3, -1, 0, 1, 2, 4, 5, 9, 10, 11, 12, 13, 14, 15, 16, 17]
 
 def run(numbers: list, expected_order: list):
-    print("Input array (numbers): " + str(numbers))
-    print("Expected output array: " + str(expected_order))
+    #print("Input array (numbers): " + str(numbers))
+    #print("Expected output array: " + str(expected_order))
 
     fan_in_stack = list() 
     rootProblem = ProblemType(
@@ -69,7 +69,7 @@ def run(numbers: list, expected_order: list):
         UserProgram = MergesortProgram())
 
     logger.debug("memoize is: " + str(rootProblem.memoize))
-    logger.debug("Root Problem: " + str(rootProblem))
+    #logger.debug("Root Problem: " + str(rootProblem))
 
     rootProblem.fan_in_stack = fan_in_stack
     rootProblem.problem_id = mergesort_program.root_problem_id
@@ -99,7 +99,7 @@ def run(numbers: list, expected_order: list):
             answerEncoded = redis_client.get("solution")
             answerSerialized = decode_base64(answerEncoded)
             answer = cloudpickle.loads(answerSerialized)
-            logger.debug("Solution: " + str(answer))
+            #logger.debug("Solution: " + str(answer))
 
             error_occurred = False
             for i in range(0, len(numbers)):
@@ -128,7 +128,7 @@ def run(numbers: list, expected_order: list):
             duration_hour = aggregated_duration / 60.0
             estimated_cost = duration_hour * cost_per_hr
             logger.info("Estimated cost: $" + str(estimated_cost))
-            logger.info(durations)
+            #logger.info(durations)
 
             return {
                 "time": end_time - start_time,
