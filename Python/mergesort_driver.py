@@ -180,7 +180,7 @@ if __name__ == "__main__":
         
         output_file = args.output
         if output_file is None:
-            output_file = "./data/mergesort/mergesort_%d_bench.csv" % len(numbers)
+            output_file = "./data/mergesort/mergesort_%d_seq=%d_bench.csv"  % (len(numbers), ProblemType.SEQUENTIAL_THRESHOLD)
 
         logger.info("Writing benchmark results to file %s now..." % output_file)
         time.sleep(1.0)
@@ -190,6 +190,6 @@ if __name__ == "__main__":
         logger.debug("DataFrame:\n%s" % str(df))
 
         # Save the input array so we can reuse it when doing comparison against SoCC Wukong.
-        with open("./data/mergesort/mergesort_%d.txt" % len(numbers), "w") as handle:
+        with open("./data/mergesort/wukongdc/mergesort_%d_seq=%d.txt" % (len(numbers), ProblemType.SEQUENTIAL_THRESHOLD), "w") as handle:
             handle.write(str(numbers))
 
