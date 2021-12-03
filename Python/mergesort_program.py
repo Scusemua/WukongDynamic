@@ -48,7 +48,7 @@ final_result_id = "[1,1]"
 
 class ProblemType(WukongProblem):
 	# The threshold at which we switch to a sequential algorithm.
-    SEQUENTIAL_THRESHOLD = 1024
+    SEQUENTIAL_THRESHOLD = 128
 	
 	# Get input arrays when the level reaches the INPUT_THRESHOLD, e.g., don't grab the initial 256MB array,
 	# wait until you reach level , say, 1, when there are two subproblems each half as big.
