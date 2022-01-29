@@ -1,7 +1,6 @@
 import base64
 import logging 
 import threading 
-import numpy as np
 import time 
 import sys
 import cloudpickle
@@ -389,8 +388,8 @@ class MergesortProgram(UserProgram):
         """
         # QUESTION: Can I just call the built-in 'sorted' function here?
         # Or am I missing something by doing this (and thus I need to implement insertion sort explicitly)?
-        problem.numbers = [np.sum(problem.numbers)]
-        result.numbers = [np.sum(problem.numbers)]
+        problem.numbers = [sum(problem.numbers)]
+        result.numbers = [sum(problem.numbers)]
         result.from_idx = 0 #problem.from_idx
         result.to_idx = 1 #problem.to_idx
 

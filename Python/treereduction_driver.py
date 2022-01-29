@@ -101,8 +101,10 @@ def run(numbers: list, expected_solution: list):
             answer = cloudpickle.loads(answerSerialized)
             logger.debug("Solution: " + str(answer))
 
-            #if not error_occurred:
-            #    logger.debug("Verified.")
+            if (answer.numbers[0] == expected_solution):
+                logger.debug("SOLUTION WAS CORRECT.\n\n")
+            else:
+                logger.error("INCORRECT SOLUTION.\n\n")
 
             logger.debug("Retrieving durations...")
             time.sleep(2)
