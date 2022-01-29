@@ -384,12 +384,13 @@ class MergesortProgram(UserProgram):
         is the value in "root".
         """
         resultEncoded = redis_client.get(final_result_id)
-        redis_client.set("solution", resultEncoded)
 
         if resultEncoded is None:
             logger.error("Final result (stored under key '" + str(final_result_id) + "' is Null")
+            redis_client.set("solution", base64.b64encode(cloudpickle.dumps("ERROR")))
             exit(1)
         else:
+            redis_client.set("solution", resultEncoded)
             resultSerialized = decode_base64(resultEncoded)
             result = cloudpickle.loads(resultSerialized)
 

@@ -99,13 +99,18 @@ def run(numbers: list, expected_order: list):
             answerEncoded = redis_client.get("solution")
             answerSerialized = decode_base64(answerEncoded)
             answer = cloudpickle.loads(answerSerialized)
-            #logger.debug("Solution: " + str(answer))
-
+            
             error_occurred = False
-            for i in range(0, len(numbers)):
-                if answer.numbers[i] != expected_order[i]:
-                    logger.error("Error in expected value: result.numbers[" + str(i) + "]: " + str(answer.numbers[i]) + " != expectedOrder[" + str(i) + "]: " + str(expected_order[i]))
-                    error_occurred = True 
+            if type(answer) is str:
+                logger.error("Unexpected solution recovered from Redis: %s\n\n" % answer)
+                error_occurred = True
+            else:
+                logger.debug("Solution: " + str(answer) + "\n\n")
+
+                for i in range(0, len(numbers)):
+                    if answer.numbers[i] != expected_order[i]:
+                        logger.error("Error in expected value: result.numbers[" + str(i) + "]: " + str(answer.numbers[i]) + " != expectedOrder[" + str(i) + "]: " + str(expected_order[i]))
+                        error_occurred = True 
 
             if not error_occurred:
                 logger.debug("Verified.")
@@ -168,6 +173,9 @@ if __name__ == "__main__":
 
     numbers = [random.randint(-1000, 1000) for _ in range(0, args.n)]
     expected_order = sorted(numbers)
+
+    print("Numbers: %s" % str(numbers))
+    print("Expected order: %s" % str(expected_order))
 
     if len(numbers) > 32000:
         logger.fatal("Problem size is far too large: " + str(len(numbers)))
