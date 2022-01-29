@@ -252,37 +252,56 @@ class MergesortProgram(UserProgram):
         first_array = first_result.numbers
         second_array = second_result.numbers
 
-        values = [None for i in range(len(first_array) + len(second_array))]
+        result_length = max(len(first_array), len(second_array))
+        #values = [None for i in range(len(first_array) + len(second_array))]
+        values = [None for i in range(result_length)]
         from_idx = 0
 
         logger.debug("combine: values.length for merged arrays: " + str(len(first_array) + len(second_array)))
         logger.debug("first array: " + str(first_array))
         logger.debug("second array: " + str(second_array))
 
-        li, ri = 0, 0
+        # If the arrays are the same length, then this will just compute the pair-wise sum between them.
+        # If one array is longer than the other, then this will compute the pair-wise sum until we exhaust the shorter array.
+        # At that point, we just stick values from the longer array into the result array without modifying them (we add 0 to them).
+        for i in range(0, result_length):
+            # As long as there are still elements in this array, we'll grab 'em.
+            arg1 = 0
+            if i < len(first_array):
+                arg1 = first_array[i]
+            
+            # As long as there are still elements in this array, we'll grab 'em.
+            arg2 = 0
+            if i < len(second_array):
+                arg2 = second_array[i]
+            
+            # Add whatever we grabbed and store it in the resulting array.
+            values[i] = arg1 + arg2 
 
-        # Merge.
-        while (li < len(first_array) and ri < len(second_array)):
-            logger.debug("li: " + str(li) + ", len(first_array): " + str(len(first_array)) + ", ri: " + str(ri) + ", len(second_array): " + str(len(second_array)))
+        # li, ri = 0, 0
 
-            if first_array[li] < second_array[ri]:
-                values[from_idx] = first_array[li]
-                from_idx += 1
-                li += 1
-            else:
-                values[from_idx] = second_array[ri]
-                from_idx += 1
-                ri += 1
+        # # Merge.
+        # while (li < len(first_array) and ri < len(second_array)):
+        #     logger.debug("li: " + str(li) + ", len(first_array): " + str(len(first_array)) + ", ri: " + str(ri) + ", len(second_array): " + str(len(second_array)))
+
+        #     if first_array[li] < second_array[ri]:
+        #         values[from_idx] = first_array[li]
+        #         from_idx += 1
+        #         li += 1
+        #     else:
+        #         values[from_idx] = second_array[ri]
+        #         from_idx += 1
+        #         ri += 1
         
-        while (li < len(first_array)):
-            values[from_idx] = first_array[li]
-            from_idx += 1
-            li += 1
+        # while (li < len(first_array)):
+        #     values[from_idx] = first_array[li]
+        #     from_idx += 1
+        #     li += 1
         
-        while (ri < len(second_array)):
-            values[from_idx] = second_array[ri]
-            from_idx += 1
-            ri += 1
+        # while (ri < len(second_array)):
+        #     values[from_idx] = second_array[ri]
+        #     from_idx += 1
+        #     ri += 1
         
         logger.debug("combine result: values.length: " + str(len(values)) + ", values: ")
 
