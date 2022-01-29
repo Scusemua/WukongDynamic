@@ -1,6 +1,7 @@
 import base64
 import logging 
 import threading 
+import numpy as np
 import time 
 import sys
 import cloudpickle
@@ -48,7 +49,7 @@ final_result_id = "[1,1]"
 
 class ProblemType(WukongProblem):
 	# The threshold at which we switch to a sequential algorithm.
-    SEQUENTIAL_THRESHOLD = 128
+    SEQUENTIAL_THRESHOLD = 2
 	
 	# Get input arrays when the level reaches the INPUT_THRESHOLD, e.g., don't grab the initial 256MB array,
 	# wait until you reach level , say, 1, when there are two subproblems each half as big.
@@ -388,10 +389,10 @@ class MergesortProgram(UserProgram):
         """
         # QUESTION: Can I just call the built-in 'sorted' function here?
         # Or am I missing something by doing this (and thus I need to implement insertion sort explicitly)?
-        problem.numbers = sorted(problem.numbers)
-        result.numbers = problem.numbers
-        result.from_idx = problem.from_idx
-        result.to_idx = problem.to_idx
+        problem.numbers = [np.sum(problem.numbers)]
+        result.numbers = [np.sum(problem.numbers)]
+        result.from_idx = 0 #problem.from_idx
+        result.to_idx = 1 #problem.to_idx
 
     def output_result(self, problem_problemID : str):
         """
