@@ -161,6 +161,9 @@ if __name__ == "__main__":
 
     if seq is None:
         logger.fatal("ProblemType.SEQUENTIAL_THRESHOLD must be defined.")
+    
+    if args.n < ProblemType.SEQUENTIAL_THRESHOLD:
+        logger.warn("Sequential Threshold is %d while input size is %d. Input size must be greater than Sequential Threshold." % (ProblemType.SEQUENTIAL_THRESHOLD, args.n))
 
     numbers = [random.randint(-1000, 1000) for _ in range(0, args.n)]
     expected_solution = np.sum(numbers)
