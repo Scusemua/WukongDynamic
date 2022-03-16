@@ -3,7 +3,7 @@ from multiprocessing import Semaphore, RLock
 import queue
 
 class CountingSemaphore(object):
-    def __init__(self, initial_permits = 0, id = -1, semaphore_name = None):
+    def __init__(self, initial_permits = 0, id = -1, semaphore_name = "DEFAULT_NAME"):
         self.waiting_p = []
         self.__name = semaphore_name
         self.__id = id 
@@ -36,19 +36,23 @@ class CountingSemaphore(object):
         # So thisLock.lock() instead of synchonized(this)
         self.__mutex.acquire() # Lock semaphore
 
+        print("Counting semaphore " + str(self.__name) + " has been locked.")
+
         try:
             self.__permits -= 1
     
             if (self.__permits >= 0): # then no need to block thread
-                wait_here = Semaphore(0)
-                queue_object.wait_here = wait_here  # queue_object is called 'o' in the Java code.
-                self.waiting_p.append(queue_object) # otherwise append blocked thread  
+                return 
         except Exception as ex:
             print("[ERROR] Unexpected error occurred during `P()`: " + str(ex))
         finally:
             self.__mutex.release()
 
         # End synchronized (this) to avoid conditionVar.wait() while holding lock on this.
+
+        wait_here = Semaphore(0)
+        queue_object.wait_here = wait_here  # queue_object is called 'o' in the Java code.
+        self.waiting_p.append(queue_object) # otherwise append blocked thread  
 
         try:
             wait_here.acquire()
@@ -116,7 +120,7 @@ class CountingSemaphore(object):
                 oldest_queue_object = self.waiting_p[0]
                 
                 # Remove the first element.
-                if (len(self.waiting_p > 1)):
+                if (len(self.waiting_p) > 1):
                     self.waiting_p = self.waiting_p[1:]
                 else:
                     self.waiting_p = []

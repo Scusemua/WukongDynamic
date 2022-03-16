@@ -25,7 +25,7 @@ class MonitorSU(object):
 class ConditionVariable(object):
     def __init__(self, monitor : MonitorSU, condition_name = None):
         self.__parent_monitor = monitor 
-        self.__thread_queue = CountingSemaphore(initial_permits = 0, condition_name = condition_name + ":threadQueue", id = 1)
+        self.__thread_queue = CountingSemaphore(initial_permits = 0, semaphore_name = condition_name + ":threadQueue", id = 1)
         self.__num_waiting_threads = 0
         self.__condition_name = condition_name 
     
