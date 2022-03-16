@@ -32,6 +32,8 @@ class CountingSemaphore(object):
         # See semaphore waitHere below
         queue_object = QueueObject() # queue_object is called 'o' in the Java code.
 
+        print("Trying to lock counting semaphore now...")
+
         # Need a lock per each Semaphore, i.e., a "Lock thisLock" member of CountingSemaphore.
         # So thisLock.lock() instead of synchonized(this)
         self.__mutex.acquire() # Lock semaphore
@@ -55,7 +57,9 @@ class CountingSemaphore(object):
         self.waiting_p.append(queue_object) # otherwise append blocked thread  
 
         try:
+            print("Calling acquire() on wait_here")
             wait_here.acquire()
+            print("Done acquiring 'wait_here' Semaphore")
         except Exception as ex:
             print("[ERROR] Exception encountered while acquiring Semaphore: " + str(ex))
 
