@@ -26,6 +26,8 @@ def lambda_handler(event, context):
     rc = redis.Redis(host = REDIS_IP_PRIVATE, port = 6379)
     logger.debug("Invocation received.")
 
+    # Extract all of the data from the payload.
+    first_executor = event["first_executor"]
     problem = cloudpickle.loads(base64.b64decode(event["problem"]))
     problem_type = cloudpickle.loads(base64.b64decode(event["problem_type"]))
     result_type = cloudpickle.loads(base64.b64decode(event["result_type"]))
@@ -38,13 +40,14 @@ def lambda_handler(event, context):
     logger.debug("Null result: " + str(null_result))
     logger.debug("Stop result: " + str(stop_result))
 
+    # Create the Executor object.
     executor = DivideAndConquerExecutor(
         problem = problem,
         problem_type = problem_type, 
         result_type = result_type,   
         null_result = null_result,
         stop_result = stop_result
-    )    
+    )
 
     logger.debug("Starting executor.")
     executor.start()

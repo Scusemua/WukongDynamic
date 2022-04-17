@@ -74,6 +74,8 @@ def run(numbers: list, expected_order: list):
     rootProblem.fan_in_stack = fan_in_stack
     rootProblem.problem_id = mergesort_program.root_problem_id
 
+    # This code is all running from the user's Desktop.
+    # This is the payload that gets sent to the very first Lambda.
     payload = {
         "problem": rootProblem,
         "problem_type": ProblemType,
@@ -87,7 +89,7 @@ def run(numbers: list, expected_order: list):
     redis_client.set("input", base64.b64encode(cloudpickle.dumps(numbers)))
     
     start_time = time.time()
-    invoke_lambda(payload = payload)
+    invoke_lambda(payload = payload, first_executor = True)
 
     while True:
         answer_exists = redis_client.exists("solution")

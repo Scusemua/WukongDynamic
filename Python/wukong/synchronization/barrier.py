@@ -5,7 +5,6 @@ class Barrier(MonitorSU):
     def __init__(self, initial_n = 0, monitor_name = None):
         super(Barrier, self).__init__(monitor_name = monitor_name)
         self._n = initial_n
-
         self.convar = ConditionVariable(monitor = self, condition_name = "go")
     
     @property

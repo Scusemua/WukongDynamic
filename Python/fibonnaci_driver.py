@@ -85,6 +85,8 @@ def run(n: int, expected_value: int):
     rootProblem.fan_in_stack = fan_in_stack
     rootProblem.problem_id = fibonnaci_program.root_problem_id
 
+    # This code is all running from the user's Desktop.
+    # This is the payload that gets sent to the very first Lambda.
     payload = {
         "problem": rootProblem,
         "problem_type": ProblemType,
@@ -96,7 +98,7 @@ def run(n: int, expected_value: int):
     ResetRedis()
 
     start_time = time.time()
-    invoke_lambda(payload = payload)
+    invoke_lambda(payload = payload, first_executor = True)
 
     print("redis_client.ping: " + str(redis_client.ping()))
 
