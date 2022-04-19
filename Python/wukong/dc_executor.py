@@ -92,18 +92,19 @@ class DivideAndConquerExecutor(Thread):
     def __init__(
         self,
         problem = None,
-        group=None, 
-        target=None, 
-        name=None,
+        group=None,     # Used by Thread.
+        target=None,    # Used by Thread.
+        name=None,      # Used by Thread.
         problem_type = None, 
         result_type = None,
         null_result = None,
         stop_result = None
     ):
+        # https://docs.python.org/3/library/threading.html#threading.Thread
         super(DivideAndConquerExecutor, self).__init__(group=group, target=target, name=name)
         self.problem = problem              # refers to an INSTANCE of the user-provided ProblemType class
-        self.problem_type = problem_type
-        self.result_type = result_type
+        self.problem_type = problem_type    # This is a Class.
+        self.result_type = result_type      # This is a Class.
         self.null_result = null_result
         self.stop_result = stop_result
     

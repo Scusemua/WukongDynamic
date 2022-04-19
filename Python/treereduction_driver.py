@@ -89,7 +89,7 @@ def run(numbers: list, expected_solution: list):
     redis_client.set("input", base64.b64encode(cloudpickle.dumps(numbers)))
     
     start_time = time.time()
-    invoke_lambda(payload = payload, first_executor = True)
+    invoke_lambda(payload = payload) 
 
     while True:
         answer_exists = redis_client.exists("solution")

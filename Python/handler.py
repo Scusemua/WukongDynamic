@@ -27,7 +27,7 @@ def lambda_handler(event, context):
     logger.debug("Invocation received.")
 
     # Extract all of the data from the payload.
-    first_executor = event["first_executor"]
+    # first_executor = event["first_executor"]
     problem = cloudpickle.loads(base64.b64decode(event["problem"]))
     problem_type = cloudpickle.loads(base64.b64decode(event["problem_type"]))
     result_type = cloudpickle.loads(base64.b64decode(event["result_type"]))

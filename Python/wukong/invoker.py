@@ -13,8 +13,7 @@ lambda_client = boto3.client('lambda', region_name = "us-east-1")
 
 def invoke_lambda(
     function_name: str = "WukongDivideAndConquer",
-    payload: dict = None,
-    first_executor: bool = False
+    payload: dict = None
 ):
     """
     Invoke an AWS Lambda function.
@@ -26,14 +25,8 @@ def invoke_lambda(
         
         payload (dict):
             Dictionary to be serialized and sent via the AWS Lambda invocation payload.
-        
-        first_executor (bool):
-            Indicates whether we're invoking the very first Executor of the program.
-            Defaults to False.
     """
-    _payload = {
-        "first_executor": first_executor
-    }
+    _payload = {}
     for k,v in payload.items():
         _payload[k] = base64.b64encode(cloudpickle.dumps(v)).decode('utf-8')
 

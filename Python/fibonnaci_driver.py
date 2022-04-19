@@ -98,7 +98,7 @@ def run(n: int, expected_value: int):
     ResetRedis()
 
     start_time = time.time()
-    invoke_lambda(payload = payload, first_executor = True)
+    invoke_lambda(payload = payload) 
 
     print("redis_client.ping: " + str(redis_client.ping()))
 
