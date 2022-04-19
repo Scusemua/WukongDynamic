@@ -1,5 +1,10 @@
 import sys
 import threading
+import uuid 
+import socket 
+import cloudpickle
+import base64
+import ujson 
 
 from threading import Thread 
 from wukong.wukong_problem import WukongProblem
@@ -27,6 +32,62 @@ if root.handlers:
 
 debug_lock = threading.Lock() 
 
+# TODO: Fill this in.
+SERVER_IP = ("", 25565)
+
+def make_json_serializable(obj):
+    """
+    Serialize and encode an object.
+    """
+    return base64.b64encode(cloudpickle.dumps(obj)).decode('utf-8')
+
+def decode_and_deserialize(obj):
+    """
+    Decode and deserialize an object.
+    """
+    return cloudpickle.loads(base64.b64decode(obj))
+
+def send_object(obj, websocket):
+    """
+    Send obj to a remote entity via the given websocket.
+    The TCP server uses a different API (streaming via file handles), so it's implemented differently. 
+    This different API is in tcp_server.py.    
+
+    Arguments:
+    ----------
+        obj (bytes):
+            The object to be sent. Should already be serialized via cloudpickle.dumps().
+        
+        websocket (socket.socket):
+            Socket connected to a remote client.
+    """
+    logger.debug("Will be sending a message of size %d bytes." % len(obj))
+    # First, we send the number of bytes that we're going to send.
+    websocket.sendall(len(obj).to_bytes(2, byteorder='big'))
+    # Next, we send the serialized object itself. 
+    websocket.sendall(obj)
+
+def recv_object(websocket):
+    """
+    Receive an object from a remote entity via the given websocket.
+
+    This is used by clients. There's another recv_object() function in TCP server.
+    The TCP server uses a different API (streaming via file handles), so it's implemented differently. 
+    This different API is in tcp_server.py.
+
+    Arguments:
+    ----------
+        websocket (socket.socket):
+            Socket connected to a remote client.    
+    """
+    # First, we receive the number of bytes of the incoming serialized object.
+    incoming_size = websocket.recv(2)
+    # Convert the bytes representing the size of the incoming serialized object to an integer.
+    incoming_size = int.from_bytes(incoming_size, 'big')
+    logger.debug("Will receive another message of size %d bytes" % incoming_size)
+    # Finally, we read the serialized object itself.
+    return websocket.recv(incoming_size).strip()
+
 class DivideAndConquerExecutor(Thread):
     def __init__(
         self,
@@ -46,6 +107,101 @@ class DivideAndConquerExecutor(Thread):
         self.null_result = null_result
         self.stop_result = stop_result
     
+    def create(self, websocket, op, type, name, state):
+        """
+        Create a remote object on the TCP server.
+
+        Arguments:
+        ----------
+            websocket (socket.socket):
+                Socket connection to the TCP server.
+                TODO: We pass this in, but in the function body, we connect to the server.
+                      In that case, we don't need to pass a websocket. We'll just create one.
+                      We should only bother with passing it as an argument if its already connected.
+            
+            op (str):
+                The operation being performed. 
+                TODO: Shouldn't this always be 'create'?
+            
+            type (str):
+                The type of the object to be created.
+
+            name (str):
+                The name (which serves as an identifier) of the object to be created.
+            
+            state (state.State):
+                Our current state.
+        """
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
+            logger.debug("Connecting to " + str(SERVER_IP))
+            websocket.connect(SERVER_IP)
+            logger.debug("Successfully connected!")
+
+            # msg_id for debugging
+            msg_id = str(uuid.uuid4())
+            logger.debug("Sending 'create' message to server. Message ID=" + msg_id)
+
+            # we set state.keyword_arguments before call to create()
+            message = {
+                "op": op,
+                "type": type,
+                "name": name,
+                "state": make_json_serializable(state),
+                "id": msg_id
+            }
+
+            msg = ujson.dumps(message).encode('utf-8')
+            send_object(msg, websocket)
+            logger.debug("Sent 'create' message to server")
+
+            # Receive data. This should just be an ACK, as the TCP server will 'ACK' our create() calls.
+            ack = recv_object(websocket)
+
+    def try_synchronize(self, websocket, op, name, method_name, state, taskID):
+        """
+        Synchronize on the remote TCP server.
+
+        Arguments:
+        ----------
+            websocket (socket.socket):
+                Socket connection to the TCP server.
+                TODO: We pass this in, but in the function body, we connect to the server.
+                      In that case, we don't need to pass a websocket. We'll just create one.
+                      We should only bother with passing it as an argument if its already connected.
+            
+            op (str):
+                The operation being performed. 
+            
+            method_name (str):
+                The name of the synchronization method we'd be calling on the server.
+
+            name (str):
+                The name (which serves as an identifier) of the object we're using for synchronization.
+            
+            state (state.State):
+                Our current state.
+            
+            task_ID (str):
+                The ID of this current task (TODO: or is it a function-level ID)?
+        """
+        # see the note below about closing the websocket or not
+        msg_id = str(uuid.uuid4())
+        message = {
+            "op": op, 
+            "name": name,
+            "method_name": method_name,
+            "state": make_json_serializable(state),
+            "id": msg_id
+        }
+        logger.debug("Calling %s, %s, Message ID=%s" % (op, state._ID, msg_id))
+        msg = ujson.dumps(message).encode('utf-8')
+        send_object(msg, websocket)
+        logger.debug("%s called %s: %s, Message ID=%s" % (taskID, op, state._ID, msg_id))
+        data = recv_object(websocket)               # Should just be a serialized state object.
+        state_from_server = cloudpickle.loads(data) # `state_from_server` is of type State
+        blocking = state_from_server.blocking
+        return blocking, state_from_server
+
     def run(self):
         ServerlessNetworkingMemoizer = None 
 
