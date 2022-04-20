@@ -3,6 +3,8 @@ from monitor_su import MonitorSU, ConditionVariable
 import threading
 import time 
 
+from _thread import Thread
+
 import logging 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -19,7 +21,7 @@ class FanIn(MonitorSU):
         super(FanIn, self).__init__(monitor_name = monitor_name)
         self._n = initial_n
         
-        self.results = {} # fan_in results of executors
+        self.results = [] # fan_in results of executors
 
         #self.convar = ConditionVariable(monitor = self, condition_name = "go")
         self._go = self.get_condition_variable(condition_name = "go")
@@ -81,7 +83,7 @@ class FanIn(MonitorSU):
             # serverless functions are rstarted by default, so turn off restart for
             #executors that are not last.
             result = kwargs['result']
-            results.append(result)
+            self.results.append(result)
             
             threading.current_thread()._restart = False
             threading.current_thread()._returnValue = 0
@@ -104,7 +106,7 @@ class FanIn(MonitorSU):
             threading.current_thread()._restart = False 
             #last thread does not append results. It will recieve list of results of other threads and append 
             #its result locally to the returned list
-            threading.current_thread()._returnValue = results
+            threading.current_thread()._returnValue = self.results
             
             logger.debug(serverlessFunctionID + " Last thread in FanIn so not calling self._go.wait_c")
             logger.debug(serverlessFunctionID + " !!!!! last Client exiting FanIn fan_in !!!!!")
@@ -114,7 +116,7 @@ class FanIn(MonitorSU):
             #self._go.signal_c_and_exit_monitor()
             super().exit_monitor()
 #ToDO: perhaps we can use this return instead of setting current_thread() members?
-            return results  # all threads have called so return results
+            return self.results  # all threads have called so return results
 
         #No logger.debugs here. main Client can exit while other threads are
         #doing this logger.debug so main thread/interpreter can't get stdout lock?
@@ -141,7 +143,7 @@ class FanIn(MonitorSU):
 
 def main():
     b = FanIn(initial_n=2,monitor_name="FanIn")
-    b.init("n": 2)
+    b.init({"n": 2})
 
     #try:
     #    logger.debug("Starting thread 1")
@@ -196,19 +198,19 @@ if __name__=="__main__":
      
     
 class testThread(Thread):
-    def __init__(self,ID):
+    def __init__(self, ID, b):
         # Call the Thread class's init function
         #Thread.__init__(self)
         super(testThread,self).__init__(name="testThread")
         self._ID = ID
         self._restart = True
         self._return = None
+        self.b = b
 
-        
     # Override the run() function of Thread class
     def run(self):
         time.sleep(1)
         logger.debug("task " + self._ID + " Calling fan_in")
-        r = b.fan_in(ID = self._ID, result = "task1 result")
+        r = self.b.fan_in(ID = self._ID, result = "task1 result")
         logger.debug("task " + self._ID + ", Successfully called fan_in")
 
