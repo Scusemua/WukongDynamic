@@ -1,6 +1,7 @@
 from re import L
 from monitor_su import MonitorSU, ConditionVariable
 import threading
+import time 
 
 import logging 
 logger = logging.getLogger(__name__)
@@ -179,12 +180,15 @@ def main():
         print("callerThread1 result is 0")
     else:
         #result is a list, print it
-        
+        pass 
+
     print("callerThread2 restart " + callerThread2._restart)
-    if callerThread2._result == 0:
-        print("callerThread2 result is 0")
-    else:
-        #result is a list, print it
+    print("callerThread2._result=" + str(callerThread2._result))
+    # if callerThread2._result == 0:
+    #     print("callerThread2 result is 0")
+    # else:
+    #     #result is a list, print it
+        
 
 
 if __name__=="__main__":
@@ -203,9 +207,8 @@ class testThread(Thread):
         
     # Override the run() function of Thread class
     def run(self):
-        
         time.sleep(1)
-        logger.debug("task " + ID + " Calling fan_in")
-        r = b.fan_in(ID = _ID, result = "task1 result)
-        logger.debug("task " + ID + ", Successfully called fan_in")
+        logger.debug("task " + self._ID + " Calling fan_in")
+        r = b.fan_in(ID = self._ID, result = "task1 result")
+        logger.debug("task " + self._ID + ", Successfully called fan_in")
 
