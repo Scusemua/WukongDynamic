@@ -13,7 +13,8 @@ lambda_client = boto3.client('lambda', region_name = "us-east-1")
 
 def invoke_lambda(
     function_name: str = "WukongDivideAndConquer",
-    payload: dict = None
+    payload: dict = None,
+    call_create: bool = False
 ):
     """
     Invoke an AWS Lambda function.
@@ -25,10 +26,17 @@ def invoke_lambda(
         
         payload (dict):
             Dictionary to be serialized and sent via the AWS Lambda invocation payload.
+        
+        call_create (bool):
+            If True, we need to call create (to the TCP server).
     """
     _payload = {}
     for k,v in payload.items():
         _payload[k] = base64.b64encode(cloudpickle.dumps(v)).decode('utf-8')
+    
+    ###########################################################################
+    # CREATE() could be called here if we wanted it to be in the client/user. #
+    ###########################################################################
 
     logger.debug("Invoking AWS Lambda function '" + function_name + "' with payload containing " + str(len(payload)) + " key(s).")
     #lambda_invocation_payload_serialized = cloudpickle.dumps()

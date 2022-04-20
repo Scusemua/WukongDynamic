@@ -40,6 +40,10 @@ def lambda_handler(event, context):
     logger.debug("Null result: " + str(null_result))
     logger.debug("Stop result: " + str(stop_result))
 
+    ###################################################################################
+    # CREATE() could be called here if we wanted it to be in the AWS Lambda function. #
+    ###################################################################################
+
     # Create the Executor object.
     executor = DivideAndConquerExecutor(
         problem = problem,
