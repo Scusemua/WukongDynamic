@@ -57,7 +57,7 @@ class FanIn(MonitorSU):
         # This males executes_wait ; wait_b atomic
         
         #block = super().is_blocking(len(self._go) < (self._n - 1))
-        block = super().is_blocking(len(self._num_calling) < (self._n - 1))
+        block = super().is_blocking(self._num_calling < (self._n - 1))
         
         # Does not do mutex.V, so we will still have the mutex lock when we next call
         # enter_monitor in wait_b
@@ -77,11 +77,14 @@ class FanIn(MonitorSU):
         
         logger.debug(serverlessFunctionID + " Entered monitor in fan_in()")
         #logger.debug(serverlessFunctionID + " fan_in() entered monitor. len(self._go) = " + str(len(self._go)) + ", self._n=" + str(self._n))
-        logger.debug(serverlessFunctionID + " fan_in() entered monitor. len(self._num_calling) = " + str(len(self._num_calling)) + ", self._n=" + str(self._n))
+        logger.debug(serverlessFunctionID + " fan_in() entered monitor. self._num_calling = " + str(self._num_calling) + ", self._n=" + str(self._n))
 
         #if len(self._go) < (self._n - 1):
-        if len(self._num_calling) < (self._n - 1):
+        if self._num_calling < (self._n - 1):
             logger.debug(serverlessFunctionID + " Calling _go.wait_c() from FanIn")
+
+            self._num_calling += 1
+
             # No need to block non-last thread since we are done with them - they will terminate and not restart
             # self._go.wait_c()
             # serverless functions are rstarted by default, so turn off restart for
