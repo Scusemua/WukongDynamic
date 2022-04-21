@@ -8,6 +8,7 @@ import ujson
 
 from threading import Thread 
 from wukong.wukong_problem import WukongProblem
+from ..server.state import State
 
 # from .memoization import memoization_controller
 # from .memoization.util import MemoizationMessage, MemoizationMessageType
@@ -98,10 +99,12 @@ class DivideAndConquerExecutor(Thread):
         problem_type = None, 
         result_type = None,
         null_result = None,
-        stop_result = None
+        stop_result = None,
+        state = None
     ):
         # https://docs.python.org/3/library/threading.html#threading.Thread
         super(DivideAndConquerExecutor, self).__init__(group=group, target=target, name=name)
+        self.state = state
         self.problem = problem              # refers to an INSTANCE of the user-provided ProblemType class
         self.problem_type = problem_type    # This is a Class.
         self.result_type = result_type      # This is a Class.
@@ -327,7 +330,7 @@ class DivideAndConquerExecutor(Thread):
                 # Calls self.problem.UserProgram.computeInputsOfSubproblems(problem,subProblems) when level == DivideandConquerFibonacci.ProblemType.INPUT_THRESHOLD
                 # and then divides the input of parent into the two inputs of the children. 
                 logger.debug("%s Calling problem.Fanout()" % self.problem.problem_id)
-                self.problem.Fanout(self.problem, subProblems, ServerlessNetworkingMemoizer)
+                self.problem.Fanout(self.problem, subProblems, ServerlessNetworkingMemoizer, self.state)
                 # rhc: end Fan-Out operation
 
                 # After the executor is the first task of a Fan-In, or computes the final result, its recursion unwinds

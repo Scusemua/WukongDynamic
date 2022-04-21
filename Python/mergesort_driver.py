@@ -9,7 +9,9 @@ import cloudpickle
 from mergesort_program import MergesortProgram
 import pandas as pd
 from wukong.invoker import invoke_lambda
+import uuid
 import random
+from server.state import State 
 
 from logging import handlers
 logger = logging.getLogger(__name__)
@@ -89,7 +91,7 @@ def run(numbers: list, expected_order: list):
     redis_client.set("input", base64.b64encode(cloudpickle.dumps(numbers)))
     
     start_time = time.time()
-    invoke_lambda(payload = payload)
+    invoke_lambda(payload = payload, is_first_invocation = True)
 
     while True:
         answer_exists = redis_client.exists("solution")

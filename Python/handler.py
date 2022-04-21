@@ -1,6 +1,7 @@
 import logging 
 import base64
 import re 
+import socket
 import time 
 import redis 
 
@@ -28,6 +29,7 @@ def lambda_handler(event, context):
 
     # Extract all of the data from the payload.
     # first_executor = event["first_executor"]
+    state = cloudpickle.loads(base64.b64decode(event["state"]))
     problem = cloudpickle.loads(base64.b64decode(event["problem"]))
     problem_type = cloudpickle.loads(base64.b64decode(event["problem_type"]))
     result_type = cloudpickle.loads(base64.b64decode(event["result_type"]))
@@ -46,12 +48,17 @@ def lambda_handler(event, context):
 
     # Create the Executor object.
     executor = DivideAndConquerExecutor(
+        state = state,
         problem = problem,
         problem_type = problem_type, 
         result_type = result_type,   
         null_result = null_result,
         stop_result = stop_result
     )
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
+        logger.debug("Calling executor.create() now...")
+        executor.create(websocket, "create", "BoundedBuffer", "result")
 
     logger.debug("Starting executor.")
     executor.start()
