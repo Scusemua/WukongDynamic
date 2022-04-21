@@ -3,7 +3,7 @@ from monitor_su import MonitorSU, ConditionVariable
 import threading
 import time 
 
-from _thread import Thread
+from threading import Thread
 
 import logging 
 logger = logging.getLogger(__name__)
@@ -20,6 +20,7 @@ class FanIn(MonitorSU):
     def __init__(self, initial_n = 0, monitor_name = None):
         super(FanIn, self).__init__(monitor_name = monitor_name)
         self._n = initial_n
+        self._num_calling = 0
         
         self.results = [] # fan_in results of executors
 
@@ -55,7 +56,8 @@ class FanIn(MonitorSU):
         # does not do mutex.V, also that enter_monitor of wait_b that follows does not do mutex.P.
         # This males executes_wait ; wait_b atomic
         
-        block = super().is_blocking(len(self._go) < (self._n - 1))
+        #block = super().is_blocking(len(self._go) < (self._n - 1))
+        block = super().is_blocking(len(self._num_calling) < (self._n - 1))
         
         # Does not do mutex.V, so we will still have the mutex lock when we next call
         # enter_monitor in wait_b
@@ -67,16 +69,18 @@ class FanIn(MonitorSU):
         #logger.debug(threading.current_thread())
         serverlessFunctionID = kwargs['ID']
 
-        logger.debug(serverlessFunctionID + " fan_in current thread ID is " + str(threading.current_thread().getID()))
+        logger.debug(serverlessFunctionID + " fan_in current thread ID is " + str(threading.current_thread().ident))
         logger.debug(serverlessFunctionID + " fan_in calling enter_monitor")
         
         # if we called executes_wait first, we still have the mutex so this enter_monitor does not do mutex.P
         super().enter_monitor(method_name = "fan_in")
         
         logger.debug(serverlessFunctionID + " Entered monitor in fan_in()")
-        logger.debug(serverlessFunctionID + " fan_in() entered monitor. len(self._go) = " + str(len(self._go)) + ", self._n=" + str(self._n))
+        #logger.debug(serverlessFunctionID + " fan_in() entered monitor. len(self._go) = " + str(len(self._go)) + ", self._n=" + str(self._n))
+        logger.debug(serverlessFunctionID + " fan_in() entered monitor. len(self._num_calling) = " + str(len(self._num_calling)) + ", self._n=" + str(self._n))
 
-        if len(self._go) < (self._n - 1):
+        #if len(self._go) < (self._n - 1):
+        if len(self._num_calling) < (self._n - 1):
             logger.debug(serverlessFunctionID + " Calling _go.wait_c() from FanIn")
             # No need to block non-last thread since we are done with them - they will terminate and not restart
             # self._go.wait_c()
@@ -140,63 +144,6 @@ class FanIn(MonitorSU):
     #else:
         #result is a list, print it
 
-
-def main():
-    b = FanIn(initial_n=2,monitor_name="FanIn")
-    b.init({"n": 2})
-
-    #try:
-    #    logger.debug("Starting thread 1")
-    #   _thread.start_new_thread(task1, (b,))
-    #except Exception as ex:
-    #    logger.debug("[ERROR] Failed to start first thread.")
-    #    logger.debug(ex)
-    
-    try:
-        callerThread1 = testThread("T1")
-        callerThread1.start()
-    except Exception as ex:
-        logger.debug("[ERROR] Failed to start first thread.")
-        logger.debug(ex)      
-
-    #try:
-    #    logger.debug("Starting first thread")
-    #    _thread.start_new_thread(task2, (b,))
-    #except Exception as ex:
-    #   logger.debug("[ERROR] Failed to start first thread.")
-    #    logger.debug(ex)
-    
-    try:
-        callerThread2 = testThread("T2")
-        callerThread2.start()
-    except Exception as ex:
-        logger.debug("[ERROR] Failed to start second thread.")
-        logger.debug(ex)
-        
-    callerThread1.join()
-    callerThread2.join()
-    
-    logger.debug("joined threads")
-    print("callerThread1 restart " + callerThread1._restart)
-    if callerThread1._result == 0:
-        print("callerThread1 result is 0")
-    else:
-        #result is a list, print it
-        pass 
-
-    print("callerThread2 restart " + callerThread2._restart)
-    print("callerThread2._result=" + str(callerThread2._result))
-    # if callerThread2._result == 0:
-    #     print("callerThread2 result is 0")
-    # else:
-    #     #result is a list, print it
-        
-
-
-if __name__=="__main__":
-    main()
-     
-    
 class testThread(Thread):
     def __init__(self, ID, b):
         # Call the Thread class's init function
@@ -214,3 +161,51 @@ class testThread(Thread):
         r = self.b.fan_in(ID = self._ID, result = "task1 result")
         logger.debug("task " + self._ID + ", Successfully called fan_in")
 
+def main():
+    b = FanIn(initial_n=2,monitor_name="FanIn")
+    b.init(**{"n": 2})
+
+    #try:
+    #    logger.debug("Starting thread 1")
+    #   _thread.start_new_thread(task1, (b,))
+    #except Exception as ex:
+    #    logger.debug("[ERROR] Failed to start first thread.")
+    #    logger.debug(ex)
+    
+    try:
+        callerThread1 = testThread("T1", b)
+        callerThread1.start()
+    except Exception as ex:
+        logger.debug("[ERROR] Failed to start first thread.")
+        logger.debug(ex)      
+
+    #try:
+    #    logger.debug("Starting first thread")
+    #    _thread.start_new_thread(task2, (b,))
+    #except Exception as ex:
+    #   logger.debug("[ERROR] Failed to start first thread.")
+    #    logger.debug(ex)
+    
+    try:
+        callerThread2 = testThread("T2", b)
+        callerThread2.start()
+    except Exception as ex:
+        logger.debug("[ERROR] Failed to start second thread.")
+        logger.debug(ex)
+        
+    callerThread1.join()
+    callerThread2.join()
+    
+    logger.debug("joined threads")
+    print("callerThread1 restart " + str(callerThread1._restart))
+    print("callerThread2._returnValue=" + str(callerThread1._returnValue))
+
+    print("callerThread2 restart " + str(callerThread2._restart))
+    print("callerThread2._returnValue=" + str(callerThread2._returnValue))
+    # if callerThread2._result == 0:
+    #     print("callerThread2 result is 0")
+    # else:
+    #     #result is a list, print it
+        
+if __name__=="__main__":
+    main()
