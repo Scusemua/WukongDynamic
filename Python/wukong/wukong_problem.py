@@ -8,7 +8,7 @@ import time
 
 sys.path.append("..")
 
-from ..server.state import State
+from server.state import State 
 
 from .memoization.util import MemoizationMessage, MemoizationMessageType
 from .invoker import invoke_lambda
@@ -141,7 +141,7 @@ class WukongProblem(object):
     # Replace with actual Wukong fan-out code
     # subProblems was originally of type ArrayList<DivideandConquerFibonacci.ProblemType>
     #@staticmethod
-    def Fanout(self, problem, subProblems : list, ServerlessNetworkingMemoizer, state : state.State):
+    def Fanout(self, problem, subProblems : list, ServerlessNetworkingMemoizer, state : State):
         # Retrieve subsegment of array when the threshold is reached. Fanout is only called while 
         # recursive calls are made and the stack is thus growing in size. Fanout is not called 
         # while the recursion is unwinding and the stack is shrinking. Thus, this condition will 

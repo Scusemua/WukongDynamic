@@ -5,8 +5,11 @@ import cloudpickle
 import json
 import base64
 import uuid
+import sys 
 
-from ..server.state import State
+sys.path.append("..")
+
+from server.state import State
 
 import logging 
 logger = logging.getLogger(__name__)

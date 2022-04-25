@@ -8,9 +8,12 @@ import ujson
 
 from threading import Thread 
 from wukong.wukong_problem import WukongProblem
-from ..server.state import State
 
-from ..constants import TCP_SERVER_IP
+sys.path.append("..")
+
+from server.state import State 
+
+from constants import TCP_SERVER_IP
 
 # from .memoization import memoization_controller
 # from .memoization.util import MemoizationMessage, MemoizationMessageType
