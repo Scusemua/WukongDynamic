@@ -57,6 +57,7 @@ def invoke_lambda(
             restart = False
         )
         _payload["state"] = base64.b64encode(cloudpickle.dumps(state)).decode('utf-8')
+        _payload["create_bounded_buffer"] = True
     
     payload_json = json.dumps(_payload)
     

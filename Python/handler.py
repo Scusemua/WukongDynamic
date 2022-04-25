@@ -56,9 +56,11 @@ def lambda_handler(event, context):
         stop_result = stop_result
     )
 
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
-        logger.debug("Calling executor.create() now...")
-        executor.create(websocket, "create", "BoundedBuffer", "result", state)
+    if "create_bounded_buffer" in event and event["create_bounded_buffer"] == True:
+        # TODO: This should only happen once at the very beginning of the program.
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
+            logger.debug("Calling executor.create() for the BoundedBuffer now...")
+            executor.create(websocket, "create", "BoundedBuffer", "result", state)
 
     logger.debug("Starting executor.")
     executor.start()
