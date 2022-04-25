@@ -1,7 +1,7 @@
 import asyncio
 from multiprocessing import synchronize
 from re import A
-import ujson
+import json
 import websockets
 import cloudpickle 
 import _thread
@@ -91,7 +91,7 @@ class ServerThread(threading.Thread):
             try:
                 data = self.client_socket.recv(2048) 
                 logger.info("Received %d bytes from client: %s" % (len(data), str(data)))
-                json_message = ujson.loads(data)
+                json_message = json.loads(data)
                 action = json_message.get("op", None)
                 self.action_handlers[action](message = json_message)
             except Exception as ex:

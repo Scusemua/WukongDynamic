@@ -7,7 +7,7 @@ import importlib
 from pydoc import locate
 from synchronizer_thread import synchronizerThread
 import boto3 
-import ujson
+import json
 import cloudpickle
 
 from invoker import Invoker 

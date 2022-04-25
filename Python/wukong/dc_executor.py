@@ -140,7 +140,7 @@ class DivideAndConquerExecutor(Thread):
         """
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
             logger.debug("Connecting to " + str(TCP_SERVER_IP))
-            #websocket.connect(TCP_SERVER_IP)
+            websocket.connect(TCP_SERVER_IP)
             logger.debug("Successfully connected!")
 
             # msg_id for debugging
