@@ -19,6 +19,7 @@ logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
 ch = logging.StreamHandler(sys.stdout)
 ch.setFormatter(formatter)
+ch.setLevel(logging.DEBUG)
 logger.addHandler(ch)
 
 if logger.handlers:
@@ -50,9 +51,10 @@ def decode_base64(original_data, altchars=b'+/'):
     return base64.b64decode(original_data, altchars)
 
 def ResetRedis():
-    print("Flushing Redis DB now.")
+    logger.debug("Flushing Redis DB now.")
     redis_client.flushdb()
     redis_client.flushall()
+    logger.debug("Flushed Redis DB.")
 
 #NUMBERS = [-81, 72, 63, -51, 96, -6, -73, -33, -63, -18, 31, 50, -88, -3, -5, 22, -56, -100, 48, -76, -4, -97, 82, 41, -65, -30, -30, 99, -94, 77, 92, 45, 99, -17, -47, -44, 46, -85, -59, 42, -69, -54, -40, -87, 45, -34, 79, 87, 83, -94, 60, -91, 78, 30, 9, 3, -77, -3, -55, 86, -33, -59, 21, 28, 16, -94, -82, 47, -79, 34, 76, 35, -30, 19, -90, -14, 41, 90, 17, 2, 18, -1, -77, -8, 36, 16, 26, 70, -70, 92, -6, -93, -52, 25, -49, -30, -40, 64, -36, 9]
 # [9, -3, 5, 0, 1, 2, -1, 4, 11, 10, 13, 12, 15, 14, 17, 16]
@@ -60,8 +62,8 @@ def ResetRedis():
 # [-3, -1, 0, 1, 2, 4, 5, 9, 10, 11, 12, 13, 14, 15, 16, 17]
 
 def run(numbers: list, expected_order: list):
-    #print("Input array (numbers): " + str(numbers))
-    #print("Expected output array: " + str(expected_order))
+    logger.debug("Input array (numbers): " + str(numbers))
+    logger.debug("Expected output array: " + str(expected_order))
 
     fan_in_stack = list() 
     rootProblem = ProblemType(
@@ -89,6 +91,8 @@ def run(numbers: list, expected_order: list):
     ResetRedis()
 
     redis_client.set("input", base64.b64encode(cloudpickle.dumps(numbers)))
+
+    logger.debug("Stored input array in Redis.")
     
     start_time = time.time()
     invoke_lambda(payload = payload, is_first_invocation = True)
@@ -178,8 +182,8 @@ if __name__ == "__main__":
     numbers = [random.randint(-1000, 1000) for _ in range(0, args.n)]
     expected_order = sorted(numbers)
 
-    print("Numbers: %s" % str(numbers))
-    print("Expected order: %s" % str(expected_order))
+    logger.debug("Numbers: %s" % str(numbers))
+    logger.debug("Expected order: %s" % str(expected_order))
 
     if len(numbers) > 32000:
         logger.fatal("Problem size is far too large: " + str(len(numbers)))

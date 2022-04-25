@@ -6,6 +6,7 @@ import json
 import base64
 import uuid
 import sys 
+import time 
 
 sys.path.append("..")
 
@@ -14,6 +15,13 @@ from server.state import State
 import logging 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
+
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+ch.setFormatter(formatter)
+
+logger.addHandler(ch)
 
 lambda_client = boto3.client('lambda', region_name = "us-east-1")
 
@@ -36,6 +44,8 @@ def invoke_lambda(
         is_first_invocation (bool):
             If True, we create the State object and put it in the payload.
     """
+    logger.debug("Creating AWS Lambda invocation payload for function '%s'" % function_name)
+    s = time.time()
     _payload = {}
     for k,v in payload.items():
         _payload[k] = base64.b64encode(cloudpickle.dumps(v)).decode('utf-8')
@@ -48,14 +58,17 @@ def invoke_lambda(
         )
         _payload["state"] = base64.b64encode(cloudpickle.dumps(state)).decode('utf-8')
     
+    logger.debug("Finished creating AWS Lambda invocation payload in %f ms." % ((time.time() - s) * 1000.0))
+    
     ###########################################################################
     # CREATE() could be called here if we wanted it to be in the client/user. #
     ###########################################################################
-
-    logger.debug("Invoking AWS Lambda function '" + function_name + "' with payload containing " + str(len(payload)) + " key(s).")
+    
+    logger.info("Invoking AWS Lambda function '" + function_name + "' with payload containing " + str(len(payload)) + " key(s).")
+    s = time.time()
     #lambda_invocation_payload_serialized = cloudpickle.dumps()
     status_code = lambda_client.invoke(
         FunctionName = function_name, 
         InvocationType = 'Event',
         Payload = json.dumps(_payload)) #json.dumps(_payload))
-    logger.debug("Invoked AWS Lambda function '" + function_name + "'. Status code: " + str(status_code) + ".")
+    logger.info("Invoked AWS Lambda function '%s' in %f ms. Status: %s." % (function_name, (time.time() - s) * 1000.0, str(status_code)))

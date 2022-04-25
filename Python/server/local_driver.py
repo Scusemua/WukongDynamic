@@ -3,7 +3,7 @@ from threading import Thread
 import cloudpickle 
 import socket
 import uuid 
-import ujson
+import json
 import base64
 
 from counting_semaphore import CountingSemaphore
@@ -78,7 +78,7 @@ def client_task(taskID):
         "id": msg_id
     }
     print("Calling 'synchronize' on the server.")
-    msg = ujson.dumps(message).encode('utf-8')
+    msg = json.dumps(message).encode('utf-8')
     send_object(msg, websocket)
     print(taskID + " called synchronize PC: " + str(state._ID))
 
@@ -113,7 +113,7 @@ def client_main():
             "id": msg_id
         }
         
-        msg = ujson.dumps(message).encode('utf-8')
+        msg = json.dumps(message).encode('utf-8')
         send_object(msg, websocket) # Send to the TCP server.
         
         print("Sent 'create' message to server")

@@ -1,6 +1,6 @@
 import boto3 
 import uuid 
-import ujson 
+import json 
 import time 
 
 from state import State
@@ -42,6 +42,6 @@ class Invoker(object):
             "state": make_json_serializable(_state),
             "do_create": do_create
         }
-        self.lambda_client.invoke(FunctionName = function_name, InvocationType = 'Event', Payload = ujson.dumps(payload))
+        self.lambda_client.invoke(FunctionName = function_name, InvocationType = 'Event', Payload = json.dumps(payload))
 
         logger.debug("Invoked AWS Lambda function '%s' with do_create=%s" % (function_name, str(do_create)))

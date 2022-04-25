@@ -4,7 +4,7 @@ import uuid
 import socket 
 import cloudpickle
 import base64
-import ujson 
+import json 
 
 from threading import Thread 
 from wukong.wukong_problem import WukongProblem
@@ -156,7 +156,7 @@ class DivideAndConquerExecutor(Thread):
                 "id": msg_id
             }
 
-            msg = ujson.dumps(message).encode('utf-8')
+            msg = json.dumps(message).encode('utf-8')
             send_object(msg, websocket)
             logger.debug("Sent 'create' message to server")
 
@@ -200,7 +200,7 @@ class DivideAndConquerExecutor(Thread):
             "id": msg_id
         }
         logger.debug("Calling %s, %s, Message ID=%s" % (op, state._ID, msg_id))
-        msg = ujson.dumps(message).encode('utf-8')
+        msg = json.dumps(message).encode('utf-8')
         send_object(msg, websocket)
         logger.debug("%s called %s: %s, Message ID=%s" % (taskID, op, state._ID, msg_id))
         data = recv_object(websocket)               # Should just be a serialized state object.
