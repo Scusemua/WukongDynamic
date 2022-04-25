@@ -58,7 +58,7 @@ def lambda_handler(event, context):
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
         logger.debug("Calling executor.create() now...")
-        executor.create(websocket, "create", "BoundedBuffer", "result")
+        executor.create(websocket, "create", "BoundedBuffer", "result", state)
 
     logger.debug("Starting executor.")
     executor.start()
