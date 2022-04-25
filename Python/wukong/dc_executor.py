@@ -140,12 +140,12 @@ class DivideAndConquerExecutor(Thread):
         """
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
             logger.debug("Connecting to " + str(TCP_SERVER_IP))
-            websocket.connect(TCP_SERVER_IP)
+            #websocket.connect(TCP_SERVER_IP)
             logger.debug("Successfully connected!")
 
             # msg_id for debugging
             msg_id = str(uuid.uuid4())
-            logger.debug("Sending 'create' message to server. Message ID=" + msg_id)
+            logger.debug("Sending 'create' message to server. Op='%s', type='%s', name='%s', id='%s', state=%s" % (op, type, name, msg_id, state))
 
             # we set state.keyword_arguments before call to create()
             message = {
@@ -157,11 +157,11 @@ class DivideAndConquerExecutor(Thread):
             }
 
             msg = json.dumps(message).encode('utf-8')
-            send_object(msg, websocket)
+            #send_object(msg, websocket)
             logger.debug("Sent 'create' message to server")
 
             # Receive data. This should just be an ACK, as the TCP server will 'ACK' our create() calls.
-            ack = recv_object(websocket)
+            #ack = recv_object(websocket)
 
     def try_synchronize(self, websocket, op, name, method_name, state, taskID):
         """

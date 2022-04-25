@@ -187,9 +187,10 @@ class WukongProblem(object):
                 num_child_problems = len(subProblems))
 
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
-                websocket.connect(TCP_SERVER_IP)
+                #websocket.connect(TCP_SERVER_IP)
                 faninId = self.fanin_problem_labeler(problem_label = ID)
                 state.keyword_arguments = {"n": 2}
+                logger.info("Calling 'create' on TCP Server for 'FanIn', FanInID=%s" % (str(faninId)))
                 self.create(self, websocket, "create", "FanIn", faninId)            
 
             logger.debug(">> %s: generated fan-out ID \"%s\"" % (problem.problem_id, ID))
@@ -486,7 +487,7 @@ class WukongProblem(object):
         logger.debug(">> Local problem label start of Fanin: \"%s\"" % local_problem_label)
 
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
-            websocket.connect(TCP_SERVER_IP) 
+            #websocket.connect(TCP_SERVER_IP) 
             while (len(problem.fan_in_stack) != 0):
                 # Stop combining results when the results reach a certain size, and the communication delay for passing
                 # the results is much larger than the time to combine them. The remaining combines can be done on one
