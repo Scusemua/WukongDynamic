@@ -3,6 +3,7 @@ import cloudpickle
 import re
 import sys
 import socket 
+import uuid
 import threading 
 import time 
 
@@ -191,7 +192,7 @@ class WukongProblem(object):
                 faninId = self.fanin_problem_labeler(problem_label = ID)
                 state.keyword_arguments = {"n": 2}
                 logger.info("Calling 'create' on TCP Server for 'FanIn', FanInID=%s" % (str(faninId)))
-                self.create(self, websocket, "create", "FanIn", faninId)            
+                #self.create(self, websocket, "create", "FanIn", faninId)            
 
             logger.debug(">> %s: generated fan-out ID \"%s\"" % (problem.problem_id, ID))
 
@@ -258,7 +259,8 @@ class WukongProblem(object):
                 "problem_type": threading.current_thread().problem_type,
                 "result_type": threading.current_thread().result_type,
                 "null_result": threading.current_thread().null_result,
-                "stop_result": threading.current_thread().stop_result
+                "stop_result": threading.current_thread().stop_result,
+                "state": State(function_name = "WukongDivideAndConquer", restart = False, function_instance_ID = str(uuid.uuid4()))
             }
 
             invoke_lambda(payload = payload)
@@ -326,6 +328,7 @@ class WukongProblem(object):
         # invoke_lambda(payload = payload)
 
         become = DivideAndConquerExecutor(
+            state = state,
             problem = becomeSubproblem,
             problem_type = threading.current_thread().problem_type,
             result_type = threading.current_thread().result_type,

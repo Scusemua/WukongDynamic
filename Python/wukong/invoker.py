@@ -52,11 +52,13 @@ def invoke_lambda(
     
     if is_first_invocation:
         state = State(
-            function_name = "WukongDivideAndConquer",
+            function_name = function_name,
             function_instance_ID = str(uuid.uuid4()),
             restart = False
         )
         _payload["state"] = base64.b64encode(cloudpickle.dumps(state)).decode('utf-8')
+    
+    payload_json = json.dumps(_payload)
     
     logger.debug("Finished creating AWS Lambda invocation payload in %f ms." % ((time.time() - s) * 1000.0))
     
@@ -70,5 +72,5 @@ def invoke_lambda(
     status_code = lambda_client.invoke(
         FunctionName = function_name, 
         InvocationType = 'Event',
-        Payload = json.dumps(_payload)) #json.dumps(_payload))
+        Payload = payload_json) #json.dumps(_payload))
     logger.info("Invoked AWS Lambda function '%s' in %f ms. Status: %s." % (function_name, (time.time() - s) * 1000.0, str(status_code)))
