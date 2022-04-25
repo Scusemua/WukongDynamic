@@ -38,4 +38,4 @@ class State(object):
         return self._pc
 
     def __str__(self):
-        return "State(FuncName='%s', FuncInstID=%s, Restart=%s, PC=%s, ReturnVal=%s, Blocking=%s,Problem=%s,Result=%s)" % (self.function_name, self.function_instance_ID, str(self.restart), str(self.return_value), str(self._pc), str(self.return_value), str(self.blocking), str(type(self.problem)), str(type(self.result)))
+        return "State(FuncName='%s', FuncInstID=%s, Restart=%s, PC=%s, ReturnVal=%s, Blocking=%s,Problem=%s,Result=%s)" % (self.function_name, self.function_instance_ID, str(self.restart), str(self._pc), str(self.return_value), str(self.blocking), str(type(self.problem)), str(type(self.result)))
