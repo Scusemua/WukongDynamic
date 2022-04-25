@@ -10,6 +10,8 @@ from threading import Thread
 from wukong.wukong_problem import WukongProblem
 from ..server.state import State
 
+from ..constants import TCP_SERVER_IP
+
 # from .memoization import memoization_controller
 # from .memoization.util import MemoizationMessage, MemoizationMessageType
 
@@ -32,9 +34,6 @@ if root.handlers:
        handler.setFormatter(formatter)
 
 debug_lock = threading.Lock() 
-
-# TODO: Fill this in.
-SERVER_IP = ("", 25565)
 
 def make_json_serializable(obj):
     """
@@ -137,8 +136,8 @@ class DivideAndConquerExecutor(Thread):
                 Our current state.
         """
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
-            logger.debug("Connecting to " + str(SERVER_IP))
-            websocket.connect(SERVER_IP)
+            logger.debug("Connecting to " + str(TCP_SERVER_IP))
+            websocket.connect(TCP_SERVER_IP)
             logger.debug("Successfully connected!")
 
             # msg_id for debugging

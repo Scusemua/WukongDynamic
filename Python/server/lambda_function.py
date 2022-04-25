@@ -6,11 +6,11 @@ import base64
 import socket
 import uuid 
 
+from ..constants import TCP_SERVER_IP
+
 from counting_semaphore import CountingSemaphore
 from state import State
 from util import make_json_serializable, decode_and_deserialize
-
-SERVER_IP = ("71.191.38.59", 25565)
 
 """
 Lambda Client
@@ -65,7 +65,7 @@ def recv_object(websocket):
 def bounded_buffer_task(taskID, function_name, websocket):
     state = State(ID = function_name)
     #with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
-    #    websocket.connect(SERVER_IP)
+    #    websocket.connect(TCP_SERVER_IP)
     msg_id1 = str(uuid.uuid4())
     print(taskID + " calling synchronize_async PC: " + str(state._ID) + ". Message ID=" +msg_id1)
 
@@ -113,7 +113,7 @@ def bounded_buffer_task(taskID, function_name, websocket):
 def try_wait_b_task(taskID, function_name):
     state = State(ID = function_name)
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
-        websocket.connect(SERVER_IP)
+        websocket.connect(TCP_SERVER_IP)
         msg_id = str(uuid.uuid4())
         print(taskID + " calling synchronize PC: " + str(state._ID) + ". Message ID=" +msg_id)
 
@@ -184,8 +184,8 @@ def lambda_handler(event, context):
 
     function_name = context.function_name
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
-        print("Connecting to " + str(SERVER_IP))
-        websocket.connect(SERVER_IP)
+        print("Connecting to " + str(TCP_SERVER_IP))
+        websocket.connect(TCP_SERVER_IP)
         print("Succcessfully connected!")
         msg_id = str(uuid.uuid4())
 

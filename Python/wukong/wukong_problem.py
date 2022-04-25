@@ -12,7 +12,7 @@ from ..server.state import State
 
 from .memoization.util import MemoizationMessage, MemoizationMessageType
 from .invoker import invoke_lambda
-from constants import REDIS_IP_PRIVATE
+from constants import REDIS_IP_PRIVATE, TCP_SERVER_IP
 
 import redis 
 import logging
@@ -40,9 +40,6 @@ if root.handlers:
 debug_lock = threading.Lock()
 
 redis_client = redis.Redis(host = REDIS_IP_PRIVATE, port = 6379)
-
-# TODO: Fill this in.
-SERVER_IP = ("", 25565)
 
 class WukongProblem(object):
     # Get input arrays when the level reaches the INPUT_THRESHOLD, e.g., don't grab the initial 256MB array,
@@ -103,8 +100,8 @@ class WukongProblem(object):
 
     @property
     def memoize(self):
-        print("WukongProblem memoize")
-        return True
+        print("WukongProblem memoize (hard-coded to be False)")
+        return False 
 
     def ProcessBaseCase(self, problem, result, ServerlessNetworkingMemoizer):
         # memoizedResult True means that we got a memoized result (either at the base case or for a non-base case)
@@ -190,7 +187,7 @@ class WukongProblem(object):
                 num_child_problems = len(subProblems))
 
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
-                websocket.connect(SERVER_IP)
+                websocket.connect(TCP_SERVER_IP)
                 faninId = self.fanin_problem_labeler(problem_label = ID)
                 state.keyword_arguments = {"n": 2}
                 self.create(self, websocket, "create", "FanIn", faninId)            
@@ -489,7 +486,7 @@ class WukongProblem(object):
         logger.debug(">> Local problem label start of Fanin: \"%s\"" % local_problem_label)
 
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
-            websocket.connect(SERVER_IP)
+            websocket.connect(TCP_SERVER_IP) 
             while (len(problem.fan_in_stack) != 0):
                 # Stop combining results when the results reach a certain size, and the communication delay for passing
                 # the results is much larger than the time to combine them. The remaining combines can be done on one
