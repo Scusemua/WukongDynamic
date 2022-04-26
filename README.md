@@ -6,10 +6,16 @@ Built as a conceptual extension of the original Wukong project, Wukong DnC provi
 
 To run code in this library, set your working directory to be `DivideAndConquer/`. Then, you can run the driver programs as follows:
 ```
-python -m wukongdnc.mergesort_driver -h
-python -m wukongdnc.treereduction_driver -h
-python -m wukongdnc.fibonnaci_driver -h
+python mergesort_driver.py -h
+python treereduction_driver.py -h
+python fibonnaci_driver.py -h
 ```
+
+<>```
+<>python -m wukongdnc.mergesort_driver -h
+<>python -m wukongdnc.treereduction_driver -h
+<>python -m wukongdnc.fibonnaci_driver -h
+<>```
 
 This framework requires you have a Redis server available. The IP address should be specified in `DivideAndConquer/wukongdnc/constants.py`. Likewise, the TCP server
 defined in `DivideAndConquer/wukongdnc/tcp_server.py` must be running as well (and its IP address should be set in the aforementioned `constants.py` file). Finally,
