@@ -385,11 +385,12 @@ class DivideAndConquerExecutor(Thread):
         self.state.keyword_arguments["result"] = result 
         self.state.return_value = None 
 
-        returned_state = self.try_synchronize(websocket, "synchronize_sync", faninId, "fan_in", self.state)
-        if returned_state.blocking: 
+        self.state = self.try_synchronize(websocket, "synchronize_sync", faninId, "fan_in", self.state)
+        if self.state.blocking: 
             # not last executor
             return False
         else:
+            logger.debug("Return value from server: " + str(self.state.return_value))
             # last executor
             subproblemResults.append(self.state.return_value)
 
@@ -529,7 +530,7 @@ class DivideAndConquerExecutor(Thread):
                 # first sibling's value in previousValue. Now the second sibling has both values.
                 
                 subproblemResults = list() # ArrayList<DivideandConquerFibonacci.ResultType> 
-                subproblemResultsSynchronizer = list() # ArrayList<DivideandConquerFibonacci.ResultType> 
+                #subproblemResultsSynchronizer = list() # ArrayList<DivideandConquerFibonacci.ResultType> 
 
                 if (WukongProblem.USESERVERLESSNETWORKING):
                     FanIn = parentProblem.problem_id
@@ -563,11 +564,11 @@ class DivideAndConquerExecutor(Thread):
                 else:
                     logger.debug(problem.problem_id + ": parentProblem ID: " + parentProblem.problem_id + ", calling isLastFanInExector() now...") 
 
-                    FanInExecutorSynchronizer = self.isLastFanInExecutorSynchronizer(faninId, result, subproblemResultsSynchronizer, websocket)
+                    FanInExecutor = self.isLastFanInExecutorSynchronizer(faninId, result, subproblemResults, websocket)
 
                     # When return we either have our result and sibling result or or our result and None. For latter, we were first
                     # Executor to fan-in so we stop.
-                    FanInExecutor = self.isLastFanInExecutor(faninId, result, subproblemResults)
+                    #FanInExecutor = self.isLastFanInExecutor(faninId, result, subproblemResults)
 
                     # Specific to Fibonnaci-2.
                     # if result == 0:
@@ -616,7 +617,7 @@ class DivideAndConquerExecutor(Thread):
                     return False
                 else:  # we are last Executor and first executor's result is in previousValue.
                     logger.debug(problem.problem_id + ": FanIn: ID: " + problem.problem_id + ": FanInID: " + faninId + ": " + ": Returned from put: executor isLastFanInExecutor ")
-                    logger.debug(subproblemResults[0])
+                    logger.debug("subproblemResults[0]: " + str(subproblemResults[0]))
                     logger.debug(problem.problem_id + ": ID: " + str(problem.problem_id) + ": call combine ***************")
                     
                     # combine takes the result for this executor and the results for the sibling subproblems obtained by
