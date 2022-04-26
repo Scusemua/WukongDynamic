@@ -26,7 +26,8 @@ lambda_client = boto3.client('lambda', region_name = "us-east-1")
 def invoke_lambda(
     function_name: str = "WukongDivideAndConquer",
     payload: dict = None,
-    is_first_invocation: bool = False
+    is_first_invocation: bool = False,
+    n : int = 1
 ):
     """
     Invoke an AWS Lambda function.
@@ -41,6 +42,10 @@ def invoke_lambda(
         
         is_first_invocation (bool):
             If True, we create the State object and put it in the payload.
+        
+        n (int):
+            The 'n' keyword argument to include in the State object we create.
+            This is only used when `is_first_invocation` is set to True.
     """
     logger.debug("Creating AWS Lambda invocation payload for function '%s'" % function_name)
     s = time.time()
@@ -52,7 +57,8 @@ def invoke_lambda(
         state = State(
             function_name = function_name,
             function_instance_ID = str(uuid.uuid4()),
-            restart = False
+            restart = False,
+            keyword_arguments = {'n': n}
         )
         _payload["state"] = base64.b64encode(cloudpickle.dumps(state)).decode('utf-8')
         _payload["create_bounded_buffer"] = True

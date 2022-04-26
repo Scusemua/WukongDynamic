@@ -244,7 +244,7 @@ class WukongProblem(object):
                 faninId = self.fanin_problem_labeler(problem_label = ID)
                 state.keyword_arguments = {"n": 2}
                 logger.info("Calling 'create' on TCP Server for 'FanIn', FanInID=%s" % (str(faninId)))
-                self.create(self, websocket, "create", "FanIn", faninId)            
+                self.create(websocket, "create", "FanIn", faninId, state)            
 
             logger.debug(">> %s: generated fan-out ID \"%s\"" % (problem.problem_id, ID))
 
@@ -438,342 +438,6 @@ class WukongProblem(object):
         # Recursion unwinds - nothing happens along the way.
         return
     
-    # The last executor to fan-in will become the Fan-In task executor. The actual executor needs to save its Merge output 
-    # and increment/set counter/boolean. We handle this  here by using map.put(key,value), which returns the previous 
-    # value the key is mapped to, if any, and None if not. So if put() returns None we are not the last executor to Fan-in. 
-    # This is a special case for MergeSort, which always has only two Fan-In executors.
-    @staticmethod
-    def isLastFanInExecutorSynchronizer(FanInID : str, result, subproblemResults: list) -> bool:
-        logger.debug("isLastFanInExecutorSynchronizer: Writing to " + FanInID + " the value " + str(result))
-
-    # subproblemResults was previously ArrayList<DivideandConquerFibonacci.ResultType> 
-    @staticmethod
-    def isLastFanInExecutor(FanInID : str, result, subproblemResults: list) -> bool:
-        # store result and check if we are the last executor to do this.
-        # Add all of the other subproblem results to subproblemResults. We will add our sibling result later (before we call combine().)
-        #FanInID = parentProblem.problem_id # String 
-
-        copyOfResult = result.copy() # DivideandConquerFibonacci.ResultType
-        copyOfResult.problem_id = result.problem_id
-        
-        logger.debug("isLastFanInExecutor: Writing to " + FanInID + " the value " + str(copyOfResult)) # result))
-
-        siblingResult = None
-        with debug_lock:
-            # Atomic get-set. We pass 'True' for the `get` kwarg, so we get the old value.
-            # Previously, the debug lock ensured atomocity of the whole get/set/exists operations.
-            # Since we're using multiple Lambdas, the debug log doesn't do anything anymore. So, we 
-            # need atomic get-set operation.
-            #
-            # This will need to be generalized to support fan-ins involving more than two executors.
-            # It will NOT work in its current form if there are more than two executors fanning in.
-            #siblingResult = redis_client.set(FanInID, cloudpickle.dumps(result), get = True)
-            resultSerialized = cloudpickle.dumps(result)
-            resultEncoded = base64.b64encode(resultSerialized)
-            logger.debug("Result (to be written to Redis) encoded: '" + str(resultEncoded) + "'")
-            # with redis_client.pipeline() as p:
-            #     while True:
-            #         try:
-            #             p.watch(FanInID)
-            #             siblingResultEncoded = p.get(FanInID) 
-            #             p.multi()
-            #             if siblingResultEncoded is None:
-            #                 p.set(FanInID, resultEncoded)
-            #             p.execute()
-            #             break
-            #         except redis.WatchError:
-            #             continue
-
-            siblingResultEncoded = redis_client.getset(FanInID, resultEncoded)
-
-            # Data in Redis is stored as base64-encoded strings. Specifically, we first pickle the
-            # data with cloudpickle, after which we encode it in base64. Thus, we must decode
-            # and deserialize (in that order) the data after reading it from Redis.
-            if siblingResultEncoded is not None:
-                logger.debug("Obtained the following encoded String from Redis: '" + str(siblingResultEncoded) + "'")
-                siblingResultSerialized = decode_base64(siblingResultEncoded)
-                print("Encoded sibling result: '" + str(siblingResultSerialized) + "'")
-                siblingResult = cloudpickle.loads(siblingResultSerialized)
-
-            # if FanInID in FanInSychronizer.resultMap:
-            #    siblingResult = FanInSychronizer.resultMap[FanInID]
-            # else:
-            #     FanInSychronizer.resultMap[FanInID] = result
-        
-        # firstFanInResult may be None
-        if (siblingResult == None):
-            return False
-        else:
-            copyOfSiblingResult = siblingResult.copy()
-            copyOfSiblingResult.problem_id = siblingResult.problem_id
-            
-            subproblemResults.append(copyOfSiblingResult)
-            return True
-
-    # Perform Fan-in and possibly the Fan-in task 
-    #@staticmethod
-    def FanInOperationandTask(self, problem, result, memoizedResult: bool, ServerlessNetworkingMemoizer) -> bool:
-        # memoizedResult True means that we got a memoized result (either at the base case or for a non-base case)
-        # and we don't want to memoize this result, which would be redundant.
-        #rhc: start Fan-In operation
-        with debug_lock:
-            logger.debug(problem.problem_id + ": **********************Start Fanin operation:")
-            logger.debug(problem.problem_id + ": Fan-in: problem ID: " + problem.problem_id)
-            logger.debug(problem.problem_id + ": Fan-in: become_executor: " + str(problem.become_executor))
-            fan_in_stack_string = problem.problem_id + ": Fan-in: fan_in_stack: "
-            for i in range(len(problem.fan_in_stack)):
-                fan_in_stack_string += str(problem.fan_in_stack[i]) + " "
-            logger.debug(fan_in_stack_string)
-        
-        # Each started executor eventually executes a base case (sequential sort) or gets a memoized
-        # result for a duplicate subProblem, and then the executor competes with its sibling(s) at a Fan-In 
-        # to do the Fan0-In task, which is a combine().
-        
-        # True if this is "become" rather than "invoke" problem. Set below.
-        FanInExecutor = False    
-        
-        # For USESERVERLESSNETWORKING, whether a subProblem is become or invoked is decided when the problem is created.
-        # If we instead determine at runtime which problem is the last to fan-in, then the last to fan-in is 
-        # the become, and the others are invoke.
-        if (WukongProblem.USESERVERLESSNETWORKING):
-            FanInExecutor = problem.become_executor
-        
-        local_problem_label = problem.problem_id
-        logger.debug(">> Local problem label start of Fanin: \"%s\"" % local_problem_label)
-
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
-            websocket.connect(TCP_SERVER_IP) 
-            while (len(problem.fan_in_stack) != 0):
-                # Stop combining results when the results reach a certain size, and the communication delay for passing
-                # the results is much larger than the time to combine them. The remaining combines can be done on one
-                # processor. This is task collapsing of the remaining combine() tasks into one task.
-                # However, we can only do this if we are sure all of the subproblems will reach the threshold. For example,
-                # this works for mergeSort as sibling subproblems are all growing in size, more or less equally. But this
-                # is not True for quicksort, which may have only one large subproblem that reaches the threshold as the 
-                # other subproblems are small ones that get merged with the large one.
-
-                #if (size >= WukongProblem.OUTPUT_THRESHOLD) { 
-                if (len(problem.fan_in_stack) == WukongProblem.OUTPUT_THRESHOLD):
-                    with debug_lock:
-                        logger.debug(problem.problem_id + ": Exector: " + str(problem.problem_id) + " Reached OUTPUT_THRESHOLD for result: " + str(result.problem_id)
-                            + " with problem.fan_in_stack.size(): " + str(len(problem.fan_in_stack))
-                            + " and WukongProblem.OUTPUT_THRESHOLD: " + str(WukongProblem.OUTPUT_THRESHOLD))
-                        logger.debug(result) 
-                        # return False so we are not considered to be the final Executor that displays final results. There will
-                        # be many executors that reach the OUPUT_THRESHOLD and stop.
-                        return False
-
-                parentProblem = problem.fan_in_stack.pop()
-                faninId = self.fanin_problem_labeler(problem_label = local_problem_label)
-                
-                with debug_lock:
-                    logger.debug(problem.problem_id + ": Fan-in: problem ID: " + str(problem.problem_id) + " parentProblem ID: " + parentProblem.problem_id)
-                    logger.debug(problem.problem_id + ": faninId: " + faninId)
-                    logger.debug(problem.problem_id + ": Fan-in: problem ID: " + str(problem.problem_id) + " problem.become_executor: " + str(problem.become_executor) + " parentProblem.become_executor: " + str(parentProblem.become_executor))
-                    logger.debug("")
-                    
-                # The last task to fan-in will become the Fan-In task executor. The actual executor needs to save its Merge output 
-                # and increment/set counter/boolean. We handle this in our prototype here by using map.put(key,value), which 
-                # returns the previous value the key is mapped to, if there is one, and None if not. So if put() returns None 
-                # we are not the last executor to Fan-in.This is a special case for MergeSort, which always has only two 
-                # Fan-In tasks.
-                #
-                # Both siblings write result to storage using key FanInID, The second sibling to write will get the 
-                # first sibling's value in previousValue. Now the second sibling has both values.
-                
-                subproblemResults = list() # ArrayList<DivideandConquerFibonacci.ResultType> 
-
-                if (WukongProblem.USESERVERLESSNETWORKING):
-                    FanIn = parentProblem.problem_id
-                    if (FanInExecutor):
-                        logger.debug("ID: " + problem.problem_id + ": FanIn: " + faninId + " was FanInExecutor: starting receive.")
-                        h = ServerLessNetworkingUniReceiverHelper(FanIn)
-                        h.start()
-                        try:
-                            h.join()
-                        except Exception as e:
-                            logger.error(repr(e))
-                        # r is a copy of sent result
-                        copyOfSentResult = h.result # DivideandConquerFibonacci.ResultType
-                        subproblemResults.append(copyOfSentResult)
-                        #synchronized(FanInSychronizer.getPrintLock()) {
-                        #    System.out.println("ID: " + problem.problem_id + ": FanIn: " + parentProblem.problem_id + " was FanInExecutor: result received:" + copyOfSentResult)
-                        logger.debug("ID: " + str(problem.problem_id) + ": FanIn: " + faninId + " was FanInExecutor: result received:" + str(copyOfSentResult))
-                        #}
-                    else:
-                        # pair and send message
-                        h = ServerLessNetworkingUniSenderHelper(FanIn,result)
-                        h.start()
-                        try:
-                            h.join() # not really necessary
-                        except Exception:
-                            pass 
-                        #synchronized(FanInSychronizer.getPrintLock()) {
-                        #    System.out.println("Fan-In: ID: " + problem.problem_id + ": FanInID: " + parentProblem.problem_id + " was not FanInExecutor:  result sent:" + result)
-                        #}
-                        logger.debug("Fan-In: ID: " + str(problem.problem_id) + ": FanInID: " + faninId + " was not FanInExecutor: result sent:" + str(result))
-                else:
-                    logger.debug(problem.problem_id + ": parentProblem ID: " + parentProblem.problem_id + ", calling isLastFanInExector() now...") 
-
-                    FanInExecutor = WukongProblem.isLastFanInExecutorSynchronizer(faninId, result, subproblemResults)
-
-                    # When return we either have our result and sibling result or or our result and None. For latter, we were first
-                    # Executor to fan-in so we stop.
-                    FanInExecutor = WukongProblem.isLastFanInExecutor(faninId, result, subproblemResults)
-
-                    # Specific to Fibonnaci-2.
-                    # if result == 0:
-                    #     logger.debug("Fan-In: ID: " + str(problem.problem_id) + ": FanInID: " + faninId + ": Result is 0, so setting FanInExecutor to False.")
-                    #     FanInExecutor = False 
-                    # else:
-                    #     logger.debug("Fan-In: ID: " + str(problem.problem_id) + ": FanInID: " + faninId + ": Result is NOT 0, so setting FanInExecutor to True.")
-                    #     FanInExecutor = True
-                    #     subproblemResults.append()
-                
-                # If we are not the last task to Fan-In then unwind recursion and we are done
-            
-                # TODO: Two threads are thinking they're a fan-in executor.
-                if not FanInExecutor:
-                    with debug_lock:
-                        #value = FanInSychronizer.resultMap[faninId]
-                        valueEncoded = redis_client.get(faninId)
-                        valueSerialized = decode_base64(valueEncoded)
-                        value = cloudpickle.loads(valueSerialized)
-                        logger.debug("Fan-In: ID: " + str(problem.problem_id) + ": FanInID: " + faninId + ": is not become Executor and its value was: " + str(result) + " and after put is " + str((value)))
-                    
-                    if (len(problem.fan_in_stack) == WukongProblem.OUTPUT_THRESHOLD):
-                        with debug_lock:
-                            logger.debug("Exector: " + str(problem.problem_id) + " Reached OUTPUT_THRESHOLD for result: " + str(result.problem_id)
-                                + " with problem.fan_in_stack.size(): " + str(len(problem.fan_in_stack))
-                                + " and WukongProblem.OUTPUT_THRESHOLD: " + str(WukongProblem.OUTPUT_THRESHOLD))
-                            logger.debug(result) 
-                            # return False so we are not considered to be the final Executor that displays final results. There will
-                            # be many executors that reach the OUPUT_THRESHOLD and stop.
-                            return False
-                    
-                    if (problem.memoize):
-                        removePairingNameMsgForParent = MemoizationMessage(
-                            message_type = MemoizationMessageType.REMOVEPAIRINGNAME,
-                            sender_id = problem.problem_id,
-                            problem_or_result_id = problem.problem_id,
-                            memoization_label = None,
-                            result = None,
-                            fan_in_stack = None
-                        )
-
-                        ServerlessNetworkingMemoizer.send1(removePairingNameMsgForParent)
-                        ack = ServerlessNetworkingMemoizer.rcv1()
-                    
-                    # Unwind recursion but real executor could simply terminate instead.
-                    return False
-                else:  # we are last Executor and first executor's result is in previousValue.
-                    logger.debug(problem.problem_id + ": FanIn: ID: " + problem.problem_id + ": FanInID: " + faninId + ": " + ": Returned from put: executor isLastFanInExecutor ")
-                    logger.debug(subproblemResults[0])
-                    logger.debug(problem.problem_id + ": ID: " + str(problem.problem_id) + ": call combine ***************")
-                    
-                    # combine takes the result for this executor and the results for the sibling subproblems obtained by
-                    # the sibling executors to produce the result for this problem.
-                    
-                    # Add the result for this executor to the subproblems. 
-                    subproblemResults.append(result)
-                    
-                    # When not using ServerLessNetworking:
-                    # Above, we checked if we are last Executor by putting result in map, which, if we are last executor
-                    # left result in map and returns the sibling result, which was first. So it is result that is sitting
-                    # in the map. Now combine adds this result and the sibling's subProblem result, and 
-                    # stores the result of add as
-                    #rhc: end Fan-In operation
-
-                    logger.debug(problem.problem_id + ": CALLING COMBINE NOW...")
-                    # rhc: start Fan-In task 
-                    self.UserProgram.combine(subproblemResults, result, problem.problem_id)
-
-                    logger.debug(problem.problem_id + ": FanIn: ID: " + problem.problem_id + ", FanInId: " + faninId + ", result: " + str(result))
-
-                    #logger.debug(problem.problem_id + ": Thread exiting...")
-                    
-                    # Note: It's possible that we got a memoized value, e.g., 1 and we added 1+0 to get 1 and we are now
-                    # memoizing 1, which we do not need to do. 
-                    # Option: Track locally the memoized values we get and put so we don't put duplicates, since get/put is expensive
-                    # when memoized storage is remote.
-
-                    if (problem.memoize):
-                        memoizedLabel = self.UserProgram.memoizeIDLabeler(parentProblem)
-                        # put will memoize a copy of result
-                        # rhc: store result with subProblem
-                        memoizationResult = FanInSychronizer.put(memoizedLabel,result)
-                        #synchronized(FanInSychronizer.getPrintLock()) {
-                        logger.debug(problem.problem_id + ": Exector: result.problem_id: " + str(result.problem_id) + " put memoizedLabel: " + str(memoizedLabel) + " result: " + str(result))
-                        #}
-                    
-                    if (problem.memoize):
-                        deliverResultMsg = MemoizationMessage(
-                            message_type = MemoizationMessageType.DELIVEREDVALUE,
-                            sender_id = problem.problem_id,
-                            problem_or_result_id = result.problem_id,
-                            memoization_label = self.UserProgram.memoizeIDLabeler(parentProblem),
-                            result = result,
-                            fan_in_stack = None
-                        )
-                        # deliverResultMsg.message_type = MemoizationMessageType.DELIVEREDVALUE
-                        # deliverResultMsg.sender_id = problem.problem_id
-                        # deliverResultMsg.problem_or_result_id = result.problem_id
-                        # memoizedLabel = self.UserProgram.memoizeIDLabeler(parentProblem)
-                        # deliverResultMsg.memoization_label = memoizedLabel
-                        # deliverResultMsg.result = result
-                        # deliverResultMsg.fan_in_stack = None
-                        ServerlessNetworkingMemoizer.send1(deliverResultMsg)
-                        
-                        ack = ServerlessNetworkingMemoizer.rcv1()
-                    
-                    if (faninId == self.UserProgram.final_result_id):
-                        logger.debug(problem.problem_id + ": Executor: Writing the final value to root: " + str(result))
-                        redis_client.set(self.UserProgram.final_result_id, base64.b64encode(cloudpickle.dumps(result)))
-
-                    if (WukongProblem.USESERVERLESSNETWORKING):
-                        if (faninId == self.UserProgram.final_result_id):
-                            logger.debug(problem.problem_id + ": Executor: Writing the final value to root: " + str(result))
-                            siblingResult = FanInSychronizer.resultMap.put(self.UserProgram.final_result_id, result) 
-
-                        FanInExecutor = parentProblem.become_executor
-                        # This executor continues to do Fan-In operations with the new problem result.
-                    
-                        # end we are second executor
-                        # rhc: end Fan-In task 
-
-                        # Instead of doing all of the work for sorting as we unwind the recursion and call merge(),
-                        # we let the executors "unwind" the recursion using the explicit FanIn stack.
-                
-                with debug_lock:
-                    left_bracket_index = local_problem_label.rindex("[")
-                    logger.debug(problem.problem_id + ": Local problem label BEFORE chopping: \"%s\"" % local_problem_label)
-                    local_problem_label = local_problem_label[0:left_bracket_index]
-                    logger.debug(problem.problem_id + ": Local problem label AFTER chopping: \"%s\"" % local_problem_label)
-
-            # end while (stack not empty)
-        
-        # Assuming that we are done with all problems and so done talking to Memoization Controller
-        if (problem.memoize):
-            removePairingNameMsgForParent = MemoizationMessage(
-                message_type = MemoizationMessageType.REMOVEPAIRINGNAME,
-                sender_id = problem.problem_id,
-                problem_or_result_id = problem.problem_id,
-                memoization_label = None,
-                result = None,
-                fan_in_stack = None
-            ) # MemoizationMessage
-            # removePairingNameMsgForParent.message_type = MemoizationMessageType.REMOVEPAIRINGNAME
-            # removePairingNameMsgForParent.sender_id = problem.problem_id
-            # removePairingNameMsgForParent.problem_or_result_id = problem.problem_id
-            # removePairingNameMsgForParent.memoization_label = None
-            # removePairingNameMsgForParent.result = None
-            # removePairingNameMsgForParent.fan_in_stack = None
-            ServerlessNetworkingMemoizer.send1(removePairingNameMsgForParent)
-            ack = ServerlessNetworkingMemoizer.rcv1() # DivideandConquerFibonacci.ResultType
-        
-        # Only the final executor, i.e., the last executor to execute the final Fan-in task, makes it to here.
-        return True
-    
     def create(self, websocket, op, type, name, state):
         """
         Create a remote object on the TCP server.
@@ -799,30 +463,25 @@ class WukongProblem(object):
             state (state.State):
                 Our current state.
         """
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
-            logger.debug("Connecting to " + str(TCP_SERVER_IP))
-            websocket.connect(TCP_SERVER_IP)
-            logger.debug("Successfully connected!")
+        # msg_id for debugging
+        msg_id = str(uuid.uuid4())
+        logger.debug("Sending 'create' message to server. Op='%s', type='%s', name='%s', id='%s', state=%s" % (op, type, name, msg_id, state))
 
-            # msg_id for debugging
-            msg_id = str(uuid.uuid4())
-            logger.debug("Sending 'create' message to server. Op='%s', type='%s', name='%s', id='%s', state=%s" % (op, type, name, msg_id, state))
+        # we set state.keyword_arguments before call to create()
+        message = {
+            "op": op,
+            "type": type,
+            "name": name,
+            "state": make_json_serializable(state),
+            "id": msg_id
+        }
 
-            # we set state.keyword_arguments before call to create()
-            message = {
-                "op": op,
-                "type": type,
-                "name": name,
-                "state": make_json_serializable(state),
-                "id": msg_id
-            }
+        msg = json.dumps(message).encode('utf-8')
+        send_object(msg, websocket)
+        logger.debug("Sent 'create' message to server")
 
-            msg = json.dumps(message).encode('utf-8')
-            #send_object(msg, websocket)
-            logger.debug("Sent 'create' message to server")
-
-            # Receive data. This should just be an ACK, as the TCP server will 'ACK' our create() calls.
-            #ack = recv_object(websocket)
+        # Receive data. This should just be an ACK, as the TCP server will 'ACK' our create() calls.
+        ack = recv_object(websocket)
 
     def fanout_problem_labeler(
         self,

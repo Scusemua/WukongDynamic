@@ -65,7 +65,7 @@ class Barrier(MonitorSU):
 
     def wait_b(self, **kwargs):
         #logger.debug(threading.current_thread())
-        serverlessFunctionID = kwargs['ID']
+        #serverlessFunctionID = kwargs['ID']
         logger.debug(serverlessFunctionID + " wait_B current thread ID is " + str(threading.current_thread().getID()))
         logger.debug(serverlessFunctionID + " wait_b calling enter_monitor")
         

@@ -88,7 +88,6 @@ class TCPHandler(socketserver.StreamRequestHandler):
         obj_name = message['name']
         method_name = message['method_name']
         state = decode_and_deserialize(message["state"])
-        function_name = state.id
 
         synchronizer_name = self._get_synchronizer_name(obj_type = None, name = obj_name)
         logger.debug("Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
@@ -117,6 +116,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         
             if return_value == True:   # synchronize op will execute wait so tell client to terminate
                 state.blocking = True 
+                state.return_value = None 
                 self.send_serialized_object(cloudpickle.dumps(state))
                 
                 # execute synchronize op but don't send result to client

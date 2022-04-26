@@ -24,13 +24,6 @@ class State(object):
         self.result = None                                  # ResultType class.
     
     @property
-    def id(self):
-        """
-        AWS Lambda function name.
-        """
-        return self._ID
-    
-    @property
     def pc(self):
         """
         Program counter.

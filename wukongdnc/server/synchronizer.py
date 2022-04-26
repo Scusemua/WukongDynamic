@@ -14,6 +14,7 @@ from .invoker import Invoker
 
 from .barrier import Barrier
 from .bounded_buffer import BoundedBuffer
+from .fanin import FanIn
 
 import logging 
 logger = logging.getLogger(__name__)
@@ -34,12 +35,13 @@ aws_region = 'us-east-1'
 @Pyro4.behavior(instance_mode="single")
 class Synchronizer(object):
 
-    synchronizers = {"barrier", "Barrier", "semaphore", "Semaphore", "bounded_buffer", "BoundedBuffer"}
+    synchronizers = {"barrier", "Barrier", "semaphore", "Semaphore", "bounded_buffer", "BoundedBuffer", "fanin", "FanIn"}
 
     # Mapping from class to the file in which it is defined.
     file_map = {
         "Barrier": "barrier",
-        "BoundedBuffer": "bounded_buffer"
+        "BoundedBuffer": "bounded_buffer",
+        "FanIn": "fanin"
     }
     
     def __init__(self):
@@ -114,8 +116,8 @@ class Synchronizer(object):
         return name, False
         
     def trySynchronize(self, method_name, state, **kwargs):
-    # 	method_name is "executesWait"
-    
+        # 	method_name is "executesWait"
+
         ID_arg = kwargs["ID"]
         logger.debug("starting trySynchronize, method_name: " + str(method_name) + ", ID is: " + ID_arg)
         
@@ -135,8 +137,8 @@ class Synchronizer(object):
 
     @Pyro4.oneway
     def synchronize(self, method_name, state, **kwargs):
-        ID_arg = kwargs["ID"]
-        logger.debug("starting synchronize, method_name: " + str(method_name) + ", ID is: " + ID_arg)
+        #ID_arg = kwargs["ID"]
+        logger.debug("starting synchronize, method_name: " + str(method_name)) # + ", ID is: " + ID_arg)
         
         try:
             _synchronizer_method = getattr(self._synchClass,method_name)
@@ -156,8 +158,8 @@ class Synchronizer(object):
         #rhc      else:
         #rhc            threading.current_thread()._restart = False
 
-        logger.debug("synchronize " + str(ID_arg) + " restart " + str(restart))
-        logger.debug("synchronize " + str(ID_arg) + " returnValue " + str(returnValue))
+        logger.debug("synchronize restart " + str(restart))
+        logger.debug("synchronize returnValue " + str(returnValue))
         logger.debug("synchronize successfully called synchronize method and acquire exited. ")
 
         #if restart:
