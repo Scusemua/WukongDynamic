@@ -8,9 +8,9 @@ import uuid
 
 from ..constants import TCP_SERVER_IP
 
-from counting_semaphore import CountingSemaphore
-from state import State
-from util import make_json_serializable, decode_and_deserialize
+from .counting_semaphore import CountingSemaphore
+from .state import State
+from .util import make_json_serializable, decode_and_deserialize
 
 """
 Lambda Client

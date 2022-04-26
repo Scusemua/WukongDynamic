@@ -1,16 +1,16 @@
 from re import L
-from barrier import Barrier
+from .barrier import Barrier
 import Pyro4
-from state import State
+from .state import State
 #from ClientNew import CallbackHandler
 import importlib
 from pydoc import locate
-from synchronizer_thread import synchronizerThread
+from .synchronizer_thread import synchronizerThread
 import boto3 
 import json
 import cloudpickle
 
-from invoker import Invoker 
+from .invoker import Invoker 
 
 import logging 
 logger = logging.getLogger(__name__)

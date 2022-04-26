@@ -15,8 +15,8 @@ import threading
 import traceback
 import json 
 
-from synchronizer import Synchronizer
-from util import make_json_serializable, decode_and_deserialize
+from .synchronizer import Synchronizer
+from .util import make_json_serializable, decode_and_deserialize
 
 # Set up logging.
 import logging 

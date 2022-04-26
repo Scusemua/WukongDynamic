@@ -6,9 +6,9 @@ import uuid
 import json
 import base64
 
-from counting_semaphore import CountingSemaphore
-from state import State
-from util import make_json_serializable, decode_and_deserialize
+from .counting_semaphore import CountingSemaphore
+from .state import State
+from .util import make_json_serializable, decode_and_deserialize
 
 SERVER_IP = ("127.0.0.1", 25565)
 

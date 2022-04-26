@@ -3,7 +3,7 @@ import uuid
 import json 
 import time 
 
-from state import State
+from .state import State
 
 import logging 
 logger = logging.getLogger(__name__)
@@ -16,7 +16,7 @@ ch.setFormatter(formatter)
 
 logger.addHandler(ch)
 
-from util import make_json_serializable
+from .util import make_json_serializable
 
 function_name = "PyroTest"
 

@@ -1,6 +1,6 @@
 from imp import release_lock
 from multiprocessing import Semaphore, RLock
-from counting_semaphore import CountingSemaphore
+from .counting_semaphore import CountingSemaphore
 import queue
 
 class MonitorSU(object):
