@@ -12,6 +12,9 @@ import cloudpickle
 
 from .invoker import Invoker 
 
+from .barrier import Barrier
+from .bounded_buffer import BoundedBuffer
+
 import logging 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -62,7 +65,6 @@ class Synchronizer(object):
 
         #e.g. “Barrier_b”
         self._synchronizer_name = (str(synchronizer_class_name) + '_' + str(synchronizer_object_name))
-        logger.debug("Creating synchronizer with name '%s'"  % self._synchronizer_name)
         
         logger.debug("Attempting to locate class '%s'" % synchronizer_class_name)
 
@@ -70,7 +72,15 @@ class Synchronizer(object):
         # I got it from this simple example: https://stackoverflow.com/a/55968374
         
         src_file = Synchronizer.file_map[synchronizer_class_name]
-        self._synchClass = locate("%s.%s" % (src_file, synchronizer_class_name))
+        #logger.debug("Creating synchronizer with name '%s' by calling locate('%s.%s')"  % (self._synchronizer_name, src_file, synchronizer_class_name))
+        logger.debug("Creating synchronizer with name '%s'" % self._synchronizer_name)
+        #self._synchClass = locate("%s.%s" % (src_file, synchronizer_class_name))
+
+        module = importlib.import_module("wukongdnc.server." + src_file)
+        self._synchClass = getattr(module, synchronizer_class_name)
+
+        if (self._synchClass is None):
+            raise ValueError("Failed to locate and create synchronizer of type %s" % synchronizer_class_name)
 
         #logger.debug("got MyClass")
         self._synchronizer = self._synchClass()
