@@ -5,13 +5,13 @@ import time
 import sys
 import cloudpickle
 
-from wukong.wukong_problem import WukongProblem, FanInSychronizer, WukongResult, UserProgram
+from .wukong.wukong_problem import WukongProblem, FanInSychronizer, WukongResult, UserProgram
 
 # import wukong.memoization.memoization_controller as memoization_controller
 
 import redis 
 import logging
-from constants import REDIS_IP_PRIVATE
+from .constants import REDIS_IP_PRIVATE
 from logging import handlers
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)

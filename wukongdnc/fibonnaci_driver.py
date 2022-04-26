@@ -9,7 +9,7 @@ import cloudpickle
 import time
 from functools import reduce
 
-from wukong.invoker import invoke_lambda
+from .wukong.invoker import invoke_lambda
 
 from logging import handlers
 logger = logging.getLogger(__name__)
@@ -23,7 +23,7 @@ logger.addHandler(ch)
 #fh.setFormatter(formatter)
 #logger.addHandler(fh)
 import redis
-from constants import REDIS_IP_PUBLIC
+from .constants import REDIS_IP_PUBLIC
 redis_client = redis.Redis(host = REDIS_IP_PUBLIC, port = 6379)
 
 if logger.handlers:
@@ -35,10 +35,8 @@ if root.handlers:
     for handler in root.handlers:
        handler.setFormatter(formatter)
 
-from wukong.wukong_problem import WukongProblem
-from fibonnaci_program import ResultType, ProblemType, FibonacciProgram
-
-import fibonnaci_program
+from .wukong.wukong_problem import WukongProblem
+from .fibonnaci_program import ResultType, ProblemType, FibonacciProgram, root_problem_id, NullResult, StopResult
 
 def decode_base64(original_data, altchars=b'+/'):
     """Decode base64, padding being optional.
@@ -81,7 +79,7 @@ def run(n: int, expected_value: int):
     logger.debug("Root Problem: " + str(rootProblem))
 
     rootProblem.fan_in_stack = fan_in_stack
-    rootProblem.problem_id = fibonnaci_program.root_problem_id
+    rootProblem.problem_id = root_problem_id
 
     # This code is all running from the user's Desktop.
     # This is the payload that gets sent to the very first Lambda.
@@ -89,8 +87,8 @@ def run(n: int, expected_value: int):
         "problem": rootProblem,
         "problem_type": ProblemType,
         "result_type": ResultType,
-        "null_result": fibonnaci_program.NullResult,
-        "stop_result": fibonnaci_program.StopResult
+        "null_result": NullResult,
+        "stop_result": StopResult
     }
 
     ResetRedis()
