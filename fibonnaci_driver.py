@@ -36,7 +36,7 @@ if root.handlers:
        handler.setFormatter(formatter)
 
 from wukongdnc.wukong.wukong_problem import WukongProblem
-from .fibonnaci_program import ResultType, ProblemType, FibonacciProgram, root_problem_id, NullResult, StopResult
+from fibonnaci_program import ResultType, ProblemType, FibonacciProgram, root_problem_id, NullResult, StopResult
 
 def decode_base64(original_data, altchars=b'+/'):
     """Decode base64, padding being optional.
