@@ -8,13 +8,11 @@ import json
 import threading 
 import time 
 
-sys.path.append("..")
-
-from server.state import State 
+from ..server.state import State 
 
 from .memoization.util import MemoizationMessage, MemoizationMessageType
 from .invoker import invoke_lambda
-from constants import REDIS_IP_PRIVATE, TCP_SERVER_IP
+from ..constants import REDIS_IP_PRIVATE, TCP_SERVER_IP
 
 import redis 
 import logging

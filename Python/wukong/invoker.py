@@ -8,9 +8,7 @@ import uuid
 import sys 
 import time 
 
-sys.path.append("..")
-
-from server.state import State
+from ..server.state import State
 
 import logging 
 logger = logging.getLogger(__name__)

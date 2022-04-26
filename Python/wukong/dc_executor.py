@@ -9,9 +9,7 @@ import json
 from threading import Thread 
 from wukong.wukong_problem import WukongProblem
 
-sys.path.append("..")
-
-from server.state import State 
+from ..server.state import State 
 
 from constants import TCP_SERVER_IP
 

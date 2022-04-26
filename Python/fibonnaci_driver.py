@@ -9,8 +9,6 @@ import cloudpickle
 import time
 from functools import reduce
 
-sys.path.append("..")
-
 from wukong.invoker import invoke_lambda
 
 from logging import handlers
