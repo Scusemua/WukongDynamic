@@ -112,7 +112,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         if isTryMethod: 
             # check if synchronize op will block, if yes tell client to terminate then call op
             # rhc: FIX THIS here and in CREATE: let 
-            return_value =  synchronizer.trySynchronize(method_name, state, **state.keyword_arguments)
+            return_value = synchronizer.trySynchronize(method_name, state, **state.keyword_arguments)
         
             if return_value == True:   # synchronize op will execute wait so tell client to terminate
                 state.blocking = True 

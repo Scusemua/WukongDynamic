@@ -5,7 +5,7 @@ import time
 import sys
 import cloudpickle
 
-from wukongdnc.wukong.wukong_problem import WukongProblem, FanInSychronizer, WukongResult, UserProgram
+from wukongdnc.wukong.wukong_problem import WukongProblem, WukongResult, UserProgram
 
 # import wukong.memoization.memoization_controller as memoization_controller
 
@@ -246,7 +246,8 @@ class MergesortProgram(UserProgram):
         This is merge, which ignores from/to values for the subproblems, as it always starts merging from position 0
         and finishes in the last positions of the arrays. The from/to values of a subproblem are w.r.t the original input array.
         """
-        first_result = subproblem_results[0]
+        logger.debug("combine() called. subproblem_results=%s, problem_result=%s, problem_id=%s" % (str(subproblem_results), str(problem_result), problem_id))
+        first_result = subproblem_results[0][0]
         second_result = subproblem_results[1]
 
         first_array = first_result.numbers
