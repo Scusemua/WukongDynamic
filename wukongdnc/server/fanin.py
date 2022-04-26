@@ -69,15 +69,15 @@ class FanIn(MonitorSU):
         #logger.debug(threading.current_thread())
         #serverlessFunctionID = kwargs['ID']
 
-        logger.debug(" fan_in current thread ID is " + str(threading.current_thread().ident))
-        logger.debug(" fan_in calling enter_monitor")
+        logger.debug("fan_in current thread ID is " + str(threading.current_thread().ident))
+        logger.debug("fan_in calling enter_monitor")
         
         # if we called executes_wait first, we still have the mutex so this enter_monitor does not do mutex.P
         super().enter_monitor(method_name = "fan_in")
         
-        logger.debug(" Entered monitor in fan_in()")
+        logger.debug("Entered monitor in fan_in()")
         #logger.debug(" fan_in() entered monitor. len(self._go) = " + str(len(self._go)) + ", self._n=" + str(self._n))
-        logger.debug(" fan_in() entered monitor. self._num_calling = " + str(self._num_calling) + ", self._n=" + str(self._n))
+        logger.debug("fan_in() entered monitor. self._num_calling = " + str(self._num_calling) + ", self._n=" + str(self._n))
 
         #if len(self._go) < (self._n - 1):
         if self._num_calling < (self._n - 1):
@@ -90,6 +90,7 @@ class FanIn(MonitorSU):
             # serverless functions are rstarted by default, so turn off restart for
             #executors that are not last.
             result = kwargs['result']
+            logger.debug("Result (saved by the non-last executor): " + str(result))
             self.results.append(result)
             
             threading.current_thread()._restart = False
@@ -113,6 +114,12 @@ class FanIn(MonitorSU):
             threading.current_thread()._restart = False 
             #last thread does not append results. It will recieve list of results of other threads and append 
             #its result locally to the returned list
+
+            if (self.results is not None):
+                logger.debug("Returning (to last executor): " + str(self.results))
+            else:
+                logger.error("Result to be returned to last executor is None!")
+
             threading.current_thread()._returnValue = self.results
             
             logger.debug(" Last thread in FanIn so not calling self._go.wait_c")
