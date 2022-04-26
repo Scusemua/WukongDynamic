@@ -6,7 +6,7 @@ import json
 import sys
 import cloudpickle
 
-from wukong.wukong_problem import WukongProblem, FanInSychronizer, WukongResult, UserProgram
+from wukongdnc.wukong.wukong_problem import WukongProblem, FanInSychronizer, WukongResult, UserProgram
 
 # import wukong.memoization.memoization_controller as memoization_controller
 
@@ -23,7 +23,7 @@ ch.setFormatter(formatter)
 # fh = handlers.RotatingFileHandler("divide_and_conquer.log", maxBytes=(1048576*5), backupCount=7)
 # fh.setFormatter(formatter)
 # logger.addHandler(fh)
-from constants import REDIS_IP_PRIVATE
+from wukongdnc.constants import REDIS_IP_PRIVATE
 redis_client = redis.Redis(host = REDIS_IP_PRIVATE, port = 6379)
 
 if logger.handlers:

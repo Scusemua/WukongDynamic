@@ -29,12 +29,12 @@ if root.handlers:
     for handler in root.handlers:
        handler.setFormatter(formatter)
 
-from .server.state import State 
-from .wukong.invoker import invoke_lambda
-from .wukong.wukong_problem import WukongProblem
-from .wukong.dc_executor import DivideAndConquerExecutor
+from wukongdnc.server.state import State 
+from wukongdnc.wukong.invoker import invoke_lambda
+from wukongdnc.wukong.wukong_problem import WukongProblem
+from wukongdnc.wukong.dc_executor import DivideAndConquerExecutor
 from .mergesort_program import ResultType, ProblemType, MergesortProgram, root_problem_id, NullResult, StopResult
-from .constants import REDIS_IP_PUBLIC
+from wukongdnc.constants import REDIS_IP_PUBLIC
 redis_client = redis.Redis(host = REDIS_IP_PUBLIC, port = 6379)
 
 def decode_base64(original_data, altchars=b'+/'):

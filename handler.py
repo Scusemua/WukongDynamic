@@ -6,8 +6,8 @@ import time
 import redis 
 
 import cloudpickle
-from wukong.dc_executor import DivideAndConquerExecutor
-from constants import REDIS_IP_PRIVATE
+from wukongdnc.wukong.dc_executor import DivideAndConquerExecutor
+from wukongdnc.constants import REDIS_IP_PRIVATE
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)

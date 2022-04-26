@@ -1,15 +1,15 @@
 import sys
-
-import logging
-import base64 
-import time 
 import argparse 
+import json
+import logging
 import numpy as np
-import cloudpickle
-from .treereduction_program import MergesortProgram
+import base64
 import pandas as pd
-from .wukong.invoker import invoke_lambda
-import random
+import cloudpickle
+import time
+from functools import reduce
+
+from wukongdnc.wukong.invoker import invoke_lambda
 
 from logging import handlers
 logger = logging.getLogger(__name__)
@@ -18,6 +18,13 @@ formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
 ch = logging.StreamHandler(sys.stdout)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
+
+#fh = handlers.RotatingFileHandler("divide_and_conquer.log", maxBytes=(1048576*5), backupCount=7, mode='w')
+#fh.setFormatter(formatter)
+#logger.addHandler(fh)
+import redis
+from wukongdnc.constants import REDIS_IP_PUBLIC
+redis_client = redis.Redis(host = REDIS_IP_PUBLIC, port = 6379)
 
 if logger.handlers:
    for handler in logger.handlers:
@@ -28,13 +35,8 @@ if root.handlers:
     for handler in root.handlers:
        handler.setFormatter(formatter)
 
-import redis
-from .constants import REDIS_IP_PUBLIC
-redis_client = redis.Redis(host = REDIS_IP_PUBLIC, port = 6379)
-
-from .wukong.wukong_problem import WukongProblem
-from .wukong.dc_executor import DivideAndConquerExecutor
-from .treereduction_program import ResultType, ProblemType, root_problem_id, NullResult, StopResult
+from wukongdnc.wukong.wukong_problem import WukongProblem
+from .fibonnaci_program import ResultType, ProblemType, FibonacciProgram, root_problem_id, NullResult, StopResult
 
 def decode_base64(original_data, altchars=b'+/'):
     """Decode base64, padding being optional.
@@ -43,6 +45,8 @@ def decode_base64(original_data, altchars=b'+/'):
     :returns: The decoded byte string.
 
     """
+    if type(original_data) is str:
+        original_data = original_data.encode('utf-8') # Convert to bytes.
     original_data += b'==='
     return base64.b64decode(original_data, altchars)
 
@@ -51,24 +55,28 @@ def ResetRedis():
     redis_client.flushdb()
     redis_client.flushall()
 
-#NUMBERS = [-81, 72, 63, -51, 96, -6, -73, -33, -63, -18, 31, 50, -88, -3, -5, 22, -56, -100, 48, -76, -4, -97, 82, 41, -65, -30, -30, 99, -94, 77, 92, 45, 99, -17, -47, -44, 46, -85, -59, 42, -69, -54, -40, -87, 45, -34, 79, 87, 83, -94, 60, -91, 78, 30, 9, 3, -77, -3, -55, 86, -33, -59, 21, 28, 16, -94, -82, 47, -79, 34, 76, 35, -30, 19, -90, -14, 41, 90, 17, 2, 18, -1, -77, -8, 36, 16, 26, 70, -70, 92, -6, -93, -52, 25, -49, -30, -40, 64, -36, 9]
-# [9, -3, 5, 0, 1, 2, -1, 4, 11, 10, 13, 12, 15, 14, 17, 16]
-#EXPECTED_ORDER = [-100, -97, -94, -94, -94, -93, -91, -90, -88, -87, -85, -82, -81, -79, -77, -77, -76, -73, -70, -69, -65, -63, -59, -59, -56, -55, -54, -52, -51, -49, -47, -44, -40, -40, -36, -34, -33, -33, -30, -30, -30, -30, -18, -17, -14, -8, -6, -6, -5, -4, -3, -3, -1, 2, 3, 9, 9, 16, 16, 17, 18, 19, 21, 22, 25, 26, 28, 30, 31, 34, 35, 36, 41, 41, 42, 45, 45, 46, 47, 48, 50, 60, 63, 64, 70, 72, 76, 77, 78, 79, 82, 83, 86, 87, 90, 92, 92, 96, 99, 99]
-# [-3, -1, 0, 1, 2, 4, 5, 9, 10, 11, 12, 13, 14, 15, 16, 17]
+def run(n: int, expected_value: int):
+    # Assert 
+    seq = None 
+    try:
+        seq = getattr(ProblemType, "SEQUENTIAL_THRESHOLD", None)
+    except Exception:
+        pass 
 
-def run(numbers: list, expected_solution: list):
-    #print("Input array (numbers): " + str(numbers))
-    #print("Expected output array: " + str(expected_order))
+    if seq is None:
+        logger.fatal("ProblemType.SEQUENTIAL_THRESHOLD must be defined.")
+        
+    logger.debug("n: " + str(n))
 
     fan_in_stack = list() 
     rootProblem = ProblemType(
-        numbers = numbers,
-        from_idx = 0,
-        to_idx = len(numbers) - 1,
-        UserProgram = MergesortProgram())
+        value = n,
+        UserProgram = FibonacciProgram()
+    )
 
     logger.debug("memoize is: " + str(rootProblem.memoize))
-    #logger.debug("Root Problem: " + str(rootProblem))
+
+    logger.debug("Root Problem: " + str(rootProblem))
 
     rootProblem.fan_in_stack = fan_in_stack
     rootProblem.problem_id = root_problem_id
@@ -85,10 +93,10 @@ def run(numbers: list, expected_solution: list):
 
     ResetRedis()
 
-    redis_client.set("input", base64.b64encode(cloudpickle.dumps(numbers)))
-    
     start_time = time.time()
     invoke_lambda(payload = payload) 
+
+    print("redis_client.ping: " + str(redis_client.ping()))
 
     while True:
         answer_exists = redis_client.exists("solution")
@@ -97,15 +105,30 @@ def run(numbers: list, expected_solution: list):
             end_time = time.time()
             logger.debug("Answer found in Redis!")
             logger.debug("Time elapsed: %f seconds." % (end_time - start_time))
-            answerEncoded = redis_client.get("solution")
-            answerSerialized = decode_base64(answerEncoded)
-            answer = cloudpickle.loads(answerSerialized)
-            logger.debug("Solution: " + str(answer))
+            resultPayloadJson = redis_client.get("solution")
 
-            if (answer.numbers[0] == expected_solution):
-                logger.debug("SOLUTION WAS CORRECT.\n\n")
+            resultPayload = json.loads(resultPayloadJson)
+
+            problem_id = resultPayload["problem_id"]
+            resultEncoded = resultPayload["solution"]
+
+            resultSerialized = decode_base64(resultEncoded)
+            result = cloudpickle.loads(resultSerialized)
+
+            logger.debug("Solution: " + str(result))
+
+            logger.debug(problem_id + ": Fibonacci(" + str(n) + ") = " + str(result.value))
+
+            logger.debug(problem_id + ": Verifying ....... ")
+            error = False 
+            if result.value != expected_value:
+                error = True 
+            
+            if not error:
+                logger.debug("Verified.")
             else:
-                logger.error("INCORRECT SOLUTION.\n\n")
+                logger.error("ERROR: Final answer differs from expected answer.")
+                logger.error("Final answer: " + str(result.value) + ", expected solution: " + str(expected_value))
 
             logger.debug("Retrieving durations...")
             time.sleep(2)
@@ -125,8 +148,8 @@ def run(numbers: list, expected_solution: list):
             duration_hour = aggregated_duration / 60.0
             estimated_cost = duration_hour * cost_per_hr
             logger.info("Estimated cost: $" + str(estimated_cost))
-            #logger.info(durations)
-
+            logger.info(durations)
+            
             return {
                 "time": end_time - start_time,
                 "cost": estimated_cost,
@@ -138,64 +161,53 @@ def run(numbers: list, expected_solution: list):
             }
         else:
             time.sleep(0.1)
-
+    
+# Main method, so to speak.
 if __name__ == "__main__":
-    logger.debug("Running Mergesort")
+    logger.debug("Running DivideandConquerFibonacci")
     logger.debug("INPUT_THRESHOLD is: {}".format(WukongProblem.INPUT_THRESHOLD))
     logger.debug("OUTPUT_THRESHOLD is: {}".format(WukongProblem.OUTPUT_THRESHOLD))
     logger.debug("SEQUENTIAL_THRESHOLD is: {}".format(ProblemType.SEQUENTIAL_THRESHOLD))
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-n", type = int, default = 16, help = "Randomly generate an array of this size, then sort it.")
+    parser.add_argument("-n", type = int, default = 5, help = "This application computes fibonacci(n), so this is the n value.")
+    parser.add_argument("-e", "--expected-value", default = 5, type = int, dest = "expected_value", help = "The expected solution of the application. Used for testing/debugging.")
     parser.add_argument("--benchmark", action = "store_true", help = "Run a benchmark rather than a single test.")
     parser.add_argument("-t", "--trials", type = int, default = 10, help = "Number of trials to run during a benchmark.")
     parser.add_argument("-o", "--output", type = str, default = None, help = "Output file for benchmark results.")
 
     args = parser.parse_args()
 
-    # Assert 
-    seq = None 
-    try:
-        seq = getattr(ProblemType, "SEQUENTIAL_THRESHOLD", None)
-    except Exception:
-        pass 
+    fib = lambda n:reduce(lambda x,n:[x[1],x[0]+x[1]], range(n),[0,1])[0]
 
-    if seq is None:
-        logger.fatal("ProblemType.SEQUENTIAL_THRESHOLD must be defined.")
+    n = args.n
+    expected_value = args.expected_value
+    benchmark = args.benchmark
+
+    if (expected_value == -1):
+        logger.warning("Calculating expected value manually...")
+        expected_value = fib(n)
+        logger.debug("Calculated expected value to be: " + str(expected_value))
+    else:
+        logger.debug("Expected value: " + str(expected_value))
     
-    if args.n < ProblemType.SEQUENTIAL_THRESHOLD:
-        logger.warn("Sequential Threshold is %d while input size is %d. Input size must be greater than Sequential Threshold." % (ProblemType.SEQUENTIAL_THRESHOLD, args.n))
+    if n > 25:
+        logger.fatal("Problem size is far too large: " + str(n))
 
-    numbers = [random.randint(-1000, 1000) for _ in range(0, args.n)]
-    expected_solution = np.sum(numbers)
-
-    print("Numbers: %s" % str(numbers))
-    print("Expected Result: %d" % expected_solution)
-
-    if len(numbers) > 32000:
-        logger.fatal("Problem size is far too large: " + str(len(numbers)))
-
-    if not args.benchmark:
-        run(numbers, expected_solution)
+    if not benchmark:
+        run(n, expected_value)
     else:
         results = []
         for i in range(args.trials):
             logger.info("===== Trial %d/%d =====" % (i+1, args.trials))
-            result = run(numbers, expected_solution)
+            result = run(n, expected_value)
             results.append(result)
         
         output_file = args.output
         if output_file is None:
-            output_file = "./data/treereduction/treereduction_%d_seq=%d_bench.csv"  % (len(numbers), ProblemType.SEQUENTIAL_THRESHOLD)
+            output_file = "./data/fibonacci/fibonacci_%d_bench.csv" % n
 
         logger.info("Writing benchmark results to file %s now..." % output_file)
         time.sleep(1.0)
         df = pd.DataFrame(results)
         df.to_csv(output_file)
-
-        logger.debug("DataFrame:\n%s" % str(df))
-
-        # Save the input array so we can reuse it when doing comparison against SoCC Wukong.
-        with open("./data/treereduction/wukongdc/treereduction_%d_seq=%d.txt" % (len(numbers), ProblemType.SEQUENTIAL_THRESHOLD), "w") as handle:
-            handle.write(str(numbers))
-
