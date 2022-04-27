@@ -32,7 +32,7 @@ if root.handlers:
        handler.setFormatter(formatter)
 
 from wukongdnc.server.state import State 
-from wukongdnc.server.util import make_json_serializable, decode_and_deserialize
+from wukongdnc.server.util import make_json_serializable, decode_and_deserialize, decode_base64
 from wukongdnc.server.api import send_object, recv_object, create
 from wukongdnc.wukong.invoker import invoke_lambda
 from wukongdnc.wukong.wukong_problem import WukongProblem
@@ -133,14 +133,15 @@ def run(numbers: list, expected_order: list):
         websocket.connect(TCP_SERVER_IP)
         #answer_exists = redis_client.exists("solution")
         default_state = State("mergesort_driver", function_instance_ID = str(uuid.uuid4))
-        answer = synchronize_sync(websocket, "synchronize_sync", "result", "withdraw", default_state)
+        state = synchronize_sync(websocket, "synchronize_sync", "result", "withdraw", default_state)
+        answer = state.return_value 
 
         end_time = time.time()
-        logger.debug("Answer found in Redis!")
-        logger.debug("Time elapsed: %f seconds." % (end_time - start_time))
-        answerEncoded = redis_client.get("solution")
-        answerSerialized = decode_base64(answerEncoded)
-        answer = cloudpickle.loads(answerSerialized)
+        # logger.debug("Answer found in Redis!")
+        # logger.debug("Time elapsed: %f seconds." % (end_time - start_time))
+        # answerEncoded = redis_client.get("solution")
+        # answerSerialized = decode_base64(answerEncoded)
+        # answer = cloudpickle.loads(answerSerialized)
         
         error_occurred = False
         if type(answer) is str:

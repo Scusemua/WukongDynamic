@@ -384,43 +384,5 @@ class MergesortProgram(UserProgram):
         result.from_idx = 0 #problem.from_idx
         result.to_idx = 1 #problem.to_idx
 
-    def output_result(self, problem_problemID : str):
-        """
-        User provides method to output the problem result.
-        We only call this for the final result, and this method verifies the final result.
-
-        Note: Used to be a result parameter but that was result at top of template, which is no longer
-        the final result since we create a new result object after every combine. The final result 
-        is the value in "root".
-        """
-        resultEncoded = redis_client.get(final_result_id)
-        redis_client.set("solution", resultEncoded)
-
-        if resultEncoded is None:
-            logger.error("Final result (stored under key '" + str(final_result_id) + "' is Null")
-            exit(1)
-        else:
-            resultSerialized = decode_base64(resultEncoded)
-            result = cloudpickle.loads(resultSerialized)
-
-        logger.debug("TreeReduction Output - ProblemID: " + str(problem_problemID))
-
-        # logger.debug("Unsorted: " + str(NUMBERS))
-
-        logger.debug("Sorted: " + str(result.numbers))
-
-        # logger.debug("Expected: " + str(EXPECTED_ORDER))
-
-        # logger.debug("Verifying...")
-
-        # error_occurred = False
-        # for i in range(0, len(NUMBERS)):
-        #     if result.numbers[i] != EXPECTED_ORDER[i]:
-        #         logger.error("Error in expected value: result.numbers[" + str(i) + "]: " + str(result.numbers[i]) + " != expectedOrder[" + str(i) + "]: " + str(EXPECTED_ORDER[i]))
-        #         error_occurred = True 
-
-        # if not error_occurred:
-        #     logger.debug("Verified.")
-
 NullResult = ResultType(result_type = -1, value = -1)
 StopResult = ResultType(result_type = 0, value = -1)

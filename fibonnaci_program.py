@@ -451,43 +451,6 @@ class FibonacciProgram(UserProgram):
         with debug_lock:
             logger.debug(str(problem.problem_id) + ": Sequential: " + str(problem.problem_id) + " result.value: " + str(result.value))
 
-    def output_result(self, problem_problemID : str):
-        """
-        User provides method to output the problem result.
-        We only call this for the final result, and this method verifies the final result.
-
-		Note: Used to be a result parameter but that was result at topof template, which is no longer
-		the final result since we create a new result object after every combine. The final result 
-		is the value in "root".
-        """
-        resultEncoded = redis_client.get(final_result_id).decode('utf-8')
-
-        solution_payload = {
-            "problem_id": problem_problemID,
-            "solution": resultEncoded
-        }
-
-        redis_client.set("solution", json.dumps(solution_payload))
-        
-        logger.debug("Wrote final result to Redis.")
-
-        # logger.debug("Disabling memoization thread now...")
-        # memoization_controller.StopThread()
-
-        # logger.debug(problem_problemID + ": Fibonacci(" + str(n) + ") = " + str(result.value))
-
-        # logger.debug(problem_problemID + ": Verifying ....... ")
-        # error = False 
-        # if result.value != expected_value:
-        #     error = True 
-        
-        # if not error:
-        #     logger.debug("Verified.")
-        # else:
-        #     logger.debug("Error. Expected value: %s, actual value: %s" % (str(expected_value), str(result.value)))
-
-        #     FanInSychronizer.debug_print_maps()
-
 # Global Constants.
 NullResult = ResultType(type = -1, value = -1)
 StopResult = ResultType(type = 0, value = -1)

@@ -560,7 +560,7 @@ class DivideAndConquerExecutor(Thread):
                         if self.state.keyword_arguments is None:
                             self.state.keyword_arguments = {}
                         self.state.keyword_arguments["value"] = result 
-                        synchronize_async(websocket, "synchronize_async", "result", "deposit", self.state)                        
+                        synchronize_async(websocket, "synchronize_async", "result", "deposit", self.state)
 
                     if (WukongProblem.USESERVERLESSNETWORKING):
                         if (faninId == self.problem.UserProgram.final_result_id):
