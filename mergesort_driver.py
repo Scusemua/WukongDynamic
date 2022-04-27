@@ -141,7 +141,8 @@ def run(numbers: list, expected_order: list):
         print("Connecting to " + str(TCP_SERVER_IP))
         websocket.connect(TCP_SERVER_IP)
         #answer_exists = redis_client.exists("solution")
-        answer = synchronize_sync(websocket, "synchronize_sync", "result", "withdraw", self.state)
+        default_state = State("mergesort_driver", function_instance_ID = str(uuid.uuid4))
+        answer = synchronize_sync(websocket, "synchronize_sync", "result", "withdraw", default_state)
 
         end_time = time.time()
         logger.debug("Answer found in Redis!")
