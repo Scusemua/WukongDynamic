@@ -35,7 +35,7 @@ redis_client = redis.Redis(host = REDIS_IP_PUBLIC, port = 6379)
 from wukongdnc.wukong.wukong_problem import WukongProblem
 from wukongdnc.wukong.dc_executor import DivideAndConquerExecutor
 from treereduction_program import ResultType, ProblemType, root_problem_id, NullResult, StopResult
-from wukongdnc.server.util import make_json_serializable, decode_and_deserialize
+from wukongdnc.server.util import make_json_serializable, decode_and_deserialize, decode_base64
 
 def ResetRedis():
     print("Flushing Redis DB now.")

@@ -37,7 +37,7 @@ if root.handlers:
 
 from wukongdnc.wukong.wukong_problem import WukongProblem
 from fibonnaci_program import ResultType, ProblemType, FibonacciProgram, root_problem_id, NullResult, StopResult
-from wukongdnc.server.util import make_json_serializable, decode_and_deserialize
+from wukongdnc.server.util import make_json_serializable, decode_and_deserialize, decode_base64
 
 def ResetRedis():
     print("Flushing Redis DB now.")

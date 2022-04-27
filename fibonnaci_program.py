@@ -6,7 +6,7 @@ import json
 import sys
 import cloudpickle
 
-from wukongdnc.server.util import make_json_serializable, decode_and_deserialize
+from wukongdnc.server.util import make_json_serializable, decode_and_deserialize, decode_base64
 from wukongdnc.wukong.wukong_problem import WukongProblem, WukongResult, UserProgram
 
 # import wukong.memoization.memoization_controller as memoization_controller

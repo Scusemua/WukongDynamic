@@ -24,3 +24,13 @@ def decode_and_deserialize(obj):
     Decode and deserialize an object.
     """
     return cloudpickle.loads(base64.b64decode(obj))
+
+def decode_base64(original_data, altchars=b'+/'):
+    """Decode base64, padding being optional.
+
+    :param data: Base64 data as an ASCII byte string
+    :returns: The decoded byte string.
+
+    """
+    original_data += b'==='
+    return base64.b64decode(original_data, altchars)

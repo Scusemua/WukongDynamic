@@ -11,7 +11,7 @@ from threading import Thread
 from .wukong_problem import WukongProblem
 from .fanin_synchronizer import FanInSychronizer
 
-from ..server.util import make_json_serializable, decode_and_deserialize
+from ..server.util import make_json_serializable, decode_and_deserialize, decode_base64
 from ..server.state import State 
 from ..server.api import send_object, recv_object, synchronize_async, synchronize_sync
 
