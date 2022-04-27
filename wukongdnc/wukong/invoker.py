@@ -7,8 +7,10 @@ import base64
 import uuid
 import sys 
 import time 
+import socket 
 
 from ..server.state import State
+from ..server.api import create
 
 import logging 
 logger = logging.getLogger(__name__)
@@ -61,7 +63,10 @@ def invoke_lambda(
             keyword_arguments = {'n': n}
         )
         _payload["state"] = base64.b64encode(cloudpickle.dumps(state)).decode('utf-8')
-        _payload["create_bounded_buffer"] = True
+
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
+            logger.debug("Calling executor.create() for the BoundedBuffer now...")
+            create(websocket, "create", "BoundedBuffer", "result", state)        
     
     payload_json = json.dumps(_payload)
     

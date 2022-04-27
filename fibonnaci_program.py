@@ -6,7 +6,8 @@ import json
 import sys
 import cloudpickle
 
-from wukongdnc.wukong.wukong_problem import WukongProblem, FanInSychronizer, WukongResult, UserProgram
+from wukongdnc.server.util import make_json_serializable, decode_and_deserialize
+from wukongdnc.wukong.wukong_problem import WukongProblem, WukongResult, UserProgram
 
 # import wukong.memoization.memoization_controller as memoization_controller
 
@@ -490,24 +491,6 @@ class FibonacciProgram(UserProgram):
 # Global Constants.
 NullResult = ResultType(type = -1, value = -1)
 StopResult = ResultType(type = 0, value = -1)
-
-def decode_base64(original_data, altchars=b'+/'):
-    """Decode base64, padding being optional.
-
-    :param data: Base64 data as an ASCII byte string
-    :returns: The decoded byte string.
-
-    """
-    # data = re.sub(rb'[^a-zA-Z0-9%s]+' % altchars, b'', original_data)  # normalize
-    # missing_padding = len(data) % 4
-    # logger.debug("Original data length: " + str(len(original_data)) + ", normalized data length: " + str(len(data)) + ", missing padding: " + str(missing_padding))
-    # if missing_padding > 0:
-    #     data += b'='* (4 - missing_padding)
-    #     logger.debug("Length of data after adjustment: " + str(len(data)))
-    # else:
-    #     logger.debug("Length of (normalized) data is multiple of 4; no adjustment required.")
-    original_data += b'==='
-    return base64.b64decode(original_data, altchars)
 
 """
 

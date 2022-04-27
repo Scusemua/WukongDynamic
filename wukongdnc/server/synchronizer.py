@@ -117,9 +117,8 @@ class Synchronizer(object):
         
     def trySynchronize(self, method_name, state, **kwargs):
         # 	method_name is "executesWait"
-
-        ID_arg = kwargs["ID"]
-        logger.debug("starting trySynchronize, method_name: " + str(method_name) + ", ID is: " + ID_arg)
+        #ID_arg = kwargs["ID"]
+        logger.debug("starting trySynchronize, method_name: " + str(method_name) + ", ID is: " + state.function_instance_ID)
         
         try:
             _synchronizer_method = getattr(self._synchClass,method_name)
@@ -127,7 +126,7 @@ class Synchronizer(object):
             logger.error("Caught Error >>> %s" % x)
             raise ValueError("Synchronizer of type %s does not have method called %s. Cannot complete trySynchronize() call." % (self._synchClass, method_name))
 
-        myPythonThreadName = "Try_callerThread"+str(ID_arg)
+        myPythonThreadName = "Try_callerThread" + state.function_instance_ID #str(ID_arg)
         restart, returnValue = self.doMethodCall(2, myPythonThreadName, self._synchronizer, _synchronizer_method, **kwargs)
                 
         logger.debug("trySynchronize " + " restart " + str(restart))
@@ -138,7 +137,7 @@ class Synchronizer(object):
     @Pyro4.oneway
     def synchronize(self, method_name, state, **kwargs):
         #ID_arg = kwargs["ID"]
-        logger.debug("starting synchronize, method_name: " + str(method_name)) # + ", ID is: " + ID_arg)
+        logger.debug("starting synchronize, method_name: " + str(method_name) + ", ID is: " + state.function_instance_ID)
         
         try:
             _synchronizer_method = getattr(self._synchClass,method_name)

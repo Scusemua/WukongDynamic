@@ -35,16 +35,7 @@ redis_client = redis.Redis(host = REDIS_IP_PUBLIC, port = 6379)
 from wukongdnc.wukong.wukong_problem import WukongProblem
 from wukongdnc.wukong.dc_executor import DivideAndConquerExecutor
 from treereduction_program import ResultType, ProblemType, root_problem_id, NullResult, StopResult
-
-def decode_base64(original_data, altchars=b'+/'):
-    """Decode base64, padding being optional.
-
-    :param data: Base64 data as an ASCII byte string
-    :returns: The decoded byte string.
-
-    """
-    original_data += b'==='
-    return base64.b64decode(original_data, altchars)
+from wukongdnc.server.util import make_json_serializable, decode_and_deserialize
 
 def ResetRedis():
     print("Flushing Redis DB now.")

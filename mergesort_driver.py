@@ -32,23 +32,14 @@ if root.handlers:
        handler.setFormatter(formatter)
 
 from wukongdnc.server.state import State 
-from wukongdnc.server.util import make_json_serializable, recv_object, send_object
+from wukongdnc.server.util import make_json_serializable, decode_and_deserialize
+from wukongdnc.server.api import send_object, recv_object, create
 from wukongdnc.wukong.invoker import invoke_lambda
 from wukongdnc.wukong.wukong_problem import WukongProblem
 from wukongdnc.wukong.dc_executor import DivideAndConquerExecutor
 from mergesort_program import ResultType, ProblemType, MergesortProgram, root_problem_id, NullResult, StopResult
 from wukongdnc.constants import REDIS_IP_PUBLIC, TCP_SERVER_IP
 redis_client = redis.Redis(host = REDIS_IP_PUBLIC, port = 6379)
-
-def decode_base64(original_data, altchars=b'+/'):
-    """Decode base64, padding being optional.
-
-    :param data: Base64 data as an ASCII byte string
-    :returns: The decoded byte string.
-
-    """
-    original_data += b'==='
-    return base64.b64decode(original_data, altchars)
 
 def ResetRedis():
     logger.debug("Flushing Redis DB now.")

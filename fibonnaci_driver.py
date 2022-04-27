@@ -37,18 +37,7 @@ if root.handlers:
 
 from wukongdnc.wukong.wukong_problem import WukongProblem
 from fibonnaci_program import ResultType, ProblemType, FibonacciProgram, root_problem_id, NullResult, StopResult
-
-def decode_base64(original_data, altchars=b'+/'):
-    """Decode base64, padding being optional.
-
-    :param data: Base64 data as an ASCII byte string
-    :returns: The decoded byte string.
-
-    """
-    if type(original_data) is str:
-        original_data = original_data.encode('utf-8') # Convert to bytes.
-    original_data += b'==='
-    return base64.b64decode(original_data, altchars)
+from wukongdnc.server.util import make_json_serializable, decode_and_deserialize
 
 def ResetRedis():
     print("Flushing Redis DB now.")

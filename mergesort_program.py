@@ -6,6 +6,7 @@ import sys
 import cloudpickle
 
 from wukongdnc.wukong.wukong_problem import WukongProblem, WukongResult, UserProgram
+from wukongdnc.server.util import make_json_serializable, decode_and_deserialize
 
 # import wukong.memoization.memoization_controller as memoization_controller
 
@@ -30,16 +31,6 @@ root = logging.getLogger()
 if root.handlers:
     for handler in root.handlers:
        handler.setFormatter(formatter)
-
-def decode_base64(original_data, altchars=b'+/'):
-    """Decode base64, padding being optional.
-
-    :param data: Base64 data as an ASCII byte string
-    :returns: The decoded byte string.
-
-    """
-    original_data += b'==='
-    return base64.b64decode(original_data, altchars)
 
 debug_lock = threading.Lock() 
 
