@@ -415,21 +415,25 @@ class DivideAndConquerExecutor(Thread):
     # value the key is mapped to, if any, and None if not. So if put() returns None we are not the last executor to Fan-in. 
     # This is a special case for MergeSort, which always has only two Fan-In executors.
     def isLastFanInExecutorSynchronizer(self, faninId : str, result, subproblemResults: list, websocket : socket.socket) -> bool:
-        logger.debug("isLastFanInExecutorSynchronizer: Writing to " + faninId + " the value " + str(result))
+        #logger.debug("isLastFanInExecutorSynchronizer: Writing to " + faninId + " the value " + str(result))
         
         if self.state.keyword_arguments is None:
             self.state.keyword_arguments = {}
         self.state.keyword_arguments["result"] = result 
-        self.state.return_value = None 
+        self.state.return_value = None  # Reset state values before going to TCP server.
+        self.state.blocking = False     # Reset state values before going to TCP server.
 
-        self.state = self.synchronize_sync(websocket, "synchronize_sync", faninId, "fan_in", self.state)
+        self.state = self.synchronize_sync(websocket, "synchronize_sync", faninId, "try_fan_in", self.state)
         if self.state.blocking: 
             # not last executor
+            logger.debug("Not last Executor, returning False")
+            self.state.blocking = False
             return False
         else:
-            logger.debug("Return value from server: " + str(self.state.return_value))
+            logger.debug("Last executor: Return value from server: " + str(self.state.return_value))
             # last executor
             subproblemResults.append(self.state.return_value)
+            self.state.return_value = None # Reset state value.
 
         return True
 
@@ -718,7 +722,7 @@ class DivideAndConquerExecutor(Thread):
                         if self.state.keyword_arguments is None:
                             self.state.keyword_arguments = {}
                         self.state.keyword_arguments["value"] = result 
-                        self.synchronize_async(websocket, "synchronize_async", "deposit", self.state)                        
+                        self.synchronize_async(websocket, "synchronize_async", "result", "deposit", self.state)                        
 
                     if (WukongProblem.USESERVERLESSNETWORKING):
                         if (faninId == self.problem.UserProgram.final_result_id):
