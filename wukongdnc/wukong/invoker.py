@@ -41,9 +41,14 @@ def invoke_lambda(
         
         payload (dict):
             Dictionary to be serialized and sent via the AWS Lambda invocation payload.
+            This is typically expected to contain a "state" entry with a state object.
+            The only time it wouldn't is at the very beginning of the program, in which
+            case we automatically create the first State object.
         
         is_first_invocation (bool):
-            If True, we create the State object and put it in the payload.
+            If True, we create the State object and put it in the payload. 
+            We also call CREATE() on the TCP Server.
+            This is ONLY passed (as True) by a client. Lambda functions would never pass this as 'true'.
         
         n (int):
             The 'n' keyword argument to include in the State object we create.
@@ -55,6 +60,7 @@ def invoke_lambda(
     for k,v in payload.items():
         _payload[k] = base64.b64encode(cloudpickle.dumps(v)).decode('utf-8')
     
+    # 
     if is_first_invocation:
         state = State(
             function_name = function_name,
