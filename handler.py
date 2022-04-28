@@ -22,7 +22,34 @@ if root.handlers:
     for handler in root.handlers:
        handler.setFormatter(formatter)
 
-def lambda_handler(event, context): 
+def lambda_handler(event, context):
+    """
+    Called by AWS Lambda. This is the "main" method of the AWS Lambda function.
+
+    We configure the AWS Lambda function to call this function by specifying the filename and the function name.
+
+    Arguments:
+    ----------
+        event (dict):
+            A JSON-formatted document that contains data for the Lambda to process. The AWS Lambda runtime converts
+            the event to a Python (or whatever language) object and passes it to our function code. Generally, it will
+            be a dict, but it could be a list, string, integer, float, or None (i.e., null).
+
+            The event object contains information from the invoking service. The entity that invokes the AWS Lambda 
+            function determines the structure and contents of the event. 
+
+            This is the object through which we pass arguments from the client (user) to the Executors, or from Executors
+            to other Executors (when we invoke AWS Lambda functions from other AWS Lambda functions).
+
+            See: https://docs.aws.amazon.com/lambda/latest/dg/python-handler.html
+        
+        context (awslambdaric.lambda_context.LambdaContext):
+            When Lambda runs this function, it passes it a context object. This is that context object.
+            The context object provides methods and properties that provide information about the invocation, 
+            function, and execution environment.
+
+            See: https://docs.aws.amazon.com/lambda/latest/dg/python-context.html
+    """
     start_time = time.time()
     rc = redis.Redis(host = REDIS_IP_PRIVATE, port = 6379)
     logger.debug("Invocation received.")

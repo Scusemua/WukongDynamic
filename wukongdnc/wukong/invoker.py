@@ -66,7 +66,7 @@ def invoke_lambda(
 
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
             logger.debug("Calling executor.create() for the BoundedBuffer now...")
-            create(websocket, "create", "BoundedBuffer", "result", state)        
+            create(websocket, "create", "BoundedBuffer", "result", state)
     
     payload_json = json.dumps(_payload)
     
