@@ -22,11 +22,40 @@ if root.handlers:
     for handler in root.handlers:
        handler.setFormatter(formatter)
 
+def funcA(args):
+    pass
+
+def funcB(args):
+    pass
+
 def lambda_handler(event, context):
     """
     Called by AWS Lambda. This is the "main" method of the AWS Lambda function.
 
     We configure the AWS Lambda function to call this function by specifying the filename and the function name.
+
+    If we wanted to have several different "handlers" (i.e., functions that execute on the AWS Lambda function),
+    we could set things up like this:
+
+    def funcA(args):
+        pass
+
+    def funcB(args):
+        pass
+
+    def lambda_handler(event, context):
+        target = event["target"] # target func
+        args = event["args"]     # target function args
+
+        # If we've specified 'funcA', then call funcA().
+        if target == "funcA":
+            return funcA(args)
+        # Alternatively, if we've specified 'funcB', then call funcB().
+        elif target == "funcB":
+            return funcB(args)
+        # The user specified some invalid target function/handler, so raise an error.
+        else:
+            raise ValueError("Invalid target function specified: " + str(target))    
 
     Arguments:
     ----------
