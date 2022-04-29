@@ -95,9 +95,9 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
         base_name, isTryMethod = isTry_and_getMethodName(method_name)
     
-        logger.debug("method_name: " + method_name)
-        logger.debug("base_name: " + base_name)
-        logger.debug("isTryMethod: " + str(isTryMethod))    
+        logger.debug("method_name: " + method_name + ", base_name: " + base_name + ", isTryMethod: " + str(isTryMethod))
+        #logger.debug("base_name: " + base_name)
+        #logger.debug("isTryMethod: " + str(isTryMethod))
         
         # COMMENTED OUT:
         # The TCP server does not have a '_synchClass' variable, so that causes an error to be thrown.
@@ -112,15 +112,19 @@ class TCPHandler(socketserver.StreamRequestHandler):
         if isTryMethod: 
             # check if synchronize op will block, if yes tell client to terminate then call op
             # rhc: FIX THIS here and in CREATE: let 
-            return_value = synchronizer.trySynchronize(method_name, state, **state.keyword_arguments)
+            try_return_value = synchronizer.trySynchronize(method_name, state, **state.keyword_arguments)
+
+            logger.debug("Value of try_return_value for fan-in ID %s: %s" % (obj_name, str(try_return_value)))
         
-            if return_value == True:   # synchronize op will execute wait so tell client to terminate
+            if try_return_value == True:   # synchronize op will execute wait so tell client to terminate
                 state.blocking = True 
                 state.return_value = None 
                 self.send_serialized_object(cloudpickle.dumps(state))
                 
                 # execute synchronize op but don't send result to client
                 return_value = synchronizer.synchronize(base_name, state, **state.keyword_arguments)
+
+                logger.debug("Value of return_value (not to be sent) for fan-in ID %s: %s" % (obj_name, str(try_return_value)))
             else:
                 # execute synchronize op and send result to client
                 return_value = synchronizer.synchronize(base_name, state, **state.keyword_arguments)
