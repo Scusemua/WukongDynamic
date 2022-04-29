@@ -19,7 +19,7 @@ from .fanin import FanIn
 import logging 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
+formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
@@ -96,7 +96,7 @@ class Synchronizer(object):
         logger.debug("Calling _synchronizer init")
         #self._synchronizer.init(value)
         #self._synchronizer.initX(kwargs)
-        self._synchronizer.init(**kwargs)  #2
+        self._synchronizer.init(fanin_id = synchronizer_object_name, **kwargs)  #2
         # where Barrier init is: init(**kwargs): if len(kwargs) not == 1
 	    # logger.debug(“Error: Barrier init has too many argos”) self._n = kwargs[‘n’]
 

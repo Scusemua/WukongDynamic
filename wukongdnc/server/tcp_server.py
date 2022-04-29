@@ -22,7 +22,7 @@ from .util import make_json_serializable, decode_and_deserialize
 import logging 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
+formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
@@ -126,6 +126,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 return_value = synchronizer.synchronize(base_name, state, **state.keyword_arguments)
                 state.return_value = return_value
                 state.blocking = False 
+                logger.debug("Synchronizer %s sending %s back to last executor." % (synchronizer_name, str(return_value)))
                 # send tuple to be consistent, and False to be consistent, i.e., get result if False
                 self.send_serialized_object(cloudpickle.dumps(state))               
         else:  # not a "try" so do synchronization op and send result to waiting client

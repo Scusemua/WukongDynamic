@@ -98,11 +98,14 @@ def synchronize_sync(websocket, op, name, method_name, state):
         "state": make_json_serializable(state),
         "id": msg_id
     }
-    logger.debug("Calling %s. Message ID=%s" % (op, msg_id))
+    logger.debug("Fan-in ID %s calling %s. Message ID=%s" % (name, op, msg_id))
     msg = json.dumps(message).encode('utf-8')
     send_object(msg, websocket)
     data = recv_object(websocket)               # Should just be a serialized state object.
     state_from_server = cloudpickle.loads(data) # `state_from_server` is of type State
+
+    logger.debug("Fan-in ID %s received return value from server in synchronize_sync: %s" % (name, str(state_from_server.return_value)))
+
     return state_from_server
 
 def synchronize_async(websocket, op, name, method_name, state):

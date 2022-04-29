@@ -367,6 +367,7 @@ class DivideAndConquerExecutor(Thread):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
             websocket.connect(TCP_SERVER_IP) 
             while (len(problem.fan_in_stack) != 0):
+                #logger.debug("Executor for fan-in %s is at beginning of iteration of while-loop." % faninId)
                 # Stop combining results when the results reach a certain size, and the communication delay for passing
                 # the results is much larger than the time to combine them. The remaining combines can be done on one
                 # processor. This is task collapsing of the remaining combine() tasks into one task.
@@ -389,11 +390,12 @@ class DivideAndConquerExecutor(Thread):
                 parentProblem = problem.fan_in_stack.pop()
                 faninId = self.problem.fanin_problem_labeler(problem_label = local_problem_label)
                 
-                with debug_lock:
-                    logger.debug(problem.problem_id + ": Fan-in: problem ID: " + str(problem.problem_id) + " parentProblem ID: " + parentProblem.problem_id)
-                    logger.debug(problem.problem_id + ": faninId: " + faninId)
-                    logger.debug(problem.problem_id + ": Fan-in: problem ID: " + str(problem.problem_id) + " problem.become_executor: " + str(problem.become_executor) + " parentProblem.become_executor: " + str(parentProblem.become_executor))
-                    logger.debug("")
+                logger.debug("")
+                logger.debug("== Beginning of While-Loop ==")
+                logger.debug(problem.problem_id + ": Fan-in: problem ID: " + str(problem.problem_id) + " parentProblem ID: " + parentProblem.problem_id)
+                logger.debug(problem.problem_id + ": faninId: " + faninId)
+                logger.debug(problem.problem_id + ": Fan-in: problem ID: " + str(problem.problem_id) + " problem.become_executor: " + str(problem.become_executor) + " parentProblem.become_executor: " + str(parentProblem.become_executor))
+                logger.debug("")
                     
                 # The last task to fan-in will become the Fan-In task executor. The actual executor needs to save its Merge output 
                 # and increment/set counter/boolean. We handle this in our prototype here by using map.put(key,value), which 
@@ -468,7 +470,8 @@ class DivideAndConquerExecutor(Thread):
                     #     valueSerialized = decode_base64(valueEncoded)
                     #     value = cloudpickle.loads(valueSerialized)
                     #     logger.debug("Fan-In: ID: " + str(problem.problem_id) + ": FanInID: " + faninId + ": is not become Executor and its value was: " + str(result) + " and after put is " + str((value)))
-                    
+                    logger.debug("Not last Executor for fan-in %s is stopping." % faninId)
+
                     if (len(problem.fan_in_stack) == WukongProblem.OUTPUT_THRESHOLD):
                         with debug_lock:
                             logger.debug("Exector: " + str(problem.problem_id) + " Reached OUTPUT_THRESHOLD for result: " + str(result.problem_id)
@@ -512,7 +515,7 @@ class DivideAndConquerExecutor(Thread):
                     # stores the result of add as
                     #rhc: end Fan-In operation
 
-                    logger.debug(problem.problem_id + ": CALLING COMBINE NOW...")
+                    logger.debug(problem.problem_id + ": CALLING COMBINE NOW for fan-in " + faninId)
                     # rhc: start Fan-In task 
                     self.problem.UserProgram.combine(subproblemResults, result, problem.problem_id)
 
@@ -578,10 +581,11 @@ class DivideAndConquerExecutor(Thread):
                 
                 with debug_lock:
                     left_bracket_index = local_problem_label.rindex("[")
-                    logger.debug(problem.problem_id + ": Local problem label BEFORE chopping: \"%s\"" % local_problem_label)
+                    logger.debug(problem.problem_id + ": Local problem label BEFORE chopping off right-most [X,Y]: \"%s\"" % local_problem_label)
                     local_problem_label = local_problem_label[0:left_bracket_index]
-                    logger.debug(problem.problem_id + ": Local problem label AFTER chopping: \"%s\"" % local_problem_label)
-
+                    logger.debug(problem.problem_id + ": Local problem label AFTER chopping off right-most [X,Y]: \"%s\"" % local_problem_label)
+                
+                logger.debug("Executor for fan-in %s is at end of current iteration of while-loop." % faninId)
             # end while (stack not empty)
         
         # Assuming that we are done with all problems and so done talking to Memoization Controller

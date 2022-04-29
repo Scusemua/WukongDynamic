@@ -8,7 +8,7 @@ from threading import Thread
 import logging 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
+formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
@@ -40,13 +40,14 @@ class FanIn(MonitorSU):
     #    logger.debug ("FanIn init n to " + str(value))
     #    self._n = value
 
-    def init(self, **kwargs):
+    def init(self, fanin_id = None, **kwargs):
         logger.debug(kwargs)
         if kwargs is None or len(kwargs) == 0:
             raise ValueError("FanIn requires a length. No length provided.")
         elif len(kwargs) > 1:
            raise ValueError("Error - FanIn init has too many args.")
         self._n = kwargs['n']
+        self.fanin_id = fanin_id
 
     def try_fan_in(self, **kwargs):
         # Does mutex.P as usual
@@ -69,19 +70,19 @@ class FanIn(MonitorSU):
         #logger.debug(threading.current_thread())
         #serverlessFunctionID = kwargs['ID']
 
-        logger.debug("fan_in current thread ID is " + str(threading.current_thread().ident))
-        logger.debug("fan_in calling enter_monitor")
+        logger.debug("fan_in " + str(self.fanin_id) + " current thread ID is " + str(threading.current_thread().ident))
+        logger.debug("fan_in %s calling enter_monitor" % self.fan_in)
         
         # if we called executes_wait first, we still have the mutex so this enter_monitor does not do mutex.P
         super().enter_monitor(method_name = "fan_in")
         
-        logger.debug("Entered monitor in fan_in()")
+        logger.debug("Fan-in %s entered monitor in fan_in()" % self.fan_in)
         #logger.debug(" fan_in() entered monitor. len(self._go) = " + str(len(self._go)) + ", self._n=" + str(self._n))
-        logger.debug("fan_in() entered monitor. self._num_calling = " + str(self._num_calling) + ", self._n=" + str(self._n))
+        logger.debug("fan_in() " + str(self.fan_in) + " entered monitor. self._num_calling = " + str(self._num_calling) + ", self._n=" + str(self._n))
 
         #if len(self._go) < (self._n - 1):
         if self._num_calling < (self._n - 1):
-            logger.debug(" Calling _go.wait_c() from FanIn")
+            logger.debug("Fan-in %s calling _go.wait_c() from FanIn" % self.fan_in)
 
             self._num_calling += 1
 
@@ -90,13 +91,13 @@ class FanIn(MonitorSU):
             # serverless functions are rstarted by default, so turn off restart for
             #executors that are not last.
             result = kwargs['result']
-            logger.debug("Result (saved by the non-last executor): " + str(result))
+            logger.debug("Result (saved by the non-last executor) for fan-in %s: %s" % (self.fan_in, str(result)))
             self.results.append(result)
             
             threading.current_thread()._restart = False
             threading.current_thread()._returnValue = 0
             
-            logger.debug(" !!!!! non-last Client exiting FanIn fan_in !!!!!")
+            logger.debug(" !!!!! non-last Client exiting FanIn fan_in id = %s!!!!!" % self.fan_in)
             super().exit_monitor()
             return 0
         else:
@@ -116,14 +117,14 @@ class FanIn(MonitorSU):
             #its result locally to the returned list
 
             if (self.results is not None):
-                logger.debug("Returning (to last executor): " + str(self.results))
+                logger.debug("Returning (to last executor) for fan-in %s: %s" % (self.fan_in, str(self.results)))
             else:
-                logger.error("Result to be returned to last executor is None!")
+                logger.error("Result to be returned to last executor is None for fan-in %s!" % self.fan_in)
 
             threading.current_thread()._returnValue = self.results
             
-            logger.debug(" Last thread in FanIn so not calling self._go.wait_c")
-            logger.debug(" !!!!! last Client exiting FanIn fan_in !!!!!")
+            logger.debug("Last thread in FanIn %s so not calling self._go.wait_c" % self.fan_in)
+            logger.debug(" !!!!! last Client exiting FanIn fan_in id=%s!!!!!" % self.fan_in)
             # does mutex.V
             # non-last threads do not block on go as we are done with them (they will not be restarted)
             # and thus are not signaled - just exit
