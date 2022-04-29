@@ -10,7 +10,7 @@ import boto3
 import json
 import cloudpickle
 
-from .invoker import Invoker 
+from ..wukong.invoker import invoke_lambda 
 
 from .barrier import Barrier
 from .bounded_buffer import BoundedBuffer
@@ -48,7 +48,6 @@ class Synchronizer(object):
         self._name = "Synchronizer"
         self.threadID = 0
         self.lambda_client = boto3.client("lambda", region_name = aws_region)
-        self.invoker = Invoker()
 
     #def init(self, synchronizer_class_name = None, synchronizer_object_name = None, value):
 
@@ -168,7 +167,7 @@ class Synchronizer(object):
             function_name = state.id 
             # TODO: Restart the function (invoke it).
             logger.info("Restarting Lambda function %s." % function_name)
-            self.invoker.invoke(do_create = False, state = state)
+            invoke_lambda(do_create = False, state = state)
             #self.lambda_client.invoke(FunctionName=function_name, InvocationType='Event', Payload=cloudpickle.dumps(state))
         
         return returnValue
