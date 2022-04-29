@@ -124,7 +124,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 # execute synchronize op but don't send result to client
                 return_value = synchronizer.synchronize(base_name, state, **state.keyword_arguments)
 
-                logger.debug("Value of return_value (not to be sent) for fan-in ID %s: %s" % (obj_name, str(try_return_value)))
+                logger.debug("Value of return_value (not to be sent) for fan-in ID %s: %s" % (obj_name, str(return_value)))
             else:
                 # execute synchronize op and send result to client
                 return_value = synchronizer.synchronize(base_name, state, **state.keyword_arguments)
