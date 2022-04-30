@@ -170,27 +170,41 @@ def create(websocket, op, type, name, state):
         state (state.State):
             Our current state.
     """
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
-        logger.debug("Connecting to " + str(TCP_SERVER_IP))
-        websocket.connect(TCP_SERVER_IP)
-        logger.debug("Successfully connected!")
+    # with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
+    #    logger.debug("Connecting to " + str(TCP_SERVER_IP))
+    #    websocket.connect(TCP_SERVER_IP)
+    #    logger.debug("Successfully connected!")
 
-        # msg_id for debugging
-        msg_id = str(uuid.uuid4())
-        logger.debug("Sending 'create' message to server. Op='%s', type='%s', name='%s', id='%s', state=%s" % (op, type, name, msg_id, state))
+    # msg_id for debugging
+    msg_id = str(uuid.uuid4())
+    logger.debug("Sending 'create' message to server. Op='%s', type='%s', name='%s', id='%s', state=%s" % (op, type, name, msg_id, state))
 
-        # we set state.keyword_arguments before call to create()
-        message = {
-            "op": op,
-            "type": type,
-            "name": name,
-            "state": make_json_serializable(state),
-            "id": msg_id
-        }
+    # we set state.keyword_arguments before call to create()
+    message = {
+        "op": op,
+        "type": type,
+        "name": name,
+        "state": make_json_serializable(state),
+        "id": msg_id
+    }
 
-        msg = json.dumps(message).encode('utf-8')
-        send_object(msg, websocket)
-        logger.debug("Sent 'create' message to server")
+    msg = json.dumps(message).encode('utf-8')
+    send_object(msg, websocket)
+    logger.debug("Sent 'create' message to server")
 
-        # Receive data. This should just be an ACK, as the TCP server will 'ACK' our create() calls.
-        ack = recv_object(websocket)
+    # Receive data. This should just be an ACK, as the TCP server will 'ACK' our create() calls.
+    ack = recv_object(websocket)
+
+def close_all(websocket):
+    """
+    Call CLOSE_ALL on the TCP server.
+    """
+    msg_id = str(uuid.uuid4())
+    message = {
+        "op": "close_all",
+        "id": msg_id
+    }
+    msg = json.dumps(message).encode('utf-8')
+    send_object(msg, websocket)
+    logger.debug("Sent 'close_all' message to server")    
+    ack = recv_object(websocket)

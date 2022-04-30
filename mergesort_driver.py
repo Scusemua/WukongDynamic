@@ -32,8 +32,8 @@ if root.handlers:
        handler.setFormatter(formatter)
 
 from wukongdnc.server.state import State 
-from wukongdnc.server.util import make_json_serializable, decode_and_deserialize, decode_base64
-from wukongdnc.server.api import send_object, recv_object, create
+from wukongdnc.server.util import make_json_serializable
+from wukongdnc.server.api import send_object, recv_object, close_all
 from wukongdnc.wukong.invoker import invoke_lambda
 from wukongdnc.wukong.wukong_problem import WukongProblem
 from wukongdnc.wukong.dc_executor import DivideAndConquerExecutor
@@ -177,6 +177,8 @@ def run(numbers: list, expected_order: list):
         estimated_cost = duration_hour * cost_per_hr
         logger.info("Estimated cost: $" + str(estimated_cost))
         #logger.info(durations)
+
+        close_all(websocket)
 
         return {
             "time": end_time - start_time,

@@ -42,7 +42,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 "create": self.create_obj,
                 "setup": self.setup_server,
                 "synchronize_async": self.synchronize_async,
-                "synchronize_sync": self.synchronize_sync
+                "synchronize_sync": self.synchronize_sync,
+                "close_all": self.close_all
             }
             #logger.info("Thread Name:{}".format(threading.current_thread().name))
 
@@ -212,6 +213,26 @@ class TCPHandler(socketserver.StreamRequestHandler):
         self.send_serialized_object(resp_encoded)
         logger.info("Sent ACK of size %d bytes to client %s for CREATE operation." % (len(resp_encoded), self.client_address[0]))
 
+    def close_all(self, message = None):
+        """
+        Clear all known synchronizers.
+        """
+        logger.debug("Received close_all request.")
+
+        tcp_server.synchronizers = {}
+
+        #############################
+        # Write ACK back to client. #
+        #############################
+        resp = {
+            "op": "ack",
+            "op_performed": "close_all"
+        }        
+        logger.info("Sending ACK to client %s for 'close_all' operation." % self.client_address[0])
+        resp_encoded = json.dumps(resp).encode('utf-8')
+        self.send_serialized_object(resp_encoded)
+        logger.info("Sent ACK of size %d bytes to client %s for 'close_all' operation." % (len(resp_encoded), self.client_address[0]))          
+
     def close_obj(self, message = None):
         """
         Called by a remote Lambda to delete an object here on the TCP server.
@@ -226,6 +247,18 @@ class TCPHandler(socketserver.StreamRequestHandler):
         state = decode_and_deserialize(message["state"])
 
         logger.debug("Received close_obj request for object with name '%s' and type %s" % (name, type_arg))
+
+        #############################
+        # Write ACK back to client. #
+        #############################
+        resp = {
+            "op": "ack",
+            "op_performed": "close_obj"
+        }        
+        logger.info("Sending ACK to client %s for CLOSE_OBJ operation." % self.client_address[0])
+        resp_encoded = json.dumps(resp).encode('utf-8')
+        self.send_serialized_object(resp_encoded)
+        logger.info("Sent ACK of size %d bytes to client %s for CLOSE_OBJ operation." % (len(resp_encoded), self.client_address[0]))        
 
     def setup_server(self, message = None):
         logger.debug("server.setup() called.")
@@ -260,9 +293,9 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
 class TCPServer(object):
     def __init__(self):
-        self.synchronizers = dict() 
-        self.server_threads = []
-        self.clients = []
+        self.synchronizers =  {}    # dict 
+        self.server_threads = []    # list
+        self.clients =        []    # list
         self.server_address = ("0.0.0.0",25565)
         self.tcp_server = socketserver.ThreadingTCPServer(self.server_address, TCPHandler)
     

@@ -9,6 +9,7 @@ import sys
 import time 
 import socket 
 
+from ..constants import TCP_SERVER_IP
 from ..server.state import State
 from ..server.api import create
 
@@ -60,7 +61,6 @@ def invoke_lambda(
     for k,v in payload.items():
         _payload[k] = base64.b64encode(cloudpickle.dumps(v)).decode('utf-8')
     
-    # 
     if is_first_invocation:
         state = State(
             function_name = function_name,
@@ -71,7 +71,9 @@ def invoke_lambda(
         _payload["state"] = base64.b64encode(cloudpickle.dumps(state)).decode('utf-8')
 
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
-            logger.debug("Calling executor.create() for the BoundedBuffer now...")
+            logger.debug("Connecting to TCP Server at %s." % str(TCP_SERVER_IP))
+            websocket.connect(TCP_SERVER_IP)
+            logger.debug("Successfully connected to TCP Server at %s. Calling executor.create() for the BoundedBuffer now...")
             create(websocket, "create", "BoundedBuffer", "result", state)
     
     payload_json = json.dumps(_payload)
