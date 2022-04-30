@@ -34,12 +34,12 @@ class MonitorSU(object):
         base_name, isTryMethod = isTry_and_getMethodName(method_name)
         if isTryMethod:
             # try methods always need to lock monitor 
-            self.mutex.P()
+            self._mutex.P()
             self._doingTry = True # tell exit_monitor to keep the muutex_lock for foo
             return
         elif not self._doingTry:
             # not a try-method and not in the middle of doing (atomically) [try_foo(); foo()] so we need to lock mutex.
-            self.mutex.P()
+            self._mutex.P()
             return
         else:
             #we are entering foo after doing try_foo; we currently have the mutex lock; tell exit_monitor to do a normal exit
@@ -47,10 +47,10 @@ class MonitorSU(object):
             return
 
     def exit_monitor(self):
-        if not self._doing_try:  # normal exit
+        if not self._doingTry:  # normal exit
             # this is exit_monitor for foo -  so we need to do a normal exit
             if self._reentry_count > 0:
-                self._reenetry.V()
+                self._reentry.V()
             else:
                 self._mutex.V()
     # else this is exit_monitor for try_foo, so keep the mutex lock for foo's enter_monitor, i..e., do nothing.
@@ -92,7 +92,7 @@ class MonitorSU(object):
     # Note: Passing self to the ConditionVarable as the parent_monitor should work since all members are named with a single underscore instead of a
     # double underscore. Double underscores cause member names to be mangled (by prefixing with the class name).
     def get_condition_variable(self, condition_name = "Condition"):
-        return ConditionVariable(mutex = self._mutex, reentry = self._reentry, reentry_count = self._reentry_count, exited = self._exited, name = condition_name)
+        return ConditionVariable(mutex = self._mutex, reentry = self._reentry, reentry_count = self._reentry_count, name = condition_name) #exited = self._exited, 
 
 class Integer:
     def __init__(self, val=0):
@@ -120,14 +120,14 @@ class ConditionVariable(object):
         #self._num_waiting_threads = 0
         #self._condition_name = name
 
-    def __init__(self, mutex = None, reentry = None, reentry_count = None, exited = None, name = None):
+    def __init__(self, mutex = None, reentry = None, reentry_count = None, name = None): #exited = None, 
         self._mutex = mutex
         self._reentry = reentry
         self._reentry_count = reentry_count
         self._thread_queue = CountingSemaphore(initial_permits = 0, semaphore_name = name + ":threadQueue", id = 1)
         self._num_waiting_threads = 0
         self._condition_name = name
-        self._exited = exited
+        #self._exited = exited
     
     #def signal_c(self):
         #if (self._num_waiting_threads > 0):
@@ -156,7 +156,7 @@ class ConditionVariable(object):
             self._reenetry.V()
         else:
             self._mutex.V()
-        self._exited.release()
+        #self._exited.release()
     
     #def wait_c(self):
         #self._num_waiting_threads += 1

@@ -132,7 +132,7 @@ def run(numbers: list, expected_order: list):
         print("Connecting to " + str(TCP_SERVER_IP))
         websocket.connect(TCP_SERVER_IP)
         #answer_exists = redis_client.exists("solution")
-        default_state = State("mergesort_driver", function_instance_ID = str(uuid.uuid4))
+        default_state = State("mergesort_driver", function_instance_ID = str(uuid.uuid4()))
         state = synchronize_sync(websocket, "synchronize_sync", "result", "withdraw", default_state)
         answer = state.return_value 
 

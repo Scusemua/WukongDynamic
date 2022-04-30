@@ -26,8 +26,10 @@ class synchronizerThread(Thread):
 
     def getRestart(self):
         return self._restart
+    
     def getID(self):
         return self._threadID
+    
     def getReturnValue(self):
         return self._returnValue
         
