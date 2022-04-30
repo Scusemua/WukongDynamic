@@ -108,11 +108,6 @@ class Synchronizer(object):
     #and not args but args may be refs to state. So passing  to
     #synchronize and it saves state, where list of args is part of state
     #and list of args is passed to _synchronizer_method;
-
-    def isTry_and_getMethodName(self,name):
-        if name.startswith("try_"):
-            return name[4:], True
-        return name, False
         
     def trySynchronize(self, method_name, state, **kwargs):
         # 	method_name is "executesWait"

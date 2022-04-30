@@ -1,13 +1,14 @@
 from imp import release_lock
 from multiprocessing import Semaphore, RLock
 from .counting_semaphore import CountingSemaphore
+from .util import isTry_and_getMethodName
 import queue
 
 class MonitorSU(object):
     def __init__(self, monitor_name = None):
         self._mutex = CountingSemaphore(initial_permits = 1, semaphore_name = "Monitor-" + str(monitor_name) + "-_mutex-CountingSemaphore") 
         self._reentry = CountingSemaphore(initial_permits = 0,  semaphore_name = "Monitor-" + str(monitor_name) + "-_reentry-CountingSemaphore")
-        self._exited = CountingSemaphore(initial_permits = 0, semaphore_name = "Monitor-" + str(monitor_name) + "-_exited-CountingSemaphore")
+        # self._exited = CountingSemaphore(initial_permits = 0, semaphore_name = "Monitor-" + str(monitor_name) + "-_exited-CountingSemaphore")
 
         self._reentry_count = Integer(0)
         self._monitor_name = monitor_name
@@ -28,28 +29,53 @@ class MonitorSU(object):
     #       self._mutex.V()
     #   self._exited.release()
 
-
-    #rhc: Block:
     def enter_monitor(self, method_name = None):
         # assert method_name starts with "try_" implies not self._doingTry
-        if self._doingTry:
-            # in the middle of doing (atomic) try_foo() and foo(), so we already
-            # have mutex obtained by  enter_monitor in try_foo().
+        base_name, isTryMethod = isTry_and_getMethodName(method_name)
+        if isTryMethod:
+            # try methods always need to lock monitor 
+            self.mutex.P()
+            self._doingTry = True # tell exit_monitor to keep the muutex_lock for foo
+            return
+        elif not self._doingTry:
+            # not a try-method and not in the middle of doing (atomically) [try_foo(); foo()] so we need to lock mutex.
+            self.mutex.P()
+            return
+        else:
+            #we are entering foo after doing try_foo; we currently have the mutex lock; tell exit_monitor to do a normal exit
             self._doingTry = False
             return
-        else:
-            self._mutex.P()
 
     def exit_monitor(self):
-        if self._doingTry:
-            self._exited.release()
-            return
+        if not self._doing_try:  # normal exit
+            # this is exit_monitor for foo -  so we need to do a normal exit
+            if self._reentry_count > 0:
+                self._reenetry.V()
+            else:
+                self._mutex.V()
+    # else this is exit_monitor for try_foo, so keep the mutex lock for foo's enter_monitor, i..e., do nothing.
+
+    #rhc: Block:
+    # def enter_monitor(self, method_name = None):
+    #     # assert method_name starts with "try_" implies not self._doingTry
+    #     if self._doingTry:
+    #         # in the middle of doing (atomic) try_foo() and foo(), so we already
+    #         # have mutex obtained by  enter_monitor in try_foo().
+    #         self._doingTry = False
+    #         return
+    #     else:
+    #         self._mutex.P()
+
+    # def exit_monitor(self):
+    #     if self._doingTry:
+    #         self._exited.release()
+    #         return
         
-        if self._reentry_count > 0:
-            self._reenetry.V()
-        else:
-            self._mutex.V()
-        self._exited.release()
+    #     if self._reentry_count > 0:
+    #         self._reenetry.V()
+    #     else:
+    #         self._mutex.V()
+    #     self._exited.release()
 
     # rhc: Block:
     def is_blocking(self, condition):
@@ -60,7 +86,7 @@ class MonitorSU(object):
         # or enter_monitor of foo(). Enter_monitor of foo will
         # set _doingTry to false so exit_monitor of foo() will
         # execute mutex.V
-        self._doingTry = True
+        # self._doingTry = True
         return condition
 
     # Note: Passing self to the ConditionVarable as the parent_monitor should work since all members are named with a single underscore instead of a

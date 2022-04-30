@@ -13,6 +13,14 @@ ch.setFormatter(formatter)
 
 logger.addHandler(ch)
 
+def isTry_and_getMethodName(name):
+    """
+    Check if the given name (which is the name of a method) begins with try. 
+    """
+    if name.startswith("try_"):
+        return name[4:], True
+    return name, False
+
 def make_json_serializable(obj):
     """
     Serialize and encode an object.

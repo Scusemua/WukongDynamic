@@ -16,7 +16,7 @@ import traceback
 import json 
 
 from .synchronizer import Synchronizer
-from .util import make_json_serializable, decode_and_deserialize
+from .util import make_json_serializable, decode_and_deserialize, isTry_and_getMethodName
 
 # Set up logging.
 import logging 
@@ -29,11 +29,6 @@ ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 
 logger.addHandler(ch)
-
-def isTry_and_getMethodName(name):
-    if name.startswith("try_"):
-        return name[4:], True
-    return name, False
 
 class TCPHandler(socketserver.StreamRequestHandler):
     def handle(self):
