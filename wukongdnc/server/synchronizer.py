@@ -169,12 +169,23 @@ class Synchronizer(object):
 
     def doMethodCall(self, PythonThreadID, myName, synchronizer, synchronizer_method, **kwargs):
         """
-        
         Call a method.
 
         Arguments:
         ----------
-            TODO: Fill in this documentation.
+        TODO: Make sure these descriptions are accurate...
+
+            PythonThreadID:
+                The ID of the Python thread associated with this operation/call.
+            
+            myName:
+                The name of the synchronizer object.
+            
+            synchronizer:
+                The synchronizer object.
+            
+            synchronizer_method:
+                The method of the synchronizer object that we're calling.
         """
         logger.debug ("starting caller thread to make the call")
         callerThread = synchronizerThread(PythonThreadID, myName,  synchronizer, synchronizer_method, **kwargs)
