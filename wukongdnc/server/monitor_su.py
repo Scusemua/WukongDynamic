@@ -8,7 +8,7 @@ class MonitorSU(object):
     def __init__(self, monitor_name = None):
         self._mutex = CountingSemaphore(initial_permits = 1, semaphore_name = "Monitor-" + str(monitor_name) + "-_mutex-CountingSemaphore") 
         self._reentry = CountingSemaphore(initial_permits = 0,  semaphore_name = "Monitor-" + str(monitor_name) + "-_reentry-CountingSemaphore")
-        # self._exited = CountingSemaphore(initial_permits = 0, semaphore_name = "Monitor-" + str(monitor_name) + "-_exited-CountingSemaphore")
+        self._exited = CountingSemaphore(initial_permits = 0, semaphore_name = "Monitor-" + str(monitor_name) + "-_exited-CountingSemaphore")
 
         self._reentry_count = Integer(0)
         self._monitor_name = monitor_name
@@ -53,6 +53,12 @@ class MonitorSU(object):
                 self._reentry.V()
             else:
                 self._mutex.V()
+        
+        # Cannot leave `exit_monitor()` without calling .release().
+        # The logic is that you cannot call the next `wait_b()` until the previous one is done.
+        # Basically, we are just waiting for `exit()` to say that it is done.
+        self._exited.release() 
+        return 
     # else this is exit_monitor for try_foo, so keep the mutex lock for foo's enter_monitor, i..e., do nothing.
 
     #rhc: Block:
@@ -92,7 +98,7 @@ class MonitorSU(object):
     # Note: Passing self to the ConditionVarable as the parent_monitor should work since all members are named with a single underscore instead of a
     # double underscore. Double underscores cause member names to be mangled (by prefixing with the class name).
     def get_condition_variable(self, condition_name = "Condition"):
-        return ConditionVariable(mutex = self._mutex, reentry = self._reentry, reentry_count = self._reentry_count, name = condition_name) #exited = self._exited, 
+        return ConditionVariable(mutex = self._mutex, reentry = self._reentry, reentry_count = self._reentry_count, exited = self._exited, name = condition_name) # 
 
 class Integer:
     def __init__(self, val=0):
@@ -120,14 +126,14 @@ class ConditionVariable(object):
         #self._num_waiting_threads = 0
         #self._condition_name = name
 
-    def __init__(self, mutex = None, reentry = None, reentry_count = None, name = None): #exited = None, 
+    def __init__(self, mutex = None, reentry = None, reentry_count = None, exited = None, name = None): # 
         self._mutex = mutex
         self._reentry = reentry
         self._reentry_count = reentry_count
         self._thread_queue = CountingSemaphore(initial_permits = 0, semaphore_name = name + ":threadQueue", id = 1)
         self._num_waiting_threads = 0
         self._condition_name = name
-        #self._exited = exited
+        self._exited = exited
     
     #def signal_c(self):
         #if (self._num_waiting_threads > 0):
@@ -156,7 +162,7 @@ class ConditionVariable(object):
             self._reenetry.V()
         else:
             self._mutex.V()
-        #self._exited.release()
+        self._exited.release()
     
     #def wait_c(self):
         #self._num_waiting_threads += 1
