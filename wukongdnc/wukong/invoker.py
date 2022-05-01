@@ -29,10 +29,11 @@ logger.propagate = False
 lambda_client = boto3.client('lambda', region_name = "us-east-1")
 
 def invoke_lambda(
-    function_name: str = "WukongDivideAndConquer",
+    function_name: str = "Composer",
     payload: dict = None,
     is_first_invocation: bool = False,
-    n : int = 1
+    n : int = 1,
+    initial_permits: int = 0
 ):
     """
     Invoke an AWS Lambda function.
@@ -68,7 +69,14 @@ def invoke_lambda(
             function_name = function_name,
             function_instance_ID = str(uuid.uuid4()),
             restart = False,
-            keyword_arguments = {'n': n}
+            pc = 0,
+            return_value = None,
+            blocking = False,
+            ID = None,
+            keyword_arguments = {
+                'n': n,
+                'initial_permits': initial_permits
+            }
         )
         _payload["state"] = base64.b64encode(cloudpickle.dumps(state)).decode('utf-8')
 
@@ -77,6 +85,7 @@ def invoke_lambda(
             websocket.connect(TCP_SERVER_IP)
             logger.debug("Successfully connected to TCP Server at %s. Calling executor.create() for the BoundedBuffer now...")
             create(websocket, "create", "BoundedBuffer", "result", state)
+            create(websocket, "create", "CountingSemaphore_Monitor", "finish", state)
     
     payload_json = json.dumps(_payload)
     

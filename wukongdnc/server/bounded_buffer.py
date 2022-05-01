@@ -67,6 +67,11 @@ class BoundedBuffer(MonitorSU):
         self._notFull.signal_c_and_exit_monitor()
         return value
 
+    def try_withdraw(self, **kwargs):
+        super().enter_monitor(method_name = "try_withdraw")
+        block = super().is_blocking(self._fullSlots==0)
+        super().exit_monitor()
+        return block
 
 def taskD(b : BoundedBuffer):
     time.sleep(1)

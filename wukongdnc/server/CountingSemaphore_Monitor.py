@@ -20,20 +20,41 @@ class CountingSemaphore_Monitor(MonitorSU):
         super(CountingSemaphore_Monitor, self).__init__(monitor_name = monitor_name)
         self._permits = initial_permits
 
-    def init(self, initial_permits=0, **kwargs):
+    def init(self, **kwargs):     # delete initial_permits parameter
         logger.debug(kwargs)
-        self._permits= initial_permits
+        if kwargs is None or len(kwargs) == 0:
+            raise ValueError("CountingSemaphore_Monitor requires a length>0. No kwargs provided.")
+        ### Assuming one kwarg
+        elif len(kwargs) > 2:
+            raise ValueError("Error - CountingSemaphore_Monitor init has too many kwargs args.")
+        self._permits= kwargs['initial_permits']
         self._permitAvailable = super().get_condition_variable(condition_name = "permitAvailable")
-                                                               
+
+    def try_P(self, **kwargs):
+        super().enter_monitor(method_name = "try_P")
+        decremented_permits = self._permits - 1
+        block = super().is_blocking(decremented_permits < 0)
+        super().exit_monitor()
+        return block 
+
     def P(self):
         super().enter_monitor(method_name = "P")
         logger.debug(" CountingSemaphore_Monitor P() entered monitor, len(self._notEmpty) ="+str(len(self._permitAvailable)) + " permits = " + str(self._permits))
 
         self._permits -= 1
+
         if self._permits < 0:
             self._permitAvailable.wait_c()
+            threading.current_thread()._restart = True
+            threading.current_thread()._returnValue = 0
+            # Lambda called “try_P” so will terminate; no need to block the
+            # proxy thread - we are using self._permits to implicitly track
+            # the number of waiting Lambdas, not length of cond. var queue
+            super().exit_monitor()
         else:
             threading.current_thread()._restart = False
+            threading.current_thread()._returnValue = 1
+            super().exit_monitor()
 	
         threading.current_thread()._returnValue = 1
         super().exit_monitor()
@@ -46,9 +67,9 @@ class CountingSemaphore_Monitor(MonitorSU):
         threading.current_thread()._returnValue = 1
         threading.current_thread()._restart = False
 
+        # Since we don’t actually block threads in P, we don’t have to 
+        # signal threads here in V. This signal will have no effect.
         self._permitAvailable.signal_c_and_exit_monitor()
-
-
 
 def taskP(b : CountingSemaphore_Monitor):
     logger.debug("Calling P")
