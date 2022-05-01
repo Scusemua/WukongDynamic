@@ -24,6 +24,8 @@ ch.setFormatter(formatter)
 
 logger.addHandler(ch)
 
+logger.propagate = False
+
 def send_object(obj, websocket):
     """
     Send obj to a remote entity via the given websocket.
@@ -38,9 +40,11 @@ def send_object(obj, websocket):
         websocket (socket.socket):
             Socket connected to a remote client.
     """
-    print("Will be sending a message of size %d bytes." % len(obj))
+    logger.debug("Will be sending a message of size %d bytes." % len(obj))
+    
     # First, we send the number of bytes that we're going to send.
     websocket.sendall(len(obj).to_bytes(2, byteorder='big'))
+
     # Next, we send the serialized object itself. 
     websocket.sendall(obj)
 
@@ -61,9 +65,21 @@ def recv_object(websocket):
     incoming_size = websocket.recv(2)
     # Convert the bytes representing the size of the incoming serialized object to an integer.
     incoming_size = int.from_bytes(incoming_size, 'big')
-    print("Will receive another message of size %d bytes" % incoming_size)
-    # Finally, we read the serialized object itself.
-    return websocket.recv(incoming_size).strip()
+    logger.debug("Will receive another message of size %d bytes" % incoming_size)
+    data = bytearray()
+    
+    while len(data) < incoming_size:
+        # Finally, we read the serialized object itself.
+        new_data = websocket.recv(incoming_size - len(data)).strip()
+
+        if not new_data:
+            break 
+
+        logger.debug("Read %d bytes from TCP server." % len(new_data))
+        data.extend(new_data)
+        logger.debug("Have read %d/%d bytes from TCP server." % (len(data), incoming_size))
+    
+    return data 
 
 def synchronize_sync(websocket, op, name, method_name, state):
     """
@@ -102,6 +118,7 @@ def synchronize_sync(websocket, op, name, method_name, state):
     msg = json.dumps(message).encode('utf-8')
     send_object(msg, websocket)
     data = recv_object(websocket)               # Should just be a serialized state object.
+    logger.debug("Received %d bytes from server..." % len(data))
     state_from_server = cloudpickle.loads(data) # `state_from_server` is of type State
 
     logger.debug("Fan-in ID %s received return value from server in synchronize_sync: %s" % (name, str(state_from_server.return_value)))

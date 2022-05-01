@@ -24,6 +24,8 @@ ch.setFormatter(formatter)
 
 logger.addHandler(ch)
 
+logger.propagate = False
+
 lambda_client = boto3.client('lambda', region_name = "us-east-1")
 
 def invoke_lambda(

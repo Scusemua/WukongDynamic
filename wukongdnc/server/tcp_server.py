@@ -145,8 +145,14 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
         The TCP server uses a "streaming" API that is implemented using file handles (or rather the API looks like we're just using file handles).
         """
-        # Read the size of the incoming serialized object.
-        incoming_size = self.rfile.read(2) 
+        try:
+            # Read the size of the incoming serialized object.
+            incoming_size = self.rfile.read(2) 
+        except ConnectionAbortedError as ex:
+            logger.error("Established connection aborted while reading incoming size.")
+            logger.error(repr(ex))
+            return None 
+
         # Convert bytes of size to integer.
         incoming_size = int.from_bytes(incoming_size, 'big')
 
@@ -159,9 +165,23 @@ class TCPHandler(socketserver.StreamRequestHandler):
             return None 
 
         logger.info("Will receive another message of size %d bytes" % incoming_size)
-        # Read serialized object (now that we know how big it'll be).
-        data = self.rfile.read(incoming_size).strip()
 
+        data = bytearray()
+        try:
+            while len(data) < incoming_size:
+                # Read serialized object (now that we know how big it'll be).
+                new_data = self.rfile.read(incoming_size - len(data)).strip()
+
+                if not new_data:
+                    break 
+
+                data.extend(new_data)
+                logger.debug("Have read %d/%d bytes from remote client." % (len(data), incoming_size))
+        except ConnectionAbortedError as ex:
+            logger.error("Established connection aborted while reading data.")
+            logger.error(repr(ex))
+            return None 
+        
         return data 
 
     def send_serialized_object(self, obj):
@@ -176,8 +196,10 @@ class TCPHandler(socketserver.StreamRequestHandler):
             obj (bytes):
                 The already-serialized object that we are sending to a remote entity (presumably an AWS Lambda executor).
         """
+        logger.debug("Sending payload of size %d bytes to remote client now..." % len(obj))
         self.wfile.write(len(obj).to_bytes(2, byteorder='big'))     # Tell the client how many bytes we're sending.
         self.wfile.write(obj)                                       # Then send the object.
+        logger.debug("Sent %d bytes to remote client." % len(obj))
 
     def create_obj(self, message = None):
         """

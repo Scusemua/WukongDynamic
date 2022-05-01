@@ -3,7 +3,8 @@ import sys
 import logging
 import base64 
 import time 
-import argparse 
+import argparse
+from more_itertools import numeric_range 
 import numpy as np
 import cloudpickle
 import pandas as pd
@@ -167,15 +168,18 @@ def run(numbers: list, expected_order: list):
         logger.info("Min: %f" % np.min(durations))
         logger.info("Max: %f" % np.max(durations))
         aggregated_duration = np.sum(durations)
-        logger.info("Aggregate duration: %f" % aggregated_duration)
+        logger.info("Aggregate duration: %f seconds" % aggregated_duration)
         
-        cost_128mb = 0.0000000021
+        cost_128mb = 0.0000000021 # Cost per ms 
         func_size = 256
         scale = func_size / 128.0
         cost_per_hr = cost_128mb * scale 
-        duration_hour = aggregated_duration / 60.0
-        estimated_cost = duration_hour * cost_per_hr
+        duration_ms = aggregated_duration * 1000.0
+        estimated_cost = duration_ms * cost_per_hr
         logger.info("Estimated cost: $" + str(estimated_cost))
+        logger.info("End-to-end time: " + str(end_time - start_time) + " sec")
+        logger.info("%f,%s,%d,%f,%f,%f,%f" % (end_time - start_time, str(estimated_cost), len(durations), aggregated_duration, np.min(durations), np.max(durations), np.mean(durations)))
+        logger.info("%f %s %d %f %f %f %f" % (end_time - start_time, str(estimated_cost), len(durations), aggregated_duration, np.min(durations), np.max(durations), np.mean(durations)))
         #logger.info(durations)
 
         close_all(websocket)
@@ -237,7 +241,6 @@ if __name__ == "__main__":
             output_file = "./data/mergesort/mergesort_%d_seq=%d_bench.csv"  % (len(numbers), ProblemType.SEQUENTIAL_THRESHOLD)
 
         logger.info("Writing benchmark results to file %s now..." % output_file)
-        time.sleep(1.0)
         df = pd.DataFrame(results)
         df.to_csv(output_file)
 
@@ -246,4 +249,5 @@ if __name__ == "__main__":
         # Save the input array so we can reuse it when doing comparison against SoCC Wukong.
         with open("./data/mergesort/wukongdc/mergesort_%d_seq=%d.txt" % (len(numbers), ProblemType.SEQUENTIAL_THRESHOLD), "w") as handle:
             handle.write(str(numbers))
-
+        
+        time.sleep(1.25)

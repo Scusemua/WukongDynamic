@@ -37,9 +37,11 @@ debug_lock = threading.Lock()
 root_problem_id = "[0,1]"
 final_result_id = "[1,1]"
 
+logger.propagate = False
+
 class ProblemType(WukongProblem):
 	# The threshold at which we switch to a sequential algorithm.
-    SEQUENTIAL_THRESHOLD = 2
+    SEQUENTIAL_THRESHOLD = 99
 	
 	# Get input arrays when the level reaches the INPUT_THRESHOLD, e.g., don't grab the initial 256MB array,
 	# wait until you reach level , say, 1, when there are two subproblems each half as big.
@@ -255,7 +257,7 @@ class MergesortProgram(UserProgram):
 
         # Merge.
         while (li < len(first_array) and ri < len(second_array)):
-            logger.debug("li: " + str(li) + ", len(first_array): " + str(len(first_array)) + ", ri: " + str(ri) + ", len(second_array): " + str(len(second_array)))
+            #logger.debug("li: " + str(li) + ", len(first_array): " + str(len(first_array)) + ", ri: " + str(ri) + ", len(second_array): " + str(len(second_array)))
 
             if first_array[li] < second_array[ri]:
                 values[from_idx] = first_array[li]

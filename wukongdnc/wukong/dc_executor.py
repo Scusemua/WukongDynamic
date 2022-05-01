@@ -40,6 +40,8 @@ if root.handlers:
     for handler in root.handlers:
        handler.setFormatter(formatter)
 
+logger.propagate = False
+
 debug_lock = threading.Lock() 
 
 def make_json_serializable(obj):

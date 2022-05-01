@@ -14,6 +14,8 @@ ch.setFormatter(formatter)
 # fh.setFormatter(formatter)
 # logger.addHandler(fh)
 
+logger.propagate = False
+
 class UniChannel(object):
     """
         Unidirectional Channel 

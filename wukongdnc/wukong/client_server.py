@@ -13,6 +13,8 @@ ch.setFormatter(formatter)
 # fh.setFormatter(formatter)
 # logger.addHandler(fh)
 
+logger.propagate = False
+
 if logger.handlers:
    for handler in logger.handlers:
       handler.setFormatter(formatter)

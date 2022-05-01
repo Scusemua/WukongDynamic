@@ -13,6 +13,8 @@ ch.setFormatter(formatter)
 
 logger.addHandler(ch)
 
+logger.propagate = False
+
 class Barrier(MonitorSU):
     def __init__(self, initial_n = 0, monitor_name = None):
         super(Barrier, self).__init__(monitor_name = monitor_name)

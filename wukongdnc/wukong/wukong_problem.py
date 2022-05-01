@@ -41,6 +41,8 @@ if root.handlers:
 
 debug_lock = threading.Lock()
 
+logger.propagate = False
+
 redis_client = redis.Redis(host = REDIS_IP_PRIVATE, port = 6379)
 
 class WukongProblem(object):

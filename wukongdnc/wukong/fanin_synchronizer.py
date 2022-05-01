@@ -9,6 +9,8 @@ formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
 ch = logging.StreamHandler(sys.stdout)
 ch.setFormatter(formatter)
 
+logger.propagate = False
+
 class FanInSychronizer(object):
     lock = threading.Lock()
 
