@@ -72,6 +72,7 @@ def invoke_lambda(
             pc = 0,
             return_value = None,
             blocking = False,
+            i = int(0),
             ID = None,
             keyword_arguments = {
                 'n': n,
@@ -83,17 +84,14 @@ def invoke_lambda(
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
             logger.debug("Connecting to TCP Server at %s." % str(TCP_SERVER_IP))
             websocket.connect(TCP_SERVER_IP)
-            logger.debug("Successfully connected to TCP Server at %s. Calling executor.create() for the BoundedBuffer now...")
+            logger.debug("Successfully connected to TCP Server at %s. Calling executor.create() now...")
             create(websocket, "create", "BoundedBuffer", "result", state)
             create(websocket, "create", "CountingSemaphore_Monitor", "finish", state)
+            create(websocket, "create", "BoundedBuffer", "final_result", state)
     
     payload_json = json.dumps(_payload)
     
     logger.debug("Finished creating AWS Lambda invocation payload in %f ms." % ((time.time() - s) * 1000.0))
-    
-    ###########################################################################
-    # CREATE() could be called here if we wanted it to be in the client/user. #
-    ###########################################################################
     
     logger.info("Invoking AWS Lambda function '" + function_name + "' with payload containing " + str(len(payload)) + " key(s).")
     s = time.time()

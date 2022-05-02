@@ -49,13 +49,13 @@ def run():
     payload = {}
     
     start_time = time.time()
-    invoke_lambda(payload = payload, is_first_invocation = True)
+    invoke_lambda(payload = payload, is_first_invocation = True, n = 1, initial_permits = 0)
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
         print("Connecting to " + str(TCP_SERVER_IP))
         websocket.connect(TCP_SERVER_IP)
         default_state = State("Composer_driver", function_instance_ID = str(uuid.uuid4()))
-        state = synchronize_sync(websocket, "synchronize_sync", "result", "withdraw", default_state)
+        state = synchronize_sync(websocket, "synchronize_sync", "final_result", "withdraw", default_state)
         answer = state.return_value 
 
         end_time = time.time()
