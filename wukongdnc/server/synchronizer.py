@@ -162,7 +162,7 @@ class Synchronizer(object):
             # TODO: Restart the function (invoke it).
             logger.info("Restarting Lambda function %s." % state.function_name)
             payload = {"state": state}
-            invoke_lambda(payload = payload, do_create = False, is_first_invocation = False, function_name = state.function_name)
+            invoke_lambda(payload = payload, is_first_invocation = False, function_name = state.function_name)
             #self.lambda_client.invoke(FunctionName=function_name, InvocationType='Event', Payload=cloudpickle.dumps(state))
         
         return returnValue

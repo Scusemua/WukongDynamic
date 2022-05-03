@@ -49,7 +49,7 @@ def run():
     payload = {}
     
     start_time = time.time()
-    invoke_lambda(payload = payload, is_first_invocation = True, n = 1, initial_permits = 0)
+    invoke_lambda(payload = payload, is_first_invocation = True, n = 1, initial_permits = 0, function_name = "Composer")
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
         print("Connecting to " + str(TCP_SERVER_IP))

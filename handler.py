@@ -42,10 +42,10 @@ class FuncA(object):
                     if self.state.blocking:
                         self.state.blocking = False
                         return
-                    else:
-                        # self.state.blocking is False
-                        # withdrawn value returned in self.state.return_value
-                        self.state.pc = 1 # transition to state PC=1
+                    # else:
+                    #     # self.state.blocking is False
+                    #     # withdrawn value returned in self.state.return_value
+                    #     self.state.pc = 1 # transition to state PC=1
 
                 elif self.state.pc == 1:
                     value = self.state.return_value
@@ -58,9 +58,8 @@ class FuncA(object):
                     self.synchronize_async(websocket, "synchronize_async", "result", "deposit", self.state)  
                     self.synchronize_async(websocket, "synchronize_async", "finished", "V", self.state)
                     break
-
-                # else: 
-                #     logger.error("Invalid PC value: " + str(self.state.pc))
+                else: 
+                    logger.error("Invalid PC value: " + str(self.state.pc))
 
             # TODO: Deposit answer in another bounded buffer.
             logger.debug(str(self.state.ID) + " is done. Result: " + str(self.state.result))
@@ -83,10 +82,10 @@ class FuncB(object): # same as FuncA with different ID
                     if self.state.blocking:
                         self.state.blocking = False
                         return
-                    else:
-                        # self.state.blocking is False
-                        # withdrawn value returned in self.state.return_value
-                        self.state.pc = 1 # transition to state PC=1
+                    # else:
+                    #     # self.state.blocking is False
+                    #     # withdrawn value returned in self.state.return_value
+                    #     self.state.pc = 1 # transition to state PC=1
 
                 elif self.state.pc == 1:
                     value = self.state.return_value
@@ -99,9 +98,8 @@ class FuncB(object): # same as FuncA with different ID
                     self.synchronize_async(websocket, "synchronize_async", "result", "deposit", self.state)  
                     self.synchronize_async(websocket, "synchronize_async", "finished", "V", self.state)
                     break
-
-                # else: 
-                #     logger.error("Invalid PC value: " + str(self.state.pc))
+                else: 
+                    logger.error("Invalid PC value: " + str(self.state.pc))
 
             # TODO: Deposit answer in another bounded buffer.
             logger.debug(str(self.state.ID) + " is done. Result: " + str(self.state.result))
@@ -206,7 +204,7 @@ def lambda_handler(event, context):
     else:
         raise ValueError("Invalid target specified: " + str(target))
 
-    logger.debug("Starting *****TARGET***.")
+    logger.debug("Starting *****%s*****." % target)
     end_time = time.time()
     duration = end_time - start_time
     logger.debug("Executor finished. Time elapsed: %f seconds." % duration)
