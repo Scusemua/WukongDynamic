@@ -257,8 +257,6 @@ class MergesortProgram(UserProgram):
 
         # Merge.
         while (li < len(first_array) and ri < len(second_array)):
-            #logger.debug("li: " + str(li) + ", len(first_array): " + str(len(first_array)) + ", ri: " + str(ri) + ", len(second_array): " + str(len(second_array)))
-
             if first_array[li] < second_array[ri]:
                 values[from_idx] = first_array[li]
                 from_idx += 1

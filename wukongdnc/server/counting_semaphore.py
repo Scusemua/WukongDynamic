@@ -182,10 +182,6 @@ class CountingSemaphore(object):
 
         first = self         # Type is CountingSemaphore, refers to 'this' instance.
         second = v_semaphore # Type is CountingSemaphore
-
-		# Need somewhere to wait, here we use Java's ability to wait() on any object.
-		# Assuming Python does not do this, you will need a Python semaphore or whatever to wait on. 
-		# See semaphore waitHere below
         
         # queue_object is called 'o' in the Java code.
         queue_object = QueueObject() # each thread blocks on its own conditionVar object

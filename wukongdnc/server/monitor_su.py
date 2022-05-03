@@ -157,11 +157,11 @@ class ConditionVariable(object):
 
     def signal_c_and_exit_monitor(self):
         if self._num_waiting_threads > 0:
-            self._thread_queue.V()
+            self._thread_queue.V() # Somebody waiting.
         elif self._reentry_count > 0:
-            self._reenetry.V()
+            self._reenetry.V()     # Somebody trying to get back in.
         else:
-            self._mutex.V()
+            self._mutex.V()        # Somebody new.
         self._exited.release()
     
     #def wait_c(self):
