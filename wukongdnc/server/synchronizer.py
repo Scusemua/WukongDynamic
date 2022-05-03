@@ -159,9 +159,8 @@ class Synchronizer(object):
         #	restart serverless function, needs its ID?
         if restart:
             state.restart = True 
-            function_name = state.id 
             # TODO: Restart the function (invoke it).
-            logger.info("Restarting Lambda function %s." % function_name)
+            logger.info("Restarting Lambda function %s." % state.function_name)
             invoke_lambda(do_create = False, state = state)
             #self.lambda_client.invoke(FunctionName=function_name, InvocationType='Event', Payload=cloudpickle.dumps(state))
         

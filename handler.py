@@ -9,7 +9,7 @@ import uuid
 import cloudpickle
 from wukongdnc.wukong.invoker import invoke_lambda
 from wukongdnc.server.state import State 
-from wukongdnc.constants import REDIS_IP_PRIVATE
+from wukongdnc.constants import REDIS_IP_PRIVATE, TCP_SERVER_IP
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -27,72 +27,84 @@ if root.handlers:
 class FuncA(object):
     def __init__(self, state = None):
         self.state = state
-        self.state.ID = "funcA"
+        self.state.ID = "FuncA"
     
     def execute(self):
-        while True:
-            if self.state.pc == 0:
-                self.state.pc = 1 # if restart PC will be 1
-                # this is essentially: value = result.withdraw()
-                self.state = self.synchronize_sync(websocket, "synchronize_sync", "result", "try_withdraw", self.state)
-                if self.state.blocking:
-                    self.state.blocking = False
-                    return
-                else:
-                    # self.state.blocking is False
-                    # withdrawn value returned in self.state.return_value
-                    self.state.pc = 1 # transition to state PC=1
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
+            logger.debug("Connecting to TCP Server at %s." % str(TCP_SERVER_IP))
+            websocket.connect(TCP_SERVER_IP)
+            logger.debug("Successfully connected to TCP Server at %s. Calling executor.create() now...")
+            while True:
+                if self.state.pc == 0:
+                    self.state.pc = 1 # if restart PC will be 1
+                    # this is essentially: value = result.withdraw()
+                    self.state = self.synchronize_sync(websocket, "synchronize_sync", "result", "try_withdraw", self.state)
+                    if self.state.blocking:
+                        self.state.blocking = False
+                        return
+                    else:
+                        # self.state.blocking is False
+                        # withdrawn value returned in self.state.return_value
+                        self.state.pc = 1 # transition to state PC=1
 
-            elif self.state.pc == 1:
-                value = self.state.return_value
-                self.state.return_value = None
-                value += 1
-                if self.state.keyword_arguments is None:
-                    self.state.keyword_arguments = {}
-                self.state.keyword_arguments["value"] = value
-                self.synchronize_async(websocket, "synchronize_async", "result", "deposit", self.state)  
-                self.synchronize_async(websocket, "synchronize_async", "finished", "V", self.state)
+                elif self.state.pc == 1:
+                    value = self.state.return_value
+                    self.state.return_value = None
+                    value += 1
+                    if self.state.keyword_arguments is None:
+                        self.state.keyword_arguments = {}
+                    self.state.function_name = "Composer"
+                    self.state.keyword_arguments["value"] = value
+                    self.synchronize_async(websocket, "synchronize_async", "result", "deposit", self.state)  
+                    self.synchronize_async(websocket, "synchronize_async", "finished", "V", self.state)
+                    break
 
-            else: 
-                logger.error("Invalid PC value: " + str(self.state.pc))
+                # else: 
+                #     logger.error("Invalid PC value: " + str(self.state.pc))
 
-        # TODO: Deposit answer in another bounded buffer.
-        logger.debug(str(self.state.ID) + " is done. Result: " + str(self.state.result))
+            # TODO: Deposit answer in another bounded buffer.
+            logger.debug(str(self.state.ID) + " is done. Result: " + str(self.state.result))
 
 class FuncB(object): # same as FuncA with different ID
     def __init__(self, state = None):
         self.state = state
-        self.state.ID = "funcB"
+        self.state.ID = "FuncB"
     
     def execute(self):
-        while True:
-            if self.state.pc == 0:
-                self.state.pc = 1 # if restart PC will be 1
-                # this is essentially: value = result.withdraw()
-                self.state = self.synchronize_sync(websocket, "synchronize_sync", "result", "try_withdraw", self.state)
-                if self.state.blocking:
-                    self.state.blocking = False
-                    return
-                else:
-                    # self.state.blocking is False
-                    # withdrawn value returned in self.state.return_value
-                    self.state.pc = 1 # transition to state PC=1
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
+            logger.debug("Connecting to TCP Server at %s." % str(TCP_SERVER_IP))
+            websocket.connect(TCP_SERVER_IP)
+            logger.debug("Successfully connected to TCP Server at %s. Calling executor.create() now...")
+            while True:
+                if self.state.pc == 0:
+                    self.state.pc = 1 # if restart PC will be 1
+                    # this is essentially: value = result.withdraw()
+                    self.state = self.synchronize_sync(websocket, "synchronize_sync", "result", "try_withdraw", self.state)
+                    if self.state.blocking:
+                        self.state.blocking = False
+                        return
+                    else:
+                        # self.state.blocking is False
+                        # withdrawn value returned in self.state.return_value
+                        self.state.pc = 1 # transition to state PC=1
 
-            elif self.state.pc == 1:
-                value = self.state.return_value
-                self.state.return_value = None
-                value += 1
-                if self.state.keyword_arguments is None:
-                    self.state.keyword_arguments = {}
-                self.state.keyword_arguments["value"] = value
-                self.synchronize_async(websocket, "synchronize_async", "result", "deposit", self.state)  
-                self.synchronize_async(websocket, "synchronize_async", "finished", "V", self.state)
-                
-            else: 
-                logger.error("Invalid PC value: " + str(self.state.pc))
+                elif self.state.pc == 1:
+                    value = self.state.return_value
+                    self.state.return_value = None
+                    value += 1
+                    if self.state.keyword_arguments is None:
+                        self.state.keyword_arguments = {}
+                    self.state.function_name = "Composer"
+                    self.state.keyword_arguments["value"] = value
+                    self.synchronize_async(websocket, "synchronize_async", "result", "deposit", self.state)  
+                    self.synchronize_async(websocket, "synchronize_async", "finished", "V", self.state)
+                    break
 
-        # TODO: Deposit answer in another bounded buffer.
-        logger.debug(str(self.state.ID) + " is done. Result: " + str(self.state.result))
+                # else: 
+                #     logger.error("Invalid PC value: " + str(self.state.pc))
+
+            # TODO: Deposit answer in another bounded buffer.
+            logger.debug(str(self.state.ID) + " is done. Result: " + str(self.state.result))
 
 class Composer(object):
     def __init__(self, state = None):
@@ -101,64 +113,75 @@ class Composer(object):
         self.List_of_Lambdas = ["FuncA", "FuncB"]
 
     def run(self):
-        while True:
-            if self.state.pc == 0:
-                if self.state.keyword_arguments is None:
-                    self.state.keyword_arguments = {}
-                self.state.keyword_arguments["value"] = 0
-                self.state.return_value = None
-                self.synchronize_async(websocket, "synchronize_async", "result", "deposit", self.state)
-                FuncA = self.List_of_Lambdas[self.state.i]  # invoke Lambda A
-                payload = {
-                    "state": State(function_name = "FuncA", restart = False, function_instance_ID = str(uuid.uuid4()))
-                }
-                invoke_lambda(payload = payload)
-                self.state.pc = 1
-                self.state = self.synchronize_sync(websocket, 
-                "synchronize_sync", "finish", "try_P", self.state)
-                if self.state.blocking:
-                    self.state.blocking = False
-                    return # transition to state 1 on restart
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
+            logger.debug("Connecting to TCP Server at %s." % str(TCP_SERVER_IP))
+            websocket.connect(TCP_SERVER_IP)
+            logger.debug("Successfully connected to TCP Server at %s. Calling executor.create() now...")        
+            while True:
+                if self.state.pc == 0:
+                    if self.state.keyword_arguments is None:
+                        self.state.keyword_arguments = {}
+                    self.state.keyword_arguments["value"] = 0
+                    self.state.return_value = None
+                    self.synchronize_async(websocket, "synchronize_async", "result", "deposit", self.state)
+                    FuncA = self.List_of_Lambdas[self.state.i]  # invoke Lambda A
+                    payload = {
+                        "state": State(function_name = "FuncA", restart = False, function_instance_ID = str(uuid.uuid4()))
+                    }
+                    invoke_lambda(payload = payload)
+                    self.state.pc = 1
+                    self.state = self.synchronize_sync(websocket, 
+                    "synchronize_sync", "finish", "try_P", self.state)
+                    if self.state.blocking:
+                        self.state.blocking = False
+                        return # transition to state 1 on restart
 
-            elif self.state.pc == 1: 
-                # restart when finish.P completes or non-blocking finish.P;
-                # either way we have finished P (w/ no return_value)
-                self.state.return_value = None
-                self.state.i += 1
+                elif self.state.pc == 1: 
+                    # restart when finish.P completes or non-blocking finish.P;
+                    # either way we have finished P (and P doesn't return anything)
+                    # If blocking was false, the synchronous_synch returned a state with the return_value. If blocking
+                    # was true, then the Lambda was restarted with a state that contained the return_value. So 
+                    # self.state.return_value is the return value of the synchronous_synch.
+                    self.state.return_value = None
+                    self.state.i += 1
 
-                FuncB = self.List_of_Lambdas[self.state.i]  # invoke Lambda A
-                payload = {
-                    "state": State(function_name = "FuncB", restart = False, function_instance_ID = str(uuid.uuid4()))
-                }
-                invoke_lambda(payload = payload)
+                    FuncB = self.List_of_Lambdas[self.state.i]  # invoke Lambda A
+                    payload = {
+                        "state": State(function_name = "FuncB", restart = False, function_instance_ID = str(uuid.uuid4()))
+                    }
+                    invoke_lambda(payload = payload)
 
-                self.state.pc = 2
-                self.state = self.synchronize_sync(websocket, 
-                "synchronize_sync", "finish", "try_P", self.state)
-                if self.state.blocking:
-                    self.state.blocking = False
-                    return    #transition to state 2 on restart
+                    self.state.pc = 2
+                    self.state = self.synchronize_sync(websocket, 
+                    "synchronize_sync", "finish", "try_P", self.state)
+                    if self.state.blocking:
+                        self.state.blocking = False
+                        return    #transition to state 2 on restart
 
-            elif self.state.pc == 2:
-                # restart when finish.P completes or non-blocking finish.P;
-                # either way we have finished P (w/ no return_value
-                self.state.pc = 3
-                self.state = self.synchronize_sync(websocket, 
-                "synchronize_sync", "result", "try_withdraw", self.state)
-                if self.state.blocking:
-                    self.state.blocking = False
-                    return #transition to state 2 on restart
+                elif self.state.pc == 2:
+                    # restart when finish.P completes or non-blocking finish.P;
+                    # either way we have finished P (and P doesn't return anything)
+                    # If blocking was false, the synchronous_synch returned a state with the return_value. If blocking
+                    # was true, then the Lambda was restarted with a state that contained the return_value. So 
+                    # self.state.return_value is the return value of the synchronous_synch.
+                    self.state.return_value = None
+                    self.state.pc = 3
+                    self.state = self.synchronize_sync(websocket, 
+                    "synchronize_sync", "result", "try_withdraw", self.state)
+                    if self.state.blocking:
+                        self.state.blocking = False
+                        return #transition to state 2 on restart
 
-            elif self.state.pc == 3:
-                # restart when withdraw completes or non-blocking withdraw;
-                # either way we have return_value of withdraw
-                value = self.state.return_value
-                self.state.return_value = None
-                break
+                elif self.state.pc == 3:
+                    # restart when withdraw completes or non-blocking withdraw;
+                    # either way we have return_value of withdraw
+                    value = self.state.return_value
+                    self.state.return_value = None
+                    break
 
-        self.state.keyword_arguments["value"] = value
-        self.state.return_value = None
-        self.synchronize_async(websocket, "synchronize_async", "final_result", "deposit", self.state)
+            self.state.keyword_arguments["value"] = value
+            self.state.return_value = None
+            self.synchronize_async(websocket, "synchronize_async", "final_result", "deposit", self.state)
 
 def lambda_handler(event, context):
     start_time = time.time()
@@ -168,17 +191,17 @@ def lambda_handler(event, context):
     # Extract all of the data from the payload.
     # first_executor = event["first_executor"]
     state = cloudpickle.loads(base64.b64decode(event["state"]))
-    target = event['target']
+
+    target = state.function_name 
+    # target = event['target']
     if target == "Composer":
-        composer = Composer(
-            state = state
-        )
+        composer = Composer(state = state)
         composer.execute()
     elif target == "funcA":
-        A = funcA(state = state)
+        A = FuncA(state = state)
         A.execute()
     elif target == "funcB":
-        B = funcB(state = state)
+        B = FuncB(state = state)
         B.execute()
     else:
         raise ValueError("Invalid target specified: " + str(target))
