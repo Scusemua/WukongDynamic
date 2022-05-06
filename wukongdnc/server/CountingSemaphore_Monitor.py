@@ -1,5 +1,5 @@
 from re import L
-from monitor_su import MonitorSU, ConditionVariable
+from .monitor_su import MonitorSU, ConditionVariable
 import threading
 import _thread
 import time
@@ -23,10 +23,10 @@ class CountingSemaphore_Monitor(MonitorSU):
     def init(self, **kwargs):     # delete initial_permits parameter
         logger.debug(kwargs)
         if kwargs is None or len(kwargs) == 0:
-            raise ValueError("CountingSemaphore_Monitor requires a length>0. No kwargs provided.")
+            raise ValueError("CountingSemaphore_Monitor requires a length > 0. No kwargs provided.")
         ### Assuming one kwarg
         elif len(kwargs) > 2:
-            raise ValueError("Error - CountingSemaphore_Monitor init has too many kwargs args.")
+            raise ValueError("Error - CountingSemaphore_Monitor init has too many kwargs args. kwargs: " + str(kwargs))
         self._permits= kwargs['initial_permits']
         self._permitAvailable = super().get_condition_variable(condition_name = "permitAvailable")
 

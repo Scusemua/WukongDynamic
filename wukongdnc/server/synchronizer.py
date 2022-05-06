@@ -35,13 +35,14 @@ aws_region = 'us-east-1'
 @Pyro4.behavior(instance_mode="single")
 class Synchronizer(object):
 
-    synchronizers = {"barrier", "Barrier", "semaphore", "Semaphore", "bounded_buffer", "BoundedBuffer", "fanin", "FanIn"}
+    synchronizers = {"barrier", "Barrier", "semaphore", "Semaphore", "bounded_buffer", "BoundedBuffer", "fanin", "FanIn", "CountingSemaphore_Monitor"}
 
     # Mapping from class to the file in which it is defined.
     file_map = {
         "Barrier": "barrier",
         "BoundedBuffer": "bounded_buffer",
-        "FanIn": "fanin"
+        "FanIn": "fanin",
+        "CountingSemaphore_Monitor": "CountingSemaphore_Monitor"
     }
     
     def __init__(self):

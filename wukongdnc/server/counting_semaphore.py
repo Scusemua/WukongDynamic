@@ -59,7 +59,7 @@ class CountingSemaphore(object):
             self._mutex.release()
             return 
         #except Exception as ex:
-            logger.debug("[ERROR] Unexpected error occurred during `P()`: " + str(ex))
+            #logger.debug("[ERROR] Unexpected error occurred during `P()`: " + str(ex))
         #finally:
         self._mutex.release()
 
@@ -140,7 +140,7 @@ class CountingSemaphore(object):
                 if (len(self.waiting_p) > 1):
                     self.waiting_p = self.waiting_p[1:]
                 else:
-                    self.waiting_p = []
+                    self.waiting_p = [] # TODO: Probably don't need this, right? 
                 
                 # this is now oldest.waitHere.V();
                 oldest_queue_object.release()
