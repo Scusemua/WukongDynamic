@@ -21,15 +21,9 @@ class State(object):
         self.return_value = return_value                    # The value being returned by the TCP server to the AWS Lambda function.
         self.blocking = blocking                            # Indicates whether the Lambda executor is making a blocking or non-blocking call to the TCP server.
         self.ID = ID
-        self._pc = pc
-
-    @property
-    def pc(self):
-        """
-        Program counter.
-        """
-        return self._pc
+        self.pc = pc
+        self.i = i
 
     def __str__(self):
-        return "State(FuncName='%s', FuncInstID=%s, Restart=%s, PC=%s, ReturnVal=%s, Blocking=%s)" % (self.function_name, self.function_instance_ID, str(self.restart), str(self._pc), str(self.return_value), str(self.blocking))
-        #return "State(FuncName='%s', FuncInstID=%s, Restart=%s, PC=%s, ReturnVal=%s, Blocking=%s,Problem=%s,Result=%s)" % (self.function_name, self.function_instance_ID, str(self.restart), str(self._pc), str(self.return_value), str(self.blocking), str(type(self.problem)), str(type(self.result)))
+        return "State(FuncName='%s', FuncInstID=%s, Restart=%s, PC=%s, ReturnVal=%s, Blocking=%s, KeywordArgs=%s, i=%s)" % (self.function_name, self.function_instance_ID, str(self.restart), str(self.pc), str(self.return_value), str(self.blocking), str(self.keyword_arguments), str(self.i))
+        #return "State(FuncName='%s', FuncInstID=%s, Restart=%s, PC=%s, ReturnVal=%s, Blocking=%s,Problem=%s,Result=%s)" % (self.function_name, self.function_instance_ID, str(self.restart), str(self.pc), str(self.return_value), str(self.blocking), str(type(self.problem)), str(type(self.result)))

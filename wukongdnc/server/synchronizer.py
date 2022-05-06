@@ -97,7 +97,7 @@ class Synchronizer(object):
         logger.debug("Calling _synchronizer init")
         #self._synchronizer.init(value)
         #self._synchronizer.initX(kwargs)
-        self._synchronizer.init(fanin_id = synchronizer_object_name, **kwargs)  #2
+        self._synchronizer.init(**kwargs)  #2
         # where Barrier init is: init(**kwargs): if len(kwargs) not == 1
 	    # logger.debug(“Error: Barrier init has too many argos”) self._n = kwargs[‘n’]
 

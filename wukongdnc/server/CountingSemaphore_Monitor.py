@@ -37,7 +37,7 @@ class CountingSemaphore_Monitor(MonitorSU):
         super().exit_monitor()
         return block 
 
-    def P(self):
+    def P(self, **kwargs):
         super().enter_monitor(method_name = "P")
         logger.debug(" CountingSemaphore_Monitor P() entered monitor, len(self._notEmpty) ="+str(len(self._permitAvailable)) + " permits = " + str(self._permits))
 
@@ -60,7 +60,7 @@ class CountingSemaphore_Monitor(MonitorSU):
         super().exit_monitor()
 
     # V should never block, so no need for restart
-    def V(self):
+    def V(self, **kwargs):
         super().enter_monitor(method_name="V")
         logger.debug(" CountingSemaphore_Monitor V() entered monitor, len(self._notEmpty) ="+str(len(self._permitAvailable)) + " permits = " + str(self._permits))
         self._permits += 1

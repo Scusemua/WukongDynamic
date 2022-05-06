@@ -9,6 +9,7 @@ import uuid
 import cloudpickle
 from wukongdnc.wukong.invoker import invoke_lambda
 from wukongdnc.server.state import State 
+from wukongdnc.server.api import synchronize_async, synchronize_sync
 from wukongdnc.constants import REDIS_IP_PRIVATE, TCP_SERVER_IP
 
 logger = logging.getLogger(__name__)
@@ -38,7 +39,7 @@ class FuncA(object):
                 if self.state.pc == 0:
                     self.state.pc = 1 # if restart PC will be 1
                     # this is essentially: value = result.withdraw()
-                    self.state = self.synchronize_sync(websocket, "synchronize_sync", "result", "try_withdraw", self.state)
+                    self.state = synchronize_sync(websocket, "synchronize_sync", "result", "try_withdraw", self.state)
                     if self.state.blocking:
                         self.state.blocking = False
                         return
@@ -55,8 +56,8 @@ class FuncA(object):
                         self.state.keyword_arguments = {}
                     self.state.function_name = "Composer"
                     self.state.keyword_arguments["value"] = value
-                    self.synchronize_async(websocket, "synchronize_async", "result", "deposit", self.state)  
-                    self.synchronize_async(websocket, "synchronize_async", "finished", "V", self.state)
+                    synchronize_async(websocket, "synchronize_async", "result", "deposit", self.state)  
+                    synchronize_async(websocket, "synchronize_async", "finish", "V", self.state)
                     break
                 else: 
                     logger.error("Invalid PC value: " + str(self.state.pc))
@@ -78,7 +79,7 @@ class FuncB(object): # same as FuncA with different ID
                 if self.state.pc == 0:
                     self.state.pc = 1 # if restart PC will be 1
                     # this is essentially: value = result.withdraw()
-                    self.state = self.synchronize_sync(websocket, "synchronize_sync", "result", "try_withdraw", self.state)
+                    self.state = synchronize_sync(websocket, "synchronize_sync", "result", "try_withdraw", self.state)
                     if self.state.blocking:
                         self.state.blocking = False
                         return
@@ -95,8 +96,8 @@ class FuncB(object): # same as FuncA with different ID
                         self.state.keyword_arguments = {}
                     self.state.function_name = "Composer"
                     self.state.keyword_arguments["value"] = value
-                    self.synchronize_async(websocket, "synchronize_async", "result", "deposit", self.state)  
-                    self.synchronize_async(websocket, "synchronize_async", "finished", "V", self.state)
+                    synchronize_async(websocket, "synchronize_async", "result", "deposit", self.state)  
+                    synchronize_async(websocket, "synchronize_async", "finish", "V", self.state)
                     break
                 else: 
                     logger.error("Invalid PC value: " + str(self.state.pc))
@@ -110,7 +111,7 @@ class Composer(object):
         self.state.ID = "Composer"
         self.List_of_Lambdas = ["FuncA", "FuncB"]
 
-    def run(self):
+    def execute(self):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
             logger.debug("Connecting to TCP Server at %s." % str(TCP_SERVER_IP))
             websocket.connect(TCP_SERVER_IP)
@@ -121,14 +122,14 @@ class Composer(object):
                         self.state.keyword_arguments = {}
                     self.state.keyword_arguments["value"] = 0
                     self.state.return_value = None
-                    self.synchronize_async(websocket, "synchronize_async", "result", "deposit", self.state)
+                    synchronize_async(websocket, "synchronize_async", "result", "deposit", self.state)
                     FuncA = self.List_of_Lambdas[self.state.i]  # invoke Lambda A
                     payload = {
                         "state": State(function_name = "FuncA", restart = False, function_instance_ID = str(uuid.uuid4()))
                     }
                     invoke_lambda(payload = payload)
                     self.state.pc = 1
-                    self.state = self.synchronize_sync(websocket, 
+                    self.state = synchronize_sync(websocket, 
                     "synchronize_sync", "finish", "try_P", self.state)
                     if self.state.blocking:
                         self.state.blocking = False
@@ -150,7 +151,7 @@ class Composer(object):
                     invoke_lambda(payload = payload)
 
                     self.state.pc = 2
-                    self.state = self.synchronize_sync(websocket, 
+                    self.state = synchronize_sync(websocket, 
                     "synchronize_sync", "finish", "try_P", self.state)
                     if self.state.blocking:
                         self.state.blocking = False
@@ -164,7 +165,7 @@ class Composer(object):
                     # self.state.return_value is the return value of the synchronous_synch.
                     self.state.return_value = None
                     self.state.pc = 3
-                    self.state = self.synchronize_sync(websocket, 
+                    self.state = synchronize_sync(websocket, 
                     "synchronize_sync", "result", "try_withdraw", self.state)
                     if self.state.blocking:
                         self.state.blocking = False
@@ -179,7 +180,7 @@ class Composer(object):
 
             self.state.keyword_arguments["value"] = value
             self.state.return_value = None
-            self.synchronize_async(websocket, "synchronize_async", "final_result", "deposit", self.state)
+            synchronize_async(websocket, "synchronize_async", "final_result", "deposit", self.state)
 
 def lambda_handler(event, context):
     start_time = time.time()
@@ -195,10 +196,10 @@ def lambda_handler(event, context):
     if target == "Composer":
         composer = Composer(state = state)
         composer.execute()
-    elif target == "funcA":
+    elif target == "FuncA":
         A = FuncA(state = state)
         A.execute()
-    elif target == "funcB":
+    elif target == "FuncB":
         B = FuncB(state = state)
         B.execute()
     else:

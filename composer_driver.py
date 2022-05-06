@@ -89,7 +89,7 @@ def run():
         func_size = 256
         scale = func_size / 128.0
         cost_per_hr = cost_128mb * scale 
-        duration_hour = aggregated_duration / 60.0
+        duration_hour = aggregated_duration * 1000.0
         estimated_cost = duration_hour * cost_per_hr
         logger.info("Estimated cost: $" + str(estimated_cost))
         #logger.info(durations)
