@@ -46,7 +46,10 @@ def ResetRedis():
     logger.debug("Flushed Redis DB.")
 
 def run():
-    payload = {}
+    payload = {
+        "list_of_functions": ["FuncA", "FuncB"],
+        "starting_input": int(0)
+    }
     
     start_time = time.time()
     invoke_lambda(payload = payload, is_first_invocation = True, n = 1, initial_permits = 0, function_name = "Composer")
