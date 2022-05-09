@@ -16,6 +16,8 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
 
+SLEEP_INTERVAL = 0.120
+
 if logger.handlers:
     for handler in logger.handlers:
         handler.setFormatter(formatter)
@@ -39,7 +41,7 @@ class FuncA(object):
                 if self.state.pc == 0:
                     self.state.pc = 1 # if restart PC will be 1
                     # this is essentially: value = result.withdraw()
-                    self.state = synchronize_sync(websocket, "synchronize_sync", "result", "try_withdraw", self.state)
+                    self.state = synchronize_sync(websocket, "synchronize_sync", "result", "withdraw", self.state)
                     if self.state.blocking:
                         self.state.blocking = False
                         return
@@ -53,6 +55,7 @@ class FuncA(object):
                     self.state.return_value = None
                     logger.debug("FuncA (pc=1) value pre-increment: " + str(value))
                     value += 1
+                    time.sleep(SLEEP_INTERVAL) # Sleep for a bit.
                     logger.debug("FuncA (pc=1) value post-increment: " + str(value))
                     if self.state.keyword_arguments is None:
                         self.state.keyword_arguments = {}
@@ -81,7 +84,7 @@ class FuncB(object): # same as FuncA with different ID
                 if self.state.pc == 0:
                     self.state.pc = 1 # if restart PC will be 1
                     # this is essentially: value = result.withdraw()
-                    self.state = synchronize_sync(websocket, "synchronize_sync", "result", "try_withdraw", self.state)
+                    self.state = synchronize_sync(websocket, "synchronize_sync", "result", "withdraw", self.state)
                     if self.state.blocking:
                         self.state.blocking = False
                         return
@@ -95,6 +98,7 @@ class FuncB(object): # same as FuncA with different ID
                     self.state.return_value = None
                     logger.debug("FuncB (pc=1) value pre-increment: " + str(value))
                     value += 1
+                    time.sleep(SLEEP_INTERVAL) # Sleep for a bit. 
                     logger.debug("FuncB (pc=1) value post-increment: " + str(value))
                     if self.state.keyword_arguments is None:
                         self.state.keyword_arguments = {}
@@ -144,7 +148,7 @@ class Composer(object):
                 invoke_lambda(payload = payload)
   
                 self.state.i += 1
-                self.state = synchronize_sync(websocket, "synchronize_sync", "finish", "try_P", self.state)
+                self.state = synchronize_sync(websocket, "synchronize_sync", "finish", "P", self.state)
                 if self.state.blocking:
                     # all of the if self.state.blocking have two statements: set blocking to False and return
                     self.state.blocking = False
@@ -164,7 +168,7 @@ class Composer(object):
                 # self.state.return_value is the return value of the synchronous_synch.
                 self.state.return_value = None
                 self.state.pc = 1
-                self.state = synchronize_sync(websocket,"synchronize_sync", "result", "try_withdraw", self.state)
+                self.state = synchronize_sync(websocket,"synchronize_sync", "result", "withdraw", self.state)
                 if self.state.blocking:
                     self.state.blocking = False
                     return #transition to state 1 on restart
@@ -195,6 +199,7 @@ def lambda_handler(event, context):
         state.starting_input = cloudpickle.loads(base64.b64decode(event["starting_input"])) # event["starting_input"]
 
     target = state.function_name 
+    logger.debug("Starting *****%s*****." % target)
     # target = event['target']
     if target == "Composer":
         composer = Composer(state = state)
@@ -207,8 +212,6 @@ def lambda_handler(event, context):
         B.execute()
     else:
         raise ValueError("Invalid target specified: " + str(target))
-
-    logger.debug("Starting *****%s*****." % target)
     end_time = time.time()
     duration = end_time - start_time
     logger.debug("Executor finished. Time elapsed: %f seconds." % duration)

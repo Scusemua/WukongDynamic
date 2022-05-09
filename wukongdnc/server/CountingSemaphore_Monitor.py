@@ -39,7 +39,7 @@ class CountingSemaphore_Monitor(MonitorSU):
 
     def P(self, **kwargs):
         super().enter_monitor(method_name = "P")
-        logger.debug(" CountingSemaphore_Monitor P() entered monitor, len(self._notEmpty) ="+str(len(self._permitAvailable)) + " permits = " + str(self._permits))
+        logger.debug("CountingSemaphore_Monitor P() entered monitor, len(self._notEmpty) = " + str(len(self._permitAvailable)) + ", permits = " + str(self._permits))
 
         self._permits -= 1
 

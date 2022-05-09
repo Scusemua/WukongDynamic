@@ -30,7 +30,6 @@ class BoundedBuffer(MonitorSU):
         self._in=0
         self._out=0
 
-
     def deposit(self, **kwargs):
         """
         Store a value.
@@ -52,13 +51,13 @@ class BoundedBuffer(MonitorSU):
         threading.current_thread()._returnValue=1
         return 1
 
-    def withdraw(self, **kwargs):
+    def withdraw_with_try(self, **kwargs):
         """
         This is the 'try' version of withdraw.
         """  
         value = 0
         if self._fullSlots == 0:
-            self._permitAvailable.wait_c()
+            self._notEmpty.wait_c()
             threading.current_thread()._restart = True
         else:
             threading.current_thread()._restart = False
@@ -69,7 +68,7 @@ class BoundedBuffer(MonitorSU):
         self._notFull.signal_c_and_exit_monitor()
         return value
 
-    def withdraw_no_try(self, **kwargs):
+    def withdraw(self, **kwargs):
         """
         This is the 'no-try' version of withdraw.
         """

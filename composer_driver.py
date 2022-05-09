@@ -50,6 +50,8 @@ def run():
         "list_of_functions": ["FuncA", "FuncB"],
         "starting_input": int(0)
     }
+
+    ResetRedis()
     
     start_time = time.time()
     invoke_lambda(payload = payload, is_first_invocation = True, n = 1, initial_permits = 0, function_name = "Composer")
@@ -57,7 +59,7 @@ def run():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
         print("Connecting to " + str(TCP_SERVER_IP))
         websocket.connect(TCP_SERVER_IP)
-        default_state = State("Composer_driver", function_instance_ID = str(uuid.uuid4()))
+        default_state = State("Composer", function_instance_ID = str(uuid.uuid4()))
         state = synchronize_sync(websocket, "synchronize_sync", "final_result", "withdraw", default_state)
         answer = state.return_value 
 
@@ -110,4 +112,30 @@ def run():
         }
 
 if __name__ == "__main__":
-    run()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-n", type = int, default = 16, help = "Randomly generate an array of this size, then sort it.")
+    parser.add_argument("--benchmark", action = "store_true", help = "Run a benchmark rather than a single test.")
+    parser.add_argument("-t", "--trials", type = int, default = 10, help = "Number of trials to run during a benchmark.")
+    parser.add_argument("-o", "--output", type = str, default = None, help = "Output file for benchmark results.")
+
+    args = parser.parse_args()
+
+    if not args.benchmark:
+        run()
+    else:
+        results = []
+        for i in range(args.trials):
+            logger.info("===== Trial %d/%d =====" % (i+1, args.trials))
+            result = run()
+            results.append(result)
+        
+        output_file = args.output
+        if output_file is None:
+            output_file = "./data/composer/composer_sleep_%dms_bench_no_try.csv" % 10
+
+        logger.info("Writing benchmark results to file %s now..." % output_file)
+        df = pd.DataFrame(results)
+        logger.debug("DataFrame:\n%s" % str(df))
+        df.to_csv(output_file)
+        
+        time.sleep(1.25)
