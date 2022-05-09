@@ -39,7 +39,7 @@ class FuncA(object):
                 if self.state.pc == 0:
                     self.state.pc = 1 # if restart PC will be 1
                     # this is essentially: value = result.withdraw()
-                    self.state = synchronize_sync(websocket, "synchronize_sync", "result", "withdraw", self.state)
+                    self.state = synchronize_sync(websocket, "synchronize_sync", "result", "try_withdraw", self.state)
                     if self.state.blocking:
                         self.state.blocking = False
                         return
@@ -81,7 +81,7 @@ class FuncB(object): # same as FuncA with different ID
                 if self.state.pc == 0:
                     self.state.pc = 1 # if restart PC will be 1
                     # this is essentially: value = result.withdraw()
-                    self.state = synchronize_sync(websocket, "synchronize_sync", "result", "withdraw", self.state)
+                    self.state = synchronize_sync(websocket, "synchronize_sync", "result", "try_withdraw", self.state)
                     if self.state.blocking:
                         self.state.blocking = False
                         return
@@ -144,7 +144,7 @@ class Composer(object):
                 invoke_lambda(payload = payload)
   
                 self.state.i += 1
-                self.state = synchronize_sync(websocket, "synchronize_sync", "finish", "P", self.state)
+                self.state = synchronize_sync(websocket, "synchronize_sync", "finish", "try_P", self.state)
                 if self.state.blocking:
                     # all of the if self.state.blocking have two statements: set blocking to False and return
                     self.state.blocking = False
@@ -164,7 +164,7 @@ class Composer(object):
                 # self.state.return_value is the return value of the synchronous_synch.
                 self.state.return_value = None
                 self.state.pc = 1
-                self.state = synchronize_sync(websocket,"synchronize_sync", "result", "withdraw", self.state)
+                self.state = synchronize_sync(websocket,"synchronize_sync", "result", "try_withdraw", self.state)
                 if self.state.blocking:
                     self.state.blocking = False
                     return #transition to state 1 on restart
