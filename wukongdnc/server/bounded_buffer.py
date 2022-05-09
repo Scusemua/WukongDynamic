@@ -53,9 +53,29 @@ class BoundedBuffer(MonitorSU):
         return 1
 
     def withdraw(self, **kwargs):
+        """
+        This is the 'try' version of withdraw.
+        """  
+        value = 0
+        if self._fullSlots == 0:
+            self._permitAvailable.wait_c()
+            threading.current_thread()._restart = True
+        else:
+            threading.current_thread()._restart = False
+        value = self._buffer[self._out]
+        self._out = (self._out+1) % int(self._capacity)
+        self._fullSlots -= 1
+        threading.current_thread()._returnValue = value
+        self._notFull.signal_c_and_exit_monitor()
+        return value
+
+    def withdraw_no_try(self, **kwargs):
+        """
+        This is the 'no-try' version of withdraw.
+        """
         super().enter_monitor(method_name = "withdraw")
-        logger.debug(" withdraw() entered monitor, len(self._notFull) ="+str(len(self._notFull))+",self._capacity="+str(self._capacity))
-        logger.debug(" withdraw() entered monitor, len(self._notEmpty) ="+str(len(self._notEmpty))+",self._capacity="+str(self._capacity))
+        logger.debug(" withdraw() entered monitor, len(self._notFull) ="+str(len(self._notFull))+", self._capacity="+str(self._capacity))
+        logger.debug(" withdraw() entered monitor, len(self._notEmpty) ="+str(len(self._notEmpty))+", self._capacity="+str(self._capacity))
         value = 0
         if self._fullSlots==0:
             self._notEmpty.wait_c()

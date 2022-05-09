@@ -45,7 +45,7 @@ class CountingSemaphore_Monitor(MonitorSU):
 
         if self._permits < 0:
             self._permitAvailable.wait_c()
-            threading.current_thread()._restart = True
+            threading.current_thread()._restart = False
             threading.current_thread()._returnValue = 0
             # Lambda called “try_P” so will terminate; no need to block the
             # proxy thread - we are using self._permits to implicitly track
