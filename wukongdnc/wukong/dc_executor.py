@@ -172,7 +172,7 @@ class DivideAndConquerExecutor(Thread):
         if not self.problem.memoize or (self.problem.memoize and result is None):
             result = self.result_type() # result_type is a class, so let's instantiate it 
 
-            # rhc: Can we do this if also doing Memoization? I think so.
+            # : Can we do this if also doing Memoization? I think so.
             if (len(self.problem.fan_in_stack) == WukongProblem.INPUT_THRESHOLD and self.problem.did_input == False):
                 self.problem.UserProgram.inputProblem(self.problem)
                 self.problem.did_input = True
@@ -189,22 +189,22 @@ class DivideAndConquerExecutor(Thread):
                 logger.debug("%s base case: result before ProcessBaseCase(): %s" % (self.problem.problem_id, str(result)))
                 self.problem.ProcessBaseCase(self.problem, result, ServerlessNetworkingMemoizer)
 
-                # rhc: At this point, the recursion stops and we begin the Fan-In operations for this leaf node executor.
+                # : At this point, the recursion stops and we begin the Fan-In operations for this leaf node executor.
             else: # not baseCase
-                # rhc: start Fan-Out task
+                # : start Fan-Out task
                 subProblems = list()
                 logger.debug("%s Calling problem.divide()" % self.problem.problem_id)
                 self.problem.UserProgram.divide(self.problem, subProblems)
 
-                # rhc: end Fan-Out task
+                # : end Fan-Out task
 
-                # rhc: start Fan-Out operation
+                # : start Fan-Out operation
                 # Makes recursive call to run() for one subproblem and a new executor for the other(s).
                 # Calls self.problem.UserProgram.computeInputsOfSubproblems(problem,subProblems) when level == DivideandConquerFibonacci.ProblemType.INPUT_THRESHOLD
                 # and then divides the input of parent into the two inputs of the children. 
                 logger.debug("%s Calling problem.Fanout()" % self.problem.problem_id)
                 self.problem.Fanout(self.problem, subProblems, ServerlessNetworkingMemoizer, self.state)
-                # rhc: end Fan-Out operation
+                # : end Fan-Out operation
 
                 # After the executor is the first task of a Fan-In, or computes the final result, its recursion unwinds
                 # and there is nothing to do on the unwind.
@@ -232,10 +232,10 @@ class DivideAndConquerExecutor(Thread):
         # one executor will stop and one will continue, leaving one executor to compute the final 
         # merge/result.
 
-        #rhc: start Fan-In operation and possibly  perform Fan-In task.
+        #: start Fan-In operation and possibly  perform Fan-In task.
 
         finalRemainingExecutor = self.FanInOperationandTask(self.problem, result, memoizedResult, ServerlessNetworkingMemoizer)
-        #rhc: end Fan-In operation and Fan-In task.
+        #: end Fan-In operation and Fan-In task.
 
         # The executor that is the last fan-in task of the final fan-in outputs the result. the
         # result will have been saved in the map with key "root."
@@ -340,7 +340,7 @@ class DivideAndConquerExecutor(Thread):
     def FanInOperationandTask(self, problem, result, memoizedResult: bool, ServerlessNetworkingMemoizer) -> bool:
         # memoizedResult True means that we got a memoized result (either at the base case or for a non-base case)
         # and we don't want to memoize this result, which would be redundant.
-        #rhc: start Fan-In operation
+        #: start Fan-In operation
         with debug_lock:
             logger.debug(problem.problem_id + ": **********************Start Fanin operation:")
             logger.debug(problem.problem_id + ": Fan-in: problem ID: " + problem.problem_id)
@@ -515,10 +515,10 @@ class DivideAndConquerExecutor(Thread):
                     # left result in map and returns the sibling result, which was first. So it is result that is sitting
                     # in the map. Now combine adds this result and the sibling's subProblem result, and 
                     # stores the result of add as
-                    #rhc: end Fan-In operation
+                    #: end Fan-In operation
 
                     logger.debug(problem.problem_id + ": CALLING COMBINE NOW for fan-in " + faninId)
-                    # rhc: start Fan-In task 
+                    # : start Fan-In task 
                     self.problem.UserProgram.combine(subproblemResults, result, problem.problem_id)
 
                     logger.debug(problem.problem_id + ": FanIn: ID: " + problem.problem_id + ", FanInId: " + faninId + ", result: " + str(result))
@@ -533,7 +533,7 @@ class DivideAndConquerExecutor(Thread):
                     if (problem.memoize):
                         memoizedLabel = self.problem.UserProgram.memoizeIDLabeler(parentProblem)
                         # put will memoize a copy of result
-                        # rhc: store result with subProblem
+                        # : store result with subProblem
                         memoizationResult = FanInSychronizer.put(memoizedLabel,result)
                         #synchronized(FanInSychronizer.getPrintLock()) {
                         logger.debug(problem.problem_id + ": Exector: result.problem_id: " + str(result.problem_id) + " put memoizedLabel: " + str(memoizedLabel) + " result: " + str(result))
@@ -576,7 +576,7 @@ class DivideAndConquerExecutor(Thread):
                         # This executor continues to do Fan-In operations with the new problem result.
                     
                         # end we are second executor
-                        # rhc: end Fan-In task 
+                        # : end Fan-In task 
 
                         # Instead of doing all of the work for sorting as we unwind the recursion and call merge(),
                         # we let the executors "unwind" the recursion using the explicit FanIn stack.

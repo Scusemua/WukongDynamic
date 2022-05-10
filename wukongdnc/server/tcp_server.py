@@ -107,7 +107,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
         if isTryMethod: 
             # check if synchronize op will block, if yes tell client to terminate then call op
-            # rhc: FIX THIS here and in CREATE: let 
+            # : FIX THIS here and in CREATE: let 
             try_return_value = synchronizer.trySynchronize(method_name, state, **state.keyword_arguments)
 
             logger.debug("Value of try_return_value for fan-in ID %s: %s" % (obj_name, str(try_return_value)))
@@ -130,7 +130,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 # send tuple to be consistent, and False to be consistent, i.e., get result if False
                 self.send_serialized_object(cloudpickle.dumps(state))               
         else:  # not a "try" so do synchronization op and send result to waiting client
-            # rhc: FIX THIS here and in CREATE
+            # : FIX THIS here and in CREATE
             return_value = synchronizer.synchronize(method_name, state, **state.keyword_arguments)
                 
             state.return_value = return_value

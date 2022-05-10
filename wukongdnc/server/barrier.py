@@ -15,12 +15,12 @@ logger.addHandler(ch)
 
 logger.propagate = False
 
+# Reusable Barrier. Clients call wait_b
 class Barrier(MonitorSU):
     def __init__(self, initial_n = 0, monitor_name = None):
         super(Barrier, self).__init__(monitor_name = monitor_name)
         self._n = initial_n
 
-        #self.convar = ConditionVariable(monitor = self, condition_name = "go")
         self._go = self.get_condition_variable(condition_name = "go")
     
     @property
@@ -31,10 +31,6 @@ class Barrier(MonitorSU):
     def n(self, value):
         logger.debug("Setting value of n to " + str(value))
         self._n = value
-
-    #def init(self,value):
-    #    logger.debug ("Barrier init to " + str(value))
-    #    self._n = value
 
     def init(self, **kwargs):
         logger.debug(kwargs)
@@ -55,7 +51,7 @@ class Barrier(MonitorSU):
         
         # super.is_blocking has a side effect which is to make sure that exit_monitor below
         # does not do mutex.V, also that enter_monitor of wait_b that follows does not do mutex.P.
-        # This males executes_wait ; wait_b atomic
+        # This makes executes_wait ; wait_b atomic
         
         block = super().is_blocking(len(self._go) < (self._n - 1))
         
@@ -66,8 +62,6 @@ class Barrier(MonitorSU):
         return block
 
     def wait_b(self, **kwargs):
-        #logger.debug(threading.current_thread())
-        #serverlessFunctionID = kwargs['ID']
         logger.debug("wait_B current thread ID is " + str(threading.current_thread().getID()))
         logger.debug("wait_b calling enter_monitor")
         
@@ -86,14 +80,12 @@ class Barrier(MonitorSU):
             # Tell Synchronizer that this serverless function should not be restarted.
             # Assuming serverless function call to wait_b is 2-way so the function will
             # block until wait_b finishes. In this case we are avoiding restart time for
-            # last serverless function to call Barrier.What costs more  - blocking or restart?
-            # Depends on variability in time for functions to do their work before calling wait_b.
+            # last serverless function to call Barrier.
             # If this were a fan-in instead of Barrier:
             # - functions that are not the last/become function should not be restarted, so
             #   after go.wait() call threading.current_thread()._restart = False. In fact,
-            #   can they call exit_monitor instead? since we are done with them? which
-            #   will signal the synchronizer so it can cleaup etc? In any event, assuming
-            #   these serverless functions called isBecome() and got False, so the functions
+            #   can they call exit_monitor instead since we are done with them.
+            #   Assuming these serverless functions called isBecome() and got False, so the functions
             #   terminated after getting False returned on 2-way cal to wait_b
             # - The last/become thread can receive the outputs of the other serverless functions
             #   as return object(s) of 2-way cal to wait_b.

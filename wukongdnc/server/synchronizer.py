@@ -1,6 +1,5 @@
 from re import L
 from .barrier import Barrier
-import Pyro4
 from .state import State
 #from ClientNew import CallbackHandler
 import importlib
@@ -31,10 +30,10 @@ logger.addHandler(ch)
 
 aws_region = 'us-east-1'
 
-@Pyro4.expose
-@Pyro4.behavior(instance_mode="single")
+# This class handles all interactions with the synchronization objects. A Synchronizer wraps a sycnhronization object.
 class Synchronizer(object):
 
+    # valid synchronization objects
     synchronizers = {"barrier", "Barrier", "semaphore", "Semaphore", "bounded_buffer", "BoundedBuffer", "fanin", "FanIn", "CountingSemaphore_Monitor"}
 
     # Mapping from class to the file in which it is defined.
@@ -50,16 +49,12 @@ class Synchronizer(object):
         self.threadID = 0
         self.lambda_client = boto3.client("lambda", region_name = aws_region)
 
-    #def init(self, synchronizer_class_name = None, synchronizer_object_name = None, value):
 
-    #@Pyro4.oneway
-    #def init(self, synchronizer_class_name = None, synchronizer_object_name = None, **kwargs):
     def create(self, synchronizer_class_name, synchronizer_object_name, **kwargs):
         # where init call by Client is init(“Barrier”,”b”,[‘n’,2]): and kwargs passed to Barrier.init
         if not synchronizer_class_name in Synchronizer.synchronizers:
             logger.error("Invalid synchronizer class name: '%s'" % synchronizer_class_name)
             raise ValueError("Invalid synchronizer class name: '%s'" % synchronizer_class_name)
-            # throw a remote exception? remote back to client?
         
         if not synchronizer_class_name in Synchronizer.file_map:
             logger.error("Could not find source file for Synchronizer '%s'" % synchronizer_class_name)
@@ -69,21 +64,19 @@ class Synchronizer(object):
         self._synchronizer_name = (str(synchronizer_class_name) + '_' + str(synchronizer_object_name))
         
         logger.debug("Attempting to locate class '%s'" % synchronizer_class_name)
-
-        # locate() described in: https://stackoverflow.com/a/24815361 - shows lots of other things to try, which didn't work for me
-        # I got it from this simple example: https://stackoverflow.com/a/55968374
         
         src_file = Synchronizer.file_map[synchronizer_class_name]
         #logger.debug("Creating synchronizer with name '%s' by calling locate('%s.%s')"  % (self._synchronizer_name, src_file, synchronizer_class_name))
         logger.debug("Creating synchronizer with name '%s'" % self._synchronizer_name)
-        #self._synchClass = locate("%s.%s" % (src_file, synchronizer_class_name))
 
+        # Get the class object for a synchronizer object, e.g.. Barrier
         module = importlib.import_module("wukongdnc.server." + src_file)
         self._synchClass = getattr(module, synchronizer_class_name)
 
         if (self._synchClass is None):
             raise ValueError("Failed to locate and create synchronizer of type %s" % synchronizer_class_name)
 
+        # Create the synchronization object
         #logger.debug("got MyClass")
         self._synchronizer = self._synchClass()
         if self._synchronizer == None:
@@ -94,25 +87,17 @@ class Synchronizer(object):
         self._synchronizer_object_name = synchronizer_object_name
         logger.debug("self._sycnhronizer_object_name: " + self._synchronizer_object_name)
 
+        # init the synchronzation object
         logger.debug("Calling _synchronizer init")
-        #self._synchronizer.init(value)
-        #self._synchronizer.initX(kwargs)
         self._synchronizer.init(**kwargs)  #2
         # where Barrier init is: init(**kwargs): if len(kwargs) not == 1
 	    # logger.debug(“Error: Barrier init has too many argos”) self._n = kwargs[‘n’]
 
         logger.debug ("Called _synchronizer init")
         return 0
-
-    #def synchronize(self, method_name, ID, program_counter):#cb, first):
-    #Note: will not be using callback, ID pc and first are part of state
-    #and not args but args may be refs to state. So passing  to
-    #synchronize and it saves state, where list of args is part of state
-    #and list of args is passed to _synchronizer_method;
         
+    # For try-ops this method calls the try-op method defined by the user
     def trySynchronize(self, method_name, state, **kwargs):
-        # 	method_name is "executesWait"
-        #ID_arg = kwargs["ID"]
         logger.debug("starting trySynchronize, method_name: " + str(method_name) + ", ID is: " + state.function_instance_ID)
         
         try:
@@ -129,9 +114,9 @@ class Synchronizer(object):
         
         return returnValue
 
-    @Pyro4.oneway
+    # This method makes the actual method call to the called method of the synchronization object and when that call
+    # returns it restarts the serverless function, if necessary.
     def synchronize(self, method_name, state, **kwargs):
-        #ID_arg = kwargs["ID"]
         logger.debug("starting synchronize, method_name: " + str(method_name) + ", ID is: " + state.function_instance_ID)
         
         try:
@@ -143,31 +128,20 @@ class Synchronizer(object):
         myPythonThreadName = "NotTrycallerThread"+str(self.threadID)
         restart, returnValue = self.doMethodCall(1, myPythonThreadName, self._synchronizer, _synchronizer_method, **kwargs) 
         
-        #rhc:   idea is if callerThread.getRestart() is true then restart he corresponding function.
-        #rhc:   restart default/init value is true. Should be set to false for non-last callers of fan-in, or
-        #         when doing synch/fast-path, in which case you know calling function is not restarting
-        #rhc:   Barrier: would restart all, and init value of restart ia true
-        #rhc:     if len(self._go) < (self._n - 1):
-        #rhc            self._go.wait_c()
-        #rhc      else:
-        #rhc            threading.current_thread()._restart = False
-
         logger.debug("synchronize restart " + str(restart))
         logger.debug("synchronize returnValue " + str(returnValue))
         logger.debug("synchronize successfully called synchronize method and acquire exited. ")
 
-        #if restart:
-        #	restart serverless function, needs its ID?
+        # if the method returns restart True, restart the serverless function and pass it its saved state.
         if restart:
             state.restart = True 
-            # TODO: Restart the function (invoke it).
             logger.info("Restarting Lambda function %s." % state.function_name)
             payload = {"state": state}
             invoke_lambda(payload = payload, is_first_invocation = False, function_name = state.function_name)
-            #self.lambda_client.invoke(FunctionName=function_name, InvocationType='Event', Payload=cloudpickle.dumps(state))
         
         return returnValue
 
+    # invokes a method on the synchronization object
     def doMethodCall(self, PythonThreadID, myName, synchronizer, synchronizer_method, **kwargs):
         """
         Call a method.
@@ -201,29 +175,4 @@ class Synchronizer(object):
         synchronizer._exited.acquire()
         logger.debug("called acquire exited. returning ...")
         return restart, returnValue
-    
-# need to call generic init() method on synchronizer with list of args
-#    @property 
-#    def n(self):
-#        return self._n 
-
-#    @n.setter 
-#    def n(self, value):
-#        logger.debug("setter")
-#        self._n = value 
-#       self._barrier._n = value
-
-
-def main():
-    Pyro4.Daemon.serveSimple(
-        {
-            Synchronizer: "Synchronizer"
-        },
-        ns = False)
-
-if __name__=="__main__":
-    main()
-
-#
-# Execute: python SynchronizerNew.py
 

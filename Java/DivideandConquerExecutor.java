@@ -26,7 +26,7 @@ class DivideAndConquerExecutor extends Thread {
 
 	public void run() {
 		
-		// rhc: start Fan-Out task
+		// start Fan-Out task
 		
 		ServerlessNetworkingClientServer ServerlessNetworkingMemoizer = null;
 		if (WukongProblem.memoize && WukongProblem.USESERVERLESSNETWORKING) {
@@ -113,7 +113,7 @@ class DivideAndConquerExecutor extends Thread {
 		if (!WukongProblem.memoize || (WukongProblem.memoize && result==null)) {
 			result = new ResultType();
 			
-//rhc: Can we do this if also doing Memoization? I think so.
+//Can we do this if also doing Memoization? I think so.
 			
 			if (problem.FanInStack.size() == WukongProblem.INPUT_THRESHOLD && problem.didInput == false) {
 				User.inputProblem(problem); 
@@ -158,20 +158,20 @@ class DivideAndConquerExecutor extends Thread {
 				System.out.println("base case: result before ProcessBaseCase(): " + result);
 				WukongProblem.ProcessBaseCase(problem,result,ServerlessNetworkingMemoizer);
 
-				// rhc: At this point, the recursion stops and we begin the Fan-In operations for this leaf node executor.
+				// : At this point, the recursion stops and we begin the Fan-In operations for this leaf node executor.
 			} else { // not baseCase
-// rhc: start Fan-Out task
+// start Fan-Out task
 				ArrayList<ProblemType> subProblems = new ArrayList<ProblemType>();
 				User.divide(problem, subProblems);
 
-// rhc: end Fan-Out task
+// end Fan-Out task
 
-// rhc: start Fan-Out operation
+// start Fan-Out operation
 				// Makes recursive call to run() for one subproblem and a new executor for the other(s).
 				// Calls User.computeInputsOfSubproblems(problem,subProblems) when level == ProblemType.INPUT_THRESHOLD
 				// and then divides the input of parent into the two inputs of the children. 
 				WukongProblem.Fanout(problem, subProblems, ServerlessNetworkingMemoizer);
-// rhc: end Fan-Out operation
+// end Fan-Out operation
 
 				// After the executor is the first task of a Fan-In, or computes the final result, its recursion unwinds
 				// and there is nothing to do on the unwind.
@@ -203,11 +203,11 @@ class DivideAndConquerExecutor extends Thread {
 		// one executor will stop and one will continue, leaving one executor to compute the final 
 		// merge/result.
 
-//rhc: start Fan-In operation and possibly  perform Fan-In task.      
+//: start Fan-In operation and possibly  perform Fan-In task.      
 
 		boolean finalRemainingExecutor = WukongProblem.FanInOperationandTask(problem,result,memoizedResult,
 				ServerlessNetworkingMemoizer);
-//rhc: end Fan-In operation and Fan-In task.
+//: end Fan-In operation and Fan-In task.
 
 		// The executor that is the last fan-in task of the final fan-in outputs the result. the
 		// result will have been saved in the map with key "root."
@@ -323,7 +323,7 @@ class WukongProblem {
  		// messages all the way up.
 
 
-		// rhc: no need to check !memoizedResult since if memoizedResult we stopped, and even if we did not stop
+		// : no need to check !memoizedResult since if memoizedResult we stopped, and even if we did not stop
 		// we only compute base case if we don't get memoized result for the base case. (If we get memoized
 		// result, we unwind by fan-in to parent of current problem.
 		if (WukongProblem.USESERVERLESSNETWORKING && /*!memoizedResult &&*/ WukongProblem.memoize) {
@@ -529,7 +529,7 @@ class WukongProblem {
 		// WukongProblem.trimProblem() here before calling User.trimProblem(problem); I believe that problem's
 		// FanInStack is no longer needed and can always be trimmed, though it might be helpful for debugging.
 		User.trimProblem(problem);
-		//rhc: end Fan-Out operation
+		//: end Fan-Out operation
 
 		// Recursion unwinds - nothing happens along the way.
 		return;
@@ -570,7 +570,7 @@ class WukongProblem {
 		// memoizedResult true means that we got a memoized result (either at the base case or for a non-base case)
 		// and we don't want to memoize this result, which would be redundant.
 		
-//rhc: start Fan-In operation
+//: start Fan-In operation
 
 		synchronized(FanInSychronizer.getPrintLock()) {
 			System.out.println("**********************Start Fanin operation:");
@@ -744,9 +744,9 @@ class WukongProblem {
 					// left result in map and returns the sibling result, which was first. So it is result that is sitting
 					// in the map. Now combine adds this result and the sibling's subProblem result, and 
 					// stores the result of add as
-//rhc: end Fan-In operation
+//: end Fan-In operation
 					
-// rhc: start Fan-In task 
+// : start Fan-In task 
 					User.combine(subproblemResults, result);
 					
 					// Note: It's possible that we got a memoized value, e.g., 1 and we added 1+0 to get 1 and we are now
@@ -757,7 +757,7 @@ class WukongProblem {
 					if (WukongProblem.memoize) {
 						String memoizedLabel = User.memoizeIDLabeler(parentProblem);
 						// put will memoize a copy of result
-						// rhc: store result with subProblem
+						// : store result with subProblem
 						ResultType memoizationResult = FanInSychronizer.put(memoizedLabel,result);
 						synchronized(FanInSychronizer.getPrintLock()) {
 							System.out.println("Exector: result.problemID: " + result.problemID + " put memoizedLabel: " + memoizedLabel
@@ -793,7 +793,7 @@ class WukongProblem {
 					// This executor continues to do Fan-In operations with the new problem result.
 				
 			} // end we are second executor
-// rhc: end Fan-In task 
+// : end Fan-In task 
 
 			// Instead of doing all of the work for sorting as we unwind the recursion and call merge(),
 			// we let the executors "unwind" the recursion using the explicit FanIn stack.
@@ -1275,7 +1275,7 @@ class MemoizationController {
 
 		}
 		// Only one return message.
-//rhc 1:
+// 1:
 		//channelMap.remove(problemOrResultID);
 		return result;
 	}
@@ -1307,7 +1307,7 @@ class MemoizationController {
 					+ " problem.didInput: " + problem.didInput);
 			}
 
-//rhc: 4 - comment start
+//: 4 - comment start
 			newExecutor.start();
 
 		}
@@ -1461,7 +1461,7 @@ class MemoizationController {
 							r1.promisedResults.add(promise);
 							r1.promisedResultsTemp.add(msg.problemOrResultID);
 							UniChannel queuePromise = channelMap.get(msg.problemOrResultID);
-//rhc 2:  - nullResult
+// 2:  - nullResult
 							queuePromise.send(/*nullResult*/ stopResult);
 						}
 						if (r1.type == MemoizationRecordType.DELIVEREDVALUE) {
@@ -1496,7 +1496,7 @@ class MemoizationController {
 								System.out.println("Internal Error: MemoizationThread: sender: " + msg.senderID + " problem/result ID " + msg.problemOrResultID + " memoizationLabel: " 
 									+ msg.memoizationLabel + " delivered result: " + msg.result + " delivered twice.");
 							}
-//rhc: 1: back to working version - comment out exit
+//: 1: back to working version - comment out exit
 							System.exit(1);
 						}
 						// must be a PROMISEDVALUE, so deliver it ...
@@ -1533,7 +1533,7 @@ class MemoizationController {
 						UniChannel queueDeliver= channelMap.get(msg.problemOrResultID);
 						queueDeliver.send(nullResult);
 						deliver(r2.promisedResults);
-//rhc: 3 - take comment off
+//: 3 - take comment off
 						//deliverTemp(r2.promisedResultsTemp);						
 					}
 					break;

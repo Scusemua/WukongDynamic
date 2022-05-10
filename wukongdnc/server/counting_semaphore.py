@@ -13,6 +13,7 @@ ch.setFormatter(formatter)
 
 logger.addHandler(ch)
 
+#Used in implementation of monitor class
 class CountingSemaphore(object):
     def __init__(self, initial_permits = 0, id = -1, semaphore_name = "DEFAULT_NAME"):
         self.waiting_p = []
@@ -177,8 +178,6 @@ class CountingSemaphore(object):
     
     def VP(self, v_semaphore):
         # execute {vSem.V(); this.P();} without any intervening P() or V() operations on this or vSem.	
-        # lock semaphores in ascending order of IDs to prevent circular deadlock (i.e. T1 holds
-        # this's lock and waits for vSem's lock while T2 holds vSem's lock and waits for this's lock.)
 
         first = self         # Type is CountingSemaphore, refers to 'this' instance.
         second = v_semaphore # Type is CountingSemaphore
@@ -190,13 +189,8 @@ class CountingSemaphore(object):
         try:
             second.__acquire_lock()
             try:
-				# this is a CountingSemaphore so assume no block
-				# vSem.V() must not block
-				# if (vSem instanceof binarySemaphore && vSem.permits == 1)
-				#   throw new IllegalArgumentException("V() part of VP() operation will block. The V() part of VP() must not block.");
 
 				# perform vSem.V()
-				# Make sure this is a Lock, not a semaphore
                 v_semaphore.V() # it's okay that we already hold vSem's lock
 
                 # perform this.P()

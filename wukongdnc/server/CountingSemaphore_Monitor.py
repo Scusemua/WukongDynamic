@@ -15,6 +15,7 @@ ch.setFormatter(formatter)
 
 logger.addHandler(ch)
 
+#Monitor implementation of a counting semaphore with operations P and V
 class CountingSemaphore_Monitor(MonitorSU):
     def __init__(self, initial_permits = 0, monitor_name = None):
         super(CountingSemaphore_Monitor, self).__init__(monitor_name = monitor_name)
@@ -24,7 +25,7 @@ class CountingSemaphore_Monitor(MonitorSU):
         logger.debug(kwargs)
         if kwargs is None or len(kwargs) == 0:
             raise ValueError("CountingSemaphore_Monitor requires a length > 0. No kwargs provided.")
-        ### Assuming one kwarg
+
         elif len(kwargs) > 2:
             raise ValueError("Error - CountingSemaphore_Monitor init has too many kwargs args. kwargs: " + str(kwargs))
         self._permits= kwargs['initial_permits']
@@ -71,6 +72,7 @@ class CountingSemaphore_Monitor(MonitorSU):
         # signal threads here in V. This signal will have no effect.
         self._permitAvailable.signal_c_and_exit_monitor()
 
+#locL tests
 def taskP(b : CountingSemaphore_Monitor):
     logger.debug("Calling P")
     b.P()

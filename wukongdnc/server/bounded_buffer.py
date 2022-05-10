@@ -15,6 +15,7 @@ ch.setFormatter(formatter)
 
 logger.addHandler(ch)
 
+# Bounded Buffer
 class BoundedBuffer(MonitorSU):
     def __init__(self, initial_capacity = 0, monitor_name = None):
         super(BoundedBuffer, self).__init__(monitor_name=monitor_name)
@@ -92,6 +93,7 @@ class BoundedBuffer(MonitorSU):
         super().exit_monitor()
         return block
 
+#Local tests
 def taskD(b : BoundedBuffer):
     time.sleep(1)
     logger.debug("Calling deposit")

@@ -16,6 +16,9 @@ ch.setFormatter(formatter)
 
 logger.addHandler(ch)
 
+#Fanin object. For a fan-in of n, the first n-1 serverless functions to call fan-in will 
+#terminate. Only the last function that calls fan-in will continue executing. fan-in returns
+#a list of the results of the n-1 threads that will terminate.
 class FanIn(MonitorSU):
     def __init__(self, initial_n = 0, monitor_name = None):
         super(FanIn, self).__init__(monitor_name = monitor_name)
@@ -24,7 +27,6 @@ class FanIn(MonitorSU):
         
         self.results = [] # fan_in results of executors
 
-        #self.convar = ConditionVariable(monitor = self, condition_name = "go")
         self._go = self.get_condition_variable(condition_name = "go")
     
     @property
@@ -36,9 +38,6 @@ class FanIn(MonitorSU):
         logger.debug("Setting value of FanIn n to " + str(value))
         self._n = value
 
-    #def init(self,value):
-    #    logger.debug ("FanIn init n to " + str(value))
-    #    self._n = value
 
     def init(self, fanin_id = None, **kwargs):
         logger.debug(kwargs)
@@ -55,9 +54,8 @@ class FanIn(MonitorSU):
         
         # super.is_blocking has a side effect which is to make sure that exit_monitor below
         # does not do mutex.V, also that enter_monitor of wait_b that follows does not do mutex.P.
-        # This males executes_wait ; wait_b atomic
+        # This makes executes_wait ; wait_b atomic
         
-        #block = super().is_blocking(len(self._go) < (self._n - 1))
         block = super().is_blocking(self._num_calling < (self._n - 1))
         
         # Does not do mutex.V, so we will still have the mutex lock when we next call
@@ -67,8 +65,6 @@ class FanIn(MonitorSU):
         return block
 
     def fan_in(self, **kwargs):
-        #logger.debug(threading.current_thread())
-        #serverlessFunctionID = kwargs['ID']
 
         logger.debug("fan_in " + str(self.fanin_id) + " current thread ID is " + str(threading.current_thread().ident))
         logger.debug("fan_in %s calling enter_monitor" % self.fanin_id)
@@ -77,10 +73,8 @@ class FanIn(MonitorSU):
         super().enter_monitor(method_name = "fan_in")
         
         logger.debug("Fan-in %s entered monitor in fan_in()" % self.fanin_id)
-        #logger.debug(" fan_in() entered monitor. len(self._go) = " + str(len(self._go)) + ", self._n=" + str(self._n))
         logger.debug("fan_in() " + str(self.fanin_id) + " entered monitor. self._num_calling = " + str(self._num_calling) + ", self._n=" + str(self._n))
 
-        #if len(self._go) < (self._n - 1):
         if self._num_calling < (self._n - 1):
             logger.debug("Fan-in %s calling _go.wait_c() from FanIn" % self.fanin_id)
 
@@ -88,8 +82,7 @@ class FanIn(MonitorSU):
 
             # No need to block non-last thread since we are done with them - they will terminate and not restart
             # self._go.wait_c()
-            # serverless functions are rstarted by default, so turn off restart for
-            #executors that are not last.
+
             result = kwargs['result']
             logger.debug("Result (saved by the non-last executor) for fan-in %s: %s" % (self.fanin_id, str(result)))
             self.results.append(result)
@@ -101,15 +94,6 @@ class FanIn(MonitorSU):
             super().exit_monitor()
             return 0
         else:
-            # For FanIns:
-            # - functions that are not the last/become function should not be restarted, so
-            #   after go.wait() call threading.current_thread()._restart = False. In fact,
-            #   can they call exit_monitor instead? since we are done with them? which
-            #   will signal the synchronizer so it can cleaup etc? In any event, assuming
-            #   these serverless functions called isBecome() and got False, so the functions
-            #   terminated after getting False returned on 2-way cal to fan_in
-            # - The last/become thread can receive the outputs of the other serverless functions
-            #   as return object(s) of 2-way call to wait_b.
             
             # last thread does sycnhronize_synch and will wait for result since False returned by try_fan_in()
             threading.current_thread()._restart = False 
@@ -128,14 +112,15 @@ class FanIn(MonitorSU):
             # does mutex.V
             # non-last threads do not block on go as we are done with them (they will not be restarted)
             # and thus are not signaled - just exit
-            #self._go.signal_c_and_exit_monitor()
             super().exit_monitor()
-#ToDO: perhaps we can use this return instead of setting current_thread() members?
+
             return self.results  # all threads have called so return results
 
         #No logger.debugs here. main Client can exit while other threads are
         #doing this logger.debug so main thread/interpreter can't get stdout lock?
-        
+
+# Local tests
+  
 #def task1(b : FanIn):
     #time.sleep(1)
     #logger.debug("task 1 Calling fan_in")

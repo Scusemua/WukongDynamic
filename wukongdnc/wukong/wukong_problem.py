@@ -124,7 +124,7 @@ class WukongProblem(object):
          # Note: not sending a REMOVEPAIRINGNAME message since the executor is now unwinding and may be sending
          # messages all the way up.
 
-        # rhc: no need to check !memoizedResult since if memoizedResult we stopped, and even if we did not stop
+        # : no need to check !memoizedResult since if memoizedResult we stopped, and even if we did not stop
         # we only compute base case if we don't get memoized result for the base case. (If we get memoized
         # result, we unwind by fan-in to parent of current problem.
         # if (WukongProblem.USESERVERLESSNETWORKING and not memoizedResult and WukongProblem.memoize) {
@@ -384,7 +384,7 @@ class WukongProblem(object):
         # WukongProblem.trimProblem() here before calling self.UserProgram.trimProblem(problem) I believe that problem's
         # fan_in_stack is no longer needed and can always be trimmed, though it might be helpful for debugging.
         self.UserProgram.trim_problem(problem)
-        #rhc: end Fan-Out operation
+        #: end Fan-Out operation
 
         # Recursion unwinds - nothing happens along the way.
         return
