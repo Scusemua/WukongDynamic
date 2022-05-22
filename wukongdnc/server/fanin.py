@@ -119,8 +119,7 @@ class FanIn(MonitorSU):
         #No logger.debugs here. main Client can exit while other threads are
         #doing this logger.debug so main thread/interpreter can't get stdout lock?
 
-# Local tests
-  
+# Local tests  
 #def task1(b : FanIn):
     #time.sleep(1)
     #logger.debug("task 1 Calling fan_in")
