@@ -16,7 +16,7 @@ import traceback
 import json 
 
 from .synchronizer import Synchronizer
-from .util import make_json_serializable, decode_and_deserialize, isTry_and_getMethodName
+from .util import make_json_serializable, decode_and_deserialize, isTry_and_getMethodName, isSelect
 
 # Set up logging.
 import logging 
@@ -83,6 +83,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         logger.debug("[HANDLER] server.synchronize_sync() called.")
         obj_name = message['name']
         method_name = message['method_name']
+        type_arg = message["type"]
         state = decode_and_deserialize(message["state"])
 
         synchronizer_name = self._get_synchronizer_name(obj_type = None, name = obj_name)
@@ -117,13 +118,21 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 state.return_value = None 
                 self.send_serialized_object(cloudpickle.dumps(state))
                 
+                if isSelect(type_arg):
+                    return_value = synchronizer.synchronizeSelect(base_name, state, **state.keyword_arguments)
+                else:
+                    return_value = synchronizer.synchronize(base_name, state, **state.keyword_arguments)
+
                 # execute synchronize op but don't send result to client
                 return_value = synchronizer.synchronize(base_name, state, **state.keyword_arguments)
 
                 logger.debug("Value of return_value (not to be sent) for fan-in ID %s: %s" % (obj_name, str(return_value)))
             else:
                 # execute synchronize op and send result to client
-                return_value = synchronizer.synchronize(base_name, state, **state.keyword_arguments)
+                if isSelect(type_arg):
+                    return_value = synchronizer.synchronizeSelect(base_name, state, **state.keyword_arguments)
+                else:
+                    return_value = synchronizer.synchronize(base_name, state, **state.keyword_arguments)
                 state.return_value = return_value
                 state.blocking = False 
                 logger.debug("Synchronizer %s sending %s back to last executor." % (synchronizer_name, str(return_value)))
@@ -131,7 +140,10 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 self.send_serialized_object(cloudpickle.dumps(state))               
         else:  # not a "try" so do synchronization op and send result to waiting client
             # : FIX THIS here and in CREATE
-            return_value = synchronizer.synchronize(method_name, state, **state.keyword_arguments)
+            if isSelect(type_arg):
+                return_value = synchronizer.synchronizeSelect(base_name, state, **state.keyword_arguments)
+            else:
+                return_value = synchronizer.synchronize(base_name, state, **state.keyword_arguments)
                 
             state.return_value = return_value
             state.blocking = False 

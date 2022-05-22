@@ -42,3 +42,11 @@ def decode_base64(original_data, altchars=b'+/'):
     """
     original_data += b'==='
     return base64.b64decode(original_data, altchars)
+
+def isSelect(name):
+    """
+    Check if the given name (which is the name of a method) ends with "_Select". 
+    """
+    if name.endswith("_Select"):
+        return True
+    return False
