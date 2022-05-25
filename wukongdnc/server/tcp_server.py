@@ -310,6 +310,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         logger.debug("[HANDLER] server.synchronize_async() called.")
         obj_name = message['name']
         method_name = message['method_name']
+        type_arg = message['type']
         state = decode_and_deserialize(message["state"])
 
         synchronizer_name = self._get_synchronizer_name(obj_type = None, name = obj_name)
@@ -321,7 +322,12 @@ class TCPHandler(socketserver.StreamRequestHandler):
         
         logger.debug("Successfully found synchronizer")
         
-        sync_ret_val = synchronizer.synchronize(method_name, state, **state.keyword_arguments)
+        if isSelect(type_arg):
+            sync_ret_val  = synchronizer.synchronizeSelect(method_name, state, **state.keyword_arguments)
+        else:
+            sync_ret_val  = synchronizer.synchronize(method_name, state, **state.keyword_arguments)
+
+        # sync_ret_val = synchronizer.synchronize(method_name, state, **state.keyword_arguments)
         
         logger.debug("Synchronize returned: %s" % str(sync_ret_val))
 

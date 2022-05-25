@@ -23,6 +23,7 @@ class synchronizerThread(Thread):
         self._synchronizer = synchronizer
         self._synchronizer_method = synchronizer_method
         self._restart = True
+        self._returnValue = None 
         self._kwargs = kwargs
 
     def getRestart(self):
