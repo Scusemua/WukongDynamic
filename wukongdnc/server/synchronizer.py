@@ -79,7 +79,8 @@ class Synchronizer(object):
 
         # Create the synchronization object
         #logger.debug("got MyClass")
-        self._synchronizer = self._synchClass()
+        #self._synchronizer = self._synchClass()
+        self._synchronizer = self._synchClass(self._synchronizer_name)
         if self._synchronizer == None:
             logger.error("Failed to locate and create synchronizer of type %s" % synchronizer_class_name)
             return -1
@@ -157,7 +158,8 @@ class Synchronizer(object):
         
         # Note: passing actual Python method reference _synchronizer_method, as well as the method_name
         myPythonThreadName = "NotTrycallerThread"+str(self.threadID)
-        restart, returnValue = self.doMethodCallExecute(1, myPythonThreadName, method_name, self._synchronizer, _synchronizer_method, **kwargs) 
+        #restart, returnValue = self.doMethodCallExecute(1, myPythonThreadName, method_name, self._synchronizer, _synchronizer_method, **kwargs) 
+        restart, returnValue = self.doMethodCallExecute(1, myPythonThreadName, method_name, self._synchronizer, _synchronizer_method, self._synchClass, **kwargs) 
         
         logger.debug("synchronize restart " + str(restart))
         logger.debug("synchronize returnValue " + str(returnValue))
@@ -208,7 +210,7 @@ class Synchronizer(object):
         return restart, returnValue
 
 # invokes method execute() which will make the actual call to synchronizer_method.
-    def doMethodCallExecute(self, PythonThreadID, myPythonThreadName, entry_name, synchronizer, synchronizer_method, **kwargs):
+    def doMethodCallExecute(self, PythonThreadID, myPythonThreadName, entry_name, synchronizer, synchronizer_method, synchClass, **kwargs):
  
 
         """
@@ -227,10 +229,13 @@ class Synchronizer(object):
             
             synchronizer_method:
                 The Python method reference of the synchronizer object that we're calling.
+            
+            synchClass:
+                The synchronizer class.
         """
         logger.debug ("starting caller thread to make the call")
         
-        result_buffer = BoundedBuffer(1, myName)
+        result_buffer = BoundedBuffer(1, "ResultBuffer")
         #pass this to callerThread, which will pass it to execute()
         
         # Start a synchronizerThreadSelect which will call execute() which will call synchronizer.synchronizer_method
@@ -246,7 +251,8 @@ class Synchronizer(object):
         # call to result_buffer.withsdraw.
         
         #callerThread = synchronizerThread(PythonThreadID, myName,  synchronizer, synchronizer_method, **kwargs)
-        callerThread = SynchronizerThreadSelect(PythonThreadID, myPythonThreadName,  entry_name, synchronizer, synchronizer_method,result_buffer, **kwargs)
+        #callerThread = SynchronizerThreadSelect(PythonThreadID, myPythonThreadName,  entry_name, synchronizer, synchronizer_method,result_buffer, **kwargs)
+        callerThread = SynchronizerThreadSelect(PythonThreadID, myPythonThreadName,  entry_name, synchronizer, synchronizer_method, synchClass, result_buffer, **kwargs)
         
         callerThread.start()
         

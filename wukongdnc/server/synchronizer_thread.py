@@ -15,11 +15,11 @@ logger.addHandler(ch)
 # A Synchronizer object wraps a user-defined object. The Synchronizer issues the actual method calls
 # on the object it wraps. The Synchronizer creates a synchronizer thread that makes the actyak method call
 class synchronizerThread(Thread):
-    def __init__(self, threadID, PythonThreadName, synchronizer, synchronizer_method, **kwargs):
+    def __init__(self, python_threadID, PythonThreadName, synchronizer, synchronizer_method, **kwargs):
         # Call the Thread class's init function
         #Thread.__init__(self)
         super(synchronizerThread,self).__init__(name=PythonThreadName)
-        self._threadID = threadID
+        self._threadID = python_threadID
         self._synchronizer = synchronizer
         self._synchronizer_method = synchronizer_method
         self._restart = True

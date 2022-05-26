@@ -17,14 +17,17 @@ logger.addHandler(ch)
 # on the object it wraps. The Synchronizer creates a synchronizer thread that makes the actuak method call.
 # Used for synchromization objects that are based on selective waits.
 class SynchronizerThreadSelect(Thread):
-    def __init__(self, PythonThreadID, PythonThreadName, entry_name, synchronizer, synchronizer_method, result_buffer, **kwargs):
+    #def __init__(self, PythonThreadID, PythonThreadName, entry_name, synchronizer, synchronizer_method, result_buffer, **kwargs):
+    def __init__(self, PythonThreadID, PythonThreadName, entry_name, synchronizer, synchronizer_method, synchClass, result_buffer, **kwargs):  
         # Call the Thread class's init function
         #Thread.__init__(self)
         super(synchronizerThread,self).__init__(name=PythonThreadName)
-        self._threadID = threadID
+        self._threadID = PythonThreadID
         self._synchronizer = synchronizer
         self._synchronizer_method = synchronizer_method
+        self._synchClass = synchClass
         self._restart = True
+        self._returnValue = None
         self._kwargs = kwargs
         self._result_buffer = result_buffer
         self._entry_name = entry_name
