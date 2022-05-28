@@ -14,6 +14,7 @@ from ..wukong.invoker import invoke_lambda
 from .barrier import Barrier
 from .synchronizerThreadSelect import SynchronizerThreadSelect
 from .bounded_buffer import BoundedBuffer
+from .result_buffer import ResultBuffer
 from .fanin import FanIn
 
 import logging 
@@ -235,7 +236,8 @@ class Synchronizer(object):
         """
         logger.debug ("starting caller thread to make the call")
         
-        result_buffer = BoundedBuffer(1, "ResultBuffer")
+        #result_buffer = BoundedBuffer(1, "resultBuffer")
+        result_buffer = ResultBuffer(1, "resultBuffer")
         #pass this to callerThread, which will pass it to execute()
         
         # Start a synchronizerThreadSelect which will call execute() which will call synchronizer.synchronizer_method
