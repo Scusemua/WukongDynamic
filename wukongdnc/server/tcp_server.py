@@ -13,10 +13,10 @@ import socket
 import socketserver
 import threading
 import traceback
-import json 
+import json
 
 from .synchronizer import Synchronizer
-from .util import make_json_serializable, decode_and_deserialize, isTry_and_getMethodName, isSelect
+from .util import make_json_serializable, decode_and_deserialize, isTry_and_getMethodName, isSelect 
 
 # Set up logging.
 import logging 
@@ -32,9 +32,9 @@ logger.addHandler(ch)
 
 class TCPHandler(socketserver.StreamRequestHandler):
     def handle(self):
-        """
-        TCP handler for incoming requests from AWS Lambda functions.
-        """
+
+        #TCP handler for incoming requests from AWS Lambda functions.
+        
         while True:
             logger.info("[HANDLER] Recieved one request from {}".format(self.client_address[0]))
 
@@ -63,13 +63,47 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 logger.error(ex)
                 logger.error(traceback.format_exc())
 
-    def _get_synchronizer_name(self, obj_type = None, name = None):
+    def _get_synchronizer_name(self, type_name = None, name = None):
         """
         Return the key of a synchronizer object. 
 
         The key is a string of the form <type>-<name>.
         """
-        return str(name) 
+        return str(type_name + "_" + name)
+
+    def create_obj(self,message = None):
+        """
+        Called by a remote Lambda to create an object here on the TCP server.
+
+        Key-word arguments:
+        -------------------
+            message (dict):
+                The payload from the AWS Lambda function.
+        """        
+        logger.debug("[HANDLER] server.create() called.")
+        type_arg = message["type"]
+        name = message["name"]
+        state = decode_and_deserialize(message["state"])
+
+        synchronizer = Synchronizer()
+
+        synchronizer.create(type_arg, name, **state.keyword_arguments)
+        
+        synchronizer_name = self._get_synchronizer_name(type_name = type_arg, name = name)
+        logger.debug("Caching new Synchronizer of type '%s' with name '%s'" % (type_arg, synchronizer_name))
+        tcp_server.synchronizers[synchronizer_name] = synchronizer # Store Synchronizer object.
+
+        resp = {
+            "op": "ack",
+            "op_performed": "create"
+        }
+        #############################
+        # Write ACK back to client. #
+        #############################
+        logger.info("Sending ACK to client %s for CREATE operation." % self.client_address[0])
+        resp_encoded = json.dumps(resp).encode('utf-8')
+        self.send_serialized_object(resp_encoded)
+        logger.info("Sent ACK of size %d bytes to client %s for CREATE operation." % (len(resp_encoded), self.client_address[0]))     
 
     def synchronize_sync(self, message = None):
         """
@@ -80,76 +114,57 @@ class TCPHandler(socketserver.StreamRequestHandler):
             message (dict):
                 The payload from the AWS Lambda function.
         """
+        
         logger.debug("[HANDLER] server.synchronize_sync() called.")
         obj_name = message['name']
         method_name = message['method_name']
         type_arg = message["type"]
         state = decode_and_deserialize(message["state"])
-
-        synchronizer_name = self._get_synchronizer_name(obj_type = None, name = obj_name)
-        logger.debug("Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
+        synchronizer_name = self._get_synchronizer_name(type_name = type_arg, name = obj_name)
+        
+        logger.debug("tcp_server: synchronize_sync: Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
         synchronizer = tcp_server.synchronizers[synchronizer_name]
-
-        base_name, isTryMethod = isTry_and_getMethodName(method_name)
-    
-        logger.debug("method_name: " + method_name + ", base_name: " + base_name + ", isTryMethod: " + str(isTryMethod))
-        #logger.debug("base_name: " + base_name)
-        #logger.debug("isTryMethod: " + str(isTryMethod))
         
-        # COMMENTED OUT:
-        # The TCP server does not have a '_synchClass' variable, so that causes an error to be thrown.
-        # We aren't even using the `_synchronizer_method` variable anywhere though, so I've just
-        # commented this out. I don't think we need it?
+        if (synchronizer is None):
+            raise ValueError("synchronize_sync: Could not find existing Synchronizer with name '%s'" % synchronizer_name)
+         
+        # This tcp_server passing self so synchronizer can access tcp_server's send_serialized_object
+        synchronizer.synchronize_sync(tcp_server, obj_name, method_name, type_arg, state, synchronizer_name)
         
-        # try:
-        #     _synchronizer_method = getattr(self._synchClass, method_name)
-        # except Exception as x:
-        #     logger.debug("Caught Error >>> %s" % x)
-
-        if isTryMethod: 
-            # check if synchronize op will block, if yes tell client to terminate then call op
-            # : FIX THIS here and in CREATE: let 
-            try_return_value = synchronizer.trySynchronize(method_name, state, **state.keyword_arguments)
-
-            logger.debug("Value of try_return_value for fan-in ID %s: %s" % (obj_name, str(try_return_value)))
+        logger.debug("tcp_server called synchronizer.synchronize_sync")
         
-            if try_return_value == True:   # synchronize op will execute wait so tell client to terminate
-                state.blocking = True 
-                state.return_value = None 
-                self.send_serialized_object(cloudpickle.dumps(state))
-                
-                if isSelect(type_arg):
-                    return_value = synchronizer.synchronizeSelect(base_name, state, **state.keyword_arguments)
-                else:
-                    return_value = synchronizer.synchronize(base_name, state, **state.keyword_arguments)
+        return return_value
 
-                # execute synchronize op but don't send result to client
-                return_value = synchronizer.synchronize(base_name, state, **state.keyword_arguments)
 
-                logger.debug("Value of return_value (not to be sent) for fan-in ID %s: %s" % (obj_name, str(return_value)))
-            else:
-                # execute synchronize op and send result to client
-                if isSelect(type_arg):
-                    return_value = synchronizer.synchronizeSelect(base_name, state, **state.keyword_arguments)
-                else:
-                    return_value = synchronizer.synchronize(base_name, state, **state.keyword_arguments)
-                state.return_value = return_value
-                state.blocking = False 
-                logger.debug("Synchronizer %s sending %s back to last executor." % (synchronizer_name, str(return_value)))
-                # send tuple to be consistent, and False to be consistent, i.e., get result if False
-                self.send_serialized_object(cloudpickle.dumps(state))               
-        else:  # not a "try" so do synchronization op and send result to waiting client
-            # : FIX THIS here and in CREATE
-            if isSelect(type_arg):
-                return_value = synchronizer.synchronizeSelect(base_name, state, **state.keyword_arguments)
-            else:
-                return_value = synchronizer.synchronize(base_name, state, **state.keyword_arguments)
-                
-            state.return_value = return_value
-            state.blocking = False 
-            # send tuple to be consistent, and False to be consistent, i.e., get result if False
-            
-            self.send_serialized_object(cloudpickle.dumps(state))
+    def synchronize_async(self, message = None):
+        """
+        Asynchronous synchronization.
+
+        Key-word arguments:
+        -------------------
+            message (dict):
+                The payload from the AWS Lambda function.
+        """        
+        logger.debug("[HANDLER] server.synchronize_async() called.")
+        obj_name = message['name']
+        method_name = message['method_name']
+        type_arg = message["type"]        
+        state = decode_and_deserialize(message["state"])
+
+        synchronizer_name = self._get_synchronizer_name(type_name = type_arg, name = obj_name)
+        logger.debug("tcp_server: synchronize_async: Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
+        synchronizer = tcp_server.synchronizers[synchronizer_name]
+        
+        if (synchronizer is None):
+            raise ValueError("synchronize_async: Could not find existing Synchronizer with name '%s'" % synchronizer_name)
+        
+        logger.debug("tcp_server: synchronize_async: Successfully found synchronizer")
+
+        synchronizer.synchronize_async(obj_name, method_name, type_arg, state, synchronizer_name)
+        
+        logger.debug("tcp_server called synchronizer.synchronize_async")
+        
+        return return_value    
 
     def recv_object(self):
         """
@@ -213,40 +228,6 @@ class TCPHandler(socketserver.StreamRequestHandler):
         self.wfile.write(obj)                                       # Then send the object.
         logger.debug("Sent %d bytes to remote client." % len(obj))
 
-    def create_obj(self, message = None):
-        """
-        Called by a remote Lambda to create an object here on the TCP server.
-
-        Key-word arguments:
-        -------------------
-            message (dict):
-                The payload from the AWS Lambda function.
-        """        
-        logger.debug("[HANDLER] server.create() called.")
-        type_arg = message["type"]
-        name = message["name"]
-        state = decode_and_deserialize(message["state"])
-
-        synchronizer = Synchronizer()
-
-        synchronizer.create(type_arg, name, **state.keyword_arguments)
-        
-        synchronizer_name = self._get_synchronizer_name(obj_type = type_arg, name = name)
-        logger.debug("Caching new Synchronizer of type '%s' with name '%s'" % (type_arg, synchronizer_name))
-        tcp_server.synchronizers[synchronizer_name] = synchronizer # Store Synchronizer object.
-
-        resp = {
-            "op": "ack",
-            "op_performed": "create"
-        }
-        #############################
-        # Write ACK back to client. #
-        #############################
-        logger.info("Sending ACK to client %s for CREATE operation." % self.client_address[0])
-        resp_encoded = json.dumps(resp).encode('utf-8')
-        self.send_serialized_object(resp_encoded)
-        logger.info("Sent ACK of size %d bytes to client %s for CREATE operation." % (len(resp_encoded), self.client_address[0]))
-
     def close_all(self, message = None):
         """
         Clear all known synchronizers.
@@ -297,45 +278,12 @@ class TCPHandler(socketserver.StreamRequestHandler):
     def setup_server(self, message = None):
         logger.debug("server.setup() called.")
         pass 
-    
-    def synchronize_async(self, message = None):
-        """
-        Asynchronous synchronization.
-
-        Key-word arguments:
-        -------------------
-            message (dict):
-                The payload from the AWS Lambda function.
-        """        
-        logger.debug("[HANDLER] server.synchronize_async() called.")
-        obj_name = message['name']
-        method_name = message['method_name']
-        type_arg = message['type']
-        state = decode_and_deserialize(message["state"])
-
-        synchronizer_name = self._get_synchronizer_name(obj_type = None, name = obj_name)
-        logger.debug("Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
-        synchronizer = tcp_server.synchronizers[synchronizer_name]
         
-        if (synchronizer is None):
-            raise ValueError("Could not find existing Synchronizer with name '%s'" % synchronizer_name)
-        
-        logger.debug("Successfully found synchronizer")
-        
-        if isSelect(type_arg):
-            sync_ret_val  = synchronizer.synchronizeSelect(method_name, state, **state.keyword_arguments)
-        else:
-            sync_ret_val  = synchronizer.synchronize(method_name, state, **state.keyword_arguments)
-
-        # sync_ret_val = synchronizer.synchronize(method_name, state, **state.keyword_arguments)
-        
-        logger.debug("Synchronize returned: %s" % str(sync_ret_val))
-
 class TCPServer(object):
     def __init__(self):
-        self.synchronizers =  {}    # dict 
-        self.server_threads = []    # list
-        self.clients =        []    # list
+        self.synchronizers =  {}    # dict of name to Synchronizer
+        self.server_threads = []    # list      - not used
+        self.clients =        []    # list      - not used
         self.server_address = ("0.0.0.0",25565)
         self.tcp_server = socketserver.ThreadingTCPServer(self.server_address, TCPHandler)
     

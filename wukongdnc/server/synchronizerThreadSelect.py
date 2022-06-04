@@ -5,7 +5,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
 
-from .synchronizer_thread import synchronizerThread
+from synchronizer_thread import synchronizerThread
 
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
@@ -16,30 +16,30 @@ logger.addHandler(ch)
 # A Synchronizer object wraps a user-defined object. The Synchronizer issues the actual method calls
 # on the object it wraps. The Synchronizer creates a synchronizer thread that makes the actuak method call.
 # Used for synchromization objects that are based on selective waits.
+# synchClass is needed in order to get a reference to method "execute" of that class.
 class SynchronizerThreadSelect(Thread):
-    #def __init__(self, PythonThreadID, PythonThreadName, entry_name, synchronizer, synchronizer_method, result_buffer, **kwargs):
-    def __init__(self, PythonThreadID, PythonThreadName, entry_name, synchronizer, synchronizer_method, synchClass, result_buffer, **kwargs):  
+    def __init__(self, PythonThreadID, PythonThreadName, entry_name, synchronizer, synchronizer_method, synchClass, result_buffer, **kwargs):
         # Call the Thread class's init function
         #Thread.__init__(self)
-        super(synchronizerThread,self).__init__(name=PythonThreadName)
+        super(SynchronizerThreadSelect,self).__init__(name=PythonThreadName)
         self._threadID = PythonThreadID
         self._synchronizer = synchronizer
         self._synchronizer_method = synchronizer_method
         self._synchClass = synchClass
-        self._restart = True
-        self._returnValue = None
+        #self._restart = True
+        self._returnValueIgnored = 0
         self._kwargs = kwargs
         self._result_buffer = result_buffer
         self._entry_name = entry_name
 
-    def getRestart(self):
-        return self._restart
+    #def getRestart(self):
+        #return self._restart
     
     def getID(self):
         return self._threadID
     
-    def getReturnValue(self):
-        return self._returnValue
+    #def getReturnValue(self):
+        #return self._returnValue
         
     # Override the run() function of Thread class
     def run(self):
@@ -55,9 +55,11 @@ class SynchronizerThreadSelect(Thread):
         # e.g., "deposit" here.
         # Easiest is to pass args, also x = num(1) print (type(x).__name__) Also def func(self): print(__class__) but
         # execute might be in superclass MonitorSelect of BoundedBufferSelect
-        self._returnValue = self._execute(self._synchronizer, self.entry_name, self.synchronizer, self.synchronizer_method, 
-		self.result_buffer, **self.kwargs)
+        self._returnValueIgnored = _execute(self._synchronizer, self._entry_name, self._synchronizer, self._synchronizer_method, 
+		self._result_buffer, **self._kwargs)
         #self._returnValue = self._synchronizer_method(self._synchronizer,**self._kwargs)
         # where wait_b in Barrier is wait_b(self, **kwargs):
 
-        logger.debug("return value is " + str(self._returnValue))
+        logger.debug("SynchronizerThreadSelect: return value is " + str(self._returnValue))
+        
+        # Note: results and restart returned through result buffer so return value should be ignored

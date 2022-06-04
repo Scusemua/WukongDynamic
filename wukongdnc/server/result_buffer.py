@@ -1,5 +1,5 @@
 from re import L
-from monitor_su import MonitorSU, ConditionVariable
+from .monitor_su import MonitorSU, ConditionVariable
 import threading
 import _thread
 import time
@@ -28,15 +28,12 @@ class ResultBuffer(MonitorSU):
         self._out=0
 
     def deposit(self, value):
-        """
-        Store a value.
-        """
         super().enter_monitor(method_name="deposit")
         logger.debug(" result buffer deposit() entered monitor, len(self._notFull) ="+str(len(self._notFull))+",self._capacity="+str(self._capacity))
         logger.debug(" result buffer deposit() entered monitor, len(self._notEmpty) ="+str(len(self._notEmpty))+",self._capacity="+str(self._capacity))
-        logger.debug("Value to deposit: " + str(value))
+        logger.debug(" result buffer: Value to deposit: " + str(value))
         if self._fullSlots==self._capacity:
-            logger.debug("Full slots (%d) is equal to capacity (%d). Calling wait_c()." % (self._fullSlots, self._capacity))
+            logger.debug(" result buffer: Full slots (%d) is equal to capacity (%d). Calling wait_c()." % (self._fullSlots, self._capacity))
             self._notFull.wait_c()
         self._buffer.insert(self._in,value)
         self._in=(self._in+1) % int(self._capacity)
@@ -45,15 +42,11 @@ class ResultBuffer(MonitorSU):
         return 0
 
     def withdraw(self):
-        """
-        This is the 'no-try' version of withdraw.
-        """
-        super().enter_monitor(method_name = "withdraw")
-        logger.debug(" result buffer withdraw() entered monitor, len(self._notFull) ="+str(len(self._notFull))+", self._capacity="+str(self._capacity))
         logger.debug(" result buffer  withdraw() entered monitor, len(self._notEmpty) ="+str(len(self._notEmpty))
 		+", self._capacity="+str(self._capacity))
         value = 0
         if self._fullSlots==0:
+            logger.debug(" result buffer: Full slots (%d) is equal to 0. Calling wait_c()." % (self._fullSlots))
             self._notEmpty.wait_c()
         value=self._buffer[self._out]
         self._out=(self._out+1) % int(self._capacity)
