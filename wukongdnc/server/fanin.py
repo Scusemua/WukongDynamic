@@ -24,9 +24,7 @@ class FanIn(MonitorSU):
         super(FanIn, self).__init__(monitor_name = monitor_name)
         self._n = initial_n
         self._num_calling = 0
-        
-        self.results = [] # fan_in results of executors
-
+        self._results = [] # fan_in results of executors
         self._go = self.get_condition_variable(condition_name = "go")
     
     @property
@@ -37,7 +35,6 @@ class FanIn(MonitorSU):
     def n(self, value):
         logger.debug("Setting value of FanIn n to " + str(value))
         self._n = value
-
 
     def init(self, fanin_id = None, **kwargs):
         logger.debug(kwargs)
@@ -50,8 +47,7 @@ class FanIn(MonitorSU):
 
     def try_fan_in(self, **kwargs):
         # Does mutex.P as usual
-        super().enter_monitor(method_name = "try_fan_in")
-        
+        super().enter_monitor(method_name = "try_fan_in")     
         # super.is_blocking has a side effect which is to make sure that exit_monitor below
         # does not do mutex.V, also that enter_monitor of wait_b that follows does not do mutex.P.
         # This makes executes_wait ; wait_b atomic
@@ -61,60 +57,56 @@ class FanIn(MonitorSU):
         # Does not do mutex.V, so we will still have the mutex lock when we next call
         # enter_monitor in wait_b
         super().exit_monitor()
-        
         return block
 
+    # synchronous try version of fan-in, no restart if block since clients are done if they are not the last to call; 
+    # Assumes clients that get block = True will terminate and do NOT expect to be restarted. A client that is not 
+    # the last to call fan_in is expected to terminate. The last client to call fan_in will become the fan-in task.
+    # no meaningful return value expected by client
     def fan_in(self, **kwargs):
-
-        logger.debug("fan_in " + str(self.fanin_id) + " current thread ID is " + str(threading.current_thread().ident))
         logger.debug("fan_in %s calling enter_monitor" % self.fanin_id)
-        
-        # if we called executes_wait first, we still have the mutex so this enter_monitor does not do mutex.P
+        # if we called try_fan_in first, we still have the mutex so this enter_monitor does not do mutex.P
         super().enter_monitor(method_name = "fan_in")
-        
         logger.debug("Fan-in %s entered monitor in fan_in()" % self.fanin_id)
         logger.debug("fan_in() " + str(self.fanin_id) + " entered monitor. self._num_calling = " + str(self._num_calling) + ", self._n=" + str(self._n))
 
         if self._num_calling < (self._n - 1):
             logger.debug("Fan-in %s calling _go.wait_c() from FanIn" % self.fanin_id)
-
             self._num_calling += 1
 
-            # No need to block non-last thread since we are done with them - they will terminate and not restart
+            # No need to block non-last thread since we are done with them - they will terminate and not restart.
             # self._go.wait_c()
-
             result = kwargs['result']
             logger.debug("Result (saved by the non-last executor) for fan-in %s: %s" % (self.fanin_id, str(result)))
-            self.results.append(result)
+            self._results.append(result)
             
-            threading.current_thread()._restart = False
-            threading.current_thread()._returnValue = 0
-            
+            #threading.current_thread()._restart = False
+            #threading.current_thread()._returnValue = 0
+            restart = False
             logger.debug(" !!!!! non-last Client exiting FanIn fan_in id = %s!!!!!" % self.fanin_id)
             super().exit_monitor()
-            return 0
-        else:
+            # Note: Typcally we would return 1 when try_fan_in returns block is True, but the Fanin currently
+            # used by wukong D&C is expecting a return value of 0 for this case.
+            return 0, restart
+        else:  
+            # Last thread does synchronize_synch and will wait for result since False returned by try_fan_in().
+            # Last thread does not append results. It will recieve list of results of other threads and append 
+            # its result locally to the returned list.
+            logger.debug("Last thread in FanIn %s so not calling self._go.wait_c" % self.fanin_id)
             
-            # last thread does sycnhronize_synch and will wait for result since False returned by try_fan_in()
-            threading.current_thread()._restart = False 
-            #last thread does not append results. It will recieve list of results of other threads and append 
-            #its result locally to the returned list
-
-            if (self.results is not None):
-                logger.debug("Returning (to last executor) for fan-in %s: %s" % (self.fanin_id, str(self.results)))
+            if (self._results is not None):
+                logger.debug("Returning (to last executor) for fan-in %s: %s" % (self.fanin_id, str(self._results)))
             else:
                 logger.error("Result to be returned to last executor is None for fan-in %s!" % self.fanin_id)
 
-            threading.current_thread()._returnValue = self.results
-            
-            logger.debug("Last thread in FanIn %s so not calling self._go.wait_c" % self.fanin_id)
+            #threading.current_thread()._returnValue = self._results
+            #threading.current_thread()._restart = False 
+            restart = False
             logger.debug(" !!!!! last Client exiting FanIn fan_in id=%s!!!!!" % self.fanin_id)
+            # No signal of non-last client; they did not block and they are done executing. 
             # does mutex.V
-            # non-last threads do not block on go as we are done with them (they will not be restarted)
-            # and thus are not signaled - just exit
             super().exit_monitor()
-
-            return self.results  # all threads have called so return results
+            return self._results, restart  # all threads have called so return results
 
         #No logger.debugs here. main Client can exit while other threads are
         #doing this logger.debug so main thread/interpreter can't get stdout lock?

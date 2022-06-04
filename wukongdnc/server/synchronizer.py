@@ -13,7 +13,7 @@ from ..wukong.invoker import invoke_lambda
 
 from .barrier import Barrier
 from .synchronizerThreadSelect import SynchronizerThreadSelect
-from .bounded_buffer import BoundedBuffer
+from .buffer import BoundedBuffer
 from .bounded_buffer_select import BoundedBuffer_Select
 from .CountingSemaphore_Monitor import CountingSemaphore_Monitor
 from .fanin import FanIn

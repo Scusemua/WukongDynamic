@@ -38,41 +38,108 @@ class CountingSemaphore_Monitor(MonitorSU):
         super().exit_monitor()
         return block 
 
+	# synchronous try version of P, restart if block; no meaningful return value expected by client
     def P(self, **kwargs):
         super().enter_monitor(method_name = "P")
         logger.debug("CountingSemaphore_Monitor P() entered monitor, len(self._notEmpty) = " + str(len(self._permitAvailable)) + ", permits = " + str(self._permits))
-
         self._permits -= 1
-
         if self._permits < 0:
             self._permitAvailable.wait_c()
-            threading.current_thread()._restart = False
-            threading.current_thread()._returnValue = 0
-            # Lambda called “try_P” so will terminate; no need to block the
-            # proxy thread - we are using self._permits to implicitly track
-            # the number of waiting Lambdas, not length of cond. var queue
+            restart = True
+            #threading.current_thread()._restart = False
+            #threading.current_thread()._returnValue = 1
             super().exit_monitor()
+            return 1, restart           # Note: return 1 when restart and 0 when no restart
         else:
-            threading.current_thread()._restart = False
-            threading.current_thread()._returnValue = 1
+            restart = False
+            #threading.current_thread()._restart = False
+            #threading.current_thread()._returnValue = 0
             super().exit_monitor()
-	
-        threading.current_thread()._returnValue = 1
+            return 0, restart
+			
+    # synchronous no-try version of P; no meaningful return value expected by client
+    # Change name to "P" if no-try version of P is to be used.
+    def P_no_try(self, **kwargs):
+        super().enter_monitor(method_name = "P")
+        self._permits -= 1
+        if self._permits < 0:
+            self._permitAvailable.wait_c()
+        restart = False
         super().exit_monitor()
-
-    # V should never block, so no need for restart
+        return 0, restart
+        
+    # asynchronous version of P; client always terminates; no meaningful return value expected by client 
+    # Change name to "P" if no-try version of P is to be used.
+    def asynch_P_terminate(self, **kwargs):
+        super().enter_monitor(method_name = "P")
+        self._permits -= 1
+        if self._permits < 0:
+            self._permitAvailable.wait_c()
+        restart = True
+        super().exit_monitor()
+        return 0, restart
+		
+	# This is the no-try version of V;         
+    # V() should never block, so no need for client to terminate and restart, and no meaningful return value expected by client.
+    #
+	# This can be called as an asynchronous operation or as a synchronous operation. For asynchronous, the client will
+	# not block waiting for a reply from the server. This is because the client can assume that V will not block, and V 
+    # does not return a meaningful value, so there is no reason to wait for the server's reply. For synchronous, the client can 
+    # also assume that V does not block, but the client, for no good reason, will wait for the server to reply with V's return value, 
+    # which is an unnecessary delay since V's return value is not meaningful. (V always returns 0.)
+	# (This is the same as the asychronous version of V that assumes the client does not terminate ("asynch_V_no_terminate" below)). 
+	# This method is the default naturall name and behavior for V, i.e., do not wait for a return value and do not terminate.
+    #
+	# Note: When a method never blocks but has a meaningful return value, the client can use a synchronous try or no-try
+	# version of V, or an asynchronous version where the client terminates. With a try-version of V that blocks, or
+	# an asynchronous version where the client terminates, the client will get the return value upon restart. Thus, the client
+	# gets a return value with a blocking try upon restart, or a synchronous no-try, or asynchronous operations with 
+	# terminations and restarts.
     def V(self, **kwargs):
         super().enter_monitor(method_name="V")
         logger.debug(" CountingSemaphore_Monitor V() entered monitor, len(self._notEmpty) ="+str(len(self._permitAvailable)) + " permits = " + str(self._permits))
         self._permits += 1
-        threading.current_thread()._returnValue = 1
-        threading.current_thread()._restart = False
-
-        # Since we don’t actually block threads in P, we don’t have to 
-        # signal threads here in V. This signal will have no effect.
+        #threading.current_thread()._returnValue = 1
+        #threading.current_thread()._restart = False
+        restart = False
         self._permitAvailable.signal_c_and_exit_monitor()
+        return 0, restart
 
-#locL tests
+	# asychronous version of V that assumes client does not terminate (since V is assumed to never block); 
+    # no meaningful return value expected by client
+    def asynch_V_no_terminate(self, **kwargs):
+        super().enter_monitor(method_name="V")
+        logger.debug(" CountingSemaphore_Monitor asynch_V_no_terminate() entered monitor, len(self._notEmpty) ="+str(len(self._permitAvailable)) + " permits = " + str(self._permits))
+        self._permits += 1
+        #threading.current_thread()._returnValue = 1
+        #threading.current_thread()._restart = False
+        restart = False
+        self._permitAvailable.signal_c_and_exit_monitor()
+        return 0, restart
+		
+	# asychronous version of V that assumes client terminates (so no unnecessary delays for client - just call and terminate); 
+    # no meaningful return value expected by client
+    def asynch_V_terminate(self, **kwargs):
+        super().enter_monitor(method_name="V")
+        logger.debug(" CountingSemaphore_Monitor asynch_V_terminate() entered monitor, len(self._notEmpty) ="+str(len(self._permitAvailable)) + " permits = " + str(self._permits))
+        self._permits += 1
+        #threading.current_thread()._returnValue = 1
+        #threading.current_thread()._restart = False
+        restart = True
+        self._permitAvailable.signal_c_and_exit_monitor()
+        return 1, restart
+	
+	# we do not define a try version of V() above since try_V() here always returns False, i.e., no blocking.
+	# Clients can call the asynch version of V, V(), which assumes that clients do not terminate 
+    # and do not wait for V()'s return_value since V() never blocks and never returns a meaningful
+    # return value.
+    def try_V(self, **kwargs):
+        super().enter_monitor(method_name = "try_V")
+        block = super().is_blocking(False)
+        super().exit_monitor()
+        return block 
+
+#local tests
 def taskP(b : CountingSemaphore_Monitor):
     logger.debug("Calling P")
     b.P()
@@ -94,7 +161,6 @@ def main():
     b.V()
     b.P()
 
-
     try:
         logger.debug("Starting D thread")
         _thread.start_new_thread(taskP, (b,))
@@ -115,5 +181,3 @@ def main():
 
 if __name__=="__main__":
     main()
-
-

@@ -12,15 +12,13 @@ ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 
 logger.addHandler(ch)
-
 logger.propagate = False
 
-# Reusable Barrier. Clients call wait_b
+# Reusable Barrier. Clients call wait_b()
 class Barrier(MonitorSU):
     def __init__(self, initial_n = 0, monitor_name = None):
         super(Barrier, self).__init__(monitor_name = monitor_name)
         self._n = initial_n
-
         self._go = self.get_condition_variable(condition_name = "go")
     
     @property
@@ -61,21 +59,16 @@ class Barrier(MonitorSU):
         
         return block
 
+	# synchronous try version of withdraw, restart when block
     def wait_b(self, **kwargs):
-        logger.debug("wait_B current thread ID is " + str(threading.current_thread().getID()))
-        logger.debug("wait_b calling enter_monitor")
-        
         # if we called executes_wait first, we still have the mutex so this enter_monitor does not do mutex.P
         super().enter_monitor(method_name = "wait_b")
-        
         logger.debug("Entered monitor in wait_b()")
         logger.debug("wait_b() entered monitor. len(self._go) = " + str(len(self._go)) + ", self._n=" + str(self._n))
-
         if len(self._go) < (self._n - 1):
             logger.debug("Calling _go.wait_c() from Barrier")
             self._go.wait_c()
-            # serverless functions are rstarted by default, so this serverless function
-            # will be restarted, as expected for barrier.
+            restart = True
         else:
             # Tell Synchronizer that this serverless function should not be restarted.
             # Assuming serverless function call to wait_b is 2-way so the function will
@@ -89,17 +82,52 @@ class Barrier(MonitorSU):
             #   terminated after getting False returned on 2-way cal to wait_b
             # - The last/become thread can receive the outputs of the other serverless functions
             #   as return object(s) of 2-way cal to wait_b.
-            threading.current_thread()._restart = False
+            #threading.current_thread()._restart = False
+            restart = False
             logger.debug("Last thread in Barrier so not calling self._go.wait_c")
 
-        logger.debug("!!!!! Client exiting Barrier wait_b !!!!!")
+        logger.debug("Client exiting Barrier wait_b")
         # does mutex.V
         self._go.signal_c_and_exit_monitor()
-
-        threading.current_thread()._returnValue = 1
-        return 1
-
+        #threading.current_thread()._returnValue = 1
+        return 0, restart
+        
         #No logger.debugs here. main Client can exit while other threads are
         #doing this logger.debug so main thread/interpreter can't get stdout lock?
+        
+	# synchronous no-try version of withdraw, restart when block
+    def wait_b_for_no_try(self, **kwargs):
+        # if we called executes_wait first, we still have the mutex so this enter_monitor does not do mutex.P
+        super().enter_monitor(method_name = "wait_b")
+        logger.debug("Entered monitor in wait_b()")
+        logger.debug("wait_b() entered monitor. len(self._go) = " + str(len(self._go)) + ", self._n=" + str(self._n))
+        if len(self._go) < (self._n - 1):
+            logger.debug("Calling _go.wait_c() from Barrier")
+            self._go.wait_c()
+        else:
+            # Tell Synchronizer that this serverless function should not be restarted.
+            # Assuming serverless function call to wait_b is 2-way so the function will
+            # block until wait_b finishes. In this case we are avoiding restart time for
+            # last serverless function to call Barrier.
+            # If this were a fan-in instead of Barrier:
+            # - functions that are not the last/become function should not be restarted, so
+            #   after go.wait() call threading.current_thread()._restart = False. In fact,
+            #   can they call exit_monitor instead since we are done with them.
+            #   Assuming these serverless functions called isBecome() and got False, so the functions
+            #   terminated after getting False returned on 2-way cal to wait_b
+            # - The last/become thread can receive the outputs of the other serverless functions
+            #   as return object(s) of 2-way cal to wait_b.
+            #threading.current_thread()._restart = False
+            logger.debug("Last thread in Barrier so not calling self._go.wait_c")
+        restart = False
+        logger.debug("Exiting Barrier wait_b")
+        # does mutex.V
+        self._go.signal_c_and_exit_monitor()
+        #threading.current_thread()._returnValue = 1
+        return 0, restart
+        
+        #No logger.debugs here. main Client can exit while other threads are
+        #doing this logger.debug so main thread/interpreter can't get stdout lock?
+        
         
         
