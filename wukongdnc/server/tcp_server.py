@@ -129,7 +129,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             raise ValueError("synchronize_sync: Could not find existing Synchronizer with name '%s'" % synchronizer_name)
          
         # This tcp_server passing self so synchronizer can access tcp_server's send_serialized_object
-        synchronizer.synchronize_sync(tcp_server, obj_name, method_name, type_arg, state, synchronizer_name)
+        return_value = synchronizer.synchronize_sync(tcp_server, obj_name, method_name, type_arg, state, synchronizer_name)
         
         logger.debug("tcp_server called synchronizer.synchronize_sync")
         
@@ -160,7 +160,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         
         logger.debug("tcp_server: synchronize_async: Successfully found synchronizer")
 
-        synchronizer.synchronize_async(obj_name, method_name, type_arg, state, synchronizer_name)
+        return_value = synchronizer.synchronize_async(obj_name, method_name, type_arg, state, synchronizer_name)
         
         logger.debug("tcp_server called synchronizer.synchronize_async")
         
