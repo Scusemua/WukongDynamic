@@ -69,7 +69,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
         The key is a string of the form <type>-<name>.
         """
-        return str(type_name + "_" + name)
+        return str(name) # return str(type_name + "_" + name)
 
     def create_obj(self,message = None):
         """
@@ -118,9 +118,10 @@ class TCPHandler(socketserver.StreamRequestHandler):
         logger.debug("[HANDLER] server.synchronize_sync() called.")
         obj_name = message['name']
         method_name = message['method_name']
-        type_arg = message["type"]
+        # type_arg = message["type"]
         state = decode_and_deserialize(message["state"])
-        synchronizer_name = self._get_synchronizer_name(type_name = type_arg, name = obj_name)
+        # synchronizer_name = self._get_synchronizer_name(type_name = type_arg, name = obj_name)
+        synchronizer_name = self._get_synchronizer_name(type_name = None, name = obj_name)
         
         logger.debug("tcp_server: synchronize_sync: Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
         synchronizer = tcp_server.synchronizers[synchronizer_name]
@@ -129,7 +130,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
             raise ValueError("synchronize_sync: Could not find existing Synchronizer with name '%s'" % synchronizer_name)
          
         # This tcp_server passing self so synchronizer can access tcp_server's send_serialized_object
-        return_value = synchronizer.synchronize_sync(tcp_server, obj_name, method_name, type_arg, state, synchronizer_name)
+        # return_value = synchronizer.synchronize_sync(tcp_server, obj_name, method_name, type_arg, state, synchronizer_name)
+        return_value = synchronizer.synchronize_sync(tcp_server, obj_name, method_name, state, synchronizer_name)
         
         logger.debug("tcp_server called synchronizer.synchronize_sync")
         
@@ -148,10 +150,10 @@ class TCPHandler(socketserver.StreamRequestHandler):
         logger.debug("[HANDLER] server.synchronize_async() called.")
         obj_name = message['name']
         method_name = message['method_name']
-        type_arg = message["type"]        
+        # type_arg = message["type"]        
         state = decode_and_deserialize(message["state"])
 
-        synchronizer_name = self._get_synchronizer_name(type_name = type_arg, name = obj_name)
+        synchronizer_name = self._get_synchronizer_name(type_name = None, name = obj_name)
         logger.debug("tcp_server: synchronize_async: Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
         synchronizer = tcp_server.synchronizers[synchronizer_name]
         
@@ -160,7 +162,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
         
         logger.debug("tcp_server: synchronize_async: Successfully found synchronizer")
 
-        return_value = synchronizer.synchronize_async(obj_name, method_name, type_arg, state, synchronizer_name)
+        # return_value = synchronizer.synchronize_async(obj_name, method_name, type_arg, state, synchronizer_name)
+        return_value = synchronizer.synchronize_async(obj_name, method_name, state, synchronizer_name)
         
         logger.debug("tcp_server called synchronizer.synchronize_async")
         

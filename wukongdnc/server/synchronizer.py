@@ -13,7 +13,7 @@ from ..wukong.invoker import invoke_lambda
 
 from .barrier import Barrier
 from .synchronizerThreadSelect import SynchronizerThreadSelect
-from .buffer import BoundedBuffer
+from .bounded_buffer import BoundedBuffer
 from .bounded_buffer_select import BoundedBuffer_Select
 from .CountingSemaphore_Monitor import CountingSemaphore_Monitor
 from .fanin import FanIn
@@ -87,6 +87,8 @@ class Synchronizer(object):
 
     def create(self, synchronizer_class_name, synchronizer_object_name, **kwargs):
         # where init call by Client is init(“Barrier”,”b”,[‘n’,2]): and kwargs passed to Barrier.init
+        self._synchronizer_class_name = synchronizer_class_name
+
         if not synchronizer_class_name in Synchronizer.synchronizers:
             logger.error("create: Invalid synchronizer class name: '%s'" % synchronizer_class_name)
             raise ValueError("Invalid synchronizer class name: '%s'" % synchronizer_class_name)
@@ -131,16 +133,18 @@ class Synchronizer(object):
 
         logger.debug ("create: Called _synchronizer init")
         return 0
-        
-    def synchronize_sync(self, tcp_server, obj_name, method_name, type_arg, state, synchronizer_name):
+
+    # def synchronize_sync(self, tcp_server, obj_name, method_name, type_arg, state, synchronizer_name):        
+    def synchronize_sync(self, tcp_server, obj_name, method_name, state, synchronizer_name):
     
         logger.debug("synchronizer: synchronize_sync: caled")
 
         base_name, isTryMethod = isTry_and_getMethodName(method_name)
-        is_select = isSelect(type_arg)
+        is_select = isSelect(self._synchronizer_class_name) # is_select = isSelect(type_arg)
     
         logger.debug("synchronizer: synchronize_sync: method_name: " + method_name + ", base_name: " + base_name + ", isTryMethod: " + str(isTryMethod))
-        logger.debug("synchronizer: synchronize_sync: type_arg: " + type_arg + ", is_select: " + str(is_select))
+        logger.debug(" self._synchronizer_class_name: : " + self._synchronizer_class_name + ", is_select: " + str(is_select))
+        # logger.debug("synchronizer: synchronize_sync: type_arg: " + type_arg + ", is_select: " + str(is_select))
         #logger.debug("base_name: " + base_name)
         #logger.debug("isTryMethod: " + str(isTryMethod))
         
@@ -242,13 +246,15 @@ class Synchronizer(object):
             
         return 0
         
-    def synchronize_async(self, obj_name, method_name, type_arg, state, synchronizer_name):
+    def synchronize_async(self, obj_name, method_name, state, synchronizer_name):
         """
         Asynchronous synchronization.
         """
         logger.debug("synchronizer: synchronize_async called")
 
-        is_select = isSelect(type_arg)
+        # is_select = isSelect(type_arg)
+        is_select = isSelect(self._synchronizer_class_name)
+        logger.debug("self._synchronizer_class_name: " + self._synchronizer_class_name + ", is_select: " + str(is_select))
         
         if is_select:
             self.lock_synchronizer()
@@ -374,7 +380,7 @@ class Synchronizer(object):
         try:
             execute = getattr(self._synchClass,"execute")
         except Exception as ex:
-            logger.error("synchronizeSelect: Failed to find method 'execute' on object '%s'." % (synchClass))
+            logger.error("synchronizeSelect: Failed to find method 'execute' on object '%s'." % (self._synchClass))
             raise ex
             
         result_buffer = ResultBuffer(1, "resultBuffer")
