@@ -351,6 +351,8 @@ class Synchronizer(object):
         # if the method returns restart True, restart the serverless function and pass it its saved state.
         if restart:
             state.restart = True 
+            state.return_value = returnValue
+            state.blocking = False            
             logger.info("synchronize: Restarting Lambda function %s." % state.function_name)
             payload = {"state": state}
             invoke_lambda(payload = payload, is_first_invocation = False, function_name = state.function_name)
@@ -411,6 +413,8 @@ class Synchronizer(object):
         # if the method returns restart True, restart the serverless function and pass it its saved state.
         if restart:
             state.restart = True 
+            state.return_value = returnValue
+            state.blocking = False            
             logger.info("Restarting Lambda function %s." % state.function_name)
             payload = {"state": state}
             invoke_lambda(payload = payload, is_first_invocation = False, function_name = state.function_name)
