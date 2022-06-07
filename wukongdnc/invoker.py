@@ -1,6 +1,6 @@
 # In composer_driver.py, invoke is:
-#   invoke_lambda(payload = payload, is_first_invocation = True, n = 1, initial_permits = 0, function_name = "Composer")
-# use either "Composer" or "Composer_select"
+#   invoke_lambda(payload = payload, is_first_invocation = True, n = 1, initial_permits = 0, function_name = "ComposerServerlessSync")
+# use either "ComposerServerlessSync" or "Composer_select"
 
 # This class has methods for invoking AWS Lambda functions.
 
@@ -35,7 +35,7 @@ logger.propagate = False
 lambda_client = boto3.client('lambda', region_name = "us-east-1")
 
 def invoke_lambda(
-    function_name: str = "Composer",
+    function_name: str = "ComposerServerlessSync", # Can change to ComposerServerlessSync_Select to create different types of synchronization 
     payload: dict = None,
     is_first_invocation: bool = False,
     n : int = 1,

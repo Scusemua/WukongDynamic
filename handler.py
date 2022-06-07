@@ -59,7 +59,7 @@ class FuncA(object):
                     logger.debug("FuncA (pc=1) value post-increment: " + str(value))
                     if self.state.keyword_arguments is None:
                         self.state.keyword_arguments = {}
-                    self.state.function_name = "Composer"
+                    self.state.function_name = "ComposerServerlessSync"
                     self.state.keyword_arguments["value"] = value
                     synchronize_async(websocket, "synchronize_async", "result", "deposit", self.state)  
                     synchronize_async(websocket, "synchronize_async", "finish", "V", self.state)
@@ -102,7 +102,7 @@ class FuncB(object): # same as FuncA with different ID
                     logger.debug("FuncB (pc=1) value post-increment: " + str(value))
                     if self.state.keyword_arguments is None:
                         self.state.keyword_arguments = {}
-                    self.state.function_name = "Composer"
+                    self.state.function_name = "ComposerServerlessSync"
                     self.state.keyword_arguments["value"] = value
                     synchronize_async(websocket, "synchronize_async", "result", "deposit", self.state)  
                     synchronize_async(websocket, "synchronize_async", "finish", "V", self.state)
@@ -116,7 +116,7 @@ class FuncB(object): # same as FuncA with different ID
 class Composer(object):
     def __init__(self, state = None):
         self.state = state
-        self.state.ID = "Composer"
+        self.state.ID = "ComposerServerlessSync"
         # self.List_of_Lambdas = ["FuncA", "FuncB"]
 
     def execute(self):
@@ -201,7 +201,7 @@ def lambda_handler(event, context):
     target = state.function_name 
     logger.debug("Starting *****%s*****." % target)
     # target = event['target']
-    if target == "Composer":
+    if target == "ComposerServerlessSync":
         composer = Composer(state = state)
         composer.execute()
     elif target == "FuncA":

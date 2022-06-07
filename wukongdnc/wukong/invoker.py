@@ -29,7 +29,7 @@ logger.propagate = False
 lambda_client = boto3.client('lambda', region_name = "us-east-1")
 
 def invoke_lambda(
-    function_name: str = "Composer",
+    function_name: str = "ComposerServerlessSync",
     payload: dict = None,
     is_first_invocation: bool = False,
     n : int = 1,

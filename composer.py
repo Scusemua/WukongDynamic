@@ -1,7 +1,7 @@
 class Composer(object):
     def __init__(self, state = None):
         self.state = state
-        self.state.ID = "Composer"
+        self.state.ID = "ComposerServerlessSync"
         # self.List_of_Lambdas = ["FuncA", "FuncB"]
 
     def execute(self):
