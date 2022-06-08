@@ -94,6 +94,7 @@ class FuncB(object): # same as FuncA with different ID
                     #     self.state.pc = 1 # transition to state PC=1
 
                 elif self.state.pc == 1:
+                    print("FuncB (START of pc=1) self.state.blocking = " + str(self.state.blocking))
                     value = self.state.return_value
                     self.state.return_value = None
                     logger.debug("FuncB (pc=1) value pre-increment: " + str(value))
@@ -104,7 +105,11 @@ class FuncB(object): # same as FuncA with different ID
                         self.state.keyword_arguments = {}
                     self.state.function_name = "ComposerServerlessSync"
                     self.state.keyword_arguments["value"] = value
+                    logger.debug("FuncB (pc=1) calling result.deposit() now.")
+                    self.state.blocking = False
                     synchronize_async(websocket, "synchronize_async", "result", "deposit", self.state)  
+                    logger.debug("FuncB (pc=1) calling finish.V() now.")
+                    self.state.blocking = False
                     synchronize_async(websocket, "synchronize_async", "finish", "V", self.state)
                     break
                 else: 
