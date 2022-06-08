@@ -148,6 +148,7 @@ class Composer(object):
                 invoke_lambda(payload = payload)
   
                 self.state.i += 1
+                print("Composer -- POST-INCREMENT -- self.state.i = " + str(self.state.i))
                 self.state = synchronize_sync(websocket, "synchronize_sync", "finish", "P", self.state)
                 if self.state.blocking:
                     # all of the if self.state.blocking have two statements: set blocking to False and return
@@ -169,6 +170,7 @@ class Composer(object):
                 self.state.return_value = None
                 self.state.pc = 1
                 self.state = synchronize_sync(websocket,"synchronize_sync", "result", "withdraw", self.state)
+                print("Composer -- withdrawn state: " + str(self.state))                
                 if self.state.blocking:
                     self.state.blocking = False
                     return #transition to state 1 on restart

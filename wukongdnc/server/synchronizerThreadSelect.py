@@ -5,7 +5,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
 
-from synchronizer_thread import synchronizerThread
+from .synchronizer_thread import synchronizerThread
 
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)

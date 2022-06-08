@@ -50,6 +50,7 @@ class Synchronizer(object):
     }
     
     def __init__(self):
+        pass
         # not used
         #self._name = "Synchronizer"
         # Not used since we unrolled a lot of methods and dn;t use the synchronizationThread or synchronizationThreadSelect
@@ -107,8 +108,8 @@ class Synchronizer(object):
         logger.debug("create: Creating synchronizer with name '%s'" % self._synchronizer_name)
 
         # Get the class object for a synchronizer object, e.g.. Barrier
-        #module = importlib.import_module("wukongdnc.server." + src_file)
-        module = importlib.import_module(src_file)
+        module = importlib.import_module("wukongdnc.server." + src_file)
+        #module = importlib.import_module(src_file)
         self._synchClass = getattr(module, synchronizer_class_name)
 
         if (self._synchClass is None):
@@ -135,7 +136,7 @@ class Synchronizer(object):
         return 0
 
     # def synchronize_sync(self, tcp_server, obj_name, method_name, type_arg, state, synchronizer_name):        
-    def synchronize_sync(self, tcp_server, obj_name, method_name, state, synchronizer_name):
+    def synchronize_sync(self, tcp_server, obj_name, method_name, state, synchronizer_name, tcp_handler):
     
         logger.debug("synchronizer: synchronize_sync: caled")
 
@@ -180,7 +181,7 @@ class Synchronizer(object):
                 # This allows client to terminate sooner than if we did this after releasing lock, but it delays
                 # other callers from executing select since lock is held.
                 # Could start a thread to do this asynchronously.
-                tcp_server.send_serialized_object(cloudpickle.dumps(state))
+                tcp_handler.send_serialized_object(cloudpickle.dumps(state))
                 
                 # execute synchronize op, but don't send result to client
                 if is_select:
@@ -218,7 +219,7 @@ class Synchronizer(object):
                 
                 # send tuple to be consistent, and False to be consistent, i.e., get result if False.
                 # This is after releasng the lock
-                tcp_server.send_serialized_object(cloudpickle.dumps(state))                         
+                tcp_handler.send_serialized_object(cloudpickle.dumps(state))                         
         else:  
             # not a "try" so do synchronization op and send result to waiting client
 
@@ -242,7 +243,7 @@ class Synchronizer(object):
 
             logger.debug("synchronizer: synchronize_sync: %s sending %s back for method %s." % (synchronizer_name, str(return_value), method_name))  
             
-            tcp_server.send_serialized_object(cloudpickle.dumps(state))
+            tcp_handler.send_serialized_object(cloudpickle.dumps(state))
             
         return 0
         
@@ -355,7 +356,7 @@ class Synchronizer(object):
             state.blocking = False            
             logger.info("synchronize: Restarting Lambda function %s." % state.function_name)
             payload = {"state": state}
-            invoke_lambda(payload = payload, is_first_invocation = False, function_name = state.function_name)
+            invoke_lambda(payload = payload, is_first_invocation = False, function_name = "ComposerServerlessSync")
         
         return returnValue
 
@@ -366,7 +367,7 @@ class Synchronizer(object):
         logger.debug("synchronizeSelect: method_name: " + str(method_name) + ", ID is: " + state.function_instance_ID)
         
         try:
-            synchronizer_method = getattr(self._synchClass,method_name)
+            synchronizer_method = getattr(self._synchClass, method_name)
         except Exception as ex:
             logger.error("synchronizeSelect: Failed to find method '%s' on object '%s'." % (method_name, self._synchClass))
             raise ex

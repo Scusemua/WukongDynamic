@@ -1,6 +1,6 @@
 #from monitor_su import MonitorSU
-from selectivewait import selectiveWait
-from counting_semaphore import CountingSemaphore
+from .selectivewait import selectiveWait
+from .counting_semaphore import CountingSemaphore
 
 import logging 
 logger = logging.getLogger(__name__)

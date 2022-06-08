@@ -59,6 +59,10 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 logger.debug("[HANDLER] Received message (size=%d bytes) from client %s with ID=%s" % (len(data), self.client_address[0], message_id))
                 action = json_message.get("op", None)
                 self.action_handlers[action](message = json_message)
+            except ConnectionResetError as ex:
+                logger.error(ex)
+                logger.error(traceback.format_exc())
+                return 
             except Exception as ex:
                 logger.error(ex)
                 logger.error(traceback.format_exc())
@@ -131,7 +135,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
          
         # This tcp_server passing self so synchronizer can access tcp_server's send_serialized_object
         # return_value = synchronizer.synchronize_sync(tcp_server, obj_name, method_name, type_arg, state, synchronizer_name)
-        return_value = synchronizer.synchronize_sync(tcp_server, obj_name, method_name, state, synchronizer_name)
+        return_value = synchronizer.synchronize_sync(tcp_server, obj_name, method_name, state, synchronizer_name, self)
         
         logger.debug("tcp_server called synchronizer.synchronize_sync")
         
