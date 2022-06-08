@@ -345,9 +345,9 @@ class Synchronizer(object):
         """ with this unrolled """
         returnValue, restart = synchronizer_method(self._synchronizer, **kwargs) 
          
-        logger.debug("synchronize:  restart " + str(restart))
-        logger.debug("synchronize:  returnValue " + str(returnValue))
-        logger.debug("synchronize:  successfully called synchronize method. ")
+        logger.debug("synchronize: method_name: " + str(method_name) + ", restart " + str(restart))
+        logger.debug("synchronize: method_name: " + str(method_name) + ", returnValue " + str(returnValue))
+        logger.debug("synchronize: method_name: " + str(method_name) + ", successfully called synchronize method. ")
 
         # if the method returns restart True, restart the serverless function and pass it its saved state.
         if restart:
