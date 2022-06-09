@@ -251,7 +251,7 @@ class Synchronizer(object):
         """
         Asynchronous synchronization.
         """
-        logger.debug("synchronizer: synchronize_async called")
+        logger.debug("synchronizer: synchronize_async called. method_name = '" + method_name + "'")
 
         # is_select = isSelect(type_arg)
         is_select = isSelect(self._synchronizer_class_name)
@@ -332,7 +332,7 @@ class Synchronizer(object):
         logger.debug("synchronize: method_name: " + str(method_name) + ", ID is: " + state.function_instance_ID)
         
         try:
-            synchronizer_method = getattr(self._synchClass,method_name)
+            synchronizer_method = getattr(self._synchClass, method_name)
         except Exception as ex:
             logger.error("synchronize: Failed to find method '%s' on object '%s'." % (method_name, self._synchClass))
             raise ex

@@ -91,7 +91,7 @@ def invoke_lambda(
             logger.debug("Connecting to TCP Server at %s." % str(TCP_SERVER_IP))
             websocket.connect(TCP_SERVER_IP)
             logger.debug("Successfully connected to TCP Server at %s. Calling executor.create() now...")
-            if not isSelect(function_name):
+            if False: # not isSelect(function_name):
                 create(websocket, "create", "BoundedBuffer", "result", state)
                 create(websocket, "create", "CountingSemaphore_Monitor", "finish", state)
                 create(websocket, "create", "BoundedBuffer", "final_result", state)

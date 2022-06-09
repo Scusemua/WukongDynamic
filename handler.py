@@ -9,7 +9,7 @@ import uuid
 import cloudpickle
 from wukongdnc.wukong.invoker import invoke_lambda
 from wukongdnc.server.state import State 
-from wukongdnc.server.api import synchronize_async, synchronize_sync
+from wukongdnc.server.api import synchronize_sync, synchronize_sync
 from wukongdnc.constants import REDIS_IP_PRIVATE, TCP_SERVER_IP
 
 logger = logging.getLogger(__name__)
@@ -41,7 +41,7 @@ class FuncA(object):
                 if self.state.pc == 0:
                     self.state.pc = 1 # if restart PC will be 1
                     # this is essentially: value = result.withdraw()
-                    self.state = synchronize_sync(websocket, "synchronize_sync", "result", "withdraw", self.state)
+                    self.state = synchronize_sync(websocket, "synchronize_sync", "result", "try_withdraw", self.state)
                     if self.state.blocking:
                         self.state.blocking = False
                         return
@@ -61,8 +61,8 @@ class FuncA(object):
                         self.state.keyword_arguments = {}
                     self.state.function_name = "ComposerServerlessSync"
                     self.state.keyword_arguments["value"] = value
-                    synchronize_async(websocket, "synchronize_async", "result", "deposit", self.state)  
-                    synchronize_async(websocket, "synchronize_async", "finish", "V", self.state)
+                    synchronize_sync(websocket, "synchronize_sync", "result", "try_deposit", self.state)  
+                    synchronize_sync(websocket, "synchronize_sync", "finish", "try_V", self.state)
                     break
                 else: 
                     logger.error("Invalid PC value: " + str(self.state.pc))
@@ -84,7 +84,7 @@ class FuncB(object): # same as FuncA with different ID
                 if self.state.pc == 0:
                     self.state.pc = 1 # if restart PC will be 1
                     # this is essentially: value = result.withdraw()
-                    self.state = synchronize_sync(websocket, "synchronize_sync", "result", "withdraw", self.state)
+                    self.state = synchronize_sync(websocket, "synchronize_sync", "result", "try_withdraw", self.state)
                     if self.state.blocking:
                         self.state.blocking = False
                         return
@@ -107,10 +107,10 @@ class FuncB(object): # same as FuncA with different ID
                     self.state.keyword_arguments["value"] = value
                     logger.debug("FuncB (pc=1) calling result.deposit() now.")
                     self.state.blocking = False
-                    synchronize_async(websocket, "synchronize_async", "result", "deposit", self.state)  
+                    synchronize_sync(websocket, "synchronize_sync", "result", "try_deposit", self.state)  
                     logger.debug("FuncB (pc=1) calling finish.V() now.")
                     self.state.blocking = False
-                    synchronize_async(websocket, "synchronize_async", "finish", "V", self.state)
+                    synchronize_sync(websocket, "synchronize_sync", "finish", "try_V", self.state)
                     break
                 else: 
                     logger.error("Invalid PC value: " + str(self.state.pc))
@@ -137,7 +137,7 @@ class Composer(object):
                     self.state.keyword_arguments = {}
                 self.state.keyword_arguments["value"] = self.state.starting_input
                 self.state.return_value = None
-                synchronize_async(websocket, "synchronize_async", "result", "deposit", self.state)
+                synchronize_sync(websocket, "synchronize_sync", "result", "try_deposit", self.state)
             
             print("Composer -- self.state.list_of_functions = " + str(self.state.list_of_functions))
             print("Composer -- INITIALLY self.state.i = " + str(self.state.i))
@@ -154,7 +154,7 @@ class Composer(object):
   
                 self.state.i += 1
                 print("Composer -- POST-INCREMENT -- self.state.i = " + str(self.state.i))
-                self.state = synchronize_sync(websocket, "synchronize_sync", "finish", "P", self.state)
+                self.state = synchronize_sync(websocket, "synchronize_sync", "finish", "try_P", self.state)
                 if self.state.blocking:
                     # all of the if self.state.blocking have two statements: set blocking to False and return
                     self.state.blocking = False
@@ -174,7 +174,7 @@ class Composer(object):
                 # self.state.return_value is the return value of the synchronous_synch.
                 self.state.return_value = None
                 self.state.pc = 1
-                self.state = synchronize_sync(websocket,"synchronize_sync", "result", "withdraw", self.state)
+                self.state = synchronize_sync(websocket,"synchronize_sync", "result", "try_withdraw", self.state)
                 print("Composer -- withdrawn state: " + str(self.state))                
                 if self.state.blocking:
                     self.state.blocking = False
@@ -188,7 +188,7 @@ class Composer(object):
             self.state.return_value = None
             self.state.keyword_arguments["value"] = value
             self.state.return_value = None
-            synchronize_async(websocket, "synchronize_async", "final_result", "deposit", self.state)
+            synchronize_sync(websocket, "synchronize_sync", "final_result", "try_deposit", self.state)
 
 def lambda_handler(event, context):
     start_time = time.time()

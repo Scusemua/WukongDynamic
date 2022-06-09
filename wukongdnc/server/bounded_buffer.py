@@ -32,7 +32,7 @@ class BoundedBuffer(MonitorSU):
         self._out=0
 		
 	# synchronous try version of deposit, restart when block
-    def deposit_for_try(self, **kwargs):
+    def deposit(self, **kwargs):
         super().enter_monitor(method_name="deposit")
         logger.debug(" deposit() entered monitor, len(self._notFull) ="+str(len(self._notFull))+",self._capacity="+str(self._capacity))
         logger.debug(" deposit() entered monitor, len(self._notEmpty) ="+str(len(self._notEmpty))+",self._capacity="+str(self._capacity))
@@ -53,7 +53,7 @@ class BoundedBuffer(MonitorSU):
         return 0, restart
 
 	# synchronous no-try version of deposit, blocking w/ no restart
-    def deposit(self, **kwargs):
+    def deposit_no_try(self, **kwargs):
         super().enter_monitor(method_name="deposit")
         logger.debug(" deposit() entered monitor, len(self._notFull) ="+str(len(self._notFull))+",self._capacity="+str(self._capacity))
         logger.debug(" deposit() entered monitor, len(self._notEmpty) ="+str(len(self._notEmpty))+",self._capacity="+str(self._capacity))
@@ -106,6 +106,12 @@ class BoundedBuffer(MonitorSU):
         #threading.current_thread()._returnValue=value
         self._notFull.signal_c_and_exit_monitor()
         return value, restart
+
+    def try_deposit(self, **kwargs):
+        super().enter_monitor(method_name = "try_deposit")
+        block = super().is_blocking(self._fullSlots==self._capacity)
+        super().exit_monitor()
+        return block
 
     def try_withdraw(self, **kwargs):
         super().enter_monitor(method_name = "try_withdraw")
