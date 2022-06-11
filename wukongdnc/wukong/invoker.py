@@ -34,6 +34,7 @@ logger.propagate = False
 
 lambda_client = boto3.client('lambda', region_name = "us-east-1")
 
+# TODO: Make this `invoke_lambda_sync` and add a separate `invoke_lambda_async`.
 def invoke_lambda(
     function_name: str = "ComposerServerlessSync", # Can change to ComposerServerlessSync_Select to create different types of synchronization 
     payload: dict = None,
