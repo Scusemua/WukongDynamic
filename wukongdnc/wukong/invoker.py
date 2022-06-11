@@ -117,15 +117,17 @@ def invoke_lambda(
             create(websocket, "create", "CountingSemaphore_Monitor_Select", "finish", state)
             create(websocket, "create", "BoundedBuffer_Select", "final_result", state)
             
+    # We must convert `_payload` to JSON before passing it to the lambda_client.invoke() function.
     payload_json = json.dumps(_payload)
     
     logger.debug("Finished creating AWS Lambda invocation payload in %f ms." % ((time.time() - s) * 1000.0))
     
     logger.info("Invoking AWS Lambda function '" + function_name + "' with payload containing " + str(len(payload)) + " key(s).")
     s = time.time()
-    #lambda_invocation_payload_serialized = cloudpickle.dumps()
+    
+    # This is the call to the AWS API that actually invokes the Lambda.
     status_code = lambda_client.invoke(
         FunctionName = function_name, 
         InvocationType = 'Event',
-        Payload = payload_json) #json.dumps(_payload))
+        Payload = payload_json) 
     logger.info("Invoked AWS Lambda function '%s' in %f ms. Status: %s." % (function_name, (time.time() - s) * 1000.0, str(status_code)))
