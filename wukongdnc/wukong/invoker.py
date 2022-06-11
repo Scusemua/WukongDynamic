@@ -68,6 +68,19 @@ def invoke_lambda(
     logger.debug("Creating AWS Lambda invocation payload for function '%s'" % function_name)
     logger.debug("Provided payload: " + str(payload))
     s = time.time()
+
+    # The `_payload` variable is the one I actually pass to AWS Lambda.
+    # The `payload` variable is passed by the user to `invoke_lambda`.
+    # For each key-value pair in `payload`, we create a corresponding 
+    # entry in `_payload`. The key is the same. But we first pickle
+    # the value via cloudpickle.dumps(). This returns a `bytes` object.
+    # AWS Lambda uses JSON encoding to pass invocation payloads to Lambda
+    # functions, and JSON doesn't support bytes. So, we convert the bytes 
+    # to a string by encoding the bytes in base64 via base64.b64encode().
+    # There is ONE more step, however. base64.b64encode() returns a UTF-8-encoded
+    # string, which is also bytes. So, we call .decode('utf-8') to convert it
+    # to a regular python string, which is stored as the value in `_payload[k]`, where
+    # k is the key.
     _payload = {}
     for k,v in payload.items():
         _payload[k] = base64.b64encode(cloudpickle.dumps(v)).decode('utf-8')
