@@ -334,6 +334,18 @@ class Synchronizer(object):
         
         try:
             synchronizer_method = getattr(self._synchClass, method_name)
+
+            # One line example. You can combine:
+            # synchronizer_method = getattr(self._synchClass, method_name)
+            # returnValue, restart = synchronizer_method(self._synchronizer, **kwargs) 
+            #
+            # into a single line as follows: 
+            # 
+            # returnValue, restart = getattr(self._synchClass, method_name)(self._synchronizer, **kwargs) 
+            #
+            # getattr returns a function object. You invoke the function object's __call__ method with the standard
+            # function-calling syntax from every programming language (args). In your case, you're passing 
+            # self._synchronizer and **kwargs as arguments.
         except Exception as ex:
             logger.error("synchronize: Failed to find method '%s' on object '%s'." % (method_name, self._synchClass))
             raise ex

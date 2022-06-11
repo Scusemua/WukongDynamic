@@ -141,7 +141,6 @@ class TCPHandler(socketserver.StreamRequestHandler):
         
         return return_value
 
-
     def synchronize_async(self, message = None):
         """
         Asynchronous synchronization.
