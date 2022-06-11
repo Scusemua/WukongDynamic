@@ -47,5 +47,7 @@ def isSelect(name):
     Check if the given name (which is the name of a method) ends with "_Select". 
     """
     if name.endswith("_Select"):
+        logger.info("isSelect(" + name + "): true")
         return True
+    logger.info("isSelect(" + name + "): false")
     return False

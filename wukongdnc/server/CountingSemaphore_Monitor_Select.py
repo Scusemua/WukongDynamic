@@ -4,6 +4,7 @@ import threading
 import _thread
 import time
 from .selector import Selector
+from .selectableEntry import selectableEntry
 
 import logging 
 logger = logging.getLogger(__name__)
@@ -37,12 +38,14 @@ class CountingSemaphore_Monitor_Select(Selector):
         self.add_entry(self._P)     # alternative 1
         self.add_entry(self._V)     # alternative 2
         
-        self.set_restart_on_block(False)
+        #self.set_restart_on_block(False)
+        self.set_restart_on_block(True)
         self.set_restart_on_noblock(False)
-        self.set_restart_on_unblock(False)
+        self.set_restart_on_unblock(True)
         
     def set_guards(self):
-        self._P.guard(self._permits < 1)
+        #self._P.guard(self._permits < 1)
+        self._P.guard(self._permits > 0)
         self._V.guard (True)
 
     def try_P(self, **kwargs):
@@ -58,6 +61,10 @@ class CountingSemaphore_Monitor_Select(Selector):
 
     def V(self, **kwargs):
         self._permits += 1
+    
+    def try_V(self, **kwargs):
+        block = self.is_blocking(False)
+        return block         
         
 #local tests
 def taskP(b : CountingSemaphore_Monitor_Select):

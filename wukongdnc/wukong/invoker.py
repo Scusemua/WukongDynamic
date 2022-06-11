@@ -1,3 +1,7 @@
+# In composer_driver.py, invoke is:
+#   invoke_lambda(payload = payload, is_first_invocation = True, n = 1, initial_permits = 0, function_name = "ComposerServerlessSync")
+# use either "ComposerServerlessSync" or "Composer_select"
+
 # This class has methods for invoking AWS Lambda functions.
 
 import boto3 
@@ -12,6 +16,8 @@ import socket
 from ..constants import TCP_SERVER_IP
 from ..server.state import State
 from ..server.api import create
+
+from ..server.util import isSelect 
 
 import logging 
 logger = logging.getLogger(__name__)
@@ -29,7 +35,7 @@ logger.propagate = False
 lambda_client = boto3.client('lambda', region_name = "us-east-1")
 
 def invoke_lambda(
-    function_name: str = "ComposerServerlessSync",
+    function_name: str = "ComposerServerlessSync", # Can change to ComposerServerlessSync_Select to create different types of synchronization 
     payload: dict = None,
     is_first_invocation: bool = False,
     n : int = 1,
@@ -59,12 +65,14 @@ def invoke_lambda(
             This is only used when `is_first_invocation` is set to True.
     """
     logger.debug("Creating AWS Lambda invocation payload for function '%s'" % function_name)
+    logger.debug("Provided payload: " + str(payload))
     s = time.time()
     _payload = {}
     for k,v in payload.items():
         _payload[k] = base64.b64encode(cloudpickle.dumps(v)).decode('utf-8')
     
     if is_first_invocation:
+        print("is_first_invocation is TRUE in `invoke_lambda()`")
         state = State(
             function_name = function_name,
             function_instance_ID = str(uuid.uuid4()),
@@ -85,10 +93,15 @@ def invoke_lambda(
             logger.debug("Connecting to TCP Server at %s." % str(TCP_SERVER_IP))
             websocket.connect(TCP_SERVER_IP)
             logger.debug("Successfully connected to TCP Server at %s. Calling executor.create() now...")
-            create(websocket, "create", "BoundedBuffer", "result", state)
-            create(websocket, "create", "CountingSemaphore_Monitor", "finish", state)
-            create(websocket, "create", "BoundedBuffer", "final_result", state)
-    
+            # if False: # not isSelect(function_name):
+            #     create(websocket, "create", "BoundedBuffer", "result", state)
+            #     create(websocket, "create", "CountingSemaphore_Monitor", "finish", state)
+            #     create(websocket, "create", "BoundedBuffer", "final_result", state)
+            # else:
+            create(websocket, "create", "BoundedBuffer_Select", "result", state)
+            create(websocket, "create", "CountingSemaphore_Monitor_Select", "finish", state)
+            create(websocket, "create", "BoundedBuffer_Select", "final_result", state)
+            
     payload_json = json.dumps(_payload)
     
     logger.debug("Finished creating AWS Lambda invocation payload in %f ms." % ((time.time() - s) * 1000.0))

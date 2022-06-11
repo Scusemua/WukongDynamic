@@ -59,7 +59,7 @@ def run():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
         print("Connecting to " + str(TCP_SERVER_IP))
         websocket.connect(TCP_SERVER_IP)
-        default_state = State("ComposerServerlessSync", function_instance_ID = str(uuid.uuid4()))
+        default_state = State("ComposerServerlessSync", function_instance_ID = str(uuid.uuid4()), list_of_functions = ["FuncA", "FuncB"])
         state = synchronize_sync(websocket, "synchronize_sync", "final_result", "withdraw", default_state)
         answer = state.return_value 
 

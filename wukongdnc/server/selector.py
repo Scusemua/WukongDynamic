@@ -72,7 +72,12 @@ class Selector():
         called_entry = self._entry_map[entry_name]
         called_entry.add_arrival(entry_name, synchronizer, synchronizer_method, result_buffer, **kwargs)
             
-        self.set_guards();
+        entry0 = self.get_entry(0)
+        logger.debug("after add: entry " + entry0.get_entry_name() + ": " + str(entry0.get_num_arrivals()))
+        entry1 = self.get_entry(1)
+        logger.debug("after add: entry " + entry1.get_entry_name() + ": " + str(entry1.get_num_arrivals()))
+
+        self.set_guards()
             
         # number of arrivals is at least 1 since we just added one. Is this the only arrival?
         if called_entry.get_num_arrivals() > 1 or called_entry.testGuard() == False:
@@ -98,7 +103,7 @@ class Selector():
             
             # return what? Part of delay alternative processing?
             logger.debug("execute returning: called_entry.get_num_arrivals(): " + str(called_entry.get_num_arrivals())
-            + " called_entry.testGuard() == False: " + str(called_entry.testGuard() == False))
+                + " called_entry.testGuard() == False: " + str(called_entry.testGuard() == False))
             return 0
 			
         else:
@@ -109,8 +114,12 @@ class Selector():
             result_buffer.deposit(return_tuple)
             called_entry.remove_first_arrival()
             logger.debug("execute called " + entry_name + ". returning")
-          
+        
         logger.debug("execute: choosing")
+        entry0 = self.get_entry(0)
+        logger.debug("choosing: entry " + entry0.get_entry_name() + ": " + str(entry0.get_num_arrivals()))
+        entry1 = self.get_entry(1)
+        logger.debug("choosing: entry " + entry1.get_entry_name() + ": " + str(entry1.get_num_arrivals()))        
         while(True):
            # just did entry_name so update guards
            self.set_guards();

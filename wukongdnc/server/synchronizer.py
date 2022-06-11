@@ -38,7 +38,7 @@ aws_region = 'us-east-1'
 class Synchronizer(object):
 
     # valid synchronization objects
-    synchronizers = {"barrier", "Barrier", "semaphore", "Semaphore", "bounded_buffer", "BoundedBuffer", "fanin", "FanIn", "CountingSemaphore_Monitor", "BoundedBuffer_Select"}
+    synchronizers = {"barrier", "Barrier", "semaphore", "Semaphore", "bounded_buffer", "BoundedBuffer", "fanin", "FanIn", "CountingSemaphore_Monitor", "CountingSemaphore_Monitor_Select", "BoundedBuffer_Select"}
 
     # Mapping from class to the file in which it is defined.
     file_map = {
@@ -46,7 +46,8 @@ class Synchronizer(object):
         "BoundedBuffer": "bounded_buffer",
         "FanIn": "fanin",
         "CountingSemaphore_Monitor": "CountingSemaphore_Monitor",
-        "BoundedBuffer_Select": "bounded_buffer_select"
+        "BoundedBuffer_Select": "bounded_buffer_select",
+        "CountingSemaphore_Monitor_Select": "CountingSemaphore_Monitor_Select"
     }
     
     def __init__(self):
@@ -418,7 +419,7 @@ class Synchronizer(object):
             state.blocking = False            
             logger.info("Restarting Lambda function %s." % state.function_name)
             payload = {"state": state}
-            invoke_lambda(payload = payload, is_first_invocation = False, function_name = state.function_name)
+            invoke_lambda(payload = payload, is_first_invocation = False, function_name = "ComposerServerlessSync")
         
         return returnValue
 

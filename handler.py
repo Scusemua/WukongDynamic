@@ -201,6 +201,8 @@ def lambda_handler(event, context):
 
     if "list_of_functions" in event:
         state.list_of_functions = cloudpickle.loads(base64.b64decode(event["list_of_functions"])) # event["list_of_functions"]
+    else:
+        logger.debug("No entry for 'list_of_functions' in invocation payload. Payload: " + str(event) + ", state: " + str(state))
     
     if "starting_input" in event:
         state.starting_input = cloudpickle.loads(base64.b64decode(event["starting_input"])) # event["starting_input"]

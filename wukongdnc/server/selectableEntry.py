@@ -43,6 +43,9 @@ class selectableEntry:
 		#return (((Long)arrivals.firstElement()).longValue());
         return self._arrivals[0]
         
+    def get_entry_name(self):
+        return self._entry_name
+
     def get_num_arrivals(self):
         return len(self._arrivals)
 

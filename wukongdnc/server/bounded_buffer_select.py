@@ -32,9 +32,10 @@ class BoundedBuffer_Select(Selector):
         self.add_entry(self._deposit)     # alternative 1
         self.add_entry(self._withdraw)    # alternative 2
         
-        self.set_restart_on_block(False)
+        #self.set_restart_on_block(False)
+        self.set_restart_on_block(True)
         self.set_restart_on_noblock(False)
-        self.set_restart_on_unblock(False)
+        self.set_restart_on_unblock(True)
 
     def try_deposit(self,**kwargs):
         # Does try_op protocol for acquiring/releasing lock
