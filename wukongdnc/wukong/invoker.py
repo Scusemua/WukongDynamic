@@ -85,6 +85,7 @@ def invoke_lambda(
     for k,v in payload.items():
         _payload[k] = base64.b64encode(cloudpickle.dumps(v)).decode('utf-8')
     
+    # If this is the first invocation, we create a new State object.
     if is_first_invocation:
         print("is_first_invocation is TRUE in `invoke_lambda()`")
         state = State(
