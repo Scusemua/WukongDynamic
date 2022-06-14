@@ -1,6 +1,7 @@
 #from monitor_su import MonitorSU
 from .selectivewait import selectiveWait
-from .counting_semaphore import CountingSemaphore
+# from .counting_semaphore import CountingSemaphore
+from multiprocessing import RLock
 
 import logging 
 logger = logging.getLogger(__name__)
@@ -25,17 +26,17 @@ class Selector():
         self._restart_on_noblock = None
         if selector_name == None:
             selector_name == ""
-        self._mutex = CountingSemaphore(initial_permits = 1, semaphore_name = "Selector-" + str(selector_name) + "-mutex-CountingSemaphore") 
+        self._mutex = RLock() #self._mutex = CountingSemaphore(initial_permits = 1, semaphore_name = "Selector-" + str(selector_name) + "-mutex-CountingSemaphore") 
 
     def is_blocking(self,condition):
         # called by try_foo()
         return condition
         
     def lock(self):
-        self._mutex.P()
+        self._mutex.acquire() # self._mutex.P()
         
     def unlock(self):
-        self._mutex.V()
+        self._mutex.release() # self._mutex.V()
 
     def add_entry(self,entry):
         self._select.add_entry(entry) 
