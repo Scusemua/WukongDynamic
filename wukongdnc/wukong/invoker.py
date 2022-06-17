@@ -34,6 +34,69 @@ logger.propagate = False
 
 lambda_client = boto3.client('lambda', region_name = "us-east-1")
 
+# Here is my sketch of invoke_lambda_synchronous for invoker.py:
+
+# Used to invoke a Lambda "storage function" to store and execute synchronization objects.
+# Lambda function names are "LambdaBoundedBuffer" and "LambdaSemapore"
+def invoke_lambda_synchronously(function_name: str = None, payload: dict = None):
+    """
+    Invoke an AWS Lambda function synchronously
+
+    Arguments:
+    ----------
+        function_name (str):
+            Name of the AWS Lambda function to invoke.
+        
+        payload (dict):
+            Dictionary to be serialized and sent via the AWS Lambda invocation payload.
+            This is typically expected to be a message from a Client.
+        
+    """
+    logger.debug("Creating AWS Lambda invocation payload for function '%s'" % function_name)
+    logger.debug("Provided payload: " + str(payload))
+    s = time.time()
+
+    # The `_payload` variable is the one I actually pass to AWS Lambda.
+    # The `payload` variable is passed by the user to `invoke_lambda`.
+    # For each key-value pair in `payload`, we create a corresponding 
+    # entry in `_payload`. The key is the same. But we first pickle
+    # the value via cloudpickle.dumps(). This returns a `bytes` object.
+    # AWS Lambda uses JSON encoding to pass invocation payloads to Lambda
+    # functions, and JSON doesn't support bytes. So, we convert the bytes 
+    # to a string by encoding the bytes in base64 via base64.b64encode().
+    # There is ONE more step, however. base64.b64encode() returns a UTF-8-encoded
+    # string, which is also bytes. So, we call .decode('utf-8') to convert it
+    # to a regular python string, which is stored as the value in `_payload[k]`, where
+    # k is the key.
+    _payload = {}
+    for k,v in payload.items():
+        _payload[k] = base64.b64encode(cloudpickle.dumps(v)).decode('utf-8')
+        
+    # We must convert `_payload` to JSON before passing it to the lambda_client.invoke() function.
+    payload_json = json.dumps(_payload)
+    
+    logger.debug("Finished creating AWS Lambda invocation payload in %f ms." % ((time.time() - s) * 1000.0))
+    
+    logger.info("Invoking AWS Lambda function synchronously'" + function_name + "' with payload containing " + str(len(payload)) + " key(s).")
+    s = time.time()
+    
+    """ Current asynch invocation in invoker.py:
+    # This is the call to the AWS API that actually invokes the Lambda.
+    status_code = lambda_client.invoke(
+        FunctionName = function_name, 
+        InvocationType = 'Event',
+        Payload = payload_json)
+    """        
+    
+    #Perhaps something like the following. I don't now how to access the retruned value.   
+    return_value_payload = lambda_client.invoke(FunctionName=function_name, InvocationType='RequestResponse', Payload=payload_json)
+    return_value = return_value_payload['Payload'].read()
+    
+    # Added substituted "return_value" for "status_code" here
+    logger.info("Invoked AWS Lambda function '%s' in %f ms. return_value: %s." % (function_name, (time.time() - s) * 1000.0, str(return_value)))
+
+    return return_value
+
 # TODO: Make this `invoke_lambda_sync` and add a separate `invoke_lambda_async`.
 def invoke_lambda(
     function_name: str = "ComposerServerlessSync", # Can change to ComposerServerlessSync_Select to create different types of synchronization 
