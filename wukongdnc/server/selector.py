@@ -47,11 +47,140 @@ class Selector():
         entry = self._select._entry_list[i]
         return entry
 
+    def get_num_entries(self):
+        return self._select.get_number_entries()
+
     # Could call [try-op; addArrival (no lock since it's private); execute]?
     # Q: Don't want to pass anything to choose(), or why not since user is not messing with
     # execute/choose in parent class.
              
-    def execute(self, entry_name, synchronizer, synchronizer_method, result_buffer, **kwargs):
+    #def execute(self, entry_name, synchronizer, synchronizer_method, result_buffer, **kwargs):
+    def execute(self, entry_name, synchronizer, synchronizer_method, result_buffer, state, send_result, **kwargs):
+        # state will be None if running the non-Lambda version, as state need not be saved in Arrival. 
+            
+        # guards could be using count (of arrivals) atribute so add arrrival first
+
+        # Save arrival information that we need to process the entry call. The
+        # sent value is in kwargs, the entry_name may be useful for debugging.
+        # the result_buffer is used to return the return_value of the entry,
+        # but we need the result_buffer after entry is processed. We also 
+        # need to call the entry which means we need the synchronizer and
+        # synchronizer_method. We have these things here, but in the while-loop
+        # below we'll need to get the saved values from the arrival information,
+        # i.e., if we choose() entry 1, get first arrival of this entry and 
+        # grab alll the info we need. Don't remove entry until we are done with it.
+
+        # Arrivals are timestamped with a global static incremented integer
+        called_entry = self._entry_map[entry_name]
+        called_entry.add_arrival(entry_name, synchronizer, synchronizer_method, result_buffer, **kwargs)
+        
+        #Debug
+        num_entries = self.get_num_entries()
+        for i in range(0, (num_entries-1)):
+            entry = self.get_entry(i)
+            logger.debug("choosing: entry " + i + " is " + entry.get_entry_name() + ", number of arrivals: " + str(entry.get_num_arrivals()))
+
+        #entry0 = self.get_entry(0)
+        #logger.debug("after add: entry " + entry0.get_entry_name() + ": " + str(entry0.get_num_arrivals()))
+        #entry1 = self.get_entry(1)
+        #logger.debug("after add: entry " + entry1.get_entry_name() + ": " + str(entry1.get_num_arrivals()))
+
+        self.set_guards()
+            
+        # number of arrivals is at least 1 since we just added one. Is this now the only arrival?
+        # If so: then check its guard to see if it should be accepted. Note: all other entrie must have
+        # false guards otherwise they would have been selected on a previous execution of execute().
+        # If not: then its guard cannot be true otherwise it would have been selected on a previous execution 
+        # of execute(). This is asserted.
+        if called_entry.get_num_arrivals() > 1 or called_entry.testGuard() == False:
+            # assert: 
+            if (called_entry.get_num_arrivals() > 1) and called_entry.testGuard():
+                logger.debug("execute: Internal ERROR: called_entry.testGuard() is True but this is not the first arrival."
+                + " A previous arrival thus had a True guard and should have been selected earlier.")
+            
+            # Q return what? return 0 for now. Eventually the value may be part of delay alternative processing, which is TBD.
+            logger.debug("execute returning: called_entry.get_num_arrivals(): " + str(called_entry.get_num_arrivals())
+                + " called_entry.testGuard() == False: " + str(called_entry.testGuard() == False))
+            return 0
+            
+        else:
+            return_value = self.domethodcall(entry_name, synchronizer, synchronizer_method, **kwargs)
+            # restart is only true if this is an asynch call after which the caller always terminates, blocking call or not.
+            restart = self.get_restart_on_noblock()
+            return_tuple = (return_value, restart)
+            # Always send a return value. This value is ignored for asynch calls and try-ops that block
+            # as asynch calls that have get_restart_on_noblock() = False assume the return value is meaningless
+            # and that the asynch call will not be blocked (e.g., semaphore.V()), while asynch calls that have 
+            # get_restart_on_noblock() = True, and which may or may not block, and may or may not get a meaningful
+            # return value (e.g., V has no menaingful return vallue and does not block; buffer.withdraw may block 
+            # and does have a meaningful return value), will get the return value when they are restarted.
+            #
+            # the tcp_serveer thread that called synchronizeSelect() is blocked on result_buffer.withdraw; thus, a deposit
+            # must always be done. As mentioned above, this return vallue may be ignored, but we need to unblock the 
+            # tcp_server thread in \ny case.
+            result_buffer.deposit(return_tuple)
+            called_entry.remove_first_arrival()
+            logger.debug("execute called " + entry_name + ". returning")
+        
+        logger.debug("execute: choosing")
+        
+        # Debug
+        num_entries = self.get_num_entries()
+        for i in range(0, (num_entries-1)):
+            entry = self.get_entry(i)
+            logger.debug("choosing: entry " + i + " is " + entry.get_entry_name() + ", number of arrivals: " + str(entry.get_num_arrivals()))
+
+        #entry0 = self.get_entry(0)
+        #logger.debug("choosing: entry " + entry0.get_entry_name() + ": " + str(entry0.get_num_arrivals()))
+        #entry1 = self.get_entry(1)
+        #logger.debug("choosing: entry " + entry1.get_entry_name() + ": " + str(entry1.get_num_arrivals()))      
+       
+        while(True):
+            # just added an Arrival for an entry so update guards (which may consider the number of arrivals for an entry)
+            self.set_guards()
+            choice = self._select.choose()
+            # entries start at number 0; the value 0 indicates something else (see below)
+            if choice >= 1 and choice <= self._select.get_number_entries():
+                logger.debug("Execute: choice is " + str(choice) + " so use list entry " + str(choice-1))
+                called_entry = self.get_entry(choice-1)
+                # entry information was stored in the Arrival for the selected entry
+                arrival = called_entry.getOldestArrival()
+                # make entry call
+                synchronizer = arrival._synchronizer;
+                synchronizer_method = arrival._synchronizer_method
+                kwargs = arrival._kwargs
+                result_buffer = arrival._result_buffer
+                return_value = self.domethodcall(entry_name, synchronizer, synchronizer_method, **kwargs)
+                logger.debug("Execute: called chosen method " + arrival._entry_name)
+                # if restart is True, the a restart of client Lambda will be done when execute() returns to synchronizeSelect
+                restart = self.get_restart_on_unblock()
+                # return value is deposited into a bounded buffer for withdraw by the tcp_server thread that
+                # is handling the client lambda's call. This value will be ignored for all asynch calls and for
+                # try-ops that blocked. If a restart is done, the client will receive the return value upon restarting.
+                return_tuple = (return_value, restart)
+                result_buffer.deposit(return_tuple)
+                # remove entry if done with it (result_buffer, etc)
+                called_entry.remove_first_arrival()
+                break  # while-loop
+            elif choice > self._select.get_number_entries()+1:
+                # error
+                print("Illegal choice in selective wait: " + choice + " number of entries" + self._select.get_number_entries())
+                break # while-loop
+            elif choice == -1: # else or delay processing TBD
+            # ToDo: on timeout we are just calling "delay" method? so no choice of delay/else
+                # if hasElse:                   
+                    # else part
+                # if hasDelay:
+                    # delay part
+                # no one called so no return to caller but may set timeout for delay
+                break # while-loop
+            elif choice == 0:    # currently we assume at least one True guard
+                #something like throw select_exception(...)
+                break # while-loop
+        logger.debug("execute: completed normally: return 0")
+        return 0
+
+    def execute_old(self, entry_name, synchronizer, synchronizer_method, result_buffer, **kwargs):
         # many multitthreaded server threads can be calling so get mutual exclusion 
         # Using try_op/no-try-op protocol for acquiring/releasing lock
 
@@ -106,7 +235,7 @@ class Selector():
             logger.debug("execute returning: called_entry.get_num_arrivals(): " + str(called_entry.get_num_arrivals())
                 + " called_entry.testGuard() == False: " + str(called_entry.testGuard() == False))
             return 0
-			
+            
         else:
             return_value = self.domethodcall(entry_name, synchronizer, synchronizer_method, **kwargs)
             # ToDo: remove the arrival or whatever choice() does 

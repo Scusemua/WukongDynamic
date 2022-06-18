@@ -189,7 +189,8 @@ class Synchronizer(object):
                     # create result_buffer, create execute() reference, call execute(), result_buffer.withdraw(), 
                     # with executes's result and restart do restart, (by definition of synchronous try-op that Blocked)
                     # and ignore return value here.
-                    return_value = self.synchronizeSelect(base_name, state, **state.keyword_arguments)
+                    wait_for_return = not try_return_value
+                    return_value = self.synchronizeSelect(base_name, state, wait_for_return, **state.keyword_arguments)
                 else:
                     return_value = self.synchronize(base_name, state, **state.keyword_arguments)
                     
@@ -205,7 +206,8 @@ class Synchronizer(object):
                     # create result_buffer, create execute() reference, call execute(), result_buffer.withdraw(), 
                     # return execute's result, with no restart (by definition of synchronous try-op that did not Block)
                     # and send result to client below.
-                    return_value = self.synchronizeSelect(base_name, state, **state.keyword_arguments)
+                    wait_for_return = not try_return_value
+                    return_value = self.synchronizeSelect(base_name, state, wait_for_return, **state.keyword_arguments)
                 else:
                     logger.debug("synchronizer: synchronize_sync: Calling synchronize()")
                     return_value = self.synchronize(base_name, state, **state.keyword_arguments)
@@ -231,7 +233,8 @@ class Synchronizer(object):
                 # create result_buffer, create execute() reference, call execute(), result_buffer.withdraw(), 
                 # return excute's result, with no restart (by definition of synchronous non-try-op)
                 # (Send result to client below.)
-                return_value = self.synchronizeSelect(base_name, state, **state.keyword_arguments)
+                wait_for_return = True
+                self.synchronizeSelect(base_name, state, wait_for_return, **state.keyword_arguments)
             else:
                 return_value = self.synchronize(base_name, state, **state.keyword_arguments)
                 
@@ -262,7 +265,8 @@ class Synchronizer(object):
             self.lock_synchronizer()
      
         if is_select:
-            sync_ret_val = self.synchronizeSelect(method_name, state, **state.keyword_arguments)
+            wait_for_return = False
+            self.synchronizeSelect(method_name, state, wait_for_return, **state.keyword_arguments)
         else:
             sync_ret_val = self.synchronize(method_name, state, **state.keyword_arguments)   
 
@@ -376,7 +380,7 @@ class Synchronizer(object):
     # This version calls self.doMethodCallSelectExecute() which is used for synchronization objects that use selectiveWaits.
     # Note, we still pass the synchronizer and method which are needed inside execute().
     # Called by synchronize_synch in tcp_server
-    def synchronizeSelect(self, method_name, state, **kwargs):
+    def synchronizeSelect(self, method_name: str, state, wait_for_result: bool, **kwargs):
         logger.debug("synchronizeSelect: method_name: " + str(method_name) + ", ID is: " + state.function_instance_ID)
         
         try:
@@ -407,7 +411,8 @@ class Synchronizer(object):
         # Easiest is to pass args, also x = num(1) print (type(x).__name__) Also def func(self): print(__class__) but
         # execute might be in superclass MonitorSelect of BoundedBufferSelect  
         
-        returnValueIgnored = execute(self._synchronizer, method_name, self._synchronizer, synchronizer_method, result_buffer, **kwargs)
+        #returnValueIgnored = execute(self._synchronizer, method_name, self._synchronizer, synchronizer_method, result_buffer, **kwargs)
+        returnValueIgnored = execute(self._synchronizer, method_name, self._synchronizer, synchronizer_method, result_buffer, None, wait_for_result, **kwargs)
         
         # unlock the synchrnizer before bocking on withdaw(). Method withdraw() may not unblock until after a call to
         # a synchronize_synch or synchronize_asynch but these methods try to lock the synchronizer so we need to 
