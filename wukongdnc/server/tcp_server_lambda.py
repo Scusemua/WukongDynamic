@@ -95,7 +95,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
         # pass thru client message to Lambda
         payload = {"json_message": json_message}
-        return_value = invoke_lambda_synchronously(payload = payload, function_name = function_name)
+        # return_value = invoke_lambda_synchronously(payload = payload, function_name = function_name)
+        return_value = invoke_lambda_synchronously(function_name = function_name, payload = payload)
         # where: lambda_client.invoke(FunctionName=function_name, InvocationType='RequestResponse', Payload=payload_json)
         
         # The return value from the Lambda function will typically be sent by tcp_server to a Lambda client of tcp_server
