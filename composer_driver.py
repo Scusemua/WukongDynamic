@@ -60,7 +60,12 @@ def run():
         print("Connecting to " + str(TCP_SERVER_IP))
         websocket.connect(TCP_SERVER_IP)
         default_state = State("ComposerServerlessSync", function_instance_ID = str(uuid.uuid4()), list_of_functions = ["FuncA", "FuncB"])
-        state = synchronize_sync(websocket, "synchronize_sync", "final_result", "withdraw", default_state)
+
+        logger.debug("Sleeping for 5sec before calling synchronize_sync()")
+        time.sleep(5.0)
+        logger.debug("Finished sleeping. Calling synchronize_sync() now...")
+
+        state = synchronize_sync(websocket, "synchronize_sync", "final_result", "try_withdraw", default_state)
         answer = state.return_value 
 
         end_time = time.time()

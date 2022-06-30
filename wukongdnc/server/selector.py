@@ -60,15 +60,11 @@ class Selector():
             
         # guards could be using count (of arrivals) atribute so add arrrival first
 
-        # Save arrival information that we need to process the entry call. The
-        # sent value is in kwargs, the entry_name may be useful for debugging.
-        # the result_buffer is used to return the return_value of the entry,
-        # but we need the result_buffer after entry is processed. We also 
-        # need to call the entry which means we need the synchronizer and
-        # synchronizer_method. We have these things here, but in the while-loop
-        # below we'll need to get the saved values from the arrival information,
-        # i.e., if we choose() entry 1, get first arrival of this entry and 
-        # grab alll the info we need. Don't remove entry until we are done with it.
+        # The tcp_server thread that called synchronizeSelect() is blocked on result_buffer.withdraw; thus, a deposit
+        # must always be done. As mentioned above, this return value may be ignored, but we need to unblock the
+        # tcp_server thread in any case. In the case where an asynch call w/ terminate blocks, which is handled below,
+        # the calling lambda will terminate, get_restart_on_unblock() will be true, so we will restart and we will
+        # deposit the result, which will be ignored.
 
         # Arrivals are timestamped with a global static incremented integer
         called_entry = self._entry_map[entry_name]
@@ -78,7 +74,7 @@ class Selector():
         num_entries = self.get_num_entries()
         for i in range(0, (num_entries-1)):
             entry = self.get_entry(i)
-            logger.debug("choosing: entry " + i + " is " + entry.get_entry_name() + ", number of arrivals: " + str(entry.get_num_arrivals()))
+            logger.debug("choosing: entry " + str(i) + " is " + str(entry.get_entry_name()) + ", number of arrivals: " + str(entry.get_num_arrivals()))
 
         #entry0 = self.get_entry(0)
         #logger.debug("after add: entry " + entry0.get_entry_name() + ": " + str(entry0.get_num_arrivals()))
@@ -108,16 +104,11 @@ class Selector():
             # restart is only true if this is an asynch call after which the caller always terminates, blocking call or not.
             restart = self.get_restart_on_noblock()
             return_tuple = (return_value, restart)
-            # Always send a return value. This value is ignored for asynch calls and try-ops that block
-            # as asynch calls that have get_restart_on_noblock() = False assume the return value is meaningless
-            # and that the asynch call will not be blocked (e.g., semaphore.V()), while asynch calls that have 
-            # get_restart_on_noblock() = True, and which may or may not block, and may or may not get a meaningful
-            # return value (e.g., V has no menaingful return vallue and does not block; buffer.withdraw may block 
-            # and does have a meaningful return value), will get the return value when they are restarted.
-            #
-            # the tcp_serveer thread that called synchronizeSelect() is blocked on result_buffer.withdraw; thus, a deposit
-            # must always be done. As mentioned above, this return vallue may be ignored, but we need to unblock the 
-            # tcp_server thread in \ny case.
+            # return value is deposited into a bounded buffer for withdraw by the tcp_server thread that
+            # is handling the client lambda's call. This value will be ignored for all asynch calls and for
+            # try-ops that blocked. If a restart is done, which is the case for a try-op that blocked and an async call
+            # that always terminates, the client will receive the return value upon restarting. In synchronizeSelect,
+            # we do result = result_buffer.withdraw() followed by if restart: ... state.return_value = returnValue ...
             result_buffer.deposit(return_tuple)
             called_entry.remove_first_arrival()
             logger.debug("execute called " + entry_name + ". returning")
@@ -128,7 +119,7 @@ class Selector():
         num_entries = self.get_num_entries()
         for i in range(0, (num_entries-1)):
             entry = self.get_entry(i)
-            logger.debug("choosing: entry " + i + " is " + entry.get_entry_name() + ", number of arrivals: " + str(entry.get_num_arrivals()))
+            logger.debug("choosing: entry " + str(i) + " is " + entry.get_entry_name() + ", number of arrivals: " + str(entry.get_num_arrivals()))
 
         #entry0 = self.get_entry(0)
         #logger.debug("choosing: entry " + entry0.get_entry_name() + ": " + str(entry0.get_num_arrivals()))
@@ -146,7 +137,7 @@ class Selector():
                 # entry information was stored in the Arrival for the selected entry
                 arrival = called_entry.getOldestArrival()
                 # make entry call
-                synchronizer = arrival._synchronizer;
+                synchronizer = arrival._synchronizer
                 synchronizer_method = arrival._synchronizer_method
                 kwargs = arrival._kwargs
                 result_buffer = arrival._result_buffer
