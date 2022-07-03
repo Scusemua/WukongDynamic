@@ -7,7 +7,7 @@ class selectableEntry:
 # these methods are not locked since only one thread at a time can access them
 
 	# global (static) timestamp for arrivals: 0, 1, 2, 3, ...
-    _global_timestamp = 0;
+    _global_timestamp = 0
     _lockForTimeStamp = threading.RLock()
 
     def __init__(self, entry_name):

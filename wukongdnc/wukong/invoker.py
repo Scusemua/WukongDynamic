@@ -150,9 +150,9 @@ def invoke_lambda(
     
     # If this is the first invocation, we create a new State object.
     if is_first_invocation:
-        print("is_first_invocation is TRUE in `invoke_lambda()`")
+        logger.debug("is_first_invocation is TRUE in `invoke_lambda()`")
         state = State(
-            function_name = function_name,
+            function_name = function_name,  # this is name of Lambda function
             function_instance_ID = str(uuid.uuid4()),
             restart = False,
             pc = 0,

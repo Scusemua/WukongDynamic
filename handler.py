@@ -9,7 +9,7 @@ import uuid
 import cloudpickle
 from wukongdnc.wukong.invoker import invoke_lambda
 from wukongdnc.server.state import State 
-from wukongdnc.server.api import synchronize_sync, synchronize_sync
+from wukongdnc.server.api import synchronize_sync, synchronize_sync, synchronize_async_terminate
 from wukongdnc.constants import REDIS_IP_PRIVATE, TCP_SERVER_IP
 
 logger = logging.getLogger(__name__)
@@ -27,6 +27,8 @@ if root.handlers:
     for handler in root.handlers:
         handler.setFormatter(formatter)
 
+###### Composer invokes Lambda "ComposerServerlessSync" with state.function_name = "FuncA" - don't change it.
+# ###### Server will also restart "ComposerServerlessSync" and will not change state.function_name. 
 class FuncA(object):
     def __init__(self, state = None):
         self.state = state
@@ -59,7 +61,7 @@ class FuncA(object):
                     logger.debug("FuncA (pc=1) value post-increment: " + str(value))
                     if self.state.keyword_arguments is None:
                         self.state.keyword_arguments = {}
-                    self.state.function_name = "ComposerServerlessSync"
+                    #self.state.function_name = "ComposerServerlessSync"
                     self.state.keyword_arguments["value"] = value
                     synchronize_sync(websocket, "synchronize_sync", "result", "try_deposit", self.state)  
                     synchronize_sync(websocket, "synchronize_sync", "finish", "try_V", self.state)
@@ -70,6 +72,8 @@ class FuncA(object):
             # TODO: Deposit answer in another bounded buffer.
             logger.debug(str(self.state.ID) + " is done. Result: " + str(self.state.return_value))
 
+###### Composer invokes Lambda "ComposerServerlessSync" with state.function_name = "FuncA" - don't change it. 
+###### Server will also restart "ComposerServerlessSync" and will not change state.function_name.
 class FuncB(object): # same as FuncA with different ID
     def __init__(self, state = None):
         self.state = state
@@ -103,7 +107,7 @@ class FuncB(object): # same as FuncA with different ID
                     logger.debug("FuncB (pc=1) value post-increment: " + str(value))
                     if self.state.keyword_arguments is None:
                         self.state.keyword_arguments = {}
-                    self.state.function_name = "ComposerServerlessSync"
+                    #self.state.function_name = "ComposerServerlessSync"
                     self.state.keyword_arguments["value"] = value
                     logger.debug("FuncB (pc=1) calling result.deposit() now.")
                     self.state.blocking = False
@@ -207,6 +211,9 @@ def lambda_handler(event, context):
     if "starting_input" in event:
         state.starting_input = cloudpickle.loads(base64.b64decode(event["starting_input"])) # event["starting_input"]
 
+    # Using state.function_name to select method to run. When "ComposerServerlessSync" invoke Composer else 
+    # "FuncA"/"FuncB" invoke FuncA/FuncB. When Compose invokes, e.g., FuncA(), it does so by invoking Lambda
+    # named "ComposerServerlessSync" with sttw.function_name = "FuncA".
     target = state.function_name 
     logger.debug("Starting *****%s*****." % target)
     # target = event['target']

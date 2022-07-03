@@ -38,9 +38,9 @@ class CountingSemaphore_Monitor_Select(Selector):
         self.add_entry(self._P)     # alternative 1
         self.add_entry(self._V)     # alternative 2
         
-        self.set_restart_on_block(False)
-        #self.set_restart_on_block(True)
-        self.set_restart_on_noblock(False)
+        #self.set_restart_on_block(False)
+        self.set_restart_on_block(True)
+        self.set_restart_on_noblock(True) # self.set_restart_on_noblock(False) 
         self.set_restart_on_unblock(True)
         
     def set_guards(self):

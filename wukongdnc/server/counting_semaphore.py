@@ -1,6 +1,5 @@
 from imp import release_lock
 from multiprocessing import Semaphore, RLock
-import queue
 
 import logging 
 logger = logging.getLogger(__name__)
@@ -13,7 +12,7 @@ ch.setFormatter(formatter)
 
 logger.addHandler(ch)
 
-#Used in implementation of monitor class
+#Used in implementation of monitor class.
 class CountingSemaphore(object):
     def __init__(self, initial_permits = 0, id = -1, semaphore_name = "DEFAULT_NAME"):
         self.waiting_p = []

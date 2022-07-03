@@ -15,7 +15,7 @@ class State(object):
         blocking : bool = False,
         i : int = int(0),
         ID: str = None,
-        list_of_functions = None,
+        list_of_functions = ["FuncA", "FuncB"],
         starting_input = int(0),
         initialized = False
     ):
@@ -30,9 +30,12 @@ class State(object):
         self.ID = ID
         self.pc = pc
         self.i = i
-        self.list_of_functions = list_of_functions 
+        self.list_of_functions = list_of_functions or ["FuncA", "FuncB"]
         self.starting_input = starting_input
         self.initialized = initialized
 
+    def __repr__(self):
+        return self.__str__()
+
     def __str__(self):
-        return "State(FuncName='%s', FuncInstID=%s, Restart=%s, PC=%s, ReturnVal=%s, Blocking=%s, KeywordArgs=%s, i=%s)" % (self.function_name, self.function_instance_ID, str(self.restart), str(self.pc), str(self.return_value), str(self.blocking), str(self.keyword_arguments), str(self.i))
+        return "State(FuncName='%s', FuncInstID=%s, Restart=%s, PC=%s, ReturnVal=%s, Blocking=%s, KeywordArgs=%s, i=%s, ListOfFuncs=%s)" % (self.function_name, self.function_instance_ID, str(self.restart), str(self.pc), str(self.return_value), str(self.blocking), str(self.keyword_arguments), str(self.i), str(self.list_of_functions))

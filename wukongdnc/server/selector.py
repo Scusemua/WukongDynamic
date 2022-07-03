@@ -21,9 +21,9 @@ class Selector():
         self._entry_map = {}  # map entry_name to entry object
         # initialized by user calling appropriate set_restart_on_block/unblock/noblock method
         # If SQS then always restart
-        self._restart_on_block = None 
-        self._restart_on_unblock = None
-        self._restart_on_noblock = None
+        self._restart_on_block = True #None 
+        self._restart_on_unblock = True
+        self._restart_on_noblock = True #None
         if selector_name == None:
             selector_name == ""
         self._mutex = RLock() #self._mutex = CountingSemaphore(initial_permits = 1, semaphore_name = "Selector-" + str(selector_name) + "-mutex-CountingSemaphore") 
@@ -74,7 +74,7 @@ class Selector():
         num_entries = self.get_num_entries()
         for i in range(0, (num_entries-1)):
             entry = self.get_entry(i)
-            logger.debug("choosing: entry " + str(i) + " is " + str(entry.get_entry_name()) + ", number of arrivals: " + str(entry.get_num_arrivals()))
+            logger.debug("execute: call to: entry " + str(i) + " is " + str(entry.get_entry_name()) + ", number of arrivals: " + str(entry.get_num_arrivals()))
 
         #entry0 = self.get_entry(0)
         #logger.debug("after add: entry " + entry0.get_entry_name() + ": " + str(entry0.get_num_arrivals()))
@@ -102,7 +102,8 @@ class Selector():
         else:
             return_value = self.domethodcall(entry_name, synchronizer, synchronizer_method, **kwargs)
             # restart is only true if this is an asynch call after which the caller always terminates, blocking call or not.
-            restart = self.get_restart_on_noblock()
+            restart = self._restart_on_noblock
+            logger.debug("Value of '_restart_on_noblock' in execute() [line 106]: " + str(self._restart_on_noblock))
             return_tuple = (return_value, restart)
             # return value is deposited into a bounded buffer for withdraw by the tcp_server thread that
             # is handling the client lambda's call. This value will be ignored for all asynch calls and for
@@ -111,7 +112,7 @@ class Selector():
             # we do result = result_buffer.withdraw() followed by if restart: ... state.return_value = returnValue ...
             result_buffer.deposit(return_tuple)
             called_entry.remove_first_arrival()
-            logger.debug("execute called " + entry_name + ". returning")
+            logger.debug("execute called " + entry_name)
         
         logger.debug("execute: choosing")
         
@@ -230,7 +231,8 @@ class Selector():
         else:
             return_value = self.domethodcall(entry_name, synchronizer, synchronizer_method, **kwargs)
             # ToDo: remove the arrival or whatever choice() does 
-            restart = self.get_restart_on_noblock()
+            restart = self._restart_on_noblock
+            logger.debug("Value of '_restart_on_noblock' in execute() [line 235]: " + str(self._restart_on_noblock))
             return_tuple = (return_value, restart)
             result_buffer.deposit(return_tuple)
             called_entry.remove_first_arrival()
@@ -243,19 +245,19 @@ class Selector():
         logger.debug("choosing: entry " + entry1.get_entry_name() + ": " + str(entry1.get_num_arrivals()))        
         while(True):
            # just did entry_name so update guards
-           self.set_guards();
+           self.set_guards()
            choice = self._select.choose()
            if choice >= 1 and choice <= self._select.get_number_entries():
                 logger.debug("Execute: choice is " + str(choice) + " so use list entry " + str(choice-1))
                 called_entry = self.get_entry(choice-1)
                 arrival = called_entry.getOldestArrival()
-                synchronizer = arrival._synchronizer;
+                synchronizer = arrival._synchronizer
                 synchronizer_method = arrival._synchronizer_method
                 kwargs = arrival._kwargs
                 result_buffer = arrival._result_buffer
                 return_value = self.domethodcall(entry_name, synchronizer, synchronizer_method, **kwargs)
                 logger.debug("Execute: called chosen method " + arrival._entry_name)
-                restart = self.get_restart_on_unblock()
+                restart = self._restart_on_unblock
                 return_tuple = (return_value, restart)
                 result_buffer.deposit(return_tuple)
                 # remove entry if done with it (result_buffer, etc)
@@ -305,6 +307,7 @@ class Selector():
         return self._restart_on_unblock
             
     def set_restart_on_noblock(self,T_or_F):
+        logger.debug("Setting value of '_restart_on_noblock' to " + str(T_or_F))
         self._restart_on_noblock = T_or_F
    
     def get_restart_on_noblock(self):
