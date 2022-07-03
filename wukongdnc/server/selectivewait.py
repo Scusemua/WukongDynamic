@@ -1,5 +1,16 @@
 import sys
 
+import logging 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
+
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+ch.setFormatter(formatter)
+
+logger.addHandler(ch)
+
 class selectiveWait:
 
     def __init__(self):
@@ -12,8 +23,8 @@ class selectiveWait:
     class delayAlternative:
 
         def __init__(self,msecDelay):
-            self._msecDelay = msecDelay;
-            self._guard = True;
+            self._msecDelay = msecDelay
+            self._guard = True
 
         def getMsecDelay(self):
             return self._msecDelay
@@ -22,7 +33,7 @@ class selectiveWait:
             self._guard = g
 
         def testGuard(self):
-            return self._guard;
+            return self._guard
 
         def accept(self):
             pass
@@ -43,7 +54,7 @@ class selectiveWait:
 
     def add_delay(self,delay):
         self._delay = delay
-        self._hasDelay = true
+        self._hasDelay = True
        
         if self.hasDelay:
             print("Warning: A selectiveWait cannot have more than one delay alternative.")
@@ -54,8 +65,8 @@ class selectiveWait:
             print("Warning: Only one of the else/delay alternatives can be selected.")
     
     def add_else(self,elsealt):
-        this._else_ = elsealt
-        self._hasElse = true
+        self._else_ = elsealt
+        self._hasElse = True
        
         if self.hasElse:
             print("Warning: A selectiveWait cannot have more than one else alternative.")
@@ -66,16 +77,16 @@ class selectiveWait:
             print("Warning: Only one of the else/delay alternatives can be selected.")
 
     def remove_else(self):
-        self._hasElse = false;
-        self._else = null;
+        self._hasElse = False
+        self._else = None
 
     def remove_delay(self):
-        self._hasDelay = false;
-        self._delay = null;
+        self._hasDelay = False
+        self._delay = None
 
     def clear_all_open(self):
         for entry in self._entry_list:
-            entry.clear_open();
+            entry.clear_open()
 
     def tryOpenAllWithTrueGuard(self):
         for entry in self._entry_list:
@@ -88,7 +99,7 @@ class selectiveWait:
         j = 1
         AtLeastOneTrueGuard = False
         for entry in self._entry_list:
-       	    AtLeastOneTrueGuard = AtLeastOneTrueGuard or entry.testGuard();
+            AtLeastOneTrueGuard = AtLeastOneTrueGuard or entry.testGuard()
             if entry.testReady() and entry.testGuard():
                 oldestArrival = entry.getOldestArrival()
                 if oldestArrival._timestamp < oldest_timestamp:
@@ -98,7 +109,7 @@ class selectiveWait:
         if i == 0 and not AtLeastOneTrueGuard:
             # you could have open guard(s) but none ready so AtLeastOneTrueGuard and i = 0
             # you could have no open guard(s) in which case !AtLeastOneTrueGuard and i = 0
-            return -1 # all guards are false
+            return -1 # all guards are False
         else:
             # return i if it has open guard and an arrival and it is next in FCFS order
             return i 
@@ -109,34 +120,34 @@ class selectiveWait:
         if (ready_index<=0): # not ready
             if self._hasElse:
                 return len(self._entry_list)+1
-        self.tryOpenAllWithTrueGuard()  # set the guards earlier, no set open if guard is true; same for delay's guard
+        self.tryOpenAllWithTrueGuard()  # set the guards earlier, no set open if guard is True same for delay's guard
         if self._hasDelay and self._delay.testGuard():
             XXX = True
             #t.start()?
             # no waits, though have timeouts on  sem.acquire()
-        	# # long startTime = System.currentTimeMillis()
-   	     	# waitTime = delay.getMsecDelay()
-        	# wait(waitTime) # this was synched
+         # # long startTime = System.currentTimeMillis()
+          # waitTime = delay.getMsecDelay()
+         # wait(waitTime) # this was synched
             # ready_index=testAll()
-        	# if ready_index <= 0 # must be timeout here, since no unrelated notifications.
+         # if ready_index <= 0 # must be timeout here, since no unrelated notifications.
             #     ready_index = len(entry_list)+1
                 
         else: # no else or open delay and readyIndex <=0
-            if ready_index == -1:          # all accept alternatives have false guards and the delay
-                return -1                       	# alternative is closed or no else so throw
+            if ready_index == -1:          # all accept alternatives have False guards and the delay
+                return -1                        # alternative is closed or no else so throw
                 # No waiting now
-		# print("selective wait starts to wait().") # waiting for an arrival (no delay/else and some guards for entries true
+		# print("selective wait starts to wait().") # waiting for an arrival (no delay/else and some guards for entries True
 		# wait()
 		# print("selective wait awakens.")
 		# ready_index=testAll() ## see what happene
-        self.clear_all_open()  # set all open to false; will set guards next time and set open if true guard
+        self.clear_all_open()  # set all open to False will set guards next time and set open if True guard
         return ready_index
   
   
 # def callDelay():
 #   race here: could set flag when start timer and see if timer or other thread gets into execute first.
 #   if other thread then don't do timer. count number of execute since startinggc timer. If timer thread
-#   finds count>00 then no timeout; reset flag and count. Also cancel timer at start of execute.
+#   finds count>00 then no timeout reset flag and count. Also cancel timer at start of execute.
 #   super().enter_monitor("callDelay")
 #   call "delay"
 #   super().exit_monitor()

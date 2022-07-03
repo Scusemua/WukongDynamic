@@ -21,9 +21,9 @@ class Selector():
         self._entry_map = {}  # map entry_name to entry object
         # initialized by user calling appropriate set_restart_on_block/unblock/noblock method
         # If SQS then always restart
-        self._restart_on_block = True #None 
-        self._restart_on_unblock = True
-        self._restart_on_noblock = True #None
+        # self._restart_on_block = True #None 
+        # self._restart_on_unblock = True
+        # self._restart_on_noblock = True #None
         if selector_name == None:
             selector_name == ""
         self._mutex = RLock() #self._mutex = CountingSemaphore(initial_permits = 1, semaphore_name = "Selector-" + str(selector_name) + "-mutex-CountingSemaphore") 
@@ -102,7 +102,7 @@ class Selector():
         else:
             return_value = self.domethodcall(entry_name, synchronizer, synchronizer_method, **kwargs)
             # restart is only true if this is an asynch call after which the caller always terminates, blocking call or not.
-            restart = self._restart_on_noblock
+            restart = called_entry.get_restart_on_noblock() # restart = self._restart_on_noblock
             logger.debug("Value of '_restart_on_noblock' in execute() [line 106]: " + str(self._restart_on_noblock))
             return_tuple = (return_value, restart)
             # return value is deposited into a bounded buffer for withdraw by the tcp_server thread that
@@ -145,7 +145,7 @@ class Selector():
                 return_value = self.domethodcall(entry_name, synchronizer, synchronizer_method, **kwargs)
                 logger.debug("Execute: called chosen method " + arrival._entry_name)
                 # if restart is True, the a restart of client Lambda will be done when execute() returns to synchronizeSelect
-                restart = self.get_restart_on_unblock()
+                restart = called_entry.get_restart_on_unblock() # restart = self.get_restart_on_unblock()
                 # return value is deposited into a bounded buffer for withdraw by the tcp_server thread that
                 # is handling the client lambda's call. This value will be ignored for all asynch calls and for
                 # try-ops that blocked. If a restart is done, the client will receive the return value upon restarting.
@@ -294,21 +294,21 @@ class Selector():
             raise ValueError("Error calling method " + entry_name + " in domethodcall of MonitorSelect")  
         return return_value
        
-    def set_restart_on_block(self,T_or_F):
-        self._restart_on_block = T_or_F
+    # def set_restart_on_block(self,T_or_F):
+    #     self._restart_on_block = T_or_F
        
-    def get_restart_on_block(self):
-        return self._restart_on_block
+    # def get_restart_on_block(self):
+    #     return self._restart_on_block
             
-    def set_restart_on_unblock(self,T_or_F):
-        self._restart_on_unblock = T_or_F
+    # def set_restart_on_unblock(self,T_or_F):
+    #     self._restart_on_unblock = T_or_F
        
-    def get_restart_on_unblock(self):
-        return self._restart_on_unblock
+    # def get_restart_on_unblock(self):
+    #     return self._restart_on_unblock
             
-    def set_restart_on_noblock(self,T_or_F):
-        logger.debug("Setting value of '_restart_on_noblock' to " + str(T_or_F))
-        self._restart_on_noblock = T_or_F
+    # def set_restart_on_noblock(self,T_or_F):
+    #     logger.debug("Setting value of '_restart_on_noblock' to " + str(T_or_F))
+    #     self._restart_on_noblock = T_or_F
    
-    def get_restart_on_noblock(self):
-        return self._restart_on_noblock     
+    # def get_restart_on_noblock(self):
+    #     return self._restart_on_noblock     

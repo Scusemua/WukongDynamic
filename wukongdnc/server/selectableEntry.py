@@ -3,6 +3,17 @@ from collections import deque
 from .arrival import Arrival
 import threading
 
+import logging 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
+
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+ch.setFormatter(formatter)
+
+logger.addHandler(ch)
+
 class selectableEntry:
 # these methods are not locked since only one thread at a time can access them
 
@@ -16,6 +27,9 @@ class selectableEntry:
         self._ready = 0
         self._guard = True
         self._arrivals = deque()
+        self._restart_on_block = True #None 
+        self._restart_on_unblock = True
+        self._restart_on_noblock = True #None        
 		# Ops on deque:
         # _arrivals.popleft()
         #  front = _arrivals[0]
@@ -69,3 +83,22 @@ class selectableEntry:
     
     def testGuard(self):
         return self._guard
+
+    def set_restart_on_block(self,T_or_F):
+        self._restart_on_block = T_or_F
+       
+    def get_restart_on_block(self):
+        return self._restart_on_block
+            
+    def set_restart_on_unblock(self,T_or_F):
+        self._restart_on_unblock = T_or_F
+       
+    def get_restart_on_unblock(self):
+        return self._restart_on_unblock
+            
+    def set_restart_on_noblock(self,T_or_F):
+        logger.debug("Setting value of '_restart_on_noblock' to " + str(T_or_F))
+        self._restart_on_noblock = T_or_F
+   
+    def get_restart_on_noblock(self):
+        return self._restart_on_noblock     

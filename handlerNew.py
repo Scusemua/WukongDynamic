@@ -185,7 +185,7 @@ class Composer(object):
                             self.state.keyword_arguments = {}
                     self.state.pc = 1 # if get restarted PC will be 1
                     # this is essentially: value = result.deposit(value)
-                    self.state.function_name = "ComposerServerlessSync"
+                    # self.state.function_name = "ComposerServerlessSync"
                     self.state.keyword_arguments = {}
                     self.state.return_value = None
                     self.state.keyword_arguments["value"] = self.state.starting_input
@@ -213,7 +213,7 @@ class Composer(object):
                         invoke_lambda(payload = payload)
 
                         self.state.i += 1
-                        self.state.function_name = "ComposerServerlessSync"
+                        # self.state.function_name = "ComposerServerlessSync"
                         self.state.keyword_arguments = {}
                         self.state.return_value = None
                         print("Composer -- POST-INCREMENT i -- self.state.i = " + str(self.state.i))
@@ -230,7 +230,7 @@ class Composer(object):
                     ##if self.state.pc == 1:    # Note: we exit loop with state.pc == 1, and i = lenggth of function list
                     print("Composer (After while-i loop with pc=1)")
                     self.state.pc = 2
-                    self.state.function_name = "ComposerServerlessSync"
+                    # self.state.function_name = "ComposerServerlessSync"
                     self.state.keyword_arguments = {}
                     self.state.return_value = None
                     #self.state = synchronize_sync(websocket,"synchronize_sync", "result", "try_withdraw", self.state)
@@ -250,7 +250,7 @@ class Composer(object):
                     value = self.state.return_value
                     self.state.return_value = None
                     logger.debug("Composer -- final state.return_value at end = " + str(value))
-                    self.state.function_name = "ComposerServerlessSync"
+                    # self.state.function_name = "ComposerServerlessSync"
                     self.state.keyword_arguments = {}
                     self.state.return_value = None
                     self.state.keyword_arguments["value"] = value
