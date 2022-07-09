@@ -38,7 +38,7 @@ class Synchronizer(object):
 
     # valid synchronization objects
     synchronizers = {"barrier", "Barrier", "semaphore", "Semaphore", "bounded_buffer", "BoundedBuffer", "fanin", 
-	"FanIn", "CountingSemaphore_Monitor", "CountingSemaphore_Monitor_Select", "BoundedBuffer_Select"}
+    "FanIn", "CountingSemaphore_Monitor", "CountingSemaphore_Monitor_Select", "BoundedBuffer_Select"}
 
     # Mapping from class to the file in which it is defined.
     file_map = {
@@ -106,7 +106,7 @@ class Synchronizer(object):
         
         src_file = Synchronizer.file_map[synchronizer_class_name]
         #logger.debug("Creating synchronizer with name '%s' by calling locate('%s.%s')"  
-		#% (self._synchronizer_name, src_file, synchronizer_class_name))
+        #% (self._synchronizer_name, src_file, synchronizer_class_name))
         logger.debug("create: Creating synchronizer with name '%s'" % self._synchronizer_name)
 
         # Get the class object for a synchronizer object, e.g.. Barrier
@@ -132,7 +132,7 @@ class Synchronizer(object):
         logger.debug("create: Calling _synchronizer init")
         self._synchronizer.init(**kwargs)  #2
         # where Barrier init is: init(**kwargs): if len(kwargs) not == 1
-	    # logger.debug(“Error: Barrier init has too many argos”) self._n = kwargs[‘n’]
+        # logger.debug(“Error: Barrier init has too many argos”) self._n = kwargs[‘n’]
 
         logger.debug ("create: Called _synchronizer init")
         return 0
@@ -147,7 +147,7 @@ class Synchronizer(object):
         is_select = isSelect(self._synchronizer_class_name) # is_select = isSelect(type_arg)
     
         logger.debug("synchronizer: synchronize_sync: method_name: " + method_name + ", base_name: " + base_name 
-			+ ", isTryMethod: " + str(isTryMethod))
+            + ", isTryMethod: " + str(isTryMethod))
         logger.debug(" self._synchronizer_class_name: : " + self._synchronizer_class_name + ", is_select: " + str(is_select))
         # logger.debug("synchronizer: synchronize_sync: type_arg: " + type_arg + ", is_select: " + str(is_select))
         #logger.debug("base_name: " + base_name)
@@ -171,16 +171,15 @@ class Synchronizer(object):
                 
             # check if synchronize op will block, if yes tell client to terminate then call op 
             ##if is_select:
-                try_return_value = self.trySynchronizeSelect(method_name, state, **state.keyword_arguments)
+            try_return_value = self.trySynchronizeSelect(method_name, state, **state.keyword_arguments)
             ##else:
                 ##try_return_value = self.trySynchronize(method_name, state, **state.keyword_arguments)
 
-            logger.debug("synchronizer_lambda: synchronize_sync: Value of try_return_value (Block) for fan-in ID %s: %s" 
-				% (obj_name, str(try_return_value)))
+            logger.debug("synchronizer_lambda: synchronize_sync: Value of try_return_value (Block) for fan-in ID %s: %s" % (obj_name, str(try_return_value)))
             
             if try_return_value == True:   # synchronize op will execute wait so tell client to terminate
-				# Do this here instead of in execute(); execute() will find that the guard is false and do 
-				# nothing (after saving caller information (including state) in an Arrival for the called entry
+                # Do this here instead of in execute(); execute() will find that the guard is false and do 
+                # nothing (after saving caller information (including state) in an Arrival for the called entry
                 state.blocking = True 
                 state.return_value = None 
                 
@@ -198,25 +197,25 @@ class Synchronizer(object):
                     ##return_value = self.synchronizeSelect(base_name, state, **state.keyword_arguments)
                 ##else:
                     ##return_value = self.synchronize(base_name, state, **state.keyword_arguments)
-					
-				logger.debug("synchronizer_lambda: synchronize_sync: Calling synchronizeLambda(): block = true")
-				wait_for_result = False
-				return_value_ignored = self.synchronizeLambda(base_name, state, wait_for_result, **state.keyword_arguments)
+                    
+                logger.debug("synchronizer_lambda: synchronize_sync: Calling synchronizeLambda(): block = true")
+                wait_for_result = False
+                return_value_ignored = self.synchronizeLambda(base_name, state, wait_for_result, **state.keyword_arguments)
                     
                 # release lock here and in the else so we can release the lock in the lse befor the tcp send to the client
                 ##if is_select:
                     ##self.unlock_synchronizer()
 
                 logger.debug("synchronizer_lambda: synchronize_sync:  Value of return_value (not to be sent) for fan-in ID %s and method %s: %s" 
-					% (obj_name, method_name, str(return_value)))
-				# sending back the above state.blocking = True; state.return_value = None. The call to synchronizeLambda will end up
-				# blocking (since the trySynchronizeSelect returned blocking true). This means at some later point the calling Lambda
-				# will be restarted and given its saved state. Tbis means the return value in return_value_ignored = self.synchronizeLambda
-				# is not a state, it is not a meaningful value and is ignored.
-				return(state)
-			
+                    % (obj_name, method_name, str(state.return_value)))
+                # sending back the above state.blocking = True; state.return_value = None. The call to synchronizeLambda will end up
+                # blocking (since the trySynchronizeSelect returned blocking true). This means at some later point the calling Lambda
+                # will be restarted and given its saved state. Tbis means the return value in return_value_ignored = self.synchronizeLambda
+                # is not a state, it is not a meaningful value and is ignored.
+                return(state)
+            
             else:
-			
+            
                 # execute synchronize op and send result to client
                 ##if is_select:
                     ##logger.debug("Calling synchronizeSelect()")
@@ -228,14 +227,14 @@ class Synchronizer(object):
                     ##logger.debug("synchronizer: synchronize_sync: Calling synchronize()")
                     ##return_value = self.synchronize(base_name, state, **state.keyword_arguments)
 
-				# This call to self.synchronizeLambda does not block since it is a non-blockingg try-op,
-				# state.return_value is set in execuute()
-				logger.debug("synchronizer_lambda: synchronize_sync: Calling synchronizeLambda(): block = false")
-				wait_for_result = True
-				return_value = self.synchronizeLambda(base_name, state, wait_for_result, **state.keyword_arguments)
+                # This call to self.synchronizeLambda does not block since it is a non-blockingg try-op,
+                # state.return_value is set in execuute()
+                logger.debug("synchronizer_lambda: synchronize_sync: Calling synchronizeLambda(): block = false")
+                wait_for_result = True
+                return_value = self.synchronizeLambda(base_name, state, wait_for_result, **state.keyword_arguments)
 
-				# Do this here, not in execute(). In execute(), if we do restart on noblock then set these state values
-				# there but if no restart we will return the return_value to the lambda client.
+                # Do this here, not in execute(). In execute(), if we do restart on noblock then set these state values
+                # there but if no restart we will return the return_value to the lambda client.
                 state.return_value = return_value
                 state.blocking = False 
                 
@@ -244,22 +243,21 @@ class Synchronizer(object):
                     ##self.unlock_synchronizer()
                     
                 ##logger.debug("synchronizer: synchronize_sync: %s sending %s back for method %s." 
-				#% (synchronizer_name, str(return_value), method_name))
-				logger.debug("synchronizer_lambda: synchronize_sync:  %s returning %s for method %s." 
-					% (synchronizer_name, str(state.return_value), method_name))
+                #% (synchronizer_name, str(return_value), method_name))
+                logger.debug("synchronizer_lambda: synchronize_sync:  %s returning %s for method %s." % (synchronizer_name, str(state.return_value), method_name))
 
                 # send tuple to be consistent, and False to be consistent, i.e., get result if False.
                 # This is after releasng the lock
                 ##tcp_handler.send_serialized_object(cloudpickle.dumps(state))  
 
-				# this is a non-blocking try-op so lambda client is waiting for result in state.return_value
-				return state
+                # this is a non-blocking try-op so lambda client is waiting for result in state.return_value
+                return state
         else:  
-			
-			logger.debug("****************")
-			logger.debug("Error: all synchronous operations must be try-ops")
-			logger.debug("****************")
-			
+            
+            logger.debug("****************")
+            logger.debug("Error: all synchronous operations must be try-ops")
+            logger.debug("****************")
+            
             # not a "try" so do synchronization op and send result to waiting client
 
             ##if is_select:
@@ -273,12 +271,12 @@ class Synchronizer(object):
             ##else:
                 ##return_value = self.synchronize(base_name, state, **state.keyword_arguments)
                  
-			logger.debug("synchronizer_lambda: synchronize_sync: Calling synchronizeLambda(): not a try-op: block = false")
-			wait_for_result = True
-			return_value = self.synchronizeLambda(base_name, state, wait_for_result, **state.keyword_arguments)
-				
-			state.return_value = return_value
-			state.blocking = False 
+            logger.debug("synchronizer_lambda: synchronize_sync: Calling synchronizeLambda(): not a try-op: block = false")
+            wait_for_result = True
+            return_value = self.synchronizeLambda(base_name, state, wait_for_result, **state.keyword_arguments)
+                
+            state.return_value = return_value
+            state.blocking = False 
             
             # release lock before TCP sending the result to client.
             ##if is_select:
@@ -287,9 +285,8 @@ class Synchronizer(object):
             ##logger.debug("synchronizer: synchronize_sync: %s sending %s back for method %s." % (synchronizer_name, str(return_value), method_name))  
             
             ##tcp_handler.send_serialized_object(cloudpickle.dumps(state))
-			
-			logger.debug("synchronizer_lambda: synchronize_sync:  %s returning %s for method %s." 
-				% (synchronizer_name, str(return_value), method_name))
+            
+            logger.debug("synchronizer_lambda: synchronize_sync:  %s returning %s for method %s."  % (synchronizer_name, str(return_value), method_name))
 
             return state
         
@@ -311,21 +308,21 @@ class Synchronizer(object):
         ##else:
         ##    sync_ret_val = self.synchronize(method_name, state, **state.keyword_arguments)  
 
-		# In previous versions, async return value is assumed to be meaningless, and call is assumed to be non-blocking. 
-		# (For example, semaphore.V().) # Thus, return value ignored, and a 0 is instead sent to client.
-		
-		#  Now we allow clients to always terminate after call. That is, terminate the lambda clint regardless of whether 
-		#  or not the call blocks Also, we allow meaningful return values for async calls, e.g., BB.wwithdraw(). 
-		#  The lambda client can always terminate and we then always restart the client. 
-		#  This means we restart on block and resstart on no-block.So asynch still ignores the return valuue of call 
-		#  and terminates, but gets the return value, meaningful or not on the restart
-		#
-		#  Note: the client code needs to be written to allow restart after the asynch call - and need matching 
-		#  restart_on_no_block in the synchronization object (e.g., BoundedBuffer_Select)
+        # In previous versions, async return value is assumed to be meaningless, and call is assumed to be non-blocking. 
+        # (For example, semaphore.V().) # Thus, return value ignored, and a 0 is instead sent to client.
+        
+        #  Now we allow clients to always terminate after call. That is, terminate the lambda clint regardless of whether 
+        #  or not the call blocks Also, we allow meaningful return values for async calls, e.g., BB.wwithdraw(). 
+        #  The lambda client can always terminate and we then always restart the client. 
+        #  This means we restart on block and resstart on no-block.So asynch still ignores the return valuue of call 
+        #  and terminates, but gets the return value, meaningful or not on the restart
+        #
+        #  Note: the client code needs to be written to allow restart after the asynch call - and need matching 
+        #  restart_on_no_block in the synchronization object (e.g., BoundedBuffer_Select)
 
-		logger.debug("synchronizer_lambda: synchronize_async: Calling synchronizeLambda(): not a try-op: wait_for_result = false")
-		wait_for_result = False # asynch calls never wait for a result
-		return_value_ignored = self.synchronizeLambda(base_name, state, wait_for_result, **state.keyword_arguments)
+        logger.debug("synchronizer_lambda: synchronize_async: Calling synchronizeLambda(): not a try-op: wait_for_result = false")
+        wait_for_result = False # asynch calls never wait for a result
+        return_value_ignored = self.synchronizeLambda(method_name, state, wait_for_result, **state.keyword_arguments)
 
         ##if is_select:
         ##    self.unlock_synchronizer()           
@@ -343,8 +340,7 @@ class Synchronizer(object):
             synchronizer_method = getattr(self._synchClass,method_name)
         except Exception as x:
             logger.error("trySynchronize: Caught Error >>> %s" % x)
-            raise ValueError("Synchronizer of type %s does not have method called %s. Cannot complete trySynchronize() call." 
-				% (self._synchClass, method_name))
+            raise ValueError("Synchronizer of type %s does not have method called %s. Cannot complete trySynchronize() call." % (self._synchClass, method_name))
 
         #   
         """ replace this call 
@@ -373,8 +369,7 @@ class Synchronizer(object):
             synchronizer_method = getattr(self._synchClass, method_name)
         except Exception as x:
             logger.error("trySynchronizeSelect: Caught Error >>> %s" % x)
-            raise ValueError("Synchronizer of type %s does not have method called %s. Cannot complete trySynchronize() call." 
-				% (self._synchClass, method_name))
+            raise ValueError("Synchronizer of type %s does not have method called %s. Cannot complete trySynchronize() call." % (self._synchClass, method_name))
 
         """ replace this call 
         myPythonThreadName = "Try_callerThread" + state.function_instance_ID #str(ID_arg)
@@ -438,7 +433,7 @@ class Synchronizer(object):
 
     # Note, we still pass the synchronizer and method which are needed inside execute().
     # Called by synchronize_synch.
-    def synchronizeSelect(self, method_name, state, wait_for_result **kwargs):
+    def synchronizeSelect(self, method_name, state, wait_for_result, **kwargs):
         logger.debug("synchronizeSelect: method_name: " + str(method_name) + ", ID is: " + state.function_instance_ID)
         
         try:
@@ -452,7 +447,7 @@ class Synchronizer(object):
         myPythonThreadName = "NotTrycallerThread"+str(self.threadID)
         # create result_buffer, create execute() reference, call execute(), result_buffer.withdraw(), get executes's result and restart
         returnValue, restart  = self.doMethodCallSelectExecute(1, myPythonThreadName, method_name, self._synchronizer, 
-		synchronizer_method, self._synchClass, **kwargs) 
+        synchronizer_method, self._synchClass, **kwargs) 
         """
         
         """ New call with doMethodCallSelectExecute unrolled  """
@@ -472,7 +467,7 @@ class Synchronizer(object):
 
 #1: pass state, wait_for_result, but we do not save state in this non-lambda version so pass None for state
         returnValueIgnored = execute(self._synchronizer, method_name, self._synchronizer, synchronizer_method, 
-		result_buffer, None, wait_for_result, **kwargs)
+        result_buffer, None, wait_for_result, **kwargs)
  
         # unlock the synchronizer before bocking on withdaw(). Method withdraw() may not unblock until after a call to
         # a synchronize_synch or synchronize_asynch but these methods try to lock the synchronizer so we need to 
@@ -482,11 +477,11 @@ class Synchronizer(object):
         # result buffer to be withdrawn here (by the handler thread of the TCP server for the earlier P operation).
         self.unlock_synchronizer()
         
-		# Always false for asynch; False for try-op that blocks; True for try-op that does not block
-		if wait_for_result:
-        	result = result_buffer.withdraw()
-        	returnValue = result[0]
-        	restart = result[1] 
+        # Always false for asynch; False for try-op that blocks; True for try-op that does not block
+        if wait_for_result:
+            result = result_buffer.withdraw()
+            returnValue = result[0]
+            restart = result[1] 
         
         logger.debug("synchronizeSelect: restart " + str(restart))
         logger.debug("synchronizeSelect: returnValue " + str(returnValue))
@@ -501,7 +496,7 @@ class Synchronizer(object):
             invoke_lambda(payload = payload, is_first_invocation = False, function_name = "ComposerServerlessSync")
         
         return returnValue
-	
+    
     # Note, we still pass the synchronizer and method which are needed inside execute().
     # Called by synchronize_synch.
     def synchronizeLamba(self, method_name, state, wait_for_result, **kwargs):
@@ -518,7 +513,7 @@ class Synchronizer(object):
         myPythonThreadName = "NotTrycallerThread"+str(self.threadID)
         # create result_buffer, create execute() reference, call execute(), result_buffer.withdraw(), get executes's result and restart
         returnValue, restart  = self.doMethodCallSelectExecute(1, myPythonThreadName, method_name, 
-			self._synchronizer, synchronizer_method, self._synchClass, **kwargs) 
+            self._synchronizer, synchronizer_method, self._synchClass, **kwargs) 
         """
         
         """ New call with doMethodCallSelectExecute unrolled  """
@@ -530,8 +525,8 @@ class Synchronizer(object):
            
 # 1:
 # async uses not wait_for_result so need a result_buufer and result will be withdrawn and returned and ignored
-		if wait_for_result:
-        	result_buffer = ResultBuffer(1, "resultBuffer")
+        if wait_for_result:
+            result_buffer = ResultBuffer(1, "resultBuffer")
             
         # Calling execute() which will make method call so need to pass class and method so call can be made.
         # This is different from synchromization objects that are regulr monitors as we call their methods
@@ -542,10 +537,10 @@ class Synchronizer(object):
 # 2: passing wait_for_result to execute(), which receives is as send_result, i.e., the vaue of wait_for_result determines
 #    whether we wait for result and whether execute() will send it.
 
-		#FYI this is 0 (op did not block and op result was deposited in result_buffer) or 1 (op blocked or no meaningful 
-		# return value, e.g., return value of semaphore.V)?
+        #FYI this is 0 (op did not block and op result was deposited in result_buffer) or 1 (op blocked or no meaningful 
+        # return value, e.g., return value of semaphore.V)?
         returnValueIgnored = execute(self._synchronizer, method_name, self._synchronizer, synchronizer_method, 
-		result_buffer, state, wait_for_result, **kwargs)
+        result_buffer, state, wait_for_result, **kwargs)
         
         # unlock the synchronizer before blocking on withdaw(). Method withdraw() may not unblock until after a call to
         # a synchronize_synch or synchronize_asynch but these methods try to lock the synchronizer so we need to 
@@ -553,24 +548,24 @@ class Synchronizer(object):
         # a CountingSemaphore_Monitor, was not accepted by execute so the call to P will only be accepted/chosen by
         # a later call to execute for method V. At that time execute will depost the result of the P operation in the 
         # result buffer to be withdrawn here (by the handler thread of the TCP server for the earlier P operation).
-		
+        
 #3:
         ##self.unlock_synchronizer()
         
 #4:
-		if wait_for_result:
-        	result = result_buffer.withdraw()
-        	returnValue = result[0]
-        	restart = result[1]
-			logger.debug("synchronizer_lambda: synchronizeLamba: after result_buffer.withdraw: restart " + str(restart))
-			logger.debug("synchronizer_lambda: synchronizeLamba: result_buffer.withdraw: " + str(returnValue))
-			if restart: #assert
-				logger.error("synchronizer_lambda: synchronizeLamba: Internal ERROR: result_buffer.withdraw returned restart true.)			
+        if wait_for_result:
+            result = result_buffer.withdraw()
+            returnValue = result[0]
+            restart = result[1]
+            logger.debug("synchronizer_lambda: synchronizeLamba: after result_buffer.withdraw: restart " + str(restart))
+            logger.debug("synchronizer_lambda: synchronizeLamba: result_buffer.withdraw: " + str(returnValue))
+            if restart: #assert
+                logger.error("synchronizer_lambda: synchronizeLamba: Internal ERROR: result_buffer.withdraw returned restart true.")
 #5:
-		else:
-			# If we did not wait_for_result we do not want to return the return_value of the operation to the user since there
-			# is no meaningul return value or we will return the vallue when the lambda client is restarted.
-			returnValue = returnValueIgnored
+        else:
+            # If we did not wait_for_result we do not want to return the return_value of the operation to the user since there
+            # is no meaningul return value or we will return the vallue when the lambda client is restarted.
+            returnValue = returnValueIgnored
 
 #6:
         ### if the method returns restart True, restart the serverless function and pass it its saved state.

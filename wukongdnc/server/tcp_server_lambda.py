@@ -1,18 +1,7 @@
-import asyncio
-from multiprocessing import synchronize
 from re import A
 import json
-import websockets
-import cloudpickle 
-import _thread
-import base64 
-import threading
 import traceback
-import sys
-import time 
-import socket
 import socketserver
-import threading
 import traceback
 import json
 
@@ -314,7 +303,7 @@ class TCPServer(object):
         self.tcp_server = socketserver.ThreadingTCPServer(self.server_address, TCPHandler)
     
     def start(self):
-        logger.info("Starting TCP server.")
+        logger.info("Starting TCP Lambda server.")
         try:
             self.tcp_server.serve_forever()
         except Exception as ex:

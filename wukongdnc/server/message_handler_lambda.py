@@ -1,19 +1,6 @@
-import asyncio
 from multiprocessing import synchronize
 from re import A
-import json
-import websockets
-import cloudpickle 
-import _thread
-import base64 
-import threading
 import traceback
-import sys
-import socket
-import socketserver
-import threading
-import traceback
-import json
 
 from .synchronizer_lambda import Synchronizer
 from .util import make_json_serializable, decode_and_deserialize, isTry_and_getMethodName, isSelect 
@@ -52,18 +39,24 @@ class MessageHandler(object):
 
             try:    
                 message_id = json_message["id"]
-                logger.debug("[MESSAGEHANDLER] handling message from client with ID=%s" % (message_id))
                 action = json_message.get("op", None)
+                logger.debug("[MessageHandler] Handling message from client with ID=%s, operation=%s" % (message_id, action))
                 
                 return_value = self.action_handlers[action](message = json_message)
-                
             except ConnectionResetError as ex:
                 logger.error(ex)
                 logger.error(traceback.format_exc())
-                return 
+                return_value = {
+                    "msg": "ConnectionResetError encountered while executing the Lambda function.",
+                    "error_msg": str(ex)
+                }
             except Exception as ex:
                 logger.error(ex)
                 logger.error(traceback.format_exc())
+                return_value = {
+                    "msg": str(type(ex)) + " encountered while executing the Lambda function.",
+                    "error_msg": str(ex)
+                }
                 
             # this is return value of Lambda, sent back to tcp_server method that invoked Lambda - create, 
             # synchronize_async, synchronize_async.

@@ -1,6 +1,4 @@
-from re import L
 #from monitor_su import MonitorSU, ConditionVariable
-import threading
 import _thread
 import time
 from .selector import Selector

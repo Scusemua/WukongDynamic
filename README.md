@@ -21,5 +21,8 @@ This framework requires you have a Redis server available. The IP address should
 defined in `DivideAndConquer/wukongdnc/tcp_server.py` must be running as well (and its IP address should be set in the aforementioned `constants.py` file). Finally,
 an AWS Lambda function must be configured and contain all of the code except the `coordinator/` direcotry, `data/` directory, and `programs/` directory.
 
-The TCP server can be started by setting your working directory to be `DivideAndConquer/` and then executing the following command:
+The TCP server can be started by setting your working directory to be `DivideAndConquer/` and then executing the following command: 
 `python -m wukongdnc.server.tcp_server`
+
+The TCP server that uses synchronization objects stored in AWS Lambda functions can be started similarly. Set your working directory to be `DivideAndConquer/` and execute the following command:
+`python -m wukongdnc.server.tcp_server_lambda`

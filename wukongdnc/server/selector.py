@@ -1,7 +1,7 @@
 #from monitor_su import MonitorSU
 from .selectivewait import selectiveWait
 # from .counting_semaphore import CountingSemaphore
-from multiprocessing import RLock
+from threading import RLock
 
 import logging 
 logger = logging.getLogger(__name__)

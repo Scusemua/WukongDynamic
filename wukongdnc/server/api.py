@@ -118,7 +118,7 @@ def synchronize_sync(websocket, op, name, method_name, state):
     msg = json.dumps(message).encode('utf-8')
     send_object(msg, websocket)
     data = recv_object(websocket)               # Should just be a serialized state object.
-    logger.debug("Received %d bytes from server..." % len(data))
+    logger.debug("Received %d bytes from server: %s" % (len(data), str(data)))
     state_from_server = cloudpickle.loads(data) # `state_from_server` is of type State
 
     logger.debug("Fan-in ID %s received return value from server in synchronize_sync: %s" % (name, str(state_from_server.return_value)))
