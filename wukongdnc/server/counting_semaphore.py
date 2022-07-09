@@ -1,5 +1,5 @@
 from imp import release_lock
-from multiprocessing import Semaphore, RLock
+from threading import Semaphore, RLock
 
 import logging 
 logger = logging.getLogger(__name__)

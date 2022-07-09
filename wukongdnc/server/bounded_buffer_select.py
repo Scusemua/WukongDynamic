@@ -1,4 +1,10 @@
-from .selector import Selector
+from ..constants import SERVERLESS_SYNC
+
+if SERVERLESS_SYNC:
+    from .selector_lambda import Selector
+else:
+    from .selector import Selector
+
 from .selectableEntry import selectableEntry
 
 import logging 

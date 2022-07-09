@@ -1,6 +1,5 @@
 from imp import release_lock
-from multiprocessing import Semaphore, RLock
-import queue
+from threading import Semaphore, RLock
 
 class CountingSemaphore(object):
     def __init__(self, initial_permits = 0, id = -1, semaphore_name = "DEFAULT_NAME"):

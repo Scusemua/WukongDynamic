@@ -97,8 +97,7 @@ class Selector():
             # Q return what? return 0 for now. Eventually the value may be part of delay alternative processing, which is TBD.
             logger.debug("execute returning: called_entry.get_num_arrivals(): " + str(called_entry.get_num_arrivals())
                 + " called_entry.testGuard() == False: " + str(called_entry.testGuard() == False))
-            return 0
-            
+            return 0 
         else:
             return_value = self.domethodcall(entry_name, synchronizer, synchronizer_method, **kwargs)
             # restart is only true if this is an asynch call after which the caller always terminates, blocking call or not.

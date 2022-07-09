@@ -499,7 +499,7 @@ class Synchronizer(object):
     
     # Note, we still pass the synchronizer and method which are needed inside execute().
     # Called by synchronize_synch.
-    def synchronizeLamba(self, method_name, state, wait_for_result, **kwargs):
+    def synchronizeLambda(self, method_name, state, wait_for_result, **kwargs):
         logger.debug("synchronizer_lambda: synchronizeLamba: method_name: " + str(method_name) + ", ID is: " + state.function_instance_ID)
         
         try:
@@ -527,6 +527,8 @@ class Synchronizer(object):
 # async uses not wait_for_result so need a result_buufer and result will be withdrawn and returned and ignored
         if wait_for_result:
             result_buffer = ResultBuffer(1, "resultBuffer")
+        else:
+            result_buffer = None 
             
         # Calling execute() which will make method call so need to pass class and method so call can be made.
         # This is different from synchromization objects that are regulr monitors as we call their methods
@@ -539,8 +541,7 @@ class Synchronizer(object):
 
         #FYI this is 0 (op did not block and op result was deposited in result_buffer) or 1 (op blocked or no meaningful 
         # return value, e.g., return value of semaphore.V)?
-        returnValueIgnored = execute(self._synchronizer, method_name, self._synchronizer, synchronizer_method, 
-        result_buffer, state, wait_for_result, **kwargs)
+        returnValueIgnored = execute(self._synchronizer, method_name, self._synchronizer, synchronizer_method, result_buffer, state, wait_for_result, **kwargs)
         
         # unlock the synchronizer before blocking on withdaw(). Method withdraw() may not unblock until after a call to
         # a synchronize_synch or synchronize_asynch but these methods try to lock the synchronizer so we need to 
