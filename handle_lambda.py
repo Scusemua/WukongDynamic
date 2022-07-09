@@ -55,4 +55,4 @@ def lambda_handler(event, context):
 	else:
 		logger.debug("**************** warm start ******************")
 
-	message_handler.handle(json_message)
+	warm_resources['message_handler'].handle(json_message)
