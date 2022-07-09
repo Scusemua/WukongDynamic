@@ -103,7 +103,7 @@ class Selector():
             return_value = self.domethodcall(entry_name, synchronizer, synchronizer_method, **kwargs)
             # restart is only true if this is an asynch call after which the caller always terminates, blocking call or not.
             restart = called_entry.get_restart_on_noblock() # restart = self._restart_on_noblock
-            logger.debug("Value of '_restart_on_noblock' in execute() [line 106]: " + str(self._restart_on_noblock))
+            logger.debug("Value of 'called_entry.get_restart_on_noblock()' in execute() [line 106]: " + str(restart))
             return_tuple = (return_value, restart)
             # return value is deposited into a bounded buffer for withdraw by the tcp_server thread that
             # is handling the client lambda's call. This value will be ignored for all asynch calls and for
@@ -231,8 +231,8 @@ class Selector():
         else:
             return_value = self.domethodcall(entry_name, synchronizer, synchronizer_method, **kwargs)
             # ToDo: remove the arrival or whatever choice() does 
-            restart = self._restart_on_noblock
-            logger.debug("Value of '_restart_on_noblock' in execute() [line 235]: " + str(self._restart_on_noblock))
+            restart = called_entry.get_restart_on_noblock() # self._restart_on_noblock
+            logger.debug("Value of 'called_entry.get_restart_on_noblock()' in execute() [line 235]: " + str(restart))
             return_tuple = (return_value, restart)
             result_buffer.deposit(return_tuple)
             called_entry.remove_first_arrival()
@@ -257,7 +257,7 @@ class Selector():
                 result_buffer = arrival._result_buffer
                 return_value = self.domethodcall(entry_name, synchronizer, synchronizer_method, **kwargs)
                 logger.debug("Execute: called chosen method " + arrival._entry_name)
-                restart = self._restart_on_unblock
+                restart = called_entry.get_restart_on_unblock() #self._restart_on_unblock
                 return_tuple = (return_value, restart)
                 result_buffer.deposit(return_tuple)
                 # remove entry if done with it (result_buffer, etc)

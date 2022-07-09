@@ -290,7 +290,7 @@ def lambda_handler(event, context):
     target = state.function_name 
     logger.debug("Starting *****%s*****." % target)
     # target = event['target']
-    if target == "ComposerServerlessSync":
+    if target == "Composer":
         composer = Composer(state = state)
         composer.execute()
     elif target == "FuncA":

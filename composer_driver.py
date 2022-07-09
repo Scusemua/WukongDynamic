@@ -59,7 +59,7 @@ def run():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
         print("Connecting to " + str(TCP_SERVER_IP))
         websocket.connect(TCP_SERVER_IP)
-        default_state = State("ComposerServerlessSync", function_instance_ID = str(uuid.uuid4()), list_of_functions = ["FuncA", "FuncB"])
+        default_state = State("Composer", function_instance_ID = str(uuid.uuid4()), list_of_functions = ["FuncA", "FuncB"])
 
         logger.debug("Sleeping for 5sec before calling synchronize_sync()")
         time.sleep(5.0)

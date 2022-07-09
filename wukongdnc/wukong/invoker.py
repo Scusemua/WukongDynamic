@@ -152,7 +152,7 @@ def invoke_lambda(
     if is_first_invocation:
         logger.debug("is_first_invocation is TRUE in `invoke_lambda()`")
         state = State(
-            function_name = function_name,  # this is name of Lambda function
+            function_name = "Composer",  # this is name of Lambda function
             function_instance_ID = str(uuid.uuid4()),
             restart = False,
             pc = 0,
