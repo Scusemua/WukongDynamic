@@ -16,7 +16,7 @@ import threading
 import traceback
 import json
 
-from .synchronizer import Synchronizer
+# from .synchronizer import Synchronizer
 from .util import make_json_serializable, decode_and_deserialize, isTry_and_getMethodName, isSelect 
 from ..wukong.invoker import invoke_lambda_synchronously
 
