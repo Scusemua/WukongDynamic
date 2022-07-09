@@ -1,5 +1,3 @@
-from imp import release_lock
-from multiprocessing import Semaphore, RLock
 from .counting_semaphore import CountingSemaphore
 from .util import isTry_and_getMethodName
 import queue

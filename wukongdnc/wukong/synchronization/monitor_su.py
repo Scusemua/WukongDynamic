@@ -1,7 +1,4 @@
-from imp import release_lock
-from multiprocessing import Semaphore, RLock
 from counting_semaphore import CountingSemaphore
-import queue
 
 class MonitorSU(object):
     def __init__(self, monitor_name = None):

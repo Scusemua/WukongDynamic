@@ -255,10 +255,18 @@ class Composer(object):
                     self.state.return_value = None
                     self.state.keyword_arguments["value"] = value
                     #synchronize_sync(websocket, "synchronize_sync", "final_result", "try_deposit", self.state)
-                    self.state = synchronize_async_terminate(websocket, "synchronize_async", "final_result", "deposit", self.state)
-                    if self.state.blocking:
-                        self.state.blocking = False
-                        return #will restart in (saved) state pc == 3
+                    #self.state = synchronize_async_terminate(websocket, "synchronize_async", "final_result", "deposit", self.state)
+
+                    logger.debug("Solution: " + str(value) + "\n\n")
+                    expected_answer = int(2)
+                    if expected_answer != value:
+                        logger.error("Error in answer: " + str(value) + " expected_answer: " + str(expected_answer))
+                    else:
+                        logger.debug("Verified. Solution is correct.")
+
+                    #if self.state.blocking:
+                    #    self.state.blocking = False
+                    #    return #will restart in (saved) state pc == 3
                     # Note: if we reach here (no return), we will iterate the while-True loop and transition to next state
                 elif self.state.pc == 3:
                     print("Composer (START of pc=3)")

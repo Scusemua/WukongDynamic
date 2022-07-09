@@ -1,5 +1,3 @@
-from multiprocessing import synchronize
-from re import A
 import traceback
 
 from .synchronizer_lambda import Synchronizer

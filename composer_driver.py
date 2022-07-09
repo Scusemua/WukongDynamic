@@ -61,8 +61,9 @@ def run():
         websocket.connect(TCP_SERVER_IP)
         default_state = State("Composer", function_instance_ID = str(uuid.uuid4()), list_of_functions = ["FuncA", "FuncB"])
 
-        logger.debug("Sleeping for 5sec before calling synchronize_sync()")
-        time.sleep(5.0)
+        sleep_length_seconds = 20.0
+        logger.debug("Sleeping for " + str(sleep_length_seconds) + " seconds before calling synchronize_sync()")
+        time.sleep(sleep_length_seconds)
         logger.debug("Finished sleeping. Calling synchronize_sync() now...")
 
         state = synchronize_sync(websocket, "synchronize_sync", "final_result", "try_withdraw", default_state)
