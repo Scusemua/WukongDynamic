@@ -2,6 +2,8 @@
 from .selectivewait import selectiveWait
 from .counting_semaphore import CountingSemaphore
 
+from ..wukong.invoker import invoke_lambda
+
 import logging 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -153,12 +155,12 @@ class Selector():
 #7: This is only the case when client always terminates, even when no block, and thus client needs restarting.
 #   This case must be an asynch call, since if it were a try-op it would indicate no blocking and we would send 
 #   the result to a client who must receive the result but would instead have terminated. 
-                # Doing state changes here for restarts. For non-restart, we do state chhangges when we get back 
+                # Doing state changes here for restarts. For non-restart, we do state changes when we get back 
                 # to synchronize_sync which called synchronizeLambda.
                 state.restart = True 
                 state.return_value = return_value
                 state.blocking = False     
-                doRestart(state,restart,return_value)
+                self.doRestart(state, restart, return_value)
             # executor does all restarts and must deposit tuple with restart false. This deposited restart 
             # is not used by synchronizee_lambda, which never does a restart.
                              
@@ -200,14 +202,14 @@ class Selector():
         
         while(True):
            # just added an Arrival for an entry so update guards (which may consider the number of arrivals or an entry)
-           self.set_guards();
+           self.set_guards()
            choice = self._select.choose()
            if choice >= 1 and choice <= self._select.get_number_entries():
                 logger.debug("Execute: choice is " + str(choice) + " so use list entry in position" + str(choice-1))
                 called_entry = self.get_entry(choice-1)
                 arrival = called_entry.getOldestArrival()
-                synchronizer = arrival._synchronizer;
-                state = arrival._state;
+                synchronizer = arrival._synchronizer
+                state = arrival._state
                 synchronizer_method = arrival._synchronizer_method
                 kwargs = arrival._kwargs
                 result_buffer = arrival._result_buffer
@@ -225,9 +227,9 @@ class Selector():
 
                 if restart: 
                     state.restart = True
-                    state.return_value = returnValue
+                    state.return_value = return_value
                     state.blocking = False 
-                    doRestart(state,restart,return_value)
+                    self.doRestart(state,restart,return_value)
 #9:
                 else: #Error lambda clients must be restarted for this version in which sync objects are stored in client
                     logger.debug("execute: Internal ERROR: Blocking Lambdas must be restarted.")

@@ -1,4 +1,3 @@
-from multiprocessing import RLock
 from collections import deque
 from .arrival import Arrival
 import threading
@@ -42,10 +41,10 @@ class selectableEntry:
             selectableEntry._global_timestamp +=  1
             return ts
           
-    def add_arrival(self, entry_name, synchronizer, synchronizer_method, result_buffer, **kwargs):
+    def add_arrival(self, entry_name, synchronizer, synchronizer_method, result_buffer, state, **kwargs):
         self._ready += 1
         ts = self.getTimeStamp()
-        entry_arrival = Arrival(entry_name, synchronizer, synchronizer_method, result_buffer, ts, **kwargs)
+        entry_arrival = Arrival(entry_name, synchronizer, synchronizer_method, result_buffer, ts, state, **kwargs)
         self._arrivals.append(entry_arrival)
 		
     def remove_first_arrival(self):
