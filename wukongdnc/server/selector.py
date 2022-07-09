@@ -68,7 +68,7 @@ class Selector():
 
         # Arrivals are timestamped with a global static incremented integer
         called_entry = self._entry_map[entry_name]
-        called_entry.add_arrival(entry_name, synchronizer, synchronizer_method, result_buffer, **kwargs)
+        called_entry.add_arrival(entry_name, synchronizer, synchronizer_method, result_buffer, state, **kwargs)
         
         #Debug
         num_entries = self.get_num_entries()
@@ -191,6 +191,8 @@ class Selector():
         # with it.
         # Arrivals are timestamped with global static
         called_entry = self._entry_map[entry_name]
+
+        # WARNING: If we use this, it will cause an error because this now has a `state` argument before **kwargs.
         called_entry.add_arrival(entry_name, synchronizer, synchronizer_method, result_buffer, **kwargs)
             
         entry0 = self.get_entry(0)
