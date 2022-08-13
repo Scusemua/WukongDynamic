@@ -30,6 +30,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
             self.action_handlers = {
                 "create": self.create_obj,
+                "create_all": self.create_all_fanins_and_faninNBs,
                 "setup": self.setup_server,
                 "synchronize_async": self.synchronize_async,
                 "synchronize_sync": self.synchronize_sync,
@@ -91,6 +92,45 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # The return value from the Lambda function will typically be sent by tcp_server to a Lambda client of tcp_server
         return return_value
     
+    def create_all_fanins_and_faninNBs(self, messages):
+        """ 
+        where parameter message created using:
+            messages = (fanin_messages,faninNB_messages) // lists of "create" messages for fanins and faninNBS, respectively
+            #each message was created using:
+            message = { # this is a message for op create_all_fanins_and_faninNBs; it has a tuple of two lists of regular "create" messages
+                "op": "create_all_fanins_and_faninNBs", # op
+                "type": "DAG_executor_fanin_or_faninNB", # this is not a type of synchronizer object; doesn't fit the usual message format
+                "name": messages, # tuple of lists of "create" messages
+                "state": make_json_serializable(state),
+                "id": msg_id
+            }
+        """
+        logger.debug("create_all_fanins_and_faninNBs: creating " + str(len(messages[0])) + " DAG_executor fanins")
+
+        fanin_messages = messages[0]
+        for msg in fanin_messages:
+            self.create_obj(msg)
+
+        logger.debug("create_all_fanins_and_faninNBs: creating " + str(len(messages[0])) + " DAG_executor faninNBs")
+        faninNB_messages = messages[1]
+        for msg in faninNB_messages:
+            self.create_obj(msg)
+        
+        """ where msg was created using:
+                message = {
+                    "op": "create",
+                    "type": "DAG_executor_FanIn/DAG_executor_FanInNB",
+                    "name": fanin_name/faninNB_name,
+                    "state": make_json_serializable(dummy_state),
+                    "id": msg_id
+                }
+        and
+                dummy_state = DAG_executor_State()
+                dummy_state.keyword_arguments['n'] = size # for size in all_faninNB_sizes
+                dummy_state.keyword_arguments['start_state_fanin_task'] = DAG_states[fanin_name] # where DAG_states maps task names to state
+                msg_id = str(uuid.uuid4())
+        """
+
     def create_obj(self, message = None):
         """
         Called by a remote Lambda to create an object here on the TCP server.
