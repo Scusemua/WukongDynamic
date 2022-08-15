@@ -203,95 +203,93 @@ def input_DAG_leaf_task_start_states():
     return DAG_leaf_tasks_start_states
 
 def run():
-    
 	# generate DAG_map using DFS_visit
-    n1 = Node(None,None,"inc0",inc0)
-    n3 = Node(None,None,"triple",triple)
-    n4 = Node(None,None,"inc1",inc1)
-    n5 = Node(Node,Node,"square",square)
-    n2 = Node(Node,Node,"add",add) 
-    n6 = Node(Node,Node,"multiply",multiply) 
-    n7 = Node(Node,Node,"divide",divide)
+    # n1 = Node(None,None,"inc0",inc0)
+    # n3 = Node(None,None,"triple",triple)
+    # n4 = Node(None,None,"inc1",inc1)
+    # n5 = Node(Node,Node,"square",square)
+    # n2 = Node(Node,Node,"add",add) 
+    # n6 = Node(Node,Node,"multiply",multiply) 
+    # n7 = Node(Node,Node,"divide",divide)
 	
-    n1.set_succ([n2])
-    n1.set_pred([])
-    n2.set_succ([n6])	
-    n2.set_pred([n1,n4])
-    n3.set_succ([n6])
-    n3.set_pred([n4])
-    n4.set_succ([n2,n5,n3])
-    n4.set_pred([])
-    n5.set_succ([n6])
-    n5.set_pred([n4])
-    n6.set_succ([n7])
-    n6.set_pred([n2,n3,n5])
-    n7.set_succ([])
-    n7.set_pred([n6])
+    # n1.set_succ([n2])
+    # n1.set_pred([])
+    # n2.set_succ([n6])	
+    # n2.set_pred([n1,n4])
+    # n3.set_succ([n6])
+    # n3.set_pred([n4])
+    # n4.set_succ([n2,n5,n3])
+    # n4.set_pred([])
+    # n5.set_succ([n6])
+    # n5.set_pred([n4])
+    # n6.set_succ([n7])
+    # n6.set_pred([n2,n3,n5])
+    # n7.set_succ([])
+    # n7.set_pred([n6])
 	
-    n1.generate_ops()
-    n4.generate_ops()
-    n2.generate_ops()
-    n3.generate_ops()
-    n5.generate_ops()
-    n6.generate_ops()
-    n7.generate_ops()
-    #Node.save_DAG_info()
+    # n1.generate_ops()
+    # n4.generate_ops()
+    # n2.generate_ops()
+    # n3.generate_ops()
+    # n5.generate_ops()
+    # n6.generate_ops()
+    # n7.generate_ops()
+    # #Node.save_DAG_info()
 	
-    logger.debug("DAG_map:")
-    for key, value in Node.DAG_map.items():
-        logger.debug(key)
-        logger.debug(value)
-    logger.debug("  ")
+    # logger.debug("DAG_map:")
+    # for key, value in Node.DAG_map.items():
+    #     logger.debug(key)
+    #     logger.debug(value)
+    # logger.debug("  ")
 	
-    logger.debug("states:")         
-    for key, value in Node.DAG_states.items():
-        logger.debug(key)
-        logger.debug(value)
-    logger.debug("   ")
+    # logger.debug("states:")         
+    # for key, value in Node.DAG_states.items():
+    #     logger.debug(key)
+    #     logger.debug(value)
+    # logger.debug("   ")
 	
-    logger.debug("num_fanins:" + str(Node.num_fanins) + " num_fanouts:" + str(Node.num_fanouts) + " num_faninNBs:" 
-        + " num_collapse:" + str(Node.num_collapse))
-    logger.debug("   ")
+    # logger.debug("num_fanins:" + str(Node.num_fanins) + " num_fanouts:" + str(Node.num_fanouts) + " num_faninNBs:" 
+    #     + " num_collapse:" + str(Node.num_collapse))
+    # logger.debug("   ")
 	
-    logger.debug("all_fanout_task_names")
-    for name in Node.all_fanout_task_names:
-        logger.debug(name)
-        logger.debug("   ")
-    logger.debug("   ")
+    # logger.debug("all_fanout_task_names")
+    # for name in Node.all_fanout_task_names:
+    #     logger.debug(name)
+    #     logger.debug("   ")
+    # logger.debug("   ")
 	
-    logger.debug("all_fanin_task_names")
-    for name in Node.all_fanin_task_names :
-        logger.debug(name)
-        logger.debug("   ")
-    logger.debug("   ")
+    # logger.debug("all_fanin_task_names")
+    # for name in Node.all_fanin_task_names :
+    #     logger.debug(name)
+    #     logger.debug("   ")
+    # logger.debug("   ")
 		  
-    logger.debug("all_faninNB_task_names")
-    for name in Node.all_faninNB_task_names:
-        logger.debug(name)
-        logger.debug("   ")
-    logger.debug("   ")
+    # logger.debug("all_faninNB_task_names")
+    # for name in Node.all_faninNB_task_names:
+    #     logger.debug(name)
+    #     logger.debug("   ")
+    # logger.debug("   ")
 		  
-    logger.debug("all_collapse_task_names")
-    for name in Node.all_collapse_task_names:
-        logger.debug(name)
-        logger.debug("   ")
-    logger.debug("   ")
+    # logger.debug("all_collapse_task_names")
+    # for name in Node.all_collapse_task_names:
+    #     logger.debug(name)
+    #     logger.debug("   ")
+    # logger.debug("   ")
 	
-    DAG_map = Node.DAG_map
+    # DAG_map = Node.DAG_map
     
-    logger.debug("DAG_map after assignment:")
-    for key, value in Node.DAG_map.items():
-        logger.debug(key)
-        logger.debug(value)
-    logger.debug("   ")
-    states = Node.DAG_states
+    # logger.debug("DAG_map after assignment:")
+    # for key, value in Node.DAG_map.items():
+    #     logger.debug(key)
+    #     logger.debug(value)
+    # logger.debug("   ")
+    # states = Node.DAG_states
     
     #all_fanout_task_names = Node.all_fanout_task_names
     #all_fanin_task_names = Node.all_fanin_task_names
     #all_faninNB_task_names = Node.all_faninNB_task_names
     #all_collapse_task_names = Node.all_collapse_task_names
-    
-    
+      
     DAG_info = DAG_Info()
     
     """

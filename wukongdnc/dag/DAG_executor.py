@@ -513,30 +513,29 @@ def process_fanins(fanins, faninNB_sizes, calling_task_name, DAG_states, DAG_exe
 	Note: We can call DAG_execute(state)
 """
 				 
-def DAG_executor(payload):
-				 
-# Note: could instead use a "state" parameter. Then we have state.starting_input and state.return_value so would need
-# to know which to acccess, as in: if first_invocation, where first_invocation is in state. Or always use
-# state.return_value so we don't need to check and save first_invocation:
-#   input = state.return_value
-# Note: for blocking try_fanin, it's not really a restart, it means we will be started in a specified fanin/faninNB
-#     task state - there is no other state to save/restore. So DAG_executor can get input and give to execute_task.
-#     try_fanin: with state.blocking = 0 and state.return_value = results map. Then we continue in state 
-#     states[fanin_task_name], which we can set before call. try_fanin w/state.blocking = 1 and state.return_value = 0, 
-#     in which case we terminate/return and no restart on fanins.
-#	  So: not really saving state and restoring on restart - fanin-block=>term w/ no restart; fanin-noblock means
-#         we transition to next state which is DAG_states[fanin_task_name]; faninNB => asynch continue on to fanouts.
-#	  But fanin has state.return_value and we pass keyword args to fanin/faninNB in real version.
-# Q:  Do we allow synchronous fanin? Yes if server, no if Lambda (for now)?
-#     faninNB: is like an async call with always terminate, so never restarted. Always term as in
-#      if self.state.blocking:
-#         self.state.blocking = False
-#         return
-#      where synchronize_async_terminate() doesn't wait for return value from server and sets self.state.blocking to True.
-# Note: may need to change dask leaf node inputs so, e.g., withdraw input from BB - then need a first_invocation
-# to control this?
-# Note: invoking DAG_executor() is different from executing task. The DAG_executor needs to get input and present it
-# to execute_task in the proper form.
+def DAG_executor(payload):		 
+    # Note: could instead use a "state" parameter. Then we have state.starting_input and state.return_value so would need
+    # to know which to acccess, as in: if first_invocation, where first_invocation is in state. Or always use
+    # state.return_value so we don't need to check and save first_invocation:
+    #   input = state.return_value
+    # Note: for blocking try_fanin, it's not really a restart, it means we will be started in a specified fanin/faninNB
+    #     task state - there is no other state to save/restore. So DAG_executor can get input and give to execute_task.
+    #     try_fanin: with state.blocking = 0 and state.return_value = results map. Then we continue in state 
+    #     states[fanin_task_name], which we can set before call. try_fanin w/state.blocking = 1 and state.return_value = 0, 
+    #     in which case we terminate/return and no restart on fanins.
+    #	  So: not really saving state and restoring on restart - fanin-block=>term w/ no restart; fanin-noblock means
+    #         we transition to next state which is DAG_states[fanin_task_name]; faninNB => asynch continue on to fanouts.
+    #	  But fanin has state.return_value and we pass keyword args to fanin/faninNB in real version.
+    # Q:  Do we allow synchronous fanin? Yes if server, no if Lambda (for now)?
+    #     faninNB: is like an async call with always terminate, so never restarted. Always term as in
+    #      if self.state.blocking:
+    #         self.state.blocking = False
+    #         return
+    #      where synchronize_async_terminate() doesn't wait for return value from server and sets self.state.blocking to True.
+    # Note: may need to change dask leaf node inputs so, e.g., withdraw input from BB - then need a first_invocation
+    # to control this?
+    # Note: invoking DAG_executor() is different from executing task. The DAG_executor needs to get input and present it
+    # to execute_task in the proper form.
 		
 	# use DAG_executor_state.state
     DAG_executor_State = payload['DAG_executor_State']
@@ -552,6 +551,7 @@ def DAG_executor(payload):
     input = payload['input']
     logger.debug("DAG_executor starting input:" +str(input) + " state: " + str(DAG_executor_State.state) )
     server = payload['server']
+    
     #ToDo:
 	#if input == None:
 		#pass  # withdraw input from payload.synchronizer_name

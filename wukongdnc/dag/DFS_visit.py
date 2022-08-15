@@ -310,7 +310,11 @@ class Node:
         print("DAG_leaf_tasks:")
         for task_name in Node.DAG_leaf_tasks:
             print(task_name)
-        print()       
+        print() 
+        print("DAG_leaf_task_inputs:")
+        for inp in Node.DAG_leaf_task_inputs:
+            print(inp)
+        print()      
 		
         Node.DAG_info["DAG_map"] = Node.DAG_map
         Node.DAG_info["DAG_states"] = Node.DAG_states
