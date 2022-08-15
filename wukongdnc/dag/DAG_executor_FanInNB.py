@@ -1,6 +1,6 @@
 from re import L
 # ToDo:
-from monitor_su import MonitorSU, ConditionVariable
+from ..server.monitor_su import MonitorSU, ConditionVariable
 import threading
 import time 
 
@@ -10,8 +10,8 @@ import _thread
 
 
 #from DAG_executor import DAG_executor
-import DAG_executor
-from DAG_executor_State import DAG_executor_State
+from . import  DAG_executor
+from .DAG_executor_State import DAG_executor_State
 import uuid
 
 import logging 

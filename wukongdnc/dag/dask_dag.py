@@ -1,7 +1,7 @@
 from distributed import LocalCluster, Client
 import dask
 from collections import defaultdict
-from DFS_visit import Node
+from .DFS_visit import Node
 
 def execute_task(task_obj: tuple, existing_results: dict = {}, task_id: str = None):
   """

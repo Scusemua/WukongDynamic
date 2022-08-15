@@ -6,14 +6,17 @@ ToDo:
 import threading
 import _thread
 import time
+import json
+import cloudpickle
 
-from DFS_visit import Node
-from DFS_visit import state_info
+import base64 
+from .DFS_visit import Node
+from .DFS_visit import state_info
 #from DAG_executor_FanInNB import DAG_executor_FanInNB
-import DAG_executor
-import DAG_executor_FanInNB
-import DAG_executor_FanIn
-from DAG_executor_State import DAG_executor_State
+from . import DAG_executor
+from . import DAG_executor_FanInNB
+from . import DAG_executor_FanIn
+from .DAG_executor_State import DAG_executor_State
 import uuid
 import pickle
 
@@ -146,8 +149,8 @@ print(a == b)
 """
 
 def input_DAG_info():
-    with open('DAG_info.pickle', 'rb') as handle:
-        DAG_info = pickle.load(handle)
+    with open('./DAG_info.pickle', 'rb') as handle:
+        DAG_info = cloudpickle.load(handle)
     return DAG_info
     
 def input_DAG_map():

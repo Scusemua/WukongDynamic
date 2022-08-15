@@ -17,12 +17,24 @@ python fibonnaci_driver.py -h
 <>python -m wukongdnc.fibonnaci_driver -h
 <>-->
 
+## The TCP Server
+
 This framework requires you have a Redis server available. The IP address should be specified in `DivideAndConquer/wukongdnc/constants.py`. Likewise, the TCP server
 defined in `DivideAndConquer/wukongdnc/tcp_server.py` must be running as well (and its IP address should be set in the aforementioned `constants.py` file). Finally,
 an AWS Lambda function must be configured and contain all of the code except the `coordinator/` direcotry, `data/` directory, and `programs/` directory.
+
+### Running the TCP Server
 
 The TCP server can be started by setting your working directory to be `DivideAndConquer/` and then executing the following command: 
 `python -m wukongdnc.server.tcp_server`
 
 The TCP server that uses synchronization objects stored in AWS Lambda functions can be started similarly. Set your working directory to be `DivideAndConquer/` and execute the following command:
 `python -m wukongdnc.server.tcp_server_lambda`
+
+## Running the Dask DAG Experiments
+
+To generate the necessary pickle file, execute the following command:
+`python -m wukongdnc.dag.dask_dag`
+
+Next, to run the local experiment itself, execute the following command:
+`python -m wukongdnc.dag.DAG_executor_driver`

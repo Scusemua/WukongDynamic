@@ -2,12 +2,12 @@ import threading
 import _thread
 import time
 
-from DFS_visit import Node
-from DFS_visit import state_info
+from .DFS_visit import Node
+from .DFS_visit import state_info
 #from DAG_executor_FanInNB import DAG_executor_FanInNB
-import DAG_executor_FanInNB
-import DAG_executor_FanIn
-from DAG_executor_State import DAG_executor_State
+from . import  DAG_executor_FanInNB
+from . import  DAG_executor_FanIn
+from .DAG_executor_State import DAG_executor_State
 import uuid
 
 from threading import RLock

@@ -12,6 +12,7 @@
 # This creates file DAG_info.pickle, which is used by the DAG_executor.
 
 import pickle
+import cloudpickle
 
 class state_info:
     def __init__(self, task_name, fanouts = None, fanins = None, faninNBs = None, collapse = None,
@@ -120,8 +121,8 @@ class Node:
     
     @classmethod
     def save_DAG_info(cls):
-        with open('DAG_info.pickle', 'wb') as handle:
-            pickle.dump(Node.DAG_info, handle, protocol=pickle.HIGHEST_PROTOCOL)  
+        with open('./DAG_info.pickle', 'wb') as handle:
+            cloudpickle.dump(Node.DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
     def __init__(self,succ=None, pred=None, task_name = None, task = None, leaf_task_input = None):
         self.succ = succ # names of dependent (successr) tasks
         self.pred = pred # names of tasks that have this noed as a dependent (successor). They are our "enablers"
