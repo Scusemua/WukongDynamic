@@ -174,6 +174,7 @@ class DAG_executor_Synchronizer(object):
         DAG_executor_State = keyword_arguments['DAG_executor_State']
         server = keyword_arguments['server']
         run_faninNB_task_on_server = keyword_arguments['run_faninNB_task_on_server']  # option set in DAG_executor
+        DAG_info = keyword_arguments['DAG_info']
         
         # create and fan_in must be atomic
         server.mutex.acquire()
@@ -333,7 +334,7 @@ def execute_task(task_name,input):
 	return output
 				 			 
 
-def process_faninNBs(faninNBs, faninNB_sizes, calling_task_name, DAG_states, DAG_exec_State, output, server):
+def process_faninNBs(faninNBs, faninNB_sizes, calling_task_name, DAG_states, DAG_exec_State, output, DAG_info, server):
     logger.debug("process_faninNBs")
 	# There may be multiple faninNBs; we cannot become one, by definition.
 	# Note: This thread cannot become since it may need to become a fanout.
@@ -369,6 +370,7 @@ def process_faninNBs(faninNBs, faninNB_sizes, calling_task_name, DAG_states, DAG
         keyword_arguments['DAG_executor_State'] = new_DAG_exec_State # given to the thread/lambda that executes the fanin task.
         keyword_arguments['server'] = server
         keyword_arguments['run_faninNB_task_on_server'] = run_faninNB_task_on_server
+        keyword_arguments['DAG_info'] = DAG_info
 				 
 		#Q: kwargs put in DAG_executor_State keywords and on server it gets keywords from state and passes to create and fanin
 				
@@ -385,7 +387,7 @@ def process_faninNBs(faninNBs, faninNB_sizes, calling_task_name, DAG_states, DAG
 #Todo: Global fanin, which determines whether last caller or not, and delegates
 #      collection of results to local fanins in infinistore executors.
 
-def process_fanouts(fanouts, DAG_states, DAG_exec_State, output, server):
+def process_fanouts(fanouts, DAG_states, DAG_exec_State, output, DAG_info, server):
     logger.debug("process_fanouts, length is " + str(len(fanouts)))
     
     #process become task 
@@ -417,6 +419,7 @@ def process_fanouts(fanouts, DAG_states, DAG_exec_State, output, server):
                     #"state": fanout_task_start_state, 
                     "input": output,
                     "DAG_executor_State": task_DAG_executor_State,
+                    "DAG_info": DAG_info,
                     "server": server
                 }
                 _thread.start_new_thread(DAG_executor_task, (payload,))
@@ -439,7 +442,8 @@ def process_fanouts(fanouts, DAG_states, DAG_exec_State, output, server):
 ##rhc
                     #"state": int(fanout_task_start_state),
                     "input": output,
-                    "DAG_executor_State": lambda_DAG_executor_State
+                    "DAG_executor_State": lambda_DAG_executor_State,
+                    "DAG_info": DAG_info
                     #"server": server   # used to mock server during testing
                 }
                 ###### DAG_executor_State.function_name has not changed
@@ -550,6 +554,7 @@ def DAG_executor(payload):
     # as the label for the value.
     input = payload['input']
     logger.debug("DAG_executor starting input:" +str(input) + " state: " + str(DAG_executor_State.state) )
+    DAG_info = payload['DAG_info']
     server = payload['server']
     
     #ToDo:
@@ -558,7 +563,9 @@ def DAG_executor(payload):
     while (True):
 ##rhc
         logger.debug ("access DAG_map with state " + str(DAG_executor_State.state))
-        state_info = Node.DAG_map[DAG_executor_State.state]
+        #state_info = Node.DAG_map[DAG_executor_State.state]
+        DAG_map = DAG_info.get_DAG_map()
+        state_info = DAG_map[DAG_executor_State.state]
         ##logger.debug ("access DAG_map with state " + str(state))
         ##state_info = Node.DAG_map[state]
 
@@ -587,7 +594,7 @@ def DAG_executor(payload):
 				# if deposit in synchronizer need to pass synchronizer name in payload. If synchronizer stored
 				# in Lambda, then fanout task executed in that Lambda.
 ##rhc
-                DAG_executor_State.state = process_fanouts(state_info.fanouts, Node.DAG_states, DAG_executor_State, output, server)
+                DAG_executor_State.state = process_fanouts(state_info.fanouts, Node.DAG_states, DAG_executor_State, output, DAG_info, server)
                 logger.debug("become state:" + str(DAG_executor_State.state))
                 ##state = process_fanouts(state_info.fanouts, Node.DAG_states, DAG_executor_State, output, server)
                 ##logger.debug("become state:" + str(state))

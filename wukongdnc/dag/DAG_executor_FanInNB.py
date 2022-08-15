@@ -60,13 +60,13 @@ class DAG_executor_FanInNB(MonitorSU):
         #   keyword_arguments['run_faninNB_task_on_server'] = run_faninNB_task_on_server    # option set in DAG_executor
         if kwargs is None or len(kwargs) == 0:
             raise ValueError("FanIn requires a length. No length provided.")
-        elif len(kwargs) > 8:
+        elif len(kwargs) > 9:
            raise ValueError("Error - FanIn init has too many args.")
         self._n = kwargs['n']
         #self.fanin_task_name = kwargs['fanin_task_name']
         self.start_state_fanin_task = kwargs['start_state_fanin_task']
         self.run_faninNB_task_on_server = kwargs['run_faninNB_task_on_server']
-        
+        self.DAG_info = kwargs['DAG_info']    
 
     def try_fan_in(self, **kwargs):
         # Does mutex.P as usual
@@ -149,6 +149,7 @@ class DAG_executor_FanInNB(MonitorSU):
                         #"state": int(start_state_fanin_task),
                         "input": self._results,
                         "DAG_executor_State": DAG_executor_state,
+                        "DAG_info": DAG_info,
                         "server": server
                     }
                     _thread.start_new_thread(DAG_executor.DAG_executor_task, (payload,))
@@ -170,6 +171,7 @@ class DAG_executor_FanInNB(MonitorSU):
                         #"state": int(start_state_fanin_task),
                         "input": self._results,
                         "DAG_executor_State": DAG_executor_state,
+                        "DAG_info": DAG_info
                         #"server": server   # used to mock server during testing
                     }
                     ###### DAG_executor_State.function_name has not changed

@@ -360,6 +360,7 @@ def run():
                     # as the label for the value.
                     "input": {'input': inp},
                     "DAG_executor_State": DAG_exec_state,
+                    "DAG_info": DAG_info,
                     "server": server
                 }
                 _thread.start_new_thread(DAG_executor.DAG_executor_task, (payload,))
@@ -380,7 +381,8 @@ def run():
 ##rhc
                     #"state": int(start_state),
                     "input": {'input': inp},
-                    "DAG_executor_State": lambda_DAG_executor_State
+                    "DAG_executor_State": lambda_DAG_executor_State,
+                    "DAG_info": DAG_info
                     #"server": server   # used to mock server during testing
                 }
                 ###### DAG_executor_State.function_name has not changed
