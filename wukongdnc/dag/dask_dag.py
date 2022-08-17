@@ -104,7 +104,7 @@ if __name__ == "__main__":
   
   if graph is None:
     graph = L[0].__dask_graph__()
-  tr_result = L[0].compute()
+  result = L[0].compute()
 
   nodes = [] 
   nodes_map = {}
@@ -141,7 +141,7 @@ if __name__ == "__main__":
   # Uncomment this line to generate an image showing the DAG.
   # dag_image = div.visualize("dag.png")
 
-  result = div.compute()
+  #result = div.compute()
 
   print("Result of executing the workload:", result)
 
