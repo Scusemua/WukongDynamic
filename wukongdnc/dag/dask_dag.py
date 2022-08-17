@@ -87,21 +87,19 @@ if __name__ == "__main__":
   def increment(x):
     return x + 1
 
-  inc0 = dask.delayed(increment)(0)
-  inc1 = dask.delayed(increment)(1)
-  trip = dask.delayed(triple)(inc1)
-  sq = dask.delayed(square)(inc1)
-  ad = dask.delayed(add)(inc1, inc0)
-  mult = dask.delayed(multiply)(trip, sq, ad)
-  div = dask.delayed(divide)(mult)
+  def manual_dag():
+    inc0 = dask.delayed(increment)(0)
+    inc1 = dask.delayed(increment)(1)
+    trip = dask.delayed(triple)(inc1)
+    sq = dask.delayed(square)(inc1)
+    ad = dask.delayed(add)(inc1, inc0)
+    mult = dask.delayed(multiply)(trip, sq, ad)
+    div = dask.delayed(divide)(mult)
 
-  #graph = div.__dask_graph__()
+    graph = div.__dask_graph__()
+    result = div.compute()
 
-  graph = None
-
-  ##################
-  # Tree Reduction #
-  ##################
+    return graph, result
 
   def tree_reduction(n = 32):
     """
@@ -144,6 +142,7 @@ if __name__ == "__main__":
 
     return graph, result    
   
+  # graph, result = manual_dag()
   # graph, result = tree_reduction(n = 32)
   graph, result = mat_mul(n = 10, c = 2)
 
@@ -157,13 +156,44 @@ if __name__ == "__main__":
     for dep in deps:
       dependents[dep].append(task)
 
+  for task, layer in graph.layers.items():
+    print("Task: %s" % task)
+    print("Layer: %s" % str(layer))
+    print("type(layer): %s\n" % str(type(layer)))
+  
+  print("\nProcessing layers now...\n")
+
   # For each of the DAG nodes, create a Node object.
   for task, layer in graph.layers.items():
-    node = Node(pred = list(dependencies[task]), succ = dependents[task], 
-      #rhc
-      task_name = task, task = layer[task][0], task_inputs = layer[task][1:])
-    nodes_map[task] = node 
-    nodes.append(node)
+    print("Processing task %s with layer type %s now..." % (task, str(type(layer))))
+    if type(layer) is dask.highlevelgraph.MaterializedLayer:
+      print("Processing MaterializedLayer now...")
+      for task_key, task_obj in layer.mapping.items():
+        print("Processing task: %s" % str(task_key))
+        if task_key in dependencies:
+          current_dependencies = list(dependencies[task_key])
+        else:
+          current_dependencies = []
+        
+        if task_key in dependents:
+          current_dependents = dependents[task_key]
+        else:
+          current_dependents = []
+
+        node = Node(pred = current_dependencies, succ = current_dependents, 
+          task_name = task_key, task = task_obj[0], task_inputs = task_obj[1:]) #rhc
+        nodes_map[task_key] = node 
+        nodes.append(node)
+    elif type(layer) is dask.blockwise.Blockwise:
+      print("Processing Blockwise now...")
+      node = Node(pred = list(dependencies[task]), succ = dependents[task], 
+        task_name = task, task = layer.dsk[task][0], task_inputs = layer.dsk[task][1:]) #rhc
+      nodes_map[task] = node 
+      nodes.append(node)
+
+      print("Processed task %s\n" % task)
+    else:
+      raise ValueError("Unknown layer type in HighLevelDask (i.e., the Dask graph has a layer in it, and we've not written code to process that type of layer). Layer type: " + str(type(layer)))
 
   for node in nodes:
     for i in range(0, len(node.pred)):
