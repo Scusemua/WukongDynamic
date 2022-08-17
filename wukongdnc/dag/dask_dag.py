@@ -1,5 +1,6 @@
 from distributed import LocalCluster, Client
 import dask
+import dask.array as da
 from collections import defaultdict
 from .DFS_visit import Node
 
@@ -98,15 +99,55 @@ if __name__ == "__main__":
 
   graph = None
 
-  L = range(32) # 1,024 
-  while len(L) > 1:
-    L = list(map(dask.delayed(add), L[0::2], L[1::2]))
-  
-  if graph is None:
-    graph = L[0].__dask_graph__()
-  result = L[0].compute()
+  ##################
+  # Tree Reduction #
+  ##################
 
-  nodes = [] 
+  def tree_reduction(n = 32):
+    """
+      n (int):
+        Size of the array on which to perform tree reduction.
+      
+      Returns
+      -------
+        Tuple where first element is the Dask HighLevelGraph object (or whatever the type is),
+        and the second element is the result of running the tree reduction computation on Dask proper.
+    """
+    L = range(n) # 1,024 
+    while len(L) > 1:
+      L = list(map(dask.delayed(add), L[0::2], L[1::2]))
+    
+    graph = L[0].__dask_graph__()
+    result = L[0].compute()
+
+    return graph, result 
+  
+  def mat_mul(n = 10, c = 2):
+    """
+      n (int):
+        We will multiply two n x n matrices.
+      
+      c (int):
+        The size of the chunks into which the matrices will be partitioned
+        when parallelizing the matrix multiplication operation.
+      
+      Returns
+      -------
+        Tuple where first element is the Dask HighLevelGraph object (or whatever the type is),
+        and the second element is the result of running the tree reduction computation on Dask proper.
+    """
+    x = da.random.random((n, n), chunks = (c, c))
+    y = da.random.random((n, n), chunks = (c, c))
+    z = da.matmul(x, y)
+    graph = z.__dask_graph__()
+    result = z.compute() 
+
+    return graph, result    
+  
+  # graph, result = tree_reduction(n = 32)
+  graph, result = mat_mul(n = 10, c = 2)
+
+  nodes = []                                                      
   nodes_map = {}
   dependencies = graph.dependencies
   dependents = defaultdict(list)
