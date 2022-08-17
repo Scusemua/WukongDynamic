@@ -66,7 +66,7 @@ class DAG_executor_FanInNB(MonitorSU):
         #self.fanin_task_name = kwargs['fanin_task_name']
         self.start_state_fanin_task = kwargs['start_state_fanin_task']
         self.run_faninNB_task_on_server = kwargs['run_faninNB_task_on_server']
-        self.DAG_info = kwargs['DAG_info']    
+        self.DAG_info = kwargs['DAG_info'] 
 
     def try_fan_in(self, **kwargs):
         # Does mutex.P as usual
@@ -100,8 +100,10 @@ class DAG_executor_FanInNB(MonitorSU):
             # No need to block non-last thread since we are done with them - they will terminate and not restart.
             # self._go.wait_c()
             result = kwargs['result']
+            logger.debug("FanInNB: result is " + str(result))
             calling_task_name = kwargs['calling_task_name']
-            self._results[calling_task_name] = result[calling_task_name]
+            #self._results[calling_task_name] = result[calling_task_name]
+            self._results[calling_task_name] = result
             logger.debug("FanInNB: Result (saved by the non-last executor) for fan-in %s: %s" % (self.monitor_name, str(result)))
             
             #threading.current_thread()._restart = False
@@ -113,13 +115,12 @@ class DAG_executor_FanInNB(MonitorSU):
             # used by wukong D&C is expecting a return value of 0 for this case.
             return 0, restart
         else:  
-            # Last thread does synchronize_synch and will wait for result since False returned by try_fan_in().
-            # Last thread does not append results. It will recieve list of results of other threads and append 
-            # its result locally to the returned list.
+            # Last thread does synchronize_synch and will not wait for result since this is fanin NB.
+            # Last thread does append results (unlike FanIn)
             logger.debug("FanInNB:Last thread in FanIn %s so not calling self._go.wait_c" % self.monitor_name)
             result = kwargs['result']
             calling_task_name = kwargs['calling_task_name']
-            self._results[calling_task_name] = result[calling_task_name]
+            self._results[calling_task_name] = result
             start_state_fanin_task = kwargs['start_state_fanin_task']
             
             if (self._results is not None):
@@ -149,7 +150,7 @@ class DAG_executor_FanInNB(MonitorSU):
                         #"state": int(start_state_fanin_task),
                         "input": self._results,
                         "DAG_executor_State": DAG_executor_state,
-                        "DAG_info": DAG_info,
+                        "DAG_info": self.DAG_info,
                         "server": server
                     }
                     _thread.start_new_thread(DAG_executor.DAG_executor_task, (payload,))
@@ -171,7 +172,7 @@ class DAG_executor_FanInNB(MonitorSU):
                         #"state": int(start_state_fanin_task),
                         "input": self._results,
                         "DAG_executor_State": DAG_executor_state,
-                        "DAG_info": DAG_info
+                        "DAG_info": self.DAG_info
                         #"server": server   # used to mock server during testing
                     }
                     ###### DAG_executor_State.function_name has not changed
@@ -228,7 +229,7 @@ class testThread(Thread):
         logger.debug("task " + self._ID + ", Successfully called fan_in")
 
 def main():
-    b = FanIn(initial_n=2,monitor_name="FanIn")
+    b = DAG_executor_FanInNB(initial_n=2,monitor_name="DAG_executor_FanInNB")
     b.init(**{"n": 2})
 
     #try:

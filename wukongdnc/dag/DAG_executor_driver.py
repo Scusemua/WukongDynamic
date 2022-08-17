@@ -281,7 +281,7 @@ def run():
     # logger.debug("DAG_map after assignment:")
     # for key, value in Node.DAG_map.items():
     #     logger.debug(key)
-    #     logger.debug(value)
+    #     logger.debug(value)   
     # logger.debug("   ")
     # states = Node.DAG_states
     
@@ -311,7 +311,34 @@ def run():
     DAG_leaf_tasks = DAG_info.get_DAG_leaf_tasks()
     DAG_leaf_task_start_states = DAG_info.get_DAG_leaf_task_start_states()
     DAG_tasks = DAG_info.get_DAG_tasks()
-    #DAG_leaf_task_inputs = DAG_info.get_DAG_leaf_task_inputs()
+    DAG_leaf_task_inputs = DAG_info.get_DAG_leaf_task_inputs()
+
+    print("DAG_map:")
+    for key, value in DAG_map.items():
+        print(key)
+        print(value)
+    print("  ")
+    print("DAG states:")         
+    for key, value in DAG_states.items():
+        print(key)
+        print(value)
+    print("   ")
+    print("DAG leaf task start states")
+    for start_state in DAG_leaf_task_start_states:
+        print(start_state)
+    print()
+    print("DAG_tasks:")
+    for key, value in DAG_tasks.items():
+        print(key, ' : ', value)
+    print()
+    print("DAG_leaf_tasks:")
+    for task_name in DAG_leaf_tasks:
+        print(task_name)
+    print() 
+    print("DAG_leaf_task_inputs:")
+    for inp in DAG_leaf_task_inputs:
+        print(inp)
+    print()  
     
     #ResetRedis()
     
@@ -324,9 +351,9 @@ def run():
 
     server = DAG_executor.DAG_executor_Synchronizer()
     
-    server.create_all_fanins_and_faninNBs(DAG_map,DAG_states, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
+    server.create_all_fanins_and_faninNBs(DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
 
-    DAG_leaf_task_inputs = get_DAG_leaf_task_inputs(DAG_leaf_tasks)
+    #DAG_leaf_task_inputs = get_DAG_leaf_task_inputs(DAG_leaf_tasks)
     
     print("DAG_leaf_tasks: " + str(DAG_leaf_tasks))
     print("DAG_leaf_task_start_states: " + str(DAG_leaf_task_start_states))
@@ -336,6 +363,7 @@ def run():
         print("iterate")
         DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state)
         logger.debug("Starting DAG_executor for task " + task_name)
+
         """
         payload = {
             #"start_state": start_state,
@@ -358,7 +386,8 @@ def run():
                     #    def execute_task(task_name,input): output = Node.DAG_tasks[task_name](input)
                     # So the executed task gets ['input': inp], just like a non-leaf task gets ['output': X]. For leaf tasks, we use "input"
                     # as the label for the value.
-                    "input": {'input': inp},
+                    #"input": {'input': inp},
+                    "input": inp,
                     "DAG_executor_State": DAG_exec_state,
                     "DAG_info": DAG_info,
                     "server": server
@@ -508,7 +537,7 @@ def create_all_fanins_and_faninNBs(websocket,DAG_map,DAG_states,all_fanin_task_n
     
     fanin_messages = []
     #for fanin_name, size in [(fanin_name,size) for fanin_name in all_fanins for size in all_fanin_sizes]:
-    for fanin_name, size in zip(all_fanins,all_fanin_sizes):
+    for fanin_name, size in zip(all_fanin_task_names,all_fanin_sizes):
         dummy_state = DAG_executor_State()
         dummy_state.keyword_arguments['n'] = size
         dummy_state.keyword_arguments['start_state_fanin_task'] = DAG_states[fanin_name]      
@@ -524,7 +553,7 @@ def create_all_fanins_and_faninNBs(websocket,DAG_map,DAG_states,all_fanin_task_n
 
     faninNB_messages = []
     #for fanin_nameNB, size in [(fanin_nameNB,size) for fanin_nameNB in all_faninNBs for size in all_faninNB_sizes]:
-    for fanin_nameNB, size in zip(all_faninNBs,all_faninNB_sizes):
+    for fanin_nameNB, size in zip(all_faninNB_task_names,all_faninNB_sizes):
         dummy_state = DAG_executor_State()
         dummy_state.keyword_arguments['n'] = size
         dummy_state.keyword_arguments['start_state_fanin_task'] = DAG_states[fanin_name]
@@ -535,7 +564,7 @@ def create_all_fanins_and_faninNBs(websocket,DAG_map,DAG_states,all_fanin_task_n
         message = {
             "op": "create",
             "type": "DAG_executor_FanInNB",
-            "name": faninNB_name,
+            "name": fanin_nameNB,
             "state": make_json_serializable(dummy_state),	
             "id": msg_id
         }
@@ -550,7 +579,7 @@ def create_all_fanins_and_faninNBs(websocket,DAG_map,DAG_states,all_fanin_task_n
         "op": "create_all_fanins_and_faninNBs",
         "type": "DAG_executor_fanin_or_faninNB",
         "name": messages,						# Q: Fix this? usually it's a synch object name (string)
-        "state": make_json_serializable(state),
+        "state": make_json_serializable(dummy_state),
         "id": msg_id
     }
 												

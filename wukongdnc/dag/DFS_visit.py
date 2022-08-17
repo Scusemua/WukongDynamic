@@ -14,9 +14,21 @@
 import pickle
 import cloudpickle
 
+import logging 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
+
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+ch.setFormatter(formatter)
+
+logger.addHandler(ch)
+
+
 class state_info:
     def __init__(self, task_name, fanouts = None, fanins = None, faninNBs = None, collapse = None,
-        fanin_sizes = None, faninNB_sizes = None):
+        fanin_sizes = None, faninNB_sizes = None, task_inputs = None):
         self.task_name = task_name
         self.fanouts = fanouts      # see comment below for examples
         self.fanins = fanins
@@ -24,6 +36,7 @@ class state_info:
         self.fanin_sizes = fanin_sizes
         self.faninNB_sizes = faninNB_sizes
         self.collapse = collapse
+        self.task_inputs = task_inputs
     def __str__(self):
         if self.fanouts != None:
             fanouts_string = str(self.fanouts)
@@ -48,13 +61,18 @@ class state_info:
         if self.faninNB_sizes != None:
             faninNB_sizes_string = str(self.faninNB_sizes)
         else:
-            faninNB_sizes_string = "None"             
+            faninNB_sizes_string = "None"         
+        if self.task_inputs != None:
+            task_inputs_string = str(self.task_inputs)
+        else:
+            task_inputs_string = "None"          
         return (" task: " + self.task_name+", " + "fanouts:" + fanouts_string + "," + "fanins:" + fanins_string + "," + "faninsNB:" + faninNBs_string + "," 
-            + "collapse:" + collapse_string + "fanin_sizes:" + fanin_sizes_string + "," + "faninNB_sizes:" + faninNB_sizes_string)
+            + "collapse:" + collapse_string + "fanin_sizes:" + fanin_sizes_string + "," 
+            + "faninNB_sizes:" + faninNB_sizes_string + "task_inputs: " + task_inputs_string)
 	
 """ Examples of fanouts, fanins, and faninNBs (No Becomes)
   n2   n3
-    \  /
+    t  t
      n1 
 n1's fanout List is [n2,n3]
 
@@ -72,7 +90,7 @@ we pass this state in the payload for the Lamda that executes the DAG; in this s
 task will be excuted (using the information from the DAG_map obtained by using state as the key).
      
   n2   n3
-   \  /  \
+   t  t  t
     n1   n4
 n1's fanouts List is [n2] - N1 will become n2
 n1's faninNBs list is n3 - neither n1 nor n4 will becone fanin task n3. 
@@ -123,16 +141,16 @@ class Node:
     def save_DAG_info(cls):
         with open('./DAG_info.pickle', 'wb') as handle:
             cloudpickle.dump(Node.DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
-    def __init__(self,succ=None, pred=None, task_name = None, task = None, leaf_task_input = None):
+    def __init__(self,succ=None, pred=None, task_name = None, task = None, task_inputs = None):
         self.succ = succ # names of dependent (successr) tasks
         self.pred = pred # names of tasks that have this noed as a dependent (successor). They are our "enablers"
         self.task_name = task_name # task_name  for this node
         self.task = task
-        self.leaf_task_input = leaf_task_input
-    def get_leaf_task_input(self):
-        return self.leaf_task_input 
-    def set_leaf_task_input(self, task_input):
-        self.leaf_task_input = task_input            
+        self.task_inputs = task_inputs
+    def get_task_inputs(self):
+        return self.task_inputs 
+    def set_task_inputs(self, task_inputs):
+        self.task_inputs = task_inputs            
     def get_pred(self):     
         return self.pred
     def set_pred(self,lst):
@@ -228,12 +246,13 @@ class Node:
         state = self.generate_state(self.get_task_name())
 		
         # if T previously encountered as a dependent, now we add T's information for executing T
-        Node.DAG_map[state] = state_info(self.get_task_name(), fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes)
+        Node.DAG_map[state] = state_info(self.get_task_name(), fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, self.get_task_inputs())
         Node.DAG_states[self.get_task_name()] = state
+        #ToDo: Don't need this if task inputs are in state_info
         if len(self.get_pred()) == 0:
             Node.DAG_leaf_task_start_states.append(state)
             Node.DAG_leaf_tasks.append(self.get_task_name()) 
-            Node.DAG_leaf_task_inputs.append(self.get_leaf_task_input())
+            Node.DAG_leaf_task_inputs.append(self.get_task_inputs())
         
         # Generate fanin/fanouts. Order is important; we will execute faninNBs followed by fanouts (where
         # fanout has a become) or fanins, where fanins and faninNBs/fanouts are mutually exlusive. i.e., 
@@ -344,7 +363,7 @@ class Node:
             assigned_state = Node.DAG_states[task_name]
         else:
             assigned_state = None
-        print("generate state: task_name: " + task_name + " assigned state:" + str(assigned_state));
+        print("generate state: task_name: " + task_name + " assigned state:" + str(assigned_state))
         if assigned_state != None:
             state = assigned_state
             # already encountered n as a dependent, here n is also a dependent so no need to add the same 
