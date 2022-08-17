@@ -97,7 +97,7 @@ class DAG_executor_FanIn(MonitorSU):
             # self._go.wait_c()
             result = kwargs['result']
             calling_task_name = kwargs['calling_task_name']
-            self._results[calling_task_name] = result[calling_task_name]
+            self._results[calling_task_name] = result
             logger.debug("Result (saved by the non-last executor) " + calling_task_name + " for fan-in %s: %s" % (self.monitor_name, str(result)))
             
             #threading.current_thread()._restart = False
@@ -170,7 +170,7 @@ class testThread(Thread):
         logger.debug("task " + self._ID + ", Successfully called fan_in")
 
 def main():
-    b = FanIn(initial_n=2,monitor_name="FanIn")
+    b = DAG_executor_FanIn(initial_n=2,monitor_name="DAG_executor_FanIn")
     b.init(**{"n": 2})
 
     #try:

@@ -1,10 +1,8 @@
-Result of executing the workload: 1.0
-
-Leaf Task IDs: ['increment-1622956c-397c-4505-bbf7-851eca2d34c0', 'increment-fe7a4394-15a5-4563-a856-f54aab132a88']
+Leaf Task IDs: ['increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54', 'increment-582ee3e0-5d6a-4359-b5f2-8d09da647fdb']
 
 Leaf Tasks:
-	 increment-1622956c-397c-4505-bbf7-851eca2d34c0: (<function increment at 0x0000013CFF4FB9D0>, 1)
-	 increment-fe7a4394-15a5-4563-a856-f54aab132a88: (<function increment at 0x0000013CFF4FB9D0>, 0)
+         increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54: (<function increment at 0x00000230FFC82AF0>, 1)
+         increment-582ee3e0-5d6a-4359-b5f2-8d09da647fdb: (<function increment at 0x00000230FFC82AF0>, 0)
 
 Mapping from Task ID to the 'Task' object
 This shows task keys mapped to task objects.
@@ -12,70 +10,70 @@ The first element of the task object is the function to be executed.
 The remaining elements are the input to the tasks.
 The inputs may be task IDs. This specifies data dependencies between tasks.
 
-multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056: (<function multiply at 0x0000013CFF4FBB80>, 'triple-9d98b735-6779-44d3-a14d-1871632797d3', 'square-0a800e8d-a04e-4b6c-8b4f-8a4913fdd237', 'add-ae31d8b9-f49b-47f7-909f-28956f81554f')
-increment-1622956c-397c-4505-bbf7-851eca2d34c0: (<function increment at 0x0000013CFF4FB9D0>, 1)
-triple-9d98b735-6779-44d3-a14d-1871632797d3: (<function triple at 0x0000013CFF4FBC10>, 'increment-1622956c-397c-4505-bbf7-851eca2d34c0')
-square-0a800e8d-a04e-4b6c-8b4f-8a4913fdd237: (<function square at 0x0000013CFF4FB940>, 'increment-1622956c-397c-4505-bbf7-851eca2d34c0')
-add-ae31d8b9-f49b-47f7-909f-28956f81554f: (<function add at 0x0000013CFF559AF0>, 'increment-1622956c-397c-4505-bbf7-851eca2d34c0', 'increment-fe7a4394-15a5-4563-a856-f54aab132a88')
-increment-fe7a4394-15a5-4563-a856-f54aab132a88: (<function increment at 0x0000013CFF4FB9D0>, 0)
-divide-6cc5f382-c7e7-417f-a4f1-e234539baa85: (<function divide at 0x0000013CFF4FBCA0>, 'multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056')
-DFS: visit task: increment-1622956c-397c-4505-bbf7-851eca2d34c0
-neighbor_task_name: triple-9d98b735-6779-44d3-a14d-1871632797d3
-DFS: visit task: triple-9d98b735-6779-44d3-a14d-1871632797d3
-neighbor_task_name: multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056
-DFS: visit task: multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056
-neighbor_task_name: divide-6cc5f382-c7e7-417f-a4f1-e234539baa85
-DFS: visit task: divide-6cc5f382-c7e7-417f-a4f1-e234539baa85
-neighbor_task_name: square-0a800e8d-a04e-4b6c-8b4f-8a4913fdd237
-DFS: visit task: square-0a800e8d-a04e-4b6c-8b4f-8a4913fdd237
-neighbor_task_name: multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056
-neighbor_task_name: add-ae31d8b9-f49b-47f7-909f-28956f81554f
-DFS: visit task: add-ae31d8b9-f49b-47f7-909f-28956f81554f
-neighbor_task_name: multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056
-DFS: visit task: increment-fe7a4394-15a5-4563-a856-f54aab132a88
-neighbor_task_name: add-ae31d8b9-f49b-47f7-909f-28956f81554f
+multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3: (<function multiply at 0x00000230FFC829D0>, 'triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b', 'square-b140dc3a-338e-4ce0-b21f-f97c585b6598', 'add-fb57fc54-14a4-4c86-965e-4096efd416a7')
+increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54: (<function increment at 0x00000230FFC82AF0>, 1)
+triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b: (<function triple at 0x00000230FEA861F0>, 'increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54')
+square-b140dc3a-338e-4ce0-b21f-f97c585b6598: (<function square at 0x00000230FEA860D0>, 'increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54')
+add-fb57fc54-14a4-4c86-965e-4096efd416a7: (<function add at 0x00000230FEA08160>, 'increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54', 'increment-582ee3e0-5d6a-4359-b5f2-8d09da647fdb')
+increment-582ee3e0-5d6a-4359-b5f2-8d09da647fdb: (<function increment at 0x00000230FFC82AF0>, 0)
+divide-757a7e5e-56f9-4c18-9e5d-65572d7c9c0d: (<function divide at 0x00000230FFC82790>, 'multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3')
+DFS: visit task: increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54
+neighbor_task_name: triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b
+DFS: visit task: triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b
+neighbor_task_name: multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3
+DFS: visit task: multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3
+neighbor_task_name: divide-757a7e5e-56f9-4c18-9e5d-65572d7c9c0d
+DFS: visit task: divide-757a7e5e-56f9-4c18-9e5d-65572d7c9c0d
+neighbor_task_name: square-b140dc3a-338e-4ce0-b21f-f97c585b6598
+DFS: visit task: square-b140dc3a-338e-4ce0-b21f-f97c585b6598
+neighbor_task_name: multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3
+neighbor_task_name: add-fb57fc54-14a4-4c86-965e-4096efd416a7
+DFS: visit task: add-fb57fc54-14a4-4c86-965e-4096efd416a7
+neighbor_task_name: multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3
+DFS: visit task: increment-582ee3e0-5d6a-4359-b5f2-8d09da647fdb
+neighbor_task_name: add-fb57fc54-14a4-4c86-965e-4096efd416a7
 
 DFS_nodes:
-increment-1622956c-397c-4505-bbf7-851eca2d34c0
-triple-9d98b735-6779-44d3-a14d-1871632797d3
-multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056
-divide-6cc5f382-c7e7-417f-a4f1-e234539baa85
-square-0a800e8d-a04e-4b6c-8b4f-8a4913fdd237
-add-ae31d8b9-f49b-47f7-909f-28956f81554f
-increment-fe7a4394-15a5-4563-a856-f54aab132a88
+increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54
+triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b
+multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3
+divide-757a7e5e-56f9-4c18-9e5d-65572d7c9c0d
+square-b140dc3a-338e-4ce0-b21f-f97c585b6598
+add-fb57fc54-14a4-4c86-965e-4096efd416a7
+increment-582ee3e0-5d6a-4359-b5f2-8d09da647fdb
 
 generate ops for DFS_nodes:
-generate_ops for: increment-1622956c-397c-4505-bbf7-851eca2d34c0
+generate_ops for: increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54
 process dependents_of_T
-process dependent triple-9d98b735-6779-44d3-a14d-1871632797d3
-process dependent square-0a800e8d-a04e-4b6c-8b4f-8a4913fdd237
-process dependent add-ae31d8b9-f49b-47f7-909f-28956f81554f
-generate state: task_name: increment-1622956c-397c-4505-bbf7-851eca2d34c0 assigned state:None
-generate state: task_name: add-ae31d8b9-f49b-47f7-909f-28956f81554f assigned state:None
-generate state: task_name: triple-9d98b735-6779-44d3-a14d-1871632797d3 assigned state:None
-generate state: task_name: square-0a800e8d-a04e-4b6c-8b4f-8a4913fdd237 assigned state:None
+process dependent triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b
+process dependent square-b140dc3a-338e-4ce0-b21f-f97c585b6598
+process dependent add-fb57fc54-14a4-4c86-965e-4096efd416a7
+generate state: task_name: increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54 assigned state:None
+generate state: task_name: add-fb57fc54-14a4-4c86-965e-4096efd416a7 assigned state:None
+generate state: task_name: triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b assigned state:None
+generate state: task_name: square-b140dc3a-338e-4ce0-b21f-f97c585b6598 assigned state:None
 DAG_map:
-1  :   task: increment-1622956c-397c-4505-bbf7-851eca2d34c0, fanouts:['triple-9d98b735-6779-44d3-a14d-1871632797d3', 'square-0a800e8d-a04e-4b6c-8b4f-8a4913fdd237'],fanins:[],faninsNB:['add-ae31d8b9-f49b-47f7-909f-28956f81554f'],collapse:[]fanin_sizes:[],faninNB_sizes:[2]
-2  :   task: add-ae31d8b9-f49b-47f7-909f-28956f81554f, fanouts:None,fanins:None,faninsNB:None,collapse:Nonefanin_sizes:None,faninNB_sizes:None
-3  :   task: triple-9d98b735-6779-44d3-a14d-1871632797d3, fanouts:None,fanins:None,faninsNB:None,collapse:Nonefanin_sizes:None,faninNB_sizes:None
-4  :   task: square-0a800e8d-a04e-4b6c-8b4f-8a4913fdd237, fanouts:None,fanins:None,faninsNB:None,collapse:Nonefanin_sizes:None,faninNB_sizes:None
+1  :   task: increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54, fanouts:['triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b', 'square-b140dc3a-338e-4ce0-b21f-f97c585b6598'],fanins:[],faninsNB:['add-fb57fc54-14a4-4c86-965e-4096efd416a7'],collapse:[]fanin_sizes:[],faninNB_sizes:[2]task_inputs: (1,)
+2  :   task: add-fb57fc54-14a4-4c86-965e-4096efd416a7, fanouts:None,fanins:None,faninsNB:None,collapse:Nonefanin_sizes:None,faninNB_sizes:Nonetask_inputs: None
+3  :   task: triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b, fanouts:None,fanins:None,faninsNB:None,collapse:Nonefanin_sizes:None,faninNB_sizes:Nonetask_inputs: None
+4  :   task: square-b140dc3a-338e-4ce0-b21f-f97c585b6598, fanouts:None,fanins:None,faninsNB:None,collapse:Nonefanin_sizes:None,faninNB_sizes:Nonetask_inputs: None
 
 states:
-increment-1622956c-397c-4505-bbf7-851eca2d34c0  :  1
-add-ae31d8b9-f49b-47f7-909f-28956f81554f  :  2
-triple-9d98b735-6779-44d3-a14d-1871632797d3  :  3
-square-0a800e8d-a04e-4b6c-8b4f-8a4913fdd237  :  4
+increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54  :  1
+add-fb57fc54-14a4-4c86-965e-4096efd416a7  :  2
+triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b  :  3
+square-b140dc3a-338e-4ce0-b21f-f97c585b6598  :  4
 
 num_fanins:0 num_fanouts:2 num_faninNBs:1 num_collapse:0
 
 all_fanout_task_names
-triple-9d98b735-6779-44d3-a14d-1871632797d3
-square-0a800e8d-a04e-4b6c-8b4f-8a4913fdd237
+triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b
+square-b140dc3a-338e-4ce0-b21f-f97c585b6598
 
 all_fanin_task_names
 
 all_faninNB_task_names
-add-ae31d8b9-f49b-47f7-909f-28956f81554f
+add-fb57fc54-14a4-4c86-965e-4096efd416a7
 
 all_collapse_task_names
 
@@ -83,41 +81,44 @@ leaf task start states
 1
 
 DAG_tasks:
-increment-1622956c-397c-4505-bbf7-851eca2d34c0  :  <function increment at 0x0000013CFF4FB9D0>
+increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54  :  <function increment at 0x00000230FFC82AF0>
 
 DAG_leaf_tasks:
-increment-1622956c-397c-4505-bbf7-851eca2d34c0
+increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54
 
-generate_ops for: triple-9d98b735-6779-44d3-a14d-1871632797d3
+DAG_leaf_task_inputs:
+(1,)
+
+generate_ops for: triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b
 process dependents_of_T
-process dependent multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056
-generate state: task_name: triple-9d98b735-6779-44d3-a14d-1871632797d3 assigned state:3
-generate state: task_name: multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056 assigned state:None
+process dependent multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3
+generate state: task_name: triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b assigned state:3
+generate state: task_name: multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3 assigned state:None
 DAG_map:
-1  :   task: increment-1622956c-397c-4505-bbf7-851eca2d34c0, fanouts:['triple-9d98b735-6779-44d3-a14d-1871632797d3', 'square-0a800e8d-a04e-4b6c-8b4f-8a4913fdd237'],fanins:[],faninsNB:['add-ae31d8b9-f49b-47f7-909f-28956f81554f'],collapse:[]fanin_sizes:[],faninNB_sizes:[2]
-2  :   task: add-ae31d8b9-f49b-47f7-909f-28956f81554f, fanouts:None,fanins:None,faninsNB:None,collapse:Nonefanin_sizes:None,faninNB_sizes:None
-3  :   task: triple-9d98b735-6779-44d3-a14d-1871632797d3, fanouts:[],fanins:['multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056'],faninsNB:[],collapse:[]fanin_sizes:[3],faninNB_sizes:[]
-4  :   task: square-0a800e8d-a04e-4b6c-8b4f-8a4913fdd237, fanouts:None,fanins:None,faninsNB:None,collapse:Nonefanin_sizes:None,faninNB_sizes:None
-5  :   task: multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056, fanouts:None,fanins:None,faninsNB:None,collapse:Nonefanin_sizes:None,faninNB_sizes:None
+1  :   task: increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54, fanouts:['triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b', 'square-b140dc3a-338e-4ce0-b21f-f97c585b6598'],fanins:[],faninsNB:['add-fb57fc54-14a4-4c86-965e-4096efd416a7'],collapse:[]fanin_sizes:[],faninNB_sizes:[2]task_inputs: (1,)
+2  :   task: add-fb57fc54-14a4-4c86-965e-4096efd416a7, fanouts:None,fanins:None,faninsNB:None,collapse:Nonefanin_sizes:None,faninNB_sizes:Nonetask_inputs: None
+3  :   task: triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b, fanouts:[],fanins:['multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3'],faninsNB:[],collapse:[]fanin_sizes:[3],faninNB_sizes:[]task_inputs: ('increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54',)
+4  :   task: square-b140dc3a-338e-4ce0-b21f-f97c585b6598, fanouts:None,fanins:None,faninsNB:None,collapse:Nonefanin_sizes:None,faninNB_sizes:Nonetask_inputs: None
+5  :   task: multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3, fanouts:None,fanins:None,faninsNB:None,collapse:Nonefanin_sizes:None,faninNB_sizes:Nonetask_inputs: None
 
 states:
-increment-1622956c-397c-4505-bbf7-851eca2d34c0  :  1
-add-ae31d8b9-f49b-47f7-909f-28956f81554f  :  2
-triple-9d98b735-6779-44d3-a14d-1871632797d3  :  3
-square-0a800e8d-a04e-4b6c-8b4f-8a4913fdd237  :  4
-multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056  :  5
+increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54  :  1
+add-fb57fc54-14a4-4c86-965e-4096efd416a7  :  2
+triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b  :  3
+square-b140dc3a-338e-4ce0-b21f-f97c585b6598  :  4
+multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3  :  5
 
 num_fanins:1 num_fanouts:2 num_faninNBs:1 num_collapse:0
 
 all_fanout_task_names
-triple-9d98b735-6779-44d3-a14d-1871632797d3
-square-0a800e8d-a04e-4b6c-8b4f-8a4913fdd237
+triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b
+square-b140dc3a-338e-4ce0-b21f-f97c585b6598
 
 all_fanin_task_names
-multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056
+multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3
 
 all_faninNB_task_names
-add-ae31d8b9-f49b-47f7-909f-28956f81554f
+add-fb57fc54-14a4-4c86-965e-4096efd416a7
 
 all_collapse_task_names
 
@@ -125,256 +126,476 @@ leaf task start states
 1
 
 DAG_tasks:
-increment-1622956c-397c-4505-bbf7-851eca2d34c0  :  <function increment at 0x0000013CFF4FB9D0>
-triple-9d98b735-6779-44d3-a14d-1871632797d3  :  <function triple at 0x0000013CFF4FBC10>
+increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54  :  <function increment at 0x00000230FFC82AF0>
+triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b  :  <function triple at 0x00000230FEA861F0>
 
 DAG_leaf_tasks:
-increment-1622956c-397c-4505-bbf7-851eca2d34c0
+increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54
 
-generate_ops for: multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056
+DAG_leaf_task_inputs:
+(1,)
+
+generate_ops for: multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3
 process dependents_of_T
-process dependent divide-6cc5f382-c7e7-417f-a4f1-e234539baa85
-generate state: task_name: multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056 assigned state:5
-generate state: task_name: divide-6cc5f382-c7e7-417f-a4f1-e234539baa85 assigned state:None
+process dependent divide-757a7e5e-56f9-4c18-9e5d-65572d7c9c0d
+generate state: task_name: multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3 assigned state:5
+generate state: task_name: divide-757a7e5e-56f9-4c18-9e5d-65572d7c9c0d assigned state:None
 DAG_map:
-1  :   task: increment-1622956c-397c-4505-bbf7-851eca2d34c0, fanouts:['triple-9d98b735-6779-44d3-a14d-1871632797d3', 'square-0a800e8d-a04e-4b6c-8b4f-8a4913fdd237'],fanins:[],faninsNB:['add-ae31d8b9-f49b-47f7-909f-28956f81554f'],collapse:[]fanin_sizes:[],faninNB_sizes:[2]
-2  :   task: add-ae31d8b9-f49b-47f7-909f-28956f81554f, fanouts:None,fanins:None,faninsNB:None,collapse:Nonefanin_sizes:None,faninNB_sizes:None
-3  :   task: triple-9d98b735-6779-44d3-a14d-1871632797d3, fanouts:[],fanins:['multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056'],faninsNB:[],collapse:[]fanin_sizes:[3],faninNB_sizes:[]
-4  :   task: square-0a800e8d-a04e-4b6c-8b4f-8a4913fdd237, fanouts:None,fanins:None,faninsNB:None,collapse:Nonefanin_sizes:None,faninNB_sizes:None
-5  :   task: multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056, fanouts:[],fanins:[],faninsNB:[],collapse:['divide-6cc5f382-c7e7-417f-a4f1-e234539baa85']fanin_sizes:[],faninNB_sizes:[]
-6  :   task: divide-6cc5f382-c7e7-417f-a4f1-e234539baa85, fanouts:None,fanins:None,faninsNB:None,collapse:Nonefanin_sizes:None,faninNB_sizes:None
+1  :   task: increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54, fanouts:['triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b', 'square-b140dc3a-338e-4ce0-b21f-f97c585b6598'],fanins:[],faninsNB:['add-fb57fc54-14a4-4c86-965e-4096efd416a7'],collapse:[]fanin_sizes:[],faninNB_sizes:[2]task_inputs: (1,)
+2  :   task: add-fb57fc54-14a4-4c86-965e-4096efd416a7, fanouts:None,fanins:None,faninsNB:None,collapse:Nonefanin_sizes:None,faninNB_sizes:Nonetask_inputs: None
+3  :   task: triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b, fanouts:[],fanins:['multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3'],faninsNB:[],collapse:[]fanin_sizes:[3],faninNB_sizes:[]task_inputs: ('increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54',)
+4  :   task: square-b140dc3a-338e-4ce0-b21f-f97c585b6598, fanouts:None,fanins:None,faninsNB:None,collapse:Nonefanin_sizes:None,faninNB_sizes:Nonetask_inputs: None
+5  :   task: multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3, fanouts:[],fanins:[],faninsNB:[],collapse:['divide-757a7e5e-56f9-4c18-9e5d-65572d7c9c0d']fanin_sizes:[],faninNB_sizes:[]task_inputs: ('triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b', 'square-b140dc3a-338e-4ce0-b21f-f97c585b6598', 'add-fb57fc54-14a4-4c86-965e-4096efd416a7')
+6  :   task: divide-757a7e5e-56f9-4c18-9e5d-65572d7c9c0d, fanouts:None,fanins:None,faninsNB:None,collapse:Nonefanin_sizes:None,faninNB_sizes:Nonetask_inputs: None
 
 states:
-increment-1622956c-397c-4505-bbf7-851eca2d34c0  :  1
-add-ae31d8b9-f49b-47f7-909f-28956f81554f  :  2
-triple-9d98b735-6779-44d3-a14d-1871632797d3  :  3
-square-0a800e8d-a04e-4b6c-8b4f-8a4913fdd237  :  4
-multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056  :  5
-divide-6cc5f382-c7e7-417f-a4f1-e234539baa85  :  6
+increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54  :  1
+add-fb57fc54-14a4-4c86-965e-4096efd416a7  :  2
+triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b  :  3
+square-b140dc3a-338e-4ce0-b21f-f97c585b6598  :  4
+multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3  :  5
+divide-757a7e5e-56f9-4c18-9e5d-65572d7c9c0d  :  6
 
 num_fanins:1 num_fanouts:2 num_faninNBs:1 num_collapse:1
 
 all_fanout_task_names
-triple-9d98b735-6779-44d3-a14d-1871632797d3
-square-0a800e8d-a04e-4b6c-8b4f-8a4913fdd237
+triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b
+square-b140dc3a-338e-4ce0-b21f-f97c585b6598
 
 all_fanin_task_names
-multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056
+multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3
 
 all_faninNB_task_names
-add-ae31d8b9-f49b-47f7-909f-28956f81554f
+add-fb57fc54-14a4-4c86-965e-4096efd416a7
 
 all_collapse_task_names
-divide-6cc5f382-c7e7-417f-a4f1-e234539baa85
+divide-757a7e5e-56f9-4c18-9e5d-65572d7c9c0d
 
 leaf task start states
 1
 
 DAG_tasks:
-increment-1622956c-397c-4505-bbf7-851eca2d34c0  :  <function increment at 0x0000013CFF4FB9D0>
-triple-9d98b735-6779-44d3-a14d-1871632797d3  :  <function triple at 0x0000013CFF4FBC10>
-multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056  :  <function multiply at 0x0000013CFF4FBB80>
+increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54  :  <function increment at 0x00000230FFC82AF0>
+triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b  :  <function triple at 0x00000230FEA861F0>
+multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3  :  <function multiply at 0x00000230FFC829D0>
 
 DAG_leaf_tasks:
-increment-1622956c-397c-4505-bbf7-851eca2d34c0
+increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54
 
-generate_ops for: divide-6cc5f382-c7e7-417f-a4f1-e234539baa85
+DAG_leaf_task_inputs:
+(1,)
+
+generate_ops for: divide-757a7e5e-56f9-4c18-9e5d-65572d7c9c0d
 process dependents_of_T
-generate state: task_name: divide-6cc5f382-c7e7-417f-a4f1-e234539baa85 assigned state:6
+generate state: task_name: divide-757a7e5e-56f9-4c18-9e5d-65572d7c9c0d assigned state:6
 DAG_map:
-1  :   task: increment-1622956c-397c-4505-bbf7-851eca2d34c0, fanouts:['triple-9d98b735-6779-44d3-a14d-1871632797d3', 'square-0a800e8d-a04e-4b6c-8b4f-8a4913fdd237'],fanins:[],faninsNB:['add-ae31d8b9-f49b-47f7-909f-28956f81554f'],collapse:[]fanin_sizes:[],faninNB_sizes:[2]
-2  :   task: add-ae31d8b9-f49b-47f7-909f-28956f81554f, fanouts:None,fanins:None,faninsNB:None,collapse:Nonefanin_sizes:None,faninNB_sizes:None
-3  :   task: triple-9d98b735-6779-44d3-a14d-1871632797d3, fanouts:[],fanins:['multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056'],faninsNB:[],collapse:[]fanin_sizes:[3],faninNB_sizes:[]
-4  :   task: square-0a800e8d-a04e-4b6c-8b4f-8a4913fdd237, fanouts:None,fanins:None,faninsNB:None,collapse:Nonefanin_sizes:None,faninNB_sizes:None
-5  :   task: multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056, fanouts:[],fanins:[],faninsNB:[],collapse:['divide-6cc5f382-c7e7-417f-a4f1-e234539baa85']fanin_sizes:[],faninNB_sizes:[]
-6  :   task: divide-6cc5f382-c7e7-417f-a4f1-e234539baa85, fanouts:[],fanins:[],faninsNB:[],collapse:[]fanin_sizes:[],faninNB_sizes:[]
+1  :   task: increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54, fanouts:['triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b', 'square-b140dc3a-338e-4ce0-b21f-f97c585b6598'],fanins:[],faninsNB:['add-fb57fc54-14a4-4c86-965e-4096efd416a7'],collapse:[]fanin_sizes:[],faninNB_sizes:[2]task_inputs: (1,)
+2  :   task: add-fb57fc54-14a4-4c86-965e-4096efd416a7, fanouts:None,fanins:None,faninsNB:None,collapse:Nonefanin_sizes:None,faninNB_sizes:Nonetask_inputs: None
+3  :   task: triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b, fanouts:[],fanins:['multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3'],faninsNB:[],collapse:[]fanin_sizes:[3],faninNB_sizes:[]task_inputs: ('increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54',)
+4  :   task: square-b140dc3a-338e-4ce0-b21f-f97c585b6598, fanouts:None,fanins:None,faninsNB:None,collapse:Nonefanin_sizes:None,faninNB_sizes:Nonetask_inputs: None
+5  :   task: multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3, fanouts:[],fanins:[],faninsNB:[],collapse:['divide-757a7e5e-56f9-4c18-9e5d-65572d7c9c0d']fanin_sizes:[],faninNB_sizes:[]task_inputs: ('triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b', 'square-b140dc3a-338e-4ce0-b21f-f97c585b6598', 'add-fb57fc54-14a4-4c86-965e-4096efd416a7')
+6  :   task: divide-757a7e5e-56f9-4c18-9e5d-65572d7c9c0d, fanouts:[],fanins:[],faninsNB:[],collapse:[]fanin_sizes:[],faninNB_sizes:[]task_inputs: ('multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3',)
 
 states:
-increment-1622956c-397c-4505-bbf7-851eca2d34c0  :  1
-add-ae31d8b9-f49b-47f7-909f-28956f81554f  :  2
-triple-9d98b735-6779-44d3-a14d-1871632797d3  :  3
-square-0a800e8d-a04e-4b6c-8b4f-8a4913fdd237  :  4
-multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056  :  5
-divide-6cc5f382-c7e7-417f-a4f1-e234539baa85  :  6
+increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54  :  1
+add-fb57fc54-14a4-4c86-965e-4096efd416a7  :  2
+triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b  :  3
+square-b140dc3a-338e-4ce0-b21f-f97c585b6598  :  4
+multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3  :  5
+divide-757a7e5e-56f9-4c18-9e5d-65572d7c9c0d  :  6
 
 num_fanins:1 num_fanouts:2 num_faninNBs:1 num_collapse:1
 
 all_fanout_task_names
-triple-9d98b735-6779-44d3-a14d-1871632797d3
-square-0a800e8d-a04e-4b6c-8b4f-8a4913fdd237
+triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b
+square-b140dc3a-338e-4ce0-b21f-f97c585b6598
 
 all_fanin_task_names
-multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056
+multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3
 
 all_faninNB_task_names
-add-ae31d8b9-f49b-47f7-909f-28956f81554f
+add-fb57fc54-14a4-4c86-965e-4096efd416a7
 
 all_collapse_task_names
-divide-6cc5f382-c7e7-417f-a4f1-e234539baa85
+divide-757a7e5e-56f9-4c18-9e5d-65572d7c9c0d
 
 leaf task start states
 1
 
 DAG_tasks:
-increment-1622956c-397c-4505-bbf7-851eca2d34c0  :  <function increment at 0x0000013CFF4FB9D0>
-triple-9d98b735-6779-44d3-a14d-1871632797d3  :  <function triple at 0x0000013CFF4FBC10>
-multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056  :  <function multiply at 0x0000013CFF4FBB80>
-divide-6cc5f382-c7e7-417f-a4f1-e234539baa85  :  <function divide at 0x0000013CFF4FBCA0>
+increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54  :  <function increment at 0x00000230FFC82AF0>
+triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b  :  <function triple at 0x00000230FEA861F0>
+multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3  :  <function multiply at 0x00000230FFC829D0>
+divide-757a7e5e-56f9-4c18-9e5d-65572d7c9c0d  :  <function divide at 0x00000230FFC82790>
 
 DAG_leaf_tasks:
-increment-1622956c-397c-4505-bbf7-851eca2d34c0
+increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54
 
-generate_ops for: square-0a800e8d-a04e-4b6c-8b4f-8a4913fdd237
+DAG_leaf_task_inputs:
+(1,)
+
+generate_ops for: square-b140dc3a-338e-4ce0-b21f-f97c585b6598
 process dependents_of_T
-process dependent multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056
-generate state: task_name: square-0a800e8d-a04e-4b6c-8b4f-8a4913fdd237 assigned state:4
-generate state: task_name: multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056 assigned state:5
+process dependent multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3
+generate state: task_name: square-b140dc3a-338e-4ce0-b21f-f97c585b6598 assigned state:4
+generate state: task_name: multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3 assigned state:5
 DAG_map:
-1  :   task: increment-1622956c-397c-4505-bbf7-851eca2d34c0, fanouts:['triple-9d98b735-6779-44d3-a14d-1871632797d3', 'square-0a800e8d-a04e-4b6c-8b4f-8a4913fdd237'],fanins:[],faninsNB:['add-ae31d8b9-f49b-47f7-909f-28956f81554f'],collapse:[]fanin_sizes:[],faninNB_sizes:[2]
-2  :   task: add-ae31d8b9-f49b-47f7-909f-28956f81554f, fanouts:None,fanins:None,faninsNB:None,collapse:Nonefanin_sizes:None,faninNB_sizes:None
-3  :   task: triple-9d98b735-6779-44d3-a14d-1871632797d3, fanouts:[],fanins:['multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056'],faninsNB:[],collapse:[]fanin_sizes:[3],faninNB_sizes:[]
-4  :   task: square-0a800e8d-a04e-4b6c-8b4f-8a4913fdd237, fanouts:[],fanins:['multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056'],faninsNB:[],collapse:[]fanin_sizes:[3],faninNB_sizes:[]
-5  :   task: multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056, fanouts:[],fanins:[],faninsNB:[],collapse:['divide-6cc5f382-c7e7-417f-a4f1-e234539baa85']fanin_sizes:[],faninNB_sizes:[]
-6  :   task: divide-6cc5f382-c7e7-417f-a4f1-e234539baa85, fanouts:[],fanins:[],faninsNB:[],collapse:[]fanin_sizes:[],faninNB_sizes:[]
+1  :   task: increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54, fanouts:['triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b', 'square-b140dc3a-338e-4ce0-b21f-f97c585b6598'],fanins:[],faninsNB:['add-fb57fc54-14a4-4c86-965e-4096efd416a7'],collapse:[]fanin_sizes:[],faninNB_sizes:[2]task_inputs: (1,)
+2  :   task: add-fb57fc54-14a4-4c86-965e-4096efd416a7, fanouts:None,fanins:None,faninsNB:None,collapse:Nonefanin_sizes:None,faninNB_sizes:Nonetask_inputs: None
+3  :   task: triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b, fanouts:[],fanins:['multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3'],faninsNB:[],collapse:[]fanin_sizes:[3],faninNB_sizes:[]task_inputs: ('increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54',)
+4  :   task: square-b140dc3a-338e-4ce0-b21f-f97c585b6598, fanouts:[],fanins:['multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3'],faninsNB:[],collapse:[]fanin_sizes:[3],faninNB_sizes:[]task_inputs: ('increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54',)
+5  :   task: multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3, fanouts:[],fanins:[],faninsNB:[],collapse:['divide-757a7e5e-56f9-4c18-9e5d-65572d7c9c0d']fanin_sizes:[],faninNB_sizes:[]task_inputs: ('triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b', 'square-b140dc3a-338e-4ce0-b21f-f97c585b6598', 'add-fb57fc54-14a4-4c86-965e-4096efd416a7')
+6  :   task: divide-757a7e5e-56f9-4c18-9e5d-65572d7c9c0d, fanouts:[],fanins:[],faninsNB:[],collapse:[]fanin_sizes:[],faninNB_sizes:[]task_inputs: ('multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3',)
 
 states:
-increment-1622956c-397c-4505-bbf7-851eca2d34c0  :  1
-add-ae31d8b9-f49b-47f7-909f-28956f81554f  :  2
-triple-9d98b735-6779-44d3-a14d-1871632797d3  :  3
-square-0a800e8d-a04e-4b6c-8b4f-8a4913fdd237  :  4
-multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056  :  5
-divide-6cc5f382-c7e7-417f-a4f1-e234539baa85  :  6
+increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54  :  1
+add-fb57fc54-14a4-4c86-965e-4096efd416a7  :  2
+triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b  :  3
+square-b140dc3a-338e-4ce0-b21f-f97c585b6598  :  4
+multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3  :  5
+divide-757a7e5e-56f9-4c18-9e5d-65572d7c9c0d  :  6
 
 num_fanins:2 num_fanouts:2 num_faninNBs:1 num_collapse:1
 
 all_fanout_task_names
-triple-9d98b735-6779-44d3-a14d-1871632797d3
-square-0a800e8d-a04e-4b6c-8b4f-8a4913fdd237
+triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b
+square-b140dc3a-338e-4ce0-b21f-f97c585b6598
 
 all_fanin_task_names
-multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056
+multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3
 
 all_faninNB_task_names
-add-ae31d8b9-f49b-47f7-909f-28956f81554f
+add-fb57fc54-14a4-4c86-965e-4096efd416a7
 
 all_collapse_task_names
-divide-6cc5f382-c7e7-417f-a4f1-e234539baa85
+divide-757a7e5e-56f9-4c18-9e5d-65572d7c9c0d
 
 leaf task start states
 1
 
 DAG_tasks:
-increment-1622956c-397c-4505-bbf7-851eca2d34c0  :  <function increment at 0x0000013CFF4FB9D0>
-triple-9d98b735-6779-44d3-a14d-1871632797d3  :  <function triple at 0x0000013CFF4FBC10>
-multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056  :  <function multiply at 0x0000013CFF4FBB80>
-divide-6cc5f382-c7e7-417f-a4f1-e234539baa85  :  <function divide at 0x0000013CFF4FBCA0>
-square-0a800e8d-a04e-4b6c-8b4f-8a4913fdd237  :  <function square at 0x0000013CFF4FB940>
+increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54  :  <function increment at 0x00000230FFC82AF0>
+triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b  :  <function triple at 0x00000230FEA861F0>
+multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3  :  <function multiply at 0x00000230FFC829D0>
+divide-757a7e5e-56f9-4c18-9e5d-65572d7c9c0d  :  <function divide at 0x00000230FFC82790>
+square-b140dc3a-338e-4ce0-b21f-f97c585b6598  :  <function square at 0x00000230FEA860D0>
 
 DAG_leaf_tasks:
-increment-1622956c-397c-4505-bbf7-851eca2d34c0
+increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54
 
-generate_ops for: add-ae31d8b9-f49b-47f7-909f-28956f81554f
+DAG_leaf_task_inputs:
+(1,)
+
+generate_ops for: add-fb57fc54-14a4-4c86-965e-4096efd416a7
 process dependents_of_T
-process dependent multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056
-generate state: task_name: add-ae31d8b9-f49b-47f7-909f-28956f81554f assigned state:2
-generate state: task_name: multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056 assigned state:5
+process dependent multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3
+generate state: task_name: add-fb57fc54-14a4-4c86-965e-4096efd416a7 assigned state:2
+generate state: task_name: multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3 assigned state:5
 DAG_map:
-1  :   task: increment-1622956c-397c-4505-bbf7-851eca2d34c0, fanouts:['triple-9d98b735-6779-44d3-a14d-1871632797d3', 'square-0a800e8d-a04e-4b6c-8b4f-8a4913fdd237'],fanins:[],faninsNB:['add-ae31d8b9-f49b-47f7-909f-28956f81554f'],collapse:[]fanin_sizes:[],faninNB_sizes:[2]
-2  :   task: add-ae31d8b9-f49b-47f7-909f-28956f81554f, fanouts:[],fanins:['multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056'],faninsNB:[],collapse:[]fanin_sizes:[3],faninNB_sizes:[]
-3  :   task: triple-9d98b735-6779-44d3-a14d-1871632797d3, fanouts:[],fanins:['multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056'],faninsNB:[],collapse:[]fanin_sizes:[3],faninNB_sizes:[]
-4  :   task: square-0a800e8d-a04e-4b6c-8b4f-8a4913fdd237, fanouts:[],fanins:['multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056'],faninsNB:[],collapse:[]fanin_sizes:[3],faninNB_sizes:[]
-5  :   task: multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056, fanouts:[],fanins:[],faninsNB:[],collapse:['divide-6cc5f382-c7e7-417f-a4f1-e234539baa85']fanin_sizes:[],faninNB_sizes:[]
-6  :   task: divide-6cc5f382-c7e7-417f-a4f1-e234539baa85, fanouts:[],fanins:[],faninsNB:[],collapse:[]fanin_sizes:[],faninNB_sizes:[]
+1  :   task: increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54, fanouts:['triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b', 'square-b140dc3a-338e-4ce0-b21f-f97c585b6598'],fanins:[],faninsNB:['add-fb57fc54-14a4-4c86-965e-4096efd416a7'],collapse:[]fanin_sizes:[],faninNB_sizes:[2]task_inputs: (1,)
+2  :   task: add-fb57fc54-14a4-4c86-965e-4096efd416a7, fanouts:[],fanins:['multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3'],faninsNB:[],collapse:[]fanin_sizes:[3],faninNB_sizes:[]task_inputs: ('increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54', 'increment-582ee3e0-5d6a-4359-b5f2-8d09da647fdb')
+3  :   task: triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b, fanouts:[],fanins:['multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3'],faninsNB:[],collapse:[]fanin_sizes:[3],faninNB_sizes:[]task_inputs: ('increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54',)
+4  :   task: square-b140dc3a-338e-4ce0-b21f-f97c585b6598, fanouts:[],fanins:['multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3'],faninsNB:[],collapse:[]fanin_sizes:[3],faninNB_sizes:[]task_inputs: ('increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54',)
+5  :   task: multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3, fanouts:[],fanins:[],faninsNB:[],collapse:['divide-757a7e5e-56f9-4c18-9e5d-65572d7c9c0d']fanin_sizes:[],faninNB_sizes:[]task_inputs: ('triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b', 'square-b140dc3a-338e-4ce0-b21f-f97c585b6598', 'add-fb57fc54-14a4-4c86-965e-4096efd416a7')
+6  :   task: divide-757a7e5e-56f9-4c18-9e5d-65572d7c9c0d, fanouts:[],fanins:[],faninsNB:[],collapse:[]fanin_sizes:[],faninNB_sizes:[]task_inputs: ('multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3',)
 
 states:
-increment-1622956c-397c-4505-bbf7-851eca2d34c0  :  1
-add-ae31d8b9-f49b-47f7-909f-28956f81554f  :  2
-triple-9d98b735-6779-44d3-a14d-1871632797d3  :  3
-square-0a800e8d-a04e-4b6c-8b4f-8a4913fdd237  :  4
-multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056  :  5
-divide-6cc5f382-c7e7-417f-a4f1-e234539baa85  :  6
+increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54  :  1
+add-fb57fc54-14a4-4c86-965e-4096efd416a7  :  2
+triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b  :  3
+square-b140dc3a-338e-4ce0-b21f-f97c585b6598  :  4
+multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3  :  5
+divide-757a7e5e-56f9-4c18-9e5d-65572d7c9c0d  :  6
 
 num_fanins:3 num_fanouts:2 num_faninNBs:1 num_collapse:1
 
 all_fanout_task_names
-triple-9d98b735-6779-44d3-a14d-1871632797d3
-square-0a800e8d-a04e-4b6c-8b4f-8a4913fdd237
+triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b
+square-b140dc3a-338e-4ce0-b21f-f97c585b6598
 
 all_fanin_task_names
-multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056
+multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3
 
 all_faninNB_task_names
-add-ae31d8b9-f49b-47f7-909f-28956f81554f
+add-fb57fc54-14a4-4c86-965e-4096efd416a7
 
 all_collapse_task_names
-divide-6cc5f382-c7e7-417f-a4f1-e234539baa85
+divide-757a7e5e-56f9-4c18-9e5d-65572d7c9c0d
 
 leaf task start states
 1
 
 DAG_tasks:
-increment-1622956c-397c-4505-bbf7-851eca2d34c0  :  <function increment at 0x0000013CFF4FB9D0>
-triple-9d98b735-6779-44d3-a14d-1871632797d3  :  <function triple at 0x0000013CFF4FBC10>
-multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056  :  <function multiply at 0x0000013CFF4FBB80>
-divide-6cc5f382-c7e7-417f-a4f1-e234539baa85  :  <function divide at 0x0000013CFF4FBCA0>
-square-0a800e8d-a04e-4b6c-8b4f-8a4913fdd237  :  <function square at 0x0000013CFF4FB940>
-add-ae31d8b9-f49b-47f7-909f-28956f81554f  :  <function add at 0x0000013CFF559AF0>
+increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54  :  <function increment at 0x00000230FFC82AF0>
+triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b  :  <function triple at 0x00000230FEA861F0>
+multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3  :  <function multiply at 0x00000230FFC829D0>
+divide-757a7e5e-56f9-4c18-9e5d-65572d7c9c0d  :  <function divide at 0x00000230FFC82790>
+square-b140dc3a-338e-4ce0-b21f-f97c585b6598  :  <function square at 0x00000230FEA860D0>
+add-fb57fc54-14a4-4c86-965e-4096efd416a7  :  <function add at 0x00000230FEA08160>
 
 DAG_leaf_tasks:
-increment-1622956c-397c-4505-bbf7-851eca2d34c0
+increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54
 
-generate_ops for: increment-fe7a4394-15a5-4563-a856-f54aab132a88
+DAG_leaf_task_inputs:
+(1,)
+
+generate_ops for: increment-582ee3e0-5d6a-4359-b5f2-8d09da647fdb
 process dependents_of_T
-process dependent add-ae31d8b9-f49b-47f7-909f-28956f81554f
-generate state: task_name: increment-fe7a4394-15a5-4563-a856-f54aab132a88 assigned state:None
-generate state: task_name: add-ae31d8b9-f49b-47f7-909f-28956f81554f assigned state:2
+process dependent add-fb57fc54-14a4-4c86-965e-4096efd416a7
+generate state: task_name: increment-582ee3e0-5d6a-4359-b5f2-8d09da647fdb assigned state:None
+generate state: task_name: add-fb57fc54-14a4-4c86-965e-4096efd416a7 assigned state:2
 DAG_map:
-1  :   task: increment-1622956c-397c-4505-bbf7-851eca2d34c0, fanouts:['triple-9d98b735-6779-44d3-a14d-1871632797d3', 'square-0a800e8d-a04e-4b6c-8b4f-8a4913fdd237'],fanins:[],faninsNB:['add-ae31d8b9-f49b-47f7-909f-28956f81554f'],collapse:[]fanin_sizes:[],faninNB_sizes:[2]
-2  :   task: add-ae31d8b9-f49b-47f7-909f-28956f81554f, fanouts:[],fanins:['multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056'],faninsNB:[],collapse:[]fanin_sizes:[3],faninNB_sizes:[]
-3  :   task: triple-9d98b735-6779-44d3-a14d-1871632797d3, fanouts:[],fanins:['multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056'],faninsNB:[],collapse:[]fanin_sizes:[3],faninNB_sizes:[]
-4  :   task: square-0a800e8d-a04e-4b6c-8b4f-8a4913fdd237, fanouts:[],fanins:['multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056'],faninsNB:[],collapse:[]fanin_sizes:[3],faninNB_sizes:[]
-5  :   task: multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056, fanouts:[],fanins:[],faninsNB:[],collapse:['divide-6cc5f382-c7e7-417f-a4f1-e234539baa85']fanin_sizes:[],faninNB_sizes:[]
-6  :   task: divide-6cc5f382-c7e7-417f-a4f1-e234539baa85, fanouts:[],fanins:[],faninsNB:[],collapse:[]fanin_sizes:[],faninNB_sizes:[]
-7  :   task: increment-fe7a4394-15a5-4563-a856-f54aab132a88, fanouts:[],fanins:[],faninsNB:['add-ae31d8b9-f49b-47f7-909f-28956f81554f'],collapse:[]fanin_sizes:[],faninNB_sizes:[2]
+1  :   task: increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54, fanouts:['triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b', 'square-b140dc3a-338e-4ce0-b21f-f97c585b6598'],fanins:[],faninsNB:['add-fb57fc54-14a4-4c86-965e-4096efd416a7'],collapse:[]fanin_sizes:[],faninNB_sizes:[2]task_inputs: (1,)
+2  :   task: add-fb57fc54-14a4-4c86-965e-4096efd416a7, fanouts:[],fanins:['multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3'],faninsNB:[],collapse:[]fanin_sizes:[3],faninNB_sizes:[]task_inputs: ('increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54', 'increment-582ee3e0-5d6a-4359-b5f2-8d09da647fdb')
+3  :   task: triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b, fanouts:[],fanins:['multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3'],faninsNB:[],collapse:[]fanin_sizes:[3],faninNB_sizes:[]task_inputs: ('increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54',)
+4  :   task: square-b140dc3a-338e-4ce0-b21f-f97c585b6598, fanouts:[],fanins:['multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3'],faninsNB:[],collapse:[]fanin_sizes:[3],faninNB_sizes:[]task_inputs: ('increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54',)
+5  :   task: multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3, fanouts:[],fanins:[],faninsNB:[],collapse:['divide-757a7e5e-56f9-4c18-9e5d-65572d7c9c0d']fanin_sizes:[],faninNB_sizes:[]task_inputs: ('triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b', 'square-b140dc3a-338e-4ce0-b21f-f97c585b6598', 'add-fb57fc54-14a4-4c86-965e-4096efd416a7')
+6  :   task: divide-757a7e5e-56f9-4c18-9e5d-65572d7c9c0d, fanouts:[],fanins:[],faninsNB:[],collapse:[]fanin_sizes:[],faninNB_sizes:[]task_inputs: ('multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3',)
+7  :   task: increment-582ee3e0-5d6a-4359-b5f2-8d09da647fdb, fanouts:[],fanins:[],faninsNB:['add-fb57fc54-14a4-4c86-965e-4096efd416a7'],collapse:[]fanin_sizes:[],faninNB_sizes:[2]task_inputs: (0,)
 
 states:
-increment-1622956c-397c-4505-bbf7-851eca2d34c0  :  1
-add-ae31d8b9-f49b-47f7-909f-28956f81554f  :  2
-triple-9d98b735-6779-44d3-a14d-1871632797d3  :  3
-square-0a800e8d-a04e-4b6c-8b4f-8a4913fdd237  :  4
-multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056  :  5
-divide-6cc5f382-c7e7-417f-a4f1-e234539baa85  :  6
-increment-fe7a4394-15a5-4563-a856-f54aab132a88  :  7
+increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54  :  1
+add-fb57fc54-14a4-4c86-965e-4096efd416a7  :  2
+triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b  :  3
+square-b140dc3a-338e-4ce0-b21f-f97c585b6598  :  4
+multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3  :  5
+divide-757a7e5e-56f9-4c18-9e5d-65572d7c9c0d  :  6
+increment-582ee3e0-5d6a-4359-b5f2-8d09da647fdb  :  7
 
 num_fanins:3 num_fanouts:2 num_faninNBs:2 num_collapse:1
 
 all_fanout_task_names
-triple-9d98b735-6779-44d3-a14d-1871632797d3
-square-0a800e8d-a04e-4b6c-8b4f-8a4913fdd237
+triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b
+square-b140dc3a-338e-4ce0-b21f-f97c585b6598
 
 all_fanin_task_names
-multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056
+multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3
 
 all_faninNB_task_names
-add-ae31d8b9-f49b-47f7-909f-28956f81554f
+add-fb57fc54-14a4-4c86-965e-4096efd416a7
 
 all_collapse_task_names
-divide-6cc5f382-c7e7-417f-a4f1-e234539baa85
+divide-757a7e5e-56f9-4c18-9e5d-65572d7c9c0d
 
 leaf task start states
 1
 7
 
 DAG_tasks:
-increment-1622956c-397c-4505-bbf7-851eca2d34c0  :  <function increment at 0x0000013CFF4FB9D0>
-triple-9d98b735-6779-44d3-a14d-1871632797d3  :  <function triple at 0x0000013CFF4FBC10>
-multiply-c99085b8-cdcc-4301-bc8f-f2f2ec438056  :  <function multiply at 0x0000013CFF4FBB80>
-divide-6cc5f382-c7e7-417f-a4f1-e234539baa85  :  <function divide at 0x0000013CFF4FBCA0>
-square-0a800e8d-a04e-4b6c-8b4f-8a4913fdd237  :  <function square at 0x0000013CFF4FB940>
-add-ae31d8b9-f49b-47f7-909f-28956f81554f  :  <function add at 0x0000013CFF559AF0>
-increment-fe7a4394-15a5-4563-a856-f54aab132a88  :  <function increment at 0x0000013CFF4FB9D0>
+increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54  :  <function increment at 0x00000230FFC82AF0>
+triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b  :  <function triple at 0x00000230FEA861F0>
+multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3  :  <function multiply at 0x00000230FFC829D0>
+divide-757a7e5e-56f9-4c18-9e5d-65572d7c9c0d  :  <function divide at 0x00000230FFC82790>
+square-b140dc3a-338e-4ce0-b21f-f97c585b6598  :  <function square at 0x00000230FEA860D0>
+add-fb57fc54-14a4-4c86-965e-4096efd416a7  :  <function add at 0x00000230FEA08160>
+increment-582ee3e0-5d6a-4359-b5f2-8d09da647fdb  :  <function increment at 0x00000230FFC82AF0>
 
 DAG_leaf_tasks:
-increment-1622956c-397c-4505-bbf7-851eca2d34c0
-increment-fe7a4394-15a5-4563-a856-f54aab132a88
+increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54
+increment-582ee3e0-5d6a-4359-b5f2-8d09da647fdb
 
+DAG_leaf_task_inputs:
+(1,)
+(0,)
+
+
+C:\Users\benrc\Desktop\Executor\DAG\WukongDynamic>python -m wukongdnc.dag.DAG_executor_driver
+DAG_map:
+1
+ task: increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54, fanouts:['triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b', 'square-b140dc3a-338e-4ce0-b21f-f97c585b6598'],fanins:[],faninsNB:['add-fb57fc54-14a4-4c86-965e-4096efd416a7'],collapse:[]fanin_sizes:[],faninNB_sizes:[2]task_inputs: (1,)
+2
+ task: add-fb57fc54-14a4-4c86-965e-4096efd416a7, fanouts:[],fanins:['multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3'],faninsNB:[],collapse:[]fanin_sizes:[3],faninNB_sizes:[]task_inputs: ('increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54', 'increment-582ee3e0-5d6a-4359-b5f2-8d09da647fdb')
+3
+ task: triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b, fanouts:[],fanins:['multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3'],faninsNB:[],collapse:[]fanin_sizes:[3],faninNB_sizes:[]task_inputs: ('increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54',)
+4
+ task: square-b140dc3a-338e-4ce0-b21f-f97c585b6598, fanouts:[],fanins:['multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3'],faninsNB:[],collapse:[]fanin_sizes:[3],faninNB_sizes:[]task_inputs: ('increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54',)
+5
+ task: multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3, fanouts:[],fanins:[],faninsNB:[],collapse:['divide-757a7e5e-56f9-4c18-9e5d-65572d7c9c0d']fanin_sizes:[],faninNB_sizes:[]task_inputs: ('triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b', 'square-b140dc3a-338e-4ce0-b21f-f97c585b6598', 'add-fb57fc54-14a4-4c86-965e-4096efd416a7')
+6
+ task: divide-757a7e5e-56f9-4c18-9e5d-65572d7c9c0d, fanouts:[],fanins:[],faninsNB:[],collapse:[]fanin_sizes:[],faninNB_sizes:[]task_inputs: ('multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3',)
+7
+ task: increment-582ee3e0-5d6a-4359-b5f2-8d09da647fdb, fanouts:[],fanins:[],faninsNB:['add-fb57fc54-14a4-4c86-965e-4096efd416a7'],collapse:[]fanin_sizes:[],faninNB_sizes:[2]task_inputs: (0,)
+
+DAG states:
+increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54
+1
+add-fb57fc54-14a4-4c86-965e-4096efd416a7
+2
+triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b
+3
+square-b140dc3a-338e-4ce0-b21f-f97c585b6598
+4
+multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3
+5
+divide-757a7e5e-56f9-4c18-9e5d-65572d7c9c0d
+6
+increment-582ee3e0-5d6a-4359-b5f2-8d09da647fdb
+7
+
+DAG leaf task start states
+1
+7
+
+DAG_tasks:
+increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54  :  <function increment at 0x00000289DC9B9DC0>
+triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b  :  <function triple at 0x00000289DC9B9E50>
+multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3  :  <function multiply at 0x00000289DC9B9EE0>
+divide-757a7e5e-56f9-4c18-9e5d-65572d7c9c0d  :  <function divide at 0x00000289DC9B9F70>
+square-b140dc3a-338e-4ce0-b21f-f97c585b6598  :  <function square at 0x00000289DC9E0040>
+add-fb57fc54-14a4-4c86-965e-4096efd416a7  :  <function add at 0x00000289DC9E00D0>
+increment-582ee3e0-5d6a-4359-b5f2-8d09da647fdb  :  <function increment at 0x00000289DC9B9DC0>
+
+DAG_leaf_tasks:
+increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54
+increment-582ee3e0-5d6a-4359-b5f2-8d09da647fdb
+
+DAG_leaf_task_inputs:
+(1,)
+(0,)
+
+[{'op': 'create', 'type': 'DAG_executor_FanIn', 'name': 'multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3', 'state': Dag_executor_State(FuncName='None', FuncInstID=None, Restart=False, PC=0, KeywordArgs={'n': 3}, ReturnVal=None, Blocking=False, state=0), 'id': '023d533a-b246-4031-91e6-c07cbef26a84'}]
+[{'op': 'create', 'type': 'DAG_executor_FanInNB', 'name': 'add-fb57fc54-14a4-4c86-965e-4096efd416a7', 'state': Dag_executor_State(FuncName='None', FuncInstID=None, Restart=False, PC=0, KeywordArgs={'n': 2, 'start_state_fanin_task': 2, 'run_faninNB_task_on_server': True, 'DAG_info': <__main__.DAG_Info object at 0x00000289DC9AFBE0>}, ReturnVal=None, Blocking=False, state=0), 'id': '82ccd3df-4fa1-4c9a-af57-df3380af1f25'}]
+[2022-08-17 10:24:18,099] [MainThread] DEBUG:  inmap before: False
+[2022-08-17 10:24:18,109] [MainThread] DEBUG:  create_and_fanin: create caching new fanin with name 'multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3'
+[2022-08-17 10:24:18,109] [MainThread] DEBUG:  inmap after: True
+[2022-08-17 10:24:18,109] [MainThread] DEBUG:  inmap before: False
+[2022-08-17 10:24:18,109] [MainThread] DEBUG:  create_and_fanin: create caching new fanin with name 'add-fb57fc54-14a4-4c86-965e-4096efd416a7'
+[2022-08-17 10:24:18,109] [MainThread] DEBUG:  inmap after: True
+DAG_leaf_tasks: ['increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54', 'increment-582ee3e0-5d6a-4359-b5f2-8d09da647fdb']
+DAG_leaf_task_start_states: [1, 7]
+DAG_leaf_task_inputs: [(1,), (0,)]
+iterate
+[2022-08-17 10:24:18,109] [MainThread] DEBUG: Starting DAG_executor for task increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54
+[2022-08-17 10:24:18,119] [MainThread] DEBUG: Starting DAG_executor thread for leaf task increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54
+iterate
+[2022-08-17 10:24:18,129] [MainThread] DEBUG: Starting DAG_executor for task increment-582ee3e0-5d6a-4359-b5f2-8d09da647fdb
+[2022-08-17 10:24:18,129] [MainThread] DEBUG: Starting DAG_executor thread for leaf task increment-582ee3e0-5d6a-4359-b5f2-8d09da647fdb
+[2022-08-17 10:24:18,129] [Dummy-1] DEBUG: DAG_executor_task: call DAG_excutor, state is 1
+[2022-08-17 10:24:18,129] [MainThread] DEBUG: Sleeping
+[2022-08-17 10:24:18,129] [Dummy-1] DEBUG: state:1
+[2022-08-17 10:24:18,129] [Dummy-2] DEBUG: DAG_executor_task: call DAG_excutor, state is 7
+[2022-08-17 10:24:18,129] [Dummy-1] DEBUG: DAG_executor starting input:(1,) state: 1
+[2022-08-17 10:24:18,129] [Dummy-2] DEBUG: state:7
+[2022-08-17 10:24:18,129] [Dummy-1] DEBUG: access DAG_map with state 1
+[2022-08-17 10:24:18,129] [Dummy-2] DEBUG: DAG_executor starting input:(0,) state: 7
+[2022-08-17 10:24:18,139] [Dummy-1] DEBUG: state_info:  task: increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54, fanouts:['triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b', 'square-b140dc3a-338e-4ce0-b21f-f97c585b6598'],fanins:[],faninsNB:['add-fb57fc54-14a4-4c86-965e-4096efd416a7'],collapse:[]fanin_sizes:[],faninNB_sizes:[2]task_inputs: (1,) execute task: increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54
+[2022-08-17 10:24:18,149] [Dummy-2] DEBUG: access DAG_map with state 7
+[2022-08-17 10:24:18,149] [Dummy-1] DEBUG: input of execute_task is: (1,)
+[2022-08-17 10:24:18,149] [Dummy-2] DEBUG: state_info:  task: increment-582ee3e0-5d6a-4359-b5f2-8d09da647fdb, fanouts:[],fanins:[],faninsNB:['add-fb57fc54-14a4-4c86-965e-4096efd416a7'],collapse:[]fanin_sizes:[],faninNB_sizes:[2]task_inputs: (0,) execute task: increment-582ee3e0-5d6a-4359-b5f2-8d09da647fdb
+[2022-08-17 10:24:18,149] [Dummy-1] DEBUG: data_dict: {'increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54': 2}
+[2022-08-17 10:24:18,149] [Dummy-2] DEBUG: input of execute_task is: (0,)
+[2022-08-17 10:24:18,149] [Dummy-1] DEBUG: process_faninNBs
+[2022-08-17 10:24:18,149] [Dummy-2] DEBUG: data_dict: {'increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54': 2, 'increment-582ee3e0-5d6a-4359-b5f2-8d09da647fdb': 1}
+[2022-08-17 10:24:18,149] [Dummy-1] DEBUG: Starting create_and_fanin for faninNB add-fb57fc54-14a4-4c86-965e-4096efd416a7
+[2022-08-17 10:24:18,149] [Dummy-2] DEBUG: process_faninNBs
+[2022-08-17 10:24:18,159] [Dummy-1] DEBUG: process_fanouts, length is 2
+[2022-08-17 10:24:18,169] [Dummy-2] DEBUG: Starting create_and_fanin for faninNB add-fb57fc54-14a4-4c86-965e-4096efd416a7
+[2022-08-17 10:24:18,169] [Dummy-1] DEBUG: fanout for increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54become_task is triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b
+[2022-08-17 10:24:18,169] [Dummy-3] DEBUG: DAG_executor_task: call DAG_excutor
+[2022-08-17 10:24:18,169] [Dummy-1] DEBUG: fanout for increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54 become_task state is 3
+[2022-08-17 10:24:18,169] [Dummy-3] DEBUG: calling_task_name: increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54 fanin_task_name: add-fb57fc54-14a4-4c86-965e-4096efd416a7 inmap: True
+[2022-08-17 10:24:18,169] [Dummy-4] DEBUG: DAG_executor_task: call DAG_excutor
+[2022-08-17 10:24:18,169] [Dummy-1] DEBUG: new fanouts after remove:['square-b140dc3a-338e-4ce0-b21f-f97c585b6598']
+[2022-08-17 10:24:18,169] [Dummy-3] DEBUG: calling_task_name: increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54 fanin_task_name: add-fb57fc54-14a4-4c86-965e-4096efd416a7 inmap: True
+[2022-08-17 10:24:18,179] [Dummy-3] DEBUG: FanInNB: fan_in add-fb57fc54-14a4-4c86-965e-4096efd416a7 calling enter_monitor
+[2022-08-17 10:24:18,169] [Dummy-1] DEBUG: run_fanout_task_on_server:True
+[2022-08-17 10:24:18,189] [Dummy-3] DEBUG: Trying to lock counting semaphore now...
+[2022-08-17 10:24:18,189] [Dummy-1] DEBUG: Starting fanout DAG_executor thread for square-b140dc3a-338e-4ce0-b21f-f97c585b6598
+[2022-08-17 10:24:18,189] [Dummy-3] DEBUG: Counting semaphore Monitor-add-fb57fc54-14a4-4c86-965e-4096efd416a7-_mutex-CountingSemaphore has been locked.
+[2022-08-17 10:24:18,189] [Dummy-1] DEBUG: fanout payload for square-b140dc3a-338e-4ce0-b21f-f97c585b6598 is 4,2
+[2022-08-17 10:24:18,189] [Dummy-3] DEBUG: release and return
+[2022-08-17 10:24:18,189] [Dummy-1] DEBUG: become state:3
+[2022-08-17 10:24:18,189] [Dummy-3] DEBUG: FanInNB: Fan-in add-fb57fc54-14a4-4c86-965e-4096efd416a7 entered monitor in fan_in()
+[2022-08-17 10:24:18,189] [Dummy-5] DEBUG: DAG_executor_task: call DAG_excutor, state is 4
+[2022-08-17 10:24:18,199] [Dummy-3] DEBUG: FanInNB: fan_in() add-fb57fc54-14a4-4c86-965e-4096efd416a7 entered monitor. self._num_calling = 0, self._n=2
+[2022-08-17 10:24:18,189] [Dummy-1] DEBUG: access DAG_map with state 3
+[2022-08-17 10:24:18,209] [Dummy-3] DEBUG: FanInNB:Fan-in add-fb57fc54-14a4-4c86-965e-4096efd416a7 calling _go.wait_c() from FanIn
+[2022-08-17 10:24:18,199] [Dummy-5] DEBUG: state:4
+[2022-08-17 10:24:18,209] [Dummy-3] DEBUG: FanInNB: result is 2
+[2022-08-17 10:24:18,209] [Dummy-1] DEBUG: state_info:  task: triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b, fanouts:[],fanins:['multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3'],faninsNB:[],collapse:[]fanin_sizes:[3],faninNB_sizes:[]task_inputs: ('increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54',) execute task: triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b
+[2022-08-17 10:24:18,209] [Dummy-3] DEBUG: FanInNB: Result (saved by the non-last executor) for fan-in add-fb57fc54-14a4-4c86-965e-4096efd416a7: 2
+[2022-08-17 10:24:18,209] [Dummy-5] DEBUG: DAG_executor starting input:2 state: 4
+[2022-08-17 10:24:18,209] [Dummy-3] DEBUG:  FanInNB: !!!!! non-last Client exiting FanInNB fan_in id = add-fb57fc54-14a4-4c86-965e-4096efd416a7!!!!!
+[2022-08-17 10:24:18,209] [Dummy-1] DEBUG: input of execute_task is: (2,)
+[2022-08-17 10:24:18,209] [Dummy-5] DEBUG: access DAG_map with state 4
+[2022-08-17 10:24:18,209] [Dummy-4] DEBUG: calling_task_name: increment-582ee3e0-5d6a-4359-b5f2-8d09da647fdb fanin_task_name: add-fb57fc54-14a4-4c86-965e-4096efd416a7 inmap: True
+[2022-08-17 10:24:18,219] [Dummy-4] DEBUG: calling_task_name: increment-582ee3e0-5d6a-4359-b5f2-8d09da647fdb fanin_task_name: add-fb57fc54-14a4-4c86-965e-4096efd416a7 inmap: True
+[2022-08-17 10:24:18,229] [Dummy-4] DEBUG: FanInNB: fan_in add-fb57fc54-14a4-4c86-965e-4096efd416a7 calling enter_monitor
+[2022-08-17 10:24:18,209] [Dummy-5] DEBUG: state_info:  task: square-b140dc3a-338e-4ce0-b21f-f97c585b6598, fanouts:[],fanins:['multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3'],faninsNB:[],collapse:[]fanin_sizes:[3],faninNB_sizes:[]task_inputs: ('increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54',) execute task: square-b140dc3a-338e-4ce0-b21f-f97c585b6598
+[2022-08-17 10:24:18,229] [Dummy-4] DEBUG: Trying to lock counting semaphore now...
+[2022-08-17 10:24:18,209] [Dummy-1] DEBUG: data_dict: {'increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54': 2, 'increment-582ee3e0-5d6a-4359-b5f2-8d09da647fdb': 1, 'triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b': 6}
+[2022-08-17 10:24:18,229] [Dummy-4] DEBUG: Counting semaphore Monitor-add-fb57fc54-14a4-4c86-965e-4096efd416a7-_mutex-CountingSemaphore has been locked.
+[2022-08-17 10:24:18,229] [Dummy-5] DEBUG: input of execute_task is: (2,)
+[2022-08-17 10:24:18,229] [Dummy-4] DEBUG: release and return
+[2022-08-17 10:24:18,229] [Dummy-1] DEBUG: process_fanins
+[2022-08-17 10:24:18,229] [Dummy-4] DEBUG: FanInNB: Fan-in add-fb57fc54-14a4-4c86-965e-4096efd416a7 entered monitor in fan_in()
+[2022-08-17 10:24:18,229] [Dummy-5] DEBUG: data_dict: {'increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54': 2, 'increment-582ee3e0-5d6a-4359-b5f2-8d09da647fdb': 1, 'triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b': 6, 'square-b140dc3a-338e-4ce0-b21f-f97c585b6598': 4}
+[2022-08-17 10:24:18,239] [Dummy-4] DEBUG: FanInNB: fan_in() add-fb57fc54-14a4-4c86-965e-4096efd416a7 entered monitor. self._num_calling = 1, self._n=2
+[2022-08-17 10:24:18,229] [Dummy-1] DEBUG: ['multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3']
+[2022-08-17 10:24:18,249] [Dummy-4] DEBUG: FanInNB:Last thread in FanIn add-fb57fc54-14a4-4c86-965e-4096efd416a7 so not calling self._go.wait_c
+[2022-08-17 10:24:18,239] [Dummy-5] DEBUG: process_fanins
+[2022-08-17 10:24:18,249] [Dummy-4] DEBUG: faninNB collected results for fan-in add-fb57fc54-14a4-4c86-965e-4096efd416a7: {'increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54': 2, 'increment-582ee3e0-5d6a-4359-b5f2-8d09da647fdb': 1}
+[2022-08-17 10:24:18,249] [Dummy-5] DEBUG: ['multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3']
+[2022-08-17 10:24:18,249] [Dummy-4] DEBUG: FanInNB: !!!!! last Client exiting FanIn fan_in id=add-fb57fc54-14a4-4c86-965e-4096efd416a7!!!!!
+[2022-08-17 10:24:18,249] [Dummy-4] DEBUG: FanInNB: starting DAG_executor thread for task add-fb57fc54-14a4-4c86-965e-4096efd416a7 with start state 2
+[2022-08-17 10:24:18,249] [Dummy-4] DEBUG: FanInNB: calling_task_name:increment-582ee3e0-5d6a-4359-b5f2-8d09da647fdb DAG_executor_state.state: 2
+[2022-08-17 10:24:18,249] [Dummy-1] DEBUG: calling_task_name: triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b fanin_task_name: multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3 inmap: True
+[2022-08-17 10:24:18,249] [Dummy-1] DEBUG: calling_task_name: triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b fanin_task_name: multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3 inmap: True
+[2022-08-17 10:24:18,249] [Dummy-1] DEBUG: Trying to lock counting semaphore now...
+[2022-08-17 10:24:18,249] [Dummy-6] DEBUG: DAG_executor_task: call DAG_excutor, state is 2
+[2022-08-17 10:24:18,259] [Dummy-1] DEBUG: Counting semaphore Monitor-multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3-_mutex-CountingSemaphore has been locked.
+[2022-08-17 10:24:18,259] [Dummy-6] DEBUG: state:2
+[2022-08-17 10:24:18,269] [Dummy-1] DEBUG: release and return
+[2022-08-17 10:24:18,269] [Dummy-6] DEBUG: DAG_executor starting input:{'increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54': 2, 'increment-582ee3e0-5d6a-4359-b5f2-8d09da647fdb': 1} state: 2
+[2022-08-17 10:24:18,269] [Dummy-1] DEBUG: fanin_task_name: multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3 try_return_value: True
+[2022-08-17 10:24:18,269] [Dummy-1] DEBUG: fan_in multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3 calling enter_monitor
+[2022-08-17 10:24:18,269] [Dummy-6] DEBUG: access DAG_map with state 2
+[2022-08-17 10:24:18,269] [Dummy-1] DEBUG: Fan-in multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3 entered monitor in fan_in()
+[2022-08-17 10:24:18,269] [Dummy-6] DEBUG: state_info:  task: add-fb57fc54-14a4-4c86-965e-4096efd416a7, fanouts:[],fanins:['multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3'],faninsNB:[],collapse:[]fanin_sizes:[3],faninNB_sizes:[]task_inputs: ('increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54', 'increment-582ee3e0-5d6a-4359-b5f2-8d09da647fdb') execute task: add-fb57fc54-14a4-4c86-965e-4096efd416a7
+[2022-08-17 10:24:18,269] [Dummy-1] DEBUG: fan_in() multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3 entered monitor. self._num_calling = 0, self._n=3
+[2022-08-17 10:24:18,269] [Dummy-6] DEBUG: input of execute_task is: (2, 1)
+[2022-08-17 10:24:18,269] [Dummy-1] DEBUG: Fan-in multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3 calling _go.wait_c() from FanIn
+[2022-08-17 10:24:18,279] [Dummy-1] DEBUG: Result (saved by the non-last executor) triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b for fan-in multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3: 6
+[2022-08-17 10:24:18,279] [Dummy-6] DEBUG: data_dict: {'increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54': 2, 'increment-582ee3e0-5d6a-4359-b5f2-8d09da647fdb': 1, 'triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b': 6, 'square-b140dc3a-338e-4ce0-b21f-f97c585b6598': 4, 'add-fb57fc54-14a4-4c86-965e-4096efd416a7': 3}
+[2022-08-17 10:24:18,289] [Dummy-1] DEBUG:  non-last Client triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b exiting FanIn fan_in id = multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3
+[2022-08-17 10:24:18,289] [Dummy-6] DEBUG: process_fanins
+[2022-08-17 10:24:18,289] [Dummy-1] DEBUG: After process_fanin: multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3 returned_state.blocking: True, returned_state.return_value: None, state: 5
+[2022-08-17 10:24:18,289] [Dummy-6] DEBUG: ['multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3']
+[2022-08-17 10:24:18,289] [Dummy-5] DEBUG: calling_task_name: square-b140dc3a-338e-4ce0-b21f-f97c585b6598 fanin_task_name: multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3 inmap: True
+[2022-08-17 10:24:18,289] [Dummy-5] DEBUG: calling_task_name: square-b140dc3a-338e-4ce0-b21f-f97c585b6598 fanin_task_name: multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3 inmap: True
+[2022-08-17 10:24:18,289] [Dummy-5] DEBUG: Trying to lock counting semaphore now...
+[2022-08-17 10:24:18,289] [Dummy-5] DEBUG: Counting semaphore Monitor-multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3-_mutex-CountingSemaphore has been locked.
+[2022-08-17 10:24:18,300] [Dummy-5] DEBUG: release and return
+[2022-08-17 10:24:18,309] [Dummy-5] DEBUG: fanin_task_name: multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3 try_return_value: True
+[2022-08-17 10:24:18,309] [Dummy-5] DEBUG: fan_in multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3 calling enter_monitor
+[2022-08-17 10:24:18,309] [Dummy-5] DEBUG: Fan-in multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3 entered monitor in fan_in()
+[2022-08-17 10:24:18,309] [Dummy-5] DEBUG: fan_in() multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3 entered monitor. self._num_calling = 1, self._n=3
+[2022-08-17 10:24:18,309] [Dummy-5] DEBUG: Fan-in multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3 calling _go.wait_c() from FanIn
+[2022-08-17 10:24:18,309] [Dummy-5] DEBUG: Result (saved by the non-last executor) square-b140dc3a-338e-4ce0-b21f-f97c585b6598 for fan-in multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3: 4
+[2022-08-17 10:24:18,309] [Dummy-5] DEBUG:  non-last Client square-b140dc3a-338e-4ce0-b21f-f97c585b6598 exiting FanIn fan_in id = multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3
+[2022-08-17 10:24:18,309] [Dummy-5] DEBUG: After process_fanin: multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3 returned_state.blocking: True, returned_state.return_value: None, state: 5
+[2022-08-17 10:24:18,309] [Dummy-6] DEBUG: calling_task_name: add-fb57fc54-14a4-4c86-965e-4096efd416a7 fanin_task_name: multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3 inmap: True
+[2022-08-17 10:24:18,309] [Dummy-6] DEBUG: calling_task_name: add-fb57fc54-14a4-4c86-965e-4096efd416a7 fanin_task_name: multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3 inmap: True
+[2022-08-17 10:24:18,319] [Dummy-6] DEBUG: Trying to lock counting semaphore now...
+[2022-08-17 10:24:18,319] [Dummy-6] DEBUG: Counting semaphore Monitor-multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3-_mutex-CountingSemaphore has been locked.
+[2022-08-17 10:24:18,329] [Dummy-6] DEBUG: release and return
+[2022-08-17 10:24:18,329] [Dummy-6] DEBUG: fanin_task_name: multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3 try_return_value: False
+[2022-08-17 10:24:18,329] [Dummy-6] DEBUG: fan_in multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3 calling enter_monitor
+[2022-08-17 10:24:18,329] [Dummy-6] DEBUG: Fan-in multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3 entered monitor in fan_in()
+[2022-08-17 10:24:18,329] [Dummy-6] DEBUG: fan_in() multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3 entered monitor. self._num_calling = 2, self._n=3
+[2022-08-17 10:24:18,329] [Dummy-6] DEBUG: Last thread in FanIn multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3 so not calling self._go.wait_c
+[2022-08-17 10:24:18,329] [Dummy-6] DEBUG: faninNB collected results from add-fb57fc54-14a4-4c86-965e-4096efd416a7 for fan-in multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3: {'triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b': 6, 'square-b140dc3a-338e-4ce0-b21f-f97c585b6598': 4}
+[2022-08-17 10:24:18,329] [Dummy-6] DEBUG:  !!!!! last Client add-fb57fc54-14a4-4c86-965e-4096efd416a7 exiting FanIn fan_in id=multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3!!!!!
+[2022-08-17 10:24:18,329] [Dummy-6] DEBUG: output:3
+[2022-08-17 10:24:18,329] [Dummy-6] DEBUG: calling_task_name:add-fb57fc54-14a4-4c86-965e-4096efd416a7
+[2022-08-17 10:24:18,329] [Dummy-6] DEBUG: After process_fanin: multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3 returned_state.blocking: False, returned_state.return_value: {'triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b': 6, 'square-b140dc3a-338e-4ce0-b21f-f97c585b6598': 4, 'add-fb57fc54-14a4-4c86-965e-4096efd416a7': 3}, state: 5
+[2022-08-17 10:24:18,339] [Dummy-6] DEBUG: access DAG_map with state 5
+[2022-08-17 10:24:18,339] [Dummy-6] DEBUG: state_info:  task: multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3, fanouts:[],fanins:[],faninsNB:[],collapse:['divide-757a7e5e-56f9-4c18-9e5d-65572d7c9c0d']fanin_sizes:[],faninNB_sizes:[]task_inputs: ('triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b', 'square-b140dc3a-338e-4ce0-b21f-f97c585b6598', 'add-fb57fc54-14a4-4c86-965e-4096efd416a7') execute task: multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3
+[2022-08-17 10:24:18,349] [Dummy-6] DEBUG: input of execute_task is: (6, 4, 3)
+[2022-08-17 10:24:18,349] [Dummy-6] DEBUG: data_dict: {'increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54': 2, 'increment-582ee3e0-5d6a-4359-b5f2-8d09da647fdb': 1, 'triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b': 6, 'square-b140dc3a-338e-4ce0-b21f-f97c585b6598': 4, 'add-fb57fc54-14a4-4c86-965e-4096efd416a7': 3, 'multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3': 72}
+[2022-08-17 10:24:18,349] [Dummy-6] DEBUG: access DAG_map with state 6
+[2022-08-17 10:24:18,349] [Dummy-6] DEBUG: state_info:  task: divide-757a7e5e-56f9-4c18-9e5d-65572d7c9c0d, fanouts:[],fanins:[],faninsNB:[],collapse:[]fanin_sizes:[],faninNB_sizes:[]task_inputs: ('multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3',) execute task: divide-757a7e5e-56f9-4c18-9e5d-65572d7c9c0d
+[2022-08-17 10:24:18,349] [Dummy-6] DEBUG: input of execute_task is: (72,)
+quotient: 1.0
+[2022-08-17 10:24:18,349] [Dummy-6] DEBUG: data_dict: {'increment-f46bdb78-6e37-4e33-aaaf-26d6f0acdf54': 2, 'increment-582ee3e0-5d6a-4359-b5f2-8d09da647fdb': 1, 'triple-fea3f172-772e-4f97-88c5-6f12eb0dde2b': 6, 'square-b140dc3a-338e-4ce0-b21f-f97c585b6598': 4, 'add-fb57fc54-14a4-4c86-965e-4096efd416a7': 3, 'multiply-b18e4ceb-bb87-4135-ba2e-65b0630d8dc3': 72, 'divide-757a7e5e-56f9-4c18-9e5d-65572d7c9c0d': 1.0}
+[2022-08-17 10:24:18,349] [Dummy-6] DEBUG: state 6 after executing task divide-757a7e5e-56f9-4c18-9e5d-65572d7c9c0d has no fanouts, fanins, or faninNBs; return

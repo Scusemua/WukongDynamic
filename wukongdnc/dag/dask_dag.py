@@ -61,7 +61,9 @@ if __name__ == "__main__":
     return x * y * z
 
   def divide(x):
-    return x / 72
+    quotient = x / 72
+    print("quotient: " + str(quotient))
+    return quotient
 
   def increment(x):
     return x + 1
@@ -89,7 +91,9 @@ if __name__ == "__main__":
 
   # For each of the DAG nodes, create a Node object.
   for task, layer in graph.layers.items():
-    node = Node(pred = list(dependencies[task]), succ = dependents[task], task_name = task, task = layer[task][0])
+    node = Node(pred = list(dependencies[task]), succ = dependents[task], 
+      #rhc
+      task_name = task, task = layer[task][0], task_inputs = layer[task][1:])
     nodes_map[task] = node 
     nodes.append(node)
 
@@ -138,7 +142,8 @@ if __name__ == "__main__":
   # Grab the inputs for the leaf tasks and put them in the appropriate nodes.
   for leaf_task_id in leaf_task_ids:
     node = nodes_map[leaf_task_id]
-    node.set_leaf_task_input(task_objects_map[leaf_task_id][leaf_task_id][1:])
+    # rhc
+    #node.set_task_inputs(task_objects_map[leaf_task_id][leaf_task_id][1:])
     leaf_nodes.append(node)
 
   print("")
