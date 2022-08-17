@@ -10,7 +10,7 @@ from . import  DAG_executor_FanIn
 from .DAG_executor_State import DAG_executor_State
 import uuid
 
-from .utils import pack_data
+from .util import pack_data
 
 from threading import RLock
 
@@ -147,7 +147,7 @@ class DAG_executor_Synchronizer(object):
         else:
             return_value, restart = FanIn.fan_in(**keyword_arguments)
 
-            logger.debug("output:" + str(output))
+            logger.debug("fanin become task output:" + str(output))
             logger.debug("calling_task_name:" + calling_task_name)
             # Add our result to the results (instead of sending it to the fanin on the server and server sending it back
             return_value[calling_task_name] = output
@@ -619,6 +619,7 @@ def DAG_executor(payload):
                 output = task(*args)
                 return output
         """
+        logger.debug("execute_task output: " + str(output))
         data_dict[state_info.task_name] = output
 
         logger.debug("data_dict: " + str(data_dict))
