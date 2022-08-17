@@ -92,8 +92,17 @@ if __name__ == "__main__":
   mult = dask.delayed(multiply)(trip, sq, ad)
   div = dask.delayed(divide)(mult)
 
-  graph = div.__dask_graph__()
-  graph.layers
+  #graph = div.__dask_graph__()
+
+  graph = None
+
+  L = range(32) # 1,024 
+  while len(L) > 1:
+    L = list(map(dask.delayed(add), L[0::2], L[1::2]))
+  
+  if graph is None:
+    graph = L[0].__dask_graph__()
+  tr_result = L[0].compute()
 
   nodes = [] 
   nodes_map = {}
