@@ -144,56 +144,95 @@ if __name__ == "__main__":
   
   # graph, result = manual_dag()
   # graph, result = tree_reduction(n = 32)
-  graph, result = mat_mul(n = 10, c = 2)
+  graph, result = mat_mul(n = 4, c = 2)
+
+  graph_dict = graph.to_dict()
+
+  # print("Graph Dictionary:")
+  # for key, val in graph_dict.items():
+    # print("%s: %s" % (key, val))
+  # print()
 
   nodes = []                                                      
   nodes_map = {}
-  dependencies = graph.dependencies
+  dependencies = graph.get_all_dependencies()
   dependents = defaultdict(list)
 
+  # print("Dependencies:")
   # Compute the dependents (i.e., successors) of each node in the DAG.
-  for task, deps in graph.dependencies.items():
-    for dep in deps:
-      dependents[dep].append(task)
+  # for task, deps in graph.get_all_dependencies().items():
+    # for dep in deps:
+      # print("Task %s depends on task %s." % (task, dep))
+      # dependents[dep].append(task)
+  # print()
 
-  for task, layer in graph.layers.items():
-    print("Task: %s" % task)
-    print("Layer: %s" % str(layer))
-    print("type(layer): %s\n" % str(type(layer)))
+  # print("Graph Layers:")
+  # for task, layer in graph.layers.items():
+    # print("Task: %s" % task)
+    # print("Layer: %s" % str(layer))
+    # print("type(layer): %s\n" % str(type(layer)))
+  # print()
   
+  chunked_tasks = defaultdict(list)
+
   print("\nProcessing layers now...\n")
+  task_objects_map = {}      # Map from Task ID to the task objects.
+
+  # TODO(ben): iterate over tasks via graph.to_dict() rather than layer-by-layer.
+  for task_key, task_obj in graph.to_dict().items():
+    task_key = str(task_key)
+    task_objects_map[task_key] = task_obj
+    # print("Processing task %s now..." % str(task_key))
+    if task_key in dependencies:
+      current_dependencies = list(dependencies[task_key])
+    else:
+      current_dependencies = []
+    
+    if task_key in dependents:
+      current_dependents = dependents[task_key]
+    else:
+      current_dependents = []
+
+    node = Node(pred = current_dependencies, succ = current_dependents, 
+      task_name = task_key, task = task_obj[0], task_inputs = task_obj[1:]) #rhc
+    nodes_map[task_key] = node 
+    nodes.append(node)
 
   # For each of the DAG nodes, create a Node object.
-  for task, layer in graph.layers.items():
-    print("Processing task %s with layer type %s now..." % (task, str(type(layer))))
-    if type(layer) is dask.highlevelgraph.MaterializedLayer:
-      print("Processing MaterializedLayer now...")
-      for task_key, task_obj in layer.mapping.items():
-        print("Processing task: %s" % str(task_key))
-        if task_key in dependencies:
-          current_dependencies = list(dependencies[task_key])
-        else:
-          current_dependencies = []
+  # for task, layer in graph.layers.items():
+  #   print("Processing task %s with layer type %s now..." % (task, str(type(layer))))
+  #   if type(layer) is dask.highlevelgraph.MaterializedLayer:
+  #     print("Processing MaterializedLayer now...")
+  #     for task_key, task_obj in layer.mapping.items():
+
+  #       if type(task_key) is tuple and task_key[0] == task:
+  #         chunked_tasks[task].append(task_key)
+
+  #       print("Processing task: %s" % str(task_key))
+  #       if task_key in dependencies:
+  #         current_dependencies = list(dependencies[task_key])
+  #       else:
+  #         current_dependencies = []
         
-        if task_key in dependents:
-          current_dependents = dependents[task_key]
-        else:
-          current_dependents = []
+  #       if task_key in dependents:
+  #         current_dependents = dependents[task_key]
+  #       else:
+  #         current_dependents = []
 
-        node = Node(pred = current_dependencies, succ = current_dependents, 
-          task_name = task_key, task = task_obj[0], task_inputs = task_obj[1:]) #rhc
-        nodes_map[task_key] = node 
-        nodes.append(node)
-    elif type(layer) is dask.blockwise.Blockwise:
-      print("Processing Blockwise now...")
-      node = Node(pred = list(dependencies[task]), succ = dependents[task], 
-        task_name = task, task = layer.dsk[task][0], task_inputs = layer.dsk[task][1:]) #rhc
-      nodes_map[task] = node 
-      nodes.append(node)
+  #       node = Node(pred = current_dependencies, succ = current_dependents, 
+  #         task_name = task_key, task = task_obj[0], task_inputs = task_obj[1:]) #rhc
+  #       nodes_map[task_key] = node 
+  #       nodes.append(node)
+  #   elif type(layer) is dask.blockwise.Blockwise:
+  #     print("Processing Blockwise now...")
+  #     node = Node(pred = list(dependencies[task]), succ = dependents[task], 
+  #       task_name = task, task = layer.dsk[task][0], task_inputs = layer.dsk[task][1:]) #rhc
+  #     nodes_map[task] = node 
+  #     nodes.append(node)
 
-      print("Processed task %s\n" % task)
-    else:
-      raise ValueError("Unknown layer type in HighLevelDask (i.e., the Dask graph has a layer in it, and we've not written code to process that type of layer). Layer type: " + str(type(layer)))
+  #     print("Processed task %s\n" % task)
+  #   else:
+  #     raise ValueError("Unknown layer type in HighLevelDask (i.e., the Dask graph has a layer in it, and we've not written code to process that type of layer). Layer type: " + str(type(layer)))
 
   for node in nodes:
     for i in range(0, len(node.pred)):
@@ -223,7 +262,6 @@ if __name__ == "__main__":
   # For leaf tasks, the inputs will be the actual numerical values to be input to the function.
   # For non-leaf tasks, the inputs will be the IDs of other tasks (strings).
 
-  task_objects_map = graph.layers         # Map from Task ID to the task objects.
   task_objects = []                       # List of all the task objects. 
   leaf_tasks_map = {}                     # Mapping from task ID to task object for leaf tasks.
   leaf_task_ids = []                      # List of task IDs of leaf tasks.
@@ -231,11 +269,13 @@ if __name__ == "__main__":
   leaf_nodes = []
 
   # Compute the leaf tasks.
-  for task_id, deps in graph.dependencies.items():
+  for task_id, deps in graph.get_all_dependencies().items():
+    task_id = str(task_id)
+    # print("Checking if task %s is a leaf task now..." % task_id)
     if len(deps) == 0:
       leaf_task_ids.append(task_id)
-      leaf_tasks.append(graph[task_id])
-      leaf_tasks_map[task_id] = graph[task_id]
+      leaf_tasks.append(task_objects_map[task_id])
+      leaf_tasks_map[task_id] = task_objects_map[task_id]
   
   # Grab the inputs for the leaf tasks and put them in the appropriate nodes.
   for leaf_task_id in leaf_task_ids:
@@ -261,18 +301,17 @@ if __name__ == "__main__":
   print("The first element of the task object is the function to be executed.")
   print("The remaining elements are the input to the tasks.")
   print("The inputs may be task IDs. This specifies data dependencies between tasks.\n")
-  for k,v in graph.layers.items():
-    print("%s: %s" % (k,v[k]))
-    task_objects.append(v[k])
+  for k,v in graph.to_dict().items():
+    task_objects.append(v)
   
   DFS_nodes = []
 
   def dfs(visited, node):  #function for dfs 
     task_name = node.get_task_name() 
     if task_name not in visited:
-      print("DFS: visit task: " + task_name)
+      print("DFS: visit task: " + str(task_name))
       DFS_nodes.append(node)
-      visited.add(task_name)
+      visited.add(str(task_name))
       dependents = node.get_succ()
       for dependent_node in dependents:
         dependent_task_name = dependent_node.get_task_name() 
