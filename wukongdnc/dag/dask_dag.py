@@ -141,6 +141,9 @@ if __name__ == "__main__":
     x = da.random.random((n, n), chunks = (c, c))
     y = da.random.random((n, n), chunks = (c, c))
     z = da.matmul(x, y)
+
+    z.visualize("./matrix_multiplication_dag.png")
+
     graph = z.__dask_graph__()
     result = z.compute() 
 
@@ -161,16 +164,19 @@ if __name__ == "__main__":
 
   nodes = []                                                      
   nodes_map = {}
-  dependencies = graph.get_all_dependencies()
+  dependencies = {}
   dependents = defaultdict(list)
 
-  # print("Dependencies:")
+  print("Dependencies:")
   # Compute the dependents (i.e., successors) of each node in the DAG.
-  # for task, deps in graph.get_all_dependencies().items():
-    # for dep in deps:
-      # print("Task %s depends on task %s." % (task, dep))
-      # dependents[dep].append(task)
-  # print()
+  for task, deps in graph.get_all_dependencies().items():
+    task = str(task)
+    dependencies[task] = deps 
+    for dep in deps:
+      print("Task %s depends on task %s." % (task, dep))
+      dep = str(dep)
+      dependents[dep].append(task)
+  print()
 
   # print("Graph Layers:")
   # for task, layer in graph.layers.items():
@@ -198,6 +204,9 @@ if __name__ == "__main__":
       current_dependents = dependents[task_key]
     else:
       current_dependents = []
+    
+    print("Task %s has %d dependencies." % (task_key, len(current_dependencies)))
+    print("Task %s has %d dependents." % (task_key, len(current_dependents)))
 
     node = Node(pred = current_dependencies, succ = current_dependents, 
       task_name = task_key, task = task_obj[0], task_inputs = task_obj[1:]) #rhc
@@ -242,9 +251,9 @@ if __name__ == "__main__":
 
   for node in nodes:
     for i in range(0, len(node.pred)):
-      node.pred[i] = nodes_map[node.pred[i]]
+      node.pred[i] = nodes_map[str(node.pred[i])]
     for i in range(0, len(node.succ)):
-      node.succ[i] = nodes_map[node.succ[i]]
+      node.succ[i] = nodes_map[str(node.succ[i])]
 
   # Then for each node in the list, do node.generate_ops().
   #for node in nodes:
