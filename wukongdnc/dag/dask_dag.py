@@ -88,6 +88,7 @@ if __name__ == "__main__":
     return x + 1
 
   def manual_dag():
+    print("==== GENERATING MANUALLY-CREATED DAG")
     inc0 = dask.delayed(increment)(0)
     inc1 = dask.delayed(increment)(1)
     trip = dask.delayed(triple)(inc1)
@@ -111,6 +112,8 @@ if __name__ == "__main__":
         Tuple where first element is the Dask HighLevelGraph object (or whatever the type is),
         and the second element is the result of running the tree reduction computation on Dask proper.
     """
+    print("==== GENERATING TREE REDUCTION (n = %d)" % n)
+
     L = range(n) # 1,024 
     while len(L) > 1:
       L = list(map(dask.delayed(add), L[0::2], L[1::2]))
@@ -134,6 +137,7 @@ if __name__ == "__main__":
         Tuple where first element is the Dask HighLevelGraph object (or whatever the type is),
         and the second element is the result of running the tree reduction computation on Dask proper.
     """
+    print("==== GENERATING MATRIX MULTIPLICATION (n = %d, c = %d)" % (n, c))
     x = da.random.random((n, n), chunks = (c, c))
     y = da.random.random((n, n), chunks = (c, c))
     z = da.matmul(x, y)
@@ -147,6 +151,8 @@ if __name__ == "__main__":
   graph, result = mat_mul(n = 4, c = 2)
 
   graph_dict = graph.to_dict()
+
+  print("There are %d individual tasks in this DAG." % len(graph_dict))
 
   # print("Graph Dictionary:")
   # for key, val in graph_dict.items():
