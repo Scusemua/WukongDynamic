@@ -132,6 +132,10 @@ class DAG_executor_FanInNB(MonitorSU):
             logger.debug("FanInNB: !!!!! last Client exiting FanIn fan_in id=%s!!!!!" % self.monitor_name)
             # for debugging
             fanin_task_name = kwargs['fanin_task_name']
+
+            # rhc queue
+            DAG_executor.work_queue.put(start_state_fanin_task)
+
             if self.run_faninNB_task_on_server:
                 try:
                     logger.debug("FanInNB: starting DAG_executor thread for task " + fanin_task_name + " with start state " + str(start_state_fanin_task))

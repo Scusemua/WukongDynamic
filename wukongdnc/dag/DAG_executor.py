@@ -13,6 +13,7 @@ import uuid
 from .util import pack_data
 
 from threading import RLock
+import queue
 
 import logging 
 logger = logging.getLogger(__name__)
@@ -403,6 +404,10 @@ def process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State, outp
     become_start_state = DAG_states[become_task]  
     # change state for this thread so that this thread will become the new task, i.e., execute another iteration with the new state
     DAG_exec_State.state = DAG_states[become_task]
+
+    #rhc: queue
+    work_queue.put(become_start_state)
+
     logger.debug ("fanout for " + calling_task_name + " become_task state is " + str(become_start_state))  
     fanouts.remove(become_task)
     logger.debug("new fanouts after remove:" + str(fanouts))
@@ -410,11 +415,14 @@ def process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State, outp
     # process rest of fanins
     logger.debug("run_fanout_task_on_server:" + str(run_fanout_task_on_server))
     for name in fanouts:
+         #rhc queue
+        work_queue.put(DAG_states[name])
         if run_fanout_task_on_server:
             try:
                 logger.debug("Starting fanout DAG_executor thread for " + name)
                 fanout_task_start_state = DAG_states[name]
                 task_DAG_executor_State = DAG_executor_State(state = fanout_task_start_state)
+
                 #rhc task_inputs
                 #output_tuple = (calling_task_name,)
                 #output_dict[calling_task_name] = output
@@ -521,6 +529,7 @@ def process_fanins(fanins, faninNB_sizes, calling_task_name, DAG_states, DAG_exe
 	Note: We can call DAG_execute(state)
 """
 
+work_queue = queue.Queue()
 data_dict = {}
 				 
 def DAG_executor(payload):		 
@@ -638,6 +647,9 @@ def DAG_executor(payload):
             #task_inputs = (state_info.task_name,)
             # We get new state_info and then state_info.task_inputs when we iterate
 
+            # rhc queue
+            work_queue.put(DAG_executor_State.state)
+
         elif len(state_info.faninNBs) > 0 or len(state_info.fanouts) > 0:
             # assert len(collapse) + len(fanin) == 0
             # If len(state_info.collapse) > 0 then there are no fanins, fanouts, or faninNBs and we will not excute this elif or the else
@@ -671,7 +683,7 @@ def DAG_executor(payload):
 			#if len(state_info.fanins) > 0:
 			#ToDo: Set next state before process_fanins, returned state just has return_value, which has input.
 			# single fanin, try-op w/ returned_state.return_value or restart with return_value or deposit/withdraw it
-            
+
             returned_state = process_fanins(state_info.fanins, state_info.fanin_sizes, state_info.task_name, DAG_info.get_DAG_states(),  DAG_executor_State, output, server)
             logger.debug("After process_fanin: " + str(state_info.fanins[0]) + " returned_state.blocking: " + str(returned_state.blocking) + ", returned_state.return_value: "
 ##rhc
@@ -679,12 +691,16 @@ def DAG_executor(payload):
 			##+ str(returned_state.return_value) + ", state: " + str(state))
             if returned_state.blocking:
                 return
+            
+            # rhc queue
+            work_queue.put(DAG_executor_State.state)
+
             #rhc task_inputs
             #else:
             #    input = returned_state.return_value
             # We get new state_info and then state_info.task_inputs when we iterate. For local exection,
             # the fanin task will get its inputs from the data dictionary -they were placed there after
-            # tasks executed. For non-loca, we will need to add them to the local ata dictionary.
+            # tasks executed. For non-local, we will need to add them to the local ata dictionary.
 
 
         else:
