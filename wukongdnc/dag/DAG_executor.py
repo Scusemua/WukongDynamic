@@ -331,9 +331,12 @@ def create_and_faninNB_task(kwargs):
 
 
 # execute task from name_to_function_map with key task_name
-def execute_task(task,args):
+def execute_task(task, args):
     logger.debug("input of execute_task is: " + str(args))
     #output = task(input)
+    for i in range(0, len(args)):
+        print("Type of argument #%d: %s" % (i, type(args[i])))
+        print("Argument #%d: %s" % (i, str(args[i])))
     output = task(*args)
     return output
 				 			 
