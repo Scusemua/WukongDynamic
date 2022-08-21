@@ -219,14 +219,13 @@ def create(websocket, op, type, name, state):
                     We should only bother with passing it as an argument if its already connected.
         
         op (str):
-            The operation being performed. 
-            TODO: Shouldn't this always be 'create'?
+            The operation being performed, which is "create"
         
         type (str):
             The type of the object to be created.
 
         name (str):
-            The name (which serves as an identifier) of the object to be created.
+            The name (which serves as an identifier) of the synchronization object to be created
         
         state (state.State):
             Our current state.
@@ -252,6 +251,50 @@ def create(websocket, op, type, name, state):
     msg = json.dumps(message).encode('utf-8')
     send_object(msg, websocket)
     logger.debug("Sent 'create' message to server")
+
+    # Receive data. This should just be an ACK, as the TCP server will 'ACK' our create() calls.
+    ack = recv_object(websocket)
+
+def create_all_fanins_and_faninNBs(websocket, op, type, name, state):
+    """
+    Create all fanins and faninNBs for DAG_executor on the TCP server.
+
+    Arguments:
+    ----------
+        websocket (socket.socket):
+            Socket connection to the TCP server.
+            TODO: We pass this in, but in the function body, we connect to the server.
+                    In that case, we don't need to pass a websocket. We'll just create one.
+                    We should only bother with passing it as an argument if its already connected.
+        
+        op (str):
+            The operation being performed, which is "create_all_fanins_and_faninNBs"
+        
+        type (str):
+            The type of the object to be created.
+
+        name (str):
+            A tuple "messages" of fanin "create" messages and faninNB "create" messages
+        
+        state (state.State):
+            Our current state.
+    """
+
+    msg_id = str(uuid.uuid4())
+    logger.debug("Sending 'create_all_fanins_and_faninNBs' message to server. Op='%s', type='%s', id='%s', state=%s" % (op, type, msg_id, state))
+
+    # we set state.keyword_arguments before call to create()
+    message = {
+        "op": op,
+        "type": type,
+        "name": name,
+        "state": make_json_serializable(state),
+        "id": msg_id
+    }
+
+    msg = json.dumps(message).encode('utf-8')
+    send_object(msg, websocket)
+    logger.debug("Sent 'create_all_fanins_and_faninNBs' message to server")
 
     # Receive data. This should just be an ACK, as the TCP server will 'ACK' our create() calls.
     ack = recv_object(websocket)
