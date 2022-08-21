@@ -20,8 +20,8 @@ def pack_data(o, d, key_types=object):
    """
    typ = type(o)
    try:
-      if isinstance(o, key_types) and o in d:
-         return d[o]
+      if isinstance(o, key_types) and str(o) in d:
+         return d[str(o)]
    except TypeError:
       pass
 
