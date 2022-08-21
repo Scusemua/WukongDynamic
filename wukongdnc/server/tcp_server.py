@@ -98,7 +98,53 @@ class TCPHandler(socketserver.StreamRequestHandler):
         logger.info("Sending ACK to client %s for CREATE operation." % self.client_address[0])
         resp_encoded = json.dumps(resp).encode('utf-8')
         self.send_serialized_object(resp_encoded)
-        logger.info("Sent ACK of size %d bytes to client %s for CREATE operation." % (len(resp_encoded), self.client_address[0]))     
+        logger.info("Sent ACK of size %d bytes to client %s for CREATE operation." % (len(resp_encoded), self.client_address[0]))  
+
+
+    def create_all_fanins_and_faninNBs(self, message = None):
+        """
+        Called by a remote Lambda to create an object here on the TCP server.
+
+        Key-word arguments:
+        -------------------
+            message (dict):
+                The payload from the AWS Lambda function.
+        
+        where:
+            message = {
+                "op": "create_all_fanins_and_faninNBs",
+                "type": "DAG_executor_fanin_or_faninNB",
+                "name": messages,						# Q: Fix this? usually it's a synch object name (string)
+                "state": make_json_serializable(dummy_state),
+                "id": msg_id
+            }
+        """  
+        logger.debug("[HANDLER] server.create_all_fanins_and_faninNBs() called.")
+        messages = message['name']
+        fanin_messages = messages[0]
+        faninNB_messages = messages[1]
+        logger.info(str(fanin_messages))
+        logger.info(str(faninNB_messages))
+
+        for msg in fanin_messages:
+            self.create_obj(msg)
+        logger.info("created fanins")
+
+        for msg in fanin_messages:
+            self.create_obj(msg)
+        logger.info("created faninNBs")
+
+        resp = {
+            "op": "ack",
+            "op_performed": "create_all_fanins_and_faninNBs"
+        }
+        #############################
+        # Write ACK back to client. #
+        #############################
+        logger.info("Sending ACK to client %s for create_all_fanins_and_faninNBs operation." % self.client_address[0])
+        resp_encoded = json.dumps(resp).encode('utf-8')
+        self.send_serialized_object(resp_encoded)
+        logger.info("Sent ACK of size %d bytes to client %s for create_all_fanins_and_faninNBs operation." % (len(resp_encoded), self.client_address[0]))
 
     def synchronize_sync(self, message = None):
         """
@@ -256,7 +302,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         """
         type_arg = message["type"]
         name = message["name"]
-        state = decode_and_deserialize(message["state"])
+        #state = decode_and_deserialize(message["state"])
 
         logger.debug("Received close_obj request for object with name '%s' and type %s" % (name, type_arg))
 

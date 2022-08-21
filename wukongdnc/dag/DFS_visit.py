@@ -99,13 +99,13 @@ n4's faninNBs list is n3
 Note: perhaps you can refine the rules for fanins and faninNBs so there are more becomes. For example,
 
   n2   n3
- / \  /  \
+ t t  t  t
 n0  n1   n4
 
 Instead of n2 and n3 are both faninNBs, n2 can be a fanin and n3 a faninNB.
      
      n3
-    /  \
+    t  t
    n1   n4
 n1's fanins List is n3
 n4's fanins list is n3

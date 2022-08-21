@@ -230,7 +230,7 @@ class testThread(Thread):
         time.sleep(1)
         logger.debug("task " + self._ID + " Calling fan_in")
         r = self.b.fan_in(ID = self._ID, result = "task1 result")
-        logger.debug("task " + self._ID + ", Successfully called fan_in")
+        logger.debug("task " + self._ID + ", Successfully called fan_in, returned r:" + r)
 
 def main():
     b = DAG_executor_FanInNB(initial_n=2,monitor_name="DAG_executor_FanInNB")
@@ -269,10 +269,10 @@ def main():
     
     logger.debug("joined threads")
     logger.debug("callerThread1 restart " + str(callerThread1._restart))
-    logger.debug("callerThread2._returnValue=" + str(callerThread1._returnValue))
+    logger.debug("callerThread2._returnValue=" + str(callerThread1._return))
 
     logger.debug("callerThread2 restart " + str(callerThread2._restart))
-    logger.debug("callerThread2._returnValue=" + str(callerThread2._returnValue))
+    logger.debug("callerThread2._returnValue=" + str(callerThread2._return))
     # if callerThread2._result == 0:
     #     logger.debug("callerThread2 result is 0")
     # else:

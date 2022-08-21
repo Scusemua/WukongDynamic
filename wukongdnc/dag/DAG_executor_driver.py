@@ -17,8 +17,11 @@ from . import DAG_executor
 from . import DAG_executor_FanInNB
 from . import DAG_executor_FanIn
 from .DAG_executor_State import DAG_executor_State
+from wukongdnc.server.util import make_json_serializable
 import uuid
 import pickle
+
+from wukongdnc.server.api import create_all_fanins_and_faninNBs
 
 import logging 
 logger = logging.getLogger(__name__)
@@ -342,16 +345,21 @@ def run():
     
     #ResetRedis()
     
-    start_time = time.time()
+#ToDo: All the timing stuff + close_all at the end of handler_new.py
+    #start_time = time.time()
 	
-	#with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
-		#logger.debug("Connecting to TCP Server at %s." % str(TCP_SERVER_IP))
-		#websocket.connect(TCP_SERVER_IP)
- 		#create_all_fanins_and_faninNBs(websocket,DAG_map,DAG_states, input_all_fanin_task_names, input_all_faninNB_task_names)
-
+#ToDO: 
+#  with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
+#       logger.debug("Connecting to TCP Server at %s." % str(TCP_SERVER_IP))
+#        websocket.connect(TCP_SERVER_IP)
+#       logger.debug("Successfully connected to TCP Server.")
+# if (multip or lambda) 
+#   create_fanins_and_faninNBs(websocket + same args) 
+# else:
     server = DAG_executor.DAG_executor_Synchronizer()
-    
     server.create_all_fanins_and_faninNBs(DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
+
+#ToDo: multip's need websocket to send their fanins - do this at start of DAG_executor?
 
     #DAG_leaf_task_inputs = get_DAG_leaf_task_inputs(DAG_leaf_tasks)
     
@@ -530,7 +538,7 @@ def invoke_lambda(
     logger.info("Invoked AWS Lambda function '%s' in %f ms. Status: %s." % (function_name, (time.time() - s) * 1000.0, str(status_code)))
 									
 												
-def create_all_fanins_and_faninNBs(websocket,DAG_map,DAG_states,all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes):										
+def create_fanins_and_faninNBs(websocket,DAG_map,DAG_states,DAG_info,all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes):										
     """
     all_fanins = []
     all_fanin_sizes = []
@@ -546,13 +554,15 @@ def create_all_fanins_and_faninNBs(websocket,DAG_map,DAG_states,all_fanin_task_n
         all_faninNBs = all_faninNBs + state_info.faninNBs
         all_faninNB_sizes = all_faninNB_sizes + state_info.faninNB_sizes
 	"""
-    
+
     fanin_messages = []
     #for fanin_name, size in [(fanin_name,size) for fanin_name in all_fanins for size in all_fanin_sizes]:
     for fanin_name, size in zip(all_fanin_task_names,all_fanin_sizes):
         dummy_state = DAG_executor_State()
         dummy_state.keyword_arguments['n'] = size
-        dummy_state.keyword_arguments['start_state_fanin_task'] = DAG_states[fanin_name]      
+        # these are used by FanInNB's
+        #dummy_state.keyword_arguments['start_state_fanin_task'] = DAG_states[fanin_name] 
+        #dummy_state.keyword_arguments['run_faninNB_task_on_server'] = run_faninNB_task_on_server    
         msg_id = str(uuid.uuid4())	# for debugging
         message = {
             "op": "create",
@@ -572,6 +582,7 @@ def create_all_fanins_and_faninNBs(websocket,DAG_map,DAG_states,all_fanin_task_n
         ####################################################################
         dummy_state.keyword_arguments['run_faninNB_task_on_server'] = run_faninNB_task_on_server
         ####################################################################
+        dummy_state.keyword_arguments['DAG_info'] = DAG_info
         msg_id = str(uuid.uuid4())
         message = {
             "op": "create",
@@ -587,6 +598,12 @@ def create_all_fanins_and_faninNBs(websocket,DAG_map,DAG_states,all_fanin_task_n
     logger.debug("Sending 'create_all' message to server")
     messages = (fanin_messages,faninNB_messages)
     # we set state.keyword_arguments before call to create()
+
+    dummy_state = DAG_executor_State()
+    create_all_fanins_and_faninNBs(websocket, "create_all_fanins_and_faninNBs", "DAG_executor_fanin_or_faninNB", 
+        messages, dummy_state)
+
+    """
     message = {
         "op": "create_all_fanins_and_faninNBs",
         "type": "DAG_executor_fanin_or_faninNB",
@@ -597,10 +614,11 @@ def create_all_fanins_and_faninNBs(websocket,DAG_map,DAG_states,all_fanin_task_n
 												
     msg = json.dumps(message).encode('utf-8')
     send_object(msg, websocket)
-    logger.debug("Sent 'create_all' message to server")
+    logger.debug("Sent 'create_all_fanins_and_faninNBs' message to server")
 
     # Receive data. This should just be an ACK, as the TCP server will 'ACK' our create_all() call.
     ack = recv_object(websocket)
+    """
 
 def lambda_handler(event, context):
     start_time = time.time()
