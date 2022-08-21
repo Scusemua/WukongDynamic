@@ -405,9 +405,6 @@ def process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State, outp
     # change state for this thread so that this thread will become the new task, i.e., execute another iteration with the new state
     DAG_exec_State.state = DAG_states[become_task]
 
-    #rhc: queue
-    work_queue.put(become_start_state)
-
     logger.debug ("fanout for " + calling_task_name + " become_task state is " + str(become_start_state))  
     fanouts.remove(become_task)
     logger.debug("new fanouts after remove:" + str(fanouts))
@@ -572,20 +569,26 @@ def DAG_executor(payload):
     logger.debug("DAG_executor starting input:" +str(task_payload_inputs) + " state: " + str(DAG_executor_State.state) )
   
     DAG_info = payload['DAG_info']
+    DAG_map = DAG_info.get_DAG_map()
+    DAG_tasks = DAG_info.get_DAG_tasks()
     server = payload['server']
     
     #ToDo:
 	#if input == None:
 		#pass  # withdraw input from payload.synchronizer_name
     while (True):
+
+#ToDo: multP's don't always get work from the queue. i.e., no get when no put.
+# - collapse: no get; fanout: become so not get; fanin: - become no get + not-become do gets
+# - faninB: no becomes - last caller does put, all callers need to do gets
+# ==> set get_flag if process does faninNB or it does fanin and is not last caller; then 
+# ==> if get_flag, do a get and reset get_flag. (Need to check return from process_fanin and 
+# ==> set get_flag accordingly.) Also, don;t do put if you don't do get.
 ##rhc
         logger.debug ("access DAG_map with state " + str(DAG_executor_State.state))
-        #state_info = DAG_info.DAG_map[DAG_executor_State.state]
-        DAG_map = DAG_info.get_DAG_map()
         state_info = DAG_map[DAG_executor_State.state]
         ##logger.debug ("access DAG_map with state " + str(state))
         ##state_info = DAG_info.DAG_map[state]
-
         logger.debug("state_info: " + str(state_info) + " execute task: " + state_info.task_name)
  
         # Example:
@@ -606,7 +609,6 @@ def DAG_executor(payload):
         # func(*args2)
 
         # using map DAG_tasks from task_name to task
-        DAG_tasks = DAG_info.get_DAG_tasks()
         task = DAG_tasks[state_info.task_name]
         #rhc task_inputs
         task_inputs = state_info.task_inputs
@@ -647,6 +649,7 @@ def DAG_executor(payload):
             #task_inputs = (state_info.task_name,)
             # We get new state_info and then state_info.task_inputs when we iterate
 
+#ToDo: Don't add to work_queue just do it
             # rhc queue
             work_queue.put(DAG_executor_State.state)
 
@@ -672,6 +675,10 @@ def DAG_executor(payload):
                 #task_inputs = (state_info.task_name,)
                 # We get new state_info and then state_info.task_inputs when we iterate
 
+#ToDo: Don't add to work_queue just do it
+                #rhc: queue
+                work_queue.put(DAG_executor_State.state)
+
             else:   # If there were fanouts then continue with become task, else this thread is done.
                 return
         elif len(state_info.fanins) > 0:
@@ -692,6 +699,7 @@ def DAG_executor(payload):
             if returned_state.blocking:
                 return
             
+#ToDo: Don't add to work_queue just do it
             # rhc queue
             work_queue.put(DAG_executor_State.state)
 

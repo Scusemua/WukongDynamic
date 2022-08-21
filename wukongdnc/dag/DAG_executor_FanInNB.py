@@ -230,7 +230,7 @@ class testThread(Thread):
         time.sleep(1)
         logger.debug("task " + self._ID + " Calling fan_in")
         r = self.b.fan_in(ID = self._ID, result = "task1 result")
-        logger.debug("task " + self._ID + ", Successfully called fan_in")
+        logger.debug("task " + self._ID + ", Successfully called fan_in, returned r:" + r)
 
 def main():
     b = DAG_executor_FanInNB(initial_n=2,monitor_name="DAG_executor_FanInNB")
