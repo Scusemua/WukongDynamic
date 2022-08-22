@@ -149,9 +149,9 @@ if __name__ == "__main__":
 
     return graph, result    
   
-  # graph, result = manual_dag()
+  graph, result = manual_dag()
   # graph, result = tree_reduction(n = 32)
-  graph, result = mat_mul(n = 4, c = 2)
+  # graph, result = mat_mul(n = 4, c = 2)
 
   graph_dict = graph.to_dict()
 

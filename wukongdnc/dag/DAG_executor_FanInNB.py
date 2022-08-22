@@ -134,56 +134,57 @@ class DAG_executor_FanInNB(MonitorSU):
             fanin_task_name = kwargs['fanin_task_name']
 
             # rhc queue
-            DAG_executor.work_queue.put(start_state_fanin_task)
-
-            if self.run_faninNB_task_on_server:
-                try:
-                    logger.debug("FanInNB: starting DAG_executor thread for task " + fanin_task_name + " with start state " + str(start_state_fanin_task))
-                    server = kwargs['server']
-                    #DAG_executor_state =  kwargs['DAG_executor_State']
-##rhc
-                    #DAG_executor_state.state = int(start_state_fanin_task)
-                    DAG_executor_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state_fanin_task)
-                    DAG_executor_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
-                    DAG_executor_state.return_value = None
-                    DAG_executor_state.blocking = False
-##rhc
-                    logger.debug("FanInNB: calling_task_name:" + calling_task_name + " DAG_executor_state.state: " + str(DAG_executor_state.state))
-                    #logger.debug("DAG_executor_state.function_name: " + DAG_executor_state.function_name)
-                    payload = {
-                        #"state": int(start_state_fanin_task),
-                        "input": self._results,
-                        "DAG_executor_State": DAG_executor_state,
-                        "DAG_info": self.DAG_info,
-                        "server": server
-                    }
-                    _thread.start_new_thread(DAG_executor.DAG_executor_task, (payload,))
-                except Exception as ex:
-                    logger.debug("FanInNB:[ERROR] Failed to start DAG_executor thread.")
-                    logger.debug(ex)
-                
+            if DAG_executor.using_workers:
+                DAG_executor.work_queue.put(start_state_fanin_task)
             else:
-                try:
-##rhc
-                    DAG_executor_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state_fanin_task)
-                    DAG_executor_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
-                    DAG_executor_state.return_value = self._results
-                    DAG_executor_state.blocking = False            
-                    logger.debug("FanInNB: starting Starting Lambda function for task " + fanin_task_name + " with start state " + str(DAG_executor_state.state))
-                    #logger.debug("DAG_executor_state: " + str(DAG_executor_state))
-                    payload = {
-##rhc
-                        #"state": int(start_state_fanin_task),
-                        "input": self._results,
-                        "DAG_executor_State": DAG_executor_state,
-                        "DAG_info": self.DAG_info
-                        #"server": server   # used to mock server during testing
-                    }
-                    ###### DAG_executor_State.function_name has not changed
-                    invoke_lambda(payload = payload, function_name = "DAG_executor")
-                except Exception as ex:
-                    logger.debug("FanInNB:[ERROR] Failed to start DAG_executor Lambda.")
-                    logger.debug(ex)
+                if self.run_faninNB_task_on_server:
+                    try:
+                        logger.debug("FanInNB: starting DAG_executor thread for task " + fanin_task_name + " with start state " + str(start_state_fanin_task))
+                        server = kwargs['server']
+                        #DAG_executor_state =  kwargs['DAG_executor_State']
+        ##rhc
+                        #DAG_executor_state.state = int(start_state_fanin_task)
+                        DAG_executor_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state_fanin_task)
+                        DAG_executor_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
+                        DAG_executor_state.return_value = None
+                        DAG_executor_state.blocking = False
+        ##rhc
+                        logger.debug("FanInNB: calling_task_name:" + calling_task_name + " DAG_executor_state.state: " + str(DAG_executor_state.state))
+                        #logger.debug("DAG_executor_state.function_name: " + DAG_executor_state.function_name)
+                        payload = {
+                            #"state": int(start_state_fanin_task),
+                            "input": self._results,
+                            "DAG_executor_State": DAG_executor_state,
+                            "DAG_info": self.DAG_info,
+                            "server": server
+                        }
+                        _thread.start_new_thread(DAG_executor.DAG_executor_task, (payload,))
+                    except Exception as ex:
+                        logger.debug("FanInNB:[ERROR] Failed to start DAG_executor thread.")
+                        logger.debug(ex)
+                    
+                else:
+                    try:
+        ##rhc
+                        DAG_executor_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state_fanin_task)
+                        DAG_executor_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
+                        DAG_executor_state.return_value = self._results
+                        DAG_executor_state.blocking = False            
+                        logger.debug("FanInNB: starting Starting Lambda function for task " + fanin_task_name + " with start state " + str(DAG_executor_state.state))
+                        #logger.debug("DAG_executor_state: " + str(DAG_executor_state))
+                        payload = {
+        ##rhc
+                            #"state": int(start_state_fanin_task),
+                            "input": self._results,
+                            "DAG_executor_State": DAG_executor_state,
+                            "DAG_info": self.DAG_info
+                            #"server": server   # used to mock server during testing
+                        }
+                        ###### DAG_executor_State.function_name has not changed
+                        invoke_lambda(payload = payload, function_name = "DAG_executor")
+                    except Exception as ex:
+                        logger.debug("FanInNB:[ERROR] Failed to start DAG_executor Lambda.")
+                        logger.debug(ex)
             # No signal of non-last client; they did not block and they are done executing. 
             # does mutex.V
             super().exit_monitor()

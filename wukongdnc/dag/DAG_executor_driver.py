@@ -35,8 +35,10 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 ################## SET THIS #################
-run_fanout_task_on_server = True
-run_faninNB_task_on_server = True
+run_fanout_task_on_server = DAG_executor.run_fanout_task_on_server
+run_faninNB_task_on_server = DAG_executor.run_faninNB_task_on_server
+using_workers = DAG_executor.using_workers
+num_workers = DAG_executor.num_workers
 #############################################
 
 def add(inp):
@@ -367,6 +369,20 @@ def run():
     print("DAG_leaf_task_start_states: " + str(DAG_leaf_task_start_states))
     print("DAG_leaf_task_inputs: " + str(DAG_leaf_task_inputs))
 
+    if using_workers:
+        #rhc queue
+        for state in DAG_leaf_task_start_states:
+            DAG_executor.work_queue.put(state)
+        #print("DAG_executor.work_queue:")
+        #for start_state in DAG_executor.work_queue.queue:
+        #   print(start_state)
+
+    #thread_list = []
+
+    #p = Process(target=f, args=('bob',))
+    #p.start()
+    #p.join()
+
     for start_state, inp, task_name in zip(DAG_leaf_task_start_states, DAG_leaf_task_inputs, DAG_leaf_tasks):
         print("iterate")
         DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state)
@@ -383,13 +399,7 @@ def run():
         #invoke_lambda(payload = payload, is_first_invocation = True, n = 1, initial_permits = 0, function_name = "ComposerServerlessSync")
         invoke_lambda(payload = payload, function_name = "DAG_executor")
         """
-
-        #rhc queue
-        DAG_executor.work_queue.put(start_state)
-        #print("DAG_executor.work_queue:")
-        #for start_state in DAG_executor.work_queue.queue:
-         #   print(start_state)
-
+            
         if run_fanout_task_on_server:
             try:
                 DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state)
@@ -407,6 +417,8 @@ def run():
                     "DAG_info": DAG_info,
                     "server": server
                 }
+                # thread = threading.Thread(target=DAG_executor.DAG_executor_task, args=(payload,))
+                # thread_list.append(thread)
                 _thread.start_new_thread(DAG_executor.DAG_executor_task, (payload,))
             except Exception as ex:
                 logger.debug("[ERROR] Failed to start DAG_executor thread for state 1")
@@ -476,7 +488,10 @@ def run():
 	"""	
 
     logger.debug("Sleeping")
-    time.sleep(5)	
+    time.sleep(5)
+
+    #for thread in thread_list:
+    #thread.join()	
 
     #rhc queue
     print("DAG_executor.work_queue:")

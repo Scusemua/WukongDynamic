@@ -29,6 +29,8 @@ logger.addHandler(ch)
 ################## SET THIS #################
 run_fanout_task_on_server = True
 run_faninNB_task_on_server = True
+using_workers = True
+num_workers = 2
 #############################################
 
 def add(inp):
@@ -83,6 +85,16 @@ def inc1(inp):
     output = {'inc1': value}
     logger.debug("inc1 output: " + str(output))
     return output
+
+class Counter(object):
+    def __init__(self,initial_value=0):
+        self.value = initial_value
+        self._lock = threading.Lock()
+        
+    def increment_and_get(self):
+        with self._lock:
+            self.value += 1
+            return self.value
   
 # This is taking role of server. 
 class DAG_executor_Synchronizer(object):
@@ -531,6 +543,10 @@ def process_fanins(fanins, faninNB_sizes, calling_task_name, DAG_states, DAG_exe
 
 work_queue = queue.Queue()
 data_dict = {}
+
+counter = None
+if using_workers:
+    counter = Counter(0)
 				 
 def DAG_executor(payload):		 
     # Note: could instead use a "state" parameter. Then we have state.starting_input and state.return_value so would need
@@ -562,23 +578,28 @@ def DAG_executor(payload):
     ##state = payload['state'] # refers to state var, not the usual State of DAG_executor 
     ##logger.debug("state:" + str(state))
     ##DAG_executor_State.state = payload['state']
-    logger.debug("state:" + str(DAG_executor_State.state))
+    logger.debug("payload state:" + str(DAG_executor_State.state))
     # For leaf task, we get  ['input': inp]; this is passed to the executed task using:
     #    def execute_task(task_name,input): output = DAG_info.DAG_tasks[task_name](input)
     # So the executed task gets ['input': inp], just like a non-leaf task gets ['output': X]. For leaf tasks, we use "input"
     # as the label for the value.
     #rhc task_inputs
     task_payload_inputs = payload['input']
-    logger.debug("DAG_executor starting input:" +str(task_payload_inputs) + " state: " + str(DAG_executor_State.state) )
+    logger.debug("DAG_executor starting payload input:" +str(task_payload_inputs) + " payload state: " + str(DAG_executor_State.state) )
   
     DAG_info = payload['DAG_info']
     DAG_map = DAG_info.get_DAG_map()
     DAG_tasks = DAG_info.get_DAG_tasks()
+    num_tasks_to_execute = len(DAG_tasks)
+    logger.debug("DAG_executor: num_tasks_to_execute: " + str(num_tasks_to_execute))
     server = payload['server']
     
     #ToDo:
 	#if input == None:
 		#pass  # withdraw input from payload.synchronizer_name
+    
+    worker_needs_input = using_workers and True
+
     while (True):
 
 #ToDo: multP's don't always get work from the queue. i.e., no get when no put.
@@ -587,6 +608,21 @@ def DAG_executor(payload):
 # ==> set get_flag if process does faninNB or it does fanin and is not last caller; then 
 # ==> if get_flag, do a get and reset get_flag. (Need to check return from process_fanin and 
 # ==> set get_flag accordingly.) Also, don;t do put if you don't do get.
+
+        if using_workers:
+            if worker_needs_input:
+                DAG_executor_State.state = work_queue.get(block=True)
+                if DAG_executor_State.state == -1:
+                    work_queue.put(-1)
+                    return
+                worker_needs_input = False # default
+                logger.debug("DAG_executor: Worker access work_queue: process state: " + str(DAG_executor_State.state))
+            else:
+                 logger.debug("DAG_executor: Worker don't access work_queue: process state: " + str(DAG_executor_State.state))
+            num_tasks_executed = counter.increment_and_get()
+            if num_tasks_executed == num_tasks_to_execute:
+                work_queue.put(-1)
+
 ##rhc
         logger.debug ("access DAG_map with state " + str(DAG_executor_State.state))
         state_info = DAG_map[DAG_executor_State.state]
@@ -611,10 +647,13 @@ def DAG_executor(payload):
         # args2 = pack_data(args, data_dict) # (1, 10, 3)
         # func(*args2)
 
+#ToDo: Lambdas use payload inputs; 
         # using map DAG_tasks from task_name to task
         task = DAG_tasks[state_info.task_name]
         #rhc task_inputs
-        task_inputs = state_info.task_inputs
+        # a tuple f input task names, not actual inputs. The inputs retrieved from data_dict,
+        # Lambdas need to put payload inputs in data_dict then get them from data_dict
+        task_inputs = state_info.task_inputs    
 
         is_leaf_task = state_info.task_name in DAG_info.get_DAG_leaf_tasks()
         if not is_leaf_task:
@@ -654,7 +693,8 @@ def DAG_executor(payload):
 
 #ToDo: Don't add to work_queue just do it
             # rhc queue
-            work_queue.put(DAG_executor_State.state)
+            #work_queue.put(DAG_executor_State.state)
+            worker_needs_input = False
 
         elif len(state_info.faninNBs) > 0 or len(state_info.fanouts) > 0:
             # assert len(collapse) + len(fanin) == 0
@@ -664,6 +704,12 @@ def DAG_executor(payload):
                 process_faninNBs(state_info.faninNBs, state_info.faninNB_sizes, 
 					state_info.task_name, DAG_info.get_DAG_states(), DAG_executor_State, output, DAG_info, server)
                 # there can be faninNBs and fanouts.
+
+                # Note: If we only process faninNBs in this state then we will need more work.
+                # However, we check fanouts next and set worker_needs_input to true (false)
+                # if there are (are not) any fanouts. So this is only for documentation.
+                if using_workers:
+                    worker_needs_input = True
             if len(state_info.fanouts) > 0:
 				# start DAG_executor in start state w/ pass output or deposit/withdraw it
 				# if deposit in synchronizer need to pass synchronizer name in payload. If synchronizer stored
@@ -677,13 +723,17 @@ def DAG_executor(payload):
                 #rhc task_inputs
                 #task_inputs = (state_info.task_name,)
                 # We get new state_info and then state_info.task_inputs when we iterate
-
-#ToDo: Don't add to work_queue just do it
+                if using_workers:   # we are become task so we have more work
+                    worker_needs_input = False
+                #Don't add to work_queue just do it = False
                 #rhc: queue
-                work_queue.put(DAG_executor_State.state)
+                #work_queue.put(DAG_executor_State.state)
 
             else:   # If there were fanouts then continue with become task, else this thread is done.
-                return
+                if using_workers:
+                    worker_needs_input = True
+                else:   # workers don't stop until there's no more work to be done
+                    return
         elif len(state_info.fanins) > 0:
             # assert len(state_info.faninNBs)  + len(state_info.fanouts) + len(collapse) == 0
             # if faninNBs or fanouts then can be no fanins. length of faninNBs and fanouts must be 0 
@@ -700,11 +750,16 @@ def DAG_executor(payload):
                 + str(returned_state.return_value) + ", state: " + str(DAG_executor_State.state))
 			##+ str(returned_state.return_value) + ", state: " + str(state))
             if returned_state.blocking:
-                return
-            
-#ToDo: Don't add to work_queue just do it
+                if using_workers:
+                    worker_needs_input = True
+                else:
+                    return
+            else:
+                if using_workers:
+                    worker_needs_input = False
+            #ToDo: Don't add to work_queue just do it
             # rhc queue
-            work_queue.put(DAG_executor_State.state)
+            #work_queue.put(DAG_executor_State.state)
 
             #rhc task_inputs
             #else:
@@ -713,12 +768,14 @@ def DAG_executor(payload):
             # the fanin task will get its inputs from the data dictionary -they were placed there after
             # tasks executed. For non-local, we will need to add them to the local ata dictionary.
 
-
         else:
 ##rhc
             logger.debug("state " + str(DAG_executor_State.state) + " after executing task " +  state_info.task_name + " has no fanouts, fanins, or faninNBs; return")
             ##logger.debug("state " + str(state) + " after executing task " +  state_info.task_name + " has no fanouts, fanins, or faninNBs; return")
-            return
+            if using_workers:
+                worker_needs_input = True
+            else:
+                return
 					
 #Local tests
 def DAG_executor_task(payload):
