@@ -11,6 +11,7 @@ import _thread
 
 #from DAG_executor import DAG_executor
 from . import  DAG_executor
+from . import DAG_executor_driver
 from .DAG_executor_State import DAG_executor_State
 import uuid
 
@@ -134,7 +135,7 @@ class DAG_executor_FanInNB(MonitorSU):
             fanin_task_name = kwargs['fanin_task_name']
 
             # rhc queue
-            if DAG_executor.using_workers:
+            if DAG_executor_driver.using_workers:
                 DAG_executor.work_queue.put(start_state_fanin_task)
             else:
                 if self.run_faninNB_task_on_server:
@@ -181,7 +182,8 @@ class DAG_executor_FanInNB(MonitorSU):
                             #"server": server   # used to mock server during testing
                         }
                         ###### DAG_executor_State.function_name has not changed
-                        invoke_lambda(payload = payload, function_name = "DAG_executor")
+                        
+                        DAG_executor_driver.invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor")
                     except Exception as ex:
                         logger.debug("FanInNB:[ERROR] Failed to start DAG_executor Lambda.")
                         logger.debug(ex)

@@ -146,7 +146,7 @@ class testThread(Thread):
         time.sleep(1)
         logger.debug("task " + self._ID + " Calling fan_in")
         r = self.b.fan_in(ID = self._ID, result = "task1 result")
-        logger.debug("task " + self._ID + ", Successfully called fan_in")
+        logger.debug("task " + self._ID + ", Successfully called fan_in, result: " + str(r))
 
 def main():
     b = FanIn(initial_n=2,monitor_name="FanIn")
@@ -185,10 +185,10 @@ def main():
     
     logger.debug("joined threads")
     print("callerThread1 restart " + str(callerThread1._restart))
-    print("callerThread2._returnValue=" + str(callerThread1._returnValue))
+    print("callerThread2._returnValue=" + str(callerThread1._return))
 
     print("callerThread2 restart " + str(callerThread2._restart))
-    print("callerThread2._returnValue=" + str(callerThread2._returnValue))
+    print("callerThread2._returnValue=" + str(callerThread2._return))
     # if callerThread2._result == 0:
     #     print("callerThread2 result is 0")
     # else:

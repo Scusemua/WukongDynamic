@@ -7,6 +7,7 @@ from .DFS_visit import state_info
 #from DAG_executor_FanInNB import DAG_executor_FanInNB
 from . import  DAG_executor_FanInNB
 from . import  DAG_executor_FanIn
+from . import DAG_executor_driver
 from .DAG_executor_State import DAG_executor_State
 import uuid
 
@@ -27,10 +28,10 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 ################## SET THIS #################
-run_fanout_task_on_server = True
-run_faninNB_task_on_server = True
-using_workers = True
-num_workers = 2
+run_fanout_task_on_server = DAG_executor_driver.run_fanout_task_on_server
+run_faninNB_task_on_server = DAG_executor_driver.run_faninNB_task_on_server
+using_workers = DAG_executor_driver.using_workers
+num_workers = DAG_executor_driver.num_workers
 #############################################
 
 def add(inp):
@@ -123,8 +124,7 @@ class DAG_executor_Synchronizer(object):
         server = keyword_arguments['server']
 		# used by FanInNB:
         # run_faninNB_task_on_server = keyword_arguments['run_faninNB_task_on_server']  # option set in DAG_executor
-
-        
+  
         # create_and_fan_in op must be atomic (as will be on server, with many client callers)
         server.mutex.acquire()
 
@@ -181,13 +181,13 @@ class DAG_executor_Synchronizer(object):
         # create new faninNB with specified name if it hasn't been created 
         fanin_task_name = keyword_arguments['fanin_task_name']
         n = keyword_arguments['n']
-        start_state_fanin_task = keyword_arguments['start_state_fanin_task']
-        output = keyword_arguments['result']
+        #start_state_fanin_task = keyword_arguments['start_state_fanin_task']
+        #output = keyword_arguments['result']
         calling_task_name = keyword_arguments['calling_task_name']
         DAG_executor_State = keyword_arguments['DAG_executor_State']
         server = keyword_arguments['server']
-        run_faninNB_task_on_server = keyword_arguments['run_faninNB_task_on_server']  # option set in DAG_executor
-        DAG_info = keyword_arguments['DAG_info']
+        #run_faninNB_task_on_server = keyword_arguments['run_faninNB_task_on_server']  # option set in DAG_executor
+        #DAG_info = keyword_arguments['DAG_info']
         
         # create and fan_in must be atomic
         server.mutex.acquire()
@@ -315,7 +315,7 @@ class DAG_executor_Synchronizer(object):
             faninNB_task_name = msg["name"]
             DAG_exec_state = msg['state']
             n = DAG_exec_state.keyword_arguments['n']
-            start_state_fanin_task = DAG_exec_state.keyword_arguments['start_state_fanin_task']
+            #start_state_fanin_task = DAG_exec_state.keyword_arguments['start_state_fanin_task']
             inmap = faninNB_task_name in self.synchronizers
             logger.debug (" inmap before: " + str(inmap))
             #if not fanin_task_name in DAG_executor_Synchronizer.synchronizers:
@@ -336,6 +336,7 @@ class DAG_executor_Synchronizer(object):
 def create_and_faninNB_task(kwargs):
     logger.debug("DAG_executor_task: call DAG_excutor")
     server = kwargs['server']
+    # Not using return_value from faninNB since faninNB starts the fanin task, i.e., there is No Become
     return_value = server.create_and_faninNB(**kwargs)
 
 # used to execute a task; need to give the task its "input" map
@@ -346,9 +347,9 @@ def create_and_faninNB_task(kwargs):
 def execute_task(task, args):
     logger.debug("input of execute_task is: " + str(args))
     #output = task(input)
-    for i in range(0, len(args)):
-        print("Type of argument #%d: %s" % (i, type(args[i])))
-        print("Argument #%d: %s" % (i, str(args[i])))
+    #for i in range(0, len(args)):
+    #    print("Type of argument #%d: %s" % (i, type(args[i])))
+    #    print("Argument #%d: %s" % (i, str(args[i])))
     output = task(*args)
     return output
 				 			 
@@ -394,7 +395,9 @@ def process_faninNBs(faninNBs, faninNB_sizes, calling_task_name, DAG_states, DAG
 				
         try:
             logger.debug("Starting create_and_fanin for faninNB " + name)
-            _thread.start_new_thread(create_and_faninNB_task, (keyword_arguments,))
+            NBthread = threading.Thread(target=create_and_faninNB_task, name=("create_and_faninNB_task_"+name), args=(keyword_arguments,))
+            NBthread.start()
+            #_thread.start_new_thread(create_and_faninNB_task, (keyword_arguments,))
         except Exception as ex:
             logger.error("[ERROR] Failed to start create_and_faninNB_task thread.")
             logger.debug(ex)
@@ -473,7 +476,7 @@ def process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State, outp
                     #"server": server   # used to mock server during testing
                 }
                 ###### DAG_executor_State.function_name has not changed
-                invoke_lambda(payload = payload, function_name = "DAG_executor")
+                DAG_executor_driver.invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor")
             except Exception as ex:
                 logger.error("FanInNB:[ERROR] Failed to start DAG_executor Lambda.")
                 logger.debug(ex)       
@@ -864,24 +867,24 @@ def main():
     logger.debug("   ")
 	
     DAG_map = Node.DAG_map
-    name_to_function_map =  Node.DAG_tasks
+    task_name_to_function_map =  Node.DAG_tasks
     
     logger.debug("DAG_map after assignment:")
-    for key, value in Node.DAG_map.items():
+    for key, value in DAG_map.items():
         logger.debug(key)
         logger.debug(value)
     logger.debug("   ")
-    logger.debug("name_to_function_map after assignment:")
-    for key, value in name_to_function_map.items():
+    logger.debug("task_name_to_function_map after assignment:")
+    for key, value in task_name_to_function_map.items():
         logger.debug(key)
         logger.debug(value)
     logger.debug("   ")
     
-    states = Node.DAG_states
-    all_fanout_task_names = Node.all_fanout_task_names
-    all_fanin_task_names = Node.all_fanin_task_names
-    all_faninNB_task_names = Node.all_faninNB_task_names
-    all_collapse_task_names = Node.all_collapse_task_names
+    #states = Node.DAG_states
+    #all_fanout_task_names = Node.all_fanout_task_names
+    #all_fanin_task_names = Node.all_fanin_task_names
+    #all_faninNB_task_names = Node.all_faninNB_task_names
+    #all_collapse_task_names = Node.all_collapse_task_names
 
 	
 	# ToDo: logger.debug Node.DAG_map

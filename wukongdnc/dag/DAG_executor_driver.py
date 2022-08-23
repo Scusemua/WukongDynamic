@@ -1,7 +1,5 @@
-"""
-ToDo:
-1. change all state to DAG_executor_State.state, and return value for fan_in for faninNB is DAG_executor_State.erturn_value
-"""
+#ToDo: make sure have if using_workers everywhere
+#ToDo: All the timing stuff + close_all at the end of handler_new.py
 
 import threading
 import _thread
@@ -22,6 +20,7 @@ import uuid
 import pickle
 
 from wukongdnc.server.api import create_all_fanins_and_faninNBs
+from wukongdnc.wukong.invoker import invoke_lambda
 
 import logging 
 logger = logging.getLogger(__name__)
@@ -35,11 +34,65 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 ################## SET THIS #################
-run_fanout_task_on_server = DAG_executor.run_fanout_task_on_server
-run_faninNB_task_on_server = DAG_executor.run_faninNB_task_on_server
-using_workers = DAG_executor.using_workers
-num_workers = DAG_executor.num_workers
+run_fanout_task_on_server = True
+run_faninNB_task_on_server = True
+using_workers = True
+num_workers = 3
 #############################################
+
+#####
+def invoke_lambda_DAG_executor(
+    function_name: str = "DAG_executor",
+    payload: dict = None
+):
+    """
+    Invoke an AWS Lambda function.
+
+    Arguments:
+    ----------
+        function_name (str):
+            Name of the AWS Lambda function to invoke.
+        
+        payload (dict):
+            Dictionary to be serialized and sent via the AWS Lambda invocation payload.
+            This is typically expected to contain a "state" entry with a state object.
+            The only time it wouldn't is at the very beginning of the program, in which
+            case we automatically create the first State object
+    """
+    logger.debug("Creating AWS Lambda invocation payload for function '%s'" % function_name)
+    logger.debug("Provided payload: " + str(payload))
+												
+    s = time.time()
+
+	# The `_payload` variable is the one I actually pass to AWS Lambda.
+	# The `payload` variable is passed by the user to `invoke_lambda`.
+	# For each key-value pair in `payload`, we create a corresponding 
+	# entry in `_payload`. The key is the same. But we first pickle]
+	# the value via cloudpickle.dumps(). This returns a `bytes` object.
+	# AWS Lambda uses JSON encoding to pass invocation payloads to Lambda
+	# functions, and JSON doesn't support bytes. So, we convert the bytes 
+	# to a string by encoding the bytes in base64 via base64.b64encode().
+	# There is ONE more step, however. base64.b64encode() returns a UTF-8-encoded
+	# string, which is also bytes. So, we call .decode('utf-8') to convert it
+	# to a regular python string, which is stored as the value in `_payload[k]`, where
+	# k is the key.
+    _payload = {}
+    for k,v in payload.items():
+        _payload[k] = base64.b64encode(cloudpickle.dumps(v)).decode('utf-8')
+											
+    payload_json = json.dumps(_payload)
+    logger.debug("Finished creating AWS Lambda invocation payload in %f ms." % ((time.time() - s) * 1000.0))
+
+    logger.info("Invoking AWS Lambda function '" + function_name + "' with payload containing " + str(len(payload)) + " key(s).")
+    s = time.time()
+    
+    # This is the call to the AWS API that actually invokes the Lambda.
+    status_code = lambda_client.invoke(
+        FunctionName = function_name, 
+        InvocationType = 'Event',
+        Payload = payload_json) 											
+    logger.info("Invoked AWS Lambda function '%s' in %f ms. Status: %s." % (function_name, (time.time() - s) * 1000.0, str(status_code)))
+
 
 def add(inp):
     logger.debug("add: " + "input: " + str(input))
@@ -347,7 +400,7 @@ def run():
     
     #ResetRedis()
     
-#ToDo: All the timing stuff + close_all at the end of handler_new.py
+
     #start_time = time.time()
 	
 #ToDO: 
@@ -369,6 +422,11 @@ def run():
     print("DAG_leaf_task_start_states: " + str(DAG_leaf_task_start_states))
     print("DAG_leaf_task_inputs: " + str(DAG_leaf_task_inputs))
 
+    #assert:
+    if using_workers:
+        if not run_fanout_task_on_server:
+            logger.error("DAG_executor_driver: if using_workers then run_fanout_task_on_server must also be true.")
+
     if using_workers:
         #rhc queue
         for state in DAG_leaf_task_start_states:
@@ -377,11 +435,15 @@ def run():
         #for start_state in DAG_executor.work_queue.queue:
         #   print(start_state)
 
-    #thread_list = []
+    if using_workers:
+        thread_list = []
 
     #p = Process(target=f, args=('bob',))
     #p.start()
     #p.join()
+
+    #  
+    num_threads_created = 0
 
     for start_state, inp, task_name in zip(DAG_leaf_task_start_states, DAG_leaf_task_inputs, DAG_leaf_tasks):
         print("iterate")
@@ -417,12 +479,17 @@ def run():
                     "DAG_info": DAG_info,
                     "server": server
                 }
-                # thread = threading.Thread(target=DAG_executor.DAG_executor_task, args=(payload,))
-                # thread_list.append(thread)
-                _thread.start_new_thread(DAG_executor.DAG_executor_task, (payload,))
+                thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=("Worker_leaf_"+str(start_state)), args=(payload,))
+                thread_list.append(thread)
+                thread.start()
+                num_threads_created += 1
+                #_thread.start_new_thread(DAG_executor.DAG_executor_task, (payload,))
             except Exception as ex:
                 logger.debug("[ERROR] Failed to start DAG_executor thread for state 1")
                 logger.debug(ex)
+
+            if using_workers and num_threads_created == num_workers:
+                break 
         else:
             try:
                 logger.debug("Starting DAG_executor thread for leaf task " + task_name)
@@ -442,7 +509,7 @@ def run():
                     #"server": server   # used to mock server during testing
                 }
                 ###### DAG_executor_State.function_name has not changed
-                invoke_lambda(payload = payload, function_name = "DAG_executor")
+                invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor")
             except Exception as ex:
                 logger.debug("FanInNB:[ERROR] Failed to start DAG_executor Lambda.")
                 logger.debug(ex)     
@@ -487,70 +554,58 @@ def run():
 
 	"""	
 
+    if using_workers and num_threads_created < num_workers:
+        # starting leaf tasks did not start num_workers threads so start num_workers-num_threads_created
+        # more threads/processes
+        while True:
+            if run_fanout_task_on_server:
+                try:
+                    # Workers so not use their start_state; they get it from the work_queue
+                    DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = 0)
+                    logger.debug("Starting DAG_executor worker for non-leaf task " + task_name)
+                    payload = {
+    ##rhc
+                        #"state": int(start_state),
+                        # DAG_executor does input = payload['input'] so input is ['input': inp]; this is passed to the executed task using:
+                        #    def execute_task(task_name,input): output = Node.DAG_tasks[task_name](input)
+                        # So the executed task gets ['input': inp], just like a non-leaf task gets ['output': X]. For leaf tasks, we use "input"
+                        # as the label for the value.
+                        # non-leaf local-running workers do not use this input
+                        "input": None,
+                        "DAG_executor_State": DAG_exec_state,
+                        "DAG_info": DAG_info,
+                        "server": server
+                    }
+                    thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=("Worker_nonleaf_"+str(start_state)), args=(payload,))
+                    thread_list.append(thread)
+                    thread.start()
+                    num_threads_created += 1
+                    #_thread.start_new_thread(DAG_executor.DAG_executor_task, (payload,))
+                except Exception as ex:
+                    logger.debug("[ERROR] Failed to start DAG_executor thread for state 1")
+                    logger.debug(ex)
+
+                if using_workers and num_threads_created == num_workers:
+                    break 
+            else:
+                logger.error("DAG_executor_driver: worker (pool) threads must run locally (no Lambdas)")
+
+    #logger.debug("Sleeping")
+    #time.sleep(1)
+
+    if using_workers:
+        for thread in thread_list:
+            thread.join()	
+        #rhc queue
+        #print("DAG_executor.work_queue:")
+        # Should be a -1 in the queue
+        #for state in DAG_executor.work_queue.queue:
+            #print(state) 
+    logger.debug("num_threads_created: " + str(num_threads_created))
     logger.debug("Sleeping")
-    time.sleep(5)
-
-    #for thread in thread_list:
-    #thread.join()	
-
-    #rhc queue
-    print("DAG_executor.work_queue:")
-    for start_state in DAG_executor.work_queue.queue:
-        print(start_state) 
+    time.sleep(1)
+		
 			
-			
-#####
-def invoke_lambda(
-    function_name: str = "DAG_executor",
-    payload: dict = None
-):
-    """
-    Invoke an AWS Lambda function.
-
-    Arguments:
-    ----------
-        function_name (str):
-            Name of the AWS Lambda function to invoke.
-        
-        payload (dict):
-            Dictionary to be serialized and sent via the AWS Lambda invocation payload.
-            This is typically expected to contain a "state" entry with a state object.
-            The only time it wouldn't is at the very beginning of the program, in which
-            case we automatically create the first State object
-    """
-    logger.debug("Creating AWS Lambda invocation payload for function '%s'" % function_name)
-    logger.debug("Provided payload: " + str(payload))
-												
-    s = time.time()
-
-	# The `_payload` variable is the one I actually pass to AWS Lambda.
-	# The `payload` variable is passed by the user to `invoke_lambda`.
-	# For each key-value pair in `payload`, we create a corresponding 
-	# entry in `_payload`. The key is the same. But we first pickle]
-	# the value via cloudpickle.dumps(). This returns a `bytes` object.
-	# AWS Lambda uses JSON encoding to pass invocation payloads to Lambda
-	# functions, and JSON doesn't support bytes. So, we convert the bytes 
-	# to a string by encoding the bytes in base64 via base64.b64encode().
-	# There is ONE more step, however. base64.b64encode() returns a UTF-8-encoded
-	# string, which is also bytes. So, we call .decode('utf-8') to convert it
-	# to a regular python string, which is stored as the value in `_payload[k]`, where
-	# k is the key.
-    _payload = {}
-    for k,v in payload.items():
-        _payload[k] = base64.b64encode(cloudpickle.dumps(v)).decode('utf-8')
-											
-    payload_json = json.dumps(_payload)
-    logger.debug("Finished creating AWS Lambda invocation payload in %f ms." % ((time.time() - s) * 1000.0))
-
-    logger.info("Invoking AWS Lambda function '" + function_name + "' with payload containing " + str(len(payload)) + " key(s).")
-    s = time.time()
-    
-    # This is the call to the AWS API that actually invokes the Lambda.
-    status_code = lambda_client.invoke(
-        FunctionName = function_name, 
-        InvocationType = 'Event',
-        Payload = payload_json) 											
-    logger.info("Invoked AWS Lambda function '%s' in %f ms. Status: %s." % (function_name, (time.time() - s) * 1000.0, str(status_code)))
 									
 												
 def create_fanins_and_faninNBs(websocket,DAG_map,DAG_states,DAG_info,all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes):										
