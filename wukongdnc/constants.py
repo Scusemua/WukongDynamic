@@ -4,4 +4,4 @@ TCP_SERVER_IP = ("127.0.0.1", 25565)
 
 # If true, we are expecting to store sync objects in AWS Lambda functions.
 # This causes BoundedBufferSelect and CountingSemaphoreMonitorSelect to import selector_lambda instead of selector.
-SERVERLESS_SYNC = True 
+SERVERLESS_SYNC = False

@@ -11,7 +11,7 @@ import _thread
 
 #from DAG_executor import DAG_executor
 from . import  DAG_executor
-from . import DAG_executor_driver
+#from . import DAG_executor_driver
 from .DAG_executor_State import DAG_executor_State
 import uuid
 
@@ -58,7 +58,7 @@ class DAG_executor_FanInNB(MonitorSU):
         #   keyword_arguments['calling_task_name'] = calling_task_name  # used to label output of task that is executing this fan_in
         #   keyword_arguments['DAG_executor_State'] = new_DAG_exec_State # given to the thread/lambda that executes the fanin task.
         #   keyword_arguments['server'] = server     # used to mock server when running local test
-        #   keyword_arguments['run_faninNB_task_on_server'] = run_faninNB_task_on_server    # option set in DAG_executor
+        #   keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally    # option set in DAG_executor
         if kwargs is None or len(kwargs) == 0:
             raise ValueError("FanIn requires a length. No length provided.")
         elif len(kwargs) > 9:
@@ -66,7 +66,7 @@ class DAG_executor_FanInNB(MonitorSU):
         self._n = kwargs['n']
         #self.fanin_task_name = kwargs['fanin_task_name']
         self.start_state_fanin_task = kwargs['start_state_fanin_task']
-        self.run_faninNB_task_on_server = kwargs['run_faninNB_task_on_server']
+        self.store_fanins_faninNBs_locally = kwargs['store_fanins_faninNBs_locally']
         self.DAG_info = kwargs['DAG_info'] 
 
     def try_fan_in(self, **kwargs):
@@ -135,10 +135,10 @@ class DAG_executor_FanInNB(MonitorSU):
             fanin_task_name = kwargs['fanin_task_name']
 
             # rhc queue
-            if DAG_executor_driver.using_workers:
+            if DAG_executor.using_workers:
                 DAG_executor.work_queue.put(start_state_fanin_task)
             else:
-                if self.run_faninNB_task_on_server:
+                if self.store_fanins_faninNBs_locally:
                     try:
                         logger.debug("FanInNB: starting DAG_executor thread for task " + fanin_task_name + " with start state " + str(start_state_fanin_task))
                         server = kwargs['server']
@@ -183,7 +183,7 @@ class DAG_executor_FanInNB(MonitorSU):
                         }
                         ###### DAG_executor_State.function_name has not changed
                         
-                        DAG_executor_driver.invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor")
+                        invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor")
                     except Exception as ex:
                         logger.debug("FanInNB:[ERROR] Failed to start DAG_executor Lambda.")
                         logger.debug(ex)

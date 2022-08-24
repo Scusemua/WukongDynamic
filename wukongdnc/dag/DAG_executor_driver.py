@@ -1,11 +1,16 @@
 #ToDo: make sure have if using_workers everywhere
-#ToDo: All the timing stuff + close_all at the end of handler_new.py
+#ToDo: All the timing stuff + close_all at the end
+#ToDo: put FanIn and FanInNB in server; check first. 
+#      change imports; 
+#      test locally first
+#      test w/  create remote and local and run locally
 
 import threading
 import _thread
 import time
 import json
 import cloudpickle
+import socket
 
 import base64 
 from .DFS_visit import Node
@@ -16,6 +21,7 @@ from . import DAG_executor_FanInNB
 from . import DAG_executor_FanIn
 from .DAG_executor_State import DAG_executor_State
 from wukongdnc.server.util import make_json_serializable
+from wukongdnc.constants import TCP_SERVER_IP, REDIS_IP_PUBLIC
 import uuid
 import pickle
 
@@ -33,11 +39,21 @@ ch.setFormatter(formatter)
 
 logger.addHandler(ch)
 
+"""
 ################## SET THIS #################
-run_fanout_task_on_server = True
-run_faninNB_task_on_server = True
+run_fanout_tasks_locally = True         # vs remotely (in Lambdas)
+store_fanins_faninNBs_locally = True    # vs remotely
+create_all_fanins_faninNBs_on_start = True
 using_workers = True
 num_workers = 3
+#############################################
+"""
+################## SET THIS #################
+run_fanout_tasks_locally = DAG_executor.run_fanout_tasks_locally
+store_fanins_faninNBs_locally = DAG_executor.store_fanins_faninNBs_locally
+create_all_fanins_faninNBs_on_start = DAG_executor.create_all_fanins_faninNBs_on_start
+using_workers = DAG_executor.using_workers
+num_workers = DAG_executor.num_workers
 #############################################
 
 #####
@@ -360,6 +376,7 @@ def run():
     DAG_leaf_tasks = input_DAG_leaf_tasks()
     DAG_leaf_task_start_states = input_DAG_leaf_task_start_states()
 	"""
+
     DAG_map = DAG_info.get_DAG_map()
     all_fanin_task_names = DAG_info.get_all_fanin_task_names()
     all_fanin_sizes = DAG_info.get_all_fanin_sizes()
@@ -403,17 +420,23 @@ def run():
 
     #start_time = time.time()
 	
-#ToDO: 
-#  with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
-#       logger.debug("Connecting to TCP Server at %s." % str(TCP_SERVER_IP))
-#        websocket.connect(TCP_SERVER_IP)
-#       logger.debug("Successfully connected to TCP Server.")
-# if (multip or lambda) 
-#   create_fanins_and_faninNBs(websocket + same args) 
-# else:
-    server = DAG_executor.DAG_executor_Synchronizer()
-    server.create_all_fanins_and_faninNBs(DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
+#############################
+#Note: if using Lambdas to store synch objects: SERVERLESS_SYNC = False in constants.py
+#############################
 
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
+        logger.debug("Connecting to TCP Server at %s." % str(TCP_SERVER_IP))
+        websocket.connect(TCP_SERVER_IP)
+        logger.debug("Successfully connected to TCP Server.")
+        if store_fanins_faninNBs_locally:
+            if create_all_fanins_faninNBs_on_start:
+                server = DAG_executor.DAG_executor_Synchronizer()
+                server.create_all_fanins_and_faninNBs_locally(DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
+        else:
+            if create_all_fanins_faninNBs_on_start:
+                create_fanins_and_faninNBs(websocket,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
+    logger.debug("Sleeping")
+    time.sleep(10)
 #ToDo: multip's need websocket to send their fanins - do this at start of DAG_executor?
 
     #DAG_leaf_task_inputs = get_DAG_leaf_task_inputs(DAG_leaf_tasks)
@@ -424,8 +447,8 @@ def run():
 
     #assert:
     if using_workers:
-        if not run_fanout_task_on_server:
-            logger.error("DAG_executor_driver: if using_workers then run_fanout_task_on_server must also be true.")
+        if not run_fanout_tasks_locally:
+            logger.error("DAG_executor_driver: if using_workers then run_fanout_tasks_locally must also be true.")
 
     if using_workers:
         #rhc queue
@@ -462,7 +485,7 @@ def run():
         invoke_lambda(payload = payload, function_name = "DAG_executor")
         """
             
-        if run_fanout_task_on_server:
+        if run_fanout_tasks_locally:
             try:
                 DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state)
                 logger.debug("Starting DAG_executor thread for leaf task " + task_name)
@@ -558,7 +581,7 @@ def run():
         # starting leaf tasks did not start num_workers threads so start num_workers-num_threads_created
         # more threads/processes
         while True:
-            if run_fanout_task_on_server:
+            if run_fanout_tasks_locally:
                 try:
                     # Workers so not use their start_state; they get it from the work_queue
                     DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = 0)
@@ -632,7 +655,7 @@ def create_fanins_and_faninNBs(websocket,DAG_map,DAG_states,DAG_info,all_fanin_t
         dummy_state.keyword_arguments['n'] = size
         # these are used by FanInNB's
         #dummy_state.keyword_arguments['start_state_fanin_task'] = DAG_states[fanin_name] 
-        #dummy_state.keyword_arguments['run_faninNB_task_on_server'] = run_faninNB_task_on_server    
+        #dummy_state.keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally    
         msg_id = str(uuid.uuid4())	# for debugging
         message = {
             "op": "create",
@@ -650,7 +673,7 @@ def create_fanins_and_faninNBs(websocket,DAG_map,DAG_states,DAG_info,all_fanin_t
         dummy_state.keyword_arguments['n'] = size
         dummy_state.keyword_arguments['start_state_fanin_task'] = DAG_states[fanin_name]
         ####################################################################
-        dummy_state.keyword_arguments['run_faninNB_task_on_server'] = run_faninNB_task_on_server
+        dummy_state.keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
         ####################################################################
         dummy_state.keyword_arguments['DAG_info'] = DAG_info
         msg_id = str(uuid.uuid4())

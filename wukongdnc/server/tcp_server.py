@@ -30,7 +30,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
             self.action_handlers = {
                 "create": self.create_obj,
-                "create_all": self.create_all_fanins_and_faninNBs,
+                "create_all_fanins_and_faninNBs": self.create_all_fanins_and_faninNBs,
                 "setup": self.setup_server,
                 "synchronize_async": self.synchronize_async,
                 "synchronize_sync": self.synchronize_sync,
