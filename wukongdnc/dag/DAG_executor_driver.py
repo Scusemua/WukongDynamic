@@ -418,7 +418,7 @@ def run():
     #ResetRedis()
     
 
-    #start_time = time.time()
+    start_time = time.time()
 	
 #############################
 #Note: if using Lambdas to store synch objects: SERVERLESS_SYNC = False in constants.py
@@ -624,6 +624,11 @@ def run():
         # Should be a -1 in the queue
         #for state in DAG_executor.work_queue.queue:
             #print(state) 
+    stop_time = time.time()
+    duration = stop_time - start_time
+
+    print("Job finished in %f seconds." % duration)
+
     logger.debug("num_threads_created: " + str(num_threads_created))
     logger.debug("Sleeping")
     time.sleep(1)
