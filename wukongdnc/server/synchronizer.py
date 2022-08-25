@@ -38,7 +38,9 @@ aws_region = 'us-east-1'
 class Synchronizer(object):
 
     # valid synchronization objects
-    synchronizers = {"barrier", "Barrier", "semaphore", "Semaphore", "bounded_buffer", "BoundedBuffer", "fanin", "FanIn", "CountingSemaphore_Monitor", "CountingSemaphore_Monitor_Select", "BoundedBuffer_Select"}
+    synchronizers = {"barrier", "Barrier", "semaphore", "Semaphore", "bounded_buffer", "BoundedBuffer", 
+        "fanin", "FanIn", "CountingSemaphore_Monitor", "CountingSemaphore_Monitor_Select", 
+        "BoundedBuffer_Select", "DAG_executor_FanIn", "DAG_executor_FanInNB"}
 
     # Mapping from class to the file in which it is defined.
     file_map = {
@@ -47,7 +49,9 @@ class Synchronizer(object):
         "FanIn": "fanin",
         "CountingSemaphore_Monitor": "CountingSemaphore_Monitor",
         "BoundedBuffer_Select": "bounded_buffer_select",
-        "CountingSemaphore_Monitor_Select": "CountingSemaphore_Monitor_Select"
+        "CountingSemaphore_Monitor_Select": "CountingSemaphore_Monitor_Select",
+        "DAG_executor_FanIn": "DAG_executor_FanIn",
+        "DAG_executor_FanInNB": "DAG_executor_FanInNB"
     }
     
     def __init__(self):

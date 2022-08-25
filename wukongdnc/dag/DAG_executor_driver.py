@@ -1,9 +1,11 @@
 #ToDo: make sure have if using_workers everywhere
 #ToDo: All the timing stuff + close_all at the end
-#ToDo: put FanIn and FanInNB in server; check first. 
-#      change imports; 
-#      test locally first
-#      test w/  create remote and local and run locally
+#ToDo: fix websocket disconnect
+#       faninNB return DAG_executor_state
+#       pass websocket into threads, processes need own websocket.
+#ToDo: need synchronous fanin for DAG_executor_FanIn and DAG_executor_FanInNB - they are
+#      non-blocking in the sense that non-become can return 0 and no restart, while become
+#      can return 1 and no restart. Need this for server and infiniX lambda versions.
 
 import threading
 import _thread
@@ -17,8 +19,10 @@ from .DFS_visit import Node
 from .DFS_visit import state_info
 #from DAG_executor_FanInNB import DAG_executor_FanInNB
 from . import DAG_executor
-from . import DAG_executor_FanInNB
-from . import DAG_executor_FanIn
+from wukongdnc.server.DAG_executor_FanInNB import DAG_executor_FanInNB
+from wukongdnc.server.DAG_executor_FanIn import DAG_executor_FanIn
+#from . import DAG_executor_FanInNB
+#from . import DAG_executor_FanIn
 from .DAG_executor_State import DAG_executor_State
 from wukongdnc.server.util import make_json_serializable
 from wukongdnc.constants import TCP_SERVER_IP, REDIS_IP_PUBLIC
@@ -435,157 +439,61 @@ def run():
         else:
             if create_all_fanins_faninNBs_on_start:
                 create_fanins_and_faninNBs(websocket,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
-    logger.debug("Sleeping")
-    time.sleep(10)
-#ToDo: multip's need websocket to send their fanins - do this at start of DAG_executor?
 
-    #DAG_leaf_task_inputs = get_DAG_leaf_task_inputs(DAG_leaf_tasks)
-    
-    print("DAG_leaf_tasks: " + str(DAG_leaf_tasks))
-    print("DAG_leaf_task_start_states: " + str(DAG_leaf_task_start_states))
-    print("DAG_leaf_task_inputs: " + str(DAG_leaf_task_inputs))
+        logger.debug("Sleeping")
+        time.sleep(10)
+    #ToDo: threads/multip's need websocket to send their fanins - processes do this at start of DAG_executor?
 
-    #assert:
-    if using_workers:
-        if not run_fanout_tasks_locally:
-            logger.error("DAG_executor_driver: if using_workers then run_fanout_tasks_locally must also be true.")
-
-    if using_workers:
-        #rhc queue
-        for state in DAG_leaf_task_start_states:
-            DAG_executor.work_queue.put(state)
-        #print("DAG_executor.work_queue:")
-        #for start_state in DAG_executor.work_queue.queue:
-        #   print(start_state)
-
-    if using_workers:
-        thread_list = []
-
-    #p = Process(target=f, args=('bob',))
-    #p.start()
-    #p.join()
-
-    #  
-    num_threads_created = 0
-
-    for start_state, inp, task_name in zip(DAG_leaf_task_start_states, DAG_leaf_task_inputs, DAG_leaf_tasks):
-        print("iterate")
-        DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state)
-        logger.debug("Starting DAG_executor for task " + task_name)
-
-        """
-        payload = {
-            #"start_state": start_state,
-            "input": input,
-			"DAG_executor_State": DAG_exec_state,
-            #"server": server
-        }
-												
-        #invoke_lambda(payload = payload, is_first_invocation = True, n = 1, initial_permits = 0, function_name = "ComposerServerlessSync")
-        invoke_lambda(payload = payload, function_name = "DAG_executor")
-        """
-            
-        if run_fanout_tasks_locally:
-            try:
-                DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state)
-                logger.debug("Starting DAG_executor thread for leaf task " + task_name)
-                payload = {
-##rhc
-                    #"state": int(start_state),
-                    # DAG_executor does input = payload['input'] so input is ['input': inp]; this is passed to the executed task using:
-                    #    def execute_task(task_name,input): output = Node.DAG_tasks[task_name](input)
-                    # So the executed task gets ['input': inp], just like a non-leaf task gets ['output': X]. For leaf tasks, we use "input"
-                    # as the label for the value.
-                    #"input": {'input': inp},
-                    "input": inp,
-                    "DAG_executor_State": DAG_exec_state,
-                    "DAG_info": DAG_info,
-                    "server": server
-                }
-                thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=("Worker_leaf_"+str(start_state)), args=(payload,))
-                thread_list.append(thread)
-                thread.start()
-                num_threads_created += 1
-                #_thread.start_new_thread(DAG_executor.DAG_executor_task, (payload,))
-            except Exception as ex:
-                logger.debug("[ERROR] Failed to start DAG_executor thread for state 1")
-                logger.debug(ex)
-
-            if using_workers and num_threads_created == num_workers:
-                break 
-        else:
-            try:
-                logger.debug("Starting DAG_executor thread for leaf task " + task_name)
-                lambda_DAG_executor_State = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state)
-                logger.debug ("payload is " + str(start_state) + "," + str(inp))
-                lambda_DAG_executor_State.restart = False      # starting new DAG_executor in state start_state_fanin_task
-                lambda_DAG_executor_State.return_value = None
-                lambda_DAG_executor_State.blocking = False            
-                logger.info("Starting Lambda function %s." % lambda_DAG_executor_State.function_name)
-                #logger.debug("lambda_DAG_executor_State: " + str(lambda_DAG_executor_State))
-                payload = {
-##rhc
-                    #"state": int(start_state),
-                    "input": {'input': inp},
-                    "DAG_executor_State": lambda_DAG_executor_State,
-                    "DAG_info": DAG_info
-                    #"server": server   # used to mock server during testing
-                }
-                ###### DAG_executor_State.function_name has not changed
-                invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor")
-            except Exception as ex:
-                logger.debug("FanInNB:[ERROR] Failed to start DAG_executor Lambda.")
-                logger.debug(ex)     
-    """ verify results: this is synch, but no synch yet for synch objects stored in Lambdas - so comment out for lambda version
-	
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
-        print("Connecting to " + str(TCP_SERVER_IP))
-        websocket.connect(TCP_SERVER_IP)
-        default_state = State("Composer", function_instance_ID = str(uuid.uuid4()), list_of_functions = ["FuncA", "FuncB"])
-
-        sleep_length_seconds = 20.0
-        logger.debug("Sleeping for " + str(sleep_length_seconds) + " seconds before calling synchronize_sync()")
-        time.sleep(sleep_length_seconds)
-        logger.debug("Finished sleeping. Calling synchronize_sync() now...")
-
-		# Note: no-try op
-        state = synchronize_sync(websocket, "synchronize_sync", "final_result", "withdraw", default_state)
-        answer = state.return_value 
-
-        end_time = time.time()
+        #DAG_leaf_task_inputs = get_DAG_leaf_task_inputs(DAG_leaf_tasks)
         
-        error_occurred = False
-        if type(answer) is str:
-            logger.error("Unexpected solution recovered from Redis: %s\n\n" % answer)
-            error_occurred = True
-        else:
-            logger.debug("Solution: " + str(answer) + "\n\n")
-            expected_answer = int(72)
-            if expected_answer != answer:
-                logger.error("Error in answer: " + str(answer) + " expected_answer: " + str(expected_answer))
-                error_occurred = True 
+        print("DAG_leaf_tasks: " + str(DAG_leaf_tasks))
+        print("DAG_leaf_task_start_states: " + str(DAG_leaf_task_start_states))
+        print("DAG_leaf_task_inputs: " + str(DAG_leaf_task_inputs))
 
-        if not error_occurred:
-            logger.debug("Verified.")
-			
-		# rest is performance stuff, close websocket and return
-		
-		..
-		
-		# then main() stuff
-	if __name__ == "__main__":
+        #assert:
+        if using_workers:
+            if not run_fanout_tasks_locally:
+                logger.error("DAG_executor_driver: if using_workers then run_fanout_tasks_locally must also be true.")
 
-	"""	
+        if using_workers:
+            #rhc queue
+            for state in DAG_leaf_task_start_states:
+                DAG_executor.work_queue.put(state)
+            #print("DAG_executor.work_queue:")
+            #for start_state in DAG_executor.work_queue.queue:
+            #   print(start_state)
 
-    if using_workers and num_threads_created < num_workers:
-        # starting leaf tasks did not start num_workers threads so start num_workers-num_threads_created
-        # more threads/processes
-        while True:
+        if using_workers:
+            thread_list = []
+
+        #p = Process(target=f, args=('bob',))
+        #p.start()
+        #p.join()
+
+        #  
+        num_threads_created = 0
+
+        for start_state, inp, task_name in zip(DAG_leaf_task_start_states, DAG_leaf_task_inputs, DAG_leaf_tasks):
+            print("iterate")
+            DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state)
+            logger.debug("Starting DAG_executor for task " + task_name)
+
+            """
+            payload = {
+                #"start_state": start_state,
+                "input": input,
+                "DAG_executor_State": DAG_exec_state,
+                #"server": server
+            }
+                                                    
+            #invoke_lambda(payload = payload, is_first_invocation = True, n = 1, initial_permits = 0, function_name = "ComposerServerlessSync")
+            invoke_lambda(payload = payload, function_name = "DAG_executor")
+            """
+                
             if run_fanout_tasks_locally:
                 try:
-                    # Workers so not use their start_state; they get it from the work_queue
-                    DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = 0)
-                    logger.debug("Starting DAG_executor worker for non-leaf task " + task_name)
+                    DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state)
+                    logger.debug("Starting DAG_executor thread for leaf task " + task_name)
                     payload = {
     ##rhc
                         #"state": int(start_state),
@@ -593,13 +501,18 @@ def run():
                         #    def execute_task(task_name,input): output = Node.DAG_tasks[task_name](input)
                         # So the executed task gets ['input': inp], just like a non-leaf task gets ['output': X]. For leaf tasks, we use "input"
                         # as the label for the value.
-                        # non-leaf local-running workers do not use this input
-                        "input": None,
+                        #"input": {'input': inp},
+                        "input": inp,
                         "DAG_executor_State": DAG_exec_state,
                         "DAG_info": DAG_info,
                         "server": server
                     }
-                    thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=("Worker_nonleaf_"+str(start_state)), args=(payload,))
+                    # Note:
+                    # get the current thread instance
+                    # thread = current_thread()
+                    # report the name of the thread
+                    # print(thread.name)
+                    thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=("Worker_leaf_"+str(start_state)), args=(payload,))
                     thread_list.append(thread)
                     thread.start()
                     num_threads_created += 1
@@ -611,28 +524,126 @@ def run():
                 if using_workers and num_threads_created == num_workers:
                     break 
             else:
-                logger.error("DAG_executor_driver: worker (pool) threads must run locally (no Lambdas)")
+                try:
+                    logger.debug("Starting DAG_executor thread for leaf task " + task_name)
+                    lambda_DAG_executor_State = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state)
+                    logger.debug ("payload is " + str(start_state) + "," + str(inp))
+                    lambda_DAG_executor_State.restart = False      # starting new DAG_executor in state start_state_fanin_task
+                    lambda_DAG_executor_State.return_value = None
+                    lambda_DAG_executor_State.blocking = False            
+                    logger.info("Starting Lambda function %s." % lambda_DAG_executor_State.function_name)
+                    #logger.debug("lambda_DAG_executor_State: " + str(lambda_DAG_executor_State))
+                    payload = {
+    ##rhc
+                        #"state": int(start_state),
+                        "input": {'input': inp},
+                        "DAG_executor_State": lambda_DAG_executor_State,
+                        "DAG_info": DAG_info
+                        #"server": server   # used to mock server during testing
+                    }
+                    ###### DAG_executor_State.function_name has not changed
+                    invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor")
+                except Exception as ex:
+                    logger.debug("FanInNB:[ERROR] Failed to start DAG_executor Lambda.")
+                    logger.debug(ex)     
+        """ verify results: this is synch, but no synch yet for synch objects stored in Lambdas - so comment out for lambda version
+        
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
+            print("Connecting to " + str(TCP_SERVER_IP))
+            websocket.connect(TCP_SERVER_IP)
+            default_state = State("Composer", function_instance_ID = str(uuid.uuid4()), list_of_functions = ["FuncA", "FuncB"])
 
-    #logger.debug("Sleeping")
-    #time.sleep(1)
+            sleep_length_seconds = 20.0
+            logger.debug("Sleeping for " + str(sleep_length_seconds) + " seconds before calling synchronize_sync()")
+            time.sleep(sleep_length_seconds)
+            logger.debug("Finished sleeping. Calling synchronize_sync() now...")
 
-    if using_workers:
-        for thread in thread_list:
-            thread.join()	
-        #rhc queue
-        #print("DAG_executor.work_queue:")
-        # Should be a -1 in the queue
-        #for state in DAG_executor.work_queue.queue:
-            #print(state) 
-    stop_time = time.time()
-    duration = stop_time - start_time
+            # Note: no-try op
+            state = synchronize_sync(websocket, "synchronize_sync", "final_result", "withdraw", default_state)
+            answer = state.return_value 
 
-    print("Job finished in %f seconds." % duration)
+            end_time = time.time()
+            
+            error_occurred = False
+            if type(answer) is str:
+                logger.error("Unexpected solution recovered from Redis: %s\n\n" % answer)
+                error_occurred = True
+            else:
+                logger.debug("Solution: " + str(answer) + "\n\n")
+                expected_answer = int(72)
+                if expected_answer != answer:
+                    logger.error("Error in answer: " + str(answer) + " expected_answer: " + str(expected_answer))
+                    error_occurred = True 
 
-    logger.debug("num_threads_created: " + str(num_threads_created))
-    logger.debug("Sleeping")
-    time.sleep(1)
+            if not error_occurred:
+                logger.debug("Verified.")
+                
+            # rest is performance stuff, close websocket and return
+            
+            ..
+            
+            # then main() stuff
+        if __name__ == "__main__":
+
+        """	
+
+        if using_workers and num_threads_created < num_workers:
+            # starting leaf tasks did not start num_workers threads so start num_workers-num_threads_created
+            # more threads/processes
+            while True:
+                if run_fanout_tasks_locally:
+                    try:
+                        # Workers so not use their start_state; they get it from the work_queue
+                        DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = 0)
+                        logger.debug("Starting DAG_executor worker for non-leaf task " + task_name)
+                        payload = {
+        ##rhc
+                            #"state": int(start_state),
+                            # DAG_executor does input = payload['input'] so input is ['input': inp]; this is passed to the executed task using:
+                            #    def execute_task(task_name,input): output = Node.DAG_tasks[task_name](input)
+                            # So the executed task gets ['input': inp], just like a non-leaf task gets ['output': X]. For leaf tasks, we use "input"
+                            # as the label for the value.
+                            # non-leaf local-running workers do not use this input
+                            "input": None,
+                            "DAG_executor_State": DAG_exec_state,
+                            "DAG_info": DAG_info,
+                            "server": server
+                        }
+                        thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=("Worker_nonleaf_"+str(start_state)), args=(payload,))
+                        thread_list.append(thread)
+                        thread.start()
+                        num_threads_created += 1
+                        #_thread.start_new_thread(DAG_executor.DAG_executor_task, (payload,))
+                    except Exception as ex:
+                        logger.debug("[ERROR] Failed to start DAG_executor thread for state 1")
+                        logger.debug(ex)
+
+                    if using_workers and num_threads_created == num_workers:
+                        break 
+                else:
+                    logger.error("DAG_executor_driver: worker (pool) threads must run locally (no Lambdas)")
+
+        #logger.debug("Sleeping")
+        #time.sleep(1)
+
+        if using_workers:
+            for thread in thread_list:
+                thread.join()	
+            #rhc queue
+            #print("DAG_executor.work_queue:")
+            # Should be a -1 in the queue
+            #for state in DAG_executor.work_queue.queue:
+                #print(state) 
+        stop_time = time.time()
+        duration = stop_time - start_time
+
+        print("Job finished in %f seconds." % duration)
+
+        logger.debug("num_threads_created: " + str(num_threads_created))
+        logger.debug("Sleeping")
+        time.sleep(1)
 		
+#ToDo:  close_all(websocket)
 			
 									
 												

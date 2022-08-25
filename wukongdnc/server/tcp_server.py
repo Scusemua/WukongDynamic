@@ -100,7 +100,6 @@ class TCPHandler(socketserver.StreamRequestHandler):
         self.send_serialized_object(resp_encoded)
         logger.info("Sent ACK of size %d bytes to client %s for CREATE operation." % (len(resp_encoded), self.client_address[0]))  
 
-
     def create_all_fanins_and_faninNBs(self, message = None):
         """
         Called by a remote Lambda to create an object here on the TCP server.
@@ -130,8 +129,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
             self.create_obj(msg)
         logger.info("created fanins")
 
-        for msg in fanin_messages:
-            self.create_obj(msg)
+        for msg in faninNB_messages:
+            self.create_one_of_all_objs(msg)
         logger.info("created faninNBs")
 
         resp = {
@@ -145,6 +144,31 @@ class TCPHandler(socketserver.StreamRequestHandler):
         resp_encoded = json.dumps(resp).encode('utf-8')
         self.send_serialized_object(resp_encoded)
         logger.info("Sent ACK of size %d bytes to client %s for create_all_fanins_and_faninNBs operation." % (len(resp_encoded), self.client_address[0]))
+
+    def create_one_of_all_objs(self,message = None):
+        """
+        Called by create_all_fanins_and_faninNBs to create an object here on the TCP server. No
+        ack is sent to a client. create_all_fanins_and_faninNBs will send the ack.
+
+        Key-word arguments:
+        -------------------
+            message (dict):
+                The payload from the AWS Lambda function.
+        """        
+        logger.debug("[HANDLER] server.create() called.")
+        type_arg = message["type"]
+        name = message["name"]
+        state = decode_and_deserialize(message["state"])
+
+        synchronizer = Synchronizer()
+
+        synchronizer.create(type_arg, name, **state.keyword_arguments)
+        
+        synchronizer_name = self._get_synchronizer_name(type_name = type_arg, name = name)
+        logger.debug("Caching new Synchronizer of type '%s' with name '%s'" % (type_arg, synchronizer_name))
+        tcp_server.synchronizers[synchronizer_name] = synchronizer # Store Synchronizer object.
+
+        # Do not send ack to client - this is just one of possibly many of the creates from create_all_fanins_and_faninNBs
 
     def synchronize_sync(self, message = None):
         """
