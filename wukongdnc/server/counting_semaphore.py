@@ -18,7 +18,6 @@ class CountingSemaphore(object):
         self.waiting_p = []
         self._name = semaphore_name
         self._id = id 
-        logger.debug("CountingSemaphore: " + semaphore_name + " initial permits: " + str(initial_permits) )
         self._permits = initial_permits
         self._mutex = RLock() # May not need to be recursive.
 
@@ -72,9 +71,7 @@ class CountingSemaphore(object):
         self.waiting_p.append(queue_object) # otherwise append blocked thread  
 
         try:
-            logger.debug("Calling acquire() on wait_here")
             wait_here.acquire()
-            logger.debug("Done acquiring 'wait_here' Semaphore")
         except Exception as ex:
             logger.debug("[ERROR] Exception encountered while acquiring Semaphore: " + str(ex))
 
@@ -214,7 +211,7 @@ class CountingSemaphore(object):
         try:
             queue_object.wait_here.acquire()
         except Exception as ex:
-            logger.debug("[ERROR] Exception encountered while acqu")
+            logger.debug("[ERROR] Exception encountered while acquiring queue_object.wait_here: " + str(ex))
 
 class QueueObject(object):
     def __init__(self):

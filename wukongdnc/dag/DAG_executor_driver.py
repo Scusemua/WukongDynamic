@@ -1,12 +1,5 @@
-#ToDo: make sure have if using_workers everywhere
 #ToDo: All the timing stuff + close_all at the end
-#ToDo: 
-#       pass websocket into threads, processes need own websocket.
-#  File "C:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\server\DAG_executor_FanInNB.py", line 106, in fan_in
-#    result = kwargs['result']
-#KeyError: 'result'
-#Note: It's seconf faninnb fanin that gets permit = -1 sce first fanin died and didnlt exit monitor
-#      Take debug out of monitorSU and countingSemaphore
+# break is FN + R
 
 import threading
 import _thread
@@ -453,9 +446,9 @@ def run():
         print("DAG_leaf_task_start_states: " + str(DAG_leaf_task_start_states))
         print("DAG_leaf_task_inputs: " + str(DAG_leaf_task_inputs))
 
-#ToDo: Don't do this when using processes or Lambdas
-        if not store_fanins_faninNBs_locally:
-            DAG_executor.websocket = websocket
+#ToDo: No - no sharing
+        #if not store_fanins_faninNBs_locally:
+        #    DAG_executor.websocket = websocket
 
         #assert:
         if using_workers:
