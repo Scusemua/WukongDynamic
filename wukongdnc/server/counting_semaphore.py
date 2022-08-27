@@ -18,6 +18,7 @@ class CountingSemaphore(object):
         self.waiting_p = []
         self._name = semaphore_name
         self._id = id 
+        logger.debug("CountingSemaphore: " + semaphore_name + " initial permits: " + str(initial_permits) )
         self._permits = initial_permits
         self._mutex = RLock() # May not need to be recursive.
 
@@ -54,6 +55,7 @@ class CountingSemaphore(object):
         #try:
         self._permits -= 1
     
+        logger.debug("Counting semaphore: self._permits after decrement: " + str(self._permits))
         if (self._permits >= 0): # then no need to block thread
             logger.debug("release and return")
             self._mutex.release()

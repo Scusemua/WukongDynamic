@@ -145,6 +145,7 @@ class Synchronizer(object):
     
         logger.debug("synchronizer: synchronize_sync: called")
         logger.debug("State: " + str(state))
+        logger.debug("State: keyword_arguments: fanin_task_name:" + str(state.keyword_arguments['fanin_task_name']))
 
         base_name, isTryMethod = isTry_and_getMethodName(method_name)
         is_select = isSelect(self._synchronizer_class_name) # is_select = isSelect(type_arg)
@@ -223,8 +224,9 @@ class Synchronizer(object):
                 # if is_select:
                 #    self.unlock_synchronizer()
                     
-                logger.debug("synchronizer: synchronize_sync: %s sending %s back for method %s." % (synchronizer_name, str(return_value), method_name))
-                
+                logger.debug("synchronizerXXX: synchronize_sync: %s sending return_value %s back for method %s." % (synchronizer_name, str(return_value), method_name))
+                logger.debug("synchronizerYYY: synchronize_sync: %s sending state %s back for method %s." % (synchronizer_name, str(state), method_name))
+
                 # send tuple to be consistent, and False to be consistent, i.e., get result if False.
                 # This is after releasng the lock
                 tcp_handler.send_serialized_object(cloudpickle.dumps(state))                         
@@ -250,8 +252,9 @@ class Synchronizer(object):
             # if is_select:
             #    self.unlock_synchronizer()  
 
-            logger.debug("synchronizer: synchronize_sync: %s sending %s back for method %s." % (synchronizer_name, str(return_value), method_name))  
-            
+            logger.debug("synchronizerXXX: synchronize_sync: %s sending return_value %s back for method %s." % (synchronizer_name, str(return_value), method_name))
+            logger.debug("synchronizerYYY: synchronize_sync: %s sending state %s back for method %s." % (synchronizer_name, str(state), method_name))
+           
             tcp_handler.send_serialized_object(cloudpickle.dumps(state))
             
         return 0
@@ -314,7 +317,7 @@ class Synchronizer(object):
     # Same as trySynchronize() but we are keeping the non-sect and select code separate.
     # Called by synchronize_synch in tcp_server
     def trySynchronizeSelect(self, method_name, state, **kwargs):
-        logger.debug("trySynchronizeSelect: method_name: " + method_name + ", ID is: " + state.function_instance_ID)
+        logger.debug("trySynchronizeSelect: method_name: " + method_name + ", ID is: " + str(state.function_instance_ID))
         
         try:
             synchronizer_method = getattr(self._synchClass, method_name)
@@ -339,7 +342,7 @@ class Synchronizer(object):
     # returns it restarts the serverless function, if necessary.
     # Called by synchronize_synch in tcp_server
     def synchronize(self, method_name, state, **kwargs):
-        logger.debug("synchronize: method_name: " + str(method_name) + ", ID is: " + state.function_instance_ID)
+        logger.debug("synchronize: method_name: " + str(method_name) + ", ID is: " + str(state.function_instance_ID))
         
         try:
             synchronizer_method = getattr(self._synchClass, method_name)

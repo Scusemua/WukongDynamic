@@ -33,7 +33,7 @@ logger.addHandler(ch)
 #terminate. Only the last function that calls fan-in will continue executing. fan-in returns
 #a list of the results of the n-1 threads that will terminate.
 class DAG_executor_FanInNB(MonitorSU):
-    def __init__(self, initial_n = 0, monitor_name = None):
+    def __init__(self, initial_n = 0, monitor_name = "DAG_executor_FanInNB"):
         super(DAG_executor_FanInNB, self).__init__(monitor_name = monitor_name)
         self.monitor_name = monitor_name    # this is fanin_task_name
         self._n = initial_n
@@ -98,7 +98,6 @@ class DAG_executor_FanInNB(MonitorSU):
         logger.debug("FanInNB: fan_in() " + self.monitor_name + " entered monitor. self._num_calling = " + str(self._num_calling) + ", self._n=" + str(self._n))
 
         if self._num_calling < (self._n - 1):
-            logger.debug("FanInNB:Fan-in %s calling _go.wait_c() from FanIn" % self.monitor_name)
             self._num_calling += 1
 
             # No need to block non-last thread since we are done with them - they will terminate and not restart.
@@ -162,7 +161,10 @@ class DAG_executor_FanInNB(MonitorSU):
                             "DAG_info": self.DAG_info,
                             "server": server
                         }
-                        _thread.start_new_thread(DAG_executor.DAG_executor_task, (payload,))
+                        thread_name_prefix = "Thread_leaf_"
+                        thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=(thread_name_prefix+str(start_state_fanin_task)), args=(payload,))
+                        thread.start()
+                        #_thread.start_new_thread(DAG_executor.DAG_executor_task, (payload,))
                     except Exception as ex:
                         logger.debug("FanInNB:[ERROR] Failed to start DAG_executor thread.")
                         logger.debug(ex)

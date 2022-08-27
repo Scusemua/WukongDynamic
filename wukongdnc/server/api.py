@@ -118,10 +118,10 @@ def synchronize_sync(websocket, op, name, method_name, state):
     msg = json.dumps(message).encode('utf-8')
     send_object(msg, websocket)
     data = recv_object(websocket)               # Should just be a serialized state object.
-    logger.debug("Received %d bytes from server: %s" % (len(data), str(data)))
+    #logger.debug("Received %d byte return value from server: %s" % (len(data), str(data)))
     state_from_server = cloudpickle.loads(data) # `state_from_server` is of type State
 
-    logger.debug("Fan-in ID %s received return value from server in synchronize_sync: %s" % (name, str(state_from_server.return_value)))
+    #ogger.debug("Fan-in ID %s received return value from server in synchronize_sync: %s" % (name, str(state_from_server.return_value)))
 
     return state_from_server
 
@@ -298,6 +298,8 @@ def create_all_fanins_and_faninNBs(websocket, op, type, name, state):
 
     # Receive data. This should just be an ACK, as the TCP server will 'ACK' our create() calls.
     ack = recv_object(websocket)
+
+    logger.debug("create_all_fanins_and_faninNBs received %d byte ack from server: %s" % (len(ack), str(ack)))
 
 def close_all(websocket):
     """

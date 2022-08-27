@@ -1,11 +1,12 @@
 #ToDo: make sure have if using_workers everywhere
 #ToDo: All the timing stuff + close_all at the end
-#ToDo: fix websocket disconnect
-#       faninNB return DAG_executor_state
+#ToDo: 
 #       pass websocket into threads, processes need own websocket.
-#ToDo: need synchronous fanin for DAG_executor_FanIn and DAG_executor_FanInNB - they are
-#      non-blocking in the sense that non-become can return 0 and no restart, while become
-#      can return 1 and no restart. Need this for server and infiniX lambda versions.
+#  File "C:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\server\DAG_executor_FanInNB.py", line 106, in fan_in
+#    result = kwargs['result']
+#KeyError: 'result'
+#Note: It's seconf faninnb fanin that gets permit = -1 sce first fanin died and didnlt exit monitor
+#      Take debug out of monitorSU and countingSemaphore
 
 import threading
 import _thread
@@ -427,21 +428,23 @@ def run():
 #############################
 #Note: if using Lambdas to store synch objects: SERVERLESS_SYNC = False in constants.py
 #############################
-
+    
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
-        logger.debug("Connecting to TCP Server at %s." % str(TCP_SERVER_IP))
-        websocket.connect(TCP_SERVER_IP)
-        logger.debug("Successfully connected to TCP Server.")
+
         if store_fanins_faninNBs_locally:
             if create_all_fanins_faninNBs_on_start:
                 server = DAG_executor.DAG_executor_Synchronizer()
                 server.create_all_fanins_and_faninNBs_locally(DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
         else:
+            server = None
+            logger.debug("Connecting to TCP Server at %s." % str(TCP_SERVER_IP))
+            websocket.connect(TCP_SERVER_IP)
+            logger.debug("Successfully connected to TCP Server.")
             if create_all_fanins_faninNBs_on_start:
                 create_fanins_and_faninNBs(websocket,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
 
-        logger.debug("Sleeping")
-        time.sleep(10)
+        #logger.debug("Sleeping")
+        #time.sleep()
     #ToDo: threads/multip's need websocket to send their fanins - processes do this at start of DAG_executor?
 
         #DAG_leaf_task_inputs = get_DAG_leaf_task_inputs(DAG_leaf_tasks)
@@ -449,6 +452,10 @@ def run():
         print("DAG_leaf_tasks: " + str(DAG_leaf_tasks))
         print("DAG_leaf_task_start_states: " + str(DAG_leaf_task_start_states))
         print("DAG_leaf_task_inputs: " + str(DAG_leaf_task_inputs))
+
+#ToDo: Don't do this when using processes or Lambdas
+        if not store_fanins_faninNBs_locally:
+            DAG_executor.websocket = websocket
 
         #assert:
         if using_workers:
@@ -512,8 +519,13 @@ def run():
                     # thread = current_thread()
                     # report the name of the thread
                     # print(thread.name)
-                    thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=("Worker_leaf_"+str(start_state)), args=(payload,))
-                    thread_list.append(thread)
+                    if using_workers:
+                        thread_name_prefix = "Worker_leaf_"
+                    else:
+                        thread_name_prefix = "Thread_leaf_"
+                    thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=(thread_name_prefix+str(start_state)), args=(payload,))
+                    if using_workers:
+                        thread_list.append(thread)
                     thread.start()
                     num_threads_created += 1
                     #_thread.start_new_thread(DAG_executor.DAG_executor_task, (payload,))
@@ -609,7 +621,8 @@ def run():
                             "DAG_info": DAG_info,
                             "server": server
                         }
-                        thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=("Worker_nonleaf_"+str(start_state)), args=(payload,))
+                        thread_name_prefix = "Worker_leaf_"
+                        thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=(thread_name_prefix+str(start_state)), args=(payload,))
                         thread_list.append(thread)
                         thread.start()
                         num_threads_created += 1

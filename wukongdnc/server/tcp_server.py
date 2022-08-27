@@ -7,6 +7,7 @@ import json
 
 from .synchronizer import Synchronizer
 from .util import make_json_serializable, decode_and_deserialize, isTry_and_getMethodName, isSelect 
+from ..dag.DAG_executor_State import DAG_executor_State
 
 # Set up logging.
 import logging 
@@ -126,7 +127,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         logger.info(str(faninNB_messages))
 
         for msg in fanin_messages:
-            self.create_obj(msg)
+            self.create_one_of_all_objs(msg)
         logger.info("created fanins")
 
         for msg in faninNB_messages:
