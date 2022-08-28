@@ -16,6 +16,8 @@ from ..dag import  DAG_executor
 #from . import DAG_executor_driver
 #from .DAG_executor_State import DAG_executor_State
 from wukongdnc.dag.DAG_executor_State import DAG_executor_State
+from wukongdnc.dag.DAG_executor_constants import run_all_tasks_locally, store_fanins_faninNBs_locally, create_all_fanins_faninNBs_on_start, using_workers, num_workers
+from wukongdnc.dag.DAG_work_queue_for_threads import work_queue
 import uuid
 
 import logging 
@@ -137,10 +139,12 @@ class DAG_executor_FanInNB(MonitorSU):
             fanin_task_name = kwargs['fanin_task_name']
 
             # rhc queue
-            if DAG_executor.using_workers:
-                DAG_executor.work_queue.put(start_state_fanin_task)
+            if using_workers:
+                #DAG_executor.work_queue.put(start_state_fanin_task)
+                logger.debug("FanInNB: using_workers: " + str(using_workers))
+                work_queue.put(start_state_fanin_task)
             else:
-                if self.store_fanins_faninNBs_locally and DAG_executor.run_fanout_tasks_locally:
+                if self.store_fanins_faninNBs_locally and run_all_tasks_locally:
                     try:
                         logger.debug("FanInNB: starting DAG_executor thread for task " + fanin_task_name + " with start state " + str(start_state_fanin_task))
                         server = kwargs['server']
@@ -169,7 +173,7 @@ class DAG_executor_FanInNB(MonitorSU):
                         logger.debug("FanInNB:[ERROR] Failed to start DAG_executor thread.")
                         logger.debug(ex)
                     
-                elif not self.store_fanins_faninNBs_locally and not DAG_executor.run_fanout_tasks_locally:
+                elif not self.store_fanins_faninNBs_locally and not run_all_tasks_locally:
                     try:
         ##rhc
                         DAG_executor_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state_fanin_task)

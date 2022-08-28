@@ -2,6 +2,7 @@ import threading
 import _thread
 import time
 import socket
+import queue
 
 from .DFS_visit import Node
 from .DFS_visit import state_info
@@ -14,13 +15,17 @@ from ..server import DAG_executor_FanIn
 #from wukongdnc.server import DAG_executor_FanIn
 #from . import DAG_executor_driver
 from .DAG_executor_State import DAG_executor_State
+from .DAG_info import DAG_Info
 from wukongdnc.server.api import synchronize_sync
 import uuid
 from wukongdnc.constants import TCP_SERVER_IP, REDIS_IP_PUBLIC
-
+from .DAG_executor_constants import run_all_tasks_locally, store_fanins_faninNBs_locally, create_all_fanins_faninNBs_on_start, using_workers, num_workers
+from .DAG_work_queue_for_threads import work_queue
+from .DAG_data_dict_for_threads import data_dict
+from .DAG_executor_synchronizer import server
 from .util import pack_data
 from threading import RLock
-import queue
+
 
 import logging 
 logger = logging.getLogger(__name__)
@@ -32,22 +37,6 @@ ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 
 logger.addHandler(ch)
-
-"""
-################## SET THIS #################
-run_fanout_tasks_locally = DAG_executor_driver.run_fanout_tasks_locally
-store_fanins_faninNBs_locally = DAG_executor_driver.store_fanins_faninNBs_locally
-create_all_fanins_faninNBs_on_start = True
-using_workers = DAG_executor_driver.using_workers
-num_workers = DAG_executor_driver.num_workers
-#############################################
-"""
-run_fanout_tasks_locally = True         # vs remotely (in Lambdas)
-store_fanins_faninNBs_locally = False    # vs remotely
-create_all_fanins_faninNBs_on_start = True
-using_workers = True
-num_workers = 3
-
 
 def add(inp):
     logger.debug("add: " + "input: " + str(input))
@@ -114,6 +103,7 @@ class Counter(object):
             self.value += 1
             return self.value
   
+"""
 # This is taking role of server. 
 class DAG_executor_Synchronizer(object):
     synchronizers =  {} 
@@ -340,22 +330,21 @@ class DAG_executor_Synchronizer(object):
         return 0
         
     def create_all_fanins_and_faninNBs_locally(self,DAG_map,DAG_states,DAG_info,all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes):
-        """
-        all_fanins = []
-        all_fanin_sizes = []
-        for key in DAG_map:
-            state_info = DAG_map[key]
-            all_fanins = all_fanins + state_info.fanins
-            all_fanin_sizes = all_fanin_sizes + state_info.fanin_sizes
+        
+        #all_fanins = []
+        #all_fanin_sizes = []
+        #for key in DAG_map:
+        #    state_info = DAG_map[key]
+        #    all_fanins = all_fanins + state_info.fanins
+        #    all_fanin_sizes = all_fanin_sizes + state_info.fanin_sizes
                                                     
-        all_faninNBs = []
-        all_faninNB_sizes = []
-        for key in DAG_map:
-            state_info = DAG_map[key]
-            all_faninNBs = all_faninNBs + state_info.faninNBs
-            all_faninNB_sizes = all_faninNB_sizes + state_info.faninNB_sizes
-        """
-                                                            
+        #all_faninNBs = []
+        #all_faninNB_sizes = []
+        #for key in DAG_map:
+        #    state_info = DAG_map[key]
+        #   all_faninNBs = all_faninNBs + state_info.faninNBs
+        #    all_faninNB_sizes = all_faninNB_sizes + state_info.faninNB_sizes
+                                                           
         fanin_messages = []
         #for fanin_name, size in [(fanin_name,size) for fanin_name in all_fanin_task_names for size in all_fanin_sizes]:
         for fanin_name, size in zip(all_fanin_task_names,all_fanin_sizes):
@@ -443,7 +432,8 @@ class DAG_executor_Synchronizer(object):
 
 		# ToDo: may return DAG_executor_State to be consistent - it can be ignored.
         return 0
-     
+     """
+
 #DES = DAG_executor_Synchronizer()
 				 
 def create_and_faninNB_task_locally(kwargs):
@@ -649,58 +639,60 @@ def process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State, outp
     logger.debug("new fanouts after remove:" + str(fanouts))
     
     # process rest of fanins
-    logger.debug("run_fanout_tasks_locally:" + str(run_fanout_tasks_locally))
+    logger.debug("run_all_tasks_locally:" + str(run_all_tasks_locally))
     for name in fanouts:
-         #rhc queue
-        work_queue.put(DAG_states[name])
-        if run_fanout_tasks_locally:
-            try:
-                logger.debug("Starting fanout DAG_executor thread for " + name)
-                fanout_task_start_state = DAG_states[name]
-                task_DAG_executor_State = DAG_executor_State(state = fanout_task_start_state)
-
-                #rhc task_inputs
-                #output_tuple = (calling_task_name,)
-                #output_dict[calling_task_name] = output
-                logger.debug ("fanout payload for " + name + " is " + str(fanout_task_start_state) + "," + str(output))
-                payload = {
-##rhc
-                    #"state": fanout_task_start_state, 
-                    #rhc task_inputs
-                    "input": output,
-                    "DAG_executor_State": task_DAG_executor_State,
-                    "DAG_info": DAG_info,
-                    "server": server
-                }
-                _thread.start_new_thread(DAG_executor_task, (payload,))
-            except Exception as ex:
-                logger.error("[ERROR] Failed to start DAG_executor thread for " + name)
-                logger.debug(ex)
+        #rhc queue
+        if using_workers:
+            work_queue.put(DAG_states[name])
         else:
-            try:
-                logger.debug("Starting fanout DAG_executor Lambda for " + name)
-                fanout_task_start_state = DAG_states[name]
-                # create a new DAG_executor_State object so no DAG_executor_State object is shared by fanout/faninNB threads in a local test.
-                lambda_DAG_executor_State = DAG_executor_State(state = fanout_task_start_state)
-                logger.debug ("payload is " + str(fanout_task_start_state) + "," + str(output))
-                lambda_DAG_executor_State.restart = False      # starting new DAG_executor in state start_state_fanin_task
-                lambda_DAG_executor_State.return_value = None
-                lambda_DAG_executor_State.blocking = False            
-                logger.info("Starting Lambda function %s." % lambda_DAG_executor_State.function_name)
-                #logger.debug("lambda_DAG_executor_State: " + str(lambda_DAG_executor_State))
-                payload = {
-##rhc
-                    #"state": int(fanout_task_start_state),
-                    "input": output,
-                    "DAG_executor_State": lambda_DAG_executor_State,
-                    "DAG_info": DAG_info
-                    #"server": server   # used to mock server during testing
-                }
-                ###### DAG_executor_State.function_name has not changed
-                invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor")
-            except Exception as ex:
-                logger.error("FanInNB:[ERROR] Failed to start DAG_executor Lambda.")
-                logger.debug(ex)       
+            if run_all_tasks_locally:
+                try:
+                    logger.debug("Starting fanout DAG_executor thread for " + name)
+                    fanout_task_start_state = DAG_states[name]
+                    task_DAG_executor_State = DAG_executor_State(state = fanout_task_start_state)
+
+                    #rhc task_inputs
+                    #output_tuple = (calling_task_name,)
+                    #output_dict[calling_task_name] = output
+                    logger.debug ("fanout payload for " + name + " is " + str(fanout_task_start_state) + "," + str(output))
+                    payload = {
+    ##rhc
+                        #"state": fanout_task_start_state, 
+                        #rhc task_inputs
+                        "input": output,
+                        "DAG_executor_State": task_DAG_executor_State,
+                        "DAG_info": DAG_info,
+                        "server": server
+                    }
+                    _thread.start_new_thread(DAG_executor_task, (payload,))
+                except Exception as ex:
+                    logger.error("[ERROR] Failed to start DAG_executor thread for " + name)
+                    logger.debug(ex)
+            else:
+                try:
+                    logger.debug("Starting fanout DAG_executor Lambda for " + name)
+                    fanout_task_start_state = DAG_states[name]
+                    # create a new DAG_executor_State object so no DAG_executor_State object is shared by fanout/faninNB threads in a local test.
+                    lambda_DAG_executor_State = DAG_executor_State(state = fanout_task_start_state)
+                    logger.debug ("payload is " + str(fanout_task_start_state) + "," + str(output))
+                    lambda_DAG_executor_State.restart = False      # starting new DAG_executor in state start_state_fanin_task
+                    lambda_DAG_executor_State.return_value = None
+                    lambda_DAG_executor_State.blocking = False            
+                    logger.info("Starting Lambda function %s." % lambda_DAG_executor_State.function_name)
+                    #logger.debug("lambda_DAG_executor_State: " + str(lambda_DAG_executor_State))
+                    payload = {
+    ##rhc
+                        #"state": int(fanout_task_start_state),
+                        "input": output,
+                        "DAG_executor_State": lambda_DAG_executor_State,
+                        "DAG_info": DAG_info
+                        #"server": server   # used to mock server during testing
+                    }
+                    ###### DAG_executor_State.function_name has not changed
+                    invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor")
+                except Exception as ex:
+                    logger.error("FanInNB:[ERROR] Failed to start DAG_executor Lambda.")
+                    logger.debug(ex)       
   
     return become_start_state
 
@@ -719,7 +711,7 @@ def fanin_remotely(websocket, DAG_exec_state,**keyword_arguments):
     #store_fanins_faninNBs_locally = keyword_arguments['store_fanins_faninNBs_locally']  # option set in DAG_executor
     #DAG_info = keyword_arguments['DAG_info']
 
-    logger.debug ("calling_task_name: " + calling_task_name + "calling fanin with fanin_task_name: " + fanin_task_name)
+    logger.debug ("fanin_remotely: calling_task_name: " + calling_task_name + "calling fanin with fanin_task_name: " + fanin_task_name)
 
     #FanInNB = server.synchronizers[fanin_task_name]
     
@@ -732,6 +724,7 @@ def fanin_remotely(websocket, DAG_exec_state,**keyword_arguments):
     DAG_exec_state.return_value = None
     DAG_exec_state.blocking = False
     DAG_exec_state = synchronize_sync(websocket, "synchronize_sync", fanin_task_name, "fan_in", DAG_exec_state)
+    logger.debug ("fanin_remotely: returned DAG_exec_state.return_value: " + str(DAG_exec_state.return_value))
     return DAG_exec_state
 
 def process_fanins(websocket,fanins, faninNB_sizes, calling_task_name, DAG_states, DAG_exec_state, output, server):
@@ -780,6 +773,8 @@ def process_fanins(websocket,fanins, faninNB_sizes, calling_task_name, DAG_state
             DAG_exec_state = create_and_fanin_remotely(websocket,DAG_exec_state, **keyword_arguments)
         else:
             DAG_exec_state = fanin_remotely(websocket, DAG_exec_state, **keyword_arguments)
+            logger.debug ("process_fanins: call to fanin_remotely returned DAG_exec_state.return_value: " + str(DAG_exec_state.return_value))
+
 
     return DAG_exec_state
 	
@@ -818,13 +813,16 @@ def process_fanins(websocket,fanins, faninNB_sizes, calling_task_name, DAG_state
 	Note: We can call DAG_execute(state)
 """
 
-work_queue = queue.Queue()
-data_dict = {}
+#work_queue = queue.Queue()
+#data_dict = {}
 
 counter = None
 if using_workers:
     counter = Counter(0)
-				 
+
+#def DAG_executor_processes(work_queuue):
+    #- read DAG_info, create DAG_exec_state, work_queue is parm
+
 def DAG_executor(payload):		 
     # Note: could instead use a "state" parameter. Then we have state.starting_input and state.return_value so would need
     # to know which to acccess, as in: if first_invocation, where first_invocation is in state. Or always use
@@ -850,37 +848,43 @@ def DAG_executor(payload):
     # to execute_task in the proper form.
 		
 	# use DAG_executor_state.state
-    DAG_executor_state = payload['DAG_executor_State']
+    if not using_workers:
+        DAG_executor_state = payload['DAG_executor_State']
+    else:
+        DAG_executor_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
 ##rhc
     ##state = payload['state'] # refers to state var, not the usual State of DAG_executor 
     ##logger.debug("state:" + str(state))
     ##DAG_executor_state.state = payload['state']
-    logger.debug("payload state:" + str(DAG_executor_state.state))
+    if not using_workers:
+        logger.debug("payload state:" + str(DAG_executor_state.state))
     # For leaf task, we get  ['input': inp]; this is passed to the executed task using:
     #    def execute_task(task_name,input): output = DAG_info.DAG_tasks[task_name](input)
     # So the executed task gets ['input': inp], just like a non-leaf task gets ['output': X]. For leaf tasks, we use "input"
     # as the label for the value.
     #rhc task_inputs
-    task_payload_inputs = payload['input']
-    logger.debug("DAG_executor starting payload input:" +str(task_payload_inputs) + " payload state: " + str(DAG_executor_state.state) )
+    #task_payload_inputs = payload['input']
+    #logger.debug("DAG_executor starting payload input:" +str(task_payload_inputs) + " payload state: " + str(DAG_executor_state.state) )
   
-    DAG_info = payload['DAG_info']
+    DAG_info = DAG_Info()
+    #DAG_info = payload['DAG_info']
     DAG_map = DAG_info.get_DAG_map()
     DAG_tasks = DAG_info.get_DAG_tasks()
     num_tasks_to_execute = len(DAG_tasks)
     logger.debug("DAG_executor: num_tasks_to_execute: " + str(num_tasks_to_execute))
-    server = payload['server']
+    #server = payload['server']
     
     #ToDo:
 	#if input == None:
 		#pass  # withdraw input from payload.synchronizer_name
     
-    worker_needs_input = using_workers and True
+    worker_needs_input = using_workers
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
         thread = threading.current_thread()
         logger.debug("DAG_executor " + thread.name + " connecting to TCP Server at %s." % str(TCP_SERVER_IP))
-        websocket.connect(TCP_SERVER_IP)
+        if not store_fanins_faninNBs_locally:
+            websocket.connect(TCP_SERVER_IP)
         logger.debug("DAG_executor " + thread.name + " successfully connected to TCP Server.")
 
         while (True):
@@ -899,7 +903,7 @@ def DAG_executor(payload):
                         work_queue.put(-1)
                         return
                     worker_needs_input = False # default
-                    logger.debug("DAG_executor: Worker access work_queue: process state: " + str(DAG_executor_state.state))
+                    logger.debug("DAG_executor: Worker accessed work_queue: process state: " + str(DAG_executor_state.state))
                 else:
                     logger.debug("DAG_executor: Worker doesn't access work_queue: process state: " + str(DAG_executor_state.state))
                 num_tasks_executed = counter.increment_and_get()
@@ -1034,13 +1038,15 @@ def DAG_executor(payload):
                 # single fanin, try-op w/ returned_state.return_value or restart with return_value or deposit/withdraw it
 
                 returned_state = process_fanins(websocket,state_info.fanins, state_info.fanin_sizes, state_info.task_name, DAG_info.get_DAG_states(),  DAG_executor_state, output, server)
-                logger.debug("After process_fanin: " + str(state_info.fanins[0]) + " returned_state.blocking: " + str(returned_state.blocking) + ", returned_state.return_value: "
+                logger.debug("After call to process_fanin: " + str(state_info.fanins[0]) + " returned_state.blocking: " + str(returned_state.blocking) + ", returned_state.return_value: "
 ##rhc
-                    + str(returned_state.return_value) + ", state: " + str(DAG_executor_state.state))
+                    + str(returned_state.return_value) + ", DAG_executor_state.state: " + str(DAG_executor_state.state))
                 ##+ str(returned_state.return_value) + ", state: " + str(state))
-                if returned_state.blocking:
-                    # we are not the bcome task for the fanin
+                #if returned_state.blocking:
+                if returned_state.return_value == 0:
+                    # we are not the become task for the fanin
                     if using_workers:
+                        logger.debug("After call to process_fanin: return value is 0; using workers so set worker_needs_input = True")
                         worker_needs_input = True
                     else:
                         # this dfs path is finished
@@ -1049,6 +1055,7 @@ def DAG_executor(payload):
                     if using_workers:
                         # we are the become task so execute the become task, where this is a worker
                         # or a dfs thread.
+                        logger.debug("After call to process_fanin: return value not 0, using workers so set worker_needs_input = False")
                         worker_needs_input = False
                 #ToDo: Don't add to work_queue just do it
                 # rhc queue
@@ -1073,7 +1080,9 @@ def DAG_executor(payload):
 #Local tests
 def DAG_executor_task(payload):
     DAG_executor_state = payload['DAG_executor_State']
-    logger.debug("DAG_executor_task: call DAG_excutor, state is " + str(DAG_executor_state.state))
+    if DAG_executor_state != None:
+        # DAG_executor_state is None when using workers
+        logger.debug("DAG_executor_task: call DAG_excutor, state is " + str(DAG_executor_state.state))
     DAG_executor(payload)
     
 	
@@ -1190,7 +1199,7 @@ def main():
 	# state 4: input 1 from "inc0" and 2 from "inc1", ("add": 1+2), output 3 to fanin "mult"
 	# state 5: input 4 from "square" and 3 from "add", ("mult": 4*3), output 12 to ?
 	
-    server = DAG_executor_Synchronizer()
+    #server = DAG_executor_Synchronizer()
 
     #ToD0: loop thru DAG_info.DAG_start_states - but need their inputs to do that
     try:
