@@ -4,6 +4,7 @@ import time
 import socket
 import queue
 
+
 from .DFS_visit import Node
 from .DFS_visit import state_info
 #from DAG_executor_FanInNB import DAG_executor_FanInNB
@@ -26,6 +27,10 @@ from .DAG_executor_synchronizer import server
 from .util import pack_data
 from threading import RLock
 
+
+import logging.handlers
+import multiprocessing
+from .multiprocessing_logging import worker_configurer
 
 import logging 
 logger = logging.getLogger(__name__)
@@ -821,10 +826,19 @@ counter = None
 if using_workers:
     counter = Counter(0)
 
-def DAG_executor_processes(process_work_queue, data_dict):
+def DAG_executor_processes(process_work_queue, data_dict, log_queue, configurer):
     #- read DAG_info, create DAG_exec_state, thread_work_queue is parm
+    configurer(log_queue)
+    proc_name = multiprocessing.current_process().name
+    print(proc_name + ": started.")
+    #logger = logging.getLogger('main')__name__
+    logger = logging.getLogger(__name__)
+    level = logging.DEBUG
+    message = (proc_name + ": testing 1 2 3.")
+    logger.log(level, message)
+    print(proc_name + ": process_work_queue get: " + str(process_work_queue.get()))
+    print(proc_name + ": Process finished.")
     return
-    print(str(process_work_queue.get()))
 
 def DAG_executor(payload):		 
     # Note: could instead use a "state" parameter. Then we have state.starting_input and state.return_value so would need

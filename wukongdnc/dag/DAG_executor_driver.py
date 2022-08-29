@@ -32,6 +32,8 @@ import pickle
 from wukongdnc.server.api import create_all_fanins_and_faninNBs
 from wukongdnc.wukong.invoker import invoke_lambda
 
+from .multiprocessing_logging import listener_configurer, listener_process, worker_configurer
+
 import logging 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -426,7 +428,7 @@ def run():
             process_work_queue = multiprocessing.Queue(maxsize = num_DAG_tasks)
             manager = Manager()
             data_dict = manager.dict()
-            
+
         if using_workers:
             #rhc queue
             if using_threads_not_processes:
@@ -448,6 +450,11 @@ def run():
 
         #  
         num_threads_created = 0
+
+        if run_all_tasks_locally and not using_threads_not_processes:
+            log_queue = multiprocessing.Queue(-1)
+            listener = multiprocessing.Process(target=listener_process, args=(log_queue, listener_configurer))
+            listener.start()
 
         #for start_state, inp, task_name in zip(DAG_leaf_task_start_states, DAG_leaf_task_inputs, DAG_leaf_tasks):
         for start_state, task_name in zip(DAG_leaf_task_start_states, DAG_leaf_tasks):
@@ -533,7 +540,8 @@ def run():
                         # print(thread.name)
                         proc_name_prefix = "Worker_leaf_"
                         #thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=(thread_name_prefix+str(start_state)), args=(payload,))
-                        proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+str(start_state)), args=(process_work_queue,data_dict,))
+                        proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+str(start_state)), args=(process_work_queue,data_dict,log_queue,worker_configurer))
+                        #args=(log_queue, worker_configurer)
                         proc.start()
                         thread_list.append(proc)
                         #thread.start()
@@ -688,11 +696,16 @@ def run():
         if using_workers:
             for thread in thread_list:
                 thread.join()	
+
+        log_queue.put_nowait(None)
+        listener.join()
+
             #rhc queue
             #print("work_queue:")
             # Should be a -1 in the queue
             #for state in work_queue.queue:
                 #print(state) 
+
         stop_time = time.time()
         duration = stop_time - start_time
 
