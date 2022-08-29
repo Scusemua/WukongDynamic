@@ -3,6 +3,8 @@
 
 import threading
 import _thread
+import multiprocessing
+from multiprocessing import Process, Manager, Queue, Value, Lock
 import time
 import json
 import cloudpickle
@@ -21,8 +23,8 @@ from .DAG_executor_State import DAG_executor_State
 from .DAG_info import DAG_Info
 from wukongdnc.server.util import make_json_serializable
 from wukongdnc.constants import TCP_SERVER_IP, REDIS_IP_PUBLIC
-from .DAG_executor_constants import run_all_tasks_locally, store_fanins_faninNBs_locally, create_all_fanins_faninNBs_on_start, using_workers, num_workers
-from .DAG_work_queue_for_threads import work_queue
+from .DAG_executor_constants import run_all_tasks_locally, store_fanins_faninNBs_locally, create_all_fanins_faninNBs_on_start, using_workers, num_workers,using_threads_not_processes
+from .DAG_work_queue_for_threads import thread_work_queue
 from .DAG_executor_synchronizer import server
 import uuid
 import pickle
@@ -406,9 +408,9 @@ def run():
 
         #DAG_leaf_task_inputs = get_DAG_leaf_task_inputs(DAG_leaf_tasks)
         
-        print("DAG_leaf_tasks: " + str(DAG_leaf_tasks))
-        print("DAG_leaf_task_start_states: " + str(DAG_leaf_task_start_states))
-        print("DAG_leaf_task_inputs: " + str(DAG_leaf_task_inputs))
+        logger.debug("DAG_leaf_tasks: " + str(DAG_leaf_tasks))
+        logger.debug("DAG_leaf_task_start_states: " + str(DAG_leaf_task_start_states))
+        logger.debug("DAG_leaf_task_inputs: " + str(DAG_leaf_task_inputs))
 
 #ToDo: No - no sharing
         #if not store_fanins_faninNBs_locally:
@@ -419,10 +421,20 @@ def run():
             if not run_all_tasks_locally:
                 logger.error("DAG_executor_driver: if using_workers then run_fanout_tasks_locally must also be true.")
 
+        if using_workers and not using_threads_not_processes:
+            num_DAG_tasks = len(DAG_tasks)
+            process_work_queue = multiprocessing.Queue(maxsize = num_DAG_tasks)
+            manager = Manager()
+            data_dict = manager.dict()
+            
         if using_workers:
             #rhc queue
-            for state in DAG_leaf_task_start_states:
-                work_queue.put(state)
+            if using_threads_not_processes:
+                for state in DAG_leaf_task_start_states:
+                    thread_work_queue.put(state)
+            else:
+                for state in DAG_leaf_task_start_states:
+                    process_work_queue.put(state)  
             #print("work_queue:")
             #for start_state in work_queue.queue:
             #   print(start_state)
@@ -439,8 +451,6 @@ def run():
 
         #for start_state, inp, task_name in zip(DAG_leaf_task_start_states, DAG_leaf_task_inputs, DAG_leaf_tasks):
         for start_state, task_name in zip(DAG_leaf_task_start_states, DAG_leaf_tasks):
-
-            print("iterate")
             DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state)
             logger.debug("Starting DAG_executor for task " + task_name)
 
@@ -460,43 +470,78 @@ def run():
 #ToDo: if using_threads_not_processes: create thread else create processes.
 #      process will have no payload: since ne er need server, get start states from work_queue
 #      not DAG_exec_state. No input as usual.
-                try:
-                    if not using_workers:
-                        DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state)
-                    else:
-                        DAG_exec_state = None
-                    logger.debug("Starting DAG_executor thread for leaf task " + task_name)
-                    payload = {
-    ##rhc
-                        #"state": int(start_state),
-                        # DAG_executor does input = payload['input'] so input is ['input': inp]; this is passed to the executed task using:
-                        #    def execute_task(task_name,input): output = Node.DAG_tasks[task_name](input)
-                        # So the executed task gets ['input': inp], just like a non-leaf task gets ['output': X]. For leaf tasks, we use "input"
-                        # as the label for the value.
-                        #"input": {'input': inp},
-                        #"input": inp,
-                        "DAG_executor_State": DAG_exec_state,
-                        #"DAG_info": DAG_info,
-                        #"server": server        # may be None
-                    }
-                    # Note:
-                    # get the current thread instance
-                    # thread = current_thread()
-                    # report the name of the thread
-                    # print(thread.name)
-                    if using_workers:
-                        thread_name_prefix = "Worker_leaf_"
-                    else:
-                        thread_name_prefix = "Thread_leaf_"
-                    thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=(thread_name_prefix+str(start_state)), args=(payload,))
-                    if using_workers:
-                        thread_list.append(thread)
-                    thread.start()
-                    num_threads_created += 1
-                    #_thread.start_new_thread(DAG_executor.DAG_executor_task, (payload,))
-                except Exception as ex:
-                    logger.debug("[ERROR] Failed to start DAG_executor thread for state 1")
-                    logger.debug(ex)
+                if using_threads_not_processes:
+                    try:
+                        if not using_workers:
+                            DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state)
+                        else:
+                            DAG_exec_state = None
+                        logger.debug("Starting DAG_executor thread for leaf task " + task_name)
+                        payload = {
+        ##rhc
+                            #"state": int(start_state),
+                            # DAG_executor does input = payload['input'] so input is ['input': inp]; this is passed to the executed task using:
+                            #    def execute_task(task_name,input): output = Node.DAG_tasks[task_name](input)
+                            # So the executed task gets ['input': inp], just like a non-leaf task gets ['output': X]. For leaf tasks, we use "input"
+                            # as the label for the value.
+                            #"input": {'input': inp},
+                            #"input": inp,
+                            "DAG_executor_State": DAG_exec_state,
+                            #"DAG_info": DAG_info,
+                            #"server": server        # may be None
+                        }
+                        # Note:
+                        # get the current thread instance
+                        # thread = current_thread()
+                        # report the name of the thread
+                        # print(thread.name)
+                        if using_workers:
+                            thread_name_prefix = "Worker_Thread_leaf_"
+                        else:
+                            thread_name_prefix = "Thread_leaf_"
+                        thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=(thread_name_prefix+str(start_state)), args=(payload,))
+                        if using_workers:
+                            thread_list.append(thread)
+                        thread.start()
+                        num_threads_created += 1
+                        #_thread.start_new_thread(DAG_executor.DAG_executor_task, (payload,))
+                    except Exception as ex:
+                        logger.debug("[ERROR] Failed to start DAG_executor thread for state " + start_state)
+                        logger.debug(ex)
+                else:
+                    try:
+                        if not using_workers:
+                            logger.debug("[ERROR] Starting multi process leaf tasks but using_workers is false.")
+                        logger.debug("Starting DAG_executor process for leaf task " + task_name)
+                        payload = {
+        ##rhc
+                            #"state": int(start_state),
+                            # DAG_executor does input = payload['input'] so input is ['input': inp]; this is passed to the executed task using:
+                            #    def execute_task(task_name,input): output = Node.DAG_tasks[task_name](input)
+                            # So the executed task gets ['input': inp], just like a non-leaf task gets ['output': X]. For leaf tasks, we use "input"
+                            # as the label for the value.
+                            #"input": {'input': inp},
+                            #"input": inp,
+                            #"DAG_executor_State": DAG_exec_state,
+                            #"DAG_info": DAG_info,
+                            #"server": server        # may be None
+                        }
+                        # Note:
+                        # get the current thread instance
+                        # thread = current_thread()
+                        # report the name of the thread
+                        # print(thread.name)
+                        proc_name_prefix = "Worker_leaf_"
+                        #thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=(thread_name_prefix+str(start_state)), args=(payload,))
+                        proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+str(start_state)), args=(process_work_queue,data_dict,))
+                        proc.start()
+                        thread_list.append(proc)
+                        #thread.start()
+                        num_threads_created += 1
+                        #_thread.start_new_thread(DAG_executor.DAG_executor_task, (payload,))
+                    except Exception as ex:
+                        logger.debug("[ERROR] Failed to start DAG_executor process for state " + start_state)
+                        logger.debug(ex)     
 
                 if using_workers and num_threads_created == num_workers:
                     break 
@@ -568,38 +613,74 @@ def run():
             # starting leaf tasks did not start num_workers threads so start num_workers-num_threads_created
             # more threads/processes
             while True:
+                logger.debug("Starting DAG_executor for task " + task_name)
                 if run_all_tasks_locally:
-                    try:
-                        # Workers so not use their start_state; they get it from the work_queue
-                        DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = 0)
-                        logger.debug("Starting DAG_executor worker for non-leaf task " + task_name)
-                        payload = {
-        ##rhc
-                            #"state": int(start_state),
-                            # DAG_executor does input = payload['input'] so input is ['input': inp]; this is passed to the executed task using:
-                            #    def execute_task(task_name,input): output = Node.DAG_tasks[task_name](input)
-                            # So the executed task gets ['input': inp], just like a non-leaf task gets ['output': X]. For leaf tasks, we use "input"
-                            # as the label for the value.
-                            # non-leaf local-running workers do not use this input
-                            #"input": None,
-                            "DAG_executor_State": DAG_exec_state,
-                            "DAG_info": DAG_info,
-                            "server": server
-                        }
-                        thread_name_prefix = "Worker_leaf_"
-                        thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=(thread_name_prefix+str(start_state)), args=(payload,))
-                        thread_list.append(thread)
-                        thread.start()
-                        num_threads_created += 1
-                        #_thread.start_new_thread(DAG_executor.DAG_executor_task, (payload,))
-                    except Exception as ex:
-                        logger.debug("[ERROR] Failed to start DAG_executor thread for state 1")
-                        logger.debug(ex)
+                    if using_threads_not_processes:
+                        try:
+                            # Workers so not use their start_state; they get it from the work_queue
+                            DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = 0)
+                            logger.debug("Starting DAG_executor worker for non-leaf task " + task_name)
+                            payload = {
+            ##rhc
+                                #"state": int(start_state),
+                                # DAG_executor does input = payload['input'] so input is ['input': inp]; this is passed to the executed task using:
+                                #    def execute_task(task_name,input): output = Node.DAG_tasks[task_name](input)
+                                # So the executed task gets ['input': inp], just like a non-leaf task gets ['output': X]. For leaf tasks, we use "input"
+                                # as the label for the value.
+                                # non-leaf local-running workers do not use this input
+                                #"input": None,
+                                "DAG_executor_State": DAG_exec_state,
+                                #"DAG_info": DAG_info,
+                                #"server": server
+                            }
+                            thread_name_prefix = "Worker_thread_non-leaf_"
+                            thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=(thread_name_prefix+str(start_state)), args=(payload,))
+                            thread_list.append(thread)
+                            thread.start()
+                            num_threads_created += 1
+                            #_thread.start_new_thread(DAG_executor.DAG_executor_task, (payload,))
+                        except Exception as ex:
+                            logger.debug("[ERROR] Failed to start DAG_executor thread for non-leaf task " + task_name)
+                            logger.debug(ex)
+                    else:
+                        try:
+                            if not using_workers:
+                                logger.debug("[ERROR] Starting multi process non-leaf tasks but using_workers is false.")
+                            logger.debug("Starting DAG_executor process for non-leaf task " + task_name)
+                            payload = {
+            ##rhc
+                                #"state": int(start_state),
+                                # DAG_executor does input = payload['input'] so input is ['input': inp]; this is passed to the executed task using:
+                                #    def execute_task(task_name,input): output = Node.DAG_tasks[task_name](input)
+                                # So the executed task gets ['input': inp], just like a non-leaf task gets ['output': X]. For leaf tasks, we use "input"
+                                # as the label for the value.
+                                #"input": {'input': inp},
+                                #"input": inp,
+                                #"DAG_executor_State": DAG_exec_state,
+                                #"DAG_info": DAG_info,
+                                #"server": server        # may be None
+                            }
+                            # Note:
+                            # get the current thread instance
+                            # thread = current_thread()
+                            # report the name of the thread
+                            # print(thread.name)
+                            proc_name_prefix = "Worker_process_non-leaf_"
+                            #thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=(thread_name_prefix+str(start_state)), args=(payload,))
+                            proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+str(start_state)), args=(process_work_queue,data_dict,))
+                            proc.start()
+                            thread_list.append(proc)
+                            #thread.start()
+                            num_threads_created += 1
+                            #_thread.start_new_thread(DAG_executor.DAG_executor_task, (payload,))                       
+                        except Exception as ex:
+                            logger.debug("[ERROR] Failed to start DAG_executor process for non-leaf task " + task_name)
+                            logger.debug(ex)
 
                     if using_workers and num_threads_created == num_workers:
                         break 
                 else:
-                    logger.error("DAG_executor_driver: worker (pool) threads must run locally (no Lambdas)")
+                    logger.error("DAG_executor_driver: worker (pool) threads/processes must run locally (no Lambdas)")
 
         #logger.debug("Sleeping")
         #time.sleep(1)
@@ -619,7 +700,7 @@ def run():
 
         logger.debug("num_threads_created: " + str(num_threads_created))
         logger.debug("Sleeping")
-        time.sleep(1)
+        time.sleep(0.1)
 		
 #ToDo:  close_all(websocket)
 			

@@ -76,9 +76,9 @@ class DAG_executor_Synchronizer(object):
 			#FanIn does not access the DAG_executor_State in kwargs
 			
 			# return is: self._results, restart, where restart is always 0 and results is 0 or a map
-            return_value, restart = FanIn.fan_in(**keyword_arguments)
+            return_value, restart_value_ignored = FanIn.fan_in(**keyword_arguments)
         else:
-            return_value, restart = FanIn.fan_in(**keyword_arguments)
+            return_value, restart_value_ignored = FanIn.fan_in(**keyword_arguments)
 
             logger.debug("fanin become task output:" + str(output))
             logger.debug("calling_task_name:" + calling_task_name)
@@ -101,25 +101,25 @@ class DAG_executor_Synchronizer(object):
 
         # create new faninNB with specified name if it hasn't been created 
 		# Here are the keyword arguments:
-        fanin_task_name = keyword_arguments['fanin_task_name']
-        n = keyword_arguments['n']	# size
+        #fanin_task_name = keyword_arguments['fanin_task_name']
+        #n = keyword_arguments['n']	# size
 		# used by FanInNB:
         #start_state_fanin_task = keyword_arguments['start_state_fanin_task']
         # where: keyword_arguments['start_state_fanin_task'] = DAG_states[name]
-        output = keyword_arguments['result']
-        calling_task_name = keyword_arguments['calling_task_name']
+        #output = keyword_arguments['result']
+        #calling_task_name = keyword_arguments['calling_task_name']
         #DAG_executor_state = keyword_arguments['DAG_executor_State']
         #server = keyword_arguments['server']
 		# used by FanInNB:
         # store_fanins_faninNBs_locally = keyword_arguments['store_fanins_faninNBs_locally']  # option set in DAG_executor
      
-        logger.debug ("calling_task_name: " + calling_task_name + " calling fanin for " + " fanin_task_name: " + fanin_task_name)
-        FanIn = self.synchronizers[fanin_task_name]  
+        logger.debug ("calling_task_name: " + keyword_arguments['calling_task_name'] + " calling fanin for " + " fanin_task_name: " + keyword_arguments['fanin_task_name'])
+        FanIn = self.synchronizers[keyword_arguments['fanin_task_name']]  
         
         # call fanin
         try_return_value = FanIn.try_fan_in(**keyword_arguments)
         #logger.debug("calling_task_name: " + calling_task_name + " FanIn: try_return_value: " + str(try_return_value))
-        logger.debug("fanin_task_name: " + fanin_task_name + " try_return_value: " + str(try_return_value))
+        logger.debug("fanin_task_name: " + keyword_arguments['fanin_task_name'] + " try_return_value: " + str(try_return_value))
         if try_return_value:   # synchronize op will execute wait so tell client to terminate
             DAG_exec_state.blocking = True 
             DAG_exec_state.return_value = 0 
@@ -128,14 +128,14 @@ class DAG_executor_Synchronizer(object):
 			#FanIn does not access the DAG_executor_State in kwargs
 			
 			# return is: self._results, restart, where restart is always 0 and results is 0 or a map
-            return_value, restart = FanIn.fan_in(**keyword_arguments)
+            return_value, restart_value_ignored = FanIn.fan_in(**keyword_arguments)
         else:
-            return_value, restart = FanIn.fan_in(**keyword_arguments)
+            return_value, restart_value_ignored = FanIn.fan_in(**keyword_arguments)
 
-            logger.debug("fanin become task output:" + str(output))
-            logger.debug("calling_task_name:" + calling_task_name)
+            logger.debug("fanin become task output:" + str(keyword_arguments['result']))
+            logger.debug("calling_task_name:" + keyword_arguments['calling_task_name'])
             # Add our result to the results (instead of sending it to the fanin on the server and server sending it back
-            return_value[calling_task_name] = output
+            return_value[keyword_arguments['calling_task_name']] = keyword_arguments['result']
             DAG_exec_state.return_value = return_value
             DAG_exec_state.blocking = False 
 			
@@ -184,7 +184,7 @@ class DAG_executor_Synchronizer(object):
 		# quit since nothing to do after a fanin.
 
         # return is: None, restart, where restart is always 0 and return_value is None; and makes no change to DAG_executor_State	
-        return_value, restart = FanInNB.fan_in(**keyword_arguments)
+        return_value_ignored, restart_value_ignored = FanInNB.fan_in(**keyword_arguments)
 
 #ToDo: if we always return a state:
         DAG_exec_state = keyword_arguments['DAG_executor_State']
@@ -206,19 +206,19 @@ class DAG_executor_Synchronizer(object):
         # keyword_arguments['start_state_fanin_task'] = DAG_states[name]
         
         # create new faninNB with specified name if it hasn't been created 
-        fanin_task_name = keyword_arguments['fanin_task_name']
-        n = keyword_arguments['n']
+        #fanin_task_name = keyword_arguments['fanin_task_name']
+        #n = keyword_arguments['n']
         #start_state_fanin_task = keyword_arguments['start_state_fanin_task']
         #output = keyword_arguments['result']
-        calling_task_name = keyword_arguments['calling_task_name']
+        #calling_task_name = keyword_arguments['calling_task_name']
         #DAG_executor_state = keyword_arguments['DAG_executor_State']
         #server = keyword_arguments['server']
         #store_fanins_faninNBs_locally = keyword_arguments['store_fanins_faninNBs_locally']  # option set in DAG_executor
         #DAG_info = keyword_arguments['DAG_info']
         
-        logger.debug ("calling_task_name: " + calling_task_name + "calling faninNB with fanin_task_name: " + fanin_task_name)
+        logger.debug ("calling_task_name: " + keyword_arguments['calling_task_name'] + "calling faninNB with fanin_task_name: " + keyword_arguments['fanin_task_name'])
 
-        FanInNB = self.synchronizers[fanin_task_name]
+        FanInNB = self.synchronizers[keyword_arguments['fanin_task_name']]
         
 		# Note: in real code, we would return here so caller can quit, letting server do the op.
 		# Here, we can just wait for op to finish, then return. Caller has nothing to do but 
@@ -228,7 +228,7 @@ class DAG_executor_Synchronizer(object):
 #      returns instead of blocking. More consistent to call try_fan_in?
 
         # return is: None, restart, where restart is always 0 and return_value is None; and makes no change to DAG_executor_State	
-        return_value, restart = FanInNB.fan_in(**keyword_arguments)
+        return_value_ignored, restart_value_ignored = FanInNB.fan_in(**keyword_arguments)
 
 #ToDo: if we always return a state:
         DAG_exec_state = DAG_executor_State()

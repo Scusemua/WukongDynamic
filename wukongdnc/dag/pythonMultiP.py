@@ -55,7 +55,7 @@ synch_dict = {}
 
 def multi_DAG_executor(q,i,data_dict):
 	print("process " + str(i) + " running")
-	DAG_info = DAG_Info()
+	#DAG_info = DAG_Info()
 	state = q.get()
 	q.put(state+1)
 	print("process " + str(i) + " got state " + str(state))	

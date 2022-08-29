@@ -16,8 +16,8 @@ from ..dag import  DAG_executor
 #from . import DAG_executor_driver
 #from .DAG_executor_State import DAG_executor_State
 from wukongdnc.dag.DAG_executor_State import DAG_executor_State
-from wukongdnc.dag.DAG_executor_constants import run_all_tasks_locally, store_fanins_faninNBs_locally, create_all_fanins_faninNBs_on_start, using_workers, num_workers
-from wukongdnc.dag.DAG_work_queue_for_threads import work_queue
+from wukongdnc.dag.DAG_executor_constants import run_all_tasks_locally, store_fanins_faninNBs_locally, create_all_fanins_faninNBs_on_start, using_workers, num_workers, using_threads_not_processes
+from wukongdnc.dag.DAG_work_queue_for_threads import thread_work_queue
 import uuid
 
 import logging 
@@ -142,7 +142,7 @@ class DAG_executor_FanInNB(MonitorSU):
             if using_workers:
                 #DAG_executor.work_queue.put(start_state_fanin_task)
                 logger.debug("FanInNB: using_workers: " + str(using_workers))
-                work_queue.put(start_state_fanin_task)
+                thread_work_queue.put(start_state_fanin_task)
             else:
                 if self.store_fanins_faninNBs_locally and run_all_tasks_locally:
                     try:

@@ -253,7 +253,7 @@ def create(websocket, op, type, name, state):
     logger.debug("Sent 'create' message to server")
 
     # Receive data. This should just be an ACK, as the TCP server will 'ACK' our create() calls.
-    ack = recv_object(websocket)
+    ack_ignored = recv_object(websocket)
 
 def create_all_fanins_and_faninNBs(websocket, op, type, name, state):
     """
@@ -313,4 +313,4 @@ def close_all(websocket):
     msg = json.dumps(message).encode('utf-8')
     send_object(msg, websocket)
     logger.debug("Sent 'close_all' message to server")    
-    ack = recv_object(websocket)
+    ack_ignored = recv_object(websocket)
