@@ -17,9 +17,9 @@ import multiprocessing
 def listener_configurer():
     root = logging.getLogger()
     #h = logging.handlers.RotatingFileHandler('mptest.log', 'a', 300, 10)
-    h = logging.handlers.RotatingFileHandler('mptest.log', 'a', 10000)
+    h = logging.handlers.RotatingFileHandler('mptest.log', 'w')
     #h = logging.handlers.FileHandler('mp.log', 'a')
-    f = logging.Formatter('%(asctime)s %(processName)-10s %(name)s %(levelname)-8s %(message)s')
+    f = logging.Formatter('[%(asctime)s] [%(processName)s] [%(name)s] [%(levelname)s]: %(message)s')
     #Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
     h.setFormatter(f)
     root.addHandler(h)

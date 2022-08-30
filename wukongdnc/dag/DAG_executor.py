@@ -832,11 +832,11 @@ def DAG_executor_processes(process_work_queue, data_dict, log_queue, configurer)
     proc_name = multiprocessing.current_process().name
     print(proc_name + ": started.")
     #logger = logging.getLogger('main')__name__
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger("multiP")    #(__name__)
     level = logging.DEBUG
     message = (proc_name + ": testing 1 2 3.")
     logger.log(level, message)
-    print(proc_name + ": process_work_queue get: " + str(process_work_queue.get()))
+    #print(proc_name + ": process_work_queue get: " + str(process_work_queue.get()))
     print(proc_name + ": Process finished.")
     return
 

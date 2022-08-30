@@ -386,7 +386,7 @@ def run():
     start_time = time.time()
 	
 #############################
-#Note: if using Lambdas to store synch objects: SERVERLESS_SYNC = False in constants.py
+#Note: if using Lambdas to store synch objects: SERVERLESS_SYNC = False in constants.py; set to True
 #############################
     
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
@@ -506,7 +506,7 @@ def run():
                             thread_name_prefix = "Worker_Thread_leaf_"
                         else:
                             thread_name_prefix = "Thread_leaf_"
-                        thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=(thread_name_prefix+str(start_state)), args=(payload,))
+                        thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=(thread_name_prefix+"ss"+str(start_state)), args=(payload,))
                         if using_workers:
                             thread_list.append(thread)
                         thread.start()
@@ -520,6 +520,7 @@ def run():
                         if not using_workers:
                             logger.debug("[ERROR] Starting multi process leaf tasks but using_workers is false.")
                         logger.debug("Starting DAG_executor process for leaf task " + task_name)
+     
                         payload = {
         ##rhc
                             #"state": int(start_state),
@@ -540,8 +541,7 @@ def run():
                         # print(thread.name)
                         proc_name_prefix = "Worker_leaf_"
                         #thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=(thread_name_prefix+str(start_state)), args=(payload,))
-                        proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+str(start_state)), args=(process_work_queue,data_dict,log_queue,worker_configurer))
-                        #args=(log_queue, worker_configurer)
+                        proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(process_work_queue,data_dict,log_queue,worker_configurer,))
                         proc.start()
                         thread_list.append(proc)
                         #thread.start()
@@ -655,6 +655,7 @@ def run():
                             if not using_workers:
                                 logger.debug("[ERROR] Starting multi process non-leaf tasks but using_workers is false.")
                             logger.debug("Starting DAG_executor process for non-leaf task " + task_name)
+ 
                             payload = {
             ##rhc
                                 #"state": int(start_state),
@@ -675,7 +676,7 @@ def run():
                             # print(thread.name)
                             proc_name_prefix = "Worker_process_non-leaf_"
                             #thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=(thread_name_prefix+str(start_state)), args=(payload,))
-                            proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+str(start_state)), args=(process_work_queue,data_dict,))
+                            proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"p"+str(num_threads_created + 1)), args=(process_work_queue,data_dict,log_queue,worker_configurer,))
                             proc.start()
                             thread_list.append(proc)
                             #thread.start()
