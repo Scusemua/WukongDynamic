@@ -139,7 +139,7 @@ class DAG_executor_FanInNB(MonitorSU):
             fanin_task_name = kwargs['fanin_task_name']
 
             # rhc queue
-            if using_workers:
+            if using_workers and using_threads_not_processes:
                 #DAG_executor.work_queue.put(start_state_fanin_task)
                 logger.debug("FanInNB: using_workers: " + str(using_workers))
                 thread_work_queue.put(start_state_fanin_task)

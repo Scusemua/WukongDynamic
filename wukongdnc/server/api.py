@@ -40,7 +40,7 @@ def send_object(obj, websocket):
         websocket (socket.socket):
             Socket connected to a remote client.
     """
-    logger.debug("Will be sending a message of size %d bytes." % len(obj))
+    logger.debug("send_object: Will be sending a message of size %d bytes." % len(obj))
     
     # First, we send the number of bytes that we're going to send.
     websocket.sendall(len(obj).to_bytes(2, byteorder='big'))
@@ -65,7 +65,7 @@ def recv_object(websocket):
     incoming_size = websocket.recv(2)
     # Convert the bytes representing the size of the incoming serialized object to an integer.
     incoming_size = int.from_bytes(incoming_size, 'big')
-    logger.debug("Will receive another message of size %d bytes" % incoming_size)
+    logger.debug("recv_object: Will receive another message of size %d bytes" % incoming_size)
     data = bytearray()
     
     while len(data) < incoming_size:
@@ -75,9 +75,9 @@ def recv_object(websocket):
         if not new_data:
             break 
 
-        logger.debug("Read %d bytes from TCP server." % len(new_data))
+        logger.debug("recv_object: starting read %d bytes from TCP server." % len(new_data))
         data.extend(new_data)
-        logger.debug("Have read %d/%d bytes from TCP server." % (len(data), incoming_size))
+        logger.debug("recv_object: end-of read %d/%d bytes from TCP server." % (len(data), incoming_size))
     
     return data 
 
@@ -114,7 +114,7 @@ def synchronize_sync(websocket, op, name, method_name, state):
         "state": make_json_serializable(state),
         "id": msg_id
     }
-    logger.debug("Fan-in ID %s calling %s. Message ID=%s" % (name, op, msg_id))
+    logger.debug("synchronize_sync: Fan-in ID %s calling %s. Message ID=%s" % (name, op, msg_id))
     msg = json.dumps(message).encode('utf-8')
     send_object(msg, websocket)
     data = recv_object(websocket)               # Should just be a serialized state object.
@@ -158,7 +158,7 @@ def synchronize_async(websocket, op, name, method_name, state):
         "state": make_json_serializable(state),
         "id": msg_id
     }
-    logger.debug("Calling %s. Message ID=%s" % (op, msg_id))
+    logger.debug("synchronize_async: Calling %s. Message ID=%s" % (op, msg_id))
     msg = json.dumps(message).encode('utf-8')
     send_object(msg, websocket)
 
@@ -200,7 +200,7 @@ def synchronize_async_terminate(websocket: socket.socket, op: str, name: str, me
         "state": make_json_serializable(state),
         "id": msg_id
     }
-    logger.debug("Calling %s. Message ID=%s" % (op, msg_id))
+    logger.debug("synchronize_async_terminate: Calling %s. Message ID=%s" % (op, msg_id))
     msg = json.dumps(message).encode('utf-8')
     send_object(msg, websocket)
 
@@ -237,7 +237,7 @@ def create(websocket, op, type, name, state):
 
     # msg_id for debugging
     msg_id = str(uuid.uuid4())
-    logger.debug("Sending 'create' message to server. Op='%s', type='%s', name='%s', id='%s', state=%s" % (op, type, name, msg_id, state))
+    logger.debug("create: Sending 'create' message to server. Op='%s', type='%s', name='%s', id='%s', state=%s" % (op, type, name, msg_id, state))
 
     # we set state.keyword_arguments before call to create()
     message = {
@@ -250,7 +250,7 @@ def create(websocket, op, type, name, state):
 
     msg = json.dumps(message).encode('utf-8')
     send_object(msg, websocket)
-    logger.debug("Sent 'create' message to server")
+    logger.debug("create: Sent 'create' message to server")
 
     # Receive data. This should just be an ACK, as the TCP server will 'ACK' our create() calls.
     ack_ignored = recv_object(websocket)
@@ -281,7 +281,7 @@ def create_all_fanins_and_faninNBs(websocket, op, type, name, state):
     """
 
     msg_id = str(uuid.uuid4())
-    logger.debug("Sending 'create_all_fanins_and_faninNBs' message to server. Op='%s', type='%s', id='%s', state=%s" % (op, type, msg_id, state))
+    logger.debug("create_all_fanins_and_faninNBs: Sending 'create_all_fanins_and_faninNBs' message to server. Op='%s', type='%s', id='%s', state=%s" % (op, type, msg_id, state))
 
     # we set state.keyword_arguments before call to create()
     message = {
@@ -294,12 +294,12 @@ def create_all_fanins_and_faninNBs(websocket, op, type, name, state):
 
     msg = json.dumps(message).encode('utf-8')
     send_object(msg, websocket)
-    logger.debug("Sent 'create_all_fanins_and_faninNBs' message to server")
+    logger.debug("create_all_fanins_and_faninNBs: Sent 'create_all_fanins_and_faninNBs' message to server")
 
     # Receive data. This should just be an ACK, as the TCP server will 'ACK' our create() calls.
     ack = recv_object(websocket)
 
-    logger.debug("create_all_fanins_and_faninNBs received %d byte ack from server: %s" % (len(ack), str(ack)))
+    logger.debug("create_all_fanins_and_faninNBs: received %d byte ack from server: %s" % (len(ack), str(ack)))
 
 def close_all(websocket):
     """
@@ -312,5 +312,5 @@ def close_all(websocket):
     }
     msg = json.dumps(message).encode('utf-8')
     send_object(msg, websocket)
-    logger.debug("Sent 'close_all' message to server")    
+    logger.debug("close_all: Sent 'close_all' message to server")    
     ack_ignored = recv_object(websocket)
