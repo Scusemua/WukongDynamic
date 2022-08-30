@@ -97,7 +97,7 @@ def invoke_lambda_DAG_executor(
         Payload = payload_json) 											
     logger.info("Invoked AWS Lambda function '%s' in %f ms. Status: %s." % (function_name, (time.time() - s) * 1000.0, str(status_code)))
 
-
+"""
 def add(inp):
     logger.debug("add: " + "input: " + str(input))
     num1 = inp['inc0']
@@ -154,7 +154,9 @@ def inc1(inp):
     output = {'inc1': value}
     logger.debug("inc1 output: " + str(output))
     return output
+"""
 
+"""
 def get_leaf_task_input(name):
     if name == "inc0":
         input_tuple = (0,)
@@ -171,6 +173,8 @@ def get_DAG_leaf_task_inputs(DAG_leaf_tasks):
 		input = get_leaf_task_input(name)
 		leaf_task_inputs.append(input)
 	return leaf_task_inputs
+"""
+
 """
 import pickle
 
@@ -189,7 +193,8 @@ def input_DAG_info():
     with open('./DAG_info.pickle', 'rb') as handle:
         DAG_info = cloudpickle.load(handle)
     return DAG_info
-    
+
+"""
 def input_DAG_map():
     DAG_map = Node.DAG_map
     #with open('DAG_map', 'rb') as handle:
@@ -238,6 +243,20 @@ def input_DAG_leaf_task_start_states():
     #with open('DAG_leaf_task_start_states.pickle', 'rb') as handle:
     #DAG_leaf_task_start_states = pickle.load(handle)
     return DAG_leaf_tasks_start_states
+"""
+
+class CounterMP(object):
+    def __init__(self):
+        self.val = multiprocessing.Value('i', 0)
+
+    def increment_and_get(self, n=1):
+        with self.val.get_lock():
+            self.val.value += n
+            return self.value
+
+    @property
+    def value(self):
+        return self.val.value
 
 def run():
 	# generate DAG_map using DFS_visit
@@ -326,8 +345,6 @@ def run():
     #all_fanin_task_names = Node.all_fanin_task_names
     #all_faninNB_task_names = Node.all_faninNB_task_names
     #all_collapse_task_names = Node.all_collapse_task_names
-      
-    DAG_info = DAG_Info()
     
     """
     DAG_map = input_DAG_map()
@@ -340,6 +357,7 @@ def run():
     DAG_leaf_task_start_states = input_DAG_leaf_task_start_states()
 	"""
 
+    DAG_info = DAG_Info()
     
     DAG_map = DAG_info.get_DAG_map()
     all_fanin_task_names = DAG_info.get_all_fanin_task_names()
@@ -379,10 +397,9 @@ def run():
         print(inp)
     print() 
 
-    
+
     #ResetRedis()
     
-
     start_time = time.time()
 	
 #############################
@@ -453,6 +470,7 @@ def run():
         num_threads_created = 0
 
         if run_all_tasks_locally and not using_threads_not_processes:
+            counter = CounterMP()
             log_queue = multiprocessing.Queue(-1)
             listener = multiprocessing.Process(target=listener_process, args=(log_queue, listener_configurer))
             listener.start()
@@ -543,7 +561,7 @@ def run():
                         # print(thread.name)
                         proc_name_prefix = "Worker_leaf_"
                         #thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=(thread_name_prefix+str(start_state)), args=(payload,))
-                        proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,process_work_queue,data_dict,log_queue,worker_configurer,))
+                        proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,counter,process_work_queue,data_dict,log_queue,worker_configurer,))
                         proc.start()
                         thread_list.append(proc)
                         #thread.start()
@@ -679,7 +697,7 @@ def run():
                             # print(thread.name)
                             proc_name_prefix = "Worker_process_non-leaf_"
                             #thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=(thread_name_prefix+str(start_state)), args=(payload,))
-                            proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"p"+str(num_threads_created + 1)), args=(payload,process_work_queue,data_dict,log_queue,worker_configurer,))
+                            proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"p"+str(num_threads_created + 1)), args=(payload,counter,process_work_queue,data_dict,log_queue,worker_configurer,))
                             proc.start()
                             thread_list.append(proc)
                             #thread.start()
