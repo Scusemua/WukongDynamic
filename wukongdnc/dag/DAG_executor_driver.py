@@ -1,5 +1,7 @@
 #ToDo: All the timing stuff + close_all at the end
 # break is FN + R
+# pylint settins
+# try matrixMult
 
 import threading
 import _thread
@@ -11,28 +13,27 @@ import cloudpickle
 import socket
 
 import base64 
-from .DFS_visit import Node
-from .DFS_visit import state_info
+#from .DFS_visit import Node
+#from .DFS_visit import state_info
 #from DAG_executor_FanInNB import DAG_executor_FanInNB
 from . import DAG_executor
 from wukongdnc.server.DAG_executor_FanInNB import DAG_executor_FanInNB
 from wukongdnc.server.DAG_executor_FanIn import DAG_executor_FanIn
-#from . import DAG_executor_FanInNB
-#from . import DAG_executor_FanIn
 from .DAG_executor_State import DAG_executor_State
 from .DAG_info import DAG_Info
 from wukongdnc.server.util import make_json_serializable
 from wukongdnc.constants import TCP_SERVER_IP, REDIS_IP_PUBLIC
-from .DAG_executor_constants import run_all_tasks_locally, store_fanins_faninNBs_locally, create_all_fanins_faninNBs_on_start, using_workers, num_workers,using_threads_not_processes
+from .DAG_executor_constants import run_all_tasks_locally, store_fanins_faninNBs_locally
+from .DAG_executor_constants import create_all_fanins_faninNBs_on_start, using_workers
+from .DAG_executor_constants import num_workers,using_threads_not_processes
 from .DAG_work_queue_for_threads import thread_work_queue
 from .DAG_executor_synchronizer import server
 import uuid
 import pickle
-
 from wukongdnc.server.api import create_all_fanins_and_faninNBs
 from wukongdnc.wukong.invoker import invoke_lambda
-
 from .multiprocessing_logging import listener_configurer, listener_process, worker_configurer
+from .DAG_executor_countermp import CounterMP
 
 import logging 
 logger = logging.getLogger(__name__)
@@ -189,6 +190,7 @@ with open('filename.pickle', 'rb') as handle:
 print(a == b)
 """
 
+# Input the infomation generatd by python -m wukongdnc.dag.dask_dag
 def input_DAG_info():
     with open('./DAG_info.pickle', 'rb') as handle:
         DAG_info = cloudpickle.load(handle)
@@ -244,19 +246,6 @@ def input_DAG_leaf_task_start_states():
     #DAG_leaf_task_start_states = pickle.load(handle)
     return DAG_leaf_tasks_start_states
 """
-
-class CounterMP(object):
-    def __init__(self):
-        self.val = multiprocessing.Value('i', 0)
-
-    def increment_and_get(self, n=1):
-        with self.val.get_lock():
-            self.val.value += n
-            return self.value
-
-    @property
-    def value(self):
-        return self.val.value
 
 def run():
 	# generate DAG_map using DFS_visit
@@ -357,6 +346,13 @@ def run():
     DAG_leaf_task_start_states = input_DAG_leaf_task_start_states()
 	"""
 
+    #asserts on configuration:
+    if using_workers:
+        if not run_all_tasks_locally:
+            # running in Lambdas so no schedule of tasks on a pool of executors
+            # i.e., schedule tasks using DFS_paths
+            logger.error("Error: DAG_executor_driver: if using_workers then run_fanout_tasks_locally must also be true.")
+
     DAG_info = DAG_Info()
     
     DAG_map = DAG_info.get_DAG_map()
@@ -370,6 +366,7 @@ def run():
     DAG_tasks = DAG_info.get_DAG_tasks()
     DAG_leaf_task_inputs = DAG_info.get_DAG_leaf_task_inputs()
 
+    # FYI:
     print("DAG_map:")
     for key, value in DAG_map.items():
         print(key)
@@ -397,7 +394,6 @@ def run():
         print(inp)
     print() 
 
-
     #ResetRedis()
     
     start_time = time.time()
@@ -408,37 +404,28 @@ def run():
     
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
 
+        # synch_objects are stored in local memory or on the tcp_Server/InfinX
         if store_fanins_faninNBs_locally:
             # cannot be multiprocessing, may or may not be pooling, running all tasks locally (no Lambdas)
-            #server = DAG_executor.DAG_executor_Synchronizer()
+            # server is global variable obtained: from .DAG_executor_synchronizer import server
             if create_all_fanins_faninNBs_on_start:
+                # create fanins and faninNBs using all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes
+                # server is a global variable in DAG_executor_synchronizer.py. It is used to simulate the
+                # tcp_server when running locally.
                 server.create_all_fanins_and_faninNBs_locally(DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
         else:
-            #server = None
+            # server will be None
             logger.debug("DAG_executor_driver: Connecting to TCP Server at %s." % str(TCP_SERVER_IP))
             websocket.connect(TCP_SERVER_IP)
             logger.debug("DAG_executor_driver: Successfully connected to TCP Server.")
             if create_all_fanins_faninNBs_on_start:
+                # create fanins and faninNbs on tcp_server or in InfiniX lambdas
                 create_fanins_and_faninNBs(websocket,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
 
-        #logger.debug("Sleeping")
-        #time.sleep()
-    #ToDo: threads/multip's need websocket to send their fanins - processes do this at start of DAG_executor?
-
-        #DAG_leaf_task_inputs = get_DAG_leaf_task_inputs(DAG_leaf_tasks)
-        
+        # FYI
         logger.debug("DAG_executor_driver: DAG_leaf_tasks: " + str(DAG_leaf_tasks))
         logger.debug("DAG_executor_driver: DAG_leaf_task_start_states: " + str(DAG_leaf_task_start_states))
         logger.debug("DAG_executor_driver: DAG_leaf_task_inputs: " + str(DAG_leaf_task_inputs))
-
-#ToDo: No - no sharing
-        #if not store_fanins_faninNBs_locally:
-        #    DAG_executor.websocket = websocket
-
-        #assert:
-        if using_workers:
-            if not run_all_tasks_locally:
-                logger.error("Error: DAG_executor_driver: if using_workers then run_fanout_tasks_locally must also be true.")
 
         if using_workers and not using_threads_not_processes:
             num_DAG_tasks = len(DAG_tasks)
@@ -448,73 +435,71 @@ def run():
             process_work_queue = manager.Queue(maxsize = num_DAG_tasks)
 
         if using_workers:
-            #rhc queue
-            if using_threads_not_processes:
+            # pool of worker threads or processes that withdraw work from a work_queue
+            if using_threads_not_processes: # pool of threads
+                # leaf task states (a task is identified by its state) are put in work_queue
                 for state in DAG_leaf_task_start_states:
                     thread_work_queue.put(state)
-            else:
+            else:   # pool of processes
                 for state in DAG_leaf_task_start_states:
-                    process_work_queue.put(state)  
-            #print("work_queue:")
-            #for start_state in work_queue.queue:
-            #   print(start_state)
+                    process_work_queue.put(state)
+
+        #print("work_queue:")
+        #for start_state in X_work_queue.queue:
+        #   print(start_state)
 
         if using_workers:
+            # keep list of threads/processes in pool so we can join() them
             thread_list = []
 
-        #p = Process(target=f, args=('bob',))
-        #p.start()
-        #p.join()
-
-        #  
+        # count of threads/processes created. We will create DAG_executor_constants.py num_workers
+        # if we are using_workers. We will create some number of threads if we are simulating the 
+        # use of creating Lambdas, e.g., at fan-out points.
         num_threads_created = 0
 
         if run_all_tasks_locally and not using_threads_not_processes:
+            # multiprocessing. processes share a counter that counts the number of tasks that have been 
+            # executed
             counter = CounterMP()
+            # used by a logger for multiprocessing
             log_queue = multiprocessing.Queue(-1)
+            # used for multiprocessor logging - receives log messages from processes
             listener = multiprocessing.Process(target=listener_process, args=(log_queue, listener_configurer))
-            listener.start()
-
-        #for start_state, inp, task_name in zip(DAG_leaf_task_start_states, DAG_leaf_task_inputs, DAG_leaf_tasks):
+            listener.start()    # joined at the end
+        
+        # if we are not using lambdas, and we are not using a worker pool, create a thread for each
+        # leaf task. If we are not using lambdas but we are using a worker pool, create at least 
+        # one worker and at most num_worker workers. If we are using workers, there may be more
+        # leaf tasks than workers, but that is okay since we put all the leaf task states in the 
+        # work queue and the created workers will withdraw them.
         for start_state, task_name in zip(DAG_leaf_task_start_states, DAG_leaf_tasks):
+
+            # The state of a DAG executor contains only one application specific member, which is the
+            # state number of the task to execute. Leaf task information is in DAG_leaf_task_start_states
+            # and DAG_leaf_tasks (which are the task names).
             DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state)
             logger.debug("DAG_executor_driver: Starting DAG_executor for task " + task_name)
 
-            """
-            payload = {
-                #"start_state": start_state,
-                "input": input,
-                "DAG_executor_State": DAG_exec_state,
-                #"server": server
-            }
-                                                    
-            #invoke_lambda(payload = payload, is_first_invocation = True, n = 1, initial_permits = 0, function_name = "ComposerServerlessSync")
-            invoke_lambda(payload = payload, function_name = "DAG_executor")
-            """
-                
             if run_all_tasks_locally:
-#ToDo: if using_threads_not_processes: create thread else create processes.
-#      process will have no payload: since ne er need server, get start states from work_queue
-#      not DAG_exec_state. No input as usual.
-                if using_threads_not_processes:
+                # not using Lambdas
+                if using_threads_not_processes: # create threads
                     try:
                         if not using_workers:
+                            # pass the state/task the thread is to execute at the start of its DFS path
                             DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state)
                         else:
+                            # workers withdraw their work, i.e., starting state, from the work_queue
                             DAG_exec_state = None
                         logger.debug("DAG_executor_driver: Starting DAG_executor thread for leaf task " + task_name)
                         payload = {
-        ##rhc
-                            #"state": int(start_state),
-                            # DAG_executor does input = payload['input'] so input is ['input': inp]; this is passed to the executed task using:
-                            #    def execute_task(task_name,input): output = Node.DAG_tasks[task_name](input)
-                            # So the executed task gets ['input': inp], just like a non-leaf task gets ['output': X]. For leaf tasks, we use "input"
-                            # as the label for the value.
-                            #"input": {'input': inp},
-                            #"input": inp,
-                            "DAG_executor_State": DAG_exec_state,
-                            #"DAG_info": DAG_info,
-                            #"server": server        # may be None
+                            # What's not in the payload: DAG_info: since threads/processes read this pickled 
+                            # file at the start of their execution. server: since this is a global variable
+                            # for the threads and processes. for processes it is Non since processes send
+                            # messages to the tcp_server, and tgus do not use the server object, which is 
+                            # used to simulate the tcp_server when running locally. Input: threads and processes
+                            # get their input from the data_dict. Note the lambdas will be invoked with their 
+                            # input in the payload and will put this input in their local data_dict.
+                            "DAG_executor_State": DAG_exec_state
                         }
                         # Note:
                         # get the current thread instance
@@ -530,11 +515,10 @@ def run():
                             thread_list.append(thread)
                         thread.start()
                         num_threads_created += 1
-                        #_thread.start_new_thread(DAG_executor.DAG_executor_task, (payload,))
                     except Exception as ex:
                         logger.debug("[ERROR] DAG_executor_driver: Failed to start DAG_executor thread for state " + start_state)
                         logger.debug(ex)
-                else:
+                else:   # multiprocessing - must be using a process pool
                     try:
                         if not using_workers:
                             logger.debug("[ERROR] DAG_executor_driver: Starting multi process leaf tasks but using_workers is false.")
@@ -542,25 +526,12 @@ def run():
                         logger.debug("DAG_executor_driver: Starting DAG_executor process for leaf task " + task_name)
      
                         payload = {
-        ##rhc
-                            #"state": int(start_state),
-                            # DAG_executor does input = payload['input'] so input is ['input': inp]; this is passed to the executed task using:
-                            #    def execute_task(task_name,input): output = Node.DAG_tasks[task_name](input)
-                            # So the executed task gets ['input': inp], just like a non-leaf task gets ['output': X]. For leaf tasks, we use "input"
-                            # as the label for the value.
-                            #"input": {'input': inp},
-                            #"input": inp,
-                            #"DAG_executor_State": DAG_exec_state,
-                            #"DAG_info": DAG_info,
-                            #"server": server        # may be None
+                            # no payload. We do not need DAG_executor_state since worker processes withdraw
+                            # states from the work_queue
                         }
-                        # Note:
-                        # get the current thread instance
-                        # thread = current_thread()
-                        # report the name of the thread
-                        # print(thread.name)
                         proc_name_prefix = "Worker_leaf_"
-                        #thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=(thread_name_prefix+str(start_state)), args=(payload,))
+                        # processes share these objects: counter,process_work_queue,data_dict,log_queue,worker_configurer.
+                        # The worker_configurer() funcion is used for multiprocess logging
                         proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,counter,process_work_queue,data_dict,log_queue,worker_configurer,))
                         proc.start()
                         thread_list.append(proc)
@@ -572,31 +543,30 @@ def run():
                         logger.debug(ex)     
 
                 if using_workers and num_threads_created == num_workers:
-                    break 
+                    break
             else:
                 try:
-                    logger.debug("DAG_executor_driver: Starting DAG_executor thread for leaf task " + task_name)
+                    logger.debug("DAG_executor_driver: Starting DAG_executor lambda for leaf task " + task_name)
                     lambda_DAG_executor_State = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state)
-                    logger.debug ("DAG_executor_driver: payload is " + str(start_state) + "," + str(inp))
+                    logger.debug ("DAG_executor_driver: lambda payload is " + str(start_state) + "," + str(inp))
                     lambda_DAG_executor_State.restart = False      # starting new DAG_executor in state start_state_fanin_task
                     lambda_DAG_executor_State.return_value = None
                     lambda_DAG_executor_State.blocking = False            
                     logger.info("DAG_executor_driver: Starting Lambda function %s." % lambda_DAG_executor_State.function_name)
-                    #logger.debug("lambda_DAG_executor_State: " + str(lambda_DAG_executor_State))
+ 
                     payload = {
-    ##rhc
-                        #"state": int(start_state),
                         "input": {'input': inp},
                         "DAG_executor_State": lambda_DAG_executor_State,
                         "DAG_info": DAG_info
-                        #"server": server   # used to mock server during testing
                     }
-                    ###### DAG_executor_State.function_name has not changed
+
                     invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor")
                 except Exception as ex:
                     logger.debug("[ERROR] DAG_executor_driver: Failed to start DAG_executor Lambda.")
-                    logger.debug(ex)     
-        """ verify results: this is synch, but no synch yet for synch objects stored in Lambdas - so comment out for lambda version
+                    logger.debug(ex)
+
+        """ verify results: this is a synch-op, but no synch-op implemented yet for synch objects stored in Infinix Lambdas
+            so commented out for lambda version
         
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
             print("Connecting to " + str(TCP_SERVER_IP))
@@ -637,38 +607,29 @@ def run():
 
         """	
 
+        # if the number of leaf tasks is less than number_workers, we need to create more workers
         if using_workers and num_threads_created < num_workers:
-            # starting leaf tasks did not start num_workers threads so start num_workers-num_threads_created
-            # more threads/processes
+            # starting leaf tasks did not start num_workers workers so start num_workers-num_threads_created
+            # more threads/processes.
             while True:
-                logger.debug("DAG_executor_driver: Starting DAG_executor for non-leaf task ")
+                logger.debug("DAG_executor_driver: Starting DAG_executor for non-leaf task.")
                 if run_all_tasks_locally:
                     if using_threads_not_processes:
                         try:
-                            # Workers so not use their start_state; they get it from the work_queue
+                            # Using workers so do not pass to them a start_state (use state = 0); 
+                            # they get their start state from the work_queue
                             DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = 0)
                             logger.debug("DAG_executor_driver: Starting DAG_executor worker for non-leaf task " + task_name)
                             payload = {
-            ##rhc
-                                #"state": int(start_state),
-                                # DAG_executor does input = payload['input'] so input is ['input': inp]; this is passed to the executed task using:
-                                #    def execute_task(task_name,input): output = Node.DAG_tasks[task_name](input)
-                                # So the executed task gets ['input': inp], just like a non-leaf task gets ['output': X]. For leaf tasks, we use "input"
-                                # as the label for the value.
-                                # non-leaf local-running workers do not use this input
-                                #"input": None,
-                                "DAG_executor_State": DAG_exec_state,
-                                #"DAG_info": DAG_info,
-                                #"server": server
+                                "DAG_executor_State": DAG_exec_state
                             }
                             thread_name_prefix = "Worker_thread_non-leaf_"
                             thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=(thread_name_prefix+str(start_state)), args=(payload,))
                             thread_list.append(thread)
                             thread.start()
                             num_threads_created += 1
-                            #_thread.start_new_thread(DAG_executor.DAG_executor_task, (payload,))
                         except Exception as ex:
-                            logger.debug("[ERROR] DAG_executor_driver: Failed to start DAG_executor thread for non-leaf task " + task_name)
+                            logger.debug("[ERROR] DAG_executor_driver: Failed to start DAG_executor worker thread for non-leaf task " + task_name)
                             logger.debug(ex)
                     else:
                         try:
@@ -678,33 +639,14 @@ def run():
                             logger.debug("DAG_executor_driver: Starting DAG_executor process for non-leaf task " + task_name)
  
                             payload = {
-            ##rhc
-                                #"state": int(start_state),
-                                # DAG_executor does input = payload['input'] so input is ['input': inp]; this is passed to the executed task using:
-                                #    def execute_task(task_name,input): output = Node.DAG_tasks[task_name](input)
-                                # So the executed task gets ['input': inp], just like a non-leaf task gets ['output': X]. For leaf tasks, we use "input"
-                                # as the label for the value.
-                                #"input": {'input': inp},
-                                #"input": inp,
-                                #"DAG_executor_State": DAG_exec_state,
-                                #"DAG_info": DAG_info,
-                                #"server": server        # may be None
                             }
-                            # Note:
-                            # get the current thread instance
-                            # thread = current_thread()
-                            # report the name of the thread
-                            # print(thread.name)
                             proc_name_prefix = "Worker_process_non-leaf_"
-                            #thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=(thread_name_prefix+str(start_state)), args=(payload,))
                             proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"p"+str(num_threads_created + 1)), args=(payload,counter,process_work_queue,data_dict,log_queue,worker_configurer,))
                             proc.start()
                             thread_list.append(proc)
-                            #thread.start()
-                            num_threads_created += 1
-                            #_thread.start_new_thread(DAG_executor.DAG_executor_task, (payload,))                       
+                            num_threads_created += 1                      
                         except Exception as ex:
-                            logger.debug("[ERROR] DAG_executor_driver: Failed to start DAG_executor process for non-leaf task " + task_name)
+                            logger.debug("[ERROR] DAG_executor_driver: Failed to start DAG_executor worker process for non-leaf task " + task_name)
                             logger.debug(ex)
 
                     if using_workers and num_threads_created == num_workers:
@@ -712,64 +654,39 @@ def run():
                 else:
                     logger.error("DAG_executor_driver: worker (pool) threads/processes must run locally (no Lambdas)")
 
-        #logger.debug("Sleeping")
-        #time.sleep(1)
-
-        logger.debug("DAG_executor_driver: joining workers.")
         if using_workers:
+            logger.debug("DAG_executor_driver: joining workers.")
             for thread in thread_list:
                 thread.join()	
 
-        logger.debug("DAG_executor_driver: joining log_queue listener.")
         if run_all_tasks_locally and not using_threads_not_processes:
+            # using processes
+            logger.debug("DAG_executor_driver: joining log_queue listener.")
             log_queue.put_nowait(None)
             listener.join()
-
-            #rhc queue
-            #print("work_queue:")
-            # Should be a -1 in the queue
-            #for state in work_queue.queue:
-                #print(state) 
 
         stop_time = time.time()
         duration = stop_time - start_time
 
-        print("Job finished in %f seconds." % duration)
+        print("DAG_Execution finished in %f seconds." % duration)
 
         logger.debug("num_threads_created: " + str(num_threads_created))
         logger.debug("Sleeping")
         time.sleep(0.1)
 		
-#ToDo:  close_all(websocket)
-			
-									
-												
+    #ToDo:  close_all(websocket)
+										
 def create_fanins_and_faninNBs(websocket,DAG_map,DAG_states,DAG_info,all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes):										
-    """
-    all_fanins = []
-    all_fanin_sizes = []
-    for key in DAG_map:
-        state_info = DAG_map[key]
-        all_fanins = all_fanins + state_info.fanins
-        all_fanin_sizes = all_fanin_sizes + state_info.fanin_sizes
-												
-    all_faninNBs = []
-    all_faninNB_sizes = []
-    for key in DAG_map:
-        state_info = DAG_map[key]
-        all_faninNBs = all_faninNBs + state_info.faninNBs
-        all_faninNB_sizes = all_faninNB_sizes + state_info.faninNB_sizes
-	"""
 
     fanin_messages = []
-    #for fanin_name, size in [(fanin_name,size) for fanin_name in all_fanins for size in all_fanin_sizes]:
+
+    # create a list of "create" messages, one for each fanin
     for fanin_name, size in zip(all_fanin_task_names,all_fanin_sizes):
         dummy_state = DAG_executor_State()
+        # we will create the fanin object and call fanin.init(**keyword_arguments)
         dummy_state.keyword_arguments['n'] = size
-        # these are used by FanInNB's
-        #dummy_state.keyword_arguments['start_state_fanin_task'] = DAG_states[fanin_name] 
-        #dummy_state.keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally    
         msg_id = str(uuid.uuid4())	# for debugging
+
         message = {
             "op": "create",
             "type": "DAG_executor_FanIn",
@@ -780,16 +697,24 @@ def create_fanins_and_faninNBs(websocket,DAG_map,DAG_states,DAG_info,all_fanin_t
         fanin_messages.append(message)
 
     faninNB_messages = []
-    #for fanin_nameNB, size in [(fanin_nameNB,size) for fanin_nameNB in all_faninNBs for size in all_faninNB_sizes]:
+
+     # create a list of "create" messages, one for each fanin
     for fanin_nameNB, size in zip(all_faninNB_task_names,all_faninNB_sizes):
         dummy_state = DAG_executor_State()
+        # passing to the fninNB object:
+        # it size
         dummy_state.keyword_arguments['n'] = size
+        # when the faninNB completes, if we are runnning locally and we are not pooling,
+        # we start a new thread to execute the fanin task. If we are thread pooling, we put the 
+        # start state in the work_queue. If we are using lambdas, we invoke a lambda to
+        # execute the fanin task. If we are process pooling, then the last process to 
+        # call fanin will put the start state of the fanin task in the work_queue. (FaninNb
+        # cannot do this since the faninNB will be on the tcp_server.)
         dummy_state.keyword_arguments['start_state_fanin_task'] = DAG_states[fanin_name]
-        ####################################################################
         dummy_state.keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
-        ####################################################################
         dummy_state.keyword_arguments['DAG_info'] = DAG_info
         msg_id = str(uuid.uuid4())
+
         message = {
             "op": "create",
             "type": "DAG_executor_FanInNB",
@@ -801,15 +726,14 @@ def create_fanins_and_faninNBs(websocket,DAG_map,DAG_states,DAG_info,all_fanin_t
 
     # msg_id for debugging
     msg_id = str(uuid.uuid4())
-    logger.debug("Sending 'create_all' message to server")
+    logger.debug("Sending a 'create_all' message to server.")
     messages = (fanin_messages,faninNB_messages)
-    # we set state.keyword_arguments before call to create()
-
     dummy_state = DAG_executor_State()
     create_all_fanins_and_faninNBs(websocket, "create_all_fanins_and_faninNBs", "DAG_executor_fanin_or_faninNB", 
         messages, dummy_state)
 
-    """
+    """ create_all_fanins_and_faninNBs creates:
+
     message = {
         "op": "create_all_fanins_and_faninNBs",
         "type": "DAG_executor_fanin_or_faninNB",
@@ -817,19 +741,23 @@ def create_fanins_and_faninNBs(websocket,DAG_map,DAG_states,DAG_info,all_fanin_t
         "state": make_json_serializable(dummy_state),
         "id": msg_id
     }
-												
+
+	Then does:	
+
     msg = json.dumps(message).encode('utf-8')
     send_object(msg, websocket)
     logger.debug("Sent 'create_all_fanins_and_faninNBs' message to server")
 
-    # Receive data. This should just be an ACK, as the TCP server will 'ACK' our create_all() call.
+    # Receive data. This should just be an ACK, as the TCP server will 'ACK' our create_all_fanins_and_faninNBs() call.
     ack = recv_object(websocket)
     """
 
 def lambda_handler(event, context):
     start_time = time.time()
     rc = redis.Redis(host = REDIS_IP_PRIVATE, port = 6379)
+
     logger.debug("Invocation received. event/payload: " + str(event))
+
     logger.debug("Starting DAG_executor: payload is: " + str(event))
 
     DAG_executor.DAG_executor(event)

@@ -3,6 +3,10 @@ import uuid
 # Class State represents the state of a running serverless function. State objects 
 # are pickeled and sent to the server. The server can then restart a serverless
 # function by invoking the function and passing the function its saved state.
+#
+# The DAG_executor has only one application specific member, which is "state."
+# This is the state of the DAG task to be excuted.
+
 class DAG_executor_State(object):
     def __init__(
         self, 

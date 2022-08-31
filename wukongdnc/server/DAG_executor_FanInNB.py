@@ -138,12 +138,19 @@ class DAG_executor_FanInNB(MonitorSU):
             # for debugging
             fanin_task_name = kwargs['fanin_task_name']
 
-            # rhc queue
             if using_workers and using_threads_not_processes:
-                #DAG_executor.work_queue.put(start_state_fanin_task)
-                logger.debug("FanInNB: using_workers: " + str(using_workers))
+                # if using worker pools of threads, add fanin task's state to the work_queue.
+                # Note: if we are using worker pools of processes, then the process will call fan_in and
+                # the last process to execute fanin will put the fanin task's state in the
+                # work_queue. This last process does not become the fanin task, as this is a
+                # faninNB (No Become). This FaninNB is running on he tcp_server, as multiprocessing
+                # requires pools to be process pools, not thread pools, and it requires synch objects
+                # to be stored on the tcp_server or InfiniX lambdas, so this faninNB cannot start
+                # a new thread/process or add a sate to the processes work_queue.
+                logger.debug("FanInNB: using_workers and threads so add start state of fanin task to thread_work_queue.")
                 thread_work_queue.put(start_state_fanin_task)
             else:
+                # 
                 if self.store_fanins_faninNBs_locally and run_all_tasks_locally:
                     try:
                         logger.debug("FanInNB: starting DAG_executor thread for task " + fanin_task_name + " with start state " + str(start_state_fanin_task))

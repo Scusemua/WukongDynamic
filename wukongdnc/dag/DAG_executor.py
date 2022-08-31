@@ -32,7 +32,7 @@ from threading import RLock
 import logging.handlers
 import multiprocessing
 from .multiprocessing_logging import worker_configurer
-import logging 
+import logging
 
 logger = None
 if run_all_tasks_locally and using_threads_not_processes:
@@ -100,7 +100,7 @@ def inc1(inp):
 """
 
 websocket = None
-				 
+
 def create_and_faninNB_task_locally(kwargs):
     logger.debug("create_and_faninNB_task: call create_and_faninNB_locally")
     server = kwargs['server']
@@ -130,7 +130,7 @@ def create_and_faninNB_remotely(websocket,**keyword_arguments):
     pass
 
 def faninNB_remotely(websocket,**keyword_arguments):
-    # create new faninNB with specified name if it hasn't been created 
+    # create new faninNB with specified name if it hasn't been created
     #fanin_task_name = keyword_arguments['fanin_task_name']
     #n = keyword_arguments['n']
     #start_state_fanin_task = keyword_arguments['start_state_fanin_task']
@@ -145,12 +145,12 @@ def faninNB_remotely(websocket,**keyword_arguments):
     logger.debug ("faninNB_remotely: calling_task_name: " + keyword_arguments['calling_task_name'] + "calling faninNB with fanin_task_name: " + keyword_arguments['fanin_task_name'])
     #logger.debug("faninNB_remotely: DAG_executor_state.keyword_arguments[fanin_task_name]: " + str(DAG_executor_state.keyword_arguments['fanin_task_name']))
     #FanInNB = server.synchronizers[fanin_task_name]
-    
+
     # Note: in real code, we would return here so caller can quit, letting server do the op.
-    # Here, we can just wait for op to finish, then return. Caller has nothing to do but 
+    # Here, we can just wait for op to finish, then return. Caller has nothing to do but
     # quit since nothing to do after a fanin.
 
-    # return is: None, restart, where restart is always 0 and return_value is None; and makes no change to DAG_executor_State	
+    # return is: None, restart, where restart is always 0 and return_value is None; and makes no change to DAG_executor_State
     #return_value, restart = FanInNB.fan_in(**keyword_arguments)
     #ToDo:
     DAG_exec_state = DAG_executor_State()
@@ -176,30 +176,30 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
     logger.debug("process_faninNBs")
 	# There may be multiple faninNBs; we cannot become one, by definition.
 	# Note: This thread cannot become since it may need to become a fanout.
-	# Or: faninNB is asynch wo/terminate, so create a thread that does the 
+	# Or: faninNB is asynch wo/terminate, so create a thread that does the
 	# stuff in DES.create_and_fanin(), and this thread keeps going
 	# Note: For real version, DAG_executor task is a Lambda? or thread of a Lambda?
 	#       Do we want faninNB to run as a thread of this current Lambda? with other
 	#       faninNB threads and fanout become threads? Or always start a new Lambda?
     #       Or make that decision based on this Lammba's load?
-  
+
     #ToDo: not passing State to FanIn, we set it after return?
     # No changes to State - this is asynch we get no State back, but we do pass it for asynch ops
     # in general since they can be asynch w/terminate and restart
     # for name, n in [(name,n) for name in faninNBs for n in faninNB_sizes]:
     for name, n in zip(faninNBs,faninNB_sizes):
 
-        # create new faninNB with specified name if it hasn't been created  
+        # create new faninNB with specified name if it hasn't been created
         start_state_fanin_task  = DAG_states[name]
         # The FanINNB fan_in will change the (start) state of the DAG_exec_state. (We are making the exact same change here
         # so these assignments to state are redunadant. If this is part of a local test (any (remote) lambda created will have its own DAG_executor_State)
-        # then we need a new DAG_exec_state for the FanInNB; otherwise, the DAG_exec_state of the become task of the fanouts and the 
-        # DAG_exec_state of the new thread that will execute the faninNB task (i.e., after the fan_in completes) will share the same 
+        # then we need a new DAG_exec_state for the FanInNB; otherwise, the DAG_exec_state of the become task of the fanouts and the
+        # DAG_exec_state of the new thread that will execute the faninNB task (i.e., after the fan_in completes) will share the same
         # DAG_exec_state object, and changing the state for the fanout and for the faninNB task is a race condition. Do create a new
         # DAG_exec_state object for the faninNB to eliminate the possibility of sharing.
-  
+
  #ToDo: else:
-       	# keyword_arguments['state'] = 
+       	# keyword_arguments['state'] =
         keyword_arguments = {}
         keyword_arguments['fanin_task_name'] = name
         keyword_arguments['n'] = n
@@ -211,7 +211,7 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
         keyword_arguments['server'] = server
         keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
         keyword_arguments['DAG_info'] = DAG_info
-	 
+
 		#Q: kwargs put in DAG_executor_State keywords and on server it gets keywords from state and passes to create and fanin
 
         if store_fanins_faninNBs_locally:
@@ -279,7 +279,7 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
                     except Exception as ex:
                         logger.debug("FanInNB:[ERROR] Failed to start DAG_executor thread.")
                         logger.debug(ex)
-                return 1		
+                return 1
     # return value not used; will process any fanouts next; no change to DAG_executor_State
     return 0
 
@@ -289,23 +289,23 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
 #def process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State, output, DAG_info, server):
 def process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State, output, DAG_info, server, work_queue):
     logger.debug("process_fanouts, length is " + str(len(fanouts)))
-    
-    #process become task 
+
+    #process become task
     become_task = fanouts[0]
     logger.debug("fanout for " + calling_task_name + "become_task is " + become_task)
-    # Note:  We will keep using DAG_exec_State for the become task. If we are running everything on a single machine, i.e., 
+    # Note:  We will keep using DAG_exec_State for the become task. If we are running everything on a single machine, i.e.,
     # no server or Lambdas, then faninNBs should use a new DAG_exec_State. Fanins and fanouts/faninNBs are mutually exclusive
-    # so, e.g., the become fanout and a fanin cannot use the same DAG_exec_Stat. Same for a faninNb and a fanin, at least 
+    # so, e.g., the become fanout and a fanin cannot use the same DAG_exec_Stat. Same for a faninNb and a fanin, at least
     # as long as we do not generate faninNBs and a fanin for the same state/task. We could optimize so that we can have
     # a fanin (with a become task and one or more faninNBs.
-    become_start_state = DAG_states[become_task]  
+    become_start_state = DAG_states[become_task]
     # change state for this thread so that this thread will become the new task, i.e., execute another iteration with the new state
     DAG_exec_State.state = DAG_states[become_task]
 
-    logger.debug ("fanout for " + calling_task_name + " become_task state is " + str(become_start_state))  
+    logger.debug ("fanout for " + calling_task_name + " become_task state is " + str(become_start_state))
     fanouts.remove(become_task)
     logger.debug("new fanouts after remove:" + str(fanouts))
-    
+
     # process rest of fanins
     logger.debug("run_all_tasks_locally:" + str(run_all_tasks_locally))
     for name in fanouts:
@@ -326,7 +326,7 @@ def process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State, outp
                     logger.debug ("fanout payload for " + name + " is " + str(fanout_task_start_state) + "," + str(output))
                     payload = {
     ##rhc
-                        #"state": fanout_task_start_state, 
+                        #"state": fanout_task_start_state,
                         #rhc task_inputs
                         "input": output,
                         "DAG_executor_State": task_DAG_executor_State,
@@ -346,7 +346,7 @@ def process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State, outp
                     logger.debug ("payload is " + str(fanout_task_start_state) + "," + str(output))
                     lambda_DAG_executor_State.restart = False      # starting new DAG_executor in state start_state_fanin_task
                     lambda_DAG_executor_State.return_value = None
-                    lambda_DAG_executor_State.blocking = False            
+                    lambda_DAG_executor_State.blocking = False
                     logger.info("Starting Lambda function %s." % lambda_DAG_executor_State.function_name)
                     #logger.debug("lambda_DAG_executor_State: " + str(lambda_DAG_executor_State))
                     payload = {
@@ -361,15 +361,15 @@ def process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State, outp
                     invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor")
                 except Exception as ex:
                     logger.error("FanInNB:[ERROR] Failed to start DAG_executor Lambda.")
-                    logger.debug(ex)       
-  
+                    logger.debug(ex)
+
     return become_start_state
 
 def create_and_fanin_remotely(websocket,DAG_exec_state,**keyword_arguments):
     pass
 
 def fanin_remotely(websocket, DAG_exec_state,**keyword_arguments):
-    # create new faninNB with specified name if it hasn't been created 
+    # create new faninNB with specified name if it hasn't been created
     #fanin_task_name = keyword_arguments['fanin_task_name']
     #n = keyword_arguments['n']
     #start_state_fanin_task = keyword_arguments['start_state_fanin_task']
@@ -383,9 +383,9 @@ def fanin_remotely(websocket, DAG_exec_state,**keyword_arguments):
     logger.debug ("fanin_remotely: calling_task_name: " + keyword_arguments['calling_task_name'] + "calling fanin with fanin_task_name: " + keyword_arguments['fanin_task_name'])
 
     #FanInNB = server.synchronizers[fanin_task_name]
-    
+
     # Note: in real code, we would return here so caller can quit, letting server do the op.
-    # Here, we can just wait for op to finish, then return. Caller has nothing to do but 
+    # Here, we can just wait for op to finish, then return. Caller has nothing to do but
     # quit since nothing to do after a fanin.
 
     # return is: None, restart, where restart is always 0 and return_value is None; and makes no change to DAG_executor_State	
@@ -408,7 +408,7 @@ def process_fanins(websocket,fanins, faninNB_sizes, calling_task_name, DAG_state
     # with the fanin results for the other tasks that fanin. We will add our results in create_and_fanin
     # using return_value[calling_task_name] = output[calling_task_name], which is add our results from output
     # to those returned by the fanin.
-    
+
     keyword_arguments = {}
     logger.debug(str(fanins))
     keyword_arguments['fanin_task_name'] = fanins[0]
@@ -473,13 +473,13 @@ def process_fanins(websocket,fanins, faninNB_sizes, calling_task_name, DAG_state
 		...
    		status_code = lambda_client.invoke( FunctionName = function_name, InvocationType = 'Event', Payload = payload_json) 
 """
-# where handler does: 
+# where handler does:
 #	state = cloudpickle.loads(base64.b64decode(event["state"]))
 """
     if target == "Composer":
         composer = Composer(state = state)
         composer.execute()
-		
+        
 	Note: We can call DAG_execute(state)
 """
 
@@ -542,7 +542,7 @@ def DAG_executor_work_loop(logger, server, counter, work_queue, DAG_executor_sta
             ##state_info = DAG_info.DAG_map[state]
             logger.debug("state_info: " + str(state_info))
             logger.debug("execute task: " + state_info.task_name)
-            
+
             # Example:
             # 
             # task = (func_obj, "task1", "task2", "task3")
@@ -805,6 +805,8 @@ def DAG_executor_task(payload):
     
 	
 def main():
+
+    """
 	# generate DAG_map using DFS_visit
     n1 = Node(None,None,"inc0",inc0)
     n3 = Node(None,None,"triple",triple)
@@ -836,6 +838,7 @@ def main():
     n5.generate_ops()
     n6.generate_ops()
     n7.generate_ops()
+    """
 	
     logger.debug("DAG_map:")
     for key, value in Node.DAG_map.items():

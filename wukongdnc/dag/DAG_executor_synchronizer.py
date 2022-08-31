@@ -16,10 +16,9 @@ ch.setFormatter(formatter)
 
 logger.addHandler(ch)
 
-# This is taking role of server. Singleton.
+# This is taking the role of the tcp_server when synch objects are stored locally. 
+# It is a global singleton.
 class DAG_executor_Synchronizer(object):
-    #synchronizers =  {} 
-    #mutex =  RLock()
     def __init__(self):
         self.synchronizers =  {}
         self.mutex =  RLock() 
@@ -243,24 +242,8 @@ class DAG_executor_Synchronizer(object):
         return 0
         
     def create_all_fanins_and_faninNBs_locally(self,DAG_map,DAG_states,DAG_info,all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes):
-        """
-        all_fanins = []
-        all_fanin_sizes = []
-        for key in DAG_map:
-            state_info = DAG_map[key]
-            all_fanins = all_fanins + state_info.fanins
-            all_fanin_sizes = all_fanin_sizes + state_info.fanin_sizes
-                                                    
-        all_faninNBs = []
-        all_faninNB_sizes = []
-        for key in DAG_map:
-            state_info = DAG_map[key]
-            all_faninNBs = all_faninNBs + state_info.faninNBs
-            all_faninNB_sizes = all_faninNB_sizes + state_info.faninNB_sizes
-        """
                                                             
         fanin_messages = []
-        #for fanin_name, size in [(fanin_name,size) for fanin_name in all_fanin_task_names for size in all_fanin_sizes]:
         for fanin_name, size in zip(all_fanin_task_names,all_fanin_sizes):
             dummy_state = DAG_executor_State()
 			# keywword_argumments used in init()
@@ -277,7 +260,6 @@ class DAG_executor_Synchronizer(object):
             fanin_messages.append(message)
 
         faninNB_messages = []
-        #for fanin_nameNB, size in [(fanin_nameNB,size) for fanin_nameNB in all_faninNB_task_names for size in all_faninNB_sizes]:
         for fanin_nameNB, size in zip(all_faninNB_task_names,all_faninNB_sizes):
             dummy_state = DAG_executor_State()
 			# keywword_argumments used in init()

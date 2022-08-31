@@ -1,6 +1,27 @@
+# Configuraion:
+#
+# True if we are not using Lambdas, i.e., executing tasks with threads or processes
+# locall, i.e., on one machine.
 run_all_tasks_locally = True         # vs remotely (in Lambdas)
-store_fanins_faninNBs_locally = False    # vs remotely
+# True if synch objects are stored locally, i.e., in the memory of the single
+# machine on which the threads are executing.  If we are using multiprocessing
+# or Lambdas, this must be False. When False, the synch objects are stored
+# on the tcp_server or in InfiniX lambdas.
+store_fanins_faninNBs_locally = True    # vs remotely
+# True when all FanIn and FanInNB objects are created locally or on the
+# tcp_server or IniniX all at once at the start of the DAG execution. If
+# False, synch objects are created on the fly, i.e, we execute create-and-fanin
+# operations that create a synch object if it has not been created yet and then
+# execute a Fan_in operaation on the created object.
 create_all_fanins_faninNBs_on_start = True
+# True if the DAG is executed by a "pool" of threads/processes. False, if we are
+# using Lambdas or we are using threads to simulate the use of Lambdas. In the latter
+# case, instead of, e.g., starting a Lambda at fan_out operations, we start a thread.
+# This results in the creation of many threads and is only use to test the logic 
+# of the Lambda code.
 using_workers = True
-using_threads_not_processes = False
-num_workers = 1
+# True when we ae not using Lambas and tasks are executed by threads instead of processes. 
+# False when we are not using lambdas and are using multiprocesssing 
+using_threads_not_processes = True
+# When using_workers, this is how many threads or processes in the pool.
+num_workers = 3
