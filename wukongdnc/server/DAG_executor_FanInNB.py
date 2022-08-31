@@ -43,7 +43,7 @@ class DAG_executor_FanInNB(MonitorSU):
         # For faninNB, results are collected in a nmap of task_name to result
         self._results = {} # fan_in results of executors
         self._go = self.get_condition_variable(condition_name = "go")
-    
+
     @property
     def n(self):
         return self._n 

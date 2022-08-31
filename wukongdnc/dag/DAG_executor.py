@@ -167,6 +167,9 @@ def faninNB_remotely(websocket,**keyword_arguments):
     DAG_exec_state.keyword_arguments['DAG_info'] = keyword_arguments['DAG_info']
     DAG_exec_state.return_value = None
     DAG_exec_state.blocking = False
+
+#ToDo: when using lambdas, so faninNB will start a lmabda to execute the fanin task, we can use 
+# an asynch call since we ignore the return value?'
     DAG_exec_state = synchronize_sync(websocket, "synchronize_sync", keyword_arguments['fanin_task_name'], "fan_in", DAG_exec_state)
     return DAG_exec_state
 
@@ -479,7 +482,7 @@ def process_fanins(websocket,fanins, faninNB_sizes, calling_task_name, DAG_state
     if target == "Composer":
         composer = Composer(state = state)
         composer.execute()
-        
+
 	Note: We can call DAG_execute(state)
 """
 

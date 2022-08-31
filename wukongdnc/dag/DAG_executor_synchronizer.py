@@ -44,7 +44,7 @@ class DAG_executor_Synchronizer(object):
 		# used by FanInNB:
         # run_faninNB_task_on_server = keyword_arguments['run_faninNB_task_on_server']  # option set in DAG_executor
   
-        # create_and_fan_in op must be atomic (as will be on server, with many client callers)
+        # check_for_object_and_create_i_not_there must be atomic (as will be on server, with many client callers)
         self.mutex.acquire()
 
         inmap = fanin_task_name in self.synchronizers
@@ -58,7 +58,12 @@ class DAG_executor_Synchronizer(object):
 				+ " DAG_executor_Synchronizer: create_and_fanin: create caching new fanin with name '%s'" % (fanin_task_name))
             logger.debug(" DAG_executor_Synchronize: create_and_fanin: create caching new fanin with name '%s'" % (fanin_task_name))
             self.synchronizers[fanin_task_name] = FanIn # Store Synchronizer object.
-        
+
+        # chck and possibly create the object is atomic; the call to fan_in the follows does not need
+        # to be atomic with the create. If two callers attempt the first create for FanIn F, one caller
+        # may create F and the other caller may execute its fan_in operation first.
+        self.mutex.release()
+
         inmap = fanin_task_name in self.synchronizers  
         logger.debug ("calling_task_name: " + calling_task_name + " fanin_task_name: " + fanin_task_name + " inmap: " + str(inmap))
         FanIn = self.synchronizers[fanin_task_name]  
@@ -86,12 +91,17 @@ class DAG_executor_Synchronizer(object):
             DAG_exec_state.return_value = return_value
             DAG_exec_state.blocking = False 
 			
-        self.mutex.release()
 		# This is returned to process_fanin which returns it to DAG_executor; DAG_executtor will look at blocking
 		# and if not blocking the return_value to get the input as if not blocking then becomes fanin task.
         return DAG_exec_state
 
-   # This is for fanin, which can be a try_fanin.
+    # This is for fanin, which can be a try_fanin. Note, however, that even though try_fan_in will
+    # return True when the caller is not the last, i.e., the become task, the call to fan_in will
+    # not block, fan_n will return 0 to the caller. For DAG_executor, thus, there is no need to
+    # call try_fan_in, we can simply call fan_in and check the return_value. If we are not using a 
+    # thread/process pool the DAG_executor thread/process can terminate. If a pool is being used, the
+    # thread/process can get more work from the work_queue.
+
     # faninNB is asynch and w/always terminate
     # ToDo: If we create all fanins/faninNBs at beginning then we can just call the usual fan_in method 
     #       and don't need a lock.
@@ -100,7 +110,7 @@ class DAG_executor_Synchronizer(object):
 
         # create new faninNB with specified name if it hasn't been created 
 		# Here are the keyword arguments:
-        #fanin_task_name = keyword_arguments['fanin_task_name']
+        # fanin_task_name = keyword_arguments['fanin_task_name']
         #n = keyword_arguments['n']	# size
 		# used by FanInNB:
         #start_state_fanin_task = keyword_arguments['start_state_fanin_task']
@@ -111,21 +121,27 @@ class DAG_executor_Synchronizer(object):
         #server = keyword_arguments['server']
 		# used by FanInNB:
         # store_fanins_faninNBs_locally = keyword_arguments['store_fanins_faninNBs_locally']  # option set in DAG_executor
-     
+
         logger.debug ("calling_task_name: " + keyword_arguments['calling_task_name'] + " calling fanin for " + " fanin_task_name: " + keyword_arguments['fanin_task_name'])
         FanIn = self.synchronizers[keyword_arguments['fanin_task_name']]  
-        
-        # call fanin
+
+        # Note: fan_in does not block - if the caller is not the last to fan_in, it does not block, 0 is
+        # returned to the caller who can terminate or, f a thread/process pool is being used, withdraw
+        # more work from the work_queue. (Of course, try_fan_in does not block either.)
+
+        # call try_fan_in and fan_in
+        # Note: try_fan_in and fan_in are coordnated in monitorSU so that they are atomic.
+        # If we use the "select" version of FanInNB, we need to lock the FanINNB. See that code.
         try_return_value = FanIn.try_fan_in(**keyword_arguments)
         #logger.debug("calling_task_name: " + calling_task_name + " FanIn: try_return_value: " + str(try_return_value))
         logger.debug("fanin_task_name: " + keyword_arguments['fanin_task_name'] + " try_return_value: " + str(try_return_value))
         if try_return_value:   # synchronize op will execute wait so tell client to terminate
             DAG_exec_state.blocking = True 
             DAG_exec_state.return_value = 0 
-			
+
 			#FanInNB gets DAG_executor_State in kwargs when it starts a new executor to execute the fanin task.
 			#FanIn does not access the DAG_executor_State in kwargs
-			
+
 			# return is: self._results, restart, where restart is always 0 and results is 0 or a map
             return_value, restart_value_ignored = FanIn.fan_in(**keyword_arguments)
         else:
@@ -137,7 +153,7 @@ class DAG_executor_Synchronizer(object):
             return_value[keyword_arguments['calling_task_name']] = keyword_arguments['result']
             DAG_exec_state.return_value = return_value
             DAG_exec_state.blocking = False 
-			
+
 		# This is returned to process_fanin which returns it to DAG_executor; DAG_executtor will look at blocking
 		# and if not blocking the return_value to get the input as if not blocking then becomes fanin task.
         return DAG_exec_state
@@ -227,6 +243,7 @@ class DAG_executor_Synchronizer(object):
 #      returns instead of blocking. More consistent to call try_fan_in?
 
         # return is: None, restart, where restart is always 0 and return_value is None; and makes no change to DAG_executor_State	
+        # Not using "asynch" here as no way to implement "asynch" locally.
         return_value_ignored, restart_value_ignored = FanInNB.fan_in(**keyword_arguments)
 
 #ToDo: if we always return a state:
