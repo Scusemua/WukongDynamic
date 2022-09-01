@@ -99,253 +99,151 @@ def invoke_lambda_DAG_executor(
     logger.info("Invoked AWS Lambda function '%s' in %f ms. Status: %s." % (function_name, (time.time() - s) * 1000.0, str(status_code)))
 
 """
-def add(inp):
-    logger.debug("add: " + "input: " + str(input))
-    num1 = inp['inc0']
-    num2 = inp['inc1']
-    sum = num1 + num2
-    output = {'add': sum}
-    logger.debug("add output: " + str(sum))
-    return output
-def multiply(inp):
-    logger.debug("multiply")
-    num1 = inp['add']
-    num2 = inp['square']
-    num3 = inp['triple']
-    product = num1 * num2 * num3
-    output = {'multiply': product}
-    logger.debug("multiply output: " + str(product))
-    return output
-def divide(inp):
-    logger.debug("divide")
-    num1 = inp['multiply']
-    quotient = num1 / 72
-    output = {'quotient': quotient}
-    logger.debug("quotient output: " + str(quotient))
-    return output
-def triple(inp):
-    logger.debug("triple")
-    value = inp['inc1']
-    value *= 3
-    output = {'triple': value}
-    logger.debug("triple output: " + str(output))
-    return output
-def square(inp):
-    logger.debug("square")
-    value = inp['inc1']
-    value *= value
-    output = {'square': value}
-    logger.debug("square output: " + str(output))
-    return output
-def inc0(inp):
-    logger.debug("inc0")
-    #value = inp['input']
-    input_tuple = inp['input']
-    value = input_tuple[0]
-    value += 1
-    output = {'inc0': value}
-    logger.debug("inc0 output: " + str(output))
-    return output
-def inc1(inp):
-    logger.debug("inc1")
-    #value = inp['input']
-    input_tuple = inp['input']
-    value = input_tuple[0]
-    value += 1
-    output = {'inc1': value}
-    logger.debug("inc1 output: " + str(output))
-    return output
-"""
+The DAG_executor executes a DAG using multiple threads/processes/Lambdas, each excuting a DFS path through
+the DAG. The DAG is encoded as a state machine; a DFS path corresponds to a sequence of state transitions.
+Fanins and faninNBs are implented using synchronization objects.
+
+Example DAG: Inputs leaf node values 0 and 1, outputs ((0+1)+(1+1) * (3*2) * 2**2) / 72 = 1.0
+         1.0
+          t
+        divide_by_72
+          t (72)
+        multiply
+      t     t   t
+ (4) t    (6) t     t (3)
+square   triple     add
+   t        t       t    t
+ (2) t   (2)t    t (2)   t (1)
+        inc1             inc0
+        t                 t
+        1                 0
+
+The state machine encoding is:
+
+Each DAG task is executed in an assigned state:
+
+DAG states: (task name --> state)
+increment-ae88130b-bc16-45fb-8479-eb35fae7f83a 1
+add-a35dba4d-ff44-4853-a814-a7804da54c11 2 
+triple-a554a391-a774-4e71-91f9-a1c8e828a454 3
+square-ea198bd4-0fb7-425b-8b83-acdad7d09028 4
+multiply-137dd808-d202-4b59-9f38-2cdb5bf0985e 5 
+divide-4311366c-ac97-4af9-a04c-1a76a586b2ad 6 
+increment-b2c04dbb-da27-4bce-aac2-c01d9d69c52d 7
+
+In a give state, the assigned task is executed, and then either 0, 1, or more faninNB and fanout operations
+are excuted or 0 or 1 fanout opeation is executed. If no operations can be executed. (Thus, in a state,
+we can execute faninNB and fanout operations, or we can excute fanin operations.)
+
+The DAG_map shows the operations enabled in each state:
+
+DAG_map:
+1: task: increment-ae88130b-bc16-45fb-8479-eb35fae7f83a, fanouts:['triple-a554a391-a774-4e71-91f9-a1c8e828a454', 'square-ea198bd4-0fb7-425b-8b83-acdad7d09028'],fanins:[],faninsNB:['add-a35dba4d-ff44-4853-a814-a7804da54c11'],collapse:[]fanin_sizes:[],faninNB_sizes:[2]task_inputs: (1,)
+2: task: add-a35dba4d-ff44-4853-a814-a7804da54c11, fanouts:[],fanins:['multiply-137dd808-d202-4b59-9f38-2cdb5bf0985e'],faninsNB:[],collapse:[]fanin_sizes:[3],faninNB_sizes:[]task_inputs: ('increment-ae88130b-bc16-45fb-8479-eb35fae7f83a', 'increment-b2c04dbb-da27-4bce-aac2-c01d9d69c52d')
+3: task: triple-a554a391-a774-4e71-91f9-a1c8e828a454, fanouts:[],fanins:['multiply-137dd808-d202-4b59-9f38-2cdb5bf0985e'],faninsNB:[],collapse:[]fanin_sizes:[3],faninNB_sizes:[]task_inputs: ('increment-ae88130b-bc16-45fb-8479-eb35fae7f83a',)
+4: task: square-ea198bd4-0fb7-425b-8b83-acdad7d09028, fanouts:[],fanins:['multiply-137dd808-d202-4b59-9f38-2cdb5bf0985e'],faninsNB:[],collapse:[]fanin_sizes:[3],faninNB_sizes:[]task_inputs: ('increment-ae88130b-bc16-45fb-8479-eb35fae7f83a',)
+5: task: multiply-137dd808-d202-4b59-9f38-2cdb5bf0985e, fanouts:[],fanins:[],faninsNB:[],collapse:['divide-4311366c-ac97-4af9-a04c-1a76a586b2ad']fanin_sizes:[],faninNB_sizes:[]task_inputs: ('triple-a554a391-a774-4e71-91f9-a1c8e828a454', 'square-ea198bd4-0fb7-425b-8b83-acdad7d09028', 'add-a35dba4d-ff44-4853-a814-a7804da54c11')
+6: task: divide-4311366c-ac97-4af9-a04c-1a76a586b2ad, fanouts:[],fanins:[],faninsNB:[],collapse:[]fanin_sizes:[],faninNB_sizes:[]task_inputs: ('multiply-137dd808-d202-4b59-9f38-2cdb5bf0985e',)
+7: task: increment-b2c04dbb-da27-4bce-aac2-c01d9d69c52d, fanouts:[],fanins:[],faninsNB:['add-a35dba4d-ff44-4853-a814-a7804da54c11'],collapse:[]fanin_sizes:[],faninNB_sizes:[2]task_inputs: (0,)
+
+In state 1, there are fanout operations for triple and square, and a faninNB operation for add. The faninNB
+operatons are performed before fanout operations. Recall that faninNB means "fanin with No Becomes". The 
+thread/process/Lambda performing a faninNB will not become the executor of the faninNB task; some other 
+thread/process/Lambda will execute the faninNB.
+
+In state 5, multiply has a "collapse" operation, which means the thread/process/Lambda that executed task
+multiply will then also execute task divide.
+
+The two increment leaf tasks have start states 1 and 7:
+
+DAG leaf task start states
+1
+7
+
+A list of leaf tasks:
+
+DAG_leaf_tasks:
+increment-ae88130b-bc16-45fb-8479-eb35fae7f83a
+increment-b2c04dbb-da27-4bce-aac2-c01d9d69c52d
+
+their leaf task inputs:
+
+DAG_leaf_task_inputs:
+(1,)
+(0,)
+
+and a list of all tasks and their Python functions:
+
+DAG_tasks (task name --> function)
+increment-ae88130b-bc16-45fb-8479-eb35fae7f83a  :  <function increment at 0x000001C04E1DE1F0>
+triple-a554a391-a774-4e71-91f9-a1c8e828a454  :  <function triple at 0x000001C04E1DE280>
+multiply-137dd808-d202-4b59-9f38-2cdb5bf0985e  :  <function multiply at 0x000001C04E1DE310>
+divide-4311366c-ac97-4af9-a04c-1a76a586b2ad  :  <function divide at 0x000001C04E1DE3A0>
+square-ea198bd4-0fb7-425b-8b83-acdad7d09028  :  <function square at 0x000001C04E1DE430>
+add-a35dba4d-ff44-4853-a814-a7804da54c11  :  <function add at 0x000001C04E1DE4C0>
+increment-b2c04dbb-da27-4bce-aac2-c01d9d69c52d  :  <function increment at 0x000001C04E1DE1F0>
+
+In general, a thread/process/Lambda executes a DFS path through the DAG.  A path corresponds
+to a sequence of states. In each state, a thread/process/Lambda executes the faninNB, fanout,
+fanin, and collpase operations for that state.
+
+There are 4 possble schemes for assigning states to thread/process/Lambda.
+
+A1. We assign each leaf node state to Lambda Executor. At fanouts, a Lambda excutor starts another
+Executor that begins execution at the fanout's associated state. When all Lamdas have performed
+a faninNB operation for a given faninNB F, F starts a new Lambda executor that begins its
+execution by excuting the fanin task in the task;s associated atate. Fanins are processed as usual
+using "becomes". This is essentially Wukong with DAGs representes as state machines.
+
+A2. This is the same as scheme (1) using threads instead of Lambdas. This is simply a way to
+test the logic of (1) by running threads locally instead of using Lambdas.
+
+A3. We use a fixed-size pool of threads with a work_queue that holds the states that have been enabled
+so far. The driver deposits the leaf task states into the work_queue. Pool threads get the leaf 
+states and execute the collapse/fanoutNB/fanout/fanin operations for these states. Any states that 
+are enabled by fanout and faninNB operation are put into the work_queue, to be eventully withdrawn 
+and executed by the pool threads, until all states/tasks have been executed.
+
+Note: When processing a group of fanouts that can be executed in a state, a thread will "become"
+the thread that executes one of the fanouts instead of putting the fanout state in the work_queue.
+The same thing happens when a thread becomes the thread that executes a fanin task. So becomes are 
+handled as usual.
+
+A4. This is the same as (3) only we use (multi) processes instead of threads. This scheme is expected
+to be faster than (3) for large enough DAGS. 
+
+We expect (1) to be faster than (4) to be faster than (3) to be faster than (2). Executing (3)
+with one thread in the pool gives us a baseline for comparing the speedup from (4) and (1).
+We can also compute the COST metric - how many cores must we use in order for a multicore execution
+of (4) or (1) to be faster than the excution of (3) with one thread (but possibly many cores).
+
+Thee are three schemes for using the fanin and faninNB synchronization objects:
+
+(S1) The fanin and faninNB objects are stored locally in RAM. This scheme can be used with schemes
+(A2) and (A3) above. In both cases, we are using threads to execute tasks, not processes or Lambdas.
+
+(S2) The fanin and faninNB objects are stored (remotely) on the TCP_server, as usual. This is used 
+when using schemes (A1) and (A4) above. Tat is, using (multi) processes or Lambas requries the 
+fanin and faninNB objects to be stored remotely.
+
+(S3) This is the same as (S2) with fanins and faninNBs stored in InfiniX lambdas instead of on the 
+tcp_server.
+
+(S4) TBD: Store the DAG tasks, i.e., the Python functions that implement a task, and the fanins
+and faninNBs in InfiniX lambdas. This requires an assignment of tasks and fanin/faninNBs to 
+InfiniX lambdas, and potentially moving them around, say, to increase locality, etc.
+
+
+
 
 """
-def get_leaf_task_input(name):
-    if name == "inc0":
-        input_tuple = (0,)
-        #return int(0)	# inc0
-        return input_tuple
-    else:
-        input_tuple = (1,)
-        #return int(1)	# inc1
-        return input_tuple
-
-def get_DAG_leaf_task_inputs(DAG_leaf_tasks):
-	leaf_task_inputs = []
-	for name in DAG_leaf_tasks:
-		input = get_leaf_task_input(name)
-		leaf_task_inputs.append(input)
-	return leaf_task_inputs
-"""
-
-"""
-import pickle
-
-a = {'hello': 'world'}
-
-with open('filename.pickle', 'wb') as handle:
-    pickle.dump(a, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-with open('filename.pickle', 'rb') as handle:
-    b = pickle.load(handle)
-
-print(a == b)
-"""
-
 # Input the infomation generatd by python -m wukongdnc.dag.dask_dag
 def input_DAG_info():
     with open('./DAG_info.pickle', 'rb') as handle:
         DAG_info = cloudpickle.load(handle)
     return DAG_info
 
-"""
-def input_DAG_map():
-    DAG_map = Node.DAG_map
-    #with open('DAG_map', 'rb') as handle:
-    #DAG_map = pickle.load(handle)
-    return DAG_map
-
-def input_DAG_states():
-    DAG_states = Node.DAG_states
-    #with open('DAG_states', 'rb') as handle:
-    #DAG_states = pickle.load(handle)
-    return DAG_states
-    
-def input_all_fanin_task_names():
-    all_fanin_task_names = Node.all_fanin_task_names
-    #with open('all_fanin_task_names', 'rb') as handle:
-    #DAG_states = pickle.load(handle)
-    return all_fanin_task_names
-    
-def input_all_fanin_sizes():
-    all_fanin_sizes = Node.all_fanin_sizes
-    #with open('input_all_fanin_sizes', 'rb') as handle:
-    #DAG_states = pickle.load(handle)
-    return all_fanin_sizes
-    
-def input_all_faninNB_task_names():
-    all_faninNB_task_names = Node.all_faninNB_task_names
-    #with open('all_faninNB_task_names', 'rb') as handle:
-    #DAG_states = pickle.load(handle)
-    return all_faninNB_task_names
-    
-    
-def input_all_faninNB_sizes():
-    all_faninNB_sizes = Node.all_faninNB_sizes
-    #with open('all_faninNB_sizes', 'rb') as handle:
-    #DAG_states = pickle.load(handle)
-    return all_faninNB_sizes
-    
-def input_DAG_leaf_tasks():
-    DAG_leaf_tasks = ["inc0","inc1"]
-    #with open('DAG_leaf_tasks.pickle', 'rb') as handle:
-    #DAG_leaf_tasks = pickle.load(handle)
-    return DAG_leaf_tasks
-
-def input_DAG_leaf_task_start_states():
-    DAG_leaf_tasks_start_states = [1,3]
-    #with open('DAG_leaf_task_start_states.pickle', 'rb') as handle:
-    #DAG_leaf_task_start_states = pickle.load(handle)
-    return DAG_leaf_tasks_start_states
-"""
-
 def run():
-	# generate DAG_map using DFS_visit
-    # n1 = Node(None,None,"inc0",inc0)
-    # n3 = Node(None,None,"triple",triple)
-    # n4 = Node(None,None,"inc1",inc1)
-    # n5 = Node(Node,Node,"square",square)
-    # n2 = Node(Node,Node,"add",add) 
-    # n6 = Node(Node,Node,"multiply",multiply) 
-    # n7 = Node(Node,Node,"divide",divide)
-	
-    # n1.set_succ([n2])
-    # n1.set_pred([])
-    # n2.set_succ([n6])	
-    # n2.set_pred([n1,n4])
-    # n3.set_succ([n6])
-    # n3.set_pred([n4])
-    # n4.set_succ([n2,n5,n3])
-    # n4.set_pred([])
-    # n5.set_succ([n6])
-    # n5.set_pred([n4])
-    # n6.set_succ([n7])
-    # n6.set_pred([n2,n3,n5])
-    # n7.set_succ([])
-    # n7.set_pred([n6])
-	
-    # n1.generate_ops()
-    # n4.generate_ops()
-    # n2.generate_ops()
-    # n3.generate_ops()
-    # n5.generate_ops()
-    # n6.generate_ops()
-    # n7.generate_ops()
-    # #Node.save_DAG_info()
-	
-    # logger.debug("DAG_map:")
-    # for key, value in Node.DAG_map.items():
-    #     logger.debug(key)
-    #     logger.debug(value)
-    # logger.debug("  ")
-	
-    # logger.debug("states:")         
-    # for key, value in Node.DAG_states.items():
-    #     logger.debug(key)
-    #     logger.debug(value)
-    # logger.debug("   ")
-	
-    # logger.debug("num_fanins:" + str(Node.num_fanins) + " num_fanouts:" + str(Node.num_fanouts) + " num_faninNBs:" 
-    #     + " num_collapse:" + str(Node.num_collapse))
-    # logger.debug("   ")
-	
-    # logger.debug("all_fanout_task_names")
-    # for name in Node.all_fanout_task_names:
-    #     logger.debug(name)
-    #     logger.debug("   ")
-    # logger.debug("   ")
-	
-    # logger.debug("all_fanin_task_names")
-    # for name in Node.all_fanin_task_names :
-    #     logger.debug(name)
-    #     logger.debug("   ")
-    # logger.debug("   ")
-		  
-    # logger.debug("all_faninNB_task_names")
-    # for name in Node.all_faninNB_task_names:
-    #     logger.debug(name)
-    #     logger.debug("   ")
-    # logger.debug("   ")
-		  
-    # logger.debug("all_collapse_task_names")
-    # for name in Node.all_collapse_task_names:
-    #     logger.debug(name)
-    #     logger.debug("   ")
-    # logger.debug("   ")
-	
-    # DAG_map = Node.DAG_map
-    
-    # logger.debug("DAG_map after assignment:")
-    # for key, value in Node.DAG_map.items():
-    #     logger.debug(key)
-    #     logger.debug(value)   
-    # logger.debug("   ")
-    # states = Node.DAG_states
-    
-    #all_fanout_task_names = Node.all_fanout_task_names
-    #all_fanin_task_names = Node.all_fanin_task_names
-    #all_faninNB_task_names = Node.all_faninNB_task_names
-    #all_collapse_task_names = Node.all_collapse_task_names
-    
-    """
-    DAG_map = input_DAG_map()
-    all_fanin_task_names = input_all_fanin_task_names()
-    all_fanin_sizes = input_all_fanin_sizes()
-    all_faninNB_task_names = input_all_faninNB_task_names()
-    all_faninNB_sizes = input_all_faninNB_sizes()
-    DAG_states = input_DAG_states()
-    DAG_leaf_tasks = input_DAG_leaf_tasks()
-    DAG_leaf_task_start_states = input_DAG_leaf_task_start_states()
-	"""
-
     #asserts on configuration:
     if using_workers:
         if not run_all_tasks_locally:
@@ -770,3 +668,246 @@ def lambda_handler(event, context):
 
 if __name__ == "__main__":
     run()
+
+
+
+"""
+def add(inp):
+    logger.debug("add: " + "input: " + str(input))
+    num1 = inp['inc0']
+    num2 = inp['inc1']
+    sum = num1 + num2
+    output = {'add': sum}
+    logger.debug("add output: " + str(sum))
+    return output
+def multiply(inp):
+    logger.debug("multiply")
+    num1 = inp['add']
+    num2 = inp['square']
+    num3 = inp['triple']
+    product = num1 * num2 * num3
+    output = {'multiply': product}
+    logger.debug("multiply output: " + str(product))
+    return output
+def divide(inp):
+    logger.debug("divide")
+    num1 = inp['multiply']
+    quotient = num1 / 72
+    output = {'quotient': quotient}
+    logger.debug("quotient output: " + str(quotient))
+    return output
+def triple(inp):
+    logger.debug("triple")
+    value = inp['inc1']
+    value *= 3
+    output = {'triple': value}
+    logger.debug("triple output: " + str(output))
+    return output
+def square(inp):
+    logger.debug("square")
+    value = inp['inc1']
+    value *= value
+    output = {'square': value}
+    logger.debug("square output: " + str(output))
+    return output
+def inc0(inp):
+    logger.debug("inc0")
+    #value = inp['input']
+    input_tuple = inp['input']
+    value = input_tuple[0]
+    value += 1
+    output = {'inc0': value}
+    logger.debug("inc0 output: " + str(output))
+    return output
+def inc1(inp):
+    logger.debug("inc1")
+    #value = inp['input']
+    input_tuple = inp['input']
+    value = input_tuple[0]
+    value += 1
+    output = {'inc1': value}
+    logger.debug("inc1 output: " + str(output))
+    return output
+"""
+
+	# generate DAG_map using DFS_visit
+    # n1 = Node(None,None,"inc0",inc0)
+    # n3 = Node(None,None,"triple",triple)
+    # n4 = Node(None,None,"inc1",inc1)
+    # n5 = Node(Node,Node,"square",square)
+    # n2 = Node(Node,Node,"add",add) 
+    # n6 = Node(Node,Node,"multiply",multiply) 
+    # n7 = Node(Node,Node,"divide",divide)
+	
+    # n1.set_succ([n2])
+    # n1.set_pred([])
+    # n2.set_succ([n6])	
+    # n2.set_pred([n1,n4])
+    # n3.set_succ([n6])
+    # n3.set_pred([n4])
+    # n4.set_succ([n2,n5,n3])
+    # n4.set_pred([])
+    # n5.set_succ([n6])
+    # n5.set_pred([n4])
+    # n6.set_succ([n7])
+    # n6.set_pred([n2,n3,n5])
+    # n7.set_succ([])
+    # n7.set_pred([n6])
+	
+    # n1.generate_ops()
+    # n4.generate_ops()
+    # n2.generate_ops()
+    # n3.generate_ops()
+    # n5.generate_ops()
+    # n6.generate_ops()
+    # n7.generate_ops()
+    # #Node.save_DAG_info()
+	
+    # logger.debug("DAG_map:")
+    # for key, value in Node.DAG_map.items():
+    #     logger.debug(key)
+    #     logger.debug(value)
+    # logger.debug("  ")
+	
+    # logger.debug("states:")         
+    # for key, value in Node.DAG_states.items():
+    #     logger.debug(key)
+    #     logger.debug(value)
+    # logger.debug("   ")
+	
+    # logger.debug("num_fanins:" + str(Node.num_fanins) + " num_fanouts:" + str(Node.num_fanouts) + " num_faninNBs:" 
+    #     + " num_collapse:" + str(Node.num_collapse))
+    # logger.debug("   ")
+	
+    # logger.debug("all_fanout_task_names")
+    # for name in Node.all_fanout_task_names:
+    #     logger.debug(name)
+    #     logger.debug("   ")
+    # logger.debug("   ")
+	
+    # logger.debug("all_fanin_task_names")
+    # for name in Node.all_fanin_task_names :
+    #     logger.debug(name)
+    #     logger.debug("   ")
+    # logger.debug("   ")
+		  
+    # logger.debug("all_faninNB_task_names")
+    # for name in Node.all_faninNB_task_names:
+    #     logger.debug(name)
+    #     logger.debug("   ")
+    # logger.debug("   ")
+		  
+    # logger.debug("all_collapse_task_names")
+    # for name in Node.all_collapse_task_names:
+    #     logger.debug(name)
+    #     logger.debug("   ")
+    # logger.debug("   ")
+	
+    # DAG_map = Node.DAG_map
+    
+    # logger.debug("DAG_map after assignment:")
+    # for key, value in Node.DAG_map.items():
+    #     logger.debug(key)
+    #     logger.debug(value)   
+    # logger.debug("   ")
+    # states = Node.DAG_states
+    
+    #all_fanout_task_names = Node.all_fanout_task_names
+    #all_fanin_task_names = Node.all_fanin_task_names
+    #all_faninNB_task_names = Node.all_faninNB_task_names
+    #all_collapse_task_names = Node.all_collapse_task_names
+
+"""
+def get_leaf_task_input(name):
+    if name == "inc0":
+        input_tuple = (0,)
+        #return int(0)	# inc0
+        return input_tuple
+    else:
+        input_tuple = (1,)
+        #return int(1)	# inc1
+        return input_tuple
+
+def get_DAG_leaf_task_inputs(DAG_leaf_tasks):
+	leaf_task_inputs = []
+	for name in DAG_leaf_tasks:
+		input = get_leaf_task_input(name)
+		leaf_task_inputs.append(input)
+	return leaf_task_inputs
+"""
+
+"""
+def input_DAG_map():
+    DAG_map = Node.DAG_map
+    #with open('DAG_map', 'rb') as handle:
+    #DAG_map = pickle.load(handle)
+    return DAG_map
+
+def input_DAG_states():
+    DAG_states = Node.DAG_states
+    #with open('DAG_states', 'rb') as handle:
+    #DAG_states = pickle.load(handle)
+    return DAG_states
+    
+def input_all_fanin_task_names():
+    all_fanin_task_names = Node.all_fanin_task_names
+    #with open('all_fanin_task_names', 'rb') as handle:
+    #DAG_states = pickle.load(handle)
+    return all_fanin_task_names
+    
+def input_all_fanin_sizes():
+    all_fanin_sizes = Node.all_fanin_sizes
+    #with open('input_all_fanin_sizes', 'rb') as handle:
+    #DAG_states = pickle.load(handle)
+    return all_fanin_sizes
+    
+def input_all_faninNB_task_names():
+    all_faninNB_task_names = Node.all_faninNB_task_names
+    #with open('all_faninNB_task_names', 'rb') as handle:
+    #DAG_states = pickle.load(handle)
+    return all_faninNB_task_names
+    
+    
+def input_all_faninNB_sizes():
+    all_faninNB_sizes = Node.all_faninNB_sizes
+    #with open('all_faninNB_sizes', 'rb') as handle:
+    #DAG_states = pickle.load(handle)
+    return all_faninNB_sizes
+    
+def input_DAG_leaf_tasks():
+    DAG_leaf_tasks = ["inc0","inc1"]
+    #with open('DAG_leaf_tasks.pickle', 'rb') as handle:
+    #DAG_leaf_tasks = pickle.load(handle)
+    return DAG_leaf_tasks
+
+def input_DAG_leaf_task_start_states():
+    DAG_leaf_tasks_start_states = [1,3]
+    #with open('DAG_leaf_task_start_states.pickle', 'rb') as handle:
+    #DAG_leaf_task_start_states = pickle.load(handle)
+    return DAG_leaf_tasks_start_states
+"""
+
+"""
+import pickle
+
+a = {'hello': 'world'}
+
+with open('filename.pickle', 'wb') as handle:
+    pickle.dump(a, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+with open('filename.pickle', 'rb') as handle:
+    b = pickle.load(handle)
+
+print(a == b)
+"""
+
+"""
+DAG_map = input_DAG_map()
+all_fanin_task_names = input_all_fanin_task_names()
+all_fanin_sizes = input_all_fanin_sizes()
+all_faninNB_task_names = input_all_faninNB_task_names()
+all_faninNB_sizes = input_all_faninNB_sizes()
+DAG_states = input_DAG_states()
+DAG_leaf_tasks = input_DAG_leaf_tasks()
+DAG_leaf_task_start_states = input_DAG_leaf_task_start_states()
+"""
