@@ -4,25 +4,22 @@
 # try matrixMult
 
 import threading
-import _thread
 import multiprocessing
-from multiprocessing import Process, Manager, Queue, Value, Lock
+from multiprocessing import Process, Manager
 import time
-import json
 import cloudpickle
 import socket
 
-import base64 
 #from .DFS_visit import Node
 #from .DFS_visit import state_info
 #from DAG_executor_FanInNB import DAG_executor_FanInNB
 from . import DAG_executor
-from wukongdnc.server.DAG_executor_FanInNB import DAG_executor_FanInNB
-from wukongdnc.server.DAG_executor_FanIn import DAG_executor_FanIn
+#from wukongdnc.server.DAG_executor_FanInNB import DAG_executor_FanInNB
+#from wukongdnc.server.DAG_executor_FanIn import DAG_executor_FanIn
 from .DAG_executor_State import DAG_executor_State
 from .DAG_info import DAG_Info
 from wukongdnc.server.util import make_json_serializable
-from wukongdnc.constants import TCP_SERVER_IP, REDIS_IP_PUBLIC
+from wukongdnc.constants import TCP_SERVER_IP
 from .DAG_executor_constants import run_all_tasks_locally, store_fanins_faninNBs_locally
 from .DAG_executor_constants import create_all_fanins_faninNBs_on_start, using_workers
 from .DAG_executor_constants import num_workers,using_threads_not_processes
@@ -30,9 +27,7 @@ from .DAG_work_queue_for_threads import thread_work_queue
 from .DAG_executor_synchronizer import server
 from wukongdnc.wukong.invoker import invoke_lambda_DAG_executor
 import uuid
-import pickle
 from wukongdnc.server.api import create_all_fanins_and_faninNBs
-from wukongdnc.wukong.invoker import invoke_lambda
 from .multiprocessing_logging import listener_configurer, listener_process, worker_configurer
 from .DAG_executor_countermp import CounterMP
 

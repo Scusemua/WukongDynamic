@@ -2,16 +2,12 @@ import threading
 import _thread
 import time
 import socket
-import queue
 
 
 from .DFS_visit import Node
-from .DFS_visit import state_info
 #from DAG_executor_FanInNB import DAG_executor_FanInNB
 #from . import  DAG_executor_FanInNB
 #from . import  DAG_executor_FanIn
-from ..server import DAG_executor_FanInNB
-from ..server import DAG_executor_FanIn
 #from wukongdnc.server import DAG_executor_FanInNB
 #from wukongdnc.server import DAG_executor_FanIn
 #from . import DAG_executor_driver
@@ -19,20 +15,18 @@ from .DAG_executor_State import DAG_executor_State
 from .DAG_info import DAG_Info
 from wukongdnc.server.api import synchronize_sync
 import uuid
-from wukongdnc.constants import TCP_SERVER_IP, REDIS_IP_PUBLIC
-from .DAG_executor_constants import run_all_tasks_locally, store_fanins_faninNBs_locally, create_all_fanins_faninNBs_on_start, using_workers, num_workers, using_threads_not_processes
+from wukongdnc.constants import TCP_SERVER_IP
+from .DAG_executor_constants import run_all_tasks_locally, store_fanins_faninNBs_locally, create_all_fanins_faninNBs_on_start, using_workers, using_threads_not_processes
 from .DAG_work_queue_for_threads import thread_work_queue
 from .DAG_data_dict_for_threads import data_dict
 from .DAG_executor_counter import counter
 from .DAG_executor_synchronizer import server
 from wukongdnc.wukong.invoker import invoke_lambda_DAG_executor
 from .util import pack_data
-from threading import RLock
 
 
 import logging.handlers
 import multiprocessing
-from .multiprocessing_logging import worker_configurer
 import logging
 
 logger = None

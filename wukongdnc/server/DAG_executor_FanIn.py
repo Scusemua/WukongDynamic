@@ -1,8 +1,7 @@
 from re import L
 # ToDo:
 #from ..server.monitor_su import MonitorSU, ConditionVariable
-from .monitor_su import MonitorSU, ConditionVariable
-import threading
+from .monitor_su import MonitorSU
 import time 
 
 from threading import Thread
