@@ -18,6 +18,7 @@ from ..dag import  DAG_executor
 from wukongdnc.dag.DAG_executor_State import DAG_executor_State
 from wukongdnc.dag.DAG_executor_constants import run_all_tasks_locally, store_fanins_faninNBs_locally, create_all_fanins_faninNBs_on_start, using_workers, num_workers, using_threads_not_processes
 from wukongdnc.dag.DAG_work_queue_for_threads import thread_work_queue
+from wukongdnc.wukong.invoker import invoke_lambda_DAG_executor
 import uuid
 
 import logging 

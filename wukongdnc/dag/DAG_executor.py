@@ -25,6 +25,7 @@ from .DAG_work_queue_for_threads import thread_work_queue
 from .DAG_data_dict_for_threads import data_dict
 from .DAG_executor_counter import counter
 from .DAG_executor_synchronizer import server
+from wukongdnc.wukong.invoker import invoke_lambda_DAG_executor
 from .util import pack_data
 from threading import RLock
 
@@ -795,7 +796,8 @@ def DAG_executor_processes(payload,counter,process_work_queue, data_dict, log_qu
     logger.debug("DAG_executor_processes: returning after work_loop.")
     return
 
-
+def DAG_executor_lambda(payload):	
+    pass
 
                         
 #Local tests

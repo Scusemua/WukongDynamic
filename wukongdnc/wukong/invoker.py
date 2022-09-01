@@ -97,7 +97,7 @@ def invoke_lambda_synchronously(function_name: str = None, payload: dict = None)
 
     return return_value
 
-# TODO: Make this `invoke_lambda_sync` and add a separate `invoke_lambda_async`.
+# TODO: Make this `invoke_lambda_async`
 def invoke_lambda(
     function_name: str = "ComposerServerlessSync", # Can change to ComposerServerlessSync_Select to create different types of synchronization 
     payload: dict = None,
@@ -193,4 +193,54 @@ def invoke_lambda(
         FunctionName = function_name, 
         InvocationType = 'Event',
         Payload = payload_json) 
+    logger.info("Invoked AWS Lambd1a function '%s' in %f ms. Status: %s." % (function_name, (time.time() - s) * 1000.0, str(status_code)))
+
+def invoke_lambda_DAG_executor(
+    function_name: str = "DAG_executor",
+    payload: dict = None
+):
+    """
+    Invoke an AWS Lambda function.
+
+    Arguments:
+    ----------
+        function_name (str):
+            Name of the AWS Lambda function to invoke.
+        
+        payload (dict):
+            Dictionary to be serialized and sent via the AWS Lambda invocation payload.
+            This is typically expected to contain a "state" entry with a state object.
+    """
+    logger.debug("Creating AWS Lambda invocation payload for function '%s'" % function_name)
+    logger.debug("Provided payload: " + str(payload))
+												
+    s = time.time()
+
+	# The `_payload` variable is the one I actually pass to AWS Lambda.
+	# The `payload` variable is passed by the driver or pogram to `invoke_lambda`.
+	# For each key-value pair in `payload`, we create a corresponding 
+	# entry in `_payload`. The key is the same. But we first pickle]
+	# the value via cloudpickle.dumps(). This returns a `bytes` object.
+	# AWS Lambda uses JSON encoding to pass invocation payloads to Lambda
+	# functions, and JSON doesn't support bytes. So, we convert the bytes 
+	# to a string by encoding the bytes in base64 via base64.b64encode().
+	# There is ONE more step, however. base64.b64encode() returns a UTF-8-encoded
+	# string, which is also bytes. So, we call .decode('utf-8') to convert it
+	# to a regular python string, which is stored as the value in `_payload[k]`, where
+	# k is the key.
+    _payload = {}
+    for k,v in payload.items():
+        _payload[k] = base64.b64encode(cloudpickle.dumps(v)).decode('utf-8')
+											
+    payload_json = json.dumps(_payload)
+    logger.debug("Finished creating AWS Lambda invocation payload in %f ms." % ((time.time() - s) * 1000.0))
+
+    logger.info("Invoking AWS Lambda function '" + function_name + "' with payload containing " + str(len(payload)) + " key(s).")
+    s = time.time()
+    
+    # This is the call to the AWS API that actually invokes the Lambda.
+    status_code = lambda_client.invoke(
+        FunctionName = function_name, 
+        InvocationType = 'Event',
+        Payload = payload_json) 											
     logger.info("Invoked AWS Lambda function '%s' in %f ms. Status: %s." % (function_name, (time.time() - s) * 1000.0, str(status_code)))

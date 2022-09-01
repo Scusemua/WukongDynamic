@@ -28,6 +28,7 @@ from .DAG_executor_constants import create_all_fanins_faninNBs_on_start, using_w
 from .DAG_executor_constants import num_workers,using_threads_not_processes
 from .DAG_work_queue_for_threads import thread_work_queue
 from .DAG_executor_synchronizer import server
+from wukongdnc.wukong.invoker import invoke_lambda_DAG_executor
 import uuid
 import pickle
 from wukongdnc.server.api import create_all_fanins_and_faninNBs
@@ -39,64 +40,10 @@ import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
-
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
-
 logger.addHandler(ch)
-
-def invoke_lambda_DAG_executor(
-    function_name: str = "DAG_executor",
-    payload: dict = None
-):
-    """
-    Invoke an AWS Lambda function.
-
-    Arguments:
-    ----------
-        function_name (str):
-            Name of the AWS Lambda function to invoke.
-        
-        payload (dict):
-            Dictionary to be serialized and sent via the AWS Lambda invocation payload.
-            This is typically expected to contain a "state" entry with a state object.
-            The only time it wouldn't is at the very beginning of the program, in which
-            case we automatically create the first State object
-    """
-    logger.debug("Creating AWS Lambda invocation payload for function '%s'" % function_name)
-    logger.debug("Provided payload: " + str(payload))
-												
-    s = time.time()
-
-	# The `_payload` variable is the one I actually pass to AWS Lambda.
-	# The `payload` variable is passed by the user to `invoke_lambda`.
-	# For each key-value pair in `payload`, we create a corresponding 
-	# entry in `_payload`. The key is the same. But we first pickle]
-	# the value via cloudpickle.dumps(). This returns a `bytes` object.
-	# AWS Lambda uses JSON encoding to pass invocation payloads to Lambda
-	# functions, and JSON doesn't support bytes. So, we convert the bytes 
-	# to a string by encoding the bytes in base64 via base64.b64encode().
-	# There is ONE more step, however. base64.b64encode() returns a UTF-8-encoded
-	# string, which is also bytes. So, we call .decode('utf-8') to convert it
-	# to a regular python string, which is stored as the value in `_payload[k]`, where
-	# k is the key.
-    _payload = {}
-    for k,v in payload.items():
-        _payload[k] = base64.b64encode(cloudpickle.dumps(v)).decode('utf-8')
-											
-    payload_json = json.dumps(_payload)
-    logger.debug("Finished creating AWS Lambda invocation payload in %f ms." % ((time.time() - s) * 1000.0))
-
-    logger.info("Invoking AWS Lambda function '" + function_name + "' with payload containing " + str(len(payload)) + " key(s).")
-    s = time.time()
-    
-    # This is the call to the AWS API that actually invokes the Lambda.
-    status_code = lambda_client.invoke(
-        FunctionName = function_name, 
-        InvocationType = 'Event',
-        Payload = payload_json) 											
-    logger.info("Invoked AWS Lambda function '%s' in %f ms. Status: %s." % (function_name, (time.time() - s) * 1000.0, str(status_code)))
 
 """
 The DAG_executor executes a DAG using multiple threads/processes/Lambdas, each excuting a DFS path through
@@ -463,48 +410,6 @@ def run():
                     logger.debug("[ERROR] DAG_executor_driver: Failed to start DAG_executor Lambda.")
                     logger.debug(ex)
 
-        """ verify results: this is a synch-op, but no synch-op implemented yet for synch objects stored in Infinix Lambdas
-            so commented out for lambda version
-        
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
-            print("Connecting to " + str(TCP_SERVER_IP))
-            websocket.connect(TCP_SERVER_IP)
-            default_state = State("Composer", function_instance_ID = str(uuid.uuid4()), list_of_functions = ["FuncA", "FuncB"])
-
-            sleep_length_seconds = 20.0
-            logger.debug("Sleeping for " + str(sleep_length_seconds) + " seconds before calling synchronize_sync()")
-            time.sleep(sleep_length_seconds)
-            logger.debug("Finished sleeping. Calling synchronize_sync() now...")
-
-            # Note: no-try op
-            state = synchronize_sync(websocket, "synchronize_sync", "final_result", "withdraw", default_state)
-            answer = state.return_value 
-
-            end_time = time.time()
-            
-            error_occurred = False
-            if type(answer) is str:
-                logger.error("Unexpected solution recovered from Redis: %s\n\n" % answer)
-                error_occurred = True
-            else:
-                logger.debug("Solution: " + str(answer) + "\n\n")
-                expected_answer = int(72)
-                if expected_answer != answer:
-                    logger.error("Error in answer: " + str(answer) + " expected_answer: " + str(expected_answer))
-                    error_occurred = True 
-
-            if not error_occurred:
-                logger.debug("Verified.")
-                
-            # rest is performance stuff, close websocket and return
-            
-            ..
-            
-            # then main() stuff
-        if __name__ == "__main__":
-
-        """	
-
         # if the number of leaf tasks is less than number_workers, we need to create more workers
         if using_workers and num_threads_created < num_workers:
             # starting leaf tasks did not start num_workers workers so start num_workers-num_threads_created
@@ -562,6 +467,8 @@ def run():
             logger.debug("DAG_executor_driver: joining log_queue listener.")
             log_queue.put_nowait(None)
             listener.join()
+
+        #Note: Verify Results: See the code below.
 
         stop_time = time.time()
         duration = stop_time - start_time
@@ -650,27 +557,11 @@ def create_fanins_and_faninNBs(websocket,DAG_map,DAG_states,DAG_info,all_fanin_t
     ack = recv_object(websocket)
     """
 
-def lambda_handler(event, context):
-    start_time = time.time()
-    rc = redis.Redis(host = REDIS_IP_PRIVATE, port = 6379)
-
-    logger.debug("Invocation received. event/payload: " + str(event))
-
-    logger.debug("Starting DAG_executor: payload is: " + str(event))
-
-    DAG_executor.DAG_executor(event)
-				 
-    end_time = time.time()
-    duration = end_time - start_time
-    logger.debug("DAG_executor finished. Time elapsed: %f seconds." % duration)
-    rc.lpush("durations", duration)    
-		
-
 if __name__ == "__main__":
     run()
 
 
-
+# xtra:
 """
 def add(inp):
     logger.debug("add: " + "input: " + str(input))
@@ -911,3 +802,48 @@ DAG_states = input_DAG_states()
 DAG_leaf_tasks = input_DAG_leaf_tasks()
 DAG_leaf_task_start_states = input_DAG_leaf_task_start_states()
 """
+
+""" verify results: this is a synch-op, but no synch-op implemented yet for synch objects stored in Infinix Lambdas
+    so commented out for lambda version
+
+    ==> Create a simple "Display" synch object with op "display() that just displays what 
+    you (asynchronously) send to it.
+
+with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
+    print("Connecting to " + str(TCP_SERVER_IP))
+    websocket.connect(TCP_SERVER_IP)
+    default_state = State("Composer", function_instance_ID = str(uuid.uuid4()), list_of_functions = ["FuncA", "FuncB"])
+
+    sleep_length_seconds = 20.0
+    logger.debug("Sleeping for " + str(sleep_length_seconds) + " seconds before calling synchronize_sync()")
+    time.sleep(sleep_length_seconds)
+    logger.debug("Finished sleeping. Calling synchronize_sync() now...")
+
+    # Note: no-try op
+    state = synchronize_sync(websocket, "synchronize_sync", "final_result", "withdraw", default_state)
+    answer = state.return_value 
+
+    end_time = time.time()
+    
+    error_occurred = False
+    if type(answer) is str:
+        logger.error("Unexpected solution recovered from Redis: %s\n\n" % answer)
+        error_occurred = True
+    else:
+        logger.debug("Solution: " + str(answer) + "\n\n")
+        expected_answer = int(72)
+        if expected_answer != answer:
+            logger.error("Error in answer: " + str(answer) + " expected_answer: " + str(expected_answer))
+            error_occurred = True 
+
+    if not error_occurred:
+        logger.debug("Verified.")
+        
+    # rest is performance stuff, close websocket and return
+    
+    ..
+    
+    # then main() stuff
+if __name__ == "__main__":
+
+"""	
