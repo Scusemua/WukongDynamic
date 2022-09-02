@@ -16,7 +16,7 @@ from .DAG_info import DAG_Info
 from wukongdnc.server.api import synchronize_sync
 import uuid
 from wukongdnc.constants import TCP_SERVER_IP
-from .DAG_executor_constants import run_all_tasks_locally, store_fanins_faninNBs_locally, create_all_fanins_faninNBs_on_start, using_workers, using_threads_not_processes
+from .DAG_executor_constants import run_all_tasks_locally, store_fanins_faninNBs_locally, create_all_fanins_faninNBs_on_start, using_workers, using_lambdas
 from .DAG_work_queue_for_threads import thread_work_queue
 from .DAG_data_dict_for_threads import data_dict
 from .DAG_executor_counter import counter
@@ -30,69 +30,13 @@ import multiprocessing
 import logging
 
 logger = None
-if run_all_tasks_locally and using_threads_not_processes:
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.DEBUG)
-    formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
-
-"""
-def add(inp):
-    logger.debug("add: " + "input: " + str(input))
-    num1 = inp['inc0']
-    num2 = inp['inc1']
-    sum = num1 + num2
-    output = {'add': sum}
-    logger.debug("add output: " + str(sum))
-    return output
-def multiply(inp):
-    logger.debug("multiply")
-    num1 = inp['add']
-    num2 = inp['square']
-    num3 = inp['triple']
-    product = num1 * num2 * num3
-    output = {'multiply': product}
-    logger.debug("multiply output: " + str(product))
-    return output
-def divide(inp):
-    logger.debug("divide")
-    num1 = inp['multiply']
-    quotient = num1 / 72
-    output = {'quotient': quotient}
-    logger.debug("quotient output: " + str(quotient))
-    return output
-def triple(inp):
-    logger.debug("triple")
-    value = inp['inc1']
-    value *= 3
-    output = {'triple': value}
-    logger.debug("triple output: " + str(output))
-    return output
-def square(inp):
-    logger.debug("square")
-    value = inp['inc1']
-    value *= value
-    output = {'square': value}
-    logger.debug("square output: " + str(output))
-    return output
-def inc0(inp):
-    logger.debug("inc0")
-    value = inp['input']
-    value += 1
-    output = {'inc0': value}
-    logger.debug("inc0 output: " + str(output))
-    return output
-def inc1(inp):
-    logger.debug("inc1")
-    value = inp['input']
-    value += 1
-    output = {'inc1': value}
-    logger.debug("inc1 output: " + str(output))
-    return output
-"""
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+ch.setFormatter(formatter)
+logger.addHandler(ch)
 
 websocket = None
 
@@ -213,13 +157,16 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
 		#Q: kwargs put in DAG_executor_State keywords and on server it gets keywords from state and passes to create and fanin
 
         if store_fanins_faninNBs_locally:
+            # Note: We start a thread to make the fanin call and we don't wait for it to finish.
+            # So this is like an asynch call to tcp_server. The faninNB will start a new 
+            # thread to execute the fanin task so the callers do not need to do anything.
+            # Agan, "NB" is "No Become" so no caller will become the executor of the fanin task.
             #keyword_arguments['DAG_executor_State'] = new_DAG_exec_state # given to the thread/lambda that executes the fanin task.
             if not create_all_fanins_faninNBs_on_start:
                 try:
                     logger.debug("Starting create_and_fanin for faninNB " + name)
                     NBthread = threading.Thread(target=create_and_faninNB_task_locally, name=("create_and_faninNB_task_"+name), args=(keyword_arguments,))
                     NBthread.start()
-                    #_thread.start_new_thread(create_and_faninNB_task, (keyword_arguments,))
                 except Exception as ex:
                     logger.error("[ERROR] Failed to start create_and_faninNB_task thread.")
                     logger.debug(ex)
@@ -229,17 +176,26 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
                     logger.debug("Starting faninNB_task for faninNB " + name)
                     NBthread = threading.Thread(target=faninNB_task_locally, name=("faninNB_task_"+name), args=(keyword_arguments,))
                     NBthread.start()
-                    #_thread.start_new_thread(faninNB_task, (keyword_arguments,))
                 except Exception as ex:
                     logger.error("[ERROR] Failed to start faninNB_task thread.")
                     logger.debug(ex)
                     return 0
         else:
             if not create_all_fanins_faninNBs_on_start:
-                # ToDo: DAG_exec_state = ...
-                create_and_faninNB_remotely(websocket,**keyword_arguments)
+                if not using_lambdas:
+                    # if we call a remote faninNB and locally we are not using lambdas,
+                    # then we need not pass the result of this task since we will not
+                    # be passing the fanin task inputs back - each task's resulte will 
+                    # have been put in the data_dict an the fanin task will get those
+                    # results, which are its inputs, from the data_dict. This makes the 
+                    # cost of the send for the fanin operaton less costly.
+                    keyword_arguments['result'] = None
+                    create_and_faninNB_remotely(websocket,**keyword_arguments)
             else:
-                DAG_exec_state = faninNB_remotely(websocket,**keyword_arguments)
+                if not using_lambdas:
+                    # see comment just above.
+                    keyword_arguments['result'] = None
+                    DAG_exec_state = faninNB_remotely(websocket,**keyword_arguments)
 
             #if DAG_exec_state.blocking:
             if DAG_exec_state.return_value == 0:
@@ -437,9 +393,25 @@ def process_fanins(websocket,fanins, faninNB_sizes, calling_task_name, DAG_state
             DAG_exec_state = server.fanin_locally(DAG_exec_state,keyword_arguments)
     else:
         if not create_all_fanins_faninNBs_on_start:
-            # ToDo: DAG_exec_state = ...
+            # Note: might wan to send the result for debugging
+            if not using_lambdas:
+                # if we call a remote fanin and locally we are not using lambdas,
+                # then we need not pass the result of this task since we will not
+                # be passing the fanin task inputs back - each task's resulte will 
+                # have been put in the data_dict an the fanin task will get those
+                # results, which are its inputs, from the data_dict. This makes the 
+                # cost of the send for the fanin operaton less costly.
+                DAG_exec_state.keyword_arguments['result'] = None
             create_and_fanin_remotely(websocket,DAG_exec_state, **keyword_arguments)
         else:
+            if not using_lambdas:
+                # if we call a remote fanin and locally we are not using lambdas,
+                # then we need not pass the result of this task since we will not
+                # be passing the fanin task inputs back - each task's resulte will 
+                # have been put in the data_dict an the fanin task will get those
+                # results, which are its inputs, from the data_dict. This makes the 
+                # cost of the send for the fanin operaton less costly.
+                DAG_exec_state.keyword_arguments['result'] = None
             DAG_exec_state = fanin_remotely(websocket, DAG_exec_state, **keyword_arguments)
             logger.debug ("process_fanins: call to fanin_remotely returned DAG_exec_state.return_value: " + str(DAG_exec_state.return_value))
 
@@ -958,3 +930,60 @@ def main():
     
 if __name__=="__main__":
     main()
+
+
+##Xtras:
+"""
+def add(inp):
+    logger.debug("add: " + "input: " + str(input))
+    num1 = inp['inc0']
+    num2 = inp['inc1']
+    sum = num1 + num2
+    output = {'add': sum}
+    logger.debug("add output: " + str(sum))
+    return output
+def multiply(inp):
+    logger.debug("multiply")
+    num1 = inp['add']
+    num2 = inp['square']
+    num3 = inp['triple']
+    product = num1 * num2 * num3
+    output = {'multiply': product}
+    logger.debug("multiply output: " + str(product))
+    return output
+def divide(inp):
+    logger.debug("divide")
+    num1 = inp['multiply']
+    quotient = num1 / 72
+    output = {'quotient': quotient}
+    logger.debug("quotient output: " + str(quotient))
+    return output
+def triple(inp):
+    logger.debug("triple")
+    value = inp['inc1']
+    value *= 3
+    output = {'triple': value}
+    logger.debug("triple output: " + str(output))
+    return output
+def square(inp):
+    logger.debug("square")
+    value = inp['inc1']
+    value *= value
+    output = {'square': value}
+    logger.debug("square output: " + str(output))
+    return output
+def inc0(inp):
+    logger.debug("inc0")
+    value = inp['input']
+    value += 1
+    output = {'inc0': value}
+    logger.debug("inc0 output: " + str(output))
+    return output
+def inc1(inp):
+    logger.debug("inc1")
+    value = inp['input']
+    value += 1
+    output = {'inc1': value}
+    logger.debug("inc1 output: " + str(output))
+    return output
+"""
