@@ -2,7 +2,6 @@ import logging
 import logging.handlers
 import multiprocessing
 
-
 # Because you'll want to define the logging configurations for listener and workers, the
 # listener and worker process functions take a configurer parameter which is a callable
 # for configuring logging for that process. These functions are also passed the queue,
@@ -23,6 +22,12 @@ def listener_configurer():
     #Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
     h.setFormatter(f)
     root.addHandler(h)
+    
+    # In theory, this code will set the logging level for ALL loggers.
+    # https://stackoverflow.com/q/54036637
+    loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
+    for logger in loggers:
+        logger.setLevel(logging.INFO) # Specify the log level here.
 """
 class logging.handlers.RotatingFileHandler(filename, mode='a', maxBytes=0, backupCount=0, encoding=None, 
 delay=False, errors=None)
