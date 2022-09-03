@@ -25,6 +25,6 @@ using_workers = True
 using_threads_not_processes = False
 # When using_workers, this is how many threads or processes in the pool.
 using_lambdas = False
-num_workers = 3
+num_workers = 1
 use_multithreaded_multiprocessing = False
-num_threads_for_multithreaded_multiprocessing = 2
+num_threads_for_multithreaded_multiprocessing = 1

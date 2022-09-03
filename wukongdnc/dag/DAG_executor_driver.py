@@ -272,9 +272,9 @@ def run():
         logger.debug("DAG_executor_driver: DAG_leaf_task_inputs: " + str(DAG_leaf_task_inputs))
 
         if using_workers and not using_threads_not_processes:
-            num_DAG_tasks = len(DAG_tasks)
             manager = Manager()
             data_dict = manager.dict()
+            num_DAG_tasks = len(DAG_tasks)
             process_work_queue = manager.Queue(maxsize = num_DAG_tasks)
 
         if using_workers:
@@ -317,7 +317,7 @@ def run():
             num_processes_created_for_multithreaded_multiprocessing = 0
 
         if use_multithreaded_multiprocessing:
-            create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,counter,process_work_queue,data_dict,log_queue,worker_configurer)
+             num_processes_created_for_multithreaded_multiprocessing = create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,counter,process_work_queue,data_dict,log_queue,worker_configurer)
         else: # multi threads or multi-processes, thread and processes may be workers using work_queue
             # if we are not using lambdas, and we are not using a worker pool, create a thread for each
             # leaf task. If we are not using lambdas but we are using a worker pool, create at least 
@@ -464,6 +464,12 @@ def run():
                     else:
                         logger.error("DAG_executor_driver: worker (pool) threads/processes must run locally (no Lambdas)")
  
+        if use_multithreaded_multiprocessing:
+            logger.debug("num_processes_created_for_multithreaded_multiprocessing: " + str(num_processes_created_for_multithreaded_multiprocessing))
+        else:
+            logger.debug("num_threads_created: " + str(num_threads_created))
+  
+
         if not use_multithreaded_multiprocessing:
             if using_workers:
                 logger.debug("DAG_executor_driver: joining workers.")
@@ -492,15 +498,14 @@ def run():
 
         print("DAG_Execution finished in %f seconds." % duration)
 
-        logger.debug("num_threads_created: " + str(num_threads_created))
-        logger.debug("Sleeping")
+        logger.debug("Sleeping 0.1")
         time.sleep(0.1)
 		
     #ToDo:  close_all(websocket)
 
-def create_and_run_threads_for_multiT_multiP(payload,counter,process_work_queue,data_dict,log_queue,worker_configurer):
+def create_and_run_threads_for_multiT_multiP(process_name,payload,counter,process_work_queue,data_dict,log_queue,worker_configurer):
     thread_list = []
-    num_threads_created = 0;
+    num_threads_created = 0
     if not run_all_tasks_locally:
         logger.error("[Error]: DAG_executor_driver: create_and_run_threads_for_multiT_multiP: multithreaded multiprocessing loop but not run_all_tasks_locally")
     logger.debug("DAG_executor_driver: create_and_run_threads_for_multiT_multiP: Starting threads for multhreaded multipocessing.")
@@ -508,8 +513,8 @@ def create_and_run_threads_for_multiT_multiP(payload,counter,process_work_queue,
         try:
             payload = {
             }
-            thread_name_prefix = "thread_multitheaded_multiproc_"
-            t = Process(target=DAG_executor.DAG_executor_processes, name=(thread_name_prefix+str(num_threads_created + 1)), args=(payload,counter,process_work_queue,data_dict,log_queue,worker_configurer,))
+            thread_name = process_name+"_thread"+str(num_threads_created+1)
+            t = Process(target=DAG_executor.DAG_executor_processes, name=thread_name, args=(payload,counter,process_work_queue,data_dict,log_queue,worker_configurer,))
             t.start()
             thread_list.append(t)
             num_threads_created += 1                      
@@ -527,9 +532,9 @@ def create_and_run_threads_for_multiT_multiP(payload,counter,process_work_queue,
         # return and join multithreaded_multiprocessing_processes
 
 def create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,counter,process_work_queue,data_dict,log_queue,worker_configurer):
+    logger.debug("DAG_executor_driver: Starting multi processors for multhreaded multipocessing.")
     while True:
-        logger.debug("DAG_executor_driver: Starting multi processors for multhreaded multipocessing.")
-        # asserts:
+         # asserts:
         if not run_all_tasks_locally:
             logger.error("[Error]: multithreaded multiprocessing loop but not run_all_tasks_locally")
         if not using_workers:
@@ -537,8 +542,8 @@ def create_multithreaded_multiprocessing_processes(num_processes_created_for_mul
         try:
             payload = {
             }
-            proc_name_prefix = "Worker_process_multithead_multiproc_"
-            proc = Process(target=create_and_run_threads_for_multiT_multiP, name=(proc_name_prefix+str(num_processes_created_for_multithreaded_multiprocessing + 1)), args=(payload,counter,process_work_queue,data_dict,log_queue,worker_configurer,))
+            process_name = "proc"+str(num_processes_created_for_multithreaded_multiprocessing + 1)
+            proc = Process(target=create_and_run_threads_for_multiT_multiP, name=(process_name), args=(process_name,payload,counter,process_work_queue,data_dict,log_queue,worker_configurer,))
             proc.start()
             multithreaded_multiprocessing_process_list.append(proc)
             num_processes_created_for_multithreaded_multiprocessing += 1                      
@@ -548,6 +553,8 @@ def create_multithreaded_multiprocessing_processes(num_processes_created_for_mul
 
         if num_processes_created_for_multithreaded_multiprocessing == num_workers:
             break 
+
+    return num_processes_created_for_multithreaded_multiprocessing
 							
 def create_fanins_and_faninNBs(websocket,DAG_map,DAG_states,DAG_info,all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes):										
 

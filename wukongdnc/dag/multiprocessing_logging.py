@@ -1,6 +1,5 @@
 import logging
 import logging.handlers
-import multiprocessing
 
 # Because you'll want to define the logging configurations for listener and workers, the
 # listener and worker process functions take a configurer parameter which is a callable
@@ -18,7 +17,7 @@ def listener_configurer():
     #h = logging.handlers.RotatingFileHandler('mptest.log', 'a', 300, 10)
     h = logging.handlers.RotatingFileHandler('mptest.log', 'w',50000)
     #h = logging.handlers.FileHandler('mp.log', 'a')
-    f = logging.Formatter('[%(asctime)s] [%(processName)s] [%(name)s] [%(levelname)s]: %(message)s')
+    f = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s] [%(name)s] [%(levelname)s]: %(message)s')
     #Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
     h.setFormatter(f)
     root.addHandler(h)
