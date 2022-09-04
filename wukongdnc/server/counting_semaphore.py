@@ -1,4 +1,4 @@
-from imp import release_lock
+#from imp import release_lock
 from threading import Semaphore, RLock
 
 import logging 
@@ -43,20 +43,20 @@ class CountingSemaphore(object):
         # See semaphore waitHere below
         queue_object = QueueObject() # queue_object is called 'o' in the Java code.
 
-        logger.debug("Trying to lock counting semaphore now...")
+        #logger.debug("Trying to lock counting semaphore now...")
 
         # Need a lock per each Semaphore, i.e., a "Lock thisLock" member of CountingSemaphore.
         # So thisLock.lock() instead of synchonized(this)
         self._mutex.acquire() # Lock semaphore
 
-        logger.debug("Counting semaphore " + str(self._name) + " has been locked.")
+        #logger.debug("Counting semaphore " + str(self._name) + " has been locked.")
 
         #try:
         self._permits -= 1
     
-        logger.debug("Counting semaphore: self._permits after decrement: " + str(self._permits))
+        #logger.debug("Counting semaphore: self._permits after decrement: " + str(self._permits))
         if (self._permits >= 0): # then no need to block thread
-            logger.debug("release and return")
+            #logger.debug("release and return")
             self._mutex.release()
             return 
         #except Exception as ex:

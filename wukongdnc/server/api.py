@@ -1,17 +1,17 @@
-import sys
-import threading
+#import sys
+#import threading
 import uuid 
 import socket 
 import cloudpickle
-import base64
+#import base64
 import json 
-import redis 
+#import redis 
 
-from threading import Thread 
+#from threading import Thread 
 
 from .util import make_json_serializable
 from .state import State 
-from ..constants import TCP_SERVER_IP
+#from ..constants import TCP_SERVER_IP
 
 import logging 
 logger = logging.getLogger(__name__)
@@ -40,7 +40,8 @@ def send_object(obj, websocket):
         websocket (socket.socket):
             Socket connected to a remote client.
     """
-    logger.debug("send_object: Will be sending a message of size %d bytes." % len(obj))
+    #rhc
+    #logger.debug("send_object: Will be sending a message of size %d bytes." % len(obj))
     
     # First, we send the number of bytes that we're going to send.
     websocket.sendall(len(obj).to_bytes(2, byteorder='big'))
@@ -65,7 +66,8 @@ def recv_object(websocket):
     incoming_size = websocket.recv(2)
     # Convert the bytes representing the size of the incoming serialized object to an integer.
     incoming_size = int.from_bytes(incoming_size, 'big')
-    logger.debug("recv_object: Will receive another message of size %d bytes" % incoming_size)
+    #rhc
+    #logger.debug("recv_object: Will receive another message of size %d bytes" % incoming_size)
     data = bytearray()
     
     while len(data) < incoming_size:
@@ -75,9 +77,10 @@ def recv_object(websocket):
         if not new_data:
             break 
 
-        logger.debug("recv_object: starting read %d bytes from TCP server." % len(new_data))
+        #rhc
+        #logger.debug("recv_object: starting read %d bytes from TCP server." % len(new_data))
         data.extend(new_data)
-        logger.debug("recv_object: end-of read %d/%d bytes from TCP server." % (len(data), incoming_size))
+        #logger.debug("recv_object: end-of read %d/%d bytes from TCP server." % (len(data), incoming_size))
     
     return data 
 
@@ -114,7 +117,8 @@ def synchronize_sync(websocket, op, name, method_name, state):
         "state": make_json_serializable(state),
         "id": msg_id
     }
-    logger.debug("synchronize_sync: Fan-in ID %s calling %s. Message ID=%s" % (name, op, msg_id))
+    #rhc
+    #logger.debug("synchronize_sync: Fan-in ID %s calling %s. Message ID=%s" % (name, op, msg_id))
     msg = json.dumps(message).encode('utf-8')
     send_object(msg, websocket)
     data = recv_object(websocket)               # Should just be a serialized state object.
@@ -158,7 +162,8 @@ def synchronize_async(websocket, op, name, method_name, state):
         "state": make_json_serializable(state),
         "id": msg_id
     }
-    logger.debug("synchronize_async: Calling %s. Message ID=%s" % (op, msg_id))
+    #rhc
+    #logger.debug("synchronize_async: Calling %s. Message ID=%s" % (op, msg_id))
     msg = json.dumps(message).encode('utf-8')
     send_object(msg, websocket)
 

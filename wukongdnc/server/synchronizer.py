@@ -145,7 +145,7 @@ class Synchronizer(object):
     
         logger.debug("synchronizer: synchronize_sync: called")
         logger.debug("State: " + str(state))
-        logger.debug("State: keyword_arguments: fanin_task_name:" + str(state.keyword_arguments['fanin_task_name']))
+        #logger.debug("State: keyword_arguments: fanin_task_name:" + str(state.keyword_arguments['fanin_task_name']))
 
         base_name, isTryMethod = isTry_and_getMethodName(method_name)
         is_select = isSelect(self._synchronizer_class_name) # is_select = isSelect(type_arg)

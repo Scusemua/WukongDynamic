@@ -27,19 +27,19 @@ class BoundedBuffer(MonitorSU):
         self._buffer=[]
         self._notFull=super().get_condition_variable(condition_name="notFull")
         self._notEmpty=super().get_condition_variable(condition_name="notEmpty")
-        logger.debug(kwargs)
+        logger.info(kwargs)
         self._in=0
         self._out=0
 		
 	# synchronous try version of deposit, restart when block
     def deposit(self, **kwargs):
         super().enter_monitor(method_name="deposit")
-        logger.debug(" deposit() entered monitor, len(self._notFull) ="+str(len(self._notFull))+",self._capacity="+str(self._capacity))
-        logger.debug(" deposit() entered monitor, len(self._notEmpty) ="+str(len(self._notEmpty))+",self._capacity="+str(self._capacity))
+        logger.info(" deposit() entered monitor, len(self._notFull) ="+str(len(self._notFull))+",self._capacity="+str(self._capacity))
+        logger.info(" deposit() entered monitor, len(self._notEmpty) ="+str(len(self._notEmpty))+",self._capacity="+str(self._capacity))
         value = kwargs["value"]
-        logger.debug("Value to deposit: " + str(value))
+        logger.info("Value to deposit: " + str(value))
         if self._fullSlots==self._capacity:
-            logger.debug("Full slots (%d) is equal to capacity (%d). Calling wait_c()." % (self._fullSlots, self._capacity))
+            logger.info("Full slots (%d) is equal to capacity (%d). Calling wait_c()." % (self._fullSlots, self._capacity))
             self._notFull.wait_c()
             restart = True
         else:
@@ -87,7 +87,7 @@ class BoundedBuffer(MonitorSU):
         self._fullSlots -= 1
         #threading.current_thread()._returnValue = value
         self._notFull.signal_c_and_exit_monitor()
-        logger.debug(" withdraw() returning value:" + str(value) + " restart:" + str(restart))
+        logger.info(" withdraw() returning value:" + str(value) + " restart:" + str(restart))
         return value, restart
 
 	# synchronous no-try version of withdraw.
