@@ -1,16 +1,14 @@
-#import threading
-#import multiprocessing
-from multiprocessing import Manager # , Process 
+#from multiprocessing import Manager # , Process 
+
 from .DAG_executor_State import DAG_executor_State
 import time
-#import cloudpickle
 import socket
 from wukongdnc.constants import TCP_SERVER_IP
-
-from ..server.api import create, synchronize_sync, synchronize_async
+from ..server.api import create, synchronize_async #,synchronize_sync 
 
 def run():
 
+    # This part is for testing the manager.Queue, uncomment to run
     """
     manager = Manager()
     #data_dict = manager.dict()

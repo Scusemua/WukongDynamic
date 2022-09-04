@@ -474,6 +474,10 @@ def DAG_executor_work_loop(logger, server, counter, work_queue, DAG_executor_sta
             websocket.connect(TCP_SERVER_IP)
         logger.debug("DAG_executor " + thread.name + " successfully connected to TCP Server.")
 
+        #ToDo:  
+        # work_queue = BoundedBuffer_Work_Queue(websocket,10000)
+        # work_queue.create()
+
         while (True):
 
 #ToDo: multP's don't always get work from the queue. i.e., no get when no put.

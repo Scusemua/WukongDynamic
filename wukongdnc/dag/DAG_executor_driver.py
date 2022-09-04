@@ -6,6 +6,17 @@
 # implement multitreaded processes- drver creates processes that start threads as usual.
 #   Need "multitreaded_multiprocessing=True" and check other constants will work.
 #   Note matrix mult may be using C code so may work well with multithreading.
+# No null out results sent to fanin/faninNB if sending resuls back for local data_dict
+# local data_dict for multiprocessing
+# try BB_work_queue
+# try fanouts before faninNBs with no other changes except needs_work logic
+# try batching fanout start states to BB.deposit_all_no_restarts
+# try sending fanout start_state batch with faninNB call and faninNB batch call
+# try fanin and faninNB (batched) where they send need_work and if not become 
+# (where fanin become dosn't need work, and faninNB become adds work to work queue, 
+# and faninNB not become gets work from work_queue (while on tcp_server) or waits for work
+# and gets work (maybe -1) from work_queue (while on tcp_server) and fanin not
+# become needs work and acts like faninNB not become.
 
 import threading
 import multiprocessing
