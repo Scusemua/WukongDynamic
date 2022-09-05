@@ -45,6 +45,7 @@ import uuid
 from wukongdnc.server.api import create_all_fanins_and_faninNBs
 from .multiprocessing_logging import listener_configurer, listener_process, worker_configurer
 from .DAG_executor_countermp import CounterMP
+from .DAG_boundedbuffer_work_queue import BoundedBuffer_Work_Queue
 
 import logging 
 logger = logging.getLogger(__name__)
@@ -190,9 +191,6 @@ tcp_server.
 and faninNBs in InfiniX lambdas. This requires an assignment of tasks and fanin/faninNBs to 
 InfiniX lambdas, and potentially moving them around, say, to increase locality, etc.
 
-
-
-
 """
 # Input the infomation generatd by python -m wukongdnc.dag.dask_dag
 def input_DAG_info():
@@ -285,8 +283,11 @@ def run():
         if using_workers and not using_threads_not_processes:
             manager = Manager()
             data_dict = manager.dict()
-            num_DAG_tasks = len(DAG_tasks)
-            process_work_queue = manager.Queue(maxsize = num_DAG_tasks)
+            #num_DAG_tasks = len(DAG_tasks)
+            #process_work_queue = manager.Queue(maxsize = num_DAG_tasks)
+            num_tasks_to_execute = len(DAG_tasks)
+            process_work_queue = BoundedBuffer_Work_Queue(websocket,2*num_tasks_to_execute)
+            process_work_queue.create()
 
         if using_workers:
             # pool of worker threads or processes that withdraw work from a work_queue
@@ -296,7 +297,12 @@ def run():
                     thread_work_queue.put(state)
             else:   # pool of processes
                 for state in DAG_leaf_task_start_states:
-                    process_work_queue.put(state)
+                    dummy_state = DAG_executor_State()
+                    logger.debug("dummy_state: " + str(dummy_state))
+                    process_work_queue.put(dummy_state,state)
+
+                # Done with process_work_queue 
+                process_work_queue = None
 
         #print("work_queue:")
         #for start_state in X_work_queue.queue:

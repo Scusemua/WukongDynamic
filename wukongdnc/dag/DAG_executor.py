@@ -16,12 +16,13 @@ from .DAG_info import DAG_Info
 from wukongdnc.server.api import synchronize_sync
 import uuid
 from wukongdnc.constants import TCP_SERVER_IP
-from .DAG_executor_constants import run_all_tasks_locally, store_fanins_faninNBs_locally, create_all_fanins_faninNBs_on_start, using_workers, using_lambdas
+from .DAG_executor_constants import run_all_tasks_locally, store_fanins_faninNBs_locally, create_all_fanins_faninNBs_on_start, using_workers, using_threads_not_processes, using_lambdas
 from .DAG_work_queue_for_threads import thread_work_queue
 from .DAG_data_dict_for_threads import data_dict
 from .DAG_executor_counter import counter
 from .DAG_executor_synchronizer import server
 from wukongdnc.wukong.invoker import invoke_lambda_DAG_executor
+from .DAG_boundedbuffer_work_queue import BoundedBuffer_Work_Queue
 from .util import pack_data
 
 
@@ -189,12 +190,15 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
                     # have been put in the data_dict an the fanin task will get those
                     # results, which are its inputs, from the data_dict. This makes the 
                     # cost of the send for the fanin operaton less costly.
-                    keyword_arguments['result'] = None
+                    # Actually:
+                    # We will use local datadict fr each multiprocess; process will receve
+                    # the faninNB results and put them in the data_dict
+                    #keyword_arguments['result'] = None
                     create_and_faninNB_remotely(websocket,**keyword_arguments)
             else:
                 if not using_lambdas:
                     # see comment just above.
-                    keyword_arguments['result'] = None
+                    #keyword_arguments['result'] = None
                     DAG_exec_state = faninNB_remotely(websocket,**keyword_arguments)
 
             #if DAG_exec_state.blocking:
@@ -204,8 +208,22 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
                 return 0
             else:
                 if using_workers:
+                    
+                    dict_of_results = DAG_exec_state.return_value
+
+                    #ToDo: I faninNB remote, with processes, dont send result and
+                    # dont save result since aleady added result to lodal data_dict;
+                    # Just add the other results.
+                    # Also, don't pass in the multp data_dict, so will use the global.
+                    # Fix if in global
+                    logger.debug("faninNB Results: ")
+                    for key, value in dict_of_results.items():
+                        logger.debug(str(key) + " -> " + str(value))
+                    #for key, value in dict_of_results.items():
+                    #    data_dict[key] = value
+
                     #thread_work_queue.put(start_state_fanin_task)
-                    work_queue.put(start_state_fanin_task)
+                    work_queue.put(DAG_exec_state,start_state_fanin_task)
                 else:
 #Todo:
                     try:
@@ -266,7 +284,7 @@ def process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State, outp
         #rhc queue
         if using_workers:
             #thread_work_queue.put(DAG_states[name])
-            work_queue.put(DAG_states[name])
+            work_queue.put(DAG_exec_State,DAG_states[name])
         else:
             if run_all_tasks_locally:
                 try:
@@ -474,9 +492,9 @@ def DAG_executor_work_loop(logger, server, counter, work_queue, DAG_executor_sta
             websocket.connect(TCP_SERVER_IP)
         logger.debug("DAG_executor " + thread.name + " successfully connected to TCP Server.")
 
-        #ToDo:  
-        # work_queue = BoundedBuffer_Work_Queue(websocket,10000)
-        # work_queue.create()
+        if using_workers and not using_threads_not_processes:
+            # Did the create() in the DAG_executor_driver
+            work_queue = BoundedBuffer_Work_Queue(websocket,2*num_tasks_to_execute)
 
         while (True):
 
@@ -490,11 +508,11 @@ def DAG_executor_work_loop(logger, server, counter, work_queue, DAG_executor_sta
             if using_workers:
                 if worker_needs_input:
                     #DAG_executor_state.state = thread_work_queue.get(block=True)
-                    DAG_executor_state.state = work_queue.get(block=True)
+                    DAG_executor_state.state = work_queue.get(DAG_executor_state,block=True)
                     if DAG_executor_state.state == -1:
                         #thread_work_queue.put(-1)
                         logger.debug("DAG_executor: state is -1 so returning.")
-                        work_queue.put(-1)
+                        work_queue.put(DAG_executor_state,-1)
                         return
                     worker_needs_input = False # default
                     logger.debug("DAG_executor: Worker accessed work_queue: process state: " + str(DAG_executor_state.state))
@@ -506,7 +524,7 @@ def DAG_executor_work_loop(logger, server, counter, work_queue, DAG_executor_sta
                     + " num_tasks_to_execute: " + str(num_tasks_to_execute))
                 if num_tasks_executed == num_tasks_to_execute:
                     #thread_work_queue.put(-1)
-                    work_queue.put(-1)
+                    work_queue.put(DAG_executor_state,-1)
                     #return
 
 ##rhc
@@ -602,7 +620,7 @@ def DAG_executor_work_loop(logger, server, counter, work_queue, DAG_executor_sta
                     # if deposit in synchronizer need to pass synchronizer name in payload. If synchronizer stored
                     # in Lambda, then fanout task executed in that Lambda.
 ##rhc
-                    DAG_executor_state.state = process_fanouts(state_info.fanouts, state_info.task_name, DAG_info.get_DAG_states(), DAG_executor_State, output, DAG_info, server,work_queue)
+                    DAG_executor_state.state = process_fanouts(state_info.fanouts, state_info.task_name, DAG_info.get_DAG_states(), DAG_executor_state, output, DAG_info, server,work_queue)
                     logger.debug("become state:" + str(DAG_executor_state.state))
                     ##state = process_fanouts(state_info.fanouts, DAG_info.get_DAG_states(), DAG_executor_state, output, server)
                     ##logger.debug("become state:" + str(state))
@@ -725,7 +743,7 @@ def DAG_executor(payload):
     #DAG_info = payload['DAG_info']
     DAG_executor_work_loop(logger, server, counter, thread_work_queue, DAG_executor_state, DAG_info, data_dict)
 
-def DAG_executor_processes(payload,counter,process_work_queue, data_dict, log_queue, configurer):
+def DAG_executor_processes(payload,counter,process_work_queue,data_dict,log_queue, configurer):
     #- read DAG_info, create DAG_exec_state, thread_work_queue is parm
     global logger
     configurer(log_queue)
@@ -741,17 +759,19 @@ def DAG_executor_processes(payload,counter,process_work_queue, data_dict, log_qu
     #level = logging.DEBUG
     #message = (proc_name + ": testing 1 2 3.")
     #logger.log(level, message)
-
+ 
     if not using_workers:
-        DAG_executor_state = payload['DAG_executor_State']
+        DAG_exec_state = payload['DAG_executor_State']
     else:
-        DAG_executor_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
+        DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
+
+    #logger.debug("DAG_executor_processes: DAG_exec_state: " + str(DAG_exec_state))
 ##rhc
     ##state = payload['state'] # refers to state var, not the usual State of DAG_executor 
     ##logger.debug("state:" + str(state))
     ##DAG_executor_state.state = payload['state']
     if not using_workers:
-        logger.debug("payload state:" + str(DAG_executor_state.state))
+        logger.debug("payload state:" + str(DAG_exec_state.state))
     # For leaf task, we get  ['input': inp]; this is passed to the executed task using:
     #    def execute_task(task_name,input): output = DAG_info.DAG_tasks[task_name](input)
     # So the executed task gets ['input': inp], just like a non-leaf task gets ['output': X]. For leaf tasks, we use "input"
@@ -762,7 +782,7 @@ def DAG_executor_processes(payload,counter,process_work_queue, data_dict, log_qu
   
     DAG_info = DAG_Info()
     #DAG_info = payload['DAG_info']
-    DAG_executor_work_loop(logger, server, counter, process_work_queue, DAG_executor_state, DAG_info, data_dict)
+    DAG_executor_work_loop(logger, server, counter, process_work_queue, DAG_exec_state, DAG_info, data_dict)
     logger.debug("DAG_executor_processes: returning after work_loop.")
     return
 

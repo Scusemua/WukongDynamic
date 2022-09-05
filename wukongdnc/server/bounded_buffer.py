@@ -1,6 +1,5 @@
-from re import L
-from .monitor_su import MonitorSU, ConditionVariable
-import threading
+#from re import L
+from .monitor_su import MonitorSU
 import _thread
 import time
 
@@ -32,7 +31,7 @@ class BoundedBuffer(MonitorSU):
         self._out=0
 		
 	# synchronous try version of deposit, restart when block
-    def deposit(self, **kwargs):
+    def deposit_try_and_restart(self, **kwargs):
         super().enter_monitor(method_name="deposit")
         logger.info(" deposit() entered monitor, len(self._notFull) ="+str(len(self._notFull))+",self._capacity="+str(self._capacity))
         logger.info(" deposit() entered monitor, len(self._notEmpty) ="+str(len(self._notEmpty))+",self._capacity="+str(self._capacity))
@@ -53,7 +52,7 @@ class BoundedBuffer(MonitorSU):
         return 0, restart
 
 	# synchronous no-try version of deposit, blocking w/ no restart
-    def deposit_no_try(self, **kwargs):
+    def deposit(self, **kwargs):
         super().enter_monitor(method_name="deposit")
         logger.debug(" deposit() entered monitor, len(self._notFull) ="+str(len(self._notFull))+",self._capacity="+str(self._capacity))
         logger.debug(" deposit() entered monitor, len(self._notEmpty) ="+str(len(self._notEmpty))+",self._capacity="+str(self._capacity))
@@ -72,7 +71,7 @@ class BoundedBuffer(MonitorSU):
         return 0, restart
 
 	# synchronous try version of withdraw, restart when block
-    def withdraw(self, **kwargs): 
+    def withdraw_try_and_restart(self, **kwargs): 
         super().enter_monitor(method_name = "withdraw")
         value = 0
         if self._fullSlots == 0:
@@ -91,7 +90,7 @@ class BoundedBuffer(MonitorSU):
         return value, restart
 
 	# synchronous no-try version of withdraw.
-    def withdraw_no_try(self, **kwargs):
+    def withdraw(self, **kwargs):
         super().enter_monitor(method_name = "withdraw")
         logger.debug(" withdraw() entered monitor, len(self._notFull) ="+str(len(self._notFull))+", self._capacity="+str(self._capacity))
         logger.debug(" withdraw() entered monitor, len(self._notEmpty) ="+str(len(self._notEmpty))+", self._capacity="+str(self._capacity))
@@ -123,17 +122,21 @@ class BoundedBuffer(MonitorSU):
 def taskD(b : BoundedBuffer):
     time.sleep(1)
     logger.debug("Calling deposit")
+    VALUEHERE = 1
     b.deposit(VALUEHERE)
     logger.debug("Successfully called deposit")
 
 def taskW(b : BoundedBuffer):
     logger.debug("Calling withdraw")
     value = b.withdraw()
-    logger.debug("Successfully called withdraw")
+    logger.debug("Successfully called withdraw: "+ value)
 
 def main():
     b = BoundedBuffer(initial_capacity=1,monitor_name="BoundedBuffer")
-    b.init(VALUEFOR_N)
+    VALUEFOR_N = 2
+    keyword_arguments = {}
+    keyword_arguments['value'] = VALUEFOR_N
+    b.init(**keyword_arguments)
     #b.deposit(value = "A")
     #value = b.withdraw()
     #logger.debug(value)

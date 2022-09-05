@@ -1,6 +1,5 @@
 #import queue
-import multiprocessing
-from multiprocessing import Process, Manager, Queue, Value, Lock
+from multiprocessing import Process, Manager, Queue, Value
 import cloudpickle
 
 class DAG_Info(object):

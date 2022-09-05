@@ -205,8 +205,8 @@ class DAG_executor_FanInNB(MonitorSU):
             # does mutex.V
             super().exit_monitor()
             
-            #return self._results, restart  # all threads have called so return results
-            return 1, restart  # all threads have called so return results
+            return self._results, restart  # all threads have called so return results
+            #return 1, restart  # all threads have called so return results
         
 
         #No logger.debugs here. main Client can exit while other threads are
