@@ -17,6 +17,7 @@
 # and faninNB not become gets work from work_queue (while on tcp_server) or waits for work
 # and gets work (maybe -1) from work_queue (while on tcp_server) and fanin not
 # become needs work and acts like faninNB not become.
+# Use diret calls to fanin_local when using pool threads instead of starting tasks to make call.
 
 import threading
 import multiprocessing

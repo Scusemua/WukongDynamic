@@ -158,29 +158,48 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
 		#Q: kwargs put in DAG_executor_State keywords and on server it gets keywords from state and passes to create and fanin
 
         if store_fanins_faninNBs_locally:
-            # Note: We start a thread to make the fanin call and we don't wait for it to finish.
-            # So this is like an asynch call to tcp_server. The faninNB will start a new 
-            # thread to execute the fanin task so the callers do not need to do anything.
-            # Agan, "NB" is "No Become" so no caller will become the executor of the fanin task.
-            #keyword_arguments['DAG_executor_State'] = new_DAG_exec_state # given to the thread/lambda that executes the fanin task.
-            if not create_all_fanins_faninNBs_on_start:
-                try:
-                    logger.debug("Starting create_and_fanin for faninNB " + name)
-                    NBthread = threading.Thread(target=create_and_faninNB_task_locally, name=("create_and_faninNB_task_"+name), args=(keyword_arguments,))
-                    NBthread.start()
-                except Exception as ex:
-                    logger.error("[ERROR] Failed to start create_and_faninNB_task thread.")
-                    logger.debug(ex)
-                    return 0
+            if not using_workers:
+                # Note: We start a thread to make the fanin call and we don't wait for it to finish.
+                # So this is like an asynch call to tcp_server. The faninNB will start a new 
+                # thread to execute the fanin task so the callers do not need to do anything.
+                # Agan, "NB" is "No Become" so no caller will become the executor of the fanin task.
+                # keyword_arguments['DAG_executor_State'] = new_DAG_exec_state 
+                # given to the thread/lambda that executes the fanin task.
+                if not create_all_fanins_faninNBs_on_start:
+                    try:
+                        logger.debug("Starting create_and_fanin for faninNB " + name)
+                        NBthread = threading.Thread(target=create_and_faninNB_task_locally, name=("create_and_faninNB_task_"+name), args=(keyword_arguments,))
+                        NBthread.start()
+                    except Exception as ex:
+                        logger.error("[ERROR] Failed to start create_and_faninNB_task thread.")
+                        logger.debug(ex)
+                        return 0
+                else:
+                    try:
+                        logger.debug("Starting faninNB_task for faninNB " + name)
+                        NBthread = threading.Thread(target=faninNB_task_locally, name=("faninNB_task_"+name), args=(keyword_arguments,))
+                        NBthread.start()
+                    except Exception as ex:
+                        logger.error("[ERROR] Failed to start faninNB_task thread.")
+                        logger.debug(ex)
+                        return 0
             else:
-                try:
-                    logger.debug("Starting faninNB_task for faninNB " + name)
-                    NBthread = threading.Thread(target=faninNB_task_locally, name=("faninNB_task_"+name), args=(keyword_arguments,))
-                    NBthread.start()
-                except Exception as ex:
-                    logger.error("[ERROR] Failed to start faninNB_task thread.")
-                    logger.debug(ex)
-                    return 0
+                # When we are using workers, we use this faster code which calls the
+                # faninNB locally directly instead of starting a thread to do it. (Starting
+                # a thread simulates calling fanin asynchronously.)
+                if not create_all_fanins_faninNBs_on_start:
+                    logger.debug("create_and_faninNB_task: call create_and_faninNB_locally")
+                    #server = kwargs['server']
+                    # Not using return_value from faninNB since faninNB starts the fanin task, i.e., there is No Become
+                    return_value_ignored = server.create_and_faninNB_locally(**keyword_arguments)
+                else:
+                    logger.debug("faninNB_task: call faninNB_locally")
+                    #server = kwargs['server']
+                    # Not using return_value from faninNB since faninNB starts the fanin task, i.e., there is No Become
+                    return_value_ignored = server.faninNB_locally(**keyword_arguments)
+
+            #Note: returning 0 since when running locally the faninNB will start 
+            # the fanin task so there is nothing to do. Process fanouts next.
         else:
             if not create_all_fanins_faninNBs_on_start:
                 if not using_lambdas:
@@ -223,7 +242,10 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
                     #    data_dict[key] = value
 
                     #thread_work_queue.put(start_state_fanin_task)
-                    work_queue.put(DAG_exec_state,start_state_fanin_task)
+                    if not using_threads_not_processes:
+                        work_queue.put(DAG_exec_state,start_state_fanin_task)
+                    else: 
+                        work_queue.put(start_state_fanin_task)
                 else:
 #Todo:
                     try:
@@ -284,7 +306,10 @@ def process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State, outp
         #rhc queue
         if using_workers:
             #thread_work_queue.put(DAG_states[name])
-            work_queue.put(DAG_exec_State,DAG_states[name])
+            if not using_threads_not_processes:
+                work_queue.put(DAG_exec_State,DAG_states[name])
+            else: 
+                work_queue.put(DAG_states[name])
         else:
             if run_all_tasks_locally:
                 try:
@@ -508,23 +533,42 @@ def DAG_executor_work_loop(logger, server, counter, work_queue, DAG_executor_sta
             if using_workers:
                 if worker_needs_input:
                     #DAG_executor_state.state = thread_work_queue.get(block=True)
-                    DAG_executor_state.state = work_queue.get(DAG_executor_state,block=True)
+                    if not using_threads_not_processes:
+                        DAG_executor_state.state = work_queue.get(DAG_executor_state,block=True)
+
+                        #if DAG_executor_state.state == -1:
+                        #    logger.debug("DAG_executor: state is -1 so returning.")
+                        #    work_queue.put(DAG_executor_state,-1)
+                         #   return
+
+                    else:
+                        state = work_queue.get(block=True)
+                        logger.debug("**********************withdrawn state: " + str(state))
+                        DAG_executor_state.state = state
+
                     if DAG_executor_state.state == -1:
-                        #thread_work_queue.put(-1)
                         logger.debug("DAG_executor: state is -1 so returning.")
-                        work_queue.put(DAG_executor_state,-1)
-                        return
+                        if not using_threads_not_processes:
+                            work_queue.put(DAG_executor_state, -1)
+                        else:
+                            work_queue.put(-1)
+                        return  
+
                     worker_needs_input = False # default
                     logger.debug("DAG_executor: Worker accessed work_queue: process state: " + str(DAG_executor_state.state))
                 else:
                     logger.debug("DAG_executor: Worker doesn't access work_queue: process state: " + str(DAG_executor_state.state))
+                
                 num_tasks_executed = counter.increment_and_get()
                 logger.debug("DAG_executor: before processing " + str(DAG_executor_state.state) 
                     + "num_tasks_executed: " + str(num_tasks_executed) 
                     + " num_tasks_to_execute: " + str(num_tasks_to_execute))
                 if num_tasks_executed == num_tasks_to_execute:
                     #thread_work_queue.put(-1)
-                    work_queue.put(DAG_executor_state,-1)
+                    if not using_threads_not_processes:
+                        work_queue.put(DAG_executor_state,-1)
+                    else:
+                        work_queue.put(-1)
                     #return
 
 ##rhc
