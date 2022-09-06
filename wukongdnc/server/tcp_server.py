@@ -30,7 +30,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
             self.action_handlers = {
                 "create": self.create_obj,
-                "create_all_fanins_and_faninNBs": self.create_all_fanins_and_faninNBs,
+                "create_all_fanins_and_faninNBs_and_possibly_work_queue": self.create_all_fanins_and_faninNBs_and_possibly_work_queue,
                 "setup": self.setup_server,
                 "synchronize_async": self.synchronize_async,
                 "synchronize_sync": self.synchronize_sync,
@@ -100,7 +100,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         self.send_serialized_object(resp_encoded)
         logger.info("Sent ACK of size %d bytes to client %s for CREATE operation." % (len(resp_encoded), self.client_address[0]))  
 
-    def create_all_fanins_and_faninNBs(self, message = None):
+    def create_all_fanins_and_faninNBs_and_possibly_work_queue(self, message = None):
         """
         Called by a remote Lambda to create an object here on the TCP server.
 
@@ -132,6 +132,14 @@ class TCPHandler(socketserver.StreamRequestHandler):
         for msg in faninNB_messages:
             self.create_one_of_all_objs(msg)
         logger.info("created faninNBs")
+
+
+        create_work_queue = (len(messages)>2)
+        logger.info("create_work_queue: " + str(create_work_queue) + " len: " + str(len(messages)))
+        if create_work_queue:
+            msg = messages[2]
+            self.create_one_of_all_objs(msg)
+
 
         resp = {
             "op": "ack",

@@ -230,9 +230,6 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
                     
                     dict_of_results = DAG_exec_state.return_value
 
-                    #ToDo: I faninNB remote, with processes, dont send result and
-                    # dont save result since aleady added result to lodal data_dict;
-                    # Just add the other results.
                     # Also, don't pass in the multp data_dict, so will use the global.
                     # Fix if in global
                     logger.debug("faninNB Results: ")
@@ -496,7 +493,8 @@ def process_fanins(websocket,fanins, faninNB_sizes, calling_task_name, DAG_state
 	Note: We can call DAG_execute(state)
 """
 
-def DAG_executor_work_loop(logger, server, counter, work_queue, DAG_executor_state, DAG_info, data_dict):
+#def DAG_executor_work_loop(logger, server, counter, work_queue, DAG_executor_state, DAG_info, data_dict):
+def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info):
 
     DAG_map = DAG_info.get_DAG_map()
     DAG_tasks = DAG_info.get_DAG_tasks()
@@ -520,6 +518,8 @@ def DAG_executor_work_loop(logger, server, counter, work_queue, DAG_executor_sta
         if using_workers and not using_threads_not_processes:
             # Did the create() in the DAG_executor_driver
             work_queue = BoundedBuffer_Work_Queue(websocket,2*num_tasks_to_execute)
+        else:
+            work_queue = thread_work_queue
 
         while (True):
 
@@ -542,7 +542,7 @@ def DAG_executor_work_loop(logger, server, counter, work_queue, DAG_executor_sta
                          #   return
 
                     else:
-                        state = work_queue.get(block=True)
+                        state = thread_work_queue.get(block=True)
                         logger.debug("**********************withdrawn state: " + str(state))
                         DAG_executor_state.state = state
 
@@ -551,7 +551,7 @@ def DAG_executor_work_loop(logger, server, counter, work_queue, DAG_executor_sta
                         if not using_threads_not_processes:
                             work_queue.put(DAG_executor_state, -1)
                         else:
-                            work_queue.put(-1)
+                            thread_work_queue.put(-1)
                         return  
 
                     worker_needs_input = False # default
@@ -568,7 +568,7 @@ def DAG_executor_work_loop(logger, server, counter, work_queue, DAG_executor_sta
                     if not using_threads_not_processes:
                         work_queue.put(DAG_executor_state,-1)
                     else:
-                        work_queue.put(-1)
+                        thread_work_queue.put(-1)
                     #return
 
 ##rhc
@@ -785,9 +785,12 @@ def DAG_executor(payload):
   
     DAG_info = DAG_Info()
     #DAG_info = payload['DAG_info']
-    DAG_executor_work_loop(logger, server, counter, thread_work_queue, DAG_executor_state, DAG_info, data_dict)
+    #DAG_executor_work_loop(logger, server, counter, thread_work_queue, DAG_executor_state, DAG_info, data_dict)
+    DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info)
 
-def DAG_executor_processes(payload,counter,process_work_queue,data_dict,log_queue, configurer):
+# def DAG_executor_processes(payload,counter,process_work_queue,data_dict,log_queue, configurer):
+def DAG_executor_processes(payload,counter,log_queue, configurer):
+
     #- read DAG_info, create DAG_exec_state, thread_work_queue is parm
     global logger
     configurer(log_queue)
@@ -826,7 +829,8 @@ def DAG_executor_processes(payload,counter,process_work_queue,data_dict,log_queu
   
     DAG_info = DAG_Info()
     #DAG_info = payload['DAG_info']
-    DAG_executor_work_loop(logger, server, counter, process_work_queue, DAG_exec_state, DAG_info, data_dict)
+    #DAG_executor_work_loop(logger, server, counter, process_work_queue, DAG_exec_state, DAG_info, data_dict)
+    DAG_executor_work_loop(logger, server, counter, DAG_exec_state, DAG_info)
     logger.debug("DAG_executor_processes: returning after work_loop.")
     return
 

@@ -260,7 +260,7 @@ def create(websocket, op, type, name, state):
     # Receive data. This should just be an ACK, as the TCP server will 'ACK' our create() calls.
     ack_ignored = recv_object(websocket)
 
-def create_all_fanins_and_faninNBs(websocket, op, type, name, state):
+def create_all_fanins_and_faninNBs_and_possibly_work_queue(websocket, op, type, name, state):
     """
     Create all fanins and faninNBs for DAG_executor on the TCP server.
 
@@ -286,7 +286,7 @@ def create_all_fanins_and_faninNBs(websocket, op, type, name, state):
     """
 
     msg_id = str(uuid.uuid4())
-    logger.debug("create_all_fanins_and_faninNBs: Sending 'create_all_fanins_and_faninNBs' message to server. Op='%s', type='%s', id='%s', state=%s" % (op, type, msg_id, state))
+    logger.debug("create_all_fanins_and_faninNBs_and_possibly_work_queue: Sending 'create_all_fanins_and_faninNBs' message to server. Op='%s', type='%s', id='%s', state=%s" % (op, type, msg_id, state))
 
     # we set state.keyword_arguments before call to create()
     message = {
@@ -299,12 +299,12 @@ def create_all_fanins_and_faninNBs(websocket, op, type, name, state):
 
     msg = json.dumps(message).encode('utf-8')
     send_object(msg, websocket)
-    logger.debug("create_all_fanins_and_faninNBs: Sent 'create_all_fanins_and_faninNBs' message to server")
+    logger.debug("create_all_fanins_and_faninNBs_and_possibly_work_queue: Sent 'create_all_fanins_and_faninNBs' message to server")
 
     # Receive data. This should just be an ACK, as the TCP server will 'ACK' our create() calls.
     ack = recv_object(websocket)
 
-    logger.debug("create_all_fanins_and_faninNBs: received %d byte ack from server: %s" % (len(ack), str(ack)))
+    logger.debug("create_all_fanins_and_faninNBs_and_possibly_work_queue: received %d byte ack from server: %s" % (len(ack), str(ack)))
 
 def close_all(websocket):
     """

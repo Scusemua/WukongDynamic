@@ -1,14 +1,11 @@
 #ToDo: All the timing stuff + close_all at the end
 # break is FN + R
 # try matrixMult
-# Null out the results sent to fanin/FaninNB when remote non-Lambda to reduce cost of send.
-#   Note that we do not send results back
+
 # implement multitreaded processes- drver creates processes that start threads as usual.
 #   Need "multitreaded_multiprocessing=True" and check other constants will work.
 #   Note matrix mult may be using C code so may work well with multithreading.
-# No null out results sent to fanin/faninNB if sending resuls back for local data_dict
-# local data_dict for multiprocessing
-# try BB_work_queue
+
 # try fanouts before faninNBs with no other changes except needs_work logic
 # try batching fanout start states to BB.deposit_all_no_restarts
 # try sending fanout start_state batch with faninNB call and faninNB batch call
@@ -17,11 +14,12 @@
 # and faninNB not become gets work from work_queue (while on tcp_server) or waits for work
 # and gets work (maybe -1) from work_queue (while on tcp_server) and fanin not
 # become needs work and acts like faninNB not become.
-# Use diret calls to fanin_local when using pool threads instead of starting tasks to make call.
+# Should we delegate process_FANINnbS to a thread?
+# Wrap work queue in a class so we can use same syntax?
 
 import threading
 import multiprocessing
-from multiprocessing import Process, Manager
+from multiprocessing import Process #, Manager
 import time
 import cloudpickle
 import socket
@@ -43,7 +41,7 @@ from .DAG_work_queue_for_threads import thread_work_queue
 from .DAG_executor_synchronizer import server
 from wukongdnc.wukong.invoker import invoke_lambda_DAG_executor
 import uuid
-from wukongdnc.server.api import create_all_fanins_and_faninNBs
+from wukongdnc.server.api import create_all_fanins_and_faninNBs_and_possibly_work_queue
 from .multiprocessing_logging import listener_configurer, listener_process, worker_configurer
 from .DAG_executor_countermp import CounterMP
 from .DAG_boundedbuffer_work_queue import BoundedBuffer_Work_Queue
@@ -273,22 +271,48 @@ def run():
             websocket.connect(TCP_SERVER_IP)
             logger.debug("DAG_executor_driver: Successfully connected to TCP Server.")
             if create_all_fanins_faninNBs_on_start:
-                # create fanins and faninNbs on tcp_server or in InfiniX lambdas
-                create_fanins_and_faninNBs(websocket,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
+                # create fanins and faninNbs on tcp_server or in InfiniX lambdas 
+                # all at the start of driver execution
+                # create_fanins_and_faninNBs(websocket,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
+                if using_workers and not using_threads_not_processes:
+                    #Note: using workers means not store_fanins_faninNBs_locally
+                    #Need to create the process_work_queue; do it in the same batch
+                    # of fanin and faninNB creates
+                    #manager = Manager()
+                    #data_dict = manager.dict()
+                    #num_DAG_tasks = len(DAG_tasks)
+                    #process_work_queue = manager.Queue(maxsize = num_DAG_tasks)
+
+                    num_tasks_to_execute = len(DAG_tasks)
+                    process_work_queue = BoundedBuffer_Work_Queue(websocket,2*num_tasks_to_execute)
+                    #process_work_queue.create()
+                    num_tasks_to_execute = len(DAG_tasks)
+
+                    create_fanins_and_faninNBs_and_work_queue(websocket,num_tasks_to_execute,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
+                else:
+                    # just create a batch of fanins and faninNBs
+                    create_fanins_and_faninNBs(websocket,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
+            else:
+                # going to create fanin and faninNBs on demand, i.e., as we execute
+                # operations on them. But still want to create process_work_queue
+                # by itself at the beginning of drivr execuion.
+                if using_workers and not using_threads_not_processes:
+                    #Note: using workers means not store_fanins_faninNBs_locally
+                    #Need to create the process_work_queue
+                    #manager = Manager()
+                    #data_dict = manager.dict()
+                    #num_DAG_tasks = len(DAG_tasks)
+                    #process_work_queue = manager.Queue(maxsize = num_DAG_tasks)
+                    num_tasks_to_execute = len(DAG_tasks)
+                    process_work_queue = BoundedBuffer_Work_Queue(websocket,2*num_tasks_to_execute)
+                    process_work_queue.create()
+                    #num_tasks_to_execute = len(DAG_tasks)
+                    #create_fanins_and_faninNBs_and_work_queue(websocket,num_tasks_to_execute,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
 
         # FYI
         logger.debug("DAG_executor_driver: DAG_leaf_tasks: " + str(DAG_leaf_tasks))
         logger.debug("DAG_executor_driver: DAG_leaf_task_start_states: " + str(DAG_leaf_task_start_states))
         logger.debug("DAG_executor_driver: DAG_leaf_task_inputs: " + str(DAG_leaf_task_inputs))
-
-        if using_workers and not using_threads_not_processes:
-            manager = Manager()
-            data_dict = manager.dict()
-            #num_DAG_tasks = len(DAG_tasks)
-            #process_work_queue = manager.Queue(maxsize = num_DAG_tasks)
-            num_tasks_to_execute = len(DAG_tasks)
-            process_work_queue = BoundedBuffer_Work_Queue(websocket,2*num_tasks_to_execute)
-            process_work_queue.create()
 
         if using_workers:
             # pool of worker threads or processes that withdraw work from a work_queue
@@ -300,6 +324,7 @@ def run():
                 for state in DAG_leaf_task_start_states:
                     dummy_state = DAG_executor_State()
                     logger.debug("dummy_state: " + str(dummy_state))
+#Error: moving this up
                     process_work_queue.put(dummy_state,state)
 
                 # Done with process_work_queue 
@@ -309,14 +334,14 @@ def run():
         #for start_state in X_work_queue.queue:
         #   print(start_state)
 
-        if using_workers and not use_multithreaded_multiprocessing:
+        if using_workers and not use_multithreaded_multiprocessing and run_all_tasks_locally:
             # keep list of threads/processes in pool so we can join() them
             thread_list = []
 
         # count of threads/processes created. We will create DAG_executor_constants.py num_workers
         # if we are using_workers. We will create some number of threads if we are simulating the 
         # use of creating Lambdas, e.g., at fan-out points.
-        if not use_multithreaded_multiprocessing:
+        if not use_multithreaded_multiprocessing and run_all_tasks_locally:
             num_threads_created = 0
 
         if run_all_tasks_locally and not using_threads_not_processes:
@@ -335,7 +360,8 @@ def run():
             num_processes_created_for_multithreaded_multiprocessing = 0
 
         if use_multithreaded_multiprocessing:
-             num_processes_created_for_multithreaded_multiprocessing = create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,counter,process_work_queue,data_dict,log_queue,worker_configurer)
+             #num_processes_created_for_multithreaded_multiprocessing = create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,counter,process_work_queue,data_dict,log_queue,worker_configurer)
+             num_processes_created_for_multithreaded_multiprocessing = create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,counter,log_queue,worker_configurer)
         else: # multi threads or multi-processes, thread and processes may be workers using work_queue
             # if we are not using lambdas, and we are not using a worker pool, create a thread for each
             # leaf task. If we are not using lambdas but we are using a worker pool, create at least 
@@ -402,7 +428,8 @@ def run():
                             proc_name_prefix = "Worker_leaf_"
                             # processes share these objects: counter,process_work_queue,data_dict,log_queue,worker_configurer.
                             # The worker_configurer() funcion is used for multiprocess logging
-                            proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,counter,process_work_queue,data_dict,log_queue,worker_configurer,))
+                            #proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,counter,process_work_queue,data_dict,log_queue,worker_configurer,))
+                            proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,counter,log_queue,worker_configurer,))
                             proc.start()
                             thread_list.append(proc)
                             #thread.start()
@@ -469,7 +496,8 @@ def run():
                                 payload = {
                                 }
                                 proc_name_prefix = "Worker_process_non-leaf_"
-                                proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"p"+str(num_threads_created + 1)), args=(payload,counter,process_work_queue,data_dict,log_queue,worker_configurer,))
+                                #proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"p"+str(num_threads_created + 1)), args=(payload,counter,process_work_queue,data_dict,log_queue,worker_configurer,))
+                                proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"p"+str(num_threads_created + 1)), args=(payload,counter,log_queue,worker_configurer,))
                                 proc.start()
                                 thread_list.append(proc)
                                 num_threads_created += 1                      
@@ -549,7 +577,9 @@ def create_and_run_threads_for_multiT_multiP(process_name,payload,counter,proces
 
         # return and join multithreaded_multiprocessing_processes
 
-def create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,counter,process_work_queue,data_dict,log_queue,worker_configurer):
+#def create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,counter,process_work_queue,data_dict,log_queue,worker_configurer):
+def create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,counter,log_queue,worker_configurer):
+
     logger.debug("DAG_executor_driver: Starting multi processors for multhreaded multipocessing.")
     while True:
          # asserts:
@@ -561,7 +591,8 @@ def create_multithreaded_multiprocessing_processes(num_processes_created_for_mul
             payload = {
             }
             process_name = "proc"+str(num_processes_created_for_multithreaded_multiprocessing + 1)
-            proc = Process(target=create_and_run_threads_for_multiT_multiP, name=(process_name), args=(process_name,payload,counter,process_work_queue,data_dict,log_queue,worker_configurer,))
+            #proc = Process(target=create_and_run_threads_for_multiT_multiP, name=(process_name), args=(process_name,payload,counter,process_work_queue,data_dict,log_queue,worker_configurer,))
+            proc = Process(target=create_and_run_threads_for_multiT_multiP, name=(process_name), args=(process_name,payload,counter,log_queue,worker_configurer,))
             proc.start()
             multithreaded_multiprocessing_process_list.append(proc)
             num_processes_created_for_multithreaded_multiprocessing += 1                      
@@ -573,9 +604,10 @@ def create_multithreaded_multiprocessing_processes(num_processes_created_for_mul
             break 
 
     return num_processes_created_for_multithreaded_multiprocessing
-							
-def create_fanins_and_faninNBs(websocket,DAG_map,DAG_states,DAG_info,all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes):										
 
+# create fanni and faninNB messages to be passed to the tcp_server for creating
+# all fanin and faninNB synch objects
+def create_fanin_and_faninNB_messages(DAG_map,DAG_states,DAG_info,all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes):
     fanin_messages = []
 
     # create a list of "create" messages, one for each fanin
@@ -622,12 +654,43 @@ def create_fanins_and_faninNBs(websocket,DAG_map,DAG_states,DAG_info,all_fanin_t
         }
         faninNB_messages.append(message)
 
-    # msg_id for debugging
-    msg_id = str(uuid.uuid4())
+        return fanin_messages, faninNB_messages
+
+
+# creates all fanins and faninNBs at the start of driver executin. If we are using 
+# workers and processes (not threads) then we also crate the work_queue here
+def create_fanins_and_faninNBs_and_work_queue(websocket,number_of_tasks,DAG_map,DAG_states,DAG_info,all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes):
+    dummy_state = DAG_executor_State()
+    # we will create the fanin object and call fanin.init(**keyword_arguments)
+    dummy_state.keyword_arguments['n'] = 2*number_of_tasks
+    msg_id = str(uuid.uuid4())	# for debugging
+
+    work_queue_message = {
+        "op": "create",
+        "type": "BoundedBuffer",
+        "name": "process_work_queue",
+        "state": make_json_serializable(dummy_state),	
+        "id": msg_id
+    } 
+
+    fanin_messages, faninNB_messages = create_fanin_and_faninNB_messages(DAG_map,DAG_states,DAG_info,all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes)
+ 
+    logger.debug("create_fanins_and_faninNBs_and_work_queue: Sending a 'create_all' message to server.")
+    messages = (fanin_messages,faninNB_messages,work_queue_message)
+    dummy_state = DAG_executor_State()
+    #Note: Passing tuple messages as name
+    create_all_fanins_and_faninNBs_and_possibly_work_queue(websocket, "create_all_fanins_and_faninNBs_and_possibly_work_queue", "DAG_executor_fanin_or_faninNB", 
+        messages, dummy_state)
+
+
+# creates all fanins and faninNBs at the start of driver execution. 
+def create_fanins_and_faninNBs(websocket,DAG_map,DAG_states,DAG_info,all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes):										
+    fanin_messages, faninNB_messages = create_fanin_and_faninNB_messages(DAG_map,DAG_states,DAG_info,all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes)
+
     logger.debug("Sending a 'create_all' message to server.")
     messages = (fanin_messages,faninNB_messages)
     dummy_state = DAG_executor_State()
-    create_all_fanins_and_faninNBs(websocket, "create_all_fanins_and_faninNBs", "DAG_executor_fanin_or_faninNB", 
+    create_all_fanins_and_faninNBs_and_possibly_work_queue(websocket, "create_all_fanins_and_faninNBs_and_possibly_work_queue", "DAG_executor_fanin_or_faninNB", 
         messages, dummy_state)
 
     """ create_all_fanins_and_faninNBs creates:
@@ -635,7 +698,7 @@ def create_fanins_and_faninNBs(websocket,DAG_map,DAG_states,DAG_info,all_fanin_t
     message = {
         "op": "create_all_fanins_and_faninNBs",
         "type": "DAG_executor_fanin_or_faninNB",
-        "name": messages,						# Q: Fix this? usually it's a synch object name (string)
+        "name": messages,		# Q: Fix this? usually it's a synch object name (string)
         "state": make_json_serializable(dummy_state),
         "id": msg_id
     }
