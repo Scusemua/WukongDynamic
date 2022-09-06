@@ -67,7 +67,9 @@ def execute_task(task, args):
     return output
 
 def create_and_faninNB_remotely(websocket,**keyword_arguments):
-    pass
+    # pass
+    # need code that returns a  DAG_exec_state = synchronize_sync()
+    return DAG_executor_State()
 
 def faninNB_remotely(websocket,**keyword_arguments):
     # create new faninNB with specified name if it hasn't been created
@@ -210,10 +212,12 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
                     # results, which are its inputs, from the data_dict. This makes the 
                     # cost of the send for the fanin operaton less costly.
                     # Actually:
-                    # We will use local datadict fr each multiprocess; process will receve
+                    # We will use local datadict for each multiprocess; process will receve
                     # the faninNB results and put them in the data_dict
                     #keyword_arguments['result'] = None
-                    create_and_faninNB_remotely(websocket,**keyword_arguments)
+#ToDo: dummy_state here, else, and if 
+#ToDo: Why pass Dag_exec_state to work_queue.put if we don;t do restarts - only for lambdas
+                    DAG_exec_state = create_and_faninNB_remotely(websocket,**keyword_arguments)
             else:
                 if not using_lambdas:
                     # see comment just above.
@@ -221,6 +225,7 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
                     DAG_exec_state = faninNB_remotely(websocket,**keyword_arguments)
 
             #if DAG_exec_state.blocking:
+            # I like using the "else" after the return, even though we don't need it
             if DAG_exec_state.return_value == 0:
                 #DAG_exec_state.blocking = False
                 # nothing to Do
@@ -648,6 +653,7 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
             elif len(state_info.faninNBs) > 0 or len(state_info.fanouts) > 0:
                 # assert len(collapse) + len(fanin) == 0
                 # If len(state_info.collapse) > 0 then there are no fanins, fanouts, or faninNBs and we will not excute this elif or the else
+                
                 if len(state_info.faninNBs) > 0:
                     # asynch + terminate + start DAG_executor in start state
                     process_faninNBs(websocket,state_info.faninNBs, state_info.faninNB_sizes, 

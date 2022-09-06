@@ -17,6 +17,13 @@
 # Should we delegate process_FANINnbS to a thread?
 # Wrap work queue in a class so we can use same syntax?
 
+# Where are we: 
+# move on the optimizations, e.g., fanout before faninNBs w/ only need work changes
+# then batch fanouts, then piggy back fanouts on faninNBs (if any).
+# Then work_queue optmizations
+# Then delegate process faninNBs to a thread since long time on server and 
+#   we can in mean time do fanouts?
+
 import threading
 import multiprocessing
 from multiprocessing import Process #, Manager
@@ -258,6 +265,8 @@ def run():
 
         # synch_objects are stored in local memory or on the tcp_Server/InfinX
         if store_fanins_faninNBs_locally:
+            if not using_threads_not_processes: # using processes
+                logger.error("[Error': store local but using processes.")
             # cannot be multiprocessing, may or may not be pooling, running all tasks locally (no Lambdas)
             # server is global variable obtained: from .DAG_executor_synchronizer import server
             if create_all_fanins_faninNBs_on_start:
@@ -265,7 +274,16 @@ def run():
                 # server is a global variable in DAG_executor_synchronizer.py. It is used to simulate the
                 # tcp_server when running locally.
                 server.create_all_fanins_and_faninNBs_locally(DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
-        else:
+                if using_workers:
+                    # leaf task states (a task is identified by its state) are put in work_queue
+                    for state in DAG_leaf_task_start_states:
+                        thread_work_queue.put(state)
+            else:
+                if using_workers:
+                    # leaf task states (a task is identified by its state) are put in work_queue
+                    for state in DAG_leaf_task_start_states:
+                        thread_work_queue.put(state)
+        else: # store remotely
             # server will be None
             logger.debug("DAG_executor_driver: Connecting to TCP Server at %s." % str(TCP_SERVER_IP))
             websocket.connect(TCP_SERVER_IP)
@@ -274,46 +292,69 @@ def run():
                 # create fanins and faninNbs on tcp_server or in InfiniX lambdas 
                 # all at the start of driver execution
                 # create_fanins_and_faninNBs(websocket,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
-                if using_workers and not using_threads_not_processes:
-                    #Note: using workers means not store_fanins_faninNBs_locally
-                    #Need to create the process_work_queue; do it in the same batch
-                    # of fanin and faninNB creates
-                    #manager = Manager()
-                    #data_dict = manager.dict()
-                    #num_DAG_tasks = len(DAG_tasks)
-                    #process_work_queue = manager.Queue(maxsize = num_DAG_tasks)
-
-                    num_tasks_to_execute = len(DAG_tasks)
-                    process_work_queue = BoundedBuffer_Work_Queue(websocket,2*num_tasks_to_execute)
-                    #process_work_queue.create()
-                    num_tasks_to_execute = len(DAG_tasks)
-
-                    create_fanins_and_faninNBs_and_work_queue(websocket,num_tasks_to_execute,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
+                if using_workers:
+                    if not using_threads_not_processes:
+                        #Note: using workers means not store_fanins_faninNBs_locally
+                        #Need to create the process_work_queue; do it in the same batch
+                        # of fanin and faninNB creates
+                        #manager = Manager()
+                        #data_dict = manager.dict()
+                        #num_DAG_tasks = len(DAG_tasks)
+                        #process_work_queue = manager.Queue(maxsize = num_DAG_tasks)
+                        num_tasks_to_execute = len(DAG_tasks)
+                        process_work_queue = BoundedBuffer_Work_Queue(websocket,2*num_tasks_to_execute)
+                        #process_work_queue.create()
+                        create_fanins_and_faninNBs_and_work_queue(websocket,num_tasks_to_execute,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
+                        for state in DAG_leaf_task_start_states:
+                            dummy_state = DAG_executor_State()
+                            #logger.debug("dummy_state: " + str(dummy_state))
+                            process_work_queue.put(dummy_state,state)
+                    else:
+                        create_fanins_and_faninNBs(websocket,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
+                        # leaf task states (a task is identified by its state) are put in work_queue
+                        for state in DAG_leaf_task_start_states:
+                            thread_work_queue.put(state)
                 else:
-                    # just create a batch of fanins and faninNBs
+                    if not using_threads_not_processes:
+                        logger.error("[Error]: not using_workers but using processes.")
+                    # just create a batch of fanins and faninNBs                
                     create_fanins_and_faninNBs(websocket,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
             else:
                 # going to create fanin and faninNBs on demand, i.e., as we execute
                 # operations on them. But still want to create process_work_queue
                 # by itself at the beginning of drivr execuion.
-                if using_workers and not using_threads_not_processes:
-                    #Note: using workers means not store_fanins_faninNBs_locally
-                    #Need to create the process_work_queue
-                    #manager = Manager()
-                    #data_dict = manager.dict()
-                    #num_DAG_tasks = len(DAG_tasks)
-                    #process_work_queue = manager.Queue(maxsize = num_DAG_tasks)
-                    num_tasks_to_execute = len(DAG_tasks)
-                    process_work_queue = BoundedBuffer_Work_Queue(websocket,2*num_tasks_to_execute)
-                    process_work_queue.create()
-                    #num_tasks_to_execute = len(DAG_tasks)
-                    #create_fanins_and_faninNBs_and_work_queue(websocket,num_tasks_to_execute,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
+                if using_workers:
+                    if not using_threads_not_processes:
+                        #Note: using workers means not store_fanins_faninNBs_locally
+                        #Need to create the process_work_queue
+                        #manager = Manager()
+                        #data_dict = manager.dict()
+                        #num_DAG_tasks = len(DAG_tasks)
+                        #process_work_queue = manager.Queue(maxsize = num_DAG_tasks)
+                        num_tasks_to_execute = len(DAG_tasks)
+                        process_work_queue = BoundedBuffer_Work_Queue(websocket,2*num_tasks_to_execute)
+                        process_work_queue.create()
+
+                        for state in DAG_leaf_task_start_states:
+                            dummy_state = DAG_executor_State()
+                            logger.debug("dummy_state: " + str(dummy_state))
+                            process_work_queue.put(dummy_state,state)
+                        #num_tasks_to_execute = len(DAG_tasks)
+                        #create_fanins_and_faninNBs_and_work_queue(websocket,num_tasks_to_execute,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
+                    else:
+                        # leaf task states (a task is identified by its state) are put in work_queue
+                        for state in DAG_leaf_task_start_states:
+                            thread_work_queue.put(state)  
+                else: 
+                    if not using_threads_not_processes:
+                        logger.error("[Error]: not using_workers but using processes.")
 
         # FYI
         logger.debug("DAG_executor_driver: DAG_leaf_tasks: " + str(DAG_leaf_tasks))
         logger.debug("DAG_executor_driver: DAG_leaf_task_start_states: " + str(DAG_leaf_task_start_states))
         logger.debug("DAG_executor_driver: DAG_leaf_task_inputs: " + str(DAG_leaf_task_inputs))
 
+        """
         if using_workers:
             # pool of worker threads or processes that withdraw work from a work_queue
             if using_threads_not_processes: # pool of threads
@@ -326,9 +367,9 @@ def run():
                     logger.debug("dummy_state: " + str(dummy_state))
 #Error: moving this up
                     process_work_queue.put(dummy_state,state)
-
-                # Done with process_work_queue 
-                process_work_queue = None
+        """
+        # Done with process_work_queue 
+        process_work_queue = None
 
         #print("work_queue:")
         #for start_state in X_work_queue.queue:
