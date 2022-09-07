@@ -14,7 +14,8 @@ from ..dag import  DAG_executor
 #from .DAG_executor_State import DAG_executor_State
 from wukongdnc.dag.DAG_executor_State import DAG_executor_State
 from wukongdnc.dag.DAG_executor_constants import run_all_tasks_locally, using_workers, using_threads_not_processes
-from wukongdnc.dag.DAG_work_queue_for_threads import thread_work_queue
+#from wukongdnc.dag.DAG_work_queue_for_threads import thread_work_queue
+from wukongdnc.dag.DAG_work_queue_for_threads import work_queue
 from wukongdnc.wukong.invoker import invoke_lambda_DAG_executor
 import uuid
 
@@ -146,7 +147,8 @@ class DAG_executor_FanInNB(MonitorSU):
                 # to be stored on the tcp_server or InfiniX lambdas, so this faninNB cannot start
                 # a new thread/process or add a sate to the processes work_queue.
                 logger.debug("FanInNB: using_workers and threads so add start state of fanin task to thread_work_queue.")
-                thread_work_queue.put(start_state_fanin_task)
+                #thread_work_queue.put(start_state_fanin_task)
+                work_queue.put(start_state_fanin_task)
             else:
                 # 
                 if self.store_fanins_faninNBs_locally and run_all_tasks_locally:

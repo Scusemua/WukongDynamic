@@ -6,20 +6,21 @@
 #   Need "multitreaded_multiprocessing=True" and check other constants will work.
 #   Note matrix mult may be using C code so may work well with multithreading.
 
-# try fanouts before faninNBs with no other changes except needs_work logic
-# try batching fanout start states to BB.deposit_all_no_restarts
-# try sending fanout start_state batch with faninNB call and faninNB batch call
-# try fanin and faninNB (batched) where they send need_work and if not become 
-# (where fanin become dosn't need work, and faninNB become adds work to work queue, 
-# and faninNB not become gets work from work_queue (while on tcp_server) or waits for work
-# and gets work (maybe -1) from work_queue (while on tcp_server) and fanin not
-# become needs work and acts like faninNB not become.
+# Try batching fanout start states to BB.deposit_all_no_restarts
+# Try sending fanout start_state batch with faninNB call and faninNB batch call
+# We'll be sending fanout/faninNB states to work_queue from tcp_server so
+#  we can just send the fanout rsults too. 
+# Try fanin and faninNB (batched) where they send need_work and if not become 
+#  (where fanin become dosn't need work, and faninNB become adds work to work queue, 
+#  and faninNB not become gets work from work_queue (while on tcp_server) or waits for work
+#  and gets work (maybe -1) from work_queue (while on tcp_server) and fanin not
+#  become needs work and acts like faninNB not become.
 # Should we delegate process_FANINnbS to a thread?
-# Wrap work queue in a class so we can use same syntax?
 
 # Where are we: 
-# move on the optimizations, e.g., fanout before faninNBs w/ only need work changes
-# then batch fanouts, then piggy back fanouts on faninNBs (if any).
+# fix data_dict problem: put fanout/faninNB results (in some cases) in work_queue
+# as tuple (state,results) for processes, not threads as thread work_queue is global)
+# move on the optimizations, batch fanouts, then piggy back fanouts on faninNBs (if any).
 # Then work_queue optmizations
 # Then delegate process faninNBs to a thread since long time on server and 
 #   we can in mean time do fanouts?
@@ -44,7 +45,8 @@ from wukongdnc.constants import TCP_SERVER_IP
 from .DAG_executor_constants import run_all_tasks_locally, store_fanins_faninNBs_locally, use_multithreaded_multiprocessing, num_threads_for_multithreaded_multiprocessing
 from .DAG_executor_constants import create_all_fanins_faninNBs_on_start, using_workers
 from .DAG_executor_constants import num_workers,using_threads_not_processes
-from .DAG_work_queue_for_threads import thread_work_queue
+#from .DAG_work_queue_for_threads import thread_work_queue
+from .DAG_work_queue_for_threads import work_queue
 from .DAG_executor_synchronizer import server
 from wukongdnc.wukong.invoker import invoke_lambda_DAG_executor
 import uuid
@@ -277,12 +279,14 @@ def run():
                 if using_workers:
                     # leaf task states (a task is identified by its state) are put in work_queue
                     for state in DAG_leaf_task_start_states:
-                        thread_work_queue.put(state)
+                        #thread_work_queue.put(state)
+                        work_queue.put(state)
             else:
                 if using_workers:
                     # leaf task states (a task is identified by its state) are put in work_queue
                     for state in DAG_leaf_task_start_states:
-                        thread_work_queue.put(state)
+                        #thread_work_queue.put(state)
+                        work_queue.put(state)
         else: # store remotely
             # server will be None
             logger.debug("DAG_executor_driver: Connecting to TCP Server at %s." % str(TCP_SERVER_IP))
@@ -306,14 +310,14 @@ def run():
                         #process_work_queue.create()
                         create_fanins_and_faninNBs_and_work_queue(websocket,num_tasks_to_execute,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
                         for state in DAG_leaf_task_start_states:
-                            dummy_state = DAG_executor_State()
                             #logger.debug("dummy_state: " + str(dummy_state))
-                            process_work_queue.put(dummy_state,state)
+                            process_work_queue.put(state)
                     else:
                         create_fanins_and_faninNBs(websocket,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
                         # leaf task states (a task is identified by its state) are put in work_queue
                         for state in DAG_leaf_task_start_states:
-                            thread_work_queue.put(state)
+                            #thread_work_queue.put(state)
+                            work_queue.put(state)
                 else:
                     if not using_threads_not_processes:
                         logger.error("[Error]: not using_workers but using processes.")
@@ -336,15 +340,14 @@ def run():
                         process_work_queue.create()
 
                         for state in DAG_leaf_task_start_states:
-                            dummy_state = DAG_executor_State()
-                            logger.debug("dummy_state: " + str(dummy_state))
-                            process_work_queue.put(dummy_state,state)
+                            process_work_queue.put(state)
                         #num_tasks_to_execute = len(DAG_tasks)
                         #create_fanins_and_faninNBs_and_work_queue(websocket,num_tasks_to_execute,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
                     else:
                         # leaf task states (a task is identified by its state) are put in work_queue
                         for state in DAG_leaf_task_start_states:
-                            thread_work_queue.put(state)  
+                            #thread_work_queue.put(state) 
+                            work_queue.put(state)  
                 else: 
                     if not using_threads_not_processes:
                         logger.error("[Error]: not using_workers but using processes.")

@@ -117,7 +117,7 @@ class DAG_executor_FanIn(MonitorSU):
             calling_task_name = kwargs['calling_task_name']
             
             if (self._results is not None):
-                logger.debug("faninNB collected results from " + calling_task_name + " for fan-in %s: %s" % (self.monitor_name, str(self._results)))
+                logger.debug("fanin collected results from " + calling_task_name + " for fan-in %s: %s" % (self.monitor_name, str(self._results)))
  
             #threading.current_thread()._returnValue = self._results
             #threading.current_thread()._restart = False 
