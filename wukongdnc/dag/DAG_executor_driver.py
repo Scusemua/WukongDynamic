@@ -20,10 +20,18 @@
 # Where are we: 
 # fix data_dict problem: put fanout/faninNB results (in some cases) in work_queue
 # as tuple (state,results) for processes, not threads as thread work_queue is global)
+# In faninNB, add elif for worker and process that does return, then elif elif, else error
+# FninNB local with no workers always starts new thread, like Lambda. Sowe are 
+#   not lookng at or changing worker_needs_work. Perhaps we should not start new 
+#   thread/Lambda if worker_needs_work or ust faster/better to start new Lambda/thread?
+#   Don't want Lambda to wait for wor or anything else? Call to fanin_all() can be asynch?
 # move on the optimizations, batch fanouts, then piggy back fanouts on faninNBs (if any).
 # Then work_queue optmizations
 # Then delegate process faninNBs to a thread since long time on server and 
 #   we can in mean time do fanouts?
+# Consider: multiple tcp_servers/work_queues and work stealing? workers generate
+# their own work, till they hit a fanin/faninNB and lose. then need need to start 
+# new dfs paths(s). Steal it? 
 
 import threading
 import multiprocessing
@@ -276,17 +284,35 @@ def run():
                 # server is a global variable in DAG_executor_synchronizer.py. It is used to simulate the
                 # tcp_server when running locally.
                 server.create_all_fanins_and_faninNBs_locally(DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
+
                 if using_workers:
                     # leaf task states (a task is identified by its state) are put in work_queue
                     for state in DAG_leaf_task_start_states:
                         #thread_work_queue.put(state)
-                        work_queue.put(state)
+                        #work_queue.put(DAG_states[name])
+                        state_info = DAG_map[state]
+                        task_inputs = state_info.task_inputs 
+                        task_name = state_info.task_name
+                        dict_of_results =  {}
+                        dict_of_results[task_name] = task_inputs
+                        work_tuple = (state,dict_of_results)
+                        work_queue.put(work_tuple)
+                        #work_queue.put(state)
+                #else: Nohing to do; we do not use a work_queue if we are not using workers
             else:
                 if using_workers:
                     # leaf task states (a task is identified by its state) are put in work_queue
                     for state in DAG_leaf_task_start_states:
                         #thread_work_queue.put(state)
-                        work_queue.put(state)
+                        state_info = DAG_map[state]
+                        task_inputs = state_info.task_inputs 
+                        task_name = state_info.task_name
+                        dict_of_results =  {}
+                        dict_of_results[task_name] = task_inputs
+                        work_tuple = (state,dict_of_results)
+                        work_queue.put(work_tuple)
+                        #work_queue.put(state)
+                #else: Nohing to do; we do not use a work_queue if we are not using workers
         else: # store remotely
             # server will be None
             logger.debug("DAG_executor_driver: Connecting to TCP Server at %s." % str(TCP_SERVER_IP))
@@ -311,13 +337,27 @@ def run():
                         create_fanins_and_faninNBs_and_work_queue(websocket,num_tasks_to_execute,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
                         for state in DAG_leaf_task_start_states:
                             #logger.debug("dummy_state: " + str(dummy_state))
-                            process_work_queue.put(state)
+                            state_info = DAG_map[state]
+                            task_inputs = state_info.task_inputs 
+                            task_name = state_info.task_name
+                            dict_of_results =  {}
+                            dict_of_results[task_name] = task_inputs
+                            work_tuple = (state,dict_of_results)
+                            process_work_queue.put(work_tuple)
+                            #process_work_queue.put(state)
                     else:
                         create_fanins_and_faninNBs(websocket,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
                         # leaf task states (a task is identified by its state) are put in work_queue
                         for state in DAG_leaf_task_start_states:
                             #thread_work_queue.put(state)
-                            work_queue.put(state)
+                            state_info = DAG_map[state]
+                            task_inputs = state_info.task_inputs 
+                            task_name = state_info.task_name
+                            dict_of_results =  {}
+                            dict_of_results[task_name] = task_inputs
+                            work_tuple = (state,dict_of_results)
+                            work_queue.put(work_tuple)
+                            #work_queue.put(state)
                 else:
                     if not using_threads_not_processes:
                         logger.error("[Error]: not using_workers but using processes.")
@@ -340,14 +380,28 @@ def run():
                         process_work_queue.create()
 
                         for state in DAG_leaf_task_start_states:
-                            process_work_queue.put(state)
+                            state_info = DAG_map[state]
+                            task_inputs = state_info.task_inputs 
+                            task_name = state_info.task_name
+                            dict_of_results =  {}
+                            dict_of_results[task_name] = task_inputs
+                            work_tuple = (state,dict_of_results)
+                            process_work_queue.put(work_tuple)
+                            #process_work_queue.put(state)
                         #num_tasks_to_execute = len(DAG_tasks)
                         #create_fanins_and_faninNBs_and_work_queue(websocket,num_tasks_to_execute,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
                     else:
                         # leaf task states (a task is identified by its state) are put in work_queue
                         for state in DAG_leaf_task_start_states:
                             #thread_work_queue.put(state) 
-                            work_queue.put(state)  
+                            state_info = DAG_map[state]
+                            task_inputs = state_info.task_inputs 
+                            task_name = state_info.task_name
+                            dict_of_results =  {}
+                            dict_of_results[task_name] = task_inputs
+                            work_tuple = (state,dict_of_results)
+                            work_queue.put(work_tuple)
+                            #work_queue.put(state)  
                 else: 
                     if not using_threads_not_processes:
                         logger.error("[Error]: not using_workers but using processes.")

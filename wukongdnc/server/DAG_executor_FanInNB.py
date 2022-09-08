@@ -8,7 +8,8 @@ from threading import Thread
 
 
 #from DAG_executor import DAG_executor
-from ..dag import  DAG_executor
+#from wukongdnc.dag 
+
 #from wukongdnc.dag.DAG_executor import DAG_executor
 #from . import DAG_executor_driver
 #from .DAG_executor_State import DAG_executor_State
@@ -18,6 +19,7 @@ from wukongdnc.dag.DAG_executor_constants import run_all_tasks_locally, using_wo
 from wukongdnc.dag.DAG_work_queue_for_threads import work_queue
 from wukongdnc.wukong.invoker import invoke_lambda_DAG_executor
 import uuid
+#from wukongdnc.dag.DAG_executor import
 
 import logging 
 logger = logging.getLogger(__name__)
@@ -108,12 +110,13 @@ class DAG_executor_FanInNB(MonitorSU):
             calling_task_name = kwargs['calling_task_name']
             #self._results[calling_task_name] = result[calling_task_name]
             self._results[calling_task_name] = result
-            logger.debug("FanInNB: Result (saved by the non-last executor) for fan-in %s: %s" % (self.monitor_name, str(result)))
+            logger.debug("FanInNB: Result (saved by the non-last executor) for fan-in %s: %s" % (calling_task_name, str(result)))
             
             #threading.current_thread()._restart = False
             #threading.current_thread()._returnValue = 0
             restart = False
-            logger.debug(" FanInNB: !!!!! non-last Client exiting FanInNB fan_in id = %s!!!!!" % self.monitor_name)
+            logger.debug(" FanInNB: !!!!! non-last Client " + calling_task_name 
+                + " exiting FanInNB fan_in id = %s!!!!!" % calling_task_name)
             super().exit_monitor()
             # Note: Typcally we would return 1 when try_fan_in returns block is True, but the Fanin currently
             # used by wukong D&C is expecting a return value of 0 for this case.
@@ -133,7 +136,8 @@ class DAG_executor_FanInNB(MonitorSU):
             #threading.current_thread()._returnValue = self._results
             #threading.current_thread()._restart = False 
             restart = False
-            logger.debug("FanInNB: !!!!! last Client exiting FanIn fan_in id=%s!!!!!" % self.monitor_name)
+            logger.debug("FanInNB: !!!!! last Client " + calling_task_name 
+                + " exiting FanIn fan_in id=%s!!!!!" % self.monitor_name)
             # for debugging
             fanin_task_name = kwargs['fanin_task_name']
 
@@ -148,7 +152,9 @@ class DAG_executor_FanInNB(MonitorSU):
                 # a new thread/process or add a sate to the processes work_queue.
                 logger.debug("FanInNB: using_workers and threads so add start state of fanin task to thread_work_queue.")
                 #thread_work_queue.put(start_state_fanin_task)
-                work_queue.put(start_state_fanin_task)
+                work_tuple = (start_state_fanin_task,self._results)
+                work_queue.put(work_tuple)
+                #work_queue.put(start_state_fanin_task)
             else:
                 # 
                 if self.store_fanins_faninNBs_locally and run_all_tasks_locally:
