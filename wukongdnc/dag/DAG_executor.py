@@ -320,11 +320,12 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
     logger.debug("process_faninNBs: returning worker_needs_input: " + str(worker_needs_input))
     return worker_needs_input
 
-#Todo: Global fanin, which determines whether last caller or not, and delegates
+#Todo: Global fanin object in tcp_Server, which determines whether last caller or not, and delegates
 #      collection of results to local fanins in infinistore executors.
 
 #def process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State, output, DAG_info, server):
-def process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State, output, DAG_info, server, work_queue):
+def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State, output, DAG_info, server, work_queue):
+
     logger.debug("process_fanouts, length is " + str(len(fanouts)))
 
     #process become task
@@ -345,6 +346,9 @@ def process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State, outp
 
     # process rest of fanins
     logger.debug("run_all_tasks_locally:" + str(run_all_tasks_locally))
+#ToDo:
+    #if using_workers and not using_threads_not_processes:
+        #list_of_values = []
     for name in fanouts:
         #rhc queue
         if using_workers:
@@ -354,13 +358,24 @@ def process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State, outp
                 dict_of_results[calling_task_name] = output
                 work_tuple = (DAG_states[name],dict_of_results)
                 #work_queue.put(DAG_states[name])
+#ToDo:
+                # Note: we are in the "not using_threads_not_processes" block
+                # so we do't need this if.
+                #if using_workers and not using_threads_not_processes:
+                    #list_of_values.append(work_tuple)
+                #else:
                 work_queue.put(work_tuple)
             else: 
-#ToDo: put tuple (state,dict[calling_task_name]=output)
                 dict_of_results =  {}
                 dict_of_results[calling_task_name] = output
                 work_tuple = (DAG_states[name],dict_of_results)
                 #work_queue.put(DAG_states[name])
+#ToDo:
+                # Note: we are in the "using_threads_not_processes" block
+                # so we don't need this if - we don't want to use put_all
+                #if using_workers and not using_threads_not_processes:
+                    #list_of_values.append(work_tuple)
+                #else:
                 work_queue.put(work_tuple)
         else:
             if run_all_tasks_locally:
@@ -411,6 +426,9 @@ def process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State, outp
                 except Exception as ex:
                     logger.error("FanInNB:[ERROR] Failed to start DAG_executor Lambda.")
                     logger.debug(ex)
+#ToDo:
+    #if using_workers and not using_threads_not_processes:
+    #    work_queue.put_all(list_of_values)
 
     return become_start_state
 
@@ -749,7 +767,8 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                 # Don't add to thread_work_queue just do it
                 # rhc queue
                 #thread_work_queue.put(DAG_executor_state.state)
-                worker_needs_input = False
+                if using_workers: 
+                    worker_needs_input = False
 
             elif len(state_info.faninNBs) > 0 or len(state_info.fanouts) > 0:
                 # assert len(collapse) + len(fanin) == 0
@@ -779,7 +798,8 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                 else:
                     # No fanouts so no bcecome task and fqninBs do not generate
                     # work for us so we will need input.
-                    worker_needs_input = True
+                    if using_workers: 
+                        worker_needs_input = True
 
                 if len(state_info.faninNBs) > 0:
                     # asynch + terminate + start DAG_executor in start state
@@ -794,6 +814,20 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     #if using_workers:
                     #    worker_needs_input = True
 
+                # If we are not using_workers and there were fanouts then continue with become 
+                # task; otherwise, this thread (simulatng a Lambda) is done, as it has reached the
+                # end of its DFS path. (Note: if using workers and there are no fanouts and no
+                # faninNBs for which we are the last thread to call fanin, the worker will get more
+                # work from the work_queue instead of stopping. The worker continutes until it gets
+                # a STOP state value from the work_queue (e.g., -1). Noet: If there are fanouts and/or 
+                # faninNBs, there can be no fanins. Note, when we are not using_workers, the faninNBs
+                # will start new threads to execute the fanin task, (or invoke new Lamdas when we 
+                # are using Lambdas. So faninNBs cannot generate more work for a worker since the 
+                # work is given to a new thread.)
+                if (not using_workers) and len(state_info.fanouts) == 0:
+                    return
+
+                """
                 else:   # If there were fanouts then continue with become task, else this thread is done.
                     if using_workers:   
                         # workers don't stop until there's no more work to be done, which is true when 
@@ -805,6 +839,8 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                         # are no fanouts, then we know there are no fanins (when there is a faninNB or
                         # fanout) , so there is no more work (on this dfs path for this thread so return.
                         return
+                """
+
             elif len(state_info.fanins) > 0:
                 # assert len(state_info.faninNBs)  + len(state_info.fanouts) + len(collapse) == 0
                 # if faninNBs or fanouts then can be no fanins. length of faninNBs and fanouts must be 0 

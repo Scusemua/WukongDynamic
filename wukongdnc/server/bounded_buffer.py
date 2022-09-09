@@ -70,6 +70,31 @@ class BoundedBuffer(MonitorSU):
         #threading.current_thread()._returnValue=0
         return 0, restart
 
+	# synchronous no-try version of deposit, blocking w/ no restart
+    def deposit_all(self, **kwargs):
+        # assumes kwargs["list_of_values"] exists and is a list of values to deposit.
+        super().enter_monitor(method_name="deposit")
+        logger.debug(" deposit_all() entered monitor, len(self._notFull) ="+str(len(self._notFull))+",self._capacity="+str(self._capacity))
+        logger.debug(" deposit_all() entered monitor, len(self._notEmpty) ="+str(len(self._notEmpty))+",self._capacity="+str(self._capacity))
+        list_of_values = kwargs["list_of_values"]
+        for value in list_of_values:
+            logger.debug("Value to deposit: " + str(value))
+            if self._fullSlots==self._capacity:
+                logger.debug("Full slots (%d) is equal to capacity (%d). Calling wait_c()." % (self._fullSlots, self._capacity))
+                self._notFull.wait_c()
+            self._buffer.insert(self._in,value)
+            self._in=(self._in+1) % int(self._capacity)
+            self._fullSlots+=1
+            # We will wake up a consumer, if any are waiting, whihc blocks us here
+            # until the consumer is done. Then we will continue. (Noet this is a 
+            # signal and urgent wait monitor, not signal and continue like Java.)
+            self._notEmpty.signal_c()
+        restart = False
+        #threading.current_thread()._restart = False
+        #threading.current_thread()._returnValue=0
+        super().exit_monitor()
+        return 0, restart
+
 	# synchronous try version of withdraw, restart when block
     def withdraw_try_and_restart(self, **kwargs): 
         super().enter_monitor(method_name = "withdraw")

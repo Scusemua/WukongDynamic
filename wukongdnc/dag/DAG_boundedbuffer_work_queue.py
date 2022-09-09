@@ -38,7 +38,7 @@ class BoundedBuffer_Work_Queue:
 
     def put_all(self,list_of_values):
         dummy_state = DAG_executor_State()
-        dummy_state.keyword_arguments['value'] = list_of_values
-        synchronize_async(self.websocket,"synchronize_async", "process_work_queue", "deposit", dummy_state)
+        dummy_state.keyword_arguments['list_of_values'] = list_of_values
+        synchronize_async(self.websocket,"synchronize_async", "process_work_queue", "deposit_all", dummy_state)
 
 

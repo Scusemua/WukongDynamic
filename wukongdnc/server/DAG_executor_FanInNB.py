@@ -19,7 +19,7 @@ from wukongdnc.dag.DAG_executor_constants import run_all_tasks_locally, using_wo
 from wukongdnc.dag.DAG_work_queue_for_threads import work_queue
 from wukongdnc.wukong.invoker import invoke_lambda_DAG_executor
 import uuid
-#from wukongdnc.dag.DAG_executor import
+from wukongdnc.dag import DAG_executor
 
 import logging 
 logger = logging.getLogger(__name__)
@@ -141,74 +141,90 @@ class DAG_executor_FanInNB(MonitorSU):
             # for debugging
             fanin_task_name = kwargs['fanin_task_name']
 
-            if using_workers and using_threads_not_processes:
-                # if using worker pools of threads, add fanin task's state to the work_queue.
-                # Note: if we are using worker pools of processes, then the process will call fan_in and
-                # the last process to execute fanin will put the fanin task's state in the
-                # work_queue. This last process does not become the fanin task, as this is a
-                # faninNB (No Become). This FaninNB is running on he tcp_server, as multiprocessing
-                # requires pools to be process pools, not thread pools, and it requires synch objects
-                # to be stored on the tcp_server or InfiniX lambdas, so this faninNB cannot start
-                # a new thread/process or add a sate to the processes work_queue.
-                logger.debug("FanInNB: using_workers and threads so add start state of fanin task to thread_work_queue.")
-                #thread_work_queue.put(start_state_fanin_task)
-                work_tuple = (start_state_fanin_task,self._results)
-                work_queue.put(work_tuple)
-                #work_queue.put(start_state_fanin_task)
-            else:
-                # 
-                if self.store_fanins_faninNBs_locally and run_all_tasks_locally:
-                    try:
-                        logger.debug("FanInNB: starting DAG_executor thread for task " + fanin_task_name + " with start state " + str(start_state_fanin_task))
-                        server = kwargs['server']
-                        #DAG_executor_state =  kwargs['DAG_executor_State']
-        ##rhc
-                        #DAG_executor_state.state = int(start_state_fanin_task)
-                        DAG_executor_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state_fanin_task)
-                        DAG_executor_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
-                        DAG_executor_state.return_value = None
-                        DAG_executor_state.blocking = False
-        ##rhc
-                        logger.debug("FanInNB: calling_task_name:" + calling_task_name + " DAG_executor_state.state: " + str(DAG_executor_state.state))
-                        #logger.debug("DAG_executor_state.function_name: " + DAG_executor_state.function_name)
-                        payload = {
-                            #"state": int(start_state_fanin_task),
-                            "input": self._results,
-                            "DAG_executor_State": DAG_executor_state,
-                            "DAG_info": self.DAG_info,
-                            "server": server
-                        }
-                        thread_name_prefix = "Thread_leaf_"
-                        thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=(thread_name_prefix+str(start_state_fanin_task)), args=(payload,))
-                        thread.start()
-                        #_thread.start_new_thread(DAG_executor.DAG_executor_task, (payload,))
-                    except Exception as ex:
-                        logger.debug("FanInNB:[ERROR] Failed to start DAG_executor thread.")
-                        logger.debug(ex)
+            if using_workers:
+                if using_threads_not_processes:
+                    if not self.store_fanins_faninNBs_locally:
+                        logger.error("[Error]: FaninB: using workers and threads but not storing fanins locally,")
+                    # if using worker pools of threads, add fanin task's state to the work_queue.
+                    # Note: if we are using worker pools of processes, then the process will call fan_in and
+                    # the last process to execute fanin will put the fanin task's state in the
+                    # work_queue. This last process does not become the fanin task, as this is a
+                    # faninNB (No Become). This FaninNB is running on he tcp_server, as multiprocessing
+                    # requires pools to be process pools, not thread pools, and it requires synch objects
+                    # to be stored on the tcp_server or InfiniX lambdas, so this faninNB cannot start
+                    # a new thread/process or add a sate to the processes work_queue.
+                    logger.debug("FanInNB: using_workers and threads so add start state of fanin task to thread_work_queue.")
+                    #thread_work_queue.put(start_state_fanin_task)
+                    work_tuple = (start_state_fanin_task,self._results)
+                    work_queue.put(work_tuple)
+                    #work_queue.put(start_state_fanin_task)
+                else:
+                    if self.store_fanins_faninNBs_locally:
+                        logger.error("[Error]: FaninB: using workers and processes but storing fanins locally,")
+                    # No signal of non-last client; they did not block and they are done executing. 
+                    # does mutex.V
+                    super().exit_monitor()
+                    return self._results, restart  # all threads have called so return results
+                    #return 1, restart  # all threads have called so return results
+            elif self.store_fanins_faninNBs_locally and run_all_tasks_locally:
+                if not using_threads_not_processes:
+                    logger.error("[Error]: FaninB: storing fanins locally but not using threads.")
+  
+                try:
+                    logger.debug("FanInNB: starting DAG_executor thread for task " + fanin_task_name + " with start state " + str(start_state_fanin_task))
+                    server = kwargs['server']
+                    #DAG_executor_state =  kwargs['DAG_executor_State']
+    ##rhc
+                    #DAG_executor_state.state = int(start_state_fanin_task)
+                    DAG_executor_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state_fanin_task)
+                    DAG_executor_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
+                    DAG_executor_state.return_value = None
+                    DAG_executor_state.blocking = False
+    ##rhc
+                    logger.debug("FanInNB: calling_task_name:" + calling_task_name + " DAG_executor_state.state: " + str(DAG_executor_state.state))
+                    #logger.debug("DAG_executor_state.function_name: " + DAG_executor_state.function_name)
+                    payload = {
+                        #"state": int(start_state_fanin_task),
+                        "input": self._results,
+                        "DAG_executor_State": DAG_executor_state,
+                        "DAG_info": self.DAG_info,
+                        "server": server
+                    }
+                    thread_name_prefix = "Thread_leaf_"
+                    thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=(thread_name_prefix+str(start_state_fanin_task)), args=(payload,))
+                    thread.start()
+                    #_thread.start_new_thread(DAG_executor.DAG_executor_task, (payload,))
+                except Exception as ex:
+                    logger.debug("FanInNB:[ERROR] Failed to start DAG_executor thread.")
+                    logger.debug(ex)
                     
-                elif not self.store_fanins_faninNBs_locally and not run_all_tasks_locally:
-                    try:
-        ##rhc
-                        DAG_executor_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state_fanin_task)
-                        DAG_executor_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
-                        DAG_executor_state.return_value = self._results
-                        DAG_executor_state.blocking = False            
-                        logger.debug("FanInNB: starting Starting Lambda function for task " + fanin_task_name + " with start state " + str(DAG_executor_state.state))
-                        #logger.debug("DAG_executor_state: " + str(DAG_executor_state))
-                        payload = {
-        ##rhc
-                            #"state": int(start_state_fanin_task),
-                            "input": self._results,
-                            "DAG_executor_State": DAG_executor_state,
-                            "DAG_info": self.DAG_info
-                            #"server": server   # used to mock server during testing
-                        }
-                        ###### DAG_executor_State.function_name has not changed
-                        
-                        invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor")
-                    except Exception as ex:
-                        logger.debug("FanInNB:[ERROR] Failed to start DAG_executor Lambda.")
-                        logger.debug(ex)
+            elif not self.store_fanins_faninNBs_locally and not run_all_tasks_locally:
+                #ToDO: use using_lambdas (=> self.store_fanins_faninNBs_locally and not run_all_tasks_locally)
+                try:
+    ##rhc
+                    DAG_executor_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state_fanin_task)
+                    DAG_executor_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
+                    DAG_executor_state.return_value = self._results
+                    DAG_executor_state.blocking = False            
+                    logger.debug("FanInNB: starting Starting Lambda function for task " + fanin_task_name + " with start state " + str(DAG_executor_state.state))
+                    #logger.debug("DAG_executor_state: " + str(DAG_executor_state))
+                    payload = {
+    ##rhc
+                        #"state": int(start_state_fanin_task),
+                        "input": self._results,
+                        "DAG_executor_State": DAG_executor_state,
+                        "DAG_info": self.DAG_info
+                        #"server": server   # used to mock server during testing
+                    }
+                    ###### DAG_executor_State.function_name has not changed
+                    
+                    invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor")
+                except Exception as ex:
+                    logger.debug("FanInNB:[ERROR] Failed to start DAG_executor Lambda.")
+                    logger.debug(ex)
+            else:
+                logger.error("FanInNB:[ERROR] Internal Error: reached else: error at end of fanin")
+
             # No signal of non-last client; they did not block and they are done executing. 
             # does mutex.V
             super().exit_monitor()

@@ -18,9 +18,6 @@
 # Should we delegate process_FANINnbS to a thread?
 
 # Where are we: 
-# fix data_dict problem: put fanout/faninNB results (in some cases) in work_queue
-# as tuple (state,results) for processes, not threads as thread work_queue is global)
-# In faninNB, add elif for worker and process that does return, then elif elif, else error
 # FninNB local with no workers always starts new thread, like Lambda. Sowe are 
 #   not lookng at or changing worker_needs_work. Perhaps we should not start new 
 #   thread/Lambda if worker_needs_work or ust faster/better to start new Lambda/thread?
@@ -32,6 +29,10 @@
 # Consider: multiple tcp_servers/work_queues and work stealing? workers generate
 # their own work, till they hit a fanin/faninNB and lose. then need need to start 
 # new dfs paths(s). Steal it? 
+# Consider creating an unbounded buufer in which deposit should never block.
+# if it blocks then raise "full" exception. USed for DAG execution where the 
+# size of the work_queue is blunded by number of tasks so we can create an
+# unbounded buffer of size number_of_tasks + delta that should never block.
 
 import threading
 import multiprocessing
