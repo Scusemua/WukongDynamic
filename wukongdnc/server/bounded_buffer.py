@@ -1,5 +1,6 @@
 #from re import L
 from .monitor_su import MonitorSU
+#from monitor_su import MonitorSU
 import _thread
 import time
 
@@ -83,6 +84,7 @@ class BoundedBuffer(MonitorSU):
                 logger.debug("Full slots (%d) is equal to capacity (%d). Calling wait_c()." % (self._fullSlots, self._capacity))
                 self._notFull.wait_c()
             self._buffer.insert(self._in,value)
+            #logger.debug(" deposit put " + value + " self._int: " + str(self._in))
             self._in=(self._in+1) % int(self._capacity)
             self._fullSlots+=1
             # We will wake up a consumer, if any are waiting, whihc blocks us here
@@ -123,6 +125,7 @@ class BoundedBuffer(MonitorSU):
         if self._fullSlots==0:
             self._notEmpty.wait_c()
         value=self._buffer[self._out]
+        #logger.debug(" withdraw got " + value + " self._out: " + str(self._out))
         self._out=(self._out+1) % int(self._capacity)
         self._fullSlots-=1
         restart = False
@@ -148,19 +151,27 @@ def taskD(b : BoundedBuffer):
     time.sleep(1)
     logger.debug("Calling deposit")
     VALUEHERE = 1
-    b.deposit(VALUEHERE)
-    logger.debug("Successfully called deposit")
+    keyword_arguments = {}
+    list_of_values = ['A','B','C']
+    #keyword_arguments['value'] = 'A'
+    keyword_arguments['list_of_values'] = list_of_values
+    b.deposit_all(**keyword_arguments)
+    logger.debug("Successfully called deposit/deposit_all")
 
 def taskW(b : BoundedBuffer):
     logger.debug("Calling withdraw")
     value = b.withdraw()
-    logger.debug("Successfully called withdraw: "+ value)
+    logger.debug("Successfully called withdraw: "+ value[0])
+    value = b.withdraw()
+    logger.debug("Successfully called withdraw: "+ value[0])
+    value = b.withdraw()
+    logger.debug("Successfully called withdraw: "+ value[0])
 
 def main():
     b = BoundedBuffer(initial_capacity=1,monitor_name="BoundedBuffer")
-    VALUEFOR_N = 2
+    VALUEFOR_N = 4
     keyword_arguments = {}
-    keyword_arguments['value'] = VALUEFOR_N
+    keyword_arguments['n'] = VALUEFOR_N
     b.init(**keyword_arguments)
     #b.deposit(value = "A")
     #value = b.withdraw()
@@ -184,7 +195,7 @@ def main():
         logger.debug(ex)
 
     logger.debug("Sleeping")
-    time.sleep(2)
+    time.sleep(6)
     logger.debug("Done sleeping")
 
 if __name__=="__main__":

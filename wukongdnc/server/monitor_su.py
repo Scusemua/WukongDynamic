@@ -1,5 +1,7 @@
 from .counting_semaphore import CountingSemaphore
 from .util import isTry_and_getMethodName
+#from counting_semaphore import CountingSemaphore
+#from util import isTry_and_getMethodName
 import queue
 
 # Hoare-style Monitor class with methods enter_monitor, exit_monitor, and ConditionVariable methods wait_c and signal_c

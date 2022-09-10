@@ -347,13 +347,13 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State, out
     # process rest of fanins
     logger.debug("run_all_tasks_locally:" + str(run_all_tasks_locally))
 #ToDo:
-    #if using_workers and not using_threads_not_processes:
-        #list_of_values = []
+    if using_workers and not using_threads_not_processes:
+        list_of_values = []
     for name in fanouts:
         #rhc queue
         if using_workers:
             #thread_work_queue.put(DAG_states[name])
-            if not using_threads_not_processes:
+            if not using_threads_not_processes: # usnig threads
                 dict_of_results =  {}
                 dict_of_results[calling_task_name] = output
                 work_tuple = (DAG_states[name],dict_of_results)
@@ -361,11 +361,11 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State, out
 #ToDo:
                 # Note: we are in the "not using_threads_not_processes" block
                 # so we do't need this if.
-                #if using_workers and not using_threads_not_processes:
-                    #list_of_values.append(work_tuple)
-                #else:
-                work_queue.put(work_tuple)
-            else: 
+                if using_workers and not using_threads_not_processes:
+                    list_of_values.append(work_tuple)
+                else:
+                    work_queue.put(work_tuple)
+            else: # using processes
                 dict_of_results =  {}
                 dict_of_results[calling_task_name] = output
                 work_tuple = (DAG_states[name],dict_of_results)
@@ -373,10 +373,10 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State, out
 #ToDo:
                 # Note: we are in the "using_threads_not_processes" block
                 # so we don't need this if - we don't want to use put_all
-                #if using_workers and not using_threads_not_processes:
-                    #list_of_values.append(work_tuple)
-                #else:
-                work_queue.put(work_tuple)
+                if using_workers and not using_threads_not_processes:
+                    list_of_values.append(work_tuple)
+                else:
+                    work_queue.put(work_tuple)
         else:
             if run_all_tasks_locally:
                 try:
@@ -427,8 +427,8 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State, out
                     logger.error("FanInNB:[ERROR] Failed to start DAG_executor Lambda.")
                     logger.debug(ex)
 #ToDo:
-    #if using_workers and not using_threads_not_processes:
-    #    work_queue.put_all(list_of_values)
+    if using_workers and not using_threads_not_processes:
+        work_queue.put_all(list_of_values)
 
     return become_start_state
 
