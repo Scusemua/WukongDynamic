@@ -87,18 +87,42 @@ if __name__ == "__main__":
   def increment(x):
     return x + 1
 
+  def halve(x):
+    # intend for x to be result of increment(1) = 2, so result is 2 / 2 = 1.0
+    return x / 2
+
+  def product(x,y):
+    return x * y
+
   def manual_dag():
     print("==== GENERATING MANUALLY-CREATED DAG")
-    inc0 = dask.delayed(increment)(0)
-    inc1 = dask.delayed(increment)(1)
-    trip = dask.delayed(triple)(inc1)
-    sq = dask.delayed(square)(inc1)
-    ad = dask.delayed(add)(inc1, inc0)
-    mult = dask.delayed(multiply)(trip, sq, ad)
-    div = dask.delayed(divide)(mult)
+    inc0 = dask.delayed(increment)(0) # 1
+    inc1 = dask.delayed(increment)(1) # 2
+    trip = dask.delayed(triple)(inc1) # 6
+    sq = dask.delayed(square)(inc1) # 4
+    ad = dask.delayed(add)(inc1, inc0) # 1+2 = 3
+    mult = dask.delayed(multiply)(trip, sq, ad)  # 6*4*3 = 72
+    div = dask.delayed(divide)(mult) # 72 / 72 = 1.0
 
     graph = div.__dask_graph__()
     result = div.compute()
+
+    return graph, result
+
+  def manual_dag_test_batch_faninNBs():
+    print("==== GENERATING MANUALLY-CREATED DAG for testing batching faninNBs")
+    inc0 = dask.delayed(increment)(0) # 1
+    inc1 = dask.delayed(increment)(1) # 2
+    trip = dask.delayed(triple)(inc1) # 6
+    sq = dask.delayed(square)(inc1) # 4
+    half = dask.delayed(halve)(inc1) # 1.0
+    prod = dask.delayed(product)(half,sq) # 4
+    ad = dask.delayed(add)(inc1, inc0) # 1+2 = 3
+    mult = dask.delayed(multiply)(trip, prod, ad) #  6*4*3 = 72.0 (same as manual_dag)
+    div2 = dask.delayed(divide)(mult) # = 72.0 / 72 = 1
+
+    graph = div2.__dask_graph__()
+    result = div2.compute()
 
     return graph, result
 
@@ -150,6 +174,7 @@ if __name__ == "__main__":
     return graph, result    
   
   graph, result = manual_dag()
+  # graph, result = manual_dag_test_batch_faninNBs()
   # graph, result = tree_reduction(n = 32)
   # graph, result = mat_mul(n = 4, c = 2)
 

@@ -225,6 +225,8 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
                     #keyword_arguments['result'] = None
                     dummy_DAG_exec_state = faninNB_remotely(websocket,**keyword_arguments)
 
+
+
             #if DAG_exec_state.blocking:
             # I like using the "else" after the return, even though we don't need it
             if dummy_DAG_exec_state.return_value == 0:
@@ -233,6 +235,7 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
                 return 0
             else:
                 if using_workers:
+                    # this caller could be a thread or a process
                     
                     dict_of_results = dummy_DAG_exec_state.return_value
                     
@@ -320,6 +323,289 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
     logger.debug("process_faninNBs: returning worker_needs_input: " + str(worker_needs_input))
     return worker_needs_input
 
+def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_states, 
+    DAG_exec_state, output, DAG_info, server, work_queue,worker_needs_input):
+
+    logger.debug("process_faninNBs")
+    logger.debug("process_faninNBs: worker_needs_input: " + str(worker_needs_input))
+	# There may be multiple faninNBs; we cannot become one, by definition.
+	# Note: This thread cannot become since it may need to become a fanout.
+	# Or: faninNB is asynch wo/terminate, so create a thread that does the
+	# stuff in DES.create_and_fanin(), and this thread keeps going
+	# Note: For real version, DAG_executor task is a Lambda? or thread of a Lambda?
+	#       Do we want faninNB to run as a thread of this current Lambda? with other
+	#       faninNB threads and fanout become threads? Or always start a new Lambda?
+    #       Or make that decision based on this Lammba's load?
+
+    #ToDo: not passing State to FanIn, we set it after return?
+    # No changes to State - this is asynch we get no State back, but we do pass it for asynch ops
+    # in general since they can be asynch w/terminate and restart
+    # for name, n in [(name,n) for name in faninNBs for n in faninNB_sizes]:
+    for name, n in zip(faninNBs,faninNB_sizes):
+
+        # create new faninNB with specified name if it hasn't been created
+        start_state_fanin_task  = DAG_states[name]
+        # The FanINNB fan_in will change the (start) state of the DAG_exec_state. (We are making the exact same change here
+        # so these assignments to state are redunadant. If this is part of a local test (any (remote) lambda created will have its own DAG_executor_State)
+        # then we need a new DAG_exec_state for the FanInNB; otherwise, the DAG_exec_state of the become task of the fanouts and the
+        # DAG_exec_state of the new thread that will execute the faninNB task (i.e., after the fan_in completes) will share the same
+        # DAG_exec_state object, and changing the state for the fanout and for the faninNB task is a race condition. Do create a new
+        # DAG_exec_state object for the faninNB to eliminate the possibility of sharing.
+
+ #ToDo: else:
+       	# keyword_arguments['state'] =
+        keyword_arguments = {}
+        keyword_arguments['fanin_task_name'] = name
+        keyword_arguments['n'] = n
+        keyword_arguments['start_state_fanin_task'] = start_state_fanin_task
+        keyword_arguments['result'] = output
+        keyword_arguments['calling_task_name'] = calling_task_name
+        #ToDo: Don't do/need this?
+        #keyword_arguments['DAG_executor_State'] = new_DAG_exec_state # given to the thread/lambda that executes the fanin task.
+        keyword_arguments['server'] = server
+        keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
+        keyword_arguments['DAG_info'] = DAG_info
+
+		#Q: kwargs put in DAG_executor_State keywords and on server it gets keywords from state and passes to create and fanin
+
+        if store_fanins_faninNBs_locally:
+            pass
+        else:
+            if not create_all_fanins_faninNBs_on_start:
+                if not using_lambdas:
+                    # if we call a remote faninNB and locally we are not using lambdas,
+                    # then we need not pass the result of this task since we will not
+                    # be passing the fanin task inputs back - each task's resulte will 
+                    # have been put in the data_dict an the fanin task will get those
+                    # results, which are its inputs, from the data_dict. This makes the 
+                    # cost of the send for the fanin operaton less costly.
+                    # Actually:
+                    # We will use local datadict for each multiprocess; process will receve
+                    # the faninNB results and put them in the data_dict
+                    #keyword_arguments['result'] = None
+                    dummy_DAG_exec_state = create_and_faninNB_remotely(websocket,**keyword_arguments)
+            else:
+                if not using_lambdas:
+                    # see comment just above.
+                    #keyword_arguments['result'] = None
+                    dummy_DAG_exec_state = faninNB_remotely(websocket,**keyword_arguments)
+
+                    """ where
+                    DAG_exec_state = synchronize_sync(websocket, "synchronize_sync", keyword_arguments['fanin_task_name'], "fan_in", DAG_exec_state)
+                    return DAG_exec_state
+
+                    and tcp_server does:
+                        if (synchronizer is None):
+                            raise ValueError("synchronize_sync: Could not find existing Synchronizer with name '%s'" % synchronizer_name)
+
+                        # This tcp_server passing self so synchronizer can access tcp_server's send_serialized_object
+                        # return_value = synchronizer.synchronize_sync(tcp_server, obj_name, method_name, type_arg, state, synchronizer_name)
+                        return_value = synchronizer.synchronize_sync(tcp_server, obj_name, method_name, state, synchronizer_name, self)
+             
+                    and, ASSUMING this is not a try-op, synchronizer.synchronize_synch does:
+
+                        if is_select:
+                                self.lock_synchronizer()
+                            
+                                if is_select:
+                                    # create result_buffer, create execute() reference, call execute(), result_buffer.withdraw(), 
+                                    # return excute's result, with no restart (by definition of synchronous non-try-op)
+                                    # (Send result to client below.)
+                                    wait_for_return = True
+                                    self.synchronizeSelect(base_name, state, wait_for_return, **state.keyword_arguments)
+                                else:
+                                    return_value = self.synchronize(base_name, state, **state.keyword_arguments)
+                                state.return_value = return_value
+                                state.blocking = False 
+                                logger.debug("synchronizerXXX: synchronize_sync: %s sending return_value %s back for method %s." % (synchronizer_name, str(return_value), method_name))
+                                logger.debug("synchronizerYYY: synchronize_sync: %s sending state %s back for method %s." % (synchronizer_name, str(state), method_name))
+                                tcp_handler.send_serialized_object(cloudpickle.dumps(state))  
+                            return 0
+
+                            and self.synchronize does:
+
+                                synchronizer_method = getattr(self._synchClass, method_name)
+                                returnValue, restart = synchronizer_method(self._synchronizer, **kwargs) 
+                                if restart:
+                                    pass
+                                return returnValue
+
+                                So returnValue goes back to:
+
+                                    state.return_value = return_value
+                                    state.blocking = False 
+
+                                which gets sent back to client:
+
+                                    tcp_handler.send_serialized_object(cloudpickle.dumps(state))  
+
+                                as the result of their synchronize_sync. 
+
+                                which we get as dummy_DAG_exec_state below.
+
+                    1. It does not make sense to batch try-ops, or to execute a batch of synchronous
+                       ops that may block and that have return values. faninNB fanins are non-blocking
+                       and either (1) we ignore return value since we are not the last caller to fanin
+                       or (2) we are last caller and we may use retrun value (if we need work), where
+                       there can only be one last caller so we are not returning multple return values
+                       for multiple operations.
+                    2. This means that we do not need the generality of doing a batch of synchronize-sync
+                       operations that could be try-ops, or could block, or could each require a value
+                       to be returned. 
+                    3. Thus we are doing a batch of fanins that each require a call to self.synchronize().
+                       The value returned by self.synchronize() for a fanin will either be a 
+                       dict_of_results, when the is the last caller for this fanin, or 0, when this is not
+                       the last call for the fanin.
+                    4. We can check the return value:
+                        If it is 0 then there is nothing to do. 
+                        If it is a dict_of_results and we (the client worker caller) do not need work, then 
+                          we can deosit this work in the work queue as tuple (start_state_of_fanin_task,
+                          dict_of_results)
+                        If it is a dict_of_results and we (the client worker caller) need work, then 
+                          we check whether we have already seen a dict of results for a previous fanin:
+                           if we have previosly seen a dict_of_results then we've already saved the 
+                           dict_of_results for return to the client worker caller so we can deposit
+                           this work in the work queue
+                        otherwise we save the dict_of_results for return to the client worker caller.
+                          Note that this is returned as DAG_exec_state.return_value, which is 
+                          checked by the caller upon return (see below).
+
+                    5. The caller does: 
+
+                        if dummy_DAG_exec_state.return_value == 0:
+                            # either we wanted work (worker_needs_input = true) but didn't get any 
+                            # or we didn't want any work
+                            return 0
+                        else:
+                            if using_workers:
+                                # this caller can be a thread of a process.
+                                dict_of_results = dummy_DAG_exec_state.return_value
+                                if not worker_needs_input:
+                                    # work should have been enqueued in work_queue by tco_server.
+                                    logger.error("[Error: process_fannNBs: Internal error: got work but not worker_needs_input."])
+
+                                # put results in our data_dict since we will use them next
+                                # Note: We will be writog over our result from the task we 
+                                #  did that inputs into this faninNB.
+                                for key, value in dict_of_results.items():
+                                    data_dict[key] = value
+                                # keep work and do it next
+                                worker_needs_input = False
+                                DAG_exec_state.state = start_state_fanin_task
+                                logger.debug("process_faninNBs: set worker_needs_input to False.")
+                            else:
+                                if not worker_needs_input:
+                                    # create a thread to do the work? this thread is not a worker
+                                    # so there is no work_queue; this thread is simulating Lambda
+                                    # scheme which means thread is created by faninNB on tcp_server?
+                                    # No: faninNB only creates therads if faninNBs are stored locally
+                                    # and there is no worker. Implicitly, here faninNBs are stored
+                                    # remotely. We are usng a single thread and storing faninNBs remotely
+                                    # so here create a new thread to do the work.
+
+
+
+                    """
+
+            #if DAG_exec_state.blocking:
+            # I like using the "else" after the return, even though we don't need it
+            if dummy_DAG_exec_state.return_value == 0:
+                #DAG_exec_state.blocking = False
+                # nothing to Do
+                return 0
+            else:
+                if using_workers:
+                    
+                    dict_of_results = dummy_DAG_exec_state.return_value
+                    
+                    if not worker_needs_input:
+                        # Also, don't pass in the multp data_dict, so will use the global.
+                        # Fix if in global
+                        logger.debug("faninNB Results: ")
+                        for key, value in dict_of_results.items():
+                            logger.debug(str(key) + " -> " + str(value))
+#ToDo: if we need work because no fanouts then we should keep this work 
+# instead of enqueing it: pass worker_needs_input here and then
+# if not worker_needs_input:
+#  ....
+# else:
+#    DAG_exec_state.state = start_state_fanin_task
+#
+# Problem, we out results in our local data_dict but then we might give work
+# to another process by enquing it. If we need work (no fsnouts or we already
+# were become task for a faninNB) then we should do the work instead of 
+# enqueing it. (This will be worked out on tcp_server). If we need to enqueue work, 
+# then we also need to enqueue results? If so, then do enqueue of faninNB results
+# on tcp_server, as planned?
+#Problem: Fanout results (for non-become fanouts) need to be enqueued too when
+# we enqueue state. So enqueue a tuple (state,results) in work_queue for
+# processes, not threads. 
+
+                        #thread_work_queue.put(start_state_fanin_task)
+                        if not using_threads_not_processes:
+                            work_tuple = (start_state_fanin_task,dict_of_results)
+                            #work_queue.put(start_state_fanin_task)
+                            work_queue.put(work_tuple)
+                        else: 
+                            work_tuple = (start_state_fanin_task,dict_of_results)
+                            #work_queue.put(start_state_fanin_task)
+                            work_queue.put(work_tuple)
+                    else:
+                        # put results in our data_dict since we will use them next
+                        # Note: We will be writog over our result from the task we 
+                        #  did that inputs into this faninNB.
+                        for key, value in dict_of_results.items():
+                            data_dict[key] = value
+                        # keep work and do it next
+                        worker_needs_input = False
+                        DAG_exec_state.state = start_state_fanin_task
+                        logger.debug("process_faninNBs: set worker_needs_input to False.")
+
+                else:
+
+#ToDo: if not using_workers then not worker_needs_input must be true? That is, we init worker_needs_input
+# to false and we never set it to true since setting worker_needs_input is guarded everywhere by using_workers?
+                    if not worker_needs_input:
+                        try:
+                            logger.debug("process_faninNBs: starting DAG_executor thread for task " + name + " with start state " + str(start_state_fanin_task))
+                            #server = kwargs['server']
+                            #DAG_executor_state =  kwargs['DAG_executor_State']
+            ##rhc
+                            #DAG_executor_state.state = int(start_state_fanin_task)
+                            new_DAG_executor_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state_fanin_task)
+                            new_DAG_executor_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
+                            #DAG_executor_state.return_value = None
+                            new_DAG_executor_state.blocking = False
+            ##rhc
+                            payload = {
+                                #"state": int(start_state_fanin_task),
+                                #"input": DAG_executor_state.return_value,
+                                "DAG_executor_State": new_DAG_executor_state,
+                                #"DAG_info": DAG_info,
+                                #"server": server
+                            }
+                            thread_name_prefix = "Thread_faninNB_"
+                            thread = threading.Thread(target=DAG_executor_task, name=(thread_name_prefix+str(start_state_fanin_task)), args=(payload,))
+                            thread.start()
+                            #_thread.start_new_thread(DAG_executor.DAG_executor_task, (payload,))
+                        except Exception as ex:
+                            logger.debug("FanInNB:[ERROR] Failed to start DAG_executor thread.")
+                            logger.debug(ex)
+                    else:
+#ToDo: assert not worker_needs_input?
+                        worker_needs_input = False
+                        DAG_exec_state.state = start_state_fanin_task
+                        logger.debug("process_faninNBs: set worker_needs_input to False,")
+
+
+                #return 1
+                logger.debug("process_faninNBs: returning worker_needs_input: " + str(worker_needs_input))
+                return worker_needs_input
+    # return value not used; will process any fanouts next; no change to DAG_executor_State
+    #return 0
+    logger.debug("process_faninNBs: returning worker_needs_input: " + str(worker_needs_input))
+    return worker_needs_input
+
 #Todo: Global fanin object in tcp_Server, which determines whether last caller or not, and delegates
 #      collection of results to local fanins in infinistore executors.
 
@@ -360,11 +646,11 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State, out
                 #work_queue.put(DAG_states[name])
 #ToDo:
                 # Note: we are in the "not using_threads_not_processes" block
-                # so we do't need this if.
-                if using_workers and not using_threads_not_processes:
-                    list_of_values.append(work_tuple)
-                else:
-                    work_queue.put(work_tuple)
+                # so we do't need an if to check.
+                #if using_workers and not using_threads_not_processes:
+                list_of_values.append(work_tuple)
+                #else:
+                    #work_queue.put(work_tuple)
             else: # using processes
                 dict_of_results =  {}
                 dict_of_results[calling_task_name] = output
@@ -373,10 +659,10 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State, out
 #ToDo:
                 # Note: we are in the "using_threads_not_processes" block
                 # so we don't need this if - we don't want to use put_all
-                if using_workers and not using_threads_not_processes:
-                    list_of_values.append(work_tuple)
-                else:
-                    work_queue.put(work_tuple)
+                #if using_workers and not using_threads_not_processes:
+                #    list_of_values.append(work_tuple)
+                #else:
+                work_queue.put(work_tuple)
         else:
             if run_all_tasks_locally:
                 try:
@@ -431,6 +717,8 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State, out
         work_queue.put_all(list_of_values)
 
     return become_start_state
+
+
 
 def create_and_fanin_remotely(websocket,DAG_exec_state,**keyword_arguments):
     pass
@@ -584,6 +872,9 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
     #if input == None:
         #pass  # withdraw input from payload.synchronizer_name
     
+    # Note: if not using_workers then worker_needs_input is initialized to False and every set 
+    # of worker_needs_input to True is guarded by "if using_workers" so worker_needs_input is never
+    # set to True if not using_workers.
     worker_needs_input = using_workers
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
@@ -673,6 +964,7 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                             work_queue.put(work_tuple)
                         return  
 
+                    # Note: using_workers is checked above and must be True
                     worker_needs_input = False # default
                     logger.debug("DAG_executor: Worker accessed work_queue: process state: " + str(DAG_executor_state.state))
                 else:
@@ -796,8 +1088,9 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     #rhc: queue
                     #thread_work_queue.put(DAG_executor_state.state)
                 else:
-                    # No fanouts so no bcecome task and fqninBs do not generate
+                    # No fanouts so no become task and fqninBs do not generate
                     # work for us so we will need input.
+                    #Note: setting worker_needs_input = True must be guarded by using_workers
                     if using_workers: 
                         worker_needs_input = True
 
@@ -859,6 +1152,7 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                 #if returned_state.blocking:
                 if returned_state.return_value == 0:
                     # we are not the become task for the fanin
+                    #Note: setting worker_needs_input = True must be guarded by using_workers
                     if using_workers:
                         logger.debug("After call to process_fanin: return value is 0; using workers so set worker_needs_input = True")
                         worker_needs_input = True
@@ -896,7 +1190,8 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
             else:
 ##rhc
                 logger.debug("state " + str(DAG_executor_state.state) + " after executing task " +  state_info.task_name + " has no fanouts, fanins, or faninNBs; return")
-                ##logger.debug("state " + str(state) + " after executing task " +  state_info.task_name + " has no fanouts, fanins, or faninNBs; return")
+                ##logger.debug("1state " + str(state) + " after executing task " +  state_info.task_name + " has no fanouts, fanins, or faninNBs; return")
+                #Note: setting worker_needs_input = True must be guarded by using_workers
                 if using_workers:
                     worker_needs_input = True
                 else:

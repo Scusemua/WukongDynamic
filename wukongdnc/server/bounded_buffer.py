@@ -63,6 +63,7 @@ class BoundedBuffer(MonitorSU):
             logger.debug("Full slots (%d) is equal to capacity (%d). Calling wait_c()." % (self._fullSlots, self._capacity))
             self._notFull.wait_c()
         self._buffer.insert(self._in,value)
+        #self._buffer[self._in] = value
         self._in=(self._in+1) % int(self._capacity)
         self._fullSlots+=1
         self._notEmpty.signal_c_and_exit_monitor()
@@ -83,8 +84,10 @@ class BoundedBuffer(MonitorSU):
             if self._fullSlots==self._capacity:
                 logger.debug("Full slots (%d) is equal to capacity (%d). Calling wait_c()." % (self._fullSlots, self._capacity))
                 self._notFull.wait_c()
-            self._buffer.insert(self._in,value)
-            #logger.debug(" deposit put " + value + " self._int: " + str(self._in))
+            #self._buffer.insert(self._in,value)
+            #logger.debug(" deposit put before: " + value + " self._in: " + str(self._in))
+            self._buffer[self._in] = value
+            #logger.debug(" deposit put after: " + value + " self._in: " + str(self._in))
             self._in=(self._in+1) % int(self._capacity)
             self._fullSlots+=1
             # We will wake up a consumer, if any are waiting, whihc blocks us here
@@ -150,7 +153,7 @@ class BoundedBuffer(MonitorSU):
 def taskD(b : BoundedBuffer):
     time.sleep(1)
     logger.debug("Calling deposit")
-    VALUEHERE = 1
+    #VALUEHERE = 1
     keyword_arguments = {}
     list_of_values = ['A','B','C']
     #keyword_arguments['value'] = 'A'
@@ -169,7 +172,7 @@ def taskW(b : BoundedBuffer):
 
 def main():
     b = BoundedBuffer(initial_capacity=1,monitor_name="BoundedBuffer")
-    VALUEFOR_N = 4
+    VALUEFOR_N = 2
     keyword_arguments = {}
     keyword_arguments['n'] = VALUEFOR_N
     b.init(**keyword_arguments)

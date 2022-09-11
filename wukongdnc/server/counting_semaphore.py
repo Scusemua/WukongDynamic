@@ -24,11 +24,13 @@ class CountingSemaphore(object):
         if initial_permits < 0:
             raise ValueError("Initial value of CountingSemaphore must be >= 0.")
     
+    """
     def __generate_id(self):
-        """
-        This might eventually be used. For now, we pass the ID to the constructor.
-        """
+        
+        #This might eventually be used. For now, we pass the ID to the constructor.
+        
         pass 
+    """
 
     def get_name(self) -> str:
         return self._name 
