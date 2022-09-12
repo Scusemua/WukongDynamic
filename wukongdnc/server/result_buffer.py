@@ -1,6 +1,5 @@
-from re import L
-from .monitor_su import MonitorSU, ConditionVariable
-import threading
+#from re import L
+from .monitor_su import MonitorSU
 import _thread
 import time
 
@@ -64,7 +63,7 @@ def taskD(b : ResultBuffer):
 def taskW(b : ResultBuffer):
     logger.debug("Calling withdraw")
     value = b.withdraw()
-    logger.debug("Successfully called withdraw")
+    logger.debug("Successfully called withdraw, got: " + str(value))
 
 
 def main():

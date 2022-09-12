@@ -302,9 +302,55 @@ def create_all_fanins_and_faninNBs_and_possibly_work_queue(websocket, op, type, 
     logger.debug("create_all_fanins_and_faninNBs_and_possibly_work_queue: Sent 'create_all_fanins_and_faninNBs' message to server")
 
     # Receive data. This should just be an ACK, as the TCP server will 'ACK' our create() calls.
-    ack = recv_object(websocket)
+    data = recv_object(websocket)
+    state_from_server = cloudpickle.loads(data) # `state_from_server` is of type State
+    return state_from_server
 
-    logger.debug("create_all_fanins_and_faninNBs_and_possibly_work_queue: received %d byte ack from server: %s" % (len(ack), str(ack)))
+def synchronize_process_faninNBs_batch(websocket, op, type, name, state):
+    """
+    process all fanins and faninNBs for DAG_executor on the TCP server.
+
+    Arguments:
+    ----------
+        websocket (socket.socket):
+            Socket connection to the TCP server.
+            TODO: We pass this in, but in the function body, we connect to the server.
+                    In that case, we don't need to pass a websocket. We'll just create one.
+                    We should only bother with passing it as an argument if its already connected.
+        
+        op (str):
+            The operation being performed, which is "v"
+        
+        type (str):
+            The type of the object to be processed
+
+        name (str):
+            Name of the operation to be performed
+        
+        state (state.State):
+            Our current state.
+    """
+
+    msg_id = str(uuid.uuid4())
+    logger.debug("synchronize_process_faninNBs_batch: Sending 'synchronize_process_faninNBs_batch' message to server. Op='%s', type='%s', id='%s', state=%s" % (op, type, msg_id, state))
+
+    # we set state.keyword_arguments before call to create()
+    message = {
+        "op": op,
+        "type": type,
+        "name": name,
+        "state": make_json_serializable(state),
+        "id": msg_id
+    }
+
+    msg = json.dumps(message).encode('utf-8')
+    send_object(msg, websocket)
+    logger.debug("synchronize_process_faninNBs_batch: Sent 'synchronize_process_faninNBs_batch' message to server")
+
+    # Receive data. This should just be an ACK, as the TCP server will 'ACK' our create() calls.
+    ack = recv_object(websocket)
+    logger.debug("synchronize_process_faninNBs_batch: received %d byte ack from server: %s" % (len(ack), str(ack)))
+    return ack
 
 def close_all(websocket):
     """

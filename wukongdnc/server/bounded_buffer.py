@@ -24,7 +24,10 @@ class BoundedBuffer(MonitorSU):
     def init(self, **kwargs):
         self._fullSlots=0
         self._capacity = kwargs["n"]
-        self._buffer=[]
+        # Need there to be an element at buffer[i]. Cannot use insert() since it will shift elements down.
+        # If we set buffer[0] we need an element to be at position 0 or we get an out of range error.
+        #self._buffer=[]
+        self._buffer= [None] * self._capacity
         self._notFull=super().get_condition_variable(condition_name="notFull")
         self._notEmpty=super().get_condition_variable(condition_name="notEmpty")
         logger.info(kwargs)
@@ -159,10 +162,24 @@ def taskD(b : BoundedBuffer):
     #keyword_arguments['value'] = 'A'
     keyword_arguments['list_of_values'] = list_of_values
     b.deposit_all(**keyword_arguments)
+    keyword_arguments['value'] = 'D'
+    b.deposit(**keyword_arguments)
+    list_of_values = ['E','F','G']
+    #keyword_arguments['value'] = 'A'
+    keyword_arguments['list_of_values'] = list_of_values
+    b.deposit_all(**keyword_arguments)
     logger.debug("Successfully called deposit/deposit_all")
 
 def taskW(b : BoundedBuffer):
     logger.debug("Calling withdraw")
+    value = b.withdraw()
+    logger.debug("Successfully called withdraw: "+ value[0])
+    value = b.withdraw()
+    logger.debug("Successfully called withdraw: "+ value[0])
+    value = b.withdraw()
+    logger.debug("Successfully called withdraw: "+ value[0])
+    value = b.withdraw()
+    logger.debug("Successfully called withdraw: "+ value[0])
     value = b.withdraw()
     logger.debug("Successfully called withdraw: "+ value[0])
     value = b.withdraw()
@@ -198,7 +215,7 @@ def main():
         logger.debug(ex)
 
     logger.debug("Sleeping")
-    time.sleep(6)
+    time.sleep(4)
     logger.debug("Done sleeping")
 
 if __name__=="__main__":

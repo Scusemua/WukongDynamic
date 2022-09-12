@@ -26,8 +26,11 @@ class BoundedBuffer_Select(Selector):
         logger.debug(kwargs)
         
         self._capacity = kwargs["n"]
+        # Need there to be an element at buffer[i]. Cannot use insert() since it will shift elements down.
+        # If we set buffer[0] we need an element to be at position 0 or we get an out of range error.
+        #self._buffer=[]
+        self._buffer= [None] * self._capacity
         self._fullSlots=0
-        self._buffer=[]
         self._in=0
         self._out=0
         

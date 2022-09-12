@@ -7,6 +7,7 @@ import socketserver
 from .synchronizer import Synchronizer
 from .util import decode_and_deserialize
 #from ..dag.DAG_executor_State import DAG_executor_State
+from .util import decode_and_deserialize, isTry_and_getMethodName, isSelect #, make_json_serializable
 
 # Set up logging.
 import logging 
@@ -30,11 +31,13 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
             self.action_handlers = {
                 "create": self.create_obj,
-                "create_all_fanins_and_faninNBs_and_possibly_work_queue": self.create_all_fanins_and_faninNBs_and_possibly_work_queue,
                 "setup": self.setup_server,
                 "synchronize_async": self.synchronize_async,
                 "synchronize_sync": self.synchronize_sync,
-                "close_all": self.close_all
+                "close_all": self.close_all,
+                # These are DAG execution operations
+                "create_all_fanins_and_faninNBs_and_possibly_work_queue": self.create_all_fanins_and_faninNBs_and_possibly_work_queue,
+                "synchronize_process_faninNBs_batch": self.synchronize_process_faninNBs_batch
             }
             #logger.info("Thread Name:{}".format(threading.current_thread().name))
 
@@ -177,6 +180,184 @@ class TCPHandler(socketserver.StreamRequestHandler):
         tcp_server.synchronizers[synchronizer_name] = synchronizer # Store Synchronizer object.
 
         # Do not send ack to client - this is just one of possibly many of the creates from create_all_fanins_and_faninNBs
+ 
+    def synchronize_process_faninNBs_batch(self, message = None):
+        """
+        Synchronous process all faninNBs for a given state during DAG execution.
+
+        Key-word arguments:
+        -------------------
+            message (dict):
+                The payload from the AWS Lambda function.
+        """
+
+        logger.debug("[HANDLER] server.synchronize_process_faninNBs_batch() called.")
+        type_arg = message["type"]
+        name = message["name"]
+        DAG_exec_state = decode_and_deserialize(message["state"])
+        faninNBs = DAG_exec_state.keyword_arguments['faninNBs']
+        faninNB_sizes = DAG_exec_state.keyword_arguments['faninNB_sizes']
+        result = DAG_exec_state.keyword_arguments['result']
+        calling_task_name = DAG_exec_state.keyword_arguments['calling_task_name'] 
+        DAG_states = DAG_exec_state.keyword_arguments['DAG_states'] 
+        worker_needs_input = DAG_exec_state.keyword_arguments['worker_needs_input'] 
+
+        got_work = False
+        for name in zip(faninNBs,faninNB_sizes):
+            start_state_fanin_task  = DAG_states[name]
+            pass
+
+            logger.debug("[HANDLER] server.synchronize_sync() called.")
+            obj_name = name
+            method_name = message['method_name']
+            DAG_exec_state = decode_and_deserialize(message["state"])
+
+            synchronizer_name = self._get_synchronizer_name(type_name = None, name = obj_name)
+
+            logger.debug("tcp_server: synchronize_process_faninNBs_batch: Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
+            synchronizer = tcp_server.synchronizers[synchronizer_name]
+
+            if (synchronizer is None):
+                raise ValueError("synchronize_process_faninNBs_batch: Could not find existing Synchronizer with name '%s'" % synchronizer_name)
+
+            base_name, isTryMethod = isTry_and_getMethodName(method_name)
+            is_select = isSelect(type_arg) # is_select = isSelect(type_arg)
+    
+            logger.debug("tcp_server: synchronize_process_faninNBs_batch: method_name: " + method_name + ", base_name: " + base_name + ", isTryMethod: " + str(isTryMethod))
+            logger.debug("tcp_server: synchronize_process_faninNBs_batch: self._synchronizer_class_name: : " + type_arg + ", is_select: " + str(is_select))
+
+            logger.debug("tcp_server: synchronize_process_faninNBs_batch: calling synchronizer.synchronize.")
+            return_value = synchronizer.synchronize(base_name, DAG_exec_state, **DAG_exec_state.keyword_arguments)
+
+            # look at return value and worker_needs_input, etc
+            if worker_needs_input:
+                if not got_work:
+                    if return_value != 0:
+                        got_work = True
+                        DAG_exec_state.return_value = return_value
+                        DAG_exec_state.blocking = False 
+                        logger.debug("tcp_server: synchronize_process_faninNBs_batch: %s sending return_value %s back for method %s." % (synchronizer_name, str(return_value), method_name))
+                        logger.debug("tcp_server: synchronize_process_faninNBs_batch: %s sending state %s back for method %s." % (synchronizer_name, str(DAG_exec_state), method_name))
+
+#ToDo/Note: Need start state of returned work
+
+        """ where faninNB_remotely_batch is:
+        DAG_exec_state = synchronize_process_faninNBs_batch(websocket, "synchronize_process_faninNBs_batch", "FaninNB", "fan_in", DAG_exec_state)
+        return DAG_exec_state
+
+
+        and tcp_server does:
+            if (synchronizer is None):
+                raise ValueError("synchronize_sync: Could not find existing Synchronizer with name '%s'" % synchronizer_name)
+
+            # This tcp_server passing self so synchronizer can access tcp_server's send_serialized_object
+            # return_value = synchronizer.synchronize_sync(tcp_server, obj_name, method_name, type_arg, state, synchronizer_name)
+            return_value = synchronizer.synchronize_sync(tcp_server, obj_name, method_name, state, synchronizer_name, self)
+    
+        and, ASSUMING this is not a try-op, synchronizer.synchronize_synch does:
+
+            if is_select:
+                    self.lock_synchronizer()
+                
+                    if is_select:
+                        # create result_buffer, create execute() reference, call execute(), result_buffer.withdraw(), 
+                        # return excute's result, with no restart (by definition of synchronous non-try-op)
+                        # (Send result to client below.)
+                        wait_for_return = True
+                        self.synchronizeSelect(base_name, state, wait_for_return, **state.keyword_arguments)
+                    else:
+                        return_value = self.synchronize(base_name, state, **state.keyword_arguments)
+                    state.return_value = return_value
+                    state.blocking = False 
+                    logger.debug("synchronizerXXX: synchronize_sync: %s sending return_value %s back for method %s." % (synchronizer_name, str(return_value), method_name))
+                    logger.debug("synchronizerYYY: synchronize_sync: %s sending state %s back for method %s." % (synchronizer_name, str(state), method_name))
+                    tcp_handler.send_serialized_object(cloudpickle.dumps(state))  
+                return 0
+
+                and self.synchronize does:
+
+                    synchronizer_method = getattr(self._synchClass, method_name)
+                    returnValue, restart = synchronizer_method(self._synchronizer, **kwargs) 
+                    if restart:
+                        pass
+                    return returnValue
+
+                    So returnValue goes back to:
+
+                        state.return_value = return_value
+                        state.blocking = False 
+
+                    which gets sent back to client:
+
+                        tcp_handler.send_serialized_object(cloudpickle.dumps(state))  
+
+                    as the result of their synchronize_sync. 
+
+                    which we get as dummy_DAG_exec_state below.
+
+        1. It does not make sense to batch try-ops, or to execute a batch of synchronous
+            ops that may block and that have return values. faninNB fanins are non-blocking
+            and either (1) we ignore return value since we are not the last caller to fanin
+            or (2) we are last caller and we may use retrun value (if we need work), where
+            there can only be one last caller so we are not returning multple return values
+            for multiple operations.
+        2. This means that we do not need the generality of doing a batch of synchronize-sync
+            operations that could be try-ops, or could block, or could each require a value
+            to be returned. 
+        3. Thus we are doing a batch of fanins that each require a call to self.synchronize().
+            The value returned by self.synchronize() for a fanin will either be a 
+            dict_of_results, when the is the last caller for this fanin, or 0, when this is not
+            the last call for the fanin.
+        4. We can check the return value:
+            If it is 0 then there is nothing to do. 
+            If it is a dict_of_results and we (the client worker caller) do not need work, then 
+                we can deosit this work in the work queue as tuple (start_state_of_fanin_task,
+                dict_of_results)
+            If it is a dict_of_results and we (the client worker caller) need work, then 
+                we check whether we have already seen a dict of results for a previous fanin:
+                if we have previosly seen a dict_of_results then we've already saved the 
+                dict_of_results for return to the client worker caller so we can deposit
+                this work in the work queue
+            otherwise we save the dict_of_results for return to the client worker caller.
+                Note that this is returned as DAG_exec_state.return_value, which is 
+                checked by the caller upon return (see below).
+
+        5. The caller does: 
+
+            if dummy_DAG_exec_state.return_value == 0:
+                # either we wanted work (worker_needs_input = true) but didn't get any 
+                # or we didn't want any work
+                return 0
+            else:
+                if using_workers:
+                    # this caller can be a thread of a process.
+                    dict_of_results = dummy_DAG_exec_state.return_value
+                    if not worker_needs_input:
+                        # work should have been enqueued in work_queue by tco_server.
+                        logger.error("[Error: process_fannNBs: Internal error: got work but not worker_needs_input."])
+
+                    # put results in our data_dict since we will use them next
+                    # Note: We will be writog over our result from the task we 
+                    #  did that inputs into this faninNB.
+                    for key, value in dict_of_results.items():
+                        data_dict[key] = value
+                    # keep work and do it next
+                    worker_needs_input = False
+                    DAG_exec_state.state = start_state_fanin_task
+                    logger.debug("process_faninNBs: set worker_needs_input to False.")
+                else:
+                    if not worker_needs_input:
+                        # create a thread to do the work? this thread is not a worker
+                        # so there is no work_queue; this thread is simulating Lambda
+                        # scheme which means thread is created by faninNB on tcp_server?
+                        # No: faninNB only creates therads if faninNBs are stored locally
+                        # and there is no worker. Implicitly, here faninNBs are stored
+                        # remotely. We are usng a single thread and storing faninNBs remotely
+                        # so here create a new thread to do the work.
+
+
+
+        """
 
     def synchronize_sync(self, message = None):
         """
