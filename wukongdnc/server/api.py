@@ -302,9 +302,9 @@ def create_all_fanins_and_faninNBs_and_possibly_work_queue(websocket, op, type, 
     logger.debug("create_all_fanins_and_faninNBs_and_possibly_work_queue: Sent 'create_all_fanins_and_faninNBs' message to server")
 
     # Receive data. This should just be an ACK, as the TCP server will 'ACK' our create() calls.
-    data = recv_object(websocket)
-    state_from_server = cloudpickle.loads(data) # `state_from_server` is of type State
-    return state_from_server
+    ack = recv_object(websocket)
+    #state_from_server = cloudpickle.loads(data) # `state_from_server` is of type State
+    return ack
 
 def synchronize_process_faninNBs_batch(websocket, op, type, name, state):
     """
