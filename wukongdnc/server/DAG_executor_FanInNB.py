@@ -143,6 +143,7 @@ class DAG_executor_FanInNB(MonitorSU):
 
             if using_workers:
                 if using_threads_not_processes:
+#ToDo: if stored locally work_queue.put(work_tuple) else like for process in next else
                     if not self.store_fanins_faninNBs_locally:
                         logger.error("[Error]: FaninB: using workers and threads but not storing fanins locally,")
                     # if using worker pools of threads, add fanin task's state to the work_queue.

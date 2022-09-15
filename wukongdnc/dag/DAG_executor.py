@@ -327,28 +327,31 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
     logger.debug("process_faninNBs: returning worker_needs_input: " + str(worker_needs_input))
     return worker_needs_input
 
-def faninNB_remotely_batch(websocket, faninNBs, faninNB_sizes, calling_task_name, DAG_states, 
-    DAG_exec_state, output, DAG_info, work_queue, worker_needs_input, **keyword_arguments):
+#def faninNB_remotely_batch(websocket, faninNBs, faninNB_sizes, calling_task_name, DAG_states, 
+#    DAG_exec_state, output, DAG_info, work_queue, worker_needs_input, **keyword_arguments):
+def faninNB_remotely_batch(websocket, **keyword_arguments):
     #Todo: remove DAG_exec_state from parm list
     
     logger.debug ("faninNB_remotely_batch: calling_task_name: " + keyword_arguments['calling_task_name'] 
-        + "calling process_faninNBs_batch with fanin_task_names: " + faninNBs)
+        + "calling process_faninNBs_batch with fanin_task_names: " + str(keyword_arguments['faninNBs']))
 
     DAG_exec_state = DAG_executor_State()
     DAG_exec_state.keyword_arguments = {}
-    DAG_exec_state.keyword_arguments['fanin_task_name'] = keyword_arguments['fanin_task_name']
-    DAG_exec_state.keyword_arguments['n'] = keyword_arguments['n']
-    DAG_exec_state.keyword_arguments['start_state_fanin_task'] = keyword_arguments['start_state_fanin_task']
+    #DAG_exec_state.keyword_arguments['fanin_task_name'] = keyword_arguments['fanin_task_name']
+    #DAG_exec_state.keyword_arguments['n'] = keyword_arguments['n']
+    #DAG_exec_state.keyword_arguments['start_state_fanin_task'] = keyword_arguments['start_state_fanin_task']
     DAG_exec_state.keyword_arguments['result'] = keyword_arguments['result']
     DAG_exec_state.keyword_arguments['calling_task_name'] = keyword_arguments['calling_task_name']
     DAG_exec_state.keyword_arguments['store_fanins_faninNBs_locally'] = keyword_arguments['store_fanins_faninNBs_locally']
     # Need these on tcp_server to process the faninNBs
     DAG_exec_state.keyword_arguments['faninNBs'] = keyword_arguments['faninNBs']
     DAG_exec_state.keyword_arguments['faninNB_sizes'] = keyword_arguments['faninNB_sizes']
-    DAG_exec_state.keyword_arguments['work_queue_name'] = keyword_arguments['process_work_queue']
-    DAG_exec_state.keyword_arguments['work_queue_type'] = keyword_arguments['BoundedBuffer']
-    DAG_exec_state.keyword_arguments['work_queue_method'] = keyword_arguments['deposit_all']
-    DAG_exec_state.keyword_arguments['work_queue_op'] = keyword_arguments['synchronize_async']
+    DAG_exec_state.keyword_arguments['worker_needs_input'] = keyword_arguments['worker_needs_input']
+    DAG_exec_state.keyword_arguments['work_queue_name'] = keyword_arguments['work_queue_name']
+    DAG_exec_state.keyword_arguments['work_queue_type'] = keyword_arguments['work_queue_type']
+    DAG_exec_state.keyword_arguments['work_queue_method'] = keyword_arguments['work_queue_method']
+    DAG_exec_state.keyword_arguments['work_queue_op'] = keyword_arguments['work_queue_op']
+    DAG_exec_state.keyword_arguments['DAG_states_of_faninNBs'] = keyword_arguments['DAG_states_of_faninNBs']
 
     if using_lambdas:
         # Note: When faninNB start a Lambda, DAG_info is in the payload. 
@@ -405,6 +408,7 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
     keyword_arguments = {}
     #keyword_arguments['fanin_task_name'] = name
     #keyword_arguments['n'] = n
+    # FaninNB uses this
     #keyword_arguments['start_state_fanin_task'] = start_state_fanin_task
     # We will use a local datadict for each multiprocess; process will receve
     # the faninNB results and put them in it local data_dict. When using Lambdas,
@@ -419,14 +423,14 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
     keyword_arguments['work_queue_name'] = "process_work_queue"
     keyword_arguments['work_queue_type'] = "BoundedBuffer"
     keyword_arguments['work_queue_method'] = "deposit_all"
-
+    keyword_arguments['work_queue_op'] = "synchronize_async"
     # get a slice of DAG_states that is the DAG states of just the faninNB tasks.
     # Instead of sending all the DAG_states, i.e., all the states in the DAG, to the server.
     # Need this to put any work that is not returned in the work_queue - work is added as
     # a tuple (start state of task, inputs to task)
     DAG_states_of_faninNBs = {}
     for name in faninNBs:
-        DAG_states_of_faninNBs[name] = DAG_states['name']
+        DAG_states_of_faninNBs[name] = DAG_states[name]
     keyword_arguments['DAG_states_of_faninNBs'] = DAG_states_of_faninNBs
 
  	#ToDo: kwargs put in DAG_executor_State keywords and on server it gets keywords from state and passes to create and fanin
@@ -1031,12 +1035,13 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                         worker_needs_input = True
 
                 if len(state_info.faninNBs) > 0:
-                    #if using_workers and not store_fanins_faninNBs_locally:
-                    #   Note: using thread or process workers - both can use batch, which may return work.
-                    #    worker_needs_input = process_faninNBs_batch(websocket,state_info.faninNBs, state_info.faninNB_sizes, 
-                    #       state_info.task_name, DAG_info.get_DAG_states(), DAG_executor_state, 
-                    #        output, DAG_info,work_queue,worker_needs_input)
-                    #else:
+#Todo: using_workers and not store_fanins_faninNBs_locally seems correct, just need driver to create work queue
+                    if False and using_workers and not store_fanins_faninNBs_locally:
+                        #Note: using thread or process workers - both can use batch, which may return work.
+                        worker_needs_input = process_faninNBs_batch(websocket,state_info.faninNBs, state_info.faninNB_sizes, 
+                           state_info.task_name, DAG_info.get_DAG_states(), DAG_executor_state, 
+                            output, DAG_info,work_queue,worker_needs_input)
+                    else:
                     # asynch + terminate + start DAG_executor in start state
                         worker_needs_input = process_faninNBs(websocket,state_info.faninNBs, state_info.faninNB_sizes, 
                             state_info.task_name, DAG_info.get_DAG_states(), DAG_executor_state, 

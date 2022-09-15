@@ -122,7 +122,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 "id": msg_id
             }
         """  
-        logger.debug("[HANDLER] server.create_all_fanins_and_faninNBs() called.")
+        logger.debug("[HANDLER] server.create_all_fanins_and_faninNBs_and_possibly_work_queue() called.")
         messages = message['name']
         fanin_messages = messages[0]
         faninNB_messages = messages[1]
@@ -203,7 +203,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         faninNBs = DAG_exec_state.keyword_arguments['faninNBs']
         faninNB_sizes = DAG_exec_state.keyword_arguments['faninNB_sizes']
         # FYI:
-        #result = DAG_exec_state.keyword_arguments['result']
+        result = DAG_exec_state.keyword_arguments['result']
         # For debuggng
         calling_task_name = DAG_exec_state.keyword_arguments['calling_task_name'] 
         DAG_states_of_faninNBs = DAG_exec_state.keyword_arguments['DAG_states_of_faninNBs'] 
@@ -219,7 +219,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         got_work = False
         list_of_work = []
 
-        for name in zip(faninNBs,faninNB_sizes):
+        for name in faninNBs:
             start_state_fanin_task  = DAG_states_of_faninNBs[name]
 
             synchronizer_name = self._get_synchronizer_name(type_name = None, name = name)
@@ -234,6 +234,10 @@ class TCPHandler(socketserver.StreamRequestHandler):
     
             logger.debug("tcp_server: synchronize_process_faninNBs_batch: method_name: " + method_name + ", base_name: " + base_name + ", isTryMethod: " + str(isTryMethod))
             logger.debug("tcp_server: synchronize_process_faninNBs_batch: self._synchronizer_class_name: : " + type_arg + ", is_select: " + str(is_select))
+
+            # These are per FaninNB
+            DAG_exec_state.keyword_arguments['fanin_task_name'] = name
+            DAG_exec_state.keyword_arguments['start_state_fanin_task'] = start_state_fanin_task
 
             logger.debug("tcp_server: synchronize_process_faninNBs_batch: calling synchronizer.synchronize.")
             return_value = synchronizer.synchronize(base_name, DAG_exec_state, **DAG_exec_state.keyword_arguments)

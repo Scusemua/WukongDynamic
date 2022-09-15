@@ -222,7 +222,7 @@ is not practical, but it tests the Lambda creation logic. In (A2) FaninNBs enque
 work_queue (sharedby the local threads).
 
 (S2) The fanin and faninNB objects are stored (remotely) on the TCP_server. This is used 
-when using schemes (A1), (A3), and (A4) above. Noet tha  using (multi) processes or Lambas requries the 
+when using schemes (A1), (A3), and (A4) above. Note tha  using (multi) processes or Lambas requries the 
 fanin and faninNB objects to be stored remotely.
 
 (S3) This is the same as (S2) with fanins and faninNBs stored in InfiniX lambdas instead of on the 
@@ -348,8 +348,11 @@ def run():
                 # all at the start of driver execution
                 # create_fanins_and_faninNBs(websocket,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
                 if using_workers:
+#Todo: if not stored locally, i.e., either threads or processes then create process queue, but its actually
+# a "remote queue" used by processes and threads.
+# if stored localy it has to be threads.
                     if not using_threads_not_processes:
-                        #Note: using workers means not store_fanins_faninNBs_locally
+                        #Note: using workers and processes means not store_fanins_faninNBs_locally
                         #Need to create the process_work_queue; do it in the same batch
                         # of fanin and faninNB creates
                         #manager = Manager()
@@ -798,7 +801,7 @@ def create_fanins_and_faninNBs_and_work_queue(websocket,number_of_tasks,DAG_map,
 
     fanin_messages, faninNB_messages = create_fanin_and_faninNB_messages(DAG_map,DAG_states,DAG_info,all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes)
  
-    logger.debug("create_fanins_and_faninNBs_and_work_queue: Sending a 'create_all' message to server.")
+    logger.debug("create_fanins_and_faninNBs_and_work_queue: Sending a 'create_fanins_and_faninNBs_and_work_queue' message to server.")
     messages = (fanin_messages,faninNB_messages,work_queue_message)
     dummy_state = DAG_executor_State()
     #Note: Passing tuple messages as name
@@ -810,7 +813,7 @@ def create_fanins_and_faninNBs_and_work_queue(websocket,number_of_tasks,DAG_map,
 def create_fanins_and_faninNBs(websocket,DAG_map,DAG_states,DAG_info,all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes):										
     fanin_messages, faninNB_messages = create_fanin_and_faninNB_messages(DAG_map,DAG_states,DAG_info,all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes)
 
-    logger.debug("Sending a 'create_all' message to server.")
+    logger.debug("Sending a 'create_all_fanins_and_faninNBs_and_possibly_work_queue' message to server.")
     messages = (fanin_messages,faninNB_messages)
     dummy_state = DAG_executor_State()
     create_all_fanins_and_faninNBs_and_possibly_work_queue(websocket, "create_all_fanins_and_faninNBs_and_possibly_work_queue", "DAG_executor_fanin_or_faninNB", 
