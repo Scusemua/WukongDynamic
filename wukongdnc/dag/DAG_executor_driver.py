@@ -6,10 +6,13 @@
 #   Need "multitreaded_multiprocessing=True" and check other constants will work.
 #   Note matrix mult may be using C code so may work well with multithreading.
 
-# Try batching fanout start states to BB.deposit_all_no_restarts
+# Fix bug on get_atr
+# double processing states?
+# test with inco last fan_inNb and in1 last fanin_nb
 # Try sending fanout start_state batch with faninNB call and faninNB batch call
-# We'll be sending fanout/faninNB states to work_queue from tcp_server so
-#  we can just send the fanout rsults too. 
+#   We'll be sending fanout/faninNB states to work_queue from tcp_server so
+#   we can just send the fanout rsults too. 
+# try with new DAG having mult faninNBs
 # Try fanin and faninNB (batched) where they send need_work and if not become 
 #  (where fanin become dosn't need work, and faninNB become adds work to work queue, 
 #  and faninNB not become gets work from work_queue (while on tcp_server) or waits for work
@@ -21,7 +24,7 @@
 #   not lookng at or changing worker_needs_work. Perhaps we should not start new 
 #   thread/Lambda if worker_needs_work or use faster/better to start new Lambda/thread?
 #   Don't want Lambda to wait for wor or anything else? Call to fanin_all() can be asynch?
-# move on the optimizations, batch fanouts, then piggy back fanouts on faninNBs (if any).
+# move on the optimizations, then piggy back fanouts on faninNBs (if any).
 # Then work_queue optmizations
 # Then delegate process faninNBs to a thread since long time on server and 
 #   we can in mean time do fanouts?
@@ -222,7 +225,7 @@ is not practical, but it tests the Lambda creation logic. In (A2) FaninNBs enque
 work_queue (sharedby the local threads).
 
 (S2) The fanin and faninNB objects are stored (remotely) on the TCP_server. This is used 
-when using schemes (A1), (A3), and (A4) above. Note tha  using (multi) processes or Lambas requries the 
+when using schemes (A1), (A3), and (A4) above. Note that  using (multi) processes or Lambas requries the 
 fanin and faninNB objects to be stored remotely.
 
 (S3) This is the same as (S2) with fanins and faninNBs stored in InfiniX lambdas instead of on the 

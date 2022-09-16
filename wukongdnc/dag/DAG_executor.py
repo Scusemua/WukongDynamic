@@ -446,17 +446,17 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
         #DAG_exec_state.blocking = False
         # nothing to do; if worker_needs_inut is True then there was no input to be gotten
         # from the faninNBs, i.e., we were not the last task to cal fan_in for any faninNB in the batch.
-        logger.debug("process_faninNBs_batch: received no work with worker_needs_input: " + worker_needs_input)
+        logger.debug("process_faninNBs_batch: received no work with worker_needs_input: " + str(worker_needs_input))
         return 0
     else:
         # we only call process_faninNBs_batch() when we are using workers.
         if not (using_workers and worker_needs_input):
             logger.debug("process_faninNBs_batch: not using workers, or worker_needs_input is False but we received work.")
         # return_value is a tuple (task name, dictionary of results used as the task's inputs)
-        name = dummy_DAG_exec_state.return_value[0]
-        start_state_fanin_task = DAG_states_of_faninNBs[name]
-        logger.debug("process_faninNBs_batch: received work for fanin task " + name 
-            + " and start_state_fanin_task " + start_state_fanin_task + " with worker_needs_input: " + worker_needs_input)
+        start_state_fanin_task = dummy_DAG_exec_state.return_value[0]
+        fanin_task_name = DAG_info.get_DAG_map()[start_state_fanin_task].task_name
+        logger.debug("process_faninNBs_batch: received work for fanin task " + fanin_task_name 
+            + " and start_state_fanin_task " + str(start_state_fanin_task) + " with worker_needs_input: " + str(worker_needs_input))
         # This must be true since we only call process_faninNBs_batch if this is true; otherwise, we call process_faninNBs
         # to process a single faninNB. Note: when we use Lambdas we do not use workers; instead, the faninNBs
         # create a new Lambda to excute the fanin task. No work is enqueued for a pool of Lambdas.
@@ -1035,9 +1035,14 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                         worker_needs_input = True
 
                 if len(state_info.faninNBs) > 0:
-#Todo: using_workers and not store_fanins_faninNBs_locally seems correct, just need driver to create work queue
-                    if False and using_workers and not store_fanins_faninNBs_locally:
-                        #Note: using thread or process workers - both can use batch, which may return work.
+                    # batching work when we are using workers and storing the FanInMBs remotey and 
+                    # we are using processes. We can also use workers with threads instead of processes
+                    # but multithreading with remote FanInNBs is not as useful as using processes. 
+                    # Multithreadng in general is not as helpful as multiprocessing in Python.
+                    if using_workers and not using_threads_not_processes:
+                        if store_fanins_faninNBs_locally:
+                            logger.error("[Error]: DAG_executor_work_loop: using processes but storing FanINNBs locally.")
+                        #Note: using worker processes - batch calsl to fan_in for FaninNBs
                         worker_needs_input = process_faninNBs_batch(websocket,state_info.faninNBs, state_info.faninNB_sizes, 
                            state_info.task_name, DAG_info.get_DAG_states(), DAG_executor_state, 
                             output, DAG_info,work_queue,worker_needs_input)

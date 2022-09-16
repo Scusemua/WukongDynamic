@@ -143,22 +143,30 @@ class DAG_executor_FanInNB(MonitorSU):
 
             if using_workers:
                 if using_threads_not_processes:
-#ToDo: if stored locally work_queue.put(work_tuple) else like for process in next else
-                    if not self.store_fanins_faninNBs_locally:
-                        logger.error("[Error]: FaninB: using workers and threads but not storing fanins locally,")
-                    # if using worker pools of threads, add fanin task's state to the work_queue.
-                    # Note: if we are using worker pools of processes, then the process will call fan_in and
-                    # the last process to execute fanin will put the fanin task's state in the
-                    # work_queue. This last process does not become the fanin task, as this is a
-                    # faninNB (No Become). This FaninNB is running on he tcp_server, as multiprocessing
-                    # requires pools to be process pools, not thread pools, and it requires synch objects
-                    # to be stored on the tcp_server or InfiniX lambdas, so this faninNB cannot start
-                    # a new thread/process or add a sate to the processes work_queue.
-                    logger.debug("FanInNB: using_workers and threads so add start state of fanin task to thread_work_queue.")
-                    #thread_work_queue.put(start_state_fanin_task)
-                    work_tuple = (start_state_fanin_task,self._results)
-                    work_queue.put(work_tuple)
-                    #work_queue.put(start_state_fanin_task)
+                    if self.store_fanins_faninNBs_locally:
+                        # if using worker pools of threads, add fanin task's state to the work_queue.
+                        # Note: if we are using worker pools of processes, then the process will call fan_in and
+                        # the last process to execute fanin will put the fanin task's state in the
+                        # work_queue (if we are not batching calls) This last process does not become the 
+                        # fanin task, as this is a faninNB (No Become).
+                        # This FaninNB is running on the tcp_server, as multiprocessing
+                        # requires pools to be process pools, not thread pools, and it requires synch objects
+                        # to be stored on the tcp_server or InfiniX lambdas, so this faninNB cannot start
+                        # a new thread/process or add a sate to the processes work_queue.
+                        # If we are batching calls to fan_in, we are storing FanInNBs remotely so we cannot
+                        # start a thread (on the tcp_server)
+                        logger.debug("FanInNB: using_workers and threads so add start state of fanin task to thread_work_queue.")
+                        #thread_work_queue.put(start_state_fanin_task)
+                        work_tuple = (start_state_fanin_task,self._results)
+                        work_queue.put(work_tuple)
+                        #work_queue.put(start_state_fanin_task)
+                    else:
+                        # FanInNB is stored remotely so return work to tcp_server. If we are not batching calls
+                        # to fan_in, the work/results will be returned to the client caller. If we are batching 
+                        # calls, one result will be returned to the client if they need work. If not, no work
+                        # is returned and all work is put into the work_queue, which is also stored on tcp_server.
+                        super().exit_monitor()
+                        return self._results, restart  # all threads have called so return results        
                 else:
                     if self.store_fanins_faninNBs_locally:
                         logger.error("[Error]: FaninB: using workers and processes but storing fanins locally,")

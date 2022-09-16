@@ -278,6 +278,25 @@ class TCPHandler(socketserver.StreamRequestHandler):
             # the last caller.
  
         if len(list_of_work) > 0:
+
+            """
+            self._synchronizer_name = (str(synchronizer_class_name) + '_' + str(synchronizer_object_name))
+            
+            logger.debug("create: Attempting to locate class '%s'" % synchronizer_class_name)
+            
+            src_file = Synchronizer.file_map[synchronizer_class_name]
+            #logger.debug("Creating synchronizer with name '%s' by calling locate('%s.%s')"  % (self._synchronizer_name, src_file, synchronizer_class_name))
+            logger.debug("create: Creating synchronizer with name '%s'" % self._synchronizer_name)
+
+            # Get the class object for a synchronizer object, e.g.. Barrier
+            module = importlib.import_module("wukongdnc.server." + src_file)
+            #module = importlib.import_module(src_file)
+            self._synchClass = getattr(module, synchronizer_class_name)
+
+            if (self._synchClass is None):
+                raise ValueError("Failed to locate and create synchronizer of type %s" % synchronizer_class_name)
+            """
+
             synchronizer = tcp_server.synchronizers[work_queue_name]
             try:
                 synchronizer_method = getattr(work_queue_type, work_queue_method)

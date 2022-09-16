@@ -348,9 +348,11 @@ def synchronize_process_faninNBs_batch(websocket, op, type, name, state):
     logger.debug("synchronize_process_faninNBs_batch: Sent 'synchronize_process_faninNBs_batch' message to server")
 
     # Receive data. This should just be an ACK, as the TCP server will 'ACK' our create() calls.
-    ack = recv_object(websocket)
-    logger.debug("synchronize_process_faninNBs_batch: received %d byte ack from server: %s" % (len(ack), str(ack)))
-    return ack
+    data = recv_object(websocket)
+    state_from_server = cloudpickle.loads(data) # `state_from_server` is of type State
+    return state_from_server
+
+
 
 def close_all(websocket):
     """
