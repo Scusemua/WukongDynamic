@@ -444,10 +444,10 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
     # I like using the "else" after the return, even though we don't need it
     if dummy_DAG_exec_state.return_value == 0:
         #DAG_exec_state.blocking = False
-        # nothing to do; if worker_needs_inut is True then there was no input to be gotten
-        # from the faninNBs, i.e., we were not the last task to cal fan_in for any faninNB in the batch.
-        logger.debug("process_faninNBs_batch: received no work with worker_needs_input: " + str(worker_needs_input))
-        return 0
+        # nothing to do; if worker_needs_input is True then there was no input to be gotten
+        # from the faninNBs, i.e., we were not the last task to call fan_in for any faninNB in the batch.
+        logger.debug("process_faninNBs_batch: calling_task_name: " + calling_task_name + " received no work with worker_needs_input: " + str(worker_needs_input))
+        return worker_needs_input
     else:
         # we only call process_faninNBs_batch() when we are using workers.
         if not (using_workers and worker_needs_input):
@@ -455,7 +455,7 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
         # return_value is a tuple (task name, dictionary of results used as the task's inputs)
         start_state_fanin_task = dummy_DAG_exec_state.return_value[0]
         fanin_task_name = DAG_info.get_DAG_map()[start_state_fanin_task].task_name
-        logger.debug("process_faninNBs_batch: received work for fanin task " + fanin_task_name 
+        logger.debug("process_faninNBs_batch: calling_task_name: " + calling_task_name + " received work for fanin task " + fanin_task_name 
             + " and start_state_fanin_task " + str(start_state_fanin_task) + " with worker_needs_input: " + str(worker_needs_input))
         # This must be true since we only call process_faninNBs_batch if this is true; otherwise, we call process_faninNBs
         # to process a single faninNB. Note: when we use Lambdas we do not use workers; instead, the faninNBs

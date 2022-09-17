@@ -57,7 +57,14 @@ class BoundedBuffer(MonitorSU):
 
 	# synchronous no-try version of deposit, blocking w/ no restart
     def deposit(self, **kwargs):
-        super().enter_monitor(method_name="deposit")
+        try:
+            super(BoundedBuffer, self).enter_monitor(method_name="deposit")
+        except Exception as ex:
+            logger.error("[ERROR] Failed super(BoundedBuffer, self)")
+            logger.error("[ERROR] self: " + str(self.__class__.__name__))
+            logger.debug(ex)
+            return 0
+
         logger.debug(" deposit() entered monitor, len(self._notFull) ="+str(len(self._notFull))+",self._capacity="+str(self._capacity))
         logger.debug(" deposit() entered monitor, len(self._notEmpty) ="+str(len(self._notEmpty))+",self._capacity="+str(self._capacity))
         value = kwargs["value"]
@@ -76,9 +83,9 @@ class BoundedBuffer(MonitorSU):
         return 0, restart
 
 	# synchronous no-try version of deposit, blocking w/ no restart
+    # assumes kwargs["list_of_values"] exists and is a list of values to deposit.
     def deposit_all(self, **kwargs):
-        # assumes kwargs["list_of_values"] exists and is a list of values to deposit.
-        super().enter_monitor(method_name="deposit")
+        super().enter_monitor(method_name="deposit_all")
         logger.debug(" deposit_all() entered monitor, len(self._notFull) ="+str(len(self._notFull))+",self._capacity="+str(self._capacity))
         logger.debug(" deposit_all() entered monitor, len(self._notEmpty) ="+str(len(self._notEmpty))+",self._capacity="+str(self._capacity))
         list_of_values = kwargs["list_of_values"]

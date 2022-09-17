@@ -212,7 +212,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
         work_queue_type = DAG_exec_state.keyword_arguments['work_queue_type']
         work_queue_method = DAG_exec_state.keyword_arguments['work_queue_method']
 
-        logger.debug("calling_task_name: " + calling_task_name)
+        logger.debug("calling_task_name: " + calling_task_name + " worker_needs_input: " + str(worker_needs_input))
+
 
         # True if the client needs work and we got some work for the client, which are the
         # results of a faninNB.
@@ -233,7 +234,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             is_select = isSelect(type_arg) # is_select = isSelect(type_arg)
     
             logger.debug("tcp_server: synchronize_process_faninNBs_batch: method_name: " + method_name + ", base_name: " + base_name + ", isTryMethod: " + str(isTryMethod))
-            logger.debug("tcp_server: synchronize_process_faninNBs_batch: self._synchronizer_class_name: : " + type_arg + ", is_select: " + str(is_select))
+            logger.debug("tcp_server: synchronize_process_faninNBs_batch: synchronizer_class_name: : " + type_arg + ", is_select: " + str(is_select))
 
             # These are per FaninNB
             DAG_exec_state.keyword_arguments['fanin_task_name'] = name
@@ -277,35 +278,25 @@ class TCPHandler(socketserver.StreamRequestHandler):
             # else we were not the last caller of fanin, so we deposited our result, which will be given to
             # the last caller.
  
-        if len(list_of_work) > 0:
-
-            """
-            self._synchronizer_name = (str(synchronizer_class_name) + '_' + str(synchronizer_object_name))
-            
-            logger.debug("create: Attempting to locate class '%s'" % synchronizer_class_name)
-            
-            src_file = Synchronizer.file_map[synchronizer_class_name]
-            #logger.debug("Creating synchronizer with name '%s' by calling locate('%s.%s')"  % (self._synchronizer_name, src_file, synchronizer_class_name))
-            logger.debug("create: Creating synchronizer with name '%s'" % self._synchronizer_name)
-
-            # Get the class object for a synchronizer object, e.g.. Barrier
-            module = importlib.import_module("wukongdnc.server." + src_file)
-            #module = importlib.import_module(src_file)
-            self._synchClass = getattr(module, synchronizer_class_name)
-
-            if (self._synchClass is None):
-                raise ValueError("Failed to locate and create synchronizer of type %s" % synchronizer_class_name)
-            """
-
+        if len(list_of_work) > 0:            
             synchronizer = tcp_server.synchronizers[work_queue_name]
+            synchClass = synchronizer._synchClass
+
+            #rhc
+            work_queue_method = "deposit"
+
             try:
-                synchronizer_method = getattr(work_queue_type, work_queue_method)
+                synchronizer_method = getattr(synchClass, work_queue_method)
             except Exception as ex:
                 logger.error("tcp_server: synchronize_process_faninNBs_batch: Failed to find method '%s' on object '%s'." % (work_queue_method, work_queue_type))
                 raise ex
-            work_queue_method_keyword_arguments = {}
-            work_queue_method_keyword_arguments['list_of_values'] = list_of_work
-            returnValue, restart = synchronizer_method(synchronizer, **work_queue_method_keyword_arguments) 
+
+            #rhc
+            for work_tuple in list_of_work:
+                work_queue_method_keyword_arguments = {}
+                #work_queue_method_keyword_arguments['list_of_values'] = list_of_work
+                work_queue_method_keyword_arguments['value'] = work_tuple
+                returnValue, restart = synchronizer_method(synchronizer._synchronizer, **work_queue_method_keyword_arguments) 
     
             logger.debug("tcp_server: synchronize_process_faninNBs_batch: work_queue_method: " + str(work_queue_method) + ", restart " + str(restart))
             logger.debug("tcp_server: synchronize_process_faninNBs_batch: " + str(work_queue_method) + ", returnValue " + str(returnValue))

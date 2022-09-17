@@ -160,12 +160,20 @@ class DAG_executor_FanInNB(MonitorSU):
                         work_tuple = (start_state_fanin_task,self._results)
                         work_queue.put(work_tuple)
                         #work_queue.put(start_state_fanin_task)
+           
+                        # No signal of non-last client; they did not block and they are done executing. 
+                        # does mutex.V
+                        super().exit_monitor()
+                        # no one should be calling fan_in again since this is last caller
+                        return self._results, restart  # all threads have called so return results
+                        #return 1, restart  # all threads have called so return results
                     else:
                         # FanInNB is stored remotely so return work to tcp_server. If we are not batching calls
                         # to fan_in, the work/results will be returned to the client caller. If we are batching 
                         # calls, one result will be returned to the client if they need work. If not, no work
                         # is returned and all work is put into the work_queue, which is also stored on tcp_server.
                         super().exit_monitor()
+                        # no one should be calling fan_in again since this is last caller
                         return self._results, restart  # all threads have called so return results        
                 else:
                     if self.store_fanins_faninNBs_locally:
@@ -173,6 +181,7 @@ class DAG_executor_FanInNB(MonitorSU):
                     # No signal of non-last client; they did not block and they are done executing. 
                     # does mutex.V
                     super().exit_monitor()
+                    # no one should be calling fan_in again since this is last calle
                     return self._results, restart  # all threads have called so return results
                     #return 1, restart  # all threads have called so return results
             elif self.store_fanins_faninNBs_locally and run_all_tasks_locally:
@@ -206,6 +215,13 @@ class DAG_executor_FanInNB(MonitorSU):
                 except Exception as ex:
                     logger.debug("FanInNB:[ERROR] Failed to start DAG_executor thread.")
                     logger.debug(ex)
+
+                # No signal of non-last client; they did not block and they are done executing. 
+                # does mutex.V
+                super().exit_monitor()
+                # no one should be calling fan_in again since this is last caller
+                return self._results, restart  # all threads have called so return results
+                #return 1, restart  # all threads have called so return results
                     
             elif not self.store_fanins_faninNBs_locally and not run_all_tasks_locally:
                 #ToDO: use using_lambdas (=> self.store_fanins_faninNBs_locally and not run_all_tasks_locally)
@@ -231,14 +247,22 @@ class DAG_executor_FanInNB(MonitorSU):
                 except Exception as ex:
                     logger.debug("FanInNB:[ERROR] Failed to start DAG_executor Lambda.")
                     logger.debug(ex)
+
+                # No signal of non-last client; they did not block and they are done executing. 
+                # does mutex.V
+                super().exit_monitor()
+                # no one should be calling fan_in again since this is last caller   
+                return self._results, restart  # all threads have called so return results
+                #return 1, restart  # all threads have called so return results
+
             else:
                 logger.error("FanInNB:[ERROR] Internal Error: reached else: error at end of fanin")
 
             # No signal of non-last client; they did not block and they are done executing. 
             # does mutex.V
-            super().exit_monitor()
+            #super().exit_monitor()
             
-            return self._results, restart  # all threads have called so return results
+            #return self._results, restart  # all threads have called so return results
             #return 1, restart  # all threads have called so return results
         
 

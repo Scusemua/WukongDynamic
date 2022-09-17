@@ -366,7 +366,7 @@ def run():
                         process_work_queue = BoundedBuffer_Work_Queue(websocket,2*num_tasks_to_execute)
                         #process_work_queue.create()
                         create_fanins_and_faninNBs_and_work_queue(websocket,num_tasks_to_execute,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
-                        for state in DAG_leaf_task_start_states:
+                        for state in reversed(DAG_leaf_task_start_states):
                             #logger.debug("dummy_state: " + str(dummy_state))
                             state_info = DAG_map[state]
                             task_inputs = state_info.task_inputs 
