@@ -211,14 +211,46 @@ class TCPHandler(socketserver.StreamRequestHandler):
         work_queue_name = DAG_exec_state.keyword_arguments['work_queue_name']
         work_queue_type = DAG_exec_state.keyword_arguments['work_queue_type']
         work_queue_method = DAG_exec_state.keyword_arguments['work_queue_method']
+        list_of_work_queue_fanout_values = DAG_exec_state.keyword_arguments['list_of_work_queue_fanout_values']
 
         logger.debug("calling_task_name: " + calling_task_name + " worker_needs_input: " + str(worker_needs_input))
-
 
         # True if the client needs work and we got some work for the client, which are the
         # results of a faninNB.
         got_work = False
         list_of_work = []
+
+        # List list_of_work_queue_fanout_values may be empty: if a state has no fanouts this list is empty. 
+        # If a state has 1 fanout it will be a become task and there will be no moer fanouts.
+        # If there are no fanouts, then worker_needs_work will be True and this list will be empty.
+        # otherwise, the worker will have a become task so worker_needs_input will be false (and this
+        # list may or may not be empty depending on whether there are any more fanouts.)
+        if len(list_of_work_queue_fanout_values) > 0:
+            # work_queue.deposit_all(list_of_work_queue_fanout_values)
+            synchronizer = tcp_server.synchronizers[work_queue_name]
+            synchClass = synchronizer._synchClass
+            try:
+                synchronizer_method = getattr(synchClass, work_queue_method)
+            except Exception as ex:
+                logger.error("tcp_server: synchronize_process_faninNBs_batch: deposit fanout work: Failed to find method '%s' on object '%s'." % (work_queue_method, work_queue_type))
+                raise ex
+
+            # To call "deposit" instead of "deposit_all", change the work_queue_method above before you
+            # generate synchronizer_method and here iterate over the list.
+            # work_queue_method = "deposit"
+            #for work_tuple in list_of_work:
+                #work_queue_method_keyword_arguments = {}
+                #work_queue_method_keyword_arguments['value'] = work_tuple
+                #returnValue, restart = synchronizer_method(synchronizer._synchronizer, **work_queue_method_keyword_arguments) 
+
+            work_queue_method_keyword_arguments = {}
+            work_queue_method_keyword_arguments['list_of_values'] = list_of_work_queue_fanout_values
+            # call work_queue (bounded buffer) deposit_all(list_of_work_queue_fanout_values)
+            logger.debug("tcp_server: synchronize_process_faninNBs_batch: deposit all fanout work.")
+            returnValue, restart = synchronizer_method(synchronizer._synchronizer, **work_queue_method_keyword_arguments) 
+            # deposit_all return value is 0 and restart is False
+        else:
+            logger.debug("tcp_server: synchronize_process_faninNBs_batch: no fanout work to deposit")
 
         for name in faninNBs:
             start_state_fanin_task  = DAG_states_of_faninNBs[name]
@@ -269,8 +301,12 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     got_work = True
                     DAG_exec_state.return_value = work_tuple
                     DAG_exec_state.blocking = False 
-                    logger.debug("tcp_server: synchronize_process_faninNBs_batch: %s sending name % and return_value %s back for method %s." % (synchronizer_name, name, str(return_value), method_name))
+                    logger.debug("tcp_server: synchronize_process_faninNBs_batch: %s sending name %s and return_value %s back for method %s." % (synchronizer_name, name, str(return_value), method_name))
                     logger.debug("tcp_server: synchronize_process_faninNBs_batch: %s sending state %s back for method %s." % (synchronizer_name, str(DAG_exec_state), method_name))
+                    # Note: We send work back now, as soon as we get it, to free up the waitign client
+                    # instead of waiting until the end. This delays the processing of FaninNBs and depositing
+                    # any work in the work_queue. Possibly: create a thread to do this.                 
+                    self.send_serialized_object(cloudpickle.dumps(DAG_exec_state))
                 else:
                     # Client doesn't need work or we already got some work for the client, so add this work
                     # to the work_queue)
@@ -283,35 +319,49 @@ class TCPHandler(socketserver.StreamRequestHandler):
             synchClass = synchronizer._synchClass
 
             #rhc
-            work_queue_method = "deposit"
+            #work_queue_method = "deposit"
 
             try:
                 synchronizer_method = getattr(synchClass, work_queue_method)
             except Exception as ex:
-                logger.error("tcp_server: synchronize_process_faninNBs_batch: Failed to find method '%s' on object '%s'." % (work_queue_method, work_queue_type))
+                logger.error("tcp_server: synchronize_process_faninNBs_batch: deposit fanin work: Failed to find method '%s' on object '%s'." % (work_queue_method, work_queue_type))
                 raise ex
 
-            #rhc
-            for work_tuple in list_of_work:
-                work_queue_method_keyword_arguments = {}
-                #work_queue_method_keyword_arguments['list_of_values'] = list_of_work
-                work_queue_method_keyword_arguments['value'] = work_tuple
-                returnValue, restart = synchronizer_method(synchronizer._synchronizer, **work_queue_method_keyword_arguments) 
-    
+            # To call "deposit" instead of "deposit_all", change the work_queue_method above before you
+            # generate synchronizer_method and here iterate over the list.
+            # work_queue_method = "deposit"
+            #for work_tuple in list_of_work:
+                #work_queue_method_keyword_arguments = {}
+                #work_queue_method_keyword_arguments['value'] = work_tuple
+                #returnValue, restart = synchronizer_method(synchronizer._synchronizer, **work_queue_method_keyword_arguments) 
+
+            work_queue_method_keyword_arguments = {}
+            work_queue_method_keyword_arguments['list_of_values'] = list_of_work
+            # call work_queue (bounded buffer) deposit_all(list_of_work)
+            logger.error("tcp_server: synchronize_process_faninNBs_batch: deposit all FanInNB work.")
+            returnValue, restart = synchronizer_method(synchronizer._synchronizer, **work_queue_method_keyword_arguments) 
+            # deposit_all return value is 0 and restart is False
+
             logger.debug("tcp_server: synchronize_process_faninNBs_batch: work_queue_method: " + str(work_queue_method) + ", restart " + str(restart))
             logger.debug("tcp_server: synchronize_process_faninNBs_batch: " + str(work_queue_method) + ", returnValue " + str(returnValue))
             logger.debug("tcp_server: synchronize_process_faninNBs_batch: " + str(work_queue_method) + ", successfully called work_queue method. ")
 
         if not got_work:
-            logger.debug("tcp_server: synchronize_process_faninNBs_batch: no work to return, returning 0.")           
+            # if if worker_needs_input is sent from client as False, then got_work is initially False and never set to True
+            logger.debug("tcp_server: synchronize_process_faninNBs_batch: no work to return, returning DAG_exec_state.return_value = 0.")           
             DAG_exec_state.return_value = 0
-            DAG_exec_state.blocking = False 
-        else:
+            DAG_exec_state.blocking = False
+            # Note: if we decide not to send work back immediately to the waitign clent (see above),
+            # then we can comment this send out, uncomment the else and he log mssage in the else part, 
+            # and uncomment the send at the end. That send will either send the DAG_exec_state return 
+            # value 0 we just set or the DAG_xec_state above with the return value containing work.
+            self.send_serialized_object(cloudpickle.dumps(DAG_exec_state))
+        #else:
             # we return the DAG_exec_state.return_value set to work_tuple above
-            logger.debug("tcp_server: synchronize_process_faninNBs_batch: returning work in ADG_exec_state.") 
+            #logger.debug("tcp_server: synchronize_process_faninNBs_batch: returning work in DAG_exec_state.") 
 
-        logger.debug("tcp_server: synchronize_process_faninNBs_batch: returning DAG_state %s." % (str(DAG_exec_state)))           
-        self.send_serialized_object(cloudpickle.dumps(DAG_exec_state))
+        #logger.debug("tcp_server: synchronize_process_faninNBs_batch: returning DAG_state %s." % (str(DAG_exec_state)))           
+        #self.send_serialized_object(cloudpickle.dumps(DAG_exec_state))
 
     def synchronize_sync(self, message = None):
         """

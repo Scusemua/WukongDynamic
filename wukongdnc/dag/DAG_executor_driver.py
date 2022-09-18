@@ -1,29 +1,18 @@
 #ToDo: All the timing stuff + close_all at the end
-# break is FN + R
+# break stuck Python is FN + R
 # try matrixMult
 
 # implement multitreaded processes- drver creates processes that start threads as usual.
 #   Need "multitreaded_multiprocessing=True" and check other constants will work.
 #   Note matrix mult may be using C code so may work well with multithreading.
 
-# Fix bug on get_atr
-# double processing states?
-# test with inco last fan_inNb and in1 last fanin_nb
-# Try sending fanout start_state batch with faninNB call and faninNB batch call
-#   We'll be sending fanout/faninNB states to work_queue from tcp_server so
-#   we can just send the fanout rsults too. 
 # try with new DAG having mult faninNBs
-# Try fanin and faninNB (batched) where they send need_work and if not become 
-#  (where fanin become dosn't need work, and faninNB become adds work to work queue, 
-#  and faninNB not become gets work from work_queue (while on tcp_server) or waits for work
-#  and gets work (maybe -1) from work_queue (while on tcp_server) and fanin not
-#  become needs work and acts like faninNB not become.
 
 # Where are we: 
 # FninNB local with no workers always starts new thread, like Lambda. Sowe are 
 #   not lookng at or changing worker_needs_work. Perhaps we should not start new 
 #   thread/Lambda if worker_needs_work or use faster/better to start new Lambda/thread?
-#   Don't want Lambda to wait for wor or anything else? Call to fanin_all() can be asynch?
+#   Don't want Lambda to wait for work or anything else? Call to fanin_all() can be asynch?
 # move on the optimizations, then piggy back fanouts on faninNBs (if any).
 # Then work_queue optmizations
 # Then delegate process faninNBs to a thread since long time on server and 
@@ -351,9 +340,8 @@ def run():
                 # all at the start of driver execution
                 # create_fanins_and_faninNBs(websocket,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
                 if using_workers:
-#Todo: if not stored locally, i.e., either threads or processes then create process queue, but its actually
-# a "remote queue" used by processes and threads.
-# if stored localy it has to be threads.
+                    # if not stored locally, i.e., and either threads or processes then create a remote 
+                    # process queue if using processs and use a local work queue for the threads.
                     if not using_threads_not_processes:
                         #Note: using workers and processes means not store_fanins_faninNBs_locally
                         #Need to create the process_work_queue; do it in the same batch
@@ -366,7 +354,9 @@ def run():
                         process_work_queue = BoundedBuffer_Work_Queue(websocket,2*num_tasks_to_execute)
                         #process_work_queue.create()
                         create_fanins_and_faninNBs_and_work_queue(websocket,num_tasks_to_execute,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
-                        for state in reversed(DAG_leaf_task_start_states):
+                        #Note: reversed() this list of leaf node start states to reverse the order of appending leaf nodes
+                        #during testing
+                        for state in DAG_leaf_task_start_states:
                             #logger.debug("dummy_state: " + str(dummy_state))
                             state_info = DAG_map[state]
                             task_inputs = state_info.task_inputs 
