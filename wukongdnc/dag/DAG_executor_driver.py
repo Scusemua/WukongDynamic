@@ -6,7 +6,8 @@
 #   Need "multitreaded_multiprocessing=True" and check other constants will work.
 #   Note matrix mult may be using C code so may work well with multithreading.
 
-# try with new DAG having mult faninNBs
+# try with new DAG having mult faninNBs:
+# get inc1 with mult faninNBs to be lat to fanin
 
 # Where are we: 
 # FninNB local with no workers always starts new thread, like Lambda. Sowe are 
@@ -727,10 +728,20 @@ def create_multithreaded_multiprocessing_processes(num_processes_created_for_mul
 # create fanni and faninNB messages to be passed to the tcp_server for creating
 # all fanin and faninNB synch objects
 def create_fanin_and_faninNB_messages(DAG_map,DAG_states,DAG_info,all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes):
+ 
+    """
+    logger.debug("create_fanin_and_faninNB_messages: size of all_fanin_task_names: " + str(len(all_fanin_task_names))
+        + " size of all_faninNB_task_names: " + str(len(all_faninNB_task_names)))
+    logger.debug("create_fanin_and_faninNB_messages: size of all_fanin_sizes: " + str(len(all_fanin_sizes))
+        + " size of all_faninNB_sizes: " + str(len(all_faninNB_sizes)))
+    logger.debug("create_fanin_and_faninNB_messages: all_faninNB_task_names: " + str(all_faninNB_task_names))
+    """
+
     fanin_messages = []
 
     # create a list of "create" messages, one for each fanin
     for fanin_name, size in zip(all_fanin_task_names,all_fanin_sizes):
+        #logger.debug("iterate fanin: fanin_name: " + fanin_name + " size: " + str(size))
         dummy_state = DAG_executor_State()
         # we will create the fanin object and call fanin.init(**keyword_arguments)
         dummy_state.keyword_arguments['n'] = size
@@ -747,8 +758,9 @@ def create_fanin_and_faninNB_messages(DAG_map,DAG_states,DAG_info,all_fanin_task
 
     faninNB_messages = []
 
-     # create a list of "create" messages, one for each fanin
+     # create a list of "create" messages, one for each faninNB
     for fanin_nameNB, size in zip(all_faninNB_task_names,all_faninNB_sizes):
+        #logger.debug("iterate faninNB: fanin_nameNB: " + fanin_nameNB + " size: " + str(size))
         dummy_state = DAG_executor_State()
         # passing to the fninNB object:
         # it size
@@ -759,7 +771,7 @@ def create_fanin_and_faninNB_messages(DAG_map,DAG_states,DAG_info,all_fanin_task
         # execute the fanin task. If we are process pooling, then the last process to 
         # call fanin will put the start state of the fanin task in the work_queue. (FaninNb
         # cannot do this since the faninNB will be on the tcp_server.)
-        dummy_state.keyword_arguments['start_state_fanin_task'] = DAG_states[fanin_name]
+        dummy_state.keyword_arguments['start_state_fanin_task'] = DAG_states[fanin_nameNB]
         dummy_state.keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
         dummy_state.keyword_arguments['DAG_info'] = DAG_info
         msg_id = str(uuid.uuid4())
@@ -773,7 +785,10 @@ def create_fanin_and_faninNB_messages(DAG_map,DAG_states,DAG_info,all_fanin_task
         }
         faninNB_messages.append(message)
 
-        return fanin_messages, faninNB_messages
+    logger.debug("create_fanin_and_faninNB_messages: number of fanin messages: " + str(len(fanin_messages))
+        + " number of faninNB messages: " + str(len(faninNB_messages)))
+
+    return fanin_messages, faninNB_messages
 
 
 # creates all fanins and faninNBs at the start of driver executin. If we are using 
@@ -793,8 +808,10 @@ def create_fanins_and_faninNBs_and_work_queue(websocket,number_of_tasks,DAG_map,
     } 
 
     fanin_messages, faninNB_messages = create_fanin_and_faninNB_messages(DAG_map,DAG_states,DAG_info,all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes)
- 
+
     logger.debug("create_fanins_and_faninNBs_and_work_queue: Sending a 'create_fanins_and_faninNBs_and_work_queue' message to server.")
+    #logger.debug("create_fanins_and_faninNBs_and_work_queue: num fanin created: "  + str(len(fanin_messages))
+    #    +  " num faninNB creates; " + str(len(faninNB_messages)))
     messages = (fanin_messages,faninNB_messages,work_queue_message)
     dummy_state = DAG_executor_State()
     #Note: Passing tuple messages as name
@@ -806,7 +823,17 @@ def create_fanins_and_faninNBs_and_work_queue(websocket,number_of_tasks,DAG_map,
 def create_fanins_and_faninNBs(websocket,DAG_map,DAG_states,DAG_info,all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes):										
     fanin_messages, faninNB_messages = create_fanin_and_faninNB_messages(DAG_map,DAG_states,DAG_info,all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes)
 
-    logger.debug("Sending a 'create_all_fanins_and_faninNBs_and_possibly_work_queue' message to server.")
+    """
+    logger.debug("create_fanins_and_faninNBs: Sending a 'create_all_fanins_and_faninNBs_and_possibly_work_queue' message to server.")
+    logger.debug("create_fanins_and_faninNBs: number of fanin messages: " + str(len(fanin_messages))
+        + " number of faninNB messages: " + str(len(faninNB_messages)))
+    logger.debug("create_fanins_and_faninNBs: size of all_fanin_task_names: " + str(len(all_fanin_task_names))
+        + " size of all_faninNB_task_names: " + str(len(all_faninNB_task_names)))
+    logger.debug("create_fanins_and_faninNBs: size of all_fanin_sizes: " + str(len(all_fanin_sizes))
+        + " size of all_faninNB_sizes: " + str(len(all_faninNB_sizes)))
+    logger.debug("create_fanins_and_faninNBs: all_faninNB_task_names: " + str(all_faninNB_task_names))
+    """
+
     messages = (fanin_messages,faninNB_messages)
     dummy_state = DAG_executor_State()
     create_all_fanins_and_faninNBs_and_possibly_work_queue(websocket, "create_all_fanins_and_faninNBs_and_possibly_work_queue", "DAG_executor_fanin_or_faninNB", 

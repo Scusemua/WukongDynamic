@@ -286,7 +286,7 @@ def create_all_fanins_and_faninNBs_and_possibly_work_queue(websocket, op, type, 
     """
 
     msg_id = str(uuid.uuid4())
-    logger.debug("create_all_fanins_and_faninNBs_and_possibly_work_queue: Sending 'create_all_fanins_and_faninNBs' message to server. Op='%s', type='%s', id='%s', state=%s" % (op, type, msg_id, state))
+    logger.debug("api: create_all_fanins_and_faninNBs_and_possibly_work_queue: Sending 'create_all_fanins_and_faninNBs' message to server. Op='%s', type='%s', id='%s', state=%s" % (op, type, msg_id, state))
     logger.debug("length name: " + str(len(name)))
     # we set state.keyword_arguments before call to create()
     message = {

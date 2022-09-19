@@ -201,9 +201,9 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
         DAG_exec_state = decode_and_deserialize(message["state"])
         faninNBs = DAG_exec_state.keyword_arguments['faninNBs']
-        faninNB_sizes = DAG_exec_state.keyword_arguments['faninNB_sizes']
+        #faninNB_sizes = DAG_exec_state.keyword_arguments['faninNB_sizes']
         # FYI:
-        result = DAG_exec_state.keyword_arguments['result']
+        #result = DAG_exec_state.keyword_arguments['result']
         # For debuggng
         calling_task_name = DAG_exec_state.keyword_arguments['calling_task_name'] 
         DAG_states_of_faninNBs = DAG_exec_state.keyword_arguments['DAG_states_of_faninNBs'] 
@@ -301,8 +301,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     got_work = True
                     DAG_exec_state.return_value = work_tuple
                     DAG_exec_state.blocking = False 
-                    logger.debug("tcp_server: synchronize_process_faninNBs_batch: %s sending name %s and return_value %s back for method %s." % (synchronizer_name, name, str(return_value), method_name))
-                    logger.debug("tcp_server: synchronize_process_faninNBs_batch: %s sending state %s back for method %s." % (synchronizer_name, str(DAG_exec_state), method_name))
+                    logger.debug("tcp_server: synchronize_process_faninNBs_batch: send work: %s sending name %s and return_value %s back for method %s." % (synchronizer_name, name, str(return_value), method_name))
+                    logger.debug("tcp_server: synchronize_process_faninNBs_batch: send work: %s sending state %s back for method %s." % (synchronizer_name, str(DAG_exec_state), method_name))
                     # Note: We send work back now, as soon as we get it, to free up the waitign client
                     # instead of waiting until the end. This delays the processing of FaninNBs and depositing
                     # any work in the work_queue. Possibly: create a thread to do this.                 

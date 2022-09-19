@@ -87,9 +87,9 @@ if __name__ == "__main__":
   def increment(x):
     return x + 1
 
-  def halve(x):
+  def half_of_product(x,y):
     # intend for x to be result of increment(1) = 2, so result is 2 / 2 = 1.0
-    return x / 2
+    return (x * y) / 2
 
   def product(x,y):
     return x * y
@@ -115,10 +115,10 @@ if __name__ == "__main__":
     inc1 = dask.delayed(increment)(1) # 2
     trip = dask.delayed(triple)(inc1) # 6
     sq = dask.delayed(square)(inc1) # 4
-    half = dask.delayed(halve)(inc1) # 1.0
-    prod = dask.delayed(product)(half,sq) # 4
+    #half = dask.delayed(halve)(inc1) # 1.0
+    half_prod = dask.delayed(half_of_product)(inc1,sq) # (2 * 4) / 2 = 4
     ad = dask.delayed(add)(inc1, inc0) # 1+2 = 3
-    mult = dask.delayed(multiply)(trip, prod, ad) #  6*4*3 = 72.0 (same as manual_dag)
+    mult = dask.delayed(multiply)(trip, half_prod, ad) #  6*4*3 = 72.0 (same as manual_dag)
     div2 = dask.delayed(divide)(mult) # = 72.0 / 72 = 1
 
     graph = div2.__dask_graph__()
@@ -173,8 +173,8 @@ if __name__ == "__main__":
 
     return graph, result    
   
-  graph, result = manual_dag()
-  # graph, result = manual_dag_test_batch_faninNBs()
+  # graph, result = manual_dag()
+  graph, result = manual_dag_test_batch_faninNBs()
   # graph, result = tree_reduction(n = 32)
   # graph, result = mat_mul(n = 4, c = 2)
 
@@ -374,4 +374,31 @@ if __name__ == "__main__":
     print("generate_ops for: " + n.get_task_name())
     n.generate_ops()
       
-  Node.save_DAG_info()  
+  Node.save_DAG_info() 
+
+
+"""
+manual_dag:
+DAG_map:
+1  :    task: increment-ae88130b-bc16-45fb-8479-eb35fae7f83a, fanouts:['triple-a554a391-a774-4e71-91f9-a1c8e828a454', 'square-ea198bd4-0fb7-425b-8b83-acdad7d09028'],fanins:[],faninsNB:['add-a35dba4d-ff44-4853-a814-a7804da54c11'],collapse:[]fanin_sizes:[],faninNB_sizes:[2]task_inputs: (1,)
+2  :    task: add-a35dba4d-ff44-4853-a814-a7804da54c11, fanouts:[],fanins:['multiply-137dd808-d202-4b59-9f38-2cdb5bf0985e'],faninsNB:[],collapse:[]fanin_sizes:[3],faninNB_sizes:[]task_inputs: ('increment-ae88130b-bc16-45fb-8479-eb35fae7f83a', 'increment-b2c04dbb-da27-4bce-aac2-c01d9d69c52d')
+3  :    task: triple-a554a391-a774-4e71-91f9-a1c8e828a454, fanouts:[],fanins:['multiply-137dd808-d202-4b59-9f38-2cdb5bf0985e'],faninsNB:[],collapse:[]fanin_sizes:[3],faninNB_sizes:[]task_inputs: ('increment-ae88130b-bc16-45fb-8479-eb35fae7f83a',)
+4  :    task: square-ea198bd4-0fb7-425b-8b83-acdad7d09028, fanouts:[],fanins:['multiply-137dd808-d202-4b59-9f38-2cdb5bf0985e'],faninsNB:[],collapse:[]fanin_sizes:[3],faninNB_sizes:[]task_inputs: ('increment-ae88130b-bc16-45fb-8479-eb35fae7f83a',)
+5  :    task: multiply-137dd808-d202-4b59-9f38-2cdb5bf0985e, fanouts:[],fanins:[],faninsNB:[],collapse:['divide-4311366c-ac97-4af9-a04c-1a76a586b2ad']fanin_sizes:[],faninNB_sizes:[]task_inputs: ('triple-a554a391-a774-4e71-91f9-a1c8e828a454', 'square-ea198bd4-0fb7-425b-8b83-acdad7d09028', 'add-a35dba4d-ff44-4853-a814-a7804da54c11')
+6  :    task: divide-4311366c-ac97-4af9-a04c-1a76a586b2ad, fanouts:[],fanins:[],faninsNB:[],collapse:[]fanin_sizes:[],faninNB_sizes:[]task_inputs: ('multiply-137dd808-d202-4b59-9f38-2cdb5bf0985e',)
+7  :    task: increment-b2c04dbb-da27-4bce-aac2-c01d9d69c52d, fanouts:[],fanins:[],faninsNB:['add-a35dba4d-ff44-4853-a814-a7804da54c11'],collapse:[]fanin_sizes:[],faninNB_sizes:[2]task_inputs: (0,)
+"
+"""
+
+"""
+manual_dag_test_batch_faninNBs:
+  DAG_map:
+1  :   task: increment-95886556-3506-41d2-8e3c-4bc940ed0336, fanouts:['triple-94cc8328-63c6-40a8-b0df-3a8188fe5284', 'square-549ef5b2-b2cc-43f4-b771-61a650d7adc4'],fanins:[],faninsNB:['half_of_product-d5e48aca-729f-4991-97c3-24d32b105cc7', 'add-6321d36e-6f23-4ba9-b2ba-a4f1308ba286'],collapse:[]fanin_sizes:[],faninNB_sizes:[2, 2]task_inputs: (1,)
+2  :   task: half_of_product-d5e48aca-729f-4991-97c3-24d32b105cc7, fanouts:[],fanins:['multiply-c2acd53c-2cb0-4aa7-bfcf-9a00e89dc894'],faninsNB:[],collapse:[]fanin_sizes:[3],faninNB_sizes:[]task_inputs: ('increment-95886556-3506-41d2-8e3c-4bc940ed0336', 'square-549ef5b2-b2cc-43f4-b771-61a650d7adc4')
+3  :   task: add-6321d36e-6f23-4ba9-b2ba-a4f1308ba286, fanouts:[],fanins:['multiply-c2acd53c-2cb0-4aa7-bfcf-9a00e89dc894'],faninsNB:[],collapse:[]fanin_sizes:[3],faninNB_sizes:[]task_inputs: ('increment-95886556-3506-41d2-8e3c-4bc940ed0336', 'increment-630d25d0-17a8-4d7d-8ac0-2859814b1f4a')
+4  :   task: triple-94cc8328-63c6-40a8-b0df-3a8188fe5284, fanouts:[],fanins:['multiply-c2acd53c-2cb0-4aa7-bfcf-9a00e89dc894'],faninsNB:[],collapse:[]fanin_sizes:[3],faninNB_sizes:[]task_inputs: ('increment-95886556-3506-41d2-8e3c-4bc940ed0336',)
+5  :   task: square-549ef5b2-b2cc-43f4-b771-61a650d7adc4, fanouts:[],fanins:[],faninsNB:['half_of_product-d5e48aca-729f-4991-97c3-24d32b105cc7'],collapse:[]fanin_sizes:[],faninNB_sizes:[2]task_inputs: ('increment-95886556-3506-41d2-8e3c-4bc940ed0336',)
+6  :   task: multiply-c2acd53c-2cb0-4aa7-bfcf-9a00e89dc894, fanouts:[],fanins:[],faninsNB:[],collapse:['divide-dd5039d9-fd56-4e12-a939-6cf5835fedf2']fanin_sizes:[],faninNB_sizes:[]task_inputs: ('triple-94cc8328-63c6-40a8-b0df-3a8188fe5284', 'half_of_product-d5e48aca-729f-4991-97c3-24d32b105cc7', 'add-6321d36e-6f23-4ba9-b2ba-a4f1308ba286')
+7  :   task: divide-dd5039d9-fd56-4e12-a939-6cf5835fedf2, fanouts:[],fanins:[],faninsNB:[],collapse:[]fanin_sizes:[],faninNB_sizes:[]task_inputs: ('multiply-c2acd53c-2cb0-4aa7-bfcf-9a00e89dc894',)
+8  :   task: increment-630d25d0-17a8-4d7d-8ac0-2859814b1f4a, fanouts:[],fanins:[],faninsNB:['add-6321d36e-6f23-4ba9-b2ba-a4f1308ba286'],collapse:[]fanin_sizes:[],faninNB_sizes:[2]task_inputs: (0,)
+"""
