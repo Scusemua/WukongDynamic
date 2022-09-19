@@ -927,6 +927,7 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     logger.debug("DAG_executor: Worker accessed work_queue: process state: " + str(DAG_executor_state.state))
                 else:
                     logger.debug("DAG_executor: Worker doesn't access work_queue: process state: " + str(DAG_executor_state.state))
+                    logger.debug("**********************process state: " + str(DAG_executor_state.state))
                 
                 num_tasks_executed = counter.increment_and_get()
                 logger.debug("DAG_executor: before processing " + str(DAG_executor_state.state) 
@@ -999,6 +1000,9 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
             data_dict[state_info.task_name] = output
 
             logger.debug("data_dict: " + str(data_dict))
+
+            #if DAG_executor_state.state == 1:
+            #    time.sleep(0.5)
 
             if len(state_info.collapse) > 0:
                 if len(state_info.fanins) + len(state_info.fanouts) + len(state_info.faninNBs) > 0:

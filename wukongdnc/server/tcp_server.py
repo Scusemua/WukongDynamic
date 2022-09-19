@@ -213,7 +213,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
         work_queue_method = DAG_exec_state.keyword_arguments['work_queue_method']
         list_of_work_queue_fanout_values = DAG_exec_state.keyword_arguments['list_of_work_queue_fanout_values']
 
-        logger.debug("calling_task_name: " + calling_task_name + " worker_needs_input: " + str(worker_needs_input))
+        logger.debug("calling_task_name: " + calling_task_name + " worker_needs_input: " + str(worker_needs_input)
+            + "faninNBs size: " +  str(len(faninNBs)))
 
         # True if the client needs work and we got some work for the client, which are the
         # results of a faninNB.
@@ -311,6 +312,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     # Client doesn't need work or we already got some work for the client, so add this work
                     # to the work_queue)
                     list_of_work.append(work_tuple)
+                    logger.debug("tcp_server: synchronize_process_faninNBs_batch: not sending work: %s sending name %s and return_value %s back for method %s." % (synchronizer_name, name, str(return_value), method_name))
             # else we were not the last caller of fanin, so we deposited our result, which will be given to
             # the last caller.
  
@@ -338,7 +340,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             work_queue_method_keyword_arguments = {}
             work_queue_method_keyword_arguments['list_of_values'] = list_of_work
             # call work_queue (bounded buffer) deposit_all(list_of_work)
-            logger.error("tcp_server: synchronize_process_faninNBs_batch: deposit all FanInNB work.")
+            logger.error("tcp_server: synchronize_process_faninNBs_batch: deposit_all FanInNB work, list_of_work size: " + str(len(list_of_work)))
             returnValue, restart = synchronizer_method(synchronizer._synchronizer, **work_queue_method_keyword_arguments) 
             # deposit_all return value is 0 and restart is False
 
