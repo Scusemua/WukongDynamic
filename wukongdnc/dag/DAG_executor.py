@@ -1001,6 +1001,10 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
 
             logger.debug("data_dict: " + str(data_dict))
 
+            # Can use this sleep to make a thread last to call FaninNB - adjust the state in which you want
+            # the call to fan_in to be last. Last caller can get the faninNB task work, if it has 
+            # worker_needs_input = True on call (so the state has no fanouts, as thread will be become
+            # task for first fanout so that thread will not need work from its FamInNBs.)
             #if DAG_executor_state.state == 1:
             #    time.sleep(0.5)
 

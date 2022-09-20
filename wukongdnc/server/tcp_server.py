@@ -192,7 +192,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 The payload from the AWS Lambda function.
         """
 
-        logger.debug("[HANDLER] server.synchronize_process_faninNBs_batch() called.")
+        logger.info("[HANDLER] server.synchronize_process_faninNBs_batch() called.")
 
         # name of the type is always "DAG_executor_FanInNB"
         type_arg = message["type"]
@@ -213,8 +213,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
         work_queue_method = DAG_exec_state.keyword_arguments['work_queue_method']
         list_of_work_queue_fanout_values = DAG_exec_state.keyword_arguments['list_of_work_queue_fanout_values']
 
-        logger.debug("calling_task_name: " + calling_task_name + " worker_needs_input: " + str(worker_needs_input)
-            + "faninNBs size: " +  str(len(faninNBs)))
+        logger.info("tcp_server: synchronize_process_faninNBs_batch: calling_task_name: " + calling_task_name + ": worker_needs_input: " + str(worker_needs_input)
+            + " faninNBs size: " +  str(len(faninNBs)))
 
         # True if the client needs work and we got some work for the client, which are the
         # results of a faninNB.
@@ -247,17 +247,17 @@ class TCPHandler(socketserver.StreamRequestHandler):
             work_queue_method_keyword_arguments = {}
             work_queue_method_keyword_arguments['list_of_values'] = list_of_work_queue_fanout_values
             # call work_queue (bounded buffer) deposit_all(list_of_work_queue_fanout_values)
-            logger.debug("tcp_server: synchronize_process_faninNBs_batch: deposit all fanout work.")
+            logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": deposit all fanout work.")
             returnValue, restart = synchronizer_method(synchronizer._synchronizer, **work_queue_method_keyword_arguments) 
             # deposit_all return value is 0 and restart is False
         else:
-            logger.debug("tcp_server: synchronize_process_faninNBs_batch: no fanout work to deposit")
+            logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": no fanout work to deposit")
 
         for name in faninNBs:
             start_state_fanin_task  = DAG_states_of_faninNBs[name]
 
             synchronizer_name = self._get_synchronizer_name(type_name = None, name = name)
-            logger.debug("tcp_server: synchronize_process_faninNBs_batch: Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
+            logger.debug("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
             synchronizer = tcp_server.synchronizers[synchronizer_name]
 
             if (synchronizer is None):
@@ -273,7 +273,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             DAG_exec_state.keyword_arguments['fanin_task_name'] = name
             DAG_exec_state.keyword_arguments['start_state_fanin_task'] = start_state_fanin_task
 
-            logger.debug("tcp_server: synchronize_process_faninNBs_batch: calling synchronizer.synchronize.")
+            logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": calling synchronizer.synchronize.")
             return_value = synchronizer.synchronize(base_name, DAG_exec_state, **DAG_exec_state.keyword_arguments)
             """
             Note: It does not make sense to batch try-ops, or to execute a batch of synchronous
@@ -302,8 +302,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     got_work = True
                     DAG_exec_state.return_value = work_tuple
                     DAG_exec_state.blocking = False 
-                    logger.debug("tcp_server: synchronize_process_faninNBs_batch: send work: %s sending name %s and return_value %s back for method %s." % (synchronizer_name, name, str(return_value), method_name))
-                    logger.debug("tcp_server: synchronize_process_faninNBs_batch: send work: %s sending state %s back for method %s." % (synchronizer_name, str(DAG_exec_state), method_name))
+                    logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": send work: %s sending name %s and return_value %s back for method %s." % (synchronizer_name, name, str(return_value), method_name))
+                    logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": send work: %s sending state %s back for method %s." % (synchronizer_name, str(DAG_exec_state), method_name))
                     # Note: We send work back now, as soon as we get it, to free up the waitign client
                     # instead of waiting until the end. This delays the processing of FaninNBs and depositing
                     # any work in the work_queue. Possibly: create a thread to do this.                 
@@ -312,7 +312,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     # Client doesn't need work or we already got some work for the client, so add this work
                     # to the work_queue)
                     list_of_work.append(work_tuple)
-                    logger.debug("tcp_server: synchronize_process_faninNBs_batch: not sending work: %s sending name %s and return_value %s back for method %s." % (synchronizer_name, name, str(return_value), method_name))
+                    logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": not sending work: %s sending name %s and return_value %s back for method %s." % (synchronizer_name, name, str(return_value), method_name))
+                    logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": not sending work: %s sending state %s back for method %s." % (synchronizer_name, str(DAG_exec_state), method_name))
             # else we were not the last caller of fanin, so we deposited our result, which will be given to
             # the last caller.
  
@@ -340,17 +341,17 @@ class TCPHandler(socketserver.StreamRequestHandler):
             work_queue_method_keyword_arguments = {}
             work_queue_method_keyword_arguments['list_of_values'] = list_of_work
             # call work_queue (bounded buffer) deposit_all(list_of_work)
-            logger.error("tcp_server: synchronize_process_faninNBs_batch: deposit_all FanInNB work, list_of_work size: " + str(len(list_of_work)))
+            logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": deposit_all FanInNB work, list_of_work size: " + str(len(list_of_work)))
             returnValue, restart = synchronizer_method(synchronizer._synchronizer, **work_queue_method_keyword_arguments) 
             # deposit_all return value is 0 and restart is False
 
-            logger.debug("tcp_server: synchronize_process_faninNBs_batch: work_queue_method: " + str(work_queue_method) + ", restart " + str(restart))
-            logger.debug("tcp_server: synchronize_process_faninNBs_batch: " + str(work_queue_method) + ", returnValue " + str(returnValue))
-            logger.debug("tcp_server: synchronize_process_faninNBs_batch: " + str(work_queue_method) + ", successfully called work_queue method. ")
+            logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": work_queue_method: " + str(work_queue_method) + ", restart " + str(restart))
+            logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": " + str(work_queue_method) + ", returnValue " + str(returnValue))
+            logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": " + str(work_queue_method) + ", successfully called work_queue method. ")
 
         if not got_work:
             # if if worker_needs_input is sent from client as False, then got_work is initially False and never set to True
-            logger.debug("tcp_server: synchronize_process_faninNBs_batch: no work to return, returning DAG_exec_state.return_value = 0.")           
+            logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": no work to return, returning DAG_exec_state.return_value = 0.")           
             DAG_exec_state.return_value = 0
             DAG_exec_state.blocking = False
             # Note: if we decide not to send work back immediately to the waitign clent (see above),

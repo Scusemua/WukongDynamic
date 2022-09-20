@@ -70,6 +70,9 @@ if __name__ == "__main__":
   def add(x, y):
     return x + y
 
+  def twox_add(x, y):
+    return 2*(x + y)
+
   def triple(x):
     return 3 * x
 
@@ -79,8 +82,16 @@ if __name__ == "__main__":
   def multiply(x, y, z):
     return x * y * z
 
+  def multiply_pair(x, y):
+    return x * y
+
   def divide(x):
     quotient = x / 72
+    print("quotient: " + str(quotient))
+    return quotient
+
+  def divide_by_18(x):
+    quotient = x / 18
     print("quotient: " + str(quotient))
     return quotient
 
@@ -120,6 +131,20 @@ if __name__ == "__main__":
     ad = dask.delayed(add)(inc1, inc0) # 1+2 = 3
     mult = dask.delayed(multiply)(trip, half_prod, ad) #  6*4*3 = 72.0 (same as manual_dag)
     div2 = dask.delayed(divide)(mult) # = 72.0 / 72 = 1
+
+    graph = div2.__dask_graph__()
+    result = div2.compute()
+
+    return graph, result
+
+  def manual_dag_test_batch_two_faninNBs():
+    print("==== GENERATING MANUALLY-CREATED DAG for testing batching faninNBs")
+    inc0 = dask.delayed(increment)(0) # 1
+    inc1 = dask.delayed(increment)(1) # 2
+    twox_ad = dask.delayed(twox_add)(inc1, inc0) # 2(1+2) = 6   
+    ad = dask.delayed(add)(inc1, inc0) # 1+2 = 3
+    mult = dask.delayed(multiply_pair)(ad,twox_ad) #  3*6 = 18
+    div2 = dask.delayed(divide_by_18)(mult) # = 18 / 18 = 1
 
     graph = div2.__dask_graph__()
     result = div2.compute()
@@ -174,7 +199,8 @@ if __name__ == "__main__":
     return graph, result    
   
   # graph, result = manual_dag()
-  graph, result = manual_dag_test_batch_faninNBs()
+  # graph, result = manual_dag_test_batch_faninNBs()
+  graph, result = manual_dag_test_batch_two_faninNBs()
   # graph, result = tree_reduction(n = 32)
   # graph, result = mat_mul(n = 4, c = 2)
 
@@ -401,4 +427,16 @@ manual_dag_test_batch_faninNBs:
 6  :   task: multiply-c2acd53c-2cb0-4aa7-bfcf-9a00e89dc894, fanouts:[],fanins:[],faninsNB:[],collapse:['divide-dd5039d9-fd56-4e12-a939-6cf5835fedf2']fanin_sizes:[],faninNB_sizes:[]task_inputs: ('triple-94cc8328-63c6-40a8-b0df-3a8188fe5284', 'half_of_product-d5e48aca-729f-4991-97c3-24d32b105cc7', 'add-6321d36e-6f23-4ba9-b2ba-a4f1308ba286')
 7  :   task: divide-dd5039d9-fd56-4e12-a939-6cf5835fedf2, fanouts:[],fanins:[],faninsNB:[],collapse:[]fanin_sizes:[],faninNB_sizes:[]task_inputs: ('multiply-c2acd53c-2cb0-4aa7-bfcf-9a00e89dc894',)
 8  :   task: increment-630d25d0-17a8-4d7d-8ac0-2859814b1f4a, fanouts:[],fanins:[],faninsNB:['add-6321d36e-6f23-4ba9-b2ba-a4f1308ba286'],collapse:[]fanin_sizes:[],faninNB_sizes:[2]task_inputs: (0,)
+"""
+
+"""
+manual_dag_test_batch_two_faninNBs:
+DAG_map:
+1  :   task: increment-ef3cb2d1-7d74-470e-b956-a165590f2bad, fanouts:[],fanins:[],faninsNB:['add-576b91ef-5e17-4e00-b106-24bc8b535816', 'twox_add-09d703bb-55d1-45ad-90f2-aaf774682b91'],collapse:[]fanin_sizes:[],faninNB_sizes:[2, 2]task_inputs: (1,)
+2  :   task: add-576b91ef-5e17-4e00-b106-24bc8b535816, fanouts:[],fanins:['multiply_pair-7000d437-7f74-4957-9d9e-4f618191616c'],faninsNB:[],collapse:[]fanin_sizes:[2],faninNB_sizes:[]task_inputs: ('increment-ef3cb2d1-7d74-470e-b956-a165590f2bad', 'increment-06e9bfdd-0e08-4b46-8237-bf353ef90c53')
+3  :   task: twox_add-09d703bb-55d1-45ad-90f2-aaf774682b91, fanouts:[],fanins:['multiply_pair-7000d437-7f74-4957-9d9e-4f618191616c'],faninsNB:[],collapse:[]fanin_sizes:[2],faninNB_sizes:[]task_inputs: ('increment-ef3cb2d1-7d74-470e-b956-a165590f2bad', 'increment-06e9bfdd-0e08-4b46-8237-bf353ef90c53')
+4  :   task: multiply_pair-7000d437-7f74-4957-9d9e-4f618191616c, fanouts:[],fanins:[],faninsNB:[],collapse:['divide_by_18-e7257418-f1bc-4b0c-b9b6-12e3197875ee']fanin_sizes:[],faninNB_sizes:[]task_inputs: ('add-576b91ef-5e17-4e00-b106-24bc8b535816', 'twox_add-09d703bb-55d1-45ad-90f2-aaf774682b91')
+5  :   task: divide_by_18-e7257418-f1bc-4b0c-b9b6-12e3197875ee, fanouts:[],fanins:[],faninsNB:[],collapse:[]fanin_sizes:[],faninNB_sizes:[]task_inputs: ('multiply_pair-7000d437-7f74-4957-9d9e-4f618191616c',)
+6  :   task: increment-06e9bfdd-0e08-4b46-8237-bf353ef90c53, fanouts:[],fanins:[],faninsNB:['add-576b91ef-5e17-4e00-b106-24bc8b535816', 'twox_add-09d703bb-55d1-45ad-90f2-aaf774682b91'],collapse:[]fanin_sizes:[],faninNB_sizes:[2, 2]task_inputs: (0,)
+
 """
