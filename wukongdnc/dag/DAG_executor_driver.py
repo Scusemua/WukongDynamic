@@ -6,16 +6,14 @@
 #   Need "multitreaded_multiprocessing=True" and check other constants will work.
 #   Note matrix mult may be using C code so may work well with multithreading.
 
-# try with new DAG having mult faninNBs:
-# get inc1 with mult faninNBs to be lat to fanin
-
 # Where are we: 
 # FninNB local with no workers always starts new thread, like Lambda. Sowe are 
 #   not lookng at or changing worker_needs_work. Perhaps we should not start new 
 #   thread/Lambda if worker_needs_work or use faster/better to start new Lambda/thread?
-#   Don't want Lambda to wait for work or anything else? Call to fanin_all() can be asynch?
-# move on the optimizations, then piggy back fanouts on faninNBs (if any).
-# Then work_queue optmizations
+#   Don't want Lambda to wait for work or anything else? Call to process_faninNBs_batch() can 
+#   be asynch since faninNB starts lambdas (all the faninNB work) so no need to wait on 
+#   process_faninNBs_batch?
+# move on the optimizations
 # Then delegate process faninNBs to a thread since long time on server and 
 #   we can in mean time do fanouts?
 # Consider: multiple tcp_servers/work_queues and work stealing? workers generate
@@ -57,6 +55,7 @@ from .DAG_executor_countermp import CounterMP
 from .DAG_boundedbuffer_work_queue import BoundedBuffer_Work_Queue
 
 import logging 
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')

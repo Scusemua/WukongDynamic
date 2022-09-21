@@ -374,21 +374,23 @@ def faninNB_remotely_batch(websocket, **keyword_arguments):
 # Note: perhaps for lambdas we can use the same synchronize_process_faninNBs_batch method but just
 # pass worker_needs_input = False then FaninNBs will start Lambdas and no work will be returned and
 # we can ignore the results.
-# ToDo: Could start a thread that calls synchronize_process_faninNBs_batch.
+# ToDo: For multiprocess, could start a thread that calls synchronize_process_faninNBs_batch.
+# ToDo: For lambdas, FaninNBs start fanin tasks so no work to wait for so make 
+#       synchronize_process_faninNBs_batch_async which does not wait for ack. Then change existing name to 
+#       synchronize_process_faninNBs_batch_sync.
     DAG_exec_state = synchronize_process_faninNBs_batch(websocket, "synchronize_process_faninNBs_batch", "DAG_executor_FanInNB", "fan_in", DAG_exec_state)
     return DAG_exec_state
 
-# this goes on tcp_server
-# called when we are storing fanins and faninNBs remotely and we are using_workers and we are 
+# Called when we are storing fanins and faninNBs remotely and we are using_workers and we are 
 # using processes instead of threads. This batches the faninNB processing.
 # If we are storing fanins and faninNBs remotely and we are not using_workers then we are 
-# using a sinle thread that starts other threads to do fanouts. However, since the faninNBs are 
-# stored on the tcp_server, the faninNBs cannot statr new threads to execute the fanin yasks,
-# unlike when using lambdas in whicg case the faninNBs can start new lambdas to excute the 
-# fanin tasks. So we cannot "simulate" the luse of lambdas when faninNBs are stored remotely.
-# For that we call process_faninNBs) which does not batch faninNB processing. The faninNB can 
+# using a single thread that starts other threads to do fanouts. However, since the faninNBs are 
+# stored on the tcp_server, the faninNBs cannot start new threads to execute the fanin tasks,
+# unlike when using lambdas where we can start new lambdas to excute the fanin tasks.
+# So we cannot "simulate" the use of lambdas when faninNBs are stored remotely.
+# For that we call process_faninNBs, which does not batch faninNB processing. The faninNB can 
 # return work to the calling thread and this thread can start a new thread (instead of letting the
-# faninNB do it that runs locally.)
+# faninNB do it) that runs locally.
 def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_states, 
     DAG_exec_state, output, DAG_info, work_queue,worker_needs_input,list_of_work_queue_fanout_values):
 
@@ -562,7 +564,7 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
 
     #process become task
     become_task = fanouts[0]
-    logger.debug("fanout for " + calling_task_name + "become_task is " + become_task)
+    logger.debug("fanout for " + calling_task_name + " become_task is " + become_task)
     # Note:  We will keep using DAG_exec_State for the become task. If we are running everything on a single machine, i.e.,
     # no server or Lambdas, then faninNBs should use a new DAG_exec_State. Fanins and fanouts/faninNBs are mutually exclusive
     # so, e.g., the become fanout and a fanin cannot use the same DAG_exec_Stat. Same for a faninNb and a fanin, at least
@@ -592,7 +594,8 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                 # Note: we are in the "not using_threads_not_processes" block
                 # so we don't need an if to check.
                 # We will be batch processing the faninNBs so we will also batch process
-                # the fanouts at the same time.
+                # the fanouts at the same time. If there are any faninBs in this state
+                # piggyback the fanouts on the call to process faninNBs.
                 #if using_workers and not using_threads_not_processes:
                 list_of_work_queue_fanout_values.append(work_tuple)
                 #else:
@@ -1048,6 +1051,10 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     DAG_executor_state.state = process_fanouts(state_info.fanouts, state_info.task_name, DAG_info.get_DAG_states(), DAG_executor_state, 
                         output, DAG_info, server,work_queue,list_of_work_queue_fanout_values)
                     logger.debug("work_loop: become state:" + str(DAG_executor_state.state))
+                    # at this point list_of_work_queue_fanout_values may or may nt be empty. We wll
+                    # piggyback this list on the call to process_faninNBs_batch if there are faninnbs.
+                    # if not, we will call work_queueu.put_all() directly.
+
                     ##state = process_fanouts(state_info.fanouts, DAG_info.get_DAG_states(), DAG_executor_state, output, server)
                     ##logger.debug("become state:" + str(state))
                     #input = output
@@ -1095,11 +1102,32 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                             output, DAG_info, server,work_queue,worker_needs_input)
                     # there can be faninNBs and fanouts.
 
-                    # Note: If we only process faninNBs in this state then we will need more work.
-                    # However, we check fanouts next and set worker_needs_input to true (false)
-                    # if there are (are not) any fanouts. So this is only for documentation.
-                    #if using_workers:
-                    #    worker_needs_input = True
+                else:
+                    if using_workers and not using_threads_not_processes:
+                        # we are batching faninNBs and piggybacking fanouts on process_faninNB_batch
+                        if len(state_info.fanouts) > 0:
+                        # No faninNBs (len(state_info.faninNBs) == 0) so we did not get a chance to 
+                        # piggybck list_of_work_queue_fanout_values on the call to process_faninNBs_batch.
+                            #assert 
+                            if worker_needs_input:
+                                # when there is at least one fanin we will become one of the fanout tasks
+                                # so we should not need work.
+                                logger.error("[Error]: work loop: Internal Error: fanouts but worker needs work.")
+                            if len(state_info.fanouts) > 1:
+                                # We became one fanout task but there were more and we should have added the 
+                                # fanouts to list_of_work_queue_fanout_values.
+                                if len(list_of_work_queue_fanout_values) == 0:
+                                    logger.error("[Error]: work loop: Internal Error: fanouts > 1 but no work in list_of_work_queue_fanout_values.")
+                                # since we could not piggyback on process_faninNB_batch, enqueue the fanouts
+                                # directly into the work_queue
+                                logger.debug("work loop: no faninNBs so enqueue fanouts directly.")
+                                work_queue.put_all(list_of_work_queue_fanout_values)
+                                # list_of_work_queue_fanout_values is redefined on next iteration
+                            else:
+                                # assert
+                                # there was one fanout so we became that one fanout and should have enqueued no fanouts
+                                if not len(list_of_work_queue_fanout_values) == 0:
+                                    logger.error("[Error]: work loop: Internal Error: len(state_info.fanouts) is 1 but list_of_work_queue_fanout_values is not empty.")
 
                 # If we are not using_workers and there were fanouts then continue with become 
                 # task; otherwise, this thread (simulatng a Lambda) is done, as it has reached the
