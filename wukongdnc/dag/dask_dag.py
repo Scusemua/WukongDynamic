@@ -215,9 +215,9 @@ if __name__ == "__main__":
   # graph, result = manual_dag()
   # graph, result = manual_dag_test_batch_faninNBs()
   # graph, result = manual_dag_test_batch_two_faninNBs()
-  graph, result = manual_dag_no_faninNBs()
+  # graph, result = manual_dag_no_faninNBs()
   # graph, result = tree_reduction(n = 32)
-  # graph, result = mat_mul(n = 4, c = 2)
+  graph, result = mat_mul(n = 4, c = 2)
 
   graph_dict = graph.to_dict()
 
@@ -464,4 +464,49 @@ DAG_map:
 4  :   task: increment-cbc42102-2c84-43b2-a34e-1120cab42cd6, fanouts:[],fanins:['multiply-e48abf5a-0aab-49c2-a6db-1d74a08cba28'],faninsNB:[],collapse:[]fanin_sizes:[3],faninNB_sizes:[]task_inputs: ('increment-96b22db5-a4d8-4748-92d1-f8f2c38acfda',)
 5  :   task: multiply-e48abf5a-0aab-49c2-a6db-1d74a08cba28, fanouts:[],fanins:[],faninsNB:[],collapse:['divide-cf14ba06-2728-4866-912c-7db587c4fb1f']fanin_sizes:[],faninNB_sizes:[]task_inputs: ('triple-3b51e4c6-6c5e-4c0c-b2ec-49a33b292f51', 'square-a101da8a-edd7-4143-874a-d2f5b1f71538', 'increment-cbc42102-2c84-43b2-a34e-1120cab42cd6')
 6  :   task: divide-cf14ba06-2728-4866-912c-7db587c4fb1f, fanouts:[],fanins:[],faninsNB:[],collapse:[]fanin_sizes:[],faninNB_sizes:[]task_inputs: ('multiply-e48abf5a-0aab-49c2-a6db-1d74a08cba28',)
+"""
+
+"""
+mat_mul(n = 4, c = 2)
+DAG_map:
+1  :   task: ('random_sample-29537961fe6c51a1f13ebd0abff16e1b', 0, 0), fanouts:[],fanins:[],faninsNB:["('matmul-2f440c4e55cca20c717a24e8ec614f7f', 0, 0, 1)", "('matmul-2f440c4e55cca20c717a24e8ec614f7f', 0, 0, 0)"],collapse:[]fanin_sizes:[],faninNB_sizes:[2, 2]task_inputs: (None, 'random_sample', array([ ], dtype=uint32), (2, 2), [], {})
+2  :   task: ('matmul-2f440c4e55cca20c717a24e8ec614f7f', 0, 0, 1), fanouts:[],fanins:[],faninsNB:[],collapse:["('chunk_sum-85390e42a81ac371703dd31840183a2a', 0, 0, 1)"]fanin_sizes:[],faninNB_sizes:[]task_inputs: (('random_sample-29537961fe6c51a1f13ebd0abff16e1b', 0, 0), ('random_sample-f4412c7680821993adbf227abaccec52', 0, 1))
+3  :   task: ('matmul-2f440c4e55cca20c717a24e8ec614f7f', 0, 0, 0), fanouts:[],fanins:[],faninsNB:[],collapse:["('chunk_sum-85390e42a81ac371703dd31840183a2a', 0, 0, 0)"]fanin_sizes:[],faninNB_sizes:[]task_inputs: (('random_sample-29537961fe6c51a1f13ebd0abff16e1b', 0, 0), ('random_sample-f4412c7680821993adbf227abaccec52', 0, 0))
+4  :   task: ('chunk_sum-85390e42a81ac371703dd31840183a2a', 0, 0, 1), fanouts:[],fanins:["('_chunk_sum-aggregate-b66343e156a06d5549345932b8572740', 0, 1)"],faninsNB:[],collapse:[]fanin_sizes:[2],faninNB_sizes:[]task_inputs: (('matmul-2f440c4e55cca20c717a24e8ec614f7f', 0, 0, 1),)
+5  :   task: ('_chunk_sum-aggregate-b66343e156a06d5549345932b8572740', 0, 1), fanouts:[],fanins:[],faninsNB:[],collapse:[]fanin_sizes:[],faninNB_sizes:[]task_inputs: ([('chunk_sum-85390e42a81ac371703dd31840183a2a', 0, 0, 1), ('chunk_sum-85390e42a81ac371703dd31840183a2a', 0, 1, 1)],)
+6  :   task: ('chunk_sum-85390e42a81ac371703dd31840183a2a', 0, 0, 0), fanouts:[],fanins:["('_chunk_sum-aggregate-b66343e156a06d5549345932b8572740', 0, 0)"],faninsNB:[],collapse:[]fanin_sizes:[2],faninNB_sizes:[]task_inputs: (('matmul-2f440c4e55cca20c717a24e8ec614f7f', 0, 0, 0),)
+7  :   task: ('_chunk_sum-aggregate-b66343e156a06d5549345932b8572740', 0, 0), fanouts:[],fanins:[],faninsNB:[],collapse:[]fanin_sizes:[],faninNB_sizes:[]task_inputs: ([('chunk_sum-85390e42a81ac371703dd31840183a2a', 0, 0, 0), ('chunk_sum-85390e42a81ac371703dd31840183a2a', 0, 1, 0)],)
+8  :   task: ('random_sample-29537961fe6c51a1f13ebd0abff16e1b', 0, 1), fanouts:[],fanins:[],faninsNB:["('matmul-2f440c4e55cca20c717a24e8ec614f7f', 0, 1, 1)", "('matmul-2f440c4e55cca20c717a24e8ec614f7f', 0, 1, 0)"],collapse:[]fanin_sizes:[],faninNB_sizes:[2, 2]task_inputs: (None, 'random_sample', array(], dtype=uint32), (2, 2), [], {})
+9  :   task: ('matmul-2f440c4e55cca20c717a24e8ec614f7f', 0, 1, 1), fanouts:[],fanins:[],faninsNB:[],collapse:["('chunk_sum-85390e42a81ac371703dd31840183a2a', 0, 1, 1)"]fanin_sizes:[],faninNB_sizes:[]task_inputs: (('random_sample-29537961fe6c51a1f13ebd0abff16e1b', 0, 1), ('random_sample-f4412c7680821993adbf227abaccec52', 1, 1))
+10  :   task: ('matmul-2f440c4e55cca20c717a24e8ec614f7f', 0, 1, 0), fanouts:[],fanins:[],faninsNB:[],collapse:["('chunk_sum-85390e42a81ac371703dd31840183a2a', 0, 1, 0)"]fanin_sizes:[],faninNB_sizes:[]task_inputs: (('random_sample-29537961fe6c51a1f13ebd0abff16e1b', 0, 1), ('random_sample-f4412c7680821993adbf227abaccec52', 1, 0))
+11  :   task: ('chunk_sum-85390e42a81ac371703dd31840183a2a', 0, 1, 1), fanouts:[],fanins:["('_chunk_sum-aggregate-b66343e156a06d5549345932b8572740', 0, 1)"],faninsNB:[],collapse:[]fanin_sizes:[2],faninNB_sizes:[]task_inputs: (('matmul-2f440c4e55cca20c717a24e8ec614f7f', 0, 1, 1),)
+12  :   task: ('chunk_sum-85390e42a81ac371703dd31840183a2a', 0, 1, 0), fanouts:[],fanins:["('_chunk_sum-aggregate-b66343e156a06d5549345932b8572740', 0, 0)"],faninsNB:[],collapse:[]fanin_sizes:[2],faninNB_sizes:[]task_inputs: (('matmul-2f440c4e55cca20c717a24e8ec614f7f', 0, 1, 0),)
+13  :   task: ('random_sample-29537961fe6c51a1f13ebd0abff16e1b', 1, 0), fanouts:[],fanins:[],faninsNB:["('matmul-2f440c4e55cca20c717a24e8ec614f7f', 1, 0, 1)", "('matmul-2f440c4e55cca20c717a24e8ec614f7f', 1, 0, 0)"],collapse:[]fanin_sizes:[],faninNB_sizes:[2, 2]task_inputs: (None, 'random_sample', array([], dtype=uint32), (2, 2), [], {})
+14  :   task: ('matmul-2f440c4e55cca20c717a24e8ec614f7f', 1, 0, 1), fanouts:[],fanins:[],faninsNB:[],collapse:["('chunk_sum-85390e42a81ac371703dd31840183a2a', 1, 0, 1)"]fanin_sizes:[],faninNB_sizes:[]task_inputs: (('random_sample-29537961fe6c51a1f13ebd0abff16e1b', 1, 0), ('random_sample-f4412c7680821993adbf227abaccec52', 0, 1))
+15  :   task: ('matmul-2f440c4e55cca20c717a24e8ec614f7f', 1, 0, 0), fanouts:[],fanins:[],faninsNB:[],collapse:["('chunk_sum-85390e42a81ac371703dd31840183a2a', 1, 0, 0)"]fanin_sizes:[],faninNB_sizes:[]task_inputs: (('random_sample-29537961fe6c51a1f13ebd0abff16e1b', 1, 0), ('random_sample-f4412c7680821993adbf227abaccec52', 0, 0))
+16  :   task: ('chunk_sum-85390e42a81ac371703dd31840183a2a', 1, 0, 1), fanouts:[],fanins:["('_chunk_sum-aggregate-b66343e156a06d5549345932b8572740', 1, 1)"],faninsNB:[],collapse:[]fanin_sizes:[2],faninNB_sizes:[]task_inputs: (('matmul-2f440c4e55cca20c717a24e8ec614f7f', 1, 0, 1),)
+17  :   task: ('_chunk_sum-aggregate-b66343e156a06d5549345932b8572740', 1, 1), fanouts:[],fanins:[],faninsNB:[],collapse:[]fanin_sizes:[],faninNB_sizes:[]task_inputs: ([('chunk_sum-85390e42a81ac371703dd31840183a2a', 1, 0, 1), ('chunk_sum-85390e42a81ac371703dd31840183a2a', 1, 1, 1)],)
+18  :   task: ('chunk_sum-85390e42a81ac371703dd31840183a2a', 1, 0, 0), fanouts:[],fanins:["('_chunk_sum-aggregate-b66343e156a06d5549345932b8572740', 1, 0)"],faninsNB:[],collapse:[]fanin_sizes:[2],faninNB_sizes:[]task_inputs: (('matmul-2f440c4e55cca20c717a24e8ec614f7f', 1, 0, 0),)
+19  :   task: ('_chunk_sum-aggregate-b66343e156a06d5549345932b8572740', 1, 0), fanouts:[],fanins:[],faninsNB:[],collapse:[]fanin_sizes:[],faninNB_sizes:[]task_inputs: ([('chunk_sum-85390e42a81ac371703dd31840183a2a', 1, 0, 0), ('chunk_sum-85390e42a81ac371703dd31840183a2a', 1, 1, 0)],)
+20  :   task: ('random_sample-29537961fe6c51a1f13ebd0abff16e1b', 1, 1), fanouts:[],fanins:[],faninsNB:["('matmul-2f440c4e55cca20c717a24e8ec614f7f', 1, 1, 1)", "('matmul-2f440c4e55cca20c717a24e8ec614f7f', 1, 1, 0)"],collapse:[]fanin_sizes:[],faninNB_sizes:[2, 2]task_inputs: (None, 'random_sample', array([], dtype=uint32), (2, 2), [], {}
+21  :   task: ('matmul-2f440c4e55cca20c717a24e8ec614f7f', 1, 1, 1), fanouts:[],fanins:[],faninsNB:[],collapse:["('chunk_sum-85390e42a81ac371703dd31840183a2a', 1, 1, 1)"]fanin_sizes:[],faninNB_sizes:[]task_inputs: (('random_sample-29537961fe6c51a1f13ebd0abff16e1b', 1, 1), ('random_sample-f4412c7680821993adbf227abaccec52', 1, 1))
+22  :   task: ('matmul-2f440c4e55cca20c717a24e8ec614f7f', 1, 1, 0), fanouts:[],fanins:[],faninsNB:[],collapse:["('chunk_sum-85390e42a81ac371703dd31840183a2a', 1, 1, 0)"]fanin_sizes:[],faninNB_sizes:[]task_inputs: (('random_sample-29537961fe6c51a1f13ebd0abff16e1b', 1, 1), ('random_sample-f4412c7680821993adbf227abaccec52', 1, 0))
+23  :   task: ('chunk_sum-85390e42a81ac371703dd31840183a2a', 1, 1, 1), fanouts:[],fanins:["('_chunk_sum-aggregate-b66343e156a06d5549345932b8572740', 1, 1)"],faninsNB:[],collapse:[]fanin_sizes:[2],faninNB_sizes:[]task_inputs: (('matmul-2f440c4e55cca20c717a24e8ec614f7f', 1, 1, 1),)
+24  :   task: ('chunk_sum-85390e42a81ac371703dd31840183a2a', 1, 1, 0), fanouts:[],fanins:["('_chunk_sum-aggregate-b66343e156a06d5549345932b8572740', 1, 0)"],faninsNB:[],collapse:[]fanin_sizes:[2],faninNB_sizes:[]task_inputs: (('matmul-2f440c4e55cca20c717a24e8ec614f7f', 1, 1, 0),)
+25  :   task: ('random_sample-f4412c7680821993adbf227abaccec52', 1, 1), fanouts:[],fanins:[],faninsNB:["('matmul-2f440c4e55cca20c717a24e8ec614f7f', 0, 1, 1)", "('matmul-2f440c4e55cca20c717a24e8ec614f7f', 1, 1, 1)"],collapse:[]fanin_sizes:[],faninNB_sizes:[2, 2]task_inputs: (None, 'random_sample', array([], dtype=uint32), (2, 2), [], {})
+26  :   task: ('random_sample-f4412c7680821993adbf227abaccec52', 0, 0), fanouts:[],fanins:[],faninsNB:["('matmul-2f440c4e55cca20c717a24e8ec614f7f', 0, 0, 0)", "('matmul-2f440c4e55cca20c717a24e8ec614f7f', 1, 0, 0)"],collapse:[]fanin_sizes:[],faninNB_sizes:[2, 2]task_inputs: (None, 'random_sample', array([]], dtype=uint32), (2, 2), [], {})
+27  :   task: ('random_sample-f4412c7680821993adbf227abaccec52', 1, 0), fanouts:[],fanins:[],faninsNB:["('matmul-2f440c4e55cca20c717a24e8ec614f7f', 0, 1, 0)", "('matmul-2f440c4e55cca20c717a24e8ec614f7f', 1, 1, 0)"],collapse:[]fanin_sizes:[],faninNB_sizes:[2, 2]task_inputs: (None, 'random_sample', array([], dtype=uint32), (2, 2), [], {})
+28  :   task: ('random_sample-f4412c7680821993adbf227abaccec52', 0, 1), fanouts:[],fanins:[],faninsNB:["('matmul-2f440c4e55cca20c717a24e8ec614f7f', 1, 0, 1)", "('matmul-2f440c4e55cca20c717a24e8ec614f7f', 0, 0, 1)"],collapse:[]fanin_sizes:[],faninNB_sizes:[2, 2]task_inputs: (None, 'random_sample', array([], dtype=uint32), (2, 2), [], {})
+
+Result of executing the workload: 
+[[1.58023501 1.29345377 1.06438115 1.25929403]
+ [0.85166008 1.25926751 0.6218218  1.02169959]
+ [0.67321402 0.5508788  0.67433678 0.84990331]
+ [1.041002   0.84622005 0.75282337 0.90294735]]
+
+Execution Output:
+"('_chunk_sum-aggregate-22ff0b8ecc87944e400288ec97faa43e', 0, 1)": array([[1.06438115, 1.25929403],[0.6218218 , 1.02169959]]), 
+"('_chunk_sum-aggregate-22ff0b8ecc87944e400288ec97faa43e', 1, 0)": array([[0.67321402, 0.5508788 ],[1.041002  , 0.84622005]]), 
+"('_chunk_sum-aggregate-22ff0b8ecc87944e400288ec97faa43e', 0, 0)": array([[1.58023501, 1.29345377],[0.85166008, 1.25926751]]), 
+"('_chunk_sum-aggregate-22ff0b8ecc87944e400288ec97faa43e', 1, 1)": array([[0.67433678, 0.84990331],[0.75282337, 0.90294735]])}
 """

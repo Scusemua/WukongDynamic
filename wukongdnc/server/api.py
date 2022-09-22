@@ -44,6 +44,9 @@ def send_object(obj, websocket):
     #logger.debug("send_object: Will be sending a message of size %d bytes." % len(obj))
     
     # First, we send the number of bytes that we're going to send.
+    logger.debug("send_object: len obj: " + str(len(obj)))
+    # send_object: len obj: 278522 needs 3 bytes
+
     websocket.sendall(len(obj).to_bytes(2, byteorder='big'))
 
     # Next, we send the serialized object itself. 
@@ -296,6 +299,20 @@ def create_all_fanins_and_faninNBs_and_possibly_work_queue(websocket, op, type, 
         "state": make_json_serializable(state),
         "id": msg_id
     }
+    logger.debug("api: create_all_fanins_and_faninNBs_and_possibly_work_queue: op:" + op + " type: " + type + " state: " + str(state) + " id: " + str(id))
+    """
+    message0 = name[0] 
+    message1 = name[1]
+    m00 = message0[0]
+    logger.debug("api: m01.op:" + m01.op
+    m01 = message0[1]
+    m02 = message0[2]
+    m03 = message0[3]
+    m10 = message1[0]
+    m11 = message1[1]
+    m12 = message1[2]
+    m13 = message1[3]
+    """
 
     msg = json.dumps(message).encode('utf-8')
     send_object(msg, websocket)
