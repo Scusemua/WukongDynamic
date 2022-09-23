@@ -36,7 +36,7 @@ def send_object(obj, websocket):
             Socket connected to a remote client.
     """
     # First, we send the number of bytes that we're going to send.
-    websocket.sendall(len(obj).to_bytes(2, byteorder='big'))
+    websocket.sendall(len(obj).to_bytes(4, byteorder='big'))
     # Next, we send the serialized object itself. 
     websocket.sendall(obj)
 

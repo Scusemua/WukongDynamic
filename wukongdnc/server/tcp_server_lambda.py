@@ -229,7 +229,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         """
         try:
             # Read the size of the incoming serialized object.
-            incoming_size = self.rfile.read(2) 
+            incoming_size = self.rfile.read(4) 
         except ConnectionAbortedError as ex:
             logger.error("Established connection aborted while reading incoming size.")
             logger.error(repr(ex))
@@ -279,7 +279,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 The already-serialized object that we are sending to a remote entity (presumably an AWS Lambda executor).
         """
         logger.debug("Sending payload of size %d bytes to remote client now..." % len(obj))
-        self.wfile.write(len(obj).to_bytes(2, byteorder='big'))     # Tell the client how many bytes we're sending.
+        self.wfile.write(len(obj).to_bytes(4, byteorder='big'))     # Tell the client how many bytes we're sending.
         self.wfile.write(obj)                                       # Then send the object.
         logger.debug("Sent %d bytes to remote client." % len(obj))
 

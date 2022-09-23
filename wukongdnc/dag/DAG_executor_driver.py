@@ -276,9 +276,9 @@ def run():
         print(task_name)
     print() 
     print("DAG_leaf_task_inputs:")
-    for inp in DAG_leaf_task_inputs:
-        print(inp)
-    print() 
+    #for inp in DAG_leaf_task_inputs:
+    #    print(inp)
+    #print() 
 
     #ResetRedis()
     
@@ -430,7 +430,8 @@ def run():
         # FYI
         logger.debug("DAG_executor_driver: DAG_leaf_tasks: " + str(DAG_leaf_tasks))
         logger.debug("DAG_executor_driver: DAG_leaf_task_start_states: " + str(DAG_leaf_task_start_states))
-        logger.debug("DAG_executor_driver: DAG_leaf_task_inputs: " + str(DAG_leaf_task_inputs))
+        #rhc: commented out for MM
+        #logger.debug("DAG_executor_driver: DAG_leaf_task_inputs: " + str(DAG_leaf_task_inputs))
 
         """
         if using_workers:

@@ -58,6 +58,7 @@ def faninNB_task_locally(kwargs):
 
 # execute task from name_to_function_map with key task_name
 def execute_task(task, args):
+    #rhc: commented out for MM
     logger.debug("input of execute_task is: " + str(args))
     #output = task(input)
     #for i in range(0, len(args)):
@@ -268,8 +269,12 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
                         # put results in our data_dict since we will use them next
                         # Note: We will be writog over our result from the task we 
                         #  did that inputs into this faninNB.
+
+                        logger.debug("add faninNB Results to data dict: ")
                         for key, value in dict_of_results.items():
                             data_dict[key] = value
+                            logger.debug(str(key) + " -> " + str(value))
+                            
                         # keep work and do it next
                         worker_needs_input = False
                         DAG_exec_state.state = start_state_fanin_task
@@ -927,9 +932,11 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
 
                     # Note: using_workers is checked above and must be True
                     worker_needs_input = False # default
-                    logger.debug("DAG_executor: Worker accessed work_queue: process state: " + str(DAG_executor_state.state))
+                    #rhc: commented out for MM
+                    #logger.debug("DAG_executor: Worker accessed work_queue: process state: ") # + str(DAG_executor_state.state))
                 else:
-                    logger.debug("DAG_executor: Worker doesn't access work_queue: process state: " + str(DAG_executor_state.state))
+                    logger.debug("DAG_executor: Worker doesn't access work_queue")
+                    #rhc: commented out for 
                     logger.debug("**********************process state: " + str(DAG_executor_state.state))
                 
                 num_tasks_executed = counter.increment_and_get()
@@ -954,7 +961,9 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
             state_info = DAG_map[DAG_executor_state.state]
             ##logger.debug ("access DAG_map with state " + str(state))
             ##state_info = DAG_info.DAG_map[state]
-            logger.debug("state_info: " + str(state_info))
+
+            #rhc: commented out for MM
+            #logger.debug("state_info: " + str(state_info))
             logger.debug("execute task: " + state_info.task_name)
 
             # Example:

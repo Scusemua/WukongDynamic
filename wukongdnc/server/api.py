@@ -47,7 +47,7 @@ def send_object(obj, websocket):
     logger.debug("send_object: len obj: " + str(len(obj)))
     # send_object: len obj: 278522 needs 3 bytes
 
-    websocket.sendall(len(obj).to_bytes(2, byteorder='big'))
+    websocket.sendall(len(obj).to_bytes(4, byteorder='big'))
 
     # Next, we send the serialized object itself. 
     websocket.sendall(obj)
@@ -66,7 +66,9 @@ def recv_object(websocket):
             Socket connected to a remote client.    
     """
     # First, we receive the number of bytes of the incoming serialized object.
-    incoming_size = websocket.recv(2)
+    
+    # rhc
+    incoming_size = websocket.recv(4)
     # Convert the bytes representing the size of the incoming serialized object to an integer.
     incoming_size = int.from_bytes(incoming_size, 'big')
     #rhc
