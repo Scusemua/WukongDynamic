@@ -7,6 +7,10 @@
 #   Note matrix mult may be using C code so may work well with multithreading.
 
 # Where are we: 
+# Fix Bug: when remote storage and using threads, call process_faninNBs but, which means we
+# make a seperate call to fanin remote for ach faninNB; but e return when we get a 0 instead
+# of processing all of the faninNBs. So like batch, we need to process all and keep 1 work
+# for ourself if we need work.
 # FninNB local with no workers always starts new thread, like Lambda. Sowe are 
 #   not lookng at or changing worker_needs_work. Perhaps we should not start new 
 #   thread/Lambda if worker_needs_work or use faster/better to start new Lambda/thread?

@@ -223,10 +223,11 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
 
             #if DAG_exec_state.blocking:
             # I like using the "else" after the return, even though we don't need it
+            logger.debug("process_faninNBs: faninNB_remotely dummy_DAG_exec_state.return_value: " + str(dummy_DAG_exec_state.return_value))
             if dummy_DAG_exec_state.return_value == 0:
                 #DAG_exec_state.blocking = False
                 # nothing to Do
-                return 0
+                return worker_needs_input
             else:
                 if using_workers:
                     # this caller could be a thread or a process
@@ -274,7 +275,7 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
                         for key, value in dict_of_results.items():
                             data_dict[key] = value
                             logger.debug(str(key) + " -> " + str(value))
-                            
+
                         # keep work and do it next
                         worker_needs_input = False
                         DAG_exec_state.state = start_state_fanin_task
