@@ -227,7 +227,8 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
             if dummy_DAG_exec_state.return_value == 0:
                 #DAG_exec_state.blocking = False
                 # nothing to Do
-                return worker_needs_input
+                # return worker_needs_input
+                pass
             else:
                 if using_workers:
                     # this caller could be a thread or a process
@@ -324,10 +325,9 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
                     #   DAG_exec_state.state = start_state_fanin_task
                     #   logger.debug("process_faninNBs: set worker_needs_input to False,")
 
-
                 #return 1
-                logger.debug("process_faninNBs: returning worker_needs_input: " + str(worker_needs_input))
-                return worker_needs_input
+                #logger.debug("process_faninNBs: returning worker_needs_input: " + str(worker_needs_input))
+                #return worker_needs_input
     # return value not used; will process any fanouts next; no change to DAG_executor_State
     #return 0
     logger.debug("process_faninNBs: returning worker_needs_input: " + str(worker_needs_input))
@@ -1221,7 +1221,7 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
 
             else:
 ##rhc
-                logger.debug("state " + str(DAG_executor_state.state) + " after executing task " +  state_info.task_name + " has no fanouts, fanins, or faninNBs; return")
+                logger.debug("state " + str(DAG_executor_state.state) + " after executing task " +  state_info.task_name + " has no fanouts, fanins, or faninNBs.")
                 ##logger.debug("1state " + str(state) + " after executing task " +  state_info.task_name + " has no fanouts, fanins, or faninNBs; return")
                 #Note: setting worker_needs_input = True must be guarded by using_workers
                 if using_workers:
