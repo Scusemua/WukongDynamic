@@ -195,7 +195,7 @@ def invoke_lambda(
     logger.info("Invoked AWS Lambd1a function '%s' in %f ms. Status: %s." % (function_name, (time.time() - s) * 1000.0, str(status_code)))
 
 def invoke_lambda_DAG_executor(
-    function_name: str = "DAG_executor",
+    function_name: str = "DAG_executor_lambda",
     payload: dict = None
 ):
     """
@@ -211,7 +211,11 @@ def invoke_lambda_DAG_executor(
             This is typically expected to contain a "state" entry with a state object.
     """
     logger.debug("Creating AWS Lambda invocation payload for function '%s'" % function_name)
-    logger.debug("Provided payload: " + str(payload))
+    #logger.debug("Provided payload: " + str(payload))
+    DAG_exec_state = payload['DAG_executor_state']
+    inp = payload['input']
+    #Note: payload also includes DAG_info
+    logger.debug ("invoke_lambda_DAG_executor: lambda payload is DAG_info + " + str(DAG_exec_state.state) + "," + str(inp))
 												
     s = time.time()
 

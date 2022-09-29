@@ -62,7 +62,7 @@ class DAG_executor_FanInNB(MonitorSU):
         #   keyword_arguments['start_state_fanin_task'] = start_state_fanin_task    # start DAG_executor in this state to run fanin task
         #   keyword_arguments['result'] = output        # output of running task that is now executing this fan_in
         #   keyword_arguments['calling_task_name'] = calling_task_name  # used to label output of task that is executing this fan_in
-        #   keyword_arguments['DAG_executor_State'] = new_DAG_exec_State # given to the thread/lambda that executes the fanin task.
+        #   keyword_arguments['DAG_executor_state'] = new_DAG_exec_State # given to the thread/lambda that executes the fanin task.
         #   keyword_arguments['server'] = server     # used to mock server when running local test
         #   keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally    # option set in DAG_executor
         if kwargs is None or len(kwargs) == 0:
@@ -204,7 +204,7 @@ class DAG_executor_FanInNB(MonitorSU):
                     payload = {
                         #"state": int(start_state_fanin_task),
                         "input": self._results,
-                        "DAG_executor_State": DAG_executor_state,
+                        "DAG_executor_state": DAG_executor_state,
                         "DAG_info": self.DAG_info,
                         "server": server
                     }
@@ -237,7 +237,7 @@ class DAG_executor_FanInNB(MonitorSU):
     ##rhc
                         #"state": int(start_state_fanin_task),
                         "input": self._results,
-                        "DAG_executor_State": DAG_executor_state,
+                        "DAG_executor_state": DAG_executor_state,
                         "DAG_info": self.DAG_info
                         #"server": server   # used to mock server during testing
                     }

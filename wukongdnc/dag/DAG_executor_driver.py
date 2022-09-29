@@ -492,7 +492,7 @@ def run():
             # one worker and at most num_worker workers. If we are using workers, there may be more
             # leaf tasks than workers, but that is okay since we put all the leaf task states in the 
             # work queue and the created workers will withdraw them.
-            for start_state, task_name in zip(DAG_leaf_task_start_states, DAG_leaf_tasks):
+            for start_state, task_name, inp in zip(DAG_leaf_task_start_states, DAG_leaf_tasks, DAG_leaf_task_inputs):
 
                 # The state of a DAG executor contains only one application specific member, which is the
                 # state number of the task to execute. Leaf task information is in DAG_leaf_task_start_states
@@ -519,7 +519,7 @@ def run():
                                 # used to simulate the tcp_server when running locally. Input: threads and processes
                                 # get their input from the data_dict. Note the lambdas will be invoked with their 
                                 # input in the payload and will put this input in their local data_dict.
-                                "DAG_executor_State": DAG_exec_state
+                                "DAG_executor_state": DAG_exec_state
                             }
                             # Note:
                             # get the current thread instance
@@ -567,21 +567,23 @@ def run():
                         break
                 else:
                     try:
-                        logger.debug("DAG_executor_driver: Starting DAG_executor lambda for leaf task " + task_name)
-                        lambda_DAG_executor_State = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state)
-                        logger.debug ("DAG_executor_driver: lambda payload is " + str(start_state) + "," + str(inp))
-                        lambda_DAG_executor_State.restart = False      # starting new DAG_executor in state start_state_fanin_task
-                        lambda_DAG_executor_State.return_value = None
-                        lambda_DAG_executor_State.blocking = False            
-                        logger.info("DAG_executor_driver: Starting Lambda function %s." % lambda_DAG_executor_State.function_name)
-    
+                        logger.debug("DAG_executor_driver: Starting DAG_executor_lambda for leaf task " + task_name)
+                        lambda_DAG_exec_state = DAG_executor_State(function_name = "DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()), state = start_state)
+                        logger.debug ("DAG_executor_driver: lambda payload is DAG_info + " + str(start_state) + "," + str(inp))
+                        lambda_DAG_exec_state.restart = False      # starting new DAG_executor in state start_state_fanin_task
+                        lambda_DAG_exec_state.return_value = None
+                        lambda_DAG_exec_state.blocking = False            
+                        logger.info("DAG_executor_driver: Starting Lambda function %s." % lambda_DAG_exec_state.function_name)
+ #ToDo: Lambda: None out the state_info.task_info for the leaf task state since we pass it here as "inp"  
+ #  or inp = None for leaf_tasks?
+
                         payload = {
-                            "input": {'input': inp},
-                            "DAG_executor_State": lambda_DAG_executor_State,
+                            "input": None,
+                            "DAG_executor_state": lambda_DAG_exec_state,
                             "DAG_info": DAG_info
                         }
 
-                        invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor")
+                        invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor.DAG_executor_lambda")
                     except Exception as ex:
                         logger.debug("[ERROR] DAG_executor_driver: Failed to start DAG_executor Lambda.")
                         logger.debug(ex)
@@ -600,7 +602,7 @@ def run():
                                 DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = 0)
                                 logger.debug("DAG_executor_driver: Starting DAG_executor worker for non-leaf task " + task_name)
                                 payload = {
-                                    "DAG_executor_State": DAG_exec_state
+                                    "DAG_executor_state": DAG_exec_state
                                 }
                                 thread_name_prefix = "Worker_thread_non-leaf_"
                                 thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=(thread_name_prefix+str(start_state)), args=(payload,))

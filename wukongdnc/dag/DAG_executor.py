@@ -307,7 +307,7 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
                         payload = {
                             #"state": int(start_state_fanin_task),
                             #"input": DAG_executor_state.return_value,
-                            "DAG_executor_State": new_DAG_executor_state,
+                            "DAG_executor_state": new_DAG_executor_state,
                             #"DAG_info": DAG_info,
                             #"server": server
                         }
@@ -533,7 +533,7 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
                 payload = {
                     #"state": int(start_state_fanin_task),
                     #"input": DAG_executor_state.return_value,
-                    "DAG_executor_State": new_DAG_executor_state,
+                    "DAG_executor_state": new_DAG_executor_state,
                     #"DAG_info": DAG_info,
                     #"server": server
                 }
@@ -645,8 +645,14 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
     ##rhc
                         #"state": fanout_task_start_state,
                         #rhc task_inputs
+                        # If not using workers and running tasks locally then we are using threads
+                        # to simulate Lambdas but threads currently use a global data_dict so they
+                        # just put task outputs in the data_dict. We pass the outputs to the fanout
+                        # tasks but they do not use "inp" since the "inp" is already in the data
+                        # dict.
+#ToDo: Lambda: modify this version to use inp
                         "input": output,
-                        "DAG_executor_State": task_DAG_executor_State,
+                        "DAG_executor_state": task_DAG_executor_State,
                         "DAG_info": DAG_info,
                         "server": server
                     }
@@ -659,18 +665,18 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                     logger.debug("Starting fanout DAG_executor Lambda for " + name)
                     fanout_task_start_state = DAG_states[name]
                     # create a new DAG_executor_State object so no DAG_executor_State object is shared by fanout/faninNB threads in a local test.
-                    lambda_DAG_executor_State = DAG_executor_State(state = fanout_task_start_state)
-                    logger.debug ("payload is " + str(fanout_task_start_state) + "," + str(output))
-                    lambda_DAG_executor_State.restart = False      # starting new DAG_executor in state start_state_fanin_task
-                    lambda_DAG_executor_State.return_value = None
-                    lambda_DAG_executor_State.blocking = False
-                    logger.info("Starting Lambda function %s." % lambda_DAG_executor_State.function_name)
+                    lambda_DAG_executor_state = DAG_executor_State(state = fanout_task_start_state)
+                    logger.debug ("payload is DAG_info + " + str(fanout_task_start_state) + "," + str(output))
+                    lambda_DAG_executor_state.restart = False      # starting new DAG_executor in state start_state_fanin_task
+                    lambda_DAG_executor_state.return_value = None
+                    lambda_DAG_executor_state.blocking = False
+                    logger.info("Starting Lambda function %s." % lambda_DAG_executor_state.function_name)
                     #logger.debug("lambda_DAG_executor_State: " + str(lambda_DAG_executor_State))
                     payload = {
     ##rhc
                         #"state": int(fanout_task_start_state),
                         "input": output,
-                        "DAG_executor_State": lambda_DAG_executor_State,
+                        "DAG_executor_state": lambda_DAG_executor_state,
                         "DAG_info": DAG_info
                         #"server": server   # used to mock server during testing
                     }
@@ -999,6 +1005,10 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
             else:
             # task_inputs is a tuple of input values, e.g., '1'
                 args = task_inputs
+#ToDo: Lambda: Do this for store local with no workers, i.e, as logic check?
+                #if using_lambdas:
+                #    # Don't keep pasing leaf task inputs to Lambdas on invocations
+                #    state_info.task__inputs = None
 
             #output = execute_task(task,input)
             output = execute_task(task,args)
@@ -1256,7 +1266,7 @@ def DAG_executor(payload):
 		
 	# use DAG_executor_state.state
     if not using_workers:
-        DAG_executor_state = payload['DAG_executor_State']
+        DAG_executor_state = payload['DAG_executor_state']
     else:
         DAG_executor_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
 ##rhc
@@ -1298,7 +1308,7 @@ def DAG_executor_processes(payload,counter,log_queue, configurer):
     #logger.log(level, message)
  
     if not using_workers:
-        DAG_exec_state = payload['DAG_executor_State']
+        DAG_exec_state = payload['DAG_executor_state']
     else:
         DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
 
@@ -1324,19 +1334,37 @@ def DAG_executor_processes(payload,counter,log_queue, configurer):
     logger.debug("DAG_executor_processes: returning after work_loop.")
     return
 
-def DAG_executor_lambda(payload):	
-    pass
+def DAG_executor_lambda(payload):
+    logger.debug("Lambda: started.")
+    DAG_exec_state = payload['DAG_executor_state']
+    logger.debug("payload DAG_exec_state.state:" + str(DAG_exec_state.state))
+    DAG_info = payload['DAG_info']	
+    DAG_map = DAG_info.get_DAG_map()
+    state_info = DAG_map[DAG_exec_state.state]
+    is_leaf_task = state_info.task_name in DAG_info.get_DAG_leaf_tasks()
+    if not is_leaf_task:
+        # lambdas invoked with input, except for leaf_tasks which have their inputs in the 
+        # state_info.task_inputs. We do not also pass leaf task inputs as "inp" since that
+        # would double up the inputs.
+        dict_of_results = payload['input']
+        for key, value in dict_of_results.items():
+            data_dict[key] = value
+    #else leaf task gets its input directly from state_info.task_inputs
 
+    # server and counter are None
+    # logger is local logger
+    DAG_executor_work_loop(logger, server, counter, DAG_exec_state, DAG_info)
+    logger.debug("DAG_executor_processes: returning after work_loop.")
+    return
                         
 #Local tests
 def DAG_executor_task(payload):
-    DAG_executor_state = payload['DAG_executor_State']
+    DAG_executor_state = payload['DAG_executor_state']
     if DAG_executor_state != None:
         # DAG_executor_state is None when using workers
         logger.debug("DAG_executor_task: call DAG_excutor, state is " + str(DAG_executor_state.state))
     DAG_executor(payload)
     
-	
 def main():
 
     """
@@ -1463,7 +1491,7 @@ def main():
 ##rhc
             #"state": int(1),
             "input": {'input': int(0)},
-			"DAG_executor_State": DAG_executor_State1,
+			"DAG_executor_state": DAG_executor_State1,
             "server": server
         }
         _thread.start_new_thread(DAG_executor_task, (payload,))
@@ -1478,7 +1506,7 @@ def main():
 ##rhc
             #"state": int(3),
             "input": {'input': int(1)},
-			"DAG_executor_State": DAG_executor_State3,
+			"DAG_executor_state": DAG_executor_State3,
             "server": server
         }
         _thread.start_new_thread(DAG_executor_task, (payload,))
