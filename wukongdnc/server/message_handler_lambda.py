@@ -1,7 +1,7 @@
 import traceback
 
 from .synchronizer_lambda import Synchronizer
-from .util import make_json_serializable, decode_and_deserialize, isTry_and_getMethodName, isSelect 
+from .util import decode_and_deserialize #, make_json_serializable,  isTry_and_getMethodName, isSelect 
 
 # Set up logging.
 import logging 
@@ -186,7 +186,7 @@ class MessageHandler(object):
         """
         type_arg = message["type"]
         name = message["name"]
-        state = decode_and_deserialize(message["state"])
+        #state = decode_and_deserialize(message["state"])
 
         logger.debug("Received close_obj request for object with name '%s' and type %s" % (name, type_arg))
 

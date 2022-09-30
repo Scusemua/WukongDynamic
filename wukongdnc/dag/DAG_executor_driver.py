@@ -47,7 +47,7 @@ from wukongdnc.server.util import make_json_serializable
 from wukongdnc.constants import TCP_SERVER_IP
 from .DAG_executor_constants import run_all_tasks_locally, store_fanins_faninNBs_locally, use_multithreaded_multiprocessing, num_threads_for_multithreaded_multiprocessing
 from .DAG_executor_constants import create_all_fanins_faninNBs_on_start, using_workers
-from .DAG_executor_constants import num_workers,using_threads_not_processes
+from .DAG_executor_constants import num_workers,using_threads_not_processes, using_lambdas
 #from .DAG_work_queue_for_threads import thread_work_queue
 from .DAG_work_queue_for_threads import work_queue
 from .DAG_executor_synchronizer import server
@@ -57,6 +57,7 @@ from wukongdnc.server.api import create_all_fanins_and_faninNBs_and_possibly_wor
 from .multiprocessing_logging import listener_configurer, listener_process, worker_configurer
 from .DAG_executor_countermp import CounterMP
 from .DAG_boundedbuffer_work_queue import BoundedBuffer_Work_Queue
+import copy
 
 import logging 
 
@@ -254,7 +255,33 @@ def run():
     DAG_leaf_tasks = DAG_info.get_DAG_leaf_tasks()
     DAG_leaf_task_start_states = DAG_info.get_DAG_leaf_task_start_states()
     DAG_tasks = DAG_info.get_DAG_tasks()
-    DAG_leaf_task_inputs = DAG_info.get_DAG_leaf_task_inputs()
+
+#ToDo: lambdas
+    # Note: if we are using_lambdas, we null out DAG_leaf_task_inputs after we get it here.
+    # So make a copy.
+    if not using_lambdas:
+        DAG_leaf_task_inputs = DAG_info.get_DAG_leaf_task_inputs()
+    else:
+        DAG_leaf_task_inputs = copy.copy(DAG_info.get_DAG_leaf_task_inputs())
+#ToDo: lambdas
+    # Combine this will else above
+    """
+    if using_lambdas:
+        # Null out the task inputs in DAG_info since we pass DAG_info to all the lambda
+        # executors and the leaf task inputs may be large.
+        # Note: When we are using thread or process workers then the workers read 
+        # DAG_info from a file at the start of their execution. We are not nullng
+        # out the leaf task inputs for workers.
+
+        # Null out DAG_leaf_task_inputs.
+        DAG_info.set_DAG_leaf_task_inputs_to_None()
+
+        # Null out task inputs in state infomation of leaf tasks
+        for start_state in DAG_leaf_task_start_states:
+            # Each leaf task's state has the leaf tasks's input. Null it out.
+            state_info = DAG_map[start_state]
+            state_info.task_inputs = None
+    """
 
     # FYI:
     print("DAG_map:")
@@ -574,8 +601,14 @@ def run():
                         lambda_DAG_exec_state.return_value = None
                         lambda_DAG_exec_state.blocking = False            
                         logger.info("DAG_executor_driver: Starting Lambda function %s." % lambda_DAG_exec_state.function_name)
- #ToDo: Lambda: None out the state_info.task_info for the leaf task state since we pass it here as "inp"  
- #  or inp = None for leaf_tasks?
+ #4
+                        # No input "inp" for leaf tasks; the leaf task input is part of the state information
+                        # in the DAG_map in DAG_info.
+                        # Since we pass DAG_info to all the Lambda executors, we will null out the leaf task
+                        # input after we get it from DAG_info in the work loop.
+#ToDo: lambdas: use "inp" for leaf task input otherwise all leaf task Executors will receive all leaf task inputs;
+# if we use "inp" then we will pass just a leaf task's input to the leaf task.
+# Also, null out the leaf task inputs in DAG_info
 
                         payload = {
                             "input": None,

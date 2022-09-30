@@ -650,7 +650,10 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                         # just put task outputs in the data_dict. We pass the outputs to the fanout
                         # tasks but they do not use "inp" since the "inp" is already in the data
                         # dict.
-#ToDo: Lambda: modify this version to use inp
+
+#ToDo: Lambdas: Is this payload correct? the driver just passes the dag executor state. We do not use
+# server, we input DAG_info from file. We do not currently use the input, but may use it to be 
+# consistent with lambdas: ==> pass state and input?
                         "input": output,
                         "DAG_executor_state": task_DAG_executor_State,
                         "DAG_info": DAG_info,
@@ -838,7 +841,7 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
     DAG_map = DAG_info.get_DAG_map()
     DAG_tasks = DAG_info.get_DAG_tasks()
     num_tasks_to_execute = len(DAG_tasks)
-    logger.debug("DAG_executor: num_tasks_to_execute: " + str(num_tasks_to_execute))
+    logger.debug("DAG_executor: number of tasks in DAG to execute: " + str(num_tasks_to_execute))
     #server = payload['server']
     
     #ToDo:
@@ -990,14 +993,12 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
             # args2 = pack_data(args, data_dict) # (1, 10, 3)
             # func(*args2)
 
-#ToDo: Lambdas use payload inputs; 
-            # using map DAG_tasks from task_name to task
-            task = DAG_tasks[state_info.task_name]
             #rhc task_inputs
-            # a tuple f input task names, not actual inputs. The inputs retrieved from data_dict,
-            # Lambdas need to put payload inputs in data_dict then get them from data_dict
+            # a tuple of input task names, not actual inputs. The inputs retrieved from data_dict,
+            # Lambdas need to put payload inputs in data_dict then get them from data_dict.
+            # Note: for leaf tasks, we null out state_info.task_inputs after we execute the
+            # leaf task so we don't pass it to every invoked lambda.
             task_inputs = state_info.task_inputs    
-
             is_leaf_task = state_info.task_name in DAG_info.get_DAG_leaf_tasks()
             if not is_leaf_task:
                 # task_inputs is a tuple of task_names
@@ -1005,11 +1006,9 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
             else:
             # task_inputs is a tuple of input values, e.g., '1'
                 args = task_inputs
-#ToDo: Lambda: Do this for store local with no workers, i.e, as logic check?
-                #if using_lambdas:
-                #    # Don't keep pasing leaf task inputs to Lambdas on invocations
-                #    state_info.task__inputs = None
 
+            # using map DAG_tasks from task_name to task
+            task = DAG_tasks[state_info.task_name]
             #output = execute_task(task,input)
             output = execute_task(task,args)
             """ where:
@@ -1019,6 +1018,11 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     output = task(*args)
                     return output
             """
+#ToDo: Lambda:
+            # Null out leaf task input so we don't pass it to every invoked Lamda
+            #if is_leaf_task:
+            #    state_info.task_inputs = None
+
             logger.debug("execute_task output: " + str(output))
             data_dict[state_info.task_name] = output
 
@@ -1266,15 +1270,15 @@ def DAG_executor(payload):
 		
 	# use DAG_executor_state.state
     if not using_workers:
-        DAG_executor_state = payload['DAG_executor_state']
+        DAG_exec_state = payload['DAG_executor_state']
     else:
-        DAG_executor_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
+        DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
 ##rhc
     ##state = payload['state'] # refers to state var, not the usual State of DAG_executor 
     ##logger.debug("state:" + str(state))
     ##DAG_executor_state.state = payload['state']
     if not using_workers:
-        logger.debug("payload state:" + str(DAG_executor_state.state))
+        logger.debug("payload state:" + str(DAG_exec_state.state))
     # For leaf task, we get  ['input': inp]; this is passed to the executed task using:
     #    def execute_task(task_name,input): output = DAG_info.DAG_tasks[task_name](input)
     # So the executed task gets ['input': inp], just like a non-leaf task gets ['output': X]. For leaf tasks, we use "input"
@@ -1284,12 +1288,28 @@ def DAG_executor(payload):
     #logger.debug("DAG_executor starting payload input:" +str(task_payload_inputs) + " payload state: " + str(DAG_executor_state.state) )
   
     DAG_info = DAG_Info()
+
+#ToDo: Lambda: modify this version to put a threads payload input in the data_dict?
+    """
+    DAG_map = DAG_info.get_DAG_map()
+    state_info = DAG_map[DAG_exec_state.state]
+    is_leaf_task = state_info.task_name in DAG_info.get_DAG_leaf_tasks()
+    if not is_leaf_task:
+        # lambdas invoked with inputs. We do not add leaf task inputs to the data
+        # dictionary, we use them directly when we execute the leaf task.
+        # Also, leaf task inputs are not in a dictionary.
+        dict_of_results = payload['input']
+        for key, value in dict_of_results.items():
+            data_dict[key] = value
+    """
+
     #DAG_info = payload['DAG_info']
     #DAG_executor_work_loop(logger, server, counter, thread_work_queue, DAG_executor_state, DAG_info, data_dict)
-    DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info)
+    DAG_executor_work_loop(logger, server, counter, DAG_exec_state, DAG_info)
 
 # def DAG_executor_processes(payload,counter,process_work_queue,data_dict,log_queue, configurer):
 def DAG_executor_processes(payload,counter,log_queue, configurer):
+    # Use for multiprocessing workers
 
     #- read DAG_info, create DAG_exec_state, thread_work_queue is parm
     global logger
@@ -1343,16 +1363,22 @@ def DAG_executor_lambda(payload):
     state_info = DAG_map[DAG_exec_state.state]
     is_leaf_task = state_info.task_name in DAG_info.get_DAG_leaf_tasks()
     if not is_leaf_task:
-        # lambdas invoked with input, except for leaf_tasks which have their inputs in the 
-        # state_info.task_inputs. We do not also pass leaf task inputs as "inp" since that
-        # would double up the inputs.
+        # lambdas invoked with inputs. We do not add leaf task inputs to the data
+        # dictionary, we use them directly when we execute the leaf task.
+        # Also, leaf task inputs are not in a dictionary.
         dict_of_results = payload['input']
         for key, value in dict_of_results.items():
             data_dict[key] = value
-    #else leaf task gets its input directly from state_info.task_inputs
-
+    else:
+        # Passing leaf task input as state_info.task_inputs in DAG_info; we don't
+        # want to add a leaf task input parameter to DAG_executor_work_loop(); this 
+        # parameter would only be used by the Lambdas and we ha ve a place already
+        # in state_info.task_inputs. 
+        # Note: We null out state_info.task_inputs for leaf tasks after we use the input.
+        inp = payload['input']
+        state_info.task_inputs = inp
     # server and counter are None
-    # logger is local logger
+    # logger is local lambda logger
     DAG_executor_work_loop(logger, server, counter, DAG_exec_state, DAG_info)
     logger.debug("DAG_executor_processes: returning after work_loop.")
     return

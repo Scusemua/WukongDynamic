@@ -26,5 +26,9 @@ class DAG_Info(object):
         return self.DAG_info["DAG_leaf_task_start_states"]
     def get_DAG_leaf_task_inputs(self):
         return self.DAG_info["DAG_leaf_task_inputs"]
+    # After the driver gets the leaf task inputs it sets DAG_info["DAG_leaf_task_inputs"]
+    # to None so that we are not passing all of these inputs to each Lambda executor.
+    def set_DAG_leaf_task_inputs_to_None(self):
+        self.DAG_info["DAG_leaf_task_inputs"] = None
     def get_DAG_tasks(self):
         return self.DAG_info["DAG_tasks"]
