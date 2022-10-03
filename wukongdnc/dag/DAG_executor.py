@@ -651,13 +651,14 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                         # tasks but they do not use "inp" since the "inp" is already in the data
                         # dict.
 
-#ToDo: Lambdas: Is this payload correct? the driver just passes the dag executor state. We do not use
-# server, we input DAG_info from file. We do not currently use the input, but may use it to be 
-# consistent with lambdas: ==> pass state and input?
-                        "input": output,
+#ToDo: Lambdas: The driver just passes the dag executor state. We do not use
+                        # server, we input DAG_info from file. We do not currently use the input, 
+                        # but may use it to be consistent with lambdas: ==> pass state and input?
+
+                        #"input": output,
                         "DAG_executor_state": task_DAG_executor_State,
-                        "DAG_info": DAG_info,
-                        "server": server
+                        #"DAG_info": DAG_info,
+                        #"server": server
                     }
                     _thread.start_new_thread(DAG_executor_task, (payload,))
                 except Exception as ex:
@@ -1019,10 +1020,6 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     output = task(*args)
                     return output
             """
-#ToDo: Lambda:
-            # Null out leaf task input so we don't pass it to every invoked Lamda
-            #if is_leaf_task:
-            #    state_info.task_inputs = None
 
             logger.debug("execute_task output: " + str(output))
             data_dict[state_info.task_name] = output
@@ -1290,7 +1287,9 @@ def DAG_executor(payload):
   
     DAG_info = DAG_Info()
 
-#ToDo: Lambda: modify this version to put a threads payload input in the data_dict?
+#ToDo: Lambda: modify this local storage no workers version to put a threads payload input in the data_dict?
+# Add comment that we are using global but we add here too to check logic. Here we can make sure data
+# is already in data_dict as assert. if not key in data_dict:
     """
     DAG_map = DAG_info.get_DAG_map()
     state_info = DAG_map[DAG_exec_state.state]

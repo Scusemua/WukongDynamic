@@ -256,14 +256,14 @@ def run():
     DAG_leaf_task_start_states = DAG_info.get_DAG_leaf_task_start_states()
     DAG_tasks = DAG_info.get_DAG_tasks()
 
-#ToDo: lambdas
-    # Note: if we are using_lambdas, we null out DAG_leaf_task_inputs after we get it here.
-    # So make a copy.
+#ToDo: lambdas:
+    # Note: if we are using_lambdas, we null out DAG_leaf_task_inputs after we get it here
+    # (by calling DAG_info.set_DAG_leaf_task_inputs_to_None() below) So make a copy.
     if not using_lambdas:
         DAG_leaf_task_inputs = DAG_info.get_DAG_leaf_task_inputs()
     else:
         DAG_leaf_task_inputs = copy.copy(DAG_info.get_DAG_leaf_task_inputs())
-#ToDo: lambdas
+#ToDo: lambdas:
     # Combine this will else above
     """
     if using_lambdas:
@@ -606,9 +606,13 @@ def run():
                         # in the DAG_map in DAG_info.
                         # Since we pass DAG_info to all the Lambda executors, we will null out the leaf task
                         # input after we get it from DAG_info in the work loop.
-#ToDo: lambdas: use "inp" for leaf task input otherwise all leaf task Executors will receive all leaf task inputs;
-# if we use "inp" then we will pass just a leaf task's input to the leaf task.
-# Also, null out the leaf task inputs in DAG_info
+#ToDo: lambdas: use "inp" for leaf task input otherwise all leaf task Executors will receive all leaf task inputs
+# in the leaf_task_input s and in the state_info.task_inputs - both are nulled out at beginning of driver
+# when we aer using lambdas.
+# If we use "inp" then we will pass only a given leaf task's input to that leaf task. For non-lambda,
+# each thread/process reads the DAG_info from a file. This DAG-info has al the leaf task inputs in it
+# so every thread/process read all these inputs. This can be optimized if necessary, e.g., separate
+# files for leaf tasks and non-leaf tasks.
 
                         payload = {
                             "input": None,
