@@ -701,10 +701,9 @@ def run():
         stop_time = time.time()
         duration = stop_time - start_time
 
+        logger.debug("Sleeping 1.0")
+        time.sleep(1.0)
         print("DAG_Execution finished in %f seconds." % duration)
-
-        logger.debug("Sleeping 0.1")
-        time.sleep(0.1)
 		
     #ToDo:  close_all(websocket)
 

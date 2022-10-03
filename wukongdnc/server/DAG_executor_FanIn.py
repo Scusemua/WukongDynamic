@@ -88,7 +88,8 @@ class DAG_executor_FanIn(MonitorSU):
         super().enter_monitor(method_name = "fan_in")
         logger.debug("Fan-in %s entered monitor in fan_in()" % self.monitor_name)
         logger.debug("fan_in() " + str(self.monitor_name) + " entered monitor. self._num_calling = " + str(self._num_calling) + ", self._n=" + str(self._n))
-
+        logger.debug("fooo")
+        
         if self._num_calling < (self._n - 1):
             logger.debug("Fan-in %s calling _go.wait_c() from FanIn" % self.monitor_name)
             self._num_calling += 1
@@ -99,7 +100,7 @@ class DAG_executor_FanIn(MonitorSU):
             calling_task_name = kwargs['calling_task_name']
             self._results[calling_task_name] = result
             logger.debug("FanIn: Result (saved by the non-last executor) " + calling_task_name + " for fan-in %s: %s" % (self.monitor_name, str(result)))
-            
+            time.sleep(0.1)
             #threading.current_thread()._restart = False
             #threading.current_thread()._returnValue = 0
             restart = False
@@ -113,6 +114,7 @@ class DAG_executor_FanIn(MonitorSU):
             # Last thread does not append results. It will recieve list of results of other threads and append 
             # its result locally to the returned list.
             logger.debug("Last thread in FanIn %s so not calling self._go.wait_c" % self.monitor_name)
+
             result = kwargs['result']
             calling_task_name = kwargs['calling_task_name']
             

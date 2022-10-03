@@ -728,7 +728,7 @@ def fanin_remotely(websocket, DAG_exec_state,**keyword_arguments):
     return DAG_exec_state
 
 def process_fanins(websocket,fanins, faninNB_sizes, calling_task_name, DAG_states, DAG_exec_state, output, server):
-    logger.debug("process_fanins")
+    logger.debug(calling_task_name + ": process_fanins")
     # assert len(fanins) == len(faninNB_sizes) ==  1
 
     # call synch-op try-op on the fanin with name f, passing output and start_state.
@@ -767,6 +767,7 @@ def process_fanins(websocket,fanins, faninNB_sizes, calling_task_name, DAG_state
         if not create_all_fanins_faninNBs_on_start:
             DAG_exec_state = server.create_and_fanin_locally(DAG_exec_state,keyword_arguments)
         else:
+            logger.debug(calling_task_name + ": call server.fanin_locally")
             DAG_exec_state = server.fanin_locally(DAG_exec_state,keyword_arguments)
     else:
         if not create_all_fanins_faninNBs_on_start:
@@ -1191,7 +1192,7 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                 # single fanin, try-op w/ returned_state.return_value or restart with return_value or deposit/withdraw it
 
                 returned_state = process_fanins(websocket,state_info.fanins, state_info.fanin_sizes, state_info.task_name, DAG_info.get_DAG_states(),  DAG_executor_state, output, server)
-                logger.debug("After call to process_fanin: " + str(state_info.fanins[0]) + " returned_state.blocking: " + str(returned_state.blocking) + ", returned_state.return_value: "
+                logger.debug(state_info.task_name + ": after call to process_fanin: " + str(state_info.fanins[0]) + " returned_state.blocking: " + str(returned_state.blocking) + ", returned_state.return_value: "
 ##rhc
                     + str(returned_state.return_value) + ", DAG_executor_state.state: " + str(DAG_executor_state.state))
                 ##+ str(returned_state.return_value) + ", state: " + str(state))
