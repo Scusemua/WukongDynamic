@@ -706,49 +706,65 @@ def run():
         duration = stop_time - start_time
 
         logger.debug("Sleeping 1.0")
-        time.sleep(1.0)
+        time.sleep(3.0)
         print("DAG_Execution finished in %f seconds." % duration)
 		
     #ToDo:  close_all(websocket)
 
-def create_and_run_threads_for_multiT_multiP(process_name,payload,counter,process_work_queue,data_dict,log_queue,worker_configurer):
+def create_and_run_threads_for_multiT_multiP(process_name,payload,counter,log_queue,worker_configurer):
+    # create, start, and join the threads in the thread pool for a multi process
+#def create_and_run_threads_for_multiT_multiP(process_name,payload,counter,process_work_queue,data_dict,log_queue,worker_configurer):
     thread_list = []
-    num_threads_created = 0
+    num_threads_created_for_multiP = 0
     if not run_all_tasks_locally:
         logger.error("[Error]: DAG_executor_driver: create_and_run_threads_for_multiT_multiP: multithreaded multiprocessing loop but not run_all_tasks_locally")
     logger.debug("DAG_executor_driver: create_and_run_threads_for_multiT_multiP: Starting threads for multhreaded multipocessing.")
-    while True:
+    iteration = 1
+    #while True:
+    while num_threads_created_for_multiP < num_threads_for_multithreaded_multiprocessing:
+        logger.debug(process_name + ": iterate: " + str(iteration))
         try:
+            DAG_exec_state = None
             payload = {
+                "DAG_executor_state": DAG_exec_state
             }
-            thread_name = process_name+"_thread"+str(num_threads_created+1)
-            t = Process(target=DAG_executor.DAG_executor_processes, name=thread_name, args=(payload,counter,process_work_queue,data_dict,log_queue,worker_configurer,))
-            t.start()
-            thread_list.append(t)
-            num_threads_created += 1                      
+            thread_name = process_name+"_thread"+str(num_threads_created_for_multiP+1)
+            thread = threading.Thread(target=DAG_executor.DAG_executor_processes, name=(thread_name), args=(payload,counter,log_queue,worker_configurer,))
+            #t = Process(target=DAG_executor.DAG_executor_processes, name=thread_name, args=(payload,counter,process_work_queue,data_dict,log_queue,worker_configurer,))t.start()
+            thread_list.append(thread)
+            thread.start()
+            num_threads_created_for_multiP += 1 
+            logger.debug(process_name + ": iteration: " + str(iteration) + ": num_threads_created_for_multiP: " + str(num_threads_created_for_multiP)
+                + " num_threads_for_multithreaded_multiprocessing: " + str(num_threads_for_multithreaded_multiprocessing))
+            #if num_threads_created_for_multiP == num_threads_for_multithreaded_multiprocessing:
+            #    logger.debug(process_name + " breaking")
+            #    break     
+            iteration += 1
         except Exception as ex:
-            logger.debug("[ERROR] DAG_executor_driver: create_and_run_threads_for_multiT_multiP: Failed to start tread for multithreaded multiprocessing " + "thread_multitheaded_multiproc_" + str(num_threads_created + 1))
+            logger.debug("[ERROR] DAG_executor_driver: create_and_run_threads_for_multiT_multiP: Failed to start tread for multithreaded multiprocessing " + "thread_multitheaded_multiproc_" + str(num_threads_created_for_multiP + 1))
             logger.debug(ex)
 
-        if num_threads_created == num_threads_for_multithreaded_multiprocessing:
-            break 
+    logger.debug("DAG_executor_driver: create_and_run_threads_for_multiT_multiP: "
+        + process_name + " joining workers.")
+    for thread in thread_list:
+        thread.join()	
 
-        logger.debug("DAG_executor_driver: create_and_run_threads_for_multiT_multiP: joining workers.")
-        for thread in thread_list:
-            thread.join()	
-
-        # return and join multithreaded_multiprocessing_processes
+    # return and join multithreaded_multiprocessing_processes
 
 #def create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,counter,process_work_queue,data_dict,log_queue,worker_configurer):
 def create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,counter,log_queue,worker_configurer):
 
     logger.debug("DAG_executor_driver: Starting multi processors for multhreaded multipocessing.")
+    iteration = 1
     while True:
+        logger.debug("create processes iteration: " + str(iteration))
+        iteration += 1
          # asserts:
         if not run_all_tasks_locally:
             logger.error("[Error]: multithreaded multiprocessing loop but not run_all_tasks_locally")
         if not using_workers:
             logger.debug("[ERROR] DAG_executor_driver: Starting multi processes for multithreaded multiprocessing but using_workers is false.")
+
         try:
             payload = {
             }
@@ -758,12 +774,16 @@ def create_multithreaded_multiprocessing_processes(num_processes_created_for_mul
             proc.start()
             multithreaded_multiprocessing_process_list.append(proc)
             num_processes_created_for_multithreaded_multiprocessing += 1                      
+
+            logger.debug("num_processes_created_for_multithreaded_multiprocessing: " + str(num_processes_created_for_multithreaded_multiprocessing)
+                + " num_workers: " + str(num_workers))
+            if num_processes_created_for_multithreaded_multiprocessing == num_workers:
+                logger.debug("process creation loop breaking")
+                break 
+
         except Exception as ex:
             logger.debug("[ERROR] DAG_executor_driver: Failed to start worker process for multithreaded multiprocessing " + "Worker_process_multithreaded_multiproc_" + str(num_processes_created_for_multithreaded_multiprocessing + 1))
             logger.debug(ex)
-
-        if num_processes_created_for_multithreaded_multiprocessing == num_workers:
-            break 
 
     return num_processes_created_for_multithreaded_multiprocessing
 

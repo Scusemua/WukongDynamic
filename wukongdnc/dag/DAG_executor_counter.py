@@ -3,7 +3,7 @@ from .DAG_executor_constants import using_threads_not_processes, using_workers
 
 # When using threads, this is a global counter used to atomically count the number
 # of tasks that have been executed. When using multiprocessing, the DAG_executor_driver
-# create a CounterMP object that is shaed by the processes.
+# create a CounterMP object that is shared by the processes.
 
 class Counter(object):
     def __init__(self,initial_value=0):
