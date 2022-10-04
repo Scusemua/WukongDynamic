@@ -1317,7 +1317,8 @@ def DAG_executor_processes(payload,counter,log_queue, configurer):
     logger = logging.getLogger("multiP")
     logger.setLevel(logging.DEBUG)
     proc_name = multiprocessing.current_process().name
-    logger.debug(proc_name + ": started.")
+    thread_name = threading.current_thread().name
+    logger.debug("proc " + proc_name + " " + " thread " + thread_name + ": started.")
 
     if not using_workers:
         logger.error("Error: DAG_executor_processes: executing multiprocesses but using_workers is false.")
