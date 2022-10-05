@@ -17,7 +17,12 @@ logger.addHandler(ch)
 def create_and_run_threads_for_multiT_multiP(process_name,payload,counter,log_queue,worker_configurer):
     # create, start, and join the threads in the thread pool for a multi process
 #def create_and_run_threads_for_multiT_multiP(process_name,payload,counter,process_work_queue,data_dict,log_queue,worker_configurer):
-    
+
+    global logger
+    worker_configurer(log_queue)
+    logger = logging.getLogger("multiP")
+    logger.setLevel(logging.DEBUG)
+
     logger.debug(process_name + ": multiT_multiP")
 
 
@@ -36,7 +41,9 @@ def create_and_run_threads_for_multiT_multiP(process_name,payload,counter,log_qu
                 "DAG_executor_state": DAG_exec_state
             }
             thread_name = process_name+"_thread"+str(num_threads_created_for_multiP+1)
-            thread = threading.Thread(target=DAG_executor.DAG_executor_processes, name=(thread_name), args=(payload,counter,log_queue,worker_configurer,))
+            #thread = threading.Thread(target=DAG_executor.DAG_executor_processes, name=(thread_name), args=(payload,counter,log_queue,worker_configurer,))
+            thread = threading.Thread(target=DAG_executor.DAG_executor_processes, name=(thread_name), args=(payload,counter,logger,worker_configurer,))
+
             thread_list.append(thread)
             #thread.start()
             num_threads_created_for_multiP += 1 
@@ -57,6 +64,7 @@ def create_and_run_threads_for_multiT_multiP(process_name,payload,counter,log_qu
 
     for thread in thread_list:
         thread.start()
+
     for thread in thread_list:
         thread.join()	
 
