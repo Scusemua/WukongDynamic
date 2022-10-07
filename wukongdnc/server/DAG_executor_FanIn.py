@@ -88,7 +88,6 @@ class DAG_executor_FanIn(MonitorSU):
         super().enter_monitor(method_name = "fan_in")
         logger.debug("Fan-in %s entered monitor in fan_in()" % self.monitor_name)
         logger.debug("fan_in() " + str(self.monitor_name) + " entered monitor. self._num_calling = " + str(self._num_calling) + ", self._n=" + str(self._n))
-        logger.debug("fooo")
         
         if self._num_calling < (self._n - 1):
             logger.debug("Fan-in %s calling _go.wait_c() from FanIn" % self.monitor_name)

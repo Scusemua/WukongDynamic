@@ -868,11 +868,17 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
     worker_needs_input = using_workers
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
+
+
         thread_name = threading.current_thread().name
         if not store_fanins_faninNBs_locally:
             logger.debug("DAG_executor " + thread_name + " connecting to TCP Server at %s." % str(TCP_SERVER_IP))
             websocket.connect(TCP_SERVER_IP)
             logger.debug("DAG_executor " + thread_name + " successfully connected to TCP Server.")
+
+        # on the client side
+        #print("socketname: " + websocket.getsockname())   # ->  (127.0.0.1,26386)
+        #print(websocket.getpeername())   # ->  (127.0.0.1, 8888)
 
         # Fun with Python: work_queue is the global work_queue that we import ...
         global work_queue
@@ -960,7 +966,7 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     #rhc: commented out for MM
                     #logger.debug("DAG_executor: Worker accessed work_queue: process state: ") # + str(DAG_executor_state.state))
                 else:
-                    logger.debug("DAG_executor: Worker doesn't access work_queue")
+                    logger.debug(thread_name + 6 "DAG_executor: Worker doesn't access work_queue")
                     #rhc: commented out for 
                     logger.debug("**********************" + thread_name + " process state: " + str(DAG_executor_state.state))
                 
@@ -971,10 +977,12 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                 if num_tasks_executed == num_tasks_to_execute:
                     #thread_work_queue.put(-1)
                     if not using_threads_not_processes:
+                        logger.debug(thread_name + ": DAG_executor: depositing -1 in work queue.")
                         work_tuple = (-1,None)
                         #work_queue.put(-1)
                         work_queue.put(work_tuple)
                     else:
+                        logger.debug(thread_name + ": DAG_executor: depositing -1 in work queue.")
                         #thread_work_queue.put(-1)
                         work_tuple = (-1,None)
                         #work_queue.put(-1)
@@ -982,7 +990,7 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     #return
 
 ##rhc
-            logger.debug ("access DAG_map with state " + str(DAG_executor_state.state))
+            logger.debug (thread_name + ": access DAG_map with state " + str(DAG_executor_state.state))
             state_info = DAG_map[DAG_executor_state.state]
             ##logger.debug ("access DAG_map with state " + str(state))
             ##state_info = DAG_info.DAG_map[state]

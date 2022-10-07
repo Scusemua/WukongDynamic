@@ -29,6 +29,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         
         while True:
             logger.info("[HANDLER] Recieved one request from {}".format(self.client_address[0]))
+            logger.info("[HANDLER] Recieved one request from {}".format(self.client_address[1]))
 
             self.action_handlers = {
                 "create": self.create_obj,
