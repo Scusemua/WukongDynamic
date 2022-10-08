@@ -45,14 +45,17 @@ def send_object(obj, websocket):
     #rhc
     #logger.debug("send_object: Will be sending a message of size %d bytes." % len(obj))
     
+    thread_name = threading.current_thread().name
+    logger.debug(thread_name + ": send_object: thread " + thread_name + ": cloudpickle.loads(data)")   
     # First, we send the number of bytes that we're going to send.
-    logger.debug("send_object: len obj: " + str(len(obj)))
+    logger.debug(thread_name + ": send_object: len obj: " + str(len(obj)))
     # send_object: len obj: 278522 needs 3 bytes
 
     websocket.sendall(len(obj).to_bytes(4, byteorder='big'))
 
     # Next, we send the serialized object itself. 
     websocket.sendall(obj)
+    logger.debug(thread_name + ": sent object: thread " + thread_name + ": cloudpickle.loads(data)") 
 
 def recv_object(websocket):
     """
@@ -68,18 +71,22 @@ def recv_object(websocket):
             Socket connected to a remote client.    
     """
     # First, we receive the number of bytes of the incoming serialized object.
-    
+
+    thread_name = threading.current_thread().name
+
     # rhc
     incoming_size = websocket.recv(4)
     # Convert the bytes representing the size of the incoming serialized object to an integer.
     incoming_size = int.from_bytes(incoming_size, 'big')
     #rhc
-    #logger.debug("recv_object: Will receive another message of size %d bytes" % incoming_size)
+    logger.debug(thread_name + ": recv_object: Will receive another message of size %d bytes" % incoming_size)
     data = bytearray()
 
     while len(data) < incoming_size:
         # Finally, we read the serialized object itself.
+        logger.debug(thread_name + ": start recv_object rcv") 
         new_data = websocket.recv(incoming_size - len(data)).strip()
+        logger.debug(thread_name + ": recv_object received") 
 
         if not new_data:
             break 
@@ -88,7 +95,9 @@ def recv_object(websocket):
         #logger.debug("recv_object: starting read %d bytes from TCP server." % len(new_data))
         data.extend(new_data)
         #logger.debug("recv_object: end-of read %d/%d bytes from TCP server." % (len(data), incoming_size))
-    
+
+        logger.debug(thread_name + ": returning from recv_object rcv") 
+
     return data 
 
 def synchronize_sync(websocket, op, name, method_name, state):
@@ -125,19 +134,21 @@ def synchronize_sync(websocket, op, name, method_name, state):
         "id": msg_id
     }
     #rhc
-    #logger.debug("synchronize_sync: Fan-in ID %s calling %s. Message ID=%s" % (name, op, msg_id))
+    thread_name = threading.current_thread().name
+    logger.debug(thread_name + ": synchronize_sync: Fan-in ID %s calling send_object %s. Message ID=%s" % (name, op, msg_id))
     msg = json.dumps(message).encode('utf-8')
     send_object(msg, websocket)
+    logger.debug(thread_name + ": synchronize_sync: sent object successful, calling receive object.")
     data = recv_object(websocket)               # Should just be a serialized state object.
+    logger.debug(thread_name + ": synchronize_sync: receive object succesful.")
     #logger.debug("Received %d byte return value from server: %s" % (len(data), str(data)))
 
-    proc_name = multiprocessing.current_process().name
-    thread_name = threading.current_thread().name
-    logger.debug("synchronize_sync: proc " + proc_name + " " + " thread " + thread_name + ": cloudpickle.loads(data)")
 
+    logger.debug("synchronize_sync: thread " + thread_name + ": cloudpickle.loads(data)")
+    logger.debug("synchronize_sync: thread " + thread_name + ": data is " + str(data))
     state_from_server = cloudpickle.loads(data) # `state_from_server` is of type State
-    logger.debug("synchronize_sync: proc " + proc_name + " " + " thread " + thread_name + " successful")
-    #ogger.debug("Fan-in ID %s received return value from server in synchronize_sync: %s" % (name, str(state_from_server.return_value)))
+    logger.debug("synchronize_sync: thread " + thread_name + " successful")
+    #logger.debug("Fan-in ID %s received return value from server in synchronize_sync: %s" % (name, str(state_from_server.return_value)))
 
     return state_from_server
 
@@ -175,9 +186,13 @@ def synchronize_async(websocket, op, name, method_name, state):
         "id": msg_id
     }
     #rhc
+    thread_name = threading.current_thread().name
+ 
     #logger.debug("synchronize_async: Calling %s. Message ID=%s" % (op, msg_id))
     msg = json.dumps(message).encode('utf-8')
+    logger.debug(thread_name + ": synchronize_async: send_object")
     send_object(msg, websocket)
+    logger.debug("synchronize_async: thread " + thread_name + " send_object successful")
 
 def synchronize_async_terminate(websocket: socket.socket, op: str, name: str, method_name: str, state: State):
     """
@@ -357,11 +372,10 @@ def synchronize_process_faninNBs_batch(websocket, op, type, name, state):
             Our current state.
     """
 
-    proc_name = multiprocessing.current_process().name
     thread_name = threading.current_thread().name
  
     msg_id = str(uuid.uuid4())
-    logger.debug("synchronize_process_faninNBs_batch: proc: " + proc_name + " thread: " + thread_name + ": Sending 'synchronize_process_faninNBs_batch' message to server. Op='%s', type='%s', id='%s', state=%s" % (op, type, msg_id, state))
+    logger.debug(thread_name + ": synchronize_process_faninNBs_batch: Sending synchronize_process_faninNBs_batch message to server. Op='%s', type='%s', id='%s', state=%s" % (op, type, msg_id, state))
 
     # we set state.keyword_arguments before call to create()
     message = {
@@ -375,12 +389,13 @@ def synchronize_process_faninNBs_batch(websocket, op, type, name, state):
     msg = json.dumps(message).encode('utf-8')
     send_object(msg, websocket)
 
-    logger.debug("synchronize_process_faninNBs_batch: proc: " + proc_name + " thread: " + thread_name + " Sent 'synchronize_process_faninNBs_batch' message to server")
+    logger.debug(thread_name + ": synchronize_process_faninNBs_batch: Sent 'synchronize_process_faninNBs_batch' message to server")
 
     # Receive data. This should just be an ACK, as the TCP server will 'ACK' our create() calls.
     data = recv_object(websocket)
+    logger.debug(thread_name + ": synchronize_process_faninNBs_batch: data is " + str(data))
     state_from_server = cloudpickle.loads(data) # `state_from_server` is of type State
-    logger.debug("synchronize_process_faninNBs_batch: proc: " + proc_name + " thread: " + thread_name + " successfully unpickled")
+    logger.debug(thread_name + ": synchronize_process_faninNBs_batch: successfully unpickled")
 
     return state_from_server
 

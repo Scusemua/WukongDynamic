@@ -966,7 +966,7 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     #rhc: commented out for MM
                     #logger.debug("DAG_executor: Worker accessed work_queue: process state: ") # + str(DAG_executor_state.state))
                 else:
-                    logger.debug(thread_name + 6 "DAG_executor: Worker doesn't access work_queue")
+                    logger.debug(thread_name + "DAG_executor: Worker doesn't access work_queue")
                     #rhc: commented out for 
                     logger.debug("**********************" + thread_name + " process state: " + str(DAG_executor_state.state))
                 
@@ -1258,8 +1258,10 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                 ##logger.debug("1state " + str(state) + " after executing task " +  state_info.task_name + " has no fanouts, fanins, or faninNBs; return")
                 #Note: setting worker_needs_input = True must be guarded by using_workers
                 if using_workers:
+                    logger.debug(thread_name + " set worker_needs_input to true")
                     worker_needs_input = True
                 else:
+                    logger.debug(thread_name + " return")
                     return
 
 

@@ -44,7 +44,9 @@ class TCPHandler(socketserver.StreamRequestHandler):
             #logger.info("Thread Name:{}".format(threading.current_thread().name))
 
             try:
+                logger.debug("[HANDLER] call receive_object")
                 data = self.recv_object()
+                logger.debug("[HANDLER] receive_object successful")
 
                 if data is None:
                     logger.warning("recv_object() returned None. Exiting handler now.")
@@ -54,13 +56,19 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 message_id = json_message["id"]
                 logger.debug("[HANDLER] Received message (size=%d bytes) from client %s with ID=%s" % (len(data), self.client_address[0], message_id))
                 action = json_message.get("op", None)
+                logger.debug("[HANDLER] for client with ID=" + message_id + " action is: " + action)
+ 
                 self.action_handlers[action](message = json_message)
             except ConnectionResetError as ex:
                 logger.error(ex)
+                logger.debug("Error in tcp_handler")
+                logger.debug(ex)
                 logger.error(traceback.format_exc())
                 return 
             except Exception as ex:
                 logger.error(ex)
+                logger.debug("Error in tcp_handler")
+                logger.debug(ex)
                 logger.error(traceback.format_exc())
 
     def _get_synchronizer_name(self, type_name = None, name = None):
@@ -436,16 +444,24 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
         The TCP server uses a "streaming" API that is implemented using file handles (or rather the API looks like we're just using file handles).
         """
+
+        logger.debug("receive_object: Do self.rfile.read(4)")
         try:
             # Read the size of the incoming serialized object.
             incoming_size = self.rfile.read(4) 
         except ConnectionAbortedError as ex:
+            logger.debug("Error in recv_object self.rfile.read(4)")
+            logger.debug(repr(ex))
             logger.error("Established connection aborted while reading incoming size.")
             logger.error(repr(ex))
             return None 
 
+        logger.debug("receive_object self.rfile.read(4) successful")
+
         # Convert bytes of size to integer.
         incoming_size = int.from_bytes(incoming_size, 'big')
+
+        logger.debug("recv_object int.from_bytes successful")
 
         if incoming_size == 0:
             logger.debug("Incoming size is 0. Client is expected to have disconnected.")
@@ -455,7 +471,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             logger.error("Incoming size < 0: " + incoming_size + ". An error might have occurred...")
             return None 
 
-        logger.info("Will receive another message of size %d bytes" % incoming_size)
+        logger.debug("recv_object: Will receive another message of size %d bytes" % incoming_size)
 
         data = bytearray()
         try:
@@ -467,7 +483,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     break 
 
                 data.extend(new_data)
-                logger.debug("Have read %d/%d bytes from remote client." % (len(data), incoming_size))
+                logger.debug("recv_object: have read %d/%d bytes from remote client." % (len(data), incoming_size))
         except ConnectionAbortedError as ex:
             logger.error("Established connection aborted while reading data.")
             logger.error(repr(ex))
