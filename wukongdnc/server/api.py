@@ -6,7 +6,6 @@ import cloudpickle
 #import base64
 import json 
 #import redis 
-import multiprocessing
 import threading
 
 #from threading import Thread 
@@ -45,8 +44,7 @@ def send_object(obj, websocket):
     #rhc
     #logger.debug("send_object: Will be sending a message of size %d bytes." % len(obj))
     
-    thread_name = threading.current_thread().name
-    logger.debug(thread_name + ": send_object: thread " + thread_name + ": cloudpickle.loads(data)")   
+    thread_name = threading.current_thread().name  
     # First, we send the number of bytes that we're going to send.
     logger.debug(thread_name + ": send_object: len obj: " + str(len(obj)))
     # send_object: len obj: 278522 needs 3 bytes
@@ -144,10 +142,10 @@ def synchronize_sync(websocket, op, name, method_name, state):
     #logger.debug("Received %d byte return value from server: %s" % (len(data), str(data)))
 
 
-    logger.debug("synchronize_sync: thread " + thread_name + ": cloudpickle.loads(data)")
-    logger.debug("synchronize_sync: thread " + thread_name + ": data is " + str(data))
+    logger.debug(thread_name+ ":synchronize_sync: cloudpickle.loads(data)")
+    logger.debug(thread_name + ": synchronize_sync: data is " + str(data))
     state_from_server = cloudpickle.loads(data) # `state_from_server` is of type State
-    logger.debug("synchronize_sync: thread " + thread_name + " successful")
+    logger.debug(thread_name+ ": synchronize_sync: successful")
     #logger.debug("Fan-in ID %s received return value from server in synchronize_sync: %s" % (name, str(state_from_server.return_value)))
 
     return state_from_server

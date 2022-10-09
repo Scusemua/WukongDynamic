@@ -21,20 +21,22 @@ This is the version of the client code that I've been running within an AWS Lamb
 I've updated it to keep it consistent with the changes we've been making.
 """
 
+# These are out of date
+"""
 def send_object(obj, websocket):
-    """
-    Send obj to a remote entity via the given websocket.
-    The TCP server uses a different API (streaming via file handles), so it's implemented differently. 
-    This different API is in tcp_server.py.    
+    
+    #Send obj to a remote entity via the given websocket.
+    #The TCP server uses a different API (streaming via file handles), so it's implemented differently. 
+    #This different API is in tcp_server.py.    
 
-    Arguments:
-    ----------
-        obj (bytes):
-            The object to be sent. Should already be serialized via cloudpickle.dumps().
+    #Arguments:
+    #----------
+    #    obj (bytes):
+    #        The object to be sent. Should already be serialized via cloudpickle.dumps().
         
-        websocket (socket.socket):
-            Socket connected to a remote client.
-    """
+    #    websocket (socket.socket):
+    #       Socket connected to a remote client.
+
     print("Will be sending a message of size %d bytes." % len(obj))
     # First, we send the number of bytes that we're going to send.
     websocket.sendall(len(obj).to_bytes(4, byteorder='big'))
@@ -42,7 +44,7 @@ def send_object(obj, websocket):
     websocket.sendall(obj)
 
 def recv_object(websocket):
-    """
+
     Receive an object from a remote entity via the given websocket.
 
     This is used by clients. There's another recv_object() function in TCP server.
@@ -53,7 +55,7 @@ def recv_object(websocket):
     ----------
         websocket (socket.socket):
             Socket connected to a remote client.    
-    """
+    
     # First, we receive the number of bytes of the incoming serialized object.
     incoming_size = websocket.recv(2)
     # Convert the bytes representing the size of the incoming serialized object to an integer.
@@ -61,6 +63,7 @@ def recv_object(websocket):
     print("Will receive another message of size %d bytes" % incoming_size)
     # Finally, we read the serialized object itself.
     return websocket.recv(incoming_size).strip()
+"""
 
 def bounded_buffer_task(taskID, function_name, websocket):
     state = State(ID = function_name)
