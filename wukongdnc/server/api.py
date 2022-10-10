@@ -7,6 +7,7 @@ import cloudpickle
 import json 
 #import redis 
 import threading
+import time
 
 #from threading import Thread 
 
@@ -48,9 +49,9 @@ def send_object(obj, websocket):
     # First, we send the number of bytes that we're going to send.
     logger.debug(thread_name + ": send_object: len obj: " + str(len(obj)))
     # send_object: len obj: 278522 needs 3 bytes
-
+    time.sleep(0.6)
     websocket.sendall(len(obj).to_bytes(4, byteorder='big'))
-
+    time.sleep(0.6)
     # Next, we send the serialized object itself. 
     websocket.sendall(obj)
     logger.debug(thread_name + ": sent object: thread " + thread_name + ": cloudpickle.loads(data)") 
@@ -135,15 +136,16 @@ def synchronize_sync(websocket, op, name, method_name, state):
     thread_name = threading.current_thread().name
     logger.debug(thread_name + ": synchronize_sync: Fan-in ID %s calling send_object %s. Message ID=%s" % (name, op, msg_id))
     msg = json.dumps(message).encode('utf-8')
+    logger.debug(thread_name + ": synchronize_sync: msg to send: " + str(msg))
     send_object(msg, websocket)
     logger.debug(thread_name + ": synchronize_sync: sent object successful, calling receive object.")
     data = recv_object(websocket)               # Should just be a serialized state object.
     logger.debug(thread_name + ": synchronize_sync: receive object succesful.")
     #logger.debug("Received %d byte return value from server: %s" % (len(data), str(data)))
 
-
-    logger.debug(thread_name+ ":synchronize_sync: cloudpickle.loads(data)")
     logger.debug(thread_name + ": synchronize_sync: data is " + str(data))
+    logger.debug(thread_name+ ":synchronize_sync: cloudpickle.loads(data)")
+
     state_from_server = cloudpickle.loads(data) # `state_from_server` is of type State
     logger.debug(thread_name+ ": synchronize_sync: successful")
     #logger.debug("Fan-in ID %s received return value from server in synchronize_sync: %s" % (name, str(state_from_server.return_value)))

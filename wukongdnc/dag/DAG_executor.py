@@ -923,7 +923,8 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
 
                     else:
                         # blocking call
-                        #DAG_executor_state.state = work_queue.get()  
+                        #DAG_executor_state.state = work_queue.get() 
+                        logger.debug("work_loop: get work for thread " + thread_name + " queue length:" + str(work_queue.qsize()))
                         work_tuple = work_queue.get()
                         DAG_executor_state.state = work_tuple[0]
                         dict_of_results = work_tuple[1]
@@ -940,7 +941,7 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     logger.debug("**********************withdrawn state for thread: " + thread_name + " :" + str(DAG_executor_state.state))
 
                     if DAG_executor_state.state == -1:
-                        logger.debug("DAG_executor: state is -1 so returning.")
+                        logger.debug("DAG_executor: state is -1 so deposit another -1 and return.")
                         #Note: we are not passing the DAG_executor_state of this 
                         # DAG_executor to tcp_server. We are not using a work_queue
                         # with Lamdas so we are not going to woory about using the
@@ -977,12 +978,12 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                 if num_tasks_executed == num_tasks_to_execute:
                     #thread_work_queue.put(-1)
                     if not using_threads_not_processes:
-                        logger.debug(thread_name + ": DAG_executor: depositing -1 in work queue.")
+                        logger.debug(thread_name + ": DAG_executor: num_tasks_executed == num_tasks_to_execute: depositing -1 in work queue.")
                         work_tuple = (-1,None)
                         #work_queue.put(-1)
                         work_queue.put(work_tuple)
                     else:
-                        logger.debug(thread_name + ": DAG_executor: depositing -1 in work queue.")
+                        logger.debug(thread_name + ": DAG_executor: num_tasks_executed == num_tasks_to_execute: depositing -1 in work queue.")
                         #thread_work_queue.put(-1)
                         work_tuple = (-1,None)
                         #work_queue.put(-1)

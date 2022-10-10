@@ -459,154 +459,154 @@ def run():
                     if not using_threads_not_processes:
                         logger.error("[Error]: not using_workers but using processes.")
 
-        # FYI
-        logger.debug("DAG_executor_driver: DAG_leaf_tasks: " + str(DAG_leaf_tasks))
-        logger.debug("DAG_executor_driver: DAG_leaf_task_start_states: " + str(DAG_leaf_task_start_states))
-        #rhc: commented out for MM
-        #logger.debug("DAG_executor_driver: DAG_leaf_task_inputs: " + str(DAG_leaf_task_inputs))
+    # FYI
+    logger.debug("DAG_executor_driver: DAG_leaf_tasks: " + str(DAG_leaf_tasks))
+    logger.debug("DAG_executor_driver: DAG_leaf_task_start_states: " + str(DAG_leaf_task_start_states))
+    #rhc: commented out for MM
+    #logger.debug("DAG_executor_driver: DAG_leaf_task_inputs: " + str(DAG_leaf_task_inputs))
 
-        """
-        if using_workers:
-            # pool of worker threads or processes that withdraw work from a work_queue
-            if using_threads_not_processes: # pool of threads
-                # leaf task states (a task is identified by its state) are put in work_queue
-                for state in DAG_leaf_task_start_states:
-                    thread_work_queue.put(state)
-            else:   # pool of processes
-                for state in DAG_leaf_task_start_states:
-                    dummy_state = DAG_executor_State()
-                    logger.debug("dummy_state: " + str(dummy_state))
+    """
+    if using_workers:
+        # pool of worker threads or processes that withdraw work from a work_queue
+        if using_threads_not_processes: # pool of threads
+            # leaf task states (a task is identified by its state) are put in work_queue
+            for state in DAG_leaf_task_start_states:
+                thread_work_queue.put(state)
+        else:   # pool of processes
+            for state in DAG_leaf_task_start_states:
+                dummy_state = DAG_executor_State()
+                logger.debug("dummy_state: " + str(dummy_state))
 #Error: moving this up
-                    process_work_queue.put(dummy_state,state)
-        """
-        # Done with process_work_queue 
-        process_work_queue = None
+                process_work_queue.put(dummy_state,state)
+    """
+    # Done with process_work_queue 
+    process_work_queue = None
 
-        #print("work_queue:")
-        #for start_state in X_work_queue.queue:
-        #   print(start_state)
+    #print("work_queue:")
+    #for start_state in X_work_queue.queue:
+    #   print(start_state)
 
-        if using_workers and not use_multithreaded_multiprocessing and run_all_tasks_locally:
-            # keep list of threads/processes in pool so we can join() them
-            thread_list = []
+    if using_workers and not use_multithreaded_multiprocessing and run_all_tasks_locally:
+        # keep list of threads/processes in pool so we can join() them
+        thread_list = []
 
-        # count of threads/processes created. We will create DAG_executor_constants.py num_workers
-        # if we are using_workers. We will create some number of threads if we are simulating the 
-        # use of creating Lambdas, e.g., at fan-out points.
-        if not use_multithreaded_multiprocessing and run_all_tasks_locally:
-            num_threads_created = 0
+    # count of threads/processes created. We will create DAG_executor_constants.py num_workers
+    # if we are using_workers. We will create some number of threads if we are simulating the 
+    # use of creating Lambdas, e.g., at fan-out points.
+    if not use_multithreaded_multiprocessing and run_all_tasks_locally:
+        num_threads_created = 0
 
-        if run_all_tasks_locally and not using_threads_not_processes:
-            # multiprocessing. processes share a counter that counts the number of tasks that have been 
-            # executed
-            counter = CounterMP()
-            # used by a logger for multiprocessing
-            log_queue = multiprocessing.Queue(-1)
-            # used for multiprocessor logging - receives log messages from processes
-            listener = multiprocessing.Process(target=listener_process, args=(log_queue, listener_configurer))
-            listener.start()    # joined at the end
+    if run_all_tasks_locally and not using_threads_not_processes:
+        # multiprocessing. processes share a counter that counts the number of tasks that have been 
+        # executed
+        counter = CounterMP()
+        # used by a logger for multiprocessing
+        log_queue = multiprocessing.Queue(-1)
+        # used for multiprocessor logging - receives log messages from processes
+        listener = multiprocessing.Process(target=listener_process, args=(log_queue, listener_configurer))
+        listener.start()    # joined at the end
 
-        if use_multithreaded_multiprocessing:
-            # keep list of threads/processes in pool so we can join() them
-            multithreaded_multiprocessing_process_list = []
-            num_processes_created_for_multithreaded_multiprocessing = 0
+    if use_multithreaded_multiprocessing:
+        # keep list of threads/processes in pool so we can join() them
+        multithreaded_multiprocessing_process_list = []
+        num_processes_created_for_multithreaded_multiprocessing = 0
 
-        if use_multithreaded_multiprocessing:
-             #num_processes_created_for_multithreaded_multiprocessing = create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,counter,process_work_queue,data_dict,log_queue,worker_configurer)
-             num_processes_created_for_multithreaded_multiprocessing = create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,counter,log_queue,worker_configurer)
-        else: # multi threads or multi-processes, thread and processes may be workers using work_queue
-            # if we are not using lambdas, and we are not using a worker pool, create a thread for each
-            # leaf task. If we are not using lambdas but we are using a worker pool, create at least 
-            # one worker and at most num_worker workers. If we are using workers, there may be more
-            # leaf tasks than workers, but that is okay since we put all the leaf task states in the 
-            # work queue and the created workers will withdraw them.
-            for start_state, task_name, inp in zip(DAG_leaf_task_start_states, DAG_leaf_tasks, DAG_leaf_task_inputs):
+    if use_multithreaded_multiprocessing:
+            #num_processes_created_for_multithreaded_multiprocessing = create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,counter,process_work_queue,data_dict,log_queue,worker_configurer)
+            num_processes_created_for_multithreaded_multiprocessing = create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,counter,log_queue,worker_configurer)
+    else: # multi threads or multi-processes, thread and processes may be workers using work_queue
+        # if we are not using lambdas, and we are not using a worker pool, create a thread for each
+        # leaf task. If we are not using lambdas but we are using a worker pool, create at least 
+        # one worker and at most num_worker workers. If we are using workers, there may be more
+        # leaf tasks than workers, but that is okay since we put all the leaf task states in the 
+        # work queue and the created workers will withdraw them.
+        for start_state, task_name, inp in zip(DAG_leaf_task_start_states, DAG_leaf_tasks, DAG_leaf_task_inputs):
 
-                # The state of a DAG executor contains only one application specific member, which is the
-                # state number of the task to execute. Leaf task information is in DAG_leaf_task_start_states
-                # and DAG_leaf_tasks (which are the task names).
-                DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state)
-                logger.debug("DAG_executor_driver: Starting DAG_executor for task " + task_name)
+            # The state of a DAG executor contains only one application specific member, which is the
+            # state number of the task to execute. Leaf task information is in DAG_leaf_task_start_states
+            # and DAG_leaf_tasks (which are the task names).
+            DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state)
+            logger.debug("DAG_executor_driver: Starting DAG_executor for task " + task_name)
 
-                if run_all_tasks_locally:
-                    # not using Lambdas
-                    if using_threads_not_processes: # create threads
-                        try:
-                            if not using_workers:
-                                # pass the state/task the thread is to execute at the start of its DFS path
-                                DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state)
-                            else:
-                                # workers withdraw their work, i.e., starting state, from the work_queue
-                                DAG_exec_state = None
-                            logger.debug("DAG_executor_driver: Starting DAG_executor thread for leaf task " + task_name)
-                            payload = {
-                                # What's not in the payload: DAG_info: since threads/processes read this pickled 
-                                # file at the start of their execution. server: since this is a global variable
-                                # for the threads and processes. for processes it is Non since processes send
-                                # messages to the tcp_server, and tgus do not use the server object, which is 
-                                # used to simulate the tcp_server when running locally. Input: threads and processes
-                                # get their input from the data_dict. Note the lambdas will be invoked with their 
-                                # input in the payload and will put this input in their local data_dict.
-                                "DAG_executor_state": DAG_exec_state
-                            }
-                            # Note:
-                            # get the current thread instance
-                            # thread = current_thread()
-                            # report the name of the thread
-                            # print(thread.name)
-                            if using_workers:
-                                thread_name_prefix = "Worker_Thread_leaf_"
-                            else:
-                                thread_name_prefix = "Thread_leaf_"
-                            thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=(thread_name_prefix+"ss"+str(start_state)), args=(payload,))
-                            if using_workers:
-                                thread_list.append(thread)
-                            thread.start()
-                            num_threads_created += 1
-                        except Exception as ex:
-                            logger.debug("[ERROR] DAG_executor_driver: Failed to start DAG_executor thread for state " + start_state)
-                            logger.debug(ex)
-                    else:   # multiprocessing - must be using a process pool
-                        try:
-                            if not using_workers:
-                                logger.debug("[ERROR] DAG_executor_driver: Starting multi process leaf tasks but using_workers is false.")
-    
-                            logger.debug("DAG_executor_driver: Starting DAG_executor process for leaf task " + task_name)
-        
-                            payload = {
-                                # no payload. We do not need DAG_executor_state since worker processes withdraw
-                                # states from the work_queue
-                            }
-                            proc_name_prefix = "Worker_leaf_"
-                            # processes share these objects: counter,process_work_queue,data_dict,log_queue,worker_configurer.
-                            # The worker_configurer() funcion is used for multiprocess logging
-                            #proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,counter,process_work_queue,data_dict,log_queue,worker_configurer,))
-                            proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,counter,log_queue,worker_configurer,))
-                            proc.start()
-                            thread_list.append(proc)
-                            #thread.start()
-                            num_threads_created += 1
-                            #_thread.start_new_thread(DAG_executor.DAG_executor_task, (payload,))
-                        except Exception as ex:
-                            logger.debug("[ERROR] DAG_executor_driver: Failed to start DAG_executor process for state " + start_state)
-                            logger.debug(ex)     
-
-                    if using_workers and num_threads_created == num_workers:
-                        break
-                else:
+            if run_all_tasks_locally:
+                # not using Lambdas
+                if using_threads_not_processes: # create threads
                     try:
-                        logger.debug("DAG_executor_driver: Starting DAG_executor_lambda for leaf task " + task_name)
-                        lambda_DAG_exec_state = DAG_executor_State(function_name = "DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()), state = start_state)
-                        logger.debug ("DAG_executor_driver: lambda payload is DAG_info + " + str(start_state) + "," + str(inp))
-                        lambda_DAG_exec_state.restart = False      # starting new DAG_executor in state start_state_fanin_task
-                        lambda_DAG_exec_state.return_value = None
-                        lambda_DAG_exec_state.blocking = False            
-                        logger.info("DAG_executor_driver: Starting Lambda function %s." % lambda_DAG_exec_state.function_name)
- #4
-                        # No input "inp" for leaf tasks; the leaf task input is part of the state information
-                        # in the DAG_map in DAG_info.
-                        # Since we pass DAG_info to all the Lambda executors, we will null out the leaf task
-                        # input after we get it from DAG_info in the work loop.
+                        if not using_workers:
+                            # pass the state/task the thread is to execute at the start of its DFS path
+                            DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state)
+                        else:
+                            # workers withdraw their work, i.e., starting state, from the work_queue
+                            DAG_exec_state = None
+                        logger.debug("DAG_executor_driver: Starting DAG_executor thread for leaf task " + task_name)
+                        payload = {
+                            # What's not in the payload: DAG_info: since threads/processes read this pickled 
+                            # file at the start of their execution. server: since this is a global variable
+                            # for the threads and processes. for processes it is Non since processes send
+                            # messages to the tcp_server, and tgus do not use the server object, which is 
+                            # used to simulate the tcp_server when running locally. Input: threads and processes
+                            # get their input from the data_dict. Note the lambdas will be invoked with their 
+                            # input in the payload and will put this input in their local data_dict.
+                            "DAG_executor_state": DAG_exec_state
+                        }
+                        # Note:
+                        # get the current thread instance
+                        # thread = current_thread()
+                        # report the name of the thread
+                        # print(thread.name)
+                        if using_workers:
+                            thread_name_prefix = "Worker_Thread_leaf_"
+                        else:
+                            thread_name_prefix = "Thread_leaf_"
+                        thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=(thread_name_prefix+"ss"+str(start_state)), args=(payload,))
+                        if using_workers:
+                            thread_list.append(thread)
+                        thread.start()
+                        num_threads_created += 1
+                    except Exception as ex:
+                        logger.debug("[ERROR] DAG_executor_driver: Failed to start DAG_executor thread for state " + start_state)
+                        logger.debug(ex)
+                else:   # multiprocessing - must be using a process pool
+                    try:
+                        if not using_workers:
+                            logger.debug("[ERROR] DAG_executor_driver: Starting multi process leaf tasks but using_workers is false.")
+
+                        logger.debug("DAG_executor_driver: Starting DAG_executor process for leaf task " + task_name)
+    
+                        payload = {
+                            # no payload. We do not need DAG_executor_state since worker processes withdraw
+                            # states from the work_queue
+                        }
+                        proc_name_prefix = "Worker_leaf_"
+                        # processes share these objects: counter,process_work_queue,data_dict,log_queue,worker_configurer.
+                        # The worker_configurer() funcion is used for multiprocess logging
+                        #proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,counter,process_work_queue,data_dict,log_queue,worker_configurer,))
+                        proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,counter,log_queue,worker_configurer,))
+                        proc.start()
+                        thread_list.append(proc)
+                        #thread.start()
+                        num_threads_created += 1
+                        #_thread.start_new_thread(DAG_executor.DAG_executor_task, (payload,))
+                    except Exception as ex:
+                        logger.debug("[ERROR] DAG_executor_driver: Failed to start DAG_executor process for state " + start_state)
+                        logger.debug(ex)     
+
+                if using_workers and num_threads_created == num_workers:
+                    break
+            else:
+                try:
+                    logger.debug("DAG_executor_driver: Starting DAG_executor_lambda for leaf task " + task_name)
+                    lambda_DAG_exec_state = DAG_executor_State(function_name = "DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()), state = start_state)
+                    logger.debug ("DAG_executor_driver: lambda payload is DAG_info + " + str(start_state) + "," + str(inp))
+                    lambda_DAG_exec_state.restart = False      # starting new DAG_executor in state start_state_fanin_task
+                    lambda_DAG_exec_state.return_value = None
+                    lambda_DAG_exec_state.blocking = False            
+                    logger.info("DAG_executor_driver: Starting Lambda function %s." % lambda_DAG_exec_state.function_name)
+#4
+                    # No input "inp" for leaf tasks; the leaf task input is part of the state information
+                    # in the DAG_map in DAG_info.
+                    # Since we pass DAG_info to all the Lambda executors, we will null out the leaf task
+                    # input after we get it from DAG_info in the work loop.
 #ToDo: lambdas: use "inp" for leaf task input otherwise all leaf task Executors will receive all leaf task inputs
 # in the leaf_task_input s and in the state_info.task_inputs - both are nulled out at beginning of driver
 # when we aer using lambdas.
@@ -615,100 +615,100 @@ def run():
 # so every thread/process read all these inputs. This can be optimized if necessary, e.g., separate
 # files for leaf tasks and non-leaf tasks.
 
-                        payload = {
-                            "input": None,
-                            "DAG_executor_state": lambda_DAG_exec_state,
-                            "DAG_info": DAG_info
-                        }
+                    payload = {
+                        "input": None,
+                        "DAG_executor_state": lambda_DAG_exec_state,
+                        "DAG_info": DAG_info
+                    }
 
-                        invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor.DAG_executor_lambda")
-                    except Exception as ex:
-                        logger.debug("[ERROR] DAG_executor_driver: Failed to start DAG_executor Lambda.")
-                        logger.debug(ex)
+                    invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor.DAG_executor_lambda")
+                except Exception as ex:
+                    logger.debug("[ERROR] DAG_executor_driver: Failed to start DAG_executor Lambda.")
+                    logger.debug(ex)
 
-            # if the number of leaf tasks is less than number_workers, we need to create more workers
-            if using_workers and num_threads_created < num_workers:
-                # starting leaf tasks did not start num_workers workers so start num_workers-num_threads_created
-                # more threads/processes.
-                while True:
-                    logger.debug("DAG_executor_driver: Starting DAG_executor for non-leaf task.")
-                    if run_all_tasks_locally:
-                        if using_threads_not_processes:
-                            try:
-                                # Using workers so do not pass to them a start_state (use state = 0); 
-                                # they get their start state from the work_queue
-                                DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = 0)
-                                logger.debug("DAG_executor_driver: Starting DAG_executor worker for non-leaf task " + task_name)
-                                payload = {
-                                    "DAG_executor_state": DAG_exec_state
-                                }
-                                thread_name_prefix = "Worker_thread_non-leaf_"
-                                thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=(thread_name_prefix+str(start_state)), args=(payload,))
-                                thread_list.append(thread)
-                                thread.start()
-                                num_threads_created += 1
-                            except Exception as ex:
-                                logger.debug("[ERROR] DAG_executor_driver: Failed to start DAG_executor worker thread for non-leaf task " + task_name)
-                                logger.debug(ex)
-                        else:
-                            try:
-                                if not using_workers:
-                                    logger.debug("[ERROR] DAG_executor_driver: Starting multi process non-leaf tasks but using_workers is false.")
-                                
-                                logger.debug("DAG_executor_driver: Starting DAG_executor process for non-leaf task " + task_name)
-    
-                                payload = {
-                                }
-                                proc_name_prefix = "Worker_process_non-leaf_"
-                                #proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"p"+str(num_threads_created + 1)), args=(payload,counter,process_work_queue,data_dict,log_queue,worker_configurer,))
-                                proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"p"+str(num_threads_created + 1)), args=(payload,counter,log_queue,worker_configurer,))
-                                proc.start()
-                                thread_list.append(proc)
-                                num_threads_created += 1                      
-                            except Exception as ex:
-                                logger.debug("[ERROR] DAG_executor_driver: Failed to start DAG_executor worker process for non-leaf task " + task_name)
-                                logger.debug(ex)
-
-                        if using_workers and num_threads_created == num_workers:
-                            break 
+        # if the number of leaf tasks is less than number_workers, we need to create more workers
+        if using_workers and num_threads_created < num_workers:
+            # starting leaf tasks did not start num_workers workers so start num_workers-num_threads_created
+            # more threads/processes.
+            while True:
+                logger.debug("DAG_executor_driver: Starting DAG_executor for non-leaf task.")
+                if run_all_tasks_locally:
+                    if using_threads_not_processes:
+                        try:
+                            # Using workers so do not pass to them a start_state (use state = 0); 
+                            # they get their start state from the work_queue
+                            DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = 0)
+                            logger.debug("DAG_executor_driver: Starting DAG_executor worker for non-leaf task " + task_name)
+                            payload = {
+                                "DAG_executor_state": DAG_exec_state
+                            }
+                            thread_name_prefix = "Worker_thread_non-leaf_"
+                            thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=(thread_name_prefix+str(start_state)), args=(payload,))
+                            thread_list.append(thread)
+                            thread.start()
+                            num_threads_created += 1
+                        except Exception as ex:
+                            logger.debug("[ERROR] DAG_executor_driver: Failed to start DAG_executor worker thread for non-leaf task " + task_name)
+                            logger.debug(ex)
                     else:
-                        logger.error("DAG_executor_driver: worker (pool) threads/processes must run locally (no Lambdas)")
- 
-        if use_multithreaded_multiprocessing:
-            logger.debug("num_processes_created_for_multithreaded_multiprocessing: " + str(num_processes_created_for_multithreaded_multiprocessing))
-        else:
-            logger.debug("num_threads_created: " + str(num_threads_created))
-  
+                        try:
+                            if not using_workers:
+                                logger.debug("[ERROR] DAG_executor_driver: Starting multi process non-leaf tasks but using_workers is false.")
+                            
+                            logger.debug("DAG_executor_driver: Starting DAG_executor process for non-leaf task " + task_name)
 
-        if not use_multithreaded_multiprocessing:
-            if using_workers:
-                logger.debug("DAG_executor_driver: joining workers.")
-                for thread in thread_list:
-                    thread.join()	
+                            payload = {
+                            }
+                            proc_name_prefix = "Worker_process_non-leaf_"
+                            #proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"p"+str(num_threads_created + 1)), args=(payload,counter,process_work_queue,data_dict,log_queue,worker_configurer,))
+                            proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"p"+str(num_threads_created + 1)), args=(payload,counter,log_queue,worker_configurer,))
+                            proc.start()
+                            thread_list.append(proc)
+                            num_threads_created += 1                      
+                        except Exception as ex:
+                            logger.debug("[ERROR] DAG_executor_driver: Failed to start DAG_executor worker process for non-leaf task " + task_name)
+                            logger.debug(ex)
 
-            if run_all_tasks_locally and not using_threads_not_processes:
-                # using processes
-                logger.debug("DAG_executor_driver: joining log_queue listener process.")
-                log_queue.put_nowait(None)
-                listener.join()
-        else:   
-            # using multithreaded with procs as workers; we have already joined the threads in each worker process
-            logger.debug("DAG_executor_driver: joining multithreaded_multiprocessing processes.")
-            for proc in multithreaded_multiprocessing_process_list:
-                proc.join()
+                    if using_workers and num_threads_created == num_workers:
+                        break 
+                else:
+                    logger.error("DAG_executor_driver: worker (pool) threads/processes must run locally (no Lambdas)")
 
+    if use_multithreaded_multiprocessing:
+        logger.debug("num_processes_created_for_multithreaded_multiprocessing: " + str(num_processes_created_for_multithreaded_multiprocessing))
+    else:
+        logger.debug("num_threads_created: " + str(num_threads_created))
+
+
+    if not use_multithreaded_multiprocessing:
+        if using_workers:
+            logger.debug("DAG_executor_driver: joining workers.")
+            for thread in thread_list:
+                thread.join()	
+
+        if run_all_tasks_locally and not using_threads_not_processes:
+            # using processes
             logger.debug("DAG_executor_driver: joining log_queue listener process.")
             log_queue.put_nowait(None)
             listener.join()
+    else:   
+        # using multithreaded with procs as workers; we have already joined the threads in each worker process
+        logger.debug("DAG_executor_driver: joining multithreaded_multiprocessing processes.")
+        for proc in multithreaded_multiprocessing_process_list:
+            proc.join()
 
-        #Note: To verify Results, see the code below.
+        logger.debug("DAG_executor_driver: joining log_queue listener process.")
+        log_queue.put_nowait(None)
+        listener.join()
 
-        stop_time = time.time()
-        duration = stop_time - start_time
+    #Note: To verify Results, see the code below.
 
-        logger.debug("Sleeping 1.0")
-        time.sleep(3.0)
-        print("DAG_Execution finished in %f seconds." % duration)
+    stop_time = time.time()
+    duration = stop_time - start_time
+
+    logger.debug("Sleeping 1.0")
+    time.sleep(3.0)
+    print("DAG_Execution finished in %f seconds." % duration)
 		
     #ToDo:  close_all(websocket)
 

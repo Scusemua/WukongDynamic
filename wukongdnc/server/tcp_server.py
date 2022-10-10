@@ -51,7 +51,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 if data is None:
                     logger.warning("recv_object() returned None. Exiting handler now.")
                     return 
-
+                logger.debug("tcp_server: synchronize_sync: data is " + str(data))
                 json_message = json.loads(data)
                 message_id = json_message["id"]
                 logger.debug("[HANDLER] Received message (size=%d bytes) from client %s with ID=%s" % (len(data), self.client_address[0], message_id))
