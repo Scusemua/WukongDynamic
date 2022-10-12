@@ -477,9 +477,14 @@ class TCPHandler(socketserver.StreamRequestHandler):
         try:
             while len(data) < incoming_size:
                 # Read serialized object (now that we know how big it'll be).
-                new_data = self.rfile.read(incoming_size - len(data)).strip()
+                new_data = self.rfile.read(incoming_size - len(data)).strip() # Do we need to call .strip() here? What if we removed something we're not supposed to?
+                # Strip removes the leading and trailing bytes ASCII whitespace. I think it's probably fine, but I'm not sure.
 
                 if not new_data:
+                    # If we see this print a lot, then we may want to remove/comment-out the break and simply sleep for 1-10ms, then try reading again?
+                    # Maybe if we fail to read any new data after ~3 tries, then we give up? But maybe we're giving up too early (i.e., trying to read data,
+                    # finding no data to read, and giving up on the entire read immediately, rather than waiting and trying to read again).
+                    logger.warn("Stopped reading from socket early. Have read " + str(len(data)) + " bytes of a total expected " + str(incoming_size) + " bytes.")
                     break 
 
                 data.extend(new_data)
