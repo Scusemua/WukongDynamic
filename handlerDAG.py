@@ -1,16 +1,16 @@
 import logging 
-import base64
-import re 
-import socket
+#import base64
+#import re 
+#import socket
 import time 
 import redis 
-import uuid
+#import uuid
 
-import cloudpickle
-from wukongdnc.wukong.invoker import invoke_lambda
-from wukongdnc.server.state import State 
-from wukongdnc.server.api import synchronize_sync, synchronize_sync, synchronize_async_terminate
-from wukongdnc.constants import REDIS_IP_PRIVATE, TCP_SERVER_IP
+#import cloudpickle
+#from wukongdnc.wukong.invoker import invoke_lambda
+#from wukongdnc.server.state import State 
+#from wukongdnc.server.api import synchronize_sync
+from wukongdnc.constants import REDIS_IP_PRIVATE  #, TCP_SERVER_IP
 from wukongdnc.dag.DAG_executor import DAG_executor_lambda
 
 logger = logging.getLogger(__name__)
@@ -28,14 +28,20 @@ if root.handlers:
     for handler in root.handlers:
         handler.setFormatter(formatter)
 
+warm_resources = {
+	'cold_start_time': time.time(),
+	'invocation_count': 0,
+}
+
 def lambda_handler(event, context):
+    invocation_time = time.time()
+    warm_resources['invocation_count'] = warm_resources['invocation_count'] + 1
+    logger.debug(f'Invocation count: {warm_resources["invocation_count"]}, Seconds since cold start: {round(invocation_time - warm_resources["cold_start_time"], 1)}')
+
     start_time = time.time()
     rc = redis.Redis(host = REDIS_IP_PRIVATE, port = 6379)
 
-    logger.debug("Invocation received. event/payload: " + str(event))
-
-    logger.debug("Starting DAG_executor: payload is: " + str(event))
-
+    logger.debug("Invocation received. Starting DAG_executor_lambda: event/payload is: " + str(event))
     DAG_executor_lambda(event)
 				 
     end_time = time.time()

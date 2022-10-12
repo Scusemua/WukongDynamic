@@ -265,9 +265,6 @@ def run():
     else:
         DAG_leaf_task_inputs = copy.copy(DAG_info.get_DAG_leaf_task_inputs())
 #ToDo: lambdas:
-    # Combine this will else above
-    """
-    if using_lambdas:
         # Null out the task inputs in DAG_info since we pass DAG_info to all the lambda
         # executors and the leaf task inputs may be large.
         # Note: When we are using thread or process workers then the workers read 
@@ -282,7 +279,6 @@ def run():
             # Each leaf task's state has the leaf tasks's input. Null it out.
             state_info = DAG_map[start_state]
             state_info.task_inputs = None
-    """
 
     # FYI:
     print("DAG_map:")
@@ -510,10 +506,8 @@ def run():
         # keep list of threads/processes in pool so we can join() them
         multithreaded_multiprocessing_process_list = []
         num_processes_created_for_multithreaded_multiprocessing = 0
-
-    if use_multithreaded_multiprocessing:
-            #num_processes_created_for_multithreaded_multiprocessing = create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,counter,process_work_queue,data_dict,log_queue,worker_configurer)
-            num_processes_created_for_multithreaded_multiprocessing = create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,counter,log_queue,worker_configurer)
+        #num_processes_created_for_multithreaded_multiprocessing = create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,counter,process_work_queue,data_dict,log_queue,worker_configurer)
+        num_processes_created_for_multithreaded_multiprocessing = create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,counter,log_queue,worker_configurer)
     else: # multi threads or multi-processes, thread and processes may be workers using work_queue
         # if we are not using lambdas, and we are not using a worker pool, create a thread for each
         # leaf task. If we are not using lambdas but we are using a worker pool, create at least 
@@ -596,7 +590,7 @@ def run():
             else:
                 try:
                     logger.debug("DAG_executor_driver: Starting DAG_executor_lambda for leaf task " + task_name)
-                    lambda_DAG_exec_state = DAG_executor_State(function_name = "DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()), state = start_state)
+                    lambda_DAG_exec_state = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()), state = start_state)
                     logger.debug ("DAG_executor_driver: lambda payload is DAG_info + " + str(start_state) + "," + str(inp))
                     lambda_DAG_exec_state.restart = False      # starting new DAG_executor in state start_state_fanin_task
                     lambda_DAG_exec_state.return_value = None
@@ -616,12 +610,12 @@ def run():
 # files for leaf tasks and non-leaf tasks.
 
                     payload = {
-                        "input": None,
+                        "input": inp,
                         "DAG_executor_state": lambda_DAG_exec_state,
                         "DAG_info": DAG_info
                     }
 
-                    invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor.DAG_executor_lambda")
+                    invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor_lambda")
                 except Exception as ex:
                     logger.debug("[ERROR] DAG_executor_driver: Failed to start DAG_executor Lambda.")
                     logger.debug(ex)
@@ -679,27 +673,27 @@ def run():
     else:
         logger.debug("num_threads_created: " + str(num_threads_created))
 
+    if run_all_tasks_locally:
+        if not use_multithreaded_multiprocessing:
+            if using_workers:
+                logger.debug("DAG_executor_driver: joining workers.")
+                for thread in thread_list:
+                    thread.join()	
 
-    if not use_multithreaded_multiprocessing:
-        if using_workers:
-            logger.debug("DAG_executor_driver: joining workers.")
-            for thread in thread_list:
-                thread.join()	
-
-        if run_all_tasks_locally and not using_threads_not_processes:
-            # using processes
+            if not using_threads_not_processes:
+                # using processes and special process logger
+                logger.debug("DAG_executor_driver: joining log_queue listener process.")
+                log_queue.put_nowait(None)
+                listener.join()
+        else:   
+            # using multithreaded with procs as workers; we have already joined the threads in each worker process
+            logger.debug("DAG_executor_driver: joining multithreaded_multiprocessing processes.")
+            for proc in multithreaded_multiprocessing_process_list:
+                proc.join()
+            # using processes and special process logger
             logger.debug("DAG_executor_driver: joining log_queue listener process.")
             log_queue.put_nowait(None)
             listener.join()
-    else:   
-        # using multithreaded with procs as workers; we have already joined the threads in each worker process
-        logger.debug("DAG_executor_driver: joining multithreaded_multiprocessing processes.")
-        for proc in multithreaded_multiprocessing_process_list:
-            proc.join()
-
-        logger.debug("DAG_executor_driver: joining log_queue listener process.")
-        log_queue.put_nowait(None)
-        listener.join()
 
     #Note: To verify Results, see the code below.
 

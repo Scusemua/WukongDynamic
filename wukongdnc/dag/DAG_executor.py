@@ -654,9 +654,9 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                         # just put task outputs in the data_dict. We pass the outputs to the fanout
                         # tasks but they do not use "inp" since the "inp" is already in the data
                         # dict.
-
-#ToDo: Lambdas: The driver just passes the dag executor state. We do not use
-                        # server, we input DAG_info from file. We do not currently use the input, 
+                        # The driver just passes the dag executor state. We do not use
+                        # server, we input DAG_info from file. 
+#ToDO: lambdas:         # We do not currently use the input, 
                         # but may use it to be consistent with lambdas: ==> pass state and input?
 
                         #"input": output,
@@ -673,7 +673,7 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                     logger.debug("Starting fanout DAG_executor Lambda for " + name)
                     fanout_task_start_state = DAG_states[name]
                     # create a new DAG_executor_State object so no DAG_executor_State object is shared by fanout/faninNB threads in a local test.
-                    lambda_DAG_executor_state = DAG_executor_State(state = fanout_task_start_state)
+                    lambda_DAG_executor_state = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()), state = fanout_task_start_state)
                     logger.debug ("payload is DAG_info + " + str(fanout_task_start_state) + "," + str(output))
                     lambda_DAG_executor_state.restart = False      # starting new DAG_executor in state start_state_fanin_task
                     lambda_DAG_executor_state.return_value = None
@@ -681,7 +681,7 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                     logger.info("Starting Lambda function %s." % lambda_DAG_executor_state.function_name)
                     #logger.debug("lambda_DAG_executor_State: " + str(lambda_DAG_executor_State))
                     payload = {
-    ##rhc
+#ToDo: Lambdas: 
                         #"state": int(fanout_task_start_state),
                         "input": output,
                         "DAG_executor_state": lambda_DAG_executor_state,
@@ -689,7 +689,7 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                         #"server": server   # used to mock server during testing
                     }
                     ###### DAG_executor_State.function_name has not changed
-                    invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor")
+                    invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor_lambda")
                 except Exception as ex:
                     logger.error("FanInNB:[ERROR] Failed to start DAG_executor Lambda.")
                     logger.debug(ex)

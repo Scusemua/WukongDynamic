@@ -2,11 +2,11 @@
 
 import logging 
 import base64
-import re 
-import socket
+#import re 
+#import socket
 import time 
-import redis 
-import uuid
+#import redis 
+#import uuid
 import cloudpickle 
 
 from wukongdnc.server.message_handler_lambda import MessageHandler

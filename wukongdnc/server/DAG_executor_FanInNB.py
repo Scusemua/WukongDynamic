@@ -227,7 +227,7 @@ class DAG_executor_FanInNB(MonitorSU):
                 #ToDO: use using_lambdas (=> self.store_fanins_faninNBs_locally and not run_all_tasks_locally)
                 try:
     ##rhc
-                    DAG_executor_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state_fanin_task)
+                    DAG_executor_state = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()), state = start_state_fanin_task)
                     DAG_executor_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
                     DAG_executor_state.return_value = self._results
                     DAG_executor_state.blocking = False            
@@ -243,7 +243,7 @@ class DAG_executor_FanInNB(MonitorSU):
                     }
                     ###### DAG_executor_State.function_name has not changed
                     
-                    invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor")
+                    invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor_lambda")
                 except Exception as ex:
                     logger.debug("FanInNB:[ERROR] Failed to start DAG_executor Lambda.")
                     logger.debug(ex)
