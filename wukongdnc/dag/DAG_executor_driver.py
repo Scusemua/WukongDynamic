@@ -367,7 +367,7 @@ def run():
                 # create fanins and faninNbs on tcp_server or in InfiniX lambdas 
                 # all at the start of driver execution
                 # create_fanins_and_faninNBs(websocket,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
-                if using_workers:
+                if run_all_tasks_locally and using_workers:
                     # if not stored locally, i.e., and either threads or processes then create a remote 
                     # process queue if using processs and use a local work queue for the threads.
                     if not using_threads_not_processes:

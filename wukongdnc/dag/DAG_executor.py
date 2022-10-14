@@ -681,7 +681,7 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                     logger.info("Starting Lambda function %s." % lambda_DAG_executor_state.function_name)
                     #logger.debug("lambda_DAG_executor_State: " + str(lambda_DAG_executor_State))
                     payload = {
-#ToDo: Lambdas: 
+#ToDo: Lambda:          # use parallel invoker with list piggybacked on batch fanonNBs, as usual
                         #"state": int(fanout_task_start_state),
                         "input": output,
                         "DAG_executor_state": lambda_DAG_executor_state,
@@ -691,7 +691,7 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                     ###### DAG_executor_State.function_name has not changed
                     invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor_lambda")
                 except Exception as ex:
-                    logger.error("FanInNB:[ERROR] Failed to start DAG_executor Lambda.")
+                    logger.error("FanInNB:[ERROR] process_fanouts: Failed to start DAG_executor Lambda.")
                     logger.debug(ex)
 
     # Note: If we do not piggyback the fanouts with process_faninNBs_batch, we would add
@@ -808,7 +808,6 @@ def process_fanins(websocket,fanins, faninNB_sizes, calling_task_name, DAG_state
             DAG_exec_state = fanin_remotely(websocket, DAG_exec_state, **keyword_arguments)
             logger.debug (thread_name + ": process_fanins: call to fanin_remotely returned DAG_exec_state.return_value: " + str(DAG_exec_state.return_value))
 
-
     return DAG_exec_state
 	
 # Driver will not have any payload args unless it will invoke the leaf nodes with their inputs
@@ -869,8 +868,6 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
 
-
-        thread_name = threading.current_thread().name
         if not store_fanins_faninNBs_locally:
             logger.debug("DAG_executor " + thread_name + " connecting to TCP Server at %s." % str(TCP_SERVER_IP))
             websocket.connect(TCP_SERVER_IP)
@@ -884,7 +881,7 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
         global work_queue
 
         # ... unless its this work_queue when we use processes:)
-        if using_workers and not using_threads_not_processes:
+        if (run_all_tasks_locally and using_workers and not using_threads_not_processes) or not run_all_tasks_locally:
             # Did the create() in the DAG_executor_driver
             work_queue = BoundedBuffer_Work_Queue(websocket,2*num_tasks_to_execute)
         #else:
@@ -1060,6 +1057,8 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     logger.error("Error1")
                 # execute collapsed task next - transition to new state and iterate loop
 ##rhc
+                # collapse is a list [] so get task name of the collapsed task which is collapse[0],
+                # the only name in this list
                 DAG_executor_state.state = DAG_info.get_DAG_states()[state_info.collapse[0]]
                 ##state = DAG_info.get_DAG_states()[state_info.collapse[0]]
                 # output of just executed task is input of next (collapsed) task
@@ -1123,40 +1122,54 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     # we are using processes. We can also use workers with threads instead of processes
                     # but multithreading with remote FanInNBs is not as useful as using processes. 
                     # Multithreadng in general is not as helpful as multiprocessing in Python.
-                    if using_workers and not using_threads_not_processes:
+                    if (run_all_tasks_locally and using_workers and not using_threads_not_processes) or not run_all_tasks_locally:
+                        # assert
                         if store_fanins_faninNBs_locally:
-                            logger.error("[Error]: DAG_executor_work_loop: using processes but storing FanINNBs locally.")
+                            logger.error("[Error]: DAG_executor_work_loop: using processes or lambdas but storing FanINNBs locally.")
+                        if not run_all_tasks_locally:
+                            if worker_needs_input:
+                                # Note: perhaps we csn use Lmbdas where Lambdas have two thread workers - faster?
+                                logger.error("[Error]: DAG_executor_work_loop: using lambdas, so no workers, but worker_needs_input.")
                         #Note: using worker processes - batch calsl to fan_in for FaninNBs
                         worker_needs_input = process_faninNBs_batch(websocket,state_info.faninNBs, state_info.faninNB_sizes, 
                         state_info.task_name, DAG_info.get_DAG_states(), DAG_executor_state, 
                             output, DAG_info,work_queue,worker_needs_input, list_of_work_queue_fanout_values)
                     else: 
-                    # not using workers or using threads. Note: if we are using thread workers we can still
-                    # store the FanInNBs remotely, but the work queue will be local. Batch FanInNb processing
-                    # will also put work in the work_queue as the work_queue is also stored remotely (with the
-                    # FAaInNBs). When using threads, the work_queue is local so we cannot put work in the work
-                    # queue while processing remote FanInNBs on the server. This means we would have to pass
-                    # all the work back here to the thread and have the thread add the work to the local work
-                    # queue. Doable, but maybe later - multithreading is not as useful as multprocessng, and 
-                    # we do batch FaninNBs and store the FanINNBs and work_queue remotely when multiprocessing
-                    # (same for multiprocessing where processes are multithreaded, which is an interesting use case).
-                    # asynch + terminate + start DAG_executor in start state
+                        # not using workers or using threads. Note: if we are using thread workers we can still
+                        # store the FanInNBs remotely, but the work queue will be local. Batch FanInNb processing
+                        # will also put work in the work_queue as the work_queue is also stored remotely (with the
+                        # FAaInNBs). When using threads, the work_queue is local so we cannot put work in the work
+                        # queue while processing remote FanInNBs on the server. This means we would have to pass
+                        # all the work back here to the thread and have the thread add the work to the local work
+                        # queue. Doable, but maybe later - multithreading is not as useful as multprocessng, and 
+                        # we do batch FaninNBs and store the FanINNBs and work_queue remotely when multiprocessing
+                        # (same for multiprocessing where processes are multithreaded, which is an interesting use case).
+                        # asynch + terminate + start DAG_executor in start state
                         worker_needs_input = process_faninNBs(websocket,state_info.faninNBs, state_info.faninNB_sizes, 
                             state_info.task_name, DAG_info.get_DAG_states(), DAG_executor_state, 
                             output, DAG_info, server,work_queue,worker_needs_input)
                     # there can be faninNBs and fanouts.
 
                 else:
-                    if using_workers and not using_threads_not_processes:
+                    # Currentl, we are not pigybacking fanouts if we are using lambdas. when using lambdas, we 
+                    # start a lambda in process_fanouts for each fanout task. This code is for the case
+                    # that we are piggybacking fanouts on the process faninNB call but we did not 
+                    # have any faninNBs so we did not get a chance to piggyback the fanouts and thus we
+                    # need to process the fanouts here. For non-lambda, that means put the fanout tasks
+                    # in the work queue. For Lambdas, we will want to send the fanouts to the tcp_server
+                    # for parallel invocation.
+                    if run_all_tasks_locally and using_workers and not using_threads_not_processes:
                         # we are batching faninNBs and piggybacking fanouts on process_faninNB_batch
                         if len(state_info.fanouts) > 0:
-                        # No faninNBs (len(state_info.faninNBs) == 0) so we did not get a chance to 
-                        # piggybck list_of_work_queue_fanout_values on the call to process_faninNBs_batch.
-                            #assert 
+                            # No faninNBs (len(state_info.faninNBs) == 0) so we did not get a chance to 
+                            # piggybck list_of_work_queue_fanout_values on the call to process_faninNBs_batch.
+ 
+                            # assert 
                             if worker_needs_input:
                                 # when there is at least one fanin we will become one of the fanout tasks
                                 # so we should not need work.
                                 logger.error("[Error]: work loop: Internal Error: fanouts but worker needs work.")
+ 
                             if len(state_info.fanouts) > 1:
                                 # We became one fanout task but there were more and we should have added the 
                                 # fanouts to list_of_work_queue_fanout_values.
@@ -1165,6 +1178,9 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                                 # since we could not piggyback on process_faninNB_batch, enqueue the fanouts
                                 # directly into the work_queue
                                 logger.debug(thread_name + " work loop: no faninNBs so enqueue fanouts directly.")
+                                # Note: if we use lambdas with a batch nvoker, here we will call the tcp_server
+                                # method that dos the batch invokes. This method is probably used by 
+                                # process_faninNBs_batch to invoke the fanouts that are piggybacked.
                                 work_queue.put_all(list_of_work_queue_fanout_values)
                                 # list_of_work_queue_fanout_values is redefined on next iteration
                             else:
@@ -1226,7 +1242,10 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                         # this dfs path is finished
                         return
                 else:
-                    if using_workers:
+                    if (run_all_tasks_locally and using_workers) or not run_all_tasks_locally:
+                        # when using workers, threads or processes, each worker has its own local
+                        # data dictionay. If we are tghe become task for a fanin, we receive the 
+                        # fanin task inputs and we put them in the data dctionary. Same for lambdas.
                         dict_of_results = returned_state.return_value
                         # Also, don't pass in the multp data_dict, so will use the global.
                         # Fix if in global
