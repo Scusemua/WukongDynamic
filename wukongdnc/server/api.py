@@ -287,6 +287,36 @@ def create(websocket, op, type, name, state):
     # Receive data. This should just be an ACK, as the TCP server will 'ACK' our create() calls.
     ack_ignored = recv_object(websocket)
 
+"""
+# Not used: No need yet to create only a wwork queue without also creating fanins and faninNBs.
+# We piggyback call to create work queue on create_all_fanins_and_faninNBs_and_possibly_work_queue
+def create_work_queue_on_server(websocket, work_queue_message):
+
+    #Create work_queue on tcp_server
+
+    #Arguments:
+    #----------
+    #    websocket (socket.socket):
+    #        Socket connection to the TCP server.
+    #        TODO: We pass this in, but in the function body, we connect to the server.
+    #                In that case, we don't need to pass a websocket. We'll just create one.
+    #                We should only bother with passing it as an argument if its already connected.
+        
+    #    work_queue_message: tcp_server command
+
+    msg_id = str(uuid.uuid4())
+    logger.debug("api: create_work_queue_on_server: Sending 'create_work_queue' message to server. Op='%s', type='%s', name='%s', id='%s', state=%s" % (work_queue_message['op'], work_queue_message['type'], work_queue_message['name'], work_queue_message['state'], work_queue_message['msg_id']))
+
+    msg = json.dumps(work_queue_message).encode('utf-8')
+    send_object(msg, websocket)
+    logger.debug("create_work_queue: Sent 'create_work_queue' message to server")
+
+    # Receive data. This should just be an ACK, as the TCP server will 'ACK' our create() calls.
+    ack = recv_object(websocket)
+    #state_from_server = cloudpickle.loads(data) # `state_from_server` is of type State
+    return ack
+"""
+
 def create_all_fanins_and_faninNBs_and_possibly_work_queue(websocket, op, type, name, state):
     """
     Create all fanins and faninNBs for DAG_executor on the TCP server.

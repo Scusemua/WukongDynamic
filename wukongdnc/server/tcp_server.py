@@ -9,7 +9,7 @@ from .synchronizer import Synchronizer
 from .util import decode_and_deserialize
 #from ..dag.DAG_executor_State import DAG_executor_State
 from .util import decode_and_deserialize, isTry_and_getMethodName, isSelect #, make_json_serializable
-from .DAG_executor_constants import run_all_tasks_locally
+from ..dag.DAG_executor_constants import run_all_tasks_locally
 
 # Set up logging.
 import logging 
@@ -40,7 +40,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 "close_all": self.close_all,
                 # These are DAG execution operations
                 "create_all_fanins_and_faninNBs_and_possibly_work_queue": self.create_all_fanins_and_faninNBs_and_possibly_work_queue,
-                "synchronize_process_faninNBs_batch": self.synchronize_process_faninNBs_batch
+                "synchronize_process_faninNBs_batch": self.synchronize_process_faninNBs_batch,
+                "create_work_queue": self.create_work_queue
             }
             #logger.info("Thread Name:{}".format(threading.current_thread().name))
 
@@ -114,9 +115,29 @@ class TCPHandler(socketserver.StreamRequestHandler):
         self.send_serialized_object(resp_encoded)
         logger.info("Sent ACK of size %d bytes to client %s for CREATE operation." % (len(resp_encoded), self.client_address[0]))  
 
+    # Not used and not tested. Currently create work queue in 
+    # create_all_fanins_and_faninNBs_and_possibly_work_queue. 
+    def create_work_queue(self, message = None):
+        # used to create only a work queue. This is the case when we are creating the fanins and faninNBs
+        # on the fly, i.e., not at the beginning of execution.
+        self.create_one_of_all_objs(message)
+
+        resp = {
+            "op": "ack",
+            "op_performed": "create_work_queue"
+        }
+        #############################
+        # Write ACK back to client. #
+        #############################
+        logger.info("Sending ACK to client %s for create_work_queue operation." % self.client_address[0])
+        resp_encoded = json.dumps(resp).encode('utf-8')
+        self.send_serialized_object(resp_encoded)
+        logger.info("Sent ACK of size %d bytes to client %s for create_awork_queue operation." % (len(resp_encoded), self.client_address[0]))
+
     def create_all_fanins_and_faninNBs_and_possibly_work_queue(self, message = None):
         """
-        Called by a remote Lambda to create an object here on the TCP server.
+        Called by a remote Lambda to create fanins, faninNBs, and pssibly work queue.
+        Number of fanins/faninNBs may be 0.
 
         Key-word arguments:
         -------------------
@@ -141,19 +162,22 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
         for msg in fanin_messages:
             self.create_one_of_all_objs(msg)
-        logger.info("created fanins")
+        if len(fanin_messages) > 0:
+            logger.info("created fanins")
 
         for msg in faninNB_messages:
             self.create_one_of_all_objs(msg)
-        logger.info("created faninNBs")
+        if len(faninNB_messages) > 0:
+            logger.info("created faninNBs")
 
-
+        # we always create the fanin and faninNBs. We possibly create the work queue. If we send
+        # a message for create work queue, in addition to the lst of messages for create
+        # fanins and create faninNBs, we create a work queue too.
         create_work_queue = (len(messages)>2)
-        logger.info("create_work_queue: " + str(create_work_queue) + " len: " + str(len(messages)))
         if create_work_queue:
+            logger.info("create_work_queue: " + str(create_work_queue) + " len: " + str(len(messages)))
             msg = messages[2]
             self.create_one_of_all_objs(msg)
-
 
         resp = {
             "op": "ack",
@@ -169,8 +193,9 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
     def create_one_of_all_objs(self,message = None):
         """
-        Called by create_all_fanins_and_faninNBs to create an object here on the TCP server. No
-        ack is sent to a client. create_all_fanins_and_faninNBs will send the ack.
+        Called by create_all_fanins_and_faninNBs_and_possibly_work_queue and create_work_queue to 
+        create an object here on the TCP server. No ack is sent to a client. 
+        create_all_fanins_and_faninNBs_and_possibly_work_queue and create_work_queue will send the ack.
 
         Key-word arguments:
         -------------------

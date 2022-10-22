@@ -265,15 +265,14 @@ def run():
     else:
         DAG_leaf_task_inputs = copy.copy(DAG_info.get_DAG_leaf_task_inputs())
 #ToDo: lambdas:
-        # Null out the task inputs in DAG_info since we pass DAG_info to all the lambda
-        # executors and the leaf task inputs may be large.
+        # Null out the task inputs in DAG_info since we pass DAG_info in the payload 
+        # to all the lambda executors and the leaf task inputs may be large.
         # Note: When we are using thread or process workers then the workers read 
         # DAG_info from a file at the start of their execution. We are not nullng
-        # out the leaf task inputs for workers.
+        # out the leaf task inputs for workers (non-lambda)
 
         # Null out DAG_leaf_task_inputs.
         DAG_info.set_DAG_leaf_task_inputs_to_None()
-
         # Null out task inputs in state infomation of leaf tasks
         for start_state in DAG_leaf_task_start_states:
             # Each leaf task's state has the leaf tasks's input. Null it out.
@@ -314,6 +313,7 @@ def run():
 	
 #############################
 #Note: if using Lambdas to store synch objects: SERVERLESS_SYNC = False in constants.py; set to True
+#      when storing synch objects in Lambdas.
 #############################
     
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
@@ -366,9 +366,8 @@ def run():
             if create_all_fanins_faninNBs_on_start:
                 # create fanins and faninNbs on tcp_server or in InfiniX lambdas 
                 # all at the start of driver execution
-                # create_fanins_and_faninNBs(websocket,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
                 if run_all_tasks_locally and using_workers:
-                    # if not stored locally, i.e., and either threads or processes then create a remote 
+                    # if not stored locally, i.e., and either threads or process workers, then create a remote 
                     # process queue if using processs and use a local work queue for the threads.
                     if not using_threads_not_processes:
                         #Note: using workers and processes means not store_fanins_faninNBs_locally
@@ -382,8 +381,8 @@ def run():
                         process_work_queue = BoundedBuffer_Work_Queue(websocket,2*num_tasks_to_execute)
                         #process_work_queue.create()
                         create_fanins_and_faninNBs_and_work_queue(websocket,num_tasks_to_execute,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
-                        #Note: reversed() this list of leaf node start states to reverse the order of appending leaf nodes
-                        #during testing
+                        #Note: you can reversed() this list of leaf node start states to reverse the order of 
+                        # appending leaf nodes during testing
                         for state in DAG_leaf_task_start_states:
                             #logger.debug("dummy_state: " + str(dummy_state))
                             state_info = DAG_map[state]
@@ -396,7 +395,7 @@ def run():
                             #process_work_queue.put(state)
                     else:
                         create_fanins_and_faninNBs(websocket,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
-                        # leaf task states (a task is identified by its state) are put in work_queue
+                        # leaf task states (a task is identified by its state) are put in the work_queue
                         for state in DAG_leaf_task_start_states:
                             #thread_work_queue.put(state)
                             state_info = DAG_map[state]
@@ -407,16 +406,26 @@ def run():
                             work_tuple = (state,dict_of_results)
                             work_queue.put(work_tuple)
                             #work_queue.put(state)
-                else:
+                elif run_all_tasks_locally and not using_workers:
+                    # not using workers, use threads to simulate lambdas. no work queue so do not
+                    # put leaf node start states in work queue. threads are created to execute
+                    # fanout tasks and fanin tasks (like lambdas)
                     if not using_threads_not_processes:
                         logger.error("[Error]: not using_workers but using processes.")
-                    # just create a batch of fanins and faninNBs                
+                    # just create a batch of fanins and faninNBs on server - no remote work queue wen using
+                    # thread workers or using lambdas.         
+                    create_fanins_and_faninNBs(websocket,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
+                else:
+                    if using_workers:
+                        logger.error("[Error]: using_workers but using lambdas.")
+                    # not run_all_tasks_locally so using lambdas, which use a work queue but no workers. 
+                    # So do not put leaf tasks in work queue
                     create_fanins_and_faninNBs(websocket,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
             else:
                 # going to create fanin and faninNBs on demand, i.e., as we execute
                 # operations on them. But still want to create process_work_queue
                 # by itself at the beginning of drivr execuion.
-                if using_workers:
+                if run_all_tasks_locally and using_workers:
                     if not using_threads_not_processes:
                         #Note: using workers means not store_fanins_faninNBs_locally
                         #Need to create the process_work_queue
@@ -450,10 +459,19 @@ def run():
                             dict_of_results[task_name] = task_inputs
                             work_tuple = (state,dict_of_results)
                             work_queue.put(work_tuple)
-                            #work_queue.put(state)  
-                else: 
+                            #work_queue.put(state) 
+#ToDo: Lambdas
+                elif run_all_tasks_locally and not using_workers:
+                    # not using workers, use threads to simulate lambdas. no work queue so do not
+                    # put leaf node start states in work queue. threads are created to execute
+                    # fanout tasks and fanin tasks (like lambdas)
                     if not using_threads_not_processes:
                         logger.error("[Error]: not using_workers but using processes.")
+                else:
+                    if using_workers:
+                        logger.error("[Error]: using_workers but using lambdas.")
+                    # not run_all_tasks_locally so using lambdas, which do not use a work queue 
+                    # So do not put leaf tasks in work queue and do not create a work queue
 
     # FYI
     logger.debug("DAG_executor_driver: DAG_leaf_tasks: " + str(DAG_leaf_tasks))
@@ -706,7 +724,7 @@ def run():
 		
     #ToDo:  close_all(websocket)
 
-# create fanni and faninNB messages to be passed to the tcp_server for creating
+# create fanin and faninNB messages to be passed to the tcp_server for creating
 # all fanin and faninNB synch objects
 def create_fanin_and_faninNB_messages(DAG_map,DAG_states,DAG_info,all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes):
  
@@ -771,6 +789,32 @@ def create_fanin_and_faninNB_messages(DAG_map,DAG_states,DAG_info,all_fanin_task
 
     return fanin_messages, faninNB_messages
 
+"""
+# Not used - no case in which we create only a work queue - we always create fanins and faninNBs
+# and possibly create a work queue. The work quueue creation is piggybacked on creating
+# the fanins and faninNBs (on server)
+#
+# NOT TESTED
+#
+# creates all fanins and faninNBs at the start of driver executin. If we are using 
+# workers and processes (not threads) then we also crate the work_queue here
+def create_work_queue(websocket,number_of_tasks):
+    dummy_state = DAG_executor_State()
+    # we will create the fanin object and call fanin.init(**keyword_arguments)
+    dummy_state.keyword_arguments['n'] = 2*number_of_tasks
+    msg_id = str(uuid.uuid4())	# for debugging
+
+    work_queue_message = {
+        "op": "create_work_queue",
+        "type": "BoundedBuffer",
+        "name": "process_work_queue",
+        "state": make_json_serializable(dummy_state),	
+        "id": msg_id
+    } 
+
+    logger.debug("create_work_queue: Sending a 'create_work_queue' message to server.")
+    create_work_queue_on_server(websocket, work_queue_message)
+"""
 
 # creates all fanins and faninNBs at the start of driver executin. If we are using 
 # workers and processes (not threads) then we also crate the work_queue here
@@ -793,12 +837,13 @@ def create_fanins_and_faninNBs_and_work_queue(websocket,number_of_tasks,DAG_map,
     logger.debug("create_fanins_and_faninNBs_and_work_queue: Sending a 'create_fanins_and_faninNBs_and_work_queue' message to server.")
     #logger.debug("create_fanins_and_faninNBs_and_work_queue: num fanin created: "  + str(len(fanin_messages))
     #    +  " num faninNB creates; " + str(len(faninNB_messages)))
+
+    # even if there are not fanins or faninNBs in Dag, need to create the work queue so send the message
     messages = (fanin_messages,faninNB_messages,work_queue_message)
-    dummy_state = DAG_executor_State()
+    dummy_state2 = DAG_executor_State()
     #Note: Passing tuple messages as name
     create_all_fanins_and_faninNBs_and_possibly_work_queue(websocket, "create_all_fanins_and_faninNBs_and_possibly_work_queue", "DAG_executor_fanin_or_faninNB", 
-        messages, dummy_state)
-
+        messages, dummy_state2)
 
 # creates all fanins and faninNBs at the start of driver execution. 
 def create_fanins_and_faninNBs(websocket,DAG_map,DAG_states,DAG_info,all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes):										
@@ -815,10 +860,13 @@ def create_fanins_and_faninNBs(websocket,DAG_map,DAG_states,DAG_info,all_fanin_t
     logger.debug("create_fanins_and_faninNBs: all_faninNB_task_names: " + str(all_faninNB_task_names))
     """
 
-    messages = (fanin_messages,faninNB_messages)
-    dummy_state = DAG_executor_State()
-    create_all_fanins_and_faninNBs_and_possibly_work_queue(websocket, "create_all_fanins_and_faninNBs_and_possibly_work_queue", "DAG_executor_fanin_or_faninNB", 
-        messages, dummy_state)
+    # Don't send a message to th server if there are no fanin or fanonNBs to create
+    # Not tested DAG with no fanins or faninNBs yet.
+    if len(fanin_messages) > 0 or len(faninNB_messages) > 0:
+        messages = (fanin_messages,faninNB_messages)
+        dummy_state = DAG_executor_State()
+        create_all_fanins_and_faninNBs_and_possibly_work_queue(websocket, "create_all_fanins_and_faninNBs_and_possibly_work_queue", "DAG_executor_fanin_or_faninNB", 
+            messages, dummy_state)
 
     """ create_all_fanins_and_faninNBs creates:
 
