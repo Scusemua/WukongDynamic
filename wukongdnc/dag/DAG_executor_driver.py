@@ -238,6 +238,20 @@ def input_DAG_info():
     return DAG_info
 
 def run():
+
+    # high-level:
+    # 1 create the fanins and faninNBs locally or on the server
+    #   - if using worker processes, the fanins and faninNBs must be remote on the tcp_server
+    #   - if using threads, the fanins and faninNBs can be ermote or local.
+    # 2 start the threads/processes/lambdas
+    #   - if using thrrads to simulate lambdas, start leaf node threads
+    #   - if using lambas, start leaf node lambdas
+    #   - if using workers, start either thread or process workers
+    #   - if using multithreaded worker processes, start the worker processes which start their internal threads
+    # 3 if not using lambdas, 
+    #   - if not using multithreaded worker processes, join the thread/process workers
+    #   - if using multithreaded worker processes. workers will start and join their threads
+    #     then we join the multithreaded worker processes. 
     #asserts on configuration:
     if using_workers:
         if not run_all_tasks_locally:
@@ -259,17 +273,18 @@ def run():
 
 #ToDo: lambdas:
     # Note: if we are using_lambdas, we null out DAG_leaf_task_inputs after we get it here
-    # (by calling DAG_info.set_DAG_leaf_task_inputs_to_None() below) So make a copy.
+    # (by calling DAG_info.set_DAG_leaf_task_inputs_to_None() below). So make a copy.
     if not using_lambdas:
         DAG_leaf_task_inputs = DAG_info.get_DAG_leaf_task_inputs()
     else:
         DAG_leaf_task_inputs = copy.copy(DAG_info.get_DAG_leaf_task_inputs())
 #ToDo: lambdas:
-        # Null out the task inputs in DAG_info since we pass DAG_info in the payload 
-        # to all the lambda executors and the leaf task inputs may be large.
+        # For lambdas, null out the task inputs in DAG_info since we pass DAG_info in the
+        # payload to all the lambda executors and the leaf task inputs may be large.
         # Note: When we are using thread or process workers then the workers read 
         # DAG_info from a file at the start of their execution. We are not nullng
-        # out the leaf task inputs for workers (non-lambda)
+        # out the leaf task inputs for workers (non-lambda) since we do not pass them
+        # on invokes.
 
         # Null out DAG_leaf_task_inputs.
         DAG_info.set_DAG_leaf_task_inputs_to_None()
@@ -318,15 +333,16 @@ def run():
     
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
 
-        # synch_objects are stored in local memory or on the tcp_Server/InfinX
+        # synch_objects are stored in local memory or on the tcp_Server or in InfinX Executors
         if store_fanins_faninNBs_locally:
+            # store fanin and faninNBs locally so not using websocket to tcp_server
             if not using_threads_not_processes: # using processes
                 logger.error("[Error': store local but using processes.")
             # cannot be multiprocessing, may or may not be pooling, running all tasks locally (no Lambdas)
             # server is global variable obtained: from .DAG_executor_synchronizer import server
             if create_all_fanins_faninNBs_on_start:
                 # create fanins and faninNBs using all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes
-                # server is a global variable in DAG_executor_synchronizer.py. It is used to simulate the
+                # server is a global variable in DAG_executor_synchronizer.py - it is used to simulate the
                 # tcp_server when running locally.
                 server.create_all_fanins_and_faninNBs_locally(DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
 
@@ -406,6 +422,11 @@ def run():
                             work_tuple = (state,dict_of_results)
                             work_queue.put(work_tuple)
                             #work_queue.put(state)
+                # This is true: not (run_all_tasks_locally and using_workers), i.e.,
+                # one of the conditions is false.
+                # Note: This configuration is never used: (not run_all_tasks_locally) and using_workers
+                # as not run_all_tasks_locally means we are using lambdas and we do not use workers
+                # when we are using lambdas.
                 elif run_all_tasks_locally and not using_workers:
                     # not using workers, use threads to simulate lambdas. no work queue so do not
                     # put leaf node start states in work queue. threads are created to execute
@@ -416,8 +437,12 @@ def run():
                     # thread workers or using lambdas.         
                     create_fanins_and_faninNBs(websocket,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
                 else:
+                    # not run_all_tasks_locally and not using workers must be true (since 
+                    # (not run_all_tasks_locally) and using_workers is never used.
                     if using_workers:
                         logger.error("[Error]: using_workers but using lambdas.")
+                    if run_all_tasks_locally:
+                        logger.error("[Error]: innteral error: DAG_executor_driver: run_all_tasks_locally shoudl be false.")
                     # not run_all_tasks_locally so using lambdas, which use a work queue but no workers. 
                     # So do not put leaf tasks in work queue
                     create_fanins_and_faninNBs(websocket,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
@@ -461,6 +486,11 @@ def run():
                             work_queue.put(work_tuple)
                             #work_queue.put(state) 
 #ToDo: Lambdas
+                # This is true: not (run_all_tasks_locally and using_workers), i.e.,
+                # one of the two conditions is false.
+                # Note: This configuration is never used: (not run_all_tasks_locally) and using_workers
+                # as not run_all_tasks_locally means we are using lambdas and we do not use workers
+                # when we are using lambdas.
                 elif run_all_tasks_locally and not using_workers:
                     # not using workers, use threads to simulate lambdas. no work queue so do not
                     # put leaf node start states in work queue. threads are created to execute
@@ -468,8 +498,12 @@ def run():
                     if not using_threads_not_processes:
                         logger.error("[Error]: not using_workers but using processes.")
                 else:
+                    # not run_all_tasks_locally and not using workers must be true (since 
+                    # (not run_all_tasks_locally) and using_workers is never used.
                     if using_workers:
                         logger.error("[Error]: using_workers but using lambdas.")
+                    if run_all_tasks_locally:
+                        logger.error("[Error]: interal error: DAG_executor_driver: run_all_tasks_locally should be false.")
                     # not run_all_tasks_locally so using lambdas, which do not use a work queue 
                     # So do not put leaf tasks in work queue and do not create a work queue
 
@@ -479,20 +513,6 @@ def run():
     #rhc: commented out for MM
     #logger.debug("DAG_executor_driver: DAG_leaf_task_inputs: " + str(DAG_leaf_task_inputs))
 
-    """
-    if using_workers:
-        # pool of worker threads or processes that withdraw work from a work_queue
-        if using_threads_not_processes: # pool of threads
-            # leaf task states (a task is identified by its state) are put in work_queue
-            for state in DAG_leaf_task_start_states:
-                thread_work_queue.put(state)
-        else:   # pool of processes
-            for state in DAG_leaf_task_start_states:
-                dummy_state = DAG_executor_State()
-                logger.debug("dummy_state: " + str(dummy_state))
-#Error: moving this up
-                process_work_queue.put(dummy_state,state)
-    """
     # Done with process_work_queue 
     process_work_queue = None
 
@@ -500,19 +520,24 @@ def run():
     #for start_state in X_work_queue.queue:
     #   print(start_state)
 
-    if using_workers and not use_multithreaded_multiprocessing and run_all_tasks_locally:
+    if run_all_tasks_locally and using_workers and not use_multithreaded_multiprocessing:
         # keep list of threads/processes in pool so we can join() them
-        thread_list = []
+        thread_proc_list = []
 
     # count of threads/processes created. We will create DAG_executor_constants.py num_workers
     # if we are using_workers. We will create some number of threads if we are simulating the 
     # use of creating Lambdas, e.g., at fan-out points.
-    if not use_multithreaded_multiprocessing and run_all_tasks_locally:
+    # We use a different counter if use_multithreaded_multiprocessing
+    if run_all_tasks_locally and not use_multithreaded_multiprocessing:
         num_threads_created = 0
 
     if run_all_tasks_locally and not using_threads_not_processes:
-        # multiprocessing. processes share a counter that counts the number of tasks that have been 
-        # executed
+        if not using_workers:
+            logger.error("[Error]: DAG_executor_driver: not using_workers but using processes.")
+        # multiprocessing. processes share a counter that counts the number of tasks that have been executed
+        # and uses this counter to determine when all tasks have been excuted so workers can stop (by 
+        # putting -1 in the work_queue - when worker gets -1 it puts -1 for the next worker. So execution
+        # ends with -1 in the work queue, which is put there by the last worker to stop.)
         counter = CounterMP()
         # used by a logger for multiprocessing
         log_queue = multiprocessing.Queue(-1)
@@ -572,7 +597,7 @@ def run():
                             thread_name_prefix = "Thread_leaf_"
                         thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=(thread_name_prefix+"ss"+str(start_state)), args=(payload,))
                         if using_workers:
-                            thread_list.append(thread)
+                            thread_proc_list.append(thread)
                         thread.start()
                         num_threads_created += 1
                     except Exception as ex:
@@ -595,7 +620,7 @@ def run():
                         #proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,counter,process_work_queue,data_dict,log_queue,worker_configurer,))
                         proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,counter,log_queue,worker_configurer,))
                         proc.start()
-                        thread_list.append(proc)
+                        thread_proc_list.append(proc)
                         #thread.start()
                         num_threads_created += 1
                         #_thread.start_new_thread(DAG_executor.DAG_executor_task, (payload,))
@@ -614,18 +639,14 @@ def run():
                     lambda_DAG_exec_state.return_value = None
                     lambda_DAG_exec_state.blocking = False            
                     logger.info("DAG_executor_driver: Starting Lambda function %s." % lambda_DAG_exec_state.function_name)
-#4
-                    # No input "inp" for leaf tasks; the leaf task input is part of the state information
-                    # in the DAG_map in DAG_info.
-                    # Since we pass DAG_info to all the Lambda executors, we will null out the leaf task
-                    # input after we get it from DAG_info in the work loop.
-#ToDo: lambdas: use "inp" for leaf task input otherwise all leaf task Executors will receive all leaf task inputs
-# in the leaf_task_input s and in the state_info.task_inputs - both are nulled out at beginning of driver
-# when we aer using lambdas.
-# If we use "inp" then we will pass only a given leaf task's input to that leaf task. For non-lambda,
-# each thread/process reads the DAG_info from a file. This DAG-info has al the leaf task inputs in it
-# so every thread/process read all these inputs. This can be optimized if necessary, e.g., separate
-# files for leaf tasks and non-leaf tasks.
+#ToDo: lambdas: 
+                    # We use "inp" for leaf task input otherwise all leaf task lambda Executors will 
+                    # receive all leaf task inputs in the leaf_task_inputs and in the state_info.task_inputs
+                    # - both are nulled out at beginning of driver. when we are using lambdas.
+                    # If we use "inp" then we will pass only a given leaf task's input to that leaf task. 
+                    # For non-lambda, each thread/process reads the DAG_info from a file. This DAG-info has
+                    # all the leaf task inputs in it so every thread/process reads all these inputs. This 
+                    # can be optimized if necessary, e.g., separate files for leaf tasks and non-leaf tasks.
 
                     payload = {
                         "input": inp,
@@ -635,11 +656,11 @@ def run():
 
                     invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor_lambda")
                 except Exception as ex:
-                    logger.debug("[ERROR] DAG_executor_driver: Failed to start DAG_executor Lambda.")
-                    logger.debug(ex)
+                    logger.error("[ERROR] DAG_executor_driver: Failed to start DAG_executor Lambda.")
+                    logger.error(ex)
 
         # if the number of leaf tasks is less than number_workers, we need to create more workers
-        if using_workers and num_threads_created < num_workers:
+        if run_all_tasks_locally and using_workers and num_threads_created < num_workers:
             # starting leaf tasks did not start num_workers workers so start num_workers-num_threads_created
             # more threads/processes.
             while True:
@@ -656,7 +677,7 @@ def run():
                             }
                             thread_name_prefix = "Worker_thread_non-leaf_"
                             thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=(thread_name_prefix+str(start_state)), args=(payload,))
-                            thread_list.append(thread)
+                            thread_proc_list.append(thread)
                             thread.start()
                             num_threads_created += 1
                         except Exception as ex:
@@ -675,7 +696,7 @@ def run():
                             #proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"p"+str(num_threads_created + 1)), args=(payload,counter,process_work_queue,data_dict,log_queue,worker_configurer,))
                             proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"p"+str(num_threads_created + 1)), args=(payload,counter,log_queue,worker_configurer,))
                             proc.start()
-                            thread_list.append(proc)
+                            thread_proc_list.append(proc)
                             num_threads_created += 1                      
                         except Exception as ex:
                             logger.debug("[ERROR] DAG_executor_driver: Failed to start DAG_executor worker process for non-leaf task " + task_name)
@@ -692,10 +713,11 @@ def run():
         logger.debug("num_threads_created: " + str(num_threads_created))
 
     if run_all_tasks_locally:
+        # Do joins if not using lambdas
         if not use_multithreaded_multiprocessing:
             if using_workers:
                 logger.debug("DAG_executor_driver: joining workers.")
-                for thread in thread_list:
+                for thread in thread_proc_list:
                     thread.join()	
 
             if not using_threads_not_processes:

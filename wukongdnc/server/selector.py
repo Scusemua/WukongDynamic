@@ -81,6 +81,7 @@ class Selector():
         #entry1 = self.get_entry(1)
         #logger.debug("after add: entry " + entry1.get_entry_name() + ": " + str(entry1.get_num_arrivals()))
 
+        # this is a method of the synchronizer objct, e.g., BoundedBufferSelect
         self.set_guards()
             
         # number of arrivals is at least 1 since we just added one. Is this now the only arrival?
