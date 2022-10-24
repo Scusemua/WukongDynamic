@@ -114,7 +114,6 @@ def run():
 	def multi_DAG_executor(q,DAG_info,ID,data_dict):
 
 		while (True):
-	##rhc
 			logger.debug ("access DAG_map with state " + str(DAG_executor_State.state))
 			#state_info = DAG_info.DAG_map[DAG_executor_State.state]
 			DAG_map = DAG_info.get_DAG_map()
@@ -144,7 +143,6 @@ def run():
 			# using map DAG_tasks from task_name to task
 			DAG_tasks = DAG_info.get_DAG_tasks()
 			task = DAG_tasks[state_info.task_name]
-			#rhc task_inputs
 			task_inputs = state_info.task_inputs
 
 			is_leaf_task = state_info.task_name in DAG_info.get_DAG_leaf_tasks()
@@ -174,7 +172,6 @@ def run():
 			elif
 
         	else:
-##rhc
             	logger.debug("state " + str(DAG_executor_State.state) + " after executing task " +  state_info.task_name 
 					+ " has no fanouts, fanins, or faninNBs; return")
             	##logger.debug("state " + str(state) + " after executing task " +  state_info.task_name 

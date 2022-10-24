@@ -42,7 +42,6 @@ def send_object(obj, websocket):
         websocket (socket.socket):
             Socket connected to a remote client.
     """
-    #rhc
     #logger.debug("send_object: Will be sending a message of size %d bytes." % len(obj))
     
     thread_name = threading.current_thread().name  
@@ -73,11 +72,9 @@ def recv_object(websocket):
 
     thread_name = threading.current_thread().name
 
-    # rhc
     incoming_size = websocket.recv(4)
     # Convert the bytes representing the size of the incoming serialized object to an integer.
     incoming_size = int.from_bytes(incoming_size, 'big')
-    #rhc
     logger.debug(thread_name + ": recv_object: Will receive another message of size %d bytes" % incoming_size)
     data = bytearray()
 
@@ -90,7 +87,6 @@ def recv_object(websocket):
         if not new_data:
             break 
 
-        #rhc
         #logger.debug("recv_object: starting read %d bytes from TCP server." % len(new_data))
         data.extend(new_data)
         #logger.debug("recv_object: end-of read %d/%d bytes from TCP server." % (len(data), incoming_size))
@@ -132,7 +128,6 @@ def synchronize_sync(websocket, op, name, method_name, state):
         "state": make_json_serializable(state),
         "id": msg_id
     }
-    #rhc
     thread_name = threading.current_thread().name
     logger.debug(thread_name + ": synchronize_sync: Fan-in ID %s calling send_object %s. Message ID=%s" % (name, op, msg_id))
     msg = json.dumps(message).encode('utf-8')
@@ -185,7 +180,6 @@ def synchronize_async(websocket, op, name, method_name, state):
         "state": make_json_serializable(state),
         "id": msg_id
     }
-    #rhc
     thread_name = threading.current_thread().name
  
     #logger.debug("synchronize_async: Calling %s. Message ID=%s" % (op, msg_id))

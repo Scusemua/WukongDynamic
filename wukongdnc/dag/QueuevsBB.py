@@ -6,6 +6,9 @@ import socket
 from wukongdnc.constants import TCP_SERVER_IP
 from ..server.api import create, synchronize_async #,synchronize_sync 
 
+# comparing the run tims for process_work_queue = manager.Queue(2000)
+# and using BoundedBuffer synch objects on tcp_server
+
 def run():
 
     # This part is for testing the manager.Queue, uncomment to run
@@ -60,9 +63,9 @@ def run():
     # Queue avg: 0.000027036
     # Queue avg: 0.000026937
     #
-    # synch
+    # synch calls to deposit
     # BB avg: 0.008840431
-    # async
+    # async calls to deposit
     # BB avg: 0.000029499
 
 if __name__ == "__main__":

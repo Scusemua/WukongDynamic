@@ -275,7 +275,7 @@ if __name__ == "__main__":
     print("Task %s has %d dependents." % (task_key, len(current_dependents)))
 
     node = Node(pred = current_dependencies, succ = current_dependents, 
-      task_name = task_key, task = task_obj[0], task_inputs = task_obj[1:]) #rhc
+      task_name = task_key, task = task_obj[0], task_inputs = task_obj[1:])
     nodes_map[task_key] = node 
     nodes.append(node)
 
@@ -301,13 +301,13 @@ if __name__ == "__main__":
   #         current_dependents = []
 
   #       node = Node(pred = current_dependencies, succ = current_dependents, 
-  #         task_name = task_key, task = task_obj[0], task_inputs = task_obj[1:]) #rhc
+  #         task_name = task_key, task = task_obj[0], task_inputs = task_obj[1:])
   #       nodes_map[task_key] = node 
   #       nodes.append(node)
   #   elif type(layer) is dask.blockwise.Blockwise:
   #     print("Processing Blockwise now...")
   #     node = Node(pred = list(dependencies[task]), succ = dependents[task], 
-  #       task_name = task, task = layer.dsk[task][0], task_inputs = layer.dsk[task][1:]) #rhc
+  #       task_name = task, task = layer.dsk[task][0], task_inputs = layer.dsk[task][1:])
   #     nodes_map[task] = node 
   #     nodes.append(node)
 
@@ -361,7 +361,6 @@ if __name__ == "__main__":
   # Grab the inputs for the leaf tasks and put them in the appropriate nodes.
   for leaf_task_id in leaf_task_ids:
     node = nodes_map[leaf_task_id]
-    # rhc
     #node.set_task_inputs(task_objects_map[leaf_task_id][leaf_task_id][1:])
     leaf_nodes.append(node)
 

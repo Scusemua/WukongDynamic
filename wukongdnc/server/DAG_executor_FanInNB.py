@@ -192,13 +192,11 @@ class DAG_executor_FanInNB(MonitorSU):
                     logger.debug("FanInNB: starting DAG_executor thread for task " + fanin_task_name + " with start state " + str(start_state_fanin_task))
                     server = kwargs['server']
                     #DAG_executor_state =  kwargs['DAG_executor_State']
-    ##rhc
                     #DAG_executor_state.state = int(start_state_fanin_task)
                     DAG_executor_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state_fanin_task)
                     DAG_executor_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
                     DAG_executor_state.return_value = None
                     DAG_executor_state.blocking = False
-    ##rhc
                     logger.debug("FanInNB: calling_task_name:" + calling_task_name + " DAG_executor_state.state: " + str(DAG_executor_state.state))
                     #logger.debug("DAG_executor_state.function_name: " + DAG_executor_state.function_name)
                     payload = {
@@ -226,7 +224,6 @@ class DAG_executor_FanInNB(MonitorSU):
             elif not self.store_fanins_faninNBs_locally and not run_all_tasks_locally:
                 #ToDO: use using_lambdas (=> self.store_fanins_faninNBs_locally and not run_all_tasks_locally)
                 try:
-    ##rhc
                     DAG_executor_state = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()), state = start_state_fanin_task)
                     DAG_executor_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
                     DAG_executor_state.return_value = self._results
@@ -234,7 +231,6 @@ class DAG_executor_FanInNB(MonitorSU):
                     logger.debug("FanInNB: starting Starting Lambda function for task " + fanin_task_name + " with start state " + str(DAG_executor_state.state))
                     #logger.debug("DAG_executor_state: " + str(DAG_executor_state))
                     payload = {
-    ##rhc
                         #"state": int(start_state_fanin_task),
                         "input": self._results,
                         "DAG_executor_state": DAG_executor_state,

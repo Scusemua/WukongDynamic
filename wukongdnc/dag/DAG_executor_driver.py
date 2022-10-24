@@ -510,7 +510,7 @@ def run():
     # FYI
     logger.debug("DAG_executor_driver: DAG_leaf_tasks: " + str(DAG_leaf_tasks))
     logger.debug("DAG_executor_driver: DAG_leaf_task_start_states: " + str(DAG_leaf_task_start_states))
-    #rhc: commented out for MM
+    #commented out for MM
     #logger.debug("DAG_executor_driver: DAG_leaf_task_inputs: " + str(DAG_leaf_task_inputs))
 
     # Done with process_work_queue 
