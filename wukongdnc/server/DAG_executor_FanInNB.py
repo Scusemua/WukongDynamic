@@ -239,7 +239,7 @@ class DAG_executor_FanInNB(MonitorSU):
                     }
                     ###### DAG_executor_State.function_name has not changed
                     
-                    invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor_lambda")
+                    invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_Executor_Lambda")
                 except Exception as ex:
                     logger.debug("FanInNB:[ERROR] Failed to start DAG_executor Lambda.")
                     logger.debug(ex)
@@ -247,8 +247,12 @@ class DAG_executor_FanInNB(MonitorSU):
                 # No signal of non-last client; they did not block and they are done executing. 
                 # does mutex.V
                 super().exit_monitor()
-                # no one should be calling fan_in again since this is last caller   
-                return self._results, restart  # all threads have called so return results
+                # no one should be calling fan_in again since this is last caller
+                # results given to invoked lambda so nothing to return; can't return results
+                # to tcp_serve \r or tcp_server might try to put them in the non-existent 
+                # work_queue.   
+                #return self._results, restart  # all threads have called so return results
+                return 0, restart
                 #return 1, restart  # all threads have called so return results
 
             else:

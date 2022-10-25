@@ -48,9 +48,9 @@ def send_object(obj, websocket):
     # First, we send the number of bytes that we're going to send.
     logger.debug(thread_name + ": send_object: len obj: " + str(len(obj)))
     # send_object: len obj: 278522 needs 3 bytes
-    time.sleep(0.6)
+    #time.sleep(0.6)
     websocket.sendall(len(obj).to_bytes(4, byteorder='big'))
-    time.sleep(0.6)
+    #time.sleep(0.6)
     # Next, we send the serialized object itself. 
     websocket.sendall(obj)
     logger.debug(thread_name + ": sent object: thread " + thread_name + ": cloudpickle.loads(data)") 
