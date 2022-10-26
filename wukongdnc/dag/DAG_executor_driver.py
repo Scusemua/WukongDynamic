@@ -295,29 +295,29 @@ def run():
             state_info.task_inputs = None
 
     # FYI:
-    print("DAG_map:")
+    print("DAG_executor_driver: DAG_map:")
     for key, value in DAG_map.items():
         print(key)
         print(value)
     print("  ")
-    print("DAG states:")         
+    print("DAG_executor_driver: DAG states:")         
     for key, value in DAG_states.items():
         print(key)
         print(value)
     print("   ")
-    print("DAG leaf task start states")
+    print("DAG_executor_driver: DAG leaf task start states")
     for start_state in DAG_leaf_task_start_states:
         print(start_state)
     print()
-    print("DAG_tasks:")
+    print("DAG_executor_driver: DAG_tasks:")
     for key, value in DAG_tasks.items():
         print(key, ' : ', value)
     print()
-    print("DAG_leaf_tasks:")
+    print("DAG_executor_driver: DAG_leaf_tasks:")
     for task_name in DAG_leaf_tasks:
         print(task_name)
     print() 
-    print("DAG_leaf_task_inputs:")
+    print("DAG_executor_driver: DAG_leaf_task_inputs:")
     #for inp in DAG_leaf_task_inputs:
     #    print(inp)
     #print() 
@@ -337,7 +337,7 @@ def run():
         if store_fanins_faninNBs_locally:
             # store fanin and faninNBs locally so not using websocket to tcp_server
             if not using_threads_not_processes: # using processes
-                logger.error("[Error': store local but using processes.")
+                logger.error("[Error]: DAG_executor_driver: store local but using processes.")
             # cannot be multiprocessing, may or may not be pooling, running all tasks locally (no Lambdas)
             # server is global variable obtained: from .DAG_executor_synchronizer import server
             if create_all_fanins_faninNBs_on_start:
@@ -432,7 +432,7 @@ def run():
                     # put leaf node start states in work queue. threads are created to execute
                     # fanout tasks and fanin tasks (like lambdas)
                     if not using_threads_not_processes:
-                        logger.error("[Error]: not using_workers but using processes.")
+                        logger.error("[Error]: DAG_executor_driver: not using_workers but using processes.")
                     # just create a batch of fanins and faninNBs on server - no remote work queue wen using
                     # thread workers or using lambdas.         
                     create_fanins_and_faninNBs(websocket,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
@@ -440,9 +440,9 @@ def run():
                     # not run_all_tasks_locally and not using workers must be true (since 
                     # (not run_all_tasks_locally) and using_workers is never used.
                     if using_workers:
-                        logger.error("[Error]: using_workers but using lambdas.")
+                        logger.error("[Error]: DAG_executor_driver: using_workers but using lambdas.")
                     if run_all_tasks_locally:
-                        logger.error("[Error]: innteral error: DAG_executor_driver: run_all_tasks_locally shoudl be false.")
+                        logger.error("[Error]: DAG_executor_driver: interal error: DAG_executor_driver: run_all_tasks_locally shoudl be false.")
                     # not run_all_tasks_locally so using lambdas, which use a work queue but no workers. 
                     # So do not put leaf tasks in work queue
                     create_fanins_and_faninNBs(websocket,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
@@ -496,14 +496,14 @@ def run():
                     # put leaf node start states in work queue. threads are created to execute
                     # fanout tasks and fanin tasks (like lambdas)
                     if not using_threads_not_processes:
-                        logger.error("[Error]: not using_workers but using processes.")
+                        logger.error("[Error]: DAG_executor_driver: not using_workers but using processes.")
                 else:
                     # not run_all_tasks_locally and not using workers must be true (since 
                     # (not run_all_tasks_locally) and using_workers is never used.
                     if using_workers:
-                        logger.error("[Error]: using_workers but using lambdas.")
+                        logger.error("[Error]: DAG_executor_driver: using_workers but using lambdas.")
                     if run_all_tasks_locally:
-                        logger.error("[Error]: interal error: DAG_executor_driver: run_all_tasks_locally should be false.")
+                        logger.error("[Error]: DAG_executor_driver: interal error: DAG_executor_driver: run_all_tasks_locally should be false.")
                     # not run_all_tasks_locally so using lambdas, which do not use a work queue 
                     # So do not put leaf tasks in work queue and do not create a work queue
 
@@ -708,9 +708,9 @@ def run():
                     logger.error("DAG_executor_driver: worker (pool) threads/processes must run locally (no Lambdas)")
 
     if use_multithreaded_multiprocessing:
-        logger.debug("num_processes_created_for_multithreaded_multiprocessing: " + str(num_processes_created_for_multithreaded_multiprocessing))
+        logger.debug("DAG_executor_driver: num_processes_created_for_multithreaded_multiprocessing: " + str(num_processes_created_for_multithreaded_multiprocessing))
     elif run_all_tasks_locally:
-            logger.debug("num_threads_created: " + str(num_threads_created))
+            logger.debug("DAG_executor_driver: num_threads_created: " + str(num_threads_created))
 
     if run_all_tasks_locally:
         # Do joins if not using lambdas
@@ -740,9 +740,9 @@ def run():
     stop_time = time.time()
     duration = stop_time - start_time
 
-    logger.debug("Sleeping 1.0")
+    logger.debug("DAG_executor_driver: Sleeping 1.0")
     time.sleep(3.0)
-    print("DAG_Execution finished in %f seconds." % duration)
+    print("DAG_executor_driver: DAG_Execution finished in %f seconds." % duration)
 		
     #ToDo:  close_all(websocket)
 
@@ -806,7 +806,7 @@ def create_fanin_and_faninNB_messages(DAG_map,DAG_states,DAG_info,all_fanin_task
         }
         faninNB_messages.append(message)
 
-    logger.debug("create_fanin_and_faninNB_messages: number of fanin messages: " + str(len(fanin_messages))
+    logger.debug("DAG_executor_driver: create_fanin_and_faninNB_messages: number of fanin messages: " + str(len(fanin_messages))
         + " number of faninNB messages: " + str(len(faninNB_messages)))
 
     return fanin_messages, faninNB_messages
@@ -856,7 +856,7 @@ def create_fanins_and_faninNBs_and_work_queue(websocket,number_of_tasks,DAG_map,
 
     fanin_messages, faninNB_messages = create_fanin_and_faninNB_messages(DAG_map,DAG_states,DAG_info,all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes)
 
-    logger.debug("create_fanins_and_faninNBs_and_work_queue: Sending a 'create_fanins_and_faninNBs_and_work_queue' message to server.")
+    logger.debug("DAG_executor_driver: create_fanins_and_faninNBs_and_work_queue: Sending a 'create_fanins_and_faninNBs_and_work_queue' message to server.")
     #logger.debug("create_fanins_and_faninNBs_and_work_queue: num fanin created: "  + str(len(fanin_messages))
     #    +  " num faninNB creates; " + str(len(faninNB_messages)))
 
