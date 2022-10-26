@@ -632,7 +632,7 @@ def run():
                     break
             else:
                 try:
-                    logger.debug("DAG_executor_driver: Starting DAG_executor_lambda for leaf task " + task_name)
+                    logger.debug("DAG_executor_driver: Starting DAG_Executor_Lambda for leaf task " + task_name)
                     lambda_DAG_exec_state = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()), state = start_state)
                     logger.debug ("DAG_executor_driver: lambda payload is DAG_info + " + str(start_state) + "," + str(inp))
                     lambda_DAG_exec_state.restart = False      # starting new DAG_executor in state start_state_fanin_task
@@ -654,7 +654,7 @@ def run():
                         "DAG_info": DAG_info
                     }
 
-                    invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor_lambda")
+                    invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_Executor_Lambda")
                 except Exception as ex:
                     logger.error("[ERROR] DAG_executor_driver: Failed to start DAG_executor Lambda.")
                     logger.error(ex)
@@ -709,8 +709,8 @@ def run():
 
     if use_multithreaded_multiprocessing:
         logger.debug("num_processes_created_for_multithreaded_multiprocessing: " + str(num_processes_created_for_multithreaded_multiprocessing))
-    else:
-        logger.debug("num_threads_created: " + str(num_threads_created))
+    elif run_all_tasks_locally:
+            logger.debug("num_threads_created: " + str(num_threads_created))
 
     if run_all_tasks_locally:
         # Do joins if not using lambdas

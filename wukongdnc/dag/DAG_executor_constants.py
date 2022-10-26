@@ -2,7 +2,7 @@
 #
 # True if we are not using Lambdas, i.e., executing tasks with threads or processes
 # locall, i.e., on one machine.
-run_all_tasks_locally = True         # vs remotely (in Lambdas)
+run_all_tasks_locally = False         # vs remotely (in Lambdas)
 # True if synch objects are stored locally, i.e., in the memory of the single
 # machine on which the threads are executing.  If we are using multiprocessing
 # or Lambdas, this must be False. When False, the synch objects are stored
@@ -19,12 +19,12 @@ create_all_fanins_faninNBs_on_start = True
 # case, instead of, e.g., starting a Lambda at fan_out operations, we start a thread.
 # This results in the creation of many threads and is only use to test the logic 
 # of the Lambda code.
-using_workers = True
+using_workers = False
 # True when we ae not using Lambas and tasks are executed by threads instead of processes. 
 # False when we are not using lambdas and are using multiprocesssing 
 using_threads_not_processes = False
 # When using_workers, this is how many threads or processes in the pool.
-using_lambdas = False   # == not run_all_tasks_locally
+using_lambdas = True   # == not run_all_tasks_locally
 num_workers = 1
 use_multithreaded_multiprocessing = True
 num_threads_for_multithreaded_multiprocessing = 2

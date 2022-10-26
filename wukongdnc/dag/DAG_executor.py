@@ -2,7 +2,8 @@ import threading
 import _thread
 import time
 import socket
-
+import cloudpickle 
+import base64 
 
 from .DFS_visit import Node
 #from DAG_executor_FanInNB import DAG_executor_FanInNB
@@ -436,6 +437,7 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
     keyword_arguments['work_queue_type'] = "BoundedBuffer"
     keyword_arguments['work_queue_method'] = "deposit_all"
     keyword_arguments['work_queue_op'] = "synchronize_async"
+    keyword_arguments['DAG_info'] = DAG_info
     # get a slice of DAG_states that is the DAG states of just the faninNB tasks.
     # Instead of sending all the DAG_states, i.e., all the states in the DAG, to the server.
     # Need this to put any work that is not returned in the work_queue - work is added as
@@ -663,23 +665,26 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                     logger.debug("Starting fanout DAG_executor Lambda for " + name)
                     fanout_task_start_state = DAG_states[name]
                     # create a new DAG_executor_State object so no DAG_executor_State object is shared by fanout/faninNB threads in a local test.
-                    lambda_DAG_executor_state = DAG_executor_State(function_name = "DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()), state = fanout_task_start_state)
-                    logger.debug ("payload is DAG_info + " + str(fanout_task_start_state) + "," + str(output))
+                    lambda_DAG_executor_state = DAG_executor_State(function_name = "DAG_Executor_Lambda", function_instance_ID = str(uuid.uuid4()), state = fanout_task_start_state)
+                    logger.debug ("payload is DAG_info + " + str(fanout_task_start_state) + ", " + str(output))
                     lambda_DAG_executor_state.restart = False      # starting new DAG_executor in state start_state_fanin_task
                     lambda_DAG_executor_state.return_value = None
                     lambda_DAG_executor_state.blocking = False
                     logger.info("Starting Lambda function %s." % lambda_DAG_executor_state.function_name)
                     #logger.debug("lambda_DAG_executor_State: " + str(lambda_DAG_executor_State))
+                    results = {}
+                    results[name] = output
                     payload = {
 #ToDo: Lambda:          # use parallel invoker with list piggybacked on batch fanonNBs, as usual
                         #"state": int(fanout_task_start_state),
-                        "input": output,
+                        #"input": output,
+                        "input": results,
                         "DAG_executor_state": lambda_DAG_executor_state,
                         "DAG_info": DAG_info
                         #"server": server   # used to mock server during testing
                     }
                     ###### DAG_executor_State.function_name has not changed
-                    invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor_lambda")
+                    invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_Executor_Lambda")
                 except Exception as ex:
                     logger.error("FanInNB:[ERROR] process_fanouts: Failed to start DAG_executor Lambda.")
                     logger.error(ex)
@@ -1020,6 +1025,7 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
             task_inputs = state_info.task_inputs    
             is_leaf_task = state_info.task_name in DAG_info.get_DAG_leaf_tasks()
             if not is_leaf_task:
+                print("Packing data. Task inputs: %s. Data dict (keys only): %s" % (str(task_inputs), str(data_dict.keys())))
                 # task_inputs is a tuple of task_names
                 args = pack_data(task_inputs, data_dict)
             else:
@@ -1094,11 +1100,11 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     # piggyback this list on the call to process_faninNBs_batch if there are faninnbs.
                     # if not, we will call work_queueu.put_all() directly.
 
-                    if len(state_info.fanouts) > 0:
+                    #if len(state_info.fanouts) > 0:
                         # We became one fanout task and removed it from fanouts, but there maybe were more fanouts
                         # and we should have added the fanouts to list_of_work_queue_fanout_values.
-                        if len(list_of_work_queue_fanout_values) == 0:
-                            logger.error("[Error]: work loop: after process_fanouts: Internal Error: fanouts > 1 but no work in list_of_work_queue_fanout_values.")
+                        #if len(list_of_work_queue_fanout_values) == 0:
+                        #    logger.error("[Error]: work loop: after process_fanouts: Internal Error: fanouts > 1 but no work in list_of_work_queue_fanout_values.")
  
                     ##state = process_fanouts(state_info.fanouts, DAG_info.get_DAG_states(), DAG_executor_state, output, server)
                     ##logger.debug("become state:" + str(state))
@@ -1383,9 +1389,10 @@ def DAG_executor_processes(payload,counter,log_queue, worker_configurer):
 
 def DAG_executor_lambda(payload):
     logger.debug("Lambda: started.")
-    DAG_exec_state = payload['DAG_executor_state']
+    DAG_exec_state = cloudpickle.loads(base64.b64decode(payload['DAG_executor_state']))
+
     logger.debug("payload DAG_exec_state.state:" + str(DAG_exec_state.state))
-    DAG_info = payload['DAG_info']	
+    DAG_info = cloudpickle.loads(base64.b64decode(payload['DAG_info']))
     DAG_map = DAG_info.get_DAG_map()
     state_info = DAG_map[DAG_exec_state.state]
     is_leaf_task = state_info.task_name in DAG_info.get_DAG_leaf_tasks()
@@ -1393,7 +1400,7 @@ def DAG_executor_lambda(payload):
         # lambdas invoked with inputs. We do not add leaf task inputs to the data
         # dictionary, we use them directly when we execute the leaf task.
         # Also, leaf task inputs are not in a dictionary.
-        dict_of_results = payload['input']
+        dict_of_results = cloudpickle.loads(base64.b64decode(payload['input']))
         for key, value in dict_of_results.items():
             data_dict[key] = value
     else:
@@ -1402,7 +1409,7 @@ def DAG_executor_lambda(payload):
         # parameter would only be used by the Lambdas and we ha ve a place already
         # in state_info.task_inputs. 
         # Note: We null out state_info.task_inputs for leaf tasks after we use the input.
-        inp = payload['input']
+        inp = cloudpickle.loads(base64.b64decode(payload['input']))
         state_info.task_inputs = inp
     # server and counter are None
     # logger is local lambda logger

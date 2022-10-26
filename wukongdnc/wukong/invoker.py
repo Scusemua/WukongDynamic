@@ -195,7 +195,7 @@ def invoke_lambda(
     logger.info("Invoked AWS Lambd1a function '%s' in %f ms. Status: %s." % (function_name, (time.time() - s) * 1000.0, str(status_code)))
 
 def invoke_lambda_DAG_executor(
-    function_name: str = "DAG_executor_lambda",
+    function_name: str = "DAG_Executor_Lambda",
     payload: dict = None
 ):
     """
