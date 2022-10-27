@@ -38,7 +38,8 @@ class Synchronizer(object):
     # valid synchronization objects
     synchronizers = {"barrier", "Barrier", "semaphore", "Semaphore", "bounded_buffer", "BoundedBuffer", 
         "fanin", "FanIn", "CountingSemaphore_Monitor", "CountingSemaphore_Monitor_Select", 
-        "BoundedBuffer_Select", "DAG_executor_FanIn", "DAG_executor_FanInNB"}
+        "BoundedBuffer_Select", "DAG_executor_FanIn", "DAG_executor_FanInNB",
+        "DAG_executor_FanIn_Select", "DAG_executor_FanInNB_Select"}
 
     # Mapping from class to the file in which it is defined.
     file_map = {
@@ -49,7 +50,9 @@ class Synchronizer(object):
         "BoundedBuffer_Select": "bounded_buffer_select",
         "CountingSemaphore_Monitor_Select": "CountingSemaphore_Monitor_Select",
         "DAG_executor_FanIn": "DAG_executor_FanIn",
-        "DAG_executor_FanInNB": "DAG_executor_FanInNB"
+        "DAG_executor_FanInNB": "DAG_executor_FanInNB",
+        "DAG_executor_FanIn_Select": "DAG_executor_FanIn_select" ,
+        "DAG_executor_FanInNB_Select": "DAG_executor_FanInNB_select"
     }
     
     def __init__(self):
@@ -422,7 +425,7 @@ class Synchronizer(object):
         #returnValueIgnored = execute(self._synchronizer, method_name, self._synchronizer, synchronizer_method, result_buffer, **kwargs)
         return_value_ignored = execute(self._synchronizer, method_name, self._synchronizer, synchronizer_method, result_buffer, None, wait_for_result, **kwargs)
         
-        # unlock the synchrnizer before bocking on withdaw(). Method withdraw() may not unblock until after a call to
+        # unlock the synchronizer before bocking on withdaw(). Method withdraw() may not unblock until after a call to
         # a synchronize_synch or synchronize_asynch but these methods try to lock the synchronizer so we need to 
         # release our synchronzer lock here. (Blocking on withdaw means the call to a method, e.g., method P on 
         # a CountingSeaphore_Monitor, was not accepted by execute so the call to P will only be accepted/chosen by

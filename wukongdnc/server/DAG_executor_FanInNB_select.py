@@ -1,10 +1,13 @@
-#from re import L
-# ToDo:
-#from ..server.monitor_su import MonitorSU, ConditionVariable
-from .monitor_su import MonitorSU
+from ..constants import SERVERLESS_SYNC
+
+if SERVERLESS_SYNC:
+    from .selector_lambda import Selector
+else:
+    from .selector import Selector
+
 import threading
-import time 
-from threading import Thread
+#import time 
+#from threading import Thread
 
 #from DAG_executor import DAG_executor
 #from wukongdnc.dag 
@@ -20,30 +23,25 @@ from wukongdnc.wukong.invoker import invoke_lambda_DAG_executor
 import uuid
 from wukongdnc.dag import DAG_executor
 
+from .selectableEntry import selectableEntry
+
 import logging 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
-
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
-
 logger.addHandler(ch)
 
-#Fanin object. For a fan-in of n, the first n-1 serverless functions to call fan-in will 
-#terminate. Only the last function that calls fan-in will continue executing. fan-in returns
-#a list of the results of the n-1 threads that will terminate.
-class DAG_executor_FanInNB(MonitorSU):
-    def __init__(self, initial_n = 0, monitor_name = "DAG_executor_FanInNB"):
-        super(DAG_executor_FanInNB, self).__init__(monitor_name = monitor_name)
-        self.monitor_name = monitor_name    # this is fanin_task_name
-        self._n = initial_n
+class DAG_executor_FanInNB_Select(Selector):
+    def __init__(self, selector_name = None):
+        super(DAG_executor_FanInNB_Select, self).__init__(selector_name=selector_name)
+        self.selector_name = selector_name
         self._num_calling = 0
-        # For faninNB, results are collected in a nmap of task_name to result
-        self._results = {} # fan_in results of executors
-        self._go = self.get_condition_variable(condition_name = "go")
-
+        # For faninNB, results are collected in a map of task_name to result
+        self._results = {} # fan_in map of results of executors
+    
     @property
     def n(self):
         return self._n 
@@ -55,15 +53,15 @@ class DAG_executor_FanInNB(MonitorSU):
 
     def init(self, **kwargs):
         #logger.debug(kwargs)
-        #   These are the 8 keyword_arguments passed:
-        #   keyword_arguments['fanin_task_name'] = name     # for debugging
-        #   keyword_arguments['n'] = n
-        #   keyword_arguments['start_state_fanin_task'] = start_state_fanin_task    # start DAG_executor in this state to run fanin task
-        #   keyword_arguments['result'] = output        # output of running task that is now executing this fan_in
-        #   keyword_arguments['calling_task_name'] = calling_task_name  # used to label output of task that is executing this fan_in
-        #   keyword_arguments['DAG_executor_state'] = new_DAG_exec_State # given to the thread/lambda that executes the fanin task.
-        #   keyword_arguments['server'] = server     # used to mock server when running local test
-        #   keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally    # option set in DAG_executor
+        #   These are the 6 keyword_arguments passed:
+        #   keyword_arguments['fanin_task_name'] = fanins[0]    # used for debugging
+        #   keyword_arguments['n'] = faninNB_sizes[0]
+        #   # used by FanInNB to start new DAG_executor in given state - FanIn uses become task
+        #   #keyword_arguments['start_state_fanin_task'] = DAG_states[fanins[0]]  
+        #   keyword_arguments['result'] = output
+        #   keyword_arguments['calling_task_name'] = calling_task_name
+        #   keyword_arguments['DAG_executor_State'] = DAG_executor_State
+        #   keyword_arguments['server'] = server    # used to mock server when running local test
         if kwargs is None or len(kwargs) == 0:
             raise ValueError("FanIn requires a length. No length provided.")
         elif len(kwargs) > 9:
@@ -74,69 +72,83 @@ class DAG_executor_FanInNB(MonitorSU):
         self.store_fanins_faninNBs_locally = kwargs['store_fanins_faninNBs_locally']
         self.DAG_info = kwargs['DAG_info'] 
 
-    def try_fan_in(self, **kwargs):
-        # Does mutex.P as usual
-        super().enter_monitor(method_name = "try_fan_in")     
+        self._fan_in = selectableEntry("fan_in")
+
+        # fan_in never blocks and we are not doing an restarts during DAG_execution.
+        self._fan_in.set_restart_on_block(False)
+        self._fan_in.set_restart_on_noblock(False) 
+        self._fan_in.set_restart_on_unblock(False)
+
+        # superclass method calls
+        self.add_entry(self._fan_in)     # alternative 1
+
+    def try_fan_in(self,**kwargs):
+        # Does try_op protocol for acquiring/releasing lock
+        
+        #self.enter_monitor(method_name = "try_deposit")
+        
         # super.is_blocking has a side effect which is to make sure that exit_monitor below
         # does not do mutex.V, also that enter_monitor of wait_b that follows does not do mutex.P.
-        # This makes executes_wait ; wait_b atomic
+        # This males try_wait_b ; wait_b atomic
         
-        block = super().is_blocking(self._num_calling < (self._n - 1))
+        #block = super().is_blocking(self._fullSlots == self._capacity)
+        block = self.is_blocking(False)
         
         # Does not do mutex.V, so we will still have the mutex lock when we next call
         # enter_monitor in wait_b
-        super().exit_monitor()
+        
+        #self.exit_monitor()
+        
         return block
+    
+    def set_guards(self):
+        self._fan_in.guard(True)
 
     # synchronous try version of fan-in, no restart if block since clients are done if they are not the last to call; 
     # Assumes clients that get block = True will terminate and do NOT expect to be restarted. A client that is not 
     # the last to call fan_in is expected to terminate. The last client to call fan_in will become the fan-in task.
     # no meaningful return value expected by client
     def fan_in(self, **kwargs):
-        logger.debug("FanInNB: fan_in %s calling enter_monitor" % self.monitor_name)
         # if we called try_fan_in first, we still have the mutex so this enter_monitor does not do mutex.P
-        super().enter_monitor(method_name = "fan_in")
-        logger.debug("FanInNB: Fan-in %s entered monitor in fan_in()" % self.monitor_name)
-        logger.debug("FanInNB: fan_in() " + self.monitor_name + " entered monitor. self._num_calling = " + str(self._num_calling) + ", self._n=" + str(self._n))
-
+        logger.debug("DAG_executor_FanInNB_Select: fan_in: entered fan_in()")
+        
         if self._num_calling < (self._n - 1):
             self._num_calling += 1
 
             # No need to block non-last thread since we are done with them - they will terminate and not restart.
             # self._go.wait_c()
             result = kwargs['result']
-            logger.debug("FanInNB: result is " + str(result))
+            logger.debug("DAG_executor_FanInNB_Select: fan_in:  result is " + str(result))
             calling_task_name = kwargs['calling_task_name']
             #self._results[calling_task_name] = result[calling_task_name]
             self._results[calling_task_name] = result
-            logger.debug("FanInNB: Result (saved by the non-last executor) for fan-in %s: %s" % (calling_task_name, str(result)))
+            logger.debug("DAG_executor_FanInNB_Select: fan_in: result (saved by the non-last executor) for fan-in %s: %s" % (calling_task_name, str(result)))
             
             #threading.current_thread()._restart = False
             #threading.current_thread()._returnValue = 0
-            restart = False
-            logger.debug(" FanInNB: !!!!! non-last Client " + calling_task_name 
-                + " exiting FanInNB fan_in id = %s!!!!!" % calling_task_name)
-            super().exit_monitor()
+
+            logger.debug(" !!!!! non-last Client: DAG_executor_FanInNB_Select: fan_in: " + calling_task_name 
+                + " exiting FanInNB fan_in")
             # Note: Typcally we would return 1 when try_fan_in returns block is True, but the Fanin currently
             # used by wukong D&C is expecting a return value of 0 for this case.
-            return 0, restart
+            return 0
         else:  
             # Last thread does synchronize_synch and will not wait for result since this is fanin NB.
             # Last thread does append results (unlike FanIn)
-            logger.debug("FanInNB:Last thread in FanIn %s so not calling self._go.wait_c" % self.monitor_name)
+            logger.debug("DAG_executor_FanInNB_Select: fan_in: Last thread in FanIn %s so not calling self._go.wait_c" % self.selector_name)
             result = kwargs['result']
             calling_task_name = kwargs['calling_task_name']
             self._results[calling_task_name] = result
             start_state_fanin_task = kwargs['start_state_fanin_task']
             
             if (self._results is not None):
-                logger.debug("faninNB collected results for fan-in %s: %s" % (self.monitor_name, str(self._results)))
+                logger.debug("DAG_executor_FanInNB_Select: fan_in: faninNB %s: collected results of fan_in: %s" % (self.selector_name, str(self._results)))
  
             #threading.current_thread()._returnValue = self._results
             #threading.current_thread()._restart = False 
-            restart = False
-            logger.debug("FanInNB: !!!!! last Client " + calling_task_name 
-                + " exiting FanIn fan_in id=%s!!!!!" % self.monitor_name)
+
+            logger.debug("!!!!! last Client: DAG_executor_FanInNB_Select: fan_in: faninNB " + self.selector_name
+                +  " calling task name: " + calling_task_name + "exiting fan_in")
             # for debugging
             fanin_task_name = kwargs['fanin_task_name']
 
@@ -154,7 +166,7 @@ class DAG_executor_FanInNB(MonitorSU):
                         # a new thread/process or add a sate to the processes work_queue.
                         # If we are batching calls to fan_in, we are storing FanInNBs remotely so we cannot
                         # start a thread (on the tcp_server)
-                        logger.debug("FanInNB: using_workers and threads so add start state of fanin task to thread_work_queue.")
+                        logger.debug("DAG_executor_FanInNB_Select: fan_in: using_workers and threads so add start state of fanin task to thread_work_queue.")
                         #thread_work_queue.put(start_state_fanin_task)
                         work_tuple = (start_state_fanin_task,self._results)
                         work_queue.put(work_tuple)
@@ -162,33 +174,33 @@ class DAG_executor_FanInNB(MonitorSU):
            
                         # No signal of non-last client; they did not block and they are done executing. 
                         # does mutex.V
-                        super().exit_monitor()
+
                         # no one should be calling fan_in again since this is last caller
-                        return self._results, restart  # all threads have called so return results
+                        return self._results  # all threads have called so return results
                         #return 1, restart  # all threads have called so return results
                     else:
                         # FanInNB is stored remotely so return work to tcp_server. If we are not batching calls
                         # to fan_in, the work/results will be returned to the client caller. If we are batching 
                         # calls, one result will be returned to the client if they need work. If not, no work
                         # is returned and all work is put into the work_queue, which is also stored on tcp_server.
-                        super().exit_monitor()
+
                         # no one should be calling fan_in again since this is last caller
-                        return self._results, restart  # all threads have called so return results        
+                        return self._results  # all threads have called so return results        
                 else:
                     if self.store_fanins_faninNBs_locally:
-                        logger.error("[Error]: FaninB: using workers and processes but storing fanins locally,")
+                        logger.error("[Error]: DAG_executor_FanInNB_Select: fan_in: using workers and processes but storing fanins locally,")
                     # No signal of non-last client; they did not block and they are done executing. 
                     # does mutex.V
-                    super().exit_monitor()
+
                     # no one should be calling fan_in again since this is last calle
-                    return self._results, restart  # all threads have called so return results
+                    return self._results  # all threads have called so return results
                     #return 1, restart  # all threads have called so return results
             elif self.store_fanins_faninNBs_locally and run_all_tasks_locally:
                 if not using_threads_not_processes:
-                    logger.error("[Error]: FaninB: storing fanins locally but not using threads.")
+                    logger.error("[Error]: DAG_executor_FanInNB_Select: fan_in:  storing fanins locally but not using threads.")
   
                 try:
-                    logger.debug("FanInNB: starting DAG_executor thread for task " + fanin_task_name + " with start state " + str(start_state_fanin_task))
+                    logger.debug("DAG_executor_FanInNB_Select: fan_in:  starting DAG_executor thread for task " + fanin_task_name + " with start state " + str(start_state_fanin_task))
                     server = kwargs['server']
                     #DAG_executor_state =  kwargs['DAG_executor_State']
                     #DAG_executor_state.state = int(start_state_fanin_task)
@@ -196,7 +208,7 @@ class DAG_executor_FanInNB(MonitorSU):
                     DAG_executor_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
                     DAG_executor_state.return_value = None
                     DAG_executor_state.blocking = False
-                    logger.debug("FanInNB: calling_task_name:" + calling_task_name + " DAG_executor_state.state: " + str(DAG_executor_state.state))
+                    logger.debug("DAG_executor_FanInNB_Select: fan_in: calling_task_name:" + calling_task_name + " DAG_executor_state.state: " + str(DAG_executor_state.state))
                     #logger.debug("DAG_executor_state.function_name: " + DAG_executor_state.function_name)
                     payload = {
                         #"state": int(start_state_fanin_task),
@@ -210,14 +222,13 @@ class DAG_executor_FanInNB(MonitorSU):
                     thread.start()
                     #_thread.start_new_thread(DAG_executor.DAG_executor_task, (payload,))
                 except Exception as ex:
-                    logger.debug("FanInNB:[ERROR] Failed to start DAG_executor thread.")
+                    logger.debug("[ERROR]: DAG_executor_FanInNB_Select: fan_in: Failed to start DAG_executor thread.")
                     logger.debug(ex)
 
                 # No signal of non-last client; they did not block and they are done executing. 
                 # does mutex.V
-                super().exit_monitor()
                 # no one should be calling fan_in again since this is last caller
-                return self._results, restart  # all threads have called so return results
+                return self._results  # all threads have called so return results
                 #return 1, restart  # all threads have called so return results
                     
             elif not self.store_fanins_faninNBs_locally and not run_all_tasks_locally:
@@ -227,7 +238,7 @@ class DAG_executor_FanInNB(MonitorSU):
                     DAG_executor_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
                     DAG_executor_state.return_value = self._results
                     DAG_executor_state.blocking = False            
-                    logger.debug("FanInNB: starting Starting Lambda function for task " + fanin_task_name + " with start state " + str(DAG_executor_state.state))
+                    logger.debug("DAG_executor_FanInNB_Select: fan_in: starting Starting Lambda function for task " + fanin_task_name + " with start state " + str(DAG_executor_state.state))
                     #logger.debug("DAG_executor_state: " + str(DAG_executor_state))
                     payload = {
                         #"state": int(start_state_fanin_task),
@@ -240,22 +251,21 @@ class DAG_executor_FanInNB(MonitorSU):
                     
                     invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_Executor_Lambda")
                 except Exception as ex:
-                    logger.debug("FanInNB:[ERROR] Failed to start DAG_executor Lambda.")
+                    logger.debug("[ERROR]: DAG_executor_FanInNB_Select: fan_in: Failed to start DAG_executor Lambda.")
                     logger.debug(ex)
 
                 # No signal of non-last client; they did not block and they are done executing. 
                 # does mutex.V
-                super().exit_monitor()
                 # no one should be calling fan_in again since this is last caller
                 # results given to invoked lambda so nothing to return; can't return results
                 # to tcp_serve \r or tcp_server might try to put them in the non-existent 
                 # work_queue.   
                 #return self._results, restart  # all threads have called so return results
-                return 0, restart
+                return 0
                 #return 1, restart  # all threads have called so return results
 
             else:
-                logger.error("FanInNB:[ERROR] Internal Error: reached else: error at end of fanin")
+                logger.error("[ERROR]: Internal Error: DAG_executor_FanInNB_Select: fan_in: reached else: error at end of fanin")
 
             # No signal of non-last client; they did not block and they are done executing. 
             # does mutex.V
@@ -263,93 +273,3 @@ class DAG_executor_FanInNB(MonitorSU):
             
             #return self._results, restart  # all threads have called so return results
             #return 1, restart  # all threads have called so return results
-        
-
-        #No logger.debugs here. main Client can exit while other threads are
-        #doing this logger.debug so main thread/interpreter can't get stdout lock?
-
-# Local tests  
-#def task1(b : FanIn):
-    #time.sleep(1)
-    #logger.debug("task 1 Calling fan_in")
-    #result = b.fan_in(ID = "task 1", result = "task1 result")
-    #logger.debug("task 1 Successfully called fan_in")
-    #if result == 0:
-    #    logger.debug("result is o")
-    #else:
-        #result is a list, logger.debug it
-
-#def task2(b : FanIn):
-    #logger.debug("task 2 Calling fan_in")
-    #result = b.fan_in(ID = "task 2", result = "task2 result")
-    #logger.debug("task 2  Successfully called fan_in")
-    #if result == 0:
-    #    logger.debug("result is o")
-    #else:
-        #result is a list, logger.debug it
-
-class testThread(Thread):
-    def __init__(self, ID, b):
-        # Call the Thread class's init function
-        #Thread.__init__(self)
-        super(testThread,self).__init__(name="testThread")
-        self._ID = ID
-        self._restart = True
-        self._return = None
-        self.b = b
-
-    # Override the run() function of Thread class
-    def run(self):
-        time.sleep(1)
-        logger.debug("task " + self._ID + " Calling fan_in")
-        r = self.b.fan_in(ID = self._ID, result = "task1 result")
-        logger.debug("task " + self._ID + ", Successfully called fan_in, returned r:" + r)
-
-def main():
-    b = DAG_executor_FanInNB(initial_n=2,monitor_name="DAG_executor_FanInNB")
-    b.init(**{"n": 2})
-
-    #try:
-    #    logger.debug("Starting thread 1")
-    #   _thread.start_new_thread(task1, (b,))
-    #except Exception as ex:
-    #    logger.debug("[ERROR] Failed to start first thread.")
-    #    logger.debug(ex)
-    
-    try:
-        callerThread1 = testThread("T1", b)
-        callerThread1.start()
-    except Exception as ex:
-        logger.debug("[ERROR] Failed to start first thread.")
-        logger.debug(ex)      
-
-    #try:
-    #    logger.debug("Starting first thread")
-    #    _thread.start_new_thread(task2, (b,))
-    #except Exception as ex:
-    #   logger.debug("[ERROR] Failed to start first thread.")
-    #    logger.debug(ex)
-    
-    try:
-        callerThread2 = testThread("T2", b)
-        callerThread2.start()
-    except Exception as ex:
-        logger.debug("[ERROR] Failed to start second thread.")
-        logger.debug(ex)
-        
-    callerThread1.join()
-    callerThread2.join()
-    
-    logger.debug("joined threads")
-    logger.debug("callerThread1 restart " + str(callerThread1._restart))
-    logger.debug("callerThread2._returnValue=" + str(callerThread1._return))
-
-    logger.debug("callerThread2 restart " + str(callerThread2._restart))
-    logger.debug("callerThread2._returnValue=" + str(callerThread2._return))
-    # if callerThread2._result == 0:
-    #     logger.debug("callerThread2 result is 0")
-    # else:
-    #     #result is a list, logger.debug it
-        
-if __name__=="__main__":
-    main()

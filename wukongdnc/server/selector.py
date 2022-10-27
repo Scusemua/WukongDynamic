@@ -50,6 +50,9 @@ class Selector():
     def get_num_entries(self):
         return self._select.get_number_entries()
 
+    def set_guards(self):
+        raise ValueError("set_guards in parent class Selector should not be called.")
+
     # Could call [try-op; addArrival (no lock since it's private); execute]?
     # Q: Don't want to pass anything to choose(), or why not since user is not messing with
     # execute/choose in parent class.

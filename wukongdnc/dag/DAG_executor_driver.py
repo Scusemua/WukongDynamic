@@ -2,29 +2,26 @@
 # break stuck Python is FN + R
 # try matrixMult
 
-# implement multitreaded processes- drver creates processes that start threads as usual.
-#   Need "multitreaded_multiprocessing=True" and check other constants will work.
-#   Note matrix mult may be using C code so may work well with multithreading.
-
 # Where are we: 
-# Fix Bug: when remote storage and using threads, call process_faninNBs but, which means we
-# make a seperate call to fanin remote for ach faninNB; but e return when we get a 0 instead
-# of processing all of the faninNBs. So like batch, we need to process all and keep 1 work
-# for ourself if we need work.
-# FninNB local with no workers always starts new thread, like Lambda. Sowe are 
-#   not lookng at or changing worker_needs_work. Perhaps we should not start new 
-#   thread/Lambda if worker_needs_work or use faster/better to start new Lambda/thread?
-#   Don't want Lambda to wait for work or anything else? Call to process_faninNBs_batch() can 
-#   be asynch since faninNB starts lambdas (all the faninNB work) so no need to wait on 
-#   process_faninNBs_batch?
-# move on the optimizations
-# Then delegate process faninNBs to a thread since long time on server and 
-#   we can in mean time do fanouts?
+# set_guards in parent Selectors worked?
+#
+# Fix sockets for multitreaded processes
+#
+# Don't want Lambda to wait for work or anything else? Call to process_faninNBs_batch() can 
+# be asynch since faninNB starts lambdas (all the faninNB work) so no need to wait on 
+# process_faninNBs_batch?
+#
+# matrix mult deposits results to "collector" object at end.
+#
+# move on the optimizations:
+#
 # Consider: multiple tcp_servers/work_queues and work stealing? workers generate
 # their own work, till they hit a fanin/faninNB and lose. then need need to start 
 # new dfs paths(s). Steal it? 
+# Consider: compute max workers you can keep busy so don;t overprovison and shut down 
+# machines as the workers are not needed or the slowdown is worth the cost.
 # Consider creating an unbounded buufer in which deposit should never block.
-# if it blocks then raise "full" exception. USed for DAG execution where the 
+# if it blocks then raise "full" exception. Used for DAG execution where the 
 # size of the work_queue is blunded by number of tasks so we can create an
 # unbounded buffer of size number_of_tasks + delta that should never block.
 

@@ -1,6 +1,6 @@
-from re import L
-from .monitor_su import MonitorSU, ConditionVariable
-import threading
+#from re import L
+from .monitor_su import MonitorSU   #, ConditionVariable
+#import threading
 import time 
 
 from threading import Thread

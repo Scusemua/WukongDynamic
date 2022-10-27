@@ -1,24 +1,24 @@
-from re import L
-from .barrier import Barrier
-from .state import State
+#from re import L
+#from .barrier import Barrier
+#from .state import State
 #from ClientNew import CallbackHandler
 import importlib
-from pydoc import locate
-from .synchronizer_thread import synchronizerThread
-import boto3 
-import json
-import cloudpickle
+#from pydoc import locate
+#from .synchronizer_thread import synchronizerThread
+#import boto3 
+#import json
+#import cloudpickle
 
 from ..wukong.invoker import invoke_lambda 
 
-from .barrier import Barrier
-from .bounded_buffer import BoundedBuffer
-from .bounded_buffer_select import BoundedBuffer_Select
-from .CountingSemaphore_Monitor import CountingSemaphore_Monitor
-from .fanin import FanIn
+#from .barrier import Barrier
+#from .bounded_buffer import BoundedBuffer
+#from .bounded_buffer_select import BoundedBuffer_Select
+#from .CountingSemaphore_Monitor import CountingSemaphore_Monitor
+#from .fanin import FanIn
 from .result_buffer import ResultBuffer
 
-from .util import make_json_serializable, decode_and_deserialize, isTry_and_getMethodName, isSelect
+from .util import isTry_and_getMethodName, isSelect #make_json_serializable, decode_and_deserialize, 
 
 import logging 
 logger = logging.getLogger(__name__)
@@ -38,7 +38,10 @@ class Synchronizer(object):
 
     # valid synchronization objects
     synchronizers = {"barrier", "Barrier", "semaphore", "Semaphore", "bounded_buffer", "BoundedBuffer", "fanin", 
-    "FanIn", "CountingSemaphore_Monitor", "CountingSemaphore_Monitor_Select", "BoundedBuffer_Select"}
+    "FanIn", "CountingSemaphore_Monitor", "CountingSemaphore_Monitor_Select", 
+    "BoundedBuffer_Select", "DAG_executor_FanIn", "DAG_executor_FanInNB",
+    "DAG_executor_FanIn_Select", "DAG_executor_FanInNB_Select"
+    }
 
     # Mapping from class to the file in which it is defined.
     file_map = {
@@ -47,7 +50,11 @@ class Synchronizer(object):
         "FanIn": "fanin",
         "CountingSemaphore_Monitor": "CountingSemaphore_Monitor",
         "BoundedBuffer_Select": "bounded_buffer_select",
-        "CountingSemaphore_Monitor_Select": "CountingSemaphore_Monitor_Select"
+        "CountingSemaphore_Monitor_Select": "CountingSemaphore_Monitor_Select",
+        "DAG_executor_FanIn": "DAG_executor_FanIn",
+        "DAG_executor_FanInNB": "DAG_executor_FanInNB",
+        "DAG_executor_FanIn_Select": "DAG_executor_FanIn_select" ,
+        "DAG_executor_FanInNB_Select": "DAG_executor_FanInNB_select"
     }
     
     def __init__(self):

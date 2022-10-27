@@ -99,7 +99,7 @@ class DAG_executor_FanIn(MonitorSU):
             calling_task_name = kwargs['calling_task_name']
             self._results[calling_task_name] = result
             logger.debug("FanIn: Result (saved by the non-last executor) " + calling_task_name + " for fan-in %s: %s" % (self.monitor_name, str(result)))
-            time.sleep(0.1)
+            #time.sleep(0.1)
             #threading.current_thread()._restart = False
             #threading.current_thread()._returnValue = 0
             restart = False
