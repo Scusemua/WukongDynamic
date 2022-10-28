@@ -1,5 +1,5 @@
-from re import L
-from .monitor_su import MonitorSU, ConditionVariable
+#from re import L
+from .monitor_su import MonitorSU #, ConditionVariable
 import threading
 import time 
 
@@ -20,9 +20,9 @@ logger.addHandler(ch)
 #terminate. Only the last function that calls fan-in will continue executing. fan-in returns
 #a list of the results of the n-1 threads that will terminate.
 class FanIn(MonitorSU):
-    def __init__(self, initial_n = 0, monitor_name = None):
+    def __init__(self, monitor_name = "FanIn"):
         super(FanIn, self).__init__(monitor_name = monitor_name)
-        self._n = initial_n
+        #self._n = initial_n
         self._num_calling = 0
         
         self.results = [] # fan_in results of executors
@@ -153,11 +153,11 @@ class testThread(Thread):
     def run(self):
         time.sleep(1)
         logger.debug("task " + self._ID + " Calling fan_in")
-        r = self.b.fan_in(ID = self._ID, result = "task1 result")
+        self._return = self.b.fan_in(ID = self._ID, result = "task1 result")
         logger.debug("task " + self._ID + ", Successfully called fan_in")
 
 def main():
-    b = FanIn(initial_n=2,monitor_name="FanIn")
+    b = FanIn(monitor_name="FanIn")
     b.init(**{"n": 2})
 
     #try:
@@ -193,10 +193,10 @@ def main():
     
     logger.debug("joined threads")
     print("callerThread1 restart " + str(callerThread1._restart))
-    print("callerThread2._returnValue=" + str(callerThread1._returnValue))
+    print("callerThread2._returnValue=" + str(callerThread1._return))
 
     print("callerThread2 restart " + str(callerThread2._restart))
-    print("callerThread2._returnValue=" + str(callerThread2._returnValue))
+    print("callerThread2._returnValue=" + str(callerThread2._return))
     # if callerThread2._result == 0:
     #     print("callerThread2 result is 0")
     # else:

@@ -1,5 +1,5 @@
 from threading import RLock
-from .DAG_executor_constants import store_fanins_faninNBs_locally
+from .DAG_executor_constants import store_fanins_faninNBs_locally, FanIn_Type, FanInNB_Type
 from ..server import DAG_executor_FanInNB
 from ..server import DAG_executor_FanIn
 from .DAG_executor_State import DAG_executor_State
@@ -52,6 +52,8 @@ class DAG_executor_Synchronizer(object):
 			+ " inmap: " + str(inmap))
         #if not fanin_task_name in DAG_executor_Synchronizer.synchronizers:
         if not inmap: 	# fanin_task_name in self.synchronizers:
+            # Note: When we create FanIn objects locally, we are always using DAG_executor_FanIn.DAG_executor_FanIn.
+            # We never use the "select" version.
             FanIn = DAG_executor_FanIn.DAG_executor_FanIn(n, fanin_task_name) # initial_n = 0, monitor_name = None
             FanIn.init(**keyword_arguments)
             logger.debug("calling_task_name: " + calling_task_name + " fanin_task_name: " + fanin_task_name
@@ -59,7 +61,7 @@ class DAG_executor_Synchronizer(object):
             logger.debug(" DAG_executor_Synchronize: create_and_fanin: create caching new fanin with name '%s'" % (fanin_task_name))
             self.synchronizers[fanin_task_name] = FanIn # Store Synchronizer object.
 
-        # chck and possibly create the object is atomic; the call to fan_in the follows does not need
+        # check and possibly create the object is atomic; the call to fan_in the follows does not need
         # to be atomic with the create. If two callers attempt the first create for FanIn F, one caller
         # may create F and the other caller may execute its fan_in operation first.
         self.mutex.release()
@@ -182,6 +184,8 @@ class DAG_executor_Synchronizer(object):
         inmap = fanin_task_name in self.synchronizers
         logger.debug ("calling_task_name: " + calling_task_name + " fanin_task_name: " + fanin_task_name + " inmap: " + str(inmap))
         if not inmap: 	# fanin_task_name in self.synchronizers:
+            # Note: When we create FanIn objects locally, we are always using DAG_executor_FanInNB.DAG_executor_FanInNB.
+            # We never use the "select" version.
             FanInNB = DAG_executor_FanInNB.DAG_executor_FanInNB(n, fanin_task_name) # initial_n = 0, monitor_name = None
             FanInNB.init(**keyword_arguments)
             logger.debug("calling_task_name: " + calling_task_name + " fanin_task_name: " + fanin_task_name
@@ -247,7 +251,8 @@ class DAG_executor_Synchronizer(object):
         return_value_ignored, restart_value_ignored = FanInNB.fan_in(**keyword_arguments)
 
 #ToDo: if we always return a state:
-        DAG_exec_state = DAG_executor_State()
+        # rhc: DES
+        DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
         #DAG_exec_state = keyword_arguments['DAG_executor_State']
         DAG_exec_state.blocking = True 
 		# for faninNB there is never a result, even for last caller since No Becomes (NB)
@@ -262,14 +267,15 @@ class DAG_executor_Synchronizer(object):
                                                             
         fanin_messages = []
         for fanin_name, size in zip(all_fanin_task_names,all_fanin_sizes):
-            dummy_state = DAG_executor_State()
+            # rhc: DES
+            dummy_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
 			# keywword_argumments used in init()
             dummy_state.keyword_arguments['n'] = size
             #dummy_state.keyword_arguments['fanin_task_name']  = fanin_name
             msg_id = str(uuid.uuid4())	# for debugging
             message = {
                 "op": "create",
-                "type": "DAG_executor_FanIn",
+                "type": FanIn_Type,
                 "name": fanin_name,
                 "state": dummy_state,	
                 "id": msg_id
@@ -278,7 +284,8 @@ class DAG_executor_Synchronizer(object):
 
         faninNB_messages = []
         for fanin_nameNB, size in zip(all_faninNB_task_names,all_faninNB_sizes):
-            dummy_state = DAG_executor_State()
+            # rhc: DES
+            dummy_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
 			# keywword_argumments used in init()
             dummy_state.keyword_arguments['n'] = size
             dummy_state.keyword_arguments['start_state_fanin_task'] = DAG_states[fanin_nameNB]
@@ -287,7 +294,7 @@ class DAG_executor_Synchronizer(object):
             msg_id = str(uuid.uuid4())
             message = {
                 "op": "create",
-                "type": "DAG_executor_FanInNB",
+                "type": FanInNB_Type,
                 "name": fanin_nameNB,
                 "state": dummy_state,	
                 "id": msg_id

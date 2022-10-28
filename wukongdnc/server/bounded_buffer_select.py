@@ -19,7 +19,7 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 class BoundedBuffer_Select(Selector):
-    def __init__(self, selector_name = None):
+    def __init__(self, selector_name = "BoundedBuffer_Select"):
         super(BoundedBuffer_Select, self).__init__(selector_name=selector_name)
         
     def init(self, **kwargs):

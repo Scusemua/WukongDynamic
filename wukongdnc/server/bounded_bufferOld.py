@@ -1,5 +1,5 @@
-from re import L
-from .monitor_su import MonitorSU, ConditionVariable
+#from re import L
+from .monitor_su import MonitorSU #, ConditionVariable
 import threading
 import _thread
 import time
@@ -17,9 +17,9 @@ logger.addHandler(ch)
 
 # Bounded Buffer
 class BoundedBuffer(MonitorSU):
-    def __init__(self, initial_capacity = 0, monitor_name = None):
+    def __init__(self, monitor_name = "BoundedBuffer"):
         super(BoundedBuffer, self).__init__(monitor_name=monitor_name)
-        self._capacity = initial_capacity
+        #self._capacity = initial_capacity
 
     def init(self, **kwargs):
         self._fullSlots=0
@@ -102,12 +102,12 @@ def taskD(b : BoundedBuffer):
 
 def taskW(b : BoundedBuffer):
     logger.debug("Calling withdraw")
-    value = b.withdraw()
+    return_value_ignored = b.withdraw()
     logger.debug("Successfully called withdraw")
 
 
 def main():
-    b = BoundedBuffer(initial_capacity=1,monitor_name="BoundedBuffer")
+    b = BoundedBuffer(monitor_name="BoundedBuffer")
     b.init()
     #b.deposit(value = "A")
     #value = b.withdraw()

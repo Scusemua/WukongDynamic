@@ -24,7 +24,7 @@ logger.addHandler(ch)
 
 #Monitor implementation of a counting semaphore with operations P and V
 class CountingSemaphore_Monitor_Select(Selector):
-    def __init__(self, selector_name = None):
+    def __init__(self, selector_name = "CountingSemaphore_Monitor_Select"):
         super(CountingSemaphore_Monitor_Select, self).__init__(selector_name = selector_name)
         self._permits = 1
         

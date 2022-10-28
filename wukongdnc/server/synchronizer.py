@@ -242,7 +242,8 @@ class Synchronizer(object):
                 # return excute's result, with no restart (by definition of synchronous non-try-op)
                 # (Send result to client below.)
                 wait_for_return = True
-                self.synchronizeSelect(base_name, state, wait_for_return, **state.keyword_arguments)
+                # rhc: DES
+                return_value = self.synchronizeSelect(base_name, state, wait_for_return, **state.keyword_arguments)
             else:
                 return_value = self.synchronize(base_name, state, **state.keyword_arguments)
                 
@@ -391,8 +392,10 @@ class Synchronizer(object):
     # Note, we still pass the synchronizer and method which are needed inside execute().
     # Called by synchronize_synch in tcp_server
     def synchronizeSelect(self, method_name: str, state: State, wait_for_result: bool, **kwargs):
-        logger.debug("synchronizeSelect: method_name: " + str(method_name) + ", ID is: " + state.function_instance_ID)
         logger.debug("State: " + str(state))
+        logger.debug("synchronizeSelect: method_name: " + str(method_name))
+        logger.debug("synchronizeSelect: ID is: " + state.function_instance_ID)
+
         
         try:
             synchronizer_method = getattr(self._synchClass, method_name)

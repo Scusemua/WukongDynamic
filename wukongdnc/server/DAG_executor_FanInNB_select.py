@@ -35,10 +35,11 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 class DAG_executor_FanInNB_Select(Selector):
-    def __init__(self, selector_name = None):
+    def __init__(self, selector_name = "DAG_executor_FanInNB_Select"):
         super(DAG_executor_FanInNB_Select, self).__init__(selector_name=selector_name)
         self.selector_name = selector_name
         self._num_calling = 0
+        #self.n = initial_n
         # For faninNB, results are collected in a map of task_name to result
         self._results = {} # fan_in map of results of executors
     

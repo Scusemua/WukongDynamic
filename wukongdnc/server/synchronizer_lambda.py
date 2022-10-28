@@ -260,10 +260,16 @@ class Synchronizer(object):
                 # this is a non-blocking try-op so lambda client is waiting for result in state.return_value
                 return state
         else:  
-            
-            logger.debug("****************")
-            logger.debug("Error: all synchronous operations must be try-ops")
-            logger.debug("****************")
+            # Currently, we only allow synchronize_sync for the FanIn select objects
+            # since the fanin select objects never block, i.e., the guard for 
+            # fan_in is always true. If we called try_fan_in it would never block,
+            # which is fine, but this allows us to call "fan_in" whether or not 
+            # we are using the select objects
+            if not (self._synchronizer_class_name == "DAG_executor_FanIn_Select" 
+                or self._synchronizer_class_name == "DAG_executor_FanInNB_Select"):
+                logger.error("****************")
+                logger.error("Error: all synchronous operations must be try-ops")
+                logger.error("****************")
             
             # not a "try" so do synchronization op and send result to waiting client
 
@@ -473,7 +479,7 @@ class Synchronizer(object):
         # execute might be in superclass MonitorSelect of BoundedBufferSelect  
 
 #1: pass state, wait_for_result, but we do not save state in this non-lambda version so pass None for state
-        returnValueIgnored = execute(self._synchronizer, method_name, self._synchronizer, synchronizer_method, 
+        return_value_ignored = execute(self._synchronizer, method_name, self._synchronizer, synchronizer_method, 
         result_buffer, None, wait_for_result, **kwargs)
  
         # unlock the synchronizer before bocking on withdaw(). Method withdraw() may not unblock until after a call to

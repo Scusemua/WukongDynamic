@@ -45,6 +45,7 @@ from wukongdnc.constants import TCP_SERVER_IP
 from .DAG_executor_constants import run_all_tasks_locally, store_fanins_faninNBs_locally, use_multithreaded_multiprocessing #, num_threads_for_multithreaded_multiprocessing
 from .DAG_executor_constants import create_all_fanins_faninNBs_on_start, using_workers
 from .DAG_executor_constants import num_workers,using_threads_not_processes, using_lambdas
+from .DAG_executor_constants import FanIn_Type, FanInNB_Type
 #from .DAG_work_queue_for_threads import thread_work_queue
 from .DAG_work_queue_for_threads import work_queue
 from .DAG_executor_synchronizer import server
@@ -760,14 +761,15 @@ def create_fanin_and_faninNB_messages(DAG_map,DAG_states,DAG_info,all_fanin_task
     # create a list of "create" messages, one for each fanin
     for fanin_name, size in zip(all_fanin_task_names,all_fanin_sizes):
         #logger.debug("iterate fanin: fanin_name: " + fanin_name + " size: " + str(size))
-        dummy_state = DAG_executor_State()
+        # rhc: DES
+        dummy_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
         # we will create the fanin object and call fanin.init(**keyword_arguments)
         dummy_state.keyword_arguments['n'] = size
         msg_id = str(uuid.uuid4())	# for debugging
 
         message = {
             "op": "create",
-            "type": "DAG_executor_FanIn",
+            "type": FanIn_Type,
             "name": fanin_name,
             "state": make_json_serializable(dummy_state),	
             "id": msg_id
@@ -779,7 +781,8 @@ def create_fanin_and_faninNB_messages(DAG_map,DAG_states,DAG_info,all_fanin_task
      # create a list of "create" messages, one for each faninNB
     for fanin_nameNB, size in zip(all_faninNB_task_names,all_faninNB_sizes):
         #logger.debug("iterate faninNB: fanin_nameNB: " + fanin_nameNB + " size: " + str(size))
-        dummy_state = DAG_executor_State()
+        # rhc: DES
+        dummy_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
         # passing to the fninNB object:
         # it size
         dummy_state.keyword_arguments['n'] = size
@@ -796,7 +799,7 @@ def create_fanin_and_faninNB_messages(DAG_map,DAG_states,DAG_info,all_fanin_task
 
         message = {
             "op": "create",
-            "type": "DAG_executor_FanInNB",
+            "type": FanInNB_Type,
             "name": fanin_nameNB,
             "state": make_json_serializable(dummy_state),	
             "id": msg_id
@@ -818,7 +821,7 @@ def create_fanin_and_faninNB_messages(DAG_map,DAG_states,DAG_info,all_fanin_task
 # creates all fanins and faninNBs at the start of driver executin. If we are using 
 # workers and processes (not threads) then we also crate the work_queue here
 def create_work_queue(websocket,number_of_tasks):
-    dummy_state = DAG_executor_State()
+    dummy_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
     # we will create the fanin object and call fanin.init(**keyword_arguments)
     dummy_state.keyword_arguments['n'] = 2*number_of_tasks
     msg_id = str(uuid.uuid4())	# for debugging
@@ -838,7 +841,7 @@ def create_work_queue(websocket,number_of_tasks):
 # creates all fanins and faninNBs at the start of driver executin. If we are using 
 # workers and processes (not threads) then we also crate the work_queue here
 def create_fanins_and_faninNBs_and_work_queue(websocket,number_of_tasks,DAG_map,DAG_states,DAG_info,all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes):
-    dummy_state = DAG_executor_State()
+    dummy_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
     # we will create the fanin object and call fanin.init(**keyword_arguments)
     dummy_state.keyword_arguments['n'] = 2*number_of_tasks
     msg_id = str(uuid.uuid4())	# for debugging
@@ -859,7 +862,7 @@ def create_fanins_and_faninNBs_and_work_queue(websocket,number_of_tasks,DAG_map,
 
     # even if there are not fanins or faninNBs in Dag, need to create the work queue so send the message
     messages = (fanin_messages,faninNB_messages,work_queue_message)
-    dummy_state2 = DAG_executor_State()
+    dummy_state2 = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
     #Note: Passing tuple messages as name
     create_all_fanins_and_faninNBs_and_possibly_work_queue(websocket, "create_all_fanins_and_faninNBs_and_possibly_work_queue", "DAG_executor_fanin_or_faninNB", 
         messages, dummy_state2)
@@ -883,7 +886,7 @@ def create_fanins_and_faninNBs(websocket,DAG_map,DAG_states,DAG_info,all_fanin_t
     # Not tested DAG with no fanins or faninNBs yet.
     if len(fanin_messages) > 0 or len(faninNB_messages) > 0:
         messages = (fanin_messages,faninNB_messages)
-        dummy_state = DAG_executor_State()
+        dummy_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
         create_all_fanins_and_faninNBs_and_possibly_work_queue(websocket, "create_all_fanins_and_faninNBs_and_possibly_work_queue", "DAG_executor_fanin_or_faninNB", 
             messages, dummy_state)
 

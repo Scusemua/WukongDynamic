@@ -101,7 +101,8 @@ def faninNB_remotely(websocket,**keyword_arguments):
     # return is: None, restart, where restart is always 0 and return_value is None; and makes no change to DAG_executor_State
     #return_value, restart = FanInNB.fan_in(**keyword_arguments)
     #ToDo:
-    DAG_exec_state = DAG_executor_State()
+    # rhc: DES
+    DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
     DAG_exec_state.keyword_arguments = {}
     DAG_exec_state.keyword_arguments['fanin_task_name'] = keyword_arguments['fanin_task_name']
     DAG_exec_state.keyword_arguments['n'] = keyword_arguments['n']
@@ -344,7 +345,8 @@ def faninNB_remotely_batch(websocket, **keyword_arguments):
     logger.debug (thread_name + " faninNB_remotely_batch: calling_task_name: " + keyword_arguments['calling_task_name'] 
         + " calling process_faninNBs_batch with fanin_task_names: " + str(keyword_arguments['faninNBs']))
 
-    DAG_exec_state = DAG_executor_State()
+    # rhc: DES
+    DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
     DAG_exec_state.keyword_arguments = {}
     #DAG_exec_state.keyword_arguments['fanin_task_name'] = keyword_arguments['fanin_task_name']
     #DAG_exec_state.keyword_arguments['n'] = keyword_arguments['n']
@@ -632,7 +634,8 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                 try:
                     logger.debug(thread_name + ": process_fanouts: Starting fanout DAG_executor thread for " + name)
                     fanout_task_start_state = DAG_states[name]
-                    task_DAG_executor_State = DAG_executor_State(state = fanout_task_start_state)
+                    # rhc: DES
+                    task_DAG_executor_State = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = fanout_task_start_state)
 
                     #output_tuple = (calling_task_name,)
                     #output_dict[calling_task_name] = output

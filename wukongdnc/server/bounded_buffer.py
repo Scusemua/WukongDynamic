@@ -17,9 +17,9 @@ logger.addHandler(ch)
 
 # Bounded Buffer
 class BoundedBuffer(MonitorSU):
-    def __init__(self, initial_capacity = 0, monitor_name = None):
+    def __init__(self, monitor_name = "BoundedBuffer"):
         super(BoundedBuffer, self).__init__(monitor_name=monitor_name)
-        self._capacity = initial_capacity
+        #self._capacity = initial_capacity
 
     def init(self, **kwargs):
         self._fullSlots=0
@@ -195,7 +195,7 @@ def taskW(b : BoundedBuffer):
     logger.debug("Successfully called withdraw: "+ value[0])
 
 def main():
-    b = BoundedBuffer(initial_capacity=1,monitor_name="BoundedBuffer")
+    b = BoundedBuffer(monitor_name="BoundedBuffer")
     VALUEFOR_N = 2
     keyword_arguments = {}
     keyword_arguments['n'] = VALUEFOR_N

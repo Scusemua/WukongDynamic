@@ -25,10 +25,11 @@ logger.addHandler(ch)
 # Here, we use a map of task names to results so fanin task can get its inputs per name. FanIn could do this to - could choose between
 # per name (key) and just gettting a list of the values.
 class DAG_executor_FanIn(MonitorSU):
-    def __init__(self, initial_n = 0, monitor_name = None):
+    def __init__(self, monitor_name = "DAG_executor_FanIn"):
         super(DAG_executor_FanIn, self).__init__(monitor_name = monitor_name)
         self.monitor_name = monitor_name    # this is fanin_task_name
-        self._n = initial_n
+        #logger.debug("DAG_executor_FanIn: __init__: monitor_name: " + str(monitor_name))
+        #self._n = initial_n
         self._num_calling = 0
         # For faninNB, results are collected in a nmap of task_name to result
         self._results = {} # fan_in results of executors
@@ -171,7 +172,7 @@ class testThread(Thread):
         logger.debug("task " + self._ID + ", Successfully called fan_in, returned r: " + r)
 
 def main():
-    b = DAG_executor_FanIn(initial_n=2,monitor_name="DAG_executor_FanIn")
+    b = DAG_executor_FanIn(monitor_name="DAG_executor_FanIn")
     b.init(**{"n": 2})
 
     #try:

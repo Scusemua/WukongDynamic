@@ -20,9 +20,9 @@ logger.addHandler(ch)
 #terminate. Only the last function that calls fan-in will continue executing. fan-in returns
 #a list of the results of the n-1 threads that will terminate.
 class FanIn(MonitorSU):
-    def __init__(self, initial_n = 0, monitor_name = None):
+    def __init__(self, monitor_name = "FanIn"):
         super(FanIn, self).__init__(monitor_name = monitor_name)
-        self._n = initial_n
+        #self._n = initial_n
         self._num_calling = 0
         self._results = [] # fan_in results of executors
         self._go = self.get_condition_variable(condition_name = "go")
@@ -149,7 +149,7 @@ class testThread(Thread):
         logger.debug("task " + self._ID + ", Successfully called fan_in, result: " + str(r))
 
 def main():
-    b = FanIn(initial_n=2,monitor_name="FanIn")
+    b = FanIn(monitor_name="FanIn")
     b.init(**{"n": 2})
 
     #try:

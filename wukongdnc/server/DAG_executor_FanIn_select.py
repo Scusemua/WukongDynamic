@@ -17,7 +17,7 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 class DAG_executor_FanIn_Select(Selector):
-    def __init__(self, selector_name = None):
+    def __init__(self, selector_name = "DAG_executor_FanIn_Select"):
         super(DAG_executor_FanIn_Select, self).__init__(selector_name=selector_name)
         self.selector_name = selector_name
         self._num_calling = 0

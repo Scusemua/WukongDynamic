@@ -1,6 +1,6 @@
-from re import L
-from .monitor_su import MonitorSU, ConditionVariable
-import threading
+#from re import L
+from .monitor_su import MonitorSU #, ConditionVariable
+#import threading
 import _thread
 import time
 
@@ -17,9 +17,9 @@ logger.addHandler(ch)
 
 #Monitor implementation of a counting semaphore with operations P and V
 class CountingSemaphore_Monitor(MonitorSU):
-    def __init__(self, initial_permits = 0, monitor_name = None):
+    def __init__(self, monitor_name = "CountingSemaphore_Monitor"):
         super(CountingSemaphore_Monitor, self).__init__(monitor_name = monitor_name)
-        self._permits = initial_permits
+        #self._permits = initial_permits
 
     def init(self, **kwargs):     # delete initial_permits parameter
         logger.debug(kwargs)
@@ -153,7 +153,7 @@ def taskV(b : CountingSemaphore_Monitor):
 
 
 def main():
-    b = CountingSemaphore_Monitor(initial_permits=1,monitor_name="BoundedBuffer")
+    b = CountingSemaphore_Monitor(monitor_name="BoundedBuffer")
     b.init(initial_permits=1)
     b.P()
     b.V()

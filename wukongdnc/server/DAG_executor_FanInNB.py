@@ -35,10 +35,11 @@ logger.addHandler(ch)
 #terminate. Only the last function that calls fan-in will continue executing. fan-in returns
 #a list of the results of the n-1 threads that will terminate.
 class DAG_executor_FanInNB(MonitorSU):
-    def __init__(self, initial_n = 0, monitor_name = "DAG_executor_FanInNB"):
+    def __init__(self, monitor_name = "DAG_executor_FanInNB"):
         super(DAG_executor_FanInNB, self).__init__(monitor_name = monitor_name)
         self.monitor_name = monitor_name    # this is fanin_task_name
-        self._n = initial_n
+        #logger.debug("DAG_executor_FanInNB: __init__: monitor_name: " + str(monitor_name))
+        #self._n = initial_n
         self._num_calling = 0
         # For faninNB, results are collected in a nmap of task_name to result
         self._results = {} # fan_in results of executors
@@ -306,7 +307,7 @@ class testThread(Thread):
         logger.debug("task " + self._ID + ", Successfully called fan_in, returned r:" + r)
 
 def main():
-    b = DAG_executor_FanInNB(initial_n=2,monitor_name="DAG_executor_FanInNB")
+    b = DAG_executor_FanInNB(monitor_name="DAG_executor_FanInNB")
     b.init(**{"n": 2})
 
     #try:
