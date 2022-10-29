@@ -45,7 +45,7 @@ from wukongdnc.constants import TCP_SERVER_IP
 from .DAG_executor_constants import run_all_tasks_locally, store_fanins_faninNBs_locally, use_multithreaded_multiprocessing #, num_threads_for_multithreaded_multiprocessing
 from .DAG_executor_constants import create_all_fanins_faninNBs_on_start, using_workers
 from .DAG_executor_constants import num_workers,using_threads_not_processes, using_lambdas
-from .DAG_executor_constants import FanIn_Type, FanInNB_Type
+from .DAG_executor_constants import FanIn_Type, FanInNB_Type, process_work_queue_Type
 #from .DAG_work_queue_for_threads import thread_work_queue
 from .DAG_work_queue_for_threads import work_queue
 from .DAG_executor_synchronizer import server
@@ -828,7 +828,7 @@ def create_work_queue(websocket,number_of_tasks):
 
     work_queue_message = {
         "op": "create_work_queue",
-        "type": "BoundedBuffer",
+        "type": process_work_queue_Type,
         "name": "process_work_queue",
         "state": make_json_serializable(dummy_state),	
         "id": msg_id
@@ -848,7 +848,7 @@ def create_fanins_and_faninNBs_and_work_queue(websocket,number_of_tasks,DAG_map,
 
     work_queue_message = {
         "op": "create",
-        "type": "BoundedBuffer",
+        "type": process_work_queue_Type,
         "name": "process_work_queue",
         "state": make_json_serializable(dummy_state),	
         "id": msg_id

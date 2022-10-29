@@ -31,5 +31,7 @@ num_threads_for_multithreaded_multiprocessing = 2
 
 FanIn_Type = "DAG_executor_FanIn"
 FanInNB_Type = "DAG_executor_FanInNB"
+process_work_queue_Type = "BoundedBuffer"
 #FanIn_Type = "DAG_executor_FanIn_Select"
 #FanInNB_Type = "DAG_executor_FanInNB_Select"
+#process_work_queue_Type = "BoundedBuffer_Select"

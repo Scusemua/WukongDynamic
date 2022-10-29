@@ -1,12 +1,10 @@
-from re import A
+#from re import A
 import json
 import traceback
 import socketserver
-import traceback
-import json
+#import traceback
+#import json
 
-# from .synchronizer import Synchronizer
-from .util import make_json_serializable, decode_and_deserialize, isTry_and_getMethodName, isSelect 
 from ..wukong.invoker import invoke_lambda_synchronously
 
 # Set up logging.
@@ -34,7 +32,11 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 "setup": self.setup_server,
                 "synchronize_async": self.synchronize_async,
                 "synchronize_sync": self.synchronize_sync,
-                "close_all": self.close_all
+                "close_all": self.close_all,
+                # These are DAG execution operations
+                "create_all_fanins_and_faninNBs_and_possibly_work_queue": self.create_all_fanins_and_faninNBs_and_possibly_work_queue,
+                "synchronize_process_faninNBs_batch": self.synchronize_process_faninNBs_batch,
+                "create_work_queue": self.create_work_queue
             }
 
             try:
@@ -45,7 +47,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     return
 
                 json_message = json.loads(data)
-                obj_name = json_message['name']
+                #obj_name = json_message['name']
                 message_id = json_message["id"]
                 logger.debug("[HANDLER] Received message (size=%d bytes) from client %s with ID=%s" % (len(data), self.client_address[0], message_id))
                 action = json_message.get("op", None)
@@ -76,12 +78,32 @@ class TCPHandler(socketserver.StreamRequestHandler):
     # Local method of tcp_server, which will synchronously invoke a Lambda
     def invoke_lambda_synchronously(self, json_message):
         name = json_message.get("name", None)
-        
-        # For prototype using two Lambdas to store synchronization objects.
+        # For DAG with workera, we have fanins, faninNBs and the process work queue. Note that we
+        # process the faninNBs in a batch and that method will access the faninNBs and 
+        # the process work queue so we put all of the fanin, faninNBs, and work queue in
+        # the same function.
+        # Also, we create all fnins and faninNBs at once so if we wan to use more than one
+        # lambda then we need to call N create alls, one for each of the N lambdas storing 
+        # the fanin and faninNBs.
+        # For DAG with lambdas, there is no work_queue, but we will still create all lambdas
+        # at once.
+        # Note:
+        # type = jsom_message.get("type", None)
+        # Types used will be BoundedBuffer_Select, DAG_executor_FanIn_Select, DAG_executor_FanInNB_Select
+        # or the type used when passing a list of messages for creating all fanins and 
+        # faninNBs: "DAG_executor_fanin_or_faninNB"7
+
+        """
+        # For simple prototype using two Lambdas to store synchronization objects.
         if name == "result" or name == "final_result":
             function_name = "LambdaBoundedBuffer"
-        else: # name is "finish"
+        else: 
+            #name is "finish"; 
             function_name = "LambdaSemapore"
+        """
+
+        # For DAG prototype, we use one function to store process_work_queue and all fanins and faninNBs
+        function_name = "LambdaBoundedBuffer"
 
         # pass thru client message to Lambda
         payload = {"json_message": json_message}
@@ -91,6 +113,31 @@ class TCPHandler(socketserver.StreamRequestHandler):
         
         # The return value from the Lambda function will typically be sent by tcp_server to a Lambda client of tcp_server
         return return_value
+
+    def create_obj(self, message = None):
+        """
+        Called by a remote Lambda to create an object here on the TCP server.
+
+        Key-word arguments:
+        -------------------
+            message (dict):
+                The payload from the AWS Lambda function.
+        """        
+        logger.debug("[HANDLER] server.create() called.")
+
+        return_value_ignored = self.invoke_lambda_synchronously(message)    # makes synchronous Lambda call - return value is not meaningful
+
+        resp = {
+            "op": "ack",
+            "op_performed": "create"
+        }
+        #############################
+        # Write ACK back to client. #
+        #############################
+        logger.info("Sending ACK to client %s for CREATE operation." % self.client_address[0])
+        resp_encoded = json.dumps(resp).encode('utf-8')
+        self.send_serialized_object(resp_encoded)
+        logger.info("Sent ACK of size %d bytes to client %s for CREATE operation." % (len(resp_encoded), self.client_address[0]))    
     
     def create_all_fanins_and_faninNBs(self, messages):
         """ 
@@ -131,30 +178,93 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 msg_id = str(uuid.uuid4())
         """
 
-    def create_obj(self, message = None):
+    def create_all_fanins_and_faninNBs_and_possibly_work_queue(self, message):
         """
-        Called by a remote Lambda to create an object here on the TCP server.
+        create all DAG fanins and faninNBs and possibly a work queue (for workers).
 
         Key-word arguments:
         -------------------
             message (dict):
                 The payload from the AWS Lambda function.
-        """        
-        logger.debug("[HANDLER] server.create() called.")
+        """
+       
+        logger.debug("[HANDLER] create_all_fanins_and_faninNBs_and_possibly_work_queue() called.")
 
-        ignored_return_value = self.invoke_lambda_synchronously(message)    # makes synchronous Lambda call - return value is not meaningful
+        return_value_ignored = self.invoke_lambda_synchronously(message)
 
+        logger.debug("tcp_server called Lambda at create_all_fanins_and_faninNBs_and_possibly_work_queue.")
+ 
         resp = {
             "op": "ack",
-            "op_performed": "create"
+            "op_performed": "create_all_fanins_and_faninNBs"
         }
         #############################
         # Write ACK back to client. #
         #############################
-        logger.info("Sending ACK to client %s for CREATE operation." % self.client_address[0])
+        logger.info("Sending ACK to client %s for create_all_fanins_and_faninNBs_and_possibly_work_queue operation." % self.client_address[0])
         resp_encoded = json.dumps(resp).encode('utf-8')
         self.send_serialized_object(resp_encoded)
-        logger.info("Sent ACK of size %d bytes to client %s for CREATE operation." % (len(resp_encoded), self.client_address[0]))    
+        logger.info("Sent ACK of size %d bytes to client %s for create_all_fanins_and_faninNBs_and_possibly_work_queue operation." % (len(resp_encoded), self.client_address[0]))
+
+        # return value not assigned
+        return 0
+
+    def synchronize_process_faninNBs_batch(self,message):
+        """
+        batch process all faninNBs and for workers their fanouts, if any, are deposited
+        into the work queue. One unit of work can be returned if the worker_needs_work,
+        which it will if there were no fanouts.
+
+        Key-word arguments:
+        -------------------
+            message (dict):
+                The payload from the AWS Lambda function.
+        """
+       
+        logger.debug("[HANDLER] synchronize_process_faninNBs_batch() called.")
+
+        # this is a DAG_executor_State with  DAG_exec_state.return_value = work_tuple
+        # or DAG_exec_state.return_value = 0
+        returned_state = self.invoke_lambda_synchronously(message)
+
+        logger.debug("tcp_server called Lambda at synchronize_process_faninNBs_batch.")
+ 
+        # pickle already done by Lambda? cloudpickle.dumps(state)? If so, just pass pickled state thru to client.
+        self.send_serialized_object(returned_state)
+       
+        # return value not assigned
+        return 0
+
+    # Not used and not tested. Currently create work queue in 
+    # create_all_fanins_and_faninNBs_and_possibly_work_queue. 
+    def create_work_queue(self,message):
+        """
+        create the work queue for workers.
+
+        Key-word arguments:
+        -------------------
+            message (dict):
+                The payload from the AWS Lambda function.
+        """
+       
+        logger.debug("[HANDLER] create_work_queue() called.")
+
+        return_value_ignored = self.invoke_lambda_synchronously(message)
+
+        resp = {
+            "op": "ack",
+            "op_performed": "create_work_queue"
+        }
+        #############################
+        # Write ACK back to client. #
+        #############################
+        logger.info("Sending ACK to client %s for create_work_queue operation." % self.client_address[0])
+        resp_encoded = json.dumps(resp).encode('utf-8')
+        self.send_serialized_object(resp_encoded)
+        logger.info("Sent ACK of size %d bytes to client %s for create_work_queue operation." % (len(resp_encoded), self.client_address[0]))
+
+        # return value not assigned
+        return 0
 
     def synchronize_sync(self, message = None):
         """
@@ -173,6 +283,11 @@ class TCPHandler(socketserver.StreamRequestHandler):
         logger.debug("tcp_server called Lambda at synchronize_sync")
 
         """
+        Note: We currently only not try-op synch calls if the ops are 
+        fanin ops for DAGs as these are always non-blocking. We can 
+        also allow fanin ops for non-DAGs too but we havn't yet implemented
+        a fanin select object.
+
         Issue: need to do the equivalent of sending the returned state value:
         tcp_handler.send_serialized_object(cloudpickle.dumps(state))
         where we have the blocking case:
@@ -191,7 +306,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         for which we send blocking false and the return value
         PROBLEM: For blocking case, we want to send blocking True then do call (that blocks) but if Lambda returns
         blocking is True (via state) then it cannot do the rest.
-        Could call Lmabda again and have it make thhe blocking call?
+        Could call Lambda again and have it make thhe blocking call?
         Or just let it make the blocking call and then send blocking true, time to maake call is not the long?
         Or let Lambda call client? No, client is a Lambda which does not allow incoming calls.
         Or only make asynch calls with termination, but restarts take more time than waiting for a blocked call
@@ -314,7 +429,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         """
         type_arg = message["type"]
         name = message["name"]
-        state = decode_and_deserialize(message["state"])
+        #state = decode_and_deserialize(message["state"])
 
         logger.debug("Received close_obj request for object with name '%s' and type %s" % (name, type_arg))
 

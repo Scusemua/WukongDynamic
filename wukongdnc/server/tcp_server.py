@@ -173,9 +173,9 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # we always create the fanin and faninNBs. We possibly create the work queue. If we send
         # a message for create work queue, in addition to the lst of messages for create
         # fanins and create faninNBs, we create a work queue too.
-        create_work_queue = (len(messages)>2)
-        if create_work_queue:
-            logger.info("create_work_queue: " + str(create_work_queue) + " len: " + str(len(messages)))
+        create_the_work_queue = (len(messages)>2)
+        if create_the_work_queue:
+            logger.info("create_the_work_queue: " + str(create_the_work_queue) + " len: " + str(len(messages)))
             msg = messages[2]
             self.create_one_of_all_objs(msg)
 
