@@ -5,7 +5,14 @@ import socketserver
 #import traceback
 #import json
 
+import cloudpickle
+#import base64
+
 from ..wukong.invoker import invoke_lambda_synchronously
+
+from ..dag.DAG_executor_constants import using_Lambda_Function_Simulator
+
+from serverless_sync_handler import Lambda_Function_Simulator
 
 # Set up logging.
 import logging 
@@ -28,7 +35,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
             self.action_handlers = {
                 "create": self.create_obj,
-                "create_all": self.create_all_fanins_and_faninNBs,
+                #"create_all": self.create_all_fanins_and_faninNBs,
                 "setup": self.setup_server,
                 "synchronize_async": self.synchronize_async,
                 "synchronize_sync": self.synchronize_sync,
@@ -77,7 +84,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
     
     # Local method of tcp_server, which will synchronously invoke a Lambda
     def invoke_lambda_synchronously(self, json_message):
-        name = json_message.get("name", None)
+        #name = json_message.get("name", None)
+
         # For DAG with workera, we have fanins, faninNBs and the process work queue. Note that we
         # process the faninNBs in a batch and that method will access the faninNBs and 
         # the process work queue so we put all of the fanin, faninNBs, and work queue in
@@ -108,7 +116,9 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # pass thru client message to Lambda
         payload = {"json_message": json_message}
         # return_value = invoke_lambda_synchronously(payload = payload, function_name = function_name)
-        return_value = invoke_lambda_synchronously(function_name = function_name, payload = payload)
+
+        return_value = tcp_server.lambda_function.lambda_handler(payload)
+        #return_value = invoke_lambda_synchronously(function_name = function_name, payload = payload)
         # where: lambda_client.invoke(FunctionName=function_name, InvocationType='RequestResponse', Payload=payload_json)
         
         # The return value from the Lambda function will typically be sent by tcp_server to a Lambda client of tcp_server
@@ -230,7 +240,11 @@ class TCPHandler(socketserver.StreamRequestHandler):
         logger.debug("tcp_server called Lambda at synchronize_process_faninNBs_batch.")
  
         # pickle already done by Lambda? cloudpickle.dumps(state)? If so, just pass pickled state thru to client.
-        self.send_serialized_object(returned_state)
+        if using_Lambda_Function_Simulator:
+            returned_state_pickled = cloudpickle.dumps(returned_state)
+            self.send_serialized_object(returned_state_pickled)
+        else:
+            self.send_serialized_object(returned_state)
        
         # return value not assigned
         return 0
@@ -276,7 +290,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 The payload from the AWS Lambda function.
         """
        
-        logger.debug("[HANDLER] server.synchronize_sync() called.")
+        logger.debug("[HANDLER] calling server.synchronize_sync().")
 
         returned_state = self.invoke_lambda_synchronously(message)
 
@@ -313,11 +327,15 @@ class TCPHandler(socketserver.StreamRequestHandler):
             and cost of time to make call is vary small?
         """
         # pickle already done by Lambda? cloudpickle.dumps(state)? If so, just pass pickled state thru to client.
-        self.send_serialized_object(returned_state)
-       
+
+        if using_Lambda_Function_Simulator:
+            returned_state_pickled = cloudpickle.dumps(returned_state)
+            self.send_serialized_object(returned_state_pickled)
+        else:
+            self.send_serialized_object(returned_state)
+
         # return value not assigned
         return 0
-
 
     def synchronize_async(self, message = None):
         """
@@ -328,7 +346,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             message (dict):
                 The payload from the AWS Lambda function.
         """        
-        logger.debug("[HANDLER] server.synchronize_async() called.")
+        logger.debug("[HANDLER] calling server.synchronize_async().")
 
         returned_value_ignored = self.invoke_lambda_synchronously(message)
        
@@ -456,6 +474,7 @@ class TCPServer(object):
         self.clients =        []    # list      - not used
         self.server_address = ("0.0.0.0",25565)
         self.tcp_server = socketserver.ThreadingTCPServer(self.server_address, TCPHandler)
+        self.lambda_function = Lambda_Function_Simulator()
     
     def start(self):
         logger.info("Starting TCP Lambda server.")

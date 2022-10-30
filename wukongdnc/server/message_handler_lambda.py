@@ -111,7 +111,7 @@ class MessageHandler(object):
             message (dict):
                 The payload from the AWS Lambda function.
         """        
-        logger.debug("[HANDLER] server.create() called.")
+        logger.debug("[MESSAGEHANDLER] server.create_one_of_all_objs() called.")
         type_arg = message["type"]
         name = message["name"]
         state = decode_and_deserialize(message["state"])
@@ -143,7 +143,7 @@ class MessageHandler(object):
                 "id": msg_id
             }
         """  
-        logger.debug("[HANDLER] server.create_all_fanins_and_faninNBs_and_possibly_work_queue() called.")
+        logger.debug("[MESSAGEHANDLER] server.create_all_fanins_and_faninNBs_and_possibly_work_queue() called.")
         messages = message['name']
         fanin_messages = messages[0]
         faninNB_messages = messages[1]
@@ -183,7 +183,7 @@ class MessageHandler(object):
                 The payload from the AWS Lambda function.
         """
 
-        logger.info("[HANDLER] server.synchronize_process_faninNBs_batch() called.")
+        logger.info("[MESSAGEHANDLER] server.synchronize_process_faninNBs_batch() called.")
 
         # name of the type is always "DAG_executor_FanInNB"
         type_arg = message["type"]
