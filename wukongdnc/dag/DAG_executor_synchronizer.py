@@ -33,7 +33,7 @@ class DAG_executor_Synchronizer(object):
         # create new faninNB with specified name if it hasn't been created 
 		# Here are the keyword arguments:
         fanin_task_name = keyword_arguments['fanin_task_name']
-        n = keyword_arguments['n']	# size
+        #n = keyword_arguments['n']	# size
 		# used by FanInNB:
         #start_state_fanin_task = keyword_arguments['start_state_fanin_task']
         # where: keyword_arguments['start_state_fanin_task'] = DAG_states[name]
@@ -54,7 +54,7 @@ class DAG_executor_Synchronizer(object):
         if not inmap: 	# fanin_task_name in self.synchronizers:
             # Note: When we create FanIn objects locally, we are always using DAG_executor_FanIn.DAG_executor_FanIn.
             # We never use the "select" version.
-            FanIn = DAG_executor_FanIn.DAG_executor_FanIn(n, fanin_task_name) # initial_n = 0, monitor_name = None
+            FanIn = DAG_executor_FanIn.DAG_executor_FanIn(fanin_task_name) # initial_n = 0, monitor_name = None
             FanIn.init(**keyword_arguments)
             logger.debug("calling_task_name: " + calling_task_name + " fanin_task_name: " + fanin_task_name
 				+ " DAG_executor_Synchronizer: create_and_fanin: create caching new fanin with name '%s'" % (fanin_task_name))
@@ -170,7 +170,7 @@ class DAG_executor_Synchronizer(object):
  # the data_dict, so in these cases we don;t need to send the output => can set output to None.       
         # create new faninNB with specified name if it hasn't been created 
         fanin_task_name = keyword_arguments['fanin_task_name']
-        n = keyword_arguments['n']
+        #n = keyword_arguments['n']
         #start_state_fanin_task = keyword_arguments['start_state_fanin_task']
         #output = keyword_arguments['result']
         calling_task_name = keyword_arguments['calling_task_name']
@@ -186,7 +186,7 @@ class DAG_executor_Synchronizer(object):
         if not inmap: 	# fanin_task_name in self.synchronizers:
             # Note: When we create FanIn objects locally, we are always using DAG_executor_FanInNB.DAG_executor_FanInNB.
             # We never use the "select" version.
-            FanInNB = DAG_executor_FanInNB.DAG_executor_FanInNB(n, fanin_task_name) # initial_n = 0, monitor_name = None
+            FanInNB = DAG_executor_FanInNB.DAG_executor_FanInNB(fanin_task_name) # initial_n = 0, monitor_name = None
             FanInNB.init(**keyword_arguments)
             logger.debug("calling_task_name: " + calling_task_name + " fanin_task_name: " + fanin_task_name
                 + " DAG_executor_Synchronizer: create_and_faninNB: create caching new fanin with name '%s'" % (fanin_task_name))
@@ -319,13 +319,13 @@ class DAG_executor_Synchronizer(object):
         for msg in fanin_messages:
             #logger.debug("calling_task_name: " + calling_task_name + " fanin_task_name: " + fanin_task_name)
             fanin_task_name = msg["name"]
-            DAG_exec_state = msg['state']
-            n = DAG_exec_state.keyword_arguments['n']
+            #DAG_exec_state = msg['state']
+            #n = DAG_exec_state.keyword_arguments['n']
             inmap = fanin_task_name in self.synchronizers
             logger.debug (" inmap before: " + str(inmap))
             #if not fanin_task_name in DAG_executor_Synchronizer.synchronizers:
             if not inmap: 	# fanin_task_name in self.synchronizers:
-                FanIn = DAG_executor_FanIn.DAG_executor_FanIn(n, fanin_task_name) # initial_n = 0, monitor_name = None
+                FanIn = DAG_executor_FanIn.DAG_executor_FanIn(fanin_task_name) # initial_n = 0, monitor_name = None
                 FanIn.init(**(msg['state'].keyword_arguments))
                 logger.debug(" create_and_fanin: create caching new fanin with name '%s'" % (fanin_task_name))
                 self.synchronizers[fanin_task_name] = FanIn # Store Synchronizer object.
@@ -335,14 +335,14 @@ class DAG_executor_Synchronizer(object):
             
         for msg in faninNB_messages:
             faninNB_task_name = msg["name"]
-            DAG_exec_state = msg['state']
-            n = DAG_exec_state.keyword_arguments['n']
+            #DAG_exec_state = msg['state']
+            #n = DAG_exec_state.keyword_arguments['n']
             #start_state_fanin_task = DAG_exec_state.keyword_arguments['start_state_fanin_task']
             inmap = faninNB_task_name in self.synchronizers
             logger.debug (" inmap before: " + str(inmap))
             #if not fanin_task_name in DAG_executor_Synchronizer.synchronizers:
             if not inmap: 	# faninNB_task_name in self.synchronizers:
-                FanInNB = DAG_executor_FanInNB.DAG_executor_FanInNB(n, faninNB_task_name) # initial_n = 0, monitor_name = None
+                FanInNB = DAG_executor_FanInNB.DAG_executor_FanInNB(faninNB_task_name) # initial_n = 0, monitor_name = None
                 FanInNB.init(**(msg['state'].keyword_arguments))
                 logger.debug(" create_and_fanin: create caching new fanin with name '%s'" % (faninNB_task_name))
                 self.synchronizers[faninNB_task_name] = FanInNB # Store Synchronizer object.

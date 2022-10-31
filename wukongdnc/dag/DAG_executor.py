@@ -20,6 +20,7 @@ from wukongdnc.constants import TCP_SERVER_IP
 from .DAG_executor_constants import run_all_tasks_locally, store_fanins_faninNBs_locally 
 from .DAG_executor_constants import create_all_fanins_faninNBs_on_start, using_workers 
 from .DAG_executor_constants import using_threads_not_processes, using_lambdas, use_multithreaded_multiprocessing
+from .DAG_executor_constants import process_work_queue_Type, FanInNB_Type
 #from .DAG_work_queue_for_threads import thread_work_queue
 from .DAG_work_queue_for_threads import work_queue
 from .DAG_data_dict_for_threads import data_dict
@@ -390,7 +391,7 @@ def faninNB_remotely_batch(websocket, **keyword_arguments):
 # ToDo: For lambdas, FaninNBs start fanin tasks so no work to wait for so make 
 #       synchronize_process_faninNBs_batch_async which does not wait for ack. Then change existing name to 
 #       synchronize_process_faninNBs_batch_sync.
-    DAG_exec_state = synchronize_process_faninNBs_batch(websocket, "synchronize_process_faninNBs_batch", "DAG_executor_FanInNB", "fan_in", DAG_exec_state)
+    DAG_exec_state = synchronize_process_faninNBs_batch(websocket, "synchronize_process_faninNBs_batch", FanInNB_Type, "fan_in", DAG_exec_state)
     return DAG_exec_state
 
 # Called when we are storing fanins and faninNBs remotely and we are using_workers and we are 
@@ -438,7 +439,8 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
     keyword_arguments['faninNB_sizes'] = faninNB_sizes   
     keyword_arguments['worker_needs_input'] = worker_needs_input  
     keyword_arguments['work_queue_name'] = "process_work_queue"
-    keyword_arguments['work_queue_type'] = "BoundedBuffer"
+    # defined in DAG_executor_constants: either select or non-select version
+    keyword_arguments['work_queue_type'] = process_work_queue_Type 
     keyword_arguments['work_queue_method'] = "deposit_all"
     keyword_arguments['work_queue_op'] = "synchronize_async"
     keyword_arguments['DAG_info'] = DAG_info

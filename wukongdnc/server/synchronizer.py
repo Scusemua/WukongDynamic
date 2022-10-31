@@ -394,7 +394,7 @@ class Synchronizer(object):
     def synchronizeSelect(self, method_name: str, state: State, wait_for_result: bool, **kwargs):
         logger.debug("State: " + str(state))
         logger.debug("synchronizeSelect: method_name: " + str(method_name))
-        logger.debug("synchronizeSelect: ID is: " + state.function_instance_ID)
+        logger.debug("synchronizeSelect: ID is: " + str(state.function_instance_ID))
 
         
         try:

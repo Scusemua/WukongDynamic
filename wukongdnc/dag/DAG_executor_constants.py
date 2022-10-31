@@ -7,7 +7,7 @@ run_all_tasks_locally = True         # vs remotely (in Lambdas)
 # machine on which the threads are executing.  If we are using multiprocessing
 # or Lambdas, this must be False. When False, the synch objects are stored
 # on the tcp_server or in InfiniX lambdas.
-store_fanins_faninNBs_locally = False    # vs remotely
+store_fanins_faninNBs_locally = True    # vs remotely
 # True when all FanIn and FanInNB objects are created locally or on the
 # tcp_server or IniniX all at once at the start of the DAG execution. If
 # False, synch objects are created on the fly, i.e, we execute create-and-fanin
@@ -19,7 +19,7 @@ create_all_fanins_faninNBs_on_start = True
 # case, instead of, e.g., starting a Lambda at fan_out operations, we start a thread.
 # This results in the creation of many threads and is only use to test the logic 
 # of the Lambda code.
-using_workers = True
+using_workers = False
 # True when we ae not using Lambas and tasks are executed by threads instead of processes. 
 # False when we are not using lambdas and are using multiprocesssing 
 using_threads_not_processes = True
@@ -29,10 +29,13 @@ num_workers = 1
 use_multithreaded_multiprocessing = False
 num_threads_for_multithreaded_multiprocessing = 2
 
-#FanIn_Type = "DAG_executor_FanIn"
-#FanInNB_Type = "DAG_executor_FanInNB"
-#process_work_queue_Type = "BoundedBuffer"
-FanIn_Type = "DAG_executor_FanIn_Select"
-FanInNB_Type = "DAG_executor_FanInNB_Select"
-process_work_queue_Type = "BoundedBuffer_Select"
+# if using lambdas to store synch objects, run tcp_server_lambda.
+# if store in regular python functions instead of real Lambdas
+# set using_Lambda_Function_Simulator = True
+FanIn_Type = "DAG_executor_FanIn"
+FanInNB_Type = "DAG_executor_FanInNB"
+process_work_queue_Type = "BoundedBuffer"
+#FanIn_Type = "DAG_executor_FanIn_Select"
+#FanInNB_Type = "DAG_executor_FanInNB_Select"
+#process_work_queue_Type = "BoundedBuffer_Select"
 using_Lambda_Function_Simulator = True

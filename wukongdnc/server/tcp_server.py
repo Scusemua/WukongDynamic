@@ -229,7 +229,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
         logger.info("[HANDLER] server.synchronize_process_faninNBs_batch() called.")
 
-        # name of the type is always "DAG_executor_FanInNB"
+        # name of the type is "DAG_executor_FanInNB" or "DAG_executor_FanInNB_Select"
         type_arg = message["type"]
         # Name of the method callled on "DAG_executor_FanInNB" is always "fanin"
         method_name = message["name"]
@@ -297,7 +297,32 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 work_queue_method_keyword_arguments['list_of_values'] = list_of_fanout_values
                 # call work_queue (bounded buffer) deposit_all(list_of_work_queue_fanout_values)
                 logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": deposit all fanout work.")
-                returnValue, restart = synchronizer_method(synchronizer._synchronizer, **work_queue_method_keyword_arguments) 
+    #rhc select first, replace
+                #returnValue, restart = synchronizer_method(synchronizer._synchronizer, **work_queue_method_keyword_arguments) 
+    #rhc select with
+                base_name, isTryMethod = isTry_and_getMethodName(work_queue_method)
+                is_select = isSelect(work_queue_type)
+                logger.debug("tcp_server: synchronize_process_faninNBs_batch: method_name: " + work_queue_method + ", base_name: " + base_name + ", isTryMethod: " + str(isTryMethod))
+                logger.debug("tcp_server: synchronize_process_faninNBs_batch: synchronizer_class_name: : " + work_queue_type + ", is_select: " + str(is_select))
+
+    #rhc select then replace
+                #return_value = synchronizer.synchronize(base_name, DAG_exec_state, **work_queue_method_keyword_arguments)
+    #rhc select with
+                if is_select:
+                    #self.lock_synchronizer()
+                    synchronizer.lock_synchronizer()
+            
+                if is_select:
+                    # create result_buffer, create execute() reference, call execute(), result_buffer.withdraw(), 
+                    # return excute's result, with no restart (by definition of synchronous non-try-op)
+                    # (Send result to client below.)
+                    wait_for_return = True
+                    # rhc: DES
+                    #return_value = self.synchronizeSelect(base_name, DAG_exec_state, wait_for_return, **DAG_exec_state.keyword_arguments)
+                    return_value = synchronizer.synchronizeSelect(base_name, DAG_exec_state, wait_for_return, **work_queue_method_keyword_arguments)
+                else:
+                    return_value = synchronizer.synchronize(base_name, DAG_exec_state, **work_queue_method_keyword_arguments)
+
                 # deposit_all return value is 0 and restart is False
         else:
             logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": no fanout work to deposit")
@@ -313,8 +338,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 raise ValueError("synchronize_process_faninNBs_batch: Could not find existing Synchronizer with name '%s'" % synchronizer_name)
 
             base_name, isTryMethod = isTry_and_getMethodName(method_name)
-            is_select = isSelect(type_arg) # is_select = isSelect(type_arg)
-    
+            is_select = isSelect(type_arg)
             logger.debug("tcp_server: synchronize_process_faninNBs_batch: method_name: " + method_name + ", base_name: " + base_name + ", isTryMethod: " + str(isTryMethod))
             logger.debug("tcp_server: synchronize_process_faninNBs_batch: synchronizer_class_name: : " + type_arg + ", is_select: " + str(is_select))
 
@@ -323,7 +347,25 @@ class TCPHandler(socketserver.StreamRequestHandler):
             DAG_exec_state.keyword_arguments['start_state_fanin_task'] = start_state_fanin_task
 
             logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": calling synchronizer.synchronize.")
-            return_value = synchronizer.synchronize(base_name, DAG_exec_state, **DAG_exec_state.keyword_arguments)
+#rhc: select replace this
+            #return_value = synchronizer.synchronize(base_name, DAG_exec_state, **DAG_exec_state.keyword_arguments)
+#rhc: select with this
+# Need to call the select version if using selects
+            if is_select:
+                #self.lock_synchronizer()
+                synchronizer.lock_synchronizer()
+            
+            if is_select:
+                # create result_buffer, create execute() reference, call execute(), result_buffer.withdraw(), 
+                # return excute's result, with no restart (by definition of synchronous non-try-op)
+                # (Send result to client below.)
+                wait_for_return = True
+                # rhc: DES
+                #return_value = self.synchronizeSelect(base_name, DAG_exec_state, wait_for_return, **DAG_exec_state.keyword_arguments)
+                return_value = synchronizer.synchronizeSelect(base_name, DAG_exec_state, wait_for_return, **DAG_exec_state.keyword_arguments)
+            else:
+                return_value = synchronizer.synchronize(base_name, DAG_exec_state, **DAG_exec_state.keyword_arguments)
+
             """
             Note: It does not make sense to batch try-ops, or to execute a batch of synchronous
                 ops that may block and that have return values. faninNB fan_ins are non-blocking
@@ -390,11 +432,36 @@ class TCPHandler(socketserver.StreamRequestHandler):
             work_queue_method_keyword_arguments['list_of_values'] = list_of_work
             # call work_queue (bounded buffer) deposit_all(list_of_work)
             logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": deposit_all FanInNB work, list_of_work size: " + str(len(list_of_work)))
-            returnValue, restart = synchronizer_method(synchronizer._synchronizer, **work_queue_method_keyword_arguments) 
+#rhc select first, replace
+            #returnValue, restart = synchronizer_method(synchronizer._synchronizer, **work_queue_method_keyword_arguments) 
+#rhc select with
+            base_name, isTryMethod = isTry_and_getMethodName(work_queue_method)
+            is_select = isSelect(work_queue_type)
+            logger.debug("tcp_server: synchronize_process_faninNBs_batch: method_name: " + work_queue_method + ", base_name: " + base_name + ", isTryMethod: " + str(isTryMethod))
+            logger.debug("tcp_server: synchronize_process_faninNBs_batch: synchronizer_class_name: : " + work_queue_type + ", is_select: " + str(is_select))
+
+#rhc select then replace
+            #return_value = synchronizer.synchronize(base_name, DAG_exec_state, **work_queue_method_keyword_arguments)
+#rhc select with
+            if is_select:
+                #self.lock_synchronizer()
+                synchronizer.lock_synchronizer()
+            
+            if is_select:
+                # create result_buffer, create execute() reference, call execute(), result_buffer.withdraw(), 
+                # return excute's result, with no restart (by definition of synchronous non-try-op)
+                # (Send result to client below.)
+                wait_for_return = True
+                # rhc: DES
+                #return_value = self.synchronizeSelect(base_name, DAG_exec_state, wait_for_return, **DAG_exec_state.keyword_arguments)
+                return_value = synchronizer.synchronizeSelect(base_name, DAG_exec_state, wait_for_return, **work_queue_method_keyword_arguments)
+            else:
+                return_value = synchronizer.synchronize(base_name, DAG_exec_state, **work_queue_method_keyword_arguments)
+    
             # deposit_all return value is 0 and restart is False
 
-            logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": work_queue_method: " + str(work_queue_method) + ", restart " + str(restart))
-            logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": " + str(work_queue_method) + ", returnValue " + str(returnValue))
+            logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": work_queue_method: " + str(work_queue_method))
+            logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": " + str(work_queue_method) + ", return_Value " + str(return_value))
             logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": " + str(work_queue_method) + ", successfully called work_queue method. ")
 
         if not got_work:
@@ -447,6 +514,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
         logger.debug("tcp_server called synchronizer.synchronize_sync")
 
+        # sysnchronizer synchronize_sync pickled the return value so sending 
+        # pickled value back to client.
         return return_value
 
     def synchronize_async(self, message = None):

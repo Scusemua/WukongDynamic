@@ -384,7 +384,7 @@ def synchronize_process_faninNBs_batch(websocket, op, type, name, state):
                     We should only bother with passing it as an argument if its already connected.
         
         op (str):
-            The operation being performed, which is "v"
+            The operation being performed, which is "synchronize_process_faninNBs_batch"
         
         type (str):
             The type of the object to be processed

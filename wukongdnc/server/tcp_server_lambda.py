@@ -31,7 +31,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         #TCP handler for incoming requests from AWS Lambda functions.
        
         while True:
-            logger.info("[HANDLER] Recieved one request from {}".format(self.client_address[0]))
+            logger.info("[HANDLER] TCPHandler lambda: Recieved one request from {}".format(self.client_address[0]))
 
             self.action_handlers = {
                 "create": self.create_obj,
@@ -56,7 +56,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 json_message = json.loads(data)
                 #obj_name = json_message['name']
                 message_id = json_message["id"]
-                logger.debug("[HANDLER] Received message (size=%d bytes) from client %s with ID=%s" % (len(data), self.client_address[0], message_id))
+                logger.debug("[HANDLER] TCPHandler: Received message (size=%d bytes) from client %s with ID=%s" % (len(data), self.client_address[0], message_id))
                 action = json_message.get("op", None)
                 #tcp_server calls local method
                 self.action_handlers[action](message = json_message)
@@ -85,7 +85,6 @@ class TCPHandler(socketserver.StreamRequestHandler):
     # Local method of tcp_server, which will synchronously invoke a Lambda
     def invoke_lambda_synchronously(self, json_message):
         #name = json_message.get("name", None)
-
         # For DAG with workera, we have fanins, faninNBs and the process work queue. Note that we
         # process the faninNBs in a batch and that method will access the faninNBs and 
         # the process work queue so we put all of the fanin, faninNBs, and work queue in
@@ -110,16 +109,20 @@ class TCPHandler(socketserver.StreamRequestHandler):
             function_name = "LambdaSemapore"
         """
 
-        # For DAG prototype, we use one function to store process_work_queue and all fanins and faninNBs
-        function_name = "LambdaBoundedBuffer"
-
         # pass thru client message to Lambda
         payload = {"json_message": json_message}
         # return_value = invoke_lambda_synchronously(payload = payload, function_name = function_name)
-
-        return_value = tcp_server.lambda_function.lambda_handler(payload)
-        #return_value = invoke_lambda_synchronously(function_name = function_name, payload = payload)
-        # where: lambda_client.invoke(FunctionName=function_name, InvocationType='RequestResponse', Payload=payload_json)
+        if using_Lambda_Function_Simulator:
+            function_key = "single_function"
+            logger.debug("[HANDLER] TCPHandler lambda: invoke_lambda_synchronously: using function key: " + function_key + " in map_of_Lambda_Function_Simulators")
+            lambda_function = tcp_server.map_of_Lambda_Function_Simulators[function_key] 
+            #return_value = tcp_server.lambda_function.lambda_handler(payload)
+            return_value = lambda_function.lambda_handler(payload)  
+        else:     
+            # For DAG prototype, we use one function to store process_work_queue and all fanins and faninNBs
+            function_name = "LambdaBoundedBuffer" 
+            return_value = invoke_lambda_synchronously(function_name = function_name, payload = payload)
+            # where: lambda_client.invoke(FunctionName=function_name, InvocationType='RequestResponse', Payload=payload_json)
         
         # The return value from the Lambda function will typically be sent by tcp_server to a Lambda client of tcp_server
         return return_value
@@ -133,7 +136,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             message (dict):
                 The payload from the AWS Lambda function.
         """        
-        logger.debug("[HANDLER] server.create() called.")
+        logger.debug("[HANDLER] TCPHandler lambda: server.create() called.")
 
         return_value_ignored = self.invoke_lambda_synchronously(message)    # makes synchronous Lambda call - return value is not meaningful
 
@@ -149,19 +152,20 @@ class TCPHandler(socketserver.StreamRequestHandler):
         self.send_serialized_object(resp_encoded)
         logger.info("Sent ACK of size %d bytes to client %s for CREATE operation." % (len(resp_encoded), self.client_address[0]))    
     
-    def create_all_fanins_and_faninNBs(self, messages):
-        """ 
-        where parameter message created using:
-            messages = (fanin_messages,faninNB_messages) // lists of "create" messages for fanins and faninNBS, respectively
-            #each message was created using:
-            message = { # this is a message for op create_all_fanins_and_faninNBs; it has a tuple of two lists of regular "create" messages
-                "op": "create_all_fanins_and_faninNBs", # op
-                "type": "DAG_executor_fanin_or_faninNB", # this is not a type of synchronizer object; doesn't fit the usual message format
-                "name": messages, # tuple of lists of "create" messages
-                "state": make_json_serializable(state),
-                "id": msg_id
-            }
-        """
+    """
+    Not Used; using create_all_fanins_and_faninNBs_and_possibly_work_queue
+    def create_all_fanins_and_faninNBs(self, messages):  
+        #where parameter message created using:
+        #    messages = (fanin_messages,faninNB_messages) // lists of "create" messages for fanins and faninNBS, respectively
+        #    each message was created using:
+        #    message = { # this is a message for op create_all_fanins_and_faninNBs; it has a tuple of two lists of regular "create" messages
+        #        "op": "create_all_fanins_and_faninNBs", # op
+        #        "type": "DAG_executor_fanin_or_faninNB", # this is not a type of synchronizer object; doesn't fit the usual message format
+        #        "name": messages, # tuple of lists of "create" messages
+        #        "state": make_json_serializable(state),
+        #        "id": msg_id
+        #    }
+        
         logger.debug("create_all_fanins_and_faninNBs: creating " + str(len(messages[0])) + " DAG_executor fanins")
 
         fanin_messages = messages[0]
@@ -173,20 +177,20 @@ class TCPHandler(socketserver.StreamRequestHandler):
         for msg in faninNB_messages:
             self.create_obj(msg)
         
-        """ where msg was created using:
-                message = {
-                    "op": "create",
-                    "type": "DAG_executor_FanIn/DAG_executor_FanInNB",
-                    "name": fanin_name/faninNB_name,
-                    "state": make_json_serializable(dummy_state),
-                    "id": msg_id
-                }
-        and
-                dummy_state = DAG_executor_State()
-                dummy_state.keyword_arguments['n'] = size # for size in all_faninNB_sizes
-                dummy_state.keyword_arguments['start_state_fanin_task'] = DAG_states[fanin_name] # where DAG_states maps task names to state
-                msg_id = str(uuid.uuid4())
-        """
+        #where msg was created using:
+        #        message = {
+        #            "op": "create",
+        #            "type": "DAG_executor_FanIn/DAG_executor_FanInNB",
+        #            "name": fanin_name/faninNB_name,
+        #            "state": make_json_serializable(dummy_state),
+        #            "id": msg_id
+        #        }
+        #and
+        #        dummy_state = DAG_executor_State()
+        #        dummy_state.keyword_arguments['n'] = size # for size in all_faninNB_sizes
+        #        dummy_state.keyword_arguments['start_state_fanin_task'] = DAG_states[fanin_name] # where DAG_states maps task names to state
+        #        msg_id = str(uuid.uuid4())
+    """
 
     def create_all_fanins_and_faninNBs_and_possibly_work_queue(self, message):
         """
@@ -198,7 +202,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 The payload from the AWS Lambda function.
         """
        
-        logger.debug("[HANDLER] create_all_fanins_and_faninNBs_and_possibly_work_queue() called.")
+        logger.debug("[HANDLER] TCPHandler lambda: create_all_fanins_and_faninNBs_and_possibly_work_queue() called.")
 
         return_value_ignored = self.invoke_lambda_synchronously(message)
 
@@ -231,7 +235,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 The payload from the AWS Lambda function.
         """
        
-        logger.debug("[HANDLER] synchronize_process_faninNBs_batch() called.")
+        logger.debug("[HANDLER] TCPHandler lambda: synchronize_process_faninNBs_batch() called.")
 
         # this is a DAG_executor_State with  DAG_exec_state.return_value = work_tuple
         # or DAG_exec_state.return_value = 0
@@ -261,7 +265,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 The payload from the AWS Lambda function.
         """
        
-        logger.debug("[HANDLER] create_work_queue() called.")
+        logger.debug("[HANDLER] TCPHandler lambda: create_work_queue() called.")
 
         return_value_ignored = self.invoke_lambda_synchronously(message)
 
@@ -290,7 +294,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 The payload from the AWS Lambda function.
         """
        
-        logger.debug("[HANDLER] calling server.synchronize_sync().")
+        logger.debug("[HANDLER] TCPHandler lambda: calling server.synchronize_sync().")
 
         returned_state = self.invoke_lambda_synchronously(message)
 
@@ -346,7 +350,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             message (dict):
                 The payload from the AWS Lambda function.
         """        
-        logger.debug("[HANDLER] calling server.synchronize_async().")
+        logger.debug("[HANDLER] TCPHandler lambda: calling server.synchronize_async().")
 
         returned_value_ignored = self.invoke_lambda_synchronously(message)
        
@@ -475,6 +479,12 @@ class TCPServer(object):
         self.server_address = ("0.0.0.0",25565)
         self.tcp_server = socketserver.ThreadingTCPServer(self.server_address, TCPHandler)
         self.lambda_function = Lambda_Function_Simulator()
+        self.list_of_Lambda_Function_Simulators = []
+        self.num_Lambda_Function_Simulators = 1
+        for _ in range(0,self.num_Lambda_Function_Simulators):
+            self.list_of_Lambda_Function_Simulators.append(Lambda_Function_Simulator())
+        self.map_of_Lambda_Function_Simulators = {}
+        self.map_of_Lambda_Function_Simulators['single_function'] = self.list_of_Lambda_Function_Simulators[0]
     
     def start(self):
         logger.info("Starting TCP Lambda server.")
