@@ -7,7 +7,7 @@ import importlib
 #from .synchronizer_thread import synchronizerThread
 #import boto3 
 #import json
-#import cloudpickle
+import cloudpickle
 
 from ..wukong.invoker import invoke_lambda 
 
@@ -301,7 +301,25 @@ class Synchronizer(object):
             
             logger.debug("synchronizer_lambda: synchronize_sync:  %s returning %s for method %s."  % (synchronizer_name, str(return_value), method_name))
 
-            return state
+            # In the version in which we store sync objects on the server, we send the pickled state
+            # back to the clent: tcp_handler.send_serialized_object(cloudpickle.dumps(state)).
+            # In this version, this lamba function is returning the state the the caller
+            # invoke_lambda_synchronously:
+            #   return_value_payload = lambda_client.invoke(FunctionName=function_name, InvocationType='RequestResponse', Payload=payload_json)
+            #   return_value = return_value_payload['Payload'].read()
+            # which was calld by tcp_server_lambda.py's using either a real lambda invocation:
+            #   return_value = invoke_lambda_synchronously(function_name = function_name, payload = payload)
+            # or a simulted lambda's invocation:
+            #   function_key = "single_function"
+            #   logger.debug("[HANDLER] TCPHandler lambda: invoke_lambda_synchronously: using function key: " + function_key + " in map_of_Lambda_Function_Simulators")
+            #   lambda_function = tcp_server.map_of_Lambda_Function_Simulators[function_key] 
+            #   return_value = lambda_function.lambda_handler(payload) 
+            # The latter using class Lambda_Function_simulator in ADG_executor_lambda_function_simulator.py
+            # 
+            # We return the pickled state to the synchronous caller of the laambda function 
+            # instead of TCP sending the picled state to the clinet
+            pickled_state = cloudpickle.dumps(state)
+            return pickled_state
         
     def synchronize_async(self, obj_name, method_name, state, synchronizer_name):
         """

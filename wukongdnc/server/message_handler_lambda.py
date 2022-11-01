@@ -1,4 +1,5 @@
 import traceback
+import cloudpickle
 
 from .synchronizer_lambda import Synchronizer
 from .util import decode_and_deserialize #, make_json_serializable,  isTry_and_getMethodName, isSelect 
@@ -386,9 +387,11 @@ class MessageHandler(object):
 
         logger.debug("MessageHandler finished synchronize_process_faninNBs_batch")
         
-        # this is a DAG_executor_State with  DAG_exec_state.return_value = work_tuple
+        # We will assign DAG_exec_state to returned_work so returned_work cannot be None.
+        # This is a DAG_executor_state with DAG_exec_state.return_value = work_tuple
         # or DAG_exec_state.return_value = 0
-        return returned_work
+        pickled_returned_work = cloudpickle.dumps(returned_work)
+        return pickled_returned_work
 
     # Not used and not tested. Currently create work queue in 
     # create_all_fanins_and_faninNBs_and_possibly_work_queue. 

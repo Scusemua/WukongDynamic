@@ -11,8 +11,7 @@ import cloudpickle
 from ..wukong.invoker import invoke_lambda_synchronously
 
 from ..dag.DAG_executor_constants import using_Lambda_Function_Simulator
-
-from serverless_sync_handler import Lambda_Function_Simulator
+from ..dag.DAG_Executor_lambda_function_simulator import Lambda_Function_Simulator
 
 # Set up logging.
 import logging 
@@ -115,8 +114,34 @@ class TCPHandler(socketserver.StreamRequestHandler):
         if using_Lambda_Function_Simulator:
             function_key = "single_function"
             logger.debug("[HANDLER] TCPHandler lambda: invoke_lambda_synchronously: using function key: " + function_key + " in map_of_Lambda_Function_Simulators")
-            lambda_function = tcp_server.map_of_Lambda_Function_Simulators[function_key] 
-            #return_value = tcp_server.lambda_function.lambda_handler(payload)
+            # tcp_server is from below: if __name__ == "__main__": # Create a Server Instance
+            # tcp_server = TCPServer() tcp_server.start()
+            #
+            # function_key is mapped to a regular Python function:
+            #   self.lambda_function = Lambda_Function_Simulator()
+            #   self.list_of_Lambda_Function_Simulators = []
+            #   self.num_Lambda_Function_Simulators = 1
+            #   for _ in range(0,self.num_Lambda_Function_Simulators):
+            #      self.list_of_Lambda_Function_Simulators.append(Lambda_Function_Simulator())
+            #   self.map_of_Lambda_Function_Simulators = {}
+            #   self.map_of_Lambda_Function_Simulators['single_function'] = self.list_of_Lambda_Function_Simulators[0]
+            # where function_key is, e.g., the name of a fanin/faninNB object or the name/state of a task
+            # so, e.g., every fanin/faninNB and every (fanout) task can be mapped to function in the 
+            # list of functions (e.g., InfiniX). For the simple DAG we have fanin multiply-a6c0e4ee-e49b-4ce1-9667-8d562e2657c6
+            # and faninNB add-75bbc5c1-cfca-466d-b8ca-215c80882558 and DAG tasks:
+            #   increment-985b1e05-0248-4d8a-8bc0-90efe6d6c147
+            #   triple-802331c1-d137-435a-af84-59f38980fc6e
+            #   multiply-a6c0e4ee-e49b-4ce1-9667-8d562e2657c6
+            #   divide-09d35db9-df80-44b9-bbce-9ed8eca7039f
+            #   square-783038ad-fbd2-4d64-b4cf-52fc0e8554dd
+            #   add-75bbc5c1-cfca-466d-b8ca-215c80882558
+            #   increment-798a4bd4-061d-436c-92e0-44773293bf18
+            # where the multiply and add tasks are fanin and faninNB task, respectively. Tasks
+            # square and triple are fanout tasks, the increment tasks are leaf tasks and task
+            # divide is clustered with fanin task multiply so divide is not a fanout task. Perhaps
+            # multiply and divide would be excuted by the same mapped function. 
+            # Note: fanina and task names are in DAG_info, which can be read at startup: DAG_info = DAG_Info()
+            lambda_function = tcp_server.map_of_Lambda_Function_Simulators[function_key]
             return_value = lambda_function.lambda_handler(payload)  
         else:     
             # For DAG prototype, we use one function to store process_work_queue and all fanins and faninNBs
@@ -245,8 +270,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
  
         # pickle already done by Lambda? cloudpickle.dumps(state)? If so, just pass pickled state thru to client.
         if using_Lambda_Function_Simulator:
-            returned_state_pickled = cloudpickle.dumps(returned_state)
-            self.send_serialized_object(returned_state_pickled)
+            #returned_state_pickled = cloudpickle.dumps(returned_state)
+            self.send_serialized_object(returned_state)
         else:
             self.send_serialized_object(returned_state)
        
@@ -332,9 +357,10 @@ class TCPHandler(socketserver.StreamRequestHandler):
         """
         # pickle already done by Lambda? cloudpickle.dumps(state)? If so, just pass pickled state thru to client.
 
+        # Note: the value returned is pickled in Message_Handler_Lambda in 
+        # synchronize_process_faninNBs_batch and returned by lambda function
         if using_Lambda_Function_Simulator:
-            returned_state_pickled = cloudpickle.dumps(returned_state)
-            self.send_serialized_object(returned_state_pickled)
+            self.send_serialized_object(returned_state)
         else:
             self.send_serialized_object(returned_state)
 
@@ -355,7 +381,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
         returned_value_ignored = self.invoke_lambda_synchronously(message)
        
         logger.debug("tcp_server called synchronizer.synchronize_async")
-       
+
+        # return value not assigned
         return returned_value_ignored
         
     def recv_object(self):
@@ -478,13 +505,15 @@ class TCPServer(object):
         self.clients =        []    # list      - not used
         self.server_address = ("0.0.0.0",25565)
         self.tcp_server = socketserver.ThreadingTCPServer(self.server_address, TCPHandler)
-        self.lambda_function = Lambda_Function_Simulator()
-        self.list_of_Lambda_Function_Simulators = []
-        self.num_Lambda_Function_Simulators = 1
-        for _ in range(0,self.num_Lambda_Function_Simulators):
-            self.list_of_Lambda_Function_Simulators.append(Lambda_Function_Simulator())
-        self.map_of_Lambda_Function_Simulators = {}
-        self.map_of_Lambda_Function_Simulators['single_function'] = self.list_of_Lambda_Function_Simulators[0]
+        if using_Lambda_Function_Simulator:
+            # using regular functions instead of real lambda functions for storing synch objects 
+            self.lambda_function = Lambda_Function_Simulator()
+            self.list_of_Lambda_Function_Simulators = []
+            self.num_Lambda_Function_Simulators = 1
+            for _ in range(0,self.num_Lambda_Function_Simulators):
+                self.list_of_Lambda_Function_Simulators.append(Lambda_Function_Simulator())
+            self.map_of_Lambda_Function_Simulators = {}
+            self.map_of_Lambda_Function_Simulators['single_function'] = self.list_of_Lambda_Function_Simulators[0]
     
     def start(self):
         logger.info("Starting TCP Lambda server.")
