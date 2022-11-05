@@ -278,12 +278,13 @@ class TCPHandler(socketserver.StreamRequestHandler):
             if run_all_tasks_locally:
                 # work_queue.deposit_all(list_of_work_queue_fanout_values)
                 synchronizer = tcp_server.synchronizers[work_queue_name]
-                synchClass = synchronizer._synchClass
-                try:
-                    synchronizer_method = getattr(synchClass, work_queue_method)
-                except Exception as ex:
-                    logger.error("tcp_server: synchronize_process_faninNBs_batch: deposit fanout work: Failed to find method '%s' on object '%s'." % (work_queue_method, work_queue_type))
-                    raise ex
+                
+                #synchClass = synchronizer._synchClass
+                #try:
+                #    synchronizer_method = getattr(synchClass, work_queue_method)
+                #except Exception as ex:
+                #    logger.error("tcp_server: synchronize_process_faninNBs_batch: deposit fanout work: Failed to find method '%s' on object '%s'." % (work_queue_method, work_queue_type))
+                #    raise ex
 
                 # To call "deposit" instead of "deposit_all", change the work_queue_method above before you
                 # generate synchronizer_method and here iterate over the list.
@@ -412,13 +413,13 @@ class TCPHandler(socketserver.StreamRequestHandler):
             # There is work in the form of faninNB tasks for which we were the last fan_in caller; thia
             # work gets enqueued in the work queue        
             synchronizer = tcp_server.synchronizers[work_queue_name]
-            synchClass = synchronizer._synchClass
 
-            try:
-                synchronizer_method = getattr(synchClass, work_queue_method)
-            except Exception as ex:
-                logger.error("tcp_server: synchronize_process_faninNBs_batch: deposit fanin work: Failed to find method '%s' on object '%s'." % (work_queue_method, work_queue_type))
-                raise ex
+            #synchClass = synchronizer._synchClass
+            #try:
+            #    synchronizer_method = getattr(synchClass, work_queue_method)
+            #except Exception as ex:
+            #    logger.error("tcp_server: synchronize_process_faninNBs_batch: deposit fanin work: Failed to find method '%s' on object '%s'." % (work_queue_method, work_queue_type))
+            #    raise ex
 
             # To call "deposit" instead of "deposit_all", change the work_queue_method above before you
             # generate synchronizer_method and here iterate over the list.

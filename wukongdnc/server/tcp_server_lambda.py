@@ -5,13 +5,14 @@ import socketserver
 #import traceback
 #import json
 
-import cloudpickle
+#import cloudpickle
 #import base64
 
 from ..wukong.invoker import invoke_lambda_synchronously
 
 from ..dag.DAG_executor_constants import using_Lambda_Function_Simulator
-from ..dag.DAG_Executor_lambda_function_simulator import Lambda_Function_Simulator
+from ..dag.DAG_Executor_lambda_function_simulator import InfiniX # , Lambda_Function_Simulator
+from ..dag.DAG_info import DAG_Info
 
 # Set up logging.
 import logging 
@@ -112,8 +113,10 @@ class TCPHandler(socketserver.StreamRequestHandler):
         payload = {"json_message": json_message}
         # return_value = invoke_lambda_synchronously(payload = payload, function_name = function_name)
         if using_Lambda_Function_Simulator:
-            function_key = "single_function"
-            logger.debug("[HANDLER] TCPHandler lambda: invoke_lambda_synchronously: using function key: " + function_key + " in map_of_Lambda_Function_Simulators")
+            # for function smulator prototype, using a single function to store all the fanins/faninNBs
+            # i.e., all fanin/faninNBs mapped under the name 'single_function'
+            sync_object_name = "single_function"
+            logger.debug("[HANDLER] TCPHandler lambda: invoke_lambda_synchronously: using object_name: " + sync_object_name + " in map_of_Lambda_Function_Simulators")
             # tcp_server is from below: if __name__ == "__main__": # Create a Server Instance
             # tcp_server = TCPServer() tcp_server.start()
             #
@@ -141,12 +144,13 @@ class TCPHandler(socketserver.StreamRequestHandler):
             # divide is clustered with fanin task multiply so divide is not a fanout task. Perhaps
             # multiply and divide would be excuted by the same mapped function. 
             # Note: fanina and task names are in DAG_info, which can be read at startup: DAG_info = DAG_Info()
-            lambda_function = tcp_server.map_of_Lambda_Function_Simulators[function_key]
+            #lambda_function = tcp_server.function_map[object_name]
+            lambda_function = tcp_server.infiniX.get_function(sync_object_name)
             return_value = lambda_function.lambda_handler(payload)  
         else:     
             # For DAG prototype, we use one function to store process_work_queue and all fanins and faninNBs
-            function_name = "LambdaBoundedBuffer" 
-            return_value = invoke_lambda_synchronously(function_name = function_name, payload = payload)
+            sync_object_name = "LambdaBoundedBuffer" 
+            return_value = invoke_lambda_synchronously(function_name = sync_object_name, payload = payload)
             # where: lambda_client.invoke(FunctionName=function_name, InvocationType='RequestResponse', Payload=payload_json)
         
         # The return value from the Lambda function will typically be sent by tcp_server to a Lambda client of tcp_server
@@ -506,14 +510,31 @@ class TCPServer(object):
         self.server_address = ("0.0.0.0",25565)
         self.tcp_server = socketserver.ThreadingTCPServer(self.server_address, TCPHandler)
         if using_Lambda_Function_Simulator:
+            """
+            DAG_info = DAG_Info()
             # using regular functions instead of real lambda functions for storing synch objects 
-            self.lambda_function = Lambda_Function_Simulator()
+            #self.lambda_function = Lambda_Function_Simulator()
             self.list_of_Lambda_Function_Simulators = []
             self.num_Lambda_Function_Simulators = 1
             for _ in range(0,self.num_Lambda_Function_Simulators):
                 self.list_of_Lambda_Function_Simulators.append(Lambda_Function_Simulator())
+            
             self.map_of_Lambda_Function_Simulators = {}
             self.map_of_Lambda_Function_Simulators['single_function'] = self.list_of_Lambda_Function_Simulators[0]
+            """
+
+            DAG_info = DAG_Info()
+            # using regular functions instead of real lambda functions for storing synch objects 
+	        # self.lambda_function = Lambda_Function_Simulator()
+            self.infiniX = InfiniX(1)
+            # creaet list of simulator functions 
+            self.infiniX.create_functions()
+            # map synch_object_name to one of the InfiniX functions
+            sync_object_name = 'single_function'
+            function_index = 0
+            self.infiniX.map_synchronization_object(sync_object_name,function_index)
+            # Note: call lambda_function = infiniX.get_function(sync_object_name) to get 
+            # the function that stores sync_object_namej
     
     def start(self):
         logger.info("Starting TCP Lambda server.")

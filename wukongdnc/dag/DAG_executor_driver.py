@@ -9,7 +9,7 @@
 #
 # Don't want Lambda to wait for work or anything else? Call to process_faninNBs_batch() can 
 # be asynch since faninNB starts lambdas (all the faninNB work) so no need to wait on 
-# process_faninNBs_batch?
+# process_faninNBs_batch? Also, no work returned to calling lambda.
 #
 # matrix mult deposits results to "collector" object at end.
 #
