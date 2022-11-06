@@ -20,6 +20,8 @@ class DAG_Info(object):
         return self.DAG_info["all_faninNB_task_names"]
     def get_all_faninNB_sizes(self):
         return self.DAG_info["all_faninNB_sizes"]
+    def get_all_fanout_task_names(self):
+        return self.DAG_info["all_fanout_task_names"]
     def get_DAG_leaf_tasks(self):
         return self.DAG_info["DAG_leaf_tasks"]
     def get_DAG_leaf_task_start_states(self):

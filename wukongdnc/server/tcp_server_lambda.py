@@ -85,7 +85,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
     # Local method of tcp_server, which will synchronously invoke a Lambda
     def invoke_lambda_synchronously(self, json_message):
         #name = json_message.get("name", None)
-        # For DAG with workera, we have fanins, faninNBs and the process work queue. Note that we
+        # For DAG with workers, we have fanins, faninNBs and the process work queue. Note that we
         # process the faninNBs in a batch and that method will access the faninNBs and 
         # the process work queue so we put all of the fanin, faninNBs, and work queue in
         # the same function.
@@ -113,6 +113,15 @@ class TCPHandler(socketserver.StreamRequestHandler):
         payload = {"json_message": json_message}
         # return_value = invoke_lambda_synchronously(payload = payload, function_name = function_name)
         if using_Lambda_Function_Simulator:
+#ToDo: when out each fanin/faninNb/fanout in simulated lambda, need to use the name from json_message
+# instead of single_function.
+# Also, use infiniX.enqueue() to "call fanin" instead of invoking the simulated lambda directly.
+# This call here is a direct invocation of any message.op. We aer talking about the cal to
+# fan_in, which is a synch_op so only those fan_n calls?  Where/when actual creates done?
+# this is the create all in sqs, which creates the messages, and then we need to give
+# each message to its mapped simulated function? The tcp_server_lambda interepts calls to
+# fan_in and issues enqueue() instad?
+
             # for function smulator prototype, using a single function to store all the fanins/faninNBs
             # i.e., all fanin/faninNBs mapped under the name 'single_function'
             sync_object_name = "single_function"
@@ -526,9 +535,17 @@ class TCPServer(object):
             DAG_info = DAG_Info()
             # using regular functions instead of real lambda functions for storing synch objects 
 	        # self.lambda_function = Lambda_Function_Simulator()
-            self.infiniX = InfiniX(1)
-            # creaet list of simulator functions 
+            all_fanin_sizes = DAG_info.get_all_fanin_sizes()
+            all_faninNB_sizes = DAG_info.get_all_faninNB_sizes()
+            all_fanin_task_names = DAG_info.get_all_fanin_task_names()
+            all_faninNB_task_names = DAG_info.get_all_faninNB_task_names()
+            all_fanout_task_names = DAG_info.get_all_fanout_task_names()
+            self.infiniX = InfiniX(all_fanout_task_names, all_fanin_task_names, all_faninNB_task_names, all_fanin_sizes, all_faninNB_sizes)
+            # create list of simulator functions 
             self.infiniX.create_functions()
+
+#ToDo: call infiniX.map_object_names_to_functions() to create functions for fanins/faninNBs/fanouts
+# but will not use fanouts just yet.
             # map synch_object_name to one of the InfiniX functions
             sync_object_name = 'single_function'
             function_index = 0
@@ -547,5 +564,3 @@ if __name__ == "__main__":
     # Create a Server Instance
     tcp_server = TCPServer()
     tcp_server.start()
-
- 

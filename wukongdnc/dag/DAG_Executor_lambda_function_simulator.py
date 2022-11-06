@@ -1,7 +1,7 @@
 import logging 
 #import re 
 #import socket
-import time 
+import time
 #import redis 
 import uuid
 
@@ -64,6 +64,9 @@ class Lambda_Function_Simulator:
 		return return_value
 
 class SQS:
+	def __init__(self):
+		self.object_name_to_trigger_map = {}
+
 	# create fanin and faninNB messages for creating all fanin and faninNB synch objects
 	def create_fanin_and_faninNB_messages(self,DAG_map,DAG_states,DAG_info,all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes):
 	
@@ -130,9 +133,34 @@ class SQS:
 
 		return fanin_messages, faninNB_messages
 
+	def map_object_name_to_trigger(self,object_name,n):
+		empty_list = []
+		list_n_pair = (empty_list,n)
+		self.object_name_to_trigger_map[object_name] = list_n_pair
+
+	def enqueue(self,json_message,simulated_lambda_function):
+		object_name = json_message.get("name", None)
+		list_n_pair = self.object_name_to_trigger_map[object_name]
+		list = list_n_pair[0]
+		n = list_n_pair[1]
+		list.append(json_message)
+		if len(list) == n:
+			payload = {"json_message": json_message}
+			return_value_ignored = simulated_lambda_function.lambda_handler(payload) 
+
+
+
+
 
 class InfiniX:
-	def __init__(self,num_Lambda_Function_Simulators = 1):
+	def __init__(self, fanouts, fanins, faninNBs, all_fanin_sizes, all_faninNB_sizes):
+		self.sqs = SQS()
+		self.fanins = fanins
+		self.fanouts = fanouts
+		self.faninNBs = faninNBs
+		self.all_fanin_sizes = all_fanin_sizes
+		self.all_faninNB_sizes = all_faninNB_sizes
+		num_Lambda_Function_Simulators = len(fanins) + len(fanouts) + len(faninNBs)
 		self.list_of_Lambda_Function_Simulators = []
 		self.num_Lambda_Function_Simulators = num_Lambda_Function_Simulators
 		self.function_map = {}
@@ -141,8 +169,33 @@ class InfiniX:
 		for _ in range(0,self.num_Lambda_Function_Simulators):
 			self.list_of_Lambda_Function_Simulators.append(Lambda_Function_Simulator())	
 
-	def map_synchronization_object(self, function_name,	function_index):
-			self.function_map[function_name] = function_index
+	def map_synchronization_object(self, object_name, object_index):
+			self.function_map[object_name] = object_index
 
-	def get_function(self, function_name):
-			return self.list_of_Lambda_Function_Simulators[self.function_map[function_name]]
+	def get_function(self, object_name):
+			return self.list_of_Lambda_Function_Simulators[self.function_map[object_name]]
+
+	def map_object_names_to_functions(self):
+		# for fanouts, the fanin object size is always 1
+		# map function name to a pair (empty_list,n) where n is size of 
+		i=0
+		for object_name, n in zip(self.faninNBs, self.all_faninNB_sizes):
+			self.map_synchronization_object(object_name,i)
+			i += 1
+			self.sqs.map_object_name_to_trigger(object_name,n)
+
+		for object_name, n in zip(self.fanins, self.all_fanin_sizes):
+			self.map_synchronization_object(object_name,i)
+			i += 1
+			self.sqs.map_object_name_to_trigger(object_name,n)
+
+		for object_name in self.fanouts:
+			self.map_synchronization_object(object_name,i)
+			i += 1
+			n = 1 # a fanout is a fanin of size 1
+			self.sqs.map_object_name_to_trigger(object_name,n)
+
+	def enqueue(self,json_message):
+		object_name = json_message.get("name", None)
+		lambda_function = self.get_function(object_name)
+		self.sqs.enqueue(json_message, lambda_function)

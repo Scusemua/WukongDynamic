@@ -3,7 +3,6 @@
 # try matrixMult
 
 # Where are we: 
-# set_guards in parent Selectors worked?
 #
 # Fix sockets for multitreaded processes
 #
@@ -24,6 +23,13 @@
 # if it blocks then raise "full" exception. Used for DAG execution where the 
 # size of the work_queue is blunded by number of tasks so we can create an
 # unbounded buffer of size number_of_tasks + delta that should never block.
+# Consider timestamping so can place fanin/faninNb/fanout objects in lambdas,
+#  where a happened before b means a and b can be in same lambda unless a || b.
+# Note: with lamba triggers, careful when a and b is same lambda so a can do 
+# local fanin to b, but then a has to also enqueue something to sqs so b is
+# triggered with other fanin results, but a is in same lamba so make sure lambda
+# is terminated before it is triggered. Not a problem with SQS in tcp_server_lambda
+# since it can trigger after a's synch call returns?
 
 import threading
 import multiprocessing
