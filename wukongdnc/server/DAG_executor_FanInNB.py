@@ -254,6 +254,14 @@ class DAG_executor_FanInNB(MonitorSU):
                 #return self._results, restart  # all threads have called so return results
                 return 0, restart
                 #return 1, restart  # all threads have called so return results
+           
+            elif not self.store_fanins_faninNBs_locally and run_all_tasks_locally:
+                # not using workers and using threads to simulate lambdas. Here
+                # there is nothing to do since a thread will be created localy
+                # in DAG work loop. (Can't create threads here or it would run here
+                # (on server or in lambda))
+                
+                return 0, restart
 
             else:
                 logger.error("FanInNB:[ERROR] Internal Error: reached else: error at end of fanin")

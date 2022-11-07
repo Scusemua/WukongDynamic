@@ -113,7 +113,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         payload = {"json_message": json_message}
         # return_value = invoke_lambda_synchronously(payload = payload, function_name = function_name)
         if using_Lambda_Function_Simulator:
-#ToDo: when out each fanin/faninNb/fanout in simulated lambda, need to use the name from json_message
+# ToDo: when out each fanin/faninNb/fanout in simulated lambda, need to use the name from json_message
 # instead of single_function.
 # Also, use infiniX.enqueue() to "call fanin" instead of invoking the simulated lambda directly.
 # This call here is a direct invocation of any message.op. We aer talking about the cal to
@@ -124,7 +124,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
             # for function smulator prototype, using a single function to store all the fanins/faninNBs
             # i.e., all fanin/faninNBs mapped under the name 'single_function'
-            sync_object_name = "single_function"
+            #sync_object_name = "single_function"
+            sync_object_name = json_message.get("name", None)
             logger.debug("[HANDLER] TCPHandler lambda: invoke_lambda_synchronously: using object_name: " + sync_object_name + " in map_of_Lambda_Function_Simulators")
             # tcp_server is from below: if __name__ == "__main__": # Create a Server Instance
             # tcp_server = TCPServer() tcp_server.start()
@@ -230,7 +231,82 @@ class TCPHandler(socketserver.StreamRequestHandler):
         #        msg_id = str(uuid.uuid4())
     """
 
-    def create_all_fanins_and_faninNBs_and_possibly_work_queue(self, message):
+    def create_all_fanins_and_faninNBs_and_possibly_work_queue(self, message = None):
+        """
+        Called by a remote Lambda to create fanins, faninNBs, and pssibly work queue.
+        Number of fanins/faninNBs may be 0.
+
+        Key-word arguments:
+        -------------------
+            message (dict):
+                The payload from the AWS Lambda function.
+        
+        where:
+            message = {
+                "op": "create_all_fanins_and_faninNBs",
+                "type": "DAG_executor_fanin_or_faninNB",
+                "name": messages,						# Q: Fix this? usually it's a synch object name (string)
+                "state": make_json_serializable(dummy_state),
+                "id": msg_id
+            }
+        """  
+        logger.debug("[MESSAGEHANDLER] server.create_all_fanins_and_faninNBs_and_possibly_work_queue() called.")
+        messages = message['name']
+        fanin_messages = messages[0]
+        faninNB_messages = messages[1]
+        logger.info(str(fanin_messages))
+        logger.info(str(faninNB_messages))
+
+        for msg in fanin_messages:
+            #self.create_one_of_all_objs(msg)
+            logger.debug("tcp_server_lambda: create_all_fanins_and_faninNBs_and_possibly_work_queue() called.")
+
+            return_value_ignored = self.invoke_lambda_synchronously(msg)
+
+            logger.debug("tcp_server_lambda: called Lambda at create_all_fanins_and_faninNBs_and_possibly_work_queue.")
+
+        if len(fanin_messages) > 0:
+            logger.info("created fanins")
+
+        for msg in faninNB_messages:
+            #self.create_one_of_all_objs(msg)
+            logger.debug("tcp_server_lambda: create_all_fanins_and_faninNBs_and_possibly_work_queue() called.")
+
+            return_value_ignored = self.invoke_lambda_synchronously(msg)
+
+            logger.debug("tcp_server_lambda: called Lambda at create_all_fanins_and_faninNBs_and_possibly_work_queue.")
+
+        if len(faninNB_messages) > 0:
+            logger.info("created faninNBs")
+
+        # we always create the fanin and faninNBs. We possibly create the work queue. If we send
+        # a message for create work queue, in addition to the lst of messages for create
+        # fanins and create faninNBs, we create a work queue too.
+        # Note: No work_queue when using lambdas
+        """
+        create_the_work_queue = (len(messages)>2)
+        if create_the_work_queue:
+            logger.info("create_the_work_queue: " + str(create_the_work_queue) + " len: " + str(len(messages)))
+            msg = messages[2]
+            self.create_one_of_all_objs(msg)
+        """
+
+        resp = {
+            "op": "ack",
+            "op_performed": "create_all_fanins_and_faninNBs"
+        }
+        #############################
+        # Write ACK back to client. #
+        #############################
+        logger.info("Sending ACK to client %s for create_all_fanins_and_faninNBs_and_possibly_work_queue operation." % self.client_address[0])
+        resp_encoded = json.dumps(resp).encode('utf-8')
+        self.send_serialized_object(resp_encoded)
+        logger.info("Sent ACK of size %d bytes to client %s for create_all_fanins_and_faninNBs_and_possibly_work_queue operation." % (len(resp_encoded), self.client_address[0]))
+
+        # return value not assigned
+        return 0
+
+    def Xcreate_all_fanins_and_faninNBs_and_possibly_work_queue(self, message):
         """
         create all DAG fanins and faninNBs and possibly a work queue (for workers).
 
@@ -535,21 +611,28 @@ class TCPServer(object):
             DAG_info = DAG_Info()
             # using regular functions instead of real lambda functions for storing synch objects 
 	        # self.lambda_function = Lambda_Function_Simulator()
-            all_fanin_sizes = DAG_info.get_all_fanin_sizes()
-            all_faninNB_sizes = DAG_info.get_all_faninNB_sizes()
-            all_fanin_task_names = DAG_info.get_all_fanin_task_names()
-            all_faninNB_task_names = DAG_info.get_all_faninNB_task_names()
-            all_fanout_task_names = DAG_info.get_all_fanout_task_names()
-            self.infiniX = InfiniX(all_fanout_task_names, all_fanin_task_names, all_faninNB_task_names, all_fanin_sizes, all_faninNB_sizes)
+            self.infiniX = InfiniX(DAG_info)
             # create list of simulator functions 
             self.infiniX.create_functions()
+            #
+            # ToDo: Do this when get the creates going
+            self.infiniX.map_object_names_to_functions()
+            #
+
+            #No. tcp_server_lambda handles this by calling create for each message?
+            #self.infiniX.create_fanin_and_faninNB_messages()
 
 #ToDo: call infiniX.map_object_names_to_functions() to create functions for fanins/faninNBs/fanouts
 # but will not use fanouts just yet.
+            #
+            # Use this when do single lambda
             # map synch_object_name to one of the InfiniX functions
-            sync_object_name = 'single_function'
-            function_index = 0
-            self.infiniX.map_synchronization_object(sync_object_name,function_index)
+            #sync_object_name = 'single_function'
+            #function_index = 0
+            #self.infiniX.map_synchronization_object(sync_object_name,function_index)
+            #
+
+            logger.debug("function map" + str(self.infiniX.function_map))
             # Note: call lambda_function = infiniX.get_function(sync_object_name) to get 
             # the function that stores sync_object_namej
     

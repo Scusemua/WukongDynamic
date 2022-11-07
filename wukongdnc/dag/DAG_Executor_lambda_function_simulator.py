@@ -149,21 +149,25 @@ class SQS:
 			return_value_ignored = simulated_lambda_function.lambda_handler(payload) 
 
 
-
-
-
 class InfiniX:
-	def __init__(self, fanouts, fanins, faninNBs, all_fanin_sizes, all_faninNB_sizes):
+	def __init__(self, DAG_info):
 		self.sqs = SQS()
-		self.fanins = fanins
-		self.fanouts = fanouts
-		self.faninNBs = faninNBs
-		self.all_fanin_sizes = all_fanin_sizes
-		self.all_faninNB_sizes = all_faninNB_sizes
-		num_Lambda_Function_Simulators = len(fanins) + len(fanouts) + len(faninNBs)
+		self.DAG_info = DAG_info
+		self.DAG_map = DAG_info.get_DAG_map()
+		self.DAG_states = DAG_info.get_DAG_states()
+		self.all_fanin_task_namesDAG_states = DAG_info.get_DAG_states()
+		self.all_fanin_task_names = DAG_info.get_all_fanin_task_names()
+		self.all_fanin_sizes = DAG_info.get_all_fanin_sizes()
+		self.all_faninNB_task_names = DAG_info.get_all_faninNB_task_names()
+		self.all_faninNB_sizes = DAG_info.get_all_faninNB_sizes()
+		self.all_fanout_task_names = DAG_info.get_all_fanout_task_names()
+		num_Lambda_Function_Simulators = len(self.all_fanin_task_names) + len(self.all_fanout_task_names) + len(self.all_faninNB_task_names)
 		self.list_of_Lambda_Function_Simulators = []
 		self.num_Lambda_Function_Simulators = num_Lambda_Function_Simulators
 		self.function_map = {}
+
+	def create_fanin_and_faninNB_messages(self):
+		self.sqs.create_fanin_and_faninNB_messages(self.DAG_map,self.DAG_states,self.DAG_info,self.all_fanin_task_names,self.all_fanin_sizes,self.all_faninNB_task_names,self.all_faninNB_sizes)
 
 	def create_functions(self):
 		for _ in range(0,self.num_Lambda_Function_Simulators):
@@ -179,17 +183,17 @@ class InfiniX:
 		# for fanouts, the fanin object size is always 1
 		# map function name to a pair (empty_list,n) where n is size of 
 		i=0
-		for object_name, n in zip(self.faninNBs, self.all_faninNB_sizes):
+		for object_name, n in zip(self.all_faninNB_task_names, self.all_faninNB_sizes):
 			self.map_synchronization_object(object_name,i)
 			i += 1
 			self.sqs.map_object_name_to_trigger(object_name,n)
 
-		for object_name, n in zip(self.fanins, self.all_fanin_sizes):
+		for object_name, n in zip(self.all_fanin_task_names, self.all_fanin_sizes):
 			self.map_synchronization_object(object_name,i)
 			i += 1
 			self.sqs.map_object_name_to_trigger(object_name,n)
 
-		for object_name in self.fanouts:
+		for object_name in self.all_fanout_task_names:
 			self.map_synchronization_object(object_name,i)
 			i += 1
 			n = 1 # a fanout is a fanin of size 1

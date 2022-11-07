@@ -265,6 +265,14 @@ class DAG_executor_FanInNB_Select(Selector):
                 return 0
                 #return 1, restart  # all threads have called so return results
 
+            elif not self.store_fanins_faninNBs_locally and run_all_tasks_locally:
+                # not using workers and using threads to simulate lambdas. Here
+                # there is nothing to do since a thread will be created localy
+                # in DAG work loop. (Can't create threads here or it would run here
+                # (on server or in lambda))
+                logger.debug("XXXXXXXXXXXXX return 0 XXXXXXXXXXXXXXXXXX")
+                return self._results
+
             else:
                 logger.error("[ERROR]: Internal Error: DAG_executor_FanInNB_Select: fan_in: reached else: error at end of fanin")
 
