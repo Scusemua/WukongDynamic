@@ -10,7 +10,7 @@ import socketserver
 
 from ..wukong.invoker import invoke_lambda_synchronously
 
-from ..dag.DAG_executor_constants import using_Lambda_Function_Simulator
+from ..dag.DAG_executor_constants import using_Lambda_Function_Simulator, use_single_lambda_function
 from ..dag.DAG_Executor_lambda_function_simulator import InfiniX # , Lambda_Function_Simulator
 from ..dag.DAG_info import DAG_Info
 
@@ -122,10 +122,14 @@ class TCPHandler(socketserver.StreamRequestHandler):
 # each message to its mapped simulated function? The tcp_server_lambda interepts calls to
 # fan_in and issues enqueue() instad?
 
-            # for function smulator prototype, using a single function to store all the fanins/faninNBs
-            # i.e., all fanin/faninNBs mapped under the name 'single_function'
-            #sync_object_name = "single_function"
-            sync_object_name = json_message.get("name", None)
+
+            if use_single_lambda_function:
+                # for function smulator prototype, using a single function to store all the fanins/faninNBs
+                # i.e., all fanin/faninNBs mapped under the name 'single_function'
+                sync_object_name = "single_function"
+            else:
+                # use the actual object name, which will be mapped to a function
+                sync_object_name = json_message.get("name", None)
             logger.debug("[HANDLER] TCPHandler lambda: invoke_lambda_synchronously: using object_name: " + sync_object_name + " in map_of_Lambda_Function_Simulators")
             # tcp_server is from below: if __name__ == "__main__": # Create a Server Instance
             # tcp_server = TCPServer() tcp_server.start()
@@ -231,6 +235,18 @@ class TCPHandler(socketserver.StreamRequestHandler):
         #        msg_id = str(uuid.uuid4())
     """
 
+    # Create all synch objects at the start of execution. Since they are created
+    # in a lambda, for each create message, we pass the message to the 
+    # message handler in the invoked lambda:
+    #  return_value_ignored = self.invoke_lambda_synchronously(msg)
+    # invoke_lambda_synchronously will get the 'name' value from the 
+    # message, get the lambda that this name was mapped to, and 
+    # invoke that lambda.
+    # Note: we are not calling this method in the message_handler_lambda
+    # as we need to create the sync objects in lambdas, so we execute
+    # this create_all here and one-by-on we invoke the lambdas with 
+    # a "create" message so the synch object os created in the invoked 
+    # lambda.
     def create_all_fanins_and_faninNBs_and_possibly_work_queue(self, message = None):
         """
         Called by a remote Lambda to create fanins, faninNBs, and pssibly work queue.
@@ -612,25 +628,24 @@ class TCPServer(object):
             # using regular functions instead of real lambda functions for storing synch objects 
 	        # self.lambda_function = Lambda_Function_Simulator()
             self.infiniX = InfiniX(DAG_info)
-            # create list of simulator functions 
-            self.infiniX.create_functions()
-            #
-            # ToDo: Do this when get the creates going
+            # create list of simulator functions, number of functions
+            # is the number of fnins + faaninNBs + fanouts
+            self.infiniX.create_functions() #
+            """
+            if use_single_lambda_function:
+                # there is a single function that stores all the synchronization objects
+                sync_object_name = 'single_function'
+                function_index = 0
+                self.infiniX.map_synchronization_object(sync_object_name,function_index)
+            else:
+                # map each fanin/faninNB/fanout name to a func. Currently,
+                # one name per function.
+                # ToDo: mapping scheme, maps multiple names to one function, e.g.,
+                # based on: two fanins/fanouts that can be executed concurrently
+                # are mapped to different functions
+                self.infiniX.map_object_names_to_functions()
+            """
             self.infiniX.map_object_names_to_functions()
-            #
-
-            #No. tcp_server_lambda handles this by calling create for each message?
-            #self.infiniX.create_fanin_and_faninNB_messages()
-
-#ToDo: call infiniX.map_object_names_to_functions() to create functions for fanins/faninNBs/fanouts
-# but will not use fanouts just yet.
-            #
-            # Use this when do single lambda
-            # map synch_object_name to one of the InfiniX functions
-            #sync_object_name = 'single_function'
-            #function_index = 0
-            #self.infiniX.map_synchronization_object(sync_object_name,function_index)
-            #
 
             logger.debug("function map" + str(self.infiniX.function_map))
             # Note: call lambda_function = infiniX.get_function(sync_object_name) to get 

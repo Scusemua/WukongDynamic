@@ -11,6 +11,7 @@ from .DAG_executor_State import DAG_executor_State
 from wukongdnc.server.util import make_json_serializable
 from .DAG_executor_constants import store_fanins_faninNBs_locally 
 from .DAG_executor_constants import FanIn_Type, FanInNB_Type
+from .DAG_executor_constants import use_single_lambda_function
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -68,6 +69,9 @@ class SQS:
 		self.object_name_to_trigger_map = {}
 
 	# create fanin and faninNB messages for creating all fanin and faninNB synch objects
+	# Not using for now - this method is in tcp_server_lamba and it
+	# invokes the mapped to lambda for a given object name with a 
+	# "create" msg so the object is created in that lamba.
 	def create_fanin_and_faninNB_messages(self,DAG_map,DAG_states,DAG_info,all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes):
 	
 		"""
@@ -170,8 +174,15 @@ class InfiniX:
 		self.sqs.create_fanin_and_faninNB_messages(self.DAG_map,self.DAG_states,self.DAG_info,self.all_fanin_task_names,self.all_fanin_sizes,self.all_faninNB_task_names,self.all_faninNB_sizes)
 
 	def create_functions(self):
+		# if use_single_lambda_function then we map all the names to a single
+		# function, which is function 0. In this case we create a single 
+		# function, which we do by breaking the creating loop after one
+		# function has been created.
 		for _ in range(0,self.num_Lambda_Function_Simulators):
 			self.list_of_Lambda_Function_Simulators.append(Lambda_Function_Simulator())	
+			# if using a single function to store all objects, break to loop. 
+			if use_single_lambda_function:
+				break
 
 	def map_synchronization_object(self, object_name, object_index):
 			self.function_map[object_name] = object_index
@@ -181,21 +192,31 @@ class InfiniX:
 
 	def map_object_names_to_functions(self):
 		# for fanouts, the fanin object size is always 1
-		# map function name to a pair (empty_list,n) where n is size of 
+		# map function name to a pair (empty_list,n) where n is size of fanin/faninNB.
+		# if use_single_lambda_function then we map all the names to a single
+		# function, which is function 0. We do this by skippng the increment
+		# of i so that i is always 0.
 		i=0
 		for object_name, n in zip(self.all_faninNB_task_names, self.all_faninNB_sizes):
 			self.map_synchronization_object(object_name,i)
-			i += 1
+			if not use_single_lambda_function:
+				i += 1
+			# Each name is mapped to a pair, which is (empty_list,n). The 
+			# list collects results for the fan_in and fanin/fanot size n is 
+			# used to determine when all of the results have been collected.
+			# For a fanout, we can use a faninNB object with a size of 1.
 			self.sqs.map_object_name_to_trigger(object_name,n)
 
 		for object_name, n in zip(self.all_fanin_task_names, self.all_fanin_sizes):
 			self.map_synchronization_object(object_name,i)
-			i += 1
+			if not use_single_lambda_function:
+				i += 1
 			self.sqs.map_object_name_to_trigger(object_name,n)
 
 		for object_name in self.all_fanout_task_names:
 			self.map_synchronization_object(object_name,i)
-			i += 1
+			if not use_single_lambda_function:
+				i += 1
 			n = 1 # a fanout is a fanin of size 1
 			self.sqs.map_object_name_to_trigger(object_name,n)
 

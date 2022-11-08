@@ -174,17 +174,35 @@ fanin/faninNBs are stored on the tcp_server.
 
 A2. This is the same as scheme (1) using threads instead of Lambdas. This is simply a way to
 test the logic of (1) by running threads locally instead of using Lambdas. In this scheme, the 
-fanin/faninNbs are stored locally, which is necessary since the faninNBs will be creating 
-threads to run the fanin tasks (to simulate creating Lambdas to run the fanin tasks) and the
-threads should not run on the tcp_server (for now) so the faninNBs must be stored/running
-locally (on the client machine) in order to create a local thread on the client machine,
+fanin/faninNbs are stored locally. The faninNBs will
+create threads to run the fanin tasks (to simulate creating Lambdas to run the fanin tasks) and the
+threads and these threads run locally. The thread that is processing the faninNB
+creates a new thread that actually makes the call to fan_in, to simulate an
+"async" call to the fan_in of a faninNB. (There is no reason to wait for
+the fan_in to return since there are no fanin results - the fanin starts
+a new thread to execute the fanin task.)
 
 A3. This is the same as scheme (1) using threads instead of Lambdas except that fanins/faninNbs
-are stored remotely.  Now the faninNBs cannot crate threads since such threads would run on the 
+are stored remotely.  Now the faninNBs cannot create threads since such threads would run on the 
 tcp_server; instead, a fanin's dictionary of results is returned to the client caller thread and 
 this thread will create a new thread that runs locally (on the client machine). So this is the 
 same as (A2) except that the thread created to execute a fanin task is created by the thread 
 that calls fanin (and is the last to call fanin) instead of the faninNB (after the last call to fanin.)
+
+This scheme is also used with real python functions that simulate lambdas
+(so we can test things without running real lambdas). If
+  using_Lambda_Function_Simulator = True
+then we create a list of functions and map the fanins/faninNBs/fanouts names 
+to these functions, e.g., one name per function, or two names mapped to
+the same function if ops on these named objects cannot be executed
+concurrently, i.e., fanin1.fanin and fanin2.fanin cannot be executed 
+concurrently since fanin1 and fanin2 are on the same DFS path.
+Then we invoke a function list(i), instead of a real
+lamba function, when we perform a sync op, e.g., fan_in, on the synch object 
+that was mapped to function i. If
+   use_single_lambda_function = True
+Then we use a single function to store all the fanins/faninNBs/fanouts as 
+a simple test case.
 
 A4. We use a fixed-size pool of threads with a work_queue that holds the states that have been enabled
 so far. The driver deposits the leaf task states into the work_queue. Pool threads get the leaf 

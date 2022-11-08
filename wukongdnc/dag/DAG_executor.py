@@ -294,8 +294,9 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
                     # However, since the fannNB on tcp_server cannot crate a thread to execute
                     # the fanin task (since the thread would run on the tcp_server) the start
                     # state is returned and we create the thread here. This deviates from the
-                    # lamba simulation since the faninNB on the tcp_server can invoke lamdas to
+                    # lambda simulation since the faninNB on the tcp_server can invoke lamdas to
                     # execute the fanin task.
+                    
                     #if not worker_needs_input:
                     if worker_needs_input:
                         logger.error("[Error]: " + thread_name + ": process_faninNBs: Internal Error: not using_workers but worker_needs_input = True")
