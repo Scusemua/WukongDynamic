@@ -148,14 +148,14 @@ class Synchronizer(object):
     # def synchronize_sync(self, tcp_server, obj_name, method_name, state, synchronizer_name, tcp_handler):
     def synchronize_sync(self, obj_name, method_name, state, synchronizer_name):
     
-        logger.debug("synchronizer: synchronize_sync: caled")
+        logger.debug("synchronizer: synchronize_sync: called")
 
         base_name, isTryMethod = isTry_and_getMethodName(method_name)
         is_select = isSelect(self._synchronizer_class_name) # is_select = isSelect(type_arg)
     
-        logger.debug("synchronizer: synchronize_sync: method_name: " + method_name + ", base_name: " + base_name 
+        logger.debug("synchronizer_lambda: synchronize_sync: method_name: " + method_name + ", base_name: " + base_name 
             + ", isTryMethod: " + str(isTryMethod))
-        logger.debug(" self._synchronizer_class_name: : " + self._synchronizer_class_name + ", is_select: " + str(is_select))
+        logger.debug("synchronizer_lambda: self._synchronizer_class_name: : " + self._synchronizer_class_name + ", is_select: " + str(is_select))
         # logger.debug("synchronizer: synchronize_sync: type_arg: " + type_arg + ", is_select: " + str(is_select))
         #logger.debug("base_name: " + base_name)
         #logger.debug("isTryMethod: " + str(isTryMethod))

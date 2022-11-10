@@ -1,4 +1,3 @@
-import logging 
 #import re 
 #import socket
 import time
@@ -13,9 +12,20 @@ from .DAG_executor_constants import store_fanins_faninNBs_locally
 from .DAG_executor_constants import FanIn_Type, FanInNB_Type
 from .DAG_executor_constants import use_single_lambda_function
 
+import logging 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
+formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
+
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+ch.setFormatter(formatter)
+
+logger.addHandler(ch)
+
+#logger = logging.getLogger(__name__)
+#logger.setLevel(logging.DEBUG)
+#formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
 
 #SLEEP_INTERVAL = 0.120
 
@@ -50,15 +60,15 @@ class Lambda_Function_Simulator:
 		# Extract all of the data from the payload.
 		#json_message = cloudpickle.loads(base64.b64decode(event["json_message"]))
 		json_message = payload['json_message']
-		logger.debug("JSON message: " + str(json_message))
+		logger.debug("ambda_Function_Simulator: lambda_handler: JSON message: " + str(json_message))
 
 		if not warm_resources['message_handler']:
 			# Issue: Can we get and print the name of the Lambda function - "LambdaBoundedBuffer" or "LambdaSemaphore"
-			logger.debug("**************** Lambda function cold start ******************")
+			logger.debug("Lambda_Function_Simulator: lambda_handler: **************** Lambda function cold start ******************")
 			warm_resources['message_handler'] = MessageHandler()
 			#Issue: what if we lost a Lambda? If we have backup we can recover but how do we determine whether we failed?
 		else:
-			logger.debug("**************** warm start ******************")
+			logger.debug("Lambda_Function_Simulator: lambda_handler: *************** warm start ******************")
 
 		return_value = warm_resources['message_handler'].handle(json_message)
 
@@ -153,7 +163,7 @@ class SQS:
 			return_value_ignored = simulated_lambda_function.lambda_handler(payload) 
 
 
-class InfiniX:
+class InfiniD:
 	def __init__(self, DAG_info):
 		self.sqs = SQS()
 		self.DAG_info = DAG_info

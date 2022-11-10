@@ -20,7 +20,7 @@ from wukongdnc.constants import TCP_SERVER_IP
 from .DAG_executor_constants import run_all_tasks_locally, store_fanins_faninNBs_locally 
 from .DAG_executor_constants import create_all_fanins_faninNBs_on_start, using_workers 
 from .DAG_executor_constants import using_threads_not_processes, using_lambdas, use_multithreaded_multiprocessing
-from .DAG_executor_constants import process_work_queue_Type, FanInNB_Type
+from .DAG_executor_constants import process_work_queue_Type, FanInNB_Type, using_Lambda_Function_Simulator
 #from .DAG_work_queue_for_threads import thread_work_queue
 from .DAG_work_queue_for_threads import work_queue
 from .DAG_data_dict_for_threads import data_dict
@@ -472,7 +472,7 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
         logger.debug(thread_name + ": process_faninNBs_batch: " + calling_task_name + " received no work with worker_needs_input: " + str(worker_needs_input))
         return worker_needs_input
     else:
-        # we only call process_faninNBs_batch() when we are using workers.
+        # we only get work from process_faninNBs_batch() when we are using workers and worker needs input
         if not (using_workers and worker_needs_input):
             logger.error("[Error]: " + thread_name + ": process_faninNBs_batch: not using workers, or worker_needs_input is False but we received work.")
         # return_value is a tuple (task name, dictionary of results used as the task's inputs)
@@ -740,7 +740,8 @@ def fanin_remotely(websocket, DAG_exec_state,**keyword_arguments):
 
 def process_fanins(websocket,fanins, faninNB_sizes, calling_task_name, DAG_states, DAG_exec_state, output, server):
     thread_name = threading.current_thread().name
-    logger.debug(thread_name + ": fanin_remotely: calling_task_name: process_fanins")
+    logger.debug(thread_name + ": fanin_remotely: calling_task_name: " + calling_task_name)
+
     # assert len(fanins) == len(faninNB_sizes) ==  1
 
     thread_name = threading.current_thread().name
@@ -1147,7 +1148,7 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     # we are using processes. We can also use workers with threads instead of processes
                     # but multithreading with remote FanInNBs is not as useful as using processes. 
                     # Multithreadng in general is not as helpful as multiprocessing in Python.
-                    if (run_all_tasks_locally and using_workers and not using_threads_not_processes) or not run_all_tasks_locally:
+                    if (run_all_tasks_locally and using_workers and not using_threads_not_processes) or (not run_all_tasks_locally) or (run_all_tasks_locally and not using_workers and using_Lambda_Function_Simulator):
                         # assert
                         if store_fanins_faninNBs_locally:
                             logger.error("[Error]: DAG_executor_work_loop: using processes or lambdas but storing FanINNBs locally.")
@@ -1155,7 +1156,7 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                             if worker_needs_input:
                                 # Note: perhaps we csn use Lmbdas where Lambdas have two thread workers - faster?
                                 logger.error("[Error]: DAG_executor_work_loop: using lambdas, so no workers, but worker_needs_input.")
-                        #Note: using worker processes - batch calsl to fan_in for FaninNBs
+                        #Note: using worker processes - batch calls to fan_in for FaninNBs
                         worker_needs_input = process_faninNBs_batch(websocket,state_info.faninNBs, state_info.faninNB_sizes, 
                         state_info.task_name, DAG_info.get_DAG_states(), DAG_executor_state, 
                             output, DAG_info,work_queue,worker_needs_input, list_of_work_queue_fanout_values)

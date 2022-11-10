@@ -7,11 +7,11 @@ import socketserver
 
 #import cloudpickle
 #import base64
-
+from .util import decode_and_deserialize, make_json_serializable
+import uuid
 from ..wukong.invoker import invoke_lambda_synchronously
-
 from ..dag.DAG_executor_constants import using_Lambda_Function_Simulator, use_single_lambda_function
-from ..dag.DAG_Executor_lambda_function_simulator import InfiniX # , Lambda_Function_Simulator
+from ..dag.DAG_Executor_lambda_function_simulator import InfiniD # , Lambda_Function_Simulator
 from ..dag.DAG_info import DAG_Info
 
 # Set up logging.
@@ -32,6 +32,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
        
         while True:
             logger.info("[HANDLER] TCPHandler lambda: Recieved one request from {}".format(self.client_address[0]))
+            logger.info("[HANDLER] TCPHandler lambda: Recieved one request from {}".format(self.client_address[1]))
 
             self.action_handlers = {
                 "create": self.create_obj,
@@ -159,7 +160,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             # multiply and divide would be excuted by the same mapped function. 
             # Note: fanina and task names are in DAG_info, which can be read at startup: DAG_info = DAG_Info()
             #lambda_function = tcp_server.function_map[object_name]
-            lambda_function = tcp_server.infiniX.get_function(sync_object_name)
+            lambda_function = tcp_server.infiniD.get_function(sync_object_name)
             return_value = lambda_function.lambda_handler(payload)  
         else:     
             # For DAG prototype, we use one function to store process_work_queue and all fanins and faninNBs
@@ -335,24 +336,33 @@ class TCPHandler(socketserver.StreamRequestHandler):
         -------------------
             message (dict):
                 The payload from the AWS Lambda function.
+        where:
+            message = {
+                "op": op,
+                "type": type,
+                "name": name,
+                "state": make_json_serializable(state),
+                "id": msg_id
+            }
         """
 
-        logger.info("[MESSAGEHANDLER] server.synchronize_process_faninNBs_batch() called.")
+        logger.debug("[tcp_server_lambda] synchronize_process_faninNBs_batch() called.")
 
-        # name of the type is always "DAG_executor_FanInNB"
-        type_arg = message["type"]
-        # Name of the method callled on "DAG_executor_FanInNB" is always "fanin"
-        method_name = message["name"]
+        # Name of the method called on "DAG_executor_FanInNB" is always "fanin"
+        # Not using since we loop through names: for name in faninNBs
+        #method_name = message["name"]
+        # Note: we do not use object type on synchronize_sync cals, we use type on "create"
 
         DAG_exec_state = decode_and_deserialize(message["state"])
         faninNBs = DAG_exec_state.keyword_arguments['faninNBs']
         #faninNB_sizes = DAG_exec_state.keyword_arguments['faninNB_sizes']
         # FYI:
         #result = DAG_exec_state.keyword_arguments['result']
-        # For debuggng
+        # For debugging:
         calling_task_name = DAG_exec_state.keyword_arguments['calling_task_name'] 
         DAG_states_of_faninNBs = DAG_exec_state.keyword_arguments['DAG_states_of_faninNBs'] 
-        # Note: if using lambdas, then we are not usingn workers (for now) so worker_needs_input must be false
+        # Note: if using lambdas, then we are not using workers (for now) so worker_needs_input 
+        # must be false, which is asertd below.
         worker_needs_input = DAG_exec_state.keyword_arguments['worker_needs_input']
         
         # Commented out: since using lambdas no workers and no work to steal
@@ -368,14 +378,14 @@ class TCPHandler(socketserver.StreamRequestHandler):
         list_of_fanout_values = DAG_exec_state.keyword_arguments['list_of_work_queue_fanout_values']
         """
 
-        logger.info("tcp_server: synchronize_process_faninNBs_batch: calling_task_name: " + calling_task_name + ": worker_needs_input: " + str(worker_needs_input)
-            + " faninNBs size: " +  str(len(faninNBs)))
+        logger.info("tcp_server_lambda: synchronize_process_faninNBs_batch: calling_task_name: "
+            + calling_task_name + " faninNBs size: " +  str(len(faninNBs)))
 
         # assert:
         if worker_needs_input:
-            logger.error("[Error]: Internal Error: synchronize_process_faninNBs_batch: worker needs input but using lambdas.")
+            logger.error("[Error]: tcp_server_lambda Internal Error: synchronize_process_faninNBs_batch: worker needs input but using lambdas.")
         
-        if using_Lambda_Function_Simulator:
+        if False: # using_Lambda_Function_Simulator:
             pass
             # Need to do an enqueue for each fan_in, or can we do batch_enqueue?
         else:
@@ -447,30 +457,46 @@ class TCPHandler(socketserver.StreamRequestHandler):
             """
 
             for name in faninNBs:
-#ToDo: this needs to be done in the lambda so put is in a method in
+#ToDo: this needs to be done in the lambda so put this in a method in
 # MessageHandler and invoke the lamba with the proper (new) command
 # for faninNB fan_in as part of a batch 
-# Q: or can we call the usual faninNb fan_in method?
+# Q: or can we call the usual faninNb fan_in method?    DAG_exec_state = synchronize_sync(websocket, "synchronize_sync", keyword_arguments['fanin_task_name'], "fan_in", DAG_exec_state)
+
+                msg_id = str(uuid.uuid4())
+                message = {
+                    "op": "synchronize_sync", 
+                    "name": name,
+                    "method_name": "fan_in",
+                    "state": make_json_serializable(DAG_exec_state),
+                    "id": msg_id
+                }
+
                 start_state_fanin_task  = DAG_states_of_faninNBs[name]
-                synchronizer_name = self._get_synchronizer_name(type_name = None, name = name)
-                logger.debug("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
-                synchronizer = MessageHandler.synchronizers[synchronizer_name]
 
-                if (synchronizer is None):
-                    raise ValueError("synchronize_process_faninNBs_batch: Could not find existing Synchronizer with name '%s'" % synchronizer_name)
+                #synchronizer_name = self._get_synchronizer_name(type_name = None, name = name)
+                #logger.debug("tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
+                #synchronizer = MessageHandler.synchronizers[synchronizer_name]
 
-                base_name, isTryMethod = isTry_and_getMethodName(method_name)
-                is_select = isSelect(type_arg) # is_select = isSelect(type_arg)
+                #if (synchronizer is None):
+                #    raise ValueError("synchronize_process_faninNBs_batch: Could not find existing Synchronizer with name '%s'" % synchronizer_name)
+
+                #base_name, isTryMethod = isTry_and_getMethodName(method_name)
+                #is_select = isSelect(type_arg) # is_select = isSelect(type_arg)
         
-                logger.debug("tcp_server: synchronize_process_faninNBs_batch: method_name: " + method_name + ", base_name: " + base_name + ", isTryMethod: " + str(isTryMethod))
-                logger.debug("tcp_server: synchronize_process_faninNBs_batch: synchronizer_class_name: : " + type_arg + ", is_select: " + str(is_select))
+                #logger.debug("tcp_server: synchronize_process_faninNBs_batch: method_name: " + method_name + ", base_name: " + base_name + ", isTryMethod: " + str(isTryMethod))
+                #logger.debug("tcp_server: synchronize_process_faninNBs_batch: synchronizer_class_name: : " + type_arg + ", is_select: " + str(is_select))
 
                 # These are per FaninNB
                 DAG_exec_state.keyword_arguments['fanin_task_name'] = name
                 DAG_exec_state.keyword_arguments['start_state_fanin_task'] = start_state_fanin_task
 
-                logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": calling synchronizer.synchronize.")
-                return_value = synchronizer.synchronize(base_name, DAG_exec_state, **DAG_exec_state.keyword_arguments)
+                logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": calling invoke_lambda_synchronously."
+                    + " start_state_fanin_task: " + str(start_state_fanin_task))
+                #return_value = synchronizer.synchronize(base_name, DAG_exec_state, **DAG_exec_state.keyword_arguments)
+                returned_state_ignored = self.invoke_lambda_synchronously(message)
+                logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": called invoke_lambda_synchronously "
+                    + "returned_state_ignored: " + str(returned_state_ignored))
+
                 """
                 Note: It does not make sense to batch try-ops, or to execute a batch of synchronous
                     ops that may block and that have return values. faninNB fan_ins are non-blocking
@@ -600,8 +626,9 @@ class TCPHandler(socketserver.StreamRequestHandler):
             pickled_returned_work = cloudpickle.dumps(returned_work)
             return pickled_returned_work
             """
-
-    # No return value is sent back to client
+#ToDo: make this async call?
+            # No return value is sent back to client for async call
+            self.send_serialized_object(returned_state_ignored)
 
     def Xsynchronize_process_faninNBs_batch(self,message):
         """
@@ -621,7 +648,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # or DAG_exec_state.return_value = 0
         returned_state = self.invoke_lambda_synchronously(message)
 
-        logger.debug("tcp_server called Lambda at synchronize_process_faninNBs_batch.")
+        logger.debug("[HANDLER] TCPHandler lambda: called Lambda at synchronize_process_faninNBs_batch.")
  
         # pickle already done by Lambda? cloudpickle.dumps(state)? If so, just pass pickled state thru to client.
         #if using_Lambda_Function_Simulator:
@@ -647,7 +674,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 The payload from the AWS Lambda function.
         """
        
-        logger.debug("[HANDLER] TCPHandler lambda: create_work_queue() called.")
+        logger.debug("tcp_server_lambda: create_work_queue() called.")
 
         return_value_ignored = self.invoke_lambda_synchronously(message)
 
@@ -658,10 +685,10 @@ class TCPHandler(socketserver.StreamRequestHandler):
         #############################
         # Write ACK back to client. #
         #############################
-        logger.info("Sending ACK to client %s for create_work_queue operation." % self.client_address[0])
+        logger.info("tcp_server_lambda: Sending ACK to client %s for create_work_queue operation." % self.client_address[0])
         resp_encoded = json.dumps(resp).encode('utf-8')
         self.send_serialized_object(resp_encoded)
-        logger.info("Sent ACK of size %d bytes to client %s for create_work_queue operation." % (len(resp_encoded), self.client_address[0]))
+        logger.info("tcp_server_lambda: Sent ACK of size %d bytes to client %s for create_work_queue operation." % (len(resp_encoded), self.client_address[0]))
 
         # return value not assigned
         return 0
@@ -676,11 +703,11 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 The payload from the AWS Lambda function.
         """
        
-        logger.debug("[HANDLER] TCPHandler lambda: calling server.synchronize_sync().")
+        logger.debug("tcp_server_lambda: calling server.synchronize_sync().")
 
         returned_state = self.invoke_lambda_synchronously(message)
 
-        logger.debug("tcp_server called Lambda at synchronize_sync")
+        logger.debug("tcp_server_lambda called Lambda at synchronize_sync")
 
         """
         Note: We currently only not try-op synch calls if the ops are 
@@ -733,11 +760,11 @@ class TCPHandler(socketserver.StreamRequestHandler):
             message (dict):
                 The payload from the AWS Lambda function.
         """        
-        logger.debug("[HANDLER] TCPHandler lambda: calling server.synchronize_async().")
+        logger.debug("tcp_server_lambda: calling server.synchronize_async().")
 
         returned_value_ignored = self.invoke_lambda_synchronously(message)
        
-        logger.debug("tcp_server called synchronizer.synchronize_async")
+        logger.debug("tcp_server_lambda: called synchronizer.synchronize_async")
 
         # return value not assigned
         return returned_value_ignored
@@ -752,7 +779,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             # Read the size of the incoming serialized object.
             incoming_size = self.rfile.read(4) 
         except ConnectionAbortedError as ex:
-            logger.error("Established connection aborted while reading incoming size.")
+            logger.error("tcp_server_lambda: Established connection aborted while reading incoming size.")
             logger.error(repr(ex))
             return None 
 
@@ -760,14 +787,14 @@ class TCPHandler(socketserver.StreamRequestHandler):
         incoming_size = int.from_bytes(incoming_size, 'big')
 
         if incoming_size == 0:
-            logger.debug("Incoming size is 0. Client is expected to have disconnected.")
+            logger.debug("tcp_server_lambda: Incoming size is 0. Client is expected to have disconnected.")
             return None 
         
         if incoming_size < 0:
-            logger.error("Incoming size < 0: " + incoming_size + ". An error might have occurred...")
+            logger.error("tcp_server_lambda: Incoming size < 0: " + incoming_size + ". An error might have occurred...")
             return None 
 
-        logger.info("Will receive another message of size %d bytes" % incoming_size)
+        logger.info("tcp_server_lambda: Will receive another message of size %d bytes" % incoming_size)
 
         data = bytearray()
         try:
@@ -779,9 +806,9 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     break 
 
                 data.extend(new_data)
-                logger.debug("Have read %d/%d bytes from remote client." % (len(data), incoming_size))
+                logger.debug("tcp_server_lambda: Have read %d/%d bytes from remote client." % (len(data), incoming_size))
         except ConnectionAbortedError as ex:
-            logger.error("Established connection aborted while reading data.")
+            logger.error("tcp_server_lambda: Established connection aborted while reading data.")
             logger.error(repr(ex))
             return None 
         
@@ -802,13 +829,13 @@ class TCPHandler(socketserver.StreamRequestHandler):
         logger.debug("Sending payload of size %d bytes to remote client now..." % len(obj))
         self.wfile.write(len(obj).to_bytes(4, byteorder='big'))     # Tell the client how many bytes we're sending.
         self.wfile.write(obj)                                       # Then send the object.
-        logger.debug("Sent %d bytes to remote client." % len(obj))
+        logger.debug("tcp_server_lambda: Sent %d bytes to remote client." % len(obj))
 
     def close_all(self, message = None):
         """
         Clear all known synchronizers.
         """
-        logger.debug("Received close_all request.")
+        logger.debug("tcp_server_lambda: Received close_all request.")
 
         tcp_server.synchronizers = {}
 
@@ -819,10 +846,10 @@ class TCPHandler(socketserver.StreamRequestHandler):
             "op": "ack",
             "op_performed": "close_all"
         }        
-        logger.info("Sending ACK to client %s for 'close_all' operation." % self.client_address[0])
+        logger.info("tcp_server_lambda: Sending ACK to client %s for 'close_all' operation." % self.client_address[0])
         resp_encoded = json.dumps(resp).encode('utf-8')
         self.send_serialized_object(resp_encoded)
-        logger.info("Sent ACK of size %d bytes to client %s for 'close_all' operation." % (len(resp_encoded), self.client_address[0]))          
+        logger.info("tcp_server_lambda: Sent ACK of size %d bytes to client %s for 'close_all' operation." % (len(resp_encoded), self.client_address[0]))          
 
     def close_obj(self, message = None):
         """
@@ -837,7 +864,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         name = message["name"]
         #state = decode_and_deserialize(message["state"])
 
-        logger.debug("Received close_obj request for object with name '%s' and type %s" % (name, type_arg))
+        logger.debug("tcp_server_lambda: Received close_obj request for object with name '%s' and type %s" % (name, type_arg))
 
         #############################
         # Write ACK back to client. #
@@ -846,13 +873,13 @@ class TCPHandler(socketserver.StreamRequestHandler):
             "op": "ack",
             "op_performed": "close_obj"
         }        
-        logger.info("Sending ACK to client %s for CLOSE_OBJ operation." % self.client_address[0])
+        logger.info("tcp_server_lambda: Sending ACK to client %s for CLOSE_OBJ operation." % self.client_address[0])
         resp_encoded = json.dumps(resp).encode('utf-8')
         self.send_serialized_object(resp_encoded)
-        logger.info("Sent ACK of size %d bytes to client %s for CLOSE_OBJ operation." % (len(resp_encoded), self.client_address[0]))        
+        logger.info("tcp_server_lambda: Sent ACK of size %d bytes to client %s for CLOSE_OBJ operation." % (len(resp_encoded), self.client_address[0]))        
 
     def setup_server(self, message = None):
-        logger.debug("server.setup() called.")
+        logger.debug("tcp_server_lambda: server.setup() called.")
         pass 
         
 class TCPServer(object):
@@ -879,10 +906,10 @@ class TCPServer(object):
             DAG_info = DAG_Info()
             # using regular functions instead of real lambda functions for storing synch objects 
 	        # self.lambda_function = Lambda_Function_Simulator()
-            self.infiniX = InfiniX(DAG_info)
+            self.infiniD = InfiniD(DAG_info)
             # create list of simulator functions, number of functions
             # is the number of fnins + faaninNBs + fanouts
-            self.infiniX.create_functions() #
+            self.infiniD.create_functions() #
             """
             if use_single_lambda_function:
                 # there is a single function that stores all the synchronization objects
@@ -897,18 +924,18 @@ class TCPServer(object):
                 # are mapped to different functions
                 self.infiniX.map_object_names_to_functions()
             """
-            self.infiniX.map_object_names_to_functions()
+            self.infiniD.map_object_names_to_functions()
 
-            logger.debug("function map" + str(self.infiniX.function_map))
+            logger.debug("tcp_server_lambda: function map" + str(self.infiniD.function_map))
             # Note: call lambda_function = infiniX.get_function(sync_object_name) to get 
             # the function that stores sync_object_namej
     
     def start(self):
-        logger.info("Starting TCP Lambda server.")
+        logger.info("tcp_server_lambda: Starting TCP Lambda server.")
         try:
             self.tcp_server.serve_forever()
         except Exception as ex:
-            logger.error("Exception encountered:" + repr(ex))
+            logger.error("tcp_server_lambda: Exception encountered:" + repr(ex))
 
 if __name__ == "__main__":
     # Create a Server Instance
