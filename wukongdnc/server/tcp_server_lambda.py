@@ -462,17 +462,6 @@ class TCPHandler(socketserver.StreamRequestHandler):
 # for faninNB fan_in as part of a batch 
 # Q: or can we call the usual faninNb fan_in method?    DAG_exec_state = synchronize_sync(websocket, "synchronize_sync", keyword_arguments['fanin_task_name'], "fan_in", DAG_exec_state)
 
-                msg_id = str(uuid.uuid4())
-                message = {
-                    "op": "synchronize_sync", 
-                    "name": name,
-                    "method_name": "fan_in",
-                    "state": make_json_serializable(DAG_exec_state),
-                    "id": msg_id
-                }
-
-                start_state_fanin_task  = DAG_states_of_faninNBs[name]
-
                 #synchronizer_name = self._get_synchronizer_name(type_name = None, name = name)
                 #logger.debug("tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
                 #synchronizer = MessageHandler.synchronizers[synchronizer_name]
@@ -486,9 +475,19 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 #logger.debug("tcp_server: synchronize_process_faninNBs_batch: method_name: " + method_name + ", base_name: " + base_name + ", isTryMethod: " + str(isTryMethod))
                 #logger.debug("tcp_server: synchronize_process_faninNBs_batch: synchronizer_class_name: : " + type_arg + ", is_select: " + str(is_select))
 
+                start_state_fanin_task  = DAG_states_of_faninNBs[name]
                 # These are per FaninNB
                 DAG_exec_state.keyword_arguments['fanin_task_name'] = name
                 DAG_exec_state.keyword_arguments['start_state_fanin_task'] = start_state_fanin_task
+
+                msg_id = str(uuid.uuid4())
+                message = {
+                    "op": "synchronize_sync", 
+                    "name": name,
+                    "method_name": "fan_in",
+                    "state": make_json_serializable(DAG_exec_state),
+                    "id": msg_id
+                }
 
                 logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": calling invoke_lambda_synchronously."
                     + " start_state_fanin_task: " + str(start_state_fanin_task))

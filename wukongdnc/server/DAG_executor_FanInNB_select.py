@@ -267,11 +267,24 @@ class DAG_executor_FanInNB_Select(Selector):
 
             elif not self.store_fanins_faninNBs_locally and run_all_tasks_locally:
                 # not using workers and using threads to simulate lambdas. Here
-                # there is nothing to do since a thread will be created localy
+                # there is nothing to do since a thread will be created locally
                 # in DAG work loop. (Can't create threads here or it would run here
                 # (on server or in lambda))
                 logger.debug("XXXXXXXXXXXXX return 0 XXXXXXXXXXXXXXXXXX")
-                return self._results
+
+                # when not self.store_fanins_faninNBs_locally and run_all_tasks_locally we 
+                # are simulating labdas with synch objects stored ermotely. In that case,
+                # we call process_faninNBs_batch which expects a work tuple. Note that we 
+                # are not using workers so this is not "work" but we use the work scheme
+                # and get the start_state_fanin_task from the tuple as the thread started
+                # to simulate a lambda needs this start state. The self._results are not 
+                # used since the threads that executed the tasks that generated these
+                # fanin results alredy put the results in the data dictionary, which is 
+                # a global dictionary when we are running local threads that simulate lambas
+                work_tuple = (start_state_fanin_task,self._results)
+
+                #return self._results
+                return work_tuple
 
             else:
                 logger.error("[ERROR]: Internal Error: DAG_executor_FanInNB_Select: fan_in: reached else: error at end of fanin")
