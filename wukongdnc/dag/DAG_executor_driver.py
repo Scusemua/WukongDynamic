@@ -4,6 +4,8 @@
 
 # Where are we: 
 #
+# impplement enqueue
+#
 # Fix sockets for multitreaded processes
 #
 # Don't want Lambda to wait for work or anything else? Call to process_faninNBs_batch() can 
@@ -29,7 +31,13 @@
 # local fanin to b, but then a has to also enqueue something to sqs so b is
 # triggered with other fanin results, but a is in same lamba so make sure lambda
 # is terminated before it is triggered. Not a problem with SQS in tcp_server_lambda
-# since it can trigger after a's synch call returns?
+# since it can trigger after a's synch call returns? Right, tcp_server_lambda 
+# called for all process_faninNBs_batch? That is, any lambdas, either triggered
+# by process_faninNB_batch or running do to external fanouts, will call faninNB_batch
+# on tcp_server which will enqueue, which can call sycnch, and wait for return and get
+# any enqueu as retrn value so that enqueue is after end of synch invocation?
+
+
 
 import threading
 import multiprocessing

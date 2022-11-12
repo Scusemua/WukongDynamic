@@ -41,4 +41,5 @@ process_work_queue_Type = "BoundedBuffer_Select"
 # Note: Currently, this is for storing synch objects in simulated lambdas;
 # we are not running real lambdas or storing synch objects in real lambdas.
 using_Lambda_Function_Simulator = True
+using_function_invoker = False
 use_single_lambda_function = False

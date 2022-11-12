@@ -1,8 +1,10 @@
 #import re 
 #import socket
 import time
-#import redis 
+import json 
 import uuid
+import threading
+from threading import Lock
 
 from wukongdnc.server.message_handler_lambda import MessageHandler
 from .DAG_executor_State import DAG_executor_State
@@ -36,17 +38,16 @@ warm_resources = {
 }
 
 class Lambda_Function_Simulator:
-	def __init__(self):
+	#def __init__(self):
 # rhc: Q: where to put this? who calls SQS.enqueue? At fanins and fanouts?
-# For fanout, it's SQS.enqueue(the message you pass to fan_in). So sqs.enqueue
+# For fanin, it's SQS.enqueue(the message you pass to fan_in). So sqs.enqueue
 # is collecting fan_in messages that it can deliver as a batch of fanins or 
 # iteratively call fan_in via synchronous lambda invoke so no cncurrent calls.
 #
 # So sqs.enqueue() is called from tcp_server_lambda.invoke_lambda_synchronouly, i.e., 
 # we call SQS instead of directly invoking the simulated lambada?
-# This considers dag_executor to be stored in infiniX lambda too? Simple vesion
+# This considers dag_executor to be stored in infiniX lambda too? Simple version
 # first that uses non-infiniX lambdas for DAG_excutors?
-		self.sqs = SQS()
 
 	def lambda_handler(self, payload):
 		#start_time = time.time()
@@ -79,6 +80,7 @@ class SQS:
 		self.object_name_to_trigger_map = {}
 
 	# create fanin and faninNB messages for creating all fanin and faninNB synch objects
+	#
 	# Not using for now - this method is in tcp_server_lamba and it
 	# invokes the mapped to lambda for a given object name with a 
 	# "create" msg so the object is created in that lamba.
@@ -152,20 +154,45 @@ class SQS:
 		list_n_pair = (empty_list,n)
 		self.object_name_to_trigger_map[object_name] = list_n_pair
 
-	def enqueue(self,json_message,simulated_lambda_function):
-		object_name = json_message.get("name", None)
-		list_n_pair = self.object_name_to_trigger_map[object_name]
+	def enqueue(self,json_message,simulated_lambda_function, simulated_lambda_function_lock):
+		thread_name = threading.current_thread().name
+		sync_object_name = json_message.get("name", None)
+		list_n_pair = self.object_name_to_trigger_map[sync_object_name]
 		list = list_n_pair[0]
 		n = list_n_pair[1]
 		list.append(json_message)
 		if len(list) == n:
-			payload = {"json_message": json_message}
-			return_value_ignored = simulated_lambda_function.lambda_handler(payload) 
+#ToDo: payload is the list of json_messages, so need a new action for executing all the 
+# messages in the list:
+# create a new message that contains the list of messages and make this message the payload
 
+			msg_id = str(uuid.uuid4())
+			dummy_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
+			logger.debug("SQS enqueue: Sending 'process_enqueued_fan_ins' message to lambda function for " + sync_object_name)
+			logger.debug("length of enqueue's list: " + str(len(list)))
+			# we set state.keyword_arguments before call to create()
+			message = {
+				"op": "process_enqueued_fan_ins",
+				"type": "DAG_executor_fanin_or_faninNB",
+				"name": list,
+				"state": make_json_serializable(dummy_state),
+				"id": msg_id
+			}
+			msg = json.dumps(message).encode('utf-8')
+			payload = {"json_message": msg}
+			with simulated_lambda_function_lock:
+				try:
+					logger.debug("SQS enqueue: calling simulated_lambda_function.lambda_handler(payload)")
+					# This is essentially a synchronous call to a regular Python function
+					return_value_ignored = simulated_lambda_function.lambda_handler(payload)
+					logger.debug("SQS enqueue: called simulated_lambda_function.lambda_handler(payload)")
+				except Exception as ex:
+					logger.error("[ERROR]: " + thread_name + ": invoke_lambda_synchronously: Failed to run lambda handler for synch object: " + sync_object_name)
+					logger.error(ex)
 
 class InfiniD:
 	def __init__(self, DAG_info):
-		self.sqs = SQS()
+		self.sqs = SQS(self)
 		self.DAG_info = DAG_info
 		self.DAG_map = DAG_info.get_DAG_map()
 		self.DAG_states = DAG_info.get_DAG_states()
@@ -177,6 +204,7 @@ class InfiniD:
 		self.all_fanout_task_names = DAG_info.get_all_fanout_task_names()
 		num_Lambda_Function_Simulators = len(self.all_fanin_task_names) + len(self.all_fanout_task_names) + len(self.all_faninNB_task_names)
 		self.list_of_Lambda_Function_Simulators = []
+		self.list_of_function_locks = []
 		self.num_Lambda_Function_Simulators = num_Lambda_Function_Simulators
 		self.function_map = {}
 
@@ -190,6 +218,7 @@ class InfiniD:
 		# function has been created.
 		for _ in range(0,self.num_Lambda_Function_Simulators):
 			self.list_of_Lambda_Function_Simulators.append(Lambda_Function_Simulator())	
+			self.list_of_function_locks.append(Lock())
 			# if using a single function to store all objects, break to loop. 
 			if use_single_lambda_function:
 				break
@@ -199,6 +228,8 @@ class InfiniD:
 
 	def get_function(self, object_name):
 			return self.list_of_Lambda_Function_Simulators[self.function_map[object_name]]
+	def get_function_lock(self, object_name):
+			return self.list_of_function_locks[self.function_map[object_name]]
 
 	def map_object_names_to_functions(self):
 		# for fanouts, the fanin object size is always 1
@@ -231,6 +262,9 @@ class InfiniD:
 			self.sqs.map_object_name_to_trigger(object_name,n)
 
 	def enqueue(self,json_message):
-		object_name = json_message.get("name", None)
-		lambda_function = self.get_function(object_name)
-		self.sqs.enqueue(json_message, lambda_function)
+		sync_object_name = json_message.get("name", None)
+		simulated_lambda_function = self.get_function(sync_object_name)
+		simulated_lambda_function_lock = self.get_function_lock(sync_object_name)
+		logger.debug("InfiniD enqueue: calling self.sqs.enqueue")
+		self.sqs.enqueue(json_message, simulated_lambda_function, simulated_lambda_function_lock)
+		logger.debug("InfiniD enqueue: called self.sqs.enqueue")

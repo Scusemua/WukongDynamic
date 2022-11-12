@@ -39,7 +39,8 @@ class MessageHandler(object):
                 # These are DAG execution operations
                 "create_all_fanins_and_faninNBs_and_possibly_work_queue": self.create_all_fanins_and_faninNBs_and_possibly_work_queue,
                 "synchronize_process_faninNBs_batch": self.synchronize_process_faninNBs_batch,
-                "create_work_queue": self.create_work_queue
+                "create_work_queue": self.create_work_queue,
+                "process_enqueued_fan_ins": self.process_enqueued_fan_ins
             }
             #logger.info("Thread Name:{}".format(threading.current_thread().name))
 
@@ -173,6 +174,46 @@ class MessageHandler(object):
         # return to handle()
         # tcp_server.create will ignore this return value and send a response to client indicating create is complete.
         return 0
+
+    def process_enqueued_fan_ins(self,message=None):
+        """
+        process the enqueued fan_ins sent by an SQS trigger
+
+        Key-word arguments:
+        -------------------
+            message (dict):
+                The payload from the AWS Lambda function.
+        where
+
+            message = {
+                "op": "process_enqueued_fan_ins",
+                "type": "DAG_executor_fanin_or_faninNB",
+                "name": list, # list of fan_in messages to be processed
+                "state": make_json_serializable(dummy_state),
+                "id": msg_id
+            }
+
+        The fan_in messaages were created by tcp_server_lambdas synchronize_process_faninNBs_batch()
+        where each message is:
+            for name in faninNBs:
+                ...
+                start_state_fanin_task  = DAG_states_of_faninNBs[name]
+                # These are per FaninNB
+                DAG_exec_state.keyword_arguments['fanin_task_name'] = name
+                DAG_exec_state.keyword_arguments['start_state_fanin_task'] = start_state_fanin_task
+
+                msg_id = str(uuid.uuid4())
+                message = {
+                    "op": "synchronize_sync", 
+                    "name": name,
+                    "method_name": "fan_in",
+                    "state": make_json_serializable(DAG_exec_state),
+                    "id": msg_id
+                }
+
+        """
+        pass
+        # can we do: return_value = self.action_handlers[action](message = json_message)
 
     def synchronize_process_faninNBs_batch(self, message = None):
         """

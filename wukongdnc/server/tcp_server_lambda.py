@@ -2,7 +2,7 @@
 import json
 import traceback
 import socketserver
-#import traceback
+import threading
 #import json
 
 #import cloudpickle
@@ -10,9 +10,10 @@ import socketserver
 from .util import decode_and_deserialize, make_json_serializable
 import uuid
 from ..wukong.invoker import invoke_lambda_synchronously
-from ..dag.DAG_executor_constants import using_Lambda_Function_Simulator, use_single_lambda_function
+from ..dag.DAG_executor_constants import using_Lambda_Function_Simulator, use_single_lambda_function, using_function_invoker
 from ..dag.DAG_Executor_lambda_function_simulator import InfiniD # , Lambda_Function_Simulator
 from ..dag.DAG_info import DAG_Info
+from threading import Lock
 
 # Set up logging.
 import logging 
@@ -110,6 +111,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             function_name = "LambdaSemapore"
         """
 
+        thread_name = threading.current_thread().name
         # pass thru client message to Lambda
         payload = {"json_message": json_message}
         # return_value = invoke_lambda_synchronously(payload = payload, function_name = function_name)
@@ -122,7 +124,6 @@ class TCPHandler(socketserver.StreamRequestHandler):
 # this is the create all in sqs, which creates the messages, and then we need to give
 # each message to its mapped simulated function? The tcp_server_lambda interepts calls to
 # fan_in and issues enqueue() instad?
-
 
             if use_single_lambda_function:
                 # for function smulator prototype, using a single function to store all the fanins/faninNBs
@@ -160,12 +161,24 @@ class TCPHandler(socketserver.StreamRequestHandler):
             # multiply and divide would be excuted by the same mapped function. 
             # Note: fanina and task names are in DAG_info, which can be read at startup: DAG_info = DAG_Info()
             #lambda_function = tcp_server.function_map[object_name]
-            lambda_function = tcp_server.infiniD.get_function(sync_object_name)
-            return_value = lambda_function.lambda_handler(payload)  
+            simulated_lambda_function = tcp_server.infiniD.get_function(sync_object_name)
+            lambda_function_lock = tcp_server.infiniD.get_function_lock(sync_object_name)
+            with lambda_function_lock:
+                try:
+                    return_value = simulated_lambda_function.lambda_handler(payload) 
+                except Exception as ex:
+                    logger.error("[ERROR]: " + thread_name + ": invoke_lambda_synchronously: Failed to run lambda handler for synch object: " + sync_object_name)
+                    logger.error(ex)
         else:     
             # For DAG prototype, we use one function to store process_work_queue and all fanins and faninNBs
             sync_object_name = "LambdaBoundedBuffer" 
-            return_value = invoke_lambda_synchronously(function_name = sync_object_name, payload = payload)
+            with lambda_function_lock:
+                try:
+                    # invoker.py's invoke_lambda_synchronously
+                    return_value = invoke_lambda_synchronously(function_name = sync_object_name, payload = payload)
+                except Exception as ex:
+                    logger.error("[ERROR]: " + thread_name + ": invoke_lambda_synchronously: Failed to invoke lambda function for synch object: " + sync_object_name)
+                    logger.error(ex)
             # where: lambda_client.invoke(FunctionName=function_name, InvocationType='RequestResponse', Payload=payload_json)
         
         # The return value from the Lambda function will typically be sent by tcp_server to a Lambda client of tcp_server
@@ -385,7 +398,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         if worker_needs_input:
             logger.error("[Error]: tcp_server_lambda Internal Error: synchronize_process_faninNBs_batch: worker needs input but using lambdas.")
         
-        if False: # using_Lambda_Function_Simulator:
+        if using_Lambda_Function_Simulator and using_function_invoker:
             pass
             # Need to do an enqueue for each fan_in, or can we do batch_enqueue?
         else:
@@ -489,12 +502,19 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     "id": msg_id
                 }
 
-                logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": calling invoke_lambda_synchronously."
-                    + " start_state_fanin_task: " + str(start_state_fanin_task))
-                #return_value = synchronizer.synchronize(base_name, DAG_exec_state, **DAG_exec_state.keyword_arguments)
-                returned_state_ignored = self.invoke_lambda_synchronously(message)
-                logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": called invoke_lambda_synchronously "
-                    + "returned_state_ignored: " + str(returned_state_ignored))
+                if using_Lambda_Function_Simulator and using_function_invoker:
+                    logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": calling infiniD.enqueue(message)."
+                        + " start_state_fanin_task: " + str(start_state_fanin_task))
+                    returned_state_ignored = self.infiniD.enqueue(message)
+                    logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": called infiniD.enqueue(message) "
+                        + "returned_state_ignored: " + str(returned_state_ignored))
+                else:
+                    logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": calling invoke_lambda_synchronously."
+                        + " start_state_fanin_task: " + str(start_state_fanin_task))
+                    #return_value = synchronizer.synchronize(base_name, DAG_exec_state, **DAG_exec_state.keyword_arguments)
+                    returned_state_ignored = self.invoke_lambda_synchronously(message)
+                    logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": called invoke_lambda_synchronously "
+                        + "returned_state_ignored: " + str(returned_state_ignored))
 
                 """
                 Note: It does not make sense to batch try-ops, or to execute a batch of synchronous
@@ -928,6 +948,11 @@ class TCPServer(object):
             logger.debug("tcp_server_lambda: function map" + str(self.infiniD.function_map))
             # Note: call lambda_function = infiniX.get_function(sync_object_name) to get 
             # the function that stores sync_object_namej
+
+        else:
+#ToDo: need ock per lambda function so create_locks() when not using lambda simulator
+# use set of names, map, etc.
+            self.function_lock = Lock()
     
     def start(self):
         logger.info("tcp_server_lambda: Starting TCP Lambda server.")
