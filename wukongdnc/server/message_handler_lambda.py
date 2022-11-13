@@ -212,9 +212,12 @@ class MessageHandler(object):
                 }
 
         """
-        pass
-        # can we do: return_value = self.action_handlers[action](message = json_message)
-        
+        list_of_messages = message['name']
+        for msg in list_of_messages:
+            # The return value of last call is a work tuple:  work_tuple = (start_state_fanin_task,self._results)
+            return_value = self.synchronize_sync(msg)
+        return return_value
+
 
     def synchronize_process_faninNBs_batch(self, message = None):
         """

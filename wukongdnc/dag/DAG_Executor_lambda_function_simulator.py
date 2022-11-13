@@ -56,12 +56,12 @@ class Lambda_Function_Simulator:
 		warm_resources['invocation_count'] = warm_resources['invocation_count'] + 1
 		#logger.debug("Invocation received. event: " + str(event))
 
-		logger.debug(f'Invocation count: {warm_resources["invocation_count"]}, Seconds since cold start: {round(invocation_time - warm_resources["cold_start_time"], 1)}')
+		logger.debug(f'Lambda_Function_Simulator: lambda_handler: Invocation count: {warm_resources["invocation_count"]}, Seconds since cold start: {round(invocation_time - warm_resources["cold_start_time"], 1)}')
 
 		# Extract all of the data from the payload.
 		#json_message = cloudpickle.loads(base64.b64decode(event["json_message"]))
 		json_message = payload['json_message']
-		logger.debug("ambda_Function_Simulator: lambda_handler: JSON message: " + str(json_message))
+		logger.debug("Lambda_Function_Simulator: lambda_handler: JSON message: " + str(json_message))
 
 		if not warm_resources['message_handler']:
 			# Issue: Can we get and print the name of the Lambda function - "LambdaBoundedBuffer" or "LambdaSemaphore"
@@ -168,8 +168,8 @@ class SQS:
 
 			msg_id = str(uuid.uuid4())
 			dummy_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
-			logger.debug("SQS enqueue: Sending 'process_enqueued_fan_ins' message to lambda function for " + sync_object_name)
-			logger.debug("length of enqueue's list: " + str(len(list)))
+			logger.debug("SQS enqueue: Triggered: Sending 'process_enqueued_fan_ins' message to lambda function for " + sync_object_name)
+			logger.debug("SQS enqueue: length of enqueue's list: " + str(len(list)))
 			# we set state.keyword_arguments before call to create()
 			message = {
 				"op": "process_enqueued_fan_ins",
@@ -178,21 +178,26 @@ class SQS:
 				"state": make_json_serializable(dummy_state),
 				"id": msg_id
 			}
-			msg = json.dumps(message).encode('utf-8')
-			payload = {"json_message": msg}
+			#msg = json.dumps(message).encode('utf-8')
+			payload = {"json_message": message}
 			with simulated_lambda_function_lock:
 				try:
 					logger.debug("SQS enqueue: calling simulated_lambda_function.lambda_handler(payload)")
 					# This is essentially a synchronous call to a regular Python function
-					return_value_ignored = simulated_lambda_function.lambda_handler(payload)
+					return_value = simulated_lambda_function.lambda_handler(payload)
 					logger.debug("SQS enqueue: called simulated_lambda_function.lambda_handler(payload)")
 				except Exception as ex:
 					logger.error("[ERROR]: " + thread_name + ": invoke_lambda_synchronously: Failed to run lambda handler for synch object: " + sync_object_name)
 					logger.error(ex)
+			return return_value
+		else:
+			logger.debug("SQS enqueue: not Triggered")
+
+		return 0
 
 class InfiniD:
 	def __init__(self, DAG_info):
-		self.sqs = SQS(self)
+		self.sqs = SQS()
 		self.DAG_info = DAG_info
 		self.DAG_map = DAG_info.get_DAG_map()
 		self.DAG_states = DAG_info.get_DAG_states()
@@ -262,9 +267,12 @@ class InfiniD:
 			self.sqs.map_object_name_to_trigger(object_name,n)
 
 	def enqueue(self,json_message):
+		
 		sync_object_name = json_message.get("name", None)
 		simulated_lambda_function = self.get_function(sync_object_name)
 		simulated_lambda_function_lock = self.get_function_lock(sync_object_name)
 		logger.debug("InfiniD enqueue: calling self.sqs.enqueue")
-		self.sqs.enqueue(json_message, simulated_lambda_function, simulated_lambda_function_lock)
+		return_value = self.sqs.enqueue(json_message, simulated_lambda_function, simulated_lambda_function_lock)
 		logger.debug("InfiniD enqueue: called self.sqs.enqueue")
+
+		return return_value
