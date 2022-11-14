@@ -168,12 +168,11 @@ class DAG_executor_FanInNB(MonitorSU):
                         return self._results, restart  # all threads have called so return results
                         #return 1, restart  # all threads have called so return results
                     else:
-                        # FanInNB is stored remotely so return work to tcp_server. If we are not batching calls
-                        # to fan_in, the work/results will be returned to the client caller. If we are batching 
-                        # calls, one result will be returned to the client if they need work. If not, no work
-                        # is returned and all work is put into the work_queue, which is also stored on tcp_server.
-                        super().exit_monitor()
-                        # no one should be calling fan_in again since this is last caller
+                        # FanInNB is stored remotely so return work to tcp_server. 
+                        # Since we are using thread workers, the work queue is local, not on the server,
+                        # and in this case, we return the results dictionary, not a work tuple.
+                        # the caller process_faninNBs() will create a work tuple and add it to the work queue.                        super().exit_monitor()
+                        # No one should be calling fan_in again since this is last caller
                         return self._results, restart  # all threads have called so return results        
                 else:
                     if self.store_fanins_faninNBs_locally:
@@ -218,6 +217,7 @@ class DAG_executor_FanInNB(MonitorSU):
                 # does mutex.V
                 super().exit_monitor()
                 # no one should be calling fan_in again since this is last caller
+                #Note: we are not using workers so we do not return a work tuple
                 return self._results, restart  # all threads have called so return results
                 #return 1, restart  # all threads have called so return results
                     
@@ -252,6 +252,7 @@ class DAG_executor_FanInNB(MonitorSU):
                 # to tcp_serve \r or tcp_server might try to put them in the non-existent 
                 # work_queue.   
                 #return self._results, restart  # all threads have called so return results
+                #Note: we are not using workers so we do not return a work tuple
                 return 0, restart
                 #return 1, restart  # all threads have called so return results
            
@@ -261,7 +262,15 @@ class DAG_executor_FanInNB(MonitorSU):
                 # in DAG work loop. (Can't create threads here or it would run here
                 # (on server or in lambda))
                 
-                return 0, restart
+                #Note: we are not using workers so we do not return a work tuple
+                # We check return_value == 0 to determine whether we need to
+                # start a thread to do fanin tas, i.e., to determine whether
+                # we become the fanin task, so we return self._results, even though
+                # we will not use these results - this is inefficient but in this case
+                # we are simulating lambdas with threads, which is just to test the 
+                # logic witout worrying about performance.
+                #return 0, restart
+                return self._results, restart
 
             else:
                 logger.error("FanInNB:[ERROR] Internal Error: reached else: error at end of fanin")

@@ -20,7 +20,7 @@ from wukongdnc.constants import TCP_SERVER_IP
 from .DAG_executor_constants import run_all_tasks_locally, store_fanins_faninNBs_locally 
 from .DAG_executor_constants import create_all_fanins_faninNBs_on_start, using_workers 
 from .DAG_executor_constants import using_threads_not_processes, using_lambdas, use_multithreaded_multiprocessing
-from .DAG_executor_constants import process_work_queue_Type, FanInNB_Type, using_Lambda_Function_Simulator
+from .DAG_executor_constants import process_work_queue_Type, FanInNB_Type #, using_Lambda_Function_Simulator
 #from .DAG_work_queue_for_threads import thread_work_queue
 from .DAG_work_queue_for_threads import work_queue
 from .DAG_data_dict_for_threads import data_dict
@@ -271,6 +271,8 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
                             #work_queue.put(start_state_fanin_task)
                             work_queue.put(work_tuple)
                         else: 
+                            # Note: if using worker processes, we call process_faninNB_batch
+                            # instead of process_faninNBs, so this code is currently not executable. 
                             work_tuple = (start_state_fanin_task,dict_of_results)
                             #work_queue.put(start_state_fanin_task)
                             work_queue.put(work_tuple)
@@ -1168,7 +1170,14 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     # we are using processes. We can also use workers with threads instead of processes
                     # but multithreading with remote FanInNBs is not as useful as using processes. 
                     # Multithreadng in general is not as helpful as multiprocessing in Python.
-                    if (run_all_tasks_locally and using_workers and not using_threads_not_processes) or (not run_all_tasks_locally) or (run_all_tasks_locally and not using_workers and using_Lambda_Function_Simulator):
+                    if (run_all_tasks_locally and using_workers and not using_threads_not_processes) or (not run_all_tasks_locally):
+                    # Note: not calling process_faninNBs_batch when usng threads to simulate lambda since
+                    # the faninNBs cannot start new simulated threads to execute the fanin tasks and so 
+                    # process_faninNB_batch would need to so something with al the generated work. We could 
+                    # try to pass all the work back an have the calling simuated thread start one thread
+                    # for each work tuple returned, but instead we will call process_faninNBs which
+                    # will issue a separate fanin to the server for each faninNB.
+                    #or (run_all_tasks_locally and not using_workers and using_Lambda_Function_Simulator):
                         # assert
                         if store_fanins_faninNBs_locally:
                             logger.error("[Error]: DAG_executor_work_loop: using processes or lambdas but storing FanINNBs locally.")

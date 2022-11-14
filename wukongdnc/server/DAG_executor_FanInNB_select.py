@@ -180,12 +180,11 @@ class DAG_executor_FanInNB_Select(Selector):
                         return self._results  # all threads have called so return results
                         #return 1, restart  # all threads have called so return results
                     else:
-                        # FanInNB is stored remotely so return work to tcp_server. If we are not batching calls
-                        # to fan_in, the work/results will be returned to the client caller. If we are batching 
-                        # calls, one result will be returned to the client if they need work. If not, no work
-                        # is returned and all work is put into the work_queue, which is also stored on tcp_server.
-
-                        # no one should be calling fan_in again since this is last caller
+                        # FanInNB is stored remotely so return work to tcp_server. 
+                        # Since we are using thread workers, the work queue is local, not on the server,
+                        # and in this case, we return the results dictionary, not a work tuple.
+                        # the caller process_faninNBs() will create a work tuple and add it to the work queue.                        super().exit_monitor()
+                        # No one should be calling fan_in again since this is last caller
                         return self._results  # all threads have called so return results        
                 else:
                     if self.store_fanins_faninNBs_locally:
@@ -266,25 +265,69 @@ class DAG_executor_FanInNB_Select(Selector):
                 #return 1, restart  # all threads have called so return results
 
             elif not self.store_fanins_faninNBs_locally and run_all_tasks_locally:
-                # not using workers and using threads to simulate lambdas. Here
-                # there is nothing to do since a thread will be created locally
-                # in DAG work loop. (Can't create threads here or it would run here
-                # (on server or in lambda))
-                logger.debug("XXXXXXXXXXXXX return 0 XXXXXXXXXXXXXXXXXX")
+                # not using workers and using threads to simulate lambdas that
+                # store remote synch objects. Here there is nothing to do since a 
+                # thread will be created locally in DAG work loop. (Can't create threads 
+                # here or it would run here (on server or in lambda))
+                logger.debug("XXXXXXXXXXXXX return XXXXXXXXXXXXXXXXXX")
 
                 # when not self.store_fanins_faninNBs_locally and run_all_tasks_locally we 
-                # are simulating labdas with synch objects stored ermotely. In that case,
-                # we call process_faninNBs_batch which expects a work tuple. Note that we 
-                # are not using workers so this is not "work" but we use the work scheme
+                # are simulating lambdas with threads and synch objects are stored remotely. 
+                # The objects could be stored on the server or in real lambdas or simulated
+                # lambdas. 
+                # For:
+                # - threads simulate lambdas with remote objects on tcp_server, we do not
+                #   want to call processfaninNBs batch and we don't
+                # - threads simulate lambdas with remote objects in lambdas (tcp_server_lambda)
+                #   we call process_faninNBs_batch, which is what we expect when we are 
+                #   using simuated r real lambdas. But When using Lambas, the FaninNB
+                #   is supposed to start a lambda to do the fanin task. But when we 
+                #   are siumlating lambdas with threads, we can't start new threads on 
+                #   the server so we let calling threads do that. 
+                #   Q: Can we call process_fanins_batch in this cse since no threads are
+                #      started?
+                #   Could let server start a simulated lambda thread? No since such threads
+                #   use a local data dict?
+                #
+                #   So: For using threads simulating lambdas, do not call process_faninNBs
+                #   batch regardless of whether objects are stored on server or not. 
+                #   process_faninNBs will call regular synchronize_sync on fan_in,
+                #   then tcp_server will call fa_in, or tcp_server_lambda will figure
+                #   out which real or simulated lambda function to invoke for the 
+                #   synchronous_sych fan_in.
+                # - for real lambdas (not simulated by threads), with objects stored in
+                #   lambdas (real or simulated) or not, the faninNBs will start real 
+                #   lambdas and return 0. We call process_faninNBs_batch but since
+                #   there is no fanout list, and no workers, and all returns values are 0,
+                #   process_faninNBs_batch can be simplified. When we run on tcp_server,
+                #   which means objects are stored on the server, we do not simplify 
+                #   process_faninNBs_batch - the if-statements detect threre is nothing
+                #   to do. When we run on tcp_server_lambda, we have to determine which 
+                #   lambda to call so we need to modify process_faninNBs_batch on 
+                #   tcp_server_lambda and we might as well smplify it?
+                
+                # we call process_faninNBs_batch which uses the resturn value to create a work tuple. 
+                # Note that we are not using workers so this is not "work" but we use the work scheme
                 # and get the start_state_fanin_task from the tuple as the thread started
                 # to simulate a lambda needs this start state. The self._results are not 
                 # used since the threads that executed the tasks that generated these
                 # fanin results alredy put the results in the data dictionary, which is 
                 # a global dictionary when we are running local threads that simulate lambas
-                work_tuple = (start_state_fanin_task,self._results)
 
-                #return self._results
-                return work_tuple
+
+                # From FaninNB:
+                #Note: we are not using workers so we do not return a work tuple
+                # We check return_value == 0 to determine whether we need to
+                # start a thread to do fanin tas, i.e., to determine whether
+                # we become the fanin task, so we return self._results, even though
+                # we will not use these results - this is inefficient but in this case
+                # we are simulating lambdas with threads, which is just to test the 
+                # logic witout worrying about performance.
+                #return 0, restart
+
+                return self._results
+                #work_tuple = (start_state_fanin_task,self._results)
+                #return work_tuple
 
             else:
                 logger.error("[ERROR]: Internal Error: DAG_executor_FanInNB_Select: fan_in: reached else: error at end of fanin")

@@ -344,10 +344,30 @@ class TCPHandler(socketserver.StreamRequestHandler):
 # we aer simulated lambas with threads and possibly storing sync objects in 
 # lambdas simulated by regular python functions. If we are using threads 
 # to simulate lambdas then we return the faninNB fan_in result as work tuple
-# and the calling thread will start a threa to execute the fanin task
+# and the calling thread will start a thread to execute the fanin task
 # (2) there is no list of fanouts since we start the lambdas
 # in the DAG_executor; this may change if we pass a list of fanouts and use the 
 # parallel invoker to invoke them 
+
+# No: Only call this when running real lambas, not simulated. The real lambdas
+# fan_ins will start real lambdas to run fanin tasks and the fan_ins will
+# return 0. Here we just figure out which ral or simulated lambda function to 
+# call and when all have been called we return 0 so process_faninNBs_bath
+# in DAG_executor will do nothing.
+#
+# Todo: This can be an asynch call, i.e., when using real lambdas, since the 
+# return value is definitely 0 and can be ignored so no use waiting for it.
+# When using workers or using no workers with threads simulating lambdas, we 
+# use synchrous call - for workers, the return value may be work, for simulated
+# threads, a non-0 return indicates that we should start a new thread to simulate
+# the lambda (that the faninNB could not start). Note that only one of the
+# simulated threads that cal fanin on a faninNB should start the fanin task, so 
+# oe thread receives the results and the others get 0's. The thread that receives
+# the results starts a new simuated lambda but soes not use the results since 
+# the simulated threads use a global dta dictionary and the results were already
+# out in the dictionary by the threads after they executed the asks that produced
+# the results (these tasks then called fanins and pas these rsults to fanin).
+
     def synchronize_process_faninNBs_batch(self, message = None):
         """
         Synchronous process all faninNBs for a given state during DAG execution.
@@ -662,9 +682,10 @@ class TCPHandler(socketserver.StreamRequestHandler):
 #    DAG_exec_state.return_value = work_tuple
 #    DAG_exec_state.blocking = False 
 # vs.
-#       DAG_exec_state.return_value = 0
-#       DAG_exec_state.blocking = False
-        self.send_serialized_object(cloudpickle.dumps(returned_state_ignored))
+        DAG_exec_state.return_value = 0
+        DAG_exec_state.blocking = False
+        #self.send_serialized_object(cloudpickle.dumps(returned_state_ignored))
+        self.send_serialized_object(cloudpickle.dumps(DAG_exec_state))
 
     def Xsynchronize_process_faninNBs_batch(self,message):
         """
