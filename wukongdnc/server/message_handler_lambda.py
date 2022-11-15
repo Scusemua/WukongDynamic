@@ -214,11 +214,14 @@ class MessageHandler(object):
         """
         list_of_messages = message['name']
         for msg in list_of_messages:
-            # The return value of last call is a work tuple:  work_tuple = (start_state_fanin_task,self._results)
+            # We are doing al the fan_in ops one-by-one in the order they were called by clients
+            # The return value of last call is the fanin results; return those to client
             return_value = self.synchronize_sync(msg)
         return return_value
 
-
+#ToDo: delete this, it is in tcp_server_lambda, which needs to determine the function to 
+# call for each faninNB, and call that function. Here, we are running in a function,
+# so it is too laet to choose which function to run in.
     def synchronize_process_faninNBs_batch(self, message = None):
         """
         Synchronous process all faninNBs for a given state during DAG execution.

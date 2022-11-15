@@ -269,7 +269,6 @@ class DAG_executor_FanInNB_Select(Selector):
                 # store remote synch objects. Here there is nothing to do since a 
                 # thread will be created locally in DAG work loop. (Can't create threads 
                 # here or it would run here (on server or in lambda))
-                logger.debug("XXXXXXXXXXXXX return XXXXXXXXXXXXXXXXXX")
 
                 # when not self.store_fanins_faninNBs_locally and run_all_tasks_locally we 
                 # are simulating lambdas with threads and synch objects are stored remotely. 
@@ -318,13 +317,16 @@ class DAG_executor_FanInNB_Select(Selector):
                 # From FaninNB:
                 #Note: we are not using workers so we do not return a work tuple
                 # We check return_value == 0 to determine whether we need to
-                # start a thread to do fanin tas, i.e., to determine whether
-                # we become the fanin task, so we return self._results, even though
+                # start a thread to do fanin task, i.e., to determine whether
+                # fanin caller was last to fanin; so we return self._results, even though
                 # we will not use these results - this is inefficient but in this case
                 # we are simulating lambdas with threads, which is just to test the 
                 # logic witout worrying about performance.
                 #return 0, restart
 
+                logger.debug("DAG_executor_FanInNB_Select: fan_in: return self._results for "
+                    + " case where simuated lambdas with threads and storing objects remotely, "
+                    + " possibly in lambas (simulated or rea)")
                 return self._results
                 #work_tuple = (start_state_fanin_task,self._results)
                 #return work_tuple

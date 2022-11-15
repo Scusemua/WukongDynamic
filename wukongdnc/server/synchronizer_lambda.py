@@ -317,7 +317,7 @@ class Synchronizer(object):
             # The latter using class Lambda_Function_simulator in ADG_executor_lambda_function_simulator.py
             # 
             # We return the pickled state to the synchronous caller of the laambda function 
-            # instead of TCP sending the picled state to the clinet
+            # instead of TCP sending the pickled state to the clinet
             pickled_state = cloudpickle.dumps(state)
             return pickled_state
         

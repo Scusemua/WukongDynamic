@@ -19,10 +19,10 @@ create_all_fanins_faninNBs_on_start = True
 # case, instead of, e.g., starting a Lambda at fan_out operations, we start a thread.
 # This results in the creation of many threads and is only use to test the logic 
 # of the Lambda code.
-using_workers = True
+using_workers = False
 # True when we ae not using Lambas and tasks are executed by threads instead of processes. 
 # False when we are not using lambdas and are using multiprocesssing 
-using_threads_not_processes = False
+using_threads_not_processes = True
 # When using_workers, this is how many threads or processes in the pool.
 using_lambdas = False   # == not run_all_tasks_locally
 num_workers = 2
@@ -32,14 +32,14 @@ num_threads_for_multithreaded_multiprocessing = 2
 # if using lambdas to store synch objects, run tcp_server_lambda.
 # if store in regular python functions instead of real Lambdas
 # set using_Lambda_Function_Simulator = True
-FanIn_Type = "DAG_executor_FanIn"
-FanInNB_Type = "DAG_executor_FanInNB"
-process_work_queue_Type = "BoundedBuffer"
-#FanIn_Type = "DAG_executor_FanIn_Select"
-#FanInNB_Type = "DAG_executor_FanInNB_Select"
-#process_work_queue_Type = "BoundedBuffer_Select"
+#FanIn_Type = "DAG_executor_FanIn"
+#FanInNB_Type = "DAG_executor_FanInNB"
+#process_work_queue_Type = "BoundedBuffer"
+FanIn_Type = "DAG_executor_FanIn_Select"
+FanInNB_Type = "DAG_executor_FanInNB_Select"
+process_work_queue_Type = "BoundedBuffer_Select"
 # Note: Currently, this is for storing synch objects in simulated lambdas;
 # we are not running real lambdas or storing synch objects in real lambdas.
-using_Lambda_Function_Simulator = False
-using_function_invoker = False
+using_Lambda_Function_Simulator = True
+using_function_invoker = True
 use_single_lambda_function = False

@@ -340,33 +340,32 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # return value not assigned
         return 0
 
-# ToDo: We are using Lambdas, whcih means (1) using lambdas that may be real or 
-# we aer simulated lambas with threads and possibly storing sync objects in 
-# lambdas simulated by regular python functions. If we are using threads 
-# to simulate lambdas then we return the faninNB fan_in result as work tuple
-# and the calling thread will start a thread to execute the fanin task
-# (2) there is no list of fanouts since we start the lambdas
-# in the DAG_executor; this may change if we pass a list of fanouts and use the 
-# parallel invoker to invoke them 
+# ToDo: We are using Lambdas, which means (1) using lambdas that are real and possibly 
+# storing sync objects in lambdas simulated by regular python functions (2) there is no 
+# list of fanouts since we start the fanned out lambdas in the DAG_executor; this may 
+# change if we pass a list of fanouts to tcp_server_lambda and use the parallel invoker 
+# to invoke them.
 
 # No: Only call this when running real lambas, not simulated. The real lambdas
 # fan_ins will start real lambdas to run fanin tasks and the fan_ins will
-# return 0. Here we just figure out which ral or simulated lambda function to 
-# call and when all have been called we return 0 so process_faninNBs_bath
-# in DAG_executor will do nothing.
+# return 0. Here we just figure out which real or simulated lambda is storing the 
+# fanin synch object. When all fanins have been called we return 0 so 
+# process_faninNBs_batch in DAG_executor will do nothing.
 #
 # Todo: This can be an asynch call, i.e., when using real lambdas, since the 
 # return value is definitely 0 and can be ignored so no use waiting for it.
-# When using workers or using no workers with threads simulating lambdas, we 
-# use synchrous call - for workers, the return value may be work, for simulated
+# When using workers or using no workers with threads simulating lambdas, 
+# (in which case we aer running tcp_server not this tcp_server_lambda) we
+# use synchrnous call - for workers, the return value may be work, for simulated
 # threads, a non-0 return indicates that we should start a new thread to simulate
 # the lambda (that the faninNB could not start). Note that only one of the
-# simulated threads that cal fanin on a faninNB should start the fanin task, so 
-# oe thread receives the results and the others get 0's. The thread that receives
-# the results starts a new simuated lambda but soes not use the results since 
+# simulated threads that call fanin on a faninNB should start the fanin task, so 
+# one thread receives the non-0 results and the others get 0's. The thread that receives
+# the results starts a new simulated lambda but does not use the results since 
 # the simulated threads use a global dta dictionary and the results were already
-# out in the dictionary by the threads after they executed the asks that produced
-# the results (these tasks then called fanins and pas these rsults to fanin).
+# put in the dictionary by the threads that executed the asks that produced
+# the results (these tasks then called fanins and pass these results to fanin, 
+# which passes the collected fann results back to the calling thread.
 
     def synchronize_process_faninNBs_batch(self, message = None):
         """
@@ -687,38 +686,6 @@ class TCPHandler(socketserver.StreamRequestHandler):
         #self.send_serialized_object(cloudpickle.dumps(returned_state_ignored))
         self.send_serialized_object(cloudpickle.dumps(DAG_exec_state))
 
-    def Xsynchronize_process_faninNBs_batch(self,message):
-        """
-        batch process all faninNBs and for workers their fanouts, if any, are deposited
-        into the work queue. One unit of work can be returned if the worker_needs_work,
-        which it will if there were no fanouts.
-
-        Key-word arguments:
-        -------------------
-            message (dict):
-                The payload from the AWS Lambda function.
-        """
-       
-        logger.debug("[HANDLER] TCPHandler lambda: synchronize_process_faninNBs_batch() called.")
-
-        # this is a DAG_executor_State with  DAG_exec_state.return_value = work_tuple
-        # or DAG_exec_state.return_value = 0
-        returned_state = self.invoke_lambda_synchronously(message)
-
-        logger.debug("[HANDLER] TCPHandler lambda: called Lambda at synchronize_process_faninNBs_batch.")
- 
-        # pickle already done by Lambda? cloudpickle.dumps(state)? If so, just pass pickled state thru to client.
-        #if using_Lambda_Function_Simulator:
-        #    #returned_state_pickled = cloudpickle.dumps(returned_state)
-        #    self.send_serialized_object(returned_state)
-        #else:
-        #   self.send_serialized_object(returned_state)
-
-        self.send_serialized_object(returned_state)
-       
-        # return value not assigned
-        return 0
-
     # Not used and not tested. Currently create work queue in 
     # create_all_fanins_and_faninNBs_and_possibly_work_queue. 
     def create_work_queue(self,message):
@@ -759,10 +726,24 @@ class TCPHandler(socketserver.StreamRequestHandler):
             message (dict):
                 The payload from the AWS Lambda function.
         """
+        DAG_exec_state = decode_and_deserialize(message["state"])
+        calling_task_name = DAG_exec_state.keyword_arguments['calling_task_name'] 
        
         logger.debug("tcp_server_lambda: calling server.synchronize_sync().")
 
-        returned_state = self.invoke_lambda_synchronously(message)
+        if using_Lambda_Function_Simulator and using_function_invoker:
+            logger.info("*********************tcp_server_lambda: synchronize_sync: " + calling_task_name + ": calling infiniD.enqueue(message).")
+            returned_state = self.enqueue_and_invoke_lambda_synchronously(message)
+            logger.info("*********************tcp_server_lambda: synchronize_sync: " + calling_task_name + ": called infiniD.enqueue(message) "
+                + "returned_state: " + str(returned_state))
+        else:
+            logger.info("*********************tcp_server_lambda: synchronize_sync: " + calling_task_name + ": calling invoke_lambda_synchronously.")
+            #return_value = synchronizer.synchronize(base_name, DAG_exec_state, **DAG_exec_state.keyword_arguments)
+            returned_state = self.invoke_lambda_synchronously(message)
+            logger.info("*********************tcp_server_lambda: synchronize_sync: " + calling_task_name + ": called invoke_lambda_synchronously "
+                + "returned_state: " + str(returned_state))
+
+        #returned_state = self.invoke_lambda_synchronously(message)
 
         logger.debug("tcp_server_lambda called Lambda at synchronize_sync")
 

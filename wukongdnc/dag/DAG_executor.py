@@ -230,6 +230,7 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
 
             #if DAG_exec_state.blocking:
             # using the "else" after the return, even though we don't need it
+            logger.debug(thread_name + ": process_faninNBs:  faninNB_remotely dummy_DAG_exec_state: " + str(dummy_DAG_exec_state))
             logger.debug(thread_name + ": process_faninNBs:  faninNB_remotely dummy_DAG_exec_state.return_value: " + str(dummy_DAG_exec_state.return_value))
             if dummy_DAG_exec_state.return_value == 0:
                 #DAG_exec_state.blocking = False
@@ -1167,17 +1168,19 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
 
                 if len(state_info.faninNBs) > 0:
                     # batching work when we are using workers and storing the FanInMBs remotey and 
-                    # we are using processes. We can also use workers with threads instead of processes
-                    # but multithreading with remote FanInNBs is not as useful as using processes. 
-                    # Multithreadng in general is not as helpful as multiprocessing in Python.
+                    # we are using processes, or we are using real lambdas. We can also use workers 
+                    # with threads instead of processes but multithreading with remote FanInNBs is 
+                    # not as useful as using processes. Multithreadng in general is not as helpful 
+                    # as multiprocessing in Python.
                     if (run_all_tasks_locally and using_workers and not using_threads_not_processes) or (not run_all_tasks_locally):
                     # Note: not calling process_faninNBs_batch when usng threads to simulate lambda since
                     # the faninNBs cannot start new simulated threads to execute the fanin tasks and so 
-                    # process_faninNB_batch would need to so something with al the generated work. We could 
-                    # try to pass all the work back an have the calling simuated thread start one thread
+                    # process_faninNB_batch would need to so something with all the generated work. We could 
+                    # try to pass all the work back and have the calling simuated thread start one thread
                     # for each work tuple returned, but instead we will call process_faninNBs which
                     # will issue a separate fanin to the server for each faninNB.
                     #or (run_all_tasks_locally and not using_workers and using_Lambda_Function_Simulator):
+ 
                         # assert
                         if store_fanins_faninNBs_locally:
                             logger.error("[Error]: DAG_executor_work_loop: using processes or lambdas but storing FanINNBs locally.")
@@ -1190,16 +1193,15 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                         state_info.task_name, DAG_info.get_DAG_states(), DAG_executor_state, 
                             output, DAG_info,work_queue,worker_needs_input, list_of_work_queue_fanout_values)
                     else: 
-                        # not using workers or using threads. Note: if we are using thread workers we can still
-                        # store the FanInNBs remotely, but the work queue will be local. Batch FanInNb processing
-                        # will also put work in the work_queue as the work_queue is also stored remotely (with the
-                        # FAaInNBs). When using threads, the work_queue is local so we cannot put work in the work
-                        # queue while processing remote FanInNBs on the server. This means we would have to pass
-                        # all the work back here to the thread and have the thread add the work to the local work
+                        # not using workers, or using worker threads not processes, or using threads to simualate lambdas.
+                        # Note: if we are using thread workers we can still store the FanInNBs remotely, but the work queue 
+                        # will be local. Batch FanInNb processing will put work (fanin tasks) in the work_queue as the 
+                        # work_queue is also stored remotely (with the FanInNBs). When using threads, the work_queue is local 
+                        # so we cannot put work in the work queue while processing remote FanInNBs on the server. This means we 
+                        # would have to pass all the work back here to the thread and have the thread add the work to the local work
                         # queue. Doable, but maybe later - multithreading is not as useful as multprocessng, and 
                         # we do batch FaninNBs and store the FanINNBs and work_queue remotely when multiprocessing
                         # (same for multiprocessing where processes are multithreaded, which is an interesting use case).
-                        # asynch + terminate + start DAG_executor in start state
                         worker_needs_input = process_faninNBs(websocket,state_info.faninNBs, state_info.faninNB_sizes, 
                             state_info.task_name, DAG_info.get_DAG_states(), DAG_executor_state, 
                             output, DAG_info, server,work_queue,worker_needs_input)

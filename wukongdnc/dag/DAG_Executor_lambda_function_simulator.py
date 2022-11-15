@@ -1,7 +1,8 @@
 #import re 
 #import socket
 import time
-import json 
+#import json 
+import cloudpickle
 import uuid
 import threading
 from threading import Lock
@@ -191,9 +192,12 @@ class SQS:
 					logger.error(ex)
 			return return_value
 		else:
-			logger.debug("SQS enqueue: not Triggered")
+			logger.debug("SQS enqueue: function call not Triggered")
 
-		return 0
+		dummy_DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
+		dummy_DAG_exec_state.return_value = 0
+		dummy_DAG_exec_state.blocking = False
+		return cloudpickle.dumps(dummy_DAG_exec_state)
 
 class InfiniD:
 	def __init__(self, DAG_info):
@@ -271,8 +275,8 @@ class InfiniD:
 		sync_object_name = json_message.get("name", None)
 		simulated_lambda_function = self.get_function(sync_object_name)
 		simulated_lambda_function_lock = self.get_function_lock(sync_object_name)
-		logger.debug("InfiniD enqueue: calling self.sqs.enqueue")
+		logger.debug("XXXXXXXXXXXXXXXXXXXX InfiniD enqueue: calling self.sqs.enqueue")
 		return_value = self.sqs.enqueue(json_message, simulated_lambda_function, simulated_lambda_function_lock)
-		logger.debug("InfiniD enqueue: called self.sqs.enqueue")
+		logger.debug("XXXXXXXXXXXXXXXXXXXX InfiniD enqueue: called self.sqs.enqueue")
 
 		return return_value
