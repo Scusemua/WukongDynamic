@@ -33,6 +33,18 @@ logger.addHandler(ch)
 
 aws_region = 'us-east-1'
 
+# Used when we are running real Lambdas. Restarts for real lambdas are
+# handled here, which invokes a Lmabda. In synchronizer, the restart values
+# are passed back to the caller on the server and handled there.
+#
+# Note: the invoke we are using is for the Composer program, whci does 
+# special things to setup that program. Should put the special stuff
+# (creating synch objects, etc on forst invocation) in the driver so we
+# can have a generic invoke(). 
+#
+# Note: DAG_executor has its own invoke that is very simple and is close
+# to the generic invoke we need.
+#
 # This class handles all interactions with the synchronization objects. A Synchronizer wraps a sycnhronization object.
 class Synchronizer(object):
 
@@ -318,7 +330,10 @@ class Synchronizer(object):
             # 
             # We return the pickled state to the synchronous caller of the laambda function 
             # instead of TCP sending the pickled state to the clinet
+            logger.debug("AAAAAAAAAAAAAAAAsynchronizer_lambda: synchronize_sync: before pickle, state is: " + str(state))
             pickled_state = cloudpickle.dumps(state)
+            logger.debug("AAAAAAAAAAAAAAAAsynchronizer_lambda: synchronize_sync: after pickle, pickled_state is: " + str(pickled_state))
+
             return pickled_state
         
     def synchronize_async(self, obj_name, method_name, state, synchronizer_name):

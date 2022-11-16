@@ -83,9 +83,10 @@ class Selector():
         called_entry.add_arrival(entry_name, synchronizer, synchronizer_method, result_buffer, state, **kwargs)
           
         num_entries = self.get_num_entries()
+        # Debugging:
         for i in range(0, (num_entries-1)):
             entry = self.get_entry(i)
-            logger.debug("choosing: entry " + str(i) + " is " + entry.get_entry_name() + ", number of arrivals: " + str(entry.get_num_arrivals()))
+            logger.debug("execute: choosing among entries: entry " + str(i) + " is " + entry.get_entry_name() + ", number of arrivals: " + str(entry.get_num_arrivals()))
 
         #entry0 = self.get_entry(0)
         #logger.debug("after add: entry " + entry0.get_entry_name() + ": " + str(entry0.get_num_arrivals()))
@@ -194,9 +195,10 @@ class Selector():
         logger.debug("execute: choosing")
         
         num_entries = self.get_num_entries()
+        # Debugging:
         for i in range(0, (num_entries-1)):
             entry = self.get_entry(i)
-            logger.debug("choosing: entry " + str(i) + " is " + entry.get_entry_name() + ", number of arrivals: " + str(entry.get_num_arrivals()))
+            logger.debug("execute: choosing among entries: entry " + str(i) + " is " + entry.get_entry_name() + ", number of arrivals: " + str(entry.get_num_arrivals()))
 
         #entry0 = self.get_entry(0)
         #logger.debug("choosing: entry " + entry0.get_entry_name() + ": " + str(entry0.get_num_arrivals()))
