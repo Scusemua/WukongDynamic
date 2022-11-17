@@ -10,7 +10,8 @@ import cloudpickle
 from .util import decode_and_deserialize, make_json_serializable
 import uuid
 from ..wukong.invoker import invoke_lambda_synchronously
-from ..dag.DAG_executor_constants import using_Lambda_Function_Simulator, use_single_lambda_function, using_function_invoker
+from ..dag.DAG_executor_constants import using_Lambda_Function_Simulator, use_single_lambda_function
+from ..dag.DAG_executor_constants import using_function_invoker, run_all_tasks_locally
 from ..dag.DAG_Executor_lambda_function_simulator import InfiniD # , Lambda_Function_Simulator
 from ..dag.DAG_info import DAG_Info
 from threading import Lock
@@ -385,7 +386,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             }
         """
 
-        logger.debug("[tcp_server_lambda] synchronize_process_faninNBs_batch() called.")
+        logger.debug("*********************[tcp_server_lambda] synchronize_process_faninNBs_batch() called.")
 
         # Name of the method called on "DAG_executor_FanInNB" is always "fanin"
         # Not using since we loop through names: for name in faninNBs
@@ -491,6 +492,9 @@ class TCPHandler(socketserver.StreamRequestHandler):
             logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": no fanout work to deposit")
         """
 
+        list_of_work_tuples = []
+        got_work = False
+        non_zero_work_tuples = 0
         for name in faninNBs:
             #synchronizer_name = self._get_synchronizer_name(type_name = None, name = name)
             #logger.debug("tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
@@ -519,20 +523,61 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 "id": msg_id
             }
 
+            # if we are run_all_tasks_locally, the returned_state's return_value is the faninNB results 
+            # if our call to fan_in is the last call (i.e., we are the become task); otherwise, the 
+            # return value is 0 (if we are not the become task)
+            # if we are not run_all_tasks_locally, i.e., running real lambas, the return value is always 0
+            # and if we were the last caller of fan_in a real lamba was started to execute the fanin_task.
+            # (If we were not the last caller then no lamba was started and there is nothing to do.
+            # The calls to process_faninNB_batch when we are using real lambda can be asynchronous since
+            # the caler does not need to wait for the return value, which will be 0 indicating there is 
+            # nothing to do.)
             if using_Lambda_Function_Simulator and using_function_invoker:
                 logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": calling infiniD.enqueue(message)."
                     + " start_state_fanin_task: " + str(start_state_fanin_task))
-#ToDo: This is a work_tuple. if real lambda what is its form? pickeled?
-                returned_state_ignored = self.enqueue_and_invoke_lambda_synchronously(message)
+                returned_state = self.enqueue_and_invoke_lambda_synchronously(message)
                 logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": called infiniD.enqueue(message) "
-                    + "returned_state_ignored: " + str(returned_state_ignored))
+                    + "returned_state_ignored: " + str(returned_state))
             else:
                 logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": calling invoke_lambda_synchronously."
                     + " start_state_fanin_task: " + str(start_state_fanin_task))
                 #return_value = synchronizer.synchronize(base_name, DAG_exec_state, **DAG_exec_state.keyword_arguments)
-                returned_state_ignored = self.invoke_lambda_synchronously(message)
+                returned_state = self.invoke_lambda_synchronously(message)
                 logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": called invoke_lambda_synchronously "
-                    + "returned_state_ignored: " + str(returned_state_ignored))
+                    + "returned_state_ignored: " + str(returned_state))
+
+            if (run_all_tasks_locally):
+                # simulating lambdas with threads. The faninNBs will not start new lambdas to execut the fanin_tasks,
+                # Instead, return the results of the fanin_ins and start new threads to run the fanin tasks (if the 
+                # fanin results are non-0; if the result is 0 then we were not the become task and 
+                # there is nothing to do.)
+                # Note: if we are not the bcome task for any faninNB, then all returned_state.return_value
+                # will be 0, and we will return a list of work_tuples where for each work_tuple there
+                # will be nothing to do. We can check for a non-zero here. If we find no non-zeros
+                # we can send back a 0 instead of the list_of_work_tuples
+                # 
+                # Note: the foo method in synchronizer_lambda pickles the returned_state. this
+                # is what we want if the returned_state is TCP sent back to the client, which is
+                # the case if the client calls a synchronous_sync operation such as a fan_in
+                # on a FanIn object (not FanInNB). Here, we are doing a list of FaninNBs and we do 
+                # not send each fan_in result back to the client; instead, we make a list of the
+                # results, assign this list as the return_alue of a DAG_excutor_State, and pickle
+                # the DAG_excutor_state, which is sent back to the client. So we unpickle each 
+                # FaninNB result state, and add it to the list unpickled.
+                # Again, this configuration, using threads to simulate lambdas is used just a
+                # special case that is used to test the Lambda logic, it is not important that 
+                # the performance is good.
+                unpickled_state = cloudpickle.loads(returned_state)
+                if not unpickled_state.return_value == 0:
+                    got_work = True
+                    non_zero_work_tuples += 1
+                work_tuple = (start_state_fanin_task,unpickled_state)
+                list_of_work_tuples.append(work_tuple)
+                logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: work_tuple appended to list: " + str(calling_task_name) + ". returned_state: " + str(returned_state))
+            else:
+                # not run_all_tasks_locally so faninNBs will start new real lambdas to execute fanin tasks and the 
+                # return value is 0
+                pass
 
             """
             Note: It does not make sense to batch try-ops, or to execute a batch of synchronous
@@ -671,20 +716,21 @@ class TCPHandler(socketserver.StreamRequestHandler):
 # store synch objects do/do not, using real lambdas do not, 
         # No return value is sent back to client for async call
 
-#ToDo: what doing here? Is FaninNB starting thread for fanin tsk? No. So will return 
-# a value for the calling thread to use to start a new thread. If fanin size > 1
-# (always? except when starting a fanout task but then enqueue only 1 thing ) then
-# ignore first fanin and return return value of second fanin. So here, we cant just 
-# st return value to 0. Somewhere we need:
-#    work_tuple = (start_state_fanin_task,return_value)
-
-#    DAG_exec_state.return_value = work_tuple
-#    DAG_exec_state.blocking = False 
-# vs.
-        DAG_exec_state.return_value = 0
-        DAG_exec_state.blocking = False
+        #if got_work and run_all_tasks_locally:
+        if run_all_tasks_locally:
+            logger.debug("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: sending back "
+                + " list of work_tuples, len is: " + str(len(list_of_work_tuples))
+                + " got_work: " + str(got_work)
+                + " non_zero_work_tuples: " + str(non_zero_work_tuples))
+            DAG_exec_state.return_value = list_of_work_tuples
+            DAG_exec_state.blocking = False
+        else:
+            logger.debug("tcp_server_lambda: synchronize_process_faninNBs_batch: not run_all_tasks_locally "
+                + " so returning 0.")
+            DAG_exec_state.return_value = 0
+            DAG_exec_state.blocking = False  
         #self.send_serialized_object(cloudpickle.dumps(returned_state_ignored))
-        self.send_serialized_object(cloudpickle.dumps(DAG_exec_state))
+        self.send_serialized_object(cloudpickle.dumps(DAG_exec_state))     
 
     # Not used and not tested. Currently create work queue in 
     # create_all_fanins_and_faninNBs_and_possibly_work_queue. 

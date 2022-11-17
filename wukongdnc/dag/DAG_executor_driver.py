@@ -4,7 +4,11 @@
 
 # Where are we: 
 #
-# impplement enqueue
+# double pickle bug fixed?
+# document stuff
+# when threads smulate lambdas call process_fanin_batch: return 
+# a list of work, which corresponds to threads to start. Do this 
+# for better test of Lambda code.
 #
 # Fix sockets for multitreaded processes
 #
