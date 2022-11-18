@@ -3,12 +3,8 @@
 # try matrixMult
 
 # Where are we: 
-#
-# double pickle bug fixed?
+
 # document stuff
-# when threads smulate lambdas call process_fanin_batch: return 
-# a list of work, which corresponds to threads to start. Do this 
-# for better test of Lambda code.
 #
 # Fix sockets for multitreaded processes
 #
@@ -23,12 +19,15 @@
 # Consider: multiple tcp_servers/work_queues and work stealing? workers generate
 # their own work, till they hit a fanin/faninNB and lose. then need need to start 
 # new dfs paths(s). Steal it? 
+#
 # Consider: compute max workers you can keep busy so don;t overprovison and shut down 
 # machines as the workers are not needed or the slowdown is worth the cost.
+#
 # Consider creating an unbounded buufer in which deposit should never block.
 # if it blocks then raise "full" exception. Used for DAG execution where the 
 # size of the work_queue is blunded by number of tasks so we can create an
 # unbounded buffer of size number_of_tasks + delta that should never block.
+#
 # Consider timestamping so can place fanin/faninNb/fanout objects in lambdas,
 #  where a happened before b means a and b can be in same lambda unless a || b.
 # Note: with lamba triggers, careful when a and b is same lambda so a can do 
@@ -39,7 +38,7 @@
 # called for all process_faninNBs_batch? That is, any lambdas, either triggered
 # by process_faninNB_batch or running do to external fanouts, will call faninNB_batch
 # on tcp_server which will enqueue, which can call sycnch, and wait for return and get
-# any enqueu as retrn value so that enqueue is after end of synch invocation?
+# any enqueu as retrn value so that enqueue is after end of synch invocation? yes
 
 
 
@@ -177,71 +176,132 @@ fanin, and collpase operations for that state.
 
 There are 4 possble schemes for assigning states to thread/process/Lambda.
 
-A1. We assign each leaf node state to Lambda Executor. At fanouts, a Lambda excutor starts another
+A1. We assign each leaf node state to Lambda Executor. At fanouts, a Lambda executor starts another
 Executor that begins execution at the fanout's associated state. When all Lamdas have performed
 a faninNB operation for a given faninNB F, F starts a new Lambda executor that begins its
 execution by excuting the fanin task in the task's associated state. Fanins are processed as usual
-using "becomes". This is essentially Wukong with DAGs representes as state machines. Note that
-fanin/faninNBs are stored on the tcp_server.
+using "becomes". This is essentially Wukong with DAGs represented as state machines. Note that
+fanin/faninNBs are stored on the tcp_server or in Lambdas.
+
+Note: we eventually want to use the parallel invoker to invoke the fanouts.
 
 A2. This is the same as scheme (1) using threads instead of Lambdas. This is simply a way to
 test the logic of (1) by running threads locally instead of using Lambdas. In this scheme, the 
-fanin/faninNbs are stored locally. The faninNBs will
-create threads to run the fanin tasks (to simulate creating Lambdas to run the fanin tasks) and the
-threads and these threads run locally. The thread that is processing the faninNB
-creates a new thread that actually makes the call to fan_in, to simulate an
-"async" call to the fan_in of a faninNB. (There is no reason to wait for
-the fan_in to return since there are no fanin results - the fanin starts
-a new thread to execute the fanin task.)
+fanin/faninNbs are stored locally. The faninNBs will create threads to run the fanin tasks 
+(to simulate creating Lambdas to run the fanin tasks) and these threads run locally. The 
+thread that is processing the faninNB creates a new thread that actually makes the call to 
+fan_in, to simulate an "async" call to the fan_in of a faninNB. (There is no reason to wait for
+the fan_in to return since there are no fanin results - the fanin starts a new thread to execute 
+the fanin task and passes the results as a parameter.
 
 A3. This is the same as scheme (1) using threads instead of Lambdas except that fanins/faninNbs
 are stored remotely.  Now the faninNBs cannot create threads since such threads would run on the 
-tcp_server; instead, a fanin's dictionary of results is returned to the client caller thread and 
-this thread will create a new thread that runs locally (on the client machine). So this is the 
-same as (A2) except that the thread created to execute a fanin task is created by the thread 
-that calls fanin (and is the last to call fanin) instead of the faninNB (after the last call to fanin.)
+tcp_server; instead, the calling create a new thread that runs locally (on the client machine). 
+So this is the  same as (A2) except that the thread created to execute a fanin task is created 
+by the thread that calls fanin (and is the last to call fanin) instead of the faninNB (after 
+the last call to fanin.) 
 
-This scheme is also used with real python functions that simulate lambdas
-(so we can test things without running real lambdas). If
+Note: for A2 and A3 the results of the fan_in are returned to the calling thread
+but these results are ignored, i.e., not passed to the fanin task that is created. This is 
+because all threads run locally and they shara a global data dictionary. The fanin results are
+already in the dictionary since the threads that executed the tasks that created these 
+outputs/results (i.e., the task execution outputs were passed to the fanin and returned to the
+become task as results) also put these outputs in the data dictionary. Thus, we have nothing
+we need to do with the results returned by a fanin. (When we use process workers, each work
+puts the fanin results in its own (local) private data dictionary as there is no global data
+dictionay shared by processes.)
+output/
+
+Note: This scheme is also used with real python functions that simulate lambdas
+(so we can test things without running real lambdas) in which we store the 
+synchroization objects. If
   using_Lambda_Function_Simulator = True
-then we create a list of functions and map the fanins/faninNBs/fanouts names 
+then we create a list of Python functions and map the fanins/faninNBs/fanouts names 
 to these functions, e.g., one name per function, or two names mapped to
 the same function if ops on these named objects cannot be executed
 concurrently, i.e., fanin1.fanin and fanin2.fanin cannot be executed 
 concurrently since fanin1 and fanin2 are on the same DFS path.
 Then we invoke a function list(i), instead of a real
-lamba function, when we perform a sync op, e.g., fan_in, on the synch object 
-that was mapped to function i. If
+lamba function, when we perform a sync op on a synch object stored in function listi). If
    use_single_lambda_function = True
 Then we use a single function to store all the fanins/faninNBs/fanouts as 
-a simple test case.
+a simple test case. Otherwise we may store each synch object in its own function.
 
-A4. We use a fixed-size pool of threads with a work_queue that holds the states that have been enabled
-so far. The driver deposits the leaf task states into the work_queue. Pool threads get the leaf 
-states and execute the collapse/fanoutNB/fanout/fanin operations for these states. Any states that 
-are enabled by fanout and faninNB operation are put into the work_queue, to be eventully withdrawn 
-and executed by the pool threads, until all states/tasks have been executed. In this scheme,
-the fanins/faninNbs can be stored locally or remotely.
+Note: There are two ways to use these Python functions. (1) when we do a synch op we
+map the object name to a function index, e.g., 1, and call that function, passing 
+a "message" to indicate the op, synchronous-fanIn1-fan_in-kwargs. (2) Instead
+of invoking the function directly each time an op is called on an object stored in 
+that function, we pass the message to an "orchestrator" similar to an AWS SQS, which 
+will check to see whether a call to the function is triggered. That is, if the synch
+object (always a fanin for now) has a size of n, and this is not the nth op, the 
+message is saved in a list of messages to given to the synch object after all n
+operations have occured (by invoking the function that stores the object, either n
+times, passing the messages one by one in the order received; or all at once, i.e.
+pass them all to the function and allow its MessageHandler to call fan_in n
+times, which reduces the number of function calls to 1)
 
-#ToDo: Describe faninNB batch processing.
+A4. We use a fixed-size pool of threads with a work_queue that holds the DAG states that have 
+been enabled so far. The driver deposits the leaf task states into the work_queue. Pool threads 
+get the leaf states and execute the task then the collapse/fanoutNB/fanout/fanin operations for 
+these states. Any states that are enabled by fanout and faninNB operation are put into the 
+work_queue, to be eventully withdrawn and executed by the pool threads, until all states/tasks 
+have been executed. In this scheme, the fanins/faninNb synch objects can be stored locally or 
+remotely.
 
-Note: When processing a group of fanouts that can be executed in a state, a thread will "become"
-the thread that executes one of the fanouts instead of putting the fanout state in the work_queue.
-The same thing happens when a thread becomes the thread that executes a fanin task. So becomes are 
-handled as usual.
+Note: When fanins/FaninNBs are stored locally, the work queue is a global local objects shared
+by all thread workers. When the fanins/faninNBs are stored remotely (on the server), the work 
+queue is on the server so enqueue/deque is a remote operation on a remote object.
 
-A5. This is the same as (3) only we use (multi) processes as worers instead of threads. This scheme is 
-expected to be faster than (3) for large enough DAGS since there is real parallelism.
+Note: We try to reduce the number of calsls to the server for faninNB processing by
+batching the faninNB operations. That is, we make one call to the server and pass
+all the faninNB operations. We also pass the list of fanouts on this call. Fanouts
+are added to the work_queue, which is also on the server. Thus, there is one call
+to the server for processing all of the faninNBs and fanouts. 
+
+Note: If a worker processing the current state has no fanouts then it will need more 
+work unless it is the become task for one of its faninNBs. Usually, the results of
+a faninNB fan_in are put it the work queue. But if the worker processing the faninNBs
+has no fanouts, it is given the results from a FanInNB if it is the become task
+for the FaninNB. (It may be the becoe task for several FaninNBs, but it is given
+the results of only one of them.) The results of any other faninNBs for which it is the 
+becoe task are put it the work queue. So one call to process_faninNB_batch may produce
+a lot of work - work for al of the fanouts that are passed, and work from any faninNBS
+for which we are the become task. (If we are not the become task for a faninNB then 
+0 is returned and we do nothing; sme other worker will be the becme task and will 
+handle the results (either by "stealing the work if it needs it or adding it to the
+work queue)
+
+Note: When a worker processes a group of fanouts that can be executed in the current state, a 
+thread will "become" the thread that executes one of the fanouts instead of putting the fanout 
+state for that fanout in the work_queue. The same thing happens when a thread becomes the 
+thread that executes a fanin task. So becomes are handled as usual. In general, when a worker
+needs_work it gets work from the (shared) work_queue. A worker on puts work in the work 
+queue that it cannot execute becuase it already has work to do.
+
+Note: We currently bcome the first fanout on the fanout list for the current state.
+It would probably be better to choose which fanout to become. For example, become the 
+fanout that will do the most fanouts/fanins, i.e., enable the most parallel operations.
+Or choose the fanout that has the most fanouts/fanins on the path from the fanout to the 
+end of the DAG.
+
+A5. This is the same as (3) only we use (multi) processes as workers instead of threads. This 
+scheme is expected to be faster than (3) for large enough DAGS since there is real parallelism.
+When we use processes, the work queue is on the server.
 
 A6. This scheme is like (A5) since the workers are processes, but each worker process can have multiple
 threads. The threads are essentilly a pool of threads (like (A4)), each of which is executing in a 
-process that is part of a pool of processes. This may make a Worer process perform better since while 
+process that is part of a pool of processes. This may make a Worker process perform better since while 
 one thread is blocked, say on a socket call to the tcp_server, the other threas(s) can run.
 
-We expect (1) to be faster than (4) to be faster than (3) to be faster than (2). Executing (3)
-with one thread in the pool gives us a baseline for comparing the speedup from (4) and (1).
-We can also compute the COST metric - how many cores must we use in order for a multicore execution
-of (4) or (1) to be faster than the excution of (3) with one thread (but possibly many cores).
+Note: Ths scheme has intermittent failures do to corrupt messages being received by the 
+tcp_server. 
+
+We expect (1) to be faster than (6) to be faster than (5) to be faster than (4) to be 
+faster than (2) to be faster than (3). Executing (4) with one thread in the pool gives us a 
+baseline T(1) for comparing the speedup from (6) and (5) (Tp) (using workers) and (1) 
+(using real lambdas) Tinfinity). We can also compute the COST metric - how many cores must 
+we use in order for a multicore execution of (6) or (5) or (1) to be faster than the excution 
+of (4) with one thread (but possibly many cores).
 
 Thee are three schemes for using the fanin and faninNB synchronization objects:
 
@@ -249,20 +309,34 @@ Thee are three schemes for using the fanin and faninNB synchronization objects:
 and (A4) above. In both cases, we are using threads to execute tasks, not processes or Lambdas.
 In (A1) FaninNBs create new (local) tasks to execute the fanin task. This is okay since the faninNBs
 are stored locally and fanin runs locally. This simulates the use of Lambdas (A2) - start a Lambda/thread
-for fanouts and for faninNB fanin tasks. This results in the creation of many threads so it 
-is not practical, but it tests the Lambda creation logic. In (A2) FaninNBs enqueue the work in a local
-work_queue (sharedby the local threads).
+for fanouts and for faninNB fanin tasks and use synch objects that are stored locally. Note
+that when using real lambdas the synch objets are stored remotely. (A1)) results in the creation of 
+many threads so it  is not practical, but it tests the Lambda creation logic. In (A2) local FaninNBs 
+enqueue the results to be used by the fanin task in a local, globsl work_queue (shared by the local 
+threads).
 
 (S2) The fanin and faninNB objects are stored (remotely) on the TCP_server. This is used 
-when using schemes (A1), (A3), and (A4) above. Note that  using (multi) processes or Lambas requries the 
-fanin and faninNB objects to be stored remotely.
+with schemes (A1), (A3), (A4), (A5), and (A6) above. Note that using (multi) processes or 
+Lambas requries the fanin and faninNB objects to be stored remotely.
 
-(S3) This is the same as (S2) with fanins and faninNBs stored in InfiniX lambdas instead of on the 
+(S3) This is the same as (S2) with fanins and faninNBs stored in InfiniD lambdas instead of on the 
 tcp_server.
 
-(S4) TBD: Store the DAG tasks, i.e., the Python functions that implement a task, and the fanins
-and faninNBs in InfiniX lambdas. This requires an assignment of tasks and fanin/faninNBs to 
-InfiniX lambdas, and potentially moving tasks/fanin/faninNBs around, say, to increase locality, etc.
+Another scheme under development is to store both the synch objects and the DAG tasks in InfiniD
+lambdas. That is, when a fanin/faninNB gets all of its results, it triggers the DAG_executor
+to excute the fanin task. Likewise, a fanout object is stored in an infiniD function as a 
+fanin of size 1. When the fanout object gets its input, it triggers the DAG_executor to 
+execute its fanout task. This requires an assignment of tasks and fanin/faninNBs to 
+InfiniD lambdas, perhaps multiple non-current fanout/fanIns per function. The orchestrator
+will orchestrate all fanout/fanin/faninNB operations/tasks.
+
+Note: This new scheme uses an orchestrator that is part of tcp_server_lambda. Consider
+a scenario where the data analyst is using real InfiniD lambda functions storng all
+fanins/fanouts/faninNBs and using her own machine to run multiple servers that are 
+orchestrating the DAG execution. Very serverless since the only non-serverless component
+is the data analyst's machine. It supplies the tcp_serer_lambdas with orchestrators and 
+it stores the intermediate results (until the operations get triggered).
+
 
 """
 # Input the infomation generatd by python -m wukongdnc.dag.dask_dag
