@@ -61,7 +61,7 @@ from wukongdnc.server.util import make_json_serializable
 from wukongdnc.constants import TCP_SERVER_IP
 from .DAG_executor_constants import run_all_tasks_locally, store_fanins_faninNBs_locally, use_multithreaded_multiprocessing #, num_threads_for_multithreaded_multiprocessing
 from .DAG_executor_constants import create_all_fanins_faninNBs_on_start, using_workers
-from .DAG_executor_constants import num_workers,using_threads_not_processes, using_lambdas
+from .DAG_executor_constants import num_workers,using_threads_not_processes
 from .DAG_executor_constants import FanIn_Type, FanInNB_Type, process_work_queue_Type
 #from .DAG_work_queue_for_threads import thread_work_queue
 from .DAG_work_queue_for_threads import work_queue
@@ -183,6 +183,11 @@ execution by excuting the fanin task in the task's associated state. Fanins are 
 using "becomes". This is essentially Wukong with DAGs represented as state machines. Note that
 fanin/faninNBs are stored on the tcp_server or in Lambdas.
 
+A1_Server. The fanins/faninNBs are stored remotely on the tcp_server
+A1_FunctionSimulator. See A3.
+A1_SingleFunction. See A3.
+A1_Orchestrator. See A3.
+
 Note: we eventually want to use the parallel invoker to invoke the fanouts.
 
 A2. This is the same as scheme (1) using threads instead of Lambdas. This is simply a way to
@@ -212,7 +217,7 @@ puts the fanin results in its own (local) private data dictionary as there is no
 dictionay shared by processes.)
 output/
 
-Note: This scheme is also used with real python functions that simulate lambdas
+(A3.unctionSimulator) Note: This scheme is also used with real python functions that simulate lambdas
 (so we can test things without running real lambdas) in which we store the 
 synchroization objects. If
   using_Lambda_Function_Simulator = True
@@ -222,15 +227,18 @@ the same function if ops on these named objects cannot be executed
 concurrently, i.e., fanin1.fanin and fanin2.fanin cannot be executed 
 concurrently since fanin1 and fanin2 are on the same DFS path.
 Then we invoke a function list(i), instead of a real
-lamba function, when we perform a sync op on a synch object stored in function listi). If
+lamba function, when we perform a sync op on a synch object stored in function listi). 
+
+(A3.SingleFunction) If
    use_single_lambda_function = True
 Then we use a single function to store all the fanins/faninNBs/fanouts as 
 a simple test case. Otherwise we may store each synch object in its own function.
 
 Note: There are two ways to use these Python functions. (1) when we do a synch op we
 map the object name to a function index, e.g., 1, and call that function, passing 
-a "message" to indicate the op, synchronous-fanIn1-fan_in-kwargs. (2) Instead
-of invoking the function directly each time an op is called on an object stored in 
+a "message" to indicate the op, synchronous-fanIn1-fan_in-kwargs. 
+
+(A3.Orchestrator) (2) Instead of invoking the function directly each time an op is called on an object stored in 
 that function, we pass the message to an "orchestrator" similar to an AWS SQS, which 
 will check to see whether a call to the function is triggered. That is, if the synch
 object (always a fanin for now) has a size of n, and this is not the nth op, the 
@@ -248,8 +256,10 @@ work_queue, to be eventully withdrawn and executed by the pool threads, until al
 have been executed. In this scheme, the fanins/faninNb synch objects can be stored locally or 
 remotely.
 
-Note: When fanins/FaninNBs are stored locally, the work queue is a global local objects shared
-by all thread workers. When the fanins/faninNBs are stored remotely (on the server), the work 
+A4_L Note: When fanins/FaninNBs are stored locally, the work queue is a global local objects shared
+by all thread workers. 
+
+A4_R. When the fanins/faninNBs are stored remotely (on the server), the work 
 queue is on the server so enqueue/deque is a remote operation on a remote object.
 
 Note: We try to reduce the number of calsls to the server for faninNB processing by
@@ -382,7 +392,7 @@ def run():
 #ToDo: lambdas:
     # Note: if we are using_lambdas, we null out DAG_leaf_task_inputs after we get it here
     # (by calling DAG_info.set_DAG_leaf_task_inputs_to_None() below). So make a copy.
-    if not using_lambdas:
+    if run_all_tasks_locally:
         DAG_leaf_task_inputs = DAG_info.get_DAG_leaf_task_inputs()
     else:
         DAG_leaf_task_inputs = copy.copy(DAG_info.get_DAG_leaf_task_inputs())

@@ -10,8 +10,8 @@ import cloudpickle
 from .util import decode_and_deserialize, make_json_serializable
 import uuid
 from ..wukong.invoker import invoke_lambda_synchronously
-from ..dag.DAG_executor_constants import using_Lambda_Function_Simulator, use_single_lambda_function
-from ..dag.DAG_executor_constants import using_function_invoker, run_all_tasks_locally
+from ..dag.DAG_executor_constants import using_Lambda_Function_Simulators_to_Store_Objects, using_single_lambda_function
+from ..dag.DAG_executor_constants import using_DAG_orchestrator, run_all_tasks_locally
 from ..dag.DAG_Executor_lambda_function_simulator import InfiniD # , Lambda_Function_Simulator
 from ..dag.DAG_info import DAG_Info
 from threading import Lock
@@ -116,7 +116,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # pass thru client message to Lambda
         payload = {"json_message": json_message}
         # return_value = invoke_lambda_synchronously(payload = payload, function_name = function_name)
-        if using_Lambda_Function_Simulator:
+        if using_Lambda_Function_Simulators_to_Store_Objects:
 # ToDo: when out each fanin/faninNb/fanout in simulated lambda, need to use the name from json_message
 # instead of single_function.
 # Also, use infiniX.enqueue() to "call fanin" instead of invoking the simulated lambda directly.
@@ -126,7 +126,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
 # each message to its mapped simulated function? The tcp_server_lambda interepts calls to
 # fan_in and issues enqueue() instad?
 
-            if use_single_lambda_function:
+            if using_single_lambda_function:
                 # for function smulator prototype, using a single function to store all the fanins/faninNBs
                 # i.e., all fanin/faninNBs mapped under the name 'single_function'
                 sync_object_name = "single_function"
@@ -532,7 +532,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             # The calls to process_faninNB_batch when we are using real lambda can be asynchronous since
             # the caler does not need to wait for the return value, which will be 0 indicating there is 
             # nothing to do.)
-            if using_Lambda_Function_Simulator and using_function_invoker:
+            if using_Lambda_Function_Simulators_to_Store_Objects and using_DAG_orchestrator:
                 logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": calling infiniD.enqueue(message)."
                     + " start_state_fanin_task: " + str(start_state_fanin_task))
                 returned_state = self.enqueue_and_invoke_lambda_synchronously(message)
@@ -777,7 +777,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
        
         logger.debug("tcp_server_lambda: calling server.synchronize_sync().")
 
-        if using_Lambda_Function_Simulator and using_function_invoker:
+        if using_Lambda_Function_Simulators_to_Store_Objects and using_DAG_orchestrator:
             logger.info("*********************tcp_server_lambda: synchronize_sync: " + calling_task_name + ": calling infiniD.enqueue(message).")
             returned_state = self.enqueue_and_invoke_lambda_synchronously(message)
             logger.info("*********************tcp_server_lambda: synchronize_sync: " + calling_task_name + ": called infiniD.enqueue(message) "
@@ -827,7 +827,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
         # Note: the value returned is pickled in Message_Handler_Lambda in 
         # synchronize_process_faninNBs_batch and returned by lambda function
-        if using_Lambda_Function_Simulator:
+        if using_Lambda_Function_Simulators_to_Store_Objects:
             self.send_serialized_object(returned_state)
         else:
             self.send_serialized_object(returned_state)
@@ -975,7 +975,7 @@ class TCPServer(object):
         self.tcp_server = socketserver.ThreadingTCPServer(self.server_address, TCPHandler)
         self.infiniD = None
 
-        if using_Lambda_Function_Simulator:
+        if using_Lambda_Function_Simulators_to_Store_Objects:
             """
             DAG_info = DAG_Info()
             # using regular functions instead of real lambda functions for storing synch objects 

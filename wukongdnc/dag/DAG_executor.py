@@ -19,8 +19,8 @@ import uuid
 from wukongdnc.constants import TCP_SERVER_IP
 from .DAG_executor_constants import run_all_tasks_locally, store_fanins_faninNBs_locally 
 from .DAG_executor_constants import create_all_fanins_faninNBs_on_start, using_workers 
-from .DAG_executor_constants import using_threads_not_processes, using_lambdas, use_multithreaded_multiprocessing
-from .DAG_executor_constants import process_work_queue_Type, FanInNB_Type, using_Lambda_Function_Simulator
+from .DAG_executor_constants import using_threads_not_processes, use_multithreaded_multiprocessing
+from .DAG_executor_constants import process_work_queue_Type, FanInNB_Type, using_Lambda_Function_Simulators_to_Store_Objects
 #from .DAG_work_queue_for_threads import thread_work_queue
 from .DAG_work_queue_for_threads import work_queue
 from .DAG_data_dict_for_threads import data_dict
@@ -115,7 +115,7 @@ def faninNB_remotely(websocket,**keyword_arguments):
     #DAG_exec_state.keyword_arguments['server'] = keyword_arguments['server']
     DAG_exec_state.keyword_arguments['store_fanins_faninNBs_locally'] = keyword_arguments['store_fanins_faninNBs_locally']
     
-    if using_lambdas:
+    if not run_all_tasks_locally:
         # Note: When faninNB start a Lambda, DAG_info is in the payload. 
         # (Threads and processes read it from disk.)
         DAG_exec_state.keyword_arguments['DAG_info'] = keyword_arguments['DAG_info']
@@ -374,7 +374,7 @@ def faninNB_remotely_batch(websocket, **keyword_arguments):
     DAG_exec_state.keyword_arguments['work_queue_op'] = keyword_arguments['work_queue_op']
     DAG_exec_state.keyword_arguments['DAG_states_of_faninNBs'] = keyword_arguments['DAG_states_of_faninNBs']
 
-    if using_lambdas:
+    if not run_all_tasks_locally:
         # Note: When faninNB start a Lambda, DAG_info is in the payload so pass DAG_info to faninNBs.
         # (Threads and processes read it from disk.)
         DAG_exec_state.keyword_arguments['DAG_info'] = keyword_arguments['DAG_info']
@@ -1196,7 +1196,7 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     # with threads instead of processes but multithreading with remote FanInNBs is 
                     # not as useful as using processes. Multithreadng in general is not as helpful 
                     # as multiprocessing in Python.
-                    if (run_all_tasks_locally and using_workers and not using_threads_not_processes) or (not run_all_tasks_locally) or (run_all_tasks_locally and not using_workers and using_Lambda_Function_Simulator):
+                    if (run_all_tasks_locally and using_workers and not using_threads_not_processes) or (not run_all_tasks_locally) or (run_all_tasks_locally and not using_workers and using_Lambda_Function_Simulators_to_Store_Objects):
                         # Note: not calling process_faninNBs_batch when usng threads to simulate lambda since
                         # the faninNBs cannot start new simulated threads to execute the fanin tasks and so 
                         # process_faninNB_batch would need to so something with all the generated work. We could 

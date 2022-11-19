@@ -13,7 +13,7 @@ from .DAG_executor_State import DAG_executor_State
 from wukongdnc.server.util import make_json_serializable
 from .DAG_executor_constants import store_fanins_faninNBs_locally 
 from .DAG_executor_constants import FanIn_Type, FanInNB_Type
-from .DAG_executor_constants import use_single_lambda_function
+from .DAG_executor_constants import using_single_lambda_function
 
 import logging 
 logger = logging.getLogger(__name__)
@@ -229,7 +229,7 @@ class InfiniD:
 			self.list_of_Lambda_Function_Simulators.append(Lambda_Function_Simulator())	
 			self.list_of_function_locks.append(Lock())
 			# if using a single function to store all objects, break to loop. 
-			if use_single_lambda_function:
+			if using_single_lambda_function:
 				break
 
 	def map_synchronization_object(self, object_name, object_index):
@@ -249,7 +249,7 @@ class InfiniD:
 		i=0
 		for object_name, n in zip(self.all_faninNB_task_names, self.all_faninNB_sizes):
 			self.map_synchronization_object(object_name,i)
-			if not use_single_lambda_function:
+			if not using_single_lambda_function:
 				i += 1
 			# Each name is mapped to a pair, which is (empty_list,n). The 
 			# list collects results for the fan_in and fanin/fanot size n is 
@@ -259,13 +259,13 @@ class InfiniD:
 
 		for object_name, n in zip(self.all_fanin_task_names, self.all_fanin_sizes):
 			self.map_synchronization_object(object_name,i)
-			if not use_single_lambda_function:
+			if not using_single_lambda_function:
 				i += 1
 			self.sqs.map_object_name_to_trigger(object_name,n)
 
 		for object_name in self.all_fanout_task_names:
 			self.map_synchronization_object(object_name,i)
-			if not use_single_lambda_function:
+			if not using_single_lambda_function:
 				i += 1
 			n = 1 # a fanout is a fanin of size 1
 			self.sqs.map_object_name_to_trigger(object_name,n)
