@@ -367,6 +367,11 @@ class TCPHandler(socketserver.StreamRequestHandler):
 # put in the dictionary by the threads that executed the asks that produced
 # the results (these tasks then called fanins and pass these results to fanin, 
 # which passes the collected fann results back to the calling thread.
+#
+# The fact that the lambda clients are not intetested in the return values
+# means that this call can be async and furthermore that we cn give the 
+# call to the orchestrator and it can delay the invocation of the actual
+# fanin call until all the fan_in calls have been made.
 
     def synchronize_process_faninNBs_batch(self, message = None):
         """

@@ -927,23 +927,26 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
 
+        # Config: A1, A4_remote, A5, A6
         if not store_fanins_faninNBs_locally:
             logger.debug("DAG_executor " + thread_name + " connecting to TCP Server at %s." % str(TCP_SERVER_IP))
             websocket.connect(TCP_SERVER_IP)
             logger.debug("DAG_executor " + thread_name + " successfully connected to TCP Server.")
-
+        # else: # Config: A2, A4_local
         # on the client side
         #print("socketname: " + websocket.getsockname())   # ->  (127.0.0.1,26386)
         #print(websocket.getpeername())   # ->  (127.0.0.1, 8888)
 
+        # Config: A2, A3, A4_local
         # Fun with Python: work_queue is the global work_queue that we import ...
         global work_queue
 
         # ... unless its this work_queue when we use processes:)
         if (run_all_tasks_locally and using_workers and not using_threads_not_processes) or not run_all_tasks_locally:
+            # Config: A1, A5, A6
             # Did the create() in the DAG_executor_driver
             work_queue = BoundedBuffer_Work_Queue(websocket,2*num_tasks_to_execute)
-        #else:
+        #else: # Config: A2, A3, A4_local, A4_Remote
         #    work_queue = thread_work_queue
 
         while (True):
@@ -953,9 +956,11 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
         # - faninB: no becomes - last caller does put, all callers need to do gets
 
             if using_workers:
+                # Config: A4_local, A4_Remote, A5, A6
                 if worker_needs_input:
                     #DAG_executor_state.state = thread_work_queue.get(block=True)
                     if not using_threads_not_processes:
+                        # Config: A5, A6
                         # blocking call
                         #DAG_executor_state.state = work_queue.get()
                         logger.debug("DAG_executor_work_loop: proc " + proc_name + " " + " thread " + thread_name + ": get work.")
@@ -973,8 +978,8 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                         #    logger.debug("DAG_executor: state is -1 so returning.")
                         #    work_queue.put(DAG_executor_state,-1)
                         #   return
-
                     else:
+                        # Config: A4_local, A4_Remote
                         # blocking call
                         #DAG_executor_state.state = work_queue.get() 
                         logger.debug("work_loop: get work for thread " + thread_name + " queue length:" + str(work_queue.qsize()))
@@ -1005,10 +1010,12 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                         # Also, this makes the thread and process work_queues have the 
                         # same interface.
                         if not using_threads_not_processes:
+                            # Config: A5, A6
                             work_tuple = (-1,None)
                             #work_queue.put(-1)
                             work_queue.put(work_tuple)
                         else:
+                            # Config: A4_local, A4_Remote
                             #thread_work_queue.put(-1)
                             work_tuple = (-1,None)
                             #work_queue.put(-1)
@@ -1030,17 +1037,20 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                 if num_tasks_executed == num_tasks_to_execute:
                     #thread_work_queue.put(-1)
                     if not using_threads_not_processes:
+                        # Config: A5, A6
                         logger.debug(thread_name + ": DAG_executor: num_tasks_executed == num_tasks_to_execute: depositing -1 in work queue.")
                         work_tuple = (-1,None)
                         #work_queue.put(-1)
                         work_queue.put(work_tuple)
                     else:
+                        # Config: A4_local, A4_Remote
                         logger.debug(thread_name + ": DAG_executor: num_tasks_executed == num_tasks_to_execute: depositing -1 in work queue.")
                         #thread_work_queue.put(-1)
                         work_tuple = (-1,None)
                         #work_queue.put(-1)
                         work_queue.put(work_tuple)
                     #return
+            # else: # Config: A1. A2, A3
 
             logger.debug (thread_name + ": access DAG_map with state " + str(DAG_executor_state.state))
             state_info = DAG_map[DAG_executor_state.state]
@@ -1101,6 +1111,7 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     return output
             """
 
+            # data_dict may be local (A1) to process/lambda or global (A2) to threads
             logger.debug(thread_name + " execute_task output: " + str(output))
             data_dict[state_info.task_name] = output
 
@@ -1130,7 +1141,9 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                 # Don't add to thread_work_queue just do it
                 #thread_work_queue.put(DAG_executor_state.state)
                 if using_workers: 
+                    # Config: A4_local, A4_Remote, A5, A6
                     worker_needs_input = False
+                # else: # Config: A1. A2, A3
 
             elif len(state_info.faninNBs) > 0 or len(state_info.fanouts) > 0:
                 # assert len(collapse) + len(fanin) == 0
@@ -1158,10 +1171,11 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     # if not, we will call work_queueu.put_all() directly.
 
                     if using_workers and not using_threads_not_processes:
+                        # Config: A5, A6
                         # We piggyback fanouts if we are using worker processes. In that case, if we have
                         # more than one fanout, the first wil be a become task, which will be removed from
                         # state_info.fanouts, decrementing the length of state_info.fanouts.
-                        #  That will make the new length greater than or equal to 0. If the length is greater
+                        # That will make the new length greater than or equal to 0. If the length is greater
                         # than 0, that means we started with more than one fanout, which means all the fanouts
                         # except the become should be in the list_of_work_queue_fanout_values.
                         # Note: We are not currently piggybacking this list whn we use lambdas; instead,
@@ -1172,6 +1186,7 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                             # and we should have added the fanouts to list_of_work_queue_fanout_values.
                             if len(list_of_work_queue_fanout_values) == 0:
                                 logger.error("[Error]: work loop: after process_fanouts: Internal Error: fanouts > 1 but no work in list_of_work_queue_fanout_values.")
+                    # else: # Config: A1, A2, A3, A4_local, A4_Remote
     
                     ##state = process_fanouts(state_info.fanouts, DAG_info.get_DAG_states(), DAG_executor_state, output, server)
                     ##logger.debug("become state:" + str(state))
@@ -1179,16 +1194,20 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     #task_inputs = (state_info.task_name,)
                     # We get new state_info and then state_info.task_inputs when we iterate
                     if using_workers:   # we are become task so we have more work
+                        # Config: A4_local, A4_Remote, A5, A6
                         worker_needs_input = False
                         logger.debug(thread_name + " work_loop: fanouts: set worker_needs_input to False")
                     #Don't add to thread_work_queue just do it = False
                     #thread_work_queue.put(DAG_executor_state.state)
+                    # else: Config: A1, A2, A3
                 else:
                     # No fanouts so no become task and fqninBs do not generate
                     # work for us so we will need input.
                     #Note: setting worker_needs_input = True must be guarded by using_workers
                     if using_workers: 
+                        # Config: A4_local, A4_Remote, A5, A6
                         worker_needs_input = True
+                    # else: Config: A1, A2, A3
 
                 if len(state_info.faninNBs) > 0:
                     # batching work when we are using workers and storing the FanInMBs remotey and 
@@ -1196,19 +1215,21 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     # with threads instead of processes but multithreading with remote FanInNBs is 
                     # not as useful as using processes. Multithreadng in general is not as helpful 
                     # as multiprocessing in Python.
-                    if (run_all_tasks_locally and using_workers and not using_threads_not_processes) or (not run_all_tasks_locally) or (run_all_tasks_locally and not using_workers and using_Lambda_Function_Simulators_to_Store_Objects):
-                        # Note: not calling process_faninNBs_batch when usng threads to simulate lambda since
-                        # the faninNBs cannot start new simulated threads to execute the fanin tasks and so 
-                        # process_faninNB_batch would need to so something with all the generated work. We could 
-                        # try to pass all the work back and have the calling simuated thread start one thread
-                        # for each work tuple returned, but instead we will call process_faninNBs which
-                        # will issue a separate fanin to the server for each faninNB.
+
+                    if (run_all_tasks_locally and using_workers and not using_threads_not_processes) or (not run_all_tasks_locally) or (run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and using_Lambda_Function_Simulators_to_Store_Objects):
+                        # Config: A1, A3, A5, A6
+                        # Note: calling process_faninNBs_batch when using threads to simulate lambdas and storing objects remotely.
+                        # Since the faninNBs cannot start new simulated threads to execute the fanin tasks,
+                        # the process_faninNB_batch passes all the work back and the calling simuated thread starts one thread
+                        # for each work tuple returned.
                         #or (run_all_tasks_locally and not using_workers and using_Lambda_Function_Simulator):
  
                         # assert
                         if store_fanins_faninNBs_locally:
+                            # Config: A2, A4_local
                             logger.error("[Error]: DAG_executor_work_loop: using processes or lambdas but storing FanINNBs locally.")
                         if not run_all_tasks_locally:
+                            # Config: A1
                             if worker_needs_input:
                                 # Note: perhaps we csn use Lmbdas where Lambdas have two thread workers - faster?
                                 logger.error("[Error]: DAG_executor_work_loop: using lambdas, so no workers, but worker_needs_input.")
@@ -1217,7 +1238,9 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                         state_info.task_name, DAG_info.get_DAG_states(), DAG_executor_state, 
                             output, DAG_info,work_queue,worker_needs_input, list_of_work_queue_fanout_values)
                     else: 
-                        # not using workers, or using worker threads not processes, or using threads to simualate lambdas.
+                        # Config: A2, A4_local, A4_Remote
+                        # not using workers, or using worker threads not processes, or using threads to simualate running lambdas,
+                        # but not using lambdas to store synch objects - storing them locally instead.
                         # Note: if we are using thread workers we can still store the FanInNBs remotely, but the work queue 
                         # will be local. Batch FanInNb processing will put work (fanin tasks) in the work_queue as the 
                         # work_queue is also stored remotely (with the FanInNBs). When using threads, the work_queue is local 
@@ -1240,6 +1263,7 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     # in the work queue. For Lambdas, we will want to send the fanouts to the tcp_server
                     # for parallel invocation.
                     if run_all_tasks_locally and using_workers and not using_threads_not_processes:
+                        # Config: A5, A6
                         # we are batching faninNBs and piggybacking fanouts on process_faninNB_batch
                         if len(state_info.fanouts) > 0:
                             # No faninNBs (len(state_info.faninNBs) == 0) so we did not get a chance to 
@@ -1269,9 +1293,9 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                                 # there was one fanout so we became that one fanout and should have enqueued no fanouts
                                 if not len(list_of_work_queue_fanout_values) == 0:
                                     logger.error("[Error]: work loop: Internal Error: len(state_info.fanouts) is 1 but list_of_work_queue_fanout_values is not empty.")
-
+                    # else: # Config: A1, A2, A3, A4_local, A4_Remote
                 # If we are not using_workers and there were fanouts then continue with become 
-                # task; otherwise, this thread (simulatng a Lambda) is done, as it has reached the
+                # task; otherwise, this thread (simulatng a Lambda) or Lambda is done, as it has reached the
                 # end of its DFS path. (Note: if using workers and there are no fanouts and no
                 # faninNBs for which we are the last thread to call fanin, the worker will get more
                 # work from the work_queue instead of stopping. The worker continutes until it gets
@@ -1280,8 +1304,11 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                 # will start new threads to execute the fanin task, (or invoke new Lamdas when we 
                 # are using Lambdas. So faninNBs cannot generate more work for a worker since the 
                 # work is given to a new thread.)
+
                 if (not using_workers) and len(state_info.fanouts) == 0:
+                    # Config: A1, A2, A3
                     return
+                #else: # Config: A4_local, A4_Remote, A5, A6
 
             elif len(state_info.fanins) > 0:
                 # assert len(state_info.faninNBs)  + len(state_info.fanouts) + len(collapse) == 0
@@ -1301,13 +1328,16 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     # we are not the become task for the fanin
                     #Note: setting worker_needs_input = True must be guarded by using_workers
                     if using_workers:
+                        # Config: A4_local, A4_Remote, A5, A6
                         logger.debug(thread_name + ": After call to process_fanin: return value is 0; using workers so set worker_needs_input = True")
                         worker_needs_input = True
                     else:
+                        # Config: A1, A2, A3
                         # this dfs path is finished
                         return
                 else:
                     if (run_all_tasks_locally and using_workers) or not run_all_tasks_locally:
+                        # Config: A1, A4_local, A4_Remote, A5, A6
                         # when using workers, threads or processes, each worker has its own local
                         # data dictionay. If we are the become task for a fanin, we receive the 
                         # fanin task inputs and we put them in the data dctionary. Same for lambdas.
@@ -1326,7 +1356,8 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                         # or a dfs thread.
                         logger.debug(thread_name + ": After call to process_fanin: return value not 0, using workers so set worker_needs_input = False")
                         worker_needs_input = False
-                #ToDo: Don't add to thread_work_queue just do it
+                    #else: # Config: A2, A3
+                #Don't add to thread_work_queue just do it
                 #thread_work_queue.put(DAG_executor_state.state)
 
                 #else:
@@ -1340,14 +1371,16 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                 ##logger.debug("1state " + str(state) + " after executing task " +  state_info.task_name + " has no fanouts, fanins, or faninNBs; return")
                 #Note: setting worker_needs_input = True must be guarded by using_workers
                 if using_workers:
+                    # Config: A4_local, A4_Remote, A5, A6
                     logger.debug(thread_name + " set worker_needs_input to true")
                     worker_needs_input = True
                 else:
+                    # Config: A1, A2, A3
                     logger.debug(thread_name + " return")
                     return
 
 
-
+# Config: A2, A3
 def DAG_executor(payload):		 
     # Note: could instead use a "state" parameter. Then we have state.starting_input and state.return_value so would need
     # to know which to acccess, as in: if first_invocation, where first_invocation is in state. Or always use
@@ -1381,6 +1414,7 @@ def DAG_executor(payload):
     ##logger.debug("state:" + str(state))
     ##DAG_executor_state.state = payload['state']
     if not using_workers:
+        # Config: A2
         logger.debug("payload state:" + str(DAG_exec_state.state))
     # For leaf task, we get  ['input': inp]; this is passed to the executed task using:
     #    def execute_task(task_name,input): output = DAG_info.DAG_tasks[task_name](input)
@@ -1412,17 +1446,20 @@ def DAG_executor(payload):
     #DAG_executor_work_loop(logger, server, counter, thread_work_queue, DAG_executor_state, DAG_info, data_dict)
     DAG_executor_work_loop(logger, server, counter, DAG_exec_state, DAG_info)
 
+# Config: A5, A6
 # def DAG_executor_processes(payload,counter,process_work_queue,data_dict,log_queue, configurer):
 def DAG_executor_processes(payload,counter,log_queue, worker_configurer):
     # Use for multiprocessing workers
 
     #- read DAG_info, create DAG_exec_state, thread_work_queue is parm
     if not use_multithreaded_multiprocessing:
+        # Config: A5
         global logger
         worker_configurer(log_queue)
         logger = logging.getLogger("multiP")
         logger.setLevel(logging.DEBUG)
     else:
+        # Config: A6
         logger = log_queue
 
     proc_name = multiprocessing.current_process().name
@@ -1437,17 +1474,19 @@ def DAG_executor_processes(payload,counter,log_queue, worker_configurer):
     #message = (proc_name + ": testing 1 2 3.")
     #logger.log(level, message)
  
-    if not using_workers:
-        DAG_exec_state = payload['DAG_executor_state']
-    else:
-        DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
+    #if not using_workers:
+    #    DAG_exec_state = payload['DAG_executor_state']
+    #else:
+    DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
 
     #logger.debug("DAG_executor_processes: DAG_exec_state: " + str(DAG_exec_state))
     ##state = payload['state'] # refers to state var, not the usual State of DAG_executor 
     ##logger.debug("state:" + str(state))
     ##DAG_executor_state.state = payload['state']
-    if not using_workers:
-        logger.debug("payload state:" + str(DAG_exec_state.state))
+
+    #if not using_workers:
+    #    logger.debug("payload state:" + str(DAG_exec_state.state))
+
     # For leaf task, we get  ['input': inp]; this is passed to the executed task using:
     #    def execute_task(task_name,input): output = DAG_info.DAG_tasks[task_name](input)
     # So the executed task gets ['input': inp], just like a non-leaf task gets ['output': X]. For leaf tasks, we use "input"
@@ -1462,6 +1501,7 @@ def DAG_executor_processes(payload,counter,log_queue, worker_configurer):
     logger.debug("DAG_executor_processes: returning after work_loop.")
     return
 
+# Config: A1
 def DAG_executor_lambda(payload):
     logger.debug("Lambda: started.")
     DAG_exec_state = cloudpickle.loads(base64.b64decode(payload['DAG_executor_state']))
@@ -1492,7 +1532,7 @@ def DAG_executor_lambda(payload):
     logger.debug("DAG_executor_processes: returning after work_loop.")
     return
                         
-#Local tests
+# Config: A4_local, A4_Remote
 def DAG_executor_task(payload):
     DAG_executor_state = payload['DAG_executor_state']
     if DAG_executor_state != None:

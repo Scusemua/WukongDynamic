@@ -3,8 +3,13 @@
 # try matrixMult
 
 # Where are we: 
-
+#
+# should invoke be atomic? for ==n check? as well as lock the function calls.
+#  or lock the check and the function calls with same fine-grained lock?
+#  Since multiple callers for invoke at the same time?
 # document stuff
+#
+# def DAG_executor(payload):	should not be using workers, correct?
 #
 # Fix sockets for multitreaded processes
 #
@@ -664,6 +669,7 @@ def run():
         listener.start()    # joined at the end
 
     if use_multithreaded_multiprocessing:
+        # Config: A6
         # keep list of threads/processes in pool so we can join() them
         multithreaded_multiprocessing_process_list = []
         num_processes_created_for_multithreaded_multiprocessing = 0
@@ -686,6 +692,7 @@ def run():
             if run_all_tasks_locally:
                 # not using Lambdas
                 if using_threads_not_processes: # create threads
+                    # Config: A4_local, A4_Remote
                     try:
                         if not using_workers:
                             # pass the state/task the thread is to execute at the start of its DFS path
@@ -722,6 +729,7 @@ def run():
                         logger.debug("[ERROR] DAG_executor_driver: Failed to start DAG_executor thread for state " + start_state)
                         logger.debug(ex)
                 else:   # multiprocessing - must be using a process pool
+                    # Config: A5
                     try:
                         if not using_workers:
                             logger.debug("[ERROR] DAG_executor_driver: Starting multi process leaf tasks but using_workers is false.")
@@ -749,6 +757,7 @@ def run():
                 if using_workers and num_threads_created == num_workers:
                     break
             else:
+                # Config: A1
                 try:
                     logger.debug("DAG_executor_driver: Starting DAG_Executor_Lambda for leaf task " + task_name)
                     lambda_DAG_exec_state = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()), state = start_state)

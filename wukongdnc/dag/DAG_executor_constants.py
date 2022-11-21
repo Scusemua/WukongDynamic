@@ -119,7 +119,7 @@ A3_Orchestrator = A3_FunctionSimulator and using_DAG_orchestrator
 
 A4_Local = run_all_tasks_locally and using_workers and using_threads_not_processes and store_fanins_faninNBs_locally and not_using_lambda_options
 # set num_workers
-# run tcp_server
+# no tcp_server since storing locally
 # Set SERVERLESS_SYNC to False in wukongdnc constants
 A4_Remote = run_all_tasks_locally and using_workers and using_threads_not_processes and not store_fanins_faninNBs_locally and not_using_lambda_options
 # set num_workers
