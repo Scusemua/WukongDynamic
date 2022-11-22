@@ -27,10 +27,14 @@ ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 
 logger.addHandler(ch)
+
+# This handler is used when we ar using lambdas to store objcts or to excute tasks. The 
+# Lambdas can be real or simulated by Python functions.
+
 class TCPHandler(socketserver.StreamRequestHandler):
     def handle(self):
 
-        #TCP handler for incoming requests from AWS Lambda functions.
+        #TCP handler for incoming requests to real or simulated Lambda functions.
        
         while True:
             logger.info("[HANDLER] TCPHandler lambda: Recieved one request from {}".format(self.client_address[0]))
@@ -74,9 +78,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 
     def _get_synchronizer_name(self, type_name = None, name = None):
         """
-        Return the key of a synchronizer object. 
+        Return the generated name of a synchronizer object. 
 
-        The key is a string of the form <type>-<name>.
         """
         return str(name) # return str(type_name + "_" + name)
 
@@ -85,7 +88,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
     # import boto3
     # lambda_client = boto3.client('lambda', region_name = "us-east-1")
     
-    # Local method of tcp_server, which will synchronously invoke a Lambda
+    # Local method of tcp_server, which will synchronously invoke a real or simulated Lambda
     def invoke_lambda_synchronously(self, json_message):
         #name = json_message.get("name", None)
         # For DAG with workers, we have fanins, faninNBs and the process work queue. Note that we

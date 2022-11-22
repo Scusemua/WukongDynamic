@@ -222,7 +222,7 @@ puts the fanin results in its own (local) private data dictionary as there is no
 dictionay shared by processes.)
 output/
 
-(A3.unctionSimulator) Note: This scheme is also used with real python functions that simulate lambdas
+(A3.FunctionSimulator) Note: This scheme is also used with real python functions that simulate lambdas
 (so we can test things without running real lambdas) in which we store the 
 synchroization objects. If
   using_Lambda_Function_Simulator = True
@@ -322,35 +322,74 @@ Thee are three schemes for using the fanin and faninNB synchronization objects:
 
 (S1) The fanin and faninNB objects are stored locally in RAM. This scheme can be used with schemes (A2) 
 and (A4) above. In both cases, we are using threads to execute tasks, not processes or Lambdas.
-In (A1) FaninNBs create new (local) tasks to execute the fanin task. This is okay since the faninNBs
-are stored locally and fanin runs locally. This simulates the use of Lambdas (A2) - start a Lambda/thread
-for fanouts and for faninNB fanin tasks and use synch objects that are stored locally. Note
-that when using real lambdas the synch objets are stored remotely. (A1)) results in the creation of 
-many threads so it  is not practical, but it tests the Lambda creation logic. In (A2) local FaninNBs 
-enqueue the results to be used by the fanin task in a local, globsl work_queue (shared by the local 
-threads).
+In (A2) FaninNBs create new (local) tasks to execute the fanin task. This is okay since the faninNBs
+are stored locally and fanin runs locally. This simulates the use of Lambdas. Note
+that when using real lambdas to run tasks (A1) the synch objets are stored remotely. (A2) results in the 
+creation of many local threads so it  is not practical, but it tests the Lambda creation logic. In (A4) 
+local FaninNBs enqueue the results to be used by the fanin task in a shared work_queue (shared by the 
+local thread workers).
 
 (S2) The fanin and faninNB objects are stored (remotely) on the TCP_server. This is used 
-with schemes (A1), (A3), (A4), (A5), and (A6) above. Note that using (multi) processes or 
+with schemes (A1), (A3), (A4_R), (A5), and (A6) above. Note that using (multi) processes or 
 Lambas requries the fanin and faninNB objects to be stored remotely.
 
-(S3) This is the same as (S2) with fanins and faninNBs stored in InfiniD lambdas instead of on the 
-tcp_server.
+(S3_real) This is the same as (S2) with fanins and faninNBs stored in real lambdas instead of on the 
+tcp_server. This scheme was tested with the Composer program, but it is harder to run since it 
+requiers AWS lambda.
 
-Another scheme under development is to store both the synch objects and the DAG tasks in InfiniD
-lambdas. That is, when a fanin/faninNB gets all of its results, it triggers the DAG_executor
-to excute the fanin task. Likewise, a fanout object is stored in an infiniD function as a 
-fanin of size 1. When the fanout object gets its input, it triggers the DAG_executor to 
-execute its fanout task. This requires an assignment of tasks and fanin/faninNBs to 
-InfiniD lambdas, perhaps multiple non-current fanout/fanIns per function. The orchestrator
-will orchestrate all fanout/fanin/faninNB operations/tasks.
+(S3_simulated) A scheme under development is to store both the synch objects and the DAG tasks in 
+simulated lambdas. One scheme is to store the objects in Python functios the way they are stored
+in real lambdas. The tcp_server_lambda simply calls a Python function instead of a real lambda
+function. The code is the same. A second scheme is to store the objects in a simulated array of
+InfiniD python functions. Objects are mapped to an array index of a function and when an op is
+performed on an object the map is used to get the Python function (Array[i].()) to call.
+
+(S3_orchestrated) 
+- Triggers: Objects are stored in InfiniD functions as in (S3_smulated), but the calling
+of funnction is through a DAG_orchestator. That is, the orchestrator collects all the fanin
+messages and when the orchestrator gets all n of the fanins, the actual fanin op calls are triggered.
+So no fanin calls are made to the FanIn object until all n calls have been collected by the 
+- Code to Data: We extend the trigger scheme by having the triggered fan_n op also execute the 
+fanin task. That is, the DAG_executor is called with the start state oof the fanin task and the fanin
+results. 
+- Fanouts are Fanins: A fanout object is stored in an infiniD function as a 
+fanin of size 1. When the fanout object gets its orchestrator triggered fan_out call, it run the 
+DAG_executor to execute its fanout task. 
+- duplicate and short-cicuit: Duplication means that if Function1 and Function2 run DAG_executors
+that faninin to FaninX, then we store a FaninX object in both Function1 and Function2. The the
+DAG_executors in Function1 and Function2 *both* execute local fan_in operations when they
+access the FaninX in their function. Short-circuit means that we try to avoid making the 
+non-local calls to FaninX when possible. Suppose the DAG_executor1 in Function1 makes its local 
+access to its FaninX and invokes process_fanins_batch on tcp_server_lambda as usual. The 
+tcp_server_lambda orchestrator can see that DAG_excutor1 will not be the last executor 
+to do a fan_in on FaninX; thus, the fan_in results of DAG_executor1 will be delivered
+to the FanInX in Function2, since DAG_executor2 in Function2 will be the 
+last to excute a fan_in on FaninX and needs the results of DAG_executor1. Note that when 
+DAG_executor2 in Function2 does its local fan_in to FanInX and calls process_fanins_batch
+on tcp_Server_lambda, the orchestrator will return the fanin results it collected from 
+DAG_executor1 so that DAG_executor1 will be able to make the corresponding fan_in calls
+on its FanInX and complete the fanin. The orchestrator will not call FanInX in function1
+with DAG_excutor2's fanin results since the orchestrator knows this call to FaninX is not the
+last call. So a non-global invocation of function1 is avoided. Also, since the 
+process_fanins_batch call by DAG_executor2 returns the fanin results of DAG_executor1, another
+invocation of function2 (to pass the results of DAG_executor1) is avoided.
+
+This (S3_orchestrated) scheme requires an assignment of tasks and fanin/faninNBs to 
+InfiniD lambdas, perhaps multiple non-current fanout/fanIns per function, possibly
+with duplication. (The DAG_representation allows us to see which paths/executors a given 
+named fanin/fanout/faninNB appears in) The orchestrator will orchestrate all fanout/fanin/faninNB
+operations/tasks.
 
 Note: This new scheme uses an orchestrator that is part of tcp_server_lambda. Consider
-a scenario where the data analyst is using real InfiniD lambda functions storng all
-fanins/fanouts/faninNBs and using her own machine to run multiple servers that are 
-orchestrating the DAG execution. Very serverless since the only non-serverless component
-is the data analyst's machine. It supplies the tcp_serer_lambdas with orchestrators and 
-it stores the intermediate results (until the operations get triggered).
+a scenario where the data analyst is using real InfiniD lambda functions storing all
+fanins/fanouts/faninNBs and using her own machine to run multiple servers with orchestrators 
+that are orchestrating the DAG execution, i.e., orchestrating the ops for their partition of the 
+fanins/fanouts. This is very serverless since the only non-serverless component
+is the data analyst's machine/server. It supplies the tcp_serer_lambdas with orchestrators and 
+it stores (in the orchestrator) the intermediate results (until the operations get triggered).
+
+Note: The orchestrator is similar to SQS, where the fanin/fanoutresults are pushed to the Lmabdas 
+instead of having the Lambdas poll/pull the fanin/fanout results.
 
 
 """
