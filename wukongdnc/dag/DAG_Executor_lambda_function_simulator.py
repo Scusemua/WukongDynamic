@@ -32,6 +32,7 @@ logger.addHandler(ch)
 
 #SLEEP_INTERVAL = 0.120
 
+# used in real lambda handler, using it here too
 warm_resources = {
 	'cold_start_time': time.time(),
 	'invocation_count': 0,
@@ -40,16 +41,9 @@ warm_resources = {
 
 class Lambda_Function_Simulator:
 	#def __init__(self):
-# rhc: Q: where to put this? who calls SQS.enqueue? At fanins and fanouts?
-# For fanin, it's SQS.enqueue(the message you pass to fan_in). So sqs.enqueue
-# is collecting fan_in messages that it can deliver as a batch of fanins or 
-# iteratively call fan_in via synchronous lambda invoke so no cncurrent calls.
-#
-# So sqs.enqueue() is called from tcp_server_lambda.invoke_lambda_synchronouly, i.e., 
-# we call SQS instead of directly invoking the simulated lambada?
-# This considers dag_executor to be stored in infiniX lambda too? Simple version
-# first that uses non-infiniX lambdas for DAG_excutors?
 
+	# called in tcp_server_lambda in invoke_lambda_synchronously to invke a simulated lambda.
+	# Does what real lambda handler does
 	def lambda_handler(self, payload):
 		#start_time = time.time()
 		global warm_resources
@@ -76,7 +70,7 @@ class Lambda_Function_Simulator:
 
 		return return_value
 
-class SQS:
+class DAG_orchestrator:
 	def __init__(self):
 		self.object_name_to_trigger_map = {}
 
@@ -150,18 +144,25 @@ class SQS:
 
 		return fanin_messages, faninNB_messages
 
+	# for each sync object, we maintain a list of fanin/fanout operations that have been performed
+	# and the size of the fanin or fanout (fanout is a fanout object with size 1)
 	def map_object_name_to_trigger(self,object_name,n):
 		empty_list = []
+		# a pair, which is a list and a value n that represents the size
 		list_n_pair = (empty_list,n)
 		self.object_name_to_trigger_map[object_name] = list_n_pair
 
+	# Whenever a fanin/fanout op is receievd by tcp_server_lambda via process_faninNBs_batch it
+	# invokes the enqueue method of InfiniD, which invokes this enqueue of the DAG_orchestrator.
 	def enqueue(self,json_message,simulated_lambda_function, simulated_lambda_function_lock):
 		thread_name = threading.current_thread().name
 		sync_object_name = json_message.get("name", None)
 		list_n_pair = self.object_name_to_trigger_map[sync_object_name]
 		list = list_n_pair[0]
 		n = list_n_pair[1]
+		# add the fanin/fannout op to the list of operations
 		list.append(json_message)
+		# if alln operations have been performed, invoke the function that contains the object
 		if len(list) == n:
 #ToDo: payload is the list of json_messages, so need a new action for executing all the 
 # messages in the list:
@@ -175,12 +176,16 @@ class SQS:
 			message = {
 				"op": "process_enqueued_fan_ins",
 				"type": "DAG_executor_fanin_or_faninNB",
+				# We are passing a list of operations to the lambda function, which will execute
+				# the mone by one in the order they were received.
 				"name": list,
 				"state": make_json_serializable(dummy_state),
 				"id": msg_id
 			}
 			#msg = json.dumps(message).encode('utf-8')
 			payload = {"json_message": message}
+			# Do not allow paraallel invocations. It's possible that parallel invocatins can never
+			# be attempted using the scheme under development.
 			with simulated_lambda_function_lock:
 				try:
 					logger.debug("SQS enqueue: calling simulated_lambda_function.lambda_handler(payload)")
@@ -197,11 +202,13 @@ class SQS:
 		dummy_DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
 		dummy_DAG_exec_state.return_value = 0
 		dummy_DAG_exec_state.blocking = False
+		# returning value to caller which is InfiniD enqueue()
 		return cloudpickle.dumps(dummy_DAG_exec_state)
 
+# collection of simuated functions
 class InfiniD:
 	def __init__(self, DAG_info):
-		self.sqs = SQS()
+		self.sqs = DAG_orchestrator()
 		self.DAG_info = DAG_info
 		self.DAG_map = DAG_info.get_DAG_map()
 		self.DAG_states = DAG_info.get_DAG_states()
@@ -217,14 +224,19 @@ class InfiniD:
 		self.num_Lambda_Function_Simulators = num_Lambda_Function_Simulators
 		self.function_map = {}
 
+	# not currently used.
 	def create_fanin_and_faninNB_messages(self):
 		self.sqs.create_fanin_and_faninNB_messages(self.DAG_map,self.DAG_states,self.DAG_info,self.all_fanin_task_names,self.all_fanin_sizes,self.all_faninNB_task_names,self.all_faninNB_sizes)
 
+	# create simulated functions. Number of fucntions is based on number of fanin/fanout/faninNB
+	# objects though we may store several objects in one function.
 	def create_functions(self):
 		# if use_single_lambda_function then we map all the names to a single
 		# function, which is function 0. In this case we create a single 
 		# function, which we do by breaking the creating loop after one
 		# function has been created.
+		# Create function and a lock used to ensure there are no concurrent invoctions
+		# of the function.
 		for _ in range(0,self.num_Lambda_Function_Simulators):
 			self.list_of_Lambda_Function_Simulators.append(Lambda_Function_Simulator())	
 			self.list_of_function_locks.append(Lock())
@@ -232,14 +244,18 @@ class InfiniD:
 			if using_single_lambda_function:
 				break
 
+	# map an object using its function name to one of the functions via its function indez
 	def map_synchronization_object(self, object_name, object_index):
 			self.function_map[object_name] = object_index
 
+	# get function the object name was mapped to
 	def get_function(self, object_name):
 			return self.list_of_Lambda_Function_Simulators[self.function_map[object_name]]
 	def get_function_lock(self, object_name):
 			return self.list_of_function_locks[self.function_map[object_name]]
 
+	# map the fanins/fanouts/faninNBs to a function, currently one object per function
+	# where order does not matter
 	def map_object_names_to_functions(self):
 		# for fanouts, the fanin object size is always 1
 		# map function name to a pair (empty_list,n) where n is size of fanin/faninNB.
@@ -270,8 +286,11 @@ class InfiniD:
 			n = 1 # a fanout is a fanin of size 1
 			self.sqs.map_object_name_to_trigger(object_name,n)
 
+	# call enqueue of DAG_orchestrator. The DAG_orchestrator will eithor store the jsn_message, which is 
+	# for a fanin/fanout op in the list of operations for the associated object, or if all n operaations
+	# have been performed, t will invoke the function storing that objct and pass the list of operations
+	# to be performed on the object. The function call will be locked with the function's lock.
 	def enqueue(self,json_message):
-		
 		sync_object_name = json_message.get("name", None)
 		simulated_lambda_function = self.get_function(sync_object_name)
 		simulated_lambda_function_lock = self.get_function_lock(sync_object_name)

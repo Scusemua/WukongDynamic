@@ -41,15 +41,22 @@ class TCPHandler(socketserver.StreamRequestHandler):
             logger.info("[HANDLER] TCPHandler lambda: Recieved one request from {}".format(self.client_address[1]))
 
             self.action_handlers = {
+                # create an object
                 "create": self.create_obj,
                 #"create_all": self.create_all_fanins_and_faninNBs,
+                # not currently used
                 "setup": self.setup_server,
+                # asynchronous operation
                 "synchronize_async": self.synchronize_async,
+                # synchronous operation
                 "synchronize_sync": self.synchronize_sync,
+                # destruct all synch objects
                 "close_all": self.close_all,
                 # These are DAG execution operations
                 "create_all_fanins_and_faninNBs_and_possibly_work_queue": self.create_all_fanins_and_faninNBs_and_possibly_work_queue,
+                # process all faninNBs fora a given state (state = task plus fanins/fanouts that follow it)
                 "synchronize_process_faninNBs_batch": self.synchronize_process_faninNBs_batch,
+                # creat a work queue - not used for lambdas since lambdas currently do not use a work queue
                 "create_work_queue": self.create_work_queue
             }
 
@@ -165,8 +172,12 @@ class TCPHandler(socketserver.StreamRequestHandler):
             # multiply and divide would be excuted by the same mapped function. 
             # Note: fanina and task names are in DAG_info, which can be read at startup: DAG_info = DAG_Info()
             #lambda_function = tcp_server.function_map[object_name]
+
+            # get the python function that is being used to simulate a lambda
             simulated_lambda_function = tcp_server.infiniD.get_function(sync_object_name)
+            # lock each function call with a per-function lock
             lambda_function_lock = tcp_server.infiniD.get_function_lock(sync_object_name)
+            # lambda handler is the same handler that is used for real lambdas
             with lambda_function_lock:
                 try:
                     return_value = simulated_lambda_function.lambda_handler(payload) 
@@ -188,7 +199,10 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # The return value from the Lambda function will typically be sent by tcp_server to a Lambda client of tcp_server
         return return_value
 
+    # called by process_faninNBs_batch to pass a fanin operation to the DAG_orchestrator
     def enqueue_and_invoke_lambda_synchronously(self,json_message):
+        # call enqueue() on the InfniD collction of functions. This enqueue() will cal;
+        # the enqueue() of the orchestrator.
         returned_state = tcp_server.infiniD.enqueue(json_message)
         return returned_state
 
@@ -344,35 +358,30 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # return value not assigned
         return 0
 
-# ToDo: We are using Lambdas, which means (1) using lambdas that are real and possibly 
+# ToDo: We are using Lambdas, which means (1) using lambdas that are real or possibly 
 # storing sync objects in lambdas simulated by regular python functions (2) there is no 
 # list of fanouts since we start the fanned out lambdas in the DAG_executor; this may 
 # change if we pass a list of fanouts to tcp_server_lambda and use the parallel invoker 
-# to invoke them.
-
-# No: Only call this when running real lambas, not simulated. The real lambdas
-# fan_ins will start real lambdas to run fanin tasks and the fan_ins will
-# return 0. Here we just figure out which real or simulated lambda is storing the 
-# fanin synch object. When all fanins have been called we return 0 so 
-# process_faninNBs_batch in DAG_executor will do nothing.
+# to invoke them, or we store fanout objects (fanout = fanin of size 1) in lambdas and
+# the the DAG_orchestrator invoke the functions.
 #
 # Todo: This can be an asynch call, i.e., when using real lambdas, since the 
 # return value is definitely 0 and can be ignored so no use waiting for it.
 # When using workers or using no workers with threads simulating lambdas, 
-# (in which case we aer running tcp_server not this tcp_server_lambda) we
+# (in which case we are running tcp_server not this tcp_server_lambda) we
 # use synchrnous call - for workers, the return value may be work, for simulated
 # threads, a non-0 return indicates that we should start a new thread to simulate
 # the lambda (that the faninNB could not start). Note that only one of the
 # simulated threads that call fanin on a faninNB should start the fanin task, so 
 # one thread receives the non-0 results and the others get 0's. The thread that receives
 # the results starts a new simulated lambda but does not use the results since 
-# the simulated threads use a global dta dictionary and the results were already
+# the simulated threads use a global data dictionary and the results were already
 # put in the dictionary by the threads that executed the asks that produced
 # the results (these tasks then called fanins and pass these results to fanin, 
 # which passes the collected fann results back to the calling thread.
 #
 # The fact that the lambda clients are not intetested in the return values
-# means that this call can be async and furthermore that we cn give the 
+# means that this call can be async and furthermore that we can give the 
 # call to the orchestrator and it can delay the invocation of the actual
 # fanin call until all the fan_in calls have been made.
 
@@ -742,6 +751,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
     # Not used and not tested. Currently create work queue in 
     # create_all_fanins_and_faninNBs_and_possibly_work_queue. 
+    # When we use lambdas, we are not currently using a work queue. 
     def create_work_queue(self,message):
         """
         create the work queue for workers.
@@ -843,6 +853,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # return value not assigned
         return 0
 
+    # TBD what to do with this when we are using lambdas possibly with an orchestrator.
+    # Not clar what "async" means in that case.
     def synchronize_async(self, message = None):
         """
         Asynchronous synchronization.
@@ -996,14 +1008,15 @@ class TCPServer(object):
             self.map_of_Lambda_Function_Simulators = {}
             self.map_of_Lambda_Function_Simulators['single_function'] = self.list_of_Lambda_Function_Simulators[0]
             """
-
+            # input DAG representation/information
             DAG_info = DAG_Info()
             # using regular functions instead of real lambda functions for storing synch objects 
 	        # self.lambda_function = Lambda_Function_Simulator()
             self.infiniD = InfiniD(DAG_info)
             # create list of simulator functions, number of functions
-            # is the number of fnins + faaninNBs + fanouts
-            self.infiniD.create_functions() #
+            # is the number of fanins + faaninNBs + fanouts
+            self.infiniD.create_functions() 
+
             """
             if use_single_lambda_function:
                 # there is a single function that stores all the synchronization objects
@@ -1018,6 +1031,8 @@ class TCPServer(object):
                 # are mapped to different functions
                 self.infiniX.map_object_names_to_functions()
             """
+            # after creating the simulated functions, we map th fanin/fanout/faninNB names to 
+            # a function. Eventually may map multiple names (i.e. objects) to a function.
             self.infiniD.map_object_names_to_functions()
 
             logger.debug("tcp_server_lambda: function map" + str(self.infiniD.function_map))
@@ -1025,7 +1040,7 @@ class TCPServer(object):
             # the function that stores sync_object_namej
 
         else:
-#ToDo: need ock per lambda function so create_locks() when not using lambda simulator
+#ToDo: need lock per lambda function so create_locks() when not using lambda simulator
 # use set of names, map, etc.
             self.function_lock = Lock()
     
