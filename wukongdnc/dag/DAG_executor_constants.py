@@ -19,24 +19,24 @@ create_all_fanins_faninNBs_on_start = True
 # case, instead of, e.g., starting a Lambda at fan_out operations, we start a thread.
 # This results in the creation of many threads and is only use to test the logic 
 # of the Lambda code.
-using_workers = False
+using_workers = True
 # True when we ae not using Lambas and tasks are executed by threads instead of processes. 
 # False when we are not using lambdas and are using multiprocesssing 
-using_threads_not_processes = True
+using_threads_not_processes = False
 # When using_workers, this is how many threads or processes in the pool.
-num_workers = 2
-use_multithreaded_multiprocessing = False
+num_workers = 1
+use_multithreaded_multiprocessing = True
 num_threads_for_multithreaded_multiprocessing = 2
 
 # if using lambdas to store synch objects, run tcp_server_lambda.
 # if store in regular python functions instead of real Lambdas
 # set using_Lambda_Function_Simulator = True
-#FanIn_Type = "DAG_executor_FanIn"
-#FanInNB_Type = "DAG_executor_FanInNB"
-#process_work_queue_Type = "BoundedBuffer"
-FanIn_Type = "DAG_executor_FanIn_Select"
-FanInNB_Type = "DAG_executor_FanInNB_Select"
-process_work_queue_Type = "BoundedBuffer_Select"
+FanIn_Type = "DAG_executor_FanIn"
+FanInNB_Type = "DAG_executor_FanInNB"
+process_work_queue_Type = "BoundedBuffer"
+#FanIn_Type = "DAG_executor_FanIn_Select"
+#FanInNB_Type = "DAG_executor_FanInNB_Select"
+#process_work_queue_Type = "BoundedBuffer_Select"
 
 # if running real lambdas or storing synch objects in real lambdas:
 #
@@ -44,9 +44,9 @@ process_work_queue_Type = "BoundedBuffer_Select"
 #
 
 # Currently, this is for storing synch objects in simulated lambdas;
-using_Lambda_Function_Simulators_to_Store_Objects = True
+using_Lambda_Function_Simulators_to_Store_Objects = False
 # use orchestrator to invoke functions (e.g., when all fanin/fanout results are available)
-using_DAG_orchestrator = True
+using_DAG_orchestrator = False
 # use a single lambda function to store all of the synchroization objects
 # to make an easy test case. This cannot be used when using the function 
 # simulators or using the DAG_orchestrator

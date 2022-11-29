@@ -36,6 +36,6 @@ The TCP server that uses synchronization objects stored in AWS Lambda functions 
 To generate the necessary pickle file, execute the following command:
 `python -m wukongdnc.dag.dask_dag`
 
-Next, to run the local experiment itself, execute the following command:
-`python -m wukongdnc.dag.DAG_executor_driver`
+Next, to run the local experiment itself, execute the following commands (in order):
 'python -m wukongdnc.server.tcp_server'
+`python -m wukongdnc.dag.DAG_executor_driver`

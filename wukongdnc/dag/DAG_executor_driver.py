@@ -44,6 +44,13 @@
 # by process_faninNB_batch or running do to external fanouts, will call faninNB_batch
 # on tcp_server which will enqueue, which can call sycnch, and wait for return and get
 # any enqueu as retrn value so that enqueue is after end of synch invocation? yes
+#
+# Note: In DandC graph, leaf nodes are fanouts not fanins, so leaf nodes are half the
+# nodes which means half the nodes are not fanins. Other half are fanins. How many 
+# groups? 1/4 - some are big and some are little (as small as one node in a group).
+# The single node groups are at the bottom and are exccuted concurrently. Some way to 
+# collapse groups? It's like you want nodes at bottom and nodes at top in same group since 
+# they may be executed at different times though they are logically concurrent.
 
 
 
