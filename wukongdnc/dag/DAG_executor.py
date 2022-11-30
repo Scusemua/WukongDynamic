@@ -947,8 +947,12 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
         # Config: A2, A3, A4_local
         # Fun with Python: work_queue is the global work_queue that we import ...
 # Todo: ??
-        if not use_multithreaded_multiprocessing:
-            global work_queue
+        if use_multithreaded_multiprocessing:
+            work_queue = None
+        #if not use_multithreaded_multiprocessing:
+        #    global work_queue
+        #else:
+            
         # Don't need gobal since just calling methods on lock
         #global work_queue_lock
 
@@ -962,15 +966,19 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                 # the work_queue they create and their web_socket will also be overwritten which means
                 # a tread's websocket may change during its execution to be some other threads websocket.
 # Todo: Wait: each thread needs its own websocket so they don't share websockets?
-# So get rid of all this and just turn global off if use_multithreaded_multiprocessing:
-# or can put the crate in the import like with data_dict? and no global work_queue?
-                with work_queue_lock: 
-                    # initialized to None in 
-                    if work_queue == None:
-                        logger.debug("DAG_executor_work_loop: proc " + proc_name + " " + " thread " + thread_name + ": work_queue is None create work_queue.")
-                        work_queue = BoundedBuffer_Work_Queue(websocket,2*num_tasks_to_execute) 
-                    else:
-                        logger.debug("DAG_executor_work_loop: proc " + proc_name + " " + " thread " + thread_name + ": work_queue is NOT None do not create work_queue.")
+#  Need to create work_queue in start methods and pass it to work_queue_loop
+#  for processes: work_queue = BoundedBuffer_Work_Queue
+#  for threads: if using_workers and using_threads_not_processes:
+#     work_queue = queue.Queue(); if not using workers then work_queue is None
+#  for lambdas: work_queue = None
+
+                #with work_queue_lock: 
+                #    # initialized to None in 
+                #   if work_queue == None:
+                #       logger.debug("DAG_executor_work_loop: proc " + proc_name + " " + " thread " + thread_name + ": work_queue is None create work_queue.")
+                work_queue = BoundedBuffer_Work_Queue(websocket,2*num_tasks_to_execute) 
+                #   else:
+                #        logger.debug("DAG_executor_work_loop: proc " + proc_name + " " + " thread " + thread_name + ": work_queue is NOT None do not create work_queue.")
             else:
                 work_queue = BoundedBuffer_Work_Queue(websocket,2*num_tasks_to_execute)
         #else: # Config: A1, A2, A3, A4_local, A4_Remote
@@ -1008,7 +1016,7 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                         # Config: A4_local, A4_Remote
                         # blocking call
                         #DAG_executor_state.state = work_queue.get() 
-                        logger.debug("work_loop: get work for thread " + thread_name + " queue length:" + str(work_queue.qsize()))
+                        logger.debug("work_loop: get work for thread " + thread_name)
                         work_tuple = work_queue.get()
                         DAG_executor_state.state = work_tuple[0]
                         dict_of_results = work_tuple[1]

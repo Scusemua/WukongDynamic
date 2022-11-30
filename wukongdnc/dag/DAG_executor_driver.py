@@ -886,7 +886,7 @@ def run():
     if use_multithreaded_multiprocessing:
         logger.debug("DAG_executor_driver: num_processes_created_for_multithreaded_multiprocessing: " + str(num_processes_created_for_multithreaded_multiprocessing))
     elif run_all_tasks_locally:
-            logger.debug("DAG_executor_driver: num_threads_created: " + str(num_threads_created))
+            logger.debug("DAG_executor_driver: num_threads/processes_created: " + str(num_threads_created))
 
     if run_all_tasks_locally:
         # Do joins if not using lambdas
