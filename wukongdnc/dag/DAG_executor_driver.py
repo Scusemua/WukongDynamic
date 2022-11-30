@@ -4,6 +4,9 @@
 
 # Where are we: 
 #
+# Test work queue changes then uncomment this statement and see if still works.
+# comment out websocket = None in DAG_executor?
+#
 # should invoke be atomic? for ==n check? as well as lock the function calls.
 #  or lock the check and the function calls with same fine-grained lock?
 #  Since multiple callers for invoke at the same time?
@@ -76,7 +79,7 @@ from .DAG_executor_constants import create_all_fanins_faninNBs_on_start, using_w
 from .DAG_executor_constants import num_workers,using_threads_not_processes
 from .DAG_executor_constants import FanIn_Type, FanInNB_Type, process_work_queue_Type
 #from .DAG_work_queue_for_threads import thread_work_queue
-from .DAG_work_queue_for_threads import work_queue
+from .DAG_executor_work_queue_for_threads import work_queue
 from .DAG_executor_synchronizer import server
 from wukongdnc.wukong.invoker import invoke_lambda_DAG_executor
 import uuid

@@ -22,7 +22,7 @@ from .DAG_executor_constants import create_all_fanins_faninNBs_on_start, using_w
 from .DAG_executor_constants import using_threads_not_processes, use_multithreaded_multiprocessing
 from .DAG_executor_constants import process_work_queue_Type, FanInNB_Type, using_Lambda_Function_Simulators_to_Store_Objects
 #from .DAG_work_queue_for_threads import thread_work_queue
-from .DAG_work_queue_for_threads import work_queue
+from .DAG_executor_work_queue_for_threads import work_queue
 from .DAG_data_dict_for_threads import data_dict
 from .DAG_executor_counter import counter
 from .DAG_executor_synchronizer import server
@@ -43,7 +43,14 @@ ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
-websocket = None
+
+#rhc: WQ
+#websocket = None
+"""
+"Similarly you can put a variable at the outer level of a module. 
+It will belong to the module, and will be initialed when the module is imported the first time."
+"""
+work_queue_lock = threading.Lock()
 
 def create_and_faninNB_task_locally(kwargs):
     logger.debug("create_and_faninNB_task: call create_and_faninNB_locally")
@@ -939,15 +946,34 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
 
         # Config: A2, A3, A4_local
         # Fun with Python: work_queue is the global work_queue that we import ...
-        global work_queue
+# Todo: ??
+        if not use_multithreaded_multiprocessing:
+            global work_queue
+        # Don't need gobal since just calling methods on lock
+        #global work_queue_lock
 
-        # ... unless its this work_queue when we use processes:)
-        if (run_all_tasks_locally and using_workers and not using_threads_not_processes) or not run_all_tasks_locally:
-            # Config: A1, A5, A6
-            # Did the create() in the DAG_executor_driver
-            work_queue = BoundedBuffer_Work_Queue(websocket,2*num_tasks_to_execute)
-        #else: # Config: A2, A3, A4_local, A4_Remote
-        #    work_queue = thread_work_queue
+        # ... unless its this work_queue when we use processes. (Lambdas do not use a work_queue, for now):)
+        if (run_all_tasks_locally and using_workers and not using_threads_not_processes): # or not run_all_tasks_locally:
+            # Config: A5, A6
+            # sent the create() for work_queue to the tcp server in the DAG_executor_driver
+            if use_multithreaded_multiprocessing:
+                # ensure only one thread creates the work_queue; otherwise, since the work_quue will
+                # save the websocket as a member, the threads will overwrite the (global) work_queue with 
+                # the work_queue they create and their web_socket will also be overwritten which means
+                # a tread's websocket may change during its execution to be some other threads websocket.
+# Todo: Wait: each thread needs its own websocket so they don't share websockets?
+# So get rid of all this and just turn global off if use_multithreaded_multiprocessing:
+# or can put the crate in the import like with data_dict? and no global work_queue?
+                with work_queue_lock: 
+                    # initialized to None in 
+                    if work_queue == None:
+                        logger.debug("DAG_executor_work_loop: proc " + proc_name + " " + " thread " + thread_name + ": work_queue is None create work_queue.")
+                        work_queue = BoundedBuffer_Work_Queue(websocket,2*num_tasks_to_execute) 
+                    else:
+                        logger.debug("DAG_executor_work_loop: proc " + proc_name + " " + " thread " + thread_name + ": work_queue is NOT None do not create work_queue.")
+            else:
+                work_queue = BoundedBuffer_Work_Queue(websocket,2*num_tasks_to_execute)
+        #else: # Config: A1, A2, A3, A4_local, A4_Remote
 
         while (True):
 

@@ -15,7 +15,7 @@ from threading import Thread
 from wukongdnc.dag.DAG_executor_State import DAG_executor_State
 from wukongdnc.dag.DAG_executor_constants import run_all_tasks_locally, using_workers, using_threads_not_processes
 #from wukongdnc.dag.DAG_work_queue_for_threads import thread_work_queue
-from wukongdnc.dag.DAG_work_queue_for_threads import work_queue
+from wukongdnc.dag.DAG_executor_work_queue_for_threads import work_queue
 from wukongdnc.wukong.invoker import invoke_lambda_DAG_executor
 import uuid
 from wukongdnc.dag import DAG_executor

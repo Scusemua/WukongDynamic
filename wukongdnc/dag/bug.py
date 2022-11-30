@@ -1,5 +1,8 @@
-"""
-****************************************************
+#
+
+r"""
+
+#****************************************************
 Failure: *******************************************
 
 This is an example of a failure that occurs:
@@ -36,7 +39,7 @@ in directory server.
 
 
 
-********************************************************
+#********************************************************
 Configuation: ******************************************
 The failure occurs when the DAG_executor_driver create a child process and that 
 process creates two threads to execute the DAG. There are no failures if the child process
@@ -51,7 +54,7 @@ parent process of the child process that creates the threads? Again, if the DAG_
 
 
 
-******************************************************
+#******************************************************
 Code: ************************************************
 The DAG_executor_driver creates the child process(es):
 
@@ -132,7 +135,7 @@ So the socket connections seem to be separate on the server side.
 Wonder if the client-side threads are stepping on each other somehow.
 
 
-********************************************************
+#********************************************************
 Running Program: ***************************************
 
 From the README file:
