@@ -7,14 +7,14 @@ import uuid
 
 import logging 
 logger = logging.getLogger(__name__)
+"""
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
-
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
-
 logger.addHandler(ch)
+"""
 
 # This is taking the role of the tcp_server when synch objects are stored locally. 
 # It is a global singleton.
@@ -314,8 +314,8 @@ class DAG_executor_Synchronizer(object):
         # create_and_fan_in op must be atomic (as will bee on server, with many client callers)
         #self.mutex.acquire()
 
-        print(str(fanin_messages))
-        print(str(faninNB_messages))
+        logger.debug(str(fanin_messages))
+        logger.debug(str(faninNB_messages))
         for msg in fanin_messages:
             #logger.debug("calling_task_name: " + calling_task_name + " fanin_task_name: " + fanin_task_name)
             fanin_task_name = msg["name"]

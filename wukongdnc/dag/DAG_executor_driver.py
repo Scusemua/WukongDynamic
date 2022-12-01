@@ -4,9 +4,6 @@
 
 # Where are we: 
 #
-# Test work queue changes then uncomment this statement and see if still works.
-# comment out websocket = None in DAG_executor?
-#
 # should invoke be atomic? for ==n check? as well as lock the function calls.
 #  or lock the check and the function calls with same fine-grained lock?
 #  Since multiple callers for invoke at the same time?
@@ -55,7 +52,15 @@
 # collapse groups? It's like you want nodes at bottom and nodes at top in same group since 
 # they may be executed at different times though they are logically concurrent.
 
+import logging 
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.ERROR)
+formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
+ch = logging.StreamHandler()
+ch.setLevel(logging.ERROR)
+ch.setFormatter(formatter)
+logger.addHandler(ch)
 
 import threading
 import multiprocessing
@@ -89,16 +94,6 @@ from .DAG_executor_countermp import CounterMP
 from .DAG_boundedbuffer_work_queue import BoundedBuffer_Work_Queue
 from .DAG_executor_create_multithreaded_multiprocessing_processes import create_multithreaded_multiprocessing_processes #, create_and_run_threads_for_multiT_multiP
 import copy
-
-import logging 
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
-ch.setFormatter(formatter)
-logger.addHandler(ch)
 
 """
 The DAG_executor executes a DAG using multiple threads/processes/Lambdas, each excuting a DFS path through
@@ -489,10 +484,11 @@ def run():
     for task_name in DAG_leaf_tasks:
         print(task_name)
     print() 
-    print("DAG_executor_driver: DAG_leaf_task_inputs:")
+    #print("DAG_executor_driver: DAG_leaf_task_inputs:")
     #for inp in DAG_leaf_task_inputs:
     #    print(inp)
     #print() 
+    print()
 
     #ResetRedis()
     

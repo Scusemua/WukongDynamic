@@ -7,14 +7,14 @@ from .DAG_executor_create_threads_for_multiT_multiP import create_and_run_thread
 
 import logging 
 logger = logging.getLogger(__name__)
+"""
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
-
-
+"""
 
 #def create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,counter,process_work_queue,data_dict,log_queue,worker_configurer):
 def create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,counter,log_queue,worker_configurer):

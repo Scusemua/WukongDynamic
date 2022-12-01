@@ -1,3 +1,17 @@
+
+import logging
+
+logger = None
+logger = logging.getLogger(__name__)
+"""
+logger.setLevel(logging.ERROR)
+formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
+ch = logging.StreamHandler()
+ch.setLevel(logging.ERROR)
+ch.setFormatter(formatter)
+logger.addHandler(ch)
+"""
+
 import threading
 import _thread
 import time
@@ -32,25 +46,7 @@ from .util import pack_data
 
 import logging.handlers
 import multiprocessing
-import logging
 
-logger = None
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
-ch.setFormatter(formatter)
-logger.addHandler(ch)
-
-
-#rhc: WQ
-#websocket = None
-"""
-"Similarly you can put a variable at the outer level of a module. 
-It will belong to the module, and will be initialed when the module is imported the first time."
-"""
-work_queue_lock = threading.Lock()
 
 def create_and_faninNB_task_locally(kwargs):
     logger.debug("create_and_faninNB_task: call create_and_faninNB_locally")
@@ -912,7 +908,7 @@ def process_fanins(websocket,fanins, faninNB_sizes, calling_task_name, DAG_state
 """
 
 #def DAG_executor_work_loop(logger, server, counter, work_queue, DAG_executor_state, DAG_info, data_dict):
-def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info):
+def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info, work_queue):
 
     DAG_map = DAG_info.get_DAG_map()
     DAG_tasks = DAG_info.get_DAG_tasks()
@@ -944,43 +940,14 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
         #print("socketname: " + websocket.getsockname())   # ->  (127.0.0.1,26386)
         #print(websocket.getpeername())   # ->  (127.0.0.1, 8888)
 
-        # Config: A2, A3, A4_local
-        # Fun with Python: work_queue is the global work_queue that we import ...
-# Todo: ??
-        if use_multithreaded_multiprocessing:
-            work_queue = None
-        #if not use_multithreaded_multiprocessing:
-        #    global work_queue
-        #else:
-            
-        # Don't need gobal since just calling methods on lock
-        #global work_queue_lock
-
         # ... unless its this work_queue when we use processes. (Lambdas do not use a work_queue, for now):)
-        if (run_all_tasks_locally and using_workers and not using_threads_not_processes): # or not run_all_tasks_locally:
+        if (run_all_tasks_locally and using_workers and not using_threads_not_processes): 
             # Config: A5, A6
             # sent the create() for work_queue to the tcp server in the DAG_executor_driver
-            if use_multithreaded_multiprocessing:
-                # ensure only one thread creates the work_queue; otherwise, since the work_quue will
-                # save the websocket as a member, the threads will overwrite the (global) work_queue with 
-                # the work_queue they create and their web_socket will also be overwritten which means
-                # a tread's websocket may change during its execution to be some other threads websocket.
-# Todo: Wait: each thread needs its own websocket so they don't share websockets?
-#  Need to create work_queue in start methods and pass it to work_queue_loop
-#  for processes: work_queue = BoundedBuffer_Work_Queue
-#  for threads: if using_workers and using_threads_not_processes:
-#     work_queue = queue.Queue(); if not using workers then work_queue is None
-#  for lambdas: work_queue = None
-
-                #with work_queue_lock: 
-                #    # initialized to None in 
-                #   if work_queue == None:
-                #       logger.debug("DAG_executor_work_loop: proc " + proc_name + " " + " thread " + thread_name + ": work_queue is None create work_queue.")
-                work_queue = BoundedBuffer_Work_Queue(websocket,2*num_tasks_to_execute) 
-                #   else:
-                #        logger.debug("DAG_executor_work_loop: proc " + proc_name + " " + " thread " + thread_name + ": work_queue is NOT None do not create work_queue.")
-            else:
-                work_queue = BoundedBuffer_Work_Queue(websocket,2*num_tasks_to_execute)
+            #
+            # each thread in multithreading multiprocesssing needs its own socket.
+            # each process when single threaded multiprocessing needs its own socket.
+            work_queue = BoundedBuffer_Work_Queue(websocket,2*num_tasks_to_execute)
         #else: # Config: A1, A2, A3, A4_local, A4_Remote
 
         while (True):
@@ -1476,9 +1443,15 @@ def DAG_executor(payload):
             data_dict[key] = value
     """
 
+    # work_queue is the global shared work queue, which is none when we are using threads
+    # to simulate lambdas and is a Queue when we are using worker threads. See imported file
+    # DAG_executor_work_queue_for_threads.py for Queue creation.
+
+    global work_queue
+
     #DAG_info = payload['DAG_info']
     #DAG_executor_work_loop(logger, server, counter, thread_work_queue, DAG_executor_state, DAG_info, data_dict)
-    DAG_executor_work_loop(logger, server, counter, DAG_exec_state, DAG_info)
+    DAG_executor_work_loop(logger, server, counter, DAG_exec_state, DAG_info, work_queue)
 
 # Config: A5, A6
 # def DAG_executor_processes(payload,counter,process_work_queue,data_dict,log_queue, configurer):
@@ -1529,9 +1502,14 @@ def DAG_executor_processes(payload,counter,log_queue, worker_configurer):
     #logger.debug("DAG_executor starting payload input:" +str(task_payload_inputs) + " payload state: " + str(DAG_executor_state.state) )
   
     DAG_info = DAG_Info()
+
+    # The work loop will create a BoundedBuffer_Work_Queue. Each process excuting the work loop
+    # will create a BoundedBuffer_Work_Queue object, which wraps the websocket creatd in the 
+    # work loop and the code to send work to the work queue on the tcp_server.
+    work_queue = None
     #DAG_info = payload['DAG_info']
     #DAG_executor_work_loop(logger, server, counter, process_work_queue, DAG_exec_state, DAG_info, data_dict)
-    DAG_executor_work_loop(logger, server, counter, DAG_exec_state, DAG_info)
+    DAG_executor_work_loop(logger, server, counter, DAG_exec_state, DAG_info, work_queue)
     logger.debug("DAG_executor_processes: returning after work_loop.")
     return
 
@@ -1560,9 +1538,13 @@ def DAG_executor_lambda(payload):
         # Note: We null out state_info.task_inputs for leaf tasks after we use the input.
         inp = cloudpickle.loads(base64.b64decode(payload['input']))
         state_info.task_inputs = inp
+
+    # lambdas do not use work_queues, for now.
+    work_queue = None
+
     # server and counter are None
     # logger is local lambda logger
-    DAG_executor_work_loop(logger, server, counter, DAG_exec_state, DAG_info)
+    DAG_executor_work_loop(logger, server, counter, DAG_exec_state, DAG_info, work_queue )
     logger.debug("DAG_executor_processes: returning after work_loop.")
     return
                         

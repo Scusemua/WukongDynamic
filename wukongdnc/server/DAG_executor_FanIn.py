@@ -8,14 +8,14 @@ from threading import Thread
 
 import logging 
 logger = logging.getLogger(__name__)
+"""
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
-
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
-
 logger.addHandler(ch)
+"""
 
 #Fanin object. For a fan-in of n, the first n-1 serverless functions to call fan-in will 
 #terminate. Only the last function that calls fan-in will continue executing. fan-in returns
