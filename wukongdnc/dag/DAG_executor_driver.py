@@ -55,10 +55,10 @@
 import logging 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
+logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 ch = logging.StreamHandler()
-ch.setLevel(logging.ERROR)
+ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
@@ -484,9 +484,9 @@ def run():
     for task_name in DAG_leaf_tasks:
         print(task_name)
     print() 
-    #print("DAG_executor_driver: DAG_leaf_task_inputs:")
-    #for inp in DAG_leaf_task_inputs:
-    #    print(inp)
+    print("DAG_executor_driver: DAG_leaf_task_inputs:")
+    for inp in DAG_leaf_task_inputs:
+        print(inp)
     #print() 
     print()
 

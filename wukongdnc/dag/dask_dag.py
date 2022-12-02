@@ -212,11 +212,11 @@ if __name__ == "__main__":
 
     return graph, result    
   
-  graph, result = manual_dag()
+  # graph, result = manual_dag()
   # graph, result = manual_dag_test_batch_faninNBs()
   # graph, result = manual_dag_test_batch_two_faninNBs()
   # graph, result = manual_dag_no_faninNBs()
-  # graph, result = tree_reduction(n = 32)
+  graph, result = tree_reduction(n = 32)
   # graph, result = mat_mul(n = 4, c = 2)
 
   graph_dict = graph.to_dict()
@@ -535,4 +535,96 @@ Execution Output:
 
        [[0.37409067, 0.49059163]]]), "('_chunk_sum-aggregate-22ff0b8ecc87944e400288ec97faa43e', 1, 1)": array([[0.67433678, 0.84990331],
        [0.75282337, 0.90294735]])}
+"""
+
+"""
+Tree Reduction:
+
+DAG_executor_driver: DAG_map:
+1
+ task: add-b3296207-3589-488d-83d0-a34d31fdafb0, fanouts:[],fanins:['add-0b42e5fb-577a-44e7-9148-ac9ef6f587df'],faninsNB:[],collapse:[]fanin_sizes:[2],faninNB_sizes:[]task_inputs: (0, 1)
+2
+ task: add-0b42e5fb-577a-44e7-9148-ac9ef6f587df, fanouts:[],fanins:['add-0f87e5ce-6e73-4788-bf9e-c1f28b3bbeaa'],faninsNB:[],collapse:[]fanin_sizes:[2],faninNB_sizes:[]task_inputs: ('add-b3296207-3589-488d-83d0-a34d31fdafb0', 'add-54241ce6-2174-4d9f-9190-32bf292cd8ef')
+3
+ task: add-0f87e5ce-6e73-4788-bf9e-c1f28b3bbeaa, fanouts:[],fanins:['add-4e7f09a7-88fb-420c-9951-f41687bf5b81'],faninsNB:[],collapse:[]fanin_sizes:[2],faninNB_sizes:[]task_inputs: ('add-0b42e5fb-577a-44e7-9148-ac9ef6f587df', 'add-d88378c5-bf50-4aec-b699-a79a9b1b0f4b')
+4
+ task: add-4e7f09a7-88fb-420c-9951-f41687bf5b81, fanouts:[],fanins:['add-d87f052f-fb81-4f0d-8e3e-0edfbd2dba07'],faninsNB:[],collapse:[]fanin_sizes:[2],faninNB_sizes:[]task_inputs: ('add-0f87e5ce-6e73-4788-bf9e-c1f28b3bbeaa', 'add-65e1046b-badc-40e4-9c96-a0436a28eb05')
+5
+ task: add-d87f052f-fb81-4f0d-8e3e-0edfbd2dba07, fanouts:[],fanins:[],faninsNB:[],collapse:[]fanin_sizes:[],faninNB_sizes:[]task_inputs: ('add-4e7f09a7-88fb-420c-9951-f41687bf5b81', 'add-fe5acebd-a1df-4e2f-8873-3d8abe3f5f5f')
+6
+ task: add-54241ce6-2174-4d9f-9190-32bf292cd8ef, fanouts:[],fanins:['add-0b42e5fb-577a-44e7-9148-ac9ef6f587df'],faninsNB:[],collapse:[]fanin_sizes:[2],faninNB_sizes:[]task_inputs: (2, 3)
+7
+ task: add-b72b49d1-ad79-4e8a-9d7f-d2377c4deef4, fanouts:[],fanins:['add-d88378c5-bf50-4aec-b699-a79a9b1b0f4b'],faninsNB:[],collapse:[]fanin_sizes:[2],faninNB_sizes:[]task_inputs: (4, 5)
+8
+ task: add-d88378c5-bf50-4aec-b699-a79a9b1b0f4b, fanouts:[],fanins:['add-0f87e5ce-6e73-4788-bf9e-c1f28b3bbeaa'],faninsNB:[],collapse:[]fanin_sizes:[2],faninNB_sizes:[]task_inputs: ('add-b72b49d1-ad79-4e8a-9d7f-d2377c4deef4', 'add-fa94d4eb-c18b-4390-b58e-32cd54f4761c')
+9
+ task: add-fa94d4eb-c18b-4390-b58e-32cd54f4761c, fanouts:[],fanins:['add-d88378c5-bf50-4aec-b699-a79a9b1b0f4b'],faninsNB:[],collapse:[]fanin_sizes:[2],faninNB_sizes:[]task_inputs: (6, 7)
+10
+ task: add-e857d6e0-db8a-4754-836e-ac969d3a113d, fanouts:[],fanins:['add-53f38bc6-556a-499b-ad33-bed666418b76'],faninsNB:[],collapse:[]fanin_sizes:[2],faninNB_sizes:[]task_inputs: (8, 9)
+11
+ task: add-53f38bc6-556a-499b-ad33-bed666418b76, fanouts:[],fanins:['add-65e1046b-badc-40e4-9c96-a0436a28eb05'],faninsNB:[],collapse:[]fanin_sizes:[2],faninNB_sizes:[]task_inputs: ('add-e857d6e0-db8a-4754-836e-ac969d3a113d', 'add-572c4040-b10b-4817-bb06-cee4168a2c79')
+12
+ task: add-65e1046b-badc-40e4-9c96-a0436a28eb05, fanouts:[],fanins:['add-4e7f09a7-88fb-420c-9951-f41687bf5b81'],faninsNB:[],collapse:[]fanin_sizes:[2],faninNB_sizes:[]task_inputs: ('add-53f38bc6-556a-499b-ad33-bed666418b76', 'add-2b743fbd-714b-45d5-a8bd-7ea0f3ffe0bf')
+13
+ task: add-572c4040-b10b-4817-bb06-cee4168a2c79, fanouts:[],fanins:['add-53f38bc6-556a-499b-ad33-bed666418b76'],faninsNB:[],collapse:[]fanin_sizes:[2],faninNB_sizes:[]task_inputs: (10, 11)
+14
+ task: add-1144595a-f3e7-45bf-b001-04b6cd36af48, fanouts:[],fanins:['add-2b743fbd-714b-45d5-a8bd-7ea0f3ffe0bf'],faninsNB:[],collapse:[]fanin_sizes:[2],faninNB_sizes:[]task_inputs: (12, 13)
+15
+ task: add-2b743fbd-714b-45d5-a8bd-7ea0f3ffe0bf, fanouts:[],fanins:['add-65e1046b-badc-40e4-9c96-a0436a28eb05'],faninsNB:[],collapse:[]fanin_sizes:[2],faninNB_sizes:[]task_inputs: ('add-1144595a-f3e7-45bf-b001-04b6cd36af48', 'add-abb99a9c-d25e-4d6b-8235-f5e7c15d96cb')
+16
+ task: add-abb99a9c-d25e-4d6b-8235-f5e7c15d96cb, fanouts:[],fanins:['add-2b743fbd-714b-45d5-a8bd-7ea0f3ffe0bf'],faninsNB:[],collapse:[]fanin_sizes:[2],faninNB_sizes:[]task_inputs: (14, 15)
+17
+ task: add-33a5ff9b-8fea-49e2-8053-7e4001587cdf, fanouts:[],fanins:['add-df227e0a-7087-4e13-9802-e6b6ab3f4e41'],faninsNB:[],collapse:[]fanin_sizes:[2],faninNB_sizes:[]task_inputs: (16, 17)
+18
+ task: add-df227e0a-7087-4e13-9802-e6b6ab3f4e41, fanouts:[],fanins:['add-32eea7e5-0fe9-4ea8-abdb-afb2f469c9ce'],faninsNB:[],collapse:[]fanin_sizes:[2],faninNB_sizes:[]task_inputs: ('add-33a5ff9b-8fea-49e2-8053-7e4001587cdf', 'add-883e0071-75d3-415a-ba41-d9088a9081aa')
+19
+ task: add-32eea7e5-0fe9-4ea8-abdb-afb2f469c9ce, fanouts:[],fanins:['add-fe5acebd-a1df-4e2f-8873-3d8abe3f5f5f'],faninsNB:[],collapse:[]fanin_sizes:[2],faninNB_sizes:[]task_inputs: ('add-df227e0a-7087-4e13-9802-e6b6ab3f4e41', 'add-d7f7e5b7-6125-4882-955c-18b955f6a7b7')
+20
+ task: add-fe5acebd-a1df-4e2f-8873-3d8abe3f5f5f, fanouts:[],fanins:['add-d87f052f-fb81-4f0d-8e3e-0edfbd2dba07'],faninsNB:[],collapse:[]fanin_sizes:[2],faninNB_sizes:[]task_inputs: ('add-32eea7e5-0fe9-4ea8-abdb-afb2f469c9ce', 'add-8b5582b5-a1f7-4296-8cf6-8ba9099aed36')
+21
+ task: add-883e0071-75d3-415a-ba41-d9088a9081aa, fanouts:[],fanins:['add-df227e0a-7087-4e13-9802-e6b6ab3f4e41'],faninsNB:[],collapse:[]fanin_sizes:[2],faninNB_sizes:[]task_inputs: (18, 19)
+22
+ task: add-026c146d-7a71-4c78-8e22-2d658d58a351, fanouts:[],fanins:['add-d7f7e5b7-6125-4882-955c-18b955f6a7b7'],faninsNB:[],collapse:[]fanin_sizes:[2],faninNB_sizes:[]task_inputs: (20, 21)
+23
+ task: add-d7f7e5b7-6125-4882-955c-18b955f6a7b7, fanouts:[],fanins:['add-32eea7e5-0fe9-4ea8-abdb-afb2f469c9ce'],faninsNB:[],collapse:[]fanin_sizes:[2],faninNB_sizes:[]task_inputs: ('add-026c146d-7a71-4c78-8e22-2d658d58a351', 'add-344861dd-e2f8-47fc-99af-40ce3cdaf93c')
+24
+ task: add-344861dd-e2f8-47fc-99af-40ce3cdaf93c, fanouts:[],fanins:['add-d7f7e5b7-6125-4882-955c-18b955f6a7b7'],faninsNB:[],collapse:[]fanin_sizes:[2],faninNB_sizes:[]task_inputs: (22, 23)
+25
+ task: add-972855d6-64f0-476c-9dcd-92fedd42c410, fanouts:[],fanins:['add-66415aef-75f2-4f80-bbb2-3b1c4f99294a'],faninsNB:[],collapse:[]fanin_sizes:[2],faninNB_sizes:[]task_inputs: (24, 25)
+26
+ task: add-66415aef-75f2-4f80-bbb2-3b1c4f99294a, fanouts:[],fanins:['add-8b5582b5-a1f7-4296-8cf6-8ba9099aed36'],faninsNB:[],collapse:[]fanin_sizes:[2],faninNB_sizes:[]task_inputs: ('add-972855d6-64f0-476c-9dcd-92fedd42c410', 'add-09f72256-5ee7-4556-938c-921c88d93292')
+27
+ task: add-8b5582b5-a1f7-4296-8cf6-8ba9099aed36, fanouts:[],fanins:['add-fe5acebd-a1df-4e2f-8873-3d8abe3f5f5f'],faninsNB:[],collapse:[]fanin_sizes:[2],faninNB_sizes:[]task_inputs: ('add-66415aef-75f2-4f80-bbb2-3b1c4f99294a', 'add-9104add5-f5b2-429b-9493-a60ce343bc10')
+28
+ task: add-09f72256-5ee7-4556-938c-921c88d93292, fanouts:[],fanins:['add-66415aef-75f2-4f80-bbb2-3b1c4f99294a'],faninsNB:[],collapse:[]fanin_sizes:[2],faninNB_sizes:[]task_inputs: (26, 27)
+29
+ task: add-6c576bb5-7a87-4b3f-96e5-649f99342568, fanouts:[],fanins:['add-9104add5-f5b2-429b-9493-a60ce343bc10'],faninsNB:[],collapse:[]fanin_sizes:[2],faninNB_sizes:[]task_inputs: (28, 29)
+30
+ task: add-9104add5-f5b2-429b-9493-a60ce343bc10, fanouts:[],fanins:['add-8b5582b5-a1f7-4296-8cf6-8ba9099aed36'],faninsNB:[],collapse:[]fanin_sizes:[2],faninNB_sizes:[]task_inputs: ('add-6c576bb5-7a87-4b3f-96e5-649f99342568', 'add-4242f92b-d942-4963-a6bd-7342d49fb7ed')
+31
+ task: add-4242f92b-d942-4963-a6bd-7342d49fb7ed, fanouts:[],fanins:['add-9104add5-f5b2-429b-9493-a60ce343bc10'],faninsNB:[],collapse:[]fanin_sizes:[2],faninNB_sizes:[]task_inputs: (30, 31)
+
+DAG_executor_driver: DAG_leaf_task_inputs:
+(0, 1)
+(2, 3)
+(4, 5)
+(6, 7)
+(8, 9)
+(10, 11)
+(12, 13)
+(14, 15)
+(16, 17)
+(18, 19)
+(20, 21)
+(22, 23)
+(24, 25)
+(26, 27)
+(28, 29)
+(30, 31)
+
+Result of executing the workload: 496
+
+Execution Output: 
+[2022-12-02 08:21:21,571] [Thread_leaf_ss31] DEBUG: Thread_leaf_ss31: execute_task: input of execute_task is: (120, 376)
+[2022-12-02 08:21:21,571] [Thread_leaf_ss31] DEBUG: Thread_leaf_ss31 execute_task output: 496
 """
