@@ -9,12 +9,14 @@ from .selectableEntry import selectableEntry
 
 import logging 
 logger = logging.getLogger(__name__)
+"""
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
+"""
 
 class DAG_executor_FanIn_Select(Selector):
     def __init__(self, selector_name = "DAG_executor_FanIn_Select"):
@@ -32,6 +34,13 @@ class DAG_executor_FanIn_Select(Selector):
     def n(self, value):
         logger.debug("Setting value of FanIn n to " + str(value))
         self._n = value
+
+    # inherit from parent
+    def lock(self):
+        pass
+        
+    def unlock(self):
+        pass
 
     def init(self, **kwargs):
         #logger.debug(kwargs)
@@ -92,8 +101,7 @@ class DAG_executor_FanIn_Select(Selector):
     # no meaningful return value expected by client
     def fan_in(self, **kwargs):
         # if we called try_fan_in first, we still have the mutex so this enter_monitor does not do mutex.P
-        logger.debug("DAG_executor_FanIn_Select: fan_in: entered fan_in()")
-        
+        logger.debug("DAG_executor_FanIn_Select: fan_in: entered fan_in()")  
         if self._num_calling < (self._n - 1):
             self._num_calling += 1
 

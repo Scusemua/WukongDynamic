@@ -3,12 +3,14 @@ import logging
 
 logger = None
 logger = logging.getLogger(__name__)
+"""
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
+"""
 
 
 import threading
@@ -789,7 +791,7 @@ def fanin_remotely(websocket, DAG_exec_state,**keyword_arguments):
 
 def process_fanins(websocket,fanins, faninNB_sizes, calling_task_name, DAG_states, DAG_exec_state, output, server):
     thread_name = threading.current_thread().name
-    logger.debug(thread_name + ": fanin_remotely: calling_task_name: " + calling_task_name)
+    logger.debug(thread_name + ": process_fanins: calling_task_name: " + calling_task_name)
 
     # assert len(fanins) == len(faninNB_sizes) ==  1
 
@@ -805,7 +807,7 @@ def process_fanins(websocket,fanins, faninNB_sizes, calling_task_name, DAG_state
     # to those returned by the fanin.
 
     keyword_arguments = {}
-    logger.debug(thread_name + ": fanin_remotely: fanins" + str(fanins))
+    logger.debug(thread_name + ": process_fanins: fanins" + str(fanins))
     keyword_arguments['fanin_task_name'] = fanins[0]
     keyword_arguments['n'] = faninNB_sizes[0]
     #keyword_arguments['start_state_fanin_task'] = DAG_states[fanins[0]]
@@ -831,7 +833,7 @@ def process_fanins(websocket,fanins, faninNB_sizes, calling_task_name, DAG_state
         if not create_all_fanins_faninNBs_on_start:
             DAG_exec_state = server.create_and_fanin_locally(DAG_exec_state,keyword_arguments)
         else:
-            logger.debug(thread_name + ": fanin_remotely: " + calling_task_name + ": call server.fanin_locally")
+            logger.debug(thread_name + ": process_fanins: " + calling_task_name + ": call server.fanin_locally")
             DAG_exec_state = server.fanin_locally(DAG_exec_state,keyword_arguments)
     else:
         if not create_all_fanins_faninNBs_on_start:
@@ -858,7 +860,7 @@ def process_fanins(websocket,fanins, faninNB_sizes, calling_task_name, DAG_state
                 # results, which are its inputs, from the data_dict. This makes the 
                 # cost of the send for the fanin operaton less costly.
 
-                #N ote: A worker process/lambda that is the last caller of fan-in will be the 
+                # Note: A worker process/lambda that is the last caller of fan-in will be the 
                 # become task and the results from the non-becme workers will be passed
                 # back from the fan-in. The woker/lambda will add the results to its local
                 # data dictionary. So we must pass our result to the fanin so it can possbly
@@ -867,7 +869,7 @@ def process_fanins(websocket,fanins, faninNB_sizes, calling_task_name, DAG_state
                 #DAG_exec_state.keyword_arguments['result'] = None
 
             DAG_exec_state = fanin_remotely(websocket, DAG_exec_state, **keyword_arguments)
-            logger.debug (thread_name + ": fanin_remotely: process_fanins: call to fanin_remotely returned DAG_exec_state.return_value: " + str(DAG_exec_state.return_value))
+            logger.debug (thread_name + ": process_fanins: process_fanins: call to fanin_remotely returned DAG_exec_state.return_value: " + str(DAG_exec_state.return_value))
 
     return DAG_exec_state
 	

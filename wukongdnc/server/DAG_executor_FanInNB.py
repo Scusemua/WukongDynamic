@@ -82,7 +82,9 @@ class DAG_executor_FanInNB(MonitorSU):
         # does not do mutex.V, also that enter_monitor of wait_b that follows does not do mutex.P.
         # This makes executes_wait ; wait_b atomic
         
-        block = super().is_blocking(self._num_calling < (self._n - 1))
+        # Note: fan_in never blocks so we are not using this:
+        #block = super().is_blocking(self._num_calling < (self._n - 1))
+        block = self.is_blocking(False)
         
         # Does not do mutex.V, so we will still have the mutex lock when we next call
         # enter_monitor in wait_b

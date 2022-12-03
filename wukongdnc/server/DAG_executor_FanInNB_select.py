@@ -27,12 +27,14 @@ from .selectableEntry import selectableEntry
 
 import logging 
 logger = logging.getLogger(__name__)
+"""
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
+"""
 
 class DAG_executor_FanInNB_Select(Selector):
     def __init__(self, selector_name = "DAG_executor_FanInNB_Select"):
@@ -51,6 +53,13 @@ class DAG_executor_FanInNB_Select(Selector):
     def n(self, value):
         logger.debug("Setting value of FanIn n to " + str(value))
         self._n = value
+
+    # inherit from parent
+    def lock(self):
+        pass
+        
+    def unlock(self):
+        pass
 
     def init(self, **kwargs):
         #logger.debug(kwargs)
@@ -92,6 +101,7 @@ class DAG_executor_FanInNB_Select(Selector):
         # does not do mutex.V, also that enter_monitor of wait_b that follows does not do mutex.P.
         # This males try_wait_b ; wait_b atomic
         
+        # Note: fan_in never blocks so we are not using this:
         #block = super().is_blocking(self._fullSlots == self._capacity)
         block = self.is_blocking(False)
         

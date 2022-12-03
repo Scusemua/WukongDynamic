@@ -1,7 +1,7 @@
 from threading import RLock
 from .DAG_executor_constants import store_fanins_faninNBs_locally, FanIn_Type, FanInNB_Type
-from ..server import DAG_executor_FanInNB
-from ..server import DAG_executor_FanIn
+from ..server import DAG_executor_FanInNB, DAG_executor_FanInNB_select
+from ..server import DAG_executor_FanIn, DAG_executor_FanIn_select
 from .DAG_executor_State import DAG_executor_State
 import uuid
 
@@ -30,14 +30,13 @@ class DAG_executor_Synchronizer(object):
     def create_and_fanin_locally(self,DAG_exec_state,keyword_arguments):
         # create new fanin with specified name if it hasn't been created 
 
-        # create new faninNB with specified name if it hasn't been created 
 		# Here are the keyword arguments:
         fanin_task_name = keyword_arguments['fanin_task_name']
         #n = keyword_arguments['n']	# size
 		# used by FanInNB:
         #start_state_fanin_task = keyword_arguments['start_state_fanin_task']
         # where: keyword_arguments['start_state_fanin_task'] = DAG_states[name]
-        output = keyword_arguments['result']
+        #output = keyword_arguments['result']
         calling_task_name = keyword_arguments['calling_task_name']
         #DAG_executor_state = keyword_arguments['DAG_executor_State']
         #server = keyword_arguments['server']
@@ -54,7 +53,11 @@ class DAG_executor_Synchronizer(object):
         if not inmap: 	# fanin_task_name in self.synchronizers:
             # Note: When we create FanIn objects locally, we are always using DAG_executor_FanIn.DAG_executor_FanIn.
             # We never use the "select" version.
-            FanIn = DAG_executor_FanIn.DAG_executor_FanIn(fanin_task_name) # initial_n = 0, monitor_name = None
+            is_select = (FanIn_Type == "DAG_executor_FanIn_Select")
+            if not is_select:
+                FanIn = DAG_executor_FanIn.DAG_executor_FanIn(fanin_task_name) # initial_n = 0, monitor_name = None
+            else:
+                FanIn = DAG_executor_FanIn_select.DAG_executor_FanIn_Select(fanin_task_name) # initial_n = 0, monitor_name = None
             FanIn.init(**keyword_arguments)
             logger.debug("calling_task_name: " + calling_task_name + " fanin_task_name: " + fanin_task_name
 				+ " DAG_executor_Synchronizer: create_and_fanin: create caching new fanin with name '%s'" % (fanin_task_name))
@@ -69,32 +72,65 @@ class DAG_executor_Synchronizer(object):
         inmap = fanin_task_name in self.synchronizers  
         logger.debug ("calling_task_name: " + calling_task_name + " fanin_task_name: " + fanin_task_name + " inmap: " + str(inmap))
         FanIn = self.synchronizers[fanin_task_name]  
-        
-        # call fanin
-        try_return_value = FanIn.try_fan_in(**keyword_arguments)
+
+        is_select = (FanIn_Type == "DAG_executor_FanIn_Select")
+        if is_select:
+            # for fanin, try_return_value always retuns False, so we will always execute the else-part
+            FanIn.lock()
+            try_return_value = FanIn.try_fan_in(**keyword_arguments)
+            # Note: For a local select object, the try_fan_in and the actual fan_in need to be 
+            # atomic. Usually, this is handled by the tcp_servr_lambda whihc will lock before
+            # the try and unlock after. Since we are storing objects locally and not using 
+            # tcp_server_lambda we have to do the locking ourselves. So we do not release the 
+            # lock until after the call to fan_in.
+            #FanIn.unlock()
+        else:
+            try_return_value = FanIn.try_fan_in(**keyword_arguments)
         #logger.debug("calling_task_name: " + calling_task_name + " FanIn: try_return_value: " + str(try_return_value))
-        logger.debug("fanin_task_name: " + fanin_task_name + " try_return_value: " + str(try_return_value))
+        logger.debug("fanin_task_name: " + keyword_arguments['fanin_task_name'] + " try_return_value: " + str(try_return_value))
+
         if try_return_value:   # synchronize op will execute wait so tell client to terminate
             DAG_exec_state.blocking = True 
-            DAG_exec_state.return_value = None 
-			
+            DAG_exec_state.return_value = 0 
+
 			#FanInNB gets DAG_executor_State in kwargs when it starts a new executor to execute the fanin task.
 			#FanIn does not access the DAG_executor_State in kwargs
-			
-			# return is: self._results, restart, where restart is always 0 and results is 0 or a map
-            return_value, restart_value_ignored = FanIn.fan_in(**keyword_arguments)
-        else:
-            return_value, restart_value_ignored = FanIn.fan_in(**keyword_arguments)
 
-            logger.debug("fanin become task output:" + str(output))
-            logger.debug("calling_task_name:" + calling_task_name)
-            # Add our result to the results (instead of sending it to the fanin on the server and server sending it back
-            return_value[calling_task_name] = output
-            DAG_exec_state.return_value = return_value
-            DAG_exec_state.blocking = False 
+			# return is: self._results, restart, where restart is always 0 and results is 0 or a map
+            if is_select:
+                # Note: we are maing try_fan_in and fan_in atomic so we already hold the lock aquired
+                # before the call to try_fan_in. Release the lock when fan_in returns.
+                #FanIn.lock()
+                return_value = FanIn.fan_in(**keyword_arguments)
+                FanIn.unlock()
+            else:
+                return_value, restart_value_ignored = FanIn.fan_in(**keyword_arguments)
+        else:
+            if is_select:
+                #FanIn.lock()
+                return_value = FanIn.fan_in(**keyword_arguments)
+                FanIn.unlock()
+            else:
+                return_value, restart_value_ignored = FanIn.fan_in(**keyword_arguments)
+
+            # try_fan_in never returns true. If we are not the last fan_in then we
+            # get a return_value of 0; otherwise, we get the other fan_in results,
+            # which do not include ours.
+            if return_value == 0:
+                logger.debug("calling_task_name:" + keyword_arguments['calling_task_name'] 
+                    + " return value of fan_in is 0.")
+                DAG_exec_state.return_value = 0
+                DAG_exec_state.blocking = False 
+            else:
+                # Add our result to the results (instead of sending our result to the fanin on the server and server sending it back
+                logger.debug("fanin become task output, which was our result (to add to results dict.):" + str(keyword_arguments['result']))
+                return_value[keyword_arguments['calling_task_name']] = keyword_arguments['result']
+                DAG_exec_state.return_value = return_value
+                DAG_exec_state.blocking = False 
 			
-		# This is returned to process_fanin which returns it to DAG_executor; DAG_executtor will look at blocking
-		# and if not blocking the return_value to get the input as if not blocking then becomes fanin task.
+
+		# This is returned to process_fanin which returns it to DAG_executor; DAG_executtor will look at return
+		# value to see if it is 0 or not.
         return DAG_exec_state
 
     # This is for fanin, which can be a try_fanin. Note, however, that even though try_fan_in will
@@ -128,15 +164,29 @@ class DAG_executor_Synchronizer(object):
         FanIn = self.synchronizers[keyword_arguments['fanin_task_name']]  
 
         # Note: fan_in does not block - if the caller is not the last to fan_in, it does not block, 0 is
-        # returned to the caller who can terminate or, f a thread/process pool is being used, withdraw
+        # returned to the caller who can terminate or, if a thread/process pool is being used, withdraw
         # more work from the work_queue. (Of course, try_fan_in does not block either.)
 
         # call try_fan_in and fan_in
-        # Note: try_fan_in and fan_in are coordnated in monitorSU so that they are atomic.
-        # If we use the "select" version of FanInNB, we need to lock the FanINNB. See that code.
-        try_return_value = FanIn.try_fan_in(**keyword_arguments)
+        # Note: try_fan_in and fan_in are coordinated in monitorS.enter_monitor() so that they are atomic.
+        # If we use the "select" version of FanInNB, we need to lock this ourselves.
+
+        is_select = (FanIn_Type == "DAG_executor_FanIn_Select")
+        if is_select:
+            # for fanin, try_return_value always retuns False, so we will always execute the else-part
+            FanIn.lock()
+            try_return_value = FanIn.try_fan_in(**keyword_arguments)
+            # Note: For a local select object, the try_fan_in and the actual fan_in need to be 
+            # atomic. Usually, this is handled by the tcp_servr_lambda whihc will lock before
+            # the try and unlock after. Since we are storing objects locally and not using 
+            # tcp_server_lambda we have to do the locking ourselves. So we do not release the 
+            # lock until after the call to fan_in.
+            #FanIn.unlock()
+        else:
+            try_return_value = FanIn.try_fan_in(**keyword_arguments)
         #logger.debug("calling_task_name: " + calling_task_name + " FanIn: try_return_value: " + str(try_return_value))
         logger.debug("fanin_task_name: " + keyword_arguments['fanin_task_name'] + " try_return_value: " + str(try_return_value))
+
         if try_return_value:   # synchronize op will execute wait so tell client to terminate
             DAG_exec_state.blocking = True 
             DAG_exec_state.return_value = 0 
@@ -145,19 +195,40 @@ class DAG_executor_Synchronizer(object):
 			#FanIn does not access the DAG_executor_State in kwargs
 
 			# return is: self._results, restart, where restart is always 0 and results is 0 or a map
-            return_value, restart_value_ignored = FanIn.fan_in(**keyword_arguments)
+            if is_select:
+                # Note: we are maing try_fan_in and fan_in atomic so we already hold the lock aquired
+                # before the call to try_fan_in. Release the lock when fan_in returns.
+                #FanIn.lock()
+                return_value = FanIn.fan_in(**keyword_arguments)
+                FanIn.unlock()
+            else:
+                return_value, restart_value_ignored = FanIn.fan_in(**keyword_arguments)
         else:
-            return_value, restart_value_ignored = FanIn.fan_in(**keyword_arguments)
+            if is_select:
+                #FanIn.lock()
+                return_value = FanIn.fan_in(**keyword_arguments)
+                FanIn.unlock()
+            else:
+                return_value, restart_value_ignored = FanIn.fan_in(**keyword_arguments)
 
-            logger.debug("fanin become task output:" + str(keyword_arguments['result']))
             logger.debug("calling_task_name:" + keyword_arguments['calling_task_name'])
-            # Add our result to the results (instead of sending it to the fanin on the server and server sending it back
-            return_value[keyword_arguments['calling_task_name']] = keyword_arguments['result']
-            DAG_exec_state.return_value = return_value
-            DAG_exec_state.blocking = False 
+            # try_fan_in never returns true. If we are not the last fan_in then we
+            # get a return_value of 0; otherwise, we get the other fan_in results,
+            # which do not include ours.
+            if return_value == 0:
+                logger.debug("calling_task_name:" + keyword_arguments['calling_task_name'] 
+                    + " return value of fan_in is 0.")
+                DAG_exec_state.return_value = 0
+                DAG_exec_state.blocking = False 
+            else:
+                # Add our result to the results (instead of sending our result to the fanin on the server and server sending it back
+                logger.debug("fanin become task output, which was our result (to add to results dict.):" + str(keyword_arguments['result']))
+                return_value[keyword_arguments['calling_task_name']] = keyword_arguments['result']
+                DAG_exec_state.return_value = return_value
+                DAG_exec_state.blocking = False 
 
-		# This is returned to process_fanin which returns it to DAG_executor; DAG_executtor will look at blocking
-		# and if not blocking the return_value to get the input as if not blocking then becomes fanin task.
+		# This is returned to process_fanin which returns it to DAG_executor; DAG_executtor will look at return
+		# value to see if it is 0 or not.
         return DAG_exec_state
         
     # faninNB is asynch w/client always terminate
@@ -183,10 +254,13 @@ class DAG_executor_Synchronizer(object):
         self.mutex.acquire()
         inmap = fanin_task_name in self.synchronizers
         logger.debug ("calling_task_name: " + calling_task_name + " fanin_task_name: " + fanin_task_name + " inmap: " + str(inmap))
+        is_select = (FanIn_Type == "DAG_executor_FanIn_Select")
         if not inmap: 	# fanin_task_name in self.synchronizers:
-            # Note: When we create FanIn objects locally, we are always using DAG_executor_FanInNB.DAG_executor_FanInNB.
-            # We never use the "select" version.
-            FanInNB = DAG_executor_FanInNB.DAG_executor_FanInNB(fanin_task_name) # initial_n = 0, monitor_name = None
+            if not is_select:
+                FanInNB = DAG_executor_FanInNB.DAG_executor_FanInNB(fanin_task_name) # initial_n = 0, monitor_name = None
+            else:
+                FanInNB = DAG_executor_FanInNB_select.DAG_executor_FanInNB_Select(fanin_task_name) # initial_n = 0, monitor_name = None
+
             FanInNB.init(**keyword_arguments)
             logger.debug("calling_task_name: " + calling_task_name + " fanin_task_name: " + fanin_task_name
                 + " DAG_executor_Synchronizer: create_and_faninNB: create caching new fanin with name '%s'" % (fanin_task_name))
@@ -202,20 +276,29 @@ class DAG_executor_Synchronizer(object):
 		# Here, we can just wait for op to finish, then return. Caller has nothing to do but 
 		# quit since nothing to do after a fanin.
 
-        # return is: None, restart, where restart is always 0 and return_value is None; and makes no change to DAG_executor_State	
-        return_value_ignored, restart_value_ignored = FanInNB.fan_in(**keyword_arguments)
+        if not is_select:
+            # return is: None, restart, where restart is always 0 and return_value is None; and makes no change to DAG_executor_State	
+            return_value_ignored, restart_value_ignored = FanInNB.fan_in(**keyword_arguments)
+        else:
+            # hld the mutex lock but do this as usual anyway
+            FanInNB.lock()
+            # non-blocking
+            return_value_ignored = FanInNB.fan_in(**keyword_arguments)
+            FanInNB.unlock()
 
-#ToDo: if we always return a state:
+        self.mutex.release()
+
+        #if we decide we always wan to return a state, we can use this:
+        """
         DAG_exec_state = keyword_arguments['DAG_executor_State']
         DAG_exec_state.blocking = True 
 		# for faninNB there is never a result, even for last caller since No Becomes (NB)
-		# Note: We could have fan_in for FanInNB return the results for debugging
+		# Note: We could have fan_in for FanInNB return the results for debugging.
+        # Note: It does return the results so we can print them for debugging.
         DAG_exec_state.return_value = None 
-
-        self.mutex.release()
+        """
         
-# ToDo: may return DAG_executor_State to be consistent - it can be ignored.
-# No: this is not being returned to user, this goes to DAG_executor, which will just process fanins next.
+        # may return DAG_executor_State to be consistent - currently, return value is ignored.
         return 0
 
     # faninNB is asynch w/client always terminate
@@ -243,28 +326,27 @@ class DAG_executor_Synchronizer(object):
 		# Here, we can just wait for op to finish, then return. Caller has nothing to do but 
 		# quit since nothing to do after a fanin.
 
-#ToDo: Like Fanin: can call try_fan_in, dont need to since fan_in does not realy block, i.e., it 
-#      returns instead of blocking. More consistent to call try_fan_in?
+        #ToDo: Like Fanin: we could call try_fan_in, don't need to since fan_in does not block, 
+        # i.e., it returns instead of blocking.
 
         # return is: None, restart, where restart is always 0 and return_value is None; and makes no change to DAG_executor_State	
         # Not using "asynch" here as no way to implement "asynch" locally.
         return_value_ignored, restart_value_ignored = FanInNB.fan_in(**keyword_arguments)
 
-#ToDo: if we always return a state:
-        # rhc: DES
+        #if we decide we always wan to return a state, we can use this:
+        """
         DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
         #DAG_exec_state = keyword_arguments['DAG_executor_State']
         DAG_exec_state.blocking = True 
 		# for faninNB there is never a result, even for last caller since No Becomes (NB)
 		# Note: We could have fan_in for FanInNB return the results for debugging
         DAG_exec_state.return_value = None 
+        """
         
-# ToDo: may return DAG_executor_State to be consistent - it can be ignored.
-# No: this is not being returned to user, this goes to DAG_executor, which will just process fanins next.
+        # may return DAG_executor_State to be consistent - currently, return value is ignored.
         return 0
         
-    def create_all_fanins_and_faninNBs_locally(self,DAG_map,DAG_states,DAG_info,all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes):
-                                                            
+    def create_all_fanins_and_faninNBs_locally(self,DAG_map,DAG_states,DAG_info,all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes):                                                 
         fanin_messages = []
         for fanin_name, size in zip(all_fanin_task_names,all_fanin_sizes):
             # rhc: DES
@@ -325,7 +407,11 @@ class DAG_executor_Synchronizer(object):
             logger.debug (" inmap before: " + str(inmap))
             #if not fanin_task_name in DAG_executor_Synchronizer.synchronizers:
             if not inmap: 	# fanin_task_name in self.synchronizers:
-                FanIn = DAG_executor_FanIn.DAG_executor_FanIn(fanin_task_name) # initial_n = 0, monitor_name = None
+                is_select = (FanIn_Type == "DAG_executor_FanIn_Select")
+                if not is_select:
+                    FanIn = DAG_executor_FanIn.DAG_executor_FanIn(fanin_task_name) # initial_n = 0, monitor_name = None
+                else:
+                    FanIn = DAG_executor_FanIn_select.DAG_executor_FanIn_Select(fanin_task_name) # initial_n = 0, monitor_name = None
                 FanIn.init(**(msg['state'].keyword_arguments))
                 logger.debug(" create_and_fanin: create caching new fanin with name '%s'" % (fanin_task_name))
                 self.synchronizers[fanin_task_name] = FanIn # Store Synchronizer object.
@@ -342,7 +428,11 @@ class DAG_executor_Synchronizer(object):
             logger.debug (" inmap before: " + str(inmap))
             #if not fanin_task_name in DAG_executor_Synchronizer.synchronizers:
             if not inmap: 	# faninNB_task_name in self.synchronizers:
-                FanInNB = DAG_executor_FanInNB.DAG_executor_FanInNB(faninNB_task_name) # initial_n = 0, monitor_name = None
+                is_select = (FanIn_Type == "DAG_executor_FanIn_Select")
+                if not is_select:
+                    FanInNB = DAG_executor_FanInNB.DAG_executor_FanInNB(faninNB_task_name) # initial_n = 0, monitor_name = None
+                else:
+                    FanInNB = DAG_executor_FanInNB_select.DAG_executor_FanInNB_Select(faninNB_task_name) # initial_n = 0, monitor_name = None
                 FanInNB.init(**(msg['state'].keyword_arguments))
                 logger.debug(" create_and_fanin: create caching new fanin with name '%s'" % (faninNB_task_name))
                 self.synchronizers[faninNB_task_name] = FanInNB # Store Synchronizer object.

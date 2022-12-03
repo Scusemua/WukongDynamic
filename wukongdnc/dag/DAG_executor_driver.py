@@ -4,6 +4,9 @@
 
 # Where are we: 
 #
+# check the local server changes
+# How do we know when to stop clock for lamba simulation? We can't join any threads
+#
 # should invoke be atomic? for ==n check? as well as lock the function calls.
 #  or lock the check and the function calls with same fine-grained lock?
 #  Since multiple callers for invoke at the same time?
@@ -55,10 +58,10 @@
 import logging 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.ERROR)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
+ch.setLevel(logging.ERROR)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
@@ -461,34 +464,36 @@ def run():
             state_info = DAG_map[start_state]
             state_info.task_inputs = None
 
-    # FYI:
-    print("DAG_executor_driver: DAG_map:")
-    for key, value in DAG_map.items():
-        print(key)
-        print(value)
-    print("  ")
-    print("DAG_executor_driver: DAG states:")         
-    for key, value in DAG_states.items():
-        print(key)
-        print(value)
-    print("   ")
-    print("DAG_executor_driver: DAG leaf task start states")
-    for start_state in DAG_leaf_task_start_states:
-        print(start_state)
-    print()
-    print("DAG_executor_driver: DAG_tasks:")
-    for key, value in DAG_tasks.items():
-        print(key, ' : ', value)
-    print()
-    print("DAG_executor_driver: DAG_leaf_tasks:")
-    for task_name in DAG_leaf_tasks:
-        print(task_name)
-    print() 
-    print("DAG_executor_driver: DAG_leaf_task_inputs:")
-    for inp in DAG_leaf_task_inputs:
-        print(inp)
-    #print() 
-    print()
+    output_DAG = False
+    if output_DAG:
+        # FYI:
+        print("DAG_executor_driver: DAG_map:")
+        for key, value in DAG_map.items():
+            print(key)
+            print(value)
+        print("  ")
+        print("DAG_executor_driver: DAG states:")         
+        for key, value in DAG_states.items():
+            print(key)
+            print(value)
+        print("   ")
+        print("DAG_executor_driver: DAG leaf task start states")
+        for start_state in DAG_leaf_task_start_states:
+            print(start_state)
+        print()
+        print("DAG_executor_driver: DAG_tasks:")
+        for key, value in DAG_tasks.items():
+            print(key, ' : ', value)
+        print()
+        print("DAG_executor_driver: DAG_leaf_tasks:")
+        for task_name in DAG_leaf_tasks:
+            print(task_name)
+        print() 
+        print("DAG_executor_driver: DAG_leaf_task_inputs:")
+        for inp in DAG_leaf_task_inputs:
+            print(inp)
+        #print() 
+        print()
 
     #ResetRedis()
     
@@ -882,7 +887,7 @@ def run():
     if use_multithreaded_multiprocessing:
         logger.debug("DAG_executor_driver: num_processes_created_for_multithreaded_multiprocessing: " + str(num_processes_created_for_multithreaded_multiprocessing))
     elif run_all_tasks_locally:
-            logger.debug("DAG_executor_driver: num_threads/processes_created: " + str(num_threads_created))
+        logger.debug("DAG_executor_driver: num_threads/processes_created: " + str(num_threads_created))
 
     if run_all_tasks_locally:
         # Do joins if not using lambdas
@@ -912,7 +917,7 @@ def run():
     stop_time = time.time()
     duration = stop_time - start_time
 
-    logger.debug("DAG_executor_driver: Sleeping 1.0")
+    logger.debug("DAG_executor_driver: Sleeping ...")
     time.sleep(3.0)
     print("DAG_executor_driver: DAG_Execution finished in %f seconds." % duration)
 		
