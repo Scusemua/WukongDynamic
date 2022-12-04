@@ -248,15 +248,25 @@ class TCPHandler(socketserver.StreamRequestHandler):
         work_queue_type = DAG_exec_state.keyword_arguments['work_queue_type']
         work_queue_method = DAG_exec_state.keyword_arguments['work_queue_method']
         list_of_fanout_values = DAG_exec_state.keyword_arguments['list_of_work_queue_fanout_values']
+#rhc: async batch
+        async_call = DAG_exec_state.keyword_arguments['async_call']
 
-        logger.info("tcp_server: synchronize_process_faninNBs_batch: calling_task_name: " + calling_task_name + ": worker_needs_input: " + str(worker_needs_input)
+        logger.debug("tcp_server: synchronize_process_faninNBs_batch: calling_task_name: " + calling_task_name + ": worker_needs_input: " + str(worker_needs_input)
             + " faninNBs size: " +  str(len(faninNBs)))
+#rhc: async batch
+        logger.debug("BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB")
+        logger.debug("tcp_server: synchronize_process_faninNBs_batch: calling_task_name: " + calling_task_name + ": async_call: " + str(async_call))
 
         # assert:
         if worker_needs_input:
             if not run_all_tasks_locally:
                 logger.error("[Error: Internal Error: synchronize_process_faninNBs_batch: worker needs input but using lambdas.")
-        
+
+        #assert: if worker needs work then we should be using synch call so we can check the results for work
+        if worker_needs_input:
+            if async_call:
+                logger.debug("[Error]: Internal Error: synchronize_process_faninNBs_batch: worker_needs_input but using async_call")
+
         # Note: If we are using lambdas, then we are not using workers (for now) so worker_needs_input
         # must be false. Also, we are currently not piggybacking the fanouts so there should be no 
         # fanouts to process.
@@ -267,8 +277,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
         list_of_work = []
 
         # List list_of_work_queue_fanout_values may be empty: if a state has no fanouts this list is empty. 
-        # If a state has 1 fanout it will be a become task and there will be no moer fanouts.
-        # If there are no fanouts, then worker_needs_work will be True and this list will be empty.
+        # If a state has 1 fanout it will be a become task and there will be no more fanouts so this list is empty.
+        # If the state has no fanouts, then worker_needs_work will be True and this fanout list will be empty.
         # otherwise, the worker will have a become task so worker_needs_input will be false (and this
         # list may or may not be empty depending on whether there are any more fanouts.)
         if len(list_of_fanout_values) > 0:
@@ -465,9 +475,12 @@ class TCPHandler(socketserver.StreamRequestHandler):
             logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": " + str(work_queue_method) + ", return_Value " + str(return_value))
             logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": " + str(work_queue_method) + ", successfully called work_queue method. ")
 
-        if not got_work:
+#rhc: async batch
+        if not got_work and not async_call:
             # if we didn't need work or we did need work but we did not get any above, 
             # then we return 0 to indicate that we didn't get work. 
+            # if async_call then the worker did not need work and so it called async and is not 
+            # waiting for a (sync) result.
             # if worker_needs_input is sent from client as False, then got_work is initially False and never set to True
             logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": no work to return, returning DAG_exec_state.return_value = 0.")           
             DAG_exec_state.return_value = 0
@@ -481,6 +494,11 @@ class TCPHandler(socketserver.StreamRequestHandler):
             # we got work above so we already returned the DAG_exec_state.return_value set to work_tuple 
             # via self.send_serialized_object(work)
             #logger.debug("tcp_server: synchronize_process_faninNBs_batch: returning work in DAG_exec_state.") 
+
+#rhc: async batch
+        #debugging
+        if async_call:
+            logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": async_call so not returning a value.")           
 
         #logger.debug("tcp_server: synchronize_process_faninNBs_batch: returning DAG_state %s." % (str(DAG_exec_state)))           
         #self.send_serialized_object(cloudpickle.dumps(DAG_exec_state))

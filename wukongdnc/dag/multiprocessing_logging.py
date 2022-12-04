@@ -26,7 +26,7 @@ def listener_configurer():
     # https://stackoverflow.com/q/54036637
     loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
     for logger in loggers:
-        logger.setLevel(logging.ERROR) # Specify the log level here.
+        logger.setLevel(logging.DEBUG) # Specify the log level here.
 """
 class logging.handlers.RotatingFileHandler(filename, mode='a', maxBytes=0, backupCount=0, encoding=None, 
 delay=False, errors=None)

@@ -13,6 +13,7 @@ import threading
 
 from .util import make_json_serializable
 from .state import State 
+from ..dag.DAG_executor_State import DAG_executor_State
 #from ..constants import TCP_SERVER_IP
 
 import logging 
@@ -371,7 +372,7 @@ def create_all_fanins_and_faninNBs_and_possibly_work_queue(websocket, op, type, 
     #state_from_server = cloudpickle.loads(data) # `state_from_server` is of type State
     return ack
 
-def synchronize_process_faninNBs_batch(websocket, op, type, name, state):
+def synchronize_process_faninNBs_batch(websocket, op, type, name, DAG_exec_state):
     """
     process all fanins and faninNBs for DAG_executor on the TCP server.
 
@@ -397,16 +398,19 @@ def synchronize_process_faninNBs_batch(websocket, op, type, name, state):
     """
 
     thread_name = threading.current_thread().name
+
+#rhc: async_call
+    async_call = DAG_exec_state.keyword_arguments['async_call']
  
     msg_id = str(uuid.uuid4())
-    logger.debug(thread_name + ": synchronize_process_faninNBs_batch: Sending synchronize_process_faninNBs_batch message to server. Op='%s', type='%s', id='%s', state=%s" % (op, type, msg_id, state))
+    logger.debug(thread_name + ": synchronize_process_faninNBs_batch: Sending synchronize_process_faninNBs_batch message to server. Op='%s', type='%s', id='%s', state=%s" % (op, type, msg_id, DAG_exec_state))
 
     # we set state.keyword_arguments before call to create()
     message = {
         "op": op,
         "type": type,
         "name": name,
-        "state": make_json_serializable(state),
+        "state": make_json_serializable(DAG_exec_state),
         "id": msg_id
     }
 
@@ -415,13 +419,22 @@ def synchronize_process_faninNBs_batch(websocket, op, type, name, state):
 
     logger.debug(thread_name + ": synchronize_process_faninNBs_batch: Sent 'synchronize_process_faninNBs_batch' message to server")
 
-    # Receive data. This should just be an ACK, as the TCP server will 'ACK' our create() calls.
-    data = recv_object(websocket)
-    logger.debug(thread_name + ": synchronize_process_faninNBs_batch: data is " + str(data))
-    state_from_server = cloudpickle.loads(data) # `state_from_server` is of type State
-    logger.debug(thread_name + ": synchronize_process_faninNBs_batch: successfully unpickled")
+    if not async_call:
+        # synch call so get return value from tcp server
+        logger.debug(thread_name + ": synchronize_process_faninNBs_batch: synchronous call so get return value.")
+        data = recv_object(websocket)
+        logger.debug(thread_name + ": synchronize_process_faninNBs_batch: data is " + str(data))
+        state = cloudpickle.loads(data) # `state_from_server` is of type State
+        logger.debug(thread_name + ": synchronize_process_faninNBs_batch: successfully unpickled")
+    else: 
+        # don't wait for return value from tcp server since we did not request to receive work.
+        # set return_value = 0 to indicate no work is coming back
+        logger.debug(thread_name + ": synchronize_process_faninNBs_batch: asynchronous call so return state with return_value 0.")
+        state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
+        state.return_value = 0
+        state.blocking = False
 
-    return state_from_server
+    return state
 
 
 

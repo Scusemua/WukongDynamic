@@ -4,7 +4,8 @@
 
 # Where are we: 
 #
-# check the local server changes
+# check the local server changes for select/non-select
+# check the async call changes + test with simulated lambdas
 # How do we know when to stop clock for lamba simulation? We can't join any threads
 #
 # should invoke be atomic? for ==n check? as well as lock the function calls.
@@ -13,12 +14,6 @@
 # document stuff
 #
 # def DAG_executor(payload):	should not be using workers, correct?
-#
-# Fix sockets for multitreaded processes
-#
-# Don't want Lambda to wait for work or anything else? Call to process_faninNBs_batch() can 
-# be asynch since faninNB starts lambdas (all the faninNB work) so no need to wait on 
-# process_faninNBs_batch? Also, no work returned to calling lambda.
 #
 # matrix mult deposits results to "collector" object at end.
 #
@@ -58,10 +53,10 @@
 import logging 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
+logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 ch = logging.StreamHandler()
-ch.setLevel(logging.ERROR)
+ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
@@ -279,7 +274,12 @@ Note: We try to reduce the number of calsls to the server for faninNB processing
 batching the faninNB operations. That is, we make one call to the server and pass
 all the faninNB operations. We also pass the list of fanouts on this call. Fanouts
 are added to the work_queue, which is also on the server. Thus, there is one call
-to the server for processing all of the faninNBs and fanouts. 
+to the server for processing all of the faninNBs and fanouts. This batching is 
+done when we aer using worker processes (not threads since the work_queue is local 
+when we are using threads), or using lambdas (which do not use a work queue, currently)
+or we are not using workers and we using threads to simulated lambdas and using 
+Python functions for simulating lambas for storing sync objects 
+(Config: A1, A3, A5, A6)
 
 Note: If a worker processing the current state has no fanouts then it will need more 
 work unless it is the become task for one of its faninNBs. Usually, the results of
@@ -300,6 +300,10 @@ state for that fanout in the work_queue. The same thing happens when a thread be
 thread that executes a fanin task. So becomes are handled as usual. In general, when a worker
 needs_work it gets work from the (shared) work_queue. A worker on puts work in the work 
 queue that it cannot execute becuase it already has work to do.
+
+Note: when we call process_fannNBs_batch and worker_needs_input is false, then this call 
+is treated as an async call since the worker does not need the results, i.e.. and thus there
+is no need to wait for the results. 
 
 Note: We currently bcome the first fanout on the fanout list for the current state.
 It would probably be better to choose which fanout to become. For example, become the 
