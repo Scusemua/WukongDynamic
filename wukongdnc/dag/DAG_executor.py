@@ -497,10 +497,11 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
     else:
         # we only get work from process_faninNBs_batch() when we are using workers and worker needs input,
         # or we are simulating lambas and storing synch objects remotely. (If we are simulating lambdas
-        # and storing synch objects locally, the FaninNBs start threads (locally) to run the fan_in tasks.)
-        if not (using_workers and worker_needs_input) and not (not store_fanins_faninNBs_locally and run_all_tasks_locally):
-            logger.error("[Error]: " + thread_name + ": process_faninNBs_batch: not using workers, or worker_needs_input is False and not (storing synch objects remotely"
-                + " and simulting lambdas) but using process_faninNBs batch and we got work.")
+        # and storing synch objects locally, the FaninNBs start th1
+        # (run_all_tasks_locally and using_workers and not using_threads_not_processes) or (not run_all_tasks_locally) or (run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and using_Lambda_Function_Simulators_to_Store_Objects):reads (locally) to run the fan_in tasks.)
+        if not (run_all_tasks_locally and using_workers and not using_threads_not_processes and worker_needs_input) and not (run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and using_Lambda_Function_Simulators_to_Store_Objects):
+            logger.error("[Error]: " + thread_name + ": process_faninNBs_batch: (not using worker processes, or worker_needs_input is False) and not (storing synch objects remotely in simulated lambdas"
+                + " and using threads to simulate lambdas) but using process_faninNBs batch and we got work back from server.")
 
         if using_workers:
             # return_value is a tuple (start state fanin task, dictionary of fanin results)
@@ -517,12 +518,13 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
             # worker can be a thread of a process
             dict_of_results = dummy_DAG_exec_state.return_value[1]
             if not worker_needs_input:
-                # Note: asserted using_workers and worker_needs_input above
-                # this should be unreachable; leaving it for now.
-                # If we don't need work then any work from faninNBs should have been enqueued in work queue
+                # Note: asserted using_workers and worker_needs_input above so ...
+                # 
+                # This should be unreachable; leaving it for now.
+                # If we don't need work then any work from faninNBs should have been enqueued in work queue instead of being returned
                 logger.error("[Error]: " + thread_name + ": process_faninNBs_batch: Internal Error: got work but not worker_needs_input.")
                 
-                # Also, don't pass in the multp data_dict, so will use the global data dict
+                # Also, don't pass in the multprocessing data_dict, so will use the global data dict
                 logger.debug(thread_name + ": process_faninNBs_batch: " + calling_task_name + ": process_faninNBs_batch Results: ")
                 for key, value in dict_of_results.items():
                     logger.debug(str(key) + " -> " + str(value))
@@ -546,10 +548,11 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
                 DAG_exec_state.state = start_state_fanin_task
                 logger.debug(thread_name + ": process_faninNBs_batch: " + calling_task_name + ": got work, added it to data_dict, set worker_needs_input to False.")
         else:
-
-            if not (not store_fanins_faninNBs_locally and run_all_tasks_locally):
-                logger.error(thread_name + ": process_faninNBs_batch: " + calling_task_name + ": Internal Error: not using_workers and not (storing synch objects remotely"
-                    + " and simulting lambdas) but using process_faninNBs batch.")
+            # we call process_faninNBs_batch when we are using threads to simulate lambdas and
+            # storing objects remotely in simulated lambdas. In this case, we will be running
+            # tcp_server_lambda, which has a synchronize_process_faninNBs_batch method that returns
+            # a list of non-empty work-tuples and a new threead (to simulate lambdas) s started
+            # for each tuple.
 
             # Not using_workers so we are using threads to simulate using lambdas.
             # However, since the faninNB on tcp_server cannot crate a thread to execute
@@ -1209,7 +1212,7 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     if using_workers:   # we are become task so we have more work
                         # Config: A4_local, A4_Remote, A5, A6
                         worker_needs_input = False
-                        logger.debug(thread_name + " work_loop: fanouts: set worker_needs_input to False")
+                        logger.debug(thread_name + " work_loop: fanouts: set worker_needs_input to True.")
                     #Don't add to thread_work_queue just do it = False
                     #thread_work_queue.put(DAG_executor_state.state)
                     # else: Config: A1, A2, A3
@@ -1220,6 +1223,7 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     if using_workers: 
                         # Config: A4_local, A4_Remote, A5, A6
                         worker_needs_input = True
+                        logger.debug(thread_name + " work_loop: fanouts: set worker_needs_input to False.")
                     # else: Config: A1, A2, A3
 
                 if len(state_info.faninNBs) > 0:
@@ -1231,7 +1235,8 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
 
                     if (run_all_tasks_locally and using_workers and not using_threads_not_processes) or (not run_all_tasks_locally) or (run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and using_Lambda_Function_Simulators_to_Store_Objects):
                         # Config: A1, A3, A5, A6
-                        # Note: calling process_faninNBs_batch when using threads to simulate lambdas and storing objects remotely.
+                        # Note: calling process_faninNBs_batch when using threads to simulate lambdas and storing objects remotely
+                        # and using_Lambda_Function_Simulators_to_Store_Objects.
                         # Since the faninNBs cannot start new simulated threads to execute the fanin tasks,
                         # the process_faninNB_batch passes all the work back and the calling simuated thread starts one thread
                         # for each work tuple returned.
@@ -1248,9 +1253,22 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                                 logger.error("[Error]: DAG_executor_work_loop: using lambdas, so no workers, but worker_needs_input.")
 
 # rhc: async batch
-                        if not worker_needs_input:
+                        if not run_all_tasks_locally or (run_all_tasks_locally and using_workers and not using_threads_not_processes and not worker_needs_input):
+                            # running real lambdas to execute tasks or using worker processes and not worker_nneds_input.
+                            # when a worker process does not need input no work can be returned so no need to wait for
+                            # the return. Note that the api call to the server in process_faninNBs_batch
+                            # will see that this is an async_call and will not wait on (receive) a return
+                            # value but instead will return 0 which is what it would have recieved from the 
+                            # tcp_server if it would have waited (synchronously)
                             async_call = True
-                        else: # erquesting work so need to call synchroously so can check result
+                        else:
+                            # using worker processes or (using threads to simulate lambdas and storing objects in simulated lambdas).
+                            # If we are using threads to simulate lambdas but storing objects on the server thn we call
+                            # process_faninNBs, we do not call the process_faninNBs batch method, so we do not need 
+                            # to set async_call here. process_faninNBs returns a value (0 or not o) for each faninNB.
+                            # Note that when we store objects in lambdas (simulated or not) we run tcp_server_lambda.py
+                            # which has a version of process_faninNBs_batch that returns a list of work if the caller
+                            # is a thread that is simulating a lambda for executing tasks.
                             async_call = False
 
                         logger.debug("BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB")

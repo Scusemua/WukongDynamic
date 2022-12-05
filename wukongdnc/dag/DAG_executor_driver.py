@@ -5,7 +5,10 @@
 # Where are we: 
 #
 # check the local server changes for select/non-select
-# check the async call changes + test with simulated lambdas
+# check the async call changes + test with simulated lambdas.
+# check process_faninNBs_batch in tcp_servr_lambda make sure it works fo 
+# simulated and non-simulated lambda callers which are the only callers
+# when objecta are stored in lambdas. do asserts on asynch_call if true then rl lambdas. 
 # How do we know when to stop clock for lamba simulation? We can't join any threads
 #
 # should invoke be atomic? for ==n check? as well as lock the function calls.
@@ -278,8 +281,21 @@ to the server for processing all of the faninNBs and fanouts. This batching is
 done when we aer using worker processes (not threads since the work_queue is local 
 when we are using threads), or using lambdas (which do not use a work queue, currently)
 or we are not using workers and we using threads to simulated lambdas and using 
-Python functions for simulating lambas for storing sync objects 
+Python functions for simulating lambas for storing sync objects. 
 (Config: A1, A3, A5, A6)
+
+For process_faninNBs_batch, we pass sync_call = True, when we are using lambdas or we 
+are using worker processes and the worker does not need work. In these cases, no work 
+can be returnd so there is no need to wait for the return value. In this case, the 
+api function that calls the tcp_server (or tcp_server_lamda if we are storing objects in
+simulated lambdas) willl not do a receive to wait on the return but istead will return
+a dummy erturn value that it creates with the return value set to 0, which is what t would 
+have received if it waited (i.e., synchronously). The process_faninNBs_batch in tcp_server_lambda
+returns a list of work (if there is work) to the thread that is simulating the calling lambda
+so this thread can create more threads to simulate the lambdas, i.e., since the server cannot
+create new threads to run the faninNB fanin tasks (or they would run on the server), we 
+let the calling (local) thread create these threads. When using real lambdas to excute tasks,
+the faninNB fanins will invoke real lambdas to execute the fanin tasks.
 
 Note: If a worker processing the current state has no fanouts then it will need more 
 work unless it is the become task for one of its faninNBs. Usually, the results of

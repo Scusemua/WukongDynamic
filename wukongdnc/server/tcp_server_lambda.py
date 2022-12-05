@@ -435,8 +435,14 @@ class TCPHandler(socketserver.StreamRequestHandler):
         list_of_fanout_values = DAG_exec_state.keyword_arguments['list_of_work_queue_fanout_values']
         """
 
-        logger.info("tcp_server_lambda: synchronize_process_faninNBs_batch: calling_task_name: "
-            + calling_task_name + " faninNBs size: " +  str(len(faninNBs)))
+#rhc: async batch
+        async_call = DAG_exec_state.keyword_arguments['async_call']
+
+        logger.debug("tcp_server_lambda: synchronize_process_faninNBs_batch: calling_task_name: " + calling_task_name 
+            + ": worker_needs_input: " + str(worker_needs_input) + " faninNBs size: " +  str(len(faninNBs)))
+#rhc: async batch
+        logger.debug("tcp_server_lambda: synchronize_process_faninNBs_batch: calling_task_name: " + calling_task_name 
+            + ": async_call: " + str(async_call))
 
         # assert:
         if worker_needs_input:
@@ -547,7 +553,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             # and if we were the last caller of fan_in a real lamba was started to execute the fanin_task.
             # (If we were not the last caller then no lamba was started and there is nothing to do.
             # The calls to process_faninNB_batch when we are using real lambda can be asynchronous since
-            # the caler does not need to wait for the return value, which will be 0 indicating there is 
+            # the caller does not need to wait for the return value, which will be 0 indicating there is 
             # nothing to do.)
             if using_Lambda_Function_Simulators_to_Store_Objects and using_DAG_orchestrator:
                 logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": calling infiniD.enqueue(message)."
@@ -742,12 +748,31 @@ class TCPHandler(socketserver.StreamRequestHandler):
             DAG_exec_state.return_value = list_of_work_tuples
             DAG_exec_state.blocking = False
         else:
+            # we are using real lambdas to execute tasks. In this case, the faninNB fanins will
+            # incoke lambdas to excute the fanin tasks so there is no work to return. This
+            # is why we set DAG_exec_state.return_value = 0 which indicates no work.
+            # Note that real lambdas that call process_faninNBs_batch will set 
+            # async_call to True, so this DAG_exec_state is not actually returned. We se it 
+            # here n case we change our mind about async_calls.
             logger.debug("tcp_server_lambda: synchronize_process_faninNBs_batch: not run_all_tasks_locally "
-                + " so returning 0.")
+                + " so no work to return.")
             DAG_exec_state.return_value = 0
             DAG_exec_state.blocking = False  
-        #self.send_serialized_object(cloudpickle.dumps(returned_state_ignored))
-        self.send_serialized_object(cloudpickle.dumps(DAG_exec_state))     
+
+        if not async_call:
+            # the caller is a thread simulating a real lambda
+            #self.send_serialized_object(cloudpickle.dumps(returned_state_ignored))
+            self.send_serialized_object(cloudpickle.dumps(DAG_exec_state)) 
+        # else: no return value for async calls. The caller was a real lambda
+        # The api caller will check async_call and create a return value for the client, which is real lambda:
+        #   state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
+        #   state.return_value = 0
+        #   state.blocking = False   
+        # When using real lambdas to execute tasks, the faninNB will star a real lambda to 
+        # execute the fanin task so no work is returned here. When using threada to simulate 
+        # lambdas, the faninNBs cannot start threads on the server so a list of work tupls is returned
+        # to the thread caller and this thread starts a new thread for each work tuple (to
+        # simulate starting a real lambda.)
 
     # Not used and not tested. Currently create work queue in 
     # create_all_fanins_and_faninNBs_and_possibly_work_queue. 

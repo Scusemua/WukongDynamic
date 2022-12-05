@@ -34,9 +34,9 @@ num_threads_for_multithreaded_multiprocessing = 2
 FanIn_Type = "DAG_executor_FanIn"
 FanInNB_Type = "DAG_executor_FanInNB"
 process_work_queue_Type = "BoundedBuffer"
-#FanIn_Type = "DAG_executor_FanIn_Select"
-#FanInNB_Type = "DAG_executor_FanInNB_Select"
-#process_work_queue_Type = "BoundedBuffer_Select"
+# FanIn_Type = "DAG_executor_FanIn_Select"
+# FanInNB_Type = "DAG_executor_FanInNB_Select"
+# process_work_queue_Type = "BoundedBuffer_Select"
 
 # if running real lambdas or storing synch objects in real lambdas:
 #
@@ -44,9 +44,9 @@ process_work_queue_Type = "BoundedBuffer"
 #
 
 # Currently, this is for storing synch objects in simulated lambdas;
-using_Lambda_Function_Simulators_to_Store_Objects = False
+using_Lambda_Function_Simulators_to_Store_Objects = True
 # use orchestrator to invoke functions (e.g., when all fanin/fanout results are available)
-using_DAG_orchestrator = False
+using_DAG_orchestrator = True
 # use a single lambda function to store all of the synchroization objects
 # to make an easy test case. This cannot be used when using the function 
 # simulators or using the DAG_orchestrator

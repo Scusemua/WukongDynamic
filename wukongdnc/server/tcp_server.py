@@ -267,6 +267,17 @@ class TCPHandler(socketserver.StreamRequestHandler):
             if async_call:
                 logger.debug("[Error]: Internal Error: synchronize_process_faninNBs_batch: worker_needs_input but using async_call")
 
+        # assert:
+        if async_call:
+            # must be running real lambdas to execute tasks. Note: If we are using threads to simulate
+            # lambdas we do not call tcp_server.process_faninNBs_batch. If we are not storing objects
+            # in lamdas, we call process_fninNBs to process the faninNBs one by one. If we are
+            # storing objects in lambdas we do call process_faninNBs_batch but we will be running
+            # tcp_server_lambda so we will not call this version in tcp_server.
+            if not (not run_all_tasks_locally):
+                logger.error("[Error: Internal Error: synchronize_process_faninNBs_batch: async_call but not (not run_all_tasks_locally).")
+
+
         # Note: If we are using lambdas, then we are not using workers (for now) so worker_needs_input
         # must be false. Also, we are currently not piggybacking the fanouts so there should be no 
         # fanouts to process.
@@ -283,7 +294,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # list may or may not be empty depending on whether there are any more fanouts.)
         if len(list_of_fanout_values) > 0:
             # if run_all_tasks_locally then we are not using lambdas so add fanouts as work in the 
-            # work queue.
+            # work queue. If we are using workers, we already used one fanout as a become task
+            # so these fanouts can be put in the work queue.
             # If we are using lambdas, then we can use the parallel invoker to invoke the fanout lambdas
             if run_all_tasks_locally:
                 # work_queue.deposit_all(list_of_work_queue_fanout_values)
@@ -478,10 +490,14 @@ class TCPHandler(socketserver.StreamRequestHandler):
 #rhc: async batch
         if not got_work and not async_call:
             # if we didn't need work or we did need work but we did not get any above, 
-            # then we return 0 to indicate that we didn't get work. 
+            # then we return 0 to indicate that we didn't get work. Note if we needed 
+            # work and we got work from faninNB it was sent above so we don't send
+            # any work here. Here we only return 0 to indicate that we did not get
+            # any work, but only f this is not an async call.
             # if async_call then the worker did not need work and so it called async and is not 
             # waiting for a (sync) result.
-            # if worker_needs_input is sent from client as False, then got_work is initially False and never set to True
+            # if worker_needs_input is sent from client as False, then got_work is initially False 
+            # and never set to True.
             logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": no work to return, returning DAG_exec_state.return_value = 0.")           
             DAG_exec_state.return_value = 0
             DAG_exec_state.blocking = False
@@ -498,7 +514,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
 #rhc: async batch
         #debugging
         if async_call:
-            logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": async_call so not returning a value.")           
+            logger.debug("CCCCCCCCCCCCCCCCCCCCCCCC")
+            logger.debug("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": async_call so not returning a value.")           
 
         #logger.debug("tcp_server: synchronize_process_faninNBs_batch: returning DAG_state %s." % (str(DAG_exec_state)))           
         #self.send_serialized_object(cloudpickle.dumps(DAG_exec_state))
