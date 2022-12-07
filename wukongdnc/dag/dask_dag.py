@@ -194,11 +194,12 @@ if __name__ == "__main__":
     while len(L) > 1:
       L = [delayed(add)(a, b) for a, b in zip(L[::2], L[1::2])]
 
+    graph = L[0].__dask_graph__()
     s = time.time()
-    res = L[0].compute()
+    result = L[0].compute()
     t = time.time()
-    print("Obtained result %d in %f seconds." % (res, t-s))
-    
+    print("Obtained result %d in %f seconds." % (result, t-s))
+    return graph, result 
   
   def mat_mul(n = 10, c = 2):
     """
@@ -230,7 +231,7 @@ if __name__ == "__main__":
   # graph, result = manual_dag_test_batch_faninNBs()
   # graph, result = manual_dag_test_batch_two_faninNBs()
   # graph, result = manual_dag_no_faninNBs()
-  graph, result = tree_reduction(n = 32)
+  graph, result = tree_reduction(n = 1024)
   # graph, result = mat_mul(n = 4, c = 2)
 
   graph_dict = graph.to_dict()
