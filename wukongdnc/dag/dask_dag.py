@@ -194,7 +194,11 @@ if __name__ == "__main__":
     while len(L) > 1:
       L = [delayed(add)(a, b) for a, b in zip(L[::2], L[1::2])]
 
+    print(str(lc))
+    s = time.time()
     graph = L[0].__dask_graph__()
+    t = time.time()
+    print("Obtained graph in %f seconds." % (t-s))
     s = time.time()
     result = L[0].compute()
     t = time.time()
@@ -233,6 +237,8 @@ if __name__ == "__main__":
   # graph, result = manual_dag_no_faninNBs()
   graph, result = tree_reduction(n = 1024)
   # graph, result = mat_mul(n = 4, c = 2)
+  print("sleeping")
+  time.sleep(3)
 
   graph_dict = graph.to_dict()
 
