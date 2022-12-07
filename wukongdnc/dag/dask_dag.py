@@ -4,6 +4,9 @@ import dask.array as da
 from collections import defaultdict
 from .DFS_visit import Node
 
+from dask import delayed
+import time
+
 # def execute_task(task_obj: tuple, existing_results: dict = {}, task_id: str = None):
 #   """
 #   Execute the given task.
@@ -176,7 +179,7 @@ if __name__ == "__main__":
         and the second element is the result of running the tree reduction computation on Dask proper.
     """
     print("==== GENERATING TREE REDUCTION (n = %d)" % n)
-
+    """ OLD
     L = range(n) # 1,024 
     while len(L) > 1:
       L = list(map(dask.delayed(add), L[0::2], L[1::2]))
@@ -185,6 +188,17 @@ if __name__ == "__main__":
     result = L[0].compute()
 
     return graph, result 
+    """
+    # New
+    L = range(n)
+    while len(L) > 1:
+      L = [delayed(add)(a, b) for a, b in zip(L[::2], L[1::2])]
+
+    s = time.time()
+    res = L[0].compute()
+    t = time.time()
+    print("Obtained result %d in %f seconds." % (res, t-s))
+    
   
   def mat_mul(n = 10, c = 2):
     """
