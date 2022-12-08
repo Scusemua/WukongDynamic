@@ -56,10 +56,10 @@
 import logging 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.ERROR)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
+ch.setLevel(logging.ERROR)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
@@ -546,7 +546,7 @@ def run():
 
     #ResetRedis()
     
-    start_time = time.time()
+    #start_time = time.time()
 	
 #############################
 #Note: if using Lambdas to store synch objects: SERVERLESS_SYNC = False in constants.py; set to True
@@ -774,6 +774,9 @@ def run():
         num_processes_created_for_multithreaded_multiprocessing = 0
         #num_processes_created_for_multithreaded_multiprocessing = create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,counter,process_work_queue,data_dict,log_queue,worker_configurer)
         num_processes_created_for_multithreaded_multiprocessing = create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,counter,log_queue,worker_configurer)
+        start_time = time.time()
+        for thread_proc in multithreaded_multiprocessing_process_list:
+            thread_proc.start()
     else: # multi threads or multi-processes, thread and processes may be workers using work_queue
         # if we are not using lambdas, and we are not using a worker pool, create a thread for each
         # leaf task. If we are not using lambdas but we are using a worker pool, create at least 
@@ -822,7 +825,8 @@ def run():
                         thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=(thread_name_prefix+"ss"+str(start_state)), args=(payload,))
                         if using_workers:
                             thread_proc_list.append(thread)
-                        thread.start()
+                        else: 
+                            thread.start()
                         num_threads_created += 1
                     except Exception as ex:
                         logger.debug("[ERROR] DAG_executor_driver: Failed to start DAG_executor thread for state " + start_state)
@@ -844,7 +848,7 @@ def run():
                         # The worker_configurer() funcion is used for multiprocess logging
                         #proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,counter,process_work_queue,data_dict,log_queue,worker_configurer,))
                         proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,counter,log_queue,worker_configurer,))
-                        proc.start()
+                        #proc.start()
                         thread_proc_list.append(proc)
                         #thread.start()
                         num_threads_created += 1
@@ -904,7 +908,7 @@ def run():
                             thread_name_prefix = "Worker_thread_non-leaf_"
                             thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=(thread_name_prefix+str(start_state)), args=(payload,))
                             thread_proc_list.append(thread)
-                            thread.start()
+                            #thread.start()
                             num_threads_created += 1
                         except Exception as ex:
                             logger.debug("[ERROR] DAG_executor_driver: Failed to start DAG_executor worker thread for non-leaf task " + task_name)
@@ -921,7 +925,7 @@ def run():
                             proc_name_prefix = "Worker_process_non-leaf_"
                             #proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"p"+str(num_threads_created + 1)), args=(payload,counter,process_work_queue,data_dict,log_queue,worker_configurer,))
                             proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"p"+str(num_threads_created + 1)), args=(payload,counter,log_queue,worker_configurer,))
-                            proc.start()
+                            #proc.start()
                             thread_proc_list.append(proc)
                             num_threads_created += 1                      
                         except Exception as ex:
@@ -937,6 +941,13 @@ def run():
         logger.debug("DAG_executor_driver: num_processes_created_for_multithreaded_multiprocessing: " + str(num_processes_created_for_multithreaded_multiprocessing))
     elif run_all_tasks_locally:
         logger.debug("DAG_executor_driver: num_threads/processes_created: " + str(num_threads_created))
+
+    if not use_multithreaded_multiprocessing:
+        start_time = time.time()
+        if run_all_tasks_locally:
+            if using_workers:
+                for thread_proc in thread_proc_list:
+                    thread_proc.start()
 
     if run_all_tasks_locally:
         # Do joins if not using lambdas
@@ -967,7 +978,7 @@ def run():
     duration = stop_time - start_time
 
     logger.debug("DAG_executor_driver: Sleeping ...")
-    time.sleep(3.0)
+    time.sleep(2.0)
     print("DAG_executor_driver: DAG_Execution finished in %f seconds." % duration)
 		
     #ToDo:  close_all(websocket)

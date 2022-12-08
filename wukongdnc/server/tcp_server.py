@@ -14,14 +14,14 @@ from ..dag.DAG_executor_constants import run_all_tasks_locally
 # Set up logging.
 import logging 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.ERROR)
+"""
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
-
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
-
 logger.addHandler(ch)
+"""
 
 class TCPHandler(socketserver.StreamRequestHandler):
     def handle(self):

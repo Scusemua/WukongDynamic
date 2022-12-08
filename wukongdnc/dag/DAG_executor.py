@@ -3,12 +3,14 @@ import logging
 
 logger = None
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+
+logger.setLevel(logging.ERROR)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
+
 
 import threading
 import _thread
@@ -970,7 +972,6 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
         # workers don't always get work from the queue. i.e., no get when no put.
         # - collapse: no get; fanout: become so not get; fanin: - become no get + not-become do gets
         # - faninB: no becomes - last caller does put, all callers need to do gets
-
             if using_workers:
                 # Config: A4_local, A4_Remote, A5, A6
                 if worker_needs_input:
@@ -1504,9 +1505,10 @@ def DAG_executor_processes(payload,counter,log_queue, worker_configurer):
     if not use_multithreaded_multiprocessing:
         # Config: A5
         global logger
-        worker_configurer(log_queue)
-        logger = logging.getLogger("multiP")
-        logger.setLevel(logging.DEBUG)
+#rhc: logging
+        #worker_configurer(log_queue)
+        #logger = logging.getLogger("multiP")
+        #logger.setLevel(logging.ERROR)
     else:
         # Config: A6
         logger = log_queue
