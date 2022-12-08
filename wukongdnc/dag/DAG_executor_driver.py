@@ -621,6 +621,8 @@ def run():
                         create_fanins_and_faninNBs_and_work_queue(websocket,num_tasks_to_execute,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
                         #Note: you can reversed() this list of leaf node start states to reverse the order of 
                         # appending leaf nodes during testing
+                        list_of_work_queue_values = []
+                        iii = 1
                         for state in DAG_leaf_task_start_states:
                             #logger.debug("dummy_state: " + str(dummy_state))
                             state_info = DAG_map[state]
@@ -629,8 +631,12 @@ def run():
                             dict_of_results =  {}
                             dict_of_results[task_name] = task_inputs
                             work_tuple = (state,dict_of_results)
-                            process_work_queue.put(work_tuple)
+                            list_of_work_queue_values.append(work_tuple)
+                            #process_work_queue.put(work_tuple)
                             #process_work_queue.put(state)
+                        # batch put work in remote work_queue
+                        process_work_queue.put_all(list_of_work_queue_values)
+                        logger.error("put")
                     else:
                         create_fanins_and_faninNBs(websocket,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
                         # leaf task states (a task is identified by its state) are put in the work_queue
