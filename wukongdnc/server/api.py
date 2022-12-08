@@ -73,9 +73,19 @@ def recv_object(websocket):
 
     thread_name = threading.current_thread().name
 
-    incoming_size = websocket.recv(4)
+    data = bytearray()
+    while len(data) < 4:
+        new_data = websocket.recv(4 - len(data)).strip()
+        logger.debug(thread_name + ": recv_object received") 
+
+        if not new_data:
+            break 
+
+        #logger.debug("recv_object: starting read %d bytes from TCP server." % len(new_data))
+        data.extend(new_data)
+    
     # Convert the bytes representing the size of the incoming serialized object to an integer.
-    incoming_size = int.from_bytes(incoming_size, 'big')
+    incoming_size = int.from_bytes(data, 'big')
     logger.debug(thread_name + ": recv_object: Will receive another message of size %d bytes" % incoming_size)
     data = bytearray()
 
