@@ -77,6 +77,7 @@ def recv_object(websocket):
         logger.debug(thread_name + ": recv_object received") 
 
         if not new_data:
+            logger.warn("Stopped reading incoming message size from socket early. Have read " + str(len(data)) + " bytes of a total expected 4 bytes.")
             break 
 
         #logger.debug("recv_object: starting read %d bytes from TCP server." % len(new_data))
