@@ -4,14 +4,14 @@ import base64
 
 import logging 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.ERROR)
+"""
 formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
-
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
-
 logger.addHandler(ch)
+"""
 
 def isTry_and_getMethodName(name):
     """

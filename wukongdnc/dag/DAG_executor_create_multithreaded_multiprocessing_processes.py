@@ -36,7 +36,7 @@ def create_multithreaded_multiprocessing_processes(num_processes_created_for_mul
             process_name = "proc"+str(num_processes_created_for_multithreaded_multiprocessing + 1)
             #proc = Process(target=create_and_run_threads_for_multiT_multiP, name=(process_name), args=(process_name,payload,counter,process_work_queue,data_dict,log_queue,worker_configurer,))
             proc = Process(target=create_and_run_threads_for_multiT_multiP, name=(process_name), args=(process_name,payload,counter,log_queue,worker_configurer,))
-            proc.start()
+            #proc.start()
             multithreaded_multiprocessing_process_list.append(proc)
             num_processes_created_for_multithreaded_multiprocessing += 1                      
 

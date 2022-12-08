@@ -25,6 +25,7 @@ logger.addHandler(ch)
 # Here, we use a map of task names to results so fanin task can get its inputs per name. FanIn could do this to - could choose between
 # per name (key) and just gettting a list of the values.
 class DAG_executor_FanIn(MonitorSU):
+    #num_fanins = 1
     def __init__(self, monitor_name = "DAG_executor_FanIn"):
         super(DAG_executor_FanIn, self).__init__(monitor_name = monitor_name)
         self.monitor_name = monitor_name    # this is fanin_task_name
@@ -86,6 +87,8 @@ class DAG_executor_FanIn(MonitorSU):
     # the last to call fan_in is expected to terminate. The last client to call fan_in will become the fan-in task.
     # no meaningful return value expected by client
     def fan_in(self, **kwargs):
+        #logger.error("fanin: " + str(DAG_executor_FanIn.num_fanins))
+        #DAG_executor_FanIn.num_fanins += 1
         logger.debug("fan_in %s calling enter_monitor" % self.monitor_name)
         # if we called try_fan_in first, we still have the mutex so this enter_monitor does not do mutex.P
         super().enter_monitor(method_name = "fan_in")
