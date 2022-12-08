@@ -18,17 +18,15 @@ from ..dag.DAG_executor_State import DAG_executor_State
 
 import logging 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.ERROR)
+"""
 formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
-
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
-
 logger.addHandler(ch)
-
 logger.propagate = False
-
+"""
 def send_object(obj, websocket):
     """
     Send obj to a remote entity via the given websocket.
