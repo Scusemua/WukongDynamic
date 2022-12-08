@@ -603,7 +603,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     # If we see this print a lot, then we may want to remove/comment-out the break and simply sleep for 1-10ms, then try reading again?
                     # Maybe if we fail to read any new data after ~3 tries, then we give up? But maybe we're giving up too early (i.e., trying to read data,
                     # finding no data to read, and giving up on the entire read immediately, rather than waiting and trying to read again).
-                    logger.warn("Stopped reading incoming message size from socket early. Have read " + str(len(data)) + " bytes of a total expected 4 bytes.")
+                    logger.warning("Stopped reading incoming message size from socket early. Have read " + str(len(data)) + " bytes of a total expected 4 bytes.")
                     break 
 
                 data.extend(new_data)
