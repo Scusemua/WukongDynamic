@@ -6,14 +6,14 @@ import threading
 
 import logging 
 logger = logging.getLogger(__name__)
-"""
-logger.setLevel(logging.DEBUG)
+
+logger.setLevel(logging.ERROR)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
-"""
+
 
 
 def create_and_run_threads_for_multiT_multiP(process_name,payload,counter,log_queue,worker_configurer):
@@ -21,9 +21,10 @@ def create_and_run_threads_for_multiT_multiP(process_name,payload,counter,log_qu
 #def create_and_run_threads_for_multiT_multiP(process_name,payload,counter,process_work_queue,data_dict,log_queue,worker_configurer):
 
     global logger
-    worker_configurer(log_queue)
-    logger = logging.getLogger("multiP")
-    logger.setLevel(logging.DEBUG)
+#rhc: logging
+    #worker_configurer(log_queue)
+    #logger = logging.getLogger("multiP")
+    #logger.setLevel(logging.DEBUG)
 
     logger.debug(process_name + ": multiT_multiP")
 
@@ -61,11 +62,16 @@ def create_and_run_threads_for_multiT_multiP(process_name,payload,counter,log_qu
 
     logger.debug(process_name + ": DAG_executor_driver: create_and_run_threads_for_multiT_multiP: "
         + process_name + " created " + str(len(thread_list)) + " threads")
-    logger.debug(process_name + ": DAG_executor_driver: create_and_run_threads_for_multiT_multiP: "
-        + process_name + " joining threads.")
+
 
     for thread in thread_list:
         thread.start()
+
+    logger.debug(process_name + ": DAG_executor_driver: create_and_run_threads_for_multiT_multiP: "
+        + process_name + " started " + str(len(thread_list)) + " threads")
+
+    logger.debug(process_name + ": DAG_executor_driver: create_and_run_threads_for_multiT_multiP: "
+        + process_name + " joining threads.")
 
     for thread in thread_list:
         thread.join()	

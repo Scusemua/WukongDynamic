@@ -66,7 +66,7 @@ def execute_task(func_obj, inputs: tuple, existing_results: dict = {}, task_id: 
   return res
 
 if __name__ == "__main__":
-  lc = LocalCluster()
+  lc = LocalCluster(n_workers = 1, threads_per_worker = 4)
   c = Client(lc)
   s = lc.scheduler
 
