@@ -4,6 +4,7 @@ from ..server import DAG_executor_FanInNB, DAG_executor_FanInNB_select
 from ..server import DAG_executor_FanIn, DAG_executor_FanIn_select
 from .DAG_executor_State import DAG_executor_State
 import uuid
+#import time
 
 import logging 
 logger = logging.getLogger(__name__)
@@ -15,6 +16,10 @@ ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 """
+
+# used to time local fanins
+#total_time = 0
+#num_fanins_timed = 0
 
 # This is taking the role of the tcp_server when synch objects are stored locally. 
 # It is a global singleton.
@@ -160,6 +165,8 @@ class DAG_executor_Synchronizer(object):
 		# used by FanInNB:
         # store_fanins_faninNBs_locally = keyword_arguments['store_fanins_faninNBs_locally']  # option set in DAG_executor
 
+        #st = time.time()
+
         logger.debug ("calling_task_name: " + keyword_arguments['calling_task_name'] + " calling fanin for " + " fanin_task_name: " + keyword_arguments['fanin_task_name'])
         FanIn = self.synchronizers[keyword_arguments['fanin_task_name']]  
 
@@ -227,6 +234,29 @@ class DAG_executor_Synchronizer(object):
                 DAG_exec_state.return_value = return_value
                 DAG_exec_state.blocking = False 
 
+        # local fanins for TR 1024 w/ 1022 fanins take between:
+        """
+            fanin_locally: total_time:
+            0.031277
+            fanin_locally: average_time:
+            0.000031
+        and
+            fanin_locally: total_time:
+            0.125213
+            fanin_locally: average_time:
+            0.000123
+
+        et = time.time()
+        global total_time
+        global num_fanins_timed
+        total_time += (et - st)
+        num_fanins_timed += 1
+        print("fanin_locally: total_time:")
+        print("{:10.6f}".format(total_time)) 
+        print("fanin_locally: average_time:")
+        print("{:10.6f}".format(total_time/num_fanins_timed)) 
+        """
+ 
 		# This is returned to process_fanin which returns it to DAG_executor; DAG_executtor will look at return
 		# value to see if it is 0 or not.
         return DAG_exec_state

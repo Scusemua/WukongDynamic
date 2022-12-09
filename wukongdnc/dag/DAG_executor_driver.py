@@ -546,7 +546,7 @@ def run():
 
     #ResetRedis()
     
-    #start_time = time.time()
+    start_time = time.time()
 	
 #############################
 #Note: if using Lambdas to store synch objects: SERVERLESS_SYNC = False in constants.py; set to True
@@ -622,7 +622,6 @@ def run():
                         #Note: you can reversed() this list of leaf node start states to reverse the order of 
                         # appending leaf nodes during testing
                         list_of_work_queue_values = []
-                        iii = 1
                         for state in DAG_leaf_task_start_states:
                             #logger.debug("dummy_state: " + str(dummy_state))
                             state_info = DAG_map[state]
@@ -636,7 +635,6 @@ def run():
                             #process_work_queue.put(state)
                         # batch put work in remote work_queue
                         process_work_queue.put_all(list_of_work_queue_values)
-                        logger.error("put")
                     else:
                         create_fanins_and_faninNBs(websocket,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
                         # leaf task states (a task is identified by its state) are put in the work_queue
@@ -689,7 +687,7 @@ def run():
                         num_tasks_to_execute = len(DAG_tasks)
                         process_work_queue = BoundedBuffer_Work_Queue(websocket,2*num_tasks_to_execute)
                         process_work_queue.create()
-
+                        list_of_work_queue_values = []
                         for state in DAG_leaf_task_start_states:
                             state_info = DAG_map[state]
                             task_inputs = state_info.task_inputs 
@@ -697,8 +695,10 @@ def run():
                             dict_of_results =  {}
                             dict_of_results[task_name] = task_inputs
                             work_tuple = (state,dict_of_results)
-                            process_work_queue.put(work_tuple)
+                            list_of_work_queue_values.append(work_tuple)
+                            #process_work_queue.put(work_tuple)
                             #process_work_queue.put(state)
+                        process_work_queue.put_all(list_of_work_queue_values)
                         #num_tasks_to_execute = len(DAG_tasks)
                         #create_fanins_and_faninNBs_and_work_queue(websocket,num_tasks_to_execute,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
                     else:
@@ -780,7 +780,7 @@ def run():
         num_processes_created_for_multithreaded_multiprocessing = 0
         #num_processes_created_for_multithreaded_multiprocessing = create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,counter,process_work_queue,data_dict,log_queue,worker_configurer)
         num_processes_created_for_multithreaded_multiprocessing = create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,counter,log_queue,worker_configurer)
-        start_time = time.time()
+        #start_time = time.time()
         for thread_proc in multithreaded_multiprocessing_process_list:
             thread_proc.start()
     else: # multi threads or multi-processes, thread and processes may be workers using work_queue
