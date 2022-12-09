@@ -47,6 +47,9 @@ from .util import pack_data
 import logging.handlers
 import multiprocessing
 
+total_time = 0
+num_fanins_timed = 0
+
 
 def create_and_faninNB_task_locally(kwargs):
     logger.debug("create_and_faninNB_task: call create_and_faninNB_locally")
@@ -800,7 +803,23 @@ def fanin_remotely(websocket, DAG_exec_state,**keyword_arguments):
     #return_value, restart = FanInNB.fan_in(**keyword_arguments)
     DAG_exec_state.return_value = None
     DAG_exec_state.blocking = False
+
+    """
+    # for TR 1024 w/ 1022 fanins end-to-end fanin processing approx:
+    #total_time:1.3573, num_fanins_timed:1022
+    #average_time:0.00132
+    
+    st = time.time()
     DAG_exec_state = synchronize_sync(websocket, "synchronize_sync", keyword_arguments['fanin_task_name'], "fan_in", DAG_exec_state)
+    et = time.time()
+    global total_time
+    global num_fanins_timed
+    total_time += (et - st)
+    num_fanins_timed += 1
+    logger.error (thread_name + ": fanin_remotely: total_time:" + str(total_time) + " num_fanins_timed:" + str(num_fanins_timed))
+    logger.error (thread_name + ": fanin_remotely: average_time:" + str(total_time/num_fanins_timed) )
+    """
+
     logger.debug (thread_name + ": fanin_remotely: calling_task_name: " + keyword_arguments['calling_task_name'] + " back from synchronize_sync")
     logger.debug (thread_name+ ": fanin_remotely: returned DAG_exec_state.return_value: " + str(DAG_exec_state.return_value))
     return DAG_exec_state
