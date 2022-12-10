@@ -3,14 +3,14 @@ import logging
 
 logger = None
 logger = logging.getLogger(__name__)
-
-logger.setLevel(logging.ERROR)
+"""
+logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
-
+"""
 
 import threading
 import _thread
@@ -810,7 +810,11 @@ def fanin_remotely(websocket, DAG_exec_state,**keyword_arguments):
     #average_time:0.00132
     
     st = time.time()
+    """
+
     DAG_exec_state = synchronize_sync(websocket, "synchronize_sync", keyword_arguments['fanin_task_name'], "fan_in", DAG_exec_state)
+    
+    """
     et = time.time()
     global total_time
     global num_fanins_timed
