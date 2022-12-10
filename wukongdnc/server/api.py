@@ -49,10 +49,12 @@ def send_object(obj, websocket):
     # send_object: len obj: 278522 needs 3 bytes
     #time.sleep(0.6)
     websocket.sendall(len(obj).to_bytes(4, byteorder='big'))
+    logger.error("length of: len(obj).to_bytes(4, byteorder='big'): " + str(len(len(obj).to_bytes(4, byteorder='big'))))
     #time.sleep(0.6)
     # Next, we send the serialized object itself. 
+    logger.error(thread_name + ": send_object: len obj: " + str(len(obj)))
     websocket.sendall(obj)
-    logger.error(thread_name + ": sent object: thread " + thread_name + ": cloudpickle.loads(data)") 
+    logger.error(thread_name + ": sent object:") 
 
 def recv_object(websocket):
     """
@@ -87,7 +89,7 @@ def recv_object(websocket):
     incoming_size = int.from_bytes(data, 'big')
     logger.error(thread_name + ": recv_object: Will receive another message of size %d bytes" % incoming_size)
     data = bytearray()
-
+    logger.error(thread_name + ": created second data object, incoming_size: " + incoming_size)
     while len(data) < incoming_size:
         # Finally, we read the serialized object itself.
         logger.error(thread_name + ": start recv_object rcv") 
@@ -194,7 +196,7 @@ def synchronize_async(websocket, op, name, method_name, state):
  
     #logger.debug("synchronize_async: Calling %s. Message ID=%s" % (op, msg_id))
     msg = json.dumps(message).encode('utf-8')
-    logger.debug(thread_name + ": synchronize_async: send_object")
+    logger.debug(thread_name + ": synchronize_async: send_object: length msg:" + str(len(msg)))
     send_object(msg, websocket)
     logger.debug("synchronize_async: thread " + thread_name + " send_object successful")
 
