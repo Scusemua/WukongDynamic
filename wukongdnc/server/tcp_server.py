@@ -593,7 +593,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         """
 
         data = bytearray()
-        logger.debug("receive_object: Do self.rfile.read(4)")
+        logger.debug("receive_object: Do self.rfile.read(4),  len(data):" + str(len(data)))
         try:
             while (len(data)) < 4:
                 # Read the size of the incoming serialized object.
@@ -614,7 +614,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             logger.error(repr(ex))
             return None 
 
-        logger.debug("receive_object self.rfile.read(4) successful")
+        logger.debug("receive_object self.rfile.read(4) successful, len(data): " + str(len(data)))
 
         # Convert bytes of size to integer.
         incoming_size = int.from_bytes(data, 'big')
@@ -632,10 +632,14 @@ class TCPHandler(socketserver.StreamRequestHandler):
         logger.debug("recv_object: Will receive another message of size %d bytes" % incoming_size)
 
         data = bytearray()
+        logger.error("recv_object: created second data object, incoming_size: " + str(incoming_size))
+        logger.error("len(data): " + str(len(data)))
         try:
             while len(data) < incoming_size:
                 # Read serialized object (now that we know how big it'll be).
+                logger.error("execute new_data ")
                 new_data = self.rfile.read(incoming_size - len(data)).strip() # Do we need to call .strip() here? What if we removed something we're not supposed to?
+                logger.error("executed new_data ")
                 # Strip removes the leading and trailing bytes ASCII whitespace. I think it's probably fine, but I'm not sure.
 
                 if not new_data:
