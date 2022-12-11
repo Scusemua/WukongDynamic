@@ -616,7 +616,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             logger.error(repr(ex))
             return None 
 
-        logger.debug("receive_object self.rfile.read(4) successful, len(data): %d. Bytes received: %s" % (str(len(data)), str(data)))
+        logger.debug("receive_object self.rfile.read(4) successful, len(data): %d. Bytes received: %s" % (len(data), str(data)))
 
         # Convert bytes of size to integer.
         incoming_size = int.from_bytes(data, 'big')
