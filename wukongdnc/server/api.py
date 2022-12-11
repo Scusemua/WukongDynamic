@@ -45,7 +45,7 @@ def send_object(obj, websocket):
     
     thread_name = threading.current_thread().name  
     # First, we send the number of bytes that we're going to send.
-    logger.debug(thread_name + ": send_object: len obj: " + str(len(obj)))
+    logger.debug(thread_name + ": send_object: len obj: " + str(len(obj))  + ", object bytes: " + str(obj))
     # send_object: len obj: 278522 needs 3 bytes
     #time.sleep(0.6)
     websocket.sendall(len(obj).to_bytes(4, byteorder='big'))
@@ -101,7 +101,7 @@ def recv_object(websocket):
         data.extend(new_data)
         #logger.debug("recv_object: end-of read %d/%d bytes from TCP server." % (len(data), incoming_size))
 
-        logger.debug(thread_name + ": returning from recv_object rcv") 
+        logger.debug(thread_name + ": returning from recv_object rcv. bytes received: " + str(data)) 
 
     return data 
 
