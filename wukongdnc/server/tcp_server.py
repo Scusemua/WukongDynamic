@@ -622,7 +622,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # Convert bytes of size to integer.
         incoming_size = int.from_bytes(data, 'big')
 
-        logger.debug("recv_object int.from_bytes successful")
+        logger.debug("recv_object int.from_bytes successful. Incoming message will have size: %d bytes" % incoming_size)
 
         if incoming_size == 0:
             logger.debug("Incoming size is 0. Client is expected to have disconnected.")
@@ -636,7 +636,6 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
         data = bytearray()
         logger.error("recv_object: created second data object, incoming_size: " + str(incoming_size))
-        logger.error("len(data): " + str(len(data)))
         try:
             while len(data) < incoming_size:
                 # Read serialized object (now that we know how big it'll be).
