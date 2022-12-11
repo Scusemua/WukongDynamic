@@ -656,6 +656,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             logger.error(repr(ex))
             return None 
         
+        logger.debug("recv_object: received all %d bytes from remote client. bytes received: %s" % (len(data), str(data)))
         return data 
 
     def send_serialized_object(self, obj):
@@ -670,7 +671,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             obj (bytes):
                 The already-serialized object that we are sending to a remote entity (presumably an AWS Lambda executor).
         """
-        logger.debug("Sending payload of size %d bytes to remote client now..." % len(obj))
+        logger.debug("Sending payload of size %d bytes to remote client now. Bytes to be sent: %s" % (len(obj), str(obj)))
         self.wfile.write(len(obj).to_bytes(4, byteorder='big'))     # Tell the client how many bytes we're sending.
         self.wfile.write(obj)                                       # Then send the object.
         logger.debug("Sent %d bytes to remote client." % len(obj))
