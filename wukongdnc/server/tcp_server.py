@@ -607,6 +607,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     break 
 
                 data.extend(new_data)
+
+                logger.debug("recv_object: self.rfile.read an additional %d bytes from remote client: %s" % (len(new_data), str(new_data)))
         except ConnectionAbortedError as ex:
             logger.debug("Error in recv_object self.rfile.read(4) -- while reading the incoming message size.")
             logger.debug(repr(ex))
