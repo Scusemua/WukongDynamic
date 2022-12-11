@@ -89,7 +89,7 @@ def recv_object(websocket):
     incoming_size = int.from_bytes(data, 'big')
     logger.error(thread_name + ": recv_object: Will receive another message of size %d bytes" % incoming_size)
     data = bytearray()
-    logger.error(thread_name + ": created second data object, incoming_size: " + incoming_size)
+    logger.error(thread_name + ": created second data object, incoming_size: " + str(incoming_size))
     while len(data) < incoming_size:
         # Finally, we read the serialized object itself.
         logger.error(thread_name + ": start recv_object rcv") 

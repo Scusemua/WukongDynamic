@@ -980,6 +980,7 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
         #print("socketname: " + websocket.getsockname())   # ->  (127.0.0.1,26386)
         #print(websocket.getpeername())   # ->  (127.0.0.1, 8888)
 
+        
         # ... unless its this work_queue when we use processes. (Lambdas do not use a work_queue, for now):)
         if (run_all_tasks_locally and using_workers and not using_threads_not_processes): 
             # Config: A5, A6
@@ -988,6 +989,24 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
             # each thread in multithreading multiprocesssing needs its own socket.
             # each process when single threaded multiprocessing needs its own socket.
             work_queue = BoundedBuffer_Work_Queue(websocket,2*num_tasks_to_execute)
+            """
+            1. mod work queue:
+            #rhc: exp
+            #if using_workers and using_threads_not_processes:
+            #    work_queue = queue.Queue()
+            work_queue = queue.Queue()
+
+            2. 
+            my_work_queue = BoundedBuffer_Work_Queue(websocket,2*num_tasks_to_execute)
+            local_work = my_work_queue.get_my_half()
+            for work_tuple in local_work:
+                work_queue.put(work_tuple)
+
+            3. using withdraw_half()
+
+            4. ToDo: switch config. constant to store locally
+            """
+            
         #else: # Config: A1, A2, A3, A4_local, A4_Remote
 
         while (True):
