@@ -87,7 +87,7 @@ def recv_object(websocket):
     
     # Convert the bytes representing the size of the incoming serialized object to an integer.
     incoming_size = int.from_bytes(data, 'big')
-    logger.error("thread_name : recv_object: Will receive another message of size %d bytes ()." % (thread_name, incoming_size, str(data)))
+    logger.error("%s : recv_object: Will receive another message of size %d bytes (%s)." % (thread_name, incoming_size, str(data)))
     data = bytearray()
     logger.error(thread_name + ": created second data object, incoming_size: " + str(incoming_size))
     while len(data) < incoming_size:
