@@ -33,6 +33,8 @@ class BoundedBuffer(MonitorSU):
         logger.info(kwargs)
         self._in=0
         self._out=0
+        #rhc: exp
+        self.first = True
 		
 	# synchronous try version of deposit, restart when block
     def deposit_try_and_restart(self, **kwargs):
@@ -132,8 +134,8 @@ class BoundedBuffer(MonitorSU):
 	# synchronous no-try version of withdraw.
     def withdraw(self, **kwargs):
         super().enter_monitor(method_name = "withdraw")
-        logger.debug(" withdraw() entered monitor, len(self._notFull) ="+str(len(self._notFull))+", self._capacity="+str(self._capacity))
-        logger.debug(" withdraw() entered monitor, len(self._notEmpty) ="+str(len(self._notEmpty))+", self._capacity="+str(self._capacity))
+        logger.debug("withdraw() entered monitor, len(self._notFull) ="+str(len(self._notFull))+", self._capacity="+str(self._capacity))
+        logger.debug("withdraw() entered monitor, len(self._notEmpty) ="+str(len(self._notEmpty))+", self._capacity="+str(self._capacity))
         value = 0
         if self._fullSlots==0:
             self._notEmpty.wait_c()
@@ -146,6 +148,41 @@ class BoundedBuffer(MonitorSU):
         #threading.current_thread()._returnValue=value
         self._notFull.signal_c_and_exit_monitor()
         return value, restart
+
+#rhc exp
+    # workers can get an initial batch of work. Here we experiment with giving ech of 
+    # two workers half of the leaf nodes. In this experiment for TR, the workers run
+    # with fanins stored locally excect for the last fanin which is shared by both
+    # workers. If a worker executes all the fan_ins for a FanIn, that FanIn can be 
+    # stored locally, whch speeds up FanIns.
+    # In general, we can, e.g., partition leaf nodes into n partitions for n workers
+    # and worker i will call to withdrw partition i. As in a map from ID i to 
+    # the partition for ID i, where the partition is a list of work.
+    def withdraw_half(self, **kwargs):
+        super().enter_monitor(method_name = "withdraw_half")
+        logger.debug("withdraw_half() entered monitor, len(self._notFull) ="+str(len(self._notFull))+", self._capacity="+str(self._capacity))
+        logger.debug("withdraw_half() entered monitor, len(self._notEmpty) ="+str(len(self._notEmpty))+", self._capacity="+str(self._capacity))
+        listOfValues = []
+        if self.first:
+            self.first = False
+            batch_size = int(self._fullSlots/2)
+            for _ in range(0,batch_size):
+                listOfValues.append(self._buffer[self._out])
+                self._out=(self._out+1) % int(self._capacity)
+                self._fullSlots-=1
+        else:
+            sizeOfBatch = self._fullSlots
+            for _ in range(0,sizeOfBatch):
+                listOfValues.append(self._buffer[self._out])
+                self._out=(self._out+1) % int(self._capacity)
+                self._fullSlots-=1
+        if (self._fullSlots != 0):
+            logger.error("[Error]: Internal Error: BoundedBuffer withdraw_half _fullSlots not 0 after second withdawl.")
+        restart = False
+        #threading.current_thread()._restart = False
+        #threading.current_thread()._returnValue=value
+        super().exit_monitor()
+        return listOfValues, restart
 
     def try_deposit(self, **kwargs):
         super().enter_monitor(method_name = "try_deposit")

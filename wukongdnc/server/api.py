@@ -49,10 +49,12 @@ def send_object(obj, websocket):
     # send_object: len obj: 278522 needs 3 bytes
     #time.sleep(0.6)
     websocket.sendall(len(obj).to_bytes(4, byteorder='big'))
+    logger.error("length of: len(obj).to_bytes(4, byteorder='big'): " + str(len(len(obj).to_bytes(4, byteorder='big'))))
     #time.sleep(0.6)
     # Next, we send the serialized object itself. 
+    logger.error(thread_name + ": send_object: len obj: " + str(len(obj)))
     websocket.sendall(obj)
-    logger.debug(thread_name + ": sent object: thread " + thread_name + ": cloudpickle.loads(data)") 
+    logger.error(thread_name + ": sent object:") 
 
 def recv_object(websocket):
     """
@@ -70,11 +72,11 @@ def recv_object(websocket):
     # First, we receive the number of bytes of the incoming serialized object.
 
     thread_name = threading.current_thread().name
-
+    logger.error(thread_name + ": do receive") 
     data = bytearray()
     while len(data) < 4:
         new_data = websocket.recv(4 - len(data)).strip()
-        logger.debug(thread_name + ": recv_object received") 
+        logger.error(thread_name + ": recv_object received") 
 
         if not new_data:
             logger.warn("Stopped reading incoming message size from socket early. Have read " + str(len(data)) + " bytes of a total expected 4 bytes.")
@@ -85,14 +87,14 @@ def recv_object(websocket):
     
     # Convert the bytes representing the size of the incoming serialized object to an integer.
     incoming_size = int.from_bytes(data, 'big')
-    logger.debug(thread_name + ": recv_object: Will receive another message of size %d bytes" % incoming_size)
+    logger.error(thread_name + ": recv_object: Will receive another message of size %d bytes" % incoming_size)
     data = bytearray()
-
+    logger.error(thread_name + ": created second data object, incoming_size: " + str(incoming_size))
     while len(data) < incoming_size:
         # Finally, we read the serialized object itself.
-        logger.debug(thread_name + ": start recv_object rcv") 
+        logger.error(thread_name + ": start recv_object rcv") 
         new_data = websocket.recv(incoming_size - len(data)).strip()
-        logger.debug(thread_name + ": recv_object received") 
+        logger.error(thread_name + ": recv_object received") 
 
         if not new_data:
             break 
@@ -194,7 +196,7 @@ def synchronize_async(websocket, op, name, method_name, state):
  
     #logger.debug("synchronize_async: Calling %s. Message ID=%s" % (op, msg_id))
     msg = json.dumps(message).encode('utf-8')
-    logger.debug(thread_name + ": synchronize_async: send_object")
+    logger.debug(thread_name + ": synchronize_async: send_object: length msg:" + str(len(msg)))
     send_object(msg, websocket)
     logger.debug("synchronize_async: thread " + thread_name + " send_object successful")
 
@@ -345,10 +347,10 @@ def create_all_fanins_and_faninNBs_and_possibly_work_queue(websocket, op, type, 
         state (state.State):
             Our current state.
     """
-
+    logger.error("foo")
     msg_id = str(uuid.uuid4())
-    logger.debug("api: create_all_fanins_and_faninNBs_and_possibly_work_queue: Sending 'create_all_fanins_and_faninNBs' message to server. Op='%s', type='%s', id='%s', state=%s" % (op, type, msg_id, state))
-    logger.debug("length name: " + str(len(name)))
+    logger.error("api: create_all_fanins_and_faninNBs_and_possibly_work_queue: Sending 'create_all_fanins_and_faninNBs' message to server. Op='%s', type='%s', id='%s', state=%s" % (op, type, msg_id, state))
+    logger.error("length name: " + str(len(name)))
     # we set state.keyword_arguments before call to create()
     message = {
         "op": op,
@@ -357,7 +359,7 @@ def create_all_fanins_and_faninNBs_and_possibly_work_queue(websocket, op, type, 
         "state": make_json_serializable(state),
         "id": msg_id
     }
-    logger.debug("api: create_all_fanins_and_faninNBs_and_possibly_work_queue: op:" + op + " type: " + type + " state: " + str(state) + " id: " + str(id))
+    logger.error("api: create_all_fanins_and_faninNBs_and_possibly_work_queue: op:" + op + " type: " + type + " state: " + str(state) + " id: " + str(id))
     """
     message0 = name[0] 
     message1 = name[1]
@@ -373,8 +375,9 @@ def create_all_fanins_and_faninNBs_and_possibly_work_queue(websocket, op, type, 
     """
 
     msg = json.dumps(message).encode('utf-8')
+    logger.error("calling send object")
     send_object(msg, websocket)
-    logger.debug("create_all_fanins_and_faninNBs_and_possibly_work_queue: Sent 'create_all_fanins_and_faninNBs' message to server")
+    logger.error("create_all_fanins_and_faninNBs_and_possibly_work_queue: Sent 'create_all_fanins_and_faninNBs' message to server")
 
     # Receive data. This should just be an ACK, as the TCP server will 'ACK' our create() calls.
     ack = recv_object(websocket)
