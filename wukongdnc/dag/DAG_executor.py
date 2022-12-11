@@ -3,14 +3,14 @@ import logging
 
 logger = None
 logger = logging.getLogger(__name__)
-
-logger.setLevel(logging.ERROR)
+"""
+logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
-
+"""
 
 import threading
 import _thread
@@ -46,6 +46,9 @@ from .util import pack_data
 
 import logging.handlers
 import multiprocessing
+
+total_time = 0
+num_fanins_timed = 0
 
 
 def create_and_faninNB_task_locally(kwargs):
@@ -800,7 +803,27 @@ def fanin_remotely(websocket, DAG_exec_state,**keyword_arguments):
     #return_value, restart = FanInNB.fan_in(**keyword_arguments)
     DAG_exec_state.return_value = None
     DAG_exec_state.blocking = False
+
+    """
+    # for TR 1024 w/ 1022 fanins end-to-end fanin processing approx:
+    #total_time:1.3573, num_fanins_timed:1022
+    #average_time:0.00132
+    
+    st = time.time()
+    """
+
     DAG_exec_state = synchronize_sync(websocket, "synchronize_sync", keyword_arguments['fanin_task_name'], "fan_in", DAG_exec_state)
+    
+    """
+    et = time.time()
+    global total_time
+    global num_fanins_timed
+    total_time += (et - st)
+    num_fanins_timed += 1
+    logger.error (thread_name + ": fanin_remotely: total_time:" + str(total_time) + " num_fanins_timed:" + str(num_fanins_timed))
+    logger.error (thread_name + ": fanin_remotely: average_time:" + str(total_time/num_fanins_timed) )
+    """
+
     logger.debug (thread_name + ": fanin_remotely: calling_task_name: " + keyword_arguments['calling_task_name'] + " back from synchronize_sync")
     logger.debug (thread_name+ ": fanin_remotely: returned DAG_exec_state.return_value: " + str(DAG_exec_state.return_value))
     return DAG_exec_state
@@ -957,6 +980,7 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
         #print("socketname: " + websocket.getsockname())   # ->  (127.0.0.1,26386)
         #print(websocket.getpeername())   # ->  (127.0.0.1, 8888)
 
+        
         # ... unless its this work_queue when we use processes. (Lambdas do not use a work_queue, for now):)
         if (run_all_tasks_locally and using_workers and not using_threads_not_processes): 
             # Config: A5, A6
@@ -965,6 +989,24 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
             # each thread in multithreading multiprocesssing needs its own socket.
             # each process when single threaded multiprocessing needs its own socket.
             work_queue = BoundedBuffer_Work_Queue(websocket,2*num_tasks_to_execute)
+            """
+            1. mod work queue:
+            #rhc: exp
+            #if using_workers and using_threads_not_processes:
+            #    work_queue = queue.Queue()
+            work_queue = queue.Queue()
+
+            2. 
+            my_work_queue = BoundedBuffer_Work_Queue(websocket,2*num_tasks_to_execute)
+            local_work = my_work_queue.get_my_half()
+            for work_tuple in local_work:
+                work_queue.put(work_tuple)
+
+            3. using withdraw_half()
+
+            4. ToDo: switch config. constant to store locally
+            """
+            
         #else: # Config: A1, A2, A3, A4_local, A4_Remote
 
         while (True):

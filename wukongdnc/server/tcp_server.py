@@ -14,14 +14,14 @@ from ..dag.DAG_executor_constants import run_all_tasks_locally
 # Set up logging.
 import logging 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
-"""
+logger.setLevel(logging.DEBUG)
+
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
-"""
+
 
 class TCPHandler(socketserver.StreamRequestHandler):
     def handle(self):
@@ -593,7 +593,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         """
 
         data = bytearray()
-        logger.debug("receive_object: Do self.rfile.read(4)")
+        logger.debug("receive_object: Do self.rfile.read(4),  len(data):" + str(len(data)))
         try:
             while (len(data)) < 4:
                 # Read the size of the incoming serialized object.
@@ -603,7 +603,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     # If we see this print a lot, then we may want to remove/comment-out the break and simply sleep for 1-10ms, then try reading again?
                     # Maybe if we fail to read any new data after ~3 tries, then we give up? But maybe we're giving up too early (i.e., trying to read data,
                     # finding no data to read, and giving up on the entire read immediately, rather than waiting and trying to read again).
-                    logger.warn("Stopped reading incoming message size from socket early. Have read " + str(len(data)) + " bytes of a total expected 4 bytes.")
+                    logger.warning("Stopped reading incoming message size from socket early. Have read " + str(len(data)) + " bytes of a total expected 4 bytes.")
                     break 
 
                 data.extend(new_data)
@@ -614,7 +614,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             logger.error(repr(ex))
             return None 
 
-        logger.debug("receive_object self.rfile.read(4) successful")
+        logger.debug("receive_object self.rfile.read(4) successful, len(data): " + str(len(data)))
 
         # Convert bytes of size to integer.
         incoming_size = int.from_bytes(data, 'big')
@@ -632,10 +632,14 @@ class TCPHandler(socketserver.StreamRequestHandler):
         logger.debug("recv_object: Will receive another message of size %d bytes" % incoming_size)
 
         data = bytearray()
+        logger.error("recv_object: created second data object, incoming_size: " + str(incoming_size))
+        logger.error("len(data): " + str(len(data)))
         try:
             while len(data) < incoming_size:
                 # Read serialized object (now that we know how big it'll be).
+                logger.error("execute new_data ")
                 new_data = self.rfile.read(incoming_size - len(data)).strip() # Do we need to call .strip() here? What if we removed something we're not supposed to?
+                logger.error("executed new_data ")
                 # Strip removes the leading and trailing bytes ASCII whitespace. I think it's probably fine, but I'm not sure.
 
                 if not new_data:

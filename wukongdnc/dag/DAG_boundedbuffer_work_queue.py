@@ -31,6 +31,11 @@ class BoundedBuffer_Work_Queue:
         dummy_state = synchronize_sync(self.websocket,"synchronize_sync", "process_work_queue", "withdraw", dummy_state)
         return dummy_state.return_value
 
+    def get_my_half(self,block = True):
+        dummy_state = DAG_executor_State()
+        dummy_state = synchronize_sync(self.websocket,"synchronize_sync", "process_work_queue", "withdraw_half", dummy_state)
+        return dummy_state.return_value
+
     def put(self,value):
         dummy_state = DAG_executor_State()
         dummy_state.keyword_arguments['value'] = value
