@@ -593,7 +593,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         """
 
         data = bytearray()
-        logger.debug("receive_object: Do self.rfile.read(4),  len(data):" + str(len(data)))
+        logger.debug("receive_object: Do self.rfile.read(4)")
         try:
             while (len(data)) < 4:
                 # Read the size of the incoming serialized object.
