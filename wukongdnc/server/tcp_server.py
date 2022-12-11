@@ -597,7 +597,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
         try:
             while (len(data)) < 4:
                 # Read the size of the incoming serialized object.
-                new_data = self.rfile.read(4 - len(data)).strip() 
+                #new_data = self.rfile.read(4 - len(data)).strip() 
+                new_data = self.rfile.read(4 - len(data))
 
                 if not new_data:
                     # If we see this print a lot, then we may want to remove/comment-out the break and simply sleep for 1-10ms, then try reading again?
