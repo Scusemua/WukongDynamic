@@ -640,7 +640,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
             while len(data) < incoming_size:
                 # Read serialized object (now that we know how big it'll be).
                 logger.error("execute new_data ")
-                new_data = self.rfile.read(incoming_size - len(data)).strip() # Do we need to call .strip() here? What if we removed something we're not supposed to?
+                #new_data = self.rfile.read(incoming_size - len(data)).strip() # Do we need to call .strip() here? What if we removed something we're not supposed to?
+                new_data = self.rfile.read(incoming_size - len(data)) # Do we need to call .strip() here? What if we removed something we're not supposed to?
                 logger.error("executed new_data ")
                 # Strip removes the leading and trailing bytes ASCII whitespace. I think it's probably fine, but I'm not sure.
 

@@ -75,7 +75,8 @@ def recv_object(websocket):
     logger.error(thread_name + ": do receive") 
     data = bytearray()
     while len(data) < 4:
-        new_data = websocket.recv(4 - len(data)).strip()
+        #new_data = websocket.recv(4 - len(data)).strip()
+        new_data = websocket.recv(4 - len(data))
         logger.error(thread_name + ": recv_object received") 
 
         if not new_data:
@@ -93,7 +94,8 @@ def recv_object(websocket):
     while len(data) < incoming_size:
         # Finally, we read the serialized object itself.
         logger.error(thread_name + ": start recv_object rcv") 
-        new_data = websocket.recv(incoming_size - len(data)).strip()
+        #new_data = websocket.recv(incoming_size - len(data)).strip()
+        new_data = websocket.recv(incoming_size - len(data))
         logger.error(thread_name + ": recv_object received") 
 
         if not new_data:
