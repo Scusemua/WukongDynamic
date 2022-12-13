@@ -136,3 +136,7 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+
+# Output; possibly large. 
+foo.txt 
+foo64.txt
