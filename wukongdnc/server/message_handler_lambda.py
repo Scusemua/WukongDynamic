@@ -252,7 +252,7 @@ class MessageHandler(object):
         work_queue_name = DAG_exec_state.keyword_arguments['work_queue_name']
         work_queue_type = DAG_exec_state.keyword_arguments['work_queue_type']
         work_queue_method = DAG_exec_state.keyword_arguments['work_queue_method']
-        list_of_fanout_values = DAG_exec_state.keyword_arguments['list_of_work_queue_fanout_values']
+        list_of_fanout_values = DAG_exec_state.keyword_arguments['list_of_work_queue_or_payload_fanout_values']
 
         logger.info("tcp_server: synchronize_process_faninNBs_batch: calling_task_name: " + calling_task_name + ": worker_needs_input: " + str(worker_needs_input)
             + " faninNBs size: " +  str(len(faninNBs)))
@@ -271,7 +271,7 @@ class MessageHandler(object):
         got_work = False
         list_of_work = []
 
-        # List list_of_work_queue_fanout_values may be empty: if a state has no fanouts this list is empty. 
+        # List list_of_work_queue_or_payload_fanout_values may be empty: if a state has no fanouts this list is empty. 
         # If a state has 1 fanout it will be a become task and there will be no moer fanouts.
         # If there are no fanouts, then worker_needs_work will be True and this list will be empty.
         # otherwise, the worker will have a become task so worker_needs_input will be false (and this
@@ -281,7 +281,7 @@ class MessageHandler(object):
             # work queue.
             # If we are using lambdas, then we can use the parallel invoker to invoke the fanout lambdas
             if run_all_tasks_locally:
-                # work_queue.deposit_all(list_of_work_queue_fanout_values)
+                # work_queue.deposit_all(list_of_work_queue_or_payload_fanout_values)
                 synchronizer = MessageHandler.synchronizers[work_queue_name]
                 synchClass = synchronizer._synchClass
                 try:
@@ -300,7 +300,7 @@ class MessageHandler(object):
 
                 work_queue_method_keyword_arguments = {}
                 work_queue_method_keyword_arguments['list_of_values'] = list_of_fanout_values
-                # call work_queue (bounded buffer) deposit_all(list_of_work_queue_fanout_values)
+                # call work_queue (bounded buffer) deposit_all(list_of_work_queue_or_payload_fanout_values)
                 logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": deposit all fanout work.")
                 returnValue, restart = synchronizer_method(synchronizer._synchronizer, **work_queue_method_keyword_arguments) 
                 # deposit_all return value is 0 and restart is False

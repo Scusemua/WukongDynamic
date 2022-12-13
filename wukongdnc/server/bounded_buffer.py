@@ -7,13 +7,13 @@ import time
 import logging 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.ERROR)
-"""
+
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
+ch.setLevel(logging.ERROR)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
-"""
+
 
 # Bounded Buffer
 class BoundedBuffer(MonitorSU):
@@ -171,13 +171,14 @@ class BoundedBuffer(MonitorSU):
                 self._out=(self._out+1) % int(self._capacity)
                 self._fullSlots-=1
         else:
+            logger.debug("withdraw_half() self._fullSlots at start of second batch: " + str(self._fullSlots))
             sizeOfBatch = self._fullSlots
             for _ in range(0,sizeOfBatch):
                 listOfValues.append(self._buffer[self._out])
                 self._out=(self._out+1) % int(self._capacity)
                 self._fullSlots-=1
-        if (self._fullSlots != 0):
-            logger.error("[Error]: Internal Error: BoundedBuffer withdraw_half _fullSlots not 0 after second withdawl.")
+            if (self._fullSlots != 0):
+                logger.error("[Error]: Internal Error: BoundedBuffer withdraw_half _fullSlots not 0 after second withdawl: " + str(self._fullSlots))
         restart = False
         #threading.current_thread()._restart = False
         #threading.current_thread()._returnValue=value

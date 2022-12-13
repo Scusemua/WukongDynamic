@@ -14,11 +14,11 @@ from ..dag.DAG_executor_constants import run_all_tasks_locally
 # Set up logging.
 import logging 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.ERROR)
 
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
+ch.setLevel(logging.ERROR)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
@@ -247,7 +247,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         work_queue_name = DAG_exec_state.keyword_arguments['work_queue_name']
         work_queue_type = DAG_exec_state.keyword_arguments['work_queue_type']
         work_queue_method = DAG_exec_state.keyword_arguments['work_queue_method']
-        list_of_fanout_values = DAG_exec_state.keyword_arguments['list_of_work_queue_fanout_values']
+        list_of_fanout_values = DAG_exec_state.keyword_arguments['list_of_work_queue_or_payload_fanout_values']
 #rhc: async batch
         async_call = DAG_exec_state.keyword_arguments['async_call']
 
@@ -287,7 +287,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         got_work = False
         list_of_work = []
 
-        # List list_of_work_queue_fanout_values may be empty: if a state has no fanouts this list is empty. 
+        # List list_of_work_queue_or_payload_fanout_values may be empty: if a state has no fanouts this list is empty. 
         # If a state has 1 fanout it will be a become task and there will be no more fanouts so this list is empty.
         # If the state has no fanouts, then worker_needs_work will be True and this fanout list will be empty.
         # otherwise, the worker will have a become task so worker_needs_input will be false (and this
@@ -298,7 +298,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             # so these fanouts can be put in the work queue.
             # If we are using lambdas, then we can use the parallel invoker to invoke the fanout lambdas
             if run_all_tasks_locally:
-                # work_queue.deposit_all(list_of_work_queue_fanout_values)
+                # work_queue.deposit_all(list_of_work_queue_or_payload_fanout_values)
                 synchronizer = tcp_server.synchronizers[work_queue_name]
                 
                 #synchClass = synchronizer._synchClass
@@ -318,7 +318,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
                 work_queue_method_keyword_arguments = {}
                 work_queue_method_keyword_arguments['list_of_values'] = list_of_fanout_values
-                # call work_queue (bounded buffer) deposit_all(list_of_work_queue_fanout_values)
+                # call work_queue (bounded buffer) deposit_all(list_of_work_queue_or_payload_fanout_values)
                 logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": deposit all fanout work.")
     #rhc select first, replace
                 #returnValue, restart = synchronizer_method(synchronizer._synchronizer, **work_queue_method_keyword_arguments) 
@@ -635,14 +635,14 @@ class TCPHandler(socketserver.StreamRequestHandler):
         logger.debug("recv_object: Will receive another message of size %d bytes" % incoming_size)
 
         data = bytearray()
-        logger.error("recv_object: created second data object, incoming_size: " + str(incoming_size))
+        logger.debug("recv_object: created second data object, incoming_size: " + str(incoming_size))
         try:
             while len(data) < incoming_size:
                 # Read serialized object (now that we know how big it'll be).
-                logger.error("execute new_data ")
+                logger.debug("execute new_data ")
                 #new_data = self.rfile.read(incoming_size - len(data)).strip() # Do we need to call .strip() here? What if we removed something we're not supposed to?
                 new_data = self.rfile.read(incoming_size - len(data)) # Do we need to call .strip() here? What if we removed something we're not supposed to?
-                logger.error("executed new_data ")
+                logger.debug("executed new_data ")
                 # Strip removes the leading and trailing bytes ASCII whitespace. I think it's probably fine, but I'm not sure.
 
                 if not new_data:

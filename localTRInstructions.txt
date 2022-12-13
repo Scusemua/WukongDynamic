@@ -1,0 +1,54 @@
+            """
+			Instructions for having processes get half of work from remote work queue and depost in local 
+			work queue and run TR locally, up to but not including last fanin, to see if speedup
+			
+            1. comment out above work_queue = Bounded ... at start of work loop and mod 
+            DAG_exector_work_queue_for ..
+            #rhc: exp
+            #if using_workers and using_threads_not_processes:
+            #    work_queue = queue.Queue()
+            work_queue = queue.Queue()
+
+            In DAG_executor_processes() add:
+                work_queue = queue.Queue()
+            after work_queue = None
+
+            2. uncomment this code, which uses withdraw_half() in BoundedBuffer
+            """
+            #my_work_queue = BoundedBuffer_Work_Queue(websocket,2*num_tasks_to_execute)
+            #local_work = my_work_queue.get_my_half()
+            #for work_tuple in local_work:
+            #   work_queue.put(work_tuple)
+            """
+            4. call store locally after creating a server:
+
+            mod server creation at end of DAG_executor_synchronizer:
+            #server = None
+            #if store_fanins_faninNBs_locally:
+            #    server = DAG_executor_Synchronizer()
+            server = DAG_executor_Synchronizer()
+            
+            In DAG_executor_driver: after create remote fanins:
+                    process_work_queue.put_all(list_of_work_queue_values)
+               create them locally too:
+                    server.create_all_fanins_and_faninNBs_locally(DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
+            """
+            #DAG_map = DAG_info.get_DAG_map()
+            #all_fanin_task_names = DAG_info.get_all_fanin_task_names()
+            #all_fanin_sizes = DAG_info.get_all_fanin_sizes()
+            #all_faninNB_task_names = DAG_info.get_all_faninNB_task_names()
+            #all_faninNB_sizes = DAG_info.get_all_faninNB_sizes()
+            #DAG_states = DAG_info.get_DAG_states()
+            #server.create_all_fanins_and_faninNBs_locally(DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
+            """
+            5. ToDo: switch config. constant to store locally. Add global declaration 
+               after with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
+                    global store_fanins_faninNBs_locally
+                so we can do the following assignment:
+            """
+            #store_fanins_faninNBs_locally = True
+            """
+            6. after process_fanins and using workers and set worker needs input add:
+                if str(state_info.fanins[0]) == "add-e58c07ee-ced9-4377-9a48-ebf7c40a144a":
+                    return
+            """
