@@ -44,6 +44,7 @@ process_work_queue_Type = "BoundedBuffer"
 #
 
 # Currently, this is for storing synch objects in simulated lambdas;
+store_sync_objects_in_lambdas = True
 using_Lambda_Function_Simulators_to_Store_Objects = True
 using_Lambda_Function_Simulators_to_Run_Tasks = False
 # use orchestrator to invoke functions (e.g., when all fanin/fanout results are available)
@@ -60,7 +61,7 @@ A4_L = A4_R = False
 A5 = A6 = False
 
 # These are used to shorten the expressions in the configurations
-not_using_lambda_options = not using_Lambda_Function_Simulators_to_Store_Objects and not using_DAG_orchestrator and not using_single_lambda_function
+not_using_lambda_options = not using_Lambda_Function_Simulators_to_Store_Objects and not using_DAG_orchestrator and not using_single_lambda_function and not using_Lambda_Function_Simulators_to_Run_Tasks
 A1 = not run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally
 A3 = run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally
 
@@ -91,12 +92,14 @@ A2 = run_all_tasks_locally and not using_workers and store_fanins_faninNBs_local
 # set FanInNB_Type = "DAG_executor_FanInNB_Select" or "DAG_executor_FanInNB"
 # Set SERVERLESS_SYNC to False in wukongdnc constants
 
-# Note: Currently we are assuming sing_Lambda_Function_Simulators_to_Store_Objects
+# Note: Currently we are assuming using_Lambda_Function_Simulators_to_Store_Objects
 # to do the orchestrator. 
 # ToDo:
-# We store objects in lmabdas when we use tcp_server_lambda, so we don't
-# have a store_sync_objects_in_servers config variable. We can create oen and
+# We store objects in lambdas when we use tcp_server_lambda, so we don't
+# have a store_sync_objects_in_lambdas config variable. We can create one and
 # tcp_server_lambda can make sure it is set?
+# Then using_Lambda_Function_Simulators_to_Store_Objects requires store_sync_objects_in_lambdas
+# and similarly for using_DAG_orchestrator and using_single_lambda_function
 
 A3_Server = A3 and not_using_lambda_options
 # set FanIn_Type = = "DAG_executor_FanIn_Select" or "DAG_executor_FanIn"

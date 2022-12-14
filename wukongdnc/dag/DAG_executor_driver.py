@@ -228,8 +228,8 @@ puts the fanin results in its own (local) private data dictionary as there is no
 dictionay shared by processes.)
 output/
 
-(A3.FunctionSimulator) Note: This scheme is also used with real python functions that simulate lambdas
-(so we can test things without running real lambdas) in which we store the 
+(A3.FunctionSimulator) Note: This scheme is also used with real python functions that simulate 
+lambdas (so we can test things without running real lambdas) in which we store the 
 synchroization objects. If
   using_Lambda_Function_Simulator = True
 then we create a list of Python functions and map the fanins/faninNBs/fanouts names 
@@ -301,14 +301,14 @@ For process_faninNBs_batch:
 this might change if we benchmark decentralized scheduling using lambdas with n workers then
 infinite workers (Wukong). This is async_call.
 - A2: when using threads to simulate workers and store lambdas locally, we do not use batch 
-processing. FaninNBs are storred locally and are handled with normal synchronous operations 
+processing. FaninNBs are stored locally and are handled with normal synchronous operations 
 one by one. The local FaniinNBs start local threads to simulate stating real lambdas.
 We are not using process_faninNB_batch so async_call is not relevant.
 - A3:Same when FaninNBs are stored on the server. The server returns the work for the faninNB
-and the calloing thread starts the thread thst simulates the real lamabda, (The server
+and the calling thread starts the thread thst simulates the real lamabda, (The server
 can't start the thread since it would run on the server.
 For A2 and A3 Performance is not an issue as we are simply testing the logic for using lambdas.
-- (A3.Orchestrator) : When we store sync objects in lambdas, we do use batch processing to make siimulated 
+- (A3.SOIL) : S*ync O*bjects I*n L*ambdas, we do use batch processing to make simulated 
 lambdas and real lambdas more similar. (Real lambdas call proocess_faninNB_batch. Each FaninNB
 will be processed by calling fanin and the fanin will start a real lambda to execute the fanin task
 so no work will be generated.) In this A3 case, we return a list of work to the calling thread
