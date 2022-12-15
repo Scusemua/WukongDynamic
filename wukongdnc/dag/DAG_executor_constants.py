@@ -61,26 +61,65 @@ A4_L = A4_R = False
 A5 = A6 = False
 
 # These are used to shorten the expressions in the configurations
-not_using_lambda_options = not using_Lambda_Function_Simulators_to_Store_Objects and not using_DAG_orchestrator and not using_single_lambda_function and not using_Lambda_Function_Simulators_to_Run_Tasks
-A1 = not run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally
-A3 = run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally
+not_using_lambda_options = not store_sync_objects_in_lambdas and (
+    not using_Lambda_Function_Simulators_to_Store_Objects) and (
+    not using_single_lambda_function) and (
+    not using_Lambda_Function_Simulators_to_Run_Tasks)
+# Note: using_DAG_orchestrator is not a lambda option. This is a non-Wukong scheme
+# for managing lambdas in that sync objects are stored in Lambdas and the objects
+# trigger their tasks to run in the asme lambda. So we have A1_Wukong, which uses
+# lambas to run tasks and at fanouts/faninNBs, invokes new lambdas to run
+# (non-becomes) fanout/fanin tasks.
 
 # configurations
-A1_Server = A1 and not_using_lambda_options
+A1_Wukong = not run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and (
+    not using_DAG_orchestrator)
+
+A1_Wukong_ObjectsOnServer = A1_Wukong and not store_sync_objects_in_lambdas and (
+    not using_Lambda_Function_Simulators_to_Store_Objects) and (
+    not using_Lambda_Function_Simulators_to_Run_Tasks) and (
+    not using_single_lambda_function)
+# This is Wukong style with sync objects stored on Server
 # FanIn_Type = "DAG_executor_FanIn"
 # FanInNB_Type = "DAG_executor_FanInNB"
 # run tcp_server
 # Set SERVERLESS_SYNC to True in wukongdnc constants
-A1_FunctionSimulator = A1 and using_Lambda_Function_Simulators_to_Store_Objects and not using_single_lambda_function
+A1_Wukong_ObjectsInLambdas = A1_Wukong and store_sync_objects_in_lambdas and (
+    not using_Lambda_Function_Simulators_to_Store_Objects) and (
+    not using_Lambda_Function_Simulators_to_Run_Tasks) and (
+    not using_single_lambda_function)
+# This is Wukong style with sync objects stored in two or more Lambdas to balance the load.
+# Not using lamba simulators, just mapping different objects (names) to different lambdas
+# FanIn_Type = "DAG_executor_FanIn"
+# FanInNB_Type = "DAG_executor_FanInNB"
+# run tcp_server_lambda
+# Set SERVERLESS_SYNC to True in wukongdnc constants
+A1_Wukong_ObjectInLambdas_UseSingleLambdaFunction = A1_Wukong_ObjectsInLambdas and using_single_lambda_function and (
+    not using_Lambda_Function_Simulators_to_Store_Objects) and (
+    not using_Lambda_Function_Simulators_to_Run_Tasks)
+# This is Wukong style with all sync objects stored in a single Lambda function 
+#   to make things easier.
+# Note: We do not use using_single_lambda_function when we use simulated lambdas to store objects.
+#   Using a single function is handy when we have to run lambdas on AWS, i.e., we only need
+#   one deployment. With simulated lambdas, having multiple "deployments" is not painful
+#   (to create the deployments, which aer just seperate Python functions.) 
+# FanIn_Type = "DAG_executor_FanIn"
+# FanInNB_Type = "DAG_executor_FanInNB"
+# run tcp_server_lambda
+# Set SERVERLESS_SYNC to True in wukongdnc constants
+A1_Wukong_ObjectInLambdas_FunctionSimulator = A1_Wukong_ObjectsInLambdas and (
+    using_Lambda_Function_Simulators_to_Store_Objects) and not using_single_lambda_function
 # FanIn_Type = "DAG_executor_FanIn_Select"
 # FanInNB_Type = "DAG_executor_FanInNB_Select"
 # run tcp_server_lambda
 # Set SERVERLESS_SYNC to True in wukongdnc constants
-A1_SingleFunction = A1 and using_single_lambda_function and not using_Lambda_Function_Simulators_to_Store_Objects
-# FanIn_Type = "DAG_executor_FanIn_Select"
-# FanInNB_Type = "DAG_executor_FanInNB_Select"
-# run tcp_server_lambda
-# Set SERVERLESS_SYNC to True in wukongdnc constants
+
+A1_Orchestrator = not run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and (
+    using_DAG_orchestrator)
+
+#rhc: A1_Orchestrator does not require that objects trigger tasks. it does not require that we use
+# simulated lambdas? Eventually we will use real lambdas.
+
 A1_Orchestrator = A1 and using_Lambda_Function_Simulators_to_Store_Objects and using_DAG_orchestrator and not using_single_lambda_function
 # FanIn_Type = "DAG_executor_FanIn_Select"
 # FanInNB_Type = "DAG_executor_FanInNB_Select"
@@ -100,7 +139,7 @@ A2 = run_all_tasks_locally and not using_workers and store_fanins_faninNBs_local
 # tcp_server_lambda can make sure it is set?
 # Then using_Lambda_Function_Simulators_to_Store_Objects requires store_sync_objects_in_lambdas
 # and similarly for using_DAG_orchestrator and using_single_lambda_function
-
+A3 = run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally
 A3_Server = A3 and not_using_lambda_options
 # set FanIn_Type = = "DAG_executor_FanIn_Select" or "DAG_executor_FanIn"
 # set FanInNB_Type = "DAG_executor_FanInNB_Select" or "DAG_executor_FanInNB"
@@ -159,4 +198,8 @@ not_A6 = not A6
 if not_A1s and not_A2 and not_A3s and not_A4s and not_A5 and not_A6:
     pass
 
+
+# Assert using_Lambda_Function_Simulators_to_Run_Tasks ==> using_DAG_orchestrator
+# Assert using a lambda option ==> store objects in Lambdas 
+# Assert using_DAG_orchestrator ==> not run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally
 

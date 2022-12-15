@@ -4,6 +4,9 @@
 
 # Where are we: 
 #
+# Q: can we invoke simuated lambda sync or async? It's a real python function
+#    so it will be sync unless we create a thread to do the invoke?
+# 
 # check the local server changes for select/non-select
 # check the async call changes + test with simulated lambdas.
 # check process_faninNBs_batch in tcp_servr_lambda make sure it works fo 
@@ -299,7 +302,7 @@ the faninNB fanins will invoke real lambdas to execute the fanin tasks.
 For process_faninNBs_batch:
 - A1: when using real lambdas, no work is returned since no workers are used with real lambdas.
 this might change if we benchmark decentralized scheduling using lambdas with n workers then
-infinite workers (Wukong). This is async_call.
+infinite workers (Wukong). This is an async_call.
 - A2: when using threads to simulate workers and store lambdas locally, we do not use batch 
 processing. FaninNBs are stored locally and are handled with normal synchronous operations 
 one by one. The local FaniinNBs start local threads to simulate stating real lambdas.
@@ -447,8 +450,131 @@ it stores (in the orchestrator) the intermediate results (until the operations g
 
 Note: The orchestrator is similar to SQS, where the fanin/fanoutresults are pushed to the Lmabdas 
 instead of having the Lambdas poll/pull the fanin/fanout results.
+"""
 
+"""
+using threads to simulate lambdas ==> run_all_tasks_locally and not using_workers: 
+        objects stored locally (so no triggering fanout/fanin tasks)
+        objects not stored locally (run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally)
+            objects stored on server - cannot trigger fanin/fanout tasks
+            objects stored in lambdas 
+                do not trigger tasks
+                trigger tasks not allowed since using threads to simulate lambdas
+                
+                
+    using lambdas:
+    store objects remotely in lambdas but do not run tasks in lambdas
+        lambdas for storage are real not simulated
+            using workers for executing tasks
+            using real lambdas for excuting tasks
+            using threads to simulate lambdas for executing tasks (like Wukong)
+        lambdas for storage simulated by python functions
+            using workers
+                do not use dag orch. since lambdas do not currently use worker-scheme
+            using real lambdas for excuting tasks
+                use dag orch. with enqueue(), then same real lambdas store objects
+                do not use dag orchestrator
+            using threads to simulate lambdas for executing tasks
+                do not use dag orchestrator since lambdas run triggered tasks
 
+Note: using threads to simulate lambdas means 
+- we simulate the Wukong scheme - all Lambdas are started by fanouts/fanins. The 
+    sync objects may or may not be stored in Lambdas, but if they are strored in
+    lambdas, simulated or real, they cannot trigger tasks since we must start a 
+    thread to simulate a Lambda executing the task, a la Wukong. So p_f_b will
+    return work to the calling thread and it will start threads to simulate starting
+    lambdas.
+- The scheme in which tasks are triggered and executed in the lambdas storing 
+    sync objects is not using threads to execute lambdas. It is using lambdas
+    simulated or not to store sync_objects that trigger their fanout/fanin tasks.
+
+We typically use simulated lambdas so we can run/test the code without using AWS.
+
+DAG_orchestrator
+    storing tasks in lambdas
+        simulated lambdas
+            running tasks in Lambdas (a)
+            not running tasks in lambdas
+        not simulated lambdas
+            running tasks in Lambdas (a)
+            not running tasks in lambdas
+==> (a) not using threads to simulate lambdas for running threads when using the 
+    DAG ochestrator. And not using workers.
+==> not run_all_tasks_locally and store_sync_objects_in_lambdas
+    and using_Lambda_Function_Simulators_to_Store_Objects = True or False
+    and using_Lambda_Function_Simulators_to_Run_Tasks = True or False
+So when we are using the DAG orchestrator it is another way to manage and 
+access the lambdas (simulated or not) that store objects. And so can be used
+with all the various ways of running tasks (threads to simulate lambdas, 
+workers, and lambdas executing tasks). Optionally, the stored objects can 
+trigger the fanout tasks, which will run in the same lambda as the object.
+In this case the lambas may be real or simulated and only lambdas can be
+used to execute tasks, i.e., no threads that simulate lambdas.
+
+Wwe call process_faninNB_batch when 
+    running tcp_server - not using lambdas 
+    running tcp_server_lambda - storing synch objects in lambdas
+        sync object may or may not trigger their tasks. 
+            Triggered tasks are running in simulated or real lambdas that will call p_f_b()
+- using worker processes
+- !run_all_tasks_locally so not using workers; instead using lambdas; note: always call p_f_b
+- using threads to simulate lambdas (and since lambdas call p_f_b threads here should too)
+
+So use async_call = False for p_f_b() when work can be returned
+    using worker processes and worker_needs_input
+    using threads to simulate lambdas - no lambas started by faninNBs or triggered since using threads to sim lambdas
+So use async_call = True for p_f_b when no work can be returned
+    using worker processes but worker_needs_input == False
+    !run_all_tasks_locally so using real lambdas so no threads for simulation  
+
+Q: In code  dag-98: if (run_all_tasks_locally and using_workers and not using_threads_not_processes) or (not run_all_tasks_locally) or (run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and using_Lambda_Function_Simulators_to_Store_Objects):
+        # Config: A1, A3, A5, A6
+        # Note: calling process_faninNBs_batch when using threads to simulate lambdas and storing objects remotely
+        # and using_Lambda_Function_Simulators_to_Store_Objects. 
+    So what if using threads to simulate lambdas and store sync objects remotely 
+    but not using simulated objects to store lambdas?
+    Then we are not using batch? Since calling tcp_server and it does not handle
+    the cse for using threads to simulate lambdas? 
+Q: So when use threads to simulate lambdas and store objects remotely but not 
+    in lambdas we do not get lsit of fanouts? and we start new threads for 
+    these fanouts? And if no faninNBs then only process fanout list when ?       
+
+store objects in lambas - workers or no workers
+    lambdas are real, i.e., not simulated (IMPLEMENTED)
+    lambdas are simulated by python function (IMLEMENTED)
+        object does not trigger task; instead object returns results to calling thread
+        object triggers task to be executd in same lamba, so no results returned
+
+So if using threads to simulate lambdas that execute the tasks and are separate
+from the lambdas that store synch objects (remotely) i.e., sync objects 
+stored remotely in lambdas (real or simulated) do not trigger their fanin tasks, 
+the collected results must be returned to the calling task.
+
+So we are working now with python functions that simulate lambdas but we should
+be able to switch over to real lambdas and keep things working. So we don't
+need to check whether we aer using simulated lambdas or not, we just check
+whether we are storing objects in lambda (simulated or not) - we set the 
+options for simulated lambdas so tht we use them since we cannot run
+real lambdas without using AWS.
+
+not run_all_tasks_locally ==> no workers
+    running tasks in real lambdas
+        original: Wukong: run leaf tasks in real lambdas + fanouts start real lambdas 
+            + faninNBs start real lambdas to execute fanin tasks
+        alternate scheme: dag orchestator invokes real lambdas to do fanout/fanins
+            and to trigger fanout/fanin tasks to excute in same real lambda
+
+workers
+    threads
+    processes
+        objects stored on server
+        objects stored in lambas
+            simulated lambdas or not
+
+We tested using workers and storing objects in real lambdas
+
+We did not test Wukong case with real lambdas executing tasks and 
+accessing objects stored on server or in lambdas.
 """
 # Input the infomation generatd by python -m wukongdnc.dag.dask_dag
 def input_DAG_info():
