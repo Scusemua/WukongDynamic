@@ -190,6 +190,8 @@ class DAG_orchestrator:
 				try:
 					logger.debug("SQS enqueue: calling simulated_lambda_function.lambda_handler(payload)")
 					# This is essentially a synchronous call to a regular Python function
+# ToDo: Do we want to allow both sync and async calls? The latter done by creating a thread that does
+# the call. Faster when we are invoking a real lambda.
 					return_value = simulated_lambda_function.lambda_handler(payload)
 					logger.debug("SQS enqueue: called simulated_lambda_function.lambda_handler(payload)")
 				except Exception as ex:

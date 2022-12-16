@@ -168,7 +168,7 @@ if __name__ == "__main__":
 
     return graph, result
 
-  def tree_reduction(n = 32):
+  def tree_reduction(n = 1024):
     """
       n (int):
         Size of the array on which to perform tree reduction.

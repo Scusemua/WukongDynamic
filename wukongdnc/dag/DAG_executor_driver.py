@@ -6,12 +6,22 @@
 #
 # Q: can we invoke simuated lambda sync or async? It's a real python function
 #    so it will be sync unless we create a thread to do the invoke?
-# 
+#
+# Need DAG_states_of_fanouts in tcp_server_lambdas when we do batch processing
+# and we are orchestrating fanouts.
+#
+# use batch processing when we are using threads to simulate workers and objects
+# are remote on the server, not just remote in lambdas, so that the condiditiom
+# for calling batch is to always call it except when using threads to simulate 
+# lambdas and storing objects locally. We currently call batch for when threads
+# simulate lambdas and objects in lambdas (so using tcp_server_lambda.)
+#
 # check the local server changes for select/non-select
-# check the async call changes + test with simulated lambdas.
-# check process_faninNBs_batch in tcp_servr_lambda make sure it works fo 
-# simulated and non-simulated lambda callers which are the only callers
-# when objecta are stored in lambdas. do asserts on asynch_call if true then rl lambdas. 
+# check the async_call changes + test with simulated lambdas.
+# check process_faninNBs_batch in tcp_servr_lambda make sure it works fo r
+# simulated and non-simulated (real) lambda callers which are the only callers
+# when objects are stored in lambdas. do asserts on asynch_call if true then rl lambdas. 
+#
 # How do we know when to stop clock for lamba simulation? We can't join any threads
 #
 # should invoke be atomic? for ==n check? as well as lock the function calls.

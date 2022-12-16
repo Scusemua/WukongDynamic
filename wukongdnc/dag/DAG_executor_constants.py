@@ -61,110 +61,176 @@ A4_L = A4_R = False
 A5 = A6 = False
 
 # These are used to shorten the expressions in the configurations
-not_using_lambda_options = not store_sync_objects_in_lambdas and (
-    not using_Lambda_Function_Simulators_to_Store_Objects) and (
-    not using_single_lambda_function) and (
-    not using_Lambda_Function_Simulators_to_Run_Tasks)
-# Note: using_DAG_orchestrator is not a lambda option. This is a non-Wukong scheme
-# for managing lambdas in that sync objects are stored in Lambdas and the objects
-# trigger their tasks to run in the asme lambda. So we have A1_Wukong, which uses
-# lambas to run tasks and at fanouts/faninNBs, invokes new lambdas to run
-# (non-becomes) fanout/fanin tasks.
+not_using_lambda_options =  not using_Lambda_Function_Simulators_to_Store_Objects and (
+    not using_Lambda_Function_Simulators_to_Run_Tasks) and (
+    not using_DAG_orchestrator) and (
+    not using_single_lambda_function)
+# Note: using_DAG_orchestrator while using_Lambda_Function_Simulators_to_Run_Tasks
+# is a non-Wukong scheme for managing lambdas - sync objects are stored in Lambdas 
+# and when using using_Lambda_Function_Simulators_to_Run_Tasks the objects
+# trigger their tasks to run within the same lambda. A1_Wukong uses
+# lambas to run tasks at fanouts/faninNBs, and stores synch objects on the 
+# server or in lambdas. A1_Wukong may use the DAG_orchestrator to manage the 
+# sync objects/lambdas. 
 
-# configurations
-A1_Wukong = not run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and (
-    not using_DAG_orchestrator)
+# Note: for all configurations, set create_all_fanins_faninNBs_on_start = True/False
+
+# Configurations:
+
+# objects can be stored on the tcp server or in lambdas
+A1_Wukong = not run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally
 
 A1_Wukong_ObjectsOnServer = A1_Wukong and not store_sync_objects_in_lambdas and (
-    not using_Lambda_Function_Simulators_to_Store_Objects) and (
-    not using_Lambda_Function_Simulators_to_Run_Tasks) and (
-    not using_single_lambda_function)
+    not not_using_lambda_options)
 # This is Wukong style with sync objects stored on Server
 # FanIn_Type = "DAG_executor_FanIn"
 # FanInNB_Type = "DAG_executor_FanInNB"
 # run tcp_server
 # Set SERVERLESS_SYNC to True in wukongdnc constants
-A1_Wukong_ObjectsInLambdas = A1_Wukong and store_sync_objects_in_lambdas and (
-    not using_Lambda_Function_Simulators_to_Store_Objects) and (
-    not using_Lambda_Function_Simulators_to_Run_Tasks) and (
-    not using_single_lambda_function)
+A1_Wukong_ObjectsInRealLambdas_UseManyLambdaFunction = A1_Wukong and store_sync_objects_in_lambdas and (
+    not not_using_lambda_options)
 # This is Wukong style with sync objects stored in two or more Lambdas to balance the load.
-# Not using lamba simulators, just mapping different objects (names) to different lambdas
-# FanIn_Type = "DAG_executor_FanIn"
-# FanInNB_Type = "DAG_executor_FanInNB"
+# Not using lamba simulators, just mapping objects (names) to lambdas.
+# If using_single_lambda_function then there is a single lambda that stores all sync objects
+# which makes setup on AWS simpler (i.e., using one distribution).
+# FanIn_Type = "DAG_executor_FanIn_Select"
+# FanInNB_Type = "DAG_executor_FanInNB_Select"
 # run tcp_server_lambda
 # Set SERVERLESS_SYNC to True in wukongdnc constants
-A1_Wukong_ObjectInLambdas_UseSingleLambdaFunction = A1_Wukong_ObjectsInLambdas and using_single_lambda_function and (
+A1_Wukong_ObjectsInRealLambdas_UseSingleLambdaFunction = A1_Wukong and store_sync_objects_in_lambdas and (
+    using_single_lambda_function) and (
     not using_Lambda_Function_Simulators_to_Store_Objects) and (
-    not using_Lambda_Function_Simulators_to_Run_Tasks)
+    not using_Lambda_Function_Simulators_to_Run_Tasks) and (
+    not using_DAG_orchestrator)
 # This is Wukong style with all sync objects stored in a single Lambda function 
-#   to make things easier.
+#   to make AWS setup easier,
 # Note: We do not use using_single_lambda_function when we use simulated lambdas to store objects.
 #   Using a single function is handy when we have to run lambdas on AWS, i.e., we only need
 #   one deployment. With simulated lambdas, having multiple "deployments" is not painful
 #   (to create the deployments, which aer just seperate Python functions.) 
-# FanIn_Type = "DAG_executor_FanIn"
-# FanInNB_Type = "DAG_executor_FanInNB"
+# FanIn_Type = "DAG_executor_FanIn_Select"
+# FanInNB_Type = "DAG_executor_FanInNB_Select"
 # run tcp_server_lambda
 # Set SERVERLESS_SYNC to True in wukongdnc constants
-A1_Wukong_ObjectInLambdas_FunctionSimulator = A1_Wukong_ObjectsInLambdas and (
-    using_Lambda_Function_Simulators_to_Store_Objects) and not using_single_lambda_function
+A1_Wukong_ObjectsInRealLambdas_UsingOrchestator = A1_Wukong and store_sync_objects_in_lambdas and (
+    not using_Lambda_Function_Simulators_to_Store_Objects) and (
+    not using_Lambda_Function_Simulators_to_Run_Tasks) and (
+    not using_single_lambda_function) 
+# This is Wukong style with all sync objects stored in a lambda functions and orchestrated.
+# FanIn_Type = "DAG_executor_FanIn_Select"
+# FanInNB_Type = "DAG_executor_FanInNB_Select"
+# run tcp_server_lambda
+# Set SERVERLESS_SYNC to True in wukongdnc constants
+A1_Wukong_ObjectInSimulatedLambdas = A1_Wukong and store_sync_objects_in_lambdas and (
+    using_Lambda_Function_Simulators_to_Store_Objects) and (
+    not using_Lambda_Function_Simulators_to_Run_Tasks) and (
+    not using_single_lambda_function) and (
+    not using_DAG_orchestrator)
+# FanIn_Type = "DAG_executor_FanIn_Select"
+# FanInNB_Type = "DAG_executor_FanInNB_Select"
+# run tcp_server_lambda
+# Set SERVERLESS_SYNC to True in wukongdnc constants
+A1_Wukong_ObjectInSimulatedLambdas_UsingOrchestator = A1_Wukong and store_sync_objects_in_lambdas and (
+    using_Lambda_Function_Simulators_to_Store_Objects) and (
+    using_DAG_orchestrator) and (
+    not using_Lambda_Function_Simulators_to_Run_Tasks) and (
+    not using_single_lambda_function) 
 # FanIn_Type = "DAG_executor_FanIn_Select"
 # FanInNB_Type = "DAG_executor_FanInNB_Select"
 # run tcp_server_lambda
 # Set SERVERLESS_SYNC to True in wukongdnc constants
 
-A1_Orchestrator = not run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and (
-    using_DAG_orchestrator)
-
-#rhc: A1_Orchestrator does not require that objects trigger tasks. it does not require that we use
-# simulated lambdas? Eventually we will use real lambdas.
-
-A1_Orchestrator = A1 and using_Lambda_Function_Simulators_to_Store_Objects and using_DAG_orchestrator and not using_single_lambda_function
+# Note: Currently we are assuming using_Lambda_Function_Simulators_to_Store_Objects is True
+# when we use the orchestrator. 
+A1_Orchestrate_SyncObjectsandTasksinRealLambdas = not run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and (
+    store_sync_objects_in_lambdas) and (
+    using_DAG_orchestrator) and (
+    not using_Lambda_Function_Simulators_to_Store_Objects) and (
+    not using_Lambda_Function_Simulators_to_Run_Tasks) and (
+    not using_single_lambda_function)
 # FanIn_Type = "DAG_executor_FanIn_Select"
 # FanInNB_Type = "DAG_executor_FanInNB_Select"
 # run tcp_server_lambda
 # Set SERVERLESS_SYNC to True in wukongdnc constants
 
-A2 = run_all_tasks_locally and not using_workers and store_fanins_faninNBs_locally and not_using_lambda_options
+A1_Orchestrate_SyncObjectsandTasksinSimulatedLambdas = not run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and (
+    store_sync_objects_in_lambdas) and (
+    using_DAG_orchestrator) and (
+    using_Lambda_Function_Simulators_to_Store_Objects) and (
+    using_Lambda_Function_Simulators_to_Run_Tasks) and (
+    not using_single_lambda_function)
+# FanIn_Type = "DAG_executor_FanIn_Select"
+# FanInNB_Type = "DAG_executor_FanInNB_Select"
+# run tcp_server_lambda
+# Set SERVERLESS_SYNC to True in wukongdnc constants
+
+using_threads_to_simulate_lambdas = run_all_tasks_locally and not using_workers
+
+# using threads to simulate lambdas and store sync objects locally (not on servr or in lambdas)
+A2 = using_threads_to_simulate_lambdas and store_fanins_faninNBs_locally and not_using_lambda_options
 # set FanIn_Type = "DAG_executor_FanIn_Select" or "DAG_executor_FanIn"
 # set FanInNB_Type = "DAG_executor_FanInNB_Select" or "DAG_executor_FanInNB"
 # Set SERVERLESS_SYNC to False in wukongdnc constants
 
-# Note: Currently we are assuming using_Lambda_Function_Simulators_to_Store_Objects
-# to do the orchestrator. 
-# ToDo:
-# We store objects in lambdas when we use tcp_server_lambda, so we don't
-# have a store_sync_objects_in_lambdas config variable. We can create one and
-# tcp_server_lambda can make sure it is set?
-# Then using_Lambda_Function_Simulators_to_Store_Objects requires store_sync_objects_in_lambdas
-# and similarly for using_DAG_orchestrator and using_single_lambda_function
-A3 = run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally
-A3_Server = A3 and not_using_lambda_options
+# using threads to simulate lambdas that execute tasks and store sync objects remotely (on server or in lambdas)
+# Note: All tasks executed by Wukong style lambdas that are invoked at fanouts/fanins.
+A3 = using_threads_to_simulate_lambdas and not store_fanins_faninNBs_locally
+
+A3_ObjectsOnServer = A3 and not_using_lambda_options
 # set FanIn_Type = = "DAG_executor_FanIn_Select" or "DAG_executor_FanIn"
 # set FanInNB_Type = "DAG_executor_FanInNB_Select" or "DAG_executor_FanInNB"
 # Set SERVERLESS_SYNC to False in wukongdnc constants
-A3_FunctionSimulator = A3 and using_Lambda_Function_Simulators_to_Store_Objects and not using_single_lambda_function and not using_DAG_orchestrator
+A3_ObjectsInRealLambdas_UseManyLambdaFunction = A3 and store_sync_objects_in_lambdas and (
+    not not_using_lambda_options)
 # FanIn_Type = "DAG_executor_FanIn_Select"
 # FanInNB_Type = "DAG_executor_FanInNB_Select"
 # run tcp_server_lambda
-# Set SERVERLESS_SYNC to False in wukongdnc constants
-A3_SingleFunction = A3 and using_single_lambda_function and not using_Lambda_Function_Simulators_to_Store_Objects
+# Set SERVERLESS_SYNC to False in wukongdnc constants    
+A3_ObjectsInRealLambdas_UseSingleLambdaFunction = A3 and store_sync_objects_in_lambdas and (
+    using_single_lambda_function) and (
+    not using_Lambda_Function_Simulators_to_Store_Objects) and (
+    not using_Lambda_Function_Simulators_to_Run_Tasks) and (
+    not using_DAG_orchestrator)
 # FanIn_Type = "DAG_executor_FanIn_Select"
 # FanInNB_Type = "DAG_executor_FanInNB_Select"
 # run tcp_server_lambda
-# Set SERVERLESS_SYNC to False in wukongdnc constants
-A3_Orchestrator = A3_FunctionSimulator and using_DAG_orchestrator
+# Set SERVERLESS_SYNC to False in wukongdnc constants 
+A3_ObjectsInRealLambdas_UsingOrchestator = A3 and store_sync_objects_in_lambdas and (
+    not using_Lambda_Function_Simulators_to_Store_Objects) and (
+    not using_Lambda_Function_Simulators_to_Run_Tasks) and (
+    not using_single_lambda_function) 
+# This is Wukong style with all sync objects stored in a lambda functions and orchestrated.
 # FanIn_Type = "DAG_executor_FanIn_Select"
 # FanInNB_Type = "DAG_executor_FanInNB_Select"
-# run tcp_server
-# Set SERVERLESS_SYNC to False in wukongdnc constants
+# run tcp_server_lambda
+# Set SERVERLESS_SYNC to True in wukongdnc constants
 
-A4_Local = run_all_tasks_locally and using_workers and using_threads_not_processes and store_fanins_faninNBs_locally and not_using_lambda_options
+A3_ObjectInSimulatedLambdas = A3 and store_sync_objects_in_lambdas and (
+    using_Lambda_Function_Simulators_to_Store_Objects) and (
+    not using_Lambda_Function_Simulators_to_Run_Tasks) and (
+    not using_single_lambda_function) and (
+    not using_DAG_orchestrator)
+# FanIn_Type = "DAG_executor_FanIn_Select"
+# FanInNB_Type = "DAG_executor_FanInNB_Select"
+# run tcp_server_lambda
+# Set SERVERLESS_SYNC to False in wukongdnc constants
+A3_ObjectInSimulatedLambdas_UsingOrchestator = A3 and store_sync_objects_in_lambdas and (
+    using_Lambda_Function_Simulators_to_Store_Objects) and (
+    using_DAG_orchestrator) and (
+    not using_Lambda_Function_Simulators_to_Run_Tasks) and (
+    not using_single_lambda_function) 
+# FanIn_Type = "DAG_executor_FanIn_Select"
+# FanInNB_Type = "DAG_executor_FanInNB_Select"
+# run tcp_server_lambda
+# Set SERVERLESS_SYNC to True in wukongdnc constants
+
+A4 = run_all_tasks_locally and using_workers and using_threads_not_processes
+A4_ObjectsStoredLocally = A4 and store_fanins_faninNBs_locally and not_using_lambda_options
 # set num_workers
 # no tcp_server since storing locally
 # Set SERVERLESS_SYNC to False in wukongdnc constants
-A4_Remote = run_all_tasks_locally and using_workers and using_threads_not_processes and not store_fanins_faninNBs_locally and not_using_lambda_options
+A4_ObjectsStoredRemotely = A4 and not store_fanins_faninNBs_locally and (
+    not_using_lambda_options)
 # set num_workers
 # set FanIn_Type = "DAG_executor_FanIn_Select" or "DAG_executor_FanIn"
 # FanInNB_Type = "DAG_executor_FanInNB_Select" or "DAG_executor_FanInNB"
@@ -172,7 +238,13 @@ A4_Remote = run_all_tasks_locally and using_workers and using_threads_not_proces
 # run tcp_server
 # Set SERVERLESS_SYNC to False in wukongdnc constants
 
-A5 = run_all_tasks_locally and using_workers and not using_threads_not_processes and not store_fanins_faninNBs_locally and not_using_lambda_options
+# Note about A4: For A4, we are using worker threads, which is not going to generate sppedup in Python.
+# The various options for storing objects in lambdas, i.e., simulated lambdas and orchestration,
+# can be used but there is no point as A4 cannot perform well in any case.
+
+A5 = run_all_tasks_locally and using_workers and not using_threads_not_processes
+A5_ObjectsStoredRemotely = A5 and (
+    not store_fanins_faninNBs_locally) 
 # set num_workers
 # set FanIn_Type = "DAG_executor_FanIn_Select" or "DAG_executor_FanIn"
 # set FanInNB_Type = "DAG_executor_FanInNB_Select" or "DAG_executor_FanInNB"
@@ -180,15 +252,20 @@ A5 = run_all_tasks_locally and using_workers and not using_threads_not_processes
 # run tcp_server
 # Set SERVERLESS_SYNC to False in wukongdnc constants
 
+# Note about A5: For A5, we are using worker processes, which requires sync objects to be
+# stored remotely. Objects can be stored on the server or in lambdas, like ususal.
+# The various options for storing objects in lambdas, i.e., simulated lambdas and orchestration,
+# can be used but it is most likely that we will be using objects storedon the server since
+# we are not using lambdas to execute tasks so we cannot co-locate objects and their
+# (fanout/fanin) tasks in lambdas.
+
 A6 = run_all_tasks_locally and use_multithreaded_multiprocessing and using_workers and not using_threads_not_processes and not store_fanins_faninNBs_locally and not_using_lambda_options
 # set num_threads_for_multithreaded_multiprocessing
 # set FanIn_Type = "DAG_executor_FanIn_Select" or "DAG_executor_FanIn"
 # set FanInNB_Type = "DAG_executor_FanInNB_Select" or "DAG_executor_FanInNB"
 # run tcp_server
 
-# For all configurations:
-# set create_all_fanins_faninNBs_on_start
-
+"""
 not_A1s = not A1_FunctionSimulator and not A1_SingleFunction and not A1_Orchestrator
 not_A2 = not A2
 not_A3s = not A3_Server and not A3_FunctionSimulator and not A3_SingleFunction and not A3_Orchestrator 
@@ -197,6 +274,7 @@ not_A5 = not A5
 not_A6 = not A6
 if not_A1s and not_A2 and not_A3s and not_A4s and not_A5 and not_A6:
     pass
+"""
 
 
 # Assert using_Lambda_Function_Simulators_to_Run_Tasks ==> using_DAG_orchestrator

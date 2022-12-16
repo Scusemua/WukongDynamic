@@ -13,6 +13,7 @@ from ..wukong.invoker import invoke_lambda_synchronously
 from ..dag.DAG_executor_constants import using_Lambda_Function_Simulators_to_Store_Objects, using_single_lambda_function
 from ..dag.DAG_executor_constants import using_DAG_orchestrator, run_all_tasks_locally
 from ..dag.DAG_executor_constants import using_workers, store_fanins_faninNBs_locally, using_Lambda_Function_Simulators_to_Run_Tasks
+from ..dag.DAG_executor_constants import store_sync_objects_in_lambdas
 from ..dag.DAG_Executor_lambda_function_simulator import InfiniD # , Lambda_Function_Simulator
 from ..dag.DAG_info import DAG_Info
 from threading import Lock
@@ -413,12 +414,14 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
         DAG_exec_state = decode_and_deserialize(message["state"])
         faninNBs = DAG_exec_state.keyword_arguments['faninNBs']
+        fanouts = DAG_exec_state.keyword_arguments['fanouts']
         #faninNB_sizes = DAG_exec_state.keyword_arguments['faninNB_sizes']
         # FYI:
         #result = DAG_exec_state.keyword_arguments['result']
         # For debugging:
         calling_task_name = DAG_exec_state.keyword_arguments['calling_task_name'] 
         DAG_states_of_faninNBs = DAG_exec_state.keyword_arguments['DAG_states_of_faninNBs'] 
+#ToDo: We need DAG_states of fanouts too, if we will orchestrate the fanouts
         # Note: if using lambdas, then we are not using workers (for now) so worker_needs_input 
         # must be false, which is asertd below.
         worker_needs_input = DAG_exec_state.keyword_arguments['worker_needs_input']
@@ -501,7 +504,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
     #     fanin task. 
     #     Then we can just pass a message to the lambda/message_handler/fanin like we usually do.
     #     Q: what are we passing here? dag state? has result?
-                for payload in list_of_fanout_values:
+                for name in fanouts:
                     start_state_fanin_task  = DAG_states_of_faninNBs[name]
                     # These are per FaninNB
                     DAG_exec_state.keyword_arguments['fanin_task_name'] = name
@@ -1117,6 +1120,9 @@ class TCPServer(object):
     
     def start(self):
         logger.info("tcp_server_lambda: Starting TCP Lambda server.")
+        # assert:
+        if not store_sync_objects_in_lambdas:
+            logger.error("tcp_server_lambda: store_sync_objects_in_lambdas is False.")
         try:
             self.tcp_server.serve_forever()
         except Exception as ex:
