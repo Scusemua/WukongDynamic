@@ -360,12 +360,12 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # return value not assigned
         return 0
 
-# ToDo: We are using Lambdas, which means (1) using lambdas that are real or possibly 
-# storing sync objects in lambdas simulated by regular python functions (2) there is no 
-# list of fanouts since we start the fanned out lambdas in the DAG_executor; this may 
-# change if we pass a list of fanouts to tcp_server_lambda and use the parallel invoker 
-# to invoke them, or we store fanout objects (fanout = fanin of size 1) in lambdas and
-# the the DAG_orchestrator invoke the functions.
+# We are using Lambdas (real or simulated) to store objects, 
+# If the sync objects trigger their fanout/fanin tasks, we store fanout objects 
+# (fanout = fanin of size 1) in lambdas and the the DAG_orchestrator invoke a
+# function to execute the fan_out. We may als0 this may pass a list of fanouts to 
+# tcp_server_lambda and use the parallel invoker to invoke them (when we are using 
+# Wukong style fanouts in which we invoke a new lamba to execute the fanout.
 #
 # Todo: This can be an asynch call, i.e., when using real lambdas, since the 
 # return value is definitely 0 and can be ignored so no use waiting for it.
@@ -433,27 +433,33 @@ class TCPHandler(socketserver.StreamRequestHandler):
         work_queue_method = DAG_exec_state.keyword_arguments['work_queue_method']
         """
         # if using threads to simulate lambdas there is no list of fanouts as threads
-        # are started by DAG_executor. If using real lambdas to execute taks, we may pass 
-        # such a list and use the parallel lamba invoker, in the future. If running the fanout
-        # and fanin tasks in python functions then we pass the fanouts to the orchestrator.
+        # are started by DAG_executor. 
+        # If using real lambdas to execute taks, we may pass such a list and use the 
+        # parallel lamba invoker, in the future. 
+        # If running the fanout and fanin tasks in python functions then we pass the 
+        # fanouts to the orchestrator. Note: we cannot be using threads to simulate
+        # lambdas since tasks will run in lambdas (triggered by the task's synch object)
 #rhc: run task
-        if (run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and (using_Lambda_Function_Simulators_to_Store_Objects or not using_Lambda_Function_Simulators_to_Store_Objects) and using_Lambda_Function_Simulators_to_Run_Tasks):
-            list_of_fanout_values = DAG_exec_state.keyword_arguments['list_of_work_queue_or_payload_fanout_values']
+        # If sync objects trigger their fanout/fanin tasks to run in the same lambda
+        # then we will process the fanouts.
+        # Todo: we may use the parallel invoer to do the fanouts when using Wukong stylr
+        # fanouts.
+        if using_Lambda_Function_Simulators_to_Run_Tasks:
+            fanouts = DAG_exec_state.keyword_arguments['fanouts']
         
 #rhc: async batch
         async_call = DAG_exec_state.keyword_arguments['async_call']
 
         logger.debug("tcp_server_lambda: synchronize_process_faninNBs_batch: calling_task_name: " + calling_task_name 
             + ": worker_needs_input: " + str(worker_needs_input) + " faninNBs size: " +  str(len(faninNBs)))
-#rhc: run task
-        logger.debug("list_of_fanout_values size: " + str(len(list_of_fanout_values)))
 #rhc: async batch
         logger.debug("tcp_server_lambda: synchronize_process_faninNBs_batch: calling_task_name: " + calling_task_name 
             + ": async_call: " + str(async_call))
 
-        # assert:
-        if worker_needs_input:
-            logger.error("[Error]: tcp_server_lambda: synchronize_process_faninNBs_batch: Internal Error: worker needs input but using lambdas.")
+        # assert: when using workers we use tcp_server not tcp_sever_lambda
+        if using_workers or worker_needs_input:
+            logger.error("[Error]: tcp_server_lambda: synchronize_process_faninNBs_batch: Internal Error: "
+            + " when using workers we should not be storing objects in lambdas and running tcp_server_lambda.")
         
         # Note: If we are using lambdas, then we are not using workers (for now) so worker_needs_input
         # must be false. Also, we are currently not piggybacking the fanouts so there should be no 
@@ -461,7 +467,6 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
         # True if the client needs work and we got some work for the client, which are the
         # results of a faninNB.
-
         # Commented out: Since usig Lambdas, there is no work stolen
         # since no workers.
         """
@@ -490,60 +495,50 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # queue so this code is completely diffrent f we do pass in a list
         # of fanouts (for parallel invocation)
 #rhc: run task
-# need to do fanin ops on the fanout fanin objects. 
 # need to do creat_if. Currently doing mappings of objects to functions.
-        if (run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and (using_Lambda_Function_Simulators_to_Store_Objects or not using_Lambda_Function_Simulators_to_Store_Objects) and using_Lambda_Function_Simulators_to_Run_Tasks):
-            if len(list_of_fanout_values) > 0:
-    #rhc: run task: need to pass payload to orchestrator who passes payload to fanout
-    #     also need name of fanout task so can run it after fanin
-    #     so we aer passing message to lamba which will call fanin operation. fanin operation
-    #     is just collecting results for fanin tasks, which in this case is a task that 
-    #     is being fanned out but it's still just a task. So why isn't single result for 
-    #     fanout the same as a result for fanin, since we are not invoking a lambda and thus
-    #     do not need a payload, just the results, same as we need the results for a
-    #     fanin task. 
-    #     Then we can just pass a message to the lambda/message_handler/fanin like we usually do.
-    #     Q: what are we passing here? dag state? has result?
-                for name in fanouts:
-                    start_state_fanin_task  = DAG_states_of_faninNBs[name]
-                    # These are per FaninNB
-                    DAG_exec_state.keyword_arguments['fanin_task_name'] = name
-                    DAG_exec_state.keyword_arguments['start_state_fanin_task'] = start_state_fanin_task
+        if using_Lambda_Function_Simulators_to_Run_Tasks:
+            for name in fanouts:
+                start_state_fanin_task  = DAG_states_of_faninNBs[name]
+                # These are per Fanout
+                DAG_exec_state.keyword_arguments['fanin_task_name'] = name
+                DAG_exec_state.keyword_arguments['start_state_fanin_task'] = start_state_fanin_task
 
-                    msg_id = str(uuid.uuid4())
-                    message = {
-                        "op": "synchronize_sync", 
-                        "name": name,
-                        "method_name": "fan_in",
-                        "state": make_json_serializable(DAG_exec_state),
-                        "id": msg_id
-                    }
+                msg_id = str(uuid.uuid4())
+                message = {
+                    "op": "synchronize_sync", 
+                    "name": name,
+                    # A fanout object is actually just a fanin object of size 1 so do "fan_in"
+                    "method_name": "fan_in",
+                    "state": make_json_serializable(DAG_exec_state),
+                    "id": msg_id
+                }
 
-                    # if we are run_all_tasks_locally, the returned_state's return_value is the faninNB results 
-                    # if our call to fan_in is the last call (i.e., we are the become task); otherwise, the 
-                    # return value is 0 (if we are not the become task)
-                    # if we are not run_all_tasks_locally, i.e., running real lambas, the return value is always 0
-                    # and if we were the last caller of fan_in a real lamba was started to execute the fanin_task.
-                    # (If we were not the last caller then no lamba was started and there is nothing to do.
-                    # The calls to process_faninNB_batch when we are using real lambda can be asynchronous since
-                    # the caller does not need to wait for the return value, which will be 0 indicating there is 
-                    # nothing to do.)
-                    if using_Lambda_Function_Simulators_to_Store_Objects and using_DAG_orchestrator:
-                        logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": calling infiniD.enqueue(message)."
-                            + " start_state_fanin_task: " + str(start_state_fanin_task))
-                        returned_state = self.enqueue_and_invoke_lambda_synchronously(message)
-                        logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": called infiniD.enqueue(message) "
-                            + "returned_state_ignored: " + str(returned_state))
-                    else:
-                        logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": calling invoke_lambda_synchronously."
-                            + " start_state_fanin_task: " + str(start_state_fanin_task))
-                        #return_value = synchronizer.synchronize(base_name, DAG_exec_state, **DAG_exec_state.keyword_arguments)
-                        returned_state = self.invoke_lambda_synchronously(message)
-                        logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": called invoke_lambda_synchronously "
-                            + "returned_state_ignored: " + str(returned_state))
+#rhc: run task: toDo: no work returned if we are running tasks in python functions, for now 
+# at least since we are not yet allowing dag_executor to do succeeding ops locally.
 
+                # if we are run_all_tasks_locally, the returned_state's return_value is the faninNB results 
+                # if our call to fan_in is the last call (i.e., we are the become task); otherwise, the 
+                # return value is 0 (if we are not the become task)
+                # if we are not run_all_tasks_locally, i.e., running real lambas, the return value is always 0
+                # and if we were the last caller of fan_in a real lamba was started to execute the fanin_task.
+                # (If we were not the last caller then no lamba was started and there is nothing to do.
+                # The calls to process_faninNB_batch when we are using real lambda can be asynchronous since
+                # the caller does not need to wait for the return value, which will be 0 indicating there is 
+                # nothing to do.)
+                if using_Lambda_Function_Simulators_to_Store_Objects and using_DAG_orchestrator:
+                    logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": calling infiniD.enqueue(message)."
+                        + " for fanout task: " + str(name))
+                    returned_state_ignored = self.enqueue_and_invoke_lambda_synchronously(message)
+                    logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": called infiniD.enqueue(message) "
+                        + " for fanout task: " + str(name) + ", returned_state_ignored: " + str(returned_state_ignored))
+                else:
+                    logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": calling invoke_lambda_synchronously."
+                        +  " for fanout task: " + str(name))
+                    #return_value = synchronizer.synchronize(base_name, DAG_exec_state, **DAG_exec_state.keyword_arguments)
+                    returned_state_ignored = self.invoke_lambda_synchronously(message)
+                    logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": called invoke_lambda_synchronously "
+                        + " for fanout task: " + str(name) + ", returned_state_ignored: "  + str(returned_state_ignored))
 
-#rhc: run task: toDo: no work returned if we are running tasks in python functions
         list_of_work_tuples = []
         got_work = False
         non_zero_work_tuples = 0
@@ -574,6 +569,9 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 "state": make_json_serializable(DAG_exec_state),
                 "id": msg_id
             }
+
+#rhc: run task: toDo: no work returned if we are running tasks in python functions, for now 
+# at least since we are not yet allowing dag_executor to do succeeding ops locally.
 
             # if we are run_all_tasks_locally, the returned_state's return_value is the faninNB results 
             # if our call to fan_in is the last call (i.e., we are the become task); otherwise, the 

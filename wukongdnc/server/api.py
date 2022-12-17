@@ -449,8 +449,6 @@ def synchronize_process_faninNBs_batch(websocket, op, type, name, DAG_exec_state
 
     return state
 
-
-
 def close_all(websocket):
     """
     Call CLOSE_ALL on the TCP server.

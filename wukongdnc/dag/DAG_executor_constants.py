@@ -166,7 +166,7 @@ A1_Orchestrate_SyncObjectsandTasksinSimulatedLambdas = not run_all_tasks_locally
 
 using_threads_to_simulate_lambdas = run_all_tasks_locally and not using_workers
 
-# using threads to simulate lambdas and store sync objects locally (not on servr or in lambdas)
+# using threads to simulate lambdas and store sync objects locally (not on server or in lambdas)
 A2 = using_threads_to_simulate_lambdas and store_fanins_faninNBs_locally and not_using_lambda_options
 # set FanIn_Type = "DAG_executor_FanIn_Select" or "DAG_executor_FanIn"
 # set FanInNB_Type = "DAG_executor_FanInNB_Select" or "DAG_executor_FanInNB"
@@ -225,39 +225,39 @@ A3_ObjectInSimulatedLambdas_UsingOrchestator = A3 and store_sync_objects_in_lamb
 # Set SERVERLESS_SYNC to True in wukongdnc constants
 
 A4 = run_all_tasks_locally and using_workers and using_threads_not_processes
-A4_ObjectsStoredLocally = A4 and store_fanins_faninNBs_locally and not_using_lambda_options
+A4_ObjectsStoredLocally = A4 and store_fanins_faninNBs_locally and (
+    not store_sync_objects_in_lambdas) and not_using_lambda_options
 # set num_workers
 # no tcp_server since storing locally
 # Set SERVERLESS_SYNC to False in wukongdnc constants
 A4_ObjectsStoredRemotely = A4 and not store_fanins_faninNBs_locally and (
-    not_using_lambda_options)
+    not store_sync_objects_in_lambdas) and not_using_lambda_options
 # set num_workers
 # set FanIn_Type = "DAG_executor_FanIn_Select" or "DAG_executor_FanIn"
-# FanInNB_Type = "DAG_executor_FanInNB_Select" or "DAG_executor_FanInNB"
-# set process_work_queue_Type = "BoundedBuffer_Select" or process_work_queue_Type = "BoundedBuffer"
+# set FanInNB_Type = "DAG_executor_FanInNB_Select" or "DAG_executor_FanInNB"
+# set process_work_queue_Type = "BoundedBuffer"
 # run tcp_server
 # Set SERVERLESS_SYNC to False in wukongdnc constants
+# Note: We do not run tcp_server_lambda so while we can use the "Select" 
+# objects they are not stored in lambdas, they are regular objects on tcp_server.
 
-# Note about A4: For A4, we are using worker threads, which is not going to generate sppedup in Python.
-# The various options for storing objects in lambdas, i.e., simulated lambdas and orchestration,
-# can be used but there is no point as A4 cannot perform well in any case.
+# Note about A4: For A4, we are using worker threads, which is not going to 
+# generate speedup in Python.
 
 A5 = run_all_tasks_locally and using_workers and not using_threads_not_processes
-A5_ObjectsStoredRemotely = A5 and (
-    not store_fanins_faninNBs_locally) 
+A5_ObjectsStoredRemotely = A5 and not store_fanins_faninNBs_locally and (
+    not store_sync_objects_in_lambdas) and not_using_lambda_options
 # set num_workers
 # set FanIn_Type = "DAG_executor_FanIn_Select" or "DAG_executor_FanIn"
 # set FanInNB_Type = "DAG_executor_FanInNB_Select" or "DAG_executor_FanInNB"
 # set process_work_queue_Type = "BoundedBuffer_Select" or process_work_queue_Type = "BoundedBuffer"
-# run tcp_server
+# run tcp_server.
 # Set SERVERLESS_SYNC to False in wukongdnc constants
+# Note: We do not run tcp_server_lambda so while we can use the "Select" 
+# objects they are not stored in lambdas, they are regular objects on tcp_server.
 
 # Note about A5: For A5, we are using worker processes, which requires sync objects to be
-# stored remotely. Objects can be stored on the server or in lambdas, like ususal.
-# The various options for storing objects in lambdas, i.e., simulated lambdas and orchestration,
-# can be used but it is most likely that we will be using objects storedon the server since
-# we are not using lambdas to execute tasks so we cannot co-locate objects and their
-# (fanout/fanin) tasks in lambdas.
+# stored remotely. Objects can only be stored on the server.
 
 A6 = run_all_tasks_locally and use_multithreaded_multiprocessing and using_workers and not using_threads_not_processes and not store_fanins_faninNBs_locally and not_using_lambda_options
 # set num_threads_for_multithreaded_multiprocessing

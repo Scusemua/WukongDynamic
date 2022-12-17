@@ -318,7 +318,7 @@ processing. FaninNBs are stored locally and are handled with normal synchronous 
 one by one. The local FaniinNBs start local threads to simulate stating real lambdas.
 We are not using process_faninNB_batch so async_call is not relevant.
 - A3:Same when FaninNBs are stored on the server. The server returns the work for the faninNB
-and the calling thread starts the thread thst simulates the real lamabda, (The server
+and the calling thread starts the thread that simulates the real lamabda, (The server
 can't start the thread since it would run on the server.
 For A2 and A3 Performance is not an issue as we are simply testing the logic for using lambdas.
 - (A3.SOIL) : S*ync O*bjects I*n L*ambdas, we do use batch processing to make simulated 
@@ -330,7 +330,20 @@ FaninNB starting a lambda for each work tuple. Note that process_faninNB_batch c
 for each FaninNB being processed. It does this either by calling the real lambda that stores
 the FaninnB or by calling the Python function that is simulating the lambda that stores the 
 object. If an orchestrator is used, the enqueue method of the orchestrator is called.
-async_call is False since the caller need to wait for the returned work, if any.
+async_call is False since the caller need to wait for the returned work, if any. Note that 
+this configuration does not permit a synch object to trigger its tasks so tha the task is
+executed in the same lambda as the sync object. In that case, the task is executed by a 
+lambda (real or simulated) not a thread simulating a lambda, and that is a version of A1.
+We support A3.SOIL so we can test the logic of using lambdas when sync obejcts are
+stoted in lambdas possbly simulated by Python functions and possibly using the 
+DAG_orchestrator. That is, all of this stuff is channeled through process_faninNBs_batch
+in tcp_server_lambda so we usually want configurations that can store sync objects in 
+lambdas to use process_faninNBs_batch. That said, when we use thread workers and store
+object remotely, we do not call process_faninNBs_batch sicen we are not interested in
+stroring sync_objects in lambdas for this case s this case (thread workers) is not an 
+important case - using multiple thread workers will not achieve any speedup in Python
+so we don't support all the various scenarios (storing objects in lambdas, using 
+DAG_orchestrator, etc) for this thread workers case.
 - A4_L: the workers are threads and the work queue is a shared local work queue. 
 process_faninNBs_batch is not called. async_call is not relevant.
 - A4_R: workers are threads and the work queue and sync objects are on the server. 
