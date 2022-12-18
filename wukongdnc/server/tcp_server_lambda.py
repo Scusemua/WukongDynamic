@@ -12,7 +12,7 @@ import uuid
 from ..wukong.invoker import invoke_lambda_synchronously
 from ..dag.DAG_executor_constants import using_Lambda_Function_Simulators_to_Store_Objects, using_single_lambda_function
 from ..dag.DAG_executor_constants import using_DAG_orchestrator, run_all_tasks_locally
-from ..dag.DAG_executor_constants import using_workers, store_fanins_faninNBs_locally, using_Lambda_Function_Simulators_to_Run_Tasks
+from ..dag.DAG_executor_constants import using_workers, using_Lambda_Function_Simulators_to_Run_Tasks
 from ..dag.DAG_executor_constants import store_sync_objects_in_lambdas
 from ..dag.DAG_Executor_lambda_function_simulator import InfiniD # , Lambda_Function_Simulator
 from ..dag.DAG_info import DAG_Info
@@ -414,13 +414,12 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
         DAG_exec_state = decode_and_deserialize(message["state"])
         faninNBs = DAG_exec_state.keyword_arguments['faninNBs']
-        fanouts = DAG_exec_state.keyword_arguments['fanouts']
         #faninNB_sizes = DAG_exec_state.keyword_arguments['faninNB_sizes']
         # FYI:
         #result = DAG_exec_state.keyword_arguments['result']
         # For debugging:
         calling_task_name = DAG_exec_state.keyword_arguments['calling_task_name'] 
-        DAG_states_of_faninNBs = DAG_exec_state.keyword_arguments['DAG_states_of_faninNBs'] 
+        DAG_states_of_faninNBs_fanouts = DAG_exec_state.keyword_arguments['DAG_states_of_faninNBs_fanouts'] 
 #ToDo: We need DAG_states of fanouts too, if we will orchestrate the fanouts
         # Note: if using lambdas, then we are not using workers (for now) so worker_needs_input 
         # must be false, which is asertd below.
@@ -474,7 +473,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         list_of_work = []
         """
 
-        # List list_of_work_queue_or_payload_fanout_values may be empty: if a state has no fanouts this list is empty. 
+        # fanouts may be empty: if a state has no fanouts this list is empty. 
         # If a state has 1 fanout it will be a become task and there will be no moer fanouts.
         # If there are no fanouts, and using workes then worker_needs_work will be True and this list will be empty.
         # otherwise, the worker will have a become task so worker_needs_input will be false (and this
@@ -484,21 +483,34 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # empty since we start the lambdas in process_fanouts. We may pass such a list
         # and use the parallel invoker to invoke the fanouts.
 
-        # Comment out:  When using Lambdas, currently len(list_of_fanout_values) is 
+        # Commented out:  When using Lambdas, currently len(list_of_fanout_values) is 
         # always 0 so this is commented out. If we are using lambdas and we want to 
         # use the parallel invoker then we should probably call a 
         # different method to proess fanouts and process the faninNB since
         # fanout processing will be different parallel) andd processing
         # faninNBs will be different too since there is no work stealing as
         # there are no workers.
-        # Note: Since using lambdas we do not eposit fanouts nto a work
+        # Note: Since using lambdas we do not deposit fanouts into a work
         # queue so this code is completely diffrent f we do pass in a list
         # of fanouts (for parallel invocation)
+
 #rhc: run task
-# need to do creat_if. Currently doing mappings of objects to functions.
-        if using_Lambda_Function_Simulators_to_Run_Tasks:
+# ToDo: Need to allow creat_if. Currently doing mappings of objects to functions.
+
+        # process fanouts
+        # The only reason to invoke a lambda for fanouts is if sync objects
+        # are triggering their tasks, i.e., we only store fanouts in lambdas
+        # when both the sync object and its task are executed in the same lambda.
+        # For now, we require that we are simulating the lambda functions and we
+        # are using the DAG_orchestrator.
+        # Note: in the DAG_executor_work_loop we made one of the fanouts a become 
+        # task and removed that fanout from fanouts.
+        if using_Lambda_Function_Simulators_to_Store_Objects and (
+            using_DAG_orchestrator) and (
+            using_Lambda_Function_Simulators_to_Run_Tasks):
+
             for name in fanouts:
-                start_state_fanin_task  = DAG_states_of_faninNBs[name]
+                start_state_fanin_task  = DAG_states_of_faninNBs_fanouts[name]
                 # These are per Fanout
                 DAG_exec_state.keyword_arguments['fanin_task_name'] = name
                 DAG_exec_state.keyword_arguments['start_state_fanin_task'] = start_state_fanin_task
@@ -525,12 +537,20 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 # The calls to process_faninNB_batch when we are using real lambda can be asynchronous since
                 # the caller does not need to wait for the return value, which will be 0 indicating there is 
                 # nothing to do.)
-                if using_Lambda_Function_Simulators_to_Store_Objects and using_DAG_orchestrator:
+
+                #Note: using_Lambda_Function_Simulators_to_Run_Tasks is true via if condition
+                if using_Lambda_Function_Simulators_to_Store_Objects and (
+                    using_DAG_orchestrator):
                     logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": calling infiniD.enqueue(message)."
                         + " for fanout task: " + str(name))
                     returned_state_ignored = self.enqueue_and_invoke_lambda_synchronously(message)
                     logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": called infiniD.enqueue(message) "
                         + " for fanout task: " + str(name) + ", returned_state_ignored: " + str(returned_state_ignored))
+                
+                """
+                # We never invoke a fanout to get its "return value". When fanouts are in lambdas we 
+                # are simply passng the results for the fanned out task to the fanout object and it is
+                # triggering its fanout task.
                 else:
                     logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": calling invoke_lambda_synchronously."
                         +  " for fanout task: " + str(name))
@@ -538,6 +558,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     returned_state_ignored = self.invoke_lambda_synchronously(message)
                     logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": called invoke_lambda_synchronously "
                         + " for fanout task: " + str(name) + ", returned_state_ignored: "  + str(returned_state_ignored))
+                """
 
         list_of_work_tuples = []
         got_work = False
@@ -556,7 +577,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             #logger.debug("tcp_server: synchronize_process_faninNBs_batch: method_name: " + method_name + ", base_name: " + base_name + ", isTryMethod: " + str(isTryMethod))
             #logger.debug("tcp_server: synchronize_process_faninNBs_batch: synchronizer_class_name: : " + type_arg + ", is_select: " + str(is_select))
 
-            start_state_fanin_task  = DAG_states_of_faninNBs[name]
+            start_state_fanin_task  = DAG_states_of_faninNBs_fanouts[name]
             # These are per FaninNB
             DAG_exec_state.keyword_arguments['fanin_task_name'] = name
             DAG_exec_state.keyword_arguments['start_state_fanin_task'] = start_state_fanin_task

@@ -4,13 +4,17 @@
 
 # Where are we: 
 #
+# test the store objects in simulated lambdas stuff, w/wo DAG_orchestrator.
+#
 # Q: can we invoke simuated lambda sync or async? It's a real python function
 #    so it will be sync unless we create a thread to do the invoke?
 #
-# Need DAG_states_of_fanouts in tcp_server_lambdas when we do batch processing
-# and we are orchestrating fanouts.
+# what is condition for sync objects trigger tasks? e.g., in process_fanouts
+#     if (not run_all_tasks_locally) and store_sync_objects_in_lambdas and using_Lambda_Function_Simulators_to_Run_Tasks:
+# so not using workers and not run_all_tasks_locally, which is like Wukong but to flip off
+# of Wukong we need using_Lambda_Function_Simulators_to_Run_Tasks, which may be too strong.
 #
-# use batch processing when we are using threads to simulate workers and objects
+# No: use batch processing when we are using threads to simulate workers and objects
 # are remote on the server, not just remote in lambdas, so that the condiditiom
 # for calling batch is to always call it except when using threads to simulate 
 # lambdas and storing objects locally. We currently call batch for when threads
@@ -69,10 +73,10 @@
 import logging 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
+logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 ch = logging.StreamHandler()
-ch.setLevel(logging.ERROR)
+ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 

@@ -387,13 +387,16 @@ def faninNB_remotely_batch(websocket, **keyword_arguments):
     DAG_exec_state.keyword_arguments['store_fanins_faninNBs_locally'] = keyword_arguments['store_fanins_faninNBs_locally']
     # Need these on tcp_server to process the faninNBs
     DAG_exec_state.keyword_arguments['faninNBs'] = keyword_arguments['faninNBs']
+    # rhc: run task
+    # fanouts are used when sync objects trigger their tasks to run in the same lambda as object
+    DAG_exec_state.keyword_arguments['fanouts'] = keyword_arguments['fanouts']
     DAG_exec_state.keyword_arguments['faninNB_sizes'] = keyword_arguments['faninNB_sizes']
     DAG_exec_state.keyword_arguments['worker_needs_input'] = keyword_arguments['worker_needs_input']
     DAG_exec_state.keyword_arguments['work_queue_name'] = keyword_arguments['work_queue_name']
     DAG_exec_state.keyword_arguments['work_queue_type'] = keyword_arguments['work_queue_type']
     DAG_exec_state.keyword_arguments['work_queue_method'] = keyword_arguments['work_queue_method']
     DAG_exec_state.keyword_arguments['work_queue_op'] = keyword_arguments['work_queue_op']
-    DAG_exec_state.keyword_arguments['DAG_states_of_faninNBs'] = keyword_arguments['DAG_states_of_faninNBs']
+    DAG_exec_state.keyword_arguments['DAG_states_of_faninNBs_fanouts'] = keyword_arguments['DAG_states_of_faninNBs_fanouts']
 
     if not run_all_tasks_locally:
         # Note: When faninNB start a Lambda, DAG_info is in the payload so pass DAG_info to faninNBs.
@@ -476,6 +479,9 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
     keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
     # Need on tcp_server to process the faninNBs
     keyword_arguments['faninNBs'] = faninNBs
+# rhc: run task
+    # fanouts are used when sync objects trigger their tasks to run in the same lambda as object
+    keyword_arguments['fanouts'] = fanouts
     keyword_arguments['faninNB_sizes'] = faninNB_sizes   
     keyword_arguments['worker_needs_input'] = worker_needs_input  
     keyword_arguments['work_queue_name'] = "process_work_queue"
@@ -484,20 +490,23 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
     keyword_arguments['work_queue_method'] = "deposit_all"
     keyword_arguments['work_queue_op'] = "synchronize_async"
     keyword_arguments['DAG_info'] = DAG_info
-    # get a slice of DAG_states that is the DAG states of just the faninNB tasks.
+    # get a slice of DAG_states that is the DAG states of just the faninNB and fanout tasks.
     # Instead of sending all the DAG_states, i.e., all the states in the DAG, to the server.
-    # Need this to put any work that is not returned in the work_queue - work is added as
-    # a tuple (start state of task, inputs to task)
-    DAG_states_of_faninNBs = {}
+    # Need this to put any faninNB work that is not returned in the work_queue - work is added as
+    # a tuple (start state of task, inputs to task). Fanouts are used when sync objects trigger 
+    # their tasks to run in the same lambda as object. This occurs when we are storing objects 
+    # in lambdas and running tcp_server_lamba.py
+    DAG_states_of_faninNBs_fanouts = {}
     for name in faninNBs:
-        DAG_states_of_faninNBs[name] = DAG_states[name]
-    keyword_arguments['DAG_states_of_faninNBs'] = DAG_states_of_faninNBs
+        DAG_states_of_faninNBs_fanouts[name] = DAG_states[name]
+    for name in fanouts:
+        DAG_states_of_faninNBs_fanouts[name] = DAG_states[name]
+    keyword_arguments['DAG_states_of_faninNBs_fanouts'] = DAG_states_of_faninNBs_fanouts
 
     keyword_arguments['list_of_work_queue_or_payload_fanout_values'] = list_of_work_queue_or_payload_fanout_values
 # rhc: async batch
     keyword_arguments['async_call'] = async_call
 
-    keyword_arguments['fanouts'] = fanouts
 
  	#ToDo: kwargs put in DAG_executor_State keywords and on server it gets keywords from state and passes to create and fanin
 
@@ -702,9 +711,7 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
 
 #def process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State, output, DAG_info, server):
 def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State, 
-    output, DAG_info, server, work_queue, list_of_work_queue_or_payload_fanout_values):
-#rhc: run task : using list_of_work_queue_or_psyload_fanout_values to hold either list
-# of work tuples or payloads.
+    output, DAG_info, server, work_queue, list_of_work_queue_values):
 
     thread_name = threading.current_thread().name
 
@@ -745,7 +752,7 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                 # we could check at the end of this method whether there are any
                 # faninNBs and if, not, call work_queue.put.
 
-                list_of_work_queue_or_payload_fanout_values.append(work_tuple)
+                list_of_work_queue_values.append(work_tuple)
             else: 
                 # using threads and using workers. Even if the FanInNBs are stored remotely,
                 # we may still be using threads. When we use threads, the work_queue is stored
@@ -765,9 +772,16 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                 #work_queue.put(DAG_states[name])
                 work_queue.put(work_tuple)
         else:
-#rhc: run tasks
-            #if run_all_tasks_locally:
-            if (run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and (using_Lambda_Function_Simulators_to_Store_Objects or not using_Lambda_Function_Simulators_to_Store_Objects) and not using_Lambda_Function_Simulators_to_Run_Tasks):
+#rhc run tasks
+            # if we are using thr
+            if (not run_all_tasks_locally) and store_sync_objects_in_lambdas and using_Lambda_Function_Simulators_to_Run_Tasks:
+            #if (run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and store_sync_objects_in_lambdas and using_Lambda_Function_Simulators_to_Run_Tasks):
+                # Nothing to do. When we are using_Lambda_Function_Simulators_to_Run_Tasks we will
+                # pass the fanouts (set) to process_faninNBs_batch and it will process the 
+                # fanouts by invoking real python functions that execute the fanout tasks.
+                pass
+            elif run_all_tasks_locally:
+            #elif (run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and not (store_sync_objects_in_lambdas and using_Lambda_Function_Simulators_to_Run_Tasks)):
                 # (run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and using_Lambda_Function_Simulators_to_Store_Objects):
                 # or (run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and using_Lambda_Function_Simulators_to_Store_Objects and using_Lambda_Function_Simulators_to_Run_Tasks):
                 # Note: if we are using threads to simulate lambas it does not matter whether or not we are storing 
@@ -806,12 +820,6 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                 except Exception as ex:
                     logger.error("[ERROR] " + thread_name + ": process_fanouts: Failed to start DAG_executor thread for " + name)
                     logger.debug(ex)
-#rhc run tasks
-            elif (run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and (using_Lambda_Function_Simulators_to_Store_Objects or not using_Lambda_Function_Simulators_to_Store_Objects) and using_Lambda_Function_Simulators_to_Run_Tasks):
-                # Nothing to do. When we are using_Lambda_Function_Simulators_to_Run_Tasks we will
-                # pass the fanouts (set) to process_faninNBs_batch and it will process the 
-                # fanouts by invoking real python functions that execute the fanout tasks.
-                pass
 #rhc run tasks changed to elif so can use else to check whether we aer missing a case
             elif not run_all_tasks_locally:
                 try:
@@ -843,8 +851,7 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                     logger.error(ex)
 #rhc: run task
             else:
-                logger.error(":ERROR] " + thread_name + " Internal Error: process_fanouts: invalid case.")
-                logger.error(ex)
+                logger.error(":ERROR] " + thread_name + " Internal Error: process_fanouts: invalid configuration.")
 
     # Note: If we do not piggyback the fanouts with process_faninNBs_batch, we would add
     # all the work to the remote work queue here.

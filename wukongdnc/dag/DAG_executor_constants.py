@@ -7,7 +7,7 @@ run_all_tasks_locally = True         # vs run tasks remotely (in Lambdas)
 # machine on which the threads are executing.  If we are using multiprocessing
 # or Lambdas, this must be False. When False, the synch objects are stored
 # on the tcp_server or in InfiniX lambdas.
-store_fanins_faninNBs_locally = True    # vs remotely
+store_fanins_faninNBs_locally = False    # vs remotely
 # True when all FanIn and FanInNB objects are created locally or on the
 # tcp_server or IniniX all at once at the start of the DAG execution. If
 # False, synch objects are created on the fly, i.e, we execute create-and-fanin
@@ -22,9 +22,9 @@ create_all_fanins_faninNBs_on_start = True
 using_workers = True
 # True when we ae not using Lambas and tasks are executed by threads instead of processes. 
 # False when we are not using lambdas and are using multiprocesssing 
-using_threads_not_processes = True
+using_threads_not_processes = False
 # When using_workers, this is how many threads or processes in the pool.
-num_workers = 1
+num_workers = 2
 use_multithreaded_multiprocessing = False
 num_threads_for_multithreaded_multiprocessing = 2
 
@@ -39,16 +39,15 @@ process_work_queue_Type = "BoundedBuffer"
 # process_work_queue_Type = "BoundedBuffer_Select"
 
 # if running real lambdas or storing synch objects in real lambdas:
-#
-# Set SERVERLESS_SYNC to True or False in wukongdnc constants !!!!!!!!!!!!!!
+#   Set SERVERLESS_SYNC to True or False in wukongdnc constants !!!!!!!!!!!!!!
 #
 
 # Currently, this is for storing synch objects in simulated lambdas;
-store_sync_objects_in_lambdas = True
-using_Lambda_Function_Simulators_to_Store_Objects = True
+store_sync_objects_in_lambdas = False
+using_Lambda_Function_Simulators_to_Store_Objects = False
 using_Lambda_Function_Simulators_to_Run_Tasks = False
 # use orchestrator to invoke functions (e.g., when all fanin/fanout results are available)
-using_DAG_orchestrator = True
+using_DAG_orchestrator = False
 # use a single lambda function to store all of the synchroization objects
 # to make an easy test case. This cannot be used when using the function 
 # simulators or using the DAG_orchestrator

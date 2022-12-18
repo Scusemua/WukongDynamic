@@ -231,11 +231,11 @@ if __name__ == "__main__":
 
     return graph, result    
   
-  # graph, result = manual_dag()
+  graph, result = manual_dag()
   # graph, result = manual_dag_test_batch_faninNBs()
   # graph, result = manual_dag_test_batch_two_faninNBs()
   # graph, result = manual_dag_no_faninNBs()
-  graph, result = tree_reduction(n = 1024)
+  # graph, result = tree_reduction(n = 1024)
   # graph, result = mat_mul(n = 4, c = 2)
   print("sleeping")
   time.sleep(3)

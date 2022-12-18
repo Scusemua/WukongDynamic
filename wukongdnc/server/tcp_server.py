@@ -14,11 +14,11 @@ from ..dag.DAG_executor_constants import run_all_tasks_locally
 # Set up logging.
 import logging 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
+logger.setLevel(logging.DEBUG)
 
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 ch = logging.StreamHandler()
-ch.setLevel(logging.ERROR)
+ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
@@ -241,7 +241,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         #result = DAG_exec_state.keyword_arguments['result']
         # For debuggng
         calling_task_name = DAG_exec_state.keyword_arguments['calling_task_name'] 
-        DAG_states_of_faninNBs = DAG_exec_state.keyword_arguments['DAG_states_of_faninNBs'] 
+        DAG_states_of_faninNBs_fanouts = DAG_exec_state.keyword_arguments['DAG_states_of_faninNBs_fanouts'] 
         # Note: if using lambdas, then we are not usingn workers (for now) so worker_needs_input must be false
         worker_needs_input = DAG_exec_state.keyword_arguments['worker_needs_input']
         work_queue_name = DAG_exec_state.keyword_arguments['work_queue_name']
@@ -351,7 +351,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": no fanout work to deposit")
 
         for name in faninNBs:
-            start_state_fanin_task  = DAG_states_of_faninNBs[name]
+            start_state_fanin_task  = DAG_states_of_faninNBs_fanouts[name]
 
             synchronizer_name = self._get_synchronizer_name(type_name = None, name = name)
             logger.debug("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
