@@ -1567,6 +1567,7 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
 
 
 # Config: A2, A3
+# called by DAG_executor_task
 def DAG_executor(payload):		 
     # Note: could instead use a "state" parameter. Then we have state.starting_input and state.return_value so would need
     # to know which to acccess, as in: if first_invocation, where first_invocation is in state. Or always use

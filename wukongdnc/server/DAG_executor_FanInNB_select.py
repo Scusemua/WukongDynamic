@@ -37,6 +37,7 @@ logger.addHandler(ch)
 """
 
 class DAG_executor_FanInNB_Select(Selector):
+    # Actual init is via local init() method, which is clled after this object is create
     def __init__(self, selector_name = "DAG_executor_FanInNB_Select"):
         super(DAG_executor_FanInNB_Select, self).__init__(selector_name=selector_name)
         self.selector_name = selector_name
@@ -275,71 +276,71 @@ class DAG_executor_FanInNB_Select(Selector):
                 #return 1, restart  # all threads have called so return results
 
             elif not self.store_fanins_faninNBs_locally and run_all_tasks_locally:
-                # not using workers and using threads to simulate lambdas that
-                # store remote synch objects. Here there is nothing to do since a 
-                # thread will be created locally in DAG work loop. (Can't create threads 
-                # here or it would run here (on server or in lambda))
-
-                # when not self.store_fanins_faninNBs_locally and run_all_tasks_locally we 
+                # When not self.store_fanins_faninNBs_locally and run_all_tasks_locally we 
                 # are simulating lambdas with threads and synch objects are stored remotely. 
                 # The objects could be stored on the server or in real lambdas or simulated
-                # lambdas. 
-                # For:
+                # lambdas. For:
                 # - threads simulate lambdas with remote objects on tcp_server, we do not
-                #   want to call processfaninNBs batch and we don't
+                #   call processfaninNBs batch, we call fan_in on faninNB objects one by one.
                 # - threads simulate lambdas with remote objects in lambdas (tcp_server_lambda)
-                #   we call process_faninNBs_batch, which is what we expect when we are 
-                #   using simuated r real lambdas. But When using Lambas, the FaninNB
-                #   is supposed to start a lambda to do the fanin task. But when we 
+                #   we call process_faninNBs_batch, which is what we expect when we are sstoring
+                #   objects in  simuated or real lambdas. When using real Lambas to execute tasks, 
+                #   the FaninNB is supposed to start a real Lambda to do the fanin task. But when we 
                 #   are siumlating lambdas with threads, we can't start new threads on 
-                #   the server so we let calling threads do that. 
-                #   Q: Can we call process_fanins_batch in this cse since no threads are
-                #      started?
-                #   Could let server start a simulated lambda thread? No since such threads
-                #   use a local data dict?
-                #
-                #   So: For using threads simulating lambdas, do not call process_faninNBs
-                #   batch regardless of whether objects are stored on server or not. 
-                #   process_faninNBs will call regular synchronize_sync on fan_in,
-                #   then tcp_server will call fa_in, or tcp_server_lambda will figure
-                #   out which real or simulated lambda function to invoke for the 
-                #   synchronous_sych fan_in.
-                # - for real lambdas (not simulated by threads), with objects stored in
+                #   the server (or they would run there (on server or in lambda)) so we let 
+                #   calling threads do that. 
+                #   So: When using threads to simulate lambdas to excute tasks, when we do not 
+                #   store objects in lambdas, we do not call process_faninNBs_batch; instead, we call 
+                #   process_faninNBs, which calls regular tcp_server synchronize_sync w/fan_in on
+                #   faninNBs, then tcp_server will call fan_in.
+                #   When usng
+                #   When using threads to simulate lambdas to excute tasks, when we store objects 
+                #   in lambdas, we call process_faninNBs_batch on tcp_servr_lambda. This allows us
+                #   to cal simulated Python functions that store the sync_objects when we are using
+                #   threads to simulate lambas tht execute threads. So we can test all this logic
+                #   without messing with AWS Lambdas. 
+                # - For real lambdas (not simulated by threads), with objects stored in
                 #   lambdas (real or simulated) or not, the faninNBs will start real 
                 #   lambdas and return 0. We call process_faninNBs_batch but since
-                #   there is no fanout list, and no workers, and all returns values are 0,
-                #   process_faninNBs_batch can be simplified. When we run on tcp_server,
-                #   which means objects are stored on the server, we do not simplify 
-                #   process_faninNBs_batch - the if-statements detect threre is nothing
-                #   to do. When we run on tcp_server_lambda, we have to determine which 
-                #   lambda to call so we need to modify process_faninNBs_batch on 
-                #   tcp_server_lambda and we might as well smplify it?
-                
-                # we call process_faninNBs_batch which uses the resturn value to create a work tuple. 
-                # Note that we are not using workers so this is not "work" but we use the work scheme
-                # and get the start_state_fanin_task from the tuple as the thread started
+                #   there is no fanout list, and no workers, and all returns values are 0.
+        
+                # When using a thread to simulate lambdas that execute tasks and storing sync objects
+                # in lambdas, we call process_faninNBs_batch on tcp_server_lambda. If we are not
+                # allowing the fannNB to trigger its tasks to run in this same lamba, 
+                # process_faninNBs_batch uses the value returned here to create a work tuple.
+                # that has the results returned here and the start_state_fanin_task.
+                # Note that we are not using workers so this is not "work" but we need the 
+                # start_state_fanin_task from the tuple as the thread that will be started
                 # to simulate a lambda needs this start state. The self._results are not 
                 # used since the threads that executed the tasks that generated these
-                # fanin results alredy put the results in the data dictionary, which is 
-                # a global dictionary when we are running local threads that simulate lambas
-
+                # fanin results already put the results in the data dictionary (before they 
+                # called process_faninNBs_batch), which is a global, shared, dictionary when 
+                # we are running local threads that simulate lambas
 
                 # From FaninNB:
-                #Note: we are not using workers so we do not return a work tuple
-                # We check return_value == 0 to determine whether we need to
-                # start a thread to do fanin task, i.e., to determine whether
-                # fanin caller was last to fanin; so we return self._results, even though
-                # we will not use these results - this is inefficient but in this case
+                # Note: we are not using workers so we do not return a work tuple.
+                # The DAG_executor_work_loop will check return_value == 0 to determine 
+                # whether we need to start a thread to do fanin task, i.e., to determine whether
+                # the fanin caller was last to fanin; so we return self._results (non-zero), even 
+                # though we will not use these results; this is inefficient but in this case
                 # we are simulating lambdas with threads, which is just to test the 
                 # logic witout worrying about performance.
                 #return 0, restart
 
+#ToDo:          if we are not triggering tasks:
                 logger.debug("DAG_executor_FanInNB_Select: fan_in: return self._results for "
                     + " case where simuated lambdas with threads and storing objects remotely, "
                     + " possibly in lambas (simulated or rea)")
                 return self._results
                 #work_tuple = (start_state_fanin_task,self._results)
                 #return work_tuple
+                """
+                else:
+                    DAG_executor.DAG_executor_lambda(payload) with payload perhaps passed in on init()
+                    when we are triggering tasks?
+                    try:
+   
+                """
 
             else:
                 logger.error("[ERROR]: Internal Error: DAG_executor_FanInNB_Select: fan_in: reached else: error at end of fanin")

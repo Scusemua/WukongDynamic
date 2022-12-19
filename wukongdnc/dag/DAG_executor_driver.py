@@ -1,4 +1,4 @@
-#ToDo: All the timing stuff + close_all at the end
+#ToDo: close_all at the end
 # break stuck Python is FN + R
 # try matrixMult
 

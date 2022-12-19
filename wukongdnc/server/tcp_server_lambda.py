@@ -420,7 +420,15 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # For debugging:
         calling_task_name = DAG_exec_state.keyword_arguments['calling_task_name'] 
         DAG_states_of_faninNBs_fanouts = DAG_exec_state.keyword_arguments['DAG_states_of_faninNBs_fanouts'] 
-#ToDo: We need DAG_states of fanouts too, if we will orchestrate the fanouts
+
+#rhc: run task
+        # If sync objects trigger their fanout/fanin tasks to run in the same lambda
+        # then we will process the fanouts.
+        # Todo: we may use the parallel invoer to do the fanouts when using Wukong stylr
+        # fanouts.
+        if using_Lambda_Function_Simulators_to_Run_Tasks:
+            fanouts = DAG_exec_state.keyword_arguments['fanouts']
+
         # Note: if using lambdas, then we are not using workers (for now) so worker_needs_input 
         # must be false, which is asertd below.
         worker_needs_input = DAG_exec_state.keyword_arguments['worker_needs_input']
@@ -438,17 +446,9 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # If running the fanout and fanin tasks in python functions then we pass the 
         # fanouts to the orchestrator. Note: we cannot be using threads to simulate
         # lambdas since tasks will run in lambdas (triggered by the task's synch object)
-#rhc: run task
-        # If sync objects trigger their fanout/fanin tasks to run in the same lambda
-        # then we will process the fanouts.
-        # Todo: we may use the parallel invoer to do the fanouts when using Wukong stylr
-        # fanouts.
-        if using_Lambda_Function_Simulators_to_Run_Tasks:
-            fanouts = DAG_exec_state.keyword_arguments['fanouts']
-        
+
 #rhc: async batch
         async_call = DAG_exec_state.keyword_arguments['async_call']
-
         logger.debug("tcp_server_lambda: synchronize_process_faninNBs_batch: calling_task_name: " + calling_task_name 
             + ": worker_needs_input: " + str(worker_needs_input) + " faninNBs size: " +  str(len(faninNBs)))
 #rhc: async batch
@@ -543,6 +543,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     using_DAG_orchestrator):
                     logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": calling infiniD.enqueue(message)."
                         + " for fanout task: " + str(name))
+                    # calls: returned_state = tcp_server.infiniD.enqueue(json_message)
                     returned_state_ignored = self.enqueue_and_invoke_lambda_synchronously(message)
                     logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": called infiniD.enqueue(message) "
                         + " for fanout task: " + str(name) + ", returned_state_ignored: " + str(returned_state_ignored))
@@ -606,6 +607,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             if using_Lambda_Function_Simulators_to_Store_Objects and using_DAG_orchestrator:
                 logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": calling infiniD.enqueue(message)."
                     + " start_state_fanin_task: " + str(start_state_fanin_task))
+                # calls: returned_state = tcp_server.infiniD.enqueue(json_message)
                 returned_state = self.enqueue_and_invoke_lambda_synchronously(message)
                 logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": called infiniD.enqueue(message) "
                     + "returned_state_ignored: " + str(returned_state))
@@ -980,7 +982,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         incoming_size = int.from_bytes(data, 'big')
 
         # Convert bytes of size to integer.
-        incoming_size = int.from_bytes(incoming_size, 'big')
+        #incoming_size = int.from_bytes(incoming_size, 'big')
 
         if incoming_size == 0:
             logger.debug("tcp_server_lambda: Incoming size is 0. Client is expected to have disconnected.")
@@ -1108,6 +1110,7 @@ class TCPServer(object):
             self.infiniD = InfiniD(DAG_info)
             # create list of simulator functions, number of functions
             # is the number of fanins + faaninNBs + fanouts
+#ToDo: create objects on fly so do we need to create functions? 
             self.infiniD.create_functions() 
 
             """
@@ -1124,8 +1127,9 @@ class TCPServer(object):
                 # are mapped to different functions
                 self.infiniX.map_object_names_to_functions()
             """
-            # after creating the simulated functions, we map th fanin/fanout/faninNB names to 
+            # after creating the simulated functions, we map the fanin/fanout/faninNB names to 
             # a function. Eventually may map multiple names (i.e. objects) to a function.
+#ToDo: option: create objects on fly so no mapping and no create functions?
             self.infiniD.map_object_names_to_functions()
 
             logger.debug("tcp_server_lambda: function map" + str(self.infiniD.function_map))
