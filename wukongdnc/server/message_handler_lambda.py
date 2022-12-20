@@ -140,7 +140,7 @@ class MessageHandler(object):
             message = {
                 "op": "create_all_fanins_and_faninNBs",
                 "type": "DAG_executor_fanin_or_faninNB",
-                "name": messages,						# Q: Fix this? usually it's a synch object name (string)
+                "name": messages,						# Q: Change this? usually it's a synch object name (string)
                 "state": make_json_serializable(dummy_state),
                 "id": msg_id
             }

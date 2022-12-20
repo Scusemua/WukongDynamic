@@ -870,7 +870,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         calling_task_name = DAG_exec_state.keyword_arguments['calling_task_name'] 
        
         logger.debug("tcp_server_lambda: calling server.synchronize_sync().")
-
+#rhc: run task: ToDo:  changes for trigeger tasks - using this or async for fanin
         if using_Lambda_Function_Simulators_to_Store_Objects and using_DAG_orchestrator:
             logger.info("*********************tcp_server_lambda: synchronize_sync: " + calling_task_name + ": calling infiniD.enqueue(message).")
             returned_state = self.enqueue_and_invoke_lambda_synchronously(message)
@@ -939,7 +939,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
         -------------------
             message (dict):
                 The payload from the AWS Lambda function.
-        """        
+        """ 
+#rhc: run task: ToDo:  changes for trigeger tasks - using this or async for fanin       
         logger.debug("tcp_server_lambda: calling server.synchronize_async().")
 
         returned_value_ignored = self.invoke_lambda_synchronously(message)

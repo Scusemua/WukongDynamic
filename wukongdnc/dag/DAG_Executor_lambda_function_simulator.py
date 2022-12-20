@@ -166,8 +166,8 @@ class DAG_orchestrator:
 		if len(list) == n:
 			msg_id = str(uuid.uuid4())
 			dummy_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
-			logger.debug("SQS enqueue: Triggered: Sending 'process_enqueued_fan_ins' message to lambda function for " + sync_object_name)
-			logger.debug("SQS enqueue: length of enqueue's list: " + str(len(list)))
+			logger.debug("DAG_Orchestrator: Triggered: Sending 'process_enqueued_fan_ins' message to lambda function for " + sync_object_name)
+			logger.debug("SDAG_Orchestrator: length of enqueue's list: " + str(len(list)))
 			# we set state.keyword_arguments before call to create()
 			message = {
 				"op": "process_enqueued_fan_ins",
@@ -221,18 +221,20 @@ class DAG_orchestrator:
 			# correct payload, created from faninNB info (results, DAG_info, ...)
 
 			payload = {"json_message": message}
-			# Do not allow paraallel invocations. It's possible that parallel invocatins can never
+
+			# Do not allow parallel invocations. It's possible that parallel invocatins can never
 			# be attempted using the scheme under development.
 #ToDo: Allow calling real lambda based on options
 #ToDo: if not create_functions_on-the-fly:
+			# created all objects at start - create objects one by one and call init() passing kwargs
 			with simulated_lambda_function_lock:
 				try:
-					logger.debug("SQS enqueue: calling simulated_lambda_function.lambda_handler(payload)")
+					logger.debug("DAG_Orchestrator enqueue: calling simulated_lambda_function.lambda_handler(payload)")
 					# This is essentially a synchronous call to a regular Python function
 # ToDo: Do we want to allow both sync and async calls? The latter done by creating a thread that does
 # the call. Faster when we are invoking a real lambda, which we will do with invoke_lambda_asynch
 					return_value = simulated_lambda_function.lambda_handler(payload)
-					logger.debug("SQS enqueue: called simulated_lambda_function.lambda_handler(payload)")
+					logger.debug("DAG_Orchestrator: called simulated_lambda_function.lambda_handler(payload)")
 				except Exception as ex:
 					logger.error("[ERROR]: " + thread_name + ": invoke_lambda_synchronously: Failed to run lambda handler for synch object: " + sync_object_name)
 					logger.error(ex)
@@ -241,11 +243,94 @@ class DAG_orchestrator:
 			"""
 			simulated_lambda_function = Lambda_Function_Simulator()
 ToDo: since this Lambda_Function_Simulator() will create a fanin and this fanin may trigger its
-task, we need to make sure it will get the payload it needs to run tasks. Note that after we 
+task, we need to make sure the  will get the payload it needs to run tasks. Note that after we 
 create the object we call init() and pass in DAG_info in case it needs to run a lambda.
 Note that it is the (simulated) Lambda that creates the faninNB so the simulated function 
-needs DAG_info on call to init, and whatevr else init() gets.
-so faninNB has what it needs (if we call init and pass in DAG_info?)
+needs DAG_info on call to init(), and whatevr else init() gets.
+Scheme: Lambda_Function_Simulator() does:
+- create_if to create() one fanoutfaninNB/fanin object. This is a "select" object
+- call object.init(), passing in:
+	if kwargs is None or len(kwargs) == 0:
+		raise ValueError("FanIn requires a length. No length provided.")
+	elif len(kwargs) > 9:
+		raise ValueError("Error - FanIn init has too many args.")
+	self._n = kwargs['n']
+	self.start_state_fanin_task = kwargs['start_state_fanin_task']
+	self.store_fanins_faninNBs_locally = kwargs['store_fanins_faninNBs_locally']
+	self.DAG_info = kwargs['DAG_info'] 
+- call fanin(), passing kword args for fanin (which can be normal synchronize_sync call):
+	kwargs['result']
+	kwargs['calling_task_name']
+	kwargs['fanin_task_name']
+	kwargs['start_state_fanin_task']
+	kwargs['server']
+- fanin() triggers fanin task with:
+	try:
+		logger.debug("DAG_executor_FanInNB_Select: triggering DAG_Executor_Lambda() for task " + fanin_task_name)
+		lambda_DAG_exec_state = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()), state = start_state_fanin_task)
+		logger.debug ("DAG_executor_FanInNB_Select: lambda payload is DAG_info + " + str(start_state_fanin_task) + "," + str(self._results))
+		lambda_DAG_exec_state.restart = False      # starting new DAG_executor in state start_state_fanin_task
+		lambda_DAG_exec_state.return_value = None
+		lambda_DAG_exec_state.blocking = False            
+		logger.info("DAG_executor_FanInNB_Select: Starting Lambda function %s." % lambda_DAG_exec_state.function_name) 
+		payload = {
+			"input": self._results,
+			"DAG_executor_state": lambda_DAG_exec_state,
+			"DAG_info": self.DAG_info
+		}
+		DAG_executor.DAG_executor_lambda(payload)
+	except Exception as ex:
+		logger.error("[ERROR] DAG_executor_FanInNB_Select: Failed to start DAG_executor.DAG_executor_lambda"
+			+ " for triggered task " + fanin_task_name)
+		logger.error(ex) 
+
+So the above info needs to be passed in payload. Is it covered?
+1. The kwargs of fan_in() are the same and are part of the regular fan_in messages in the list of results. 
+   Currently this list is put in the message:
+   			message = {
+				"op": "process_enqueued_fan_ins",
+				"type": "DAG_executor_fanin_or_faninNB",
+				# We are passing a list of operations to the lambda function, which will execute
+				# the mone by one in the order they were received.
+				"name": list,
+				"state": make_json_serializable(dummy_state),   # NOTE: no info in state
+				"id": msg_id
+			}
+	passed as the payload: payload = {"json_message": message} on the 
+	call: return_value = simulated_lambda_function.lambda_handler(payload)
+2. Normally, the driver calls make all objects and when we create a message to pass to the server
+   we add DAG_info to the DAG_executor_State that gets passed:
+		dummy_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
+		# passing to the fninNB object:
+		# it size
+		dummy_state.keyword_arguments['n'] = size
+		# when the faninNB completes, if we are runnning locally and we are not pooling,
+		# we start a new thread to execute the fanin task. If we are thread pooling, we put the 
+		# start state in the work_queue. If we are using lambdas, we invoke a lambda to
+		# execute the fanin task. If we are process pooling, then the last process to 
+		# call fanin will put the start state of the fanin task in the work_queue. (FaninNb
+		# cannot do this since the faninNB will be on the tcp_server.)
+		dummy_state.keyword_arguments['start_state_fanin_task'] = DAG_states[fanin_nameNB]
+		dummy_state.keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
+		dummy_state.keyword_arguments['DAG_info'] = DAG_info
+	which is fine since this is info that init() expects. But now the create is being initiated
+	here, not in the driver, so we need to get this info and pass it to the 
+	simulated_lambda_function (which is a Lambda_Function_Simulator()):
+	- DAG_info we have
+	- store_fanins_faninNBs_locally is false
+	- n we can get:
+		list_n_pair = self.object_name_to_trigger_map[sync_object_name]
+		list = list_n_pair[0]
+		n = list_n_pair[1]
+	- start_state_fanin_task we can get: 
+		from above: sync_object_name = json_message.get("name", None)
+		start_state_fanin_task = DAG_states[sync_object_name]
+3. The information for the triggered task payload () is: start_state_fanin_task, self._results
+   and DAG-info, which we have.
+
+So: How to package this info in the payload of triggered Lambdas? These Lambdas are different 
+from the simpler lambdas that just execute tasks Wukong style.
+
 			try:
 				logger.debug("SQS enqueue: calling simulated_lambda_function.lambda_handler(payload)")
 				# This is essentially a synchronous call to a regular Python function
@@ -262,6 +347,7 @@ so faninNB has what it needs (if we call init and pass in DAG_info?)
 		else:
 			logger.debug("SQS enqueue: function call not Triggered")
 
+#ToDo: this value is used/ignored now that we can trigger tasks?
 		dummy_DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
 		dummy_DAG_exec_state.return_value = 0
 		dummy_DAG_exec_state.blocking = False

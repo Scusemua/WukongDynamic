@@ -17,6 +17,7 @@ import threading
 #from .DAG_executor_State import DAG_executor_State
 from wukongdnc.dag.DAG_executor_State import DAG_executor_State
 from wukongdnc.dag.DAG_executor_constants import run_all_tasks_locally, using_workers, using_threads_not_processes
+from wukongdnc.dag.DAG_executor_constants import using_Lambda_Function_Simulators_to_Run_Tasks
 #from wukongdnc.dag.DAG_work_queue_for_threads import thread_work_queue
 from wukongdnc.dag.DAG_executor_work_queue_for_threads import work_queue
 from wukongdnc.wukong.invoker import invoke_lambda_DAG_executor
@@ -327,21 +328,32 @@ class DAG_executor_FanInNB_Select(Selector):
                 # logic witout worrying about performance.
                 #return 0, restart
 
-#ToDo:          if we are not triggering tasks:
-                logger.debug("DAG_executor_FanInNB_Select: fan_in: return self._results for "
-                    + " case where simuated lambdas with threads and storing objects remotely, "
-                    + " possibly in lambas (simulated or rea)")
-                return self._results
-                #work_tuple = (start_state_fanin_task,self._results)
-                #return work_tuple
-                """
-                else:
-                    DAG_executor.DAG_executor_lambda(payload) with payload perhaps passed in on init()
-                    when we are triggering tasks?
+                if using_Lambda_Function_Simulators_to_Run_Tasks:
+                    logger.debug("DAG_executor_FanInNB_Select: fan_in: return self._results for "
+                        + " case where simuated lambdas with threads and storing objects remotely, "
+                        + " possibly in lambas (simulated or rea)")
+                    return self._results
+                    #work_tuple = (start_state_fanin_task,self._results)
+                    #return work_tuple
+                else: # we are triggering tasks?
                     try:
-   
-                """
-
+                        logger.debug("DAG_executor_FanInNB_Select: triggering DAG_Executor_Lambda() for task " + fanin_task_name)
+                        lambda_DAG_exec_state = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()), state = start_state_fanin_task)
+                        logger.debug ("DAG_executor_FanInNB_Select: lambda payload is DAG_info + " + str(start_state_fanin_task) + "," + str(self._results))
+                        lambda_DAG_exec_state.restart = False      # starting new DAG_executor in state start_state_fanin_task
+                        lambda_DAG_exec_state.return_value = None
+                        lambda_DAG_exec_state.blocking = False            
+                        logger.info("DAG_executor_FanInNB_Select: Starting Lambda function %s." % lambda_DAG_exec_state.function_name) 
+                        payload = {
+                            "input": self._results,
+                            "DAG_executor_state": lambda_DAG_exec_state,
+                            "DAG_info": self.DAG_info
+                        }
+                        DAG_executor.DAG_executor_lambda(payload)
+                    except Exception as ex:
+                        logger.error("[ERROR] DAG_executor_FanInNB_Select: Failed to start DAG_executor.DAG_executor_lambda"
+                            + " for triggered task " + fanin_task_name)
+                        logger.error(ex) 
             else:
                 logger.error("[ERROR]: Internal Error: DAG_executor_FanInNB_Select: fan_in: reached else: error at end of fanin")
 
