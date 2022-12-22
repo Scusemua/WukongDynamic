@@ -4,7 +4,16 @@
 
 # Where are we: 
 #
-# test the store objects in simulated lambdas stuff, w/wo DAG_orchestrator.
+# Lots of docs in the function simulator file:
+# - try just having the pre-created and mapped fanout/faninNB ops trigger the tasks
+#   in the faninNBs. That's the only change?
+# - If create on fy, then perhaps modify process_enqueued_fan_ins to 
+#   create_and_process_enqueued_fan_ins and make sure payloaf has enough information
+# Consider: The fanin object can be on server since DAG_orchestrator is essentially
+# acting like this object anyway and fanin dos not trigger tasks so why bother putting
+# it on the server?
+# Consider: have RDMA dictionary for DAG_orchestrator to put results and faninNB/fanouts
+# to get results.
 #
 # Q: can we invoke simuated lambda sync or async? It's a real python function
 #    so it will be sync unless we create a thread to do the invoke?

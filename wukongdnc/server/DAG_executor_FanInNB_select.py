@@ -294,10 +294,9 @@ class DAG_executor_FanInNB_Select(Selector):
                 #   store objects in lambdas, we do not call process_faninNBs_batch; instead, we call 
                 #   process_faninNBs, which calls regular tcp_server synchronize_sync w/fan_in on
                 #   faninNBs, then tcp_server will call fan_in.
-                #   When usng
                 #   When using threads to simulate lambdas to excute tasks, when we store objects 
                 #   in lambdas, we call process_faninNBs_batch on tcp_servr_lambda. This allows us
-                #   to cal simulated Python functions that store the sync_objects when we are using
+                #   to call simulated Python functions that store the sync_objects when we are using
                 #   threads to simulate lambas tht execute threads. So we can test all this logic
                 #   without messing with AWS Lambdas. 
                 # - For real lambdas (not simulated by threads), with objects stored in
@@ -328,10 +327,10 @@ class DAG_executor_FanInNB_Select(Selector):
                 # logic witout worrying about performance.
                 #return 0, restart
 
-                if using_Lambda_Function_Simulators_to_Run_Tasks:
+                if not using_Lambda_Function_Simulators_to_Run_Tasks:
                     logger.debug("DAG_executor_FanInNB_Select: fan_in: return self._results for "
                         + " case where simuated lambdas with threads and storing objects remotely, "
-                        + " possibly in lambas (simulated or rea)")
+                        + " possibly in lambas (simulated or real) and not triggering tasks.")
                     return self._results
                     #work_tuple = (start_state_fanin_task,self._results)
                     #return work_tuple
