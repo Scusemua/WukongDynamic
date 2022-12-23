@@ -134,9 +134,10 @@ class TCPHandler(socketserver.StreamRequestHandler):
         self.send_serialized_object(resp_encoded)
         logger.info("Sent ACK of size %d bytes to client %s for create_awork_queue operation." % (len(resp_encoded), self.client_address[0]))
 
+#ToDo: use create_all_sync_objects
     def create_all_fanins_and_faninNBs_and_possibly_work_queue(self, message = None):
         """
-        Called by a remote Lambda to create fanins, faninNBs, and pssibly work queue.
+        Called by remote driver to create fanins, faninNBs, and pssibly work queue.
         Number of fanins/faninNBs may be 0.
 
         Key-word arguments:

@@ -55,6 +55,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 # destruct all synch objects
                 "close_all": self.close_all,
                 # These are DAG execution operations
+#ToDo: Change name - drop possible wq but then different names on tcp_server and tcp_server_lambda
+# so use more genera name on both - "create_all_sync_objects"
                 "create_all_fanins_and_faninNBs_and_possibly_work_queue": self.create_all_fanins_and_faninNBs_and_possibly_work_queue,
                 # process all faninNBs fora a given state (state = task plus fanins/fanouts that follow it)
                 "synchronize_process_faninNBs_batch": self.synchronize_process_faninNBs_batch,
@@ -286,6 +288,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
     # a "create" message so the synch object os created in the invoked 
     # lambda.
     def create_all_fanins_and_faninNBs_and_possibly_work_queue(self, message = None):
+    #def create_all_fanins_and_faninNBs_and_fanouts(self, message = None):
         """
         Called by a remote Lambda to create fanins, faninNBs, and pssibly work queue.
         Number of fanins/faninNBs may be 0.
@@ -308,8 +311,10 @@ class TCPHandler(socketserver.StreamRequestHandler):
         messages = message['name']
         fanin_messages = messages[0]
         faninNB_messages = messages[1]
+        fanout_messages = messages[2]
         logger.info(str(fanin_messages))
         logger.info(str(faninNB_messages))
+        logger.info(str(fanout_messages))
 
         for msg in fanin_messages:
             #self.create_one_of_all_objs(msg)
@@ -332,6 +337,17 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
         if len(faninNB_messages) > 0:
             logger.info("created faninNBs")
+
+        for msg in fanout_messages:
+            #self.create_one_of_all_objs(msg)
+            logger.debug("tcp_server_lambda: calling create_all_fanins_and_faninNBs_and_fanouts().")
+
+            return_value_ignored = self.invoke_lambda_synchronously(msg)
+
+            logger.debug("tcp_server_lambda: called Lambda at create_all_fanins_and_faninNBs_and_fanouts.")
+
+        if len(fanout_messages) > 0:
+            logger.info("created fanouts")
 
         # we always create the fanin and faninNBs. We possibly create the work queue. If we send
         # a message for create work queue, in addition to the lst of messages for create

@@ -325,9 +325,12 @@ def create_work_queue_on_server(websocket, work_queue_message):
     return ack
 """
 
+#ToDo: change name to "create_all_sync_objects"
 def create_all_fanins_and_faninNBs_and_possibly_work_queue(websocket, op, type, name, state):
     """
-    Create all fanins and faninNBs for DAG_executor on the TCP server.
+    Create all fanins and faninNBs and either possibly the work_queue  (if using workers)
+    or possibly the fanouts (if fanouts/fanis stored in lambdas and they trigger their tasks)
+    for DAG_executor on the TCP server.
 
     Arguments:
     ----------

@@ -2,7 +2,7 @@
 #
 # True if we are not using Lambdas, i.e., executing tasks with threads or processes
 # local, i.e., on one machine.
-run_all_tasks_locally = True         # vs run tasks remotely (in Lambdas)
+run_all_tasks_locally = False         # vs run tasks remotely (in Lambdas)
 # True if synch objects are stored locally, i.e., in the memory of the single
 # machine on which the threads are executing.  If we are using multiprocessing
 # or Lambdas, this must be False. When False, the synch objects are stored
@@ -45,7 +45,7 @@ process_work_queue_Type = "BoundedBuffer_Select"
 # Currently, this is for storing synch objects in simulated lambdas;
 store_sync_objects_in_lambdas = True
 using_Lambda_Function_Simulators_to_Store_Objects = True
-using_Lambda_Function_Simulators_to_Run_Tasks = False
+using_Lambda_Function_Simulators_to_Run_Tasks = True
 # use orchestrator to invoke functions (e.g., when all fanin/fanout results are available)
 using_DAG_orchestrator = True
 # use a single lambda function to store all of the synchroization objects
