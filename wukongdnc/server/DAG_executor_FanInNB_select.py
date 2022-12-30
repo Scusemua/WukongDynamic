@@ -17,7 +17,9 @@ import threading
 #from .DAG_executor_State import DAG_executor_State
 from wukongdnc.dag.DAG_executor_State import DAG_executor_State
 from wukongdnc.dag.DAG_executor_constants import run_all_tasks_locally, using_workers, using_threads_not_processes
-from wukongdnc.dag.DAG_executor_constants import using_Lambda_Function_Simulators_to_Run_Tasks
+from wukongdnc.dag.DAG_executor_constants import sync_objects_in_lambdas_trigger_their_tasks
+from wukongdnc.dag.DAG_executor_constants import store_sync_objects_in_lambdas
+# Note: we init self.store_fanins_faninNBs_locally in init()
 #from wukongdnc.dag.DAG_work_queue_for_threads import thread_work_queue
 from wukongdnc.dag.DAG_executor_work_queue_for_threads import work_queue
 from wukongdnc.wukong.invoker import invoke_lambda_DAG_executor
@@ -81,9 +83,11 @@ class DAG_executor_FanInNB_Select(Selector):
         self._n = kwargs['n']
         #self.fanin_task_name = kwargs['fanin_task_name']
         self.start_state_fanin_task = kwargs['start_state_fanin_task']
+        #ToDo: Should we just access the gobal constant like we do for the other constants?
         self.store_fanins_faninNBs_locally = kwargs['store_fanins_faninNBs_locally']
         self.DAG_info = kwargs['DAG_info'] 
 
+        # this is the enty that is selected when its guard is true
         self._fan_in = selectableEntry("fan_in")
 
         # fan_in never blocks and we are not doing an restarts during DAG_execution.
@@ -208,6 +212,9 @@ class DAG_executor_FanInNB_Select(Selector):
                     return self._results  # all threads have called so return results
                     #return 1, restart  # all threads have called so return results
             elif self.store_fanins_faninNBs_locally and run_all_tasks_locally:
+                # we store_fanins_faninNBs_locally means the the threasd that simulate lambdas
+                # executing tasks and the sync objects are both running locally, i.e., the 
+                # sync objects are not on the server or in lambdas. We are not using workers either.
                 if not using_threads_not_processes:
                     logger.error("[Error]: DAG_executor_FanInNB_Select: fan_in:  storing fanins locally but not using threads.")
   
@@ -241,11 +248,17 @@ class DAG_executor_FanInNB_Select(Selector):
                 # does mutex.V
                 # no one should be calling fan_in again since this is last caller
                 return self._results  # all threads have called so return results
-                #return 1, restart  # all threads have called so return results
-                    
+                #return 1, restart  # all threads have called so return results  
             elif not self.store_fanins_faninNBs_locally and not run_all_tasks_locally:
-#ToDO: use using_lambdas (=> self.store_fanins_faninNBs_locally and not run_all_tasks_locall
-#ToDo: Condition
+                # we are executing tasks in lambdas. The sync objects can be stored on the
+                # tcp_server or in lambdas. If this object, which is a select object, is on the 
+                # tcp_server is is stored as a regular python object on the server. It may also
+                # be stored in a lamba, in which case we are running tcp_serverlambda.
+                # Either this object starts a new lambda to execute the fanin task or we trigger 
+                # the task by simply callng it. (Note: When we are using lambdas, the sync 
+                # objcects cannot be stored locally.)
+#ToDo: uncomment actual condition
+                #if store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks:
                 if True:
                     try:
                         logger.debug("DAG_executor_FanInNB_Select: triggering DAG_Executor_Lambda() for task " + fanin_task_name)
@@ -288,8 +301,7 @@ class DAG_executor_FanInNB_Select(Selector):
                         logger.debug(ex)
 
                 # No signal of non-last client; they did not block and they are done executing. 
-                # does mutex.V
-                # no one should be calling fan_in again since this is last caller
+                # does mutex.V. No one should be calling fan_in again since this is last caller
                 # results given to invoked lambda so nothing to return; can't return results
                 # to tcp_serve \r or tcp_server might try to put them in the non-existent 
                 # work_queue.   
@@ -297,7 +309,7 @@ class DAG_executor_FanInNB_Select(Selector):
                 return 0
                 #return 1, restart  # all threads have called so return results
             
-            elif False:  # not self.store_fanins_faninNBs_locally and run_all_tasks_locally:
+            elif not self.store_fanins_faninNBs_locally and run_all_tasks_locally:
                 # When not self.store_fanins_faninNBs_locally and run_all_tasks_locally we 
                 # are simulating lambdas with threads and synch objects are stored remotely. 
                 # The objects could be stored on the server or in real lambdas or simulated
@@ -347,33 +359,12 @@ class DAG_executor_FanInNB_Select(Selector):
                 # we are simulating lambdas with threads, which is just to test the 
                 # logic witout worrying about performance.
                 #return 0, restart
-#ToDo: Condition
-                if False: # not using_Lambda_Function_Simulators_to_Run_Tasks:
-                    logger.debug("DAG_executor_FanInNB_Select: fan_in: return self._results for "
-                        + " case where simuated lambdas with threads and storing objects remotely, "
-                        + " possibly in lambas (simulated or real) and not triggering tasks.")
-                    return self._results
-                    #work_tuple = (start_state_fanin_task,self._results)
-                    #return work_tuple
-                else: # we are triggering tasks?
-                    try:
-                        logger.debug("DAG_executor_FanInNB_Select: triggering DAG_Executor_Lambda() for task " + fanin_task_name)
-                        lambda_DAG_exec_state = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()), state = start_state_fanin_task)
-                        logger.debug ("DAG_executor_FanInNB_Select: lambda payload is DAG_info + " + str(start_state_fanin_task) + "," + str(self._results))
-                        lambda_DAG_exec_state.restart = False      # starting new DAG_executor in state start_state_fanin_task
-                        lambda_DAG_exec_state.return_value = None
-                        lambda_DAG_exec_state.blocking = False            
-                        logger.info("DAG_executor_FanInNB_Select: Starting Lambda function %s." % lambda_DAG_exec_state.function_name) 
-                        payload = {
-                            "input": self._results,
-                            "DAG_executor_state": lambda_DAG_exec_state,
-                            "DAG_info": self.DAG_info
-                        }
-                        DAG_executor.DAG_executor_lambda(payload)
-                    except Exception as ex:
-                        logger.error("[ERROR] DAG_executor_FanInNB_Select: Failed to start DAG_executor.DAG_executor_lambda"
-                            + " for triggered task " + fanin_task_name)
-                        logger.error(ex) 
+                logger.debug("DAG_executor_FanInNB_Select: fan_in: return self._results for "
+                    + " case where simuated lambdas with threads and storing objects remotely, "
+                    + " possibly in lambas (simulated or real) and not triggering tasks.")
+                return self._results
+                #work_tuple = (start_state_fanin_task,self._results)
+                #return work_tuple 
             else:
                 logger.error("[ERROR]: Internal Error: DAG_executor_FanInNB_Select: fan_in: reached else: error at end of fanin")
 

@@ -39,7 +39,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 "synchronize_sync": self.synchronize_sync,
                 "close_all": self.close_all,
                 # These are DAG execution operations
-                "create_all_fanins_and_faninNBs_and_possibly_work_queue": self.create_all_fanins_and_faninNBs_and_possibly_work_queue,
+                "create_all_sync_objects": self.create_all_sync_objects,
                 "synchronize_process_faninNBs_batch": self.synchronize_process_faninNBs_batch,
                 "create_work_queue": self.create_work_queue
             }
@@ -134,10 +134,9 @@ class TCPHandler(socketserver.StreamRequestHandler):
         self.send_serialized_object(resp_encoded)
         logger.info("Sent ACK of size %d bytes to client %s for create_awork_queue operation." % (len(resp_encoded), self.client_address[0]))
 
-#ToDo: use create_all_sync_objects
-    def create_all_fanins_and_faninNBs_and_possibly_work_queue(self, message = None):
+    def create_all_sync_objects(self, message = None):
         """
-        Called by remote driver to create fanins, faninNBs, and pssibly work queue.
+        Called by remote driver to create fanins, faninNBs, and possibly work queue.
         Number of fanins/faninNBs may be 0.
 
         Key-word arguments:
@@ -154,31 +153,46 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 "id": msg_id
             }
         """  
-        logger.debug("[HANDLER] server.create_all_fanins_and_faninNBs_and_possibly_work_queue() called.")
+        logger.debug("[HANDLER] server.create_all_sync_objects called.")
         messages = message['name']
         fanin_messages = messages[0]
         faninNB_messages = messages[1]
-        logger.info(str(fanin_messages))
-        logger.info(str(faninNB_messages))
+        logger.info("create_all_sync_objects: fanin messages: " + str(fanin_messages))
+        logger.info("create_all_sync_objects: faninNB messages: " + str(faninNB_messages))
 
         for msg in fanin_messages:
             self.create_one_of_all_objs(msg)
         if len(fanin_messages) > 0:
-            logger.info("created fanins")
+            logger.info("create_all_sync_objects: created fanins")
 
         for msg in faninNB_messages:
             self.create_one_of_all_objs(msg)
         if len(faninNB_messages) > 0:
-            logger.info("created faninNBs")
+            logger.info("create_all_sync_objects: created faninNBs")
 
         # we always create the fanin and faninNBs. We possibly create the work queue. If we send
-        # a message for create work queue, in addition to the lst of messages for create
-        # fanins and create faninNBs, we create a work queue too.
-        create_the_work_queue = (len(messages)>2)
-        if create_the_work_queue:
-            logger.info("create_the_work_queue: " + str(create_the_work_queue) + " len: " + str(len(messages)))
-            msg = messages[2]
-            self.create_one_of_all_objs(msg)
+        # a message for create work queue, in addition to the list of messages for create
+        # fanins and create faninNBs, we create a work queue too. We may instead send the 
+        # list of fanout messages. Check the type of the operation to determine whether we
+        # create a work queue (as we are using worker with remote objects) or create fanout 
+        # objects (when we store fanins/faninBs and fanouts) in Lambdas an the fanin operations
+        # trigger their fanin tasks. (A fanout is implemented using a fanin of size 1 that 
+        # triggers its fanout operation.)
+        create_the_work_queue_or_fanouts = (len(messages)>2)
+        if create_the_work_queue_or_fanouts:
+            type = messages['type']
+            if type == "DAG_executor_fanin_or_faninNB_or_work_queue":
+                logger.info("create_all_sync_objects: create_the_work_queue:" + " len: " + str(len(messages)))
+                msg = messages[2]
+                self.create_one_of_all_objs(msg)
+            else:
+                logger.info("create_all_sync_objects: " + " create the fanouts.")
+                fanout_messages = messages[2]
+                logger.info("create_all_sync_objects: faninout messages: " + str(fanout_messages))
+                for msg in fanout_messages:
+                    self.create_one_of_all_objs(msg)
+                if len(fanout_messages) > 0:
+                    logger.info("create_all_sync_objects: created fanouts.")
 
         resp = {
             "op": "ack",
@@ -187,10 +201,10 @@ class TCPHandler(socketserver.StreamRequestHandler):
         #############################
         # Write ACK back to client. #
         #############################
-        logger.info("Sending ACK to client %s for create_all_fanins_and_faninNBs operation." % self.client_address[0])
+        logger.info("create_all_sync_objects: Sending ACK to client %s for create_all_fanins_and_faninNBs operation." % self.client_address[0])
         resp_encoded = json.dumps(resp).encode('utf-8')
         self.send_serialized_object(resp_encoded)
-        logger.info("Sent ACK of size %d bytes to client %s for create_all_fanins_and_faninNBs operation." % (len(resp_encoded), self.client_address[0]))
+        logger.info("create_all_sync_objects: Sent ACK of size %d bytes to client %s for create_all_fanins_and_faninNBs operation." % (len(resp_encoded), self.client_address[0]))
 
     def create_one_of_all_objs(self,message = None):
         """

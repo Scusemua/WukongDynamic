@@ -12,7 +12,7 @@ import uuid
 from ..wukong.invoker import invoke_lambda_synchronously
 from ..dag.DAG_executor_constants import using_Lambda_Function_Simulators_to_Store_Objects, using_single_lambda_function
 from ..dag.DAG_executor_constants import using_DAG_orchestrator, run_all_tasks_locally
-from ..dag.DAG_executor_constants import using_workers, using_Lambda_Function_Simulators_to_Run_Tasks
+from ..dag.DAG_executor_constants import using_workers, sync_objects_in_lambdas_trigger_their_tasks
 from ..dag.DAG_executor_constants import store_sync_objects_in_lambdas
 from ..dag.DAG_Executor_lambda_function_simulator import InfiniD # , Lambda_Function_Simulator
 from ..dag.DAG_info import DAG_Info
@@ -442,7 +442,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # then we will process the fanouts.
         # Todo: we may use the parallel invoer to do the fanouts when using Wukong stylr
         # fanouts.
-        if using_Lambda_Function_Simulators_to_Run_Tasks:
+        if sync_objects_in_lambdas_trigger_their_tasks:
             fanouts = DAG_exec_state.keyword_arguments['fanouts']
 
         # Note: if using lambdas, then we are not using workers (for now) so worker_needs_input 
@@ -522,8 +522,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # Note: in the DAG_executor_work_loop we made one of the fanouts a become 
         # task and removed that fanout from fanouts.
         if using_Lambda_Function_Simulators_to_Store_Objects and (
-            using_DAG_orchestrator) and (
-            using_Lambda_Function_Simulators_to_Run_Tasks):
+            using_DAG_orchestrator) and sync_objects_in_lambdas_trigger_their_tasks:
 
             for name in fanouts:
                 start_state_fanin_task  = DAG_states_of_faninNBs_fanouts[name]
@@ -554,7 +553,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 # the caller does not need to wait for the return value, which will be 0 indicating there is 
                 # nothing to do.)
 
-                #Note: using_Lambda_Function_Simulators_to_Run_Tasks is true via if condition
+                #Note: sync_objects_in_lambdas_trigger_their_tasks is true via if condition
                 if using_Lambda_Function_Simulators_to_Store_Objects and (
                     using_DAG_orchestrator):
                     logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": calling infiniD.enqueue(message)."

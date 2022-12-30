@@ -7,18 +7,18 @@
 # Lots of docs in the function simulator file:
 #   DO THIS FITST - if it works then just get payload to lambda function right.
 # - ==> try just having the pre-created and mapped fanout/faninNB ops trigger the tasks
-#   in the faninNBs. Need to have the using_Lambda_Function_Simulators_to_Run_Tasks = True
-#   so all that code is enabled. In work lop, need condition for process faninNBs batch
+#   in the faninNBs. Need to have the sync_objects_in_lambdas_trigger_their_tasks = True
+#   so all that code is enabled. 
+# - In work loop, need condition for process faninNBs batch
 #   and for async. Not using run_locally now, so need "not run_locally" for process faninNBs batch
-#   but when not "run locally" may or may not be using_Lambda_Function_Simulators_to_Run_Tasks
-#   but async_call is false in either case? i.e., nothing comes back to lamba. Check other 
-#   conditions involving using_Lambda_Function_Simulators_to_Run_Task. This includes the
+#   but when not "run locally" may or may not be sync_objects_in_lambdas_trigger_their_tasks
+#   but async_call is true in either case? i.e., nothing comes back to lamba. 
+# - Check other conditions involving sync_objects_in_lambdas_trigger_their_tasks. This includes the
 #   process_faninNBS_batch in tcp_server_lambda, which needs "not run locally" for triggering.
-#   Note: LOOKS LIKE GETTING QUOTIENT since although the faninNBS could not start tasks, the regular run_locally code started a 
-#   new thread for running the task?
+#   Note: LOOKS LIKE GETTING QUOTIENT since although the faninNBS could not start tasks, the regular 
+#   run_locally code started a new thread for running the task?
 #   - Driver changes: 1. need to create fanins for fanout objects too when running tasks and
-#     not create on fly.
-#     separate methods: create_fanin_and_faninNB_and _fanout_messages and
+#     not create on fly. separate methods: create_fanin_and_faninNB_and_fanout_messages and
 #     create_fanins_and_faninNBs_and_fanouts (so never work queue so use this and 
 #     change name on tcp_Server and tcp_server_lambda to create_all_sync_objects.)
 #     2. Also, need to start leaf tasks, perhaps by creating a "fanouts" 
@@ -40,6 +40,10 @@
 #      So could have tcp_server/tp_server_lambda, which read DAG_info, add DAG_info
 #      to message only if it is needed, so drver doesn;t have to send DAG_info in 
 #      all of the messages to all of the faninNBs/fanouts.
+#
+# SECOND: Test the working configs.
+# THIRD: Test the trigger with mapped tasks
+# Fourth: implement create on fly
 # 
 # - If create on fly, then perhaps modify process_enqueued_fan_ins to 
 #   create_and_process_enqueued_fan_ins and make sure payloaf has enough information
@@ -53,9 +57,9 @@
 #    so it will be sync unless we create a thread to do the invoke?
 #
 # what is condition for sync objects trigger tasks? e.g., in process_fanouts
-#     if (not run_all_tasks_locally) and store_sync_objects_in_lambdas and using_Lambda_Function_Simulators_to_Run_Tasks:
+#     if (not run_all_tasks_locally) and store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks:
 # so not using workers and not run_all_tasks_locally, which is like Wukong but to flip off
-# of Wukong we need using_Lambda_Function_Simulators_to_Run_Tasks, which may be too strong.
+# of Wukong we need sync_objects_in_lambdas_trigger_their_tasks, which may be too strong.
 #
 # No: use batch processing when we are using threads to simulate workers and objects
 # are remote on the server, not just remote in lambdas, so that the condiditiom
@@ -144,13 +148,13 @@ from .DAG_executor_constants import run_all_tasks_locally, store_fanins_faninNBs
 from .DAG_executor_constants import create_all_fanins_faninNBs_on_start, using_workers
 from .DAG_executor_constants import num_workers,using_threads_not_processes
 from .DAG_executor_constants import FanIn_Type, FanInNB_Type, process_work_queue_Type
+from .DAG_executor_constants import store_sync_objects_in_lambdas, sync_objects_in_lambdas_trigger_their_tasks, using_DAG_orchestrator
 #from .DAG_work_queue_for_threads import thread_work_queue
 from .DAG_executor_work_queue_for_threads import work_queue
 from .DAG_executor_synchronizer import server
 from wukongdnc.wukong.invoker import invoke_lambda_DAG_executor
 import uuid
-#ToDo: create_all_sync_objects
-from wukongdnc.server.api import create_all_fanins_and_faninNBs_and_possibly_work_queue
+from wukongdnc.server.api import create_all_sync_objects
 from .multiprocessing_logging import listener_configurer, listener_process, worker_configurer
 from .DAG_executor_countermp import CounterMP
 from .DAG_boundedbuffer_work_queue import BoundedBuffer_Work_Queue
@@ -573,7 +577,7 @@ DAG_orchestrator
     DAG ochestrator. And not using workers.
 ==> not run_all_tasks_locally and store_sync_objects_in_lambdas
     and using_Lambda_Function_Simulators_to_Store_Objects = True or False
-    and using_Lambda_Function_Simulators_to_Run_Tasks = True or False
+    and sync_objects_in_lambdas_trigger_their_tasks = True or False
 So when we are using the DAG orchestrator it is another way to manage and 
 access the lambdas (simulated or not) that store objects. And so can be used
 with all the various ways of running tasks (threads to simulate lambdas, 
@@ -682,6 +686,8 @@ def run():
     all_fanin_sizes = DAG_info.get_all_fanin_sizes()
     all_faninNB_task_names = DAG_info.get_all_faninNB_task_names()
     all_faninNB_sizes = DAG_info.get_all_faninNB_sizes()
+    all_fanout_task_names = DAG_info.get_all_fanout_task_names()
+    # Note: all fanout_sizes is not needed since fanouts are fanins that have size 1
     DAG_states = DAG_info.get_DAG_states()
     DAG_leaf_tasks = DAG_info.get_DAG_leaf_tasks()
     DAG_leaf_task_start_states = DAG_info.get_DAG_leaf_task_start_states()
@@ -861,21 +867,25 @@ def run():
                     # thread workers or using lambdas.         
                     create_fanins_and_faninNBs(websocket,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
                 else:
-                    # not run_all_tasks_locally and not using workers must be true (since 
-                    # (not run_all_tasks_locally) and using_workers is never used.
+                    # not run_all_tasks_locally and not using workers (must be true (since 
+                    # (not run_all_tasks_locally) and using_workers is never used in that case.)
                     if using_workers:
                         logger.error("[Error]: DAG_executor_driver: using_workers but using lambdas.")
                     if run_all_tasks_locally:
                         logger.error("[Error]: DAG_executor_driver: interal error: DAG_executor_driver: run_all_tasks_locally shoudl be false.")
                     # not run_all_tasks_locally so using lambdas (real or simulatd)
                     # So do not put leaf tasks in work queue
-#ToDo: if not run_all_tasks_locally and store_sync_objects_in_lambdas and 
-# using_Lambda_Function_Simulators_to_Run_Tasks and using_DAG_orchestrator:
-# create_fanins_and_faninNBs_and_fanouts(websocket,number_of_tasks,DAG_map,DAG_states,DAG_info,
-#   all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes,all_fanout_task_names,all_fanout_sizes
-# ):
 
-                    create_fanins_and_faninNBs(websocket,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
+                    if not run_all_tasks_locally and store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks and using_DAG_orchestrator:
+                        # storing sync objects in lambdas and snc objects trigger their tasks
+                        create_fanins_and_faninNBs_and_fanouts(websocket,DAG_map,DAG_states,DAG_info,
+                        all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes,all_fanout_task_names)
+                    else:
+                        # storing sync objects remotely; they do not trigger their tasks to run
+                        # in the same lamba that strores the sync object. So, e.g., fanouts are
+                        # done by calling lambdas to excute the fanout task (besides the becomes 
+                        # task.)
+                        create_fanins_and_faninNBs(websocket,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
             else:
                 # going to create fanin and faninNBs on demand, i.e., as we execute
                 # operations on them. But still want to create process_work_queue
@@ -1263,7 +1273,7 @@ def create_fanin_and_faninNB_messages(DAG_map,DAG_states,DAG_info,all_fanin_task
 # create fanin and faninNB messages to be passed to the tcp_server for creating
 # all fanin and faninNB synch objects
 def create_fanin_and_faninNB_and_fanout_messages(DAG_map,DAG_states,DAG_info,all_fanin_task_names,
-    all_fanin_sizes,all_faninNB_task_names, all_faninNB_sizes,all_fanout_task_names,all_fanout_sizes):
+    all_fanin_sizes,all_faninNB_task_names, all_faninNB_sizes,all_fanout_task_names):
  
     """
     logger.debug("create_fanin_and_faninNB_messages: size of all_fanin_task_names: " + str(len(all_fanin_task_names))
@@ -1326,12 +1336,14 @@ def create_fanin_and_faninNB_and_fanout_messages(DAG_map,DAG_states,DAG_info,all
     fanout_messages = []
 
     # create a list of "create" messages, one for each fanin
-    for fanout_name, size in zip(all_fanout_task_names,all_fanout_sizes):
+    # Note: There is no all_fanout_sizes since size is always
+    for fanout_name in zip(all_fanout_task_names):
         #logger.debug("iterate fanin: fanin_name: " + fanin_name + " size: " + str(size))
         # rhc: DES
         dummy_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
         # we will create the fanin object and call fanin.init(**keyword_arguments)
-        dummy_state.keyword_arguments['n'] = size
+        # Note: a fanout is a fann of size 1
+        dummy_state.keyword_arguments['n'] = 1
         # when the faninNB completes, if we are runnning locally and we are not pooling,
         # we start a new thread to execute the fanin task. If we are thread pooling, we put the 
         # start state in the work_queue. If we are using lambdas, we invoke a lambda to
@@ -1345,7 +1357,7 @@ def create_fanin_and_faninNB_and_fanout_messages(DAG_map,DAG_states,DAG_info,all
 
         message = {
             "op": "create",
-            # fanouts are just fanins of size 1
+            # fanouts are just FanIns of size 1
             "type": FanIn_Type,
             "name": fanout_name,
             "state": make_json_serializable(dummy_state),	
@@ -1412,17 +1424,16 @@ def create_fanins_and_faninNBs_and_work_queue(websocket,number_of_tasks,DAG_map,
     messages = (fanin_messages,faninNB_messages,work_queue_message)
     dummy_state2 = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
     #Note: Passing tuple messages as name
-#ToD: create_all_sync_objects here and parm
-    create_all_fanins_and_faninNBs_and_possibly_work_queue(websocket, "create_all_fanins_and_faninNBs_and_possibly_work_queue", "DAG_executor_fanin_or_faninNB", 
+    create_all_sync_objects(websocket, "create_all_sync_objects", "DAG_executor_fanin_or_faninNB_or_work_queue", 
         messages, dummy_state2)
 
-# creates all fanins and faninNBs at the start of driver executin. If we are using 
-# workers and processes (not threads) then we also crate the work_queue here
-def create_fanins_and_faninNBs_and_fanouts(websocket,number_of_tasks,DAG_map,DAG_states,DAG_info,all_fanin_task_names,all_fanin_sizes,
-    all_faninNB_task_names,all_faninNB_sizes,all_fanout_task_names,all_fanout_sizes):
+# creates all fanins and faninNBs anf fanouts at the start of driver executin. We use this
+# when we aer using lambdas to execte tasks, not workers.
+def create_fanins_and_faninNBs_and_fanouts(websocket,DAG_map,DAG_states,DAG_info,all_fanin_task_names,all_fanin_sizes,
+    all_faninNB_task_names,all_faninNB_sizes,all_fanout_task_names):
 
     fanin_messages, faninNB_messages, fanout_messages = create_fanin_and_faninNB_and_fanout_messages(DAG_map,DAG_states,DAG_info,
-        all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes,all_fanout_task_names,all_fanout_sizes)
+        all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes,all_fanout_task_names)
 
     logger.debug("DAG_executor_driver: create_fanins_and_faninNBs_and_work_queue: Sending a 'create_fanins_and_faninNBs_and_fanouts' message to server.")
     #logger.debug("create_fanins_and_faninNBs_and_work_queue: num fanin created: "  + str(len(fanin_messages))
@@ -1432,8 +1443,7 @@ def create_fanins_and_faninNBs_and_fanouts(websocket,number_of_tasks,DAG_map,DAG
     messages = (fanin_messages,faninNB_messages,fanout_messages)
     dummy_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
     #Note: Passing tuple messages as name
-#ToDo: create_all_sync_objects
-    create_all_fanins_and_faninNBs_and_possibly_work_queue(websocket, "create_all_fanins_and_faninNBs_and_fanouts", "DAG_executor_fanin_or_faninNB_or_fanout", 
+    create_all_sync_objects(websocket, "create_all_sync_objects", "DAG_executor_fanin_or_faninNB_or_fanout", 
         messages, dummy_state)
 
 # creates all fanins and faninNBs at the start of driver execution. 
@@ -1456,8 +1466,7 @@ def create_fanins_and_faninNBs(websocket,DAG_map,DAG_states,DAG_info,all_fanin_t
     if len(fanin_messages) > 0 or len(faninNB_messages) > 0:
         messages = (fanin_messages,faninNB_messages)
         dummy_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
-#ToDo: create_all_sync_objects
-        create_all_fanins_and_faninNBs_and_possibly_work_queue(websocket, "create_all_fanins_and_faninNBs_and_possibly_work_queue", "DAG_executor_fanin_or_faninNB", 
+        create_all_sync_objects(websocket, "create_all_sync_objects", "DAG_executor_fanin_or_faninNB", 
             messages, dummy_state)
 
     """ create_all_fanins_and_faninNBs creates:

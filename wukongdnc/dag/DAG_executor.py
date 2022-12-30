@@ -35,7 +35,7 @@ from .DAG_executor_constants import run_all_tasks_locally, store_fanins_faninNBs
 from .DAG_executor_constants import create_all_fanins_faninNBs_on_start, using_workers 
 from .DAG_executor_constants import using_threads_not_processes, use_multithreaded_multiprocessing
 from .DAG_executor_constants import process_work_queue_Type, FanInNB_Type, using_Lambda_Function_Simulators_to_Store_Objects
-from .DAG_executor_constants import using_Lambda_Function_Simulators_to_Run_Tasks, store_sync_objects_in_lambdas
+from .DAG_executor_constants import sync_objects_in_lambdas_trigger_their_tasks, store_sync_objects_in_lambdas
 #from .DAG_work_queue_for_threads import thread_work_queue
 from .DAG_executor_work_queue_for_threads import work_queue
 from .DAG_data_dict_for_threads import data_dict
@@ -532,7 +532,7 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
 
 #rhc: async task ToDo: don't need to be using sims
         if not (run_all_tasks_locally and using_workers and not using_threads_not_processes and worker_needs_input) and not (run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and (
-            using_Lambda_Function_Simulators_to_Store_Objects) and not using_Lambda_Function_Simulators_to_Run_Tasks):
+            using_Lambda_Function_Simulators_to_Store_Objects) and not sync_objects_in_lambdas_trigger_their_tasks):
             logger.error("[Error]: " + thread_name + ": process_faninNBs_batch: (not using worker processes, or worker_needs_input is False) and not (storing synch objects remotely in simulated lambdas"
                 + " and using threads to simulate lambdas) but using process_faninNBs batch and we got work back from server.")
 
@@ -774,16 +774,16 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
         else:
 #rhc run tasks
             # if we are using thr
-            if (not run_all_tasks_locally) and store_sync_objects_in_lambdas and using_Lambda_Function_Simulators_to_Run_Tasks:
-            #if (run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and store_sync_objects_in_lambdas and using_Lambda_Function_Simulators_to_Run_Tasks):
-                # Nothing to do. When we are using_Lambda_Function_Simulators_to_Run_Tasks we will
+            if (not run_all_tasks_locally) and store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks:
+            #if (run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks):
+                # Nothing to do. When we are sync_objects_in_lambdas_trigger_their_tasks we will
                 # pass the fanouts (set) to process_faninNBs_batch and it will process the 
                 # fanouts by invoking real python functions that execute the fanout tasks.
                 pass
             elif run_all_tasks_locally:
-            #elif (run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and not (store_sync_objects_in_lambdas and using_Lambda_Function_Simulators_to_Run_Tasks)):
+            #elif (run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and not (store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks)):
                 # (run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and using_Lambda_Function_Simulators_to_Store_Objects):
-                # or (run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and using_Lambda_Function_Simulators_to_Store_Objects and using_Lambda_Function_Simulators_to_Run_Tasks):
+                # or (run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and using_Lambda_Function_Simulators_to_Store_Objects and sync_objects_in_lambdas_trigger_their_tasks):
                 # Note: if we are using threads to simulate lambas it does not matter whether or not we are storing 
                 # objects in python functions, we will invoke a new thread to execute the fanout task. But if
                 # we are running tasks in python functions that simulate lambdas, we will call process_faninNBS_batch
@@ -1341,9 +1341,9 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
 #rhc run tasks - this is when we call batch; whether we use async_call depends on whether we get return values or not
                     if (run_all_tasks_locally and using_workers and not using_threads_not_processes) or (
                         not run_all_tasks_locally) or (
-#rhc run taks:  using_Lambda_Function_Simulators_to_Run_Tasks is too strong? don't require function simulator
+#rhc run taks:  sync_objects_in_lambdas_trigger_their_tasks is too strong? don't require function simulator
 #  just haven't implemented real lamdba version yet. So condition is sync_objects_trigger_tasks.
-                        run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and store_sync_objects_in_lambdas and using_Lambda_Function_Simulators_to_Run_Tasks):
+                        not run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks):
                         # Config: A1, A3, A5, A6
                         # Note: We call process_faninNBs_batch when we are simulating lambdas with threads
                         # and we are storing synch objects in lambdas, regardless of whether the objects are stored
@@ -1355,7 +1355,7 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                         # may be simuated by using Python functions. The sync objects are fanin objects
                         # that are fanins or fanouts (where a fanout is a fanin of size 1). These sync
                         # object fanins can optionally execute their fanin tasks when they have all of
-                        # their results. This option is using_Lambda_Function_Simulators_to_Run_Tasks.
+                        # their results. This option is sync_objects_in_lambdas_trigger_their_tasks.
                         # In this case, the tasks and the synch objects are executed and stored, respectfully,
                         # in the same lambdas - so we are using lambdas to excute and store sync objects 
                         # and the lambdas may be real or simulated.
@@ -1387,17 +1387,16 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
 
 # rhc: async batch
                         if not run_all_tasks_locally or (run_all_tasks_locally and using_workers and not using_threads_not_processes and not worker_needs_input):
-#rhc: run tasks             or (run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and using_Lambda_Function_Simulators_to_Store_Objects and using_Lambda_Function_Simulators_to_Run_Tasks):
+#rhc: run tasks
 # Note: this will not be async when we allow lambdas to run tasks and then have local fanin(NB) objects
-# sine process_faninNBs_batch will return 0 or the preceeding results if caller is become task.
+# since process_faninNBs_batch will return 0 or the preceeding results if caller is become task.
 # note: for simulating lambdas, if not using python functions to run tasks then using threads to
 #  simulate lambdas and run tasks. Can be using threads if we are just storing objects in lambdas
 #  (whether these are real lambdas or python objects?)
-                            # running real lambdas to execute tasks or using worker processes and not worker_nneds_input.
+                            # running lambdas to execute tasks or using worker processes and not worker_nneds_input.
                             # when a worker process does not need input no work can be returned so no need to wait for
-                            # the return. We also use async call when we are using Python functions to store
-                            # objects and to run tasks. So we are simulating lambdas but not with
-                            # threads; instead we are running tasks in real Python functions.
+                            # the return. We also use async call when we are using Python/Lambda functions to store
+                            # objects and to run tasks.
                             # Note that the api call to the server in process_faninNBs_batch
                             # will see that this is an async_call and will not wait on (receive) a return
                             # value but instead will return 0 which is what it would have recieved from the 

@@ -325,10 +325,9 @@ def create_work_queue_on_server(websocket, work_queue_message):
     return ack
 """
 
-#ToDo: change name to "create_all_sync_objects"
-def create_all_fanins_and_faninNBs_and_possibly_work_queue(websocket, op, type, name, state):
+def create_all_sync_objects(websocket, op, type, name, state):
     """
-    Create all fanins and faninNBs and either possibly the work_queue  (if using workers)
+    Create all fanins and faninNBs and either the work_queue  (if using workers)
     or possibly the fanouts (if fanouts/fanis stored in lambdas and they trigger their tasks)
     for DAG_executor on the TCP server.
 
@@ -353,8 +352,8 @@ def create_all_fanins_and_faninNBs_and_possibly_work_queue(websocket, op, type, 
             Our current state.
     """
     msg_id = str(uuid.uuid4())
-    #logger.error("api: create_all_fanins_and_faninNBs_and_possibly_work_queue: Sending 'create_all_fanins_and_faninNBs' message to server. Op='%s', type='%s', id='%s', state=%s" % (op, type, msg_id, state))
-    #logger.error("length name: " + str(len(name)))
+    #logger.error("api: create_all_sync_objects: Sending 'create_all_sync_objects' message to server. Op='%s', type='%s', id='%s', state=%s" % (op, type, msg_id, state))
+    #logger.error("api: create_all_sync_objects: length name: " + str(len(name)))
     # we set state.keyword_arguments before call to create()
     message = {
         "op": op,
@@ -363,7 +362,7 @@ def create_all_fanins_and_faninNBs_and_possibly_work_queue(websocket, op, type, 
         "state": make_json_serializable(state),
         "id": msg_id
     }
-    #logger.error("api: create_all_fanins_and_faninNBs_and_possibly_work_queue: op:" + op + " type: " + type + " state: " + str(state) + " id: " + str(id))
+    #logger.error("api: create_all_sync_objects: create_all_fanins_and_faninNBs_and_possibly_work_queue: op:" + op + " type: " + type + " state: " + str(state) + " id: " + str(id))
     """
     message0 = name[0] 
     message1 = name[1]
@@ -379,9 +378,9 @@ def create_all_fanins_and_faninNBs_and_possibly_work_queue(websocket, op, type, 
     """
 
     msg = json.dumps(message).encode('utf-8')
-    #logger.error("calling send object")
+    #logger.error("api: create_all_sync_objects: calling send object")
     send_object(msg, websocket)
-    #logger.error("create_all_fanins_and_faninNBs_and_possibly_work_queue: Sent 'create_all_fanins_and_faninNBs' message to server")
+    #logger.error("create_all_sync_objects: Sent 'create_all_fanins_and_faninNBs' message to server")
 
     # Receive data. This should just be an ACK, as the TCP server will 'ACK' our create() calls.
     ack = recv_object(websocket)
