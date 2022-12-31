@@ -349,11 +349,11 @@ or we are not using workers and we using threads to simulated lambdas and using
 Python functions for simulating lambas for storing sync objects. 
 (Config: A1, A3, A5, A6)
 
-For process_faninNBs_batch, we pass sync_call = True, when we are using lambdas or we 
-are using worker processes and the worker does not need work. In these cases, no work 
-can be returned so there is no need to wait for the return value. In this case, the 
+For process_faninNBs_batch, we pass sync_call = True, when we are using lambdas Wukong
+styl or we are using worker processes and the worker does not need work. In these cases, no work 
+can be returned so there is no need to wait for the return value. In these cases, the 
 api function that calls the tcp_server (or tcp_server_lamda if we are storing objects in
-simulated lambdas) willl not do a receive to wait on the return but istead will return
+simulated lambdas) will not do a receive to wait on the return but istead will return
 a dummy erturn value that it creates with the return value set to 0, which is what t would 
 have received if it waited (i.e., synchronously). The process_faninNBs_batch in tcp_server_lambda
 returns a list of work (if there is work) to the thread that is simulating the calling lambda
@@ -363,22 +363,25 @@ let the calling (local) thread create these threads. When using real lambdas to 
 the faninNB fanins will invoke real lambdas to execute the fanin tasks.
 For process_faninNBs_batch:
 - A1: when using real lambdas, no work is returned since no workers are used with real lambdas.
-this might change if we benchmark decentralized scheduling using lambdas with n workers then
-infinite workers (Wukong). This is an async_call.
+this might change if we benchmark decentralized scheduling using a lambda that has n workers 
+then infinite workers (Wukong) as a comparision. This is an async_call.
 - A2: when using threads to simulate workers and store lambdas locally, we do not use batch 
 processing. FaninNBs are stored locally and are handled with normal synchronous operations 
-one by one. The local FaniinNBs start local threads to simulate stating real lambdas.
+one by one. The local FaninNBs start local threads to simulate starting real lambdas.
 We are not using process_faninNB_batch so async_call is not relevant.
-- A3:Same when FaninNBs are stored on the server. The server returns the work for the faninNB
+- A3:Same holds when FaninNBs are stored on the server. The server returns the work for the faninNB
 and the calling thread starts the thread that simulates the real lamabda, (The server
 can't start the thread since it would run on the server.
 For A2 and A3 Performance is not an issue as we are simply testing the logic for using lambdas.
-- (A3.SOIL) : S*ync O*bjects I*n L*ambdas, we do use batch processing to make simulated 
-lambdas and real lambdas more similar. (Real lambdas call proocess_faninNB_batch. Each FaninNB
-will be processed by calling fanin and the fanin will start a real lambda to execute the fanin task
-so no work will be generated.) In this A3 case, we return a list of work to the calling thread
-(that is simulating a lambda) and it starts a thread for each work tuple (simulating the 
-FaninNB starting a lambda for each work tuple. Note that process_faninNB_batch calls fanin
+- (A3.SOIL) : S*ync O*bjects I*n L*ambdas, we do use batch processing here. When sync objects are
+stored in lambdas instead of on the server, we will be running tcp_server_lambda, and 
+we will call process_faninB_batch of tcp_server_lambda for this case. So when we store
+sync objects in lambdas we try to call process_faninNB_batch of tcp_server_lambda.
+(Real lambdas call proocess_faninNB_batch. Each FaninNB will be processed one by one by
+calling fanin for each faninNB and the fanin will start a real lambda to execute the fanin task
+so no work will be generated.) In this (A3.SOIL) case, we return a list of work to the calling 
+thread (that is simulating a lambda) and it starts a thread for each work tuple (simulating the 
+FaninNB starting a lambda for each work tuple). Note that process_faninNB_batch calls fanin
 for each FaninNB being processed. It does this either by calling the real lambda that stores
 the FaninnB or by calling the Python function that is simulating the lambda that stores the 
 object. If an orchestrator is used, the enqueue method of the orchestrator is called.
@@ -397,7 +400,8 @@ important case - using multiple thread workers will not achieve any speedup in P
 so we don't support all the various scenarios (storing objects in lambdas, using 
 DAG_orchestrator, etc) for this thread workers case.
 - A4_L: the workers are threads and the work queue is a shared local work queue. 
-process_faninNBs_batch is not called. async_call is not relevant.
+process_faninNBs_batch is not called (since process_faninNB_batch for tcp_server also
+enques work in the work queue that is on the server). async_call is not relevant.
 - A4_R: workers are threads and the work queue and sync objects are on the server. 
 async_call is False since the caller needs to wait for the returned work, if any.
 - A5 workers are processes and sync objects and work queue are on the server.

@@ -1338,12 +1338,19 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     # else: Config: A1, A2, A3
 
                 if len(state_info.faninNBs) > 0:
-#rhc run tasks - this is when we call batch; whether we use async_call depends on whether we get return values or not
+                    # this is the condition for batch processing; whether we use 
+                    # async_call or not depends on whether or not we can get return values.
+                    # if using worker processes and we don't need work (since we got a become task
+                    # from the fanouts) or we are running tasks in lambdas then do batch processing
+                    # Note: we haven't implemented real lamdba version yet, but we do 
+                    # not distinguish here between real and simulated lambdas
                     if (run_all_tasks_locally and using_workers and not using_threads_not_processes) or (
-                        not run_all_tasks_locally) or (
-#rhc run taks:  sync_objects_in_lambdas_trigger_their_tasks is too strong? don't require function simulator
-#  just haven't implemented real lamdba version yet. So condition is sync_objects_trigger_tasks.
-                        not run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks):
+                        not run_all_tasks_locally):
+                        # We do batch processing when we use lambdas to execute tasks, real or simulated.
+                        # So this condition, which specifies the "sync objects trigger their tasks" case
+                        # is not needed.
+                        #not run_all_tasks_locall1y and not using_workers and not store_fanins_faninNBs_locally and store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks):
+
                         # Config: A1, A3, A5, A6
                         # Note: We call process_faninNBs_batch when we are simulating lambdas with threads
                         # and we are storing synch objects in lambdas, regardless of whether the objects are stored

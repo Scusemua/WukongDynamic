@@ -13,7 +13,7 @@ from ..wukong.invoker import invoke_lambda_synchronously
 from ..dag.DAG_executor_constants import using_Lambda_Function_Simulators_to_Store_Objects, using_single_lambda_function
 from ..dag.DAG_executor_constants import using_DAG_orchestrator, run_all_tasks_locally
 from ..dag.DAG_executor_constants import using_workers, sync_objects_in_lambdas_trigger_their_tasks
-from ..dag.DAG_executor_constants import store_sync_objects_in_lambdas
+from ..dag.DAG_executor_constants import store_sync_objects_in_lambdas, store_fanins_faninNBs_locally
 from ..dag.DAG_Executor_lambda_function_simulator import InfiniD # , Lambda_Function_Simulator
 from ..dag.DAG_info import DAG_Info
 from threading import Lock
@@ -430,6 +430,14 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
         DAG_exec_state = decode_and_deserialize(message["state"])
         faninNBs = DAG_exec_state.keyword_arguments['faninNBs']
+#rhc: run task
+        # If sync objects trigger their fanout/fanin tasks to run in the same lambda
+        # then we will process the fanouts here.
+        # Todo: we may use the parallel invoker to do the fanouts when using Wukong stylr
+        # fanouts.
+        if sync_objects_in_lambdas_trigger_their_tasks:
+            fanouts = DAG_exec_state.keyword_arguments['fanouts']
+
         #faninNB_sizes = DAG_exec_state.keyword_arguments['faninNB_sizes']
         # FYI:
         #result = DAG_exec_state.keyword_arguments['result']
@@ -437,17 +445,13 @@ class TCPHandler(socketserver.StreamRequestHandler):
         calling_task_name = DAG_exec_state.keyword_arguments['calling_task_name'] 
         DAG_states_of_faninNBs_fanouts = DAG_exec_state.keyword_arguments['DAG_states_of_faninNBs_fanouts'] 
 
-#rhc: run task
-        # If sync objects trigger their fanout/fanin tasks to run in the same lambda
-        # then we will process the fanouts.
-        # Todo: we may use the parallel invoer to do the fanouts when using Wukong stylr
-        # fanouts.
-        if sync_objects_in_lambdas_trigger_their_tasks:
-            fanouts = DAG_exec_state.keyword_arguments['fanouts']
-
         # Note: if using lambdas, then we are not using workers (for now) so worker_needs_input 
         # must be false, which is asertd below.
         worker_needs_input = DAG_exec_state.keyword_arguments['worker_needs_input']
+        # assert: when using workers we use tcp_server not tcp_sever_lambda
+        if using_workers or worker_needs_input:
+            logger.error("[Error]: tcp_server_lambda: synchronize_process_faninNBs_batch: Internal Error: "
+            + " when using workers we should not be storing objects in lambdas and running tcp_server_lambda.")
         
         # Commented out: since using lambdas there are no workers and thus no work to steal
         """
@@ -471,19 +475,13 @@ class TCPHandler(socketserver.StreamRequestHandler):
         logger.debug("tcp_server_lambda: synchronize_process_faninNBs_batch: calling_task_name: " + calling_task_name 
             + ": async_call: " + str(async_call))
 
-        # assert: when using workers we use tcp_server not tcp_sever_lambda
-        if using_workers or worker_needs_input:
-            logger.error("[Error]: tcp_server_lambda: synchronize_process_faninNBs_batch: Internal Error: "
-            + " when using workers we should not be storing objects in lambdas and running tcp_server_lambda.")
-        
         # Note: If we are using lambdas, then we are not using workers (for now) so worker_needs_input
         # must be false. Also, we are currently not piggybacking the fanouts so there should be no 
         # fanouts to process.
 
-        # True if the client needs work and we got some work for the client, which are the
-        # results of a faninNB.
-        # Commented out: Since usig Lambdas, there is no work stolen
-        # since no workers.
+        # got_work True if the client needs work and we got some work for the client, 
+        # which are the results of a faninNB.
+        # Commented out: Since usig Lambdas, there is no work stolen since no workers.
         """
         got_work = False
         list_of_work = []
@@ -499,30 +497,30 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # empty since we start the lambdas in process_fanouts. We may pass such a list
         # and use the parallel invoker to invoke the fanouts.
 
-        # Commented out:  When using Lambdas, currently len(list_of_fanout_values) is 
-        # always 0 so this is commented out. If we are using lambdas and we want to 
+        # Commented out: If we are using lambdas and we want to 
         # use the parallel invoker then we should probably call a 
         # different method to proess fanouts and process the faninNB since
-        # fanout processing will be different parallel) andd processing
+        # fanout processing will be different parallel) and processing
         # faninNBs will be different too since there is no work stealing as
-        # there are no workers.
-        # Note: Since using lambdas we do not deposit fanouts into a work
-        # queue so this code is completely diffrent f we do pass in a list
-        # of fanouts (for parallel invocation)
+        # there are no workers. That is, we do not deposit fanouts into a work
+        # queue.
 
 #rhc: run task
-# ToDo: Need to allow creat_if. Currently doing mappings of objects to functions.
+# ToDo: Need to allow create_if. Currently doing mappings of objects to functions.
 
         # process fanouts
         # The only reason to invoke a lambda for fanouts is if sync objects
         # are triggering their tasks, i.e., we only store fanouts in lambdas
         # when both the sync object and its task are executed in the same lambda.
-        # For now, we require that we are simulating the lambda functions and we
-        # are using the DAG_orchestrator.
+        # For now, we have only implemented trigged tasks with simulated lambda 
+        # functions that are called by the DAG_orchestrator.
+        
         # Note: in the DAG_executor_work_loop we made one of the fanouts a become 
         # task and removed that fanout from fanouts.
-        if using_Lambda_Function_Simulators_to_Store_Objects and (
-            using_DAG_orchestrator) and sync_objects_in_lambdas_trigger_their_tasks:
+
+        if not run_all_tasks_locally and not using_workers and (
+            not store_fanins_faninNBs_locally) and store_sync_objects_in_lambdas and (
+                sync_objects_in_lambdas_trigger_their_tasks):
 
             for name in fanouts:
                 start_state_fanin_task  = DAG_states_of_faninNBs_fanouts[name]
@@ -540,22 +538,24 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     "id": msg_id
                 }
 
-#rhc: run task: toDo: no work returned if we are running tasks in python functions, for now 
-# at least since we are not yet allowing dag_executor to do succeeding ops locally.
-
                 # if we are run_all_tasks_locally, the returned_state's return_value is the faninNB results 
                 # if our call to fan_in is the last call (i.e., we are the become task); otherwise, the 
                 # return value is 0 (if we are not the become task)
-                # if we are not run_all_tasks_locally, i.e., running real lambas, the return value is always 0
-                # and if we were the last caller of fan_in a real lamba was started to execute the fanin_task.
+                # if we are not run_all_tasks_locally, i.e., running real or simulated lambas, the return 
+                # value is always 0 and if we were the last caller of fan_in a real lamba was started to execute the fanin_task.
                 # (If we were not the last caller then no lamba was started and there is nothing to do.
                 # The calls to process_faninNB_batch when we are using real lambda can be asynchronous since
                 # the caller does not need to wait for the return value, which will be 0 indicating there is 
                 # nothing to do.)
 
-                #Note: sync_objects_in_lambdas_trigger_their_tasks is true via if condition
-                if using_Lambda_Function_Simulators_to_Store_Objects and (
-                    using_DAG_orchestrator):
+                #Note: sync_objects_in_lambdas_trigger_their_tasks is true via if condition above
+                # toDo: We have not implemented the case where we are using real lambdas to store
+                # sync objects and the DAG_orchestrator invokes them. Thus, the else-part is 
+                # commented out.
+                # Note: We never invoke a fanout to get its "return value". When fanouts are in lambdas 
+                # we are simply passng the results for the fanned out task to the fanout object and it is
+                # triggering its fanout task.
+                if using_DAG_orchestrator:
                     logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": calling infiniD.enqueue(message)."
                         + " for fanout task: " + str(name))
                     # calls: returned_state = tcp_server.infiniD.enqueue(json_message)
@@ -564,9 +564,6 @@ class TCPHandler(socketserver.StreamRequestHandler):
                         + " for fanout task: " + str(name) + ", returned_state_ignored: " + str(returned_state_ignored))
                 
                 """
-                # We never invoke a fanout to get its "return value". When fanouts are in lambdas we 
-                # are simply passng the results for the fanned out task to the fanout object and it is
-                # triggering its fanout task.
                 else:
                     logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": calling invoke_lambda_synchronously."
                         +  " for fanout task: " + str(name))
@@ -608,8 +605,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             }
 
 #rhc: run task: toDo: no work returned if we are running tasks in python functions, for now 
-# at least since we are not yet allowing dag_executor to do succeeding ops locally.
-
+# at least since we are not yet allowing dag_executor to do succeeding ops locally.; 
             # if we are run_all_tasks_locally, the returned_state's return_value is the faninNB results 
             # if our call to fan_in is the last call (i.e., we are the become task); otherwise, the 
             # return value is 0 (if we are not the become task)
@@ -625,47 +621,59 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 # calls: returned_state = tcp_server.infiniD.enqueue(json_message)
                 returned_state = self.enqueue_and_invoke_lambda_synchronously(message)
                 logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": called infiniD.enqueue(message) "
-                    + "returned_state_ignored: " + str(returned_state))
+                    + "returned_state: " + str(returned_state))
             else:
                 logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": calling invoke_lambda_synchronously."
                     + " start_state_fanin_task: " + str(start_state_fanin_task))
                 #return_value = synchronizer.synchronize(base_name, DAG_exec_state, **DAG_exec_state.keyword_arguments)
                 returned_state = self.invoke_lambda_synchronously(message)
                 logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": called invoke_lambda_synchronously "
-                    + "returned_state_ignored: " + str(returned_state))
+                    + "returned_state: " + str(returned_state))
 
-#rhc: run task: toDo: no work returned if we are running tasks in python functions
-            if (run_all_tasks_locally):  # and not run tasks in python functions
-                # simulating lambdas with threads. The faninNBs will not start new lambdas to execut the fanin_tasks,
-                # Instead, return the results of the fanin_ins and start new threads to run the fanin tasks (if the 
-                # fanin results are non-0; if the result is 0 then we were not the become task and 
-                # there is nothing to do.)
-                # Note: if we are not the bcome task for any faninNB, then all returned_state.return_value
-                # will be 0, and we will return a list of work_tuples where for each work_tuple there
-                # will be nothing to do. We can check for a non-zero here. If we find no non-zeros
-                # we can send back a 0 instead of the list_of_work_tuples
+            if (run_all_tasks_locally):
+                # using threads to simulate lambdas for executing tasks and storing sync
+                # objects in lambdas; this means we will be running tcp_serverlambdas.
+                # The faninNBs will not start new lambdas to execut the fanin_tasks,
+                # Instead, return the results of the fanin_ins and start new threads to run
+                # the fanin tasks (if the fanin results are non-0; if the result is 0 then 
+                # we were not the become task and there is nothing to do.)
+                # Note: if we are not the become task for a faninNB, then returned_state.return_value
+                # will be 0. If we are not the become tasks for any of the faninNBs, we will return a 
+                # list of work_tuples where for each work_tuple there will be nothing to do. 
+                # We can check for a non-zero below - if we find no non-zeros we can send back a 0 
+                # instead of the list_of_work_tuples
                 # 
                 # Note: the foo method in synchronizer_lambda pickles the returned_state. this
-                # is what we want if the returned_state is TCP sent back to the client, which is
-                # the case if the client calls a synchronous_sync operation such as a fan_in
-                # on a FanIn object (not FanInNB). Here, we are doing a list of FaninNBs and we do 
+                # is what we want if the returned_state will be TCP-sent back to the client, which is
+                # the case if the client calls a single synchronous_sync operation such as a fan_in
+                # on a FanIn object (not FanInNB). Here, we are processing a list of FaninNBs and we do 
                 # not send each fan_in result back to the client; instead, we make a list of the
-                # results, assign this list as the return_alue of a DAG_excutor_State, and pickle
+                # results, assign this list as the return_value of a DAG_excutor_State, and pickle
                 # the DAG_excutor_state, which is sent back to the client. So we unpickle each 
-                # FaninNB result state, and add it to the list unpickled.
-                # Again, this configuration, using threads to simulate lambdas is used just a
-                # special case that is used to test the Lambda logic, it is not important that 
+                # FaninNB result state, and add it to the list_of_work_tuples unpickled.
+                # Again, this configuration, using threads to simulate lambdas is a special 
+                # configuration that is used to test the Lambda logic, it is not important that 
                 # the performance is good.
                 unpickled_state = cloudpickle.loads(returned_state)
                 if not unpickled_state.return_value == 0:
                     got_work = True
                     non_zero_work_tuples += 1
+                # else the return value is a list of the fan_in results to be input to the fanin task
                 work_tuple = (start_state_fanin_task,unpickled_state)
+                # the work tuple is not actually work if the unpickled_state.return_value
+                # is 0. When the client gets the returned list_of_work_tuples the client will 
+                # iterate throgh the work tuples and check for this case, skipping the 
+                # tuple if there is no work.
+                """
+                    if work_tuple_state.return_value == 0:
+                        # we were not the become task of faninNB so there is nothing to do
+                        continue
+                """
                 list_of_work_tuples.append(work_tuple)
                 logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: work_tuple appended to list: " + str(calling_task_name) + ". returned_state: " + str(returned_state))
             else:
-                # not run_all_tasks_locally so faninNBs will start new real lambdas to execute fanin tasks and the 
-                # return value is 0
+                # not run_all_tasks_locally so faninNBs will start new lambdas to execute fanin tasks 
+                # and thus there is no work to return
                 pass
 
             """
@@ -805,21 +813,22 @@ class TCPHandler(socketserver.StreamRequestHandler):
 # store synch objects do/do not, using real lambdas do not, 
         # No return value is sent back to client for async call
 
-        #if got_work and run_all_tasks_locally:
         if run_all_tasks_locally:
             logger.debug("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: sending back "
                 + " list of work_tuples, len is: " + str(len(list_of_work_tuples))
                 + " got_work: " + str(got_work)
                 + " non_zero_work_tuples: " + str(non_zero_work_tuples))
+            # Noet: this wll be treated by client caller as a non-0 return value
             DAG_exec_state.return_value = list_of_work_tuples
             DAG_exec_state.blocking = False
         else:
-            # we are using real lambdas to execute tasks. In this case, the faninNB fanins will
-            # incoke lambdas to excute the fanin tasks so there is no work to return. This
-            # is why we set DAG_exec_state.return_value = 0 which indicates no work.
-            # Note that real lambdas that call process_faninNBs_batch will set 
-            # async_call to True, so this DAG_exec_state is not actually returned. We se it 
-            # here n case we change our mind about async_calls.
+            # we are using lambdas to execute tasks. In this case, the faninNB fanins will
+            # invoke/trigger lambdas to execute the fanin tasks so there is no work to return. 
+            # This is why we set DAG_exec_state.return_value = 0 which indicates no work.
+            # Note that lambdas that call process_faninNBs_batch will set 
+            # async_call to True, and will not wait for this return value. So this 
+            # DAG_exec_state is not actually received by the client. We set it 
+            # here in case we change our mind about async_calls.
             logger.debug("tcp_server_lambda: synchronize_process_faninNBs_batch: not run_all_tasks_locally "
                 + " so no work to return.")
             DAG_exec_state.return_value = 0
@@ -829,14 +838,15 @@ class TCPHandler(socketserver.StreamRequestHandler):
             # the caller is a thread simulating a real lambda
             #self.send_serialized_object(cloudpickle.dumps(returned_state_ignored))
             self.send_serialized_object(cloudpickle.dumps(DAG_exec_state)) 
-        # else: no return value for async calls. The caller was a real lambda
-        # The api caller will check async_call and create a return value for the client, which is real lambda:
+        # else: no return value for async calls. The caller was a lambda
+        # The api caller will see async_call is False and create a return value for the client, 
+        # which is a lambda:
         #   state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
         #   state.return_value = 0
         #   state.blocking = False   
-        # When using real lambdas to execute tasks, the faninNB will star a real lambda to 
-        # execute the fanin task so no work is returned here. When using threada to simulate 
-        # lambdas, the faninNBs cannot start threads on the server so a list of work tupls is returned
+        # When using lambdas to execute tasks, the faninNB will start/trigger a lambda to 
+        # execute the fanin task so no work is returned here. When using threads to simulate 
+        # lambdas, the faninNBs cannot start threads on the server so a list of work tuples is returned
         # to the thread caller and this thread starts a new thread for each work tuple (to
         # simulate starting a real lambda.)
 

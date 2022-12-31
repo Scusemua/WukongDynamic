@@ -257,9 +257,8 @@ class DAG_executor_FanInNB_Select(Selector):
                 # Either this object starts a new lambda to execute the fanin task or we trigger 
                 # the task by simply callng it. (Note: When we are using lambdas, the sync 
                 # objcects cannot be stored locally.)
-#ToDo: uncomment actual condition
-                #if store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks:
-                if True:
+#rhc: run task
+                if store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks:
                     try:
                         logger.debug("DAG_executor_FanInNB_Select: triggering DAG_Executor_Lambda() for task " + fanin_task_name)
                         lambda_DAG_exec_state = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()), state = start_state_fanin_task)
