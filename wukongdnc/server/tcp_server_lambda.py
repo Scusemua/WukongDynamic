@@ -16,7 +16,9 @@ from ..dag.DAG_executor_constants import using_workers, sync_objects_in_lambdas_
 from ..dag.DAG_executor_constants import store_sync_objects_in_lambdas, store_fanins_faninNBs_locally
 from ..dag.DAG_Executor_lambda_function_simulator import InfiniD # , Lambda_Function_Simulator
 from ..dag.DAG_info import DAG_Info
+from ..dag.DAG_executor_State import DAG_executor_State
 from threading import Lock
+import copy
 
 # Set up logging.
 import logging 
@@ -55,13 +57,13 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 # destruct all synch objects
                 "close_all": self.close_all,
                 # These are DAG execution operations
-#ToDo: Change name - drop possible wq but then different names on tcp_server and tcp_server_lambda
-# so use more genera name on both - "create_all_sync_objects"
-                "create_all_fanins_and_faninNBs_and_possibly_work_queue": self.create_all_fanins_and_faninNBs_and_possibly_work_queue,
+                "create_all_sync_objects": self.create_all_sync_objects,
                 # process all faninNBs fora a given state (state = task plus fanins/fanouts that follow it)
                 "synchronize_process_faninNBs_batch": self.synchronize_process_faninNBs_batch,
                 # creat a work queue - not used for lambdas since lambdas currently do not use a work queue
-                "create_work_queue": self.create_work_queue
+                "create_work_queue": self.create_work_queue,
+                # invoke the leaf tasl fanouts in lambdas which will trigger their leaf tasks
+                "process_leaf_tasks_batch": self.process_leaf_tasks_batch
             }
 
             try:
@@ -287,7 +289,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
     # this create_all here and one-by-on we invoke the lambdas with 
     # a "create" message so the synch object os created in the invoked 
     # lambda.
-    def create_all_fanins_and_faninNBs_and_possibly_work_queue(self, message = None):
+    def create_all_sync_objects(self, message = None):
     #def create_all_fanins_and_faninNBs_and_fanouts(self, message = None):
         """
         Called by a remote Lambda to create fanins, faninNBs, and pssibly work queue.
@@ -307,7 +309,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 "id": msg_id
             }
         """  
-        logger.debug("[MESSAGEHANDLER] server.create_all_fanins_and_faninNBs_and_possibly_work_queue() called.")
+        logger.debug("[MESSAGEHANDLER] server.create_all_sync_objects() called.")
         messages = message['name']
         fanin_messages = messages[0]
         faninNB_messages = messages[1]
@@ -318,36 +320,36 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
         for msg in fanin_messages:
             #self.create_one_of_all_objs(msg)
-            logger.debug("tcp_server_lambda: create_all_fanins_and_faninNBs_and_possibly_work_queue() called.")
+            logger.debug("tcp_server_lambda: create_all_sync_objects: invoke lambda.")
 
             return_value_ignored = self.invoke_lambda_synchronously(msg)
 
-            logger.debug("tcp_server_lambda: called Lambda at create_all_fanins_and_faninNBs_and_possibly_work_queue.")
+            logger.debug("tcp_server_lambda: create_all_sync_objects: invoked lambda.")
 
         if len(fanin_messages) > 0:
-            logger.info("created fanins")
+            logger.info("tcp_server_lambda: create_all_sync_objects: invoke lambda.")
 
         for msg in faninNB_messages:
             #self.create_one_of_all_objs(msg)
-            logger.debug("tcp_server_lambda: create_all_fanins_and_faninNBs_and_possibly_work_queue() called.")
+            logger.debug("tcp_server_lambda: call create_all_sync_objects() called.")
 
             return_value_ignored = self.invoke_lambda_synchronously(msg)
 
-            logger.debug("tcp_server_lambda: called Lambda at create_all_fanins_and_faninNBs_and_possibly_work_queue.")
+            logger.debug("tcp_server_lambda: create_all_sync_objects: invoked lambda.")
 
         if len(faninNB_messages) > 0:
-            logger.info("created faninNBs")
+            logger.info("tcp_server_lambda: create_all_sync_objects: created faninNBs")
 
         for msg in fanout_messages:
             #self.create_one_of_all_objs(msg)
-            logger.debug("tcp_server_lambda: calling create_all_fanins_and_faninNBs_and_fanouts().")
+            logger.debug("ttcp_server_lambda: create_all_sync_objects: invoke lambda..")
 
             return_value_ignored = self.invoke_lambda_synchronously(msg)
 
-            logger.debug("tcp_server_lambda: called Lambda at create_all_fanins_and_faninNBs_and_fanouts.")
+            logger.debug("tcp_server_lambda: create_all_sync_objects: invoked lambda..")
 
         if len(fanout_messages) > 0:
-            logger.info("created fanouts")
+            logger.info("tcp_server_lambda: create_all_sync_objects:  created fanouts")
 
         # we always create the fanin and faninNBs. We possibly create the work queue. If we send
         # a message for create work queue, in addition to the lst of messages for create
@@ -368,10 +370,10 @@ class TCPHandler(socketserver.StreamRequestHandler):
         #############################
         # Write ACK back to client. #
         #############################
-        logger.info("Sending ACK to client %s for create_all_fanins_and_faninNBs_and_possibly_work_queue operation." % self.client_address[0])
+        logger.info("tcp_server_lambda: create_all_sync_objects: Sending ACK to client %s for create_all_fanins_and_faninNBs_and_possibly_work_queue operation." % self.client_address[0])
         resp_encoded = json.dumps(resp).encode('utf-8')
         self.send_serialized_object(resp_encoded)
-        logger.info("Sent ACK of size %d bytes to client %s for create_all_fanins_and_faninNBs_and_possibly_work_queue operation." % (len(resp_encoded), self.client_address[0]))
+        logger.info("tcp_server_lambda: create_all_sync_objects: Sent ACK of size %d bytes to client %s for create_all_fanins_and_faninNBs_and_possibly_work_queue operation." % (len(resp_encoded), self.client_address[0]))
 
         # return value not assigned
         return 0
@@ -850,6 +852,101 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # to the thread caller and this thread starts a new thread for each work tuple (to
         # simulate starting a real lambda.)
 
+    def process_leaf_tasks_batch(self):
+        DAG_info = DAG_Info()
+        DAG_map = DAG_info.get_DAG_map()
+        DAG_states = DAG_info.get_DAG_states()
+        DAG_leaf_tasks = DAG_info.get_DAG_leaf_tasks()
+        DAG_leaf_task_start_states = DAG_info.get_DAG_leaf_task_start_states()
+        DAG_leaf_task_inputs = DAG_info.get_DAG_leaf_task_inputs()
+
+        # Note: if we are using_lambdas, we null out DAG_leaf_task_inputs after we get it here
+        # (by calling DAG_info.set_DAG_leaf_task_inputs_to_None() below). So make a copy.
+        if run_all_tasks_locally:
+            DAG_leaf_task_inputs = DAG_info.get_DAG_leaf_task_inputs()
+        else:
+            DAG_leaf_task_inputs = copy.copy(DAG_info.get_DAG_leaf_task_inputs())
+
+            # For lambdas, null out the task inputs in DAG_info since we pass DAG_info in the
+            # payload to all the lambda executors and the leaf task inputs may be large.
+            # Note: When we are using thread or process workers then the workers read 
+            # DAG_info from a file at the start of their execution. We are not nullng
+            # out the leaf task inputs for workers (non-lambda) since we do not pass them
+            # on invokes.
+
+            # Null out DAG_leaf_task_inputs.
+            DAG_info.set_DAG_leaf_task_inputs_to_None()
+            # Null out task inputs in state infomation of leaf tasks
+            for start_state in DAG_leaf_task_start_states:
+                # Each leaf task's state has the leaf tasks's input. Null it out.
+                state_info = DAG_map[start_state]
+                state_info.task_inputs = None
+
+        for start_state, task_name, inp in zip(DAG_leaf_task_start_states, DAG_leaf_tasks, DAG_leaf_task_inputs):
+            try:
+                logger.debug("tcp_server_lambda: process_leaf_tasks_batch: Starting leaf task " + task_name)
+                lambda_DAG_exec_state = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()), state = start_state)
+                logger.debug ("tcp_server_lambda: process_leaf_tasks_batch:  lambda payload is DAG_info + " + str(start_state) + "," + str(inp))
+                lambda_DAG_exec_state.restart = False      # starting new DAG_executor in state start_state_fanin_task
+                lambda_DAG_exec_state.return_value = None
+                lambda_DAG_exec_state.blocking = False  
+
+                start_state_fanin_task  = DAG_states[task_name]
+                # These are per leaf task
+                lambda_DAG_exec_state.keyword_arguments['fanin_task_name'] = task_name
+                lambda_DAG_exec_state.keyword_arguments['start_state_fanin_task'] = start_state_fanin_task
+                lambda_DAG_exec_state.keyword_arguments['result'] = inp  
+
+                msg_id = str(uuid.uuid4())
+                message = {
+                    "op": "synchronize_sync", 
+                    "name": task_name,
+                    # A fanout object is actually just a fanin object of size 1 so do "fan_in"
+                    "method_name": "fan_in",
+                    "state": make_json_serializable(lambda_DAG_exec_state),
+                    "id": msg_id
+                }
+        
+                logger.info("tcp_server_lambda: process_leaf_tasks_batch:  Starting Lambda function %s." % lambda_DAG_exec_state.function_name)
+
+                # We use "inp" for leaf task input otherwise all leaf task lambda Executors will 
+                # receive all leaf task inputs in the leaf_task_inputs of ADG_info and in the 
+                # state_info.task_inputs - both are nulled out above.
+                # If we use "inp" then we will pass only a given leaf task's input to that leaf task. 
+                # For non-lambda, each thread/process reads the DAG_info from a file. This DAG-info has
+                # all the leaf task inputs in it so every thread/process reads all these inputs. This 
+                # can be optimized if necessary, e.g., separate files for leaf tasks and non-leaf tasks.
+
+#rhc: ToDo: Note: this is the lambda paylad for a leaf task. 
+                #payload = {
+                #    "input": inp,
+                #    "DAG_executor_state": lambda_DAG_exec_state,
+                #    "DAG_info": DAG_info
+                #}
+
+                if using_DAG_orchestrator:
+                    logger.info("*********************tcp_server_lambda: process_leaf_tasks_batch: calling infiniD.enqueue(message)."
+                        + " for fanout task: " + str(task_name))
+                    # calls: returned_state = tcp_server.infiniD.enqueue(json_message)
+                    returned_state_ignored = self.enqueue_and_invoke_lambda_synchronously(message)
+                    logger.info("*********************tcp_server_lambda: process_leaf_tasks_batch: called infiniD.enqueue(message) "
+                        + " for fanout task: " + str(task_name) + ", returned_state_ignored: " + str(returned_state_ignored))
+                
+                """
+                else:
+                    logger.info("*********************tcp_server_lambda: process_leaf_tasks_batch: " + calling_task_name + ": calling invoke_lambda_synchronously."
+                        +  " for fanout task: " + str(task_name))
+                    #return_value = synchronizer.synchronize(base_name, DAG_exec_state, **DAG_exec_state.keyword_arguments)
+                    returned_state_ignored = self.invoke_lambda_synchronously(message)
+                    logger.info("*********************tcp_server_lambda: process_leaf_tasks_batch: " + calling_task_name + ": called invoke_lambda_synchronously "
+                        + " for fanout task: " + str(task_name) + ", returned_state_ignored: "  + str(returned_state_ignored))
+                """
+
+            except Exception as ex:
+                logger.error("[ERROR] tcp_server_lambda: process_leaf_tasks_batch: Failed to start DAG_executor Lambda.")
+                logger.error(ex)
+
+
     # Not used and not tested. Currently create work queue in 
     # create_all_fanins_and_faninNBs_and_possibly_work_queue. 
     # When we use lambdas, we are not currently using a work queue. 
@@ -1118,7 +1215,7 @@ class TCPServer(object):
 
         if using_Lambda_Function_Simulators_to_Store_Objects:
             """
-            DAG_info = DAG_Info()
+            self.DAG_info = DAG_Info()
             # using regular functions instead of real lambda functions for storing synch objects 
             #self.lambda_function = Lambda_Function_Simulator()
             self.list_of_Lambda_Function_Simulators = []
@@ -1131,6 +1228,7 @@ class TCPServer(object):
             """
             # input DAG representation/information
             DAG_info = DAG_Info()
+            
             # using regular functions instead of real lambda functions for storing synch objects 
 	        # self.lambda_function = Lambda_Function_Simulator()
             self.infiniD = InfiniD(DAG_info)

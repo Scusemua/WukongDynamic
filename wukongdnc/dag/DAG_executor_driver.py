@@ -5,7 +5,12 @@
 # Where are we: 
 #
 # Lots of docs in the function simulator file:
-#   DO THIS FITST - if it works then just get payload to lambda function right.
+#
+#   Make sure if pass DAG_nfo that you null out leaf stuff like driver
+#   Need to add leaf tasks to "fanouts" so leaf tasks have a fanout object too?
+#   payload for lambdas when triggering (ns when just storing objects)
+#
+#   DO THIS FIRST - if it works then just get payload to lambda function right.
 # - ==> try just having the pre-created and mapped fanout/faninNB ops trigger the tasks
 #   in the faninNBs. Need to have the sync_objects_in_lambdas_trigger_their_tasks = True
 #   so all that code is enabled. 
@@ -26,7 +31,8 @@
 #     server_lambda? with inputs, which must be handled as leaf inputs by work_loop.
 #     Are leaf tasks special cases for fanout triggers? Is payload of non-leaf fanout
 #     same as payload of leaf incocation? (Must be same as far as DAG_executor_lambda
-#     is concerned?) where for leaf nodes hen using real lambdas:
+#     is concerned?) where for leaf nodes then using real lambdas:
+#
 #       for start_state, task_name, inp in zip(DAG_leaf_task_start_states, DAG_leaf_tasks, DAG_leaf_task_inputs):
 #
 #           payload = {
@@ -154,7 +160,7 @@ from .DAG_executor_work_queue_for_threads import work_queue
 from .DAG_executor_synchronizer import server
 from wukongdnc.wukong.invoker import invoke_lambda_DAG_executor
 import uuid
-from wukongdnc.server.api import create_all_sync_objects
+from wukongdnc.server.api import create_all_sync_objects, synchronize_trigger_leaf_tasks
 from .multiprocessing_logging import listener_configurer, listener_process, worker_configurer
 from .DAG_executor_countermp import CounterMP
 from .DAG_boundedbuffer_work_queue import BoundedBuffer_Work_Queue
@@ -697,14 +703,14 @@ def run():
     DAG_leaf_task_start_states = DAG_info.get_DAG_leaf_task_start_states()
     DAG_tasks = DAG_info.get_DAG_tasks()
 
-#ToDo: lambdas:
+
     # Note: if we are using_lambdas, we null out DAG_leaf_task_inputs after we get it here
     # (by calling DAG_info.set_DAG_leaf_task_inputs_to_None() below). So make a copy.
     if run_all_tasks_locally:
         DAG_leaf_task_inputs = DAG_info.get_DAG_leaf_task_inputs()
     else:
         DAG_leaf_task_inputs = copy.copy(DAG_info.get_DAG_leaf_task_inputs())
-#ToDo: lambdas:
+
         # For lambdas, null out the task inputs in DAG_info since we pass DAG_info in the
         # payload to all the lambda executors and the leaf task inputs may be large.
         # Note: When we are using thread or process workers then the workers read 
@@ -882,8 +888,10 @@ def run():
 
                     if not run_all_tasks_locally and store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks and using_DAG_orchestrator:
                         # storing sync objects in lambdas and snc objects trigger their tasks
+            #rhc: ToDO: need a fanout for the leaf tasks too
                         create_fanins_and_faninNBs_and_fanouts(websocket,DAG_map,DAG_states,DAG_info,
-                        all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes,all_fanout_task_names)
+                            all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes,all_fanout_task_names)
+                        process_leaf_tasks_batch(websocket)
                     else:
                         # storing sync objects remotely; they do not trigger their tasks to run
                         # in the same lamba that strores the sync object. So, e.g., fanouts are
@@ -931,7 +939,7 @@ def run():
                             work_tuple = (state,dict_of_results)
                             work_queue.put(work_tuple)
                             #work_queue.put(state) 
-#ToDo: Lambdas
+
                 # This is true: not (run_all_tasks_locally and using_workers), i.e.,
                 # one of the two conditions is false.
                 # Note: This configuration is never used: (not run_all_tasks_locally) and using_workers
@@ -1084,34 +1092,40 @@ def run():
                 if using_workers and num_threads_created == num_workers:
                     break
             else:
-                # Config: A1
-                try:
-                    logger.debug("DAG_executor_driver: Starting DAG_Executor_Lambda for leaf task " + task_name)
-                    lambda_DAG_exec_state = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()), state = start_state)
-                    logger.debug ("DAG_executor_driver: lambda payload is DAG_info + " + str(start_state) + "," + str(inp))
-                    lambda_DAG_exec_state.restart = False      # starting new DAG_executor in state start_state_fanin_task
-                    lambda_DAG_exec_state.return_value = None
-                    lambda_DAG_exec_state.blocking = False            
-                    logger.info("DAG_executor_driver: Starting Lambda function %s." % lambda_DAG_exec_state.function_name)
-#ToDo: lambdas: 
-                    # We use "inp" for leaf task input otherwise all leaf task lambda Executors will 
-                    # receive all leaf task inputs in the leaf_task_inputs and in the state_info.task_inputs
-                    # - both are nulled out at beginning of driver. when we are using lambdas.
-                    # If we use "inp" then we will pass only a given leaf task's input to that leaf task. 
-                    # For non-lambda, each thread/process reads the DAG_info from a file. This DAG-info has
-                    # all the leaf task inputs in it so every thread/process reads all these inputs. This 
-                    # can be optimized if necessary, e.g., separate files for leaf tasks and non-leaf tasks.
+                if not sync_objects_in_lambdas_trigger_their_tasks:
+                    # Config: A1
+                    try:
+                        logger.debug("DAG_executor_driver: Starting DAG_Executor_Lambda for leaf task " + task_name)
+                        lambda_DAG_exec_state = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()), state = start_state)
+                        logger.debug ("DAG_executor_driver: lambda payload is DAG_info + " + str(start_state) + "," + str(inp))
+                        lambda_DAG_exec_state.restart = False      # starting new DAG_executor in state start_state_fanin_task
+                        lambda_DAG_exec_state.return_value = None
+                        lambda_DAG_exec_state.blocking = False            
+                        logger.info("DAG_executor_driver: Starting Lambda function %s." % lambda_DAG_exec_state.function_name)
 
-                    payload = {
-                        "input": inp,
-                        "DAG_executor_state": lambda_DAG_exec_state,
-                        "DAG_info": DAG_info
-                    }
+                        # We use "inp" for leaf task input otherwise all leaf task lambda Executors will 
+                        # receive all leaf task inputs in the DAG_info.leaf_task_inputs and in the state_info.task_inputs
+                        # - both of which are nulled out at beginning of driver when we are using lambdas.
+                        # If we use "inp" then we will pass only a given leaf task's input to that leaf task. 
+                        # For non-lambda, each thread/process reads the DAG_info from a file. This DAG-info has
+                        # all the leaf task inputs in it so every thread/process reads all these inputs. This 
+                        # can be optimized if necessary, e.g., separate files for leaf tasks and non-leaf tasks.
 
-                    invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_Executor_Lambda")
-                except Exception as ex:
-                    logger.error("[ERROR] DAG_executor_driver: Failed to start DAG_executor Lambda.")
-                    logger.error(ex)
+                        payload = {
+                            "input": inp,
+                            "DAG_executor_state": lambda_DAG_exec_state,
+                            "DAG_info": DAG_info
+                        }
+
+                        invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_Executor_Lambda")
+                    except Exception as ex:
+                        logger.error("[ERROR] DAG_executor_driver: Failed to start DAG_executor Lambda.")
+                        logger.error(ex)
+                else:
+                    # sync_objects_in_lambdas_trigger_their_tasks == True so
+                    # above we called tcp_server_lambda.process_leaf_tasks_batch
+                    # to trigger the leaf tasks.
+                    pass
 
         # if the number of leaf tasks is less than number_workers, we need to create more workers
         if run_all_tasks_locally and using_workers and num_threads_created < num_workers:
@@ -1465,7 +1479,7 @@ def create_fanins_and_faninNBs(websocket,DAG_map,DAG_states,DAG_info,all_fanin_t
     #logger.error("create_fanins_and_faninNBs: all_faninNB_task_names: " + str(all_faninNB_task_names))
     
 
-    # Don't send a message to th server if there are no fanin or fanonNBs to create
+    # Don't send a message to the server if there are no fanin or faninNBs to create
     # Not tested DAG with no fanins or faninNBs yet.
     if len(fanin_messages) > 0 or len(faninNB_messages) > 0:
         messages = (fanin_messages,faninNB_messages)
@@ -1492,6 +1506,11 @@ def create_fanins_and_faninNBs(websocket,DAG_map,DAG_states,DAG_info,all_fanin_t
     # Receive data. This should just be an ACK, as the TCP server will 'ACK' our create_all_fanins_and_faninNBs() call.
     ack = recv_object(websocket)
     """
+
+def process_leaf_tasks_batch(websocket):
+    dummy_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4())) 
+    synchronize_trigger_leaf_tasks(websocket, "process_leaf_tasks_batch", "tprocess_leaf_tasks_batch_Type", 
+        "leaf_tasks", dummy_state)
 
 if __name__ == "__main__":
     run()

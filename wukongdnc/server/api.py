@@ -451,6 +451,58 @@ def synchronize_process_faninNBs_batch(websocket, op, type, name, DAG_exec_state
 
     return state
 
+# called by the DAG_exector_driver to trigger the execution of the leaf tasks (fanouts)
+# on the tcp_server_lambda. The op is "trigger_leaf_tasks" which is the method
+# that runs on tcp_server_lambda,
+def synchronize_trigger_leaf_tasks(websocket, op, type, name, state):
+    """
+    Create a remote object on the TCP server.
+
+    Arguments:
+    ----------
+        websocket (socket.socket):
+            Socket connection to the TCP server.
+            TODO: We pass this in, but in the function body, we connect to the server.
+                    In that case, we don't need to pass a websocket. We'll just create one.
+                    We should only bother with passing it as an argument if its already connected.
+        
+        op (str):
+            The operation being performed, which is "create"
+        
+        type (str):
+            The type of the object to be created.
+
+        name (str):
+            The name (which serves as an identifier) of the synchronization object to be created
+        
+        state (state.State):
+            Our current state.
+    """
+    # with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
+    #    logger.debug("Connecting to " + str(TCP_SERVER_IP))
+    #    websocket.connect(TCP_SERVER_IP)
+    #    logger.debug("Successfully connected!")
+
+    # msg_id for debugging
+    msg_id = str(uuid.uuid4())
+    logger.debug("synchronize_trigger_leaf_tasks: Sending 'trigger_leaf_tasks' message to server. Op='%s', type='%s', name='%s', id='%s', state=%s" % (op, type, name, msg_id, state))
+
+    # we set state.keyword_arguments before call to create()
+    message = {
+        "op": op,
+        "type": type,
+        "name": name,
+        "state": make_json_serializable(state),
+        "id": msg_id
+    }
+
+    msg = json.dumps(message).encode('utf-8')
+    send_object(msg, websocket)
+    logger.debug("synchronize_trigger_leaf_tasks: Sent 'create' message to server")
+
+    # Receive data. This should just be an ACK, as the TCP server will 'ACK' our create() calls.
+    ack_ignored = recv_object(websocket)
+
 def close_all(websocket):
     """
     Call CLOSE_ALL on the TCP server.
