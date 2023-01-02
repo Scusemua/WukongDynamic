@@ -6,7 +6,9 @@
 #
 # Lots of docs in the function simulator file:
 #
-#   Make sure if pass DAG_nfo that you null out leaf stuff like driver
+#  faninNB and faninNB_select are out of sync
+$
+#   Make sure if pass DAG_nfo that tcp_server_lambda nulls out leaf stuff like driver
 #   Need to add leaf tasks to "fanouts" so leaf tasks have a fanout object too?
 #   payload for lambdas when triggering (ns when just storing objects)
 #
@@ -888,9 +890,10 @@ def run():
 
                     if not run_all_tasks_locally and store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks and using_DAG_orchestrator:
                         # storing sync objects in lambdas and snc objects trigger their tasks
-            #rhc: ToDO: need a fanout for the leaf tasks too
                         create_fanins_and_faninNBs_and_fanouts(websocket,DAG_map,DAG_states,DAG_info,
-                            all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes,all_fanout_task_names)
+                            all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes,
+                            all_fanout_task_names,DAG_leaf_tasks,DAG_leaf_task_start_states)
+                        # cal server to trigger the leaf tasks 
                         process_leaf_tasks_batch(websocket)
                     else:
                         # storing sync objects remotely; they do not trigger their tasks to run
@@ -1291,7 +1294,8 @@ def create_fanin_and_faninNB_messages(DAG_map,DAG_states,DAG_info,all_fanin_task
 # create fanin and faninNB messages to be passed to the tcp_server for creating
 # all fanin and faninNB synch objects
 def create_fanin_and_faninNB_and_fanout_messages(DAG_map,DAG_states,DAG_info,all_fanin_task_names,
-    all_fanin_sizes,all_faninNB_task_names, all_faninNB_sizes,all_fanout_task_names):
+    all_fanin_sizes,all_faninNB_task_names, all_faninNB_sizes,
+    all_fanout_task_names,DAG_leaf_tasks,DAG_leaf_task_start_states):
  
     """
     logger.debug("create_fanin_and_faninNB_messages: size of all_fanin_task_names: " + str(len(all_fanin_task_names))
@@ -1353,9 +1357,11 @@ def create_fanin_and_faninNB_and_fanout_messages(DAG_map,DAG_states,DAG_info,all
 
     fanout_messages = []
 
-    # create a list of "create" messages, one for each fanin
+    # create a list of "create" messages, one for each fanout
     # Note: There is no all_fanout_sizes since size is always
-    for fanout_name in zip(all_fanout_task_names):
+    # Note: Also create a message for the fanin task, which is 
+    # treated as a fanout.
+    for leaf_task_name, leaf_task_start_state in zip(DAG_leaf_tasks,DAG_leaf_task_start_states):
         #logger.debug("iterate fanin: fanin_name: " + fanin_name + " size: " + str(size))
         # rhc: DES
         dummy_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
@@ -1368,7 +1374,35 @@ def create_fanin_and_faninNB_and_fanout_messages(DAG_map,DAG_states,DAG_info,all
         # execute the fanin task. If we are process pooling, then the last process to 
         # call fanin will put the start state of the fanin task in the work_queue. (FaninNb
         # cannot do this since the faninNB will be on the tcp_server.)
-        dummy_state.keyword_arguments['start_state_fanin_task'] = DAG_states[fanin_nameNB]
+        dummy_state.keyword_arguments['start_state_fanin_task'] = leaf_task_start_state
+        dummy_state.keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
+        dummy_state.keyword_arguments['DAG_info'] = DAG_info
+        msg_id = str(uuid.uuid4())	# for debugging
+
+        message = {
+            "op": "create",
+            # fanouts are just FanIns of size 1
+            "type": FanIn_Type,
+            "name": leaf_task_name,
+            "state": make_json_serializable(dummy_state),	
+            "id": msg_id
+        }
+        fanout_messages.append(message)
+
+    for fanout_name in all_fanout_task_names:
+        #logger.debug("iterate fanin: fanin_name: " + fanin_name + " size: " + str(size))
+        # rhc: DES
+        dummy_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
+        # we will create the fanin object and call fanin.init(**keyword_arguments)
+        # Note: a fanout is a fann of size 1
+        dummy_state.keyword_arguments['n'] = 1
+        # when the faninNB completes, if we are runnning locally and we are not pooling,
+        # we start a new thread to execute the fanin task. If we are thread pooling, we put the 
+        # start state in the work_queue. If we are using lambdas, we invoke a lambda to
+        # execute the fanin task. If we are process pooling, then the last process to 
+        # call fanin will put the start state of the fanin task in the work_queue. (FaninNb
+        # cannot do this since the faninNB will be on the tcp_server.)
+        dummy_state.keyword_arguments['start_state_fanin_task'] = DAG_states[fanout_name]
         dummy_state.keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
         dummy_state.keyword_arguments['DAG_info'] = DAG_info
         msg_id = str(uuid.uuid4())	# for debugging
@@ -1383,9 +1417,10 @@ def create_fanin_and_faninNB_and_fanout_messages(DAG_map,DAG_states,DAG_info,all
         }
         fanout_messages.append(message)
 
-    logger.debug("DAG_executor_driver: create_fanin_and_faninNB_messages: number of fanin messages: " + str(len(fanin_messages))
+    logger.debug("DAG_executor_driver: create_fanin_and_faninNB_and_fanout_messages: number of fanin messages: " 
+        + str(len(fanin_messages))
         + " number of faninNB messages: " + str(len(faninNB_messages))
-        + " number of fanout messages: " + str(len(fanout_messages)))
+        + " number of fanout messages (including leaf task fanouts): " + str(len(fanout_messages)))
 
     return fanin_messages, faninNB_messages, fanout_messages
 
@@ -1445,15 +1480,18 @@ def create_fanins_and_faninNBs_and_work_queue(websocket,number_of_tasks,DAG_map,
     create_all_sync_objects(websocket, "create_all_sync_objects", "DAG_executor_fanin_or_faninNB_or_work_queue", 
         messages, dummy_state2)
 
-# creates all fanins and faninNBs anf fanouts at the start of driver executin. We use this
-# when we aer using lambdas to execte tasks, not workers.
+# creates all fanins and faninNBs and fanouts at the start of driver execution. We use this
+# when we are using lambdas to execte tasks, not workers. Note that leaf tasks
+# will be included in the fanouts.
 def create_fanins_and_faninNBs_and_fanouts(websocket,DAG_map,DAG_states,DAG_info,all_fanin_task_names,all_fanin_sizes,
-    all_faninNB_task_names,all_faninNB_sizes,all_fanout_task_names):
+    all_faninNB_task_names,all_faninNB_sizes,all_fanout_task_names, 
+    DAG_leaf_tasks, DAG_leaf_task_start_states):
 
     fanin_messages, faninNB_messages, fanout_messages = create_fanin_and_faninNB_and_fanout_messages(DAG_map,DAG_states,DAG_info,
-        all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes,all_fanout_task_names)
+        all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes,
+        all_fanout_task_names, DAG_leaf_tasks,DAG_leaf_task_start_states)
 
-    logger.debug("DAG_executor_driver: create_fanins_and_faninNBs_and_work_queue: Sending a 'create_fanins_and_faninNBs_and_fanouts' message to server.")
+    logger.debug("DAG_executor_driver: create_fanins_and_faninNBs_and_fanouts: Sending a 'create_fanins_and_faninNBs_and_fanouts' message to server.")
     #logger.debug("create_fanins_and_faninNBs_and_work_queue: num fanin created: "  + str(len(fanin_messages))
     #    +  " num faninNB creates; " + str(len(faninNB_messages)))
 

@@ -80,6 +80,7 @@ class DAG_orchestrator:
 	# Not using for now - this method is in tcp_server_lamba and it
 	# invokes the mapped to lambda for a given object name with a 
 	# "create" msg so the object is created in that lamba.
+	# Note: If we use this we will also need to create fanout and leaf task messages
 	def create_fanin_and_faninNB_messages(self,DAG_map,DAG_states,DAG_info,all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes):
 	
 		"""
@@ -174,7 +175,7 @@ class DAG_orchestrator:
 				"op": "process_enqueued_fan_ins",
 				"type": "DAG_executor_fanin_or_faninNB",
 				# We are passing a list of operations to the lambda function, which will execute
-				# the mone by one in the order they were received.
+				# them one by one in the order they were received.
 				"name": list,
 				"state": make_json_serializable(dummy_state),
 				"id": msg_id
@@ -184,7 +185,7 @@ class DAG_orchestrator:
 			# the lambda has the payload it needs to run, i.e., for sync object the payload is the message 
 			# it normally gets, but if the sync object triggers a task to run in the same lambda, the payload
 			# must also contain the info needed to run the task. This would be the payload info sent to
-			# real lambdas by DAG_executor_lambda(payload), which is from Driver:
+			# real lambdas by DAG_executor_lambda(payload), which is from dag_executor_driver:
 			"""
 								lambda_DAG_exec_state = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()), state = start_state)
 								logger.debug ("DAG_executor_driver: lambda payload is DAG_info + " + str(start_state) + "," + str(inp))
@@ -194,7 +195,7 @@ class DAG_orchestrator:
 								logger.info("DAG_executor_driver: Starting Lambda function %s." % lambda_DAG_exec_state.function_name)
 			#ToDo: lambdas: 
 								# We use "inp" for leaf task input otherwise all leaf task lambda Executors will 
-								# receive all leaf task inputs in the leaf_task_inputs and in the state_info.task_inputs
+								# receive all DAG_info leaf task inputs in the leaf_task_inputs and in the state_info.task_inputs
 								# - both are nulled out at beginning of driver. when we are using lambdas.
 								# If we use "inp" then we will pass only a given leaf task's input to that leaf task. 
 								# For non-lambda, each thread/process reads the DAG_info from a file. This DAG-info has
@@ -207,19 +208,20 @@ class DAG_orchestrator:
 									"DAG_info": DAG_info
 								}
 			"""
-			# So we need DAG_info, which InfiniD has and can pass to DAG_Orchestrator.
-			# See below about: invoke (simulaed) function which creates object on the fly
-			# and calls init() which needs DAG_info ,and whatever. So need to pass DAG_info
+			# So we need DAG_info, which InfiniD inputs and can pass to DAG_Orchestrator.
+			# See below about: invoke a (simulated) function which creates the object on the fly
+			# and calls init(), which needs DAG_info, and whatever. So need to pass DAG_info
 			# to (simulated) function (which is what Driver does when invoking a real 
-			# lambda function). So the (simulated) function needs payoad for fan_in and 
-			# payload for invoking real lambda, though they may overlap. If not triggering 
-			# tasks then only need sync object payload. So the deployent for lambda
-			# functions that store objects and trigger tasks is different than the deployment
+			# lambda function). So the (simulated) function needs a payload for fan_in and 
+			# a payload for invoking a lambda, though they may overlap. If not triggering 
+			# tasks then only need sync object payload. So the deployment for lambda
+			# functions that store objects and triggers tasks is different than the deployment
 			# for lambdas that just run tasks like Wukong. Former has a payload that has sync
-			# object and task info. The triggering lambdas: create sync object on fly, init()
-			# it as usual (with DAG_info and whatever) then will execute the case for triggering
-			# task, whch it does by calling DAG_executor.DAG_executor_lambda(payload) with the
-			# correct payload, created from faninNB info (results, DAG_info, ...)
+			# object and task info. The triggering lambdas: create sync object on fly, call init()
+			# as usual (with DAG_info and whatever) then call the fan_in operations on the 
+			# sync oject. The sync object will trigger the fanin task by calling 
+			# DAG_executor.DAG_executor_lambda(payload) with the
+			# correct payload, created from the faninNB fan_in info (results, DAG_info, ...)
 
 			payload = {"json_message": message}
 
@@ -227,7 +229,7 @@ class DAG_orchestrator:
 			# be attempted using the scheme under development.
 #ToDo: Allow calling real lambdas insted of simulated lambdas based on options. like we do 
 #    in the tcp_server_lambda functions.
-#ToDo: if not create_functions_on-the-fly:
+#ToDo:	if not create_functions_on-the-fly:
 			# created all objects at start - created objects one by one and called init() passing kwargs
 			with simulated_lambda_function_lock:
 				try:
@@ -235,9 +237,12 @@ class DAG_orchestrator:
 					# This is essentially a synchronous call to a regular Python function
 # ToDo: Do we want to allow both sync and async calls to simulated functions? The latter done by 
 # creating a thread that does the call. Async faster when we are invoking a real lambda, which we will do with invoke_lambda_asynch
-					# Will call process_enqueued_fan_ins to call the fan_in ops on the fanin object 
-					# that was created at the beginning and returning its results to the thread that
-					#  called fan_in i.e., the thread that is simulating a lambda.
+					# The payload is a message with "op": "process_enqueued_fan_ins", so lambda
+					# Will execute process_enqueued_fan_ins to call the fan_in ops on the fanin objects 
+					# that were created at the beginning and returning the fanin results to the client
+					# caller, e.g., a thread that called fan_in i.e., the thread that is simulating a lambda.
+					# The returned result for a fanin is 0 or the collected fan_in results.
+					# For faninNB, no results are returned so the return value is 0.
 					return_value = simulated_lambda_function.lambda_handler(payload)
 					logger.debug("DAG_Orchestrator: called simulated_lambda_function.lambda_handler(payload)")
 				except Exception as ex:
@@ -246,54 +251,72 @@ class DAG_orchestrator:
 
 #   	else: 
 			"""
+#rhc: ToDo: the payload needs to work for the above pre-mapped case too
+
 			simulated_lambda_function = Lambda_Function_Simulator()
 
 So: The current lamba_function_simulator lamba_handler does warm_resources['message_handler'].handle(json_message)
 where the message_handler is message_handler_lambda. This works for non-triggered lambdas. The 
-message handler will call process_enqueued_fan_ins and return 0 or the collected fan_in results.
+message handler will call process_enqueued_fan_ins and return 0 (always 0 for faninNBs) or the 
+collected fan_in results.
 When we have a triggered lambda, and we create objects on the fly, we need to create and init
 the object and call the fan_in(s) and let the fan_in trigger the task by calling 
 DAG_executor_lambda(payload). However ....
 *****
 ToDo: ... 
-- if we use pre-created and mapped objects, like we currentl have, we can simply 
-allow the fan_in to call DAG_excutor_lamba(payload)?
+- if we use pre-created and mapped objects, like we currently have, we can simply 
+call the fan_in(s) and allow the fan_in to call DAG_excutor_lamba(payload)?
 - And if we create on the fly, can we just do "create_and_process_enqueued_fan_ins" which simply
-creates the object before we do fan_ins? 
-- But we need to pass a payload to simulated lambda function that has infomation for all of 
+creates the object before we do fan_ins? The object will be local and will never be
+accessed again.
+- But we need to pass a payload to simulated lambda function that has information for all of 
 this - create object, do fanins, call DAG_excutor_lamba(payload).
 *****
 
-ToDo: Since this Lambda_Function_Simulator() will create a fanin and this fanin may trigger its
+ToDo: Since this Lambda_Function_Simulator() may create a fanin and this fanin may trigger its
 task, we need to make sure the Lambda_Function_Simulator() will get the payload it needs to run 
 tasks. Note that after we create the object we call init() and pass in DAG_info in case it needs 
-to run a lambda. Note that it is the (simulated) Lambda that creates the faninNB so the simulated 
+to run a lambda. Note that it is the (simulated) Lambda that creates the fanin so the simulated 
 lambda needs DAG_info for its call to init(), and whatever else init() gets.
+
+rhc: ToDo: need to premap leaf tasks.
+
 Scheme: Lambda_Function_Simulator() does:
-- create() one local fanoutfaninNB/fanin object. This is a "select" object since it is in a 
+- If create on fly:
+  create() one local fanout/faninNB/fanin object. This is a "select" object since it is in a 
   lambda? or since the lifetime of this object is only this one execution of this lambda then 
   it could be a non-select object?
   Note that we know this object does not exist on this first invocation of the lambda so we can 
   call create() instead of create_if() to create the foo object. (That is, the name of the 
   object does not have to be the actual name of the fanout/fanin. We can reuse this local
-  foo object for succeeding operations?)
+  foo object for succeeding operations? Can we do multiple fanins if we are the become
+  task for each of them? Or just do fann processing as usual, i.e., remote calls to
+  fanin object - have to do remote call anyway to get other results.
 - call object.init(), passing in:
-	if kwargs is None or len(kwargs) == 0:
-		raise ValueError("FanIn requires a length. No length provided.")
-	elif len(kwargs) > 9:
-		raise ValueError("Error - FanIn init has too many args.")
-	self._n = kwargs['n']
-	self.start_state_fanin_task = kwargs['start_state_fanin_task']
-	self.store_fanins_faninNBs_locally = kwargs['store_fanins_faninNBs_locally']
-	self.DAG_info = kwargs['DAG_info'] 
+	FaninNB and FaninNB_select
+	def init(self,kwargs): 
+		if kwargs is None or len(kwargs) == 0:
+			raise ValueError("FanIn requires a length. No length provided.")
+		elif len(kwargs) > 9:
+			raise ValueError("Error - FanIn init has too many args.")
+		self._n = kwargs['n']
+		self.start_state_fanin_task = kwargs['start_state_fanin_task']
+		self.store_fanins_faninNBs_locally = kwargs['store_fanins_faninNBs_locally']
+		self.DAG_info = kwargs['DAG_info'] 
+	Fanin and Fanin_Select: only ref kwargs['n']
 - call all fan_ins(), passing kwargs for fan_in (which can be normal synchronize_sync call). The 
   kwargs for the saved ops in the list created by DAG_executor are all the same:
-	kwargs['result']
-	kwargs['calling_task_name']
-	kwargs['fanin_task_name']
-	kwargs['start_state_fanin_task']
-	kwargs['server']
-- fanin() triggers fanin task with:
+	For faninNB and FaninNB_select:
+    def fan_in(self, **kwargs)
+		where fan_in for non-select references:
+		kwargs['result']
+		kwargs['calling_task_name']
+		kwargs['fanin_task_name']
+		kwargs['start_state_fanin_task']
+		kwargs['server']
+	For fanin and fanin_select: only refs result and calling_task_name.
+	Note: fanins do not do anything after last fan_in other than return results
+- fan_in() for faninNB triggers fanin task with:
 	try:
 		logger.debug("DAG_executor_FanInNB_Select: triggering DAG_Executor_Lambda() for task " + fanin_task_name)
 		lambda_DAG_exec_state = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()), state = start_state_fanin_task)
@@ -327,6 +350,9 @@ So the above info needs to be passed in payload. Is it covered?
 			}
 	passed as the payload: payload = {"json_message": message} on the 
 	call: return_value = simulated_lambda_function.lambda_handler(payload)
+	So the payload for calling the fan_ins is just pat of the saved fan_in
+	messages in the list in this current message, which is for doing 
+	ops on the sync_ops but not for triggering tasks.
 2. Normally, the driver makes all objects and when we create a message to pass to the server
    we add DAG_info to the DAG_executor_State that gets passed:
 		dummy_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
@@ -345,7 +371,7 @@ So the above info needs to be passed in payload. Is it covered?
 	which is fine since this is info that init() expects. But now the create is being initiated
 	here, not in the driver, so we need to get this info and pass it to the 
 	simulated_lambda_function (which is a Lambda_Function_Simulator()):
-	- DAG_info we have
+	- DAG_info we have ***but we need to null out the leaf task stuff***
 	- store_fanins_faninNBs_locally is false
 	- n we can get:
 		list_n_pair = self.object_name_to_trigger_map[sync_object_name]
@@ -354,14 +380,38 @@ So the above info needs to be passed in payload. Is it covered?
 	- start_state_fanin_task we can get: 
 		from above: sync_object_name = json_message.get("name", None)
 		start_state_fanin_task = DAG_states[sync_object_name]
+	So this info can be packaged as a dummy_state 
 3. The information for the triggered task payload () is: start_state_fanin_task, self._results
-   and DAG-info, which we have.
+   and DAG-info, which we have since it is the fan_in can alreay create payloads
+   for invoking lambdas by using the info from init() and the collected results
+#rhc: Q: results have all the results? or missing become task's results?
+Comment says:
+	# Last thread does not append results. It will recieve list of results of other threads and append 
+	# its result locally to the returned list.
+So we will send back results with last caller's results missing.
+
+# rhc: ToDo: Do we actually invoke lambda to do fan_in for FanIn? We have the results
+on tcp_sever_lambda (saved). And for FanIn can create a FanIn on tcp_server_lambda
+to reuse the FanIn logic, i.e., fan_in will return what we want?
 
 So: How to package this info in the payload of triggered Lambdas? These Lambdas are different 
 from the simpler lambdas that just execute tasks Wukong style since these lambdas must
 create a fanout/fanin object and cal fan_in(s) on it so it will trigger its task.
+A: Seems like we have the fan_in kwargs in the saved fan_in op messages. We just
+need the init inf, whch we can package as a DAG_executor_State. The trigger info
+is info that the fan_in has - the results and the init() info. So the payload to
+the lmabda function is: the message for processing the list of fan_in ops and the 
+DAG_excutor_tate fr the call to init()
+Note: 
+If not triggering and using pre-mapped objects, then we just process the 
+list of fanins
+If not triggering and not using premapped objects, we need to create() and
+init() the sync object before we process the list of fan_ins
+If triggering and not using premapped objects, we need to create() and
+init() the sync object before we process the list of fan_ins thrn 
+the fanin will trigger the task by calling 
 
-The DAG_handler.py is:
+The current DAG_handler.py is:
 	def lambda_handler(event, context):
 		invocation_time = time.time()
 		warm_resources['invocation_count'] = warm_resources['invocation_count'] + 1
@@ -414,17 +464,22 @@ def DAG_executor_lambda(payload):
     logger.debug("DAG_executor_processes: returning after work_loop.")
     return
 
+We are not here calling DAG_executor_lambda(event) since we are now doing the fan_in
+ops and triggering tasks. We can just pass the message to call process fan_ins
+and it can crate object if necessary, and call fan_ins.
+
 Can we call new DAG_executor_lambda_trigerred() and have it call DAG_executor_lambda(payload)?
-No! We are executing a fanout/faninNB operation. [Note that fanins are handled the usual
+No! We are executing fanout/faninNB operations. [Note that fanins are handled the usual
 way, i.e., we return a dictionary of results like usual, which is what happens when we use the
-DAG_orchestrator but we do not trigger tasks - fan_in resturs a DAG_executor_State with a 
+DAG_orchestrator but we do not trigger tasks - fan_in returns a DAG_executor_State with a 
 return value that holds the dictionary of results. Note: When we trigger tasks, either the 
 DAG_orchestrator or the method that calls it will have to take DAG_orchestrator's saved
-results create a dictionary of rseults (borowing the FanIn.fan_in() code) and put them in 
-a DAG_executor_State.] So we create the fanout/fanin, call the  fan_in operation(s) with 
+results create a dictionary of results (borowing the FanIn.fan_in() code) and put them in 
+a DAG_executor_State.] 
+For Fanout/faninNB, we create the fanout/fanin, call the fan_in operation(s) with 
 the DAG_executor's saved results and let the fanout/fanin trigger the task by calling 
 DAG_executor_lambda(payload); this will be the first call to  DAG_executor_lambda(payload) 
-in this lambda. DAG_executor_lambda is unchanged, it executes the work loop, whic means it 
+in this lambda. DAG_executor_lambda is unchanged, it executes the work loop, which means it 
 executes the trggered task and does the fanouts/faninNBs/fanins after that, possibly becoming
 one of the fanouts and calling process_faninNBs_batch to procss the other fanouts/faninNBs or 
 processing the fanin, as usual.
@@ -444,10 +499,14 @@ So we can call DAG_executor_lambda_trigerred(), which does:
   Or just create the server in DAG_executor_lambda_trigerred (Yes). Not that we will
   not use the server or the created fanout/faninNB object again, as new fanin/fanouts/faninNBs 
   are remote.
-
+No?? jst call proces list of fanins, it creates object if not mapping, processes
+list of fanins. The fan_in will trigger. So this is same as non-triggered case
+with object check when not mapped.
 
 Lambda_Function_Simulator() payload is:
-payload = {"json_message": message			# message for process_enqueued_fan_ins
+payload = {
+	"json_message": message,			# message for process_enqueued_fan_ins
+	"state for init": dummy_state
 
 } 
 
@@ -487,10 +546,14 @@ class InfiniD:
 		self.all_faninNB_task_names = DAG_info.get_all_faninNB_task_names()
 		self.all_faninNB_sizes = DAG_info.get_all_faninNB_sizes()
 		self.all_fanout_task_names = DAG_info.get_all_fanout_task_names()
-		num_Lambda_Function_Simulators = len(self.all_fanin_task_names) + len(self.all_fanout_task_names) + len(self.all_faninNB_task_names)
+		self.DAG_leaf_tasks = DAG_info.get_DAG_leaf_tasks()
+#rhc: leaf tasks
+		self.num_Lambda_Function_Simulators = len(self.all_fanin_task_names) + (
+			len(self.all_fanout_task_names)) + (
+			len(self.all_faninNB_task_names)) + (
+			len(self.DAG_leaf_tasks))
 		self.list_of_Lambda_Function_Simulators = []
 		self.list_of_function_locks = []
-		self.num_Lambda_Function_Simulators = num_Lambda_Function_Simulators
 		self.function_map = {}
 
 	# not currently used.
@@ -549,6 +612,13 @@ class InfiniD:
 			self.dag_orchestrator.map_object_name_to_trigger(object_name,n)
 
 		for object_name in self.all_fanout_task_names:
+			self.map_synchronization_object(object_name,i)
+			if not using_single_lambda_function:
+				i += 1
+			n = 1 # a fanout is a fanin of size 1
+			self.dag_orchestrator.map_object_name_to_trigger(object_name,n)
+
+		for object_name in self.DAG_leaf_tasks:
 			self.map_synchronization_object(object_name,i)
 			if not using_single_lambda_function:
 				i += 1
