@@ -18,7 +18,6 @@ from ..dag.DAG_Executor_lambda_function_simulator import InfiniD # , Lambda_Func
 from ..dag.DAG_info import DAG_Info
 from ..dag.DAG_executor_State import DAG_executor_State
 from threading import Lock
-import copy
 
 # Set up logging.
 import logging 
@@ -853,34 +852,19 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # simulate starting a real lambda.)
 
     def process_leaf_tasks_batch(self):
+        # read DAG_info. We read DAG_info here but this method is called only once.
+        # We also read DAG_info when tcserver_lambda starts; we pass that
+        # DAG_info to InfinX, which passes DAG_info to the lambdas it starts.
+        # We could pass DAG_info from the DAG_executor_drver to ths method
+        # but we read it instead.
         DAG_info = DAG_Info()
-        DAG_map = DAG_info.get_DAG_map()
         DAG_states = DAG_info.get_DAG_states()
         DAG_leaf_tasks = DAG_info.get_DAG_leaf_tasks()
         DAG_leaf_task_start_states = DAG_info.get_DAG_leaf_task_start_states()
         DAG_leaf_task_inputs = DAG_info.get_DAG_leaf_task_inputs()
 
-        # Note: if we are using_lambdas, we null out DAG_leaf_task_inputs after we get it here
-        # (by calling DAG_info.set_DAG_leaf_task_inputs_to_None() below). So make a copy.
-        if run_all_tasks_locally:
-            DAG_leaf_task_inputs = DAG_info.get_DAG_leaf_task_inputs()
-        else:
-            DAG_leaf_task_inputs = copy.copy(DAG_info.get_DAG_leaf_task_inputs())
-
-            # For lambdas, null out the task inputs in DAG_info since we pass DAG_info in the
-            # payload to all the lambda executors and the leaf task inputs may be large.
-            # Note: When we are using thread or process workers then the workers read 
-            # DAG_info from a file at the start of their execution. We are not nullng
-            # out the leaf task inputs for workers (non-lambda) since we do not pass them
-            # on invokes.
-
-            # Null out DAG_leaf_task_inputs.
-            DAG_info.set_DAG_leaf_task_inputs_to_None()
-            # Null out task inputs in state infomation of leaf tasks
-            for start_state in DAG_leaf_task_start_states:
-                # Each leaf task's state has the leaf tasks's input. Null it out.
-                state_info = DAG_map[start_state]
-                state_info.task_inputs = None
+        # Note: We do not pass this DAG_info to any lambdas. The TCP_server
+        # reads DAG_info and does pass that DAG_info object to InfiniX.
 
         for start_state, task_name, inp in zip(DAG_leaf_task_start_states, DAG_leaf_tasks, DAG_leaf_task_inputs):
             try:
@@ -1227,7 +1211,21 @@ class TCPServer(object):
             self.map_of_Lambda_Function_Simulators['single_function'] = self.list_of_Lambda_Function_Simulators[0]
             """
             # input DAG representation/information
+            # We also read DAG_info in process_leaf_tasks_batch, whcih gets called
+            # one time at the start of DAG execution to trigger the leaf tasks.
             DAG_info = DAG_Info()
+            DAG_map = DAG_info.get_DAG_map()
+            DAG_leaf_task_start_states = DAG_info.get_DAG_leaf_task_start_states()
+            # For lambdas, null out the leaf task inputs in DAG_info since we pass DAG_info in the
+            # payload to all the lambda executors and the leaf task inputs may be large.
+
+            # Null out DAG_leaf_task_inputs.
+            DAG_info.set_DAG_leaf_task_inputs_to_None()
+            # Null out task inputs in state infomation of leaf tasks
+            for start_state in DAG_leaf_task_start_states:
+                # Each leaf task's state has the leaf tasks's input. Null it out.
+                state_info = DAG_map[start_state]
+                state_info.task_inputs = None
             
             # using regular functions instead of real lambda functions for storing synch objects 
 	        # self.lambda_function = Lambda_Function_Simulator()

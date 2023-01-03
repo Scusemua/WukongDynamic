@@ -3,9 +3,11 @@ import cloudpickle
 
 from .synchronizer_lambda import Synchronizer
 from .util import decode_and_deserialize #, make_json_serializable,  isTry_and_getMethodName, isSelect 
-
-from ..dag.DAG_executor_constants import run_all_tasks_locally
-from .util import decode_and_deserialize, isTry_and_getMethodName, isSelect #, make_json_serializable
+from ..dag.DAG_executor_State import DAG_executor_State
+from ..dag.DAG_executor_constants import FanIn_Type, FanInNB_Type
+from ..dag.DAG_executor_constants import run_all_tasks_locally, create_all_fanins_faninNBs_on_start
+from .util import decode_and_deserialize, isTry_and_getMethodName, isSelect, make_json_serializable
+import uuid
 
 # Set up logging.
 import logging 
@@ -212,9 +214,42 @@ class MessageHandler(object):
                 }
 
         """
+
         list_of_messages = message['name']
+        #assert:
+        if len(list_of_messages) == 0:
+            logger.error("[Error]: Internal error: process_enqueued_fan_ins: "
+                + " length of list_of_messages is 0 but fanin size > 0.")
+#rhc: ToDo
+        if not create_all_fanins_faninNBs_on_start:
+            # create this sync object on the fly
+            first_msg = list_of_messages[0]
+            fanin_name = first_msg['name']
+            fanin_state = first_msg['state']
+            fanin_kwargs = fanin_state['keyword_arguments']
+            n = fanin_kwargs['n']
+#rhc: ToDo:
+            # get Type so know which type of object to create
+
+            dummy_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
+            # we will create the fanin object and call fanin.init(**keyword_arguments)
+            dummy_state.keyword_arguments['n'] = n
+#rhc: ToDo: more keyword_arguments values
+
+            msg_id = str(uuid.uuid4())	# for debugging
+
+            creation_message = {
+                "op": "create",
+#rhc: ToDo: use correct type
+                "type": FanIn_Type,
+                "name": fanin_name,
+                "state": make_json_serializable(dummy_state),	
+                "id": msg_id
+            }
+            self.create_obj(creation_message)
+
         for msg in list_of_messages:
-            # We are doing al the fan_in ops one-by-one in the order they were called by clients
+            # We are doing all the fan_in ops one-by-one in the order they were called by clients
             # The return value of last call is the fanin results; return those to client
             return_value = self.synchronize_sync(msg)
         return return_value

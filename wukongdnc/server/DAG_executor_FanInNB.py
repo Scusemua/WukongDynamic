@@ -14,6 +14,7 @@ from threading import Thread
 #from .DAG_executor_State import DAG_executor_State
 from wukongdnc.dag.DAG_executor_State import DAG_executor_State
 from wukongdnc.dag.DAG_executor_constants import run_all_tasks_locally, using_workers, using_threads_not_processes
+from wukongdnc.dag.DAG_executor_constants import store_sync_objects_in_lambdas, sync_objects_in_lambdas_trigger_their_tasks
 #from wukongdnc.dag.DAG_work_queue_for_threads import thread_work_queue
 from wukongdnc.dag.DAG_executor_work_queue_for_threads import work_queue
 from wukongdnc.wukong.invoker import invoke_lambda_DAG_executor
@@ -224,39 +225,68 @@ class DAG_executor_FanInNB(MonitorSU):
                 #return 1, restart  # all threads have called so return results
                     
             elif not self.store_fanins_faninNBs_locally and not run_all_tasks_locally:
-                #ToDO: use using_lambdas (=> self.store_fanins_faninNBs_locally and not run_all_tasks_locally)
-                try:
-                    DAG_executor_state = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()), state = start_state_fanin_task)
-                    DAG_executor_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
-                    DAG_executor_state.return_value = self._results
-                    DAG_executor_state.blocking = False            
-                    logger.debug("FanInNB: starting Starting Lambda function for task " + fanin_task_name + " with start state " + str(DAG_executor_state.state))
-                    #logger.debug("DAG_executor_state: " + str(DAG_executor_state))
-                    payload = {
-                        #"state": int(start_state_fanin_task),
-                        "input": self._results,
-                        "DAG_executor_state": DAG_executor_state,
-                        "DAG_info": self.DAG_info
-                        #"server": server   # used to mock server during testing
-                    }
-                    ###### DAG_executor_State.function_name has not changed
-                    
-                    invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_Executor_Lambda")
-                except Exception as ex:
-                    logger.debug("FanInNB:[ERROR] Failed to start DAG_executor Lambda.")
-                    logger.debug(ex)
+#rhc: run task
+                # Note: we are store_sync_objects_in_lambdas so usually we would not 
+                # use a non-select faninNB in this case as we use select faninNBs when 
+                # we store sync objects in Lambdas. But if the non-select sync object
+                # triggers its fanin task, then this Lambda will be invoked 
+                # (by the DAG_orchestrator) only one time so we can use the non-select
+                # fanin. It is also the case that fan_in operations never block so we
+                # do not have to worry about a proxy thread blocking during a 
+                # fan_in op, which would prebent the Lmabda from terminatng (which 
+                # is why we have the select version of FanInNB.)
+                if store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks:
+                    try:
+                        logger.debug("DAG_executor_FanInNB_Select: triggering DAG_Executor_Lambda() for task " + fanin_task_name)
+                        lambda_DAG_exec_state = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()), state = start_state_fanin_task)
+                        logger.debug ("DAG_executor_FanInNB_Select: lambda payload is DAG_info + " + str(start_state_fanin_task) + "," + str(self._results))
+                        lambda_DAG_exec_state.restart = False      # starting new DAG_executor in state start_state_fanin_task
+                        lambda_DAG_exec_state.return_value = None
+                        lambda_DAG_exec_state.blocking = False            
+                        logger.info("DAG_executor_FanInNB_Select: Starting Lambda function %s." % lambda_DAG_exec_state.function_name) 
+                        payload = {
+                            "input": self._results,
+                            "DAG_executor_state": lambda_DAG_exec_state,
+                            "DAG_info": self.DAG_info
+                        }
+                        DAG_executor.DAG_executor_lambda(payload)
+                    except Exception as ex:
+                        logger.error("[ERROR] DAG_executor_FanInNB_Select: Failed to start DAG_executor.DAG_executor_lambda"
+                            + " for triggered task " + fanin_task_name)
+                        logger.error(ex) 
+                else:      
+                    try:
+                        DAG_executor_state = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()), state = start_state_fanin_task)
+                        DAG_executor_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
+                        DAG_executor_state.return_value = self._results
+                        DAG_executor_state.blocking = False            
+                        logger.debug("FanInNB: starting Starting Lambda function for task " + fanin_task_name + " with start state " + str(DAG_executor_state.state))
+                        #logger.debug("DAG_executor_state: " + str(DAG_executor_state))
+                        payload = {
+                            #"state": int(start_state_fanin_task),
+                            "input": self._results,
+                            "DAG_executor_state": DAG_executor_state,
+                            "DAG_info": self.DAG_info
+                            #"server": server   # used to mock server during testing
+                        }
+                        ###### DAG_executor_State.function_name has not changed
+                        
+                        invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_Executor_Lambda")
+                    except Exception as ex:
+                        logger.debug("FanInNB:[ERROR] Failed to start DAG_executor Lambda.")
+                        logger.debug(ex)
 
-                # No signal of non-last client; they did not block and they are done executing. 
-                # does mutex.V
-                super().exit_monitor()
-                # no one should be calling fan_in again since this is last caller
-                # results given to invoked lambda so nothing to return; can't return results
-                # to tcp_serve \r or tcp_server might try to put them in the non-existent 
-                # work_queue.   
-                #return self._results, restart  # all threads have called so return results
-                #Note: we are not using workers so we do not return a work tuple
-                return 0, restart
-                #return 1, restart  # all threads have called so return results
+                    # No signal of non-last client; they did not block and they are done executing. 
+                    # does mutex.V
+                    super().exit_monitor()
+                    # no one should be calling fan_in again since this is last caller
+                    # results given to invoked lambda so nothing to return; can't return results
+                    # to tcp_serve \r or tcp_server might try to put them in the non-existent 
+                    # work_queue.   
+                    #return self._results, restart  # all threads have called so return results
+                    #Note: we are not using workers so we do not return a work tuple
+                    return 0, restart
+                    #return 1, restart  # all threads have called so return results
            
             elif not self.store_fanins_faninNBs_locally and run_all_tasks_locally:
                 # not using workers and using threads to simulate lambdas. Here
@@ -284,7 +314,6 @@ class DAG_executor_FanInNB(MonitorSU):
             #return self._results, restart  # all threads have called so return results
             #return 1, restart  # all threads have called so return results
         
-
         #No logger.debugs here. main Client can exit while other threads are
         #doing this logger.debug so main thread/interpreter can't get stdout lock?
 

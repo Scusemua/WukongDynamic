@@ -403,13 +403,25 @@ is info that the fan_in has - the results and the init() info. So the payload to
 the lmabda function is: the message for processing the list of fan_in ops and the 
 DAG_excutor_tate fr the call to init()
 Note: 
-If not triggering and using pre-mapped objects, then we just process the 
-list of fanins
-If not triggering and not using premapped objects, we need to create() and
+-If not triggering and using pre-created objects, then we just process the 
+list of fanins. Noet that pre-created objects must be created somewhere and
+we need to remember where so these pre-created ojects are pre-mapped too.
+Also, for simulated functions the functions are not named, they are indexed
+in an array (i.e., we map a function to an index i) so the implicit name of 
+the function in Array[i] is Fi. In general, we will map sync objects to 
+"deployment names".
+-If not triggering and not using precreated objects, we need to create() and
 init() the sync object before we process the list of fan_ins
-If triggering and not using premapped objects, we need to create() and
-init() the sync object before we process the list of fan_ins thrn 
-the fanin will trigger the task by calling 
+-If triggering and not using precreatd objects, we need to create() and
+init() the sync object before we process the list of fan_ins. 
+The fanin will trigger the task by calling DAG_executor_lambda, (which
+does not need to access the object again.)
+
+rhc: Q: if we pre-create object O in a function F then we have to know how 
+to access F. For simulated objects, we map O to the index i of the function
+in the list of simulated functions. For real lambdas, we map O to the "name"
+of the function deployment. So when we pre-create objects we must also 
+map objects to functions?
 
 The current DAG_handler.py is:
 	def lambda_handler(event, context):
@@ -465,16 +477,16 @@ def DAG_executor_lambda(payload):
     return
 
 We are not here calling DAG_executor_lambda(event) since we are now doing the fan_in
-ops and triggering tasks. We can just pass the message to call process fan_ins
-and it can crate object if necessary, and call fan_ins.
+ops and fan_in will trigger the task by calling DAG_executor_lambda(event).
+We can just pass the message to call process fan_ins and it can create object if necessary, 
+and call fan_ins. Note that create() calls init().
 
-Can we call new DAG_executor_lambda_trigerred() and have it call DAG_executor_lambda(payload)?
-No! We are executing fanout/faninNB operations. [Note that fanins are handled the usual
+We are executing fanout/faninNB operations. [Note that fanins are handled the usual
 way, i.e., we return a dictionary of results like usual, which is what happens when we use the
 DAG_orchestrator but we do not trigger tasks - fan_in returns a DAG_executor_State with a 
 return value that holds the dictionary of results. Note: When we trigger tasks, either the 
-DAG_orchestrator or the method that calls it will have to take DAG_orchestrator's saved
-results create a dictionary of results (borowing the FanIn.fan_in() code) and put them in 
+DAG_orchestrator or the method that calls D_O will have to take DAG_orchestrator's saved
+results create a dictionary of results (borrowing the FanIn.fan_in() code) and put them in 
 a DAG_executor_State.] 
 For Fanout/faninNB, we create the fanout/fanin, call the fan_in operation(s) with 
 the DAG_executor's saved results and let the fanout/fanin trigger the task by calling 
@@ -484,31 +496,46 @@ executes the trggered task and does the fanouts/faninNBs/fanins after that, poss
 one of the fanouts and calling process_faninNBs_batch to procss the other fanouts/faninNBs or 
 processing the fanin, as usual.
 
-So we can call DAG_executor_lambda_trigerred(), which does:
-- make sure server exists, create object, and call fan_in() for the fanout or fan_ins() for 
-  the faninNB. We'll need to make sure kwargs for create_and_fanin() have the info needed for 
-  the call to object.init(). Note that create() calls init(). Note that for fanins, fan_in is 
-  done as usual, as we do not invoke a new lambda for the fan_in tasks (only for tasks of 
+Note that for fanins, fan_in is done as usual, as we do not invoke a new lambda for the fan_in tasks (only for tasks of 
   fanouts and faninNBs)  (as usual means we get back a 0 or the non-zero fan_in results.)  
   tcp_server_lambda - get the results from the saved ops and make a dict of results to be 
-  returned to the DAG_executor_lambda borowing the FanIn.fan_in() code.Currently, this is:
-	server = None
-	if store_fanins_faninNBs_locally:
-		server = DAG_executor_Synchronizer()
-  but store_fanins_faninNBs_locally is false so we need to modify this condition;
-  Or just create the server in DAG_executor_lambda_trigerred (Yes). Not that we will
-  not use the server or the created fanout/faninNB object again, as new fanin/fanouts/faninNBs 
-  are remote.
-No?? jst call proces list of fanins, it creates object if not mapping, processes
-list of fanins. The fan_in will trigger. So this is same as non-triggered case
-with object check when not mapped.
+  returned to the DAG_executor_lambda borowing the FanIn.fan_in() code.
+
+So this is same as non-triggered case with check for object pre-created.
+
+rhc: toDo: For this create, we need to know the type but type is not in 
+the fan_in message. So we can look up name in fanins - if in fanins the
+its a fanin else its a faninNB (for faninNBs and fanouts).
 
 Lambda_Function_Simulator() payload is:
 payload = {
 	"json_message": message,			# message for process_enqueued_fan_ins
 	"state for init": dummy_state
-
 } 
+
+No: We still pass the process_enqueued_fan_ins message in the payload; 
+this message will cause process_enqueued_fan_ins to be called, which 
+is what we want. But we also need to make sure we can get the message
+for the possible create():
+
+	creation_message = {
+		"op": "create",
+#rhc: ToDo: use correct type
+		"type": FanIn_Type,
+		"name": fanin_name,
+		"state": make_json_serializable(dummy_state),	
+		"id": msg_id
+	}
+	self.create_obj(creation_message)
+
+So perhaps we can assemble this message and pass it to process_enqueued_fan_ins
+as part of the dummy_state, which is now not used for anything in 
+process_enqueued_fan_ins: 
+	dummy_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
+We need to compute the type of fanin object and we can get the set of
+fan_ins, as InfniD could give DAG_info to the DAG_orchestrator so we 
+can get the set of fanins. Note: This code here is in DAG_orchestrator.enqueue()
+Note: We only need the creation message if not pre-created ojects.
 
 			try:
 				logger.debug("DAG_Orchestrator enqueue: calling simulated_lambda_function.lambda_handler(payload)")

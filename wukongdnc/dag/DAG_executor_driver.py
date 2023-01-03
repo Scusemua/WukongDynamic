@@ -6,11 +6,7 @@
 #
 # Lots of docs in the function simulator file:
 #
-#  faninNB and faninNB_select are out of sync
-$
-#   Make sure if pass DAG_nfo that tcp_server_lambda nulls out leaf stuff like driver
-#   Need to add leaf tasks to "fanouts" so leaf tasks have a fanout object too?
-#   payload for lambdas when triggering (ns when just storing objects)
+#   payload for lambdas when triggering (and when just storing objects)
 #
 #   DO THIS FIRST - if it works then just get payload to lambda function right.
 # - ==> try just having the pre-created and mapped fanout/faninNB ops trigger the tasks
@@ -713,7 +709,7 @@ def run():
     else:
         DAG_leaf_task_inputs = copy.copy(DAG_info.get_DAG_leaf_task_inputs())
 
-        # For lambdas, null out the task inputs in DAG_info since we pass DAG_info in the
+        # For lambdas, null out the leaf task inputs in DAG_info since we pass DAG_info in the
         # payload to all the lambda executors and the leaf task inputs may be large.
         # Note: When we are using thread or process workers then the workers read 
         # DAG_info from a file at the start of their execution. We are not nullng
