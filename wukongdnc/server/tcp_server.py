@@ -180,7 +180,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # triggers its fanout operation.)
         create_the_work_queue_or_fanouts = (len(messages)>2)
         if create_the_work_queue_or_fanouts:
-            type = messages['type']
+            type = message['type']
             if type == "DAG_executor_fanin_or_faninNB_or_work_queue":
                 logger.info("create_all_sync_objects: create_the_work_queue:" + " len: " + str(len(messages)))
                 msg = messages[2]

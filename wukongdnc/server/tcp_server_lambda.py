@@ -312,10 +312,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
         messages = message['name']
         fanin_messages = messages[0]
         faninNB_messages = messages[1]
-        fanout_messages = messages[2]
         logger.info(str(fanin_messages))
         logger.info(str(faninNB_messages))
-        logger.info(str(fanout_messages))
 
         for msg in fanin_messages:
             #self.create_one_of_all_objs(msg)
@@ -339,20 +337,24 @@ class TCPHandler(socketserver.StreamRequestHandler):
         if len(faninNB_messages) > 0:
             logger.info("tcp_server_lambda: create_all_sync_objects: created faninNBs")
 
-        for msg in fanout_messages:
-            #self.create_one_of_all_objs(msg)
-            logger.debug("ttcp_server_lambda: create_all_sync_objects: invoke lambda..")
+        if sync_objects_in_lambdas_trigger_their_tasks:
+            fanout_messages = messages[2]
+            logger.info(str(fanout_messages))
+            for msg in fanout_messages:
+                #self.create_one_of_all_objs(msg)
+                logger.debug("ttcp_server_lambda: create_all_sync_objects: invoke lambda..")
 
-            return_value_ignored = self.invoke_lambda_synchronously(msg)
+                return_value_ignored = self.invoke_lambda_synchronously(msg)
 
-            logger.debug("tcp_server_lambda: create_all_sync_objects: invoked lambda..")
+                logger.debug("tcp_server_lambda: create_all_sync_objects: invoked lambda..")
 
-        if len(fanout_messages) > 0:
-            logger.info("tcp_server_lambda: create_all_sync_objects:  created fanouts")
+            if len(fanout_messages) > 0:
+                logger.info("tcp_server_lambda: create_all_sync_objects:  created fanouts")
 
-        # we always create the fanin and faninNBs. We possibly create the work queue. If we send
+        # We always create the fanin and faninNBs. We possibly create the work queue. If we send
         # a message for create work queue, in addition to the lst of messages for create
         # fanins and create faninNBs, we create a work queue too.
+        #
         # Note: No work_queue when using lambdas
         """
         create_the_work_queue = (len(messages)>2)
@@ -1074,7 +1076,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     # If we see this print a lot, then we may want to remove/comment-out the break and simply sleep for 1-10ms, then try reading again?
                     # Maybe if we fail to read any new data after ~3 tries, then we give up? But maybe we're giving up too early (i.e., trying to read data,
                     # finding no data to read, and giving up on the entire read immediately, rather than waiting and trying to read again).
-                    logger.warn("Stopped reading incoming message size from socket early. Have read " + str(len(data)) + " bytes of a total expected 4 bytes.")
+                    logger.warning("Stopped reading incoming message size from socket early. Have read " + str(len(data)) + " bytes of a total expected 4 bytes.")
                     break 
 
                 data.extend(new_data)

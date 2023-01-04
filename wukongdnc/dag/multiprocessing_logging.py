@@ -26,7 +26,7 @@ def listener_configurer():
     # https://stackoverflow.com/q/54036637
     loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
     for logger in loggers:
-        logger.setLevel(logging.ERROR) # Specify the log level here.
+        logger.setLevel(logging.DEBUG) # Specify the log level here.
 """
 class logging.handlers.RotatingFileHandler(filename, mode='a', maxBytes=0, backupCount=0, encoding=None, 
 delay=False, errors=None)
@@ -76,7 +76,7 @@ def worker_configurer(queue):
     root = logging.getLogger()
     root.addHandler(h)
     # send all messages, for demo; no other level or filter logic applied.
-    root.setLevel(logging.ERROR)
+    root.setLevel(logging.DEBUG)
 
 # This is the worker process top-level loop, which just logs ten events with
 # random intervening delays before terminating.
