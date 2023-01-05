@@ -75,9 +75,12 @@ class Selector():
         
         #Debug
         num_entries = self.get_num_entries()
-        for i in range(0, (num_entries-1)):
+        logger.debug("num_entries: "+ str(num_entries))
+        i = 0
+        while i < num_entries:
             entry = self.get_entry(i)
             logger.debug("execute: call to: entry " + str(i) + " is " + str(entry.get_entry_name()) + ", number of arrivals: " + str(entry.get_num_arrivals()))
+            i += i+1
 
         #entry0 = self.get_entry(0)
         #logger.debug("after add: entry " + entry0.get_entry_name() + ": " + str(entry0.get_num_arrivals()))

@@ -4,6 +4,8 @@ import traceback
 import socketserver
 import threading
 #import json
+import os
+import time
 
 import cloudpickle
 #import base64
@@ -208,6 +210,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
     def enqueue_and_invoke_lambda_synchronously(self,json_message):
         # call enqueue() on the InfniD collction of functions. This enqueue() will cal;
         # the enqueue() of the orchestrator.
+        logger.debug("Call infniD.enqueue")
         returned_state = tcp_server.infiniD.enqueue(json_message)
         return returned_state
 
@@ -312,8 +315,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
         messages = message['name']
         fanin_messages = messages[0]
         faninNB_messages = messages[1]
-        logger.info(str(fanin_messages))
-        logger.info(str(faninNB_messages))
+        logger.info("fanin_messages: " + str(fanin_messages))
+        logger.info("faninNB_messages: " + str(faninNB_messages))
 
         for msg in fanin_messages:
             #self.create_one_of_all_objs(msg)
@@ -339,7 +342,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
         if sync_objects_in_lambdas_trigger_their_tasks:
             fanout_messages = messages[2]
-            logger.info(str(fanout_messages))
+            logger.info("fanout_messages: " + str(fanout_messages))
             for msg in fanout_messages:
                 #self.create_one_of_all_objs(msg)
                 logger.debug("ttcp_server_lambda: create_all_sync_objects: invoke lambda..")
@@ -853,8 +856,12 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # to the thread caller and this thread starts a new thread for each work tuple (to
         # simulate starting a real lambda.)
 
-    def process_leaf_tasks_batch(self):
-        # read DAG_info. We read DAG_info here but this method is called only once.
+    # Called by DAG_excutor_driver
+    def process_leaf_tasks_batch(self,message):
+        # message is ignored. All information needed to start the leaf tasks is
+        # in DAG_info.
+        #
+        # Read DAG_info. We read DAG_info here but this method is called only once.
         # We also read DAG_info when tcserver_lambda starts; we pass that
         # DAG_info to InfinX, which passes DAG_info to the lambdas it starts.
         # We could pass DAG_info from the DAG_executor_drver to ths method
@@ -868,11 +875,11 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # Note: We do not pass this DAG_info to any lambdas. The TCP_server
         # reads DAG_info and does pass that DAG_info object to InfiniX.
 
-        for start_state, task_name, inp in zip(DAG_leaf_task_start_states, DAG_leaf_tasks, DAG_leaf_task_inputs):
+        for start_state_fanin_task, task_name, inp in zip(DAG_leaf_task_start_states, DAG_leaf_tasks, DAG_leaf_task_inputs):
             try:
                 logger.debug("tcp_server_lambda: process_leaf_tasks_batch: Starting leaf task " + task_name)
-                lambda_DAG_exec_state = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()), state = start_state)
-                logger.debug ("tcp_server_lambda: process_leaf_tasks_batch:  lambda payload is DAG_info + " + str(start_state) + "," + str(inp))
+                lambda_DAG_exec_state = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()), state = start_state_fanin_task)
+                logger.debug ("tcp_server_lambda: process_leaf_tasks_batch:  lambda payload is DAG_info + start state: " + str(start_state_fanin_task) + ", inp: " + str(inp))
                 lambda_DAG_exec_state.restart = False      # starting new DAG_executor in state start_state_fanin_task
                 lambda_DAG_exec_state.return_value = None
                 lambda_DAG_exec_state.blocking = False  
@@ -880,6 +887,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 start_state_fanin_task  = DAG_states[task_name]
                 # These are per leaf task
                 lambda_DAG_exec_state.keyword_arguments['fanin_task_name'] = task_name
+                lambda_DAG_exec_state.keyword_arguments['calling_task_name'] = "DAG_executor_driver"  
                 lambda_DAG_exec_state.keyword_arguments['start_state_fanin_task'] = start_state_fanin_task
                 lambda_DAG_exec_state.keyword_arguments['result'] = inp  
 
@@ -893,7 +901,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     "id": msg_id
                 }
         
-                logger.info("tcp_server_lambda: process_leaf_tasks_batch:  Starting Lambda function %s." % lambda_DAG_exec_state.function_name)
+                logger.info("tcp_server_lambda: process_leaf_tasks_batch:  processing fan_in for " + task_name)
 
                 # We use "inp" for leaf task input otherwise all leaf task lambda Executors will 
                 # receive all leaf task inputs in the leaf_task_inputs of ADG_info and in the 
@@ -917,7 +925,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     returned_state_ignored = self.enqueue_and_invoke_lambda_synchronously(message)
                     logger.info("*********************tcp_server_lambda: process_leaf_tasks_batch: called infiniD.enqueue(message) "
                         + " for fanout task: " + str(task_name) + ", returned_state_ignored: " + str(returned_state_ignored))
-                
+                    time.sleep(2)
+                    os._exit(0)
                 """
                 else:
                     logger.info("*********************tcp_server_lambda: process_leaf_tasks_batch: " + calling_task_name + ": calling invoke_lambda_synchronously."

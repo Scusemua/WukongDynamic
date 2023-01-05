@@ -6,6 +6,7 @@ import cloudpickle
 import uuid
 import threading
 from threading import Lock
+import os
 
 from wukongdnc.server.message_handler_lambda import MessageHandler
 from .DAG_executor_State import DAG_executor_State
@@ -18,14 +19,14 @@ from .DAG_executor_constants import create_all_fanins_faninNBs_on_start
 
 import logging 
 logger = logging.getLogger(__name__)
-"""
+
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
-"""
+
 
 #logger = logging.getLogger(__name__)
 #logger.setLevel(logging.DEBUG)
@@ -233,7 +234,7 @@ class DAG_orchestrator:
 			dummy_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
 			logger.debug("DAG_Orchestrator: Triggered: Sending 'process_enqueued_fan_ins' message to lambda function for " + sync_object_name)
 			logger.debug("SDAG_Orchestrator: length of enqueue's list: " + str(len(list_of_fan_in_ops)))
-
+			
 			if not create_all_fanins_faninNBs_on_start:
 				is_fanin = sync_object_name in self.all_fanin_task_names
 				dummy_state.keyword_arguments['is_fanin'] = is_fanin	
@@ -279,6 +280,7 @@ class DAG_orchestrator:
 			with simulated_lambda_function_lock:
 				try:
 					logger.debug("DAG_Orchestrator enqueue: calling simulated_lambda_function.lambda_handler(payload)")
+
 					# This is essentially a synchronous call to a regular Python function
 	#ToDo: Allow calling real lambdas insted of simulated lambdas based on options. like we do 
 	# in the tcp_server_lambda functions.
@@ -709,8 +711,8 @@ class InfiniD:
 #        use the single deployment.
 		simulated_lambda_function = self.get_function(sync_object_name)
 		simulated_lambda_function_lock = self.get_function_lock(sync_object_name)
-		logger.debug("XXXXXXXXXXXXXXXXXXXX InfiniD enqueue: calling self.sqs.enqueue")
+		logger.debug("XXXXXXXXXXXXXXXXXXXX InfiniD enqueue: calling self.dag_orchestrator.enqueue for sync_object " + sync_object_name)
 		return_value = self.dag_orchestrator.enqueue(json_message, simulated_lambda_function, simulated_lambda_function_lock)
-		logger.debug("XXXXXXXXXXXXXXXXXXXX InfiniD enqueue: called self.sqs.enqueue")
+		logger.debug("XXXXXXXXXXXXXXXXXXXX InfiniD enqueue: called self.sqs.enqueue for sync_object " + sync_object_name)
 
 		return return_value

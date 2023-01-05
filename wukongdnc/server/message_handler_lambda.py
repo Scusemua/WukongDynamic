@@ -6,6 +6,8 @@ from ..dag.DAG_executor_constants import FanIn_Type, FanInNB_Type
 from ..dag.DAG_executor_constants import create_all_fanins_faninNBs_on_start
 from .util import decode_and_deserialize, make_json_serializable
 import uuid
+import os
+import time
 
 # Set up logging.
 import logging 
@@ -238,6 +240,8 @@ class MessageHandler(object):
             }
             self.create_obj(creation_message)
 
+        logger.debug("message_handler_lambda: process_enqueued_fan_ins: process list of messages.")
+
         for msg in list_of_messages:
             # We are doing all the fan_in ops one-by-one in the order they were called by clients
             # The return value of last call is the fanin results; return those to client
@@ -286,10 +290,13 @@ class MessageHandler(object):
         # MessageHandler not passing itself since synchronizer does not use send_serialized_object to send results 
         # to tcp_server - Lambda returns values synchronously.
         #return_value = synchronizer.synchronize_sync(obj_name, method_name, state, synchronizer_name, self)
+
         return_value = synchronizer.synchronize_sync(obj_name, method_name, state, synchronizer_name)
         
         logger.debug("MessageHandler called synchronizer.synchronize_sync")
-        
+        logging.shutdown()
+        time.sleep(3)
+        os._exit(0)
         return return_value
 
     def synchronize_async(self, message = None):

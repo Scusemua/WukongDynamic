@@ -6,6 +6,16 @@
 #
 # Lots of docs in the function simulator file:
 #
+# driver has os exit afer process_leaf_tasks_batch
+# message handler lambda has os exit after call to 
+# tcp_server_lanbda has os exit after self.enqueue_and_invoke_lambda for
+#   the enqueue of the first leaf task start
+# So continue with DAG_executor_lambda(payload) and see if leaf task runs
+# then next leaf task
+# then non-leaf tasks
+# Check code first.
+#
+#   synchronizer.synchronize_sync for first and only leaf task fan_in op
 #   payload for lambdas when triggering (and when just storing objects)
 #
 #   DO THIS FIRST - if it works then just get payload to lambda function right.
@@ -137,6 +147,7 @@ from multiprocessing import Process #, Manager
 import time
 import cloudpickle
 import socket
+import os
 
 #from .DFS_visit import Node
 #from .DFS_visit import state_info
@@ -891,6 +902,7 @@ def run():
                             all_fanout_task_names,DAG_leaf_tasks,DAG_leaf_task_start_states)
                         # cal server to trigger the leaf tasks 
                         process_leaf_tasks_batch(websocket)
+                        os._exit(0)
                     else:
                         # storing sync objects remotely; they do not trigger their tasks to run
                         # in the same lamba that strores the sync object. So, e.g., fanouts are
@@ -1378,7 +1390,7 @@ def create_fanin_and_faninNB_and_fanout_messages(DAG_map,DAG_states,DAG_info,all
         message = {
             "op": "create",
             # fanouts are just FanIns of size 1
-            "type": FanIn_Type,
+            "type": FanInNB_Type,
             "name": leaf_task_name,
             "state": make_json_serializable(dummy_state),	
             "id": msg_id
@@ -1406,7 +1418,7 @@ def create_fanin_and_faninNB_and_fanout_messages(DAG_map,DAG_states,DAG_info,all
         message = {
             "op": "create",
             # fanouts are just FanIns of size 1
-            "type": FanIn_Type,
+            "type": FanInNB_Type,
             "name": fanout_name,
             "state": make_json_serializable(dummy_state),	
             "id": msg_id

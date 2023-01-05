@@ -6,6 +6,8 @@ else:
     from .selector import Selector
 
 import threading
+import time
+import os
 #import time 
 #from threading import Thread
 
@@ -30,14 +32,14 @@ from .selectableEntry import selectableEntry
 
 import logging 
 logger = logging.getLogger(__name__)
-"""
+
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
-"""
+
 
 class DAG_executor_FanInNB_Select(Selector):
     # Actual init is via local init() method, which is clled after this object is create
@@ -259,6 +261,7 @@ class DAG_executor_FanInNB_Select(Selector):
                 # objcects cannot be stored locally.)
 #rhc: run task
                 if store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks:
+                    #  trigger fanni task to run in this lambda
                     try:
                         logger.debug("DAG_executor_FanInNB_Select: triggering DAG_Executor_Lambda() for task " + fanin_task_name)
                         lambda_DAG_exec_state = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()), state = start_state_fanin_task)
@@ -278,6 +281,7 @@ class DAG_executor_FanInNB_Select(Selector):
                             + " for triggered task " + fanin_task_name)
                         logger.error(ex) 
                 else:
+                    # invoke a new lambda to run fanin task
                     try:
                         DAG_executor_state = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()), state = start_state_fanin_task)
                         DAG_executor_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
