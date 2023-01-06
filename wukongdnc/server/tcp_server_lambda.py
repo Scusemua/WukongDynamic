@@ -925,6 +925,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     returned_state_ignored = self.enqueue_and_invoke_lambda_synchronously(message)
                     logger.info("*********************tcp_server_lambda: process_leaf_tasks_batch: called infiniD.enqueue(message) "
                         + " for fanout task: " + str(task_name) + ", returned_state_ignored: " + str(returned_state_ignored))
+                    logging.shutdown()
                     time.sleep(2)
                     os._exit(0)
                 """

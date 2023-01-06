@@ -6,7 +6,6 @@ import cloudpickle
 import uuid
 import threading
 from threading import Lock
-import os
 
 from wukongdnc.server.message_handler_lambda import MessageHandler
 from .DAG_executor_State import DAG_executor_State

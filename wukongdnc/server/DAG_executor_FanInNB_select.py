@@ -6,8 +6,9 @@ else:
     from .selector import Selector
 
 import threading
-import time
-import os
+
+#import time
+#import os
 #import time 
 #from threading import Thread
 
@@ -275,6 +276,12 @@ class DAG_executor_FanInNB_Select(Selector):
                             "DAG_executor_state": lambda_DAG_exec_state,
                             "DAG_info": self.DAG_info
                         }
+
+                        # Note: Not pickle payload - this is a local call to 
+                        # method DAG_executor.DAG_executor_lambda(payload).
+                        # If we call a real lambda (in else-part) we pickle.
+                        # DAG_executor.DAG_executor_lambda will determine wheher
+                        # it needs to unpickle (real lambda) or not (local call)
                         DAG_executor.DAG_executor_lambda(payload)
                     except Exception as ex:
                         logger.error("[ERROR] DAG_executor_FanInNB_Select: Failed to start DAG_executor.DAG_executor_lambda"

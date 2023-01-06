@@ -47,6 +47,7 @@ from .util import pack_data
 
 import logging.handlers
 import multiprocessing
+import os
 
 total_time = 0
 num_fanins_timed = 0
@@ -1710,11 +1711,18 @@ def DAG_executor_processes(payload,counter,log_queue, worker_configurer):
 # Config: A1
 def DAG_executor_lambda(payload):
     logger.debug("Lambda: started.")
-    DAG_exec_state = cloudpickle.loads(base64.b64decode(payload['DAG_executor_state']))
 
-    logger.debug("payload DAG_exec_state.state:" + str(DAG_exec_state.state))
-    DAG_info = cloudpickle.loads(base64.b64decode(payload['DAG_info']))
+    if not (store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks):
+        DAG_exec_state = cloudpickle.loads(base64.b64decode(payload['DAG_executor_state']))
+        DAG_info = cloudpickle.loads(base64.b64decode(payload['DAG_info']))
+    else:
+        DAG_exec_state = payload['DAG_executor_state'] 
+        DAG_info = payload['DAG_info']  
+
+    #logger.debug("payload DAG_exec_state.state:" + str(DAG_exec_state.state))
+
     DAG_map = DAG_info.get_DAG_map()
+    
     state_info = DAG_map[DAG_exec_state.state]
     is_leaf_task = state_info.task_name in DAG_info.get_DAG_leaf_tasks()
     if not is_leaf_task:
@@ -1730,7 +1738,10 @@ def DAG_executor_lambda(payload):
         # parameter would only be used by the Lambdas and we ha ve a place already
         # in state_info.task_inputs. 
         # Note: We null out state_info.task_inputs for leaf tasks after we use the input.
-        inp = cloudpickle.loads(base64.b64decode(payload['input']))
+        if not (store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks):
+            inp = cloudpickle.loads(base64.b64decode(payload['input']))
+        else:
+            inp = payload['input']
         state_info.task_inputs = inp
 
     # lambdas do not use work_queues, for now.
@@ -1738,6 +1749,7 @@ def DAG_executor_lambda(payload):
 
     # server and counter are None
     # logger is local lambda logger
+
     DAG_executor_work_loop(logger, server, counter, DAG_exec_state, DAG_info, work_queue )
     logger.debug("DAG_executor_processes: returning after work_loop.")
     return
