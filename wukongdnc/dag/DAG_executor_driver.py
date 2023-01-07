@@ -7,18 +7,7 @@
 # Lots of docs in the function simulator file:
 #
 # driver has os exit afer process_leaf_tasks_batch
-# message handler lambda has os exit after call to synchronizer.synchronize_sync
-#   which calls self.synchronizeLambda
-# tcp_server_lanbda in process leaf tasks has os exit after 
-#   self.enqueue_and_invoke_lambda for the enqueue of the first leaf task start
-# So continue with DAG_executor_lambda(payload) and see if leaf task runs
-# then next leaf task 
-# ==> remove exit in tcp_server_lambda process leaf tasks
-# after th enqueue, so second call can be made
-# ==> remove exit in message hander after synchronizer.synchronize_sync
-# Q: after triggered task does DAG_executor_lambda return to faninNB_select
-#    and then lambda returns to process leaf tasksand does net lef task
-#    and then return to process_leaf_tasks then lambda returns to enqueue?
+#
 # ToDo: parallel invoke of leaf tasks?
 #
 # then non-leaf tasks: Check Fanin path, which is same as non-trigger?

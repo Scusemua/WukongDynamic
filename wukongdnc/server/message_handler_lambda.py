@@ -294,9 +294,7 @@ class MessageHandler(object):
         return_value = synchronizer.synchronize_sync(obj_name, method_name, state, synchronizer_name)
         
         logger.debug("MessageHandler called synchronizer.synchronize_sync")
-        logging.shutdown()
-        time.sleep(3)
-        os._exit(0)
+
         return return_value
 
     def synchronize_async(self, message = None):

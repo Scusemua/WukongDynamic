@@ -712,6 +712,6 @@ class InfiniD:
 		simulated_lambda_function_lock = self.get_function_lock(sync_object_name)
 		logger.debug("XXXXXXXXXXXXXXXXXXXX InfiniD enqueue: calling self.dag_orchestrator.enqueue for sync_object " + sync_object_name)
 		return_value = self.dag_orchestrator.enqueue(json_message, simulated_lambda_function, simulated_lambda_function_lock)
-		logger.debug("XXXXXXXXXXXXXXXXXXXX InfiniD enqueue: called self.sqs.enqueue for sync_object " + sync_object_name)
+		logger.debug("XXXXXXXXXXXXXXXXXXXX InfiniD enqueue: called self.dag_orchestrator.enqueue for sync_object " + sync_object_name)
 
 		return return_value

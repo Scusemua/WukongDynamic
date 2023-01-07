@@ -287,6 +287,7 @@ class DAG_executor_FanInNB_Select(Selector):
                         logger.error("[ERROR] DAG_executor_FanInNB_Select: Failed to start DAG_executor.DAG_executor_lambda"
                             + " for triggered task " + fanin_task_name)
                         logger.error(ex) 
+                        logging.exception("foo")
                 else:
                     # invoke a new lambda to run fanin task
                     try:

@@ -920,28 +920,25 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
                 if using_DAG_orchestrator:
                     logger.info("*********************tcp_server_lambda: process_leaf_tasks_batch: calling infiniD.enqueue(message)."
-                        + " for fanout task: " + str(task_name))
+                        + " for leaf task: " + str(task_name))
                     # calls: returned_state = tcp_server.infiniD.enqueue(json_message)
                     returned_state_ignored = self.enqueue_and_invoke_lambda_synchronously(message)
                     logger.info("*********************tcp_server_lambda: process_leaf_tasks_batch: called infiniD.enqueue(message) "
-                        + " for fanout task: " + str(task_name) + ", returned_state_ignored: " + str(returned_state_ignored))
-                    logging.shutdown()
-                    time.sleep(2)
-                    os._exit(0)
+                        + " for leaf task: " + str(task_name) + ", returned_state_ignored: " + str(returned_state_ignored))
+
                 """
                 else:
                     logger.info("*********************tcp_server_lambda: process_leaf_tasks_batch: " + calling_task_name + ": calling invoke_lambda_synchronously."
-                        +  " for fanout task: " + str(task_name))
+                        +  " for leaf task: " + str(task_name))
                     #return_value = synchronizer.synchronize(base_name, DAG_exec_state, **DAG_exec_state.keyword_arguments)
                     returned_state_ignored = self.invoke_lambda_synchronously(message)
                     logger.info("*********************tcp_server_lambda: process_leaf_tasks_batch: " + calling_task_name + ": called invoke_lambda_synchronously "
-                        + " for fanout task: " + str(task_name) + ", returned_state_ignored: "  + str(returned_state_ignored))
+                        + " for leaf task: " + str(task_name) + ", returned_state_ignored: "  + str(returned_state_ignored))
                 """
 
             except Exception as ex:
                 logger.error("[ERROR] tcp_server_lambda: process_leaf_tasks_batch: Failed to start DAG_executor Lambda.")
                 logger.error(ex)
-
 
     # Not used and not tested. Currently create work queue in 
     # create_all_fanins_and_faninNBs_and_possibly_work_queue. 

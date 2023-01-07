@@ -1217,13 +1217,25 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
             # pass all those leaf task inputs in DAG_info in each payload.
             task_inputs = state_info.task_inputs    
             is_leaf_task = state_info.task_name in DAG_info.get_DAG_leaf_tasks()
+            logger.debug("is_leaf_task: " + str(is_leaf_task))
+            logger.debug("task_inputs: " + str(task_inputs))
             if not is_leaf_task:
                 logger.debug("Packing data. Task inputs: %s. Data dict (keys only): %s" % (str(task_inputs), str(data_dict.keys())))
                 # task_inputs is a tuple of task_names
                 args = pack_data(task_inputs, data_dict)
             else:
-            # task_inputs is a tuple of input values, e.g., '1'
-                args = task_inputs
+                # if not triggering tasks in lambdas task_inputs is a tuple of input values, e.g., '1'
+                if not (store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks):
+                    args = task_inputs
+                else:
+                    # else the laf task was triggered by a fanin operation on the fann object
+                    # for the leaf task and the fanin result, as usual, maps the task that
+                    # sent the input to the input. For leaf tasks, the task that sent the 
+                    # input is "DAG_executor_driver", whuch is not a real DAG task. So
+                    # we have to grab the value that DAG_executor_driver is mapped to,
+                    # which is the leaf task input. The only input to a leaf task is this
+                    # input.
+                    args = task_inputs['DAG_executor_driver']
 
             # using map DAG_tasks from task_name to task
             task = DAG_tasks[state_info.task_name]
@@ -1729,7 +1741,10 @@ def DAG_executor_lambda(payload):
         # lambdas invoked with inputs. We do not add leaf task inputs to the data
         # dictionary, we use them directly when we execute the leaf task.
         # Also, leaf task inputs are not in a dictionary.
-        dict_of_results = cloudpickle.loads(base64.b64decode(payload['input']))
+        if not (store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks):
+            dict_of_results = cloudpickle.loads(base64.b64decode(payload['input']))
+        else:
+            dict_of_results = payload['input']
         for key, value in dict_of_results.items():
             data_dict[key] = value
     else:
