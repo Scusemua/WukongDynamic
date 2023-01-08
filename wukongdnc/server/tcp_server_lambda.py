@@ -315,8 +315,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
         messages = message['name']
         fanin_messages = messages[0]
         faninNB_messages = messages[1]
-        logger.info("fanin_messages: " + str(fanin_messages))
-        logger.info("faninNB_messages: " + str(faninNB_messages))
+        #logger.info("fanin_messages: " + str(fanin_messages))
+        #logger.info("faninNB_messages: " + str(faninNB_messages))
 
         for msg in fanin_messages:
             #self.create_one_of_all_objs(msg)
@@ -331,7 +331,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
         for msg in faninNB_messages:
             #self.create_one_of_all_objs(msg)
-            logger.debug("tcp_server_lambda: call create_all_sync_objects() called.")
+            logger.debug("tcp_server_lambda: call create_all_sync_objects().")
 
             return_value_ignored = self.invoke_lambda_synchronously(msg)
 
@@ -342,7 +342,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
         if sync_objects_in_lambdas_trigger_their_tasks:
             fanout_messages = messages[2]
-            logger.info("fanout_messages: " + str(fanout_messages))
+            #logger.info("fanout_messages: " + str(fanout_messages))
             for msg in fanout_messages:
                 #self.create_one_of_all_objs(msg)
                 logger.debug("ttcp_server_lambda: create_all_sync_objects: invoke lambda..")
@@ -374,10 +374,10 @@ class TCPHandler(socketserver.StreamRequestHandler):
         #############################
         # Write ACK back to client. #
         #############################
-        logger.info("tcp_server_lambda: create_all_sync_objects: Sending ACK to client %s for create_all_fanins_and_faninNBs_and_possibly_work_queue operation." % self.client_address[0])
+        logger.info("tcp_server_lambda: create_all_sync_objects: Sending ACK to client %s for create_all_sync_objects operation." % self.client_address[0])
         resp_encoded = json.dumps(resp).encode('utf-8')
         self.send_serialized_object(resp_encoded)
-        logger.info("tcp_server_lambda: create_all_sync_objects: Sent ACK of size %d bytes to client %s for create_all_fanins_and_faninNBs_and_possibly_work_queue operation." % (len(resp_encoded), self.client_address[0]))
+        logger.info("tcp_server_lambda: create_all_sync_objects: Sent ACK of size %d bytes to client %s for create_all_sync_objects operation." % (len(resp_encoded), self.client_address[0]))
 
         # return value not assigned
         return 0
@@ -567,7 +567,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     # calls: returned_state = tcp_server.infiniD.enqueue(json_message)
                     returned_state_ignored = self.enqueue_and_invoke_lambda_synchronously(message)
                     logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": called infiniD.enqueue(message) "
-                        + " for fanout task: " + str(name) + ", returned_state_ignored: " + str(returned_state_ignored))
+                        + " for fanout task: " + str(name)) # + ", returned_state_ignored: " + str(returned_state_ignored))
                 
                 """
                 else:
@@ -576,7 +576,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     #return_value = synchronizer.synchronize(base_name, DAG_exec_state, **DAG_exec_state.keyword_arguments)
                     returned_state_ignored = self.invoke_lambda_synchronously(message)
                     logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": called invoke_lambda_synchronously "
-                        + " for fanout task: " + str(name) + ", returned_state_ignored: "  + str(returned_state_ignored))
+                        + " for fanout task: " + str(name)) # + ", returned_state_ignored: "  + str(returned_state_ignored))
                 """
 
         list_of_work_tuples = []
@@ -626,15 +626,15 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     + " start_state_fanin_task: " + str(start_state_fanin_task))
                 # calls: returned_state = tcp_server.infiniD.enqueue(json_message)
                 returned_state = self.enqueue_and_invoke_lambda_synchronously(message)
-                logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": called infiniD.enqueue(message) "
-                    + "returned_state: " + str(returned_state))
+                logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": called infiniD.enqueue(message) ")
+                    # + "returned_state: " + str(returned_state))
             else:
                 logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": calling invoke_lambda_synchronously."
                     + " start_state_fanin_task: " + str(start_state_fanin_task))
                 #return_value = synchronizer.synchronize(base_name, DAG_exec_state, **DAG_exec_state.keyword_arguments)
                 returned_state = self.invoke_lambda_synchronously(message)
-                logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": called invoke_lambda_synchronously "
-                    + "returned_state: " + str(returned_state))
+                logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": called invoke_lambda_synchronously ")
+                    # + "returned_state: " + str(returned_state))
 
             if (run_all_tasks_locally):
                 # using threads to simulate lambdas for executing tasks and storing sync
@@ -939,6 +939,21 @@ class TCPHandler(socketserver.StreamRequestHandler):
             except Exception as ex:
                 logger.error("[ERROR] tcp_server_lambda: process_leaf_tasks_batch: Failed to start DAG_executor Lambda.")
                 logger.error(ex)
+
+        resp = {
+        "op": "ack",
+        "op_performed": "process_leaf_tasks_batch"
+        }
+        #############################
+        # Write ACK back to client. #
+        #############################
+        logger.info("tcp_server_lambda: process_leaf_tasks_batch: Sending ACK to client %s for process_leaf_tasks_batch operation." % self.client_address[0])
+        resp_encoded = json.dumps(resp).encode('utf-8')
+        self.send_serialized_object(resp_encoded)
+        logger.info("tcp_server_lambda: process_leaf_tasks_batch: Sent ACK of size %d bytes to client %s for process_leaf_tasks_batch operation." % (len(resp_encoded), self.client_address[0]))
+
+        # return value not assigned
+        return 0
 
     # Not used and not tested. Currently create work queue in 
     # create_all_fanins_and_faninNBs_and_possibly_work_queue. 

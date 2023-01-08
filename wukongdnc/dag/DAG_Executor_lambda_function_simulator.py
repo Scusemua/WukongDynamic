@@ -57,7 +57,7 @@ class Lambda_Function_Simulator:
 		# Extract all of the data from the payload.
 		#json_message = cloudpickle.loads(base64.b64decode(event["json_message"]))
 		json_message = payload['json_message']
-		logger.debug("Lambda_Function_Simulator: lambda_handler: JSON message: " + str(json_message))
+		#logger.debug("Lambda_Function_Simulator: lambda_handler: JSON message: " + str(json_message))
 
 		if not warm_resources['message_handler']:
 			# Issue: Can we get and print the name of the Lambda function - "LambdaBoundedBuffer" or "LambdaSemaphore"

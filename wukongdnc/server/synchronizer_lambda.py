@@ -330,9 +330,9 @@ class Synchronizer(object):
             # 
             # We return the pickled state to the synchronous caller of the laambda function 
             # instead of TCP sending the pickled state to the clinet
-            logger.debug("AAAAAAAAAAAAAAAAsynchronizer_lambda: synchronize_sync: before pickle, state is: " + str(state))
+            #logger.debug("synchronizer_lambda: synchronize_sync: before pickle, state is: " + str(state))
             pickled_state = cloudpickle.dumps(state)
-            logger.debug("AAAAAAAAAAAAAAAAsynchronizer_lambda: synchronize_sync: after pickle, pickled_state is: " + str(pickled_state))
+            #logger.debug("synchronizer_lambda: synchronize_sync: after pickle, pickled_state is: " + str(pickled_state))
 
             return pickled_state
         
