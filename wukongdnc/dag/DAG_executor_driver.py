@@ -4,11 +4,12 @@
 
 # Where are we: 
 #
-# test all configs incl no-trigger and trigger
-# # Create objcts on fly - no pre-create and no mapping
-# - no create and no mapping - then map returns func()
-# - enable code for create: perhaps modify process_enqueued_fan_ins to 
-#   create_and_process_enqueued_fan_ins and make sure payload has enough information
+# - test all configs incl no-trigger and trigger
+
+# - enable code for create in the enqueue. Make sure all enqueus
+#   will be using this (leaf task and not leaf task).
+# - integrate the non-simulated lambda stff with the mapping and
+#   anonynous stuff. Still use InfiniD? with "DAG_executor_i"
 #
 # Lots of docs in the function simulator file:
 #

@@ -16,9 +16,12 @@ from ..dag.DAG_executor_constants import using_Lambda_Function_Simulators_to_Sto
 from ..dag.DAG_executor_constants import using_DAG_orchestrator, run_all_tasks_locally
 from ..dag.DAG_executor_constants import using_workers, sync_objects_in_lambdas_trigger_their_tasks
 from ..dag.DAG_executor_constants import store_sync_objects_in_lambdas, store_fanins_faninNBs_locally
+from ..dag.DAG_executor_constants import map_objects_to_lambda_functions, create_all_fanins_faninNBs_on_start
+from ..dag.DAG_executor_constants import use_anonymous_lambda_functions
 from ..dag.DAG_Executor_lambda_function_simulator import InfiniD # , Lambda_Function_Simulator
 from ..dag.DAG_info import DAG_Info
 from ..dag.DAG_executor_State import DAG_executor_State
+
 from threading import Lock
 
 # Set up logging.
@@ -181,6 +184,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             #lambda_function = tcp_server.function_map[object_name]
 
             # get the python function that is being used to simulate a lambda
+            # Note: We are not using the DAG_Orchestrator
             simulated_lambda_function = tcp_server.infiniD.get_function(sync_object_name)
             # lock each function call with a per-function lock
             lambda_function_lock = tcp_server.infiniD.get_function_lock(sync_object_name)
@@ -1256,8 +1260,23 @@ class TCPServer(object):
             self.infiniD = InfiniD(DAG_info)
             # create list of simulator functions, number of functions
             # is the number of fanins + faaninNBs + fanouts
-#ToDo: create objects on fly so do we need to create functions? 
-            self.infiniD.create_functions() 
+
+            if create_all_fanins_faninNBs_on_start or map_objects_to_lambda_functions and (
+                using_Lambda_Function_Simulators_to_Store_Objects):
+                # if create objects on start then map_objects_to_lambda_functions must be 
+                # true. if not create objects on start then we can still be mapping objects
+                # to functions but we we will create the objects on the fly in the function
+                # they are mapped to.
+                # Note: we assert not use_anonymous_lambda_functions is true when 
+                # map_objects_to_lambda_functions is True in the constants file.
+                # Note: These are real python functions we are creating to 
+                # simulate lamnda functions. When we use real lambdas, we do not 
+                # "create" the functions before hand, we create the deployments.
+                # Note: We map an object to a function by mapping the object to a
+                # function index i. for simuated lambdas, i is an ndex nto a list
+                # of lambdas. For real lambdas, we can use depoyment names like
+                # "Dag_executor_i."
+                self.infiniD.create_functions() 
 
             """
             if use_single_lambda_function:
@@ -1275,8 +1294,14 @@ class TCPServer(object):
             """
             # after creating the simulated functions, we map the fanin/fanout/faninNB names to 
             # a function. Eventually may map multiple names (i.e. objects) to a function.
-#ToDo: option: create objects on fly so no mapping and no create functions?
-            self.infiniD.map_object_names_to_functions()
+
+            if map_objects_to_lambda_functions:
+                # Note: we assert not use_anonymous_lambda_functions is true when 
+                # map_objects_to_lambda_functions is True in the constants file.
+                # Note: The functions need not have been crated in the case
+                # that we aer using real lambdas. We can map an object to 
+                # ndex i which is a map to the deployment named, e.g., "DAG_executor_i"
+                self.infiniD.map_object_names_to_functions()
 
             logger.debug("tcp_server_lambda: function map" + str(self.infiniD.function_map))
             # Note: call lambda_function = infiniX.get_function(sync_object_name) to get 

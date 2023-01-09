@@ -14,7 +14,8 @@ from wukongdnc.server.util import make_json_serializable
 from .DAG_executor_constants import store_fanins_faninNBs_locally 
 from .DAG_executor_constants import FanIn_Type, FanInNB_Type
 from .DAG_executor_constants import using_single_lambda_function
-from .DAG_executor_constants import create_all_fanins_faninNBs_on_start
+from .DAG_executor_constants import create_all_fanins_faninNBs_on_start, map_objects_to_lambda_functions
+
 
 import logging 
 logger = logging.getLogger(__name__)
@@ -619,7 +620,10 @@ class InfiniD:
 		self.all_faninNB_sizes = DAG_info.get_all_faninNB_sizes()
 		self.all_fanout_task_names = DAG_info.get_all_fanout_task_names()
 		self.DAG_leaf_tasks = DAG_info.get_DAG_leaf_tasks()
-#rhc: leaf tasks
+		# Assuming each sync object will be in a separate function. We may
+		# assign several objects to a function, e.g., input sets of objects that go in 
+		# the same function in which case the number of functions will be the 
+		# number of sets.
 		self.num_Lambda_Function_Simulators = len(self.all_fanin_task_names) + (
 			len(self.all_fanout_task_names)) + (
 			len(self.all_faninNB_task_names)) + (
@@ -652,9 +656,15 @@ class InfiniD:
 	def map_synchronization_object(self, object_name, object_index):
 			self.function_map[object_name] = object_index
 
-	# get function the object name was mapped to
+	# get function, if mapping objects to functions, returns the object name was mapped to;
+	# otherwise, it returns an anonyous function. Note: This function can only be invoked
+	# once snce we have no way to refer to it by name (index or deploment name).
+	# Noet: this here is all for simulated functions.
 	def get_function(self, object_name):
+		if map_objects_to_lambda_functions:
 			return self.list_of_Lambda_Function_Simulators[self.function_map[object_name]]
+		else:
+			return Lambda_Function_Simulator()
 	def get_function_lock(self, object_name):
 			return self.list_of_function_locks[self.function_map[object_name]]
 
@@ -668,6 +678,12 @@ class InfiniD:
 		# of i so that i is always 0.
 		i=0
 		for object_name, n in zip(self.all_faninNB_task_names, self.all_faninNB_sizes):
+			# mapping to an index i not a string and not a func(), so we do not need
+			# to have created the functions yet. If usng real lambdas, thn, of course,
+			# we do not "create a function"; we have the deployment name and we can
+			# call a function using its deployment name. 
+			# Note: we can use deployments "DAG_executor_i" so we can still map to
+			# an index i.
 			self.map_synchronization_object(object_name,i)
 			if not using_single_lambda_function:
 				i += 1

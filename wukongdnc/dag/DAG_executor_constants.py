@@ -1,3 +1,15 @@
+import logging
+
+logger = None
+logger = logging.getLogger(__name__)
+
+logger.setLevel(logging.DEBUG)
+formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+ch.setFormatter(formatter)
+logger.addHandler(ch)
+
 # Configuraion:
 #
 # True if we are not using Lambdas, i.e., executing tasks with threads or processes
@@ -48,10 +60,51 @@ using_Lambda_Function_Simulators_to_Store_Objects = True
 sync_objects_in_lambdas_trigger_their_tasks = True
 # use orchestrator to invoke functions (e.g., when all fanin/fanout results are available)
 using_DAG_orchestrator = True
+# map ech synch object by name to the function it resided in. if we create
+# all objects on start we msut map the objects to function so we can get the
+# function an onject is in. If we do not create objects on start then
+# we will crate them on the fly. We can still map he objects to functions -
+# we will just have to create the object in the funtion on the first function
+# invocation. If we do not map objects, then we will/can only invoke tge
+# function that contains the possibly pre-created object once. 
+map_objects_to_lambda_functions = True
+# We can use an anonymous simulated function or a single named lambda deployment.
+# In this case, we can invoke the function only once snce we cannot
+# refer to that function by name, i.e., by index for simuated functions and 
+# by uniqueu deploment name for real lambda functions. For simuated functions
+# we do not create an indexed list of fnctions, and for real Lambdas we
+# just have one deployment. 
+# Note: if map_objects_to_lambda_functions then use_anonymous_lambda_functions 
+# must be False. We map objects to function so we can invoke a function more
+# than once when we access an object more than once. If we 
+# use_anonymous_lambda_functions then we cannot access s specific function
+# (by name or by index).
+# ToDo: integrate using_single_lambda_function with this mapping stuff. that
+# is, 
+use_anonymous_lambda_functions = True
+
+#assert:
+if create_all_fanins_faninNBs_on_start:
+    if not map_objects_to_lambda_functions:
+        # if create sync objects on start then we must map them to function so
+        # that we can determine the function an object is in.
+        logger.error("[Error]: Configuration error: if create_all_fanins_faninNBs_on_start"
+            + " then map_objects_to_functions must be True.")
+
+#assert:
+if map_objects_to_lambda_functions:
+    if use_anonymous_lambda_functions:
+        # if create sync objects on start then we must map them to function so
+        # that we can determine the function an object is in.
+        logger.error("[Error]: Configuration error: if map_objects_to_lambda_functions"
+            + " then using_single_lambda_function must be False.")
+
 # use a single lambda function to store all of the synchroization objects
 # to make an easy test case. This cannot be used when using the function 
 # simulators or using the DAG_orchestrator
 using_single_lambda_function = False
+
+
 
 A1 = A1_Server = A1_FunctionSimulator = A1_SingleFunction = A1_Orchestrator = False
 A2 = False
