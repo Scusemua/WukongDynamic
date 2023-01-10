@@ -17,7 +17,7 @@ from ..dag.DAG_executor_constants import using_DAG_orchestrator, run_all_tasks_l
 from ..dag.DAG_executor_constants import using_workers, sync_objects_in_lambdas_trigger_their_tasks
 from ..dag.DAG_executor_constants import store_sync_objects_in_lambdas, store_fanins_faninNBs_locally
 from ..dag.DAG_executor_constants import map_objects_to_lambda_functions, create_all_fanins_faninNBs_on_start
-from ..dag.DAG_executor_constants import use_anonymous_lambda_functions
+#from ..dag.DAG_executor_constants import use_anonymous_lambda_functions
 from ..dag.DAG_Executor_lambda_function_simulator import InfiniD # , Lambda_Function_Simulator
 from ..dag.DAG_info import DAG_Info
 from ..dag.DAG_executor_State import DAG_executor_State
@@ -147,7 +147,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
 # fan_in and issues enqueue() instad?
 
             if using_single_lambda_function:
-                # for function smulator prototype, using a single function to store all the fanins/faninNBs
+                # for function simulator prototype, using a single function to store all the fanins/faninNBs
                 # i.e., all fanin/faninNBs mapped under the name 'single_function'
                 sync_object_name = "single_function"
             else:
@@ -185,7 +185,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
             # get the python function that is being used to simulate a lambda
             # Note: We are not using the DAG_Orchestrator
-            simulated_lambda_function = tcp_server.infiniD.get_function(sync_object_name)
+            simulated_lambda_function = tcp_server.infiniD.get_simulated_lambda_function(sync_object_name)
             # lock each function call with a per-function lock
             lambda_function_lock = tcp_server.infiniD.get_function_lock(sync_object_name)
             # lambda handler is the same handler that is used for real lambdas
@@ -943,6 +943,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             except Exception as ex:
                 logger.error("[ERROR] tcp_server_lambda: process_leaf_tasks_batch: Failed to start DAG_executor Lambda.")
                 logger.error(ex)
+                logging.exception("trigger leaf task")
 
         resp = {
         "op": "ack",
@@ -1298,10 +1299,18 @@ class TCPServer(object):
             if map_objects_to_lambda_functions:
                 # Note: we assert not use_anonymous_lambda_functions is true when 
                 # map_objects_to_lambda_functions is True in the constants file.
-                # Note: The functions need not have been crated in the case
-                # that we aer using real lambdas. We can map an object to 
-                # ndex i which is a map to the deployment named, e.g., "DAG_executor_i"
+                # Note: The functions need not have been created in the case
+                # that we are using real lambdas. We can map an object to 
+                # index i which is a map to the deployment named, e.g., "DAG_executor_i"
                 self.infiniD.map_object_names_to_functions()
+
+            # Need to map names to trigger whether we map objects to functions
+            # or not. A trigger is a pair [list of fanin ops, n]. The n is used
+            # to determine whether all fanin ops have occurred so the fanins
+            # can be triggered. The list of fanin ops is the saved fanins
+            # that will be given to the fanin object one by one when it is 
+            # triggered.
+            self.infiniD.map_object_name_to_triggers()
 
             logger.debug("tcp_server_lambda: function map" + str(self.infiniD.function_map))
             # Note: call lambda_function = infiniX.get_function(sync_object_name) to get 

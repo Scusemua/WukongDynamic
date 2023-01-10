@@ -223,13 +223,15 @@ class MessageHandler(object):
                 + " length of list_of_messages is 0 but fanin size > 0.")
 
         if not create_all_fanins_faninNBs_on_start:
-            dummy_state = message['state']
-            is_fanin = dummy_state.keyword_arguments['is_fanin']
+#rhc: states is jsoned? need to extract state?
+            dummy_state = decode_and_deserialize(message["state"])
             fanin_name = dummy_state.keyword_arguments['fanin_name']
+            is_fanin = dummy_state.keyword_arguments['is_fanin']
             if is_fanin:
                 fanin_type = FanIn_Type
             else:
                 fanin_type = FanInNB_Type
+
             msg_id = str(uuid.uuid4())	# for debugging
             creation_message = {
                 "op": "create",
@@ -238,9 +240,11 @@ class MessageHandler(object):
                 "state": make_json_serializable(dummy_state),	
                 "id": msg_id
             }
+            logger.debug("message_handler_lambda: process_enqueued_fan_ins: "
+            + "create sync object " + fanin_name + "on the fly")
             self.create_obj(creation_message)
 
-        logger.debug("message_handler_lambda: process_enqueued_fan_ins: process list of messages.")
+            logger.debug("message_handler_lambda: process_enqueued_fan_ins: process list of messages ")
 
         for msg in list_of_messages:
             # We are doing all the fan_in ops one-by-one in the order they were called by clients

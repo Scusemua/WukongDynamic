@@ -511,10 +511,17 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
 
  	#ToDo: kwargs put in DAG_executor_State keywords and on server it gets keywords from state and passes to create and fanin
 
-    if not create_all_fanins_faninNBs_on_start:
+    # This create_all_fanins_faninNBs_on_start is for creating sync objects
+    # on the tcp_server. If we store_sync_objects_in_lambdas and 
+    # not create_all_fanins_faninNBs_on_start the tcp_server_lambda or
+    # or the lambdas themselves will create the object to be stored in them.
+    if not create_all_fanins_faninNBs_on_start and (
+            not store_sync_objects_in_lambdas):
         # not implemented
+        logger.debug(thread_name + ": process_faninNBs_batch: call create_and_faninNB_remotely_batch.") 
         dummy_DAG_exec_state = create_and_faninNB_remotely_batch(websocket,**keyword_arguments)
     else:
+        logger.debug(thread_name + ": process_faninNBs_batch: call faninNB_remotely_batch.") 
         dummy_DAG_exec_state = faninNB_remotely_batch(websocket,**keyword_arguments)
 
     #if DAG_exec_state.blocking:
@@ -734,7 +741,7 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
     fanouts.remove(become_task)
     logger.debug(thread_name + ": process_fanouts: new fanouts after remove:" + str(fanouts))
 
-    # process rest of fanins
+    # process rest of fanouts
     logger.debug(thread_name + ": process_fanouts: run_all_tasks_locally:" + str(run_all_tasks_locally))
 
     for name in fanouts:
@@ -774,7 +781,6 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                 work_queue.put(work_tuple)
         else:
 #rhc run tasks
-            # if we are using thr
             if (not run_all_tasks_locally) and store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks:
             #if (run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks):
                 # Nothing to do. When we are sync_objects_in_lambdas_trigger_their_tasks we will

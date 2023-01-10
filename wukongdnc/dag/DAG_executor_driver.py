@@ -4,12 +4,14 @@
 
 # Where are we: 
 #
+#   Fix bug when create on fly
 # - test all configs incl no-trigger and trigger
-
+# 
 # - enable code for create in the enqueue. Make sure all enqueus
 #   will be using this (leaf task and not leaf task).
 # - integrate the non-simulated lambda stff with the mapping and
 #   anonynous stuff. Still use InfiniD? with "DAG_executor_i"
+#   Set function_map directly
 #
 # Lots of docs in the function simulator file:
 #
@@ -981,6 +983,24 @@ def run():
                         logger.error("[Error]: DAG_executor_driver: interal error: DAG_executor_driver: run_all_tasks_locally should be false.")
                     # not run_all_tasks_locally so using lambdas, which do not use a work queue 
                     # So do not put leaf tasks in work queue and do not create a work queue
+                    if not run_all_tasks_locally and store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks and using_DAG_orchestrator:
+                        # storing sync objects in lambdas and snc objects trigger their tasks
+                        #create_fanins_and_faninNBs_and_fanouts(websocket,DAG_map,DAG_states,DAG_info,
+                        #    all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes,
+                        #    all_fanout_task_names,DAG_leaf_tasks,DAG_leaf_task_start_states)
+                        # call server to trigger the leaf tasks
+                        process_leaf_tasks_batch(websocket)
+                        # Informs the logging system to perform an orderly 
+                        # shutdown by flushing and closing all handlers. 
+                        # This should be called at application exit and no 
+                        # further use of the logging system should be made 
+                        # after this call.
+                    #else:
+                        # storing sync objects remotely; they do not trigger their tasks to run
+                        # in the same lamba that strores the sync object. So, e.g., fanouts are
+                        # done by calling lambdas to excute the fanout task (besides the becomes 
+                        # task.)
+                        #create_fanins_and_faninNBs(websocket,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
 
     # FYI
     logger.debug("DAG_executor_driver: DAG_leaf_tasks: " + str(DAG_leaf_tasks))

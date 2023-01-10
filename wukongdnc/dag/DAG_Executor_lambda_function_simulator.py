@@ -274,34 +274,54 @@ class DAG_orchestrator:
 
 			payload = {"json_message": message}	
 
-			# Do not allow parallel invocations. It's possible that parallel invocatins can never
-			# be attempted using the scheme under development.
-			# created all objects at start - created objects one by one and called init() passing kwargs
-			with simulated_lambda_function_lock:
+
+			# Note: Created all objects at start - created objects one by one and called init() passing kwargs
+# ToDo: Do we want to allow both sync and async calls to simulated functions? The latter done by 
+# creating a thread that does the call. Async faster when we are invoking a real lambda, which we 
+# will do with invoke_lambda_asynch.
+#ToDo: Allow calling real lambdas instead of simulated lambdas based on options. like we do 
+# in the tcp_server_lambda functions.
+
+			# This is essentially a synchronous call to a regular Python function
+			# The payload is a message with "op": "process_enqueued_fan_ins", so lambda
+			# Will execute process_enqueued_fan_ins to call the fan_in ops on the fanin objects 
+			# that were created at the beginning and returning the fanin results to the client
+			# caller, e.g., a thread that called fan_in i.e., the thread that is simulating a lambda.
+			# The returned result for a fanin is 0 or the collected fan_in results.
+			# For faninNB, no results are returned so the return value is 0.
+			if map_objects_to_lambda_functions:
+				# Do not allow parallel invocations. We may invoke the function
+				# more than once, e.g., two or more sync ojects mapped to the
+				# same function, or the object is a semaphore and we make 
+				# multiple P/V calls.
+				with simulated_lambda_function_lock:
+					try:
+						logger.debug("DAG_Orchestrator enqueue: calling simulated_lambda_function.lambda_handler(payload)")
+						return_value = simulated_lambda_function.lambda_handler(payload)
+						logger.debug("DAG_Orchestrator: called simulated_lambda_function.lambda_handler(payload)")
+					except Exception as ex:
+						logger.error("[ERROR]: " + thread_name + ": invoke_lambda_synchronously: Failed to run lambda handler for synch object: " + sync_object_name)
+						logger.error(ex)
+			else:
+				# we are not mapping objects to functions; instead, we are using
+				# anonymous functions that can inherently only be invoked one
+				# time, so there is no need to lock the invocation. There is 
+				# only one invocation since each object is in its own anonymous
+				# function and we only do one fanin (fanout) operation on 
+				# each object.
 				try:
 					logger.debug("DAG_Orchestrator enqueue: calling simulated_lambda_function.lambda_handler(payload)")
-
-					# This is essentially a synchronous call to a regular Python function
-	#ToDo: Allow calling real lambdas insted of simulated lambdas based on options. like we do 
-	# in the tcp_server_lambda functions.
-	# ToDo: Do we want to allow both sync and async calls to simulated functions? The latter done by 
-	# creating a thread that does the call. Async faster when we are invoking a real lambda, which we will do with invoke_lambda_asynch
-					# The payload is a message with "op": "process_enqueued_fan_ins", so lambda
-					# Will execute process_enqueued_fan_ins to call the fan_in ops on the fanin objects 
-					# that were created at the beginning and returning the fanin results to the client
-					# caller, e.g., a thread that called fan_in i.e., the thread that is simulating a lambda.
-					# The returned result for a fanin is 0 or the collected fan_in results.
-					# For faninNB, no results are returned so the return value is 0.
 					return_value = simulated_lambda_function.lambda_handler(payload)
 					logger.debug("DAG_Orchestrator: called simulated_lambda_function.lambda_handler(payload)")
 				except Exception as ex:
 					logger.error("[ERROR]: " + thread_name + ": invoke_lambda_synchronously: Failed to run lambda handler for synch object: " + sync_object_name)
-					logger.error(ex)		
-			"""
-#rhc: ToDo: the payload needs to work for the above pre-created objects case too
+					logger.error(ex)					
 
-			simulated_lambda_function = Lambda_Function_Simulator()
+			return return_value
+		else:
+			logger.debug("DAG_Orchestator enqueue: function call not Triggered")
 
+		"""
 So: The current lamba_function_simulator lamba_handler does warm_resources['message_handler'].handle(json_message)
 where the message_handler is message_handler_lambda. This works for non-triggered lambdas. The 
 message handler will call process_enqueued_fan_ins and return 0 (always 0 for faninNBs) or the 
@@ -594,11 +614,7 @@ Note: We only need the creation message if not pre-created ojects.
 			except Exception as ex:
 				logger.error("[ERROR]: " + thread_name + ": invoke_lambda_synchronously: Failed to run lambda handler for synch object: " + sync_object_name)
 				logger.error(ex)
-			"""
-			
-			return return_value
-		else:
-			logger.debug("DAG_Orchestator enqueue: function call not Triggered")
+		"""		
 
 #ToDo: this value is used/ignored now that we can trigger tasks?
 		dummy_DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
@@ -660,13 +676,25 @@ class InfiniD:
 	# otherwise, it returns an anonyous function. Note: This function can only be invoked
 	# once snce we have no way to refer to it by name (index or deploment name).
 	# Noet: this here is all for simulated functions.
-	def get_function(self, object_name):
+	def get_simulated_lambda_function(self, object_name):
 		if map_objects_to_lambda_functions:
 			return self.list_of_Lambda_Function_Simulators[self.function_map[object_name]]
 		else:
 			return Lambda_Function_Simulator()
 	def get_function_lock(self, object_name):
+		if map_objects_to_lambda_functions:
 			return self.list_of_function_locks[self.function_map[object_name]]
+		else:
+			return None
+	
+	def get_real_lambda_function(self, object_name):
+		# returns the deployment name that object_name is mapped to
+		if map_objects_to_lambda_functions:
+			i = self.function_map[object_name]
+			deployment_name = "DAG_executor"+str(i)
+			return deployment_name
+		else:
+			return "DAG_executor"
 
 	# map the fanins/fanouts/faninNBs to a function, currently one object per function
 	# where order does not matter
@@ -676,6 +704,9 @@ class InfiniD:
 		# if use_single_lambda_function then we map all the names to a single
 		# function, which is function 0. We do this by skippng the increment
 		# of i so that i is always 0.
+		# Note: This maps each name to a separate function (index). we may want to
+		# map multiple names to the same function, in which case we can input
+		# sets of names, so "a" and "b" mapped to 1, "c" and "d" mapped to 2, etc.
 		i=0
 		for object_name, n in zip(self.all_faninNB_task_names, self.all_faninNB_sizes):
 			# mapping to an index i not a string and not a func(), so we do not need
@@ -691,27 +722,58 @@ class InfiniD:
 			# list collects results for the fan_in and fanin/fanot size n is 
 			# used to determine when all of the results have been collected.
 			# For a fanout, we can use a faninNB object with a size of 1.
-			self.dag_orchestrator.map_object_name_to_trigger(object_name,n)
+			#self.dag_orchestrator.map_object_name_to_trigger(object_name,n)
 
 		for object_name, n in zip(self.all_fanin_task_names, self.all_fanin_sizes):
 			self.map_synchronization_object(object_name,i)
 			if not using_single_lambda_function:
 				i += 1
-			self.dag_orchestrator.map_object_name_to_trigger(object_name,n)
+			#self.dag_orchestrator.map_object_name_to_trigger(object_name,n)
 
 		for object_name in self.all_fanout_task_names:
 			self.map_synchronization_object(object_name,i)
 			if not using_single_lambda_function:
 				i += 1
-			n = 1 # a fanout is a fanin of size 1
-			self.dag_orchestrator.map_object_name_to_trigger(object_name,n)
+			#n = 1 # a fanout is a fanin of size 1
+			#self.dag_orchestrator.map_object_name_to_trigger(object_name,n)
 
 		for object_name in self.DAG_leaf_tasks:
 			self.map_synchronization_object(object_name,i)
 			if not using_single_lambda_function:
 				i += 1
+			#n = 1 # a fanout is a fanin of size 1
+			#self.dag_orchestrator.map_object_name_to_trigger(object_name,n)
+
+	# map the fanins/fanouts/faninNBs to a function, currently one object per function
+	# where order does not matter
+	def map_object_name_to_triggers(self):
+		# for fanouts, the fanin object size is always 1
+		# map function name to a pair (empty_list,n) where n is size of fanin/faninNB.
+		# if use_single_lambda_function then we map all the names to a single
+		# function, which is function 0. We do this by skippng the increment
+		# of i so that i is always 0.
+		# Note: This maps each name to a separate function (index). we may want to
+		# map multiple names to the same function, in which case we can input
+		# sets of names, so "a" and "b" mapped to 1, "c" and "d" mapped to 2, etc.
+		i=0
+		for object_name, n in zip(self.all_faninNB_task_names, self.all_faninNB_sizes):
+			# Each name is mapped to a pair, which is (empty_list,n). The 
+			# list collects results for the fan_in and fanin/fanot size n is 
+			# used to determine when all of the results have been collected.
+			# For a fanout, we can use a faninNB object with a size of 1.
+			self.dag_orchestrator.map_object_name_to_trigger(object_name,n)
+
+		for object_name, n in zip(self.all_fanin_task_names, self.all_fanin_sizes):
+			self.dag_orchestrator.map_object_name_to_trigger(object_name,n)
+
+		for object_name in self.all_fanout_task_names:
 			n = 1 # a fanout is a fanin of size 1
 			self.dag_orchestrator.map_object_name_to_trigger(object_name,n)
+
+		for object_name in self.DAG_leaf_tasks:
+			n = 1 # a fanout is a fanin of size 1
+			self.dag_orchestrator.map_object_name_to_trigger(object_name,n)
+
 
 	# call enqueue of DAG_orchestrator. The DAG_orchestrator will eithor store the jsn_message, which is 
 	# for a fanin/fanout op in the list of operations for the associated object, or if all n operaations
@@ -724,7 +786,7 @@ class InfiniD:
 #      So: if not create functions on-the-fly: get func/lock 
 # 		else: Create anonymous function/lock on the fly? Or if real lambdas 
 #        use the single deployment.
-		simulated_lambda_function = self.get_function(sync_object_name)
+		simulated_lambda_function = self.get_simulated_lambda_function(sync_object_name)
 		simulated_lambda_function_lock = self.get_function_lock(sync_object_name)
 		logger.debug("XXXXXXXXXXXXXXXXXXXX InfiniD enqueue: calling self.dag_orchestrator.enqueue for sync_object " + sync_object_name)
 		return_value = self.dag_orchestrator.enqueue(json_message, simulated_lambda_function, simulated_lambda_function_lock)

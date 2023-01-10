@@ -25,7 +25,8 @@ store_fanins_faninNBs_locally = False    # vs remotely
 # False, synch objects are created on the fly, i.e, we execute create-and-fanin
 # operations that create a synch object if it has not been created yet and then
 # execute a Fan_in operaation on the created object.
-create_all_fanins_faninNBs_on_start = True
+create_all_fanins_faninNBs_on_start = False
+
 # True if the DAG is executed by a "pool" of threads/processes. False, if we are
 # using Lambdas or we are using threads to simulate the use of Lambdas. In the latter
 # case, instead of, e.g., starting a Lambda at fan_out operations, we start a thread.
@@ -67,20 +68,20 @@ using_DAG_orchestrator = True
 # we will just have to create the object in the funtion on the first function
 # invocation. If we do not map objects, then we will/can only invoke tge
 # function that contains the possibly pre-created object once. 
-map_objects_to_lambda_functions = True
+map_objects_to_lambda_functions = False
 # We can use an anonymous simulated function or a single named lambda deployment.
 # In this case, we can invoke the function only once snce we cannot
-# refer to that function by name, i.e., by index for simuated functions and 
+# refer to a function instance by name, i.e., by index for simuated functions and 
 # by uniqueu deploment name for real lambda functions. For simuated functions
-# we do not create an indexed list of fnctions, and for real Lambdas we
+# we do not create an indexed list of functions, and for real Lambdas we
 # just have one deployment. 
 # Note: if map_objects_to_lambda_functions then use_anonymous_lambda_functions 
-# must be False. We map objects to function so we can invoke a function more
-# than once when we access an object more than once. If we 
-# use_anonymous_lambda_functions then we cannot access s specific function
+# must be False. We map objects to function so we can invoke a function instance 
+# more than once when we access an object more than once. If we 
+# use_anonymous_lambda_functions then we cannot access a specific function
 # (by name or by index).
 # ToDo: integrate using_single_lambda_function with this mapping stuff. that
-# is, 
+# is, map names to lambda functions, and sometimes there is only one function.
 use_anonymous_lambda_functions = True
 
 #assert:
@@ -97,7 +98,10 @@ if map_objects_to_lambda_functions:
         # if create sync objects on start then we must map them to function so
         # that we can determine the function an object is in.
         logger.error("[Error]: Configuration error: if map_objects_to_lambda_functions"
-            + " then using_single_lambda_function must be False.")
+            + " then use_anonymous_lambda_functions must be False.")
+
+# So if create on start then must map objects and cannot use anonymous functions.
+# If want to use anonymous functions then no create objects on statr and no mapping.
 
 # use a single lambda function to store all of the synchroization objects
 # to make an easy test case. This cannot be used when using the function 
