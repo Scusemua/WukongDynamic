@@ -3,29 +3,15 @@
 # try matrixMult
 
 # Where are we: 
-#
-#   Fix bug when create on fly 
-#   1527 returned_state.return_value == 0 but value is None?
-#   because process_fanins calls create_and_fanin_remotely, which is
-#   not implemented so getting the return vaue = None set by faninNB select
-#   when it triggers task and passes DAG_executor_state. Need to call
-#   the synch op on tcp_server_lambda (via fanin_remote) which calls
-#   the enqueue which calls synchronize_sync, whcih needs to 
-#   do the create like processfaninNBs_batch.
-#   Need create ifo, see dag exec lambda func line 238 which puts
-#   the create info in dummy_state.keyword_arguments and puts this 
-#   state in its process enqueued message. So we'll have this create
-#   info same as the other, and the saved fan_in op message will be 
-#   sent to the fanin.
 # - test all configs incl no-trigger and trigger
 # 
-# - enable code for create in the enqueue. Make sure all enqueus
-#   will be using this (leaf task and not leaf task).
 # - integrate the non-simulated lambda stff with the mapping and
 #   anonynous stuff. Still use InfiniD? with "DAG_executor_i"
 #   Set function_map directly
+# - crate on the fly for non-enqueue cases. Do it it message_handler(lambda)
+#   so objects are created in the lambda for tcp_server_lambda, same for tcp_server.
 #
-# Lots of docs in the function simulator file:
+# - Docs
 #
 # ToDo: parallel invoke of leaf tasks?
 #

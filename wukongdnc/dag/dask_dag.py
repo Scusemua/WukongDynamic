@@ -90,12 +90,16 @@ if __name__ == "__main__":
 
   def divide(x):
     quotient = x / 72
+    print("xxxxxxxxxxxxx")
     print("quotient: " + str(quotient))
+    print("xxxxxxxxxxxxx")
     return quotient
 
   def divide_by_18(x):
     quotient = x / 18
+    print("xxxxxxxxxxxxx")
     print("quotient: " + str(quotient))
+    print("xxxxxxxxxxxxx")
     return quotient
 
   def increment(x):

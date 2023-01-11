@@ -965,7 +965,14 @@ def process_fanins(websocket,fanins, faninNB_sizes, calling_task_name, DAG_state
             logger.debug(thread_name + ": process_fanins: " + calling_task_name + ": call server.fanin_locally")
             DAG_exec_state = server.fanin_locally(DAG_exec_state,keyword_arguments)
     else:
-        if not create_all_fanins_faninNBs_on_start:
+#rhc: ToDo: when not create_all_fanins_faninNBs_on_start create the object
+# on the server, like we do for the enqueue case. If storing objects in 
+# lambda we have to be in the lmabda when we creae the object, i.e.,
+# in message_handler_lambda, so when create objects on server put the
+# create in msg_handler's synchronize sync to be consistent (rather
+# than in tcp_server?)
+        if False:
+        #if not create_all_fanins_faninNBs_on_start:
             # Note: might wan to send the result for debugging
             #if not using_lambdas:
                 # if we call a remote fanin and locally we are not using lambdas,
