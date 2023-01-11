@@ -277,7 +277,14 @@ class MessageHandler(object):
         obj_name = message['name']
         method_name = message['method_name']
         state = decode_and_deserialize(message["state"])
-        
+
+#rhc: ToDo:        if not create_all_fanins_faninNBs_on_start:
+#  create object like above then finish this.
+#  Need the info for create.
+# dummy_state = decode_and_deserialize(message["state"])
+# fanin_name = dummy_state.keyword_arguments['fanin_name']
+# is_fanin = dummy_state.keyword_arguments['is_fanin']
+
         # not using synchronizer class name in object name for now, i.e., use "bb" instead of "BoundedBuffer_bb"
         # type_arg = message["type"]
         # synchronizer_name = self._get_synchronizer_name(type_name = type_arg, name = obj_name)
