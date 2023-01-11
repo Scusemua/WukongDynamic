@@ -1003,6 +1003,64 @@ class TCPHandler(socketserver.StreamRequestHandler):
         """
         DAG_exec_state = decode_and_deserialize(message["state"])
         calling_task_name = DAG_exec_state.keyword_arguments['calling_task_name'] 
+
+
+        """
+        So, the message is the synchronize synch message, e.g. for a fan_in
+        op. We need to pass this on to the messagehandler by calling
+        invoke_lambda_synchronously(), However, the message_handler
+        synchronize_sync may need to create the object on the fly. Thus,
+        we create the dummy_state and pack it with the info needed by 
+        create(). Then we create a createinfo_and_message that has this dummy_state
+        and whose name is the parameter message. So the synchronize_syc
+        in the message_handler can check if create mesage on fly and if so
+        grab the info from dummy_state and create the state, then grab
+        the message from name and do the op as usual.
+
+        msg_id = str(uuid.uuid4())
+        dummy_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
+        logger.debug("DAG_Orchestrator: Triggered: Sending 'process_enqueued_fan_ins' message to lambda function for " + sync_object_name)
+        logger.debug("SDAG_Orchestrator: length of enqueue's list: " + str(len(list_of_fan_in_ops)))
+        
+        if not create_all_fanins_faninNBs_on_start:
+            is_fanin = sync_object_name in self.all_fanin_task_names
+            dummy_state.keyword_arguments['is_fanin'] = is_fanin	
+            # need to send the fanin_name. this name is in the fan_in ops in the 
+            # list_of_fan_in_ops but easier to send it here as part of message so we
+            # won't have to extract the first op and get the name.
+            dummy_state.keyword_arguments['fanin_name'] = sync_object_name
+            if not is_fanin: # faninNB or fanout
+                # passing to the faninNB object:
+                # its size
+                dummy_state.keyword_arguments['n'] = n
+                # when the faninNB completes, if we are runnning locally and we are not pooling,
+                # we start a new thread to execute the fanin task. If we are thread pooling, we put the 
+                # start state in the work_queue. If we are using lambdas, we invoke a lambda to
+                # execute the fanin task. If we are process pooling, then the last process to 
+                # call fanin will put the start state of the fanin task in the work_queue. (FaninNb
+                # cannot do this since the faninNB will be on the tcp_server.)
+                dummy_state.keyword_arguments['start_state_fanin_task'] = self.DAG_states[sync_object_name]
+                dummy_state.keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
+                dummy_state.keyword_arguments['DAG_info'] = self.DAG_info
+            else: # fanin
+                # passing to the faninNB object:
+                # its size
+                dummy_state.keyword_arguments['n'] = n	
+
+        # we set state.keyword_arguments before call to create()
+        createinfo_and_message = {
+            "op": "synchronize_sync",
+            "type": "createinfo_and_message",
+            # We are passing the message parameter throuh as "name"
+            "name": message,
+            "state": make_json_serializable(dummy_state),
+            "id": msg_id
+        }
+        #msg = json.dumps(message).encode('utf-8')
+
+        payload = {"json_message": createinfo_and_message}	
+
+        """
        
         logger.debug("tcp_server_lambda: calling server.synchronize_sync().")
 #rhc: run task: ToDo:  changes for trigeger tasks - using this or async for fanin

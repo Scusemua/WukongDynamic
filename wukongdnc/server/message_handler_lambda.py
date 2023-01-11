@@ -272,18 +272,45 @@ class MessageHandler(object):
             message (dict):
                 The payload from the AWS Lambda function.
         """
-        
+
         logger.debug("[MESSAGEHANDLER] synchronize_sync() called.")
+
+#rhc: ToDo (for async too)
+        """
+        Need to check create object on fly. If so then use the 
+        createinfo_message to get the create() info and create
+        the message. Then grab the op message from "name" and 
+        finish.
+
+        Consider changing parm to "createinfo_and_message"
+
+        if not create_all_fanins_faninNBs_on_start:
+            dummy_state = decode_and_deserialize(createinfo_and_message["state"])
+            fanin_name = dummy_state.keyword_arguments['fanin_name']
+            is_fanin = dummy_state.keyword_arguments['is_fanin']
+            if is_fanin:
+                fanin_type = FanIn_Type
+            else:
+                fanin_type = FanInNB_Type
+
+            msg_id = str(uuid.uuid4())	# for debugging
+            creation_message = {
+                "op": "create",
+                "type": fanin_type,
+                "name": fanin_name,
+                "state": make_json_serializable(dummy_state),	
+                "id": msg_id
+            }
+            logger.debug("message_handler_lambda: process_enqueued_fan_ins: "
+            + "create sync object " + fanin_name + "on the fly")
+            self.create_obj(creation_message)
+
+        message = createinfo_and_message['name']
+        """
+        
         obj_name = message['name']
         method_name = message['method_name']
         state = decode_and_deserialize(message["state"])
-
-#rhc: ToDo:        if not create_all_fanins_faninNBs_on_start:
-#  create object like above then finish this.
-#  Need the info for create.
-# dummy_state = decode_and_deserialize(message["state"])
-# fanin_name = dummy_state.keyword_arguments['fanin_name']
-# is_fanin = dummy_state.keyword_arguments['is_fanin']
 
         # not using synchronizer class name in object name for now, i.e., use "bb" instead of "BoundedBuffer_bb"
         # type_arg = message["type"]
@@ -316,7 +343,10 @@ class MessageHandler(object):
         -------------------
             message (dict):
                 The payload from the AWS Lambda function.
-        """        
+        """     
+
+#rhc: ToDo: Same as for sync
+   
         logger.debug("[MESSAGEHANDLER] synchronize_async() called.")
         obj_name = message['name']
         method_name = message['method_name']       

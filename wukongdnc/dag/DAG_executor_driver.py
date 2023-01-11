@@ -10,17 +10,19 @@
 #   Set function_map directly
 # - crate on the fly for non-enqueue cases. Do it it message_handler(lambda)
 #   so objects are created in the lambda for tcp_server_lambda, same for tcp_server.
-#
+# - on the fly for tcp_server and local?
 # - Docs
 #
 # ToDo: parallel invoke of leaf tasks?
 #
 # Short-circuit call to fan_in op in lambda? Use local Fanins?
+# The fanin object can be on server since DAG_orchestrator is essentially
+# acting like this object anyway and fanin dos not trigger tasks so why bother putting
+# it on the server? Also, fanin just returns it's results, i.e., does not trigger a 
+# fanin task to run in the same lambda ss fanin. But then fanin are not in lambdas.
+#  
+# Consider: 
 #
-#   DO THIS FIRST - if it works then just get payload to lambda function right.
-# - ==> try just having the pre-created and mapped fanout/faninNB ops trigger the tasks
-#   in the faninNBs. Need to have the sync_objects_in_lambdas_trigger_their_tasks = True
-#   so all that code is enabled. 
 # - In work loop, need condition for process faninNBs batch
 #   and for async. Not using run_locally now, so need "not run_locally" for process faninNBs batch
 #   but when not "run locally" may or may not be sync_objects_in_lambdas_trigger_their_tasks
@@ -58,9 +60,6 @@
 #  same in the sense that the init)( and fan_in) have the info needed for 
 #  triggered task payload, so nothing special for triggered task payloads.
 #
-#  Consider: The fanin object can be on server since DAG_orchestrator is essentially
-# acting like this object anyway and fanin dos not trigger tasks so why bother putting
-# it on the server?
 # Consider: have RDMA dictionary for DAG_orchestrator to put results and faninNB/fanouts
 # to get results.
 #
