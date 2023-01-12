@@ -8,8 +8,41 @@
 # - integrate the non-simulated lambda stff with the mapping and
 #   anonynous stuff. Still use InfiniD? with "DAG_executor_i"
 #   Set function_map directly
-# - crate on the fly for non-enqueue cases. Do it it message_handler(lambda)
+# - create on the fly for non-enqueue cases. Do it it message_handler(lambda)
 #   so objects are created in the lambda for tcp_server_lambda, same for tcp_server.
+#   Note: just changing the create objects on the fy option, still not using
+#   the DAG_orchestrator (but using simulated functins)
+# - Problem: we have create in process_enqueued where it always does 
+#   create since we aer assuming process_enqueued is called once for
+#   a fanin/fanout. This assumption is true for fanin/fanouts.
+#   Is there an object for which we can call process_enquued moer than once?
+#   For example, semaphore P/V, can invoke muliple times but we won't save
+#   the operations like fan_ins? How about inc(), which we might batch
+#   like Gruppa? so save multiple incs() then process_enqueued on batch?
+#   So if create on fly we should still, in general, check to see if 
+#   object has already been created?
+# - Also, if we aer going to check can we put the create at the "bottom"? 
+#   i.e., in synchronize_sync() of message_handler or whatever is common 
+#   bottom?
+# - Note: process leaf tasks batch is not creating objects; it is calling
+#   enqueue which will create dag_stte for create() and call 
+#   process enqueued in msg_handler which will do creates. But how will
+#   leaf fanout objects get created if ni dag_orchestrator? Need to do 
+#   it in message handler synch.
+# - But make sure we can get create() info if we don't get it in 
+#   enqueue, i.e., can we get it in message_handler? Need DAG_info.
+#   So need to get DAG_info in tcp_servr_lambda and give it to 
+#   message handler sync?
+#   So if create on fly we pass a message that has the DAG_exec
+#   with the create info and we pass the list of messages (to process
+#   enqueued) or the message (to synchronize_sync); otherwise, we just
+#   pass the orignal messge or we always pass the new message but
+#   we don't include the new dag_state: No: we need the task_name,
+#   which we won't have it we use name to pass message so we need name
+#   in DAG state for create()
+#   Note: Don't forget message handler is in lamba when using tcp_server_lambda.
+#   So have to get DAG_info in create_info means have to read it in
+#   tcp_server_lambda? So need to get create info in process leaf?
 # - on the fly for tcp_server and local?
 # - Docs
 #
@@ -159,7 +192,7 @@ from .DAG_executor_constants import run_all_tasks_locally, store_fanins_faninNBs
 from .DAG_executor_constants import create_all_fanins_faninNBs_on_start, using_workers
 from .DAG_executor_constants import num_workers,using_threads_not_processes
 from .DAG_executor_constants import FanIn_Type, FanInNB_Type, process_work_queue_Type
-from .DAG_executor_constants import store_sync_objects_in_lambdas, sync_objects_in_lambdas_trigger_their_tasks, using_DAG_orchestrator
+from .DAG_executor_constants import store_sync_objects_in_lambdas, sync_objects_in_lambdas_trigger_their_tasks
 #from .DAG_work_queue_for_threads import thread_work_queue
 from .DAG_executor_work_queue_for_threads import work_queue
 from .DAG_executor_synchronizer import server
@@ -900,7 +933,7 @@ def run():
                     # not run_all_tasks_locally so using lambdas (real or simulatd)
                     # So do not put leaf tasks in work queue
 
-                    if not run_all_tasks_locally and store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks and using_DAG_orchestrator:
+                    if not run_all_tasks_locally and store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks:
                         # storing sync objects in lambdas and snc objects trigger their tasks
                         create_fanins_and_faninNBs_and_fanouts(websocket,DAG_map,DAG_states,DAG_info,
                             all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes,
@@ -914,7 +947,7 @@ def run():
                         # after this call.
                     else:
                         # storing sync objects remotely; they do not trigger their tasks to run
-                        # in the same lamba that strores the sync object. So, e.g., fanouts are
+                        # in the same lamba that stores the sync object. So, e.g., fanouts are
                         # done by calling lambdas to excute the fanout task (besides the becomes 
                         # task.)
                         create_fanins_and_faninNBs(websocket,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
@@ -980,7 +1013,7 @@ def run():
                         logger.error("[Error]: DAG_executor_driver: interal error: DAG_executor_driver: run_all_tasks_locally should be false.")
                     # not run_all_tasks_locally so using lambdas, which do not use a work queue 
                     # So do not put leaf tasks in work queue and do not create a work queue
-                    if not run_all_tasks_locally and store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks and using_DAG_orchestrator:
+                    if not run_all_tasks_locally and store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks:
                         # storing sync objects in lambdas and snc objects trigger their tasks
                         #create_fanins_and_faninNBs_and_fanouts(websocket,DAG_map,DAG_states,DAG_info,
                         #    all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes,
@@ -1053,7 +1086,7 @@ def run():
         # one worker and at most num_worker workers. If we are using workers, there may be more
         # leaf tasks than workers, but that is okay since we put all the leaf task states in the 
         # work queue and the created workers will withdraw them.
-        if not (not run_all_tasks_locally and store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks and using_DAG_orchestrator):
+        if not (not run_all_tasks_locally and store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks):
             # we are not having sync objects trigger their tasks in lambdas
             for start_state, task_name, inp in zip(DAG_leaf_task_start_states, DAG_leaf_tasks, DAG_leaf_task_inputs):
 
@@ -1169,7 +1202,6 @@ def run():
                         # lambdas then we should not have entered this loop for 
                         # starting tasks.
                         logger.error("[ERROR] DAG_executor_driver: reached unreachable code for starting triggered tasks")
-                        logger.error(ex)
             
         #else we started the leaf tasks above with process_leaf_tasks_batch
 

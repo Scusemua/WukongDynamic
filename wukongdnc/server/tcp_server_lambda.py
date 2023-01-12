@@ -193,8 +193,9 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 try:
                     return_value = simulated_lambda_function.lambda_handler(payload) 
                 except Exception as ex:
-                    logger.error("[ERROR]: " + thread_name + ": invoke_lambda_synchronously: Failed to run lambda handler for synch object: " + sync_object_name)
+                    logger.error("[ERROR]: " + thread_name + ": tcp_server_lambda: invoke_lambda_synchronously: Failed to run lambda handler for synch object: " + sync_object_name)
                     logger.error(ex)
+                    logging.exception("tcp_server_lambda: invoke_lambda_synchronously:")
         else:     
             # For DAG prototype, we use one function to store process_work_queue and all fanins and faninNBs
             sync_object_name = "LambdaBoundedBuffer" 
@@ -205,6 +206,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 except Exception as ex:
                     logger.error("[ERROR]: " + thread_name + ": invoke_lambda_synchronously: Failed to invoke lambda function for synch object: " + sync_object_name)
                     logger.error(ex)
+                    logging.exception("tcp_server_lambda: invoke_lambda_synchronously:")
             # where: lambda_client.invoke(FunctionName=function_name, InvocationType='RequestResponse', Payload=payload_json)
         
         # The return value from the Lambda function will typically be sent by tcp_server to a Lambda client of tcp_server
@@ -565,15 +567,13 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 # Note: We never invoke a fanout to get its "return value". When fanouts are in lambdas 
                 # we are simply passng the results for the fanned out task to the fanout object and it is
                 # triggering its fanout task.
-                if using_DAG_orchestrator:
+                if using_Lambda_Function_Simulators_to_Store_Objects and using_DAG_orchestrator:
                     logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": calling infiniD.enqueue(message)."
                         + " for fanout task: " + str(name))
                     # calls: returned_state = tcp_server.infiniD.enqueue(json_message)
                     returned_state_ignored = self.enqueue_and_invoke_lambda_synchronously(message)
                     logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": called infiniD.enqueue(message) "
                         + " for fanout task: " + str(name)) # + ", returned_state_ignored: " + str(returned_state_ignored))
-                
-                """
                 else:
                     logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": calling invoke_lambda_synchronously."
                         +  " for fanout task: " + str(name))
@@ -581,7 +581,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     returned_state_ignored = self.invoke_lambda_synchronously(message)
                     logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": called invoke_lambda_synchronously "
                         + " for fanout task: " + str(name)) # + ", returned_state_ignored: "  + str(returned_state_ignored))
-                """
+                
 
         list_of_work_tuples = []
         got_work = False
@@ -915,30 +915,27 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 # all the leaf task inputs in it so every thread/process reads all these inputs. This 
                 # can be optimized if necessary, e.g., separate files for leaf tasks and non-leaf tasks.
 
-#rhc: ToDo: Note: this is the lambda paylad for a leaf task. 
+                #Note: this is the lambda paylad for a leaf task. 
                 #payload = {
                 #    "input": inp,
                 #    "DAG_executor_state": lambda_DAG_exec_state,
                 #    "DAG_info": DAG_info
                 #}
 
-                if using_DAG_orchestrator:
+                if using_Lambda_Function_Simulators_to_Store_Objects and using_DAG_orchestrator:
                     logger.info("*********************tcp_server_lambda: process_leaf_tasks_batch: calling infiniD.enqueue(message)."
                         + " for leaf task: " + str(task_name))
                     # calls: returned_state = tcp_server.infiniD.enqueue(json_message)
                     returned_state_ignored = self.enqueue_and_invoke_lambda_synchronously(message)
                     logger.info("*********************tcp_server_lambda: process_leaf_tasks_batch: called infiniD.enqueue(message) "
                         + " for leaf task: " + str(task_name) + ", returned_state_ignored: " + str(returned_state_ignored))
-
-                """
                 else:
-                    logger.info("*********************tcp_server_lambda: process_leaf_tasks_batch: " + calling_task_name + ": calling invoke_lambda_synchronously."
+                    logger.info("*********************tcp_server_lambda: process_leaf_tasks_batch: calling invoke_lambda_synchronously."
                         +  " for leaf task: " + str(task_name))
                     #return_value = synchronizer.synchronize(base_name, DAG_exec_state, **DAG_exec_state.keyword_arguments)
                     returned_state_ignored = self.invoke_lambda_synchronously(message)
-                    logger.info("*********************tcp_server_lambda: process_leaf_tasks_batch: " + calling_task_name + ": called invoke_lambda_synchronously "
+                    logger.info("*********************tcp_server_lambda: process_leaf_tasks_batch: called invoke_lambda_synchronously "
                         + " for leaf task: " + str(task_name) + ", returned_state_ignored: "  + str(returned_state_ignored))
-                """
 
             except Exception as ex:
                 logger.error("[ERROR] tcp_server_lambda: process_leaf_tasks_batch: Failed to start DAG_executor Lambda.")
@@ -1114,7 +1111,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
         # Note: the value returned is pickled in Message_Handler_Lambda in 
         # synchronize_process_faninNBs_batch and returned by lambda function
-        if using_Lambda_Function_Simulators_to_Store_Objects:
+        if using_Lambda_Function_Simulators_to_Store_Objects and using_DAG_orchestrator:
             self.send_serialized_object(returned_state)
         else:
             self.send_serialized_object(returned_state)

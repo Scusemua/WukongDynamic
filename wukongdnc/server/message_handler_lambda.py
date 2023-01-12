@@ -285,6 +285,7 @@ class MessageHandler(object):
         Consider changing parm to "createinfo_and_message"
 
         if not create_all_fanins_faninNBs_on_start:
+#rhc: Todo: get it; if not created create it
             dummy_state = decode_and_deserialize(createinfo_and_message["state"])
             fanin_name = dummy_state.keyword_arguments['fanin_name']
             is_fanin = dummy_state.keyword_arguments['is_fanin']
