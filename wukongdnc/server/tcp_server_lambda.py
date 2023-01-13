@@ -862,14 +862,17 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
     # Called by DAG_excutor_driver
     def process_leaf_tasks_batch(self,message):
-        # message is ignored. All information needed to start the leaf tasks is
-        # in DAG_info.
+        # parameter message is ignored. All information needed to start 
+        # the leaf tasks is in DAG_info.
         #
         # Read DAG_info. We read DAG_info here but this method is called only once.
         # We also read DAG_info when tcserver_lambda starts; we pass that
         # DAG_info to InfinX, which passes DAG_info to the lambdas it starts.
         # We could pass DAG_info from the DAG_executor_drver to ths method
         # but we read it instead.
+
+#rhc: ToDo: make DAG_info global and read it in init().
+#   will make InfiniD and DAG_orchestrator separate files so still pass to them
         DAG_info = DAG_Info()
         DAG_states = DAG_info.get_DAG_states()
         DAG_leaf_tasks = DAG_info.get_DAG_leaf_tasks()

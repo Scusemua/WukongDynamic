@@ -25,9 +25,9 @@
 #   i.e., in synchronize_sync() of message_handler or whatever is common 
 #   bottom?
 # - Note: process leaf tasks batch is not creating objects; it is calling
-#   enqueue which will create dag_stte for create() and call 
+#   enqueue which will create dag_state for create() and call 
 #   process enqueued in msg_handler which will do creates. But how will
-#   leaf fanout objects get created if ni dag_orchestrator? Need to do 
+#   leaf fanout objects get created if no dag_orchestrator? Need to do 
 #   it in message handler synch.
 # - But make sure we can get create() info if we don't get it in 
 #   enqueue, i.e., can we get it in message_handler? Need DAG_info.
@@ -39,7 +39,7 @@
 #   pass the orignal messge or we always pass the new message but
 #   we don't include the new dag_state: No: we need the task_name,
 #   which we won't have it we use name to pass message so we need name
-#   in DAG state for create()
+#   in DAG state for create(). No: But message has name.
 #   Note: Don't forget message handler is in lamba when using tcp_server_lambda.
 #   So have to get DAG_info in create_info means have to read it in
 #   tcp_server_lambda? So need to get create info in process leaf?
