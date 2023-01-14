@@ -305,12 +305,16 @@ class DAG_executor_Synchronizer(object):
 		# Note: in real code, we would return here so caller can quit, letting server do the op.
 		# Here, we can just wait for op to finish, then return. Caller has nothing to do but 
 		# quit since nothing to do after a fanin.
-
+        # Note: For FanInNB_Select we call fan_in() directly, instead
+        # of going through execute() and all the selective wait stuff;
+        # this is because fan_in guard is always true and the FanInNB
+        # has no other entry methods to call. And no blocked callers
+        # on fan_in - callers that aer not the last to call do not block.
         if not is_select:
             # return is: None, restart, where restart is always 0 and return_value is None; and makes no change to DAG_executor_State	
             return_value_ignored, restart_value_ignored = FanInNB.fan_in(**keyword_arguments)
         else:
-            # hld the mutex lock but do this as usual anyway
+            # hold the mutex lock but do this as usual anyway
             FanInNB.lock()
             # non-blocking
             return_value_ignored = FanInNB.fan_in(**keyword_arguments)

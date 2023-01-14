@@ -4,7 +4,13 @@
 
 # Where are we: 
 # - test all configs incl no-trigger and trigger
+#   - in faninNB select, for local threads, comment out DAG_info
+#     since not using DAG_info from payload; read it instead.
+#   - in create messages, only need DAG_info if not run_all_tasks_locally, else set to NONE
 # 
+# - Option is on server, somehow get DAG_info to create so it can use 
+#   DAG_info when not run_all_tasks_locally. Ths instead of passing
+#   DAG_info in all the create messages for all the objects.
 # - integrate the non-simulated lambda stff with the mapping and
 #   anonynous stuff. Still use InfiniD? with "DAG_executor_i"
 #   Set function_map directly
@@ -47,6 +53,9 @@
 # - Docs
 #
 # ToDo: parallel invoke of leaf tasks?
+#
+# ToDo: Does tcpServer fannNBs_batch really need to call execute()
+# instead of calling dirextly, like we do for local objects?
 #
 # Short-circuit call to fan_in op in lambda? Use local Fanins?
 # The fanin object can be on server since DAG_orchestrator is essentially
@@ -1353,6 +1362,7 @@ def create_fanin_and_faninNB_messages(DAG_map,DAG_states,DAG_info,all_fanin_task
         # cannot do this since the faninNB will be on the tcp_server.)
         dummy_state.keyword_arguments['start_state_fanin_task'] = DAG_states[fanin_nameNB]
         dummy_state.keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
+#rhc: Todo: Only need DAG_info if not run_all_tasks_locally, else set to NONE
         dummy_state.keyword_arguments['DAG_info'] = DAG_info
         msg_id = str(uuid.uuid4())
 
@@ -1422,6 +1432,7 @@ def create_fanin_and_faninNB_and_fanout_messages(DAG_map,DAG_states,DAG_info,all
         # cannot do this since the faninNB will be on the tcp_server.)
         dummy_state.keyword_arguments['start_state_fanin_task'] = DAG_states[fanin_nameNB]
         dummy_state.keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
+#rhc: Todo: Only need DAG_info if not run_all_tasks_locally, else set to NONE
         dummy_state.keyword_arguments['DAG_info'] = DAG_info
         msg_id = str(uuid.uuid4())
 
@@ -1455,6 +1466,7 @@ def create_fanin_and_faninNB_and_fanout_messages(DAG_map,DAG_states,DAG_info,all
         # cannot do this since the faninNB will be on the tcp_server.)
         dummy_state.keyword_arguments['start_state_fanin_task'] = leaf_task_start_state
         dummy_state.keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
+#rhc: Todo: Only need DAG_info if not run_all_tasks_locally, else set to NONE
         dummy_state.keyword_arguments['DAG_info'] = DAG_info
         msg_id = str(uuid.uuid4())	# for debugging
 
@@ -1483,6 +1495,7 @@ def create_fanin_and_faninNB_and_fanout_messages(DAG_map,DAG_states,DAG_info,all
         # cannot do this since the faninNB will be on the tcp_server.)
         dummy_state.keyword_arguments['start_state_fanin_task'] = DAG_states[fanout_name]
         dummy_state.keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
+#rhc: Todo: Only need DAG_info if not run_all_tasks_locally, else set to NONE
         dummy_state.keyword_arguments['DAG_info'] = DAG_info
         msg_id = str(uuid.uuid4())	# for debugging
 
@@ -1626,7 +1639,7 @@ def create_fanins_and_faninNBs(websocket,DAG_map,DAG_states,DAG_info,all_fanin_t
 
 def process_leaf_tasks_batch(websocket):
     dummy_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4())) 
-    synchronize_trigger_leaf_tasks(websocket, "process_leaf_tasks_batch", "tprocess_leaf_tasks_batch_Type", 
+    synchronize_trigger_leaf_tasks(websocket, "process_leaf_tasks_batch", "process_leaf_tasks_batch_Type", 
         "leaf_tasks", dummy_state)
 
 if __name__ == "__main__":

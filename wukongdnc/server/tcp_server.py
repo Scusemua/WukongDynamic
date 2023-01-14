@@ -559,8 +559,12 @@ class TCPHandler(socketserver.StreamRequestHandler):
         if (synchronizer is None):
             raise ValueError("synchronize_sync: Could not find existing Synchronizer with name '%s'" % synchronizer_name)
 
-        # This tcp_server passing self so synchronizer can access tcp_server's send_serialized_object
+        # This tcp_server passing itself so synchronizer can access tcp_server's send_serialized_object
         # return_value = synchronizer.synchronize_sync(tcp_server, obj_name, method_name, type_arg, state, synchronizer_name)
+        # Note: If synchronizer is a FanInNB_Select, we call fan_in() 
+        # directly, instead # of going through execute() and all the 
+        # selective wait stuff; this is because fan_in guard is always 
+        # true and the FanInNB has no other entry methods to call.
         return_value = synchronizer.synchronize_sync(tcp_server, obj_name, method_name, state, synchronizer_name, self)
 
         logger.debug("tcp_server called synchronizer.synchronize_sync")

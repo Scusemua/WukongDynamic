@@ -205,6 +205,7 @@ class DAG_executor_FanInNB(MonitorSU):
                         #"state": int(start_state_fanin_task),
                         "input": self._results,
                         "DAG_executor_state": DAG_executor_state,
+#rhc: ToDo: comment out DAG_info w/comment
                         "DAG_info": self.DAG_info,
                         "server": server
                     }

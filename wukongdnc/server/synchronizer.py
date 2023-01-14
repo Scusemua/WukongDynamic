@@ -420,7 +420,7 @@ class Synchronizer(object):
         result_buffer = ResultBuffer(1, "resultBuffer")
             
         # Calling execute() which will make method call so need to pass class and method so call can be made.
-        # This is different from synchromization objects that are regulr monitors as we call their methods
+        # This is different from synchronization objects that are regulr monitors as we call their methods
         # e.g., "deposit" here.
         # Easiest is to pass args, also x = num(1) print (type(x).__name__) Also def func(self): print(__class__) but
         # execute might be in superclass MonitorSelect of BoundedBufferSelect  

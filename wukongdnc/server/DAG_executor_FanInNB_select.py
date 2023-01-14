@@ -173,6 +173,9 @@ class DAG_executor_FanInNB_Select(Selector):
             fanin_task_name = kwargs['fanin_task_name']
 
             if using_workers:
+                if not (run_all_tasks_locally):
+                    logger.error("[Error]: Configuration error: if using_workers"
+                            + " then run_all_tasks_locally must be True.")
                 if using_threads_not_processes:
                     if self.store_fanins_faninNBs_locally:
                         # if using worker pools of threads, add fanin task's state to the work_queue.
@@ -236,6 +239,7 @@ class DAG_executor_FanInNB_Select(Selector):
                         #"state": int(start_state_fanin_task),
                         "input": self._results,
                         "DAG_executor_state": DAG_executor_state,
+#rhc: ToDo: comment out DAG_info w/ comment
                         "DAG_info": self.DAG_info,
                         "server": server
                     }
@@ -253,13 +257,15 @@ class DAG_executor_FanInNB_Select(Selector):
                 return self._results  # all threads have called so return results
                 #return 1, restart  # all threads have called so return results  
             elif not self.store_fanins_faninNBs_locally and not run_all_tasks_locally:
+                # Note: not run_all_tasks_locally ==> not self.store_fanins_faninNBs_locally
+                # that is, if we run tasks in lambdas then we store sync objects remotely.
                 # we are executing tasks in lambdas. The sync objects can be stored on the
                 # tcp_server or in lambdas. If this object, which is a select object, is on the 
                 # tcp_server is is stored as a regular python object on the server. It may also
                 # be stored in a lamba, in which case we are running tcp_serverlambda.
                 # Either this object starts a new lambda to execute the fanin task or we trigger 
                 # the task by simply callng it. (Note: When we are using lambdas, the sync 
-                # objcects cannot be stored locally.)
+                # objects cannot be stored locally.)
 #rhc: run task
                 if store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks:
                     #  trigger fanni task to run in this lambda

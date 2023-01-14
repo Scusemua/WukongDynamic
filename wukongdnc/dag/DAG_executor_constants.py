@@ -100,6 +100,14 @@ if map_objects_to_lambda_functions:
         logger.error("[Error]: Configuration error: if map_objects_to_lambda_functions"
             + " then use_anonymous_lambda_functions must be False.")
 
+#assert:
+if sync_objects_in_lambdas_trigger_their_tasks:
+    if run_all_tasks_locally:
+        # if create sync objects on start then we must map them to function so
+        # that we can determine the function an object is in.
+        logger.error("[Error]: Configuration error: if sync_objects_in_lambdas_trigger_their_tasks"
+            + " then not run_all_tasks_locally must be True.")
+
 # So if create on start then must map objects and cannot use anonymous functions.
 # If want to use anonymous functions then no create objects on statr and no mapping.
 
