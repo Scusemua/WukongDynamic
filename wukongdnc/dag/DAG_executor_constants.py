@@ -25,7 +25,7 @@ store_fanins_faninNBs_locally = False    # vs remotely
 # False, synch objects are created on the fly, i.e, we execute create-and-fanin
 # operations that create a synch object if it has not been created yet and then
 # execute a Fan_in operaation on the created object.
-create_all_fanins_faninNBs_on_start = True
+create_all_fanins_faninNBs_on_start = False
 
 # True if the DAG is executed by a "pool" of threads/processes. False, if we are
 # using Lambdas or we are using threads to simulate the use of Lambdas. In the latter
@@ -38,6 +38,7 @@ using_workers = False
 using_threads_not_processes = True
 # When using_workers, this is how many threads or processes in the pool.
 num_workers = 2
+# Use one or more worker processes (num_workers) with one or more threads
 use_multithreaded_multiprocessing = False
 num_threads_for_multithreaded_multiprocessing = 2
 
@@ -60,7 +61,7 @@ store_sync_objects_in_lambdas = True
 using_Lambda_Function_Simulators_to_Store_Objects = True
 sync_objects_in_lambdas_trigger_their_tasks = True
 # use orchestrator to invoke functions (e.g., when all fanin/fanout results are available)
-using_DAG_orchestrator = False
+using_DAG_orchestrator = True
 # map ech synch object by name to the function it resided in. if we create
 # all objects on start we msut map the objects to function so we can get the
 # function an onject is in. If we do not create objects on start then
@@ -68,7 +69,7 @@ using_DAG_orchestrator = False
 # we will just have to create the object in the funtion on the first function
 # invocation. If we do not map objects, then we will/can only invoke tge
 # function that contains the possibly pre-created object once. 
-map_objects_to_lambda_functions = True
+map_objects_to_lambda_functions = False
 # We can use an anonymous simulated function or a single named lambda deployment.
 # In this case, we can invoke the function only once snce we cannot
 # refer to a function instance by name, i.e., by index for simuated functions and 
@@ -82,13 +83,38 @@ map_objects_to_lambda_functions = True
 # (by name or by index).
 # ToDo: integrate using_single_lambda_function with this mapping stuff. that
 # is, map names to lambda functions, and sometimes there is only one function.
-use_anonymous_lambda_functions = False
+use_anonymous_lambda_functions = True
+# For all: remote objects, using select objects:
+# 1. run_all_tasks_locally = True, create objects on start = True:
+# TTFFTF: no trigger and no DAG_orchestrator, but map objects (anon is false) and create objects on start
+# - change D_O to T, 
+# - D_O to T, change map to F, and anon to T: Note: no function lock since anon caled only once
+# - change D_O to F, map F, anon T: Note: no function lock since anon caled only once
+# 2. run_all_tasks_locally = False, create objects on start = True:
+# Note: not running real lambdas yet, so need TTT, i.e., not using threads
+#       to simulate lambdas and not running real lambdas yet, so need to
+#       trigger lambdas, whcih means stre objects in lambdas and they call
+#       DAG_excutor_Lambda to execute task (i.e., "trigger task to run in 
+#       the same lambda"). Eventually we'll have tests for use real 
+#       non-triggered lambdas to run tasks (invoked at fanouts/faninNBS)
+#       and objects stored in lambdas or on server.
+# TTTTTF: trigger and DAG_orchestrator, map objects (anon is false) and create objects on start
+# - change map to F, and anon to T and create on start to F: Note: no function lock since anon caled only once
+# Next Test:
+# - change DAG_orchestrator to F - so not going through enqueue so will
+#   need to create on fly in other places; using tcpserver_lambda and
+#   tcp_server
+
+# Q: if map is F does anony have to be True, in theory no, use any named
+#    e.g., use DAG_executor_i for ith, but finite limit; still can
+#    call same function more than once.
 
 #assert:
-if create_all_fanins_faninNBs_on_start:
+if create_all_fanins_faninNBs_on_start and not run_all_tasks_locally:
     if not map_objects_to_lambda_functions:
-        # if create sync objects on start then we must map them to function so
-        # that we can determine the function an object is in.
+        # if create sync objects on start and executing tasks in lambdas "
+        # then we must map them to function so that we can determine the 
+        # function an object is in.
         logger.error("[Error]: Configuration error: if create_all_fanins_faninNBs_on_start"
             + " then map_objects_to_functions must be True.")
 
@@ -339,7 +365,7 @@ if not_A1s and not_A2 and not_A3s and not_A4s and not_A5 and not_A6:
     pass
 """
 
-
+# Assert using worker processes  ==> store objects remotely
 # Assert sync_objects_in_lambdas_trigger_their_tasks ==> using_DAG_orchestrator
 # Assert using a lambda option ==> store objects in Lambdas 
 # Assert using_DAG_orchestrator ==> not run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally

@@ -23,14 +23,14 @@ from wukongdnc.dag import DAG_executor
 
 import logging 
 logger = logging.getLogger(__name__)
-"""
+
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
-"""
+
 
 #Fanin object. For a fan-in of n, the first n-1 serverless functions to call fan-in will 
 #terminate. Only the last function that calls fan-in will continue executing. fan-in returns
@@ -205,8 +205,10 @@ class DAG_executor_FanInNB(MonitorSU):
                         #"state": int(start_state_fanin_task),
                         "input": self._results,
                         "DAG_executor_state": DAG_executor_state,
-#rhc: ToDo: comment out DAG_info w/comment
-                        "DAG_info": self.DAG_info,
+                        # Using threads to simulate lambdas and th threads
+                        # just read ADG_info locally, we do not need to pass it 
+                        # to each Lambda.
+                        #"DAG_info": self.DAG_info,
                         "server": server
                     }
                     thread_name_prefix = "Thread_leaf_"

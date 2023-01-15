@@ -4,9 +4,6 @@
 
 # Where are we: 
 # - test all configs incl no-trigger and trigger
-#   - in faninNB select, for local threads, comment out DAG_info
-#     since not using DAG_info from payload; read it instead.
-#   - in create messages, only need DAG_info if not run_all_tasks_locally, else set to NONE
 # 
 # - Option is on server, somehow get DAG_info to create so it can use 
 #   DAG_info when not run_all_tasks_locally. Ths instead of passing
@@ -829,7 +826,8 @@ def run():
         if store_fanins_faninNBs_locally:
             # store fanin and faninNBs locally so not using websocket to tcp_server
             if not using_threads_not_processes: # using processes
-                logger.error("[Error]: DAG_executor_driver: store local but using processes.")
+                logger.error("[Error]: Configuration Error: DAG_executor_driver: store objects locally but using worker processes,"
+                    + " which must use remote objects (on server).")
             # cannot be multiprocessing, may or may not be pooling, running all tasks locally (no Lambdas)
             # server is global variable obtained: from .DAG_executor_synchronizer import server
             if create_all_fanins_faninNBs_on_start:
@@ -851,7 +849,7 @@ def run():
                         work_tuple = (state,dict_of_results)
                         work_queue.put(work_tuple)
                         #work_queue.put(state)
-                #else: Nohing to do; we do not use a work_queue if we are not using workers
+                #else: Nothing to do; we do not use a work_queue if we are not using workers
             else:
                 if using_workers:
                     # leaf task states (a task is identified by its state) are put in work_queue
@@ -1362,8 +1360,11 @@ def create_fanin_and_faninNB_messages(DAG_map,DAG_states,DAG_info,all_fanin_task
         # cannot do this since the faninNB will be on the tcp_server.)
         dummy_state.keyword_arguments['start_state_fanin_task'] = DAG_states[fanin_nameNB]
         dummy_state.keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
-#rhc: Todo: Only need DAG_info if not run_all_tasks_locally, else set to NONE
-        dummy_state.keyword_arguments['DAG_info'] = DAG_info
+        # Only need DAG_info if not run_all_tasks_locally, as we pass DAG_info to Lambas
+        if not run_all_tasks_locally:
+            dummy_state.keyword_arguments['DAG_info'] = DAG_info
+        else:
+            dummy_state.keyword_arguments['DAG_info'] = None
         msg_id = str(uuid.uuid4())
 
         message = {
@@ -1432,8 +1433,11 @@ def create_fanin_and_faninNB_and_fanout_messages(DAG_map,DAG_states,DAG_info,all
         # cannot do this since the faninNB will be on the tcp_server.)
         dummy_state.keyword_arguments['start_state_fanin_task'] = DAG_states[fanin_nameNB]
         dummy_state.keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
-#rhc: Todo: Only need DAG_info if not run_all_tasks_locally, else set to NONE
-        dummy_state.keyword_arguments['DAG_info'] = DAG_info
+        # Only need DAG_info if not run_all_tasks_locally, as we pass DAG_info to Lambas
+        if not run_all_tasks_locally:
+            dummy_state.keyword_arguments['DAG_info'] = DAG_info
+        else:
+            dummy_state.keyword_arguments['DAG_info'] = None
         msg_id = str(uuid.uuid4())
 
         message = {
@@ -1466,8 +1470,11 @@ def create_fanin_and_faninNB_and_fanout_messages(DAG_map,DAG_states,DAG_info,all
         # cannot do this since the faninNB will be on the tcp_server.)
         dummy_state.keyword_arguments['start_state_fanin_task'] = leaf_task_start_state
         dummy_state.keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
-#rhc: Todo: Only need DAG_info if not run_all_tasks_locally, else set to NONE
-        dummy_state.keyword_arguments['DAG_info'] = DAG_info
+        # Only need DAG_info if not run_all_tasks_locally, as we pass DAG_info to Lambas
+        if not run_all_tasks_locally:
+            dummy_state.keyword_arguments['DAG_info'] = DAG_info
+        else:
+            dummy_state.keyword_arguments['DAG_info'] = None
         msg_id = str(uuid.uuid4())	# for debugging
 
         message = {
@@ -1495,8 +1502,11 @@ def create_fanin_and_faninNB_and_fanout_messages(DAG_map,DAG_states,DAG_info,all
         # cannot do this since the faninNB will be on the tcp_server.)
         dummy_state.keyword_arguments['start_state_fanin_task'] = DAG_states[fanout_name]
         dummy_state.keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
-#rhc: Todo: Only need DAG_info if not run_all_tasks_locally, else set to NONE
-        dummy_state.keyword_arguments['DAG_info'] = DAG_info
+        # Only need DAG_info if not run_all_tasks_locally, as we pass DAG_info to Lambas
+        if not run_all_tasks_locally:
+            dummy_state.keyword_arguments['DAG_info'] = DAG_info
+        else:
+            dummy_state.keyword_arguments['DAG_info'] = None
         msg_id = str(uuid.uuid4())	# for debugging
 
         message = {

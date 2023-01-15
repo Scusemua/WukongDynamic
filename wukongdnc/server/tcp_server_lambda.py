@@ -183,13 +183,28 @@ class TCPHandler(socketserver.StreamRequestHandler):
             # Note: fanina and task names are in DAG_info, which can be read at startup: DAG_info = DAG_Info()
             #lambda_function = tcp_server.function_map[object_name]
 
-            # get the python function that is being used to simulate a lambda
-            # Note: We are not using the DAG_Orchestrator
-            simulated_lambda_function = tcp_server.infiniD.get_simulated_lambda_function(sync_object_name)
-            # lock each function call with a per-function lock
-            lambda_function_lock = tcp_server.infiniD.get_function_lock(sync_object_name)
-            # lambda handler is the same handler that is used for real lambdas
-            with lambda_function_lock:
+            if map_objects_to_lambda_functions:
+                # get the python function that is being used to simulate a lambda
+                # Note: We are not using the DAG_Orchestrator
+                simulated_lambda_function = tcp_server.infiniD.get_simulated_lambda_function(sync_object_name)
+                # lock each function call with a per-function lock
+                lambda_function_lock = tcp_server.infiniD.get_function_lock(sync_object_name)
+                # lambda handler is the same handler that is used for real lambdas
+                with lambda_function_lock:
+                    try:
+                        return_value = simulated_lambda_function.lambda_handler(payload) 
+                    except Exception as ex:
+                        logger.error("[ERROR]: " + thread_name + ": tcp_server_lambda: invoke_lambda_synchronously: Failed to run lambda handler for synch object: " + sync_object_name)
+                        logger.error(ex)
+                        logging.exception("tcp_server_lambda: invoke_lambda_synchronously:")
+            else:
+                # get the python function that is being used to simulate a lambda
+                # Note: We are not using the DAG_Orchestrator
+                simulated_lambda_function = tcp_server.infiniD.get_simulated_lambda_function(sync_object_name)
+                # lock each function call with a per-function lock
+                #lambda_function_lock = tcp_server.infiniD.get_function_lock(sync_object_name)
+                # lambda handler is the same handler that is used for real lambdas
+                #with lambda_function_lock:
                 try:
                     return_value = simulated_lambda_function.lambda_handler(payload) 
                 except Exception as ex:
@@ -197,9 +212,9 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     logger.error(ex)
                     logging.exception("tcp_server_lambda: invoke_lambda_synchronously:")
         else:     
-            # For DAG prototype, we use one function to store process_work_queue and all fanins and faninNBs
+            # For DAG prototype, we use one real function to store process_work_queue and all fanins and faninNBs
             sync_object_name = "LambdaBoundedBuffer" 
-            with lambda_function_lock:
+            with tcp_server.function_lock:
                 try:
                     # invoker.py's invoke_lambda_synchronously
                     return_value = invoke_lambda_synchronously(function_name = sync_object_name, payload = payload)
