@@ -699,18 +699,23 @@ class InfiniD:
 	# map the fanins/fanouts/faninNBs to a function, currently one object per function
 	# where order does not matter
 	def map_object_names_to_functions(self):
-		# for fanouts, the fanin object size is always 1
-		# map function name to a pair (empty_list,n) where n is size of fanin/faninNB.
-		# if use_single_lambda_function then we map all the names to a single
+		# For fanouts, the fanin object size is always 1
+		# map function name to a pair (empty_list,i) where i is an index, where
+		# i is either the list index of the function or i is used to generate
+		# the deployment name of a real lambda, e.g., "DAG_executor_1" for i=1.
+		# If use_single_lambda_function then we map all the names to a single
 		# function, which is function 0. We do this by skippng the increment
 		# of i so that i is always 0.
 		# Note: This maps each name to a separate function (index). we may want to
 		# map multiple names to the same function, in which case we can input
 		# sets of names, so "a" and "b" mapped to 1, "c" and "d" mapped to 2, etc.
+		# Note: We map_object_name_to_triggers in a separate method since
+		# we want to do that mapping even if we do not do this object names
+		# to functions mapping.
 		i=0
-		for object_name, n in zip(self.all_faninNB_task_names, self.all_faninNB_sizes):
+		for object_name in self.all_faninNB_task_names:
 			# mapping to an index i not a string and not a func(), so we do not need
-			# to have created the functions yet. If usng real lambdas, thn, of course,
+			# to have created the functions yet. If usng real lambdas, then, of course,
 			# we do not "create a function"; we have the deployment name and we can
 			# call a function using its deployment name. 
 			# Note: we can use deployments "DAG_executor_i" so we can still map to
@@ -722,27 +727,21 @@ class InfiniD:
 			# list collects results for the fan_in and fanin/fanot size n is 
 			# used to determine when all of the results have been collected.
 			# For a fanout, we can use a faninNB object with a size of 1.
-			#self.dag_orchestrator.map_object_name_to_trigger(object_name,n)
 
-		for object_name, n in zip(self.all_fanin_task_names, self.all_fanin_sizes):
+		for object_name in self.all_fanin_task_names:
 			self.map_synchronization_object(object_name,i)
 			if not using_single_lambda_function:
 				i += 1
-			#self.dag_orchestrator.map_object_name_to_trigger(object_name,n)
 
 		for object_name in self.all_fanout_task_names:
 			self.map_synchronization_object(object_name,i)
 			if not using_single_lambda_function:
 				i += 1
-			#n = 1 # a fanout is a fanin of size 1
-			#self.dag_orchestrator.map_object_name_to_trigger(object_name,n)
 
 		for object_name in self.DAG_leaf_tasks:
 			self.map_synchronization_object(object_name,i)
 			if not using_single_lambda_function:
 				i += 1
-			#n = 1 # a fanout is a fanin of size 1
-			#self.dag_orchestrator.map_object_name_to_trigger(object_name,n)
 
 	# map the fanins/fanouts/faninNBs to a function, currently one object per function
 	# where order does not matter
@@ -755,7 +754,7 @@ class InfiniD:
 		# Note: This maps each name to a separate function (index). we may want to
 		# map multiple names to the same function, in which case we can input
 		# sets of names, so "a" and "b" mapped to 1, "c" and "d" mapped to 2, etc.
-		i=0
+
 		for object_name, n in zip(self.all_faninNB_task_names, self.all_faninNB_sizes):
 			# Each name is mapped to a pair, which is (empty_list,n). The 
 			# list collects results for the fan_in and fanin/fanot size n is 
@@ -773,7 +772,6 @@ class InfiniD:
 		for object_name in self.DAG_leaf_tasks:
 			n = 1 # a fanout is a fanin of size 1
 			self.dag_orchestrator.map_object_name_to_trigger(object_name,n)
-
 
 	# call enqueue of DAG_orchestrator. The DAG_orchestrator will eithor store the jsn_message, which is 
 	# for a fanin/fanout op in the list of operations for the associated object, or if all n operaations

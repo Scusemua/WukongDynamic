@@ -3,8 +3,12 @@
 # try matrixMult
 
 # Where are we: 
-# - test all configs incl no-trigger and trigger
+# - test new createifs and process enqueued and process leaf tasks
+#   - check code
+#   - test with D_O and create on start first, then D_O w/ not create on start
 # 
+# - Then do the non-enqueu create on start for tcp_server_lambda, then tcp_server
+#   - synch in tcp_server_lamda is like process leaf tasks?
 # - Option is on server, somehow get DAG_info to create so it can use 
 #   DAG_info when not run_all_tasks_locally. Ths instead of passing
 #   DAG_info in all the create messages for all the objects.

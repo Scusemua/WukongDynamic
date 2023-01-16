@@ -17,6 +17,7 @@ from ..dag.DAG_executor_constants import using_DAG_orchestrator, run_all_tasks_l
 from ..dag.DAG_executor_constants import using_workers, sync_objects_in_lambdas_trigger_their_tasks
 from ..dag.DAG_executor_constants import store_sync_objects_in_lambdas, store_fanins_faninNBs_locally
 from ..dag.DAG_executor_constants import map_objects_to_lambda_functions, create_all_fanins_faninNBs_on_start
+from ..dag.DAG_executor_constants import FanInNB_Type
 #from ..dag.DAG_executor_constants import use_anonymous_lambda_functions
 from ..dag.DAG_Executor_lambda_function_simulator import InfiniD # , Lambda_Function_Simulator
 from ..dag.DAG_info import DAG_Info
@@ -900,18 +901,18 @@ class TCPHandler(socketserver.StreamRequestHandler):
         for start_state_fanin_task, task_name, inp in zip(DAG_leaf_task_start_states, DAG_leaf_tasks, DAG_leaf_task_inputs):
             try:
                 logger.debug("tcp_server_lambda: process_leaf_tasks_batch: Starting leaf task " + task_name)
-                lambda_DAG_exec_state = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()), state = start_state_fanin_task)
+                dummy_state_for_message = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()))
                 logger.debug ("tcp_server_lambda: process_leaf_tasks_batch:  lambda payload is DAG_info + start state: " + str(start_state_fanin_task) + ", inp: " + str(inp))
-                lambda_DAG_exec_state.restart = False      # starting new DAG_executor in state start_state_fanin_task
-                lambda_DAG_exec_state.return_value = None
-                lambda_DAG_exec_state.blocking = False  
+                dummy_state_for_message.restart = False      # starting new DAG_executor in state start_state_fanin_task
+                dummy_state_for_message.return_value = None
+                dummy_state_for_message.blocking = False  
 
                 start_state_fanin_task  = DAG_states[task_name]
                 # These are per leaf task
-                lambda_DAG_exec_state.keyword_arguments['fanin_task_name'] = task_name
-                lambda_DAG_exec_state.keyword_arguments['calling_task_name'] = "DAG_executor_driver"  
-                lambda_DAG_exec_state.keyword_arguments['start_state_fanin_task'] = start_state_fanin_task
-                lambda_DAG_exec_state.keyword_arguments['result'] = inp  
+                dummy_state_for_message.keyword_arguments['fanin_task_name'] = task_name
+                dummy_state_for_message.keyword_arguments['calling_task_name'] = "DAG_executor_driver"  
+                dummy_state_for_message.keyword_arguments['start_state_fanin_task'] = start_state_fanin_task
+                dummy_state_for_message.keyword_arguments['result'] = inp  
 
                 msg_id = str(uuid.uuid4())
                 message = {
@@ -919,9 +920,48 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     "name": task_name,
                     # A fanout object is actually just a fanin object of size 1 so do "fan_in"
                     "method_name": "fan_in",
-                    "state": make_json_serializable(lambda_DAG_exec_state),
+                    "state": make_json_serializable(dummy_state_for_message),
                     "id": msg_id
                 }
+
+#rhc: Todo: Added all this
+                if not create_all_fanins_faninNBs_on_start:
+                    dummy_state_for_create_message = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()))
+                    # passing to the created faninNB object:
+                    # its size
+                    dummy_state_for_create_message.keyword_arguments['n'] = 1
+                    # when the faninNB completes, if we are runnning locally and we are not pooling,
+                    # we start a new thread to execute the fanin task. If we are thread pooling, we put the 
+                    # start state in the work_queue. If we are using lambdas, we invoke a lambda to
+                    # execute the fanin task. If we are process pooling, then the last process to 
+                    # call fanin will put the start state of the fanin task in the work_queue. (FaninNb
+                    # cannot do this since the faninNB will be on the tcp_server.)
+                    dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = DAG_states[task_name]
+                    dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
+                    dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info
+
+                    msg_id = str(uuid.uuid4())	# for debugging
+                    creation_message = {
+                        "op": "create",
+                        "type": FanInNB_Type,
+                        "name": task_name,
+                        "state": make_json_serializable(dummy_state_for_create_message),	
+                        "id": msg_id
+                    }
+#rhc: ToDo:
+                    #logger.debug("message_handler_lambda: process_enqueued_fan_ins: "
+                    #   + "create sync object " + fanin_name + "on the fly")
+                    #self.create_obj(creation_message)
+#rhc: ToDo:
+                    messages = (creation_message, message)
+                    dummy_state_for_control_message = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()))
+                    control_message = {
+                        "op": "createif_and_synchronize_sync",
+                        "type": "DAG_executor_faninNB_for_fanout",
+                        "name": messages,   # filled in below with tuple of messages
+                        "state": make_json_serializable(dummy_state_for_control_message),	
+                        "id": msg_id
+                    }
         
                 logger.info("tcp_server_lambda: process_leaf_tasks_batch:  processing fan_in for " + task_name)
 
@@ -951,7 +991,11 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     logger.info("*********************tcp_server_lambda: process_leaf_tasks_batch: calling invoke_lambda_synchronously."
                         +  " for leaf task: " + str(task_name))
                     #return_value = synchronizer.synchronize(base_name, DAG_exec_state, **DAG_exec_state.keyword_arguments)
-                    returned_state_ignored = self.invoke_lambda_synchronously(message)
+#rhc: ToDo:
+                    if create_all_fanins_faninNBs_on_start:
+                        returned_state_ignored = self.invoke_lambda_synchronously(message)
+                    else:
+                        returned_state_ignored = self.invoke_lambda_synchronously(control_message)
                     logger.info("*********************tcp_server_lambda: process_leaf_tasks_batch: called invoke_lambda_synchronously "
                         + " for leaf task: " + str(task_name) + ", returned_state_ignored: "  + str(returned_state_ignored))
 
