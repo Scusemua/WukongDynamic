@@ -925,6 +925,9 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 }
 
 #rhc: Todo: Added all this
+                # if not creatin objects at start, create the create_message
+                # to be given to create() and the control message to b given
+                # to createif_and_synchronize_sync
                 if not create_all_fanins_faninNBs_on_start:
                     dummy_state_for_create_message = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()))
                     # passing to the created faninNB object:
@@ -980,6 +983,9 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 #    "DAG_info": DAG_info
                 #}
 
+                # the enqueue path will check whether we create objects on start
+                # and if not will generate the create message and control message
+                # in message_handler_lambda process_enqueued_fan_ins()
                 if using_Lambda_Function_Simulators_to_Store_Objects and using_DAG_orchestrator:
                     logger.info("*********************tcp_server_lambda: process_leaf_tasks_batch: calling infiniD.enqueue(message)."
                         + " for leaf task: " + str(task_name))
@@ -993,8 +999,13 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     #return_value = synchronizer.synchronize(base_name, DAG_exec_state, **DAG_exec_state.keyword_arguments)
 #rhc: ToDo:
                     if create_all_fanins_faninNBs_on_start:
+                        # call synchronize_sync on the alrfeady created object
                         returned_state_ignored = self.invoke_lambda_synchronously(message)
                     else:
+                        # call createif_and_synchronize_sync to create object
+                        # and call synchronize_sync on it. the control_message
+                        # has the creation_message and the message for snchronize_sync
+                        # in a messages tuple value under its 'name' key.
                         returned_state_ignored = self.invoke_lambda_synchronously(control_message)
                     logger.info("*********************tcp_server_lambda: process_leaf_tasks_batch: called invoke_lambda_synchronously "
                         + " for leaf task: " + str(task_name) + ", returned_state_ignored: "  + str(returned_state_ignored))

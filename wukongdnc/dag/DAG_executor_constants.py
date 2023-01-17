@@ -69,7 +69,7 @@ using_DAG_orchestrator = True
 # we will just have to create the object in the funtion on the first function
 # invocation. If we do not map objects, then we will/can only invoke tge
 # function that contains the possibly pre-created object once. 
-map_objects_to_lambda_functions = False
+map_objects_to_lambda_functions = True
 # We can use an anonymous simulated function or a single named lambda deployment.
 # In this case, we can invoke the function only once snce we cannot
 # refer to a function instance by name, i.e., by index for simuated functions and 
@@ -83,7 +83,7 @@ map_objects_to_lambda_functions = False
 # (by name or by index).
 # ToDo: integrate using_single_lambda_function with this mapping stuff. that
 # is, map names to lambda functions, and sometimes there is only one function.
-use_anonymous_lambda_functions = True
+use_anonymous_lambda_functions = False
 # For all: remote objects, using select objects:
 # 1. run_all_tasks_locally = True, create objects on start = True:
 # TTFFTF: no trigger and no DAG_orchestrator, but map objects (anon is false) and create objects on start
@@ -93,7 +93,7 @@ use_anonymous_lambda_functions = True
 # 2. run_all_tasks_locally = False, create objects on start = True:
 # Note: not running real lambdas yet, so need TTT, i.e., not using threads
 #       to simulate lambdas and not running real lambdas yet, so need to
-#       trigger lambdas, whcih means stre objects in lambdas and they call
+#       trigger lambdas, whcih means store objects in lambdas and they call
 #       DAG_excutor_Lambda to execute task (i.e., "trigger task to run in 
 #       the same lambda"). Eventually we'll have tests for use real 
 #       non-triggered lambdas to run tasks (invoked at fanouts/faninNBS)
@@ -103,7 +103,7 @@ use_anonymous_lambda_functions = True
 # Next Test:
 # - change DAG_orchestrator to F - so not going through enqueue so will
 #   need to create on fly in other places; using tcpserver_lambda and
-#   tcp_server
+#   then tcp_server.
 
 # Q: if map is F does anony have to be True, in theory no, use any named
 #    e.g., use DAG_executor_i for ith, but finite limit; still can

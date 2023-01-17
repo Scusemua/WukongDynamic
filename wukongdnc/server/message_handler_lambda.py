@@ -149,7 +149,7 @@ class MessageHandler(object):
                 "id": msg_id
             }
         """  
-        logger.debug("[MESSAGEHANDLER] server.create_all_fanins_and_faninNBs_and_possibly_work_queue() called.")
+        logger.debug("[MESSAGEHANDLERLAMBDA] create_all_fanins_and_faninNBs_and_possibly_work_queue() called.")
         messages = message['name']
         fanin_messages = messages[0]
         faninNB_messages = messages[1]
@@ -243,27 +243,34 @@ class MessageHandler(object):
 
             #logger.debug("message_handler_lambda: process_enqueued_fan_ins: "
             #   + "create sync object " + fanin_name + "on the fly")
+#rhc: Note: Not so big difference is craete in createif instead of here.
             #self.create_obj(creation_message)
 #rhc: ToDo:
             dummy_state_for_control_message = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()))
             control_message = {
                 "op": "createif_and_synchronize_sync",
                 "type": "DAG_executor_fanin_or_faninNB_or_fanout",
-                "name": None,   # filled in below with tuple of messages
+                "name": None,   # filled in below with tuple of messages for each fanin op
                 "state": make_json_serializable(dummy_state_for_control_message),	
                 "id": msg_id
             }
 
-            logger.debug("message_handler_lambda: process_enqueued_fan_ins: process list of messages ")
+        logger.debug("message_handler_lambda: process_enqueued_fan_ins: process list of messages.")
 
         for msg in list_of_messages:
             # We are doing all the fan_in ops one-by-one in the order they were called by clients
             # The return value of last call is the fanin results; return those to client
 #rhc: ToDo:
             if create_all_fanins_faninNBs_on_start:
+                # call synchronize_sync on the already created object
                 return_value = self.synchronize_sync(msg)
             else:
-                # Do create object and synchronize sync
+                # call createif_and_synchronize_sync to create object
+                # and call synchronize_sync on it. The control_message
+                # has the creation_message and the message for snchronize_sync
+                # in a messages tuple value under its 'name' key.
+                # Note: The first call to createif will create the object. 
+                # Succeeding calls will not create the object since the first call did
                 messages = (creation_message,msg)
                 control_message['name'] = messages
                 return_value = self.createif_and_synchronize_sync(control_message)
@@ -291,7 +298,7 @@ class MessageHandler(object):
                 The payload from the AWS Lambda function.
         """
 
-        logger.debug("[MESSAGEHANDLER] synchronize_sync() called.")
+        logger.debug("[MESSAGEHANDLERLAMBDA] synchronize_sync() called.")
 
         obj_name = message['name']
         method_name = message['method_name']
@@ -313,6 +320,8 @@ class MessageHandler(object):
         # MessageHandler not passing itself since synchronizer does not use send_serialized_object to send results 
         # to tcp_server - Lambda returns values synchronously.
         #return_value = synchronizer.synchronize_sync(obj_name, method_name, state, synchronizer_name, self)
+
+        logger.debug("message_handler_lambda: synchronize_sync: do synchronizer.synchronous_sync ")
 
         return_value = synchronizer.synchronize_sync(obj_name, method_name, state, synchronizer_name)
         
@@ -353,7 +362,7 @@ class MessageHandler(object):
 
         messages = message['name']
         creation_message = messages[0]
-        synchronous_sync_message = message[1]
+        synchronous_sync_message = messages[1]
 
         obj_name = synchronous_sync_message['name']
         method_name = synchronous_sync_message['method_name']
@@ -365,16 +374,16 @@ class MessageHandler(object):
 
         # check if already created
         logger.debug("message_handler_lambda: createif_and_synchronize_sync: Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
-        synchronizer = MessageHandler.synchronizers[synchronizer_name]
+        #synchronizer = MessageHandler.synchronizers[synchronizer_name]
+        synchronizer = MessageHandler.synchronizers.get(synchronizer_name,None)
         if (synchronizer is None):
             # not created yet so create object
             logger.debug("message_handler_lambda: createif_and_synchronize_sync: "
-            + "create sync object " + obj_name + "on the fly")
+                + "create sync object " + obj_name + "on the fly")
             self.create_obj(creation_message)
 
         logger.debug("message_handler_lambda: createif_and_synchronize_sync: do synchronous_sync ")
        
-        logger.debug("message_handler_lambda: synchronize_sync: Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
         synchronizer = MessageHandler.synchronizers[synchronizer_name]
         
         if (synchronizer is None):
@@ -401,7 +410,7 @@ class MessageHandler(object):
             message (dict):
                 The payload from the AWS Lambda function.
         """ 
-        logger.debug("[MESSAGEHANDLER] synchronize_async() called.")
+        logger.debug("[MESSAGEHANDLERLAMBDA] synchronize_async() called.")
 
         obj_name = message['name']
         method_name = message['method_name']       
@@ -422,7 +431,7 @@ class MessageHandler(object):
         logger.debug("MessageHandler called synchronizer.synchronize_async")
         return return_value    
 
-    def createif_and_synchronize_async(self, creation_message=None, message = None):
+    def createif_and_synchronize_async(self, message = None):
         """
         Create object if it hasn't been created yet and do synchronous asynchronization.
 
@@ -470,13 +479,15 @@ class MessageHandler(object):
         # check if already created
         logger.debug("message_handler_lambda: createif_and_synchronize_async: Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
         synchronizer = MessageHandler.synchronizers[synchronizer_name]
+        synchronizer = MessageHandler.synchronizers.get(synchronizer_name,None)
+
         if (synchronizer is None):
             # not created yet so create object
             logger.debug("message_handler_lambda: createif_and_synchronize_async: "
             + "create sync object " + obj_name + "on the fly")
             self.create_obj(creation_message)
 
-        logger.debug("message_handler_lambda: createif_and_synchronize_async: do asynchronous_sync ")
+        logger.debug("message_handler_lambda: createif_and_synchronize_async: do synchronous_async ")
        
         logger.debug("message_handler_lambda: synchronize_async: Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
         synchronizer = MessageHandler.synchronizers[synchronizer_name]
