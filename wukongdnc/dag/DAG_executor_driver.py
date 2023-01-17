@@ -7,9 +7,11 @@
 #   - check code
 #   - test with D_O and create on start first, then D_O w/ not create on start
 # 
-# - in tcp_server_lambda make DAG_info global and read it in init().
-# - Then do the non-enqueu create on start for tcp_server_lambda, then tcp_server
+#   - in tcp_server_lambda make DAG_info global and read it in init().
+#   - then test wo/ D_O
+# - Then do the wo/ D_O create on start for tcp_server_lambda, then tcp_server
 #   - synch in tcp_server_lamda is like process leaf tasks?
+#   - process faninNB batch uncomment
 # - Option is on server, somehow get DAG_info to create so it can use 
 #   DAG_info when not run_all_tasks_locally. Ths instead of passing
 #   DAG_info in all the create messages for all the objects.
