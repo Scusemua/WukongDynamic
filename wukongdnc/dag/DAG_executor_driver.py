@@ -3,56 +3,45 @@
 # try matrixMult
 
 # Where are we: 
-# - test new createifs and process enqueued and process leaf tasks
-#   - check code
-#   - test with D_O and create on start first, then D_O w/ not create on start
+#
+# - Lock the get and set in message handler lambda createif? Note:
+#   for fanouts there is only one synch op performed on
+#   them so no races. but no current way to identify fanout objects 
+#   since they are same type as FnInNB. 
+#   Note: we can map but not create on start. We will map object "foo"
+#   to some function (and lock) and just create the "Foo" object on
+#   the fly, which seems reasonable. Could chck for map then grab
+#   lock if mapped.
+# - Note: just because we map objects to functions doesn't mean we need 
+#   a lock for each function. If we cal function once then we don't
+#   need a lock. True for fanout/fanins/faninNBs when using D_O that 
+#   enqueues all ops until the last one. Which brings up:
+# - D_O can invoke function (with lock) as ops ar performed to overlap
+#   passing results with waiting for last operation. Do this for big
+#   results? The function can open socket and after getting result can 
+#   ask for moer results - if none available then stop.
 # 
-#   - in tcp_server_lambda make DAG_info global and read it in init().
-#   - then test wo/ D_O
 # - Then do the wo/ D_O create on start for tcp_server_lambda, then tcp_server
-#   - synch in tcp_server_lamda is like process leaf tasks?
-#   - process faninNB batch uncomment
+#   (So, if we use D_O and go through enqueue, then enqueue will create 
+#   a state with the info needed by the process_enqueued in message
+#   handler to create a create message and use it to call create,
+#   if no D_O then no enqueue, so in the places where we can call 
+#   enqueue we will not call enqueue and instead we will call invoke 
+#   lambda synchronously. In this case we need to create a control message
+#   which is a tuple [create_message, message] and call the 
+#   createif_and_synchronize_sync which uses both messages to create object
+#   then do synch op on object. these other places are process leaf tasks
+#   batch, process faninNBs batch, and synchronize (a)sync, all of which
+#   create a control_message with the messages tuple, and invoke lambda
+#   synchronously to call createif_and_synchronize_sync n message handler
+#   lambda.)
+#
 # - Option is on server, somehow get DAG_info to create so it can use 
 #   DAG_info when not run_all_tasks_locally. Ths instead of passing
 #   DAG_info in all the create messages for all the objects.
-# - integrate the non-simulated lambda stff with the mapping and
+# - integrate the non-simulated lambda stuff with the mapping and
 #   anonynous stuff. Still use InfiniD? with "DAG_executor_i"
 #   Set function_map directly
-# - create on the fly for non-enqueue cases. Do it it message_handler(lambda)
-#   so objects are created in the lambda for tcp_server_lambda, same for tcp_server.
-#   Note: just changing the create objects on the fy option, still not using
-#   the DAG_orchestrator (but using simulated functins)
-# - Problem: we have create in process_enqueued where it always does 
-#   create since we aer assuming process_enqueued is called once for
-#   a fanin/fanout. This assumption is true for fanin/fanouts.
-#   Is there an object for which we can call process_enquued moer than once?
-#   For example, semaphore P/V, can invoke muliple times but we won't save
-#   the operations like fan_ins? How about inc(), which we might batch
-#   like Gruppa? so save multiple incs() then process_enqueued on batch?
-#   So if create on fly we should still, in general, check to see if 
-#   object has already been created?
-# - Also, if we aer going to check can we put the create at the "bottom"? 
-#   i.e., in synchronize_sync() of message_handler or whatever is common 
-#   bottom?
-# - Note: process leaf tasks batch is not creating objects; it is calling
-#   enqueue which will create dag_state for create() and call 
-#   process enqueued in msg_handler which will do creates. But how will
-#   leaf fanout objects get created if no dag_orchestrator? Need to do 
-#   it in message handler synch.
-# - But make sure we can get create() info if we don't get it in 
-#   enqueue, i.e., can we get it in message_handler? Need DAG_info.
-#   So need to get DAG_info in tcp_servr_lambda and give it to 
-#   message handler sync?
-#   So if create on fly we pass a message that has the DAG_exec
-#   with the create info and we pass the list of messages (to process
-#   enqueued) or the message (to synchronize_sync); otherwise, we just
-#   pass the orignal messge or we always pass the new message but
-#   we don't include the new dag_state: No: we need the task_name,
-#   which we won't have it we use name to pass message so we need name
-#   in DAG state for create(). No: But message has name.
-#   Note: Don't forget message handler is in lamba when using tcp_server_lambda.
-#   So have to get DAG_info in create_info means have to read it in
-#   tcp_server_lambda? So need to get create info in process leaf?
 # - on the fly for tcp_server and local?
 # - Docs
 #

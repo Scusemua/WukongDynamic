@@ -44,7 +44,8 @@ class MessageHandler(object):
                 # moved to tcpserver_lambda
                 #"synchronize_process_faninNBs_batch": self.synchronize_process_faninNBs_batch,
                 "create_work_queue": self.create_work_queue,
-                "process_enqueued_fan_ins": self.process_enqueued_fan_ins
+                "process_enqueued_fan_ins": self.process_enqueued_fan_ins,
+                "createif_and_synchronize_sync": self.createif_and_synchronize_sync
             }
             #logger.info("Thread Name:{}".format(threading.current_thread().name))
 
@@ -375,6 +376,7 @@ class MessageHandler(object):
         # check if already created
         logger.debug("message_handler_lambda: createif_and_synchronize_sync: Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
         #synchronizer = MessageHandler.synchronizers[synchronizer_name]
+#rhc: ToDo: This needs to be locked? 
         synchronizer = MessageHandler.synchronizers.get(synchronizer_name,None)
         if (synchronizer is None):
             # not created yet so create object

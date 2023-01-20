@@ -160,8 +160,32 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 # i.e., all fanin/faninNBs mapped under the name 'single_function'
                 sync_object_name = "single_function"
             else:
+                
                 # use the actual object name, which will be mapped to a function
-                sync_object_name = json_message.get("name", None)
+                #sync_object_name = json_message.get("name", None)
+
+                # name_of_message is either a string, which is the name of
+                # the sync object, or it is a control_message, which is 
+                # used when we create sync objects on the fly. The control 
+                # message has a 'name' key whose value is a tuple. The
+                # tuple has a creation message to create an object and
+                #  ergular message that is an op on the newly created object.
+                # We need the name of the object so we can use this name as 
+                # a key to get the function and/or function lock that the 
+                # object is mapped to. As in:
+                #   simulated_lambda_function = tcp_server.infiniD.get_simulated_lambda_function(sync_object_name)
+                #   lambda_function_lock = tcp_server.infiniD.get_function_lock(sync_object_name)
+
+                name_of_message = json_message.get("name", None)
+                is_tuple = type(name_of_message) is tuple
+                if not is_tuple:
+                    sync_object_name = name_of_message
+                else:
+                    messages = name_of_message
+                    #messages = control_message['name']
+                    message = messages[1] # creation_mesage is messages[0]
+                    sync_object_name = message['name']
+
             logger.debug("[HANDLER] TCPHandler lambda: " + thread_name + " invoke_lambda_synchronously: using object_name: " + sync_object_name + " in map_of_Lambda_Function_Simulators")
             # tcp_server is from below: if __name__ == "__main__": # Create a Server Instance
             # tcp_server = TCPServer() tcp_server.start()
@@ -610,7 +634,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     control_message = {
                         "op": "createif_and_synchronize_sync",
                         "type": "DAG_executor_faninNB_for_fanout",
-                        "name": messages,   # filled in below with tuple of messages
+                        "name": messages,
                         "state": make_json_serializable(dummy_state_for_control_message),	
                         "id": msg_id
                     }
@@ -1301,13 +1325,13 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
             if create_all_fanins_faninNBs_on_start:
                 # call synchronize_sync on the alrfeady created object
-                returned_state_ignored = self.invoke_lambda_synchronously(message)
+                returned_state = self.invoke_lambda_synchronously(message)
             else:
                 # call createif_and_synchronize_sync to create object
                 # and call synchronize_sync on it. the control_message
                 # has the creation_message and the message for snchronize_sync
                 # in a messages tuple value under its 'name' key.
-                returned_state_ignored = self.invoke_lambda_synchronously(control_message)
+                returned_state = self.invoke_lambda_synchronously(control_message)
 
             logger.info("*********************tcp_server_lambda: synchronize_sync: " + calling_task_name + ": called invoke_lambda_synchronously "
                 + "returned_state: " + str(returned_state))
@@ -1350,10 +1374,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
         # Note: the value returned is pickled in Message_Handler_Lambda in 
         # synchronize_process_faninNBs_batch and returned by lambda function
-        if using_Lambda_Function_Simulators_to_Store_Objects and using_DAG_orchestrator:
-            self.send_serialized_object(returned_state)
-        else:
-            self.send_serialized_object(returned_state)
+        self.send_serialized_object(returned_state)
 
         # return value not assigned
         return 0
