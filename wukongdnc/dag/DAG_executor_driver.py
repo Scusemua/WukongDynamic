@@ -3,7 +3,9 @@
 # try matrixMult
 
 # Where are we: 
-#
+# - did local with no create on start for workers and no-workers.
+#   Next do non-local with worker threads and processes. Need to 
+#   copy stuff from tcp_server_lambda and message handler lambda.
 # - Lock the get and set in message handler lambda createif? Note:
 #   for fanouts there is only one synch op performed on
 #   them so no races. but no current way to identify fanout objects 

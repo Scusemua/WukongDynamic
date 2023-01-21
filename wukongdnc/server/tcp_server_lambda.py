@@ -37,8 +37,9 @@ ch.setFormatter(formatter)
 
 logger.addHandler(ch)
 
-# This handler is used when we ar using lambdas to store objcts or to excute tasks. The 
-# Lambdas can be real or simulated by Python functions.
+# This tcp_server labda handler is used when we ar using lambdas to 
+# store objcts or to excute tasks. 
+# The Lambdas can be real or simulated by Python functions.
 
 # global varable. TCP_Server init() reads the DAG_info: 
 #   global DAG_info
@@ -46,6 +47,14 @@ logger.addHandler(ch)
 # process_leaf_tasks_batch gets the leaf task inputs and then nulls
 # out the leaf task inputs in DAG_info so we do not pass them to non-leaf
 # tasks when we pass DAG_info as the payload for a lambda.
+# Note: We'd have liked the tcp server to __init__ the TCPHandler with 
+# this DAG_info, but there doesn;t seem to be a way to __init__ N
+# instance of TCPHandler. TCP_Server init calls:
+# self.tcp_server = socketserver.ThreadingTCPServer(self.server_address, TCPHandler)
+# so there's no explicit call to crreate a TCPHandler instance and init it.
+# So we use this global variable - DAG_info is used in several of 
+# TCPHandler's handle methods. (DAG_info must be passed to any Lambda that 
+# is invoked so the lambdahas the DAG.)
 DAG_info = None
 
 class TCPHandler(socketserver.StreamRequestHandler):
