@@ -376,7 +376,10 @@ class MessageHandler(object):
         # check if already created
         logger.debug("message_handler_lambda: createif_and_synchronize_sync: Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
         #synchronizer = MessageHandler.synchronizers[synchronizer_name]
-#rhc: ToDo: This needs to be locked? 
+#rhc: ToDo: This needs to be locked? When can create calls be concurrent
+# For example, never if using D_O? Is this cal implcitly already
+# locked previosly? Not if using moitors? yes if using select? and we are
+# using select unless we know it's one shot, etc.?
         synchronizer = MessageHandler.synchronizers.get(synchronizer_name,None)
         if (synchronizer is None):
             # not created yet so create object

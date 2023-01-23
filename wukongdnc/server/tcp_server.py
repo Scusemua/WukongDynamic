@@ -10,6 +10,7 @@ from .util import decode_and_deserialize
 #from ..dag.DAG_executor_State import DAG_executor_State
 from .util import decode_and_deserialize, isTry_and_getMethodName, isSelect #, make_json_serializable
 from ..dag.DAG_executor_constants import run_all_tasks_locally
+from ..dag.DAG_executor_constants import create_all_fanins_faninNBs_on_start
 
 # Set up logging.
 import logging 
@@ -314,6 +315,9 @@ class TCPHandler(socketserver.StreamRequestHandler):
             # If we are using lambdas, then we can use the parallel invoker to invoke the fanout lambdas
             if run_all_tasks_locally:
                 # work_queue.deposit_all(list_of_work_queue_or_payload_fanout_values)
+#rhc: ToDo: if not create on start then create this somewhere on fly
+# perhaps at top - we may or may not use work_queue so may create it 
+# but don't use it. 
                 synchronizer = tcp_server.synchronizers[work_queue_name]
                 
                 #synchClass = synchronizer._synchClass
@@ -351,15 +355,13 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     synchronizer.lock_synchronizer()
             
                 if is_select:
-                    # create result_buffer, create execute() reference, call execute(), result_buffer.withdraw(), 
-                    # return excute's result, with no restart (by definition of synchronous non-try-op)
-                    # (Send result to client below.)
                     wait_for_return = True
                     # rhc: DES
                     #return_value = self.synchronizeSelect(base_name, DAG_exec_state, wait_for_return, **DAG_exec_state.keyword_arguments)
-                    return_value = synchronizer.synchronizeSelect(base_name, DAG_exec_state, wait_for_return, **work_queue_method_keyword_arguments)
+                    # This is return value of deposit_all which is 0 and is not used
+                    return_value_ignored = synchronizer.synchronizeSelect(base_name, DAG_exec_state, wait_for_return, **work_queue_method_keyword_arguments)
                 else:
-                    return_value = synchronizer.synchronize(base_name, DAG_exec_state, **work_queue_method_keyword_arguments)
+                    return_value_ignored = synchronizer.synchronize(base_name, DAG_exec_state, **work_queue_method_keyword_arguments)
 
                 # deposit_all return value is 0 and restart is False
         else:
@@ -492,14 +494,14 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 wait_for_return = True
                 # rhc: DES
                 #return_value = self.synchronizeSelect(base_name, DAG_exec_state, wait_for_return, **DAG_exec_state.keyword_arguments)
-                return_value = synchronizer.synchronizeSelect(base_name, DAG_exec_state, wait_for_return, **work_queue_method_keyword_arguments)
+                return_value_ignored = synchronizer.synchronizeSelect(base_name, DAG_exec_state, wait_for_return, **work_queue_method_keyword_arguments)
             else:
-                return_value = synchronizer.synchronize(base_name, DAG_exec_state, **work_queue_method_keyword_arguments)
+                return_value_ignored = synchronizer.synchronize(base_name, DAG_exec_state, **work_queue_method_keyword_arguments)
     
             # deposit_all return value is 0 and restart is False
 
             logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": work_queue_method: " + str(work_queue_method))
-            logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": " + str(work_queue_method) + ", return_Value " + str(return_value))
+            logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": " + str(work_queue_method) + ", return_Value " + str(return_value_ignored))
             logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": " + str(work_queue_method) + ", successfully called work_queue method. ")
 
 #rhc: async batch
@@ -571,6 +573,79 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
         # sysnchronizer synchronize_sync pickled the return value so sending 
         # pickled value back to client.
+        return return_value
+
+    def createif_and_synchronize_sync(self,  message = None):
+        """
+        Create object if it hasn't been created yet and do synchronous synchronization.
+
+        Key-word arguments:
+        -------------------
+            message (dict):
+               message['name'] contains a tuple of messages where
+                  message[0] is the creation message and
+                  message[1] is the synchrnous_sync message
+
+            creation_message is created using:
+            if is_fanin:
+                fanin_type = FanIn_Type
+            else:
+                fanin_type = FanInNB_Type
+            msg_id = str(uuid.uuid4())	# for debugging
+            creation_message = {
+                "op": "create",
+                "type": fanin_type,
+                "name": fanin_name,
+                "state": make_json_serializable(dummy_state),	
+                "id": msg_id
+            }
+        """
+        logger.debug("[MESSAGEHANDLERLAMBDA] createif_and_synchronize_sync() called.")
+
+        if create_all_fanins_faninNBs_on_start:
+            logger.error("[Error]: Internal Error: message_handler_lambda: createif_and_synchronize_sync: "
+                + "called createif_and_synchronize_sync but create_all_fanins_faninNBs_on_start")
+
+        messages = message['name']
+        creation_message = messages[0]
+        synchronous_sync_message = messages[1]
+
+        obj_name = synchronous_sync_message['name']
+        method_name = synchronous_sync_message['method_name']
+        state = decode_and_deserialize(synchronous_sync_message["state"])
+        # not using synchronizer class name in object name for now, i.e., use "bb" instead of "BoundedBuffer_bb"
+        # type_arg = message["type"]
+        # synchronizer_name = self._get_synchronizer_name(type_name = type_arg, name = obj_name)
+        synchronizer_name = self._get_synchronizer_name(type_name = None, name = obj_name)
+
+        # check if already created
+        logger.debug("message_handler_lambda: createif_and_synchronize_sync: Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
+        #synchronizer = MessageHandler.synchronizers[synchronizer_name]
+#rhc: ToDo: This needs to be locked? When can create calls be concurrent
+        synchronizer = tcp_server.synchronizers.get(synchronizer_name,None)
+        if (synchronizer is None):
+            # not created yet so create object
+            logger.debug("message_handler_lambda: createif_and_synchronize_sync: "
+                + "create sync object " + obj_name + "on the fly")
+            self.create_obj(creation_message)
+
+        logger.debug("message_handler_lambda: createif_and_synchronize_sync: do synchronous_sync ")
+       
+        synchronizer = tcp_server.synchronizers[synchronizer_name]
+        
+        if (synchronizer is None):
+            raise ValueError("message_handler_lambda: synchronize_sync: Could not find existing Synchronizer with name '%s'" % synchronizer_name)
+         
+        # return_value = synchronizer.synchronize_sync(tcp_server, obj_name, method_name, type_arg, state, synchronizer_name)
+        # return_value = synchronizer.synchronize_sync(tcp_server, obj_name, method_name, state, synchronizer_name, self)
+        # MessageHandler not passing itself since synchronizer does not use send_serialized_object to send results 
+        # to tcp_server - Lambda returns values synchronously.
+        #return_value = synchronizer.synchronize_sync(obj_name, method_name, state, synchronizer_name, self)
+
+        return_value = synchronizer.synchronize_sync(obj_name, method_name, state, synchronizer_name)
+        
+        logger.debug("message_handler_lambda called synchronizer.synchronize_sync")
+
         return return_value
 
     def synchronize_async(self, message = None):
