@@ -3,6 +3,7 @@
 # try matrixMult
 
 # Where are we: 
+# - check code
 # - did local with no create on start for workers and no-workers.
 #   Next do non-local with worker threads and processes. Need to 
 #   copy stuff from tcp_server_lambda and message handler lambda.
@@ -14,7 +15,8 @@
 # - Lock the get and set in message handler lambda createif? Note:
 #   for fanouts there is only one synch op performed on
 #   them so no races. but no current way to identify fanout objects 
-#   since they are same type as FnInNB. 
+#   since they are same type as FnInNB. Create a create-lock per
+#   object using DAG_info?
 #   Note: we can map but not create on start. We will map object "foo"
 #   to some function (and lock) and just create the "Foo" object on
 #   the fly, which seems reasonable. Could chck for map then grab

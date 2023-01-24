@@ -3,14 +3,17 @@ import json
 import traceback
 import socketserver
 import cloudpickle
-
+import uuid
 
 from .synchronizer import Synchronizer
 from .util import decode_and_deserialize
 #from ..dag.DAG_executor_State import DAG_executor_State
-from .util import decode_and_deserialize, isTry_and_getMethodName, isSelect #, make_json_serializable
-from ..dag.DAG_executor_constants import run_all_tasks_locally
+from .util import decode_and_deserialize, isTry_and_getMethodName, isSelect, make_json_serializable
+from ..dag.DAG_executor_constants import run_all_tasks_locally, process_work_queue_Type
 from ..dag.DAG_executor_constants import create_all_fanins_faninNBs_on_start
+from ..dag.DAG_executor_constants import FanInNB_Type, FanIn_Type, store_fanins_faninNBs_locally
+from ..dag.DAG_info import DAG_Info
+from ..dag.DAG_executor_State import DAG_executor_State
 
 # Set up logging.
 import logging 
@@ -23,6 +26,7 @@ ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
+DAG_info = None
 
 class TCPHandler(socketserver.StreamRequestHandler):
     def handle(self):
@@ -303,6 +307,34 @@ class TCPHandler(socketserver.StreamRequestHandler):
         got_work = False
         list_of_work = []
 
+        """ New 
+        #rhc: ToDo: This needs to be locked?
+        if not create_all_fanins_faninNBs_on_start:
+            synchronizer = tcp_server.synchronizers.get(work_queue_name,None)
+            if (synchronizer is None):
+                dummy_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
+                # we will create the fanin object and call fanin.init(**keyword_arguments)
+                number_of_tasks = len(DAG_info.get_DAG_tasks())
+                dummy_state.keyword_arguments['n'] = 2*number_of_tasks
+                msg_id = str(uuid.uuid4())	# for debugging
+                creation_message = {
+                    "op": "create",
+                    "type": process_work_queue_Type,
+                    "name": "process_work_queue",
+                    "state": make_json_serializable(dummy_state),	
+                    "id": msg_id
+                } 
+                # not created yet so create object
+                logger.debug("tcp_server: synchronize_process_faninNBs_batch: "
+                    + "create sync object process_work_queue on the fly")
+#rhc: Todo: call create_one_of_all_objs so no ack sent to client? rename
+                self.create_obj(creation_message)
+            else:
+                logger.debug("tcp_server: synchronize_sync: object already created.")
+
+            logger.debug("tcp_server: synchronize_sync: do synchronous_sync after create. ")
+        """
+
         # List list_of_work_queue_or_payload_fanout_values may be empty: if a state has no fanouts this list is empty. 
         # If a state has 1 fanout it will be a become task and there will be no more fanouts so this list is empty.
         # If the state has no fanouts, then worker_needs_work will be True and this fanout list will be empty.
@@ -373,6 +405,63 @@ class TCPHandler(socketserver.StreamRequestHandler):
             synchronizer_name = self._get_synchronizer_name(type_name = None, name = name)
             logger.debug("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
             synchronizer = tcp_server.synchronizers[synchronizer_name]
+
+            """ New - comment out preceding line and:
+            #rhc: ToDo: This needs to be locked?
+            if not create_all_fanins_faninNBs_on_start:
+                synchronizer = tcp_server.synchronizers.get(synchronizer_name,None)
+                if (synchronizer is None):
+                    dummy_state_for_create_message = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()))
+                    # passing to the created faninNB object:
+                    #global DAG_info
+                    DAG_states = DAG_info.get_DAG_states()
+                    dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = DAG_states[name]
+                    dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
+                    dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info
+                    all_fanin_task_names = DAG_info.get_all_fanin_task_names()
+                    all_fanin_sizes = DAG_info.get_all_fanin_sizes()
+                    all_faninNB_task_names = DAG_info.get_all_faninNB_task_names()
+                    all_faninNB_sizes = DAG_info.get_all_faninNB_sizes()
+                    is_fanin = name in all_fanin_task_names
+                    is_faninNB = name in all_faninNB_task_names
+                    if not is_fanin and not is_faninNB:
+                        logger.error("[Error]: Internal Error: tcp_server: synchronize_sync:"
+                            + " sync object for synchronize_sync is neither a fanin nor a faninNB.")
+
+                    # compute size of fanin or faninNB 
+                    # FanIn could be a non-select (monitor) or select FanIn type
+                    if is_fanin:
+                        fanin_type = FanIn_Type
+                        fanin_index = all_fanin_task_names.index(name)
+                        # The name of a fanin/faninNB is the name of its fanin task.
+                        # The index of taskname in the list of task_names is the same as the
+                        # index of the corresponding size of the fanin/fanout
+                        dummy_state_for_create_message.keyword_arguments['n'] = all_fanin_sizes[fanin_index]
+                    else:
+                        fanin_type = FanInNB_Type
+                        faninNB_index = all_faninNB_task_names.index(name)
+                        dummy_state_for_create_message.keyword_arguments['n'] = all_faninNB_sizes[faninNB_index]
+
+                    msg_id = str(uuid.uuid4())	# for debugging
+                    creation_message = {
+                        "op": "create",
+                        "type": fanin_type,
+                        "name": name,
+                        "state": make_json_serializable(dummy_state_for_create_message),	
+                        "id": msg_id
+                    }
+                    # not created yet so create object
+                    logger.debug("tcp_server: synchronize_sync: "
+                        + "create sync object " + name + "on the fly")
+#rhc: Todo: call create_one_of_all_objs so no ack sent to client? rename
+                    self.create_obj(creation_message)
+                else:
+                    logger.debug("tcp_server: synchronize_sync: object already created.")
+
+                logger.debug("tcp_server: synchronize_sync: do synchronous_sync after create. ")
+            
+            synchronizer = tcp_server.synchronizers[synchronizer_name]
+            """
 
             if (synchronizer is None):
                 raise ValueError("synchronize_process_faninNBs_batch: Could not find existing Synchronizer with name '%s'" % synchronizer_name)
@@ -558,6 +647,78 @@ class TCPHandler(socketserver.StreamRequestHandler):
         logger.debug("tcp_server: synchronize_sync: Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
         synchronizer = tcp_server.synchronizers[synchronizer_name]
 
+        """ New - comment out preceding line and:
+        #rhc: ToDo: This needs to be locked?
+        if not create_all_fanins_faninNBs_on_start:
+            synchronizer = tcp_server.synchronizers.get(synchronizer_name,None)
+            if (synchronizer is None):
+#rhc: ToDo: 
+#  This part here is only for DAGs, not, e.g., Semaphores
+#  For other typs of objects, we'l need their type so we'll need
+#  to deal with it in DAG_executor? which will call createif (as it does now)
+#  passing a create message with the message?
+#  But only user nows the crete ino, as typically user would create semaphors, etc.
+#  User could "register" objects so we have their information. And register
+#  could do creates() or register objects on tcp_server for create_if?
+#  Then user cannot do ops on the fly, which is normally the case in 
+#  any program, considering scope this would be odd, but our objects have
+#  "server scope"? which is global, so ...
+                if method_name == "fan_in":
+                    dummy_state_for_create_message = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()))
+                    # passing to the created faninNB object:
+                    #global DAG_info
+                    DAG_states = DAG_info.get_DAG_states()
+                    dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = DAG_states[obj_name]
+                    dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
+                    dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info
+                    all_fanin_task_names = DAG_info.get_all_fanin_task_names()
+                    all_fanin_sizes = DAG_info.get_all_fanin_sizes()
+                    all_faninNB_task_names = DAG_info.get_all_faninNB_task_names()
+                    all_faninNB_sizes = DAG_info.get_all_faninNB_sizes()
+                    is_fanin = obj_name in all_fanin_task_names
+                    is_faninNB = obj_name in all_faninNB_task_names
+                    if not is_fanin and not is_faninNB:
+                        logger.error("[Error]: Internal Error: tcp_server: synchronize_sync:"
+                            + " sync object for synchronize_sync is neither a fanin nor a faninNB.")
+
+                    # compute size of fanin or faninNB 
+                    # FanIn could be a non-select (monitor) or select FanIn type
+                    if is_fanin:
+                        fanin_type = FanIn_Type
+                        fanin_index = all_fanin_task_names.index(obj_name)
+                        # The name of a fanin/faninNB is the name of its fanin task.
+                        # The index of taskname in the list of task_names is the same as the
+                        # index of the corresponding size of the fanin/fanout
+                        dummy_state_for_create_message.keyword_arguments['n'] = all_fanin_sizes[fanin_index]
+                    else:
+                        fanin_type = FanInNB_Type
+                        faninNB_index = all_faninNB_task_names.index(obj_name)
+                        dummy_state_for_create_message.keyword_arguments['n'] = all_faninNB_sizes[faninNB_index]
+
+                    msg_id = str(uuid.uuid4())	# for debugging
+                    creation_message = {
+                        "op": "create",
+                        "type": fanin_type,
+                        "name": obj_name,
+                        "state": make_json_serializable(dummy_state_for_create_message),	
+                        "id": msg_id
+                    }
+                    # not created yet so create object
+                    logger.debug("tcp_server: synchronize_sync: "
+                        + "create sync object " + obj_name + "on the fly")
+#rhc: Todo: call create_one_of_all_objs so no ack sent to client? rename
+                    self.create_obj(creation_message)
+                 # else:
+                    # pass
+                    # what to do for non-DAG objects, we need info about them
+            else:
+                logger.debug("tcp_server: synchronize_sync: object already created.")
+
+            logger.debug("tcp_server: synchronize_sync: do synchronous_sync after create. ")
+        
+        synchronizer = tcp_server.synchronizers[synchronizer_name]
+        """
+
         if (synchronizer is None):
             raise ValueError("synchronize_sync: Could not find existing Synchronizer with name '%s'" % synchronizer_name)
 
@@ -600,10 +761,10 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 "id": msg_id
             }
         """
-        logger.debug("[MESSAGEHANDLERLAMBDA] createif_and_synchronize_sync() called.")
+        logger.debug("[TCPSERVER] createif_and_synchronize_sync() called.")
 
         if create_all_fanins_faninNBs_on_start:
-            logger.error("[Error]: Internal Error: message_handler_lambda: createif_and_synchronize_sync: "
+            logger.error("[Error]: Internal Error: tcp_server: createif_and_synchronize_sync: "
                 + "called createif_and_synchronize_sync but create_all_fanins_faninNBs_on_start")
 
         messages = message['name']
@@ -619,13 +780,13 @@ class TCPHandler(socketserver.StreamRequestHandler):
         synchronizer_name = self._get_synchronizer_name(type_name = None, name = obj_name)
 
         # check if already created
-        logger.debug("message_handler_lambda: createif_and_synchronize_sync: Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
+        logger.debug("tcp_server: createif_and_synchronize_sync: Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
         #synchronizer = MessageHandler.synchronizers[synchronizer_name]
 #rhc: ToDo: This needs to be locked? When can create calls be concurrent
         synchronizer = tcp_server.synchronizers.get(synchronizer_name,None)
         if (synchronizer is None):
             # not created yet so create object
-            logger.debug("message_handler_lambda: createif_and_synchronize_sync: "
+            logger.debug("tcp_server: createif_and_synchronize_sync: "
                 + "create sync object " + obj_name + "on the fly")
             self.create_obj(creation_message)
 
@@ -634,7 +795,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         synchronizer = tcp_server.synchronizers[synchronizer_name]
         
         if (synchronizer is None):
-            raise ValueError("message_handler_lambda: synchronize_sync: Could not find existing Synchronizer with name '%s'" % synchronizer_name)
+            raise ValueError("tcp_server: createif_and_synchronize_sync: Could not find existing Synchronizer with name '%s'" % synchronizer_name)
          
         # return_value = synchronizer.synchronize_sync(tcp_server, obj_name, method_name, type_arg, state, synchronizer_name)
         # return_value = synchronizer.synchronize_sync(tcp_server, obj_name, method_name, state, synchronizer_name, self)
@@ -644,7 +805,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
         return_value = synchronizer.synchronize_sync(obj_name, method_name, state, synchronizer_name)
         
-        logger.debug("message_handler_lambda called synchronizer.synchronize_sync")
+        logger.debug("tcp_server: synchronize_sync called synchronizer.synchronize_sync")
 
         return return_value
 
@@ -678,6 +839,9 @@ class TCPHandler(socketserver.StreamRequestHandler):
         logger.debug("tcp_server called synchronizer.synchronize_async")
 
         return return_value    
+
+    def createif_and_synchronize_async(self,  message = None):
+        pass
 
     def recv_object(self):
         """
@@ -831,6 +995,14 @@ class TCPServer(object):
         self.clients =        []    # list      - not used
         self.server_address = ("0.0.0.0",25565)
         self.tcp_server = socketserver.ThreadingTCPServer(self.server_address, TCPHandler)
+
+        if (not create_all_fanins_faninNBs_on_start and (
+            not run_all_tasks_locally)):
+            # Need DAG_info if we are creating objects on their first
+            # use and objects will be invoking lambdas (as lambdas need)
+            # the DAG_info.
+            global DAG_info
+            DAG_info = DAG_Info()
     
     def start(self):
         logger.info("Starting TCP server.")
