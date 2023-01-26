@@ -3,7 +3,7 @@
 # try matrixMult
 
 # Where are we: 
-# - check code
+# check code + pass nuber of tasks on process_faninNBs batch?
 # - did local with no create on start for workers and no-workers.
 #   Next do non-local with worker threads and processes. Need to 
 #   copy stuff from tcp_server_lambda and message handler lambda.
