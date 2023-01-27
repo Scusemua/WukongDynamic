@@ -83,7 +83,8 @@ def execute_task(task, args):
 def create_and_faninNB_remotely(websocket,**keyword_arguments):
     # pass
     # need code that returns a  DAG_exec_state = synchronize_sync()
-    return DAG_executor_State()
+    dummy_DAG_exec_state = faninNB_remotely(websocket,**keyword_arguments)
+    return dummy_DAG_exec_state
 
 def faninNB_remotely(websocket,**keyword_arguments):
     # create new faninNB with specified name if it hasn't been created
@@ -138,8 +139,8 @@ def faninNB_remotely(websocket,**keyword_arguments):
     return DAG_exec_state
 
 def create_and_faninNB_remotely_batch(websocket,**keyword_arguments):
-    pass
-    return DAG_executor_State()
+    DAG_exec_state = faninNB_remotely_batch(websocket,**keyword_arguments)
+    return DAG_exec_state()
 
 #def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_states, DAG_exec_state, output, DAG_info, server):
 def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_states, 
@@ -233,6 +234,12 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
             #Note: returning 0 since when running locally the faninNB will start 
             # the fanin task so there is nothing to do. Process fanouts next.
         else:
+            # create_and_faninNB_remotely simply calls faninNB_remotely(websocket,**keyword_arguments)
+            # All the create logic is on the server, so we call faninNB_remotely in
+            # either case. We leave this call to create_and_faninNB_remotely 
+            # as a placeholder in case we decide to do smething differet - 
+            # as in create_and_faninNB_remotely could create and pass a new message to 
+            # the server, i.e., move the create logic down from the server.
             if not create_all_fanins_faninNBs_on_start:
                 dummy_DAG_exec_state = create_and_faninNB_remotely(websocket,**keyword_arguments)
             else:
@@ -517,7 +524,12 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
     # or the lambdas themselves will create the object to be stored in them.
     if not create_all_fanins_faninNBs_on_start and (
             not store_sync_objects_in_lambdas):
-        # not implemented
+        # create_and_faninNB_remotely_batch simply calls faninNB_remotely_batch(websocket,**keyword_arguments)
+        # All the create logic is on the server, so we call faninNB_remotely_batch in
+        # either case. We leave this call to create_and_faninNB_remotely_batch 
+        # as a placeholder in case we decide to do smething differet - 
+        # as in create_and_faninNB_remotely_batch could create and pass a new message to 
+        # the server, i.e., move the create logic down from the server.
         logger.debug(thread_name + ": process_faninNBs_batch: call create_and_faninNB_remotely_batch.") 
         dummy_DAG_exec_state = create_and_faninNB_remotely_batch(websocket,**keyword_arguments)
     else:
@@ -868,7 +880,8 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
     return become_start_state
 
 def create_and_fanin_remotely(websocket,DAG_exec_state,**keyword_arguments):
-    pass
+    DAG_exec_state = fanin_remotely(websocket, DAG_exec_state, **keyword_arguments)
+    return DAG_exec_state
 
 def fanin_remotely(websocket, DAG_exec_state,**keyword_arguments):
     # create new faninNB with specified name if it hasn't been created
@@ -971,9 +984,9 @@ def process_fanins(websocket,fanins, faninNB_sizes, calling_task_name, DAG_state
 # in message_handler_lambda, so when create objects on server put the
 # create in msg_handler's synchronize sync to be consistent (rather
 # than in tcp_server?)
-        if False:
-        #if not create_all_fanins_faninNBs_on_start:
-            # Note: might wan to send the result for debugging
+
+        if not create_all_fanins_faninNBs_on_start:
+            # Note: might want to send the result for debugging
             #if not using_lambdas:
                 # if we call a remote fanin and locally we are not using lambdas,
                 # then we need not pass the result of this task since we will not
@@ -984,9 +997,16 @@ def process_fanins(websocket,fanins, faninNB_sizes, calling_task_name, DAG_state
                 # Actually:
                 # We will use local datadict for each multiprocess; process will receve
                 # the faninNB results and put them in the data_dict
-
                 # DAG_exec_state.keyword_arguments['result'] = None
-            create_and_fanin_remotely(websocket,DAG_exec_state, **keyword_arguments)
+
+            # create_and_fanin_remotely simply calls fanin_remotely(websocket,**keyword_arguments)
+            # All the create logic is on the server, so we call fanin_remotely in
+            # either case. We leave this call to create_and_fanin_remotely 
+            # as a placeholder in case we decide to do smething differet - 
+            # as in create_and_fanin_remotely could create and pass a new message to 
+            # the server, i.e., move the create logic down from the server.
+            DAG_exec_state = create_and_fanin_remotely(websocket,DAG_exec_state, **keyword_arguments)
+            logger.debug (thread_name + ": process_fanins: process_fanins: call to create_and_fanin_remotely returned DAG_exec_state.return_value: " + str(DAG_exec_state.return_value))
         else:
             #if not using_lambdas:
                 # if we call a remote fanin and locally we are not using lambdas,

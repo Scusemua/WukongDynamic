@@ -19,7 +19,7 @@ run_all_tasks_locally = True         # vs run tasks remotely (in Lambdas)
 # machine on which the threads are executing.  If we are using multiprocessing
 # or Lambdas, this must be False. When False, the synch objects are stored
 # on the tcp_server or in InfiniX lambdas.
-store_fanins_faninNBs_locally = True    # vs remotely
+store_fanins_faninNBs_locally = False    # vs remotely
 # True when all FanIn and FanInNB objects are created locally or on the
 # tcp_server or IniniX all at once at the start of the DAG execution. If
 # False, synch objects are created on the fly, i.e, we execute create-and-fanin
@@ -45,12 +45,12 @@ num_threads_for_multithreaded_multiprocessing = 2
 # if using lambdas to store synch objects, run tcp_server_lambda.
 # if store in regular python functions instead of real Lambdas
 # set using_Lambda_Function_Simulator = True
-#FanIn_Type = "DAG_executor_FanIn"
-#FanInNB_Type = "DAG_executor_FanInNB"
-#process_work_queue_Type = "BoundedBuffer"
-FanIn_Type = "DAG_executor_FanIn_Select"
-FanInNB_Type = "DAG_executor_FanInNB_Select"
-process_work_queue_Type = "BoundedBuffer_Select"
+FanIn_Type = "DAG_executor_FanIn"
+FanInNB_Type = "DAG_executor_FanInNB"
+process_work_queue_Type = "BoundedBuffer"
+#FanIn_Type = "DAG_executor_FanIn_Select"
+#FanInNB_Type = "DAG_executor_FanInNB_Select"
+#process_work_queue_Type = "BoundedBuffer_Select"
 
 # if running real lambdas or storing synch objects in real lambdas:
 #   Set SERVERLESS_SYNC to True or False in wukongdnc constants !!!!!!!!!!!!!!
