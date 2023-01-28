@@ -3,49 +3,46 @@
 # try matrixMult
 
 # Where are we: 
-# check code + pass nuber of tasks on process_faninNBs batch?
-#
+# check code
+# test all
 # - Lock the get and set in message handler lambda createif? Note:
 #   for fanouts there is only one synch op performed on
 #   them so no races. but no current way to identify fanout objects 
 #   since they are same type as FnInNB. Create a create-lock per
-#   object using DAG_info?
+#   object using DAG_info? Yes, but not always processing DAGs.
 #   Note: we can map but not create on start. We will map object "foo"
 #   to some function (and lock) and just create the "Foo" object on
-#   the fly, which seems reasonable. Could chck for map then grab
+#   the fly, which seems reasonable. Could check for map then grab
 #   lock if mapped.
 # - Note: just because we map objects to functions doesn't mean we need 
 #   a lock for each function. If we cal function once then we don't
 #   need a lock. True for fanout/fanins/faninNBs when using D_O that 
 #   enqueues all ops until the last one. Which brings up:
-# - D_O can invoke function (with lock) as ops ar performed to overlap
+# - D_O can invoke function (with lock) as ops are performed to overlap
 #   passing results with waiting for last operation. Do this for big
 #   results? The function can open socket and after getting result can 
 #   ask for moer results - if none available then stop.
-# 
-# - Then do the wo/ D_O create on start for tcp_server_lambda, then tcp_server
-#   (So, if we use D_O and go through enqueue, then enqueue will create 
-#   a state with the info needed by the process_enqueued in message
-#   handler to create a create message and use it to call create,
-#   if no D_O then no enqueue, so in the places where we can call 
-#   enqueue we will not call enqueue and instead we will call invoke 
-#   lambda synchronously. In this case we need to create a control message
-#   which is a tuple [create_message, message] and call the 
-#   createif_and_synchronize_sync which uses both messages to create object
-#   then do synch op on object. these other places are process leaf tasks
-#   batch, process faninNBs batch, and synchronize (a)sync, all of which
-#   create a control_message with the messages tuple, and invoke lambda
-#   synchronously to call createif_and_synchronize_sync n message handler
-#   lambda.)
 #
-# - Option is on server, somehow get DAG_info to create so it can use 
-#   DAG_info when not run_all_tasks_locally. Ths instead of passing
-#   DAG_info in all the create messages for all the objects.
 # - integrate the non-simulated lambda stuff with the mapping and
 #   anonynous stuff. Still use InfiniD? with "DAG_executor_i"
 #   Set function_map directly
-# - on the fly for tcp_server and local?
 # - Docs
+#
+# DOC: When not creating objects on start and using tcp_server_lambda:
+#   When we use D_O and go through enqueue, enqueue creates a state 
+#   with the info needed by process_enqueued_messages and creates
+#   a create_message that gets passed as part of the control message
+#   for process_enqueued_messages. if there is no D_O then no enqueue, 
+#   instead we will call invoke lambda synchronously. In this case we 
+#   create a control message which is a tuple [create_message, message] 
+#   and call the createif_and_synchronize_sync which uses both messages, 
+#   first to create the object then do synch op on object. These other 
+#   places (rather than enqueue) are process leaf tasks
+#   batch, process faninNBs batch, and synchronize (a)sync, all of which
+#   create a control_message with the messages tuple, and invoke lambda
+#   synchronously to call createif_and_synchronize_sync in the 
+#   message_handler_lambda.)
+
 #
 # ToDo: parallel invoke of leaf tasks?
 #

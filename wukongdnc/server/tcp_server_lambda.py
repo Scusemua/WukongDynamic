@@ -1656,10 +1656,11 @@ class TCPServer(object):
             # declared DAG_info global since we assign to it
             global DAG_info
             DAG_info = DAG_Info()
-            if DAG_info == None:
-                logger.debug("DAG_info is None.")
-            else:
-                logger.debug("DAG_info is not None.")
+            # debug
+            #if DAG_info == None:
+            #    logger.debug("DAG_info is None.")
+            #else:
+            #    logger.debug("DAG_info is not None.")
 
             """
             #DAG_map = DAG_info.get_DAG_map()

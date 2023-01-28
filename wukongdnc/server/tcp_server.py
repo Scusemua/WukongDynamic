@@ -275,9 +275,12 @@ class TCPHandler(socketserver.StreamRequestHandler):
         work_queue_name = DAG_exec_state.keyword_arguments['work_queue_name']
         work_queue_type = DAG_exec_state.keyword_arguments['work_queue_type']
         work_queue_method = DAG_exec_state.keyword_arguments['work_queue_method']
+        # used to calculate size of work queue (2 * number of tasks in DAG)
+        number_of_tasks = DAG_exec_state.keyword_arguments['number_of_tasks']
         list_of_fanout_values = DAG_exec_state.keyword_arguments['list_of_work_queue_or_payload_fanout_values']
 #rhc: async batch
         async_call = DAG_exec_state.keyword_arguments['async_call']
+
 
         logger.debug("tcp_server: synchronize_process_faninNBs_batch: calling_task_name: " + calling_task_name + ": worker_needs_input: " + str(worker_needs_input)
             + " faninNBs size: " +  str(len(faninNBs)))
@@ -320,8 +323,6 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 synchronizer = tcp_server.synchronizers.get(work_queue_name,None)
                 if (synchronizer is None):
                     dummy_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
-                    # we will create the fanin object and call fanin.init(**keyword_arguments)
-                    number_of_tasks = len(DAG_info.get_DAG_tasks())
                     dummy_state.keyword_arguments['n'] = 2*number_of_tasks
                     msg_id = str(uuid.uuid4())	# for debugging
                     creation_message = {
@@ -1024,16 +1025,10 @@ class TCPServer(object):
         self.server_address = ("0.0.0.0",25565)
         self.tcp_server = socketserver.ThreadingTCPServer(self.server_address, TCPHandler)
 
-        if not create_all_fanins_faninNBs_on_start:
+        if not create_all_fanins_faninNBs_on_start or not run_all_tasks_locally:
             # Need DAG_info if we are creating objects on their first
-            # use and objects will be invoking lambdas (as lambdas need)
+            # use or objects will be invoking lambdas (as lambdas need)
             # the DAG_info.
-            # We also use DAG_info when we create the work_queue, which means
-            # we need DAG_info even if we are not using lambdas (i.e, we
-            # run_tasks_locally). We use DAG_info to get the number of tasks.
-            # Note: We could pass the number of tasks on call to process faninNBs
-            # batch so we would not need DAG_info to get the number of tasks
-            # when we are not using real lambdas.
             global DAG_info
             DAG_info = DAG_Info()
             global create_work_queue_lock
