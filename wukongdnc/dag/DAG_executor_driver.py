@@ -28,21 +28,135 @@
 #   Set function_map directly
 # - Docs
 #
-# DOC: When not creating objects on start and using tcp_server_lambda:
-#   When we use D_O and go through enqueue, enqueue creates a state 
-#   with the info needed by process_enqueued_messages and creates
+# DOC: 
+#   When we aer using the tcp_server so tht objects are stored on the 
+#   server and we are creating objects on the fly, before we do an 
+#   operation on an object, we check to see whether the object has
+#   been created. The methods that do ops are syncronize_(a)sync
+#   and process_fanis_batch. Both of these message check whether the
+#   object exists before doing their op, and if the object dos not 
+#   exis the object is created.
+"""
+        if not create_all_fanins_faninNBs_on_start:
+            # create the work_queue used by workers (when using worker pools
+            # to execute the DAG instad of lambdas. When the workers are processes
+            # the work queue is on the server so all the worker processes can access it.)
+            with create_work_queue_lock:
+                synchronizer = tcp_server.synchronizers.get(work_queue_name,None)
+                if (synchronizer is None):
+                    dummy_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
+                    dummy_state.keyword_arguments['n'] = 2*number_of_tasks
+                    msg_id = str(uuid.uuid4())	# for debugging
+                    creation_message = {
+                        "op": "create",
+                        "type": process_work_queue_Type,
+                        "name": "process_work_queue",
+                        "state": make_json_serializable(dummy_state),	
+                        "id": msg_id
+                    } 
+                    # not created yet so create object
+                    logger.debug("tcp_server: synchronize_process_faninNBs_batch: "
+                        + "create sync object process_work_queue on the fly.")
+                    self.create_obj_but_no_ack_to_client(creation_message)
+                else:
+                    logger.debug("tcp_server: synchronize_process_faninNBs_batch: object " + 
+                        "process_work_queue already created.")
+"""
+#   Note that checking whether the object exists and then creting an object
+#   if it does not must be atomic, so it is locked.
+#   When we are not creating objects on start and we are using 
+#   tcp_server_lambda because objects are stored in lambdas and/or 
+#   lambdas execute tasks, we are either using th DAG_orchestrator (D_O)
+#   or not.
+#   - When we use D_O the D_O calls process_enqueued_messages to process the 
+#   fanin operations when all of them have been received, enqueue creates 
+#   a state with the fanin ops for process_enqueued_messages and creates
 #   a create_message that gets passed as part of the control message
-#   for process_enqueued_messages. if there is no D_O then no enqueue, 
-#   instead we will call invoke lambda synchronously. In this case we 
-#   create a control message which is a tuple [create_message, message] 
-#   and call the createif_and_synchronize_sync which uses both messages, 
-#   first to create the object then do synch op on object. These other 
-#   places (rather than enqueue) are process leaf tasks
-#   batch, process faninNBs batch, and synchronize (a)sync, all of which
-#   create a control_message with the messages tuple, and invoke lambda
-#   synchronously to call createif_and_synchronize_sync in the 
-#   message_handler_lambda.)
+#   for process_enqueued_messages. The control message is what the 
+#   message_hanlder_lambda looks in order to call the right method to
+#   process the message, in this case process_enqueued_messages.
+#   process_enqueued_messages will see that we are creating objects
+#   on the fly instead of at the start and use the create_message
+#   to gather the information that is passed to create() the object.
+#   - If we are not using D_O then fanin ops are not enqueued, 
+#   instead we will call invoke_lambda_synchronously to execute the
+#   fanin operations as they are called. In this case, as the parameter
+#   to invoke_lambda_synchronously, we create a control message which 
+#   is a tuple [create_message, message] and call createif_and_synchronize_sync.
+#   That is, since we are creating objects on the fly, we call this method
+#   instead of the regular synchronize_sync. The latter assumes the object
+#   was created at the start.  createif_and_synchronize_sync uses both messages, 
+#   first the crete_message to create the object then the regular synchronize_sync
+#   fanin messag to do the synch op on object. The places we invoke 
+#   invoke_lambda_synchronously are the places that can do a synchronize_sync
+#   operation, which are process_leaf_tasks_batch, process_faninNBs_batch, 
+#   and synchronize (a)sync. All these place create a control_message with the
+#   messages tuple, and invoke lambda synchronously to call 
+#   createif_and_synchronize_sync in the message_handler_lambda.
+#   Recall: When using tp_server_lambda, there is a mesage handler in
+#   tcp_server on the server that receievs client messages and routes them 
+#   to the method that processes them. This method will pass the message or
+#   create a control message as just described and invoke a lambda, passing
+#   the message as a parameter. In the lambda, the message_handler_lambda
+#   will route the message to the method that handles it, just like we do 
+#   on the server.
+#   Note: When using tcp_server, which means we are not storing objects 
+#   in lambdas, we are storing ojects on the server, the tcp_server
+#   will receive a message and route it to a method of the message_handler.
+#   In this case the message_handler is on the server.
+#   Note: So when we move to storing objects in lambas, we still have a tcp
+#   server to route messages to the message_hanlder but the message_handler
+#   is inside the lambda and the mesage_handler will route the message
+#   it gets rom the tcp_server_lambda to the method that handles the object.
+#   The code for tp_server and tcp_server_lambda is very similar, the 
+#   big difference is where the message_handler runs (in a lambda or on
+#   the server.)
+"""
+    def synchronize_sync(self, message = None):
 
+        if not create_all_fanins_faninNBs_on_start:
+            ...
+            creation_message = {
+                "op": "create",
+                "type": fanin_type,
+                "name": task_name,
+                "state": make_json_serializable(dummy_state_for_create_message),	
+                "id": msg_id
+            }
+            ...
+            # message is the original synchronize_sync message
+            messages = (creation_message, message)
+            ...
+            control_message = {
+                "op": "createif_and_synchronize_sync",
+                "type": "DAG_executor_fanin_or_fanout",
+                "name": messages,   
+                "state": make_json_serializable(dummy_state_for_control_message),	
+                "id": msg_id
+            }
+
+        if using_Lambda_Function_Simulators_to_Store_Objects and using_DAG_orchestrator:
+            # The enqueue_and_invoke_lambda_synchronously will generte the creae message
+            logger.info("*********************tcp_server_lambda: synchronize_sync: " + calling_task_name + ": calling infiniD.enqueue(message).")
+            returned_state = self.enqueue_and_invoke_lambda_synchronously(message)
+            logger.info("*********************tcp_server_lambda: synchronize_sync: " + calling_task_name + ": called infiniD.enqueue(message) "
+                + "returned_state: " + str(returned_state))
+        else:
+            logger.info("*********************tcp_server_lambda: synchronize_sync: " + calling_task_name + ": calling invoke_lambda_synchronously.")
+            if create_all_fanins_faninNBs_on_start:
+                # call synchronize_sync on the already created object
+                returned_state = self.invoke_lambda_synchronously(message)
+            else:
+                # call createif_and_synchronize_sync to create object
+                # and call synchronize_sync on it. the control_message
+                # has the creation_message and the message for snchronize_sync
+                # in a messages tuple value under its 'name' key.
+                returned_state = self.invoke_lambda_synchronously(control_message)
+
+            logger.info("*********************tcp_server_lambda: synchronize_sync: " + calling_task_name + ": called invoke_lambda_synchronously "
+                + "returned_state: " + str(returned_state))
+
+"""
 #
 # ToDo: parallel invoke of leaf tasks?
 #

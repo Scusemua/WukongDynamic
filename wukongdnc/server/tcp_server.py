@@ -319,6 +319,9 @@ class TCPHandler(socketserver.StreamRequestHandler):
         list_of_work = []
 
         if not create_all_fanins_faninNBs_on_start:
+            # create the work_queue used by workers (when using worker pools
+            # to execute the DAG instad of lambdas. When the workers are processes
+            # the work queue is on the server so all the worker processes can access it.)
             with create_work_queue_lock:
                 synchronizer = tcp_server.synchronizers.get(work_queue_name,None)
                 if (synchronizer is None):
