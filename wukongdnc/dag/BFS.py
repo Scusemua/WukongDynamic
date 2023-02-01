@@ -250,6 +250,7 @@ for x in range(num_nodes+1):
     nodes.append(Node(x))
 
 num_parent_appends = 0
+num_children_appends = 0
 
 while True:
     count += 1
@@ -263,14 +264,29 @@ while True:
     words = line.split(' ')
     source = int(words[1])
     target = int(words[2])
-    print ("source:" + str(source) + "target:" + str(target))
+    #print("target:" + str(target))
+    if target == 101:
+        print("target is 101")
+    if target > num_nodes:
+        if len(nodes) < target+1:
+            number_of_nodes_to_append = target - num_nodes
+            print("number_of_nodes_to_append:" + str(number_of_nodes_to_append))
+            for i in range(number_of_nodes_to_append):
+                print("Node(" + str(num_nodes+i+1) + ")")
+                nodes.append(Node((num_nodes+i+1)))
+            num_nodes += number_of_nodes_to_append
+    print ("source:" + str(source) + " target:" + str(target))
     source_node = nodes[source]
     source_node.children.append(target)
+    num_children_appends += 1
+#rhc: ToDo: So 101 is a sink, i.e., it has no children so it will not appear as a source
+# in the file? Need to append a node if target is out of range, actually append target - 
+# num_nodes. Is this just a cooincidence that sink is node 100+1?
     target_node = nodes[target]
     target_node.parents.append(source)
     num_parent_appends +=  1
   
-    print("Line{}: {}".format(count, line.strip()))
+    print("Line {}: {}".format(count, line.strip()))
 
 source_node = nodes[1]
 print("Node1 children:")
@@ -288,34 +304,34 @@ print("Node7 parents:")
 for parent in source_node.parents:
     print(parent)
 
-count_edges = 0
+count_child_edges = 0
 i = 1
 while i <= num_nodes:
     node = nodes[i]
-    print (str(i) + ": get children: " + str(len(node.children)))
-    count_edges += len(node.children)
+    #print (str(i) + ": get children: " + str(len(node.children)))
+    count_child_edges += len(node.children)
     i += 1
 print("num edges in graph: " + str(num_edges))
-if not num_edges == count_edges:
-    print("[Error]: num child edges in graph is " + str(count_edges) + " but edges in file is "
-    + str(num_edges))
+if not num_edges == count_child_edges:
+    print("[Error]: num child edges in graph is " + str(count_child_edges) + " but edges in file is "
+        + str(num_edges))
 
-count_edges = 0
+count_parent_edges = 0
 i = 1
 while i <= num_nodes:
     node = nodes[i]
-    print (str(i) + ": get parents: " + str(len(node.parents)))
-    count_edges += len(node.parents)
+    #print (str(i) + ": get parents: " + str(len(node.parents)))
+    count_parent_edges += len(node.parents)
     i += 1
 
 print("num_edges in graph: " + str(num_edges))
-if not num_edges == count_edges:
-    print("[Error]: num parent edges in graph is " + str(count_edges) + " but edges in file is "
+if not num_edges == count_parent_edges:
+    print("[Error]: num parent edges in graph is " + str(count_parent_edges) + " but edges in file is "
     + str(num_edges))
 
 print("num_parent_appends:" + str(num_parent_appends))
+print("num_children_appends:" + str(num_children_appends))
 
-  
 graph_file.close()
 print("Following is the Breadth-First Search")
 #bfs(visited, graph, '5')    # function calling
