@@ -219,6 +219,104 @@ def bfs(visited, graph, node): #function for BFS
 
 
 # Driver Code
+graph_file = open('100.gr', 'r')
+count = 0
+file_name_line = graph_file.readline()
+count += 1
+print("file_name_line{}: {}".format(count, file_name_line.strip()))
+vertices_line = graph_file.readline()
+count += 1
+print("vertices_line{}: {}".format(count, vertices_line.strip()))
+edges_line = graph_file.readline()
+count += 1
+print("edges_line{}: {}".format(count, edges_line.strip()))
+max_weight_line = graph_file.readline()
+count += 1
+print("max_weight_line{}: {}".format(count, max_weight_line.strip()))
+min_weight_line = graph_file.readline()
+count += 1
+print("min_weight_line{}: {}".format(count, min_weight_line.strip()))
+vertices_edges_line = graph_file.readline()
+count += 1
+print("vertices_edges_line{}: {}".format(count, vertices_edges_line.strip()))
+
+words = vertices_edges_line.split(' ')
+print("nodes:" + words[2] + " edges:" + words[3])
+num_nodes = int(words[2])
+num_edges = int(words[3])
+print ("num_nodes:" + str(num_nodes) + " num_edges:" + str(num_edges))
+nodes = []
+for x in range(num_nodes+1):
+    nodes.append(Node(x))
+
+num_parent_appends = 0
+
+while True:
+    count += 1
+  
+    # Get next line from file
+    line = graph_file.readline()
+    # if line is empty
+    # end of file is reached
+    if not line:
+        break
+    words = line.split(' ')
+    source = int(words[1])
+    target = int(words[2])
+    print ("source:" + str(source) + "target:" + str(target))
+    source_node = nodes[source]
+    source_node.children.append(target)
+    target_node = nodes[target]
+    target_node.parents.append(source)
+    num_parent_appends +=  1
+  
+    print("Line{}: {}".format(count, line.strip()))
+
+source_node = nodes[1]
+print("Node1 children:")
+for child in source_node.children:
+    print(child)
+print("Node1 parents:")
+for parent in source_node.parents:
+    print(parent)
+
+source_node = nodes[7]
+print("Node7 children:")
+for child in source_node.children:
+    print(child)
+print("Node7 parents:")
+for parent in source_node.parents:
+    print(parent)
+
+count_edges = 0
+i = 1
+while i <= num_nodes:
+    node = nodes[i]
+    print (str(i) + ": get children: " + str(len(node.children)))
+    count_edges += len(node.children)
+    i += 1
+print("num edges in graph: " + str(num_edges))
+if not num_edges == count_edges:
+    print("[Error]: num child edges in graph is " + str(count_edges) + " but edges in file is "
+    + str(num_edges))
+
+count_edges = 0
+i = 1
+while i <= num_nodes:
+    node = nodes[i]
+    print (str(i) + ": get parents: " + str(len(node.parents)))
+    count_edges += len(node.parents)
+    i += 1
+
+print("num_edges in graph: " + str(num_edges))
+if not num_edges == count_edges:
+    print("[Error]: num parent edges in graph is " + str(count_edges) + " but edges in file is "
+    + str(num_edges))
+
+print("num_parent_appends:" + str(num_parent_appends))
+
+  
+graph_file.close()
 print("Following is the Breadth-First Search")
 #bfs(visited, graph, '5')    # function calling
-bfs(visited, graph, N1)    # function calling
+#bfs(visited, graph, N1)    # function calling
