@@ -72,10 +72,9 @@ N11 = Node(11)
 N12 = Node(12)
 
 num_nodes = 12
-#for x in range(num_nodes+1):
-#    nodes.append(Node(x))
+for x in range(num_nodes+1):
+    nodes.append(Node(x))
 
-nodes[0] = Node(0)  # not used; num_nodes does not include nodes[0]
 nodes[1] = N1
 nodes[2] = N2
 nodes[3] = N3
@@ -267,17 +266,7 @@ def dfs_parent(visited, graph, node):  #function for dfs
             # loop detected - mark this loop in partition (for debugging for now)
             print ("dfs_parent neighbor " + str(neighbor.ID) + " already visited")
             if neighbor.partition_number == -1:
-                # Example: 1 5 6 7 3(Lp) 12(Lp) 11 11(Lc) 12 4 3 2 10 9 8
-                # Here, 3 is a parent of 11 that 11 finds visited so when visiting
-                # 11 in dfs_parent 11 will output 3(Lprnt_of_11). Same for when 
-                # 11 finds parent 12 is visited 12(Lprnt_of_11) We use "3(Lprnt_of_11)
-                # indicators to show a loop was detected when 11 visited parent 3
-                # and to show 3 in the partition before 11, where 3 is the parent of 11.
-                # We use "12(Lprnt_of_11)" to show a loop was detected when 11 visited 
-                # parent 12. 11 is the parent of 12 and 11 was put in partition before 
-                # 12 so we do not need "12(Lprnt_of_11)" before the 11 - it is just to 
-                # indicates the loop detected when 11 saw it's parent 12 was visited.
-                loop_indicator = str(neighbor.ID)+"(Lprnt_of_" + str(node.ID) + ")"
+                loop_indicator = str(neighbor.ID)+"(Lp)"
                 current_partition.append(loop_indicator)
                 print("[Info]: Possible parent loop detected, start and end with " + str(neighbor.ID)
                     + ", loop indicator: " + loop_indicator)
@@ -373,22 +362,7 @@ def dfs_parent(visited, graph, node):  #function for dfs
             print("unvisited child " + str(unvisited_child) + " was not visited during parent traversal")
     if print_loop_indicator:
         # a loop involving child 'c' as in (L'c')
-        # Example: 1 5 6 7 3(Lp) 12(Lp) 11 11(Lc) 12 4 3 2 10 9 8
-        # Here, 11 is a child of 12, and also 12 is a child of 11. When we visit 12
-        # dring a dfs_parent parent traversl, 12 will have an unvisited child 11.
-        # But 11 will become visited when 12 does dfs_parent(11). So after the return
-        # of 12's cal to dfs_parent(11), 12 will se that 11 is now visited, which means
-        # 12's child 11 was visited during the traversal dfs_parent(11) of 12's 
-        # parents, which meas that a cycle has been detected. So 12 outputs
-        # 11(Lchld_of_12) to indicate this cycle. It also puts 11 in the partition 
-        # before 12, which, in general, we want since a parent node is supposed to 
-        # be added to a partition before any of its children. This is not always
-        # possible due to cycles, e.g., 3, 11, 12, 4, 3, so we use the loop indicators
-        # to make this true. In this example, 11 appears before 12 in the partition so 
-        # we did not need the loop indicator to make this true; still it shows that a
-        # loop was detected FYI.
-   
-        loop_indicator += "(Lchild_of_" + str(node.ID) + ")"
+        loop_indicator += "(Lc)"
         current_partition.append(loop_indicator)
         #global loop_nodes_added
         loop_nodes_added += 1
@@ -471,13 +445,14 @@ def dfs_parent(visited, graph, node):  #function for dfs
         print("node " + str(node.ID) + " has no unvisited children after parent traversal,"
             + " add it to partition but not queue")
         if node.partition_number == -1:
-            print("dfs_parent add " + str(node.ID) + " to partition")
+            print ("dfs_parent add " + str(node.ID) + " to partition")
             node.partition_number = current_partition_number
             current_partition.append(node.ID)
         else:
-            print("dfs_parent do not add " + str(node.ID) + " to partition "
+            print ("dfs_parent do not add " + str(node.ID) + " to partition "
                 + current_partition_number + " since it is already in partition " 
                 + node.partition_number)
+
 
 def bfs(visited, graph, node): #function for BFS
     print ("bfs mark " + str(node.ID) + " as visited and add to queue")
@@ -494,7 +469,7 @@ def bfs(visited, graph, node): #function for BFS
     for x in frontier:
         print(x.ID, end=" ")
     print()
-    #print ("bfs add " + str(node.ID) + " to partition")
+    print ("bfs add " + str(node.ID) + " to partition")
     #node.partition_number = current_partition_number
     #current_partition.append(node.ID)
 
@@ -575,8 +550,6 @@ def input_graph():
     num_edges = int(words[3])
     print ("num_nodes:" + str(num_nodes) + " num_edges:" + str(num_edges))
 
-    # if num_nodes is 100, this fills nodes[0] ... nodes[100]
-    # Note: nodes[0] is not used
     for x in range(num_nodes+1):
         nodes.append(Node(x))
 
@@ -604,23 +577,12 @@ def input_graph():
         # in the file. Need to append a new node if target is out of range, actually 
         # append target - num_nodes. Is this just a coincidence that sink is node 100+1
         # where the gaph is supposed to have 100 nodes?
-
-        # Example: num_nodes is 100 and target is 101, so 101 > 100.
-        # But nodes is filled from nodes[0] ... nodes[100] so len(nodes) is 101
         if target > num_nodes:
-            # If len(nodes) is 101 and num_nodes is 100 and we have a tatget of
-            # 101, which is a sink, i.e., parents but no children, then there is 
-            # no source 101. We use target+1, where 101 - num_nodes = 101 - 100 - 1
-            # and target+1 = 101+1 = 102 - len(nodes) = 101 - 101 - 1, so we get 
-            # the number_of_nodes_to_append to be 1, as needed.
             if len(nodes) < target+1:
                 number_of_nodes_to_append = target - num_nodes
                 print("number_of_nodes_to_append:" + str(number_of_nodes_to_append))
-                # in our example, number_of_nodes_to_append = 1 so i starts
-                # with 0 (default) and ends with number_of_nodes_to_append-1 = 0
                 for i in range(number_of_nodes_to_append):
                     print("Node(" + str(num_nodes+i+1) + ")")
-                    # new node ID for our example is 101 = num_nodes+i+1 = 100 + 0 + 1 = 101
                     nodes.append(Node((num_nodes+i+1)))
                 num_nodes += number_of_nodes_to_append
         print ("source:" + str(source) + " target:" + str(target))
@@ -656,8 +618,7 @@ def input_graph():
         #print (str(i) + ": get children: " + str(len(node.children)))
         count_child_edges += len(node.children)
         i += 1
-    print("num edges in graph: " + str(num_edges) + " num child edges: " 
-        + count_child_edges)`
+    print("num edges in graph: " + str(num_edges))
     if not num_edges == count_child_edges:
         print("[Error]: num child edges in graph is " + str(count_child_edges) + " but edges in file is "
             + str(num_edges))
@@ -670,8 +631,7 @@ def input_graph():
         count_parent_edges += len(node.parents)
         i += 1
 
-    print("num_edges in graph: " + str(num_edges) + " num parent edges: " 
-        + count_parent_edges)`
+    print("num_edges in graph: " + str(num_edges))
     if not num_edges == count_parent_edges:
         print("[Error]: num parent edges in graph is " + str(count_parent_edges) + " but edges in file is "
         + str(num_edges))
@@ -685,11 +645,9 @@ def input_graph():
 
 print("Following is the Breadth-First Search")
 #bfs(visited, graph, '5')    # function calling
-# example: num_nodes = 100, so Nodes in nodes[1] to nodes[100]
-# i start = 1 as nodes[0] not used, i end is (num_nodes+1) - 1  = 100
 for i in range(1,num_nodes+1):
     if i not in visited:
-        bfs(visited, graph, nodes[i])    # function calling
+        bfs(visited, graph, nodes[1])    # function calling
 
 print("visited length: " + str(len(visited)))
 if len(visited) != num_nodes:
