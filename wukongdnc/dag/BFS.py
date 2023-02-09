@@ -1,3 +1,7 @@
+import networkx as nx
+import matplotlib.pyplot as plt
+import time
+
 graph = {
   '5' : ['3','7'],
   '3' : ['2', '4'],
@@ -115,18 +119,48 @@ N10.parents = [N3]
 N11.children = []
 N11.parents = [N3]
 """
+
+# visual is a list which stores all the set of edges that constitutes a graph
+visual = []
+
 N1.children = [3,2]
 N1.parents = []
+temp = [1,3]
+visual.append(temp)
+temp = [1,2]
+visual.append(temp)
+
 N2.children = [9,8]
 N2.parents = [1]
+temp = [2,9]
+visual.append(temp)
+temp = [2,8]
+visual.append(temp)
+
 N3.children = [11,10]
 N3.parents = [1,4]
+temp = [3,11]
+visual.append(temp)
+temp = [3,10]
+visual.append(temp)
+
 N4.children = [3]
 N4.parents = [5,6,12]
+temp = [4,3]
+visual.append(temp)
+
 N5.children = [4]
 N5.parents = []
-N6.children = [7]
+temp = [5,4]
+visual.append(temp)
+
+N6.children = [7,4]
 N6.parents = []
+temp = [6,7]
+visual.append(temp)
+temp = [6,4]
+visual.append(temp)
+
 N7.children = []
 N7.parents = [6]
 N8.children = []
@@ -135,26 +169,48 @@ N9.children = []
 N9.parents = [2]
 N10.children = []
 N10.parents = [3]
+
 N11.children = [12]
 N11.parents = [3,12]
+temp = [11,12]
+visual.append(temp)
+
 N12.children = [4,11]
 N12.parents = [11]
+temp = [12,4]
+visual.append(temp)
+temp = [12,11]
+visual.append(temp)
+
+def visualize():
+    fig = plt.figure()
+    fig.show()
+    G = nx.DiGraph()
+    G.add_edges_from(visual)
+    #nx.draw_networkx(G)
+    #plt.show()
+    nx.draw_planar(G,with_labels = True, alpha=0.8) #NEW FUNCTION
+    fig.canvas.draw()
 
 visited = [] # List for visited nodes.
 queue = []     #Initialize a queue
 partitions = []
 current_partition = []
 current_partition_number = 1
-dfs_p_changes_in_partiton_size = []
+dfs_parent_changes_in_partiton_size = []
 loop_nodes_added = 0
 total_loop_nodes_added = 0
 frontier_costs = []
 frontier_cost = []
 frontiers = []
 frontier = []
+all_frontier_costs = []
+
+IDENTIFY_SINGLETONS = False
 
 
 """
+# Regular bfs.
 def bfs(visited, graph, node): #function for BFS
   visited.append(node)
   queue.append(node)
@@ -169,114 +225,12 @@ def bfs(visited, graph, node): #function for BFS
         queue.append(neighbor)
 """
 
-def dfs_p_new(visited, graph, node):  #function for dfs 
-    # e.g. dfs(3) where bfs is visiting 3 as a child of enqueued node
-    # so 3 is not visited yet
-    print ("dfs_p_new from node " + str(node.ID))
-
-    #dfs_p_start_partition_size = len(current_partition)
-    #global loop_nodes_added
-    #loop_nodes_added_start = loop_nodes_added
-
-    list_of_unvisited_children = []
-    check_list_of_unvisited_chldren_after_visiting_parents = False
-
-    print("in dfs_p_new start: list_of_unvisited_children:" + str(list_of_unvisited_children))
-
-    # process children before parent traversal
-    #list_of_unvisited_children, 
-    check_list_of_unvisited_chldren_after_visiting_parents = dfs_parent_pre_parent_traversal(node,
-        visited,list_of_unvisited_children)
-
-    print("in dfs_p_new after pre: list_of_unvisited_children:" + str(list_of_unvisited_children))
-
-    if not len(node.parents):
-        print ("dfs_p node " + str(node.ID) + " has no parents")
-    else:
-        print ("dfs_p node " + str(node.ID) + " visit parents")
-
-    # visit parents
-    for neighbor_index in node.parents:
-        neighbor = nodes[neighbor_index]
-        if neighbor.ID not in visited:
-            print ("dfs_p visit node " + str(neighbor.ID))
-            dfs_parent(visited, graph, neighbor)
-        else:
-            print ("dfs_p neighbor.ID " + str(neighbor.ID) + " already visited")
-            if neighbor.partition_number == -1:
-                # Example: 1 5 6 7 3(Lp) 12(Lp) 11 11(Lc) 12 4 3 2 10 9 8
-                # Here, 3 is a parent of 11 that 11 finds visited so when visiting
-                # 11 in dfs_parent 11 will output 3(Lprnt_of_11). Same for when 
-                # 11 finds parent 12 is visited 12(Lprnt_of_11) We use "3(Lprnt_of_11)
-                # indicators to show a loop was detected when 11 visited parent 3
-                # and to show 3 in the partition before 11, where 3 is the parent of 11.
-                # We use "12(Lprnt_of_11)" to show a loop was detected when 11 visited 
-                # parent 12. 11 is the parent of 12 and 11 was put in partition before 
-                # 12 so we do not need "12(Lprnt_of_11)" before the 11 - it is just to 
-                # indicates the loop detected when 11 saw it's parent 12 was visited.
-                loop_indicator = str(neighbor.ID)+"(Lprnt_of_" + str(node.ID) + ")"
-                current_partition.append(loop_indicator)
-                print("[Info]: Possible parent loop detected, start and end with " + str(neighbor.ID)
-                    + ", loop indicator: " + loop_indicator)
-                loop_nodes_added += 1
-
-    # process children after parent traversal
-    dfs_parent_post_parent_traversal(node, visited,
-    list_of_unvisited_children, check_list_of_unvisited_chldren_after_visiting_parents)
-
-    #dfs_p_end_partition_size = len(current_partition)
-    #loop_nodes_added_end = loop_nodes_added
-    #dfs_p_change_in_partitiob_size = (dfs_p_end_partition_size - dfs_p_start_partition_size) - (
-    #    loop_nodes_added_end - loop_nodes_added_start)
-    #print("dfs_p_change_in_partition_size: " + str(dfs_p_change_in_partitiob_size))
-    #dfs_p_changes_in_partiton_size.append(dfs_p_change_in_partitiob_size)
-
-def dfs_p(visited, graph, node):
-    print ("dfs_p from node " + str(node.ID))
-    dfs_p_start_partition_size = len(current_partition)
-    loop_nodes_added_start = loop_nodes_added
-
-    # target child node c of dfs_p(c) in bfs was to to visited in bfs before call to dfs_p(c)
-    if not len(node.parents):
-        print ("dfs_p node " + str(node.ID) + " has no parents")
-    else:
-        print ("dfs_p node " + str(node.ID) + " visit parents")
-
-    for neighbor_index in node.parents:
-        neighbor = nodes[neighbor_index]
-        if neighbor.ID not in visited:
-            print ("dfs_p visit node " + str(neighbor.ID))
-            dfs_parent(visited, graph, neighbor)
-        else:
-            print ("dfs_p neighbor.ID " + str(neighbor.ID) + " already visited")
-
-
-    # make sure parent in partition before any if its children. We visit parents of node 
-    # in dfs_parents and they are added to partition in dfs_parents after their parents 
-    # are added in dfs_parents then here we add node to partition. node is the target 
-    # of dfs_p(node)  
-    if node.partition_number == -1:
-        print ("dfs_p add " + str(node.ID) + " to partition")
-        node.partition_number = current_partition_number
-        current_partition.append(node.ID)
-    else:
-        print ("dfs_p do not add " + str(node.ID) + " to partition "
-            + str(current_partition_number) + " since it is already in partition " 
-            + str(node.partition_number))
-
-    dfs_p_end_partition_size = len(current_partition)
-    loop_nodes_added_end = loop_nodes_added
-    dfs_p_change_in_partitiob_size = (dfs_p_end_partition_size - dfs_p_start_partition_size) - (
-        loop_nodes_added_end - loop_nodes_added_start)
-    print("dfs_p_change_in_partition_size: " + str(dfs_p_change_in_partitiob_size))
-    dfs_p_changes_in_partiton_size.append(dfs_p_change_in_partitiob_size)
-
 # process children before parent traversal
 def dfs_parent_pre_parent_traversal(node,visited,list_of_unvisited_children):
     check_list_of_unvisited_chldren_after_visiting_parents = False
     # set child node to visited if possible before dfs_parent so that when the parent 
     # checks if this child is visited it will be visited. 
-    print("in pre start: list_of_unvisited_children:" + str(list_of_unvisited_children))
+    print("dfs_parent_pre: at start: list_of_unvisited_children:" + str(list_of_unvisited_children))
     if len(node.children) == 0:
         # Can a child be in visited? If child was visited then parent must have been
         # already visited? No. 
@@ -289,7 +243,7 @@ def dfs_parent_pre_parent_traversal(node,visited,list_of_unvisited_children):
         # Example: children arrows. 3 --> 11 --> 12 --> 4. So parent traversal 
         # is 4, 12, 11, 3 so node 11 is parent of child C 12.
         visited.append(node.ID)
-        print ("dfs_parent add " + str(node.ID) + " to visited since no children")              
+        print ("dfs_parent_pre: add " + str(node.ID) + " to visited since no children")              
     else:
         # node has more than one child or it has one child that has one or more
         # children (it is not a sink) or more than one parent (so if
@@ -299,16 +253,16 @@ def dfs_parent_pre_parent_traversal(node,visited,list_of_unvisited_children):
         for neighbor_index in node.children:
             neighbor = nodes[neighbor_index]
             if neighbor.ID not in visited:
-                print ("dfs_parent child " + str(neighbor.ID) + " not in visited")
+                print ("dfs_parent_pre: child " + str(neighbor.ID) + " not in visited")
                 has_unvisited_children = True
                 list_of_unvisited_children.append(neighbor.ID)
                 #break
         if not has_unvisited_children:
-            print ("dfs_parent mark " + str(node.ID) + " as visited since it has no unvisited children "
+            print ("dfs_parent_pre mark " + str(node.ID) + " as visited since it has no unvisited children "
             + "but do not add it to bfs queue since no children need to be visited")
             visited.append(node.ID)
         else:
-            print ("dfs_parent " + str(node.ID) + " has unvisted children so mark " 
+            print ("dfs_parent_pre " + str(node.ID) + " has unvisted children so mark " 
                 + str(node.ID) + " as visited and check children again after parent traversal")
             # this node can be marked as visited, but we will only add it to the queue
             # if these unvisited children are still unvisited when we return from 
@@ -318,8 +272,8 @@ def dfs_parent_pre_parent_traversal(node,visited,list_of_unvisited_children):
             # we need not add node to the queue. 
             visited.append(node.ID)
             check_list_of_unvisited_chldren_after_visiting_parents = True
-            print("set check_list_of_unvisited_chldren True")
-            print("in pre: list_of_unvisited_children:" + str(list_of_unvisited_children))
+            print("dfs_parent_pre: set check_list_of_unvisited_chldren True")
+            print("dfs_parent_pre: list_of_unvisited_children:" + str(list_of_unvisited_children))
 
     return check_list_of_unvisited_chldren_after_visiting_parents
 
@@ -455,11 +409,19 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
     if len(unvisited_children_after_parent_loop) > 0:
         # There remains some unvisited children
 #rhc: ToDo: check for singleton
-        if len(unvisited_children_after_parent_loop) == 1:
+        if IDENTIFY_SINGLETONS and (
+        len(unvisited_children_after_parent_loop)) == 1:
             # in fact, there is only one unvisited child
             print("1 unvisited child after parent loop.")
-            only_child_index = node.children[0]
+            #only_child_index = node.children[0]
+            only_child_index = unvisited_children_after_parent_loop[0]
+            print("only_child_index: " + str(only_child_index))
             only_child = nodes[only_child_index]
+#rhc: ToDo: node may have more than 1 child, but if there is only one 
+#  unvisited child only_child and it has no children and node is only_child's
+#  only parent then we could mark only_child as visited. 
+#  Note that in this case only_child would not be a singleton.
+#  Of course, we could do this for all of node's children but that's too much?
             if len(node.children) == 1 and (
                 # and node actually has only one child (which must be unvisited)
                 len(only_child.children) == 0) and (
@@ -561,48 +523,32 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
 
 def bfs(visited, graph, node): #function for BFS
     print ("bfs mark " + str(node.ID) + " as visited and add to queue")
-#rhc: changed
+    #rhc: add to visited is done in dfs_parent
     #visited.append(node.ID)
-    # dfs_p will add node to partition (and its unvisited parent nodes)
-#rhc: ToDO: use dfs_p_new(visited, graph, node)
-# ToDo: Move the stats at beginning and end of dfs_p_new here; then just call 
-#       dfs_parent instead of dfs_p
+    # dfs_parent will add node to partition (and its unvisited parent nodes)
     global current_partition
-    dfs_p_start_partition_size = len(current_partition)
+    dfs_parent_start_partition_size = len(current_partition)
     global loop_nodes_added
     loop_nodes_added_start = loop_nodes_added
 
     #dfs_p(visited, graph, node)
+    #dfs_p_new(visited, graph, node)
     dfs_parent(visited, graph, node)
 
-#   ToDo:
-    dfs_p_end_partition_size = len(current_partition)
+    dfs_parent_end_partition_size = len(current_partition)
     loop_nodes_added_end = loop_nodes_added
-    dfs_p_change_in_partitiob_size = (dfs_p_end_partition_size - dfs_p_start_partition_size) - (
+    dfs_parent_change_in_partition_size = (dfs_parent_end_partition_size - dfs_parent_start_partition_size) - (
         loop_nodes_added_end - loop_nodes_added_start)
-    print("dfs_p_change_in_partition_size: " + str(dfs_p_change_in_partitiob_size))
-    dfs_p_changes_in_partiton_size.append(dfs_p_change_in_partitiob_size)
+    print("dfs_parent_change_in_partition_size: " + str(dfs_parent_change_in_partition_size))
+    dfs_parent_changes_in_partiton_size.append(dfs_parent_change_in_partition_size)
 
-    """
-    queue.append(node)
-    print("queue after add " + str(node.ID) + ":", end=" ")
-    for x in queue:
-        print(x.ID, end=" ")
-    print()
-    frontier.append(node)
-    print("frontier after add " + str(node.ID) + ":", end=" ")
-    for x in frontier:
-        print(x.ID, end=" ")
-    print()
-    #print ("bfs add " + str(node.ID) + " to partition")
-    #node.partition_number = current_partition_number
-    #current_partition.append(node.ID)
-    """
+    # queue.append(node) and frontier.append(node) done optionally in dfs_parent
 
     while queue:          # Creating loop to visit each node
-
         node = queue.pop(0) 
-        #frontier_cost.append("pop-"+str(node.ID) + ":" + str(len(frontier)))
+        # so we can see the frontier costs that do not correspnd to when 
+        # partitions were created, i.e., was there a better frontier for partition?
+        all_frontier_costs.append("pop-"+str(node.ID) + ":" + str(len(frontier)))
 
         if len(current_partition) >= num_nodes/2:
             print("BFS: create sub-partition")
@@ -632,37 +578,28 @@ def bfs(visited, graph, node): #function for BFS
 
 # ToDo: Move the stats at beginning and end of dfs_p_new here; then just call 
 #       dfs_parent instead of dfs_p
-                dfs_p_start_partition_size = len(current_partition)
+                dfs_parent_start_partition_size = len(current_partition)
                 loop_nodes_added_start = loop_nodes_added
 
                 #dfs_p_new(visited, graph, neighbor)
                 dfs_parent(visited, graph, neighbor)
 #   ToDo:
-                dfs_p_end_partition_size = len(current_partition)
+                dfs_parent_end_partition_size = len(current_partition)
                 loop_nodes_added_end = loop_nodes_added
-                dfs_p_change_in_partitiob_size = (dfs_p_end_partition_size - dfs_p_start_partition_size) - (
+                dfs_parent_change_in_partition_size = (dfs_parent_end_partition_size - dfs_parent_start_partition_size) - (
                 loop_nodes_added_end - loop_nodes_added_start)
-                print("dfs_p_change_in_partition_size: " + str(dfs_p_change_in_partitiob_size))
-                dfs_p_changes_in_partiton_size.append(dfs_p_change_in_partitiob_size)
+                print("dfs_parent_change_in_partition_size: " + str(dfs_parent_change_in_partition_size))
+                dfs_parent_changes_in_partiton_size.append(dfs_parent_change_in_partition_size)
 
                 """
-                # dfs_p(neighbor) did parent traversal and added neighbor to partition. 
-                # If neighbor has no children, do not add neighbor to queue. This puts 
-                # neighbor on the frontier with a zero cost (since it has no children
-                # that are not in the same (current) partition.)
+                # dfs_parent decides whether to queue the node to queue and frontier. 
+                # If the neighbor has a child but this child has no children and neighbor
+                # is the child's single parent, do not add neighbor to queue and 
+                # mark the child as visited.  If neighbot has no children do not 
+                # queue it or add t to the frontier. We used to have the followng
                 if len(neighbor.children) > 0:
-                    print ("bfs after dfs_p, add child " + str(neighbor.ID) + " of node " 
-                        + str(node.ID) + " to queue")
                     queue.append(neighbor)
-                    print("queue after add " + str(neighbor.ID) + ":", end=" ")
-                    for x in queue:
-                        print(x.ID, end=" ")
-                    print()
                     frontier.append(neighbor)
-                    print("frontier after add " + str(neighbor.ID) + ":", end=" ")
-                    for x in frontier:
-                        print(x.ID, end=" ")
-                    print()
                 else:
                     print("child " + str(neighbor.ID) + " of node " + str(node.ID)
                         + " has no children, already marked it visited and added"
@@ -848,13 +785,13 @@ if sum_of_partition_lengths != num_nodes:
 #    print(x, end=" ")
 print()
 # adjusting for loop_nodes_added in dfs_p
-sum_of_changes = sum(dfs_p_changes_in_partiton_size)
-print("dfs_p_changes_in_partiton_size length: " + str(len(dfs_p_changes_in_partiton_size))
+sum_of_changes = sum(dfs_parent_changes_in_partiton_size)
+print("dfs_parent_changes_in_partiton_size length, len: " + str(len(dfs_parent_changes_in_partiton_size))
     + ", sum_of_changes: " + str(sum_of_changes))
 if sum_of_changes != num_nodes:
     print("[Error]: sum_of_changes is " + str(sum_of_changes)
         + " but num_nodes is " + str(num_nodes))
-for x in dfs_p_changes_in_partiton_size:
+for x in dfs_parent_changes_in_partiton_size:
     print(x, end=" ")
 print()
 print()
@@ -869,32 +806,48 @@ print()
 #for x in frontier_cost:
 #    print(str(x), end=" ")
 #print()
-print("partitions: " + str(len(partitions)))
+print("partitions, len: " + str(len(partitions))+":")
 for x in partitions:
     print("-- " + str(x))
 print()
 # final frontier shoudl always be empty
 # assert: 
-print("frontiers: (final fronter shoudl be empty) " + str(len(frontiers)))
+print("frontiers: (final fronter should be empty), len: " + str(len(frontiers))+":")
 for frontier_list in frontiers:
     print("-- ",end="")
     for x in frontier_list:
-        print(str(x.ID),end="")
+        print(str(x.ID),end=" ")
     print()
 frontiers_length = len(frontiers)
 if len(frontiers[frontiers_length-1]) != 0:
     print ("Error]: final frontoer is not empty.")
 print()
-print("frontier costs (cost=length of frontier) " + str(len(frontier_costs)))
+print("frontier costs (cost=length of frontier), len: " + str(len(frontier_costs))+":")
 for x in frontier_costs:
     print("-- ",end="")
     print(str(x))
 print()
+print("all frontier costs " + str(len(all_frontier_costs)))
+for x in all_frontier_costs:
+    print(str(x),end=" ")
+print()
+visualize()
+input('Press <ENTER> to continue')
+#time.sleep(120)
 
 
 
-# ToDo: check frontier code. keep current cost of frontier, which is number 
-# of nodes in frontier? assuming no singleton sinks in frontier?
+
+# ToDo: check frontier code. assuming no singleton sinks in frontier?
+# For example, queue 6, then dequeue 6 and dfs_parent(6) where
+# 6 has (singleton) child 7 but 7 has no unvisited children before or after 
+# dfs_parent (actually 7's parent is 6 which is visited so no call to
+# dfs_parent from 7, so we make 7 as visited put it in partition and 
+# do not queue it. But 6 will be on the frontier with a singleton child
+# so the cost for 6 is 1 and we could reduce frontier when take partition
+# by examining 6 for singleton.
+# ToDo: Any reason to not short circuit 7, i.e., put 7 in queue, i.e., do
+# not do the unvisited stuff for 7 when 6 calls dfs_p(7)?
 
 # ToDo: get rid of visited parameter?
 
@@ -943,3 +896,110 @@ print()
         frontier.remove(node.ID)
 # 
 """
+"""
+# old code: BFS origially called dfs_p() for nodes that were dequeued.
+# dfs_p_new is essentially dfs_parent. So dequeued nodes are no longer
+# treated specially, we call dfs_parent to start the recursive parent
+# traversal.
+
+def dfs_p_new(visited, graph, node):  #function for dfs 
+    # e.g. dfs(3) where bfs is visiting 3 as a child of enqueued node
+    # so 3 is not visited yet
+    print ("dfs_p_new from node " + str(node.ID))
+
+    #dfs_p_start_partition_size = len(current_partition)
+    #global loop_nodes_added
+    #loop_nodes_added_start = loop_nodes_added
+
+    list_of_unvisited_children = []
+    check_list_of_unvisited_chldren_after_visiting_parents = False
+
+    print("in dfs_p_new start: list_of_unvisited_children:" + str(list_of_unvisited_children))
+
+    # process children before parent traversal
+    #list_of_unvisited_children, 
+    check_list_of_unvisited_chldren_after_visiting_parents = dfs_parent_pre_parent_traversal(node,
+        visited,list_of_unvisited_children)
+
+    print("in dfs_p_new after pre: list_of_unvisited_children:" + str(list_of_unvisited_children))
+
+    if not len(node.parents):
+        print ("dfs_p node " + str(node.ID) + " has no parents")
+    else:
+        print ("dfs_p node " + str(node.ID) + " visit parents")
+
+    # visit parents
+    for neighbor_index in node.parents:
+        neighbor = nodes[neighbor_index]
+        if neighbor.ID not in visited:
+            print ("dfs_p visit node " + str(neighbor.ID))
+            dfs_parent(visited, graph, neighbor)
+        else:
+            print ("dfs_p neighbor.ID " + str(neighbor.ID) + " already visited")
+            if neighbor.partition_number == -1:
+                # Example: 1 5 6 7 3(Lp) 12(Lp) 11 11(Lc) 12 4 3 2 10 9 8
+                # Here, 3 is a parent of 11 that 11 finds visited so when visiting
+                # 11 in dfs_parent 11 will output 3(Lprnt_of_11). Same for when 
+                # 11 finds parent 12 is visited 12(Lprnt_of_11) We use "3(Lprnt_of_11)
+                # indicators to show a loop was detected when 11 visited parent 3
+                # and to show 3 in the partition before 11, where 3 is the parent of 11.
+                # We use "12(Lprnt_of_11)" to show a loop was detected when 11 visited 
+                # parent 12. 11 is the parent of 12 and 11 was put in partition before 
+                # 12 so we do not need "12(Lprnt_of_11)" before the 11 - it is just to 
+                # indicates the loop detected when 11 saw it's parent 12 was visited.
+                loop_indicator = str(neighbor.ID)+"(Lprnt_of_" + str(node.ID) + ")"
+                current_partition.append(loop_indicator)
+                print("[Info]: Possible parent loop detected, start and end with " + str(neighbor.ID)
+                    + ", loop indicator: " + loop_indicator)
+                loop_nodes_added += 1
+
+    # process children after parent traversal
+    dfs_parent_post_parent_traversal(node, visited,
+    list_of_unvisited_children, check_list_of_unvisited_chldren_after_visiting_parents)
+
+    #dfs_p_end_partition_size = len(current_partition)
+    #loop_nodes_added_end = loop_nodes_added
+    #dfs_p_change_in_partitiob_size = (dfs_p_end_partition_size - dfs_p_start_partition_size) - (
+    #    loop_nodes_added_end - loop_nodes_added_start)
+    #print("dfs_p_change_in_partition_size: " + str(dfs_p_change_in_partitiob_size))
+    #dfs_p_changes_in_partiton_size.append(dfs_p_change_in_partitiob_size)
+
+def dfs_p(visited, graph, node):
+    print ("dfs_p from node " + str(node.ID))
+    dfs_p_start_partition_size = len(current_partition)
+    loop_nodes_added_start = loop_nodes_added
+
+    # target child node c of dfs_p(c) in bfs was to to visited in bfs before call to dfs_p(c)
+    if not len(node.parents):
+        print ("dfs_p node " + str(node.ID) + " has no parents")
+    else:
+        print ("dfs_p node " + str(node.ID) + " visit parents")
+
+    for neighbor_index in node.parents:
+        neighbor = nodes[neighbor_index]
+        if neighbor.ID not in visited:
+            print ("dfs_p visit node " + str(neighbor.ID))
+            dfs_parent(visited, graph, neighbor)
+        else:
+            print ("dfs_p neighbor.ID " + str(neighbor.ID) + " already visited")
+
+
+    # make sure parent in partition before any if its children. We visit parents of node 
+    # in dfs_parents and they are added to partition in dfs_parents after their parents 
+    # are added in dfs_parents then here we add node to partition. node is the target 
+    # of dfs_p(node)  
+    if node.partition_number == -1:
+        print ("dfs_p add " + str(node.ID) + " to partition")
+        node.partition_number = current_partition_number
+        current_partition.append(node.ID)
+    else:
+        print ("dfs_p do not add " + str(node.ID) + " to partition "
+            + str(current_partition_number) + " since it is already in partition " 
+            + str(node.partition_number))
+
+    dfs_p_end_partition_size = len(current_partition)
+    loop_nodes_added_end = loop_nodes_added
+    dfs_p_change_in_partitiob_size = (dfs_p_end_partition_size - dfs_p_start_partition_size) - (
+        loop_nodes_added_end - loop_nodes_added_start)
+    print("dfs_p_change_in_partition_size: " + str(dfs_p_change_in_partitiob_size))
+    dfs_p_changes_in_partiton_size.append(dfs_p_change_in_partitiob_size)"""
