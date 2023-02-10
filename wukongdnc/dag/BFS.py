@@ -1,6 +1,5 @@
 import networkx as nx
 import matplotlib.pyplot as plt
-import time
 
 graph = {
   '5' : ['3','7'],
@@ -62,6 +61,7 @@ N9.parents = [N2]
 
 nodes = []
 
+"""
 N1 = Node(1)
 N2= Node(2)
 N3 = Node(3)
@@ -74,12 +74,14 @@ N9 = Node(9)
 N10 = Node(10)
 N11 = Node(11)
 N12 = Node(12)
-
-num_nodes = 12
+"""
+"""
+num_nodes = 100
 #put non-null elements in place
 for x in range(num_nodes+1):
     nodes.append(Node(x))
-
+"""
+"""
 # Assign above nodes
 nodes[0] = Node(0)  # not used; num_nodes does not include nodes[0]
 nodes[1] = N1
@@ -94,6 +96,7 @@ nodes[9] = N9
 nodes[10] = N10
 nodes[11] = N11
 nodes[12] = N12
+"""
 
 """
 N1.children = [N3,N2]
@@ -122,7 +125,19 @@ N11.parents = [N3]
 
 # visual is a list which stores all the set of edges that constitutes a graph
 visual = []
+def visualize():
+    fig = plt.figure()
+    fig.show()
+    G = nx.DiGraph()
+    G.add_edges_from(visual)
+    print(nx.is_connected(G))
+    #nx.draw_networkx(G)
+    #plt.show()
+    # comment 
+    nx.draw_planar(G,with_labels = True, alpha=0.8) #NEW FUNCTION
+    fig.canvas.draw()
 
+"""
 N1.children = [3,2]
 N1.parents = []
 temp = [1,3]
@@ -181,16 +196,7 @@ temp = [12,4]
 visual.append(temp)
 temp = [12,11]
 visual.append(temp)
-
-def visualize():
-    fig = plt.figure()
-    fig.show()
-    G = nx.DiGraph()
-    G.add_edges_from(visual)
-    #nx.draw_networkx(G)
-    #plt.show()
-    nx.draw_planar(G,with_labels = True, alpha=0.8) #NEW FUNCTION
-    fig.canvas.draw()
+"""
 
 visited = [] # List for visited nodes.
 queue = []     #Initialize a queue
@@ -207,7 +213,6 @@ frontier = []
 all_frontier_costs = []
 
 IDENTIFY_SINGLETONS = False
-
 
 """
 # Regular bfs.
@@ -285,8 +290,28 @@ def dfs_parent(visited, graph, node):  #function for dfs
     list_of_unvisited_children = []
     check_list_of_unvisited_chldren_after_visiting_parents = False
 
-    # process children before parent traversal
-    # list_of_unvisited_children, 
+    # Get unvisited children, which affects whether ndoe is addded to the queue
+    # in the post traversal.
+    # For example, assume 4's parent is 6 and 6 has no parents and only
+    # one child 7 where 7 has no children and 7's only parent is 6.
+    # With singleton checking, 4 will call dfs_parent(6), which will mark
+    # 6 as visited and look at 6's children to see whether 6 should be queued.
+    # dfs_parent(6) will see that 6 has an unvisited child 7, which remains
+    # unvisited after dfs_parent(6) tries to traverse 6's parents (but
+    # it has none). If checking for singletons, dfs_parent(6) will see that
+    # 7 is a singleton and so mark 7 as visited, add 6 then 7 (parent first)
+    # to the current partition, and not add 6 or 7 to the queue. If singleton
+    # chcking is off, then 7 will not be marked visited (6 was already marked
+    # visited) and 6 will be added to the queue. In this case, 6 is added to 
+    # the frontier having a singleton child 7. When the current partition is
+    # full, we can examine the frontier, and for 6 we can move its singleton
+    # child 7 into the frontier, reducing the cost of the fronter by 1.
+    # When 6 is dequeued, we call dfs_parent(7), whcih sees that 7 has no chldren
+    # and marks 7 as visited. 7's parents (6) are already visited so after
+    # the parent traversal 7 still has no unvisited children. Thus 7 is not 
+    # added to the queue or the frontier (since it has no children) and 7 is
+    # added to the curret partition.
+
     check_list_of_unvisited_chldren_after_visiting_parents = dfs_parent_pre_parent_traversal(node,visited,list_of_unvisited_children)
 
     print("after pre: list_of_unvisited_children: " + str(list_of_unvisited_children))
@@ -550,6 +575,21 @@ def bfs(visited, graph, node): #function for BFS
         # partitions were created, i.e., was there a better frontier for partition?
         all_frontier_costs.append("pop-"+str(node.ID) + ":" + str(len(frontier)))
 
+        # Note: There are no singletons in the frontier. if N has a singleton child
+        # C then the dfs_parent(N) will se that C is unvisited. IF singleton checking
+        # is on then singleton C will be identified, C will be marked visited, and
+        # neither N nor C will be enqueued but both N and C will be added to the 
+        # partition but not the frontier. If singleton checking is off then N
+        # will be enqueued. When N is popped off the queue, dfs_parent(C) will be
+        # called and it will see that C has no children before or after C's parent 
+        # traversal (N is already visited) so C will be marked visited and C will 
+        # not be enqueued but will be added to the partition but not the frontier.
+        # Note: If the partiton becmes full with N in the frontier with singleton 
+        # chld C, we can reduce the frontier by pruning N - pop N from the queue,
+        # mark N as visited, remove N fro the frontier, mark its singleton child C 
+        # visited, and add C to the partition but not the queue.
+        # Note: handling singletons here is more efficent since we don;t waste time 
+        # checkng for singletons in dfs_parent when most nodes are not singletons.
         if len(current_partition) >= num_nodes/2:
             print("BFS: create sub-partition")
             partitions.append(current_partition.copy())
@@ -572,18 +612,16 @@ def bfs(visited, graph, node): #function for BFS
             if neighbor.ID not in visited:
                 print ("bfs visit child " + str(neighbor.ID) + " mark it visited and "
                     + "dfs_p(" + str(neighbor.ID) + ")")
-#rhc: Changed
+
                 #visited.append(neighbor.ID)
                 print ("bfs dfs_p("+ str(neighbor.ID) + ")")
 
-# ToDo: Move the stats at beginning and end of dfs_p_new here; then just call 
-#       dfs_parent instead of dfs_p
                 dfs_parent_start_partition_size = len(current_partition)
                 loop_nodes_added_start = loop_nodes_added
 
                 #dfs_p_new(visited, graph, neighbor)
                 dfs_parent(visited, graph, neighbor)
-#   ToDo:
+
                 dfs_parent_end_partition_size = len(current_partition)
                 loop_nodes_added_end = loop_nodes_added
                 dfs_parent_change_in_partition_size = (dfs_parent_end_partition_size - dfs_parent_start_partition_size) - (
@@ -625,12 +663,14 @@ def input_graph():
     edges_line = graph_file.readline()
     count += 1
     print("edges_line{}: {}".format(count, edges_line.strip()))
-    max_weight_line = graph_file.readline()
+    
+    max_weight_line_ignored = graph_file.readline()
     count += 1
-    print("max_weight_line{}: {}".format(count, max_weight_line.strip()))
-    min_weight_line = graph_file.readline()
+    #print("max_weight_line{}: {}".format(count, max_weight_line.strip()))
+    min_weight_line_ignored = graph_file.readline()
     count += 1
-    print("min_weight_line{}: {}".format(count, min_weight_line.strip()))
+    #print("min_weight_line{}: {}".format(count, min_weight_line.strip()))
+    
     vertices_edges_line = graph_file.readline()
     count += 1
     print("vertices_edges_line{}: {}".format(count, vertices_edges_line.strip()))
@@ -648,6 +688,7 @@ def input_graph():
 
     num_parent_appends = 0
     num_children_appends = 0
+    num_self_loops = 0
 
     while True:
         count += 1
@@ -662,7 +703,9 @@ def input_graph():
         source = int(words[1])
         target = int(words[2])
         if source == target:
-            print("[Warning]: self loop: " + source + " -->" + target)
+            print("[Warning]: self loop: " + str(source) + " -->" + str(target))
+            num_self_loops += 1
+            continue
         #print("target:" + str(target))
         #if target == 101:
         #    print("target is 101")
@@ -673,6 +716,9 @@ def input_graph():
 
         # Example: num_nodes is 100 and target is 101, so 101 > 100.
         # But nodes is filled from nodes[0] ... nodes[100] so len(nodes) is 101
+        if (target == 101):
+            print ("target is 101, num_nodes is " + str(num_nodes) + " len nodes is "
+                + str(len(nodes)))
         if target > num_nodes:
             # If len(nodes) is 101 and num_nodes is 100 and we have a tatget of
             # 101, which is a sink, i.e., parents but no children, then there is 
@@ -689,16 +735,21 @@ def input_graph():
                     # new node ID for our example is 101 = num_nodes+i+1 = 100 + 0 + 1 = 101
                     nodes.append(Node((num_nodes+i+1)))
                 num_nodes += number_of_nodes_to_append
-        print ("source:" + str(source) + " target:" + str(target))
+        #print ("source:" + str(source) + " target:" + str(target))
         source_node = nodes[source]
         source_node.children.append(target)
         num_children_appends += 1
         target_node = nodes[target]
         target_node.parents.append(source)
         num_parent_appends +=  1
-    
-        print("Line {}: {}".format(count, line.strip()))
 
+        # Only visualize small graphs
+        #temp = [source,target]
+        #visual.append(temp)
+    
+        #print("Line {}: {}".format(count, line.strip()))
+
+    """
     source_node = nodes[1]
     print("Node1 children:")
     for child in source_node.children:
@@ -714,6 +765,7 @@ def input_graph():
     print("Node7 parents:")
     for parent in source_node.parents:
         print(parent)
+    """
 
     count_child_edges = 0
     i = 1
@@ -722,9 +774,9 @@ def input_graph():
         #print (str(i) + ": get children: " + str(len(node.children)))
         count_child_edges += len(node.children)
         i += 1
-    print("num edges in graph: " + str(num_edges) + " num child edges: " 
-        + str(count_child_edges))
-    if not num_edges == count_child_edges:
+    print("num edges in graph: " + str(num_edges) + " = num child edges: " 
+        + str(count_child_edges) + " + num_self_loops: " + str(num_self_loops))
+    if not ((num_edges - num_self_loops) == count_child_edges):
         print("[Error]: num child edges in graph is " + str(count_child_edges) + " but edges in file is "
             + str(num_edges))
 
@@ -736,20 +788,36 @@ def input_graph():
         count_parent_edges += len(node.parents)
         i += 1
 
-    print("num_edges in graph: " + str(num_edges) + " num parent edges: " 
-        + str(count_parent_edges))
-    if not num_edges == count_parent_edges:
+    print("num_edges in graph: " + str(num_edges) + " = num parent edges: " 
+        + str(count_parent_edges) + " + num_self_loops: " + str(num_self_loops))
+    if not ((num_edges - num_self_loops) == count_parent_edges):
         print("[Error]: num parent edges in graph is " + str(count_parent_edges) + " but edges in file is "
         + str(num_edges))
 
     print("num_parent_appends:" + str(num_parent_appends))
     print("num_children_appends:" + str(num_children_appends))
+    print("num_self_loops: " + str(num_self_loops))
+    if num_self_loops > 0:
+        save_num_edges = num_edges
+        num_edges -= + num_self_loops
+        print("old num_edges: " + str(save_num_edges) + " num_edges: " + str(num_edges))
+    else:
+        print("num_edges: " + str(num_edges))
 
     graph_file.close()
 
 # Driver Code
 
 print("Following is the Breadth-First Search")
+input_graph()
+
+"""
+G = nx.DiGraph()
+G.add_edges_from(visual)
+print(nx.is_connected(G))
+"""
+
+"""
 #bfs(visited, graph, '5')    # function calling
 # example: num_nodes = 100, so Nodes in nodes[1] to nodes[100]
 # i start = 1 as nodes[0] not used, i end is (num_nodes+1) - 1  = 100
@@ -833,19 +901,9 @@ for x in all_frontier_costs:
 print()
 visualize()
 input('Press <ENTER> to continue')
-#time.sleep(120)
+"""
 
-
-
-
-# ToDo: check frontier code. assuming no singleton sinks in frontier?
-# For example, queue 6, then dequeue 6 and dfs_parent(6) where
-# 6 has (singleton) child 7 but 7 has no unvisited children before or after 
-# dfs_parent (actually 7's parent is 6 which is visited so no call to
-# dfs_parent from 7, so we make 7 as visited put it in partition and 
-# do not queue it. But 6 will be on the frontier with a singleton child
-# so the cost for 6 is 1 and we could reduce frontier when take partition
-# by examining 6 for singleton.
+#
 # ToDo: Any reason to not short circuit 7, i.e., put 7 in queue, i.e., do
 # not do the unvisited stuff for 7 when 6 calls dfs_p(7)?
 
