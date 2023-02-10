@@ -61,7 +61,7 @@ N9.parents = [N2]
 
 nodes = []
 
-"""
+
 N1 = Node(1)
 N2= Node(2)
 N3 = Node(3)
@@ -74,14 +74,14 @@ N9 = Node(9)
 N10 = Node(10)
 N11 = Node(11)
 N12 = Node(12)
-"""
-"""
-num_nodes = 100
+
+
+num_nodes = 12
 #put non-null elements in place
 for x in range(num_nodes+1):
     nodes.append(Node(x))
-"""
-"""
+
+
 # Assign above nodes
 nodes[0] = Node(0)  # not used; num_nodes does not include nodes[0]
 nodes[1] = N1
@@ -96,7 +96,6 @@ nodes[9] = N9
 nodes[10] = N10
 nodes[11] = N11
 nodes[12] = N12
-"""
 
 """
 N1.children = [N3,N2]
@@ -127,17 +126,19 @@ N11.parents = [N3]
 visual = []
 def visualize():
     fig = plt.figure()
+    #fig.set_size_inches(width,height)
+    fig.set_figheight(8)
+    fig.set_figwidth(12)
     fig.show()
     G = nx.DiGraph()
     G.add_edges_from(visual)
-    print(nx.is_connected(G))
-    #nx.draw_networkx(G)
+    nx.draw_networkx(G)
     #plt.show()
     # comment 
-    nx.draw_planar(G,with_labels = True, alpha=0.8) #NEW FUNCTION
+    #nx.draw_planar(G,with_labels = True, alpha=0.8) #NEW FUNCTION
     fig.canvas.draw()
 
-"""
+
 N1.children = [3,2]
 N1.parents = []
 temp = [1,3]
@@ -196,7 +197,7 @@ temp = [12,4]
 visual.append(temp)
 temp = [12,11]
 visual.append(temp)
-"""
+
 
 visited = [] # List for visited nodes.
 queue = []     #Initialize a queue
@@ -439,9 +440,9 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
             # in fact, there is only one unvisited child
             print("1 unvisited child after parent loop.")
             #only_child_index = node.children[0]
-            only_child_index = unvisited_children_after_parent_loop[0]
+            unvisited_child_index = unvisited_children_after_parent_loop[0]
             print("only_child_index: " + str(only_child_index))
-            only_child = nodes[only_child_index]
+            unvisited_child = nodes[unvisited_child_index]
 #rhc: ToDo: node may have more than 1 child, but if there is only one 
 #  unvisited child only_child and it has no children and node is only_child's
 #  only parent then we could mark only_child as visited. 
@@ -449,9 +450,9 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
 #  Of course, we could do this for all of node's children but that's too much?
             if len(node.children) == 1 and (
                 # and node actually has only one child (which must be unvisited)
-                len(only_child.children) == 0) and (
+                len(unvisited_child.children) == 0) and (
                 # this unvisited only child has no children
-                len(only_child.parents) == 1):
+                len(unvisited_child.parents) == 1):
                 # and node is this unvisited child's only parent, then we can 
                 # put the node (first) and its child in the partition, put
                 # the child in visited (parent already marked visited) and
@@ -470,7 +471,7 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
                 # partition along with node
                 print("the 1 unvisited child after parent loop is a singleton"
                     + " mark it visited and add parent (first) and child to partition.")
-                visited.append(only_child.ID)
+                visited.append(unvisited_child.ID)
                 # add node to partition before child 
                 if node.partition_number == -1:
                     print ("dfs_parent add " + str(node.ID) + " to partition")
@@ -480,15 +481,15 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
                     print ("dfs_parent do not add " + str(node.ID) + " to partition "
                         + current_partition_number + " since it is already in partition " 
                         + node.partition_number)
-                if only_child.partition_number == -1:
-                    print ("dfs_parent add " + str(only_child.ID) + " to partition")
-                    only_child.partition_number = current_partition_number
-                    current_partition.append(only_child.ID)
+                if unvisited_child.partition_number == -1:
+                    print ("dfs_parent add " + str(unvisited_child.ID) + " to partition")
+                    unvisited_child.partition_number = current_partition_number
+                    current_partition.append(unvisited_child.ID)
                 else:
                     # assert: this is an Error
-                    print ("dfs_parent do not add " + str(only_child.ID) + " to partition "
+                    print ("dfs_parent do not add " + str(unvisited_child.ID) + " to partition "
                         + current_partition_number + " since it is already in partition " 
-                        + only_child.partition_number)
+                        + unvisited_child.partition_number)
 
             else:
                 queue.append(node)
@@ -650,6 +651,17 @@ def bfs(visited, graph, node): #function for BFS
         for x in frontier:
             print(x.ID, end=" ")
         print()
+    
+    if len(current_partition) >= 0:
+        print("BFS: create final sub-partition")
+        partitions.append(current_partition.copy())
+        current_partition = []
+        #global total_loop_nodes_added
+        total_loop_nodes_added += loop_nodes_added
+        loop_nodes_added = 0
+        frontiers.append(frontier.copy())
+        frontier_cost = "atEnd:" + str(len(frontier))
+        frontier_costs.append(frontier_cost)
 
 def input_graph():
     graph_file = open('100.gr', 'r')
@@ -744,8 +756,8 @@ def input_graph():
         num_parent_appends +=  1
 
         # Only visualize small graphs
-        #temp = [source,target]
-        #visual.append(temp)
+        temp = [source,target]
+        visual.append(temp)
     
         #print("Line {}: {}".format(count, line.strip()))
 
@@ -809,7 +821,9 @@ def input_graph():
 # Driver Code
 
 print("Following is the Breadth-First Search")
-input_graph()
+#input_graph()
+#visualize()
+#input('Press <ENTER> to continue')
 
 """
 G = nx.DiGraph()
@@ -817,7 +831,6 @@ G.add_edges_from(visual)
 print(nx.is_connected(G))
 """
 
-"""
 #bfs(visited, graph, '5')    # function calling
 # example: num_nodes = 100, so Nodes in nodes[1] to nodes[100]
 # i start = 1 as nodes[0] not used, i end is (num_nodes+1) - 1  = 100
@@ -825,10 +838,10 @@ for i in range(1,num_nodes+1):
     if i not in visited:
         bfs(visited, graph, nodes[i])    # function calling
 
-partitions.append(current_partition.copy())
-frontiers.append(frontier.copy())
-frontier_cost = "END" + ":" + str(len(frontier))
-frontier_costs.append(frontier_cost)
+#partitions.append(current_partition.copy())
+#frontiers.append(frontier.copy())
+#frontier_cost = "END" + ":" + str(len(frontier))
+#frontier_costs.append(frontier_cost)
 print()
 print("visited length: " + str(len(visited)))
 if len(visited) != num_nodes:
@@ -895,13 +908,19 @@ for x in frontier_costs:
     print("-- ",end="")
     print(str(x))
 print()
-print("all frontier costs " + str(len(all_frontier_costs)))
+sum_of_partition_costs = 0
+for x in all_frontier_costs:
+    words = x.split(':')
+    cost = int(words[1])
+    sum_of_partition_costs += cost
+print("all frontier costs, len: " + str(len(all_frontier_costs)) + ", sum: " 
+    + str(sum_of_partition_costs))
 for x in all_frontier_costs:
     print(str(x),end=" ")
 print()
-visualize()
-input('Press <ENTER> to continue')
-"""
+print()
+#visualize()
+#input('Press <ENTER> to continue')
 
 #
 # ToDo: Any reason to not short circuit 7, i.e., put 7 in queue, i.e., do
