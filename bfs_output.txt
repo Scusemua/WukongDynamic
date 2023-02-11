@@ -1,0 +1,3439 @@
+Following is the Breadth-First Search
+file_name_line1: c FILE                  :100.gr
+vertices_line2: c No. of vertices       :100
+edges_line3: c No. of directed edges :609
+vertices_edges_line6: p sp 100 609
+nodes:100 edges:609
+
+num_nodes:100 num_edges:609
+[Warning]: self loop: 4 -->4
+target is 101, num_nodes is 100 len nodes is 101
+number_of_nodes_to_append:1
+Node(101)
+[Warning]: self loop: 14 -->14
+target is 101, num_nodes is 101 len nodes is 102
+[Warning]: self loop: 47 -->47
+target is 101, num_nodes is 101 len nodes is 102
+[Warning]: self loop: 61 -->61
+target is 101, num_nodes is 101 len nodes is 102
+target is 101, num_nodes is 101 len nodes is 102
+[Warning]: self loop: 74 -->74
+target is 101, num_nodes is 101 len nodes is 102
+target is 101, num_nodes is 101 len nodes is 102
+[Warning]: self loop: 92 -->92
+[Warning]: self loop: 94 -->94
+num edges in graph: 609 = num child edges: 602 + num_self_loops: 7
+num_edges in graph: 609 = num parent edges: 602 + num_self_loops: 7
+num_parent_appends:602
+num_children_appends:602
+num_self_loops: 7
+old num_edges: 609 num_edges: 602
+num_nodes after input graph: 101
+bfs mark 1 as visited and add to queue
+dfs_parent from node 1
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 71 not in visited
+dfs_parent_pre: child 76 not in visited
+dfs_parent_pre: child 99 not in visited
+dfs_parent_pre: child 57 not in visited
+dfs_parent_pre 1 has unvisted children so mark 1 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[71, 76, 99, 57]
+after pre: list_of_unvisited_children: [71, 76, 99, 57]
+dfs_parent node 1 visit parents
+dfs_parent visit node 7
+dfs_parent from node 7
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 6 not in visited
+dfs_parent_pre: child 12 not in visited
+dfs_parent_pre: child 45 not in visited
+dfs_parent_pre: child 69 not in visited
+dfs_parent_pre: child 5 not in visited
+dfs_parent_pre: child 26 not in visited
+dfs_parent_pre: child 87 not in visited
+dfs_parent_pre: child 63 not in visited
+dfs_parent_pre 7 has unvisted children so mark 7 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[6, 12, 45, 69, 5, 26, 87, 63]
+after pre: list_of_unvisited_children: [6, 12, 45, 69, 5, 26, 87, 63]
+dfs_parent node 7 visit parents
+dfs_parent visit node 4
+dfs_parent from node 4
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 92 not in visited
+dfs_parent_pre: child 11 not in visited
+dfs_parent_pre: child 27 not in visited
+dfs_parent_pre: child 71 not in visited
+dfs_parent_pre: child 53 not in visited
+dfs_parent_pre: child 20 not in visited
+dfs_parent_pre 4 has unvisted children so mark 4 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[92, 11, 27, 71, 53, 20]
+after pre: list_of_unvisited_children: [92, 11, 27, 71, 53, 20]
+dfs_parent node 4 visit parents
+dfs_parent visit node 15
+dfs_parent from node 15
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 37 not in visited
+dfs_parent_pre: child 87 not in visited
+dfs_parent_pre: child 74 not in visited
+dfs_parent_pre: child 100 not in visited
+dfs_parent_pre: child 34 not in visited
+dfs_parent_pre: child 65 not in visited
+dfs_parent_pre: child 6 not in visited
+dfs_parent_pre: child 20 not in visited
+dfs_parent_pre: child 29 not in visited
+dfs_parent_pre 15 has unvisted children so mark 15 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[37, 87, 74, 100, 34, 65, 6, 20, 29]
+after pre: list_of_unvisited_children: [37, 87, 74, 100, 34, 65, 6, 20, 29]
+dfs_parent node 15 visit parents
+dfs_parent visit node 3
+dfs_parent from node 3
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 82 not in visited
+dfs_parent_pre: child 54 not in visited
+dfs_parent_pre: child 77 not in visited
+dfs_parent_pre 3 has unvisted children so mark 3 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[82, 54, 77]
+after pre: list_of_unvisited_children: [82, 54, 77]
+dfs_parent node 3 visit parents
+dfs_parent visit node 39
+dfs_parent from node 39
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 91 not in visited
+dfs_parent_pre: child 18 not in visited
+dfs_parent_pre: child 40 not in visited
+dfs_parent_pre: child 32 not in visited
+dfs_parent_pre: child 28 not in visited
+dfs_parent_pre: child 56 not in visited
+dfs_parent_pre: child 63 not in visited
+dfs_parent_pre: child 101 not in visited
+dfs_parent_pre 39 has unvisted children so mark 39 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[91, 18, 40, 32, 28, 56, 63, 101]
+after pre: list_of_unvisited_children: [91, 18, 40, 32, 28, 56, 63, 101]
+dfs_parent node 39 visit parents
+dfs_parent visit node 38
+dfs_parent from node 38
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 68 not in visited
+dfs_parent_pre: child 71 not in visited
+dfs_parent_pre: child 94 not in visited
+dfs_parent_pre: child 75 not in visited
+dfs_parent_pre: child 81 not in visited
+dfs_parent_pre 38 has unvisted children so mark 38 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[68, 71, 94, 75, 81]
+after pre: list_of_unvisited_children: [68, 71, 94, 75, 81]
+dfs_parent node 38 visit parents
+dfs_parent visit node 8
+dfs_parent from node 8
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 94 not in visited
+dfs_parent_pre: child 20 not in visited
+dfs_parent_pre: child 22 not in visited
+dfs_parent_pre: child 91 not in visited
+dfs_parent_pre: child 29 not in visited
+dfs_parent_pre: child 30 not in visited
+dfs_parent_pre: child 40 not in visited
+dfs_parent_pre: child 66 not in visited
+dfs_parent_pre: child 78 not in visited
+dfs_parent_pre 8 has unvisted children so mark 8 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[94, 20, 22, 91, 29, 30, 40, 66, 78]
+after pre: list_of_unvisited_children: [94, 20, 22, 91, 29, 30, 40, 66, 78]
+dfs_parent node 8 visit parents
+dfs_parent visit node 5
+dfs_parent from node 5
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 60 not in visited
+dfs_parent_pre: child 12 not in visited
+dfs_parent_pre: child 49 not in visited
+dfs_parent_pre: child 52 not in visited
+dfs_parent_pre: child 51 not in visited
+dfs_parent_pre: child 14 not in visited
+dfs_parent_pre: child 65 not in visited
+dfs_parent_pre 5 has unvisted children so mark 5 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[60, 12, 49, 52, 51, 14, 65]
+after pre: list_of_unvisited_children: [60, 12, 49, 52, 51, 14, 65]
+dfs_parent node 5 visit parents
+dfs_parent neighbor 7 already visited
+[Info]: Possible parent loop detected, start and end with 7, loop indicator: 7(Lprnt_of_5)
+dfs_parent visit node 23
+dfs_parent from node 23
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 85 not in visited
+dfs_parent_pre: child 46 not in visited
+dfs_parent_pre: child 87 not in visited
+dfs_parent_pre: child 95 not in visited
+dfs_parent_pre 23 has unvisted children so mark 23 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[85, 46, 87, 95]
+after pre: list_of_unvisited_children: [85, 46, 87, 95]
+dfs_parent node 23 visit parents
+dfs_parent visit node 24
+dfs_parent from node 24
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 51 not in visited
+dfs_parent_pre: child 81 not in visited
+dfs_parent_pre: child 100 not in visited
+dfs_parent_pre: child 48 not in visited
+dfs_parent_pre: child 21 not in visited
+dfs_parent_pre 24 has unvisted children so mark 24 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[51, 81, 100, 48, 21]
+after pre: list_of_unvisited_children: [51, 81, 100, 48, 21]
+dfs_parent node 24 visit parents
+dfs_parent visit node 41
+dfs_parent from node 41
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 69 not in visited
+dfs_parent_pre: child 60 not in visited
+dfs_parent_pre: child 83 not in visited
+dfs_parent_pre: child 100 not in visited
+dfs_parent_pre: child 92 not in visited
+dfs_parent_pre 41 has unvisted children so mark 41 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[69, 60, 83, 100, 92]
+after pre: list_of_unvisited_children: [69, 60, 83, 100, 92]
+dfs_parent node 41 visit parents
+dfs_parent visit node 27
+dfs_parent from node 27
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 50 not in visited
+dfs_parent_pre: child 12 not in visited
+dfs_parent_pre: child 77 not in visited
+dfs_parent_pre: child 26 not in visited
+dfs_parent_pre 27 has unvisted children so mark 27 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[50, 12, 77, 26]
+after pre: list_of_unvisited_children: [50, 12, 77, 26]
+dfs_parent node 27 visit parents
+dfs_parent visit node 2
+dfs_parent from node 2
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 98 not in visited
+dfs_parent_pre: child 10 not in visited
+dfs_parent_pre: child 56 not in visited
+dfs_parent_pre: child 13 not in visited
+dfs_parent_pre: child 96 not in visited
+dfs_parent_pre: child 62 not in visited
+dfs_parent_pre: child 66 not in visited
+dfs_parent_pre 2 has unvisted children so mark 2 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[98, 10, 56, 13, 96, 62, 66]
+after pre: list_of_unvisited_children: [98, 10, 56, 13, 96, 62, 66]
+dfs_parent node 2 visit parents
+dfs_parent visit node 6
+dfs_parent from node 6
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 35 not in visited
+dfs_parent_pre: child 10 not in visited
+dfs_parent_pre: child 12 not in visited
+dfs_parent_pre 6 has unvisted children so mark 6 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[35, 10, 12]
+after pre: list_of_unvisited_children: [35, 10, 12]
+dfs_parent node 6 visit parents
+dfs_parent neighbor 7 already visited
+[Info]: Possible parent loop detected, start and end with 7, loop indicator: 7(Lprnt_of_6)
+dfs_parent neighbor 15 already visited
+[Info]: Possible parent loop detected, start and end with 15, loop indicator: 15(Lprnt_of_6)
+dfs_parent visit node 30
+dfs_parent from node 30
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 36 not in visited
+dfs_parent_pre: child 79 not in visited
+dfs_parent_pre: child 100 not in visited
+dfs_parent_pre 30 has unvisted children so mark 30 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[36, 79, 100]
+after pre: list_of_unvisited_children: [36, 79, 100]
+dfs_parent node 30 visit parents
+dfs_parent neighbor 8 already visited
+[Info]: Possible parent loop detected, start and end with 8, loop indicator: 8(Lprnt_of_30)
+dfs_parent visit node 25
+dfs_parent from node 25
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 86 not in visited
+dfs_parent_pre 25 has unvisted children so mark 25 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[86]
+after pre: list_of_unvisited_children: [86]
+dfs_parent node 25 visit parents
+dfs_parent visit node 55
+dfs_parent from node 55
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 100 not in visited
+dfs_parent_pre: child 89 not in visited
+dfs_parent_pre: child 43 not in visited
+dfs_parent_pre: child 98 not in visited
+dfs_parent_pre 55 has unvisted children so mark 55 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[100, 89, 43, 98]
+after pre: list_of_unvisited_children: [100, 89, 43, 98]
+dfs_parent node 55 visit parents
+dfs_parent visit node 32
+dfs_parent from node 32
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 71 not in visited
+dfs_parent_pre: child 29 not in visited
+dfs_parent_pre: child 17 not in visited
+dfs_parent_pre: child 44 not in visited
+dfs_parent_pre: child 48 not in visited
+dfs_parent_pre 32 has unvisted children so mark 32 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[71, 29, 17, 44, 48]
+after pre: list_of_unvisited_children: [71, 29, 17, 44, 48]
+dfs_parent node 32 visit parents
+dfs_parent neighbor 39 already visited
+[Info]: Possible parent loop detected, start and end with 39, loop indicator: 39(Lprnt_of_32)
+dfs_parent visit node 67
+dfs_parent from node 67
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 93 not in visited
+dfs_parent_pre: child 101 not in visited
+dfs_parent_pre 67 has unvisted children so mark 67 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[93, 101]
+after pre: list_of_unvisited_children: [93, 101]
+dfs_parent node 67 visit parents
+dfs_parent visit node 12
+dfs_parent from node 12
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 40 not in visited
+dfs_parent_pre: child 21 not in visited
+dfs_parent_pre 12 has unvisted children so mark 12 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[40, 21]
+after pre: list_of_unvisited_children: [40, 21]
+dfs_parent node 12 visit parents
+dfs_parent neighbor 5 already visited
+[Info]: Possible parent loop detected, start and end with 5, loop indicator: 5(Lprnt_of_12)
+dfs_parent neighbor 6 already visited
+[Info]: Possible parent loop detected, start and end with 6, loop indicator: 6(Lprnt_of_12)
+dfs_parent neighbor 7 already visited
+[Info]: Possible parent loop detected, start and end with 7, loop indicator: 7(Lprnt_of_12)
+dfs_parent neighbor 27 already visited
+[Info]: Possible parent loop detected, start and end with 27, loop indicator: 27(Lprnt_of_12)
+dfs_parent visit node 60
+dfs_parent from node 60
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 75 not in visited
+dfs_parent_pre: child 37 not in visited
+dfs_parent_pre: child 58 not in visited
+dfs_parent_pre 60 has unvisted children so mark 60 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[75, 37, 58]
+after pre: list_of_unvisited_children: [75, 37, 58]
+dfs_parent node 60 visit parents
+dfs_parent neighbor 5 already visited
+[Info]: Possible parent loop detected, start and end with 5, loop indicator: 5(Lprnt_of_60)
+dfs_parent visit node 19
+dfs_parent from node 19
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 98 not in visited
+dfs_parent_pre: child 11 not in visited
+dfs_parent_pre: child 44 not in visited
+dfs_parent_pre: child 10 not in visited
+dfs_parent_pre: child 40 not in visited
+dfs_parent_pre: child 28 not in visited
+dfs_parent_pre: child 52 not in visited
+dfs_parent_pre: child 62 not in visited
+dfs_parent_pre 19 has unvisted children so mark 19 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[98, 11, 44, 10, 40, 28, 52, 62]
+after pre: list_of_unvisited_children: [98, 11, 44, 10, 40, 28, 52, 62]
+dfs_parent node 19 visit parents
+dfs_parent visit node 14
+dfs_parent from node 14
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 11 not in visited
+dfs_parent_pre: child 43 not in visited
+dfs_parent_pre: child 53 not in visited
+dfs_parent_pre: child 18 not in visited
+dfs_parent_pre: child 31 not in visited
+dfs_parent_pre 14 has unvisted children so mark 14 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[11, 43, 53, 18, 31]
+after pre: list_of_unvisited_children: [11, 43, 53, 18, 31]
+dfs_parent node 14 visit parents
+dfs_parent neighbor 5 already visited
+[Info]: Possible parent loop detected, start and end with 5, loop indicator: 5(Lprnt_of_14)
+dfs_parent visit node 29
+dfs_parent from node 29
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 72 not in visited
+dfs_parent_pre: child 68 not in visited
+dfs_parent_pre: child 44 not in visited
+dfs_parent_pre: child 42 not in visited
+dfs_parent_pre: child 87 not in visited
+dfs_parent_pre: child 17 not in visited
+dfs_parent_pre: child 9 not in visited
+dfs_parent_pre: child 18 not in visited
+dfs_parent_pre 29 has unvisted children so mark 29 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[72, 68, 44, 42, 87, 17, 9, 18]
+after pre: list_of_unvisited_children: [72, 68, 44, 42, 87, 17, 9, 18]
+dfs_parent node 29 visit parents
+dfs_parent neighbor 8 already visited
+[Info]: Possible parent loop detected, start and end with 8, loop indicator: 8(Lprnt_of_29)
+dfs_parent neighbor 15 already visited
+[Info]: Possible parent loop detected, start and end with 15, loop indicator: 15(Lprnt_of_29)
+dfs_parent neighbor 32 already visited
+[Info]: Possible parent loop detected, start and end with 32, loop indicator: 32(Lprnt_of_29)
+dfs_parent visit node 49
+dfs_parent from node 49
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 82 not in visited
+dfs_parent_pre: child 79 not in visited
+dfs_parent_pre: child 35 not in visited
+dfs_parent_pre 49 has unvisted children so mark 49 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[82, 79, 35]
+after pre: list_of_unvisited_children: [82, 79, 35]
+dfs_parent node 49 visit parents
+dfs_parent neighbor 5 already visited
+[Info]: Possible parent loop detected, start and end with 5, loop indicator: 5(Lprnt_of_49)
+dfs_parent visit node 13
+dfs_parent from node 13
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 37 not in visited
+dfs_parent_pre 13 has unvisted children so mark 13 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[37]
+after pre: list_of_unvisited_children: [37]
+dfs_parent node 13 visit parents
+dfs_parent neighbor 2 already visited
+[Info]: Possible parent loop detected, start and end with 2, loop indicator: 2(Lprnt_of_13)
+dfs_parent visit node 81
+dfs_parent from node 81
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 76 not in visited
+dfs_parent_pre: child 90 not in visited
+dfs_parent_pre 81 has unvisted children so mark 81 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[76, 90]
+after pre: list_of_unvisited_children: [76, 90]
+dfs_parent node 81 visit parents
+dfs_parent neighbor 24 already visited
+[Info]: Possible parent loop detected, start and end with 24, loop indicator: 24(Lprnt_of_81)
+dfs_parent neighbor 38 already visited
+[Info]: Possible parent loop detected, start and end with 38, loop indicator: 38(Lprnt_of_81)
+dfs_parent visit node 42
+dfs_parent from node 42
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 82 not in visited
+dfs_parent_pre: child 94 not in visited
+dfs_parent_pre: child 33 not in visited
+dfs_parent_pre: child 76 not in visited
+dfs_parent_pre: child 70 not in visited
+dfs_parent_pre 42 has unvisted children so mark 42 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[82, 94, 33, 76, 70]
+after pre: list_of_unvisited_children: [82, 94, 33, 76, 70]
+dfs_parent node 42 visit parents
+dfs_parent neighbor 29 already visited
+[Info]: Possible parent loop detected, start and end with 29, loop indicator: 29(Lprnt_of_42)
+dfs_parent visit node 52
+dfs_parent from node 52
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 86 not in visited
+dfs_parent_pre: child 31 not in visited
+dfs_parent_pre: child 16 not in visited
+dfs_parent_pre 52 has unvisted children so mark 52 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[86, 31, 16]
+after pre: list_of_unvisited_children: [86, 31, 16]
+dfs_parent node 52 visit parents
+dfs_parent neighbor 5 already visited
+[Info]: Possible parent loop detected, start and end with 5, loop indicator: 5(Lprnt_of_52)
+dfs_parent visit node 9
+dfs_parent from node 9
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 94 not in visited
+dfs_parent_pre: child 45 not in visited
+dfs_parent_pre: child 11 not in visited
+dfs_parent_pre: child 78 not in visited
+dfs_parent_pre: child 37 not in visited
+dfs_parent_pre 9 has unvisted children so mark 9 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[94, 45, 11, 78, 37]
+after pre: list_of_unvisited_children: [94, 45, 11, 78, 37]
+dfs_parent node 9 visit parents
+dfs_parent visit node 11
+dfs_parent from node 11
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 78 not in visited
+dfs_parent_pre: child 72 not in visited
+dfs_parent_pre: child 64 not in visited
+dfs_parent_pre: child 58 not in visited
+dfs_parent_pre: child 90 not in visited
+dfs_parent_pre: child 22 not in visited
+dfs_parent_pre 11 has unvisted children so mark 11 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[78, 72, 64, 58, 90, 22]
+after pre: list_of_unvisited_children: [78, 72, 64, 58, 90, 22]
+dfs_parent node 11 visit parents
+dfs_parent neighbor 4 already visited
+[Info]: Possible parent loop detected, start and end with 4, loop indicator: 4(Lprnt_of_11)
+dfs_parent neighbor 9 already visited
+[Info]: Possible parent loop detected, start and end with 9, loop indicator: 9(Lprnt_of_11)
+dfs_parent neighbor 14 already visited
+[Info]: Possible parent loop detected, start and end with 14, loop indicator: 14(Lprnt_of_11)
+dfs_parent neighbor 19 already visited
+[Info]: Possible parent loop detected, start and end with 19, loop indicator: 19(Lprnt_of_11)
+dfs_parent visit node 20
+dfs_parent from node 20
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 72 not in visited
+dfs_parent_pre: child 22 not in visited
+dfs_parent_pre: child 83 not in visited
+dfs_parent_pre: child 45 not in visited
+dfs_parent_pre 20 has unvisted children so mark 20 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[72, 22, 83, 45]
+after pre: list_of_unvisited_children: [72, 22, 83, 45]
+dfs_parent node 20 visit parents
+dfs_parent neighbor 4 already visited
+[Info]: Possible parent loop detected, start and end with 4, loop indicator: 4(Lprnt_of_20)
+dfs_parent neighbor 8 already visited
+[Info]: Possible parent loop detected, start and end with 8, loop indicator: 8(Lprnt_of_20)
+dfs_parent neighbor 15 already visited
+[Info]: Possible parent loop detected, start and end with 15, loop indicator: 15(Lprnt_of_20)
+dfs_parent visit node 53
+dfs_parent from node 53
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 34 not in visited
+dfs_parent_pre: child 64 not in visited
+dfs_parent_pre: child 28 not in visited
+dfs_parent_pre: child 72 not in visited
+dfs_parent_pre: child 18 not in visited
+dfs_parent_pre: child 33 not in visited
+dfs_parent_pre: child 63 not in visited
+dfs_parent_pre 53 has unvisted children so mark 53 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[34, 64, 28, 72, 18, 33, 63]
+after pre: list_of_unvisited_children: [34, 64, 28, 72, 18, 33, 63]
+dfs_parent node 53 visit parents
+dfs_parent neighbor 4 already visited
+[Info]: Possible parent loop detected, start and end with 4, loop indicator: 4(Lprnt_of_53)
+dfs_parent neighbor 14 already visited
+[Info]: Possible parent loop detected, start and end with 14, loop indicator: 14(Lprnt_of_53)
+dfs_parent visit node 28
+dfs_parent from node 28
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 87 not in visited
+dfs_parent_pre: child 33 not in visited
+dfs_parent_pre: child 71 not in visited
+dfs_parent_pre: child 65 not in visited
+dfs_parent_pre 28 has unvisted children so mark 28 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[87, 33, 71, 65]
+after pre: list_of_unvisited_children: [87, 33, 71, 65]
+dfs_parent node 28 visit parents
+dfs_parent visit node 17
+dfs_parent from node 17
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 93 not in visited
+dfs_parent_pre: child 68 not in visited
+dfs_parent_pre: child 22 not in visited
+dfs_parent_pre: child 86 not in visited
+dfs_parent_pre 17 has unvisted children so mark 17 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[93, 68, 22, 86]
+after pre: list_of_unvisited_children: [93, 68, 22, 86]
+dfs_parent node 17 visit parents
+dfs_parent neighbor 29 already visited
+[Info]: Possible parent loop detected, start and end with 29, loop indicator: 29(Lprnt_of_17)
+dfs_parent neighbor 32 already visited
+[Info]: Possible parent loop detected, start and end with 32, loop indicator: 32(Lprnt_of_17)
+dfs_parent visit node 34
+dfs_parent from node 34
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 99 not in visited
+dfs_parent_pre 34 has unvisted children so mark 34 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[99]
+after pre: list_of_unvisited_children: [99]
+dfs_parent node 34 visit parents
+dfs_parent visit node 10
+dfs_parent from node 10
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 101 not in visited
+dfs_parent_pre: child 85 not in visited
+dfs_parent_pre 10 has unvisted children so mark 10 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[101, 85]
+after pre: list_of_unvisited_children: [101, 85]
+dfs_parent node 10 visit parents
+dfs_parent neighbor 2 already visited
+[Info]: Possible parent loop detected, start and end with 2, loop indicator: 2(Lprnt_of_10)
+dfs_parent neighbor 6 already visited
+[Info]: Possible parent loop detected, start and end with 6, loop indicator: 6(Lprnt_of_10)
+dfs_parent neighbor 19 already visited
+[Info]: Possible parent loop detected, start and end with 19, loop indicator: 19(Lprnt_of_10)
+dfs_parent visit node 31
+dfs_parent from node 31
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 91 not in visited
+dfs_parent_pre: child 33 not in visited
+dfs_parent_pre: child 26 not in visited
+dfs_parent_pre: child 71 not in visited
+dfs_parent_pre: child 97 not in visited
+dfs_parent_pre: child 61 not in visited
+dfs_parent_pre: child 66 not in visited
+dfs_parent_pre 31 has unvisted children so mark 31 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[91, 33, 26, 71, 97, 61, 66]
+after pre: list_of_unvisited_children: [91, 33, 26, 71, 97, 61, 66]
+dfs_parent node 31 visit parents
+dfs_parent neighbor 14 already visited
+[Info]: Possible parent loop detected, start and end with 14, loop indicator: 14(Lprnt_of_31)
+dfs_parent visit node 50
+dfs_parent from node 50
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 22 not in visited
+dfs_parent_pre: child 66 not in visited
+dfs_parent_pre: child 76 not in visited
+dfs_parent_pre 50 has unvisted children so mark 50 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[22, 66, 76]
+after pre: list_of_unvisited_children: [22, 66, 76]
+dfs_parent node 50 visit parents
+dfs_parent neighbor 27 already visited
+[Info]: Possible parent loop detected, start and end with 27, loop indicator: 27(Lprnt_of_50)
+dfs_parent visit node 47
+dfs_parent from node 47
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 78 not in visited
+dfs_parent_pre: child 40 not in visited
+dfs_parent_pre: child 82 not in visited
+dfs_parent_pre: child 46 not in visited
+dfs_parent_pre 47 has unvisted children so mark 47 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[78, 40, 82, 46]
+after pre: list_of_unvisited_children: [78, 40, 82, 46]
+dfs_parent node 47 visit parents
+dfs_parent visit node 40
+dfs_parent from node 40
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 46 not in visited
+dfs_parent_pre: child 97 not in visited
+dfs_parent_pre: child 80 not in visited
+dfs_parent_pre: child 21 not in visited
+dfs_parent_pre: child 85 not in visited
+dfs_parent_pre: child 22 not in visited
+dfs_parent_pre 40 has unvisted children so mark 40 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[46, 97, 80, 21, 85, 22]
+after pre: list_of_unvisited_children: [46, 97, 80, 21, 85, 22]
+dfs_parent node 40 visit parents
+dfs_parent neighbor 8 already visited
+[Info]: Possible parent loop detected, start and end with 8, loop indicator: 8(Lprnt_of_40)
+dfs_parent neighbor 12 already visited
+[Info]: Possible parent loop detected, start and end with 12, loop indicator: 12(Lprnt_of_40)
+dfs_parent neighbor 19 already visited
+[Info]: Possible parent loop detected, start and end with 19, loop indicator: 19(Lprnt_of_40)
+dfs_parent neighbor 39 already visited
+[Info]: Possible parent loop detected, start and end with 39, loop indicator: 39(Lprnt_of_40)
+dfs_parent neighbor 47 already visited
+[Info]: Possible parent loop detected, start and end with 47, loop indicator: 47(Lprnt_of_40)
+dfs_parent visit node 71
+dfs_parent from node 71
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 57 not in visited
+dfs_parent_pre: child 43 not in visited
+dfs_parent_pre 71 has unvisted children so mark 71 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[57, 43]
+after pre: list_of_unvisited_children: [57, 43]
+dfs_parent node 71 visit parents
+dfs_parent neighbor 1 already visited
+[Info]: Possible parent loop detected, start and end with 1, loop indicator: 1(Lprnt_of_71)
+dfs_parent neighbor 4 already visited
+[Info]: Possible parent loop detected, start and end with 4, loop indicator: 4(Lprnt_of_71)
+dfs_parent neighbor 28 already visited
+[Info]: Possible parent loop detected, start and end with 28, loop indicator: 28(Lprnt_of_71)
+dfs_parent neighbor 31 already visited
+[Info]: Possible parent loop detected, start and end with 31, loop indicator: 31(Lprnt_of_71)
+dfs_parent neighbor 32 already visited
+[Info]: Possible parent loop detected, start and end with 32, loop indicator: 32(Lprnt_of_71)
+dfs_parent neighbor 38 already visited
+[Info]: Possible parent loop detected, start and end with 38, loop indicator: 38(Lprnt_of_71)
+dfs_parent visit node 59
+dfs_parent from node 59
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 101 not in visited
+dfs_parent_pre: child 43 not in visited
+dfs_parent_pre: child 48 not in visited
+dfs_parent_pre: child 58 not in visited
+dfs_parent_pre: child 68 not in visited
+dfs_parent_pre: child 99 not in visited
+dfs_parent_pre: child 16 not in visited
+dfs_parent_pre: child 90 not in visited
+dfs_parent_pre 59 has unvisted children so mark 59 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[101, 43, 48, 58, 68, 99, 16, 90]
+after pre: list_of_unvisited_children: [101, 43, 48, 58, 68, 99, 16, 90]
+dfs_parent node 59 visit parents
+dfs_parent visit node 62
+dfs_parent from node 62
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 74 not in visited
+dfs_parent_pre: child 91 not in visited
+dfs_parent_pre: child 56 not in visited
+dfs_parent_pre 62 has unvisted children so mark 62 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[74, 91, 56]
+after pre: list_of_unvisited_children: [74, 91, 56]
+dfs_parent node 62 visit parents
+dfs_parent neighbor 2 already visited
+[Info]: Possible parent loop detected, start and end with 2, loop indicator: 2(Lprnt_of_62)
+dfs_parent neighbor 19 already visited
+[Info]: Possible parent loop detected, start and end with 19, loop indicator: 19(Lprnt_of_62)
+dfs_parent visit node 37
+dfs_parent from node 37
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 86 not in visited
+dfs_parent_pre: child 66 not in visited
+dfs_parent_pre: child 48 not in visited
+dfs_parent_pre 37 has unvisted children so mark 37 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[86, 66, 48]
+after pre: list_of_unvisited_children: [86, 66, 48]
+dfs_parent node 37 visit parents
+dfs_parent neighbor 9 already visited
+[Info]: Possible parent loop detected, start and end with 9, loop indicator: 9(Lprnt_of_37)
+dfs_parent neighbor 13 already visited
+[Info]: Possible parent loop detected, start and end with 13, loop indicator: 13(Lprnt_of_37)
+dfs_parent neighbor 15 already visited
+[Info]: Possible parent loop detected, start and end with 15, loop indicator: 15(Lprnt_of_37)
+dfs_parent visit node 16
+dfs_parent from node 16
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 73 not in visited
+dfs_parent_pre 16 has unvisted children so mark 16 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[73]
+after pre: list_of_unvisited_children: [73]
+dfs_parent node 16 visit parents
+dfs_parent neighbor 52 already visited
+[Info]: Possible parent loop detected, start and end with 52, loop indicator: 52(Lprnt_of_16)
+dfs_parent neighbor 59 already visited
+[Info]: Possible parent loop detected, start and end with 59, loop indicator: 59(Lprnt_of_16)
+dfs_parent visit node 63
+dfs_parent from node 63
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 33 not in visited
+dfs_parent_pre: child 45 not in visited
+dfs_parent_pre: child 98 not in visited
+dfs_parent_pre 63 has unvisted children so mark 63 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[33, 45, 98]
+after pre: list_of_unvisited_children: [33, 45, 98]
+dfs_parent node 63 visit parents
+dfs_parent neighbor 7 already visited
+[Info]: Possible parent loop detected, start and end with 7, loop indicator: 7(Lprnt_of_63)
+dfs_parent visit node 18
+dfs_parent from node 18
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 83 not in visited
+dfs_parent_pre 18 has unvisted children so mark 18 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[83]
+after pre: list_of_unvisited_children: [83]
+dfs_parent node 18 visit parents
+dfs_parent neighbor 14 already visited
+[Info]: Possible parent loop detected, start and end with 14, loop indicator: 14(Lprnt_of_18)
+dfs_parent neighbor 29 already visited
+[Info]: Possible parent loop detected, start and end with 29, loop indicator: 29(Lprnt_of_18)
+dfs_parent neighbor 39 already visited
+[Info]: Possible parent loop detected, start and end with 39, loop indicator: 39(Lprnt_of_18)
+dfs_parent neighbor 53 already visited
+[Info]: Possible parent loop detected, start and end with 53, loop indicator: 53(Lprnt_of_18)
+dfs_parent visit node 76
+dfs_parent from node 76
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 80 not in visited
+dfs_parent_pre: child 89 not in visited
+dfs_parent_pre 76 has unvisted children so mark 76 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[80, 89]
+after pre: list_of_unvisited_children: [80, 89]
+dfs_parent node 76 visit parents
+dfs_parent neighbor 1 already visited
+[Info]: Possible parent loop detected, start and end with 1, loop indicator: 1(Lprnt_of_76)
+dfs_parent visit node 36
+dfs_parent from node 36
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 56 not in visited
+dfs_parent_pre: child 87 not in visited
+dfs_parent_pre 36 has unvisted children so mark 36 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[56, 87]
+after pre: list_of_unvisited_children: [56, 87]
+dfs_parent node 36 visit parents
+dfs_parent neighbor 30 already visited
+[Info]: Possible parent loop detected, start and end with 30, loop indicator: 30(Lprnt_of_36)
+dfs_parent visit node 35
+dfs_parent from node 35
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 84 not in visited
+dfs_parent_pre: child 46 not in visited
+dfs_parent_pre 35 has unvisted children so mark 35 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[84, 46]
+after pre: list_of_unvisited_children: [84, 46]
+dfs_parent node 35 visit parents
+dfs_parent neighbor 6 already visited
+[Info]: Possible parent loop detected, start and end with 6, loop indicator: 6(Lprnt_of_35)
+dfs_parent visit node 33
+dfs_parent from node 33
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 56 not in visited
+dfs_parent_pre 33 has unvisted children so mark 33 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[56]
+after pre: list_of_unvisited_children: [56]
+dfs_parent node 33 visit parents
+dfs_parent neighbor 28 already visited
+[Info]: Possible parent loop detected, start and end with 28, loop indicator: 28(Lprnt_of_33)
+dfs_parent neighbor 31 already visited
+[Info]: Possible parent loop detected, start and end with 31, loop indicator: 31(Lprnt_of_33)
+dfs_parent neighbor 42 already visited
+[Info]: Possible parent loop detected, start and end with 42, loop indicator: 42(Lprnt_of_33)
+dfs_parent neighbor 53 already visited
+[Info]: Possible parent loop detected, start and end with 53, loop indicator: 53(Lprnt_of_33)
+dfs_parent neighbor 63 already visited
+[Info]: Possible parent loop detected, start and end with 63, loop indicator: 63(Lprnt_of_33)
+dfs_parent visit node 92
+dfs_parent from node 92
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 57 not in visited
+dfs_parent_pre 92 has unvisted children so mark 92 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[57]
+after pre: list_of_unvisited_children: [57]
+dfs_parent node 92 visit parents
+dfs_parent neighbor 4 already visited
+[Info]: Possible parent loop detected, start and end with 4, loop indicator: 4(Lprnt_of_92)
+dfs_parent neighbor 41 already visited
+[Info]: Possible parent loop detected, start and end with 41, loop indicator: 41(Lprnt_of_92)
+dfs_parent visit node 46
+dfs_parent from node 46
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 45 not in visited
+dfs_parent_pre: child 56 not in visited
+dfs_parent_pre: child 77 not in visited
+dfs_parent_pre 46 has unvisted children so mark 46 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[45, 56, 77]
+after pre: list_of_unvisited_children: [45, 56, 77]
+dfs_parent node 46 visit parents
+dfs_parent neighbor 23 already visited
+[Info]: Possible parent loop detected, start and end with 23, loop indicator: 23(Lprnt_of_46)
+dfs_parent neighbor 35 already visited
+[Info]: Possible parent loop detected, start and end with 35, loop indicator: 35(Lprnt_of_46)
+dfs_parent neighbor 40 already visited
+[Info]: Possible parent loop detected, start and end with 40, loop indicator: 40(Lprnt_of_46)
+dfs_parent neighbor 47 already visited
+[Info]: Possible parent loop detected, start and end with 47, loop indicator: 47(Lprnt_of_46)
+dfs_parent visit node 85
+dfs_parent from node 85
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 61 not in visited
+dfs_parent_pre: child 48 not in visited
+dfs_parent_pre: child 72 not in visited
+dfs_parent_pre: child 56 not in visited
+dfs_parent_pre: child 95 not in visited
+dfs_parent_pre 85 has unvisted children so mark 85 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[61, 48, 72, 56, 95]
+after pre: list_of_unvisited_children: [61, 48, 72, 56, 95]
+dfs_parent node 85 visit parents
+dfs_parent neighbor 10 already visited
+[Info]: Possible parent loop detected, start and end with 10, loop indicator: 10(Lprnt_of_85)
+dfs_parent neighbor 23 already visited
+[Info]: Possible parent loop detected, start and end with 23, loop indicator: 23(Lprnt_of_85)
+dfs_parent neighbor 40 already visited
+[Info]: Possible parent loop detected, start and end with 40, loop indicator: 40(Lprnt_of_85)
+dfs_parent visit node 61
+dfs_parent from node 61
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre mark 61 as visited since it has no unvisited children but do not add it to bfs queue since no children need to be visited
+after pre: list_of_unvisited_children: []
+dfs_parent node 61 visit parents
+dfs_parent neighbor 31 already visited
+[Info]: Possible parent loop detected, start and end with 31, loop indicator: 31(Lprnt_of_61)
+dfs_parent visit node 66
+dfs_parent from node 66
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 51 not in visited
+dfs_parent_pre: child 65 not in visited
+dfs_parent_pre: child 44 not in visited
+dfs_parent_pre: child 57 not in visited
+dfs_parent_pre: child 86 not in visited
+dfs_parent_pre 66 has unvisted children so mark 66 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[51, 65, 44, 57, 86]
+after pre: list_of_unvisited_children: [51, 65, 44, 57, 86]
+dfs_parent node 66 visit parents
+dfs_parent neighbor 2 already visited
+[Info]: Possible parent loop detected, start and end with 2, loop indicator: 2(Lprnt_of_66)
+dfs_parent neighbor 8 already visited
+[Info]: Possible parent loop detected, start and end with 8, loop indicator: 8(Lprnt_of_66)
+dfs_parent neighbor 31 already visited
+[Info]: Possible parent loop detected, start and end with 31, loop indicator: 31(Lprnt_of_66)
+dfs_parent neighbor 37 already visited
+[Info]: Possible parent loop detected, start and end with 37, loop indicator: 37(Lprnt_of_66)
+dfs_parent neighbor 50 already visited
+[Info]: Possible parent loop detected, start and end with 50, loop indicator: 50(Lprnt_of_66)
+dfs_parent visit node 80
+dfs_parent from node 80
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 94 not in visited
+dfs_parent_pre: child 87 not in visited
+dfs_parent_pre 80 has unvisted children so mark 80 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[94, 87]
+after pre: list_of_unvisited_children: [94, 87]
+dfs_parent node 80 visit parents
+dfs_parent neighbor 40 already visited
+[Info]: Possible parent loop detected, start and end with 40, loop indicator: 40(Lprnt_of_80)
+dfs_parent visit node 64
+dfs_parent from node 64
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 57 not in visited
+dfs_parent_pre: child 74 not in visited
+dfs_parent_pre: child 95 not in visited
+dfs_parent_pre 64 has unvisted children so mark 64 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[57, 74, 95]
+after pre: list_of_unvisited_children: [57, 74, 95]
+dfs_parent node 64 visit parents
+dfs_parent neighbor 11 already visited
+[Info]: Possible parent loop detected, start and end with 11, loop indicator: 11(Lprnt_of_64)
+dfs_parent visit node 26
+dfs_parent from node 26
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 65 not in visited
+dfs_parent_pre 26 has unvisted children so mark 26 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[65]
+after pre: list_of_unvisited_children: [65]
+dfs_parent node 26 visit parents
+dfs_parent neighbor 7 already visited
+[Info]: Possible parent loop detected, start and end with 7, loop indicator: 7(Lprnt_of_26)
+dfs_parent neighbor 27 already visited
+[Info]: Possible parent loop detected, start and end with 27, loop indicator: 27(Lprnt_of_26)
+dfs_parent neighbor 31 already visited
+[Info]: Possible parent loop detected, start and end with 31, loop indicator: 31(Lprnt_of_26)
+dfs_parent visit node 44
+dfs_parent from node 44
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 69 not in visited
+dfs_parent_pre: child 65 not in visited
+dfs_parent_pre 44 has unvisted children so mark 44 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[69, 65]
+after pre: list_of_unvisited_children: [69, 65]
+dfs_parent node 44 visit parents
+dfs_parent neighbor 19 already visited
+[Info]: Possible parent loop detected, start and end with 19, loop indicator: 19(Lprnt_of_44)
+dfs_parent neighbor 29 already visited
+[Info]: Possible parent loop detected, start and end with 29, loop indicator: 29(Lprnt_of_44)
+dfs_parent neighbor 32 already visited
+[Info]: Possible parent loop detected, start and end with 32, loop indicator: 32(Lprnt_of_44)
+dfs_parent neighbor 66 already visited
+[Info]: Possible parent loop detected, start and end with 66, loop indicator: 66(Lprnt_of_44)
+dfs_parent visit node 84
+dfs_parent from node 84
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 78 not in visited
+dfs_parent_pre 84 has unvisted children so mark 84 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[78]
+after pre: list_of_unvisited_children: [78]
+dfs_parent node 84 visit parents
+dfs_parent neighbor 35 already visited
+[Info]: Possible parent loop detected, start and end with 35, loop indicator: 35(Lprnt_of_84)
+dfs_parent visit node 45
+dfs_parent from node 45
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre mark 45 as visited since it has no unvisited children but do not add it to bfs queue since no children need to be visited
+after pre: list_of_unvisited_children: []
+dfs_parent node 45 visit parents
+dfs_parent neighbor 7 already visited
+[Info]: Possible parent loop detected, start and end with 7, loop indicator: 7(Lprnt_of_45)
+dfs_parent neighbor 9 already visited
+[Info]: Possible parent loop detected, start and end with 9, loop indicator: 9(Lprnt_of_45)
+dfs_parent neighbor 20 already visited
+[Info]: Possible parent loop detected, start and end with 20, loop indicator: 20(Lprnt_of_45)
+dfs_parent neighbor 46 already visited
+[Info]: Possible parent loop detected, start and end with 46, loop indicator: 46(Lprnt_of_45)
+dfs_parent visit node 54
+dfs_parent from node 54
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 86 not in visited
+dfs_parent_pre: child 93 not in visited
+dfs_parent_pre: child 75 not in visited
+dfs_parent_pre: child 74 not in visited
+dfs_parent_pre: child 88 not in visited
+dfs_parent_pre 54 has unvisted children so mark 54 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[86, 93, 75, 74, 88]
+after pre: list_of_unvisited_children: [86, 93, 75, 74, 88]
+dfs_parent node 54 visit parents
+dfs_parent neighbor 3 already visited
+[Info]: Possible parent loop detected, start and end with 3, loop indicator: 3(Lprnt_of_54)
+dfs_parent visit node 43
+dfs_parent from node 43
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 65 not in visited
+dfs_parent_pre 43 has unvisted children so mark 43 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[65]
+after pre: list_of_unvisited_children: [65]
+dfs_parent node 43 visit parents
+dfs_parent neighbor 14 already visited
+[Info]: Possible parent loop detected, start and end with 14, loop indicator: 14(Lprnt_of_43)
+dfs_parent neighbor 55 already visited
+[Info]: Possible parent loop detected, start and end with 55, loop indicator: 55(Lprnt_of_43)
+dfs_parent neighbor 59 already visited
+[Info]: Possible parent loop detected, start and end with 59, loop indicator: 59(Lprnt_of_43)
+dfs_parent neighbor 71 already visited
+[Info]: Possible parent loop detected, start and end with 71, loop indicator: 71(Lprnt_of_43)
+dfs_parent visit node 82
+dfs_parent from node 82
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 86 not in visited
+dfs_parent_pre 82 has unvisted children so mark 82 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[86]
+after pre: list_of_unvisited_children: [86]
+dfs_parent node 82 visit parents
+dfs_parent neighbor 3 already visited
+[Info]: Possible parent loop detected, start and end with 3, loop indicator: 3(Lprnt_of_82)
+dfs_parent neighbor 42 already visited
+[Info]: Possible parent loop detected, start and end with 42, loop indicator: 42(Lprnt_of_82)
+dfs_parent neighbor 47 already visited
+[Info]: Possible parent loop detected, start and end with 47, loop indicator: 47(Lprnt_of_82)
+dfs_parent visit node 48
+dfs_parent from node 48
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 93 not in visited
+dfs_parent_pre: child 99 not in visited
+dfs_parent_pre: child 87 not in visited
+dfs_parent_pre 48 has unvisted children so mark 48 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[93, 99, 87]
+after pre: list_of_unvisited_children: [93, 99, 87]
+dfs_parent node 48 visit parents
+dfs_parent neighbor 24 already visited
+[Info]: Possible parent loop detected, start and end with 24, loop indicator: 24(Lprnt_of_48)
+dfs_parent neighbor 32 already visited
+[Info]: Possible parent loop detected, start and end with 32, loop indicator: 32(Lprnt_of_48)
+dfs_parent neighbor 37 already visited
+[Info]: Possible parent loop detected, start and end with 37, loop indicator: 37(Lprnt_of_48)
+dfs_parent neighbor 59 already visited
+[Info]: Possible parent loop detected, start and end with 59, loop indicator: 59(Lprnt_of_48)
+dfs_parent visit node 73
+dfs_parent from node 73
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 83 not in visited
+dfs_parent_pre: child 78 not in visited
+dfs_parent_pre 73 has unvisted children so mark 73 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[83, 78]
+after pre: list_of_unvisited_children: [83, 78]
+dfs_parent node 73 visit parents
+dfs_parent neighbor 16 already visited
+[Info]: Possible parent loop detected, start and end with 16, loop indicator: 16(Lprnt_of_73)
+dfs_parent visit node 89
+dfs_parent from node 89
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 51 not in visited
+dfs_parent_pre 89 has unvisted children so mark 89 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[51]
+after pre: list_of_unvisited_children: [51]
+dfs_parent node 89 visit parents
+dfs_parent visit node 21
+dfs_parent from node 21
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre mark 21 as visited since it has no unvisited children but do not add it to bfs queue since no children need to be visited
+after pre: list_of_unvisited_children: []
+dfs_parent node 21 visit parents
+dfs_parent neighbor 12 already visited
+[Info]: Possible parent loop detected, start and end with 12, loop indicator: 12(Lprnt_of_21)
+dfs_parent neighbor 24 already visited
+[Info]: Possible parent loop detected, start and end with 24, loop indicator: 24(Lprnt_of_21)
+dfs_parent neighbor 40 already visited
+[Info]: Possible parent loop detected, start and end with 40, loop indicator: 40(Lprnt_of_21)
+dfs_parent visit node 83
+dfs_parent from node 83
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 69 not in visited
+dfs_parent_pre: child 90 not in visited
+dfs_parent_pre: child 101 not in visited
+dfs_parent_pre: child 88 not in visited
+dfs_parent_pre: child 79 not in visited
+dfs_parent_pre: child 65 not in visited
+dfs_parent_pre 83 has unvisted children so mark 83 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[69, 90, 101, 88, 79, 65]
+after pre: list_of_unvisited_children: [69, 90, 101, 88, 79, 65]
+dfs_parent node 83 visit parents
+dfs_parent neighbor 18 already visited
+[Info]: Possible parent loop detected, start and end with 18, loop indicator: 18(Lprnt_of_83)
+dfs_parent neighbor 20 already visited
+[Info]: Possible parent loop detected, start and end with 20, loop indicator: 20(Lprnt_of_83)
+dfs_parent neighbor 41 already visited
+[Info]: Possible parent loop detected, start and end with 41, loop indicator: 41(Lprnt_of_83)
+dfs_parent visit node 69
+dfs_parent from node 69
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 77 not in visited
+dfs_parent_pre: child 65 not in visited
+dfs_parent_pre 69 has unvisted children so mark 69 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[77, 65]
+after pre: list_of_unvisited_children: [77, 65]
+dfs_parent node 69 visit parents
+dfs_parent neighbor 7 already visited
+[Info]: Possible parent loop detected, start and end with 7, loop indicator: 7(Lprnt_of_69)
+dfs_parent neighbor 41 already visited
+[Info]: Possible parent loop detected, start and end with 41, loop indicator: 41(Lprnt_of_69)
+dfs_parent neighbor 44 already visited
+[Info]: Possible parent loop detected, start and end with 44, loop indicator: 44(Lprnt_of_69)
+dfs_parent visit node 72
+dfs_parent from node 72
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 74 not in visited
+dfs_parent_pre: child 101 not in visited
+dfs_parent_pre: child 51 not in visited
+dfs_parent_pre 72 has unvisted children so mark 72 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[74, 101, 51]
+after pre: list_of_unvisited_children: [74, 101, 51]
+dfs_parent node 72 visit parents
+dfs_parent neighbor 11 already visited
+[Info]: Possible parent loop detected, start and end with 11, loop indicator: 11(Lprnt_of_72)
+dfs_parent neighbor 20 already visited
+[Info]: Possible parent loop detected, start and end with 20, loop indicator: 20(Lprnt_of_72)
+dfs_parent neighbor 29 already visited
+[Info]: Possible parent loop detected, start and end with 29, loop indicator: 29(Lprnt_of_72)
+dfs_parent neighbor 53 already visited
+[Info]: Possible parent loop detected, start and end with 53, loop indicator: 53(Lprnt_of_72)
+dfs_parent visit node 56
+dfs_parent from node 56
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 94 not in visited
+dfs_parent_pre 56 has unvisted children so mark 56 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[94]
+after pre: list_of_unvisited_children: [94]
+dfs_parent node 56 visit parents
+dfs_parent neighbor 2 already visited
+[Info]: Possible parent loop detected, start and end with 2, loop indicator: 2(Lprnt_of_56)
+dfs_parent visit node 22
+dfs_parent from node 22
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 95 not in visited
+dfs_parent_pre 22 has unvisted children so mark 22 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[95]
+after pre: list_of_unvisited_children: [95]
+dfs_parent node 22 visit parents
+dfs_parent neighbor 8 already visited
+[Info]: Possible parent loop detected, start and end with 8, loop indicator: 8(Lprnt_of_22)
+dfs_parent neighbor 11 already visited
+[Info]: Possible parent loop detected, start and end with 11, loop indicator: 11(Lprnt_of_22)
+dfs_parent neighbor 17 already visited
+[Info]: Possible parent loop detected, start and end with 17, loop indicator: 17(Lprnt_of_22)
+dfs_parent neighbor 20 already visited
+[Info]: Possible parent loop detected, start and end with 20, loop indicator: 20(Lprnt_of_22)
+dfs_parent neighbor 40 already visited
+[Info]: Possible parent loop detected, start and end with 40, loop indicator: 40(Lprnt_of_22)
+dfs_parent neighbor 50 already visited
+[Info]: Possible parent loop detected, start and end with 50, loop indicator: 50(Lprnt_of_22)
+dfs_parent visit node 86
+dfs_parent from node 86
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 77 not in visited
+dfs_parent_pre 86 has unvisted children so mark 86 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[77]
+after pre: list_of_unvisited_children: [77]
+dfs_parent node 86 visit parents
+dfs_parent neighbor 17 already visited
+[Info]: Possible parent loop detected, start and end with 17, loop indicator: 17(Lprnt_of_86)
+dfs_parent neighbor 25 already visited
+[Info]: Possible parent loop detected, start and end with 25, loop indicator: 25(Lprnt_of_86)
+dfs_parent neighbor 37 already visited
+[Info]: Possible parent loop detected, start and end with 37, loop indicator: 37(Lprnt_of_86)
+dfs_parent neighbor 52 already visited
+[Info]: Possible parent loop detected, start and end with 52, loop indicator: 52(Lprnt_of_86)
+dfs_parent neighbor 54 already visited
+[Info]: Possible parent loop detected, start and end with 54, loop indicator: 54(Lprnt_of_86)
+dfs_parent neighbor 66 already visited
+[Info]: Possible parent loop detected, start and end with 66, loop indicator: 66(Lprnt_of_86)
+dfs_parent neighbor 82 already visited
+[Info]: Possible parent loop detected, start and end with 82, loop indicator: 82(Lprnt_of_86)
+check unvisited child 77
+unvisited child 77 not visited during parent traversal
+1 children remain unvisited
+check whether node 86 unvisited child 77 is still unvisited after parent traversal
+unvisited child 77 was not visited during parent traversal
+queue after add 86: 86 
+frontier after add 86: 86 
+dfs_parent add 86 to partition
+dfs_parent visit node 91
+dfs_parent from node 91
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre mark 91 as visited since it has no unvisited children but do not add it to bfs queue since no children need to be visited
+after pre: list_of_unvisited_children: []
+dfs_parent node 91 visit parents
+dfs_parent neighbor 8 already visited
+[Info]: Possible parent loop detected, start and end with 8, loop indicator: 8(Lprnt_of_91)
+dfs_parent neighbor 31 already visited
+[Info]: Possible parent loop detected, start and end with 31, loop indicator: 31(Lprnt_of_91)
+dfs_parent neighbor 39 already visited
+[Info]: Possible parent loop detected, start and end with 39, loop indicator: 39(Lprnt_of_91)
+dfs_parent neighbor 62 already visited
+[Info]: Possible parent loop detected, start and end with 62, loop indicator: 62(Lprnt_of_91)
+dfs_parent visit node 70
+dfs_parent from node 70
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 94 not in visited
+dfs_parent_pre 70 has unvisted children so mark 70 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[94]
+after pre: list_of_unvisited_children: [94]
+dfs_parent node 70 visit parents
+dfs_parent neighbor 42 already visited
+[Info]: Possible parent loop detected, start and end with 42, loop indicator: 42(Lprnt_of_70)
+dfs_parent visit node 58
+dfs_parent from node 58
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 74 not in visited
+dfs_parent_pre: child 90 not in visited
+dfs_parent_pre 58 has unvisted children so mark 58 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[74, 90]
+after pre: list_of_unvisited_children: [74, 90]
+dfs_parent node 58 visit parents
+dfs_parent neighbor 11 already visited
+[Info]: Possible parent loop detected, start and end with 11, loop indicator: 11(Lprnt_of_58)
+dfs_parent neighbor 59 already visited
+[Info]: Possible parent loop detected, start and end with 59, loop indicator: 59(Lprnt_of_58)
+dfs_parent neighbor 60 already visited
+[Info]: Possible parent loop detected, start and end with 60, loop indicator: 60(Lprnt_of_58)
+check unvisited child 74
+unvisited child 74 not visited during parent traversal
+check unvisited child 90
+unvisited child 90 not visited during parent traversal
+2 children remain unvisited
+check whether node 58 unvisited child 74 is still unvisited after parent traversal
+unvisited child 74 was not visited during parent traversal
+check whether node 58 unvisited child 90 is still unvisited after parent traversal
+unvisited child 90 was not visited during parent traversal
+queue after add 58: 86 58 
+frontier after add 58: 86 58 
+dfs_parent add 58 to partition
+dfs_parent visit node 68
+dfs_parent from node 68
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 78 not in visited
+dfs_parent_pre: child 96 not in visited
+dfs_parent_pre: child 75 not in visited
+dfs_parent_pre 68 has unvisted children so mark 68 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[78, 96, 75]
+after pre: list_of_unvisited_children: [78, 96, 75]
+dfs_parent node 68 visit parents
+dfs_parent neighbor 17 already visited
+[Info]: Possible parent loop detected, start and end with 17, loop indicator: 17(Lprnt_of_68)
+dfs_parent neighbor 29 already visited
+[Info]: Possible parent loop detected, start and end with 29, loop indicator: 29(Lprnt_of_68)
+dfs_parent neighbor 38 already visited
+[Info]: Possible parent loop detected, start and end with 38, loop indicator: 38(Lprnt_of_68)
+dfs_parent neighbor 59 already visited
+[Info]: Possible parent loop detected, start and end with 59, loop indicator: 59(Lprnt_of_68)
+dfs_parent visit node 77
+dfs_parent from node 77
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 98 not in visited
+dfs_parent_pre: child 99 not in visited
+dfs_parent_pre: child 74 not in visited
+dfs_parent_pre 77 has unvisted children so mark 77 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[98, 99, 74]
+after pre: list_of_unvisited_children: [98, 99, 74]
+dfs_parent node 77 visit parents
+dfs_parent neighbor 3 already visited
+[Info]: Possible parent loop detected, start and end with 3, loop indicator: 3(Lprnt_of_77)
+dfs_parent neighbor 27 already visited
+[Info]: Possible parent loop detected, start and end with 27, loop indicator: 27(Lprnt_of_77)
+dfs_parent neighbor 46 already visited
+[Info]: Possible parent loop detected, start and end with 46, loop indicator: 46(Lprnt_of_77)
+dfs_parent neighbor 69 already visited
+[Info]: Possible parent loop detected, start and end with 69, loop indicator: 69(Lprnt_of_77)
+dfs_parent neighbor 86 already visited
+dfs_parent visit node 94
+dfs_parent from node 94
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre mark 94 as visited since it has no unvisited children but do not add it to bfs queue since no children need to be visited
+after pre: list_of_unvisited_children: []
+dfs_parent node 94 visit parents
+dfs_parent neighbor 8 already visited
+[Info]: Possible parent loop detected, start and end with 8, loop indicator: 8(Lprnt_of_94)
+dfs_parent neighbor 9 already visited
+[Info]: Possible parent loop detected, start and end with 9, loop indicator: 9(Lprnt_of_94)
+dfs_parent neighbor 38 already visited
+[Info]: Possible parent loop detected, start and end with 38, loop indicator: 38(Lprnt_of_94)
+dfs_parent neighbor 42 already visited
+[Info]: Possible parent loop detected, start and end with 42, loop indicator: 42(Lprnt_of_94)
+dfs_parent visit node 51
+dfs_parent from node 51
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 93 not in visited
+dfs_parent_pre 51 has unvisted children so mark 51 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[93]
+after pre: list_of_unvisited_children: [93]
+dfs_parent node 51 visit parents
+dfs_parent neighbor 5 already visited
+[Info]: Possible parent loop detected, start and end with 5, loop indicator: 5(Lprnt_of_51)
+dfs_parent neighbor 24 already visited
+[Info]: Possible parent loop detected, start and end with 24, loop indicator: 24(Lprnt_of_51)
+dfs_parent neighbor 66 already visited
+[Info]: Possible parent loop detected, start and end with 66, loop indicator: 66(Lprnt_of_51)
+dfs_parent neighbor 72 already visited
+[Info]: Possible parent loop detected, start and end with 72, loop indicator: 72(Lprnt_of_51)
+dfs_parent neighbor 89 already visited
+[Info]: Possible parent loop detected, start and end with 89, loop indicator: 89(Lprnt_of_51)
+check unvisited child 93
+unvisited child 93 not visited during parent traversal
+1 children remain unvisited
+check whether node 51 unvisited child 93 is still unvisited after parent traversal
+unvisited child 93 was not visited during parent traversal
+queue after add 51: 86 58 51 
+frontier after add 51: 86 58 51 
+dfs_parent add 51 to partition
+dfs_parent neighbor 56 already visited
+[Info]: Possible parent loop detected, start and end with 56, loop indicator: 56(Lprnt_of_94)
+dfs_parent neighbor 70 already visited
+[Info]: Possible parent loop detected, start and end with 70, loop indicator: 70(Lprnt_of_94)
+dfs_parent visit node 78
+dfs_parent from node 78
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 87 not in visited
+dfs_parent_pre 78 has unvisted children so mark 78 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[87]
+after pre: list_of_unvisited_children: [87]
+dfs_parent node 78 visit parents
+dfs_parent neighbor 8 already visited
+[Info]: Possible parent loop detected, start and end with 8, loop indicator: 8(Lprnt_of_78)
+dfs_parent neighbor 9 already visited
+[Info]: Possible parent loop detected, start and end with 9, loop indicator: 9(Lprnt_of_78)
+dfs_parent neighbor 11 already visited
+[Info]: Possible parent loop detected, start and end with 11, loop indicator: 11(Lprnt_of_78)
+dfs_parent neighbor 47 already visited
+[Info]: Possible parent loop detected, start and end with 47, loop indicator: 47(Lprnt_of_78)
+dfs_parent visit node 57
+dfs_parent from node 57
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 79 not in visited
+dfs_parent_pre: child 97 not in visited
+dfs_parent_pre 57 has unvisted children so mark 57 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[79, 97]
+after pre: list_of_unvisited_children: [79, 97]
+dfs_parent node 57 visit parents
+dfs_parent neighbor 1 already visited
+[Info]: Possible parent loop detected, start and end with 1, loop indicator: 1(Lprnt_of_57)
+dfs_parent neighbor 64 already visited
+[Info]: Possible parent loop detected, start and end with 64, loop indicator: 64(Lprnt_of_57)
+dfs_parent neighbor 66 already visited
+[Info]: Possible parent loop detected, start and end with 66, loop indicator: 66(Lprnt_of_57)
+dfs_parent neighbor 71 already visited
+[Info]: Possible parent loop detected, start and end with 71, loop indicator: 71(Lprnt_of_57)
+dfs_parent neighbor 92 already visited
+[Info]: Possible parent loop detected, start and end with 92, loop indicator: 92(Lprnt_of_57)
+check unvisited child 79
+unvisited child 79 not visited during parent traversal
+check unvisited child 97
+unvisited child 97 not visited during parent traversal
+2 children remain unvisited
+check whether node 57 unvisited child 79 is still unvisited after parent traversal
+unvisited child 79 was not visited during parent traversal
+check whether node 57 unvisited child 97 is still unvisited after parent traversal
+unvisited child 97 was not visited during parent traversal
+queue after add 57: 86 58 51 57 
+frontier after add 57: 86 58 51 57 
+dfs_parent add 57 to partition
+dfs_parent neighbor 68 already visited
+[Info]: Possible parent loop detected, start and end with 68, loop indicator: 68(Lprnt_of_78)
+dfs_parent neighbor 73 already visited
+[Info]: Possible parent loop detected, start and end with 73, loop indicator: 73(Lprnt_of_78)
+dfs_parent neighbor 84 already visited
+[Info]: Possible parent loop detected, start and end with 84, loop indicator: 84(Lprnt_of_78)
+dfs_parent visit node 95
+dfs_parent from node 95
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 100 not in visited
+dfs_parent_pre 95 has unvisted children so mark 95 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[100]
+after pre: list_of_unvisited_children: [100]
+dfs_parent node 95 visit parents
+dfs_parent neighbor 22 already visited
+[Info]: Possible parent loop detected, start and end with 22, loop indicator: 22(Lprnt_of_95)
+dfs_parent neighbor 23 already visited
+[Info]: Possible parent loop detected, start and end with 23, loop indicator: 23(Lprnt_of_95)
+dfs_parent neighbor 64 already visited
+[Info]: Possible parent loop detected, start and end with 64, loop indicator: 64(Lprnt_of_95)
+dfs_parent visit node 75
+dfs_parent from node 75
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre mark 75 as visited since it has no unvisited children but do not add it to bfs queue since no children need to be visited
+after pre: list_of_unvisited_children: []
+dfs_parent node 75 visit parents
+dfs_parent neighbor 38 already visited
+[Info]: Possible parent loop detected, start and end with 38, loop indicator: 38(Lprnt_of_75)
+dfs_parent neighbor 54 already visited
+[Info]: Possible parent loop detected, start and end with 54, loop indicator: 54(Lprnt_of_75)
+dfs_parent neighbor 60 already visited
+[Info]: Possible parent loop detected, start and end with 60, loop indicator: 60(Lprnt_of_75)
+dfs_parent neighbor 68 already visited
+[Info]: Possible parent loop detected, start and end with 68, loop indicator: 68(Lprnt_of_75)
+0 children remain unvisited
+node 75 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 75 to partition
+dfs_parent neighbor 85 already visited
+[Info]: Possible parent loop detected, start and end with 85, loop indicator: 85(Lprnt_of_95)
+check unvisited child 100
+unvisited child 100 not visited during parent traversal
+1 children remain unvisited
+check whether node 95 unvisited child 100 is still unvisited after parent traversal
+unvisited child 100 was not visited during parent traversal
+queue after add 95: 86 58 51 57 95 
+frontier after add 95: 86 58 51 57 95 
+dfs_parent add 95 to partition
+dfs_parent visit node 100
+dfs_parent from node 100
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre mark 100 as visited since it has no unvisited children but do not add it to bfs queue since no children need to be visited
+after pre: list_of_unvisited_children: []
+dfs_parent node 100 visit parents
+dfs_parent neighbor 15 already visited
+[Info]: Possible parent loop detected, start and end with 15, loop indicator: 15(Lprnt_of_100)
+dfs_parent neighbor 24 already visited
+[Info]: Possible parent loop detected, start and end with 24, loop indicator: 24(Lprnt_of_100)
+dfs_parent neighbor 30 already visited
+[Info]: Possible parent loop detected, start and end with 30, loop indicator: 30(Lprnt_of_100)
+dfs_parent neighbor 41 already visited
+[Info]: Possible parent loop detected, start and end with 41, loop indicator: 41(Lprnt_of_100)
+dfs_parent neighbor 55 already visited
+[Info]: Possible parent loop detected, start and end with 55, loop indicator: 55(Lprnt_of_100)
+dfs_parent neighbor 95 already visited
+0 children remain unvisited
+node 100 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 100 to partition
+check unvisited child 87
+unvisited child 87 not visited during parent traversal
+1 children remain unvisited
+check whether node 78 unvisited child 87 is still unvisited after parent traversal
+unvisited child 87 was not visited during parent traversal
+queue after add 78: 86 58 51 57 95 78 
+frontier after add 78: 86 58 51 57 95 78 
+dfs_parent add 78 to partition
+dfs_parent neighbor 80 already visited
+[Info]: Possible parent loop detected, start and end with 80, loop indicator: 80(Lprnt_of_94)
+0 children remain unvisited
+node 94 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 94 to partition
+check unvisited child 98
+unvisited child 98 not visited during parent traversal
+check unvisited child 99
+unvisited child 99 not visited during parent traversal
+check unvisited child 74
+unvisited child 74 not visited during parent traversal
+3 children remain unvisited
+check whether node 77 unvisited child 98 is still unvisited after parent traversal
+unvisited child 98 was not visited during parent traversal
+check whether node 77 unvisited child 99 is still unvisited after parent traversal
+unvisited child 99 was not visited during parent traversal
+check whether node 77 unvisited child 74 is still unvisited after parent traversal
+unvisited child 74 was not visited during parent traversal
+queue after add 77: 86 58 51 57 95 78 77 
+frontier after add 77: 86 58 51 57 95 78 77 
+dfs_parent add 77 to partition
+dfs_parent visit node 98
+dfs_parent from node 98
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 65 not in visited
+dfs_parent_pre 98 has unvisted children so mark 98 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[65]
+after pre: list_of_unvisited_children: [65]
+dfs_parent node 98 visit parents
+dfs_parent neighbor 2 already visited
+[Info]: Possible parent loop detected, start and end with 2, loop indicator: 2(Lprnt_of_98)
+dfs_parent neighbor 19 already visited
+[Info]: Possible parent loop detected, start and end with 19, loop indicator: 19(Lprnt_of_98)
+dfs_parent neighbor 55 already visited
+[Info]: Possible parent loop detected, start and end with 55, loop indicator: 55(Lprnt_of_98)
+dfs_parent neighbor 63 already visited
+[Info]: Possible parent loop detected, start and end with 63, loop indicator: 63(Lprnt_of_98)
+dfs_parent neighbor 77 already visited
+check unvisited child 65
+unvisited child 65 not visited during parent traversal
+1 children remain unvisited
+check whether node 98 unvisited child 65 is still unvisited after parent traversal
+unvisited child 65 was not visited during parent traversal
+queue after add 98: 86 58 51 57 95 78 77 98 
+frontier after add 98: 86 58 51 57 95 78 77 98 
+dfs_parent add 98 to partition
+check unvisited child 78
+check unvisited child 96
+unvisited child 96 not visited during parent traversal
+check unvisited child 75
+1 children remain unvisited
+check whether node 68 unvisited child 78 is still unvisited after parent traversal
+unvisited child 78 not still unvisited
+check whether node 68 unvisited child 96 is still unvisited after parent traversal
+unvisited child 96 was not visited during parent traversal
+check whether node 68 unvisited child 75 is still unvisited after parent traversal
+unvisited child 75 not still unvisited
+[Info]: possible loop detected, loop indicator: 78/75(Lchild_of_68)
+queue after add 68: 86 58 51 57 95 78 77 98 68 
+frontier after add 68: 86 58 51 57 95 78 77 98 68 
+dfs_parent add 68 to partition
+dfs_parent neighbor 98 already visited
+check unvisited child 94
+0 children remain unvisited
+check whether node 70 unvisited child 94 is still unvisited after parent traversal
+unvisited child 94 not still unvisited
+[Info]: possible loop detected, loop indicator: 94(Lchild_of_70)
+node 70 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 70 to partition
+dfs_parent visit node 79
+dfs_parent from node 79
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 99 not in visited
+dfs_parent_pre 79 has unvisted children so mark 79 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[99]
+after pre: list_of_unvisited_children: [99]
+dfs_parent node 79 visit parents
+dfs_parent neighbor 30 already visited
+[Info]: Possible parent loop detected, start and end with 30, loop indicator: 30(Lprnt_of_79)
+dfs_parent neighbor 49 already visited
+[Info]: Possible parent loop detected, start and end with 49, loop indicator: 49(Lprnt_of_79)
+dfs_parent neighbor 57 already visited
+dfs_parent neighbor 83 already visited
+[Info]: Possible parent loop detected, start and end with 83, loop indicator: 83(Lprnt_of_79)
+check unvisited child 99
+unvisited child 99 not visited during parent traversal
+1 children remain unvisited
+check whether node 79 unvisited child 99 is still unvisited after parent traversal
+unvisited child 99 was not visited during parent traversal
+queue after add 79: 86 58 51 57 95 78 77 98 68 79 
+frontier after add 79: 86 58 51 57 95 78 77 98 68 79 
+dfs_parent add 79 to partition
+0 children remain unvisited
+node 91 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 91 to partition
+dfs_parent neighbor 94 already visited
+dfs_parent visit node 97
+dfs_parent from node 97
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre mark 97 as visited since it has no unvisited children but do not add it to bfs queue since no children need to be visited
+after pre: list_of_unvisited_children: []
+dfs_parent node 97 visit parents
+dfs_parent neighbor 31 already visited
+[Info]: Possible parent loop detected, start and end with 31, loop indicator: 31(Lprnt_of_97)
+dfs_parent neighbor 40 already visited
+[Info]: Possible parent loop detected, start and end with 40, loop indicator: 40(Lprnt_of_97)
+dfs_parent neighbor 57 already visited
+0 children remain unvisited
+node 97 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 97 to partition
+check unvisited child 95
+0 children remain unvisited
+check whether node 22 unvisited child 95 is still unvisited after parent traversal
+unvisited child 95 not still unvisited
+[Info]: possible loop detected, loop indicator: 95(Lchild_of_22)
+node 22 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 22 to partition
+dfs_parent neighbor 33 already visited
+[Info]: Possible parent loop detected, start and end with 33, loop indicator: 33(Lprnt_of_56)
+dfs_parent neighbor 36 already visited
+[Info]: Possible parent loop detected, start and end with 36, loop indicator: 36(Lprnt_of_56)
+dfs_parent neighbor 39 already visited
+[Info]: Possible parent loop detected, start and end with 39, loop indicator: 39(Lprnt_of_56)
+dfs_parent neighbor 46 already visited
+[Info]: Possible parent loop detected, start and end with 46, loop indicator: 46(Lprnt_of_56)
+dfs_parent neighbor 62 already visited
+[Info]: Possible parent loop detected, start and end with 62, loop indicator: 62(Lprnt_of_56)
+dfs_parent neighbor 85 already visited
+[Info]: Possible parent loop detected, start and end with 85, loop indicator: 85(Lprnt_of_56)
+dfs_parent visit node 99
+dfs_parent from node 99
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre mark 99 as visited since it has no unvisited children but do not add it to bfs queue since no children need to be visited
+after pre: list_of_unvisited_children: []
+dfs_parent node 99 visit parents
+dfs_parent neighbor 1 already visited
+[Info]: Possible parent loop detected, start and end with 1, loop indicator: 1(Lprnt_of_99)
+dfs_parent neighbor 34 already visited
+[Info]: Possible parent loop detected, start and end with 34, loop indicator: 34(Lprnt_of_99)
+dfs_parent neighbor 48 already visited
+[Info]: Possible parent loop detected, start and end with 48, loop indicator: 48(Lprnt_of_99)
+dfs_parent neighbor 59 already visited
+[Info]: Possible parent loop detected, start and end with 59, loop indicator: 59(Lprnt_of_99)
+dfs_parent neighbor 77 already visited
+dfs_parent neighbor 79 already visited
+0 children remain unvisited
+node 99 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 99 to partition
+dfs_parent neighbor 100 already visited
+check unvisited child 94
+0 children remain unvisited
+check whether node 56 unvisited child 94 is still unvisited after parent traversal
+unvisited child 94 not still unvisited
+[Info]: possible loop detected, loop indicator: 94(Lchild_of_56)
+node 56 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 56 to partition
+dfs_parent neighbor 78 already visited
+dfs_parent neighbor 85 already visited
+[Info]: Possible parent loop detected, start and end with 85, loop indicator: 85(Lprnt_of_72)
+check unvisited child 74
+unvisited child 74 not visited during parent traversal
+check unvisited child 101
+unvisited child 101 not visited during parent traversal
+check unvisited child 51
+2 children remain unvisited
+check whether node 72 unvisited child 74 is still unvisited after parent traversal
+unvisited child 74 was not visited during parent traversal
+check whether node 72 unvisited child 101 is still unvisited after parent traversal
+unvisited child 101 was not visited during parent traversal
+check whether node 72 unvisited child 51 is still unvisited after parent traversal
+unvisited child 51 not still unvisited
+[Info]: possible loop detected, loop indicator: 51(Lchild_of_72)
+queue after add 72: 86 58 51 57 95 78 77 98 68 79 72 
+frontier after add 72: 86 58 51 57 95 78 77 98 68 79 72 
+dfs_parent add 72 to partition
+dfs_parent visit node 74
+dfs_parent from node 74
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre mark 74 as visited since it has no unvisited children but do not add it to bfs queue since no children need to be visited
+after pre: list_of_unvisited_children: []
+dfs_parent node 74 visit parents
+dfs_parent neighbor 15 already visited
+[Info]: Possible parent loop detected, start and end with 15, loop indicator: 15(Lprnt_of_74)
+dfs_parent neighbor 54 already visited
+[Info]: Possible parent loop detected, start and end with 54, loop indicator: 54(Lprnt_of_74)
+dfs_parent neighbor 58 already visited
+dfs_parent neighbor 62 already visited
+[Info]: Possible parent loop detected, start and end with 62, loop indicator: 62(Lprnt_of_74)
+dfs_parent neighbor 64 already visited
+[Info]: Possible parent loop detected, start and end with 64, loop indicator: 64(Lprnt_of_74)
+dfs_parent neighbor 72 already visited
+dfs_parent neighbor 77 already visited
+dfs_parent visit node 90
+dfs_parent from node 90
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre mark 90 as visited since it has no unvisited children but do not add it to bfs queue since no children need to be visited
+after pre: list_of_unvisited_children: []
+dfs_parent node 90 visit parents
+dfs_parent neighbor 11 already visited
+[Info]: Possible parent loop detected, start and end with 11, loop indicator: 11(Lprnt_of_90)
+dfs_parent neighbor 58 already visited
+dfs_parent neighbor 59 already visited
+[Info]: Possible parent loop detected, start and end with 59, loop indicator: 59(Lprnt_of_90)
+dfs_parent neighbor 81 already visited
+[Info]: Possible parent loop detected, start and end with 81, loop indicator: 81(Lprnt_of_90)
+dfs_parent neighbor 83 already visited
+[Info]: Possible parent loop detected, start and end with 83, loop indicator: 83(Lprnt_of_90)
+0 children remain unvisited
+node 90 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 90 to partition
+0 children remain unvisited
+node 74 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 74 to partition
+dfs_parent neighbor 83 already visited
+[Info]: Possible parent loop detected, start and end with 83, loop indicator: 83(Lprnt_of_69)
+dfs_parent neighbor 86 already visited
+check unvisited child 77
+check unvisited child 65
+unvisited child 65 not visited during parent traversal
+1 children remain unvisited
+check whether node 69 unvisited child 77 is still unvisited after parent traversal
+unvisited child 77 not still unvisited
+check whether node 69 unvisited child 65 is still unvisited after parent traversal
+unvisited child 65 was not visited during parent traversal
+[Info]: possible loop detected, loop indicator: 77(Lchild_of_69)
+queue after add 69: 86 58 51 57 95 78 77 98 68 79 72 69 
+frontier after add 69: 86 58 51 57 95 78 77 98 68 79 72 69 
+dfs_parent add 69 to partition
+dfs_parent neighbor 72 already visited
+dfs_parent neighbor 73 already visited
+[Info]: Possible parent loop detected, start and end with 73, loop indicator: 73(Lprnt_of_83)
+dfs_parent neighbor 86 already visited
+dfs_parent neighbor 98 already visited
+check unvisited child 69
+check unvisited child 90
+check unvisited child 101
+unvisited child 101 not visited during parent traversal
+check unvisited child 88
+unvisited child 88 not visited during parent traversal
+check unvisited child 79
+check unvisited child 65
+unvisited child 65 not visited during parent traversal
+3 children remain unvisited
+check whether node 83 unvisited child 69 is still unvisited after parent traversal
+unvisited child 69 not still unvisited
+check whether node 83 unvisited child 90 is still unvisited after parent traversal
+unvisited child 90 not still unvisited
+check whether node 83 unvisited child 101 is still unvisited after parent traversal
+unvisited child 101 was not visited during parent traversal
+check whether node 83 unvisited child 88 is still unvisited after parent traversal
+unvisited child 88 was not visited during parent traversal
+check whether node 83 unvisited child 79 is still unvisited after parent traversal
+unvisited child 79 not still unvisited
+check whether node 83 unvisited child 65 is still unvisited after parent traversal
+unvisited child 65 was not visited during parent traversal
+[Info]: possible loop detected, loop indicator: 69/90/79(Lchild_of_83)
+queue after add 83: 86 58 51 57 95 78 77 98 68 79 72 69 83 
+frontier after add 83: 86 58 51 57 95 78 77 98 68 79 72 69 83 
+dfs_parent add 83 to partition
+0 children remain unvisited
+node 21 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 21 to partition
+dfs_parent neighbor 55 already visited
+[Info]: Possible parent loop detected, start and end with 55, loop indicator: 55(Lprnt_of_89)
+dfs_parent neighbor 76 already visited
+[Info]: Possible parent loop detected, start and end with 76, loop indicator: 76(Lprnt_of_89)
+check unvisited child 51
+0 children remain unvisited
+check whether node 89 unvisited child 51 is still unvisited after parent traversal
+unvisited child 51 not still unvisited
+[Info]: possible loop detected, loop indicator: 51(Lchild_of_89)
+node 89 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 89 to partition
+check unvisited child 83
+check unvisited child 78
+0 children remain unvisited
+check whether node 73 unvisited child 83 is still unvisited after parent traversal
+unvisited child 83 not still unvisited
+check whether node 73 unvisited child 78 is still unvisited after parent traversal
+unvisited child 78 not still unvisited
+[Info]: possible loop detected, loop indicator: 83/78(Lchild_of_73)
+node 73 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 73 to partition
+dfs_parent neighbor 85 already visited
+[Info]: Possible parent loop detected, start and end with 85, loop indicator: 85(Lprnt_of_48)
+check unvisited child 93
+unvisited child 93 not visited during parent traversal
+check unvisited child 99
+check unvisited child 87
+unvisited child 87 not visited during parent traversal
+2 children remain unvisited
+check whether node 48 unvisited child 93 is still unvisited after parent traversal
+unvisited child 93 was not visited during parent traversal
+check whether node 48 unvisited child 99 is still unvisited after parent traversal
+unvisited child 99 not still unvisited
+check whether node 48 unvisited child 87 is still unvisited after parent traversal
+unvisited child 87 was not visited during parent traversal
+[Info]: possible loop detected, loop indicator: 99(Lchild_of_48)
+queue after add 48: 86 58 51 57 95 78 77 98 68 79 72 69 83 48 
+frontier after add 48: 86 58 51 57 95 78 77 98 68 79 72 69 83 48 
+dfs_parent add 48 to partition
+dfs_parent neighbor 49 already visited
+[Info]: Possible parent loop detected, start and end with 49, loop indicator: 49(Lprnt_of_82)
+dfs_parent neighbor 86 already visited
+check unvisited child 86
+0 children remain unvisited
+check whether node 82 unvisited child 86 is still unvisited after parent traversal
+unvisited child 86 not still unvisited
+[Info]: possible loop detected, loop indicator: 86(Lchild_of_82)
+node 82 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 82 to partition
+dfs_parent neighbor 95 already visited
+dfs_parent visit node 96
+dfs_parent from node 96
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 65 not in visited
+dfs_parent_pre 96 has unvisted children so mark 96 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[65]
+after pre: list_of_unvisited_children: [65]
+dfs_parent node 96 visit parents
+dfs_parent neighbor 2 already visited
+[Info]: Possible parent loop detected, start and end with 2, loop indicator: 2(Lprnt_of_96)
+dfs_parent neighbor 68 already visited
+check unvisited child 65
+unvisited child 65 not visited during parent traversal
+1 children remain unvisited
+check whether node 96 unvisited child 65 is still unvisited after parent traversal
+unvisited child 65 was not visited during parent traversal
+queue after add 96: 86 58 51 57 95 78 77 98 68 79 72 69 83 48 96 
+frontier after add 96: 86 58 51 57 95 78 77 98 68 79 72 69 83 48 96 
+dfs_parent add 96 to partition
+check unvisited child 65
+unvisited child 65 not visited during parent traversal
+1 children remain unvisited
+check whether node 43 unvisited child 65 is still unvisited after parent traversal
+unvisited child 65 was not visited during parent traversal
+queue after add 43: 86 58 51 57 95 78 77 98 68 79 72 69 83 48 96 43 
+frontier after add 43: 86 58 51 57 95 78 77 98 68 79 72 69 83 48 96 43 
+dfs_parent add 43 to partition
+dfs_parent neighbor 69 already visited
+check unvisited child 86
+check unvisited child 93
+unvisited child 93 not visited during parent traversal
+check unvisited child 75
+check unvisited child 74
+check unvisited child 88
+unvisited child 88 not visited during parent traversal
+2 children remain unvisited
+check whether node 54 unvisited child 86 is still unvisited after parent traversal
+unvisited child 86 not still unvisited
+check whether node 54 unvisited child 93 is still unvisited after parent traversal
+unvisited child 93 was not visited during parent traversal
+check whether node 54 unvisited child 75 is still unvisited after parent traversal
+unvisited child 75 not still unvisited
+check whether node 54 unvisited child 74 is still unvisited after parent traversal
+unvisited child 74 not still unvisited
+check whether node 54 unvisited child 88 is still unvisited after parent traversal
+unvisited child 88 was not visited during parent traversal
+[Info]: possible loop detected, loop indicator: 86/75/74(Lchild_of_54)
+queue after add 54: 86 58 51 57 95 78 77 98 68 79 72 69 83 48 96 43 54 
+frontier after add 54: 86 58 51 57 95 78 77 98 68 79 72 69 83 48 96 43 54 
+dfs_parent add 54 to partition
+dfs_parent neighbor 63 already visited
+[Info]: Possible parent loop detected, start and end with 63, loop indicator: 63(Lprnt_of_45)
+dfs_parent neighbor 70 already visited
+dfs_parent neighbor 73 already visited
+dfs_parent neighbor 77 already visited
+dfs_parent neighbor 83 already visited
+0 children remain unvisited
+node 45 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 45 to partition
+dfs_parent neighbor 74 already visited
+check unvisited child 78
+0 children remain unvisited
+check whether node 84 unvisited child 78 is still unvisited after parent traversal
+unvisited child 78 not still unvisited
+[Info]: possible loop detected, loop indicator: 78(Lchild_of_84)
+node 84 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 84 to partition
+check unvisited child 69
+check unvisited child 65
+unvisited child 65 not visited during parent traversal
+1 children remain unvisited
+check whether node 44 unvisited child 69 is still unvisited after parent traversal
+unvisited child 69 not still unvisited
+check whether node 44 unvisited child 65 is still unvisited after parent traversal
+unvisited child 65 was not visited during parent traversal
+[Info]: possible loop detected, loop indicator: 69(Lchild_of_44)
+queue after add 44: 86 58 51 57 95 78 77 98 68 79 72 69 83 48 96 43 54 44 
+frontier after add 44: 86 58 51 57 95 78 77 98 68 79 72 69 83 48 96 43 54 44 
+dfs_parent add 44 to partition
+dfs_parent neighbor 58 already visited
+dfs_parent neighbor 68 already visited
+dfs_parent visit node 87
+dfs_parent from node 87
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre mark 87 as visited since it has no unvisited children but do not add it to bfs queue since no children need to be visited
+after pre: list_of_unvisited_children: []
+dfs_parent node 87 visit parents
+dfs_parent neighbor 7 already visited
+[Info]: Possible parent loop detected, start and end with 7, loop indicator: 7(Lprnt_of_87)
+dfs_parent neighbor 15 already visited
+[Info]: Possible parent loop detected, start and end with 15, loop indicator: 15(Lprnt_of_87)
+dfs_parent neighbor 23 already visited
+[Info]: Possible parent loop detected, start and end with 23, loop indicator: 23(Lprnt_of_87)
+dfs_parent neighbor 28 already visited
+[Info]: Possible parent loop detected, start and end with 28, loop indicator: 28(Lprnt_of_87)
+dfs_parent neighbor 29 already visited
+[Info]: Possible parent loop detected, start and end with 29, loop indicator: 29(Lprnt_of_87)
+dfs_parent neighbor 36 already visited
+[Info]: Possible parent loop detected, start and end with 36, loop indicator: 36(Lprnt_of_87)
+dfs_parent neighbor 48 already visited
+dfs_parent neighbor 78 already visited
+dfs_parent neighbor 80 already visited
+[Info]: Possible parent loop detected, start and end with 80, loop indicator: 80(Lprnt_of_87)
+dfs_parent visit node 93
+dfs_parent from node 93
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre mark 93 as visited since it has no unvisited children but do not add it to bfs queue since no children need to be visited
+after pre: list_of_unvisited_children: []
+dfs_parent node 93 visit parents
+dfs_parent neighbor 17 already visited
+[Info]: Possible parent loop detected, start and end with 17, loop indicator: 17(Lprnt_of_93)
+dfs_parent neighbor 48 already visited
+dfs_parent neighbor 51 already visited
+dfs_parent neighbor 54 already visited
+dfs_parent neighbor 67 already visited
+[Info]: Possible parent loop detected, start and end with 67, loop indicator: 67(Lprnt_of_93)
+0 children remain unvisited
+node 93 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 93 to partition
+0 children remain unvisited
+node 87 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 87 to partition
+dfs_parent neighbor 91 already visited
+dfs_parent neighbor 100 already visited
+check unvisited child 65
+unvisited child 65 not visited during parent traversal
+1 children remain unvisited
+check whether node 26 unvisited child 65 is still unvisited after parent traversal
+unvisited child 65 was not visited during parent traversal
+queue after add 26: 86 58 51 57 95 78 77 98 68 79 72 69 83 48 96 43 54 44 26 
+frontier after add 26: 86 58 51 57 95 78 77 98 68 79 72 69 83 48 96 43 54 44 26 
+dfs_parent add 26 to partition
+dfs_parent neighbor 53 already visited
+[Info]: Possible parent loop detected, start and end with 53, loop indicator: 53(Lprnt_of_64)
+dfs_parent neighbor 58 already visited
+dfs_parent neighbor 90 already visited
+check unvisited child 57
+check unvisited child 74
+check unvisited child 95
+0 children remain unvisited
+check whether node 64 unvisited child 57 is still unvisited after parent traversal
+unvisited child 57 not still unvisited
+check whether node 64 unvisited child 74 is still unvisited after parent traversal
+unvisited child 74 not still unvisited
+check whether node 64 unvisited child 95 is still unvisited after parent traversal
+unvisited child 95 not still unvisited
+[Info]: possible loop detected, loop indicator: 57/74/95(Lchild_of_64)
+node 64 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 64 to partition
+dfs_parent neighbor 76 already visited
+[Info]: Possible parent loop detected, start and end with 76, loop indicator: 76(Lprnt_of_80)
+check unvisited child 94
+check unvisited child 87
+0 children remain unvisited
+check whether node 80 unvisited child 94 is still unvisited after parent traversal
+unvisited child 94 not still unvisited
+check whether node 80 unvisited child 87 is still unvisited after parent traversal
+unvisited child 87 not still unvisited
+[Info]: possible loop detected, loop indicator: 94/87(Lchild_of_80)
+node 80 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 80 to partition
+dfs_parent neighbor 94 already visited
+check unvisited child 51
+check unvisited child 65
+unvisited child 65 not visited during parent traversal
+check unvisited child 44
+check unvisited child 57
+check unvisited child 86
+1 children remain unvisited
+check whether node 66 unvisited child 51 is still unvisited after parent traversal
+unvisited child 51 not still unvisited
+check whether node 66 unvisited child 65 is still unvisited after parent traversal
+unvisited child 65 was not visited during parent traversal
+check whether node 66 unvisited child 44 is still unvisited after parent traversal
+unvisited child 44 not still unvisited
+check whether node 66 unvisited child 57 is still unvisited after parent traversal
+unvisited child 57 not still unvisited
+check whether node 66 unvisited child 86 is still unvisited after parent traversal
+unvisited child 86 not still unvisited
+[Info]: possible loop detected, loop indicator: 51/44/57/86(Lchild_of_66)
+queue after add 66: 86 58 51 57 95 78 77 98 68 79 72 69 83 48 96 43 54 44 26 66 
+frontier after add 66: 86 58 51 57 95 78 77 98 68 79 72 69 83 48 96 43 54 44 26 66 
+dfs_parent add 66 to partition
+dfs_parent neighbor 75 already visited
+dfs_parent neighbor 85 already visited
+[Info]: Possible parent loop detected, start and end with 85, loop indicator: 85(Lprnt_of_61)
+dfs_parent neighbor 94 already visited
+0 children remain unvisited
+node 61 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 61 to partition
+dfs_parent neighbor 82 already visited
+dfs_parent visit node 88
+dfs_parent from node 88
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 101 not in visited
+dfs_parent_pre 88 has unvisted children so mark 88 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[101]
+after pre: list_of_unvisited_children: [101]
+dfs_parent node 88 visit parents
+dfs_parent neighbor 54 already visited
+dfs_parent neighbor 83 already visited
+check unvisited child 101
+unvisited child 101 not visited during parent traversal
+1 children remain unvisited
+check whether node 88 unvisited child 101 is still unvisited after parent traversal
+unvisited child 101 was not visited during parent traversal
+queue after add 88: 86 58 51 57 95 78 77 98 68 79 72 69 83 48 96 43 54 44 26 66 88 
+frontier after add 88: 86 58 51 57 95 78 77 98 68 79 72 69 83 48 96 43 54 44 26 66 88 
+dfs_parent add 88 to partition
+check unvisited child 61
+check unvisited child 48
+check unvisited child 72
+check unvisited child 56
+check unvisited child 95
+0 children remain unvisited
+check whether node 85 unvisited child 61 is still unvisited after parent traversal
+unvisited child 61 not still unvisited
+check whether node 85 unvisited child 48 is still unvisited after parent traversal
+unvisited child 48 not still unvisited
+check whether node 85 unvisited child 72 is still unvisited after parent traversal
+unvisited child 72 not still unvisited
+check whether node 85 unvisited child 56 is still unvisited after parent traversal
+unvisited child 56 not still unvisited
+check whether node 85 unvisited child 95 is still unvisited after parent traversal
+unvisited child 95 not still unvisited
+[Info]: possible loop detected, loop indicator: 61/48/72/56/95(Lchild_of_85)
+node 85 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 85 to partition
+dfs_parent neighbor 95 already visited
+dfs_parent neighbor 99 already visited
+dfs_parent neighbor 100 already visited
+check unvisited child 45
+check unvisited child 56
+check unvisited child 77
+0 children remain unvisited
+check whether node 46 unvisited child 45 is still unvisited after parent traversal
+unvisited child 45 not still unvisited
+check whether node 46 unvisited child 56 is still unvisited after parent traversal
+unvisited child 56 not still unvisited
+check whether node 46 unvisited child 77 is still unvisited after parent traversal
+unvisited child 77 not still unvisited
+[Info]: possible loop detected, loop indicator: 45/56/77(Lchild_of_46)
+node 46 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 46 to partition
+dfs_parent neighbor 87 already visited
+dfs_parent neighbor 91 already visited
+dfs_parent neighbor 97 already visited
+check unvisited child 57
+0 children remain unvisited
+check whether node 92 unvisited child 57 is still unvisited after parent traversal
+unvisited child 57 not still unvisited
+[Info]: possible loop detected, loop indicator: 57(Lchild_of_92)
+node 92 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 92 to partition
+check unvisited child 56
+0 children remain unvisited
+check whether node 33 unvisited child 56 is still unvisited after parent traversal
+unvisited child 56 not still unvisited
+[Info]: possible loop detected, loop indicator: 56(Lchild_of_33)
+node 33 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 33 to partition
+dfs_parent neighbor 49 already visited
+[Info]: Possible parent loop detected, start and end with 49, loop indicator: 49(Lprnt_of_35)
+dfs_parent visit node 65
+dfs_parent from node 65
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre mark 65 as visited since it has no unvisited children but do not add it to bfs queue since no children need to be visited
+after pre: list_of_unvisited_children: []
+dfs_parent node 65 visit parents
+dfs_parent neighbor 5 already visited
+[Info]: Possible parent loop detected, start and end with 5, loop indicator: 5(Lprnt_of_65)
+dfs_parent neighbor 15 already visited
+[Info]: Possible parent loop detected, start and end with 15, loop indicator: 15(Lprnt_of_65)
+dfs_parent neighbor 26 already visited
+dfs_parent neighbor 28 already visited
+[Info]: Possible parent loop detected, start and end with 28, loop indicator: 28(Lprnt_of_65)
+dfs_parent neighbor 43 already visited
+dfs_parent neighbor 44 already visited
+dfs_parent neighbor 66 already visited
+dfs_parent neighbor 69 already visited
+dfs_parent neighbor 83 already visited
+dfs_parent neighbor 96 already visited
+dfs_parent neighbor 98 already visited
+0 children remain unvisited
+node 65 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 65 to partition
+dfs_parent neighbor 93 already visited
+check unvisited child 84
+check unvisited child 46
+0 children remain unvisited
+check whether node 35 unvisited child 84 is still unvisited after parent traversal
+unvisited child 84 not still unvisited
+check whether node 35 unvisited child 46 is still unvisited after parent traversal
+unvisited child 46 not still unvisited
+[Info]: possible loop detected, loop indicator: 84/46(Lchild_of_35)
+node 35 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 35 to partition
+dfs_parent neighbor 79 already visited
+dfs_parent neighbor 85 already visited
+check unvisited child 56
+check unvisited child 87
+0 children remain unvisited
+check whether node 36 unvisited child 56 is still unvisited after parent traversal
+unvisited child 56 not still unvisited
+check whether node 36 unvisited child 87 is still unvisited after parent traversal
+unvisited child 87 not still unvisited
+[Info]: possible loop detected, loop indicator: 56/87(Lchild_of_36)
+node 36 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 36 to partition
+dfs_parent neighbor 42 already visited
+[Info]: Possible parent loop detected, start and end with 42, loop indicator: 42(Lprnt_of_76)
+dfs_parent neighbor 50 already visited
+[Info]: Possible parent loop detected, start and end with 50, loop indicator: 50(Lprnt_of_76)
+dfs_parent neighbor 68 already visited
+dfs_parent neighbor 75 already visited
+dfs_parent neighbor 77 already visited
+dfs_parent neighbor 81 already visited
+[Info]: Possible parent loop detected, start and end with 81, loop indicator: 81(Lprnt_of_76)
+check unvisited child 80
+check unvisited child 89
+0 children remain unvisited
+check whether node 76 unvisited child 80 is still unvisited after parent traversal
+unvisited child 80 not still unvisited
+check whether node 76 unvisited child 89 is still unvisited after parent traversal
+unvisited child 89 not still unvisited
+[Info]: possible loop detected, loop indicator: 80/89(Lchild_of_76)
+node 76 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 76 to partition
+dfs_parent neighbor 84 already visited
+dfs_parent neighbor 90 already visited
+check unvisited child 83
+0 children remain unvisited
+check whether node 18 unvisited child 83 is still unvisited after parent traversal
+unvisited child 83 not still unvisited
+[Info]: possible loop detected, loop indicator: 83(Lchild_of_18)
+node 18 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 18 to partition
+dfs_parent neighbor 39 already visited
+[Info]: Possible parent loop detected, start and end with 39, loop indicator: 39(Lprnt_of_63)
+dfs_parent neighbor 53 already visited
+[Info]: Possible parent loop detected, start and end with 53, loop indicator: 53(Lprnt_of_63)
+dfs_parent neighbor 58 already visited
+dfs_parent neighbor 66 already visited
+dfs_parent neighbor 93 already visited
+check unvisited child 33
+check unvisited child 45
+check unvisited child 98
+0 children remain unvisited
+check whether node 63 unvisited child 33 is still unvisited after parent traversal
+unvisited child 33 not still unvisited
+check whether node 63 unvisited child 45 is still unvisited after parent traversal
+unvisited child 45 not still unvisited
+check whether node 63 unvisited child 98 is still unvisited after parent traversal
+unvisited child 98 not still unvisited
+[Info]: possible loop detected, loop indicator: 33/45/98(Lchild_of_63)
+node 63 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 63 to partition
+dfs_parent neighbor 68 already visited
+dfs_parent neighbor 76 already visited
+dfs_parent neighbor 91 already visited
+check unvisited child 73
+0 children remain unvisited
+check whether node 16 unvisited child 73 is still unvisited after parent traversal
+unvisited child 73 not still unvisited
+[Info]: possible loop detected, loop indicator: 73(Lchild_of_16)
+node 16 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 16 to partition
+dfs_parent neighbor 21 already visited
+dfs_parent neighbor 60 already visited
+[Info]: Possible parent loop detected, start and end with 60, loop indicator: 60(Lprnt_of_37)
+dfs_parent neighbor 74 already visited
+dfs_parent neighbor 86 already visited
+check unvisited child 86
+check unvisited child 66
+check unvisited child 48
+0 children remain unvisited
+check whether node 37 unvisited child 86 is still unvisited after parent traversal
+unvisited child 86 not still unvisited
+check whether node 37 unvisited child 66 is still unvisited after parent traversal
+unvisited child 66 not still unvisited
+check whether node 37 unvisited child 48 is still unvisited after parent traversal
+unvisited child 48 not still unvisited
+[Info]: possible loop detected, loop indicator: 86/66/48(Lchild_of_37)
+node 37 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 37 to partition
+dfs_parent neighbor 70 already visited
+dfs_parent neighbor 74 already visited
+dfs_parent neighbor 79 already visited
+dfs_parent neighbor 82 already visited
+check unvisited child 74
+check unvisited child 91
+check unvisited child 56
+0 children remain unvisited
+check whether node 62 unvisited child 74 is still unvisited after parent traversal
+unvisited child 74 not still unvisited
+check whether node 62 unvisited child 91 is still unvisited after parent traversal
+unvisited child 91 not still unvisited
+check whether node 62 unvisited child 56 is still unvisited after parent traversal
+unvisited child 56 not still unvisited
+[Info]: possible loop detected, loop indicator: 74/91/56(Lchild_of_62)
+node 62 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 62 to partition
+check unvisited child 101
+unvisited child 101 not visited during parent traversal
+check unvisited child 43
+check unvisited child 48
+check unvisited child 58
+check unvisited child 68
+check unvisited child 99
+check unvisited child 16
+check unvisited child 90
+1 children remain unvisited
+check whether node 59 unvisited child 101 is still unvisited after parent traversal
+unvisited child 101 was not visited during parent traversal
+check whether node 59 unvisited child 43 is still unvisited after parent traversal
+unvisited child 43 not still unvisited
+check whether node 59 unvisited child 48 is still unvisited after parent traversal
+unvisited child 48 not still unvisited
+check whether node 59 unvisited child 58 is still unvisited after parent traversal
+unvisited child 58 not still unvisited
+check whether node 59 unvisited child 68 is still unvisited after parent traversal
+unvisited child 68 not still unvisited
+check whether node 59 unvisited child 99 is still unvisited after parent traversal
+unvisited child 99 not still unvisited
+check whether node 59 unvisited child 16 is still unvisited after parent traversal
+unvisited child 16 not still unvisited
+check whether node 59 unvisited child 90 is still unvisited after parent traversal
+unvisited child 90 not still unvisited
+[Info]: possible loop detected, loop indicator: 43/48/58/68/99/16/90(Lchild_of_59)
+queue after add 59: 86 58 51 57 95 78 77 98 68 79 72 69 83 48 96 43 54 44 26 66 88 59 
+frontier after add 59: 86 58 51 57 95 78 77 98 68 79 72 69 83 48 96 43 54 44 26 66 88 59 
+dfs_parent add 59 to partition
+dfs_parent neighbor 61 already visited
+dfs_parent neighbor 77 already visited
+dfs_parent neighbor 96 already visited
+check unvisited child 57
+check unvisited child 43
+0 children remain unvisited
+check whether node 71 unvisited child 57 is still unvisited after parent traversal
+unvisited child 57 not still unvisited
+check whether node 71 unvisited child 43 is still unvisited after parent traversal
+unvisited child 43 not still unvisited
+[Info]: possible loop detected, loop indicator: 57/43(Lchild_of_71)
+node 71 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 71 to partition
+dfs_parent neighbor 94 already visited
+dfs_parent neighbor 97 already visited
+check unvisited child 46
+check unvisited child 97
+check unvisited child 80
+check unvisited child 21
+check unvisited child 85
+check unvisited child 22
+0 children remain unvisited
+check whether node 40 unvisited child 46 is still unvisited after parent traversal
+unvisited child 46 not still unvisited
+check whether node 40 unvisited child 97 is still unvisited after parent traversal
+unvisited child 97 not still unvisited
+check whether node 40 unvisited child 80 is still unvisited after parent traversal
+unvisited child 80 not still unvisited
+check whether node 40 unvisited child 21 is still unvisited after parent traversal
+unvisited child 21 not still unvisited
+check whether node 40 unvisited child 85 is still unvisited after parent traversal
+unvisited child 85 not still unvisited
+check whether node 40 unvisited child 22 is still unvisited after parent traversal
+unvisited child 22 not still unvisited
+[Info]: possible loop detected, loop indicator: 46/97/80/21/85/22(Lchild_of_40)
+node 40 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 40 to partition
+dfs_parent neighbor 66 already visited
+check unvisited child 78
+check unvisited child 40
+check unvisited child 82
+check unvisited child 46
+0 children remain unvisited
+check whether node 47 unvisited child 78 is still unvisited after parent traversal
+unvisited child 78 not still unvisited
+check whether node 47 unvisited child 40 is still unvisited after parent traversal
+unvisited child 40 not still unvisited
+check whether node 47 unvisited child 82 is still unvisited after parent traversal
+unvisited child 82 not still unvisited
+check whether node 47 unvisited child 46 is still unvisited after parent traversal
+unvisited child 46 not still unvisited
+[Info]: possible loop detected, loop indicator: 78/40/82/46(Lchild_of_47)
+node 47 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 47 to partition
+dfs_parent neighbor 73 already visited
+dfs_parent neighbor 82 already visited
+check unvisited child 22
+check unvisited child 66
+check unvisited child 76
+0 children remain unvisited
+check whether node 50 unvisited child 22 is still unvisited after parent traversal
+unvisited child 22 not still unvisited
+check whether node 50 unvisited child 66 is still unvisited after parent traversal
+unvisited child 66 not still unvisited
+check whether node 50 unvisited child 76 is still unvisited after parent traversal
+unvisited child 76 not still unvisited
+[Info]: possible loop detected, loop indicator: 22/66/76(Lchild_of_50)
+node 50 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 50 to partition
+dfs_parent neighbor 52 already visited
+[Info]: Possible parent loop detected, start and end with 52, loop indicator: 52(Lprnt_of_31)
+dfs_parent neighbor 78 already visited
+dfs_parent neighbor 86 already visited
+dfs_parent neighbor 87 already visited
+check unvisited child 91
+check unvisited child 33
+check unvisited child 26
+check unvisited child 71
+check unvisited child 97
+check unvisited child 61
+check unvisited child 66
+0 children remain unvisited
+check whether node 31 unvisited child 91 is still unvisited after parent traversal
+unvisited child 91 not still unvisited
+check whether node 31 unvisited child 33 is still unvisited after parent traversal
+unvisited child 33 not still unvisited
+check whether node 31 unvisited child 26 is still unvisited after parent traversal
+unvisited child 26 not still unvisited
+check whether node 31 unvisited child 71 is still unvisited after parent traversal
+unvisited child 71 not still unvisited
+check whether node 31 unvisited child 97 is still unvisited after parent traversal
+unvisited child 97 not still unvisited
+check whether node 31 unvisited child 61 is still unvisited after parent traversal
+unvisited child 61 not still unvisited
+check whether node 31 unvisited child 66 is still unvisited after parent traversal
+unvisited child 66 not still unvisited
+[Info]: possible loop detected, loop indicator: 91/33/26/71/97/61/66(Lchild_of_31)
+node 31 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 31 to partition
+dfs_parent neighbor 65 already visited
+dfs_parent neighbor 82 already visited
+dfs_parent neighbor 86 already visited
+dfs_parent neighbor 90 already visited
+dfs_parent neighbor 98 already visited
+check unvisited child 101
+unvisited child 101 not visited during parent traversal
+check unvisited child 85
+1 children remain unvisited
+check whether node 10 unvisited child 101 is still unvisited after parent traversal
+unvisited child 101 was not visited during parent traversal
+check whether node 10 unvisited child 85 is still unvisited after parent traversal
+unvisited child 85 not still unvisited
+[Info]: possible loop detected, loop indicator: 85(Lchild_of_10)
+queue after add 10: 86 58 51 57 95 78 77 98 68 79 72 69 83 48 96 43 54 44 26 66 88 59 10 
+frontier after add 10: 86 58 51 57 95 78 77 98 68 79 72 69 83 48 96 43 54 44 26 66 88 59 10 
+dfs_parent add 10 to partition
+dfs_parent neighbor 15 already visited
+[Info]: Possible parent loop detected, start and end with 15, loop indicator: 15(Lprnt_of_34)
+dfs_parent neighbor 37 already visited
+dfs_parent neighbor 47 already visited
+dfs_parent neighbor 53 already visited
+[Info]: Possible parent loop detected, start and end with 53, loop indicator: 53(Lprnt_of_34)
+dfs_parent neighbor 57 already visited
+dfs_parent neighbor 58 already visited
+dfs_parent neighbor 71 already visited
+dfs_parent neighbor 77 already visited
+dfs_parent neighbor 96 already visited
+dfs_parent neighbor 98 already visited
+check unvisited child 99
+0 children remain unvisited
+check whether node 34 unvisited child 99 is still unvisited after parent traversal
+unvisited child 99 not still unvisited
+[Info]: possible loop detected, loop indicator: 99(Lchild_of_34)
+node 34 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 34 to partition
+dfs_parent neighbor 47 already visited
+dfs_parent neighbor 54 already visited
+dfs_parent neighbor 66 already visited
+dfs_parent neighbor 74 already visited
+check unvisited child 93
+check unvisited child 68
+check unvisited child 22
+check unvisited child 86
+0 children remain unvisited
+check whether node 17 unvisited child 93 is still unvisited after parent traversal
+unvisited child 93 not still unvisited
+check whether node 17 unvisited child 68 is still unvisited after parent traversal
+unvisited child 68 not still unvisited
+check whether node 17 unvisited child 22 is still unvisited after parent traversal
+unvisited child 22 not still unvisited
+check whether node 17 unvisited child 86 is still unvisited after parent traversal
+unvisited child 86 not still unvisited
+[Info]: possible loop detected, loop indicator: 93/68/22/86(Lchild_of_17)
+node 17 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 17 to partition
+dfs_parent neighbor 19 already visited
+[Info]: Possible parent loop detected, start and end with 19, loop indicator: 19(Lprnt_of_28)
+dfs_parent neighbor 39 already visited
+[Info]: Possible parent loop detected, start and end with 39, loop indicator: 39(Lprnt_of_28)
+dfs_parent neighbor 43 already visited
+dfs_parent neighbor 53 already visited
+[Info]: Possible parent loop detected, start and end with 53, loop indicator: 53(Lprnt_of_28)
+dfs_parent neighbor 83 already visited
+dfs_parent neighbor 84 already visited
+dfs_parent neighbor 100 already visited
+check unvisited child 87
+check unvisited child 33
+check unvisited child 71
+check unvisited child 65
+0 children remain unvisited
+check whether node 28 unvisited child 87 is still unvisited after parent traversal
+unvisited child 87 not still unvisited
+check whether node 28 unvisited child 33 is still unvisited after parent traversal
+unvisited child 33 not still unvisited
+check whether node 28 unvisited child 71 is still unvisited after parent traversal
+unvisited child 71 not still unvisited
+check whether node 28 unvisited child 65 is still unvisited after parent traversal
+unvisited child 65 not still unvisited
+[Info]: possible loop detected, loop indicator: 87/33/71/65(Lchild_of_28)
+node 28 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 28 to partition
+dfs_parent neighbor 61 already visited
+dfs_parent neighbor 63 already visited
+dfs_parent neighbor 95 already visited
+check unvisited child 34
+check unvisited child 64
+check unvisited child 28
+check unvisited child 72
+check unvisited child 18
+check unvisited child 33
+check unvisited child 63
+0 children remain unvisited
+check whether node 53 unvisited child 34 is still unvisited after parent traversal
+unvisited child 34 not still unvisited
+check whether node 53 unvisited child 64 is still unvisited after parent traversal
+unvisited child 64 not still unvisited
+check whether node 53 unvisited child 28 is still unvisited after parent traversal
+unvisited child 28 not still unvisited
+check whether node 53 unvisited child 72 is still unvisited after parent traversal
+unvisited child 72 not still unvisited
+check whether node 53 unvisited child 18 is still unvisited after parent traversal
+unvisited child 18 not still unvisited
+check whether node 53 unvisited child 33 is still unvisited after parent traversal
+unvisited child 33 not still unvisited
+check whether node 53 unvisited child 63 is still unvisited after parent traversal
+unvisited child 63 not still unvisited
+[Info]: possible loop detected, loop indicator: 34/64/28/72/18/33/63(Lchild_of_53)
+node 53 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 53 to partition
+dfs_parent neighbor 76 already visited
+dfs_parent neighbor 85 already visited
+dfs_parent neighbor 91 already visited
+dfs_parent neighbor 92 already visited
+check unvisited child 72
+check unvisited child 22
+check unvisited child 83
+check unvisited child 45
+0 children remain unvisited
+check whether node 20 unvisited child 72 is still unvisited after parent traversal
+unvisited child 72 not still unvisited
+check whether node 20 unvisited child 22 is still unvisited after parent traversal
+unvisited child 22 not still unvisited
+check whether node 20 unvisited child 83 is still unvisited after parent traversal
+unvisited child 83 not still unvisited
+check whether node 20 unvisited child 45 is still unvisited after parent traversal
+unvisited child 45 not still unvisited
+[Info]: possible loop detected, loop indicator: 72/22/83/45(Lchild_of_20)
+node 20 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 20 to partition
+dfs_parent neighbor 36 already visited
+dfs_parent neighbor 85 already visited
+dfs_parent neighbor 95 already visited
+dfs_parent neighbor 96 already visited
+dfs_parent neighbor 100 already visited
+check unvisited child 78
+check unvisited child 72
+check unvisited child 64
+check unvisited child 58
+check unvisited child 90
+check unvisited child 22
+0 children remain unvisited
+check whether node 11 unvisited child 78 is still unvisited after parent traversal
+unvisited child 78 not still unvisited
+check whether node 11 unvisited child 72 is still unvisited after parent traversal
+unvisited child 72 not still unvisited
+check whether node 11 unvisited child 64 is still unvisited after parent traversal
+unvisited child 64 not still unvisited
+check whether node 11 unvisited child 58 is still unvisited after parent traversal
+unvisited child 58 not still unvisited
+check whether node 11 unvisited child 90 is still unvisited after parent traversal
+unvisited child 90 not still unvisited
+check whether node 11 unvisited child 22 is still unvisited after parent traversal
+unvisited child 22 not still unvisited
+[Info]: possible loop detected, loop indicator: 78/72/64/58/90/22(Lchild_of_11)
+node 11 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 11 to partition
+dfs_parent neighbor 16 already visited
+dfs_parent neighbor 29 already visited
+[Info]: Possible parent loop detected, start and end with 29, loop indicator: 29(Lprnt_of_9)
+dfs_parent neighbor 61 already visited
+dfs_parent neighbor 87 already visited
+check unvisited child 94
+check unvisited child 45
+check unvisited child 11
+check unvisited child 78
+check unvisited child 37
+0 children remain unvisited
+check whether node 9 unvisited child 94 is still unvisited after parent traversal
+unvisited child 94 not still unvisited
+check whether node 9 unvisited child 45 is still unvisited after parent traversal
+unvisited child 45 not still unvisited
+check whether node 9 unvisited child 11 is still unvisited after parent traversal
+unvisited child 11 not still unvisited
+check whether node 9 unvisited child 78 is still unvisited after parent traversal
+unvisited child 78 not still unvisited
+check whether node 9 unvisited child 37 is still unvisited after parent traversal
+unvisited child 37 not still unvisited
+[Info]: possible loop detected, loop indicator: 94/45/11/78/37(Lchild_of_9)
+node 9 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 9 to partition
+dfs_parent neighbor 16 already visited
+dfs_parent neighbor 19 already visited
+[Info]: Possible parent loop detected, start and end with 19, loop indicator: 19(Lprnt_of_52)
+dfs_parent neighbor 28 already visited
+dfs_parent neighbor 62 already visited
+dfs_parent neighbor 64 already visited
+dfs_parent neighbor 71 already visited
+check unvisited child 86
+check unvisited child 31
+check unvisited child 16
+0 children remain unvisited
+check whether node 52 unvisited child 86 is still unvisited after parent traversal
+unvisited child 86 not still unvisited
+check whether node 52 unvisited child 31 is still unvisited after parent traversal
+unvisited child 31 not still unvisited
+check whether node 52 unvisited child 16 is still unvisited after parent traversal
+unvisited child 16 not still unvisited
+[Info]: possible loop detected, loop indicator: 86/31/16(Lchild_of_52)
+node 52 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 52 to partition
+dfs_parent neighbor 65 already visited
+dfs_parent neighbor 77 already visited
+check unvisited child 82
+check unvisited child 94
+check unvisited child 33
+check unvisited child 76
+check unvisited child 70
+0 children remain unvisited
+check whether node 42 unvisited child 82 is still unvisited after parent traversal
+unvisited child 82 not still unvisited
+check whether node 42 unvisited child 94 is still unvisited after parent traversal
+unvisited child 94 not still unvisited
+check whether node 42 unvisited child 33 is still unvisited after parent traversal
+unvisited child 33 not still unvisited
+check whether node 42 unvisited child 76 is still unvisited after parent traversal
+unvisited child 76 not still unvisited
+check whether node 42 unvisited child 70 is still unvisited after parent traversal
+unvisited child 70 not still unvisited
+[Info]: possible loop detected, loop indicator: 82/94/33/76/70(Lchild_of_42)
+node 42 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 42 to partition
+dfs_parent neighbor 70 already visited
+dfs_parent neighbor 71 already visited
+dfs_parent neighbor 79 already visited
+dfs_parent neighbor 91 already visited
+check unvisited child 76
+check unvisited child 90
+0 children remain unvisited
+check whether node 81 unvisited child 76 is still unvisited after parent traversal
+unvisited child 76 not still unvisited
+check whether node 81 unvisited child 90 is still unvisited after parent traversal
+unvisited child 90 not still unvisited
+[Info]: possible loop detected, loop indicator: 76/90(Lchild_of_81)
+node 81 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 81 to partition
+dfs_parent neighbor 84 already visited
+check unvisited child 37
+0 children remain unvisited
+check whether node 13 unvisited child 37 is still unvisited after parent traversal
+unvisited child 37 not still unvisited
+[Info]: possible loop detected, loop indicator: 37(Lchild_of_13)
+node 13 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 13 to partition
+dfs_parent neighbor 40 already visited
+dfs_parent neighbor 66 already visited
+dfs_parent neighbor 81 already visited
+check unvisited child 82
+check unvisited child 79
+check unvisited child 35
+0 children remain unvisited
+check whether node 49 unvisited child 82 is still unvisited after parent traversal
+unvisited child 82 not still unvisited
+check whether node 49 unvisited child 79 is still unvisited after parent traversal
+unvisited child 79 not still unvisited
+check whether node 49 unvisited child 35 is still unvisited after parent traversal
+unvisited child 35 not still unvisited
+[Info]: possible loop detected, loop indicator: 82/79/35(Lchild_of_49)
+node 49 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 49 to partition
+dfs_parent neighbor 70 already visited
+check unvisited child 72
+check unvisited child 68
+check unvisited child 44
+check unvisited child 42
+check unvisited child 87
+check unvisited child 17
+check unvisited child 9
+check unvisited child 18
+0 children remain unvisited
+check whether node 29 unvisited child 72 is still unvisited after parent traversal
+unvisited child 72 not still unvisited
+check whether node 29 unvisited child 68 is still unvisited after parent traversal
+unvisited child 68 not still unvisited
+check whether node 29 unvisited child 44 is still unvisited after parent traversal
+unvisited child 44 not still unvisited
+check whether node 29 unvisited child 42 is still unvisited after parent traversal
+unvisited child 42 not still unvisited
+check whether node 29 unvisited child 87 is still unvisited after parent traversal
+unvisited child 87 not still unvisited
+check whether node 29 unvisited child 17 is still unvisited after parent traversal
+unvisited child 17 not still unvisited
+check whether node 29 unvisited child 9 is still unvisited after parent traversal
+unvisited child 9 not still unvisited
+check whether node 29 unvisited child 18 is still unvisited after parent traversal
+unvisited child 18 not still unvisited
+[Info]: possible loop detected, loop indicator: 72/68/44/42/87/17/9/18(Lchild_of_29)
+node 29 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 29 to partition
+dfs_parent neighbor 74 already visited
+dfs_parent neighbor 84 already visited
+dfs_parent neighbor 86 already visited
+check unvisited child 11
+check unvisited child 43
+check unvisited child 53
+check unvisited child 18
+check unvisited child 31
+0 children remain unvisited
+check whether node 14 unvisited child 11 is still unvisited after parent traversal
+unvisited child 11 not still unvisited
+check whether node 14 unvisited child 43 is still unvisited after parent traversal
+unvisited child 43 not still unvisited
+check whether node 14 unvisited child 53 is still unvisited after parent traversal
+unvisited child 53 not still unvisited
+check whether node 14 unvisited child 18 is still unvisited after parent traversal
+unvisited child 18 not still unvisited
+check whether node 14 unvisited child 31 is still unvisited after parent traversal
+unvisited child 31 not still unvisited
+[Info]: possible loop detected, loop indicator: 11/43/53/18/31(Lchild_of_14)
+node 14 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 14 to partition
+dfs_parent neighbor 16 already visited
+dfs_parent neighbor 58 already visited
+dfs_parent neighbor 72 already visited
+dfs_parent neighbor 78 already visited
+dfs_parent neighbor 95 already visited
+check unvisited child 98
+check unvisited child 11
+check unvisited child 44
+check unvisited child 10
+check unvisited child 40
+check unvisited child 28
+check unvisited child 52
+check unvisited child 62
+0 children remain unvisited
+check whether node 19 unvisited child 98 is still unvisited after parent traversal
+unvisited child 98 not still unvisited
+check whether node 19 unvisited child 11 is still unvisited after parent traversal
+unvisited child 11 not still unvisited
+check whether node 19 unvisited child 44 is still unvisited after parent traversal
+unvisited child 44 not still unvisited
+check whether node 19 unvisited child 10 is still unvisited after parent traversal
+unvisited child 10 not still unvisited
+check whether node 19 unvisited child 40 is still unvisited after parent traversal
+unvisited child 40 not still unvisited
+check whether node 19 unvisited child 28 is still unvisited after parent traversal
+unvisited child 28 not still unvisited
+check whether node 19 unvisited child 52 is still unvisited after parent traversal
+unvisited child 52 not still unvisited
+check whether node 19 unvisited child 62 is still unvisited after parent traversal
+unvisited child 62 not still unvisited
+[Info]: possible loop detected, loop indicator: 98/11/44/10/40/28/52/62(Lchild_of_19)
+node 19 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 19 to partition
+dfs_parent neighbor 41 already visited
+[Info]: Possible parent loop detected, start and end with 41, loop indicator: 41(Lprnt_of_60)
+check unvisited child 75
+check unvisited child 37
+check unvisited child 58
+0 children remain unvisited
+check whether node 60 unvisited child 75 is still unvisited after parent traversal
+unvisited child 75 not still unvisited
+check whether node 60 unvisited child 37 is still unvisited after parent traversal
+unvisited child 37 not still unvisited
+check whether node 60 unvisited child 58 is still unvisited after parent traversal
+unvisited child 58 not still unvisited
+[Info]: possible loop detected, loop indicator: 75/37/58(Lchild_of_60)
+node 60 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 60 to partition
+dfs_parent neighbor 71 already visited
+check unvisited child 40
+check unvisited child 21
+0 children remain unvisited
+check whether node 12 unvisited child 40 is still unvisited after parent traversal
+unvisited child 40 not still unvisited
+check whether node 12 unvisited child 21 is still unvisited after parent traversal
+unvisited child 21 not still unvisited
+[Info]: possible loop detected, loop indicator: 40/21(Lchild_of_12)
+node 12 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 12 to partition
+dfs_parent neighbor 34 already visited
+dfs_parent neighbor 40 already visited
+dfs_parent neighbor 43 already visited
+dfs_parent neighbor 49 already visited
+dfs_parent neighbor 54 already visited
+dfs_parent neighbor 79 already visited
+dfs_parent neighbor 80 already visited
+check unvisited child 93
+check unvisited child 101
+unvisited child 101 not visited during parent traversal
+1 children remain unvisited
+check whether node 67 unvisited child 93 is still unvisited after parent traversal
+unvisited child 93 not still unvisited
+check whether node 67 unvisited child 101 is still unvisited after parent traversal
+unvisited child 101 was not visited during parent traversal
+[Info]: possible loop detected, loop indicator: 93(Lchild_of_67)
+queue after add 67: 86 58 51 57 95 78 77 98 68 79 72 69 83 48 96 43 54 44 26 66 88 59 10 67 
+frontier after add 67: 86 58 51 57 95 78 77 98 68 79 72 69 83 48 96 43 54 44 26 66 88 59 10 67 
+dfs_parent add 67 to partition
+dfs_parent neighbor 68 already visited
+dfs_parent neighbor 71 already visited
+dfs_parent neighbor 88 already visited
+check unvisited child 71
+check unvisited child 29
+check unvisited child 17
+check unvisited child 44
+check unvisited child 48
+0 children remain unvisited
+check whether node 32 unvisited child 71 is still unvisited after parent traversal
+unvisited child 71 not still unvisited
+check whether node 32 unvisited child 29 is still unvisited after parent traversal
+unvisited child 29 not still unvisited
+check whether node 32 unvisited child 17 is still unvisited after parent traversal
+unvisited child 17 not still unvisited
+check whether node 32 unvisited child 44 is still unvisited after parent traversal
+unvisited child 44 not still unvisited
+check whether node 32 unvisited child 48 is still unvisited after parent traversal
+unvisited child 48 not still unvisited
+[Info]: possible loop detected, loop indicator: 71/29/17/44/48(Lchild_of_32)
+node 32 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 32 to partition
+dfs_parent neighbor 42 already visited
+dfs_parent neighbor 48 already visited
+dfs_parent neighbor 65 already visited
+dfs_parent neighbor 99 already visited
+check unvisited child 100
+check unvisited child 89
+check unvisited child 43
+check unvisited child 98
+0 children remain unvisited
+check whether node 55 unvisited child 100 is still unvisited after parent traversal
+unvisited child 100 not still unvisited
+check whether node 55 unvisited child 89 is still unvisited after parent traversal
+unvisited child 89 not still unvisited
+check whether node 55 unvisited child 43 is still unvisited after parent traversal
+unvisited child 43 not still unvisited
+check whether node 55 unvisited child 98 is still unvisited after parent traversal
+unvisited child 98 not still unvisited
+[Info]: possible loop detected, loop indicator: 100/89/43/98(Lchild_of_55)
+node 55 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 55 to partition
+dfs_parent neighbor 64 already visited
+dfs_parent neighbor 78 already visited
+dfs_parent neighbor 100 already visited
+check unvisited child 86
+0 children remain unvisited
+check whether node 25 unvisited child 86 is still unvisited after parent traversal
+unvisited child 86 not still unvisited
+[Info]: possible loop detected, loop indicator: 86(Lchild_of_25)
+node 25 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 25 to partition
+dfs_parent neighbor 60 already visited
+dfs_parent neighbor 93 already visited
+check unvisited child 36
+check unvisited child 79
+check unvisited child 100
+0 children remain unvisited
+check whether node 30 unvisited child 36 is still unvisited after parent traversal
+unvisited child 36 not still unvisited
+check whether node 30 unvisited child 79 is still unvisited after parent traversal
+unvisited child 79 not still unvisited
+check whether node 30 unvisited child 100 is still unvisited after parent traversal
+unvisited child 100 not still unvisited
+[Info]: possible loop detected, loop indicator: 36/79/100(Lchild_of_30)
+node 30 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 30 to partition
+dfs_parent neighbor 32 already visited
+dfs_parent neighbor 78 already visited
+dfs_parent neighbor 84 already visited
+dfs_parent neighbor 88 already visited
+check unvisited child 35
+check unvisited child 10
+check unvisited child 12
+0 children remain unvisited
+check whether node 6 unvisited child 35 is still unvisited after parent traversal
+unvisited child 35 not still unvisited
+check whether node 6 unvisited child 10 is still unvisited after parent traversal
+unvisited child 10 not still unvisited
+check whether node 6 unvisited child 12 is still unvisited after parent traversal
+unvisited child 12 not still unvisited
+[Info]: possible loop detected, loop indicator: 35/10/12(Lchild_of_6)
+node 6 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 6 to partition
+dfs_parent neighbor 14 already visited
+dfs_parent neighbor 16 already visited
+dfs_parent neighbor 17 already visited
+dfs_parent neighbor 60 already visited
+dfs_parent neighbor 65 already visited
+dfs_parent neighbor 91 already visited
+check unvisited child 98
+check unvisited child 10
+check unvisited child 56
+check unvisited child 13
+check unvisited child 96
+check unvisited child 62
+check unvisited child 66
+0 children remain unvisited
+check whether node 2 unvisited child 98 is still unvisited after parent traversal
+unvisited child 98 not still unvisited
+check whether node 2 unvisited child 10 is still unvisited after parent traversal
+unvisited child 10 not still unvisited
+check whether node 2 unvisited child 56 is still unvisited after parent traversal
+unvisited child 56 not still unvisited
+check whether node 2 unvisited child 13 is still unvisited after parent traversal
+unvisited child 13 not still unvisited
+check whether node 2 unvisited child 96 is still unvisited after parent traversal
+unvisited child 96 not still unvisited
+check whether node 2 unvisited child 62 is still unvisited after parent traversal
+unvisited child 62 not still unvisited
+check whether node 2 unvisited child 66 is still unvisited after parent traversal
+unvisited child 66 not still unvisited
+[Info]: possible loop detected, loop indicator: 98/10/56/13/96/62/66(Lchild_of_2)
+node 2 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 2 to partition
+dfs_parent neighbor 4 already visited
+[Info]: Possible parent loop detected, start and end with 4, loop indicator: 4(Lprnt_of_27)
+dfs_parent neighbor 20 already visited
+dfs_parent neighbor 64 already visited
+check unvisited child 50
+check unvisited child 12
+check unvisited child 77
+check unvisited child 26
+0 children remain unvisited
+check whether node 27 unvisited child 50 is still unvisited after parent traversal
+unvisited child 50 not still unvisited
+check whether node 27 unvisited child 12 is still unvisited after parent traversal
+unvisited child 12 not still unvisited
+check whether node 27 unvisited child 77 is still unvisited after parent traversal
+unvisited child 77 not still unvisited
+check whether node 27 unvisited child 26 is still unvisited after parent traversal
+unvisited child 26 not still unvisited
+[Info]: possible loop detected, loop indicator: 50/12/77/26(Lchild_of_27)
+node 27 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 27 to partition
+dfs_parent neighbor 36 already visited
+dfs_parent neighbor 62 already visited
+dfs_parent neighbor 69 already visited
+dfs_parent neighbor 70 already visited
+dfs_parent neighbor 86 already visited
+dfs_parent neighbor 100 already visited
+check unvisited child 69
+check unvisited child 60
+check unvisited child 83
+check unvisited child 100
+check unvisited child 92
+0 children remain unvisited
+check whether node 41 unvisited child 69 is still unvisited after parent traversal
+unvisited child 69 not still unvisited
+check whether node 41 unvisited child 60 is still unvisited after parent traversal
+unvisited child 60 not still unvisited
+check whether node 41 unvisited child 83 is still unvisited after parent traversal
+unvisited child 83 not still unvisited
+check whether node 41 unvisited child 100 is still unvisited after parent traversal
+unvisited child 100 not still unvisited
+check whether node 41 unvisited child 92 is still unvisited after parent traversal
+unvisited child 92 not still unvisited
+[Info]: possible loop detected, loop indicator: 69/60/83/100/92(Lchild_of_41)
+node 41 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 41 to partition
+dfs_parent neighbor 48 already visited
+dfs_parent neighbor 58 already visited
+dfs_parent neighbor 83 already visited
+dfs_parent neighbor 84 already visited
+check unvisited child 51
+check unvisited child 81
+check unvisited child 100
+check unvisited child 48
+check unvisited child 21
+0 children remain unvisited
+check whether node 24 unvisited child 51 is still unvisited after parent traversal
+unvisited child 51 not still unvisited
+check whether node 24 unvisited child 81 is still unvisited after parent traversal
+unvisited child 81 not still unvisited
+check whether node 24 unvisited child 100 is still unvisited after parent traversal
+unvisited child 100 not still unvisited
+check whether node 24 unvisited child 48 is still unvisited after parent traversal
+unvisited child 48 not still unvisited
+check whether node 24 unvisited child 21 is still unvisited after parent traversal
+unvisited child 21 not still unvisited
+[Info]: possible loop detected, loop indicator: 51/81/100/48/21(Lchild_of_24)
+node 24 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 24 to partition
+dfs_parent neighbor 41 already visited
+dfs_parent neighbor 64 already visited
+dfs_parent neighbor 90 already visited
+check unvisited child 85
+check unvisited child 46
+check unvisited child 87
+check unvisited child 95
+0 children remain unvisited
+check whether node 23 unvisited child 85 is still unvisited after parent traversal
+unvisited child 85 not still unvisited
+check whether node 23 unvisited child 46 is still unvisited after parent traversal
+unvisited child 46 not still unvisited
+check whether node 23 unvisited child 87 is still unvisited after parent traversal
+unvisited child 87 not still unvisited
+check whether node 23 unvisited child 95 is still unvisited after parent traversal
+unvisited child 95 not still unvisited
+[Info]: possible loop detected, loop indicator: 85/46/87/95(Lchild_of_23)
+node 23 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 23 to partition
+dfs_parent neighbor 57 already visited
+dfs_parent neighbor 63 already visited
+dfs_parent neighbor 98 already visited
+check unvisited child 60
+check unvisited child 12
+check unvisited child 49
+check unvisited child 52
+check unvisited child 51
+check unvisited child 14
+check unvisited child 65
+0 children remain unvisited
+check whether node 5 unvisited child 60 is still unvisited after parent traversal
+unvisited child 60 not still unvisited
+check whether node 5 unvisited child 12 is still unvisited after parent traversal
+unvisited child 12 not still unvisited
+check whether node 5 unvisited child 49 is still unvisited after parent traversal
+unvisited child 49 not still unvisited
+check whether node 5 unvisited child 52 is still unvisited after parent traversal
+unvisited child 52 not still unvisited
+check whether node 5 unvisited child 51 is still unvisited after parent traversal
+unvisited child 51 not still unvisited
+check whether node 5 unvisited child 14 is still unvisited after parent traversal
+unvisited child 14 not still unvisited
+check whether node 5 unvisited child 65 is still unvisited after parent traversal
+unvisited child 65 not still unvisited
+[Info]: possible loop detected, loop indicator: 60/12/49/52/51/14/65(Lchild_of_5)
+node 5 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 5 to partition
+dfs_parent neighbor 6 already visited
+dfs_parent neighbor 55 already visited
+dfs_parent neighbor 61 already visited
+dfs_parent neighbor 63 already visited
+dfs_parent neighbor 64 already visited
+dfs_parent neighbor 90 already visited
+check unvisited child 94
+check unvisited child 20
+check unvisited child 22
+check unvisited child 91
+check unvisited child 29
+check unvisited child 30
+check unvisited child 40
+check unvisited child 66
+check unvisited child 78
+0 children remain unvisited
+check whether node 8 unvisited child 94 is still unvisited after parent traversal
+unvisited child 94 not still unvisited
+check whether node 8 unvisited child 20 is still unvisited after parent traversal
+unvisited child 20 not still unvisited
+check whether node 8 unvisited child 22 is still unvisited after parent traversal
+unvisited child 22 not still unvisited
+check whether node 8 unvisited child 91 is still unvisited after parent traversal
+unvisited child 91 not still unvisited
+check whether node 8 unvisited child 29 is still unvisited after parent traversal
+unvisited child 29 not still unvisited
+check whether node 8 unvisited child 30 is still unvisited after parent traversal
+unvisited child 30 not still unvisited
+check whether node 8 unvisited child 40 is still unvisited after parent traversal
+unvisited child 40 not still unvisited
+check whether node 8 unvisited child 66 is still unvisited after parent traversal
+unvisited child 66 not still unvisited
+check whether node 8 unvisited child 78 is still unvisited after parent traversal
+unvisited child 78 not still unvisited
+[Info]: possible loop detected, loop indicator: 94/20/22/91/29/30/40/66/78(Lchild_of_8)
+node 8 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 8 to partition
+dfs_parent neighbor 51 already visited
+dfs_parent neighbor 62 already visited
+dfs_parent neighbor 73 already visited
+check unvisited child 68
+check unvisited child 71
+check unvisited child 94
+check unvisited child 75
+check unvisited child 81
+0 children remain unvisited
+check whether node 38 unvisited child 68 is still unvisited after parent traversal
+unvisited child 68 not still unvisited
+check whether node 38 unvisited child 71 is still unvisited after parent traversal
+unvisited child 71 not still unvisited
+check whether node 38 unvisited child 94 is still unvisited after parent traversal
+unvisited child 94 not still unvisited
+check whether node 38 unvisited child 75 is still unvisited after parent traversal
+unvisited child 75 not still unvisited
+check whether node 38 unvisited child 81 is still unvisited after parent traversal
+unvisited child 81 not still unvisited
+[Info]: possible loop detected, loop indicator: 68/71/94/75/81(Lchild_of_38)
+node 38 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 38 to partition
+dfs_parent neighbor 54 already visited
+dfs_parent neighbor 74 already visited
+dfs_parent neighbor 78 already visited
+dfs_parent neighbor 79 already visited
+check unvisited child 91
+check unvisited child 18
+check unvisited child 40
+check unvisited child 32
+check unvisited child 28
+check unvisited child 56
+check unvisited child 63
+check unvisited child 101
+unvisited child 101 not visited during parent traversal
+1 children remain unvisited
+check whether node 39 unvisited child 91 is still unvisited after parent traversal
+unvisited child 91 not still unvisited
+check whether node 39 unvisited child 18 is still unvisited after parent traversal
+unvisited child 18 not still unvisited
+check whether node 39 unvisited child 40 is still unvisited after parent traversal
+unvisited child 40 not still unvisited
+check whether node 39 unvisited child 32 is still unvisited after parent traversal
+unvisited child 32 not still unvisited
+check whether node 39 unvisited child 28 is still unvisited after parent traversal
+unvisited child 28 not still unvisited
+check whether node 39 unvisited child 56 is still unvisited after parent traversal
+unvisited child 56 not still unvisited
+check whether node 39 unvisited child 63 is still unvisited after parent traversal
+unvisited child 63 not still unvisited
+check whether node 39 unvisited child 101 is still unvisited after parent traversal
+unvisited child 101 was not visited during parent traversal
+[Info]: possible loop detected, loop indicator: 91/18/40/32/28/56/63(Lchild_of_39)
+queue after add 39: 86 58 51 57 95 78 77 98 68 79 72 69 83 48 96 43 54 44 26 66 88 59 10 67 39 
+frontier after add 39: 86 58 51 57 95 78 77 98 68 79 72 69 83 48 96 43 54 44 26 66 88 59 10 67 39 
+dfs_parent add 39 to partition
+dfs_parent neighbor 81 already visited
+check unvisited child 82
+check unvisited child 54
+check unvisited child 77
+0 children remain unvisited
+check whether node 3 unvisited child 82 is still unvisited after parent traversal
+unvisited child 82 not still unvisited
+check whether node 3 unvisited child 54 is still unvisited after parent traversal
+unvisited child 54 not still unvisited
+check whether node 3 unvisited child 77 is still unvisited after parent traversal
+unvisited child 77 not still unvisited
+[Info]: possible loop detected, loop indicator: 82/54/77(Lchild_of_3)
+node 3 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 3 to partition
+dfs_parent neighbor 30 already visited
+dfs_parent neighbor 41 already visited
+dfs_parent neighbor 45 already visited
+check unvisited child 37
+check unvisited child 87
+check unvisited child 74
+check unvisited child 100
+check unvisited child 34
+check unvisited child 65
+check unvisited child 6
+check unvisited child 20
+check unvisited child 29
+0 children remain unvisited
+check whether node 15 unvisited child 37 is still unvisited after parent traversal
+unvisited child 37 not still unvisited
+check whether node 15 unvisited child 87 is still unvisited after parent traversal
+unvisited child 87 not still unvisited
+check whether node 15 unvisited child 74 is still unvisited after parent traversal
+unvisited child 74 not still unvisited
+check whether node 15 unvisited child 100 is still unvisited after parent traversal
+unvisited child 100 not still unvisited
+check whether node 15 unvisited child 34 is still unvisited after parent traversal
+unvisited child 34 not still unvisited
+check whether node 15 unvisited child 65 is still unvisited after parent traversal
+unvisited child 65 not still unvisited
+check whether node 15 unvisited child 6 is still unvisited after parent traversal
+unvisited child 6 not still unvisited
+check whether node 15 unvisited child 20 is still unvisited after parent traversal
+unvisited child 20 not still unvisited
+check whether node 15 unvisited child 29 is still unvisited after parent traversal
+unvisited child 29 not still unvisited
+[Info]: possible loop detected, loop indicator: 37/87/74/100/34/65/6/20/29(Lchild_of_15)
+node 15 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 15 to partition
+dfs_parent neighbor 16 already visited
+dfs_parent neighbor 26 already visited
+dfs_parent neighbor 35 already visited
+dfs_parent neighbor 76 already visited
+dfs_parent neighbor 98 already visited
+check unvisited child 92
+check unvisited child 11
+check unvisited child 27
+check unvisited child 71
+check unvisited child 53
+check unvisited child 20
+0 children remain unvisited
+check whether node 4 unvisited child 92 is still unvisited after parent traversal
+unvisited child 92 not still unvisited
+check whether node 4 unvisited child 11 is still unvisited after parent traversal
+unvisited child 11 not still unvisited
+check whether node 4 unvisited child 27 is still unvisited after parent traversal
+unvisited child 27 not still unvisited
+check whether node 4 unvisited child 71 is still unvisited after parent traversal
+unvisited child 71 not still unvisited
+check whether node 4 unvisited child 53 is still unvisited after parent traversal
+unvisited child 53 not still unvisited
+check whether node 4 unvisited child 20 is still unvisited after parent traversal
+unvisited child 20 not still unvisited
+[Info]: possible loop detected, loop indicator: 92/11/27/71/53/20(Lchild_of_4)
+node 4 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 4 to partition
+dfs_parent neighbor 11 already visited
+dfs_parent neighbor 14 already visited
+dfs_parent neighbor 20 already visited
+dfs_parent neighbor 24 already visited
+dfs_parent neighbor 31 already visited
+dfs_parent neighbor 40 already visited
+dfs_parent neighbor 42 already visited
+dfs_parent neighbor 54 already visited
+dfs_parent neighbor 62 already visited
+dfs_parent neighbor 74 already visited
+check unvisited child 6
+check unvisited child 12
+check unvisited child 45
+check unvisited child 69
+check unvisited child 5
+check unvisited child 26
+check unvisited child 87
+check unvisited child 63
+0 children remain unvisited
+check whether node 7 unvisited child 6 is still unvisited after parent traversal
+unvisited child 6 not still unvisited
+check whether node 7 unvisited child 12 is still unvisited after parent traversal
+unvisited child 12 not still unvisited
+check whether node 7 unvisited child 45 is still unvisited after parent traversal
+unvisited child 45 not still unvisited
+check whether node 7 unvisited child 69 is still unvisited after parent traversal
+unvisited child 69 not still unvisited
+check whether node 7 unvisited child 5 is still unvisited after parent traversal
+unvisited child 5 not still unvisited
+check whether node 7 unvisited child 26 is still unvisited after parent traversal
+unvisited child 26 not still unvisited
+check whether node 7 unvisited child 87 is still unvisited after parent traversal
+unvisited child 87 not still unvisited
+check whether node 7 unvisited child 63 is still unvisited after parent traversal
+unvisited child 63 not still unvisited
+[Info]: possible loop detected, loop indicator: 6/12/45/69/5/26/87/63(Lchild_of_7)
+node 7 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 7 to partition
+dfs_parent neighbor 19 already visited
+dfs_parent neighbor 49 already visited
+dfs_parent neighbor 65 already visited
+dfs_parent neighbor 68 already visited
+dfs_parent neighbor 72 already visited
+dfs_parent neighbor 74 already visited
+dfs_parent neighbor 80 already visited
+dfs_parent neighbor 95 already visited
+check unvisited child 71
+check unvisited child 76
+check unvisited child 99
+check unvisited child 57
+0 children remain unvisited
+check whether node 1 unvisited child 71 is still unvisited after parent traversal
+unvisited child 71 not still unvisited
+check whether node 1 unvisited child 76 is still unvisited after parent traversal
+unvisited child 76 not still unvisited
+check whether node 1 unvisited child 99 is still unvisited after parent traversal
+unvisited child 99 not still unvisited
+check whether node 1 unvisited child 57 is still unvisited after parent traversal
+unvisited child 57 not still unvisited
+[Info]: possible loop detected, loop indicator: 71/76/99/57(Lchild_of_1)
+node 1 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 1 to partition
+dfs_parent_change_in_partition_size: 100
+BFS: create sub-partition
+bfs pop node 86 from queue
+bfs node 86 visit children
+bfs node 83 already visited
+bfs node 69 already visited
+bfs node 14 already visited
+bfs node 22 already visited
+bfs node 31 already visited
+bfs node 82 already visited
+bfs node 41 already visited
+bfs node 37 already visited
+bfs node 10 already visited
+bfs node 77 already visited
+frontier after remove 86: 58 51 57 95 78 77 98 68 79 72 69 83 48 96 43 54 44 26 66 88 59 10 67 39 
+bfs pop node 58 from queue
+bfs node 58 visit children
+bfs node 74 already visited
+bfs node 26 already visited
+bfs node 90 already visited
+bfs node 34 already visited
+bfs node 24 already visited
+bfs node 63 already visited
+bfs node 64 already visited
+bfs node 19 already visited
+bfs node 70 already visited
+frontier after remove 58: 51 57 95 78 77 98 68 79 72 69 83 48 96 43 54 44 26 66 88 59 10 67 39 
+bfs pop node 51 from queue
+bfs node 51 visit children
+bfs node 38 already visited
+bfs node 93 already visited
+bfs node 94 already visited
+frontier after remove 51: 57 95 78 77 98 68 79 72 69 83 48 96 43 54 44 26 66 88 59 10 67 39 
+bfs pop node 57 from queue
+bfs node 57 visit children
+bfs node 79 already visited
+bfs node 97 already visited
+bfs node 34 already visited
+bfs node 78 already visited
+bfs node 5 already visited
+frontier after remove 57: 95 78 77 98 68 79 72 69 83 48 96 43 54 44 26 66 88 59 10 67 39 
+bfs pop node 95 from queue
+bfs node 95 visit children
+bfs node 78 already visited
+bfs node 1 already visited
+bfs node 19 already visited
+bfs node 46 already visited
+bfs node 43 already visited
+bfs node 100 already visited
+bfs node 11 already visited
+bfs node 53 already visited
+frontier after remove 95: 78 77 98 68 79 72 69 83 48 96 43 54 44 26 66 88 59 10 67 39 
+bfs pop node 78 from queue
+bfs node 78 visit children
+bfs node 6 already visited
+bfs node 19 already visited
+bfs node 39 already visited
+bfs node 94 already visited
+bfs node 31 already visited
+bfs node 72 already visited
+bfs node 87 already visited
+bfs node 25 already visited
+frontier after remove 78: 77 98 68 79 72 69 83 48 96 43 54 44 26 66 88 59 10 67 39 
+bfs pop node 77 from queue
+bfs node 77 visit children
+bfs node 34 already visited
+bfs node 98 already visited
+bfs node 71 already visited
+bfs node 68 already visited
+bfs node 76 already visited
+bfs node 45 already visited
+bfs node 99 already visited
+bfs node 74 already visited
+bfs node 42 already visited
+frontier after remove 77: 98 68 79 72 69 83 48 96 43 54 44 26 66 88 59 10 67 39 
+bfs pop node 98 from queue
+bfs node 98 visit children
+bfs node 83 already visited
+bfs node 34 already visited
+bfs node 4 already visited
+bfs node 68 already visited
+bfs node 5 already visited
+bfs node 10 already visited
+bfs node 70 already visited
+bfs node 65 already visited
+frontier after remove 98: 68 79 72 69 83 48 96 43 54 44 26 66 88 59 10 67 39 
+bfs pop node 68 from queue
+bfs node 68 visit children
+bfs node 26 already visited
+bfs node 16 already visited
+bfs node 76 already visited
+bfs node 70 already visited
+bfs node 78 already visited
+bfs node 32 already visited
+bfs node 96 already visited
+bfs node 75 already visited
+bfs node 1 already visited
+frontier after remove 68: 79 72 69 83 48 96 43 54 44 26 66 88 59 10 67 39 
+bfs pop node 79 from queue
+bfs node 79 visit children
+bfs node 62 already visited
+bfs node 67 already visited
+bfs node 81 already visited
+bfs node 39 already visited
+bfs node 36 already visited
+bfs node 91 already visited
+bfs node 99 already visited
+frontier after remove 79: 72 69 83 48 96 43 54 44 26 66 88 59 10 67 39 
+bfs pop node 72 from queue
+bfs node 72 visit children
+bfs node 69 already visited
+bfs node 19 already visited
+bfs node 74 already visited
+bfs node 83 already visited
+bfs node 1 already visited
+bfs visit child 101 mark it visited and dfs_p(101)
+bfs dfs_p(101)
+dfs_parent from node 101
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: add 101 to visited since no children
+after pre: list_of_unvisited_children: []
+dfs_parent node 101 visit parents
+dfs_parent neighbor 10 already visited
+dfs_parent neighbor 39 already visited
+dfs_parent neighbor 59 already visited
+dfs_parent neighbor 67 already visited
+dfs_parent neighbor 72 already visited
+dfs_parent neighbor 83 already visited
+dfs_parent neighbor 88 already visited
+0 children remain unvisited
+node 101 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 101 to partition
+dfs_parent_change_in_partition_size: 1
+bfs node 51 already visited
+frontier after remove 72: 69 83 48 96 43 54 44 26 66 88 59 10 67 39 
+bfs pop node 69 from queue
+bfs node 69 visit children
+bfs node 54 already visited
+bfs node 77 already visited
+bfs node 83 already visited
+bfs node 41 already visited
+bfs node 65 already visited
+frontier after remove 69: 83 48 96 43 54 44 26 66 88 59 10 67 39 
+bfs pop node 83 from queue
+bfs node 83 visit children
+bfs node 24 already visited
+bfs node 69 already visited
+bfs node 90 already visited
+bfs node 101 already visited
+bfs node 28 already visited
+bfs node 88 already visited
+bfs node 79 already visited
+bfs node 21 already visited
+bfs node 45 already visited
+bfs node 65 already visited
+frontier after remove 83: 48 96 43 54 44 26 66 88 59 10 67 39 
+bfs pop node 48 from queue
+bfs node 48 visit children
+bfs node 24 already visited
+bfs node 82 already visited
+bfs node 93 already visited
+bfs node 99 already visited
+bfs node 87 already visited
+bfs node 55 already visited
+frontier after remove 48: 96 43 54 44 26 66 88 59 10 67 39 
+bfs pop node 96 from queue
+bfs node 96 visit children
+bfs node 71 already visited
+bfs node 43 already visited
+bfs node 65 already visited
+bfs node 11 already visited
+bfs node 34 already visited
+frontier after remove 96: 43 54 44 26 66 88 59 10 67 39 
+bfs pop node 43 from queue
+bfs node 43 visit children
+bfs node 67 already visited
+bfs node 28 already visited
+bfs node 54 already visited
+bfs node 65 already visited
+frontier after remove 43: 54 44 26 66 88 59 10 67 39 
+bfs pop node 54 from queue
+bfs node 54 visit children
+bfs node 86 already visited
+bfs node 67 already visited
+bfs node 17 already visited
+bfs node 93 already visited
+bfs node 39 already visited
+bfs node 45 already visited
+bfs node 75 already visited
+bfs node 74 already visited
+bfs node 7 already visited
+bfs node 88 already visited
+frontier after remove 54: 44 26 66 88 59 10 67 39 
+bfs pop node 44 from queue
+bfs node 44 visit children
+bfs node 69 already visited
+bfs node 26 already visited
+bfs node 65 already visited
+frontier after remove 44: 26 66 88 59 10 67 39 
+bfs pop node 26 from queue
+bfs node 26 visit children
+bfs node 64 already visited
+bfs node 4 already visited
+bfs node 65 already visited
+frontier after remove 26: 66 88 59 10 67 39 
+bfs pop node 66 from queue
+bfs node 66 visit children
+bfs node 51 already visited
+bfs node 65 already visited
+bfs node 44 already visited
+bfs node 17 already visited
+bfs node 57 already visited
+bfs node 63 already visited
+bfs node 49 already visited
+bfs node 47 already visited
+bfs node 86 already visited
+bfs node 61 already visited
+frontier after remove 66: 88 59 10 67 39 
+bfs pop node 88 from queue
+bfs node 88 visit children
+bfs node 85 already visited
+bfs node 32 already visited
+bfs node 101 already visited
+bfs node 6 already visited
+frontier after remove 88: 59 10 67 39 
+bfs pop node 59 from queue
+bfs node 59 visit children
+bfs node 101 already visited
+bfs node 43 already visited
+bfs node 71 already visited
+bfs node 48 already visited
+bfs node 58 already visited
+bfs node 68 already visited
+bfs node 99 already visited
+bfs node 16 already visited
+bfs node 90 already visited
+frontier after remove 59: 10 67 39 
+bfs pop node 10 from queue
+bfs node 10 visit children
+bfs node 34 already visited
+bfs node 101 already visited
+bfs node 85 already visited
+frontier after remove 10: 67 39 
+bfs pop node 67 from queue
+bfs node 67 visit children
+bfs node 93 already visited
+bfs node 32 already visited
+bfs node 101 already visited
+frontier after remove 67: 39 
+bfs pop node 39 from queue
+bfs node 39 visit children
+bfs node 91 already visited
+bfs node 18 already visited
+bfs node 40 already visited
+bfs node 32 already visited
+bfs node 28 already visited
+bfs node 3 already visited
+bfs node 56 already visited
+bfs node 63 already visited
+bfs node 101 already visited
+frontier after remove 39: 
+BFS: create final sub-partition
+
+visited length: 101
+1 7 4 15 3 39 38 8 5 23 24 41 27 2 6 30 25 55 32 67 12 60 19 14 29 49 13 81 42 52 9 11 20 53 28 17 34 10 31 50 47 40 71 59 62 37 16 63 18 76 36 35 33 92 46 85 61 66 80 64 26 44 84 45 54 43 82 48 73 89 21 83 69 72 56 22 86 91 70 58 68 77 94 51 78 57 95 75 100 98 79 97 99 74 90 96 87 93 88 65 101 
+
+final current_partition length: 0
+sum_of_partition_lengths (not counting total_loop_nodes_added): 101
+
+dfs_parent_changes_in_partiton_size length, len: 2, sum_of_changes: 101
+100 1 
+
+partitions, len: 2:
+-- ['7(Lprnt_of_5)', '7(Lprnt_of_6)', '15(Lprnt_of_6)', '8(Lprnt_of_30)', '39(Lprnt_of_32)', '5(Lprnt_of_12)', '6(Lprnt_of_12)', '7(Lprnt_of_12)', '27(Lprnt_of_12)', '5(Lprnt_of_60)', '5(Lprnt_of_14)', '8(Lprnt_of_29)', '15(Lprnt_of_29)', '32(Lprnt_of_29)', '5(Lprnt_of_49)', '2(Lprnt_of_13)', '24(Lprnt_of_81)', '38(Lprnt_of_81)', '29(Lprnt_of_42)', '5(Lprnt_of_52)', '4(Lprnt_of_11)', '9(Lprnt_of_11)', '14(Lprnt_of_11)', '19(Lprnt_of_11)', '4(Lprnt_of_20)', '8(Lprnt_of_20)', '15(Lprnt_of_20)', '4(Lprnt_of_53)', '14(Lprnt_of_53)', '29(Lprnt_of_17)', '32(Lprnt_of_17)', '2(Lprnt_of_10)', '6(Lprnt_of_10)', '19(Lprnt_of_10)', '14(Lprnt_of_31)', '27(Lprnt_of_50)', '8(Lprnt_of_40)', '12(Lprnt_of_40)', '19(Lprnt_of_40)', '39(Lprnt_of_40)', '47(Lprnt_of_40)', '1(Lprnt_of_71)', '4(Lprnt_of_71)', '28(Lprnt_of_71)', '31(Lprnt_of_71)', '32(Lprnt_of_71)', '38(Lprnt_of_71)', '2(Lprnt_of_62)', '19(Lprnt_of_62)', '9(Lprnt_of_37)', '13(Lprnt_of_37)', '15(Lprnt_of_37)', '52(Lprnt_of_16)', '59(Lprnt_of_16)', '7(Lprnt_of_63)', '14(Lprnt_of_18)', '29(Lprnt_of_18)', '39(Lprnt_of_18)', '53(Lprnt_of_18)', '1(Lprnt_of_76)', '30(Lprnt_of_36)', '6(Lprnt_of_35)', '28(Lprnt_of_33)', '31(Lprnt_of_33)', '42(Lprnt_of_33)', '53(Lprnt_of_33)', '63(Lprnt_of_33)', '4(Lprnt_of_92)', '41(Lprnt_of_92)', '23(Lprnt_of_46)', '35(Lprnt_of_46)', '40(Lprnt_of_46)', '47(Lprnt_of_46)', '10(Lprnt_of_85)', '23(Lprnt_of_85)', '40(Lprnt_of_85)', '31(Lprnt_of_61)', '2(Lprnt_of_66)', '8(Lprnt_of_66)', '31(Lprnt_of_66)', '37(Lprnt_of_66)', '50(Lprnt_of_66)', '40(Lprnt_of_80)', '11(Lprnt_of_64)', '7(Lprnt_of_26)', '27(Lprnt_of_26)', '31(Lprnt_of_26)', '19(Lprnt_of_44)', '29(Lprnt_of_44)', '32(Lprnt_of_44)', '66(Lprnt_of_44)', '35(Lprnt_of_84)', '7(Lprnt_of_45)', '9(Lprnt_of_45)', '20(Lprnt_of_45)', '46(Lprnt_of_45)', '3(Lprnt_of_54)', '14(Lprnt_of_43)', '55(Lprnt_of_43)', '59(Lprnt_of_43)', '71(Lprnt_of_43)', '3(Lprnt_of_82)', '42(Lprnt_of_82)', '47(Lprnt_of_82)', '24(Lprnt_of_48)', '32(Lprnt_of_48)', '37(Lprnt_of_48)', '59(Lprnt_of_48)', '16(Lprnt_of_73)', '12(Lprnt_of_21)', '24(Lprnt_of_21)', '40(Lprnt_of_21)', '18(Lprnt_of_83)', '20(Lprnt_of_83)', '41(Lprnt_of_83)', '7(Lprnt_of_69)', '41(Lprnt_of_69)', '44(Lprnt_of_69)', '11(Lprnt_of_72)', '20(Lprnt_of_72)', '29(Lprnt_of_72)', '53(Lprnt_of_72)', '2(Lprnt_of_56)', '8(Lprnt_of_22)', '11(Lprnt_of_22)', '17(Lprnt_of_22)', '20(Lprnt_of_22)', '40(Lprnt_of_22)', '50(Lprnt_of_22)', '17(Lprnt_of_86)', '25(Lprnt_of_86)', '37(Lprnt_of_86)', '52(Lprnt_of_86)', '54(Lprnt_of_86)', '66(Lprnt_of_86)', '82(Lprnt_of_86)', 86, '8(Lprnt_of_91)', '31(Lprnt_of_91)', '39(Lprnt_of_91)', '62(Lprnt_of_91)', '42(Lprnt_of_70)', '11(Lprnt_of_58)', '59(Lprnt_of_58)', '60(Lprnt_of_58)', 58, '17(Lprnt_of_68)', '29(Lprnt_of_68)', '38(Lprnt_of_68)', '59(Lprnt_of_68)', '3(Lprnt_of_77)', '27(Lprnt_of_77)', '46(Lprnt_of_77)', '69(Lprnt_of_77)', '8(Lprnt_of_94)', '9(Lprnt_of_94)', '38(Lprnt_of_94)', '42(Lprnt_of_94)', '5(Lprnt_of_51)', '24(Lprnt_of_51)', '66(Lprnt_of_51)', '72(Lprnt_of_51)', '89(Lprnt_of_51)', 51, '56(Lprnt_of_94)', '70(Lprnt_of_94)', '8(Lprnt_of_78)', '9(Lprnt_of_78)', '11(Lprnt_of_78)', '47(Lprnt_of_78)', '1(Lprnt_of_57)', '64(Lprnt_of_57)', '66(Lprnt_of_57)', '71(Lprnt_of_57)', '92(Lprnt_of_57)', 57, '68(Lprnt_of_78)', '73(Lprnt_of_78)', '84(Lprnt_of_78)', '22(Lprnt_of_95)', '23(Lprnt_of_95)', '64(Lprnt_of_95)', '38(Lprnt_of_75)', '54(Lprnt_of_75)', '60(Lprnt_of_75)', '68(Lprnt_of_75)', 75, '85(Lprnt_of_95)', 95, '15(Lprnt_of_100)', '24(Lprnt_of_100)', '30(Lprnt_of_100)', '41(Lprnt_of_100)', '55(Lprnt_of_100)', 100, 78, '80(Lprnt_of_94)', 94, 77, '2(Lprnt_of_98)', '19(Lprnt_of_98)', '55(Lprnt_of_98)', '63(Lprnt_of_98)', 98, '78/75(Lchild_of_68)', 68, '94(Lchild_of_70)', 70, '30(Lprnt_of_79)', '49(Lprnt_of_79)', '83(Lprnt_of_79)', 79, 91, '31(Lprnt_of_97)', '40(Lprnt_of_97)', 97, '95(Lchild_of_22)', 22, '33(Lprnt_of_56)', '36(Lprnt_of_56)', '39(Lprnt_of_56)', '46(Lprnt_of_56)', '62(Lprnt_of_56)', '85(Lprnt_of_56)', '1(Lprnt_of_99)', '34(Lprnt_of_99)', '48(Lprnt_of_99)', '59(Lprnt_of_99)', 99, '94(Lchild_of_56)', 56, '85(Lprnt_of_72)', '51(Lchild_of_72)', 72, '15(Lprnt_of_74)', '54(Lprnt_of_74)', '62(Lprnt_of_74)', '64(Lprnt_of_74)', '11(Lprnt_of_90)', '59(Lprnt_of_90)', '81(Lprnt_of_90)', '83(Lprnt_of_90)', 90, 74, '83(Lprnt_of_69)', '77(Lchild_of_69)', 69, '73(Lprnt_of_83)', '69/90/79(Lchild_of_83)', 83, 21, '55(Lprnt_of_89)', '76(Lprnt_of_89)', '51(Lchild_of_89)', 89, '83/78(Lchild_of_73)', 73, '85(Lprnt_of_48)', '99(Lchild_of_48)', 48, '49(Lprnt_of_82)', '86(Lchild_of_82)', 82, '2(Lprnt_of_96)', 96, 43, '86/75/74(Lchild_of_54)', 54, '63(Lprnt_of_45)', 45, '78(Lchild_of_84)', 84, '69(Lchild_of_44)', 44, '7(Lprnt_of_87)', '15(Lprnt_of_87)', '23(Lprnt_of_87)', '28(Lprnt_of_87)', '29(Lprnt_of_87)', '36(Lprnt_of_87)', '80(Lprnt_of_87)', '17(Lprnt_of_93)', '67(Lprnt_of_93)', 93, 87, 26, '53(Lprnt_of_64)', '57/74/95(Lchild_of_64)', 64, '76(Lprnt_of_80)', '94/87(Lchild_of_80)', 80, '51/44/57/86(Lchild_of_66)', 66, '85(Lprnt_of_61)', 61, 88, '61/48/72/56/95(Lchild_of_85)', 85, '45/56/77(Lchild_of_46)', 46, '57(Lchild_of_92)', 92, '56(Lchild_of_33)', 33, '49(Lprnt_of_35)', '5(Lprnt_of_65)', '15(Lprnt_of_65)', '28(Lprnt_of_65)', 65, '84/46(Lchild_of_35)', 35, '56/87(Lchild_of_36)', 36, '42(Lprnt_of_76)', '50(Lprnt_of_76)', '81(Lprnt_of_76)', '80/89(Lchild_of_76)', 76, '83(Lchild_of_18)', 18, '39(Lprnt_of_63)', '53(Lprnt_of_63)', '33/45/98(Lchild_of_63)', 63, '73(Lchild_of_16)', 16, '60(Lprnt_of_37)', '86/66/48(Lchild_of_37)', 37, '74/91/56(Lchild_of_62)', 62, '43/48/58/68/99/16/90(Lchild_of_59)', 59, '57/43(Lchild_of_71)', 71, '46/97/80/21/85/22(Lchild_of_40)', 40, '78/40/82/46(Lchild_of_47)', 47, '22/66/76(Lchild_of_50)', 50, '52(Lprnt_of_31)', '91/33/26/71/97/61/66(Lchild_of_31)', 31, '85(Lchild_of_10)', 10, '15(Lprnt_of_34)', '53(Lprnt_of_34)', '99(Lchild_of_34)', 34, '93/68/22/86(Lchild_of_17)', 17, '19(Lprnt_of_28)', '39(Lprnt_of_28)', '53(Lprnt_of_28)', '87/33/71/65(Lchild_of_28)', 28, '34/64/28/72/18/33/63(Lchild_of_53)', 53, '72/22/83/45(Lchild_of_20)', 20, '78/72/64/58/90/22(Lchild_of_11)', 11, '29(Lprnt_of_9)', '94/45/11/78/37(Lchild_of_9)', 9, '19(Lprnt_of_52)', '86/31/16(Lchild_of_52)', 52, '82/94/33/76/70(Lchild_of_42)', 42, '76/90(Lchild_of_81)', 81, '37(Lchild_of_13)', 13, '82/79/35(Lchild_of_49)', 49, '72/68/44/42/87/17/9/18(Lchild_of_29)', 29, '11/43/53/18/31(Lchild_of_14)', 14, '98/11/44/10/40/28/52/62(Lchild_of_19)', 19, '41(Lprnt_of_60)', '75/37/58(Lchild_of_60)', 60, '40/21(Lchild_of_12)', 12, '93(Lchild_of_67)', 67, '71/29/17/44/48(Lchild_of_32)', 32, '100/89/43/98(Lchild_of_55)', 55, '86(Lchild_of_25)', 25, '36/79/100(Lchild_of_30)', 30, '35/10/12(Lchild_of_6)', 6, '98/10/56/13/96/62/66(Lchild_of_2)', 2, '4(Lprnt_of_27)', '50/12/77/26(Lchild_of_27)', 27, '69/60/83/100/92(Lchild_of_41)', 41, '51/81/100/48/21(Lchild_of_24)', 24, '85/46/87/95(Lchild_of_23)', 23, '60/12/49/52/51/14/65(Lchild_of_5)', 5, '94/20/22/91/29/30/40/66/78(Lchild_of_8)', 8, '68/71/94/75/81(Lchild_of_38)', 38, '91/18/40/32/28/56/63(Lchild_of_39)', 39, '82/54/77(Lchild_of_3)', 3, '37/87/74/100/34/65/6/20/29(Lchild_of_15)', 15, '92/11/27/71/53/20(Lchild_of_4)', 4, '6/12/45/69/5/26/87/63(Lchild_of_7)', 7, '71/76/99/57(Lchild_of_1)', 1]
+-- [101]
+
+frontiers: (final fronter should be empty), len: 2:
+-- 86 58 51 57 95 78 77 98 68 79 72 69 83 48 96 43 54 44 26 66 88 59 10 67 39 
+-- 
+
+frontier costs (cost=length of frontier), len: 2:
+-- pop-86:25
+-- atEnd:0
+
+all frontier costs, len: 25, sum: 325
+pop-86:25 pop-58:24 pop-51:23 pop-57:22 pop-95:21 pop-78:20 pop-77:19 pop-98:18 pop-68:17 pop-79:16 pop-72:15 pop-69:14 pop-83:13 pop-48:12 pop-96:11 pop-43:10 pop-54:9 pop-44:8 pop-26:7 pop-66:6 pop-88:5 pop-59:4 pop-10:3 pop-67:2 pop-39:1 
+

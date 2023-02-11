@@ -61,7 +61,7 @@ N9.parents = [N2]
 
 nodes = []
 
-
+"""
 N1 = Node(1)
 N2= Node(2)
 N3 = Node(3)
@@ -74,14 +74,18 @@ N9 = Node(9)
 N10 = Node(10)
 N11 = Node(11)
 N12 = Node(12)
+"""
 
-
+num_nodes = 0
+num_edges = 0
+"""
 num_nodes = 12
 #put non-null elements in place
 for x in range(num_nodes+1):
     nodes.append(Node(x))
+"""
 
-
+"""
 # Assign above nodes
 nodes[0] = Node(0)  # not used; num_nodes does not include nodes[0]
 nodes[1] = N1
@@ -96,7 +100,7 @@ nodes[9] = N9
 nodes[10] = N10
 nodes[11] = N11
 nodes[12] = N12
-
+"""
 """
 N1.children = [N3,N2]
 N1.parents = []
@@ -138,7 +142,7 @@ def visualize():
     #nx.draw_planar(G,with_labels = True, alpha=0.8) #NEW FUNCTION
     fig.canvas.draw()
 
-
+"""
 N1.children = [3,2]
 N1.parents = []
 temp = [1,3]
@@ -197,7 +201,7 @@ temp = [12,4]
 visual.append(temp)
 temp = [12,11]
 visual.append(temp)
-
+"""
 
 visited = [] # List for visited nodes.
 queue = []     #Initialize a queue
@@ -214,6 +218,7 @@ frontier = []
 all_frontier_costs = []
 
 IDENTIFY_SINGLETONS = False
+TRACK_PARTITION_LOOPS = False
 
 """
 # Regular bfs.
@@ -257,11 +262,11 @@ def dfs_parent_pre_parent_traversal(node,visited,list_of_unvisited_children):
         # in the partition (first))
         has_unvisited_children = False
         for neighbor_index in node.children:
-            neighbor = nodes[neighbor_index]
-            if neighbor.ID not in visited:
-                print ("dfs_parent_pre: child " + str(neighbor.ID) + " not in visited")
+            child_node = nodes[neighbor_index]
+            if child_node.ID not in visited:
+                print ("dfs_parent_pre: child " + str(child_node.ID) + " not in visited")
                 has_unvisited_children = True
-                list_of_unvisited_children.append(neighbor.ID)
+                list_of_unvisited_children.append(child_node.ID)
                 #break
         if not has_unvisited_children:
             print ("dfs_parent_pre mark " + str(node.ID) + " as visited since it has no unvisited children "
@@ -324,14 +329,14 @@ def dfs_parent(visited, graph, node):  #function for dfs
 
     # visit parents
     for neighbor_index in node.parents:
-        neighbor = nodes[neighbor_index]
-        if neighbor.ID not in visited:
-            print ("dfs_parent visit node " + str(neighbor.ID))
-            dfs_parent(visited, graph, neighbor)
+        parent_node = nodes[neighbor_index]
+        if parent_node.ID not in visited:
+            print ("dfs_parent visit node " + str(parent_node.ID))
+            dfs_parent(visited, graph, parent_node)
         else:
             # loop detected - mark this loop in partition (for debugging for now)
-            print ("dfs_parent neighbor " + str(neighbor.ID) + " already visited")
-            if neighbor.partition_number == -1:
+            print ("dfs_parent neighbor " + str(parent_node.ID) + " already visited")
+            if TRACK_PARTITION_LOOPS and parent_node.partition_number == -1:
                 # Example: 1 5 6 7 3(Lp) 12(Lp) 11 11(Lc) 12 4 3 2 10 9 8
                 # Here, 3 is a parent of 11 that 11 finds visited so when visiting
                 # 11 in dfs_parent 11 will output 3(Lprnt_of_11). Same for when 
@@ -342,9 +347,9 @@ def dfs_parent(visited, graph, node):  #function for dfs
                 # parent 12. 11 is the parent of 12 and 11 was put in partition before 
                 # 12 so we do not need "12(Lprnt_of_11)" before the 11 - it is just to 
                 # indicates the loop detected when 11 saw it's parent 12 was visited.
-                loop_indicator = str(neighbor.ID)+"(Lprnt_of_" + str(node.ID) + ")"
+                loop_indicator = str(parent_node.ID)+"(Lprnt_of_" + str(node.ID) + ")"
                 current_partition.append(loop_indicator)
-                print("[Info]: Possible parent loop detected, start and end with " + str(neighbor.ID)
+                print("[Info]: Possible parent loop detected, start and end with " + str(parent_node.ID)
                     + ", loop indicator: " + loop_indicator)
                 global loop_nodes_added
                 loop_nodes_added += 1
@@ -409,7 +414,7 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
             print_loop_indicator = True
         else:
             print("unvisited child " + str(unvisited_child) + " was not visited during parent traversal")
-    if print_loop_indicator:
+    if TRACK_PARTITION_LOOPS and print_loop_indicator:
         # a loop involving child 'c' as in (L'c')
         # Example: 1 5 6 7 3(Lp) 12(Lp) 11 11(Lc) 12 4 3 2 10 9 8
         # Here, 11 is a child of 12, and also 12 is a child of 11. When we visit 12
@@ -441,7 +446,7 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
             print("1 unvisited child after parent loop.")
             #only_child_index = node.children[0]
             unvisited_child_index = unvisited_children_after_parent_loop[0]
-            print("only_child_index: " + str(only_child_index))
+            print("unvisited_child_index: " + str(unvisited_child_index))
             unvisited_child = nodes[unvisited_child_index]
 #rhc: ToDo: node may have more than 1 child, but if there is only one 
 #  unvisited child only_child and it has no children and node is only_child's
@@ -591,7 +596,7 @@ def bfs(visited, graph, node): #function for BFS
         # visited, and add C to the partition but not the queue.
         # Note: handling singletons here is more efficent since we don;t waste time 
         # checkng for singletons in dfs_parent when most nodes are not singletons.
-        if len(current_partition) >= num_nodes/2:
+        if len(current_partition) >= num_nodes/5:
             print("BFS: create sub-partition")
             partitions.append(current_partition.copy())
             current_partition = []
@@ -612,10 +617,10 @@ def bfs(visited, graph, node): #function for BFS
             neighbor = nodes[neighbor_index]
             if neighbor.ID not in visited:
                 print ("bfs visit child " + str(neighbor.ID) + " mark it visited and "
-                    + "dfs_p(" + str(neighbor.ID) + ")")
+                    + "dfs_parent(" + str(neighbor.ID) + ")")
 
                 #visited.append(neighbor.ID)
-                print ("bfs dfs_p("+ str(neighbor.ID) + ")")
+                print ("bfs dfs_parent("+ str(neighbor.ID) + ")")
 
                 dfs_parent_start_partition_size = len(current_partition)
                 loop_nodes_added_start = loop_nodes_added
@@ -664,7 +669,18 @@ def bfs(visited, graph, node): #function for BFS
         frontier_costs.append(frontier_cost)
 
 def input_graph():
-    graph_file = open('100.gr', 'r')
+    """
+    c FILE                  :graph1.gr.gr
+    c No. of vertices       :20
+    c No. of edges          :23
+    c Max. weight           :1
+    c Min. weight           :1
+    c Min. edge             :1
+    c Max. edge             :3
+    p sp 20 23
+    """
+    #graph_file = open('100.gr', 'r')
+    graph_file = open('graph1.gr', 'r')
     count = 0
     file_name_line = graph_file.readline()
     count += 1
@@ -678,10 +694,17 @@ def input_graph():
     
     max_weight_line_ignored = graph_file.readline()
     count += 1
-    #print("max_weight_line{}: {}".format(count, max_weight_line.strip()))
+    #print("max_weight_line{}: {}".format(count, max_weight_line_ignored.strip()))
     min_weight_line_ignored = graph_file.readline()
     count += 1
-    #print("min_weight_line{}: {}".format(count, min_weight_line.strip()))
+    #print("min_weight_line{}: {}".format(count,  min_weight_line_ignored.strip()))
+
+    min_edge_line_ignored = graph_file.readline()
+    count += 1
+    #print("min_edge_line{}: {}".format(count, min_edge_line_ignored.strip()))
+    max_edge_line_ignored = graph_file.readline()
+    count += 1
+    #print("max_edge_line{}: {}".format(count, max_edge_line_ignored.strip()))
     
     vertices_edges_line = graph_file.readline()
     count += 1
@@ -689,7 +712,9 @@ def input_graph():
 
     words = vertices_edges_line.split(' ')
     print("nodes:" + words[2] + " edges:" + words[3])
+    global num_nodes
     num_nodes = int(words[2])
+    global num_edges
     num_edges = int(words[3])
     print ("num_nodes:" + str(num_nodes) + " num_edges:" + str(num_edges))
 
@@ -756,8 +781,8 @@ def input_graph():
         num_parent_appends +=  1
 
         # Only visualize small graphs
-        temp = [source,target]
-        visual.append(temp)
+        #temp = [source,target]
+        #visual.append(temp)
     
         #print("Line {}: {}".format(count, line.strip()))
 
@@ -821,7 +846,8 @@ def input_graph():
 # Driver Code
 
 print("Following is the Breadth-First Search")
-#input_graph()
+input_graph()
+print("num_nodes after input graph: " + str(num_nodes))
 #visualize()
 #input('Press <ENTER> to continue')
 
