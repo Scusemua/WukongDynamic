@@ -394,48 +394,48 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
     # list_of_unvisited_children. 
     # Need to know the children that remain unvisited. They are the children 
     # in list_of_unvisited_children tht are not in unvisited_children_after_parent_loop.
-
-    for unvisited_child in list_of_unvisited_children:
-        print("check whether node " + str(node.ID) + " unvisited child " + str(unvisited_child) + " is still unvisited"
-            + " after parent traversal")
-        if unvisited_child not in unvisited_children_after_parent_loop:
-            # Unvisited_child is no longer unvisited after call to dfs_parent.
-            # A child that was unvisited before parent loop traverasal but
-            # that was visited durng this traversal is part of a loop.
-            # This child is also a parent or ancestor.
-            # output loop (L) indicators in partition, children are in no 
-            # particular order.
-            print("unvisited child " + str(unvisited_child) + " not still unvisited")
-            if first:
-                first = False
-                loop_indicator = str(nodes[unvisited_child].ID)
+    if TRACK_PARTITION_LOOPS:
+        for unvisited_child in list_of_unvisited_children:
+            print("check whether node " + str(node.ID) + " unvisited child " + str(unvisited_child) + " is still unvisited"
+                + " after parent traversal")
+            if unvisited_child not in unvisited_children_after_parent_loop:
+                # Unvisited_child is no longer unvisited after call to dfs_parent.
+                # A child that was unvisited before parent loop traverasal but
+                # that was visited durng this traversal is part of a loop.
+                # This child is also a parent or ancestor.
+                # output loop (L) indicators in partition, children are in no 
+                # particular order.
+                print("unvisited child " + str(unvisited_child) + " not still unvisited")
+                if first:
+                    first = False
+                    loop_indicator = str(nodes[unvisited_child].ID)
+                else:
+                    loop_indicator += "/" + str(nodes[unvisited_child].ID)
+                print_loop_indicator = True
             else:
-                loop_indicator += "/" + str(nodes[unvisited_child].ID)
-            print_loop_indicator = True
-        else:
-            print("unvisited child " + str(unvisited_child) + " was not visited during parent traversal")
-    if TRACK_PARTITION_LOOPS and print_loop_indicator:
-        # a loop involving child 'c' as in (L'c')
-        # Example: 1 5 6 7 3(Lp) 12(Lp) 11 11(Lc) 12 4 3 2 10 9 8
-        # Here, 11 is a child of 12, and also 12 is a child of 11. When we visit 12
-        # dring a dfs_parent parent traversl, 12 will have an unvisited child 11.
-        # But 11 will become visited when 12 does dfs_parent(11). So after the return
-        # of 12's cal to dfs_parent(11), 12 will se that 11 is now visited, which means
-        # 12's child 11 was visited during the traversal dfs_parent(11) of 12's 
-        # parents, which meas that a cycle has been detected. So 12 outputs
-        # 11(Lchld_of_12) to indicate this cycle. It also puts 11 in the partition 
-        # before 12, which, in general, we want since a parent node is supposed to 
-        # be added to a partition before any of its children. This is not always
-        # possible due to cycles, e.g., 3, 11, 12, 4, 3, so we use the loop indicators
-        # to make this true. In this example, 11 appears before 12 in the partition so 
-        # we did not need the loop indicator to make this true; still it shows that a
-        # loop was detected FYI.
-   
-        loop_indicator += "(Lchild_of_" + str(node.ID) + ")"
-        current_partition.append(loop_indicator)
-        global loop_nodes_added
-        loop_nodes_added += 1
-        print("[Info]: possible loop detected, loop indicator: " + loop_indicator)
+                print("unvisited child " + str(unvisited_child) + " was not visited during parent traversal")
+        if print_loop_indicator:
+            # a loop involving child 'c' as in (L'c')
+            # Example: 1 5 6 7 3(Lp) 12(Lp) 11 11(Lc) 12 4 3 2 10 9 8
+            # Here, 11 is a child of 12, and also 12 is a child of 11. When we visit 12
+            # dring a dfs_parent parent traversl, 12 will have an unvisited child 11.
+            # But 11 will become visited when 12 does dfs_parent(11). So after the return
+            # of 12's cal to dfs_parent(11), 12 will se that 11 is now visited, which means
+            # 12's child 11 was visited during the traversal dfs_parent(11) of 12's 
+            # parents, which meas that a cycle has been detected. So 12 outputs
+            # 11(Lchld_of_12) to indicate this cycle. It also puts 11 in the partition 
+            # before 12, which, in general, we want since a parent node is supposed to 
+            # be added to a partition before any of its children. This is not always
+            # possible due to cycles, e.g., 3, 11, 12, 4, 3, so we use the loop indicators
+            # to make this true. In this example, 11 appears before 12 in the partition so 
+            # we did not need the loop indicator to make this true; still it shows that a
+            # loop was detected FYI.
+    
+            loop_indicator += "(Lchild_of_" + str(node.ID) + ")"
+            current_partition.append(loop_indicator)
+            global loop_nodes_added
+            loop_nodes_added += 1
+            print("[Info]: possible loop detected, loop indicator: " + loop_indicator)
 
     if len(unvisited_children_after_parent_loop) > 0:
         # There remains some unvisited children
@@ -949,6 +949,16 @@ print()
 #input('Press <ENTER> to continue')
 
 #
+# When pop 86, 86 was put in frontier because at that time (foo) 86 had
+# 1 unvisited child 77after parent traversal so put 86 in queue. But
+# when we finished the dfs_parent, *all* nodes were in partition and
+# 86 was on frontier, which means 86 had left the frontier and yes 
+# all of 86's chldren, including 77, were visited. So 86 should not 
+# be in fronter - if we cannot take it off we need to iterate
+# through the frontier and adjust it - remove frontier nodes that have
+# no unvisited children (so all children in partition) or that have
+# singleton children. But still might want to split partition and
+# want partition and its frontier?
 # ToDo: Any reason to not short circuit 7, i.e., put 7 in queue, i.e., do
 # not do the unvisited stuff for 7 when 6 calls dfs_p(7)?
 

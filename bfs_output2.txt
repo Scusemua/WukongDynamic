@@ -1053,9 +1053,15 @@ unvisited child 77 not visited during parent traversal
 1 children remain unvisited
 check whether node 86 unvisited child 77 is still unvisited after parent traversal
 unvisited child 77 was not visited during parent traversal
+
+rhc
+
 queue after add 86: 86 
 frontier after add 86: 86 
 dfs_parent add 86 to partition
+
+rhc: is 91 a parent of 22? yes
+
 dfs_parent visit node 91
 dfs_parent from node 91
 dfs_parent_pre: at start: list_of_unvisited_children:[]
@@ -1116,6 +1122,9 @@ dfs_parent neighbor 17 already visited
 dfs_parent neighbor 29 already visited
 dfs_parent neighbor 38 already visited
 dfs_parent neighbor 59 already visited
+
+rhc
+
 dfs_parent visit node 77
 dfs_parent from node 77
 dfs_parent_pre: at start: list_of_unvisited_children:[]
