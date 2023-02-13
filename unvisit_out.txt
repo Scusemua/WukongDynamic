@@ -1,0 +1,2271 @@
+Following is the Breadth-First Search
+file_name_line1: c FILE                  :100.gr
+vertices_line2: c No. of vertices       :100
+edges_line3: c No. of directed edges :609
+vertices_edges_line8: a 1 76 -90
+nodes:76 edges:-90
+
+num_nodes:76 num_edges:-90
+number_of_nodes_to_append:23
+Node(77)
+Node(78)
+Node(79)
+Node(80)
+Node(81)
+Node(82)
+Node(83)
+Node(84)
+Node(85)
+Node(86)
+Node(87)
+Node(88)
+Node(89)
+Node(90)
+Node(91)
+Node(92)
+Node(93)
+Node(94)
+Node(95)
+Node(96)
+Node(97)
+Node(98)
+Node(99)
+[Warning]: self loop: 4 -->4
+target is 101, num_nodes is 99 len nodes is 100
+number_of_nodes_to_append:2
+Node(100)
+Node(101)
+[Warning]: self loop: 14 -->14
+target is 101, num_nodes is 101 len nodes is 102
+[Warning]: self loop: 47 -->47
+target is 101, num_nodes is 101 len nodes is 102
+[Warning]: self loop: 61 -->61
+target is 101, num_nodes is 101 len nodes is 102
+target is 101, num_nodes is 101 len nodes is 102
+[Warning]: self loop: 74 -->74
+target is 101, num_nodes is 101 len nodes is 102
+target is 101, num_nodes is 101 len nodes is 102
+[Warning]: self loop: 92 -->92
+[Warning]: self loop: 94 -->94
+num edges in graph: -90 = num child edges: 600 + num_self_loops: 7
+[Error]: num child edges in graph is 600 but edges in file is -90
+num_edges in graph: -90 = num parent edges: 600 + num_self_loops: 7
+[Error]: num parent edges in graph is 600 but edges in file is -90
+num_parent_appends:600
+num_children_appends:600
+num_self_loops: 7
+old num_edges: -90 num_edges: -97
+num_nodes after input graph: 101
+bfs mark 1 as visited and add to queue
+dfs_parent from node 1
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 99 not in visited
+dfs_parent_pre: child 57 not in visited
+dfs_parent_pre 1 has unvisted children so mark 1 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[99, 57]
+after pre: list_of_unvisited_children: [99, 57]
+dfs_parent node 1 visit parents
+dfs_parent visit node 7
+dfs_parent from node 7
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 6 not in visited
+dfs_parent_pre: child 12 not in visited
+dfs_parent_pre: child 45 not in visited
+dfs_parent_pre: child 69 not in visited
+dfs_parent_pre: child 5 not in visited
+dfs_parent_pre: child 26 not in visited
+dfs_parent_pre: child 87 not in visited
+dfs_parent_pre: child 63 not in visited
+dfs_parent_pre 7 has unvisted children so mark 7 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[6, 12, 45, 69, 5, 26, 87, 63]
+after pre: list_of_unvisited_children: [6, 12, 45, 69, 5, 26, 87, 63]
+dfs_parent node 7 visit parents
+dfs_parent visit node 4
+dfs_parent from node 4
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 92 not in visited
+dfs_parent_pre: child 11 not in visited
+dfs_parent_pre: child 27 not in visited
+dfs_parent_pre: child 71 not in visited
+dfs_parent_pre: child 53 not in visited
+dfs_parent_pre: child 20 not in visited
+dfs_parent_pre 4 has unvisted children so mark 4 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[92, 11, 27, 71, 53, 20]
+after pre: list_of_unvisited_children: [92, 11, 27, 71, 53, 20]
+dfs_parent node 4 visit parents
+dfs_parent visit node 15
+dfs_parent from node 15
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 37 not in visited
+dfs_parent_pre: child 87 not in visited
+dfs_parent_pre: child 74 not in visited
+dfs_parent_pre: child 100 not in visited
+dfs_parent_pre: child 34 not in visited
+dfs_parent_pre: child 65 not in visited
+dfs_parent_pre: child 6 not in visited
+dfs_parent_pre: child 20 not in visited
+dfs_parent_pre: child 29 not in visited
+dfs_parent_pre 15 has unvisted children so mark 15 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[37, 87, 74, 100, 34, 65, 6, 20, 29]
+after pre: list_of_unvisited_children: [37, 87, 74, 100, 34, 65, 6, 20, 29]
+dfs_parent node 15 visit parents
+dfs_parent visit node 3
+dfs_parent from node 3
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 82 not in visited
+dfs_parent_pre: child 54 not in visited
+dfs_parent_pre: child 77 not in visited
+dfs_parent_pre 3 has unvisted children so mark 3 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[82, 54, 77]
+after pre: list_of_unvisited_children: [82, 54, 77]
+dfs_parent node 3 visit parents
+dfs_parent visit node 39
+dfs_parent from node 39
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 91 not in visited
+dfs_parent_pre: child 18 not in visited
+dfs_parent_pre: child 40 not in visited
+dfs_parent_pre: child 32 not in visited
+dfs_parent_pre: child 28 not in visited
+dfs_parent_pre: child 56 not in visited
+dfs_parent_pre: child 63 not in visited
+dfs_parent_pre: child 101 not in visited
+dfs_parent_pre 39 has unvisted children so mark 39 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[91, 18, 40, 32, 28, 56, 63, 101]
+after pre: list_of_unvisited_children: [91, 18, 40, 32, 28, 56, 63, 101]
+dfs_parent node 39 visit parents
+dfs_parent visit node 38
+dfs_parent from node 38
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 68 not in visited
+dfs_parent_pre: child 71 not in visited
+dfs_parent_pre: child 94 not in visited
+dfs_parent_pre: child 75 not in visited
+dfs_parent_pre: child 81 not in visited
+dfs_parent_pre 38 has unvisted children so mark 38 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[68, 71, 94, 75, 81]
+after pre: list_of_unvisited_children: [68, 71, 94, 75, 81]
+dfs_parent node 38 visit parents
+dfs_parent visit node 8
+dfs_parent from node 8
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 94 not in visited
+dfs_parent_pre: child 20 not in visited
+dfs_parent_pre: child 22 not in visited
+dfs_parent_pre: child 91 not in visited
+dfs_parent_pre: child 29 not in visited
+dfs_parent_pre: child 30 not in visited
+dfs_parent_pre: child 40 not in visited
+dfs_parent_pre: child 66 not in visited
+dfs_parent_pre: child 78 not in visited
+dfs_parent_pre 8 has unvisted children so mark 8 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[94, 20, 22, 91, 29, 30, 40, 66, 78]
+after pre: list_of_unvisited_children: [94, 20, 22, 91, 29, 30, 40, 66, 78]
+dfs_parent node 8 visit parents
+dfs_parent visit node 5
+dfs_parent from node 5
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 60 not in visited
+dfs_parent_pre: child 12 not in visited
+dfs_parent_pre: child 49 not in visited
+dfs_parent_pre: child 52 not in visited
+dfs_parent_pre: child 51 not in visited
+dfs_parent_pre: child 14 not in visited
+dfs_parent_pre: child 65 not in visited
+dfs_parent_pre 5 has unvisted children so mark 5 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[60, 12, 49, 52, 51, 14, 65]
+after pre: list_of_unvisited_children: [60, 12, 49, 52, 51, 14, 65]
+dfs_parent node 5 visit parents
+dfs_parent neighbor 7 already visited
+dfs_parent visit node 23
+dfs_parent from node 23
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 85 not in visited
+dfs_parent_pre: child 46 not in visited
+dfs_parent_pre: child 87 not in visited
+dfs_parent_pre: child 95 not in visited
+dfs_parent_pre 23 has unvisted children so mark 23 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[85, 46, 87, 95]
+after pre: list_of_unvisited_children: [85, 46, 87, 95]
+dfs_parent node 23 visit parents
+dfs_parent visit node 24
+dfs_parent from node 24
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 51 not in visited
+dfs_parent_pre: child 81 not in visited
+dfs_parent_pre: child 100 not in visited
+dfs_parent_pre: child 48 not in visited
+dfs_parent_pre: child 21 not in visited
+dfs_parent_pre 24 has unvisted children so mark 24 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[51, 81, 100, 48, 21]
+after pre: list_of_unvisited_children: [51, 81, 100, 48, 21]
+dfs_parent node 24 visit parents
+dfs_parent visit node 41
+dfs_parent from node 41
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 69 not in visited
+dfs_parent_pre: child 60 not in visited
+dfs_parent_pre: child 83 not in visited
+dfs_parent_pre: child 100 not in visited
+dfs_parent_pre: child 92 not in visited
+dfs_parent_pre 41 has unvisted children so mark 41 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[69, 60, 83, 100, 92]
+after pre: list_of_unvisited_children: [69, 60, 83, 100, 92]
+dfs_parent node 41 visit parents
+dfs_parent visit node 27
+dfs_parent from node 27
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 50 not in visited
+dfs_parent_pre: child 12 not in visited
+dfs_parent_pre: child 77 not in visited
+dfs_parent_pre: child 26 not in visited
+dfs_parent_pre 27 has unvisted children so mark 27 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[50, 12, 77, 26]
+after pre: list_of_unvisited_children: [50, 12, 77, 26]
+dfs_parent node 27 visit parents
+dfs_parent visit node 2
+dfs_parent from node 2
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 98 not in visited
+dfs_parent_pre: child 10 not in visited
+dfs_parent_pre: child 56 not in visited
+dfs_parent_pre: child 13 not in visited
+dfs_parent_pre: child 96 not in visited
+dfs_parent_pre: child 62 not in visited
+dfs_parent_pre: child 66 not in visited
+dfs_parent_pre 2 has unvisted children so mark 2 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[98, 10, 56, 13, 96, 62, 66]
+after pre: list_of_unvisited_children: [98, 10, 56, 13, 96, 62, 66]
+dfs_parent node 2 visit parents
+dfs_parent visit node 6
+dfs_parent from node 6
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 35 not in visited
+dfs_parent_pre: child 10 not in visited
+dfs_parent_pre: child 12 not in visited
+dfs_parent_pre 6 has unvisted children so mark 6 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[35, 10, 12]
+after pre: list_of_unvisited_children: [35, 10, 12]
+dfs_parent node 6 visit parents
+dfs_parent neighbor 7 already visited
+dfs_parent neighbor 15 already visited
+dfs_parent visit node 30
+dfs_parent from node 30
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 36 not in visited
+dfs_parent_pre: child 79 not in visited
+dfs_parent_pre: child 100 not in visited
+dfs_parent_pre 30 has unvisted children so mark 30 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[36, 79, 100]
+after pre: list_of_unvisited_children: [36, 79, 100]
+dfs_parent node 30 visit parents
+dfs_parent neighbor 8 already visited
+dfs_parent visit node 25
+dfs_parent from node 25
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 86 not in visited
+dfs_parent_pre 25 has unvisted children so mark 25 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[86]
+after pre: list_of_unvisited_children: [86]
+dfs_parent node 25 visit parents
+dfs_parent visit node 55
+dfs_parent from node 55
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 100 not in visited
+dfs_parent_pre: child 89 not in visited
+dfs_parent_pre: child 43 not in visited
+dfs_parent_pre: child 98 not in visited
+dfs_parent_pre 55 has unvisted children so mark 55 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[100, 89, 43, 98]
+after pre: list_of_unvisited_children: [100, 89, 43, 98]
+dfs_parent node 55 visit parents
+dfs_parent visit node 32
+dfs_parent from node 32
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 71 not in visited
+dfs_parent_pre: child 29 not in visited
+dfs_parent_pre: child 17 not in visited
+dfs_parent_pre: child 44 not in visited
+dfs_parent_pre: child 48 not in visited
+dfs_parent_pre 32 has unvisted children so mark 32 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[71, 29, 17, 44, 48]
+after pre: list_of_unvisited_children: [71, 29, 17, 44, 48]
+dfs_parent node 32 visit parents
+dfs_parent neighbor 39 already visited
+dfs_parent visit node 67
+dfs_parent from node 67
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 93 not in visited
+dfs_parent_pre: child 101 not in visited
+dfs_parent_pre 67 has unvisted children so mark 67 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[93, 101]
+after pre: list_of_unvisited_children: [93, 101]
+dfs_parent node 67 visit parents
+dfs_parent visit node 12
+dfs_parent from node 12
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 40 not in visited
+dfs_parent_pre: child 21 not in visited
+dfs_parent_pre 12 has unvisted children so mark 12 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[40, 21]
+after pre: list_of_unvisited_children: [40, 21]
+dfs_parent node 12 visit parents
+dfs_parent neighbor 5 already visited
+dfs_parent neighbor 6 already visited
+dfs_parent neighbor 7 already visited
+dfs_parent neighbor 27 already visited
+dfs_parent visit node 60
+dfs_parent from node 60
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 75 not in visited
+dfs_parent_pre: child 37 not in visited
+dfs_parent_pre: child 58 not in visited
+dfs_parent_pre 60 has unvisted children so mark 60 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[75, 37, 58]
+after pre: list_of_unvisited_children: [75, 37, 58]
+dfs_parent node 60 visit parents
+dfs_parent neighbor 5 already visited
+dfs_parent visit node 19
+dfs_parent from node 19
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 98 not in visited
+dfs_parent_pre: child 11 not in visited
+dfs_parent_pre: child 44 not in visited
+dfs_parent_pre: child 10 not in visited
+dfs_parent_pre: child 40 not in visited
+dfs_parent_pre: child 28 not in visited
+dfs_parent_pre: child 52 not in visited
+dfs_parent_pre: child 62 not in visited
+dfs_parent_pre 19 has unvisted children so mark 19 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[98, 11, 44, 10, 40, 28, 52, 62]
+after pre: list_of_unvisited_children: [98, 11, 44, 10, 40, 28, 52, 62]
+dfs_parent node 19 visit parents
+dfs_parent visit node 14
+dfs_parent from node 14
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 11 not in visited
+dfs_parent_pre: child 43 not in visited
+dfs_parent_pre: child 53 not in visited
+dfs_parent_pre: child 18 not in visited
+dfs_parent_pre: child 31 not in visited
+dfs_parent_pre 14 has unvisted children so mark 14 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[11, 43, 53, 18, 31]
+after pre: list_of_unvisited_children: [11, 43, 53, 18, 31]
+dfs_parent node 14 visit parents
+dfs_parent neighbor 5 already visited
+dfs_parent visit node 29
+dfs_parent from node 29
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 72 not in visited
+dfs_parent_pre: child 68 not in visited
+dfs_parent_pre: child 44 not in visited
+dfs_parent_pre: child 42 not in visited
+dfs_parent_pre: child 87 not in visited
+dfs_parent_pre: child 17 not in visited
+dfs_parent_pre: child 9 not in visited
+dfs_parent_pre: child 18 not in visited
+dfs_parent_pre 29 has unvisted children so mark 29 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[72, 68, 44, 42, 87, 17, 9, 18]
+after pre: list_of_unvisited_children: [72, 68, 44, 42, 87, 17, 9, 18]
+dfs_parent node 29 visit parents
+dfs_parent neighbor 8 already visited
+dfs_parent neighbor 15 already visited
+dfs_parent neighbor 32 already visited
+dfs_parent visit node 49
+dfs_parent from node 49
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 82 not in visited
+dfs_parent_pre: child 79 not in visited
+dfs_parent_pre: child 35 not in visited
+dfs_parent_pre 49 has unvisted children so mark 49 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[82, 79, 35]
+after pre: list_of_unvisited_children: [82, 79, 35]
+dfs_parent node 49 visit parents
+dfs_parent neighbor 5 already visited
+dfs_parent visit node 13
+dfs_parent from node 13
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 37 not in visited
+dfs_parent_pre 13 has unvisted children so mark 13 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[37]
+after pre: list_of_unvisited_children: [37]
+dfs_parent node 13 visit parents
+dfs_parent neighbor 2 already visited
+dfs_parent visit node 81
+dfs_parent from node 81
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 76 not in visited
+dfs_parent_pre: child 90 not in visited
+dfs_parent_pre 81 has unvisted children so mark 81 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[76, 90]
+after pre: list_of_unvisited_children: [76, 90]
+dfs_parent node 81 visit parents
+dfs_parent neighbor 24 already visited
+dfs_parent neighbor 38 already visited
+dfs_parent visit node 42
+dfs_parent from node 42
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 82 not in visited
+dfs_parent_pre: child 94 not in visited
+dfs_parent_pre: child 33 not in visited
+dfs_parent_pre: child 76 not in visited
+dfs_parent_pre: child 70 not in visited
+dfs_parent_pre 42 has unvisted children so mark 42 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[82, 94, 33, 76, 70]
+after pre: list_of_unvisited_children: [82, 94, 33, 76, 70]
+dfs_parent node 42 visit parents
+dfs_parent neighbor 29 already visited
+dfs_parent visit node 52
+dfs_parent from node 52
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 86 not in visited
+dfs_parent_pre: child 31 not in visited
+dfs_parent_pre: child 16 not in visited
+dfs_parent_pre 52 has unvisted children so mark 52 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[86, 31, 16]
+after pre: list_of_unvisited_children: [86, 31, 16]
+dfs_parent node 52 visit parents
+dfs_parent neighbor 5 already visited
+dfs_parent visit node 9
+dfs_parent from node 9
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 94 not in visited
+dfs_parent_pre: child 45 not in visited
+dfs_parent_pre: child 11 not in visited
+dfs_parent_pre: child 78 not in visited
+dfs_parent_pre: child 37 not in visited
+dfs_parent_pre 9 has unvisted children so mark 9 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[94, 45, 11, 78, 37]
+after pre: list_of_unvisited_children: [94, 45, 11, 78, 37]
+dfs_parent node 9 visit parents
+dfs_parent visit node 11
+dfs_parent from node 11
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 78 not in visited
+dfs_parent_pre: child 72 not in visited
+dfs_parent_pre: child 64 not in visited
+dfs_parent_pre: child 58 not in visited
+dfs_parent_pre: child 90 not in visited
+dfs_parent_pre: child 22 not in visited
+dfs_parent_pre 11 has unvisted children so mark 11 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[78, 72, 64, 58, 90, 22]
+after pre: list_of_unvisited_children: [78, 72, 64, 58, 90, 22]
+dfs_parent node 11 visit parents
+dfs_parent neighbor 4 already visited
+dfs_parent neighbor 9 already visited
+dfs_parent neighbor 14 already visited
+dfs_parent neighbor 19 already visited
+dfs_parent visit node 20
+dfs_parent from node 20
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 72 not in visited
+dfs_parent_pre: child 22 not in visited
+dfs_parent_pre: child 83 not in visited
+dfs_parent_pre: child 45 not in visited
+dfs_parent_pre 20 has unvisted children so mark 20 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[72, 22, 83, 45]
+after pre: list_of_unvisited_children: [72, 22, 83, 45]
+dfs_parent node 20 visit parents
+dfs_parent neighbor 4 already visited
+dfs_parent neighbor 8 already visited
+dfs_parent neighbor 15 already visited
+dfs_parent visit node 53
+dfs_parent from node 53
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 34 not in visited
+dfs_parent_pre: child 64 not in visited
+dfs_parent_pre: child 28 not in visited
+dfs_parent_pre: child 72 not in visited
+dfs_parent_pre: child 18 not in visited
+dfs_parent_pre: child 33 not in visited
+dfs_parent_pre: child 63 not in visited
+dfs_parent_pre 53 has unvisted children so mark 53 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[34, 64, 28, 72, 18, 33, 63]
+after pre: list_of_unvisited_children: [34, 64, 28, 72, 18, 33, 63]
+dfs_parent node 53 visit parents
+dfs_parent neighbor 4 already visited
+dfs_parent neighbor 14 already visited
+dfs_parent visit node 28
+dfs_parent from node 28
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 87 not in visited
+dfs_parent_pre: child 33 not in visited
+dfs_parent_pre: child 71 not in visited
+dfs_parent_pre: child 65 not in visited
+dfs_parent_pre 28 has unvisted children so mark 28 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[87, 33, 71, 65]
+after pre: list_of_unvisited_children: [87, 33, 71, 65]
+dfs_parent node 28 visit parents
+dfs_parent visit node 17
+dfs_parent from node 17
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 93 not in visited
+dfs_parent_pre: child 68 not in visited
+dfs_parent_pre: child 22 not in visited
+dfs_parent_pre: child 86 not in visited
+dfs_parent_pre 17 has unvisted children so mark 17 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[93, 68, 22, 86]
+after pre: list_of_unvisited_children: [93, 68, 22, 86]
+dfs_parent node 17 visit parents
+dfs_parent neighbor 29 already visited
+dfs_parent neighbor 32 already visited
+dfs_parent visit node 34
+dfs_parent from node 34
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 99 not in visited
+dfs_parent_pre 34 has unvisted children so mark 34 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[99]
+after pre: list_of_unvisited_children: [99]
+dfs_parent node 34 visit parents
+dfs_parent visit node 10
+dfs_parent from node 10
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 101 not in visited
+dfs_parent_pre: child 85 not in visited
+dfs_parent_pre 10 has unvisted children so mark 10 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[101, 85]
+after pre: list_of_unvisited_children: [101, 85]
+dfs_parent node 10 visit parents
+dfs_parent neighbor 2 already visited
+dfs_parent neighbor 6 already visited
+dfs_parent neighbor 19 already visited
+dfs_parent visit node 31
+dfs_parent from node 31
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 91 not in visited
+dfs_parent_pre: child 33 not in visited
+dfs_parent_pre: child 26 not in visited
+dfs_parent_pre: child 71 not in visited
+dfs_parent_pre: child 97 not in visited
+dfs_parent_pre: child 61 not in visited
+dfs_parent_pre: child 66 not in visited
+dfs_parent_pre 31 has unvisted children so mark 31 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[91, 33, 26, 71, 97, 61, 66]
+after pre: list_of_unvisited_children: [91, 33, 26, 71, 97, 61, 66]
+dfs_parent node 31 visit parents
+dfs_parent neighbor 14 already visited
+dfs_parent visit node 50
+dfs_parent from node 50
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 22 not in visited
+dfs_parent_pre: child 66 not in visited
+dfs_parent_pre: child 76 not in visited
+dfs_parent_pre 50 has unvisted children so mark 50 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[22, 66, 76]
+after pre: list_of_unvisited_children: [22, 66, 76]
+dfs_parent node 50 visit parents
+dfs_parent neighbor 27 already visited
+dfs_parent visit node 47
+dfs_parent from node 47
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 78 not in visited
+dfs_parent_pre: child 40 not in visited
+dfs_parent_pre: child 82 not in visited
+dfs_parent_pre: child 46 not in visited
+dfs_parent_pre 47 has unvisted children so mark 47 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[78, 40, 82, 46]
+after pre: list_of_unvisited_children: [78, 40, 82, 46]
+dfs_parent node 47 visit parents
+dfs_parent visit node 40
+dfs_parent from node 40
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 46 not in visited
+dfs_parent_pre: child 97 not in visited
+dfs_parent_pre: child 80 not in visited
+dfs_parent_pre: child 21 not in visited
+dfs_parent_pre: child 85 not in visited
+dfs_parent_pre: child 22 not in visited
+dfs_parent_pre 40 has unvisted children so mark 40 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[46, 97, 80, 21, 85, 22]
+after pre: list_of_unvisited_children: [46, 97, 80, 21, 85, 22]
+dfs_parent node 40 visit parents
+dfs_parent neighbor 8 already visited
+dfs_parent neighbor 12 already visited
+dfs_parent neighbor 19 already visited
+dfs_parent neighbor 39 already visited
+dfs_parent neighbor 47 already visited
+dfs_parent visit node 71
+dfs_parent from node 71
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 57 not in visited
+dfs_parent_pre: child 43 not in visited
+dfs_parent_pre 71 has unvisted children so mark 71 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[57, 43]
+after pre: list_of_unvisited_children: [57, 43]
+dfs_parent node 71 visit parents
+dfs_parent neighbor 4 already visited
+dfs_parent neighbor 28 already visited
+dfs_parent neighbor 31 already visited
+dfs_parent neighbor 32 already visited
+dfs_parent neighbor 38 already visited
+dfs_parent visit node 59
+dfs_parent from node 59
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 101 not in visited
+dfs_parent_pre: child 43 not in visited
+dfs_parent_pre: child 48 not in visited
+dfs_parent_pre: child 58 not in visited
+dfs_parent_pre: child 68 not in visited
+dfs_parent_pre: child 99 not in visited
+dfs_parent_pre: child 16 not in visited
+dfs_parent_pre: child 90 not in visited
+dfs_parent_pre 59 has unvisted children so mark 59 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[101, 43, 48, 58, 68, 99, 16, 90]
+after pre: list_of_unvisited_children: [101, 43, 48, 58, 68, 99, 16, 90]
+dfs_parent node 59 visit parents
+dfs_parent visit node 62
+dfs_parent from node 62
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 74 not in visited
+dfs_parent_pre: child 91 not in visited
+dfs_parent_pre: child 56 not in visited
+dfs_parent_pre 62 has unvisted children so mark 62 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[74, 91, 56]
+after pre: list_of_unvisited_children: [74, 91, 56]
+dfs_parent node 62 visit parents
+dfs_parent neighbor 2 already visited
+dfs_parent neighbor 19 already visited
+dfs_parent visit node 37
+dfs_parent from node 37
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 86 not in visited
+dfs_parent_pre: child 66 not in visited
+dfs_parent_pre: child 48 not in visited
+dfs_parent_pre 37 has unvisted children so mark 37 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[86, 66, 48]
+*******dfs_parent_pre_parent_traversal: 13 after removing child 37 has no unvisited children, so remove 13 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 13 not in queue.
+*******dfs_parent_pre_parent_traversal: 13 not in frontier.
+after pre: list_of_unvisited_children: [86, 66, 48]
+dfs_parent node 37 visit parents
+dfs_parent neighbor 9 already visited
+dfs_parent neighbor 13 already visited
+dfs_parent neighbor 15 already visited
+dfs_parent visit node 16
+dfs_parent from node 16
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 73 not in visited
+dfs_parent_pre 16 has unvisted children so mark 16 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[73]
+after pre: list_of_unvisited_children: [73]
+dfs_parent node 16 visit parents
+dfs_parent neighbor 52 already visited
+dfs_parent neighbor 59 already visited
+dfs_parent visit node 63
+dfs_parent from node 63
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 33 not in visited
+dfs_parent_pre: child 45 not in visited
+dfs_parent_pre: child 98 not in visited
+dfs_parent_pre 63 has unvisted children so mark 63 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[33, 45, 98]
+after pre: list_of_unvisited_children: [33, 45, 98]
+dfs_parent node 63 visit parents
+dfs_parent neighbor 7 already visited
+dfs_parent visit node 18
+dfs_parent from node 18
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 83 not in visited
+dfs_parent_pre 18 has unvisted children so mark 18 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[83]
+after pre: list_of_unvisited_children: [83]
+dfs_parent node 18 visit parents
+dfs_parent neighbor 14 already visited
+dfs_parent neighbor 29 already visited
+dfs_parent neighbor 39 already visited
+dfs_parent neighbor 53 already visited
+dfs_parent visit node 76
+dfs_parent from node 76
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 80 not in visited
+dfs_parent_pre: child 89 not in visited
+dfs_parent_pre 76 has unvisted children so mark 76 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[80, 89]
+after pre: list_of_unvisited_children: [80, 89]
+dfs_parent node 76 visit parents
+dfs_parent visit node 36
+dfs_parent from node 36
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 56 not in visited
+dfs_parent_pre: child 87 not in visited
+dfs_parent_pre 36 has unvisted children so mark 36 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[56, 87]
+after pre: list_of_unvisited_children: [56, 87]
+dfs_parent node 36 visit parents
+dfs_parent neighbor 30 already visited
+dfs_parent visit node 35
+dfs_parent from node 35
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 84 not in visited
+dfs_parent_pre: child 46 not in visited
+dfs_parent_pre 35 has unvisted children so mark 35 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[84, 46]
+*******dfs_parent_pre_parent_traversal: 6 after removing child 35 has no unvisited children, so remove 6 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 6 not in queue.
+*******dfs_parent_pre_parent_traversal: 6 not in frontier.
+after pre: list_of_unvisited_children: [84, 46]
+dfs_parent node 35 visit parents
+dfs_parent neighbor 6 already visited
+dfs_parent visit node 33
+dfs_parent from node 33
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 56 not in visited
+dfs_parent_pre 33 has unvisted children so mark 33 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[56]
+after pre: list_of_unvisited_children: [56]
+dfs_parent node 33 visit parents
+dfs_parent neighbor 28 already visited
+dfs_parent neighbor 31 already visited
+dfs_parent neighbor 42 already visited
+dfs_parent neighbor 53 already visited
+dfs_parent neighbor 63 already visited
+dfs_parent visit node 92
+dfs_parent from node 92
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 57 not in visited
+dfs_parent_pre 92 has unvisted children so mark 92 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[57]
+*******dfs_parent_pre_parent_traversal: 4 after removing child 92 has no unvisited children, so remove 4 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 4 not in queue.
+*******dfs_parent_pre_parent_traversal: 4 not in frontier.
+after pre: list_of_unvisited_children: [57]
+dfs_parent node 92 visit parents
+dfs_parent neighbor 4 already visited
+dfs_parent neighbor 41 already visited
+dfs_parent visit node 46
+dfs_parent from node 46
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 45 not in visited
+dfs_parent_pre: child 56 not in visited
+dfs_parent_pre: child 77 not in visited
+dfs_parent_pre 46 has unvisted children so mark 46 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[45, 56, 77]
+after pre: list_of_unvisited_children: [45, 56, 77]
+dfs_parent node 46 visit parents
+dfs_parent neighbor 23 already visited
+dfs_parent neighbor 35 already visited
+dfs_parent neighbor 40 already visited
+dfs_parent neighbor 47 already visited
+dfs_parent visit node 85
+dfs_parent from node 85
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 61 not in visited
+dfs_parent_pre: child 48 not in visited
+dfs_parent_pre: child 72 not in visited
+dfs_parent_pre: child 56 not in visited
+dfs_parent_pre: child 95 not in visited
+dfs_parent_pre 85 has unvisted children so mark 85 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[61, 48, 72, 56, 95]
+after pre: list_of_unvisited_children: [61, 48, 72, 56, 95]
+dfs_parent node 85 visit parents
+dfs_parent neighbor 10 already visited
+dfs_parent neighbor 23 already visited
+dfs_parent neighbor 40 already visited
+dfs_parent visit node 61
+dfs_parent from node 61
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre mark 61 as visited since it has no unvisited children but do not add it to bfs queue since no children need to be visited
+after pre: list_of_unvisited_children: []
+dfs_parent node 61 visit parents
+dfs_parent neighbor 31 already visited
+dfs_parent visit node 66
+dfs_parent from node 66
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 51 not in visited
+dfs_parent_pre: child 65 not in visited
+dfs_parent_pre: child 44 not in visited
+dfs_parent_pre: child 57 not in visited
+dfs_parent_pre: child 86 not in visited
+dfs_parent_pre 66 has unvisted children so mark 66 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[51, 65, 44, 57, 86]
+after pre: list_of_unvisited_children: [51, 65, 44, 57, 86]
+dfs_parent node 66 visit parents
+dfs_parent neighbor 2 already visited
+dfs_parent neighbor 8 already visited
+dfs_parent neighbor 31 already visited
+dfs_parent neighbor 37 already visited
+dfs_parent neighbor 50 already visited
+dfs_parent visit node 80
+dfs_parent from node 80
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 94 not in visited
+dfs_parent_pre: child 87 not in visited
+dfs_parent_pre 80 has unvisted children so mark 80 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[94, 87]
+after pre: list_of_unvisited_children: [94, 87]
+dfs_parent node 80 visit parents
+dfs_parent neighbor 40 already visited
+dfs_parent visit node 64
+dfs_parent from node 64
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 57 not in visited
+dfs_parent_pre: child 74 not in visited
+dfs_parent_pre: child 95 not in visited
+dfs_parent_pre 64 has unvisted children so mark 64 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[57, 74, 95]
+after pre: list_of_unvisited_children: [57, 74, 95]
+dfs_parent node 64 visit parents
+dfs_parent neighbor 11 already visited
+dfs_parent visit node 26
+dfs_parent from node 26
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 65 not in visited
+dfs_parent_pre 26 has unvisted children so mark 26 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[65]
+after pre: list_of_unvisited_children: [65]
+dfs_parent node 26 visit parents
+dfs_parent neighbor 7 already visited
+dfs_parent neighbor 27 already visited
+dfs_parent neighbor 31 already visited
+dfs_parent visit node 44
+dfs_parent from node 44
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 69 not in visited
+dfs_parent_pre: child 65 not in visited
+dfs_parent_pre 44 has unvisted children so mark 44 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[69, 65]
+after pre: list_of_unvisited_children: [69, 65]
+dfs_parent node 44 visit parents
+dfs_parent neighbor 19 already visited
+dfs_parent neighbor 29 already visited
+dfs_parent neighbor 32 already visited
+dfs_parent neighbor 66 already visited
+dfs_parent visit node 84
+dfs_parent from node 84
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 78 not in visited
+dfs_parent_pre 84 has unvisted children so mark 84 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[78]
+*******dfs_parent_pre_parent_traversal: 35 after removing child 84 has no unvisited children, so remove 35 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 35 not in queue.
+*******dfs_parent_pre_parent_traversal: 35 not in frontier.
+after pre: list_of_unvisited_children: [78]
+dfs_parent node 84 visit parents
+dfs_parent neighbor 35 already visited
+dfs_parent visit node 45
+dfs_parent from node 45
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre mark 45 as visited since it has no unvisited children but do not add it to bfs queue since no children need to be visited
+after pre: list_of_unvisited_children: []
+dfs_parent node 45 visit parents
+dfs_parent neighbor 7 already visited
+dfs_parent neighbor 9 already visited
+dfs_parent neighbor 20 already visited
+dfs_parent neighbor 46 already visited
+dfs_parent visit node 54
+dfs_parent from node 54
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 86 not in visited
+dfs_parent_pre: child 93 not in visited
+dfs_parent_pre: child 75 not in visited
+dfs_parent_pre: child 74 not in visited
+dfs_parent_pre: child 88 not in visited
+dfs_parent_pre 54 has unvisted children so mark 54 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[86, 93, 75, 74, 88]
+after pre: list_of_unvisited_children: [86, 93, 75, 74, 88]
+dfs_parent node 54 visit parents
+dfs_parent neighbor 3 already visited
+dfs_parent visit node 43
+dfs_parent from node 43
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 65 not in visited
+dfs_parent_pre 43 has unvisted children so mark 43 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[65]
+*******dfs_parent_pre_parent_traversal: 14 after removing child 43 has no unvisited children, so remove 14 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 14 not in queue.
+*******dfs_parent_pre_parent_traversal: 14 not in frontier.
+after pre: list_of_unvisited_children: [65]
+dfs_parent node 43 visit parents
+dfs_parent neighbor 14 already visited
+dfs_parent neighbor 55 already visited
+dfs_parent neighbor 59 already visited
+dfs_parent neighbor 71 already visited
+dfs_parent visit node 82
+dfs_parent from node 82
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 86 not in visited
+dfs_parent_pre 82 has unvisted children so mark 82 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[86]
+after pre: list_of_unvisited_children: [86]
+dfs_parent node 82 visit parents
+dfs_parent neighbor 3 already visited
+dfs_parent neighbor 42 already visited
+dfs_parent neighbor 47 already visited
+dfs_parent visit node 48
+dfs_parent from node 48
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 93 not in visited
+dfs_parent_pre: child 99 not in visited
+dfs_parent_pre: child 87 not in visited
+dfs_parent_pre 48 has unvisted children so mark 48 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[93, 99, 87]
+*******dfs_parent_pre_parent_traversal: 32 after removing child 48 has no unvisited children, so remove 32 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 32 not in queue.
+*******dfs_parent_pre_parent_traversal: 32 not in frontier.
+after pre: list_of_unvisited_children: [93, 99, 87]
+dfs_parent node 48 visit parents
+dfs_parent neighbor 24 already visited
+dfs_parent neighbor 32 already visited
+dfs_parent neighbor 37 already visited
+dfs_parent neighbor 59 already visited
+dfs_parent visit node 73
+dfs_parent from node 73
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 83 not in visited
+dfs_parent_pre: child 78 not in visited
+dfs_parent_pre 73 has unvisted children so mark 73 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[83, 78]
+*******dfs_parent_pre_parent_traversal: 16 after removing child 73 has no unvisited children, so remove 16 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 16 not in queue.
+*******dfs_parent_pre_parent_traversal: 16 not in frontier.
+after pre: list_of_unvisited_children: [83, 78]
+dfs_parent node 73 visit parents
+dfs_parent neighbor 16 already visited
+dfs_parent visit node 89
+dfs_parent from node 89
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 51 not in visited
+dfs_parent_pre 89 has unvisted children so mark 89 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[51]
+*******dfs_parent_pre_parent_traversal: 76 after removing child 89 has no unvisited children, so remove 76 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 76 not in queue.
+*******dfs_parent_pre_parent_traversal: 76 not in frontier.
+after pre: list_of_unvisited_children: [51]
+dfs_parent node 89 visit parents
+dfs_parent visit node 21
+dfs_parent from node 21
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre mark 21 as visited since it has no unvisited children but do not add it to bfs queue since no children need to be visited
+*******dfs_parent_pre_parent_traversal: 12 after removing child 21 has no unvisited children, so remove 12 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 12 not in queue.
+*******dfs_parent_pre_parent_traversal: 12 not in frontier.
+after pre: list_of_unvisited_children: []
+dfs_parent node 21 visit parents
+dfs_parent neighbor 12 already visited
+dfs_parent neighbor 24 already visited
+dfs_parent neighbor 40 already visited
+dfs_parent visit node 83
+dfs_parent from node 83
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 69 not in visited
+dfs_parent_pre: child 90 not in visited
+dfs_parent_pre: child 101 not in visited
+dfs_parent_pre: child 88 not in visited
+dfs_parent_pre: child 79 not in visited
+dfs_parent_pre: child 65 not in visited
+dfs_parent_pre 83 has unvisted children so mark 83 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[69, 90, 101, 88, 79, 65]
+*******dfs_parent_pre_parent_traversal: 18 after removing child 83 has no unvisited children, so remove 18 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 18 not in queue.
+*******dfs_parent_pre_parent_traversal: 18 not in frontier.
+after pre: list_of_unvisited_children: [69, 90, 101, 88, 79, 65]
+dfs_parent node 83 visit parents
+dfs_parent neighbor 18 already visited
+dfs_parent neighbor 20 already visited
+dfs_parent neighbor 41 already visited
+dfs_parent visit node 69
+dfs_parent from node 69
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 77 not in visited
+dfs_parent_pre: child 65 not in visited
+dfs_parent_pre 69 has unvisted children so mark 69 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[77, 65]
+after pre: list_of_unvisited_children: [77, 65]
+dfs_parent node 69 visit parents
+dfs_parent neighbor 7 already visited
+dfs_parent neighbor 41 already visited
+dfs_parent neighbor 44 already visited
+dfs_parent visit node 72
+dfs_parent from node 72
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 74 not in visited
+dfs_parent_pre: child 101 not in visited
+dfs_parent_pre: child 51 not in visited
+dfs_parent_pre 72 has unvisted children so mark 72 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[74, 101, 51]
+*******dfs_parent_pre_parent_traversal: 53 after removing child 72 has no unvisited children, so remove 53 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 53 not in queue.
+*******dfs_parent_pre_parent_traversal: 53 not in frontier.
+after pre: list_of_unvisited_children: [74, 101, 51]
+dfs_parent node 72 visit parents
+dfs_parent neighbor 11 already visited
+dfs_parent neighbor 20 already visited
+dfs_parent neighbor 29 already visited
+dfs_parent neighbor 53 already visited
+dfs_parent visit node 56
+dfs_parent from node 56
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 94 not in visited
+dfs_parent_pre 56 has unvisted children so mark 56 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[94]
+*******dfs_parent_pre_parent_traversal: 33 after removing child 56 has no unvisited children, so remove 33 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 33 not in queue.
+*******dfs_parent_pre_parent_traversal: 33 not in frontier.
+after pre: list_of_unvisited_children: [94]
+dfs_parent node 56 visit parents
+dfs_parent neighbor 2 already visited
+dfs_parent visit node 22
+dfs_parent from node 22
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 95 not in visited
+dfs_parent_pre 22 has unvisted children so mark 22 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[95]
+*******dfs_parent_pre_parent_traversal: 20 after removing child 22 has no unvisited children, so remove 20 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 20 not in queue.
+*******dfs_parent_pre_parent_traversal: 20 not in frontier.
+*******dfs_parent_pre_parent_traversal: 50 after removing child 22 has no unvisited children, so remove 50 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 50 not in queue.
+*******dfs_parent_pre_parent_traversal: 50 not in frontier.
+after pre: list_of_unvisited_children: [95]
+dfs_parent node 22 visit parents
+dfs_parent neighbor 8 already visited
+dfs_parent neighbor 11 already visited
+dfs_parent neighbor 17 already visited
+dfs_parent neighbor 20 already visited
+dfs_parent neighbor 40 already visited
+dfs_parent neighbor 50 already visited
+dfs_parent visit node 86
+dfs_parent from node 86
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 77 not in visited
+dfs_parent_pre 86 has unvisted children so mark 86 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[77]
+*******dfs_parent_pre_parent_traversal: 25 after removing child 86 has no unvisited children, so remove 25 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 25 not in queue.
+*******dfs_parent_pre_parent_traversal: 25 not in frontier.
+*******dfs_parent_pre_parent_traversal: 37 after removing child 86 has no unvisited children, so remove 37 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 37 not in queue.
+*******dfs_parent_pre_parent_traversal: 37 not in frontier.
+*******dfs_parent_pre_parent_traversal: 52 after removing child 86 has no unvisited children, so remove 52 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 52 not in queue.
+*******dfs_parent_pre_parent_traversal: 52 not in frontier.
+*******dfs_parent_pre_parent_traversal: 82 after removing child 86 has no unvisited children, so remove 82 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 82 not in queue.
+*******dfs_parent_pre_parent_traversal: 82 not in frontier.
+after pre: list_of_unvisited_children: [77]
+dfs_parent node 86 visit parents
+dfs_parent neighbor 17 already visited
+dfs_parent neighbor 25 already visited
+dfs_parent neighbor 37 already visited
+dfs_parent neighbor 52 already visited
+dfs_parent neighbor 54 already visited
+dfs_parent neighbor 66 already visited
+dfs_parent neighbor 82 already visited
+check unvisited child 77
+unvisited child 77 not visited during parent traversal
+1 children remain unvisited
+queue after add 86: 86 
+frontier after add 86: 86 
+dfs_parent add 86 to partition
+dfs_parent visit node 91
+dfs_parent from node 91
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre mark 91 as visited since it has no unvisited children but do not add it to bfs queue since no children need to be visited
+after pre: list_of_unvisited_children: []
+dfs_parent node 91 visit parents
+dfs_parent neighbor 8 already visited
+dfs_parent neighbor 31 already visited
+dfs_parent neighbor 39 already visited
+dfs_parent neighbor 62 already visited
+dfs_parent visit node 70
+dfs_parent from node 70
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 94 not in visited
+dfs_parent_pre 70 has unvisted children so mark 70 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[94]
+after pre: list_of_unvisited_children: [94]
+dfs_parent node 70 visit parents
+dfs_parent neighbor 42 already visited
+dfs_parent visit node 58
+dfs_parent from node 58
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 74 not in visited
+dfs_parent_pre: child 90 not in visited
+dfs_parent_pre 58 has unvisted children so mark 58 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[74, 90]
+after pre: list_of_unvisited_children: [74, 90]
+dfs_parent node 58 visit parents
+dfs_parent neighbor 11 already visited
+dfs_parent neighbor 59 already visited
+dfs_parent neighbor 60 already visited
+check unvisited child 74
+unvisited child 74 not visited during parent traversal
+check unvisited child 90
+unvisited child 90 not visited during parent traversal
+2 children remain unvisited
+queue after add 58: 86 58 
+frontier after add 58: 86 58 
+dfs_parent add 58 to partition
+dfs_parent visit node 68
+dfs_parent from node 68
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 78 not in visited
+dfs_parent_pre: child 96 not in visited
+dfs_parent_pre: child 75 not in visited
+dfs_parent_pre 68 has unvisted children so mark 68 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[78, 96, 75]
+after pre: list_of_unvisited_children: [78, 96, 75]
+dfs_parent node 68 visit parents
+dfs_parent neighbor 17 already visited
+dfs_parent neighbor 29 already visited
+dfs_parent neighbor 38 already visited
+dfs_parent neighbor 59 already visited
+dfs_parent visit node 77
+dfs_parent from node 77
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 98 not in visited
+dfs_parent_pre: child 99 not in visited
+dfs_parent_pre: child 74 not in visited
+dfs_parent_pre 77 has unvisted children so mark 77 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[98, 99, 74]
+*******dfs_parent_pre_parent_traversal: 3 after removing child 77 has no unvisited children, so remove 3 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 3 not in queue.
+*******dfs_parent_pre_parent_traversal: 3 not in frontier.
+*******dfs_parent_pre_parent_traversal: 27 after removing child 77 has no unvisited children, so remove 27 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 27 not in queue.
+*******dfs_parent_pre_parent_traversal: 27 not in frontier.
+*******dfs_parent_pre_parent_traversal: 46 after removing child 77 has no unvisited children, so remove 46 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 46 not in queue.
+*******dfs_parent_pre_parent_traversal: 46 not in frontier.
+*******dfs_parent_pre_parent_traversal: 86 after removing child 77 has no unvisited children, so remove 86 from queue and frontier.
+after pre: list_of_unvisited_children: [98, 99, 74]
+dfs_parent node 77 visit parents
+dfs_parent neighbor 3 already visited
+dfs_parent neighbor 27 already visited
+dfs_parent neighbor 46 already visited
+dfs_parent neighbor 69 already visited
+dfs_parent neighbor 86 already visited
+dfs_parent visit node 94
+dfs_parent from node 94
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre mark 94 as visited since it has no unvisited children but do not add it to bfs queue since no children need to be visited
+*******dfs_parent_pre_parent_traversal: 42 after removing child 94 has no unvisited children, so remove 42 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 42 not in queue.
+*******dfs_parent_pre_parent_traversal: 42 not in frontier.
+*******dfs_parent_pre_parent_traversal: 56 after removing child 94 has no unvisited children, so remove 56 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 56 not in queue.
+*******dfs_parent_pre_parent_traversal: 56 not in frontier.
+*******dfs_parent_pre_parent_traversal: 70 after removing child 94 has no unvisited children, so remove 70 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 70 not in queue.
+*******dfs_parent_pre_parent_traversal: 70 not in frontier.
+after pre: list_of_unvisited_children: []
+dfs_parent node 94 visit parents
+dfs_parent neighbor 8 already visited
+dfs_parent neighbor 9 already visited
+dfs_parent neighbor 38 already visited
+dfs_parent neighbor 42 already visited
+dfs_parent visit node 51
+dfs_parent from node 51
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 93 not in visited
+dfs_parent_pre 51 has unvisted children so mark 51 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[93]
+*******dfs_parent_pre_parent_traversal: 89 after removing child 51 has no unvisited children, so remove 89 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 89 not in queue.
+*******dfs_parent_pre_parent_traversal: 89 not in frontier.
+after pre: list_of_unvisited_children: [93]
+dfs_parent node 51 visit parents
+dfs_parent neighbor 5 already visited
+dfs_parent neighbor 24 already visited
+dfs_parent neighbor 66 already visited
+dfs_parent neighbor 72 already visited
+dfs_parent neighbor 89 already visited
+check unvisited child 93
+unvisited child 93 not visited during parent traversal
+1 children remain unvisited
+queue after add 51: 58 51 
+frontier after add 51: 58 51 
+dfs_parent add 51 to partition
+dfs_parent neighbor 56 already visited
+dfs_parent neighbor 70 already visited
+dfs_parent visit node 78
+dfs_parent from node 78
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 87 not in visited
+dfs_parent_pre 78 has unvisted children so mark 78 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[87]
+*******dfs_parent_pre_parent_traversal: 8 after removing child 78 has no unvisited children, so remove 8 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 8 not in queue.
+*******dfs_parent_pre_parent_traversal: 8 not in frontier.
+*******dfs_parent_pre_parent_traversal: 9 after removing child 78 has no unvisited children, so remove 9 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 9 not in queue.
+*******dfs_parent_pre_parent_traversal: 9 not in frontier.
+*******dfs_parent_pre_parent_traversal: 47 after removing child 78 has no unvisited children, so remove 47 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 47 not in queue.
+*******dfs_parent_pre_parent_traversal: 47 not in frontier.
+*******dfs_parent_pre_parent_traversal: 73 after removing child 78 has no unvisited children, so remove 73 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 73 not in queue.
+*******dfs_parent_pre_parent_traversal: 73 not in frontier.
+*******dfs_parent_pre_parent_traversal: 84 after removing child 78 has no unvisited children, so remove 84 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 84 not in queue.
+*******dfs_parent_pre_parent_traversal: 84 not in frontier.
+after pre: list_of_unvisited_children: [87]
+dfs_parent node 78 visit parents
+dfs_parent neighbor 8 already visited
+dfs_parent neighbor 9 already visited
+dfs_parent neighbor 11 already visited
+dfs_parent neighbor 47 already visited
+dfs_parent visit node 57
+dfs_parent from node 57
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 79 not in visited
+dfs_parent_pre: child 97 not in visited
+dfs_parent_pre 57 has unvisted children so mark 57 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[79, 97]
+*******dfs_parent_pre_parent_traversal: 71 after removing child 57 has no unvisited children, so remove 71 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 71 not in queue.
+*******dfs_parent_pre_parent_traversal: 71 not in frontier.
+*******dfs_parent_pre_parent_traversal: 92 after removing child 57 has no unvisited children, so remove 92 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 92 not in queue.
+*******dfs_parent_pre_parent_traversal: 92 not in frontier.
+after pre: list_of_unvisited_children: [79, 97]
+dfs_parent node 57 visit parents
+dfs_parent neighbor 1 already visited
+dfs_parent neighbor 64 already visited
+dfs_parent neighbor 66 already visited
+dfs_parent neighbor 71 already visited
+dfs_parent neighbor 92 already visited
+check unvisited child 79
+unvisited child 79 not visited during parent traversal
+check unvisited child 97
+unvisited child 97 not visited during parent traversal
+2 children remain unvisited
+queue after add 57: 58 51 57 
+frontier after add 57: 58 51 57 
+dfs_parent add 57 to partition
+dfs_parent neighbor 68 already visited
+dfs_parent neighbor 73 already visited
+dfs_parent neighbor 84 already visited
+dfs_parent visit node 95
+dfs_parent from node 95
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 100 not in visited
+dfs_parent_pre 95 has unvisted children so mark 95 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[100]
+*******dfs_parent_pre_parent_traversal: 22 after removing child 95 has no unvisited children, so remove 22 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 22 not in queue.
+*******dfs_parent_pre_parent_traversal: 22 not in frontier.
+*******dfs_parent_pre_parent_traversal: 85 after removing child 95 has no unvisited children, so remove 85 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 85 not in queue.
+*******dfs_parent_pre_parent_traversal: 85 not in frontier.
+after pre: list_of_unvisited_children: [100]
+dfs_parent node 95 visit parents
+dfs_parent neighbor 22 already visited
+dfs_parent neighbor 23 already visited
+dfs_parent neighbor 64 already visited
+dfs_parent visit node 75
+dfs_parent from node 75
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre mark 75 as visited since it has no unvisited children but do not add it to bfs queue since no children need to be visited
+*******dfs_parent_pre_parent_traversal: 38 after removing child 75 has no unvisited children, so remove 38 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 38 not in queue.
+*******dfs_parent_pre_parent_traversal: 38 not in frontier.
+*******dfs_parent_pre_parent_traversal: 60 after removing child 75 has no unvisited children, so remove 60 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 60 not in queue.
+*******dfs_parent_pre_parent_traversal: 60 not in frontier.
+after pre: list_of_unvisited_children: []
+dfs_parent node 75 visit parents
+dfs_parent neighbor 38 already visited
+dfs_parent neighbor 54 already visited
+dfs_parent neighbor 60 already visited
+dfs_parent neighbor 68 already visited
+0 children remain unvisited
+node 75 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 75 to partition
+dfs_parent neighbor 85 already visited
+check unvisited child 100
+unvisited child 100 not visited during parent traversal
+1 children remain unvisited
+queue after add 95: 58 51 57 95 
+frontier after add 95: 58 51 57 95 
+dfs_parent add 95 to partition
+dfs_parent visit node 100
+dfs_parent from node 100
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre mark 100 as visited since it has no unvisited children but do not add it to bfs queue since no children need to be visited
+*******dfs_parent_pre_parent_traversal: 24 after removing child 100 has no unvisited children, so remove 24 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 24 not in queue.
+*******dfs_parent_pre_parent_traversal: 24 not in frontier.
+*******dfs_parent_pre_parent_traversal: 41 after removing child 100 has no unvisited children, so remove 41 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 41 not in queue.
+*******dfs_parent_pre_parent_traversal: 41 not in frontier.
+*******dfs_parent_pre_parent_traversal: 95 after removing child 100 has no unvisited children, so remove 95 from queue and frontier.
+after pre: list_of_unvisited_children: []
+dfs_parent node 100 visit parents
+dfs_parent neighbor 15 already visited
+dfs_parent neighbor 24 already visited
+dfs_parent neighbor 30 already visited
+dfs_parent neighbor 41 already visited
+dfs_parent neighbor 55 already visited
+dfs_parent neighbor 95 already visited
+0 children remain unvisited
+node 100 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 100 to partition
+check unvisited child 87
+unvisited child 87 not visited during parent traversal
+1 children remain unvisited
+queue after add 78: 58 51 57 78 
+frontier after add 78: 58 51 57 78 
+dfs_parent add 78 to partition
+dfs_parent neighbor 80 already visited
+0 children remain unvisited
+node 94 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 94 to partition
+check unvisited child 98
+unvisited child 98 not visited during parent traversal
+check unvisited child 99
+unvisited child 99 not visited during parent traversal
+check unvisited child 74
+unvisited child 74 not visited during parent traversal
+3 children remain unvisited
+queue after add 77: 58 51 57 78 77 
+frontier after add 77: 58 51 57 78 77 
+dfs_parent add 77 to partition
+dfs_parent visit node 98
+dfs_parent from node 98
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 65 not in visited
+dfs_parent_pre 98 has unvisted children so mark 98 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[65]
+*******dfs_parent_pre_parent_traversal: 19 after removing child 98 has no unvisited children, so remove 19 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 19 not in queue.
+*******dfs_parent_pre_parent_traversal: 19 not in frontier.
+*******dfs_parent_pre_parent_traversal: 55 after removing child 98 has no unvisited children, so remove 55 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 55 not in queue.
+*******dfs_parent_pre_parent_traversal: 55 not in frontier.
+*******dfs_parent_pre_parent_traversal: 63 after removing child 98 has no unvisited children, so remove 63 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 63 not in queue.
+*******dfs_parent_pre_parent_traversal: 63 not in frontier.
+after pre: list_of_unvisited_children: [65]
+dfs_parent node 98 visit parents
+dfs_parent neighbor 2 already visited
+dfs_parent neighbor 19 already visited
+dfs_parent neighbor 55 already visited
+dfs_parent neighbor 63 already visited
+dfs_parent neighbor 77 already visited
+check unvisited child 65
+unvisited child 65 not visited during parent traversal
+1 children remain unvisited
+queue after add 98: 58 51 57 78 77 98 
+frontier after add 98: 58 51 57 78 77 98 
+dfs_parent add 98 to partition
+check unvisited child 96
+unvisited child 96 not visited during parent traversal
+1 children remain unvisited
+queue after add 68: 58 51 57 78 77 98 68 
+frontier after add 68: 58 51 57 78 77 98 68 
+dfs_parent add 68 to partition
+dfs_parent neighbor 98 already visited
+0 children remain unvisited
+node 70 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 70 to partition
+dfs_parent visit node 79
+dfs_parent from node 79
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 99 not in visited
+dfs_parent_pre 79 has unvisted children so mark 79 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[99]
+*******dfs_parent_pre_parent_traversal: 30 after removing child 79 has no unvisited children, so remove 30 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 30 not in queue.
+*******dfs_parent_pre_parent_traversal: 30 not in frontier.
+*******dfs_parent_pre_parent_traversal: 49 after removing child 79 has no unvisited children, so remove 49 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 49 not in queue.
+*******dfs_parent_pre_parent_traversal: 49 not in frontier.
+after pre: list_of_unvisited_children: [99]
+dfs_parent node 79 visit parents
+dfs_parent neighbor 30 already visited
+dfs_parent neighbor 49 already visited
+dfs_parent neighbor 57 already visited
+dfs_parent neighbor 83 already visited
+check unvisited child 99
+unvisited child 99 not visited during parent traversal
+1 children remain unvisited
+queue after add 79: 58 51 57 78 77 98 68 79 
+frontier after add 79: 58 51 57 78 77 98 68 79 
+dfs_parent add 79 to partition
+0 children remain unvisited
+node 91 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 91 to partition
+dfs_parent neighbor 94 already visited
+dfs_parent visit node 97
+dfs_parent from node 97
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre mark 97 as visited since it has no unvisited children but do not add it to bfs queue since no children need to be visited
+*******dfs_parent_pre_parent_traversal: 31 after removing child 97 has no unvisited children, so remove 31 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 31 not in queue.
+*******dfs_parent_pre_parent_traversal: 31 not in frontier.
+*******dfs_parent_pre_parent_traversal: 40 after removing child 97 has no unvisited children, so remove 40 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 40 not in queue.
+*******dfs_parent_pre_parent_traversal: 40 not in frontier.
+*******dfs_parent_pre_parent_traversal: 57 after removing child 97 has no unvisited children, so remove 57 from queue and frontier.
+after pre: list_of_unvisited_children: []
+dfs_parent node 97 visit parents
+dfs_parent neighbor 31 already visited
+dfs_parent neighbor 40 already visited
+dfs_parent neighbor 57 already visited
+0 children remain unvisited
+node 97 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 97 to partition
+0 children remain unvisited
+node 22 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 22 to partition
+dfs_parent neighbor 33 already visited
+dfs_parent neighbor 36 already visited
+dfs_parent neighbor 39 already visited
+dfs_parent neighbor 46 already visited
+dfs_parent neighbor 62 already visited
+dfs_parent neighbor 85 already visited
+dfs_parent visit node 99
+dfs_parent from node 99
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre mark 99 as visited since it has no unvisited children but do not add it to bfs queue since no children need to be visited
+*******dfs_parent_pre_parent_traversal: 1 after removing child 99 has no unvisited children, so remove 1 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 1 not in queue.
+*******dfs_parent_pre_parent_traversal: 1 not in frontier.
+*******dfs_parent_pre_parent_traversal: 34 after removing child 99 has no unvisited children, so remove 34 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 34 not in queue.
+*******dfs_parent_pre_parent_traversal: 34 not in frontier.
+*******dfs_parent_pre_parent_traversal: 79 after removing child 99 has no unvisited children, so remove 79 from queue and frontier.
+after pre: list_of_unvisited_children: []
+dfs_parent node 99 visit parents
+dfs_parent neighbor 1 already visited
+dfs_parent neighbor 34 already visited
+dfs_parent neighbor 48 already visited
+dfs_parent neighbor 59 already visited
+dfs_parent neighbor 77 already visited
+dfs_parent neighbor 79 already visited
+0 children remain unvisited
+node 99 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 99 to partition
+dfs_parent neighbor 100 already visited
+0 children remain unvisited
+node 56 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 56 to partition
+dfs_parent neighbor 78 already visited
+dfs_parent neighbor 85 already visited
+check unvisited child 74
+unvisited child 74 not visited during parent traversal
+check unvisited child 101
+unvisited child 101 not visited during parent traversal
+2 children remain unvisited
+queue after add 72: 58 51 78 77 98 68 72 
+frontier after add 72: 58 51 78 77 98 68 72 
+dfs_parent add 72 to partition
+dfs_parent visit node 74
+dfs_parent from node 74
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre mark 74 as visited since it has no unvisited children but do not add it to bfs queue since no children need to be visited
+*******dfs_parent_pre_parent_traversal: 62 after removing child 74 has no unvisited children, so remove 62 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 62 not in queue.
+*******dfs_parent_pre_parent_traversal: 62 not in frontier.
+*******dfs_parent_pre_parent_traversal: 64 after removing child 74 has no unvisited children, so remove 64 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 64 not in queue.
+*******dfs_parent_pre_parent_traversal: 64 not in frontier.
+*******dfs_parent_pre_parent_traversal: 77 after removing child 74 has no unvisited children, so remove 77 from queue and frontier.
+after pre: list_of_unvisited_children: []
+dfs_parent node 74 visit parents
+dfs_parent neighbor 15 already visited
+dfs_parent neighbor 54 already visited
+dfs_parent neighbor 58 already visited
+dfs_parent neighbor 62 already visited
+dfs_parent neighbor 64 already visited
+dfs_parent neighbor 72 already visited
+dfs_parent neighbor 77 already visited
+dfs_parent visit node 90
+dfs_parent from node 90
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre mark 90 as visited since it has no unvisited children but do not add it to bfs queue since no children need to be visited
+*******dfs_parent_pre_parent_traversal: 11 after removing child 90 has no unvisited children, so remove 11 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 11 not in queue.
+*******dfs_parent_pre_parent_traversal: 11 not in frontier.
+*******dfs_parent_pre_parent_traversal: 58 after removing child 90 has no unvisited children, so remove 58 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 81 after removing child 90 has no unvisited children, so remove 81 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 81 not in queue.
+*******dfs_parent_pre_parent_traversal: 81 not in frontier.
+after pre: list_of_unvisited_children: []
+dfs_parent node 90 visit parents
+dfs_parent neighbor 11 already visited
+dfs_parent neighbor 58 already visited
+dfs_parent neighbor 59 already visited
+dfs_parent neighbor 81 already visited
+dfs_parent neighbor 83 already visited
+0 children remain unvisited
+node 90 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 90 to partition
+0 children remain unvisited
+node 74 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 74 to partition
+dfs_parent neighbor 83 already visited
+dfs_parent neighbor 86 already visited
+check unvisited child 65
+unvisited child 65 not visited during parent traversal
+1 children remain unvisited
+queue after add 69: 51 78 98 68 72 69 
+frontier after add 69: 51 78 98 68 72 69 
+dfs_parent add 69 to partition
+dfs_parent neighbor 72 already visited
+dfs_parent neighbor 73 already visited
+dfs_parent neighbor 86 already visited
+dfs_parent neighbor 98 already visited
+check unvisited child 101
+unvisited child 101 not visited during parent traversal
+check unvisited child 88
+unvisited child 88 not visited during parent traversal
+check unvisited child 65
+unvisited child 65 not visited during parent traversal
+3 children remain unvisited
+queue after add 83: 51 78 98 68 72 69 83 
+frontier after add 83: 51 78 98 68 72 69 83 
+dfs_parent add 83 to partition
+0 children remain unvisited
+node 21 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 21 to partition
+dfs_parent neighbor 55 already visited
+dfs_parent neighbor 76 already visited
+0 children remain unvisited
+node 89 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 89 to partition
+0 children remain unvisited
+node 73 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 73 to partition
+dfs_parent neighbor 85 already visited
+check unvisited child 93
+unvisited child 93 not visited during parent traversal
+check unvisited child 87
+unvisited child 87 not visited during parent traversal
+2 children remain unvisited
+queue after add 48: 51 78 98 68 72 69 83 48 
+frontier after add 48: 51 78 98 68 72 69 83 48 
+dfs_parent add 48 to partition
+dfs_parent neighbor 49 already visited
+dfs_parent neighbor 86 already visited
+0 children remain unvisited
+node 82 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 82 to partition
+dfs_parent neighbor 95 already visited
+dfs_parent visit node 96
+dfs_parent from node 96
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 65 not in visited
+dfs_parent_pre 96 has unvisted children so mark 96 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[65]
+*******dfs_parent_pre_parent_traversal: 2 after removing child 96 has no unvisited children, so remove 2 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 2 not in queue.
+*******dfs_parent_pre_parent_traversal: 2 not in frontier.
+*******dfs_parent_pre_parent_traversal: 68 after removing child 96 has no unvisited children, so remove 68 from queue and frontier.
+after pre: list_of_unvisited_children: [65]
+dfs_parent node 96 visit parents
+dfs_parent neighbor 2 already visited
+dfs_parent neighbor 68 already visited
+check unvisited child 65
+unvisited child 65 not visited during parent traversal
+1 children remain unvisited
+queue after add 96: 51 78 98 72 69 83 48 96 
+frontier after add 96: 51 78 98 72 69 83 48 96 
+dfs_parent add 96 to partition
+check unvisited child 65
+unvisited child 65 not visited during parent traversal
+1 children remain unvisited
+queue after add 43: 51 78 98 72 69 83 48 96 43 
+frontier after add 43: 51 78 98 72 69 83 48 96 43 
+dfs_parent add 43 to partition
+dfs_parent neighbor 69 already visited
+check unvisited child 93
+unvisited child 93 not visited during parent traversal
+check unvisited child 88
+unvisited child 88 not visited during parent traversal
+2 children remain unvisited
+queue after add 54: 51 78 98 72 69 83 48 96 43 54 
+frontier after add 54: 51 78 98 72 69 83 48 96 43 54 
+dfs_parent add 54 to partition
+dfs_parent neighbor 63 already visited
+dfs_parent neighbor 70 already visited
+dfs_parent neighbor 73 already visited
+dfs_parent neighbor 77 already visited
+dfs_parent neighbor 83 already visited
+0 children remain unvisited
+node 45 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 45 to partition
+dfs_parent neighbor 74 already visited
+0 children remain unvisited
+node 84 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 84 to partition
+check unvisited child 65
+unvisited child 65 not visited during parent traversal
+1 children remain unvisited
+queue after add 44: 51 78 98 72 69 83 48 96 43 54 44 
+frontier after add 44: 51 78 98 72 69 83 48 96 43 54 44 
+dfs_parent add 44 to partition
+dfs_parent neighbor 58 already visited
+dfs_parent neighbor 68 already visited
+dfs_parent visit node 87
+dfs_parent from node 87
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre mark 87 as visited since it has no unvisited children but do not add it to bfs queue since no children need to be visited
+*******dfs_parent_pre_parent_traversal: 7 after removing child 87 has no unvisited children, so remove 7 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 7 not in queue.
+*******dfs_parent_pre_parent_traversal: 7 not in frontier.
+*******dfs_parent_pre_parent_traversal: 23 after removing child 87 has no unvisited children, so remove 23 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 23 not in queue.
+*******dfs_parent_pre_parent_traversal: 23 not in frontier.
+*******dfs_parent_pre_parent_traversal: 29 after removing child 87 has no unvisited children, so remove 29 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 29 not in queue.
+*******dfs_parent_pre_parent_traversal: 29 not in frontier.
+*******dfs_parent_pre_parent_traversal: 36 after removing child 87 has no unvisited children, so remove 36 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 36 not in queue.
+*******dfs_parent_pre_parent_traversal: 36 not in frontier.
+*******dfs_parent_pre_parent_traversal: 78 after removing child 87 has no unvisited children, so remove 78 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 80 after removing child 87 has no unvisited children, so remove 80 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 80 not in queue.
+*******dfs_parent_pre_parent_traversal: 80 not in frontier.
+after pre: list_of_unvisited_children: []
+dfs_parent node 87 visit parents
+dfs_parent neighbor 7 already visited
+dfs_parent neighbor 15 already visited
+dfs_parent neighbor 23 already visited
+dfs_parent neighbor 28 already visited
+dfs_parent neighbor 29 already visited
+dfs_parent neighbor 36 already visited
+dfs_parent neighbor 48 already visited
+dfs_parent neighbor 78 already visited
+dfs_parent neighbor 80 already visited
+dfs_parent visit node 93
+dfs_parent from node 93
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre mark 93 as visited since it has no unvisited children but do not add it to bfs queue since no children need to be visited
+*******dfs_parent_pre_parent_traversal: 17 after removing child 93 has no unvisited children, so remove 17 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 17 not in queue.
+*******dfs_parent_pre_parent_traversal: 17 not in frontier.
+*******dfs_parent_pre_parent_traversal: 48 after removing child 93 has no unvisited children, so remove 48 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 51 after removing child 93 has no unvisited children, so remove 51 from queue and frontier.
+after pre: list_of_unvisited_children: []
+dfs_parent node 93 visit parents
+dfs_parent neighbor 17 already visited
+dfs_parent neighbor 48 already visited
+dfs_parent neighbor 51 already visited
+dfs_parent neighbor 54 already visited
+dfs_parent neighbor 67 already visited
+0 children remain unvisited
+node 93 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 93 to partition
+0 children remain unvisited
+node 87 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 87 to partition
+dfs_parent neighbor 91 already visited
+dfs_parent neighbor 100 already visited
+check unvisited child 65
+unvisited child 65 not visited during parent traversal
+1 children remain unvisited
+queue after add 26: 98 72 69 83 96 43 54 44 26 
+frontier after add 26: 98 72 69 83 96 43 54 44 26 
+dfs_parent add 26 to partition
+dfs_parent neighbor 53 already visited
+dfs_parent neighbor 58 already visited
+dfs_parent neighbor 90 already visited
+0 children remain unvisited
+node 64 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 64 to partition
+dfs_parent neighbor 76 already visited
+0 children remain unvisited
+node 80 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 80 to partition
+dfs_parent neighbor 94 already visited
+check unvisited child 65
+unvisited child 65 not visited during parent traversal
+1 children remain unvisited
+queue after add 66: 98 72 69 83 96 43 54 44 26 66 
+frontier after add 66: 98 72 69 83 96 43 54 44 26 66 
+dfs_parent add 66 to partition
+dfs_parent neighbor 75 already visited
+dfs_parent neighbor 85 already visited
+dfs_parent neighbor 94 already visited
+0 children remain unvisited
+node 61 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 61 to partition
+dfs_parent neighbor 82 already visited
+dfs_parent visit node 88
+dfs_parent from node 88
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: child 101 not in visited
+dfs_parent_pre 88 has unvisted children so mark 88 as visited and check children again after parent traversal
+dfs_parent_pre: set check_list_of_unvisited_chldren True
+dfs_parent_pre: list_of_unvisited_children:[101]
+*******dfs_parent_pre_parent_traversal: 54 after removing child 88 has no unvisited children, so remove 54 from queue and frontier.
+after pre: list_of_unvisited_children: [101]
+dfs_parent node 88 visit parents
+dfs_parent neighbor 54 already visited
+dfs_parent neighbor 83 already visited
+check unvisited child 101
+unvisited child 101 not visited during parent traversal
+1 children remain unvisited
+queue after add 88: 98 72 69 83 96 43 44 26 66 88 
+frontier after add 88: 98 72 69 83 96 43 44 26 66 88 
+dfs_parent add 88 to partition
+0 children remain unvisited
+node 85 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 85 to partition
+dfs_parent neighbor 95 already visited
+dfs_parent neighbor 99 already visited
+dfs_parent neighbor 100 already visited
+0 children remain unvisited
+node 46 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 46 to partition
+dfs_parent neighbor 87 already visited
+dfs_parent neighbor 91 already visited
+dfs_parent neighbor 97 already visited
+0 children remain unvisited
+node 92 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 92 to partition
+0 children remain unvisited
+node 33 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 33 to partition
+dfs_parent neighbor 49 already visited
+dfs_parent visit node 65
+dfs_parent from node 65
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre mark 65 as visited since it has no unvisited children but do not add it to bfs queue since no children need to be visited
+*******dfs_parent_pre_parent_traversal: 5 after removing child 65 has no unvisited children, so remove 5 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 5 not in queue.
+*******dfs_parent_pre_parent_traversal: 5 not in frontier.
+*******dfs_parent_pre_parent_traversal: 15 after removing child 65 has no unvisited children, so remove 15 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 15 not in queue.
+*******dfs_parent_pre_parent_traversal: 15 not in frontier.
+*******dfs_parent_pre_parent_traversal: 26 after removing child 65 has no unvisited children, so remove 26 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 28 after removing child 65 has no unvisited children, so remove 28 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 28 not in queue.
+*******dfs_parent_pre_parent_traversal: 28 not in frontier.
+*******dfs_parent_pre_parent_traversal: 43 after removing child 65 has no unvisited children, so remove 43 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 44 after removing child 65 has no unvisited children, so remove 44 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 66 after removing child 65 has no unvisited children, so remove 66 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 69 after removing child 65 has no unvisited children, so remove 69 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 96 after removing child 65 has no unvisited children, so remove 96 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 98 after removing child 65 has no unvisited children, so remove 98 from queue and frontier.
+after pre: list_of_unvisited_children: []
+dfs_parent node 65 visit parents
+dfs_parent neighbor 5 already visited
+dfs_parent neighbor 15 already visited
+dfs_parent neighbor 26 already visited
+dfs_parent neighbor 28 already visited
+dfs_parent neighbor 43 already visited
+dfs_parent neighbor 44 already visited
+dfs_parent neighbor 66 already visited
+dfs_parent neighbor 69 already visited
+dfs_parent neighbor 83 already visited
+dfs_parent neighbor 96 already visited
+dfs_parent neighbor 98 already visited
+0 children remain unvisited
+node 65 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 65 to partition
+dfs_parent neighbor 93 already visited
+0 children remain unvisited
+node 35 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 35 to partition
+dfs_parent neighbor 79 already visited
+dfs_parent neighbor 85 already visited
+0 children remain unvisited
+node 36 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 36 to partition
+dfs_parent neighbor 42 already visited
+dfs_parent neighbor 50 already visited
+dfs_parent neighbor 68 already visited
+dfs_parent neighbor 75 already visited
+dfs_parent neighbor 77 already visited
+dfs_parent neighbor 81 already visited
+0 children remain unvisited
+node 76 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 76 to partition
+dfs_parent neighbor 84 already visited
+dfs_parent neighbor 90 already visited
+0 children remain unvisited
+node 18 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 18 to partition
+dfs_parent neighbor 39 already visited
+dfs_parent neighbor 53 already visited
+dfs_parent neighbor 58 already visited
+dfs_parent neighbor 66 already visited
+dfs_parent neighbor 93 already visited
+0 children remain unvisited
+node 63 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 63 to partition
+dfs_parent neighbor 68 already visited
+dfs_parent neighbor 76 already visited
+dfs_parent neighbor 91 already visited
+0 children remain unvisited
+node 16 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 16 to partition
+dfs_parent neighbor 21 already visited
+dfs_parent neighbor 60 already visited
+dfs_parent neighbor 74 already visited
+dfs_parent neighbor 86 already visited
+0 children remain unvisited
+node 37 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 37 to partition
+dfs_parent neighbor 70 already visited
+dfs_parent neighbor 74 already visited
+dfs_parent neighbor 79 already visited
+dfs_parent neighbor 82 already visited
+0 children remain unvisited
+node 62 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 62 to partition
+check unvisited child 101
+unvisited child 101 not visited during parent traversal
+1 children remain unvisited
+queue after add 59: 72 83 88 59 
+frontier after add 59: 72 83 88 59 
+dfs_parent add 59 to partition
+dfs_parent neighbor 61 already visited
+dfs_parent neighbor 77 already visited
+dfs_parent neighbor 96 already visited
+0 children remain unvisited
+node 71 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 71 to partition
+dfs_parent neighbor 94 already visited
+dfs_parent neighbor 97 already visited
+0 children remain unvisited
+node 40 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 40 to partition
+dfs_parent neighbor 66 already visited
+0 children remain unvisited
+node 47 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 47 to partition
+dfs_parent neighbor 73 already visited
+dfs_parent neighbor 82 already visited
+0 children remain unvisited
+node 50 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 50 to partition
+dfs_parent neighbor 52 already visited
+dfs_parent neighbor 78 already visited
+dfs_parent neighbor 86 already visited
+dfs_parent neighbor 87 already visited
+0 children remain unvisited
+node 31 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 31 to partition
+dfs_parent neighbor 65 already visited
+dfs_parent neighbor 82 already visited
+dfs_parent neighbor 86 already visited
+dfs_parent neighbor 90 already visited
+dfs_parent neighbor 98 already visited
+check unvisited child 101
+unvisited child 101 not visited during parent traversal
+1 children remain unvisited
+queue after add 10: 72 83 88 59 10 
+frontier after add 10: 72 83 88 59 10 
+dfs_parent add 10 to partition
+dfs_parent neighbor 15 already visited
+dfs_parent neighbor 37 already visited
+dfs_parent neighbor 47 already visited
+dfs_parent neighbor 53 already visited
+dfs_parent neighbor 57 already visited
+dfs_parent neighbor 58 already visited
+dfs_parent neighbor 71 already visited
+dfs_parent neighbor 77 already visited
+dfs_parent neighbor 96 already visited
+dfs_parent neighbor 98 already visited
+0 children remain unvisited
+node 34 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 34 to partition
+dfs_parent neighbor 47 already visited
+dfs_parent neighbor 54 already visited
+dfs_parent neighbor 66 already visited
+dfs_parent neighbor 74 already visited
+0 children remain unvisited
+node 17 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 17 to partition
+dfs_parent neighbor 19 already visited
+dfs_parent neighbor 39 already visited
+dfs_parent neighbor 43 already visited
+dfs_parent neighbor 53 already visited
+dfs_parent neighbor 83 already visited
+dfs_parent neighbor 84 already visited
+dfs_parent neighbor 100 already visited
+0 children remain unvisited
+node 28 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 28 to partition
+dfs_parent neighbor 61 already visited
+dfs_parent neighbor 63 already visited
+dfs_parent neighbor 95 already visited
+0 children remain unvisited
+node 53 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 53 to partition
+dfs_parent neighbor 76 already visited
+dfs_parent neighbor 85 already visited
+dfs_parent neighbor 91 already visited
+dfs_parent neighbor 92 already visited
+0 children remain unvisited
+node 20 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 20 to partition
+dfs_parent neighbor 36 already visited
+dfs_parent neighbor 85 already visited
+dfs_parent neighbor 95 already visited
+dfs_parent neighbor 96 already visited
+dfs_parent neighbor 100 already visited
+0 children remain unvisited
+node 11 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 11 to partition
+dfs_parent neighbor 16 already visited
+dfs_parent neighbor 29 already visited
+dfs_parent neighbor 61 already visited
+dfs_parent neighbor 87 already visited
+0 children remain unvisited
+node 9 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 9 to partition
+dfs_parent neighbor 16 already visited
+dfs_parent neighbor 19 already visited
+dfs_parent neighbor 28 already visited
+dfs_parent neighbor 62 already visited
+dfs_parent neighbor 64 already visited
+dfs_parent neighbor 71 already visited
+0 children remain unvisited
+node 52 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 52 to partition
+dfs_parent neighbor 65 already visited
+dfs_parent neighbor 77 already visited
+0 children remain unvisited
+node 42 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 42 to partition
+dfs_parent neighbor 70 already visited
+dfs_parent neighbor 71 already visited
+dfs_parent neighbor 79 already visited
+dfs_parent neighbor 91 already visited
+0 children remain unvisited
+node 81 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 81 to partition
+dfs_parent neighbor 84 already visited
+0 children remain unvisited
+node 13 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 13 to partition
+dfs_parent neighbor 40 already visited
+dfs_parent neighbor 66 already visited
+dfs_parent neighbor 81 already visited
+0 children remain unvisited
+node 49 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 49 to partition
+dfs_parent neighbor 70 already visited
+0 children remain unvisited
+node 29 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 29 to partition
+dfs_parent neighbor 74 already visited
+dfs_parent neighbor 84 already visited
+dfs_parent neighbor 86 already visited
+0 children remain unvisited
+node 14 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 14 to partition
+dfs_parent neighbor 16 already visited
+dfs_parent neighbor 58 already visited
+dfs_parent neighbor 72 already visited
+dfs_parent neighbor 78 already visited
+dfs_parent neighbor 95 already visited
+0 children remain unvisited
+node 19 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 19 to partition
+dfs_parent neighbor 41 already visited
+0 children remain unvisited
+node 60 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 60 to partition
+dfs_parent neighbor 71 already visited
+0 children remain unvisited
+node 12 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 12 to partition
+dfs_parent neighbor 34 already visited
+dfs_parent neighbor 40 already visited
+dfs_parent neighbor 43 already visited
+dfs_parent neighbor 49 already visited
+dfs_parent neighbor 54 already visited
+dfs_parent neighbor 79 already visited
+dfs_parent neighbor 80 already visited
+check unvisited child 101
+unvisited child 101 not visited during parent traversal
+1 children remain unvisited
+queue after add 67: 72 83 88 59 10 67 
+frontier after add 67: 72 83 88 59 10 67 
+dfs_parent add 67 to partition
+dfs_parent neighbor 68 already visited
+dfs_parent neighbor 71 already visited
+dfs_parent neighbor 88 already visited
+0 children remain unvisited
+node 32 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 32 to partition
+dfs_parent neighbor 42 already visited
+dfs_parent neighbor 48 already visited
+dfs_parent neighbor 65 already visited
+dfs_parent neighbor 99 already visited
+0 children remain unvisited
+node 55 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 55 to partition
+dfs_parent neighbor 64 already visited
+dfs_parent neighbor 78 already visited
+dfs_parent neighbor 100 already visited
+0 children remain unvisited
+node 25 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 25 to partition
+dfs_parent neighbor 60 already visited
+dfs_parent neighbor 93 already visited
+0 children remain unvisited
+node 30 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 30 to partition
+dfs_parent neighbor 32 already visited
+dfs_parent neighbor 78 already visited
+dfs_parent neighbor 84 already visited
+dfs_parent neighbor 88 already visited
+0 children remain unvisited
+node 6 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 6 to partition
+dfs_parent neighbor 14 already visited
+dfs_parent neighbor 16 already visited
+dfs_parent neighbor 17 already visited
+dfs_parent neighbor 60 already visited
+dfs_parent neighbor 65 already visited
+dfs_parent neighbor 91 already visited
+0 children remain unvisited
+node 2 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 2 to partition
+dfs_parent neighbor 4 already visited
+dfs_parent neighbor 20 already visited
+dfs_parent neighbor 64 already visited
+0 children remain unvisited
+node 27 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 27 to partition
+dfs_parent neighbor 36 already visited
+dfs_parent neighbor 62 already visited
+dfs_parent neighbor 69 already visited
+dfs_parent neighbor 70 already visited
+dfs_parent neighbor 86 already visited
+dfs_parent neighbor 100 already visited
+0 children remain unvisited
+node 41 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 41 to partition
+dfs_parent neighbor 48 already visited
+dfs_parent neighbor 58 already visited
+dfs_parent neighbor 83 already visited
+dfs_parent neighbor 84 already visited
+0 children remain unvisited
+node 24 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 24 to partition
+dfs_parent neighbor 41 already visited
+dfs_parent neighbor 64 already visited
+dfs_parent neighbor 90 already visited
+0 children remain unvisited
+node 23 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 23 to partition
+dfs_parent neighbor 57 already visited
+dfs_parent neighbor 63 already visited
+dfs_parent neighbor 98 already visited
+0 children remain unvisited
+node 5 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 5 to partition
+dfs_parent neighbor 6 already visited
+dfs_parent neighbor 55 already visited
+dfs_parent neighbor 61 already visited
+dfs_parent neighbor 63 already visited
+dfs_parent neighbor 64 already visited
+dfs_parent neighbor 90 already visited
+0 children remain unvisited
+node 8 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 8 to partition
+dfs_parent neighbor 51 already visited
+dfs_parent neighbor 62 already visited
+dfs_parent neighbor 73 already visited
+0 children remain unvisited
+node 38 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 38 to partition
+dfs_parent neighbor 54 already visited
+dfs_parent neighbor 74 already visited
+dfs_parent neighbor 78 already visited
+dfs_parent neighbor 79 already visited
+check unvisited child 101
+unvisited child 101 not visited during parent traversal
+1 children remain unvisited
+queue after add 39: 72 83 88 59 10 67 39 
+frontier after add 39: 72 83 88 59 10 67 39 
+dfs_parent add 39 to partition
+dfs_parent neighbor 81 already visited
+0 children remain unvisited
+node 3 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 3 to partition
+dfs_parent neighbor 30 already visited
+dfs_parent neighbor 41 already visited
+dfs_parent neighbor 45 already visited
+0 children remain unvisited
+node 15 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 15 to partition
+dfs_parent neighbor 16 already visited
+dfs_parent neighbor 26 already visited
+dfs_parent neighbor 35 already visited
+dfs_parent neighbor 76 already visited
+dfs_parent neighbor 98 already visited
+0 children remain unvisited
+node 4 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 4 to partition
+dfs_parent neighbor 11 already visited
+dfs_parent neighbor 14 already visited
+dfs_parent neighbor 20 already visited
+dfs_parent neighbor 24 already visited
+dfs_parent neighbor 31 already visited
+dfs_parent neighbor 40 already visited
+dfs_parent neighbor 42 already visited
+dfs_parent neighbor 54 already visited
+dfs_parent neighbor 62 already visited
+dfs_parent neighbor 74 already visited
+0 children remain unvisited
+node 7 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 7 to partition
+dfs_parent neighbor 19 already visited
+dfs_parent neighbor 49 already visited
+dfs_parent neighbor 65 already visited
+dfs_parent neighbor 68 already visited
+dfs_parent neighbor 72 already visited
+dfs_parent neighbor 74 already visited
+dfs_parent neighbor 80 already visited
+dfs_parent neighbor 95 already visited
+0 children remain unvisited
+node 1 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 1 to partition
+dfs_parent_change_in_partition_size: 100
+BFS: create sub-partition
+bfs pop node 72 from queue
+bfs node 72 visit children
+bfs node 69 already visited
+bfs node 19 already visited
+bfs node 74 already visited
+bfs node 83 already visited
+bfs node 1 already visited
+bfs visit child 101 mark it visited and dfs_parent(101)
+bfs dfs_parent(101)
+dfs_parent from node 101
+dfs_parent_pre: at start: list_of_unvisited_children:[]
+dfs_parent_pre: add 101 to visited since no children
+*******dfs_parent_pre_parent_traversal: 10 after removing child 101 has no unvisited children, so remove 10 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 39 after removing child 101 has no unvisited children, so remove 39 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 59 after removing child 101 has no unvisited children, so remove 59 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 67 after removing child 101 has no unvisited children, so remove 67 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 72 after removing child 101 has no unvisited children, so remove 72 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 72 not in queue.
+*******dfs_parent_pre_parent_traversal: 83 after removing child 101 has no unvisited children, so remove 83 from queue and frontier.
+*******dfs_parent_pre_parent_traversal: 88 after removing child 101 has no unvisited children, so remove 88 from queue and frontier.
+after pre: list_of_unvisited_children: []
+dfs_parent node 101 visit parents
+dfs_parent neighbor 10 already visited
+dfs_parent neighbor 39 already visited
+dfs_parent neighbor 59 already visited
+dfs_parent neighbor 67 already visited
+dfs_parent neighbor 72 already visited
+dfs_parent neighbor 83 already visited
+dfs_parent neighbor 88 already visited
+0 children remain unvisited
+node 101 has no unvisited children after parent traversal, add it to partition but not queue
+dfs_parent add 101 to partition
+dfs_parent_change_in_partition_size: 1
+bfs node 51 already visited
+*******bfs: 72 not in frontier.
+frontier after remove 72: 
+BFS: create final sub-partition
+
+visited length: 101
+1 7 4 15 3 39 38 8 5 23 24 41 27 2 6 30 25 55 32 67 12 60 19 14 29 49 13 81 42 52 9 11 20 53 28 17 34 10 31 50 47 40 71 59 62 37 16 63 18 76 36 35 33 92 46 85 61 66 80 64 26 44 84 45 54 43 82 48 73 89 21 83 69 72 56 22 86 91 70 58 68 77 94 51 78 57 95 75 100 98 79 97 99 74 90 96 87 93 88 65 101 
+
+final current_partition length: 0
+sum_of_partition_lengths (not counting total_loop_nodes_added): 101
+
+dfs_parent_changes_in_partiton_size length, len: 2, sum_of_changes: 101
+100 1 
+
+partitions, len: 2:
+-- [86, 58, 51, 57, 75, 95, 100, 78, 94, 77, 98, 68, 70, 79, 91, 97, 22, 99, 56, 72, 90, 74, 69, 83, 21, 89, 73, 48, 82, 96, 43, 54, 45, 84, 44, 93, 87, 26, 64, 80, 66, 61, 88, 85, 46, 92, 33, 65, 35, 36, 76, 18, 63, 16, 37, 62, 59, 71, 40, 47, 50, 31, 10, 34, 17, 28, 53, 20, 11, 9, 52, 42, 81, 13, 49, 29, 14, 19, 60, 12, 67, 32, 55, 25, 30, 6, 2, 27, 41, 24, 23, 5, 8, 38, 39, 3, 15, 4, 7, 1]
+-- [101]
+
+frontiers: (final fronter should be empty), len: 2:
+-- 72 83 88 59 10 67 39 
+-- 
+
+frontier costs (cost=length of frontier), len: 2:
+-- pop-72:7
+-- atEnd:0
+
+all frontier costs, len: 1, sum: 7
+pop-72:7 
+

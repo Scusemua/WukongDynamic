@@ -17,6 +17,8 @@ class Node:
         self.parents = []
         self.children = []
         self.partition = -1
+#rhc: un
+        self.unvisited = []
 
     def __eq__(self,other):
         return self.ID == other.ID
@@ -285,7 +287,29 @@ def dfs_parent_pre_parent_traversal(node,visited,list_of_unvisited_children):
             check_list_of_unvisited_chldren_after_visiting_parents = True
             print("dfs_parent_pre: set check_list_of_unvisited_chldren True")
             print("dfs_parent_pre: list_of_unvisited_children:" + str(list_of_unvisited_children))
+#rhc: un
+            node.unvisited_children = list_of_unvisited_children
 
+#rhc: un
+    for neighbor_index in node.parents:
+        parent_node = nodes[neighbor_index]
+        if parent_node.ID in visited:
+            parent_node.unvisited_children.remove(node.ID)
+            if len(parent_node.unvisited_children) == 0:
+                print("*******dfs_parent_pre_parent_traversal: " + str(parent_node.ID) + " after removing child " 
+                    + str(node.ID) + " has no unvisited children, so remove "
+                    + str(parent_node.ID) + " from queue and frontier.")
+                try:
+                    queue.remove(parent_node.ID)
+                except ValueError:
+                    print("*******dfs_parent_pre_parent_traversal: " + str(parent_node.ID)
+                    + " not in queue.")
+                try:
+                    frontier.remove(parent_node.ID)
+                except ValueError:
+                    print("*******dfs_parent_pre_parent_traversal: " + str(parent_node.ID)
+                    + " not in frontier.")
+    
     return check_list_of_unvisited_chldren_after_visiting_parents
 
 def dfs_parent(visited, graph, node):  #function for dfs 
@@ -370,6 +394,8 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
                 print("unvisited child " + str(child_node.ID) + " not visited during parent traversal")
                 # Did not visit this unvsited child when visiting parents
                 unvisited_children_after_parent_loop.append(child_node.ID)
+#rhc: un
+        node.unvisited_children = unvisited_children_after_parent_loop
     print(str(len(unvisited_children_after_parent_loop)) + " children remain unvisited")
 
     # All or none of children in list_of_unvisited_children could remain 
@@ -497,15 +523,19 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
                         + unvisited_child.partition_number)
 
             else:
-                queue.append(node)
+                #queue.append(node)
+                queue.append(node.ID)
                 print("queue after add " + str(node.ID) + ":", end=" ")
                 for x in queue:
-                    print(x.ID, end=" ")
+                    #print(x.ID, end=" ")
+                    print(x, end=" ")
                 print()
-                frontier.append(node)
+                #frontier.append(node)
+                frontier.append(node.ID)
                 print("frontier after add " + str(node.ID) + ":", end=" ")
                 for x in frontier:
-                    print(x.ID, end=" ")
+                    #print(x.ID, end=" ")
+                    print(x, end=" ")
                 print()
                 # make sure parent in partition before any if its children. We visit parents of nodein dfs_parents 
                 # and they are added to partition in dfs_parents after their parents are added 
@@ -519,15 +549,19 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
                         + current_partition_number + " since it is already in partition " 
                         + node.partition_number)
         else:
-                queue.append(node)
+                #queue.append(node)
+                queue.append(node.ID)
                 print("queue after add " + str(node.ID) + ":", end=" ")
                 for x in queue:
-                    print(x.ID, end=" ")
+                    #print(x.ID, end=" ")
+                    print(x, end=" ")
                 print()
-                frontier.append(node)
+                #frontier.append(node)
+                frontier.append(node.ID)
                 print("frontier after add " + str(node.ID) + ":", end=" ")
                 for x in frontier:
-                    print(x.ID, end=" ")
+                    #print(x.ID, end=" ")
+                    print(x, end=" ")
                 print()
                 # make sure parent in partition before any if its children. We visit parents of nodein dfs_parents 
                 # and they are added to partition in dfs_parents after their parents are added 
@@ -576,7 +610,9 @@ def bfs(visited, graph, node): #function for BFS
     # queue.append(node) and frontier.append(node) done optionally in dfs_parent
 
     while queue:          # Creating loop to visit each node
-        node = queue.pop(0) 
+        #node = queue.pop(0) 
+        ID = queue.pop(0) 
+        node = nodes[ID]
         # so we can see the frontier costs that do not correspnd to when 
         # partitions were created, i.e., was there a better frontier for partition?
         all_frontier_costs.append("pop-"+str(node.ID) + ":" + str(len(frontier)))
@@ -651,10 +687,18 @@ def bfs(visited, graph, node): #function for BFS
                 """
             else:
                 print ("bfs node " + str(neighbor.ID) + " already visited")
-        frontier.remove(node)
+        #frontier.remove(node)
+        #frontier.remove(node.ID)
+        try:
+            frontier.remove(node.ID)
+        except ValueError:
+            print("*******bfs: " + str(node.ID)
+                + " not in frontier.")
+
         print("frontier after remove " + str(node.ID) + ":", end=" ")
         for x in frontier:
-            print(x.ID, end=" ")
+            #print(x.ID, end=" ")
+            print(x, end=" ")
         print()
     
     if len(current_partition) >= 0:
@@ -679,8 +723,8 @@ def input_graph():
     c Max. edge             :3
     p sp 20 23
     """
-    #graph_file = open('100.gr', 'r')
-    graph_file = open('graph1.gr', 'r')
+    graph_file = open('100.gr', 'r')
+    #graph_file = open('graph1.gr', 'r')
     count = 0
     file_name_line = graph_file.readline()
     count += 1
@@ -699,6 +743,8 @@ def input_graph():
     count += 1
     #print("min_weight_line{}: {}".format(count,  min_weight_line_ignored.strip()))
 
+    # need this for generated graphs; 100.gr is old format?
+    
     min_edge_line_ignored = graph_file.readline()
     count += 1
     #print("min_edge_line{}: {}".format(count, min_edge_line_ignored.strip()))
@@ -923,11 +969,12 @@ print("frontiers: (final fronter should be empty), len: " + str(len(frontiers))+
 for frontier_list in frontiers:
     print("-- ",end="")
     for x in frontier_list:
-        print(str(x.ID),end=" ")
+        #print(str(x.ID),end=" ")
+        print(str(x),end=" ")
     print()
 frontiers_length = len(frontiers)
 if len(frontiers[frontiers_length-1]) != 0:
-    print ("Error]: final frontoer is not empty.")
+    print ("Error]: final frontier is not empty.")
 print()
 print("frontier costs (cost=length of frontier), len: " + str(len(frontier_costs))+":")
 for x in frontier_costs:
@@ -950,7 +997,7 @@ print()
 
 #
 # When pop 86, 86 was put in frontier because at that time (foo) 86 had
-# 1 unvisited child 77after parent traversal so put 86 in queue. But
+# 1 unvisited child 77 after parent traversal so put 86 in queue. But
 # when we finished the dfs_parent, *all* nodes were in partition and
 # 86 was on frontier, which means 86 had left the frontier and yes 
 # all of 86's chldren, including 77, were visited. So 86 should not 
@@ -959,8 +1006,31 @@ print()
 # no unvisited children (so all children in partition) or that have
 # singleton children. But still might want to split partition and
 # want partition and its frontier?
+# 
+# So is it better to chck all the parents of the childrenthat become visited
+# or adjust the queue and frontier after return from dfs_parent
+# to bfs? Where we might wan to do continue partitioning the result of
+# bfs's dfs_parent. The constant child checking during dfs_parent is costly?
+# as opposed to just doing it for only the nodes in the queue and the nodes
+# in the frontier, i.e., just the nodes for which it is possble to prune.
+# 
+# And we perhaps want to identify singletons anyway in this same frontier
+# reduction? Noet that leaving the nodes with no unvisited chldren in the 
+# queue does not hurt sincebfs will ignore them anyway. Although
+# the queue is inaccurate that might not affect the partitioning of
+# bsf's dfs_parent result for large partitions returned to bfs.
+#
 # ToDo: Any reason to not short circuit 7, i.e., put 7 in queue, i.e., do
 # not do the unvisited stuff for 7 when 6 calls dfs_p(7)?
+#
+# Now storing IDs in queue and frontier
+#
+# So, for now, check parents of child set to visited; if a parent no longer
+# has any unvisited children, then remove parent from queue, if present,
+# and frontier, if present. May not be in either, etc. If just popped X from
+# queue then not in there but stil in frontier. If dfs_parent removes X
+# from queue and frontier then BFS will find X is no longer in frontier
+# when it finishes visiting all children of X and tries to remove X.
 
 # ToDo: get rid of visited parameter?
 
