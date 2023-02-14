@@ -632,13 +632,43 @@ def bfs(visited, graph, node): #function for BFS
         # visited, and add C to the partition but not the queue.
         # Note: handling singletons here is more efficent since we don;t waste time 
         # checkng for singletons in dfs_parent when most nodes are not singletons.
-        if len(current_partition) >= num_nodes/5:
+        if len(current_partition) >= num_nodes/100:
             print("BFS: create sub-partition")
             partitions.append(current_partition.copy())
             current_partition = []
             global total_loop_nodes_added
             total_loop_nodes_added += loop_nodes_added
             loop_nodes_added = 0
+#rhc: Q: 
+# - So some nodes are in current_partition. Some of these nodes that are in the 
+# current_partition are in the frontier and some aer not in the frontier. For example, 
+# a node N with lots of children may be added to the partition, but N will stay on
+# the frontier until we pop N's last child. This means that N can stay on the
+# frontier for many partionings after it is added to the current_partition.
+# - Noet that we still satisfy the rule that a parent is aded to a/the partition
+# before its children aer added toa/the partition. ==> Are the parent and its
+# children expected to be in the same partition? No. 
+# ==> If a parent is in partition i are all of the parent"s children exepcted to be 
+# in partition i+1? Is this required? No? The only rule is: if node X is in 
+# partition i then all of X's parent's are in partition n, n<=i? No! we only want
+# partition i to have to send nodes to partition i+1. But ...
+# Woops:)
+# So 
+# - we only add a node N to the frontier when we add N to the partition. 
+# - we only add a node N to the partition when we dequeue it and thus begin
+#   visiting its children?
+# - No. When we deque a node N:
+#   We don't add N to the partition P1. We have to first visit N's children
+#   and follow the parents-before-children rule to see what's going into
+#   the partition Part1. Let the first child of N be C1. We have to dfs_parent(C1)
+#   to visit C1's parents. They have to go into the partition Part1 before C1.
+#   If we add a parent P1 of C1 to the partition Part1 then we want all of P1's 
+#   children to go into Part 2 to get a ring.
+# - ETC!!!!!
+# Alternately: we only take a partition when all of the nodes that were in the previous
+# partition leave the frontier? So not balanced? But we can combine partitions?
+# Ugh!!
+
             frontiers.append(frontier.copy())
             frontier_cost = "pop-"+str(node.ID) + ":" + str(len(frontier))
             frontier_costs.append(frontier_cost)
@@ -701,6 +731,7 @@ def bfs(visited, graph, node): #function for BFS
             print(x, end=" ")
         print()
     
+    """
     if len(current_partition) >= 0:
         print("BFS: create final sub-partition")
         partitions.append(current_partition.copy())
@@ -711,6 +742,7 @@ def bfs(visited, graph, node): #function for BFS
         frontiers.append(frontier.copy())
         frontier_cost = "atEnd:" + str(len(frontier))
         frontier_costs.append(frontier_cost)
+    """
 
 def input_graph():
     """
@@ -723,8 +755,9 @@ def input_graph():
     c Max. edge             :3
     p sp 20 23
     """
-    graph_file = open('100.gr', 'r')
-    #graph_file = open('graph1.gr', 'r')
+    #graph_file = open('100.gr', 'r')
+    #graph_file = open('graph_20.gr', 'r')
+    graph_file = open('graph_3000.gr', 'r')
     count = 0
     file_name_line = graph_file.readline()
     count += 1
@@ -799,9 +832,9 @@ def input_graph():
 
         # Example: num_nodes is 100 and target is 101, so 101 > 100.
         # But nodes is filled from nodes[0] ... nodes[100] so len(nodes) is 101
-        if (target == 101):
-            print ("target is 101, num_nodes is " + str(num_nodes) + " len nodes is "
-                + str(len(nodes)))
+        #if (target == 101):
+        #    print ("target is 101, num_nodes is " + str(num_nodes) + " len nodes is "
+        #       + str(len(nodes)))
         if target > num_nodes:
             # If len(nodes) is 101 and num_nodes is 100 and we have a tatget of
             # 101, which is a sink, i.e., parents but no children, then there is 
@@ -908,12 +941,26 @@ print(nx.is_connected(G))
 # i start = 1 as nodes[0] not used, i end is (num_nodes+1) - 1  = 100
 for i in range(1,num_nodes+1):
     if i not in visited:
+        print("Driver call BFS " + str(i))
         bfs(visited, graph, nodes[i])    # function calling
+
+if len(current_partition) >= 0:
+    print("BFS: create final sub-partition")
+    partitions.append(current_partition.copy())
+    current_partition = []
+    #global total_loop_nodes_added
+    total_loop_nodes_added += loop_nodes_added
+    loop_nodes_added = 0
+    frontiers.append(frontier.copy())
+    frontier_cost = "atEnd:" + str(len(frontier))
+    frontier_costs.append(frontier_cost)
 
 #partitions.append(current_partition.copy())
 #frontiers.append(frontier.copy())
 #frontier_cost = "END" + ":" + str(len(frontier))
 #frontier_costs.append(frontier_cost)
+print()
+print("num_nodes: " + str(num_nodes) + " num_edges: " + str(num_edges))
 print()
 print("visited length: " + str(len(visited)))
 if len(visited) != num_nodes:
@@ -961,13 +1008,13 @@ print()
 #print()
 print("partitions, len: " + str(len(partitions))+":")
 for x in partitions:
-    print("-- " + str(x))
+    print("-- (" + str(len(x)) + "):" + str(x))
 print()
 # final frontier shoudl always be empty
 # assert: 
 print("frontiers: (final fronter should be empty), len: " + str(len(frontiers))+":")
 for frontier_list in frontiers:
-    print("-- ",end="")
+    print("-- (" + str(len(frontier_list)) + "): ",end="")
     for x in frontier_list:
         #print(str(x.ID),end=" ")
         print(str(x),end=" ")
@@ -988,8 +1035,17 @@ for x in all_frontier_costs:
     sum_of_partition_costs += cost
 print("all frontier costs, len: " + str(len(all_frontier_costs)) + ", sum: " 
     + str(sum_of_partition_costs))
+i = 0
+costs_per_line = 13
 for x in all_frontier_costs:
-    print(str(x),end=" ")
+    if (i < costs_per_line):
+        print(str(x),end=" ")
+    else:
+        print(str(x))
+        i = 0
+    i += 1
+
+
 print()
 print()
 #visualize()
