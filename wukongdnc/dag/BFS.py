@@ -211,6 +211,7 @@ partitions = []
 current_partition = []
 current_partition_number = 1
 dfs_parent_changes_in_partiton_size = []
+dfs_parent_changes_in_frontier_size = []
 loop_nodes_added = 0
 total_loop_nodes_added = 0
 frontier_costs = []
@@ -221,6 +222,9 @@ all_frontier_costs = []
 
 IDENTIFY_SINGLETONS = False
 TRACK_PARTITION_LOOPS = False
+CHECK_UNVISITED_CHILDREN = False
+
+FRONTIER_NODE = Node(-1)
 
 """
 # Regular bfs.
@@ -255,6 +259,7 @@ def dfs_parent_pre_parent_traversal(node,visited,list_of_unvisited_children):
         # then visit C's parent which is N which will see its child C as visited.
         # Example: children arrows. 3 --> 11 --> 12 --> 4. So parent traversal 
         # is 4, 12, 11, 3 so node 11 is parent of child C 12.
+        check_list_of_unvisited_chldren_after_visiting_parents = False
         visited.append(node.ID)
         print ("dfs_parent_pre: add " + str(node.ID) + " to visited since no children")              
     else:
@@ -273,6 +278,7 @@ def dfs_parent_pre_parent_traversal(node,visited,list_of_unvisited_children):
         if not has_unvisited_children:
             print ("dfs_parent_pre mark " + str(node.ID) + " as visited since it has no unvisited children "
             + "but do not add it to bfs queue since no children need to be visited")
+            check_list_of_unvisited_chldren_after_visiting_parents = False
             visited.append(node.ID)
         else:
             print ("dfs_parent_pre " + str(node.ID) + " has unvisted children so mark " 
@@ -341,11 +347,12 @@ def dfs_parent(visited, graph, node):  #function for dfs
     # the parent traversal 7 still has no unvisited children. Thus 7 is not 
     # added to the queue or the frontier (since it has no children) and 7 is
     # added to the curret partition.
+    if CHECK_UNVISITED_CHILDREN:
+        check_list_of_unvisited_chldren_after_visiting_parents = dfs_parent_pre_parent_traversal(node,visited,list_of_unvisited_children)
+        print("after pre: list_of_unvisited_children: " + str(list_of_unvisited_children))
+    else:
+        visited.append(node.ID)
 
-    check_list_of_unvisited_chldren_after_visiting_parents = dfs_parent_pre_parent_traversal(node,visited,list_of_unvisited_children)
-
-    print("after pre: list_of_unvisited_children: " + str(list_of_unvisited_children))
-    
     if not len(node.parents):
         print ("dfs_parent node " + str(node.ID) + " has no parents")
     else:
@@ -378,9 +385,36 @@ def dfs_parent(visited, graph, node):  #function for dfs
                 global loop_nodes_added
                 loop_nodes_added += 1
 
-    # process children after parent traversal
-    dfs_parent_post_parent_traversal(node, visited,
-    list_of_unvisited_children, check_list_of_unvisited_chldren_after_visiting_parents)
+    if CHECK_UNVISITED_CHILDREN:
+        # process children after parent traversal
+        dfs_parent_post_parent_traversal(node, visited,
+            list_of_unvisited_children, check_list_of_unvisited_chldren_after_visiting_parents)
+    else:
+        queue.append(node.ID)
+        #queue.append(-1)
+        print("queue after add " + str(node.ID) + ":", end=" ")
+        for x in queue:
+            #print(x.ID, end=" ")
+            print(x, end=" ")
+        print()
+        #frontier.append(node)
+        frontier.append(node.ID)
+        print("frontier after add " + str(node.ID) + ":", end=" ")
+        for x in frontier:
+            #print(x.ID, end=" ")
+            print(x, end=" ")
+        print()
+        # make sure parent in partition before any if its children. We visit parents of nodein dfs_parents 
+        # and they are added to partition in dfs_parents after their parents are added 
+        # in dfs_parents then here we add node to partition.  
+        if node.partition_number == -1:
+            print ("dfs_parent add " + str(node.ID) + " to partition")
+            node.partition_number = current_partition_number
+            current_partition.append(node.ID)
+        else:
+            print ("dfs_parent do not add " + str(node.ID) + " to partition "
+                + current_partition_number + " since it is already in partition " 
+                + node.partition_number)
 
 # process children after parent traversal
 def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, check_list_of_unvisited_chldren_after_visiting_parents):
@@ -593,25 +627,87 @@ def bfs(visited, graph, node): #function for BFS
     # dfs_parent will add node to partition (and its unvisited parent nodes)
     global current_partition
     dfs_parent_start_partition_size = len(current_partition)
+    dfs_parent_start_frontier_size = len(frontier)
     global loop_nodes_added
     loop_nodes_added_start = loop_nodes_added
 
     #dfs_p(visited, graph, node)
     #dfs_p_new(visited, graph, node)
+
+#rhc: 
+    queue.append(-1)
     dfs_parent(visited, graph, node)
 
     dfs_parent_end_partition_size = len(current_partition)
+    dfs_parent_end_frontier_size = len(frontier)
     loop_nodes_added_end = loop_nodes_added
     dfs_parent_change_in_partition_size = (dfs_parent_end_partition_size - dfs_parent_start_partition_size) - (
         loop_nodes_added_end - loop_nodes_added_start)
+    dfs_parent_change_in_frontier_size = (dfs_parent_end_frontier_size - dfs_parent_start_frontier_size) - (
+        loop_nodes_added_end - loop_nodes_added_start)
     print("dfs_parent_change_in_partition_size: " + str(dfs_parent_change_in_partition_size))
+    print("dfs_parent_change_in_frontier_size: " + str(dfs_parent_change_in_frontier_size))
     dfs_parent_changes_in_partiton_size.append(dfs_parent_change_in_partition_size)
+    dfs_parent_changes_in_frontier_size.append(dfs_parent_change_in_frontier_size)
 
     # queue.append(node) and frontier.append(node) done optionally in dfs_parent
-
+#rhc
+    end_of_current_frontier = False
     while queue:          # Creating loop to visit each node
         #node = queue.pop(0) 
         ID = queue.pop(0) 
+        print("bfs pop node " + str(ID) + " from queue") 
+#rhc
+        # issue: if we add queue.append(-1) in dfs_parent, we get smaller partitions
+        # but the frontiers overlap. this is becuase in dfs_parent we get
+        # a -1 b -1 c -1 then we rturn to bfs then it checks -1 at front, which is 
+        # true, so it crates partition a b c sincne a b and c are in the partition
+        # but haven't got thru aall the nodes on frontier, which is a b c so next 
+        # frontier is b c ... So if we put a b c in partition before we see our
+        # first -1 then we have to get through a b and c. Note there is a funny interaction
+        # with when we remove node from frontier, i.e., after we isit all of its
+        # children. So only can process -1's after processing all of a node's children.
+        # Hmmm. 
+        # We get 5, 17, 1 so we dfs_parent 5 and visit 5's parents then visit 5's children:
+        """
+        bfs node 5 visit children
+        bfs visit child 16 mark it visited and dfs_parent(16)
+        bfs dfs_parent(16)
+        dfs_parent from node 16
+        dfs_parent node 16 visit parents
+        dfs_parent neighbor 5 already visited
+        dfs_parent visit node 10
+        dfs_parent from node 10
+        dfs_parent node 10 visit parents
+        dfs_parent visit node 2
+        dfs_parent from node 2
+        dfs_parent node 2 has no parents
+        queue after add 2: 17 1 -1 2
+        frontier after add 2: 5 17 1 2
+        dfs_parent add 2 to partition
+        queue after add 10: 17 1 -1 2 10
+        frontier after add 10: 5 17 1 2 10 
+        dfs_parent add 10 to partition
+        queue after add 16: 17 1 -1 2 10 16
+        frontier after add 16: 5 17 1 2 10 16
+        dfs_parent add 16 to partition
+        dfs_parent_change_in_partition_size: 3
+        dfs_parent_change_in_frontier_size: 3
+        bfs node 17 already visited
+        frontier after remove 5: 17 1 2 10 16
+        """
+        # but no -1 after 5. So coul put -1 after 5 if we replaced 5 on queue
+        # with all its parent cild stuff?
+
+        if ID == -1:
+            end_of_current_frontier = True
+            if queue:
+                ID = queue.pop(0)
+                print("bfs after pop -1 pop node " + str(ID) + " from queue") 
+                queue.append(-1)
+            else:
+                break
+
         node = nodes[ID]
         # so we can see the frontier costs that do not correspnd to when 
         # partitions were created, i.e., was there a better frontier for partition?
@@ -632,13 +728,17 @@ def bfs(visited, graph, node): #function for BFS
         # visited, and add C to the partition but not the queue.
         # Note: handling singletons here is more efficent since we don;t waste time 
         # checkng for singletons in dfs_parent when most nodes are not singletons.
-        if len(current_partition) >= num_nodes/100:
-            print("BFS: create sub-partition")
-            partitions.append(current_partition.copy())
-            current_partition = []
-            global total_loop_nodes_added
-            total_loop_nodes_added += loop_nodes_added
-            loop_nodes_added = 0
+#rhc: ToDo: partitions based on frontier?
+        if end_of_current_frontier:
+            end_of_current_frontier = False
+            if len(current_partition) > 0:
+            #if len(current_partition) >= num_nodes/5:
+                print("BFS: create sub-partition at end of current frontier")
+                partitions.append(current_partition.copy())
+                current_partition = []
+                global total_loop_nodes_added
+                total_loop_nodes_added += loop_nodes_added
+                loop_nodes_added = 0
 #rhc: Q: 
 # - So some nodes are in current_partition. Some of these nodes that are in the 
 # current_partition are in the frontier and some aer not in the frontier. For example, 
@@ -669,11 +769,9 @@ def bfs(visited, graph, node): #function for BFS
 # partition leave the frontier? So not balanced? But we can combine partitions?
 # Ugh!!
 
-            frontiers.append(frontier.copy())
-            frontier_cost = "pop-"+str(node.ID) + ":" + str(len(frontier))
-            frontier_costs.append(frontier_cost)
-        #print (node.ID, end = " ") 
-        print("bfs pop node " + str(node.ID) + " from queue") 
+                frontiers.append(frontier.copy())
+                frontier_cost = "pop-"+str(node.ID) + ":" + str(len(frontier))
+                frontier_costs.append(frontier_cost)
 
         if not len(node.children):
             print ("bfs node " + str(node.ID) + " has no children")
@@ -690,16 +788,22 @@ def bfs(visited, graph, node): #function for BFS
 
                 dfs_parent_start_partition_size = len(current_partition)
                 loop_nodes_added_start = loop_nodes_added
+                dfs_parent_start_frontier_size = len(frontier)
 
                 #dfs_p_new(visited, graph, neighbor)
                 dfs_parent(visited, graph, neighbor)
 
                 dfs_parent_end_partition_size = len(current_partition)
+                dfs_parent_end_frontier_size = len(frontier)
                 loop_nodes_added_end = loop_nodes_added
                 dfs_parent_change_in_partition_size = (dfs_parent_end_partition_size - dfs_parent_start_partition_size) - (
-                loop_nodes_added_end - loop_nodes_added_start)
+                    loop_nodes_added_end - loop_nodes_added_start)
+                dfs_parent_change_in_frontier_size = (dfs_parent_end_frontier_size - dfs_parent_start_frontier_size) - (
+                    loop_nodes_added_end - loop_nodes_added_start)
                 print("dfs_parent_change_in_partition_size: " + str(dfs_parent_change_in_partition_size))
+                print("dfs_parent_change_in_frontier_size: " + str(dfs_parent_change_in_frontier_size))
                 dfs_parent_changes_in_partiton_size.append(dfs_parent_change_in_partition_size)
+                dfs_parent_changes_in_frontier_size.append(dfs_parent_change_in_frontier_size)
 
                 """
                 # dfs_parent decides whether to queue the node to queue and frontier. 
@@ -756,8 +860,8 @@ def input_graph():
     p sp 20 23
     """
     #graph_file = open('100.gr', 'r')
-    #graph_file = open('graph_20.gr', 'r')
-    graph_file = open('graph_3000.gr', 'r')
+    graph_file = open('graph_20.gr', 'r')
+    #graph_file = open('graph_3000.gr', 'r')
     count = 0
     file_name_line = graph_file.readline()
     count += 1
@@ -944,7 +1048,7 @@ for i in range(1,num_nodes+1):
         print("Driver call BFS " + str(i))
         bfs(visited, graph, nodes[i])    # function calling
 
-if len(current_partition) >= 0:
+if len(current_partition) > 0:
     print("BFS: create final sub-partition")
     partitions.append(current_partition.copy())
     current_partition = []
@@ -954,6 +1058,9 @@ if len(current_partition) >= 0:
     frontiers.append(frontier.copy())
     frontier_cost = "atEnd:" + str(len(frontier))
     frontier_costs.append(frontier_cost)
+else:
+    # always do this - below we assert final frontier is empty
+    frontiers.append(frontier.copy())
 
 #partitions.append(current_partition.copy())
 #frontiers.append(frontier.copy())
@@ -992,6 +1099,17 @@ if sum_of_changes != num_nodes:
     print("[Error]: sum_of_changes is " + str(sum_of_changes)
         + " but num_nodes is " + str(num_nodes))
 for x in dfs_parent_changes_in_partiton_size:
+    print(x, end=" ")
+print()
+print()
+# adjusting for loop_nodes_added in dfs_p
+sum_of_changes = sum(dfs_parent_changes_in_frontier_size)
+print("dfs_parent_changes_in_frontier_size length, len: " + str(len(dfs_parent_changes_in_frontier_size))
+    + ", sum_of_changes: " + str(sum_of_changes))
+if sum_of_changes != num_nodes:
+    print("[Error]: sum_of_changes is " + str(sum_of_changes)
+        + " but num_nodes is " + str(num_nodes))
+for x in dfs_parent_changes_in_frontier_size:
     print(x, end=" ")
 print()
 print()
