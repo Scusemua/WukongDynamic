@@ -351,6 +351,8 @@ def dfs_parent(visited, graph, node):  #function for dfs
         check_list_of_unvisited_chldren_after_visiting_parents = dfs_parent_pre_parent_traversal(node,visited,list_of_unvisited_children)
         print("after pre: list_of_unvisited_children: " + str(list_of_unvisited_children))
     else:
+#rhc: If not doing child stuff do we mark node visited here or when we enqueue 
+# node in dfs_parent path?
         visited.append(node.ID)
 
     if not len(node.parents):
@@ -860,8 +862,8 @@ def input_graph():
     p sp 20 23
     """
     #graph_file = open('100.gr', 'r')
-    graph_file = open('graph_20.gr', 'r')
-    #graph_file = open('graph_3000.gr', 'r')
+    #graph_file = open('graph_20.gr', 'r')
+    graph_file = open('graph_3000.gr', 'r')
     count = 0
     file_name_line = graph_file.readline()
     count += 1
@@ -1045,7 +1047,7 @@ print(nx.is_connected(G))
 # i start = 1 as nodes[0] not used, i end is (num_nodes+1) - 1  = 100
 for i in range(1,num_nodes+1):
     if i not in visited:
-        print("Driver call BFS " + str(i))
+        print("*************Driver call BFS " + str(i))
         bfs(visited, graph, nodes[i])    # function calling
 
 if len(current_partition) > 0:
@@ -1181,7 +1183,7 @@ print()
 # singleton children. But still might want to split partition and
 # want partition and its frontier?
 # 
-# So is it better to chck all the parents of the childrenthat become visited
+# So is it better to check all the parents of the children that become visited
 # or adjust the queue and frontier after return from dfs_parent
 # to bfs? Where we might wan to do continue partitioning the result of
 # bfs's dfs_parent. The constant child checking during dfs_parent is costly?
@@ -1193,6 +1195,12 @@ print()
 # queue does not hurt sincebfs will ignore them anyway. Although
 # the queue is inaccurate that might not affect the partitioning of
 # bsf's dfs_parent result for large partitions returned to bfs.
+#
+# If not doing child stuff in dfs_parent, do we mark node visited before 
+# or after parent_traversal? Consider multithreading version, which will
+# stop visiting along a (parent) traversal when it see's a visted node.
+# So node visited means: have visited node's parents then set node
+# visited or marke visited and will visit node's parents. Does it matter?
 #
 # ToDo: Any reason to not short circuit 7, i.e., put 7 in queue, i.e., do
 # not do the unvisited stuff for 7 when 6 calls dfs_p(7)?
