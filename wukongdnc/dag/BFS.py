@@ -1,6 +1,19 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 
+import logging 
+
+logger = logging.getLogger(__name__)
+#logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.ERROR)
+#formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
+formatter = logging.Formatter('%(levelname)s: %(message)s')
+ch = logging.StreamHandler()
+#ch.setLevel(logging.DEBUG)
+ch.setLevel(logging.ERROR)
+ch.setFormatter(formatter)
+logger.addHandler(ch)
+
 graph = {
   '5' : ['3','7'],
   '3' : ['2', '4'],
@@ -223,8 +236,8 @@ all_frontier_costs = []
 IDENTIFY_SINGLETONS = False
 TRACK_PARTITION_LOOPS = False
 CHECK_UNVISITED_CHILDREN = False
-
-FRONTIER_NODE = Node(-1)
+DEBUG = False
+PRINT_DETAILED_STATS = False
 
 """
 # Regular bfs.
@@ -247,7 +260,7 @@ def dfs_parent_pre_parent_traversal(node,visited,list_of_unvisited_children):
     check_list_of_unvisited_chldren_after_visiting_parents = False
     # set child node to visited if possible before dfs_parent so that when the parent 
     # checks if this child is visited it will be visited. 
-    print("dfs_parent_pre: at start: list_of_unvisited_children:" + str(list_of_unvisited_children))
+    logger.debug("dfs_parent_pre: at start: list_of_unvisited_children:" + str(list_of_unvisited_children))
     if len(node.children) == 0:
         # Can a child be in visited? If child was visited then parent must have been
         # already visited? No. 
@@ -261,7 +274,7 @@ def dfs_parent_pre_parent_traversal(node,visited,list_of_unvisited_children):
         # is 4, 12, 11, 3 so node 11 is parent of child C 12.
         check_list_of_unvisited_chldren_after_visiting_parents = False
         visited.append(node.ID)
-        print ("dfs_parent_pre: add " + str(node.ID) + " to visited since no children")              
+        logger.debug ("dfs_parent_pre: add " + str(node.ID) + " to visited since no children")              
     else:
         # node has more than one child or it has one child that has one or more
         # children (it is not a sink) or more than one parent (so if
@@ -271,17 +284,17 @@ def dfs_parent_pre_parent_traversal(node,visited,list_of_unvisited_children):
         for neighbor_index in node.children:
             child_node = nodes[neighbor_index]
             if child_node.ID not in visited:
-                print ("dfs_parent_pre: child " + str(child_node.ID) + " not in visited")
+                logger.debug ("dfs_parent_pre: child " + str(child_node.ID) + " not in visited")
                 has_unvisited_children = True
                 list_of_unvisited_children.append(child_node.ID)
                 #break
         if not has_unvisited_children:
-            print ("dfs_parent_pre mark " + str(node.ID) + " as visited since it has no unvisited children "
+            logger.debug ("dfs_parent_pre mark " + str(node.ID) + " as visited since it has no unvisited children "
             + "but do not add it to bfs queue since no children need to be visited")
             check_list_of_unvisited_chldren_after_visiting_parents = False
             visited.append(node.ID)
         else:
-            print ("dfs_parent_pre " + str(node.ID) + " has unvisted children so mark " 
+            logger.debug ("dfs_parent_pre " + str(node.ID) + " has unvisted children so mark " 
                 + str(node.ID) + " as visited and check children again after parent traversal")
             # this node can be marked as visited, but we will only add it to the queue
             # if these unvisited children are still unvisited when we return from 
@@ -291,8 +304,8 @@ def dfs_parent_pre_parent_traversal(node,visited,list_of_unvisited_children):
             # we need not add node to the queue. 
             visited.append(node.ID)
             check_list_of_unvisited_chldren_after_visiting_parents = True
-            print("dfs_parent_pre: set check_list_of_unvisited_chldren True")
-            print("dfs_parent_pre: list_of_unvisited_children:" + str(list_of_unvisited_children))
+            logger.debug("dfs_parent_pre: set check_list_of_unvisited_chldren True")
+            logger.debug("dfs_parent_pre: list_of_unvisited_children:" + str(list_of_unvisited_children))
 #rhc: un
             node.unvisited_children = list_of_unvisited_children
 
@@ -302,18 +315,18 @@ def dfs_parent_pre_parent_traversal(node,visited,list_of_unvisited_children):
         if parent_node.ID in visited:
             parent_node.unvisited_children.remove(node.ID)
             if len(parent_node.unvisited_children) == 0:
-                print("*******dfs_parent_pre_parent_traversal: " + str(parent_node.ID) + " after removing child " 
+                logger.debug("*******dfs_parent_pre_parent_traversal: " + str(parent_node.ID) + " after removing child " 
                     + str(node.ID) + " has no unvisited children, so remove "
                     + str(parent_node.ID) + " from queue and frontier.")
                 try:
                     queue.remove(parent_node.ID)
                 except ValueError:
-                    print("*******dfs_parent_pre_parent_traversal: " + str(parent_node.ID)
+                    logger.debug("*******dfs_parent_pre_parent_traversal: " + str(parent_node.ID)
                     + " not in queue.")
                 try:
                     frontier.remove(parent_node.ID)
                 except ValueError:
-                    print("*******dfs_parent_pre_parent_traversal: " + str(parent_node.ID)
+                    logger.debug("*******dfs_parent_pre_parent_traversal: " + str(parent_node.ID)
                     + " not in frontier.")
     
     return check_list_of_unvisited_chldren_after_visiting_parents
@@ -321,7 +334,7 @@ def dfs_parent_pre_parent_traversal(node,visited,list_of_unvisited_children):
 def dfs_parent(visited, graph, node):  #function for dfs 
     # e.g. dfs(3) where bfs is visiting 3 as a child of enqueued node
     # so 3 is not visited yet
-    print ("dfs_parent from node " + str(node.ID))
+    logger.debug ("dfs_parent from node " + str(node.ID))
 
     list_of_unvisited_children = []
     check_list_of_unvisited_chldren_after_visiting_parents = False
@@ -349,26 +362,26 @@ def dfs_parent(visited, graph, node):  #function for dfs
     # added to the curret partition.
     if CHECK_UNVISITED_CHILDREN:
         check_list_of_unvisited_chldren_after_visiting_parents = dfs_parent_pre_parent_traversal(node,visited,list_of_unvisited_children)
-        print("after pre: list_of_unvisited_children: " + str(list_of_unvisited_children))
+        logger.debug("after pre: list_of_unvisited_children: " + str(list_of_unvisited_children))
     else:
 #rhc: If not doing child stuff do we mark node visited here or when we enqueue 
 # node in dfs_parent path?
         visited.append(node.ID)
 
     if not len(node.parents):
-        print ("dfs_parent node " + str(node.ID) + " has no parents")
+        logger.debug ("dfs_parent node " + str(node.ID) + " has no parents")
     else:
-        print ("dfs_parent node " + str(node.ID) + " visit parents")
+        logger.debug ("dfs_parent node " + str(node.ID) + " visit parents")
 
     # visit parents
     for neighbor_index in node.parents:
         parent_node = nodes[neighbor_index]
         if parent_node.ID not in visited:
-            print ("dfs_parent visit node " + str(parent_node.ID))
+            logger.debug ("dfs_parent visit node " + str(parent_node.ID))
             dfs_parent(visited, graph, parent_node)
         else:
             # loop detected - mark this loop in partition (for debugging for now)
-            print ("dfs_parent neighbor " + str(parent_node.ID) + " already visited")
+            logger.debug ("dfs_parent neighbor " + str(parent_node.ID) + " already visited")
             if TRACK_PARTITION_LOOPS and parent_node.partition_number == -1:
                 # Example: 1 5 6 7 3(Lp) 12(Lp) 11 11(Lc) 12 4 3 2 10 9 8
                 # Here, 3 is a parent of 11 that 11 finds visited so when visiting
@@ -382,7 +395,7 @@ def dfs_parent(visited, graph, node):  #function for dfs
                 # indicates the loop detected when 11 saw it's parent 12 was visited.
                 loop_indicator = str(parent_node.ID)+"(Lprnt_of_" + str(node.ID) + ")"
                 current_partition.append(loop_indicator)
-                print("[Info]: Possible parent loop detected, start and end with " + str(parent_node.ID)
+                logger.debug("[Info]: Possible parent loop detected, start and end with " + str(parent_node.ID)
                     + ", loop indicator: " + loop_indicator)
                 global loop_nodes_added
                 loop_nodes_added += 1
@@ -394,27 +407,29 @@ def dfs_parent(visited, graph, node):  #function for dfs
     else:
         queue.append(node.ID)
         #queue.append(-1)
-        print("queue after add " + str(node.ID) + ":", end=" ")
-        for x in queue:
-            #print(x.ID, end=" ")
-            print(x, end=" ")
-        print()
+        if DEBUG:
+            print("queue after add " + str(node.ID) + ":", end=" ")
+            for x in queue:
+                #logger.debug(x.ID, end=" ")
+                print(x, end=" ")
+            print()
         #frontier.append(node)
         frontier.append(node.ID)
-        print("frontier after add " + str(node.ID) + ":", end=" ")
-        for x in frontier:
-            #print(x.ID, end=" ")
-            print(x, end=" ")
-        print()
+        if DEBUG:
+            print("frontier after add " + str(node.ID) + ":", end=" ")
+            for x in frontier:
+                #logger.debug(x.ID, end=" ")
+                print(x, end=" ")
+            print()
         # make sure parent in partition before any if its children. We visit parents of nodein dfs_parents 
         # and they are added to partition in dfs_parents after their parents are added 
         # in dfs_parents then here we add node to partition.  
         if node.partition_number == -1:
-            print ("dfs_parent add " + str(node.ID) + " to partition")
+            logger.debug ("dfs_parent add " + str(node.ID) + " to partition")
             node.partition_number = current_partition_number
             current_partition.append(node.ID)
         else:
-            print ("dfs_parent do not add " + str(node.ID) + " to partition "
+            logger.debug ("dfs_parent do not add " + str(node.ID) + " to partition "
                 + current_partition_number + " since it is already in partition " 
                 + node.partition_number)
 
@@ -424,15 +439,15 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
     unvisited_children_after_parent_loop = []
     if check_list_of_unvisited_chldren_after_visiting_parents:
         for child_index in list_of_unvisited_children:
-            print("check unvisited child " + str(child_index))
+            logger.debug("check unvisited child " + str(child_index))
             child_node = nodes[child_index]
             if child_node.ID not in visited:
-                print("unvisited child " + str(child_node.ID) + " not visited during parent traversal")
+                logger.debug("unvisited child " + str(child_node.ID) + " not visited during parent traversal")
                 # Did not visit this unvsited child when visiting parents
                 unvisited_children_after_parent_loop.append(child_node.ID)
 #rhc: un
         node.unvisited_children = unvisited_children_after_parent_loop
-    print(str(len(unvisited_children_after_parent_loop)) + " children remain unvisited")
+    logger.debug(str(len(unvisited_children_after_parent_loop)) + " children remain unvisited")
 
     # All or none of children in list_of_unvisited_children could remain 
     # unvisited. If they are all unvisited then no loop is detected but
@@ -458,7 +473,7 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
     # in list_of_unvisited_children tht are not in unvisited_children_after_parent_loop.
     if TRACK_PARTITION_LOOPS:
         for unvisited_child in list_of_unvisited_children:
-            print("check whether node " + str(node.ID) + " unvisited child " + str(unvisited_child) + " is still unvisited"
+            logger.debug("check whether node " + str(node.ID) + " unvisited child " + str(unvisited_child) + " is still unvisited"
                 + " after parent traversal")
             if unvisited_child not in unvisited_children_after_parent_loop:
                 # Unvisited_child is no longer unvisited after call to dfs_parent.
@@ -467,15 +482,15 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
                 # This child is also a parent or ancestor.
                 # output loop (L) indicators in partition, children are in no 
                 # particular order.
-                print("unvisited child " + str(unvisited_child) + " not still unvisited")
+                logger.debug("unvisited child " + str(unvisited_child) + " not still unvisited")
                 if first:
                     first = False
                     loop_indicator = str(nodes[unvisited_child].ID)
                 else:
                     loop_indicator += "/" + str(nodes[unvisited_child].ID)
-                print_loop_indicator = True
+                logger.debug_loop_indicator = True
             else:
-                print("unvisited child " + str(unvisited_child) + " was not visited during parent traversal")
+                logger.debug("unvisited child " + str(unvisited_child) + " was not visited during parent traversal")
         if print_loop_indicator:
             # a loop involving child 'c' as in (L'c')
             # Example: 1 5 6 7 3(Lp) 12(Lp) 11 11(Lc) 12 4 3 2 10 9 8
@@ -497,7 +512,7 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
             current_partition.append(loop_indicator)
             global loop_nodes_added
             loop_nodes_added += 1
-            print("[Info]: possible loop detected, loop indicator: " + loop_indicator)
+            logger.debug("[Info]: possible loop detected, loop indicator: " + loop_indicator)
 
     if len(unvisited_children_after_parent_loop) > 0:
         # There remains some unvisited children
@@ -505,10 +520,10 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
         if IDENTIFY_SINGLETONS and (
         len(unvisited_children_after_parent_loop)) == 1:
             # in fact, there is only one unvisited child
-            print("1 unvisited child after parent loop.")
+            logger.debug("1 unvisited child after parent loop.")
             #only_child_index = node.children[0]
             unvisited_child_index = unvisited_children_after_parent_loop[0]
-            print("unvisited_child_index: " + str(unvisited_child_index))
+            logger.debug("unvisited_child_index: " + str(unvisited_child_index))
             unvisited_child = nodes[unvisited_child_index]
 #rhc: ToDo: node may have more than 1 child, but if there is only one 
 #  unvisited child only_child and it has no children and node is only_child's
@@ -536,94 +551,98 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
                 # whether to add node to queue, and whether node has a 
                 # singleton child that can be marked visited and added to the 
                 # partition along with node
-                print("the 1 unvisited child after parent loop is a singleton"
+                logger.debug("the 1 unvisited child after parent loop is a singleton"
                     + " mark it visited and add parent (first) and child to partition.")
                 visited.append(unvisited_child.ID)
                 # add node to partition before child 
                 if node.partition_number == -1:
-                    print ("dfs_parent add " + str(node.ID) + " to partition")
+                    logger.debug ("dfs_parent add " + str(node.ID) + " to partition")
                     node.partition_number = current_partition_number
                     current_partition.append(node.ID)
                 else:
-                    print ("dfs_parent do not add " + str(node.ID) + " to partition "
+                    logger.debug ("dfs_parent do not add " + str(node.ID) + " to partition "
                         + current_partition_number + " since it is already in partition " 
                         + node.partition_number)
                 if unvisited_child.partition_number == -1:
-                    print ("dfs_parent add " + str(unvisited_child.ID) + " to partition")
+                    logger.debug ("dfs_parent add " + str(unvisited_child.ID) + " to partition")
                     unvisited_child.partition_number = current_partition_number
                     current_partition.append(unvisited_child.ID)
                 else:
                     # assert: this is an Error
-                    print ("dfs_parent do not add " + str(unvisited_child.ID) + " to partition "
+                    logger.debug ("dfs_parent do not add " + str(unvisited_child.ID) + " to partition "
                         + current_partition_number + " since it is already in partition " 
                         + unvisited_child.partition_number)
 
             else:
                 #queue.append(node)
                 queue.append(node.ID)
-                print("queue after add " + str(node.ID) + ":", end=" ")
-                for x in queue:
-                    #print(x.ID, end=" ")
-                    print(x, end=" ")
-                print()
+                if DEBUG:
+                    print("queue after add " + str(node.ID) + ":", end=" ")
+                    for x in queue:
+                        #logger.debug(x.ID, end=" ")
+                        print(x, end=" ")
+                    print()
                 #frontier.append(node)
                 frontier.append(node.ID)
-                print("frontier after add " + str(node.ID) + ":", end=" ")
-                for x in frontier:
-                    #print(x.ID, end=" ")
-                    print(x, end=" ")
-                print()
+                if DEBUG:
+                    print("frontier after add " + str(node.ID) + ":", end=" ")
+                    for x in frontier:
+                        #logger.debug(x.ID, end=" ")
+                        print(x, end=" ")
+                    print()
                 # make sure parent in partition before any if its children. We visit parents of nodein dfs_parents 
                 # and they are added to partition in dfs_parents after their parents are added 
                 # in dfs_parents then here we add node to partition.  
                 if node.partition_number == -1:
-                    print ("dfs_parent add " + str(node.ID) + " to partition")
+                    logger.debug ("dfs_parent add " + str(node.ID) + " to partition")
                     node.partition_number = current_partition_number
                     current_partition.append(node.ID)
                 else:
-                    print ("dfs_parent do not add " + str(node.ID) + " to partition "
+                    logger.debug ("dfs_parent do not add " + str(node.ID) + " to partition "
                         + current_partition_number + " since it is already in partition " 
                         + node.partition_number)
         else:
                 #queue.append(node)
                 queue.append(node.ID)
-                print("queue after add " + str(node.ID) + ":", end=" ")
-                for x in queue:
-                    #print(x.ID, end=" ")
-                    print(x, end=" ")
-                print()
+                if DEBUG:
+                    print("queue after add " + str(node.ID) + ":", end=" ")
+                    for x in queue:
+                        #logger.debug(x.ID, end=" ")
+                        print(x, end=" ")
+                    print()
                 #frontier.append(node)
                 frontier.append(node.ID)
-                print("frontier after add " + str(node.ID) + ":", end=" ")
-                for x in frontier:
-                    #print(x.ID, end=" ")
-                    print(x, end=" ")
-                print()
+                if DEBUG:
+                    print("frontier after add " + str(node.ID) + ":", end=" ")
+                    for x in frontier:
+                        #logger.debug(x.ID, end=" ")
+                        print(x, end=" ")
+                    print()
                 # make sure parent in partition before any if its children. We visit parents of nodein dfs_parents 
                 # and they are added to partition in dfs_parents after their parents are added 
                 # in dfs_parents then here we add node to partition.  
                 if node.partition_number == -1:
-                    print ("dfs_parent add " + str(node.ID) + " to partition")
+                    logger.debug ("dfs_parent add " + str(node.ID) + " to partition")
                     node.partition_number = current_partition_number
                     current_partition.append(node.ID)
                 else:
-                    print ("dfs_parent do not add " + str(node.ID) + " to partition "
+                    logger.debug ("dfs_parent do not add " + str(node.ID) + " to partition "
                         + current_partition_number + " since it is already in partition " 
                         + node.partition_number)
     else:
-        print("node " + str(node.ID) + " has no unvisited children after parent traversal,"
+        logger.debug("node " + str(node.ID) + " has no unvisited children after parent traversal,"
             + " add it to partition but not queue")
         if node.partition_number == -1:
-            print("dfs_parent add " + str(node.ID) + " to partition")
+            logger.debug("dfs_parent add " + str(node.ID) + " to partition")
             node.partition_number = current_partition_number
             current_partition.append(node.ID)
         else:
-            print("dfs_parent do not add " + str(node.ID) + " to partition "
+            logger.debug("dfs_parent do not add " + str(node.ID) + " to partition "
                 + current_partition_number + " since it is already in partition " 
                 + node.partition_number)
 
 def bfs(visited, graph, node): #function for BFS
-    print ("bfs mark " + str(node.ID) + " as visited and add to queue")
+    logger.debug ("bfs mark " + str(node.ID) + " as visited and add to queue")
     #rhc: add to visited is done in dfs_parent
     #visited.append(node.ID)
     # dfs_parent will add node to partition (and its unvisited parent nodes)
@@ -647,8 +666,8 @@ def bfs(visited, graph, node): #function for BFS
         loop_nodes_added_end - loop_nodes_added_start)
     dfs_parent_change_in_frontier_size = (dfs_parent_end_frontier_size - dfs_parent_start_frontier_size) - (
         loop_nodes_added_end - loop_nodes_added_start)
-    print("dfs_parent_change_in_partition_size: " + str(dfs_parent_change_in_partition_size))
-    print("dfs_parent_change_in_frontier_size: " + str(dfs_parent_change_in_frontier_size))
+    logger.debug("dfs_parent_change_in_partition_size: " + str(dfs_parent_change_in_partition_size))
+    logger.debug("dfs_parent_change_in_frontier_size: " + str(dfs_parent_change_in_frontier_size))
     dfs_parent_changes_in_partiton_size.append(dfs_parent_change_in_partition_size)
     dfs_parent_changes_in_frontier_size.append(dfs_parent_change_in_frontier_size)
 
@@ -658,7 +677,7 @@ def bfs(visited, graph, node): #function for BFS
     while queue:          # Creating loop to visit each node
         #node = queue.pop(0) 
         ID = queue.pop(0) 
-        print("bfs pop node " + str(ID) + " from queue") 
+        logger.debug("bfs pop node " + str(ID) + " from queue") 
 #rhc
         # issue: if we add queue.append(-1) in dfs_parent, we get smaller partitions
         # but the frontiers overlap. this is becuase in dfs_parent we get
@@ -705,7 +724,7 @@ def bfs(visited, graph, node): #function for BFS
             end_of_current_frontier = True
             if queue:
                 ID = queue.pop(0)
-                print("bfs after pop -1 pop node " + str(ID) + " from queue") 
+                logger.debug("bfs after pop -1 pop node " + str(ID) + " from queue") 
                 queue.append(-1)
             else:
                 break
@@ -735,7 +754,7 @@ def bfs(visited, graph, node): #function for BFS
             end_of_current_frontier = False
             if len(current_partition) > 0:
             #if len(current_partition) >= num_nodes/5:
-                print("BFS: create sub-partition at end of current frontier")
+                logger.debug("BFS: create sub-partition at end of current frontier")
                 partitions.append(current_partition.copy())
                 current_partition = []
                 global total_loop_nodes_added
@@ -776,17 +795,17 @@ def bfs(visited, graph, node): #function for BFS
                 frontier_costs.append(frontier_cost)
 
         if not len(node.children):
-            print ("bfs node " + str(node.ID) + " has no children")
+            logger.debug ("bfs node " + str(node.ID) + " has no children")
         else:
-            print ("bfs node " + str(node.ID) + " visit children")
+            logger.debug ("bfs node " + str(node.ID) + " visit children")
         for neighbor_index in node.children:
             neighbor = nodes[neighbor_index]
             if neighbor.ID not in visited:
-                print ("bfs visit child " + str(neighbor.ID) + " mark it visited and "
+                logger.debug ("bfs visit child " + str(neighbor.ID) + " mark it visited and "
                     + "dfs_parent(" + str(neighbor.ID) + ")")
 
                 #visited.append(neighbor.ID)
-                print ("bfs dfs_parent("+ str(neighbor.ID) + ")")
+                logger.debug ("bfs dfs_parent("+ str(neighbor.ID) + ")")
 
                 dfs_parent_start_partition_size = len(current_partition)
                 loop_nodes_added_start = loop_nodes_added
@@ -802,8 +821,8 @@ def bfs(visited, graph, node): #function for BFS
                     loop_nodes_added_end - loop_nodes_added_start)
                 dfs_parent_change_in_frontier_size = (dfs_parent_end_frontier_size - dfs_parent_start_frontier_size) - (
                     loop_nodes_added_end - loop_nodes_added_start)
-                print("dfs_parent_change_in_partition_size: " + str(dfs_parent_change_in_partition_size))
-                print("dfs_parent_change_in_frontier_size: " + str(dfs_parent_change_in_frontier_size))
+                logger.debug("dfs_parent_change_in_partition_size: " + str(dfs_parent_change_in_partition_size))
+                logger.debug("dfs_parent_change_in_frontier_size: " + str(dfs_parent_change_in_frontier_size))
                 dfs_parent_changes_in_partiton_size.append(dfs_parent_change_in_partition_size)
                 dfs_parent_changes_in_frontier_size.append(dfs_parent_change_in_frontier_size)
 
@@ -817,29 +836,29 @@ def bfs(visited, graph, node): #function for BFS
                     queue.append(neighbor)
                     frontier.append(neighbor)
                 else:
-                    print("child " + str(neighbor.ID) + " of node " + str(node.ID)
+                    logger.debug("child " + str(neighbor.ID) + " of node " + str(node.ID)
                         + " has no children, already marked it visited and added"
                         + " it to partition but do not queue it or add it to frontier.")
                 """
             else:
-                print ("bfs node " + str(neighbor.ID) + " already visited")
+                logger.debug ("bfs node " + str(neighbor.ID) + " already visited")
         #frontier.remove(node)
         #frontier.remove(node.ID)
         try:
             frontier.remove(node.ID)
         except ValueError:
-            print("*******bfs: " + str(node.ID)
+            logger.debug("*******bfs: " + str(node.ID)
                 + " not in frontier.")
-
-        print("frontier after remove " + str(node.ID) + ":", end=" ")
-        for x in frontier:
-            #print(x.ID, end=" ")
-            print(x, end=" ")
-        print()
+        if DEBUG:
+            print("frontier after remove " + str(node.ID) + ":", end=" ")
+            for x in frontier:
+                #logger.debug(x.ID, end=" ")
+                print(x, end=" ")
+            print()
     
     """
     if len(current_partition) >= 0:
-        print("BFS: create final sub-partition")
+        logger.debug("BFS: create final sub-partition")
         partitions.append(current_partition.copy())
         current_partition = []
         #global total_loop_nodes_added
@@ -863,45 +882,46 @@ def input_graph():
     """
     #graph_file = open('100.gr', 'r')
     #graph_file = open('graph_20.gr', 'r')
-    graph_file = open('graph_3000.gr', 'r')
+    #graph_file = open('graph_3000.gr', 'r')
+    graph_file = open('graph_30000.gr', 'r')
     count = 0
     file_name_line = graph_file.readline()
     count += 1
-    print("file_name_line{}: {}".format(count, file_name_line.strip()))
+    logger.debug("file_name_line{}: {}".format(count, file_name_line.strip()))
     vertices_line = graph_file.readline()
     count += 1
-    print("vertices_line{}: {}".format(count, vertices_line.strip()))
+    logger.debug("vertices_line{}: {}".format(count, vertices_line.strip()))
     edges_line = graph_file.readline()
     count += 1
-    print("edges_line{}: {}".format(count, edges_line.strip()))
+    logger.debug("edges_line{}: {}".format(count, edges_line.strip()))
     
     max_weight_line_ignored = graph_file.readline()
     count += 1
-    #print("max_weight_line{}: {}".format(count, max_weight_line_ignored.strip()))
+    #logger.debug("max_weight_line{}: {}".format(count, max_weight_line_ignored.strip()))
     min_weight_line_ignored = graph_file.readline()
     count += 1
-    #print("min_weight_line{}: {}".format(count,  min_weight_line_ignored.strip()))
+    #logger.debug("min_weight_line{}: {}".format(count,  min_weight_line_ignored.strip()))
 
     # need this for generated graphs; 100.gr is old format?
     
     min_edge_line_ignored = graph_file.readline()
     count += 1
-    #print("min_edge_line{}: {}".format(count, min_edge_line_ignored.strip()))
+    #logger.debug("min_edge_line{}: {}".format(count, min_edge_line_ignored.strip()))
     max_edge_line_ignored = graph_file.readline()
     count += 1
-    #print("max_edge_line{}: {}".format(count, max_edge_line_ignored.strip()))
+    #logger.debug("max_edge_line{}: {}".format(count, max_edge_line_ignored.strip()))
     
     vertices_edges_line = graph_file.readline()
     count += 1
-    print("vertices_edges_line{}: {}".format(count, vertices_edges_line.strip()))
+    logger.debug("vertices_edges_line{}: {}".format(count, vertices_edges_line.strip()))
 
     words = vertices_edges_line.split(' ')
-    print("nodes:" + words[2] + " edges:" + words[3])
+    logger.debug("nodes:" + words[2] + " edges:" + words[3])
     global num_nodes
     num_nodes = int(words[2])
     global num_edges
     num_edges = int(words[3])
-    print ("num_nodes:" + str(num_nodes) + " num_edges:" + str(num_edges))
+    print("input_file: read: num_nodes:" + str(num_nodes) + " num_edges:" + str(num_edges))
 
     # if num_nodes is 100, this fills nodes[0] ... nodes[100]
     # Note: nodes[0] is not used
@@ -925,12 +945,12 @@ def input_graph():
         source = int(words[1])
         target = int(words[2])
         if source == target:
-            print("[Warning]: self loop: " + str(source) + " -->" + str(target))
+            logger.debug("[Warning]: self loop: " + str(source) + " -->" + str(target))
             num_self_loops += 1
             continue
-        #print("target:" + str(target))
+        #logger.debug("target:" + str(target))
         #if target == 101:
-        #    print("target is 101")
+        #    logger.debug("target is 101")
         #rhc: 101 is a sink, i.e., it has no children so it will not appear as a source
         # in the file. Need to append a new node if target is out of range, actually 
         # append target - num_nodes. Is this just a coincidence that sink is node 100+1
@@ -939,7 +959,7 @@ def input_graph():
         # Example: num_nodes is 100 and target is 101, so 101 > 100.
         # But nodes is filled from nodes[0] ... nodes[100] so len(nodes) is 101
         #if (target == 101):
-        #    print ("target is 101, num_nodes is " + str(num_nodes) + " len nodes is "
+        #    logger.debug ("target is 101, num_nodes is " + str(num_nodes) + " len nodes is "
         #       + str(len(nodes)))
         if target > num_nodes:
             # If len(nodes) is 101 and num_nodes is 100 and we have a tatget of
@@ -949,15 +969,15 @@ def input_graph():
             # the number_of_nodes_to_append to be 1, as needed.
             if len(nodes) < target+1:
                 number_of_nodes_to_append = target - num_nodes
-                print("number_of_nodes_to_append:" + str(number_of_nodes_to_append))
+                logger.debug("number_of_nodes_to_append:" + str(number_of_nodes_to_append))
                 # in our example, number_of_nodes_to_append = 1 so i starts
                 # with 0 (default) and ends with number_of_nodes_to_append-1 = 0
                 for i in range(number_of_nodes_to_append):
-                    print("Node(" + str(num_nodes+i+1) + ")")
+                    logger.debug("Node(" + str(num_nodes+i+1) + ")")
                     # new node ID for our example is 101 = num_nodes+i+1 = 100 + 0 + 1 = 101
                     nodes.append(Node((num_nodes+i+1)))
                 num_nodes += number_of_nodes_to_append
-        #print ("source:" + str(source) + " target:" + str(target))
+        #logger.debug ("source:" + str(source) + " target:" + str(target))
         source_node = nodes[source]
         source_node.children.append(target)
         num_children_appends += 1
@@ -969,77 +989,77 @@ def input_graph():
         #temp = [source,target]
         #visual.append(temp)
     
-        #print("Line {}: {}".format(count, line.strip()))
+        #logger.debug("Line {}: {}".format(count, line.strip()))
 
     """
     source_node = nodes[1]
-    print("Node1 children:")
+    logger.debug("Node1 children:")
     for child in source_node.children:
-        print(child)
-    print("Node1 parents:")
+        logger.debug(child)
+    logger.debug("Node1 parents:")
     for parent in source_node.parents:
-        print(parent)
+        logger.debug(parent)
 
     source_node = nodes[7]
-    print("Node7 children:")
+    logger.debug("Node7 children:")
     for child in source_node.children:
-        print(child)
-    print("Node7 parents:")
+        logger.debug(child)
+    logger.debug("Node7 parents:")
     for parent in source_node.parents:
-        print(parent)
+        logger.debug(parent)
     """
 
     count_child_edges = 0
     i = 1
     while i <= num_nodes:
         node = nodes[i]
-        #print (str(i) + ": get children: " + str(len(node.children)))
+        #logger.debug (str(i) + ": get children: " + str(len(node.children)))
         count_child_edges += len(node.children)
         i += 1
-    print("num edges in graph: " + str(num_edges) + " = num child edges: " 
+    logger.debug("num edges in graph: " + str(num_edges) + " = num child edges: " 
         + str(count_child_edges) + " + num_self_loops: " + str(num_self_loops))
     if not ((num_edges - num_self_loops) == count_child_edges):
-        print("[Error]: num child edges in graph is " + str(count_child_edges) + " but edges in file is "
+        logger.error("[Error]: num child edges in graph is " + str(count_child_edges) + " but edges in file is "
             + str(num_edges))
 
     count_parent_edges = 0
     i = 1
     while i <= num_nodes:
         node = nodes[i]
-        #print (str(i) + ": get parents: " + str(len(node.parents)))
+        #logger.debug (str(i) + ": get parents: " + str(len(node.parents)))
         count_parent_edges += len(node.parents)
         i += 1
 
-    print("num_edges in graph: " + str(num_edges) + " = num parent edges: " 
+    logger.debug("num_edges in graph: " + str(num_edges) + " = num parent edges: " 
         + str(count_parent_edges) + " + num_self_loops: " + str(num_self_loops))
     if not ((num_edges - num_self_loops) == count_parent_edges):
-        print("[Error]: num parent edges in graph is " + str(count_parent_edges) + " but edges in file is "
+        logger.error("[Error]: num parent edges in graph is " + str(count_parent_edges) + " but edges in file is "
         + str(num_edges))
 
-    print("num_parent_appends:" + str(num_parent_appends))
-    print("num_children_appends:" + str(num_children_appends))
-    print("num_self_loops: " + str(num_self_loops))
+    logger.debug("num_parent_appends:" + str(num_parent_appends))
+    logger.debug("num_children_appends:" + str(num_children_appends))
+    logger.debug("num_self_loops: " + str(num_self_loops))
     if num_self_loops > 0:
         save_num_edges = num_edges
         num_edges -= + num_self_loops
-        print("old num_edges: " + str(save_num_edges) + " num_edges: " + str(num_edges))
+        logger.debug("old num_edges: " + str(save_num_edges) + " num_edges: " + str(num_edges))
     else:
-        print("num_edges: " + str(num_edges))
+        logger.debug("num_edges: " + str(num_edges))
 
     graph_file.close()
 
 # Driver Code
 
-print("Following is the Breadth-First Search")
+logger.debug("Following is the Breadth-First Search")
 input_graph()
-print("num_nodes after input graph: " + str(num_nodes))
+logger.debug("num_nodes after input graph: " + str(num_nodes))
 #visualize()
 #input('Press <ENTER> to continue')
 
 """
 G = nx.DiGraph()
 G.add_edges_from(visual)
-print(nx.is_connected(G))
+logger.debug(nx.is_connected(G))
 """
 
 #bfs(visited, graph, '5')    # function calling
@@ -1047,11 +1067,11 @@ print(nx.is_connected(G))
 # i start = 1 as nodes[0] not used, i end is (num_nodes+1) - 1  = 100
 for i in range(1,num_nodes+1):
     if i not in visited:
-        print("*************Driver call BFS " + str(i))
+        logger.debug("*************Driver call BFS " + str(i))
         bfs(visited, graph, nodes[i])    # function calling
 
 if len(current_partition) > 0:
-    print("BFS: create final sub-partition")
+    logger.debug("BFS: create final sub-partition")
     partitions.append(current_partition.copy())
     current_partition = []
     #global total_loop_nodes_added
@@ -1069,11 +1089,11 @@ else:
 #frontier_cost = "END" + ":" + str(len(frontier))
 #frontier_costs.append(frontier_cost)
 print()
-print("num_nodes: " + str(num_nodes) + " num_edges: " + str(num_edges))
+print("input_file: generated: num_nodes: " + str(num_nodes) + " num_edges: " + str(num_edges))
 print()
 print("visited length: " + str(len(visited)))
 if len(visited) != num_nodes:
-    print("[Error]: visited length is " + str(len(visited))
+    logger.error("[Error]: visited length is " + str(len(visited))
         + " but num_nodes is " + str(num_nodes))
 for x in visited:
     print(x, end=" ")
@@ -1088,36 +1108,43 @@ sum_of_partition_lengths -= total_loop_nodes_added
 print("sum_of_partition_lengths (not counting total_loop_nodes_added): " 
     + str(sum_of_partition_lengths))
 if sum_of_partition_lengths != num_nodes:
-    print("[Error]: sum_of_partition_lengths is " + str(sum_of_partition_lengths)
+    logger.error("[Error]: sum_of_partition_lengths is " + str(sum_of_partition_lengths)
         + " but num_nodes is " + str(num_nodes))
 #for x in current_partition:
 #    print(x, end=" ")
 print()
+
 # adjusting for loop_nodes_added in dfs_p
 sum_of_changes = sum(dfs_parent_changes_in_partiton_size)
-print("dfs_parent_changes_in_partiton_size length, len: " + str(len(dfs_parent_changes_in_partiton_size))
-    + ", sum_of_changes: " + str(sum_of_changes))
-if sum_of_changes != num_nodes:
-    print("[Error]: sum_of_changes is " + str(sum_of_changes)
-        + " but num_nodes is " + str(num_nodes))
-for x in dfs_parent_changes_in_partiton_size:
-    print(x, end=" ")
+avg_change = sum_of_changes / len(dfs_parent_changes_in_partiton_size)
+print("dfs_parent_changes_in_partiton_size length, len: " 
+    + str(len(dfs_parent_changes_in_partiton_size)) + ", sum_of_changes: " 
+    + str(sum_of_changes), end="")
+print(", average dfs_parent change: %.1f" % avg_change)
+if PRINT_DETAILED_STATS:
+    if sum_of_changes != num_nodes:
+        logger.error("[Error]: sum_of_changes is " + str(sum_of_changes)
+            + " but num_nodes is " + str(num_nodes))
+    for x in dfs_parent_changes_in_partiton_size:
+        print(x, end=" ")
+
 print()
 print()
-# adjusting for loop_nodes_added in dfs_p
-sum_of_changes = sum(dfs_parent_changes_in_frontier_size)
-print("dfs_parent_changes_in_frontier_size length, len: " + str(len(dfs_parent_changes_in_frontier_size))
-    + ", sum_of_changes: " + str(sum_of_changes))
-if sum_of_changes != num_nodes:
-    print("[Error]: sum_of_changes is " + str(sum_of_changes)
-        + " but num_nodes is " + str(num_nodes))
-for x in dfs_parent_changes_in_frontier_size:
-    print(x, end=" ")
-print()
-print()
+if PRINT_DETAILED_STATS:
+    # adjusting for loop_nodes_added in dfs_p
+    sum_of_changes = sum(dfs_parent_changes_in_frontier_size)
+    print("dfs_parent_changes_in_frontier_size length, len: " + str(len(dfs_parent_changes_in_frontier_size))
+        + ", sum_of_changes: " + str(sum_of_changes))
+    if sum_of_changes != num_nodes:
+        logger.error("[Error]: sum_of_changes is " + str(sum_of_changes)
+            + " but num_nodes is " + str(num_nodes))
+    for x in dfs_parent_changes_in_frontier_size:
+        print(x, end=" ")
+    print()
+    print()
 #print("frontier length: " + str(len(frontier)))
 #if len(frontier) != 0:
-#    print("[Error]: frontier length is " + str(len(frontier))
+#    logger.error("[Error]: frontier length is " + str(len(frontier))
 #       + " but num_nodes is " + str(num_nodes))
 #for x in frontier:
 #    print(str(x.ID), end=" ")
@@ -1128,26 +1155,34 @@ print()
 #print()
 print("partitions, len: " + str(len(partitions))+":")
 for x in partitions:
-    print("-- (" + str(len(x)) + "):" + str(x))
+    if PRINT_DETAILED_STATS:
+        print("-- (" + str(len(x)) + "):", end=" ")
+        print(str(x))
+    else:
+        print("-- (" + str(len(x)) + ")")
 print()
 # final frontier shoudl always be empty
 # assert: 
 print("frontiers: (final fronter should be empty), len: " + str(len(frontiers))+":")
 for frontier_list in frontiers:
-    print("-- (" + str(len(frontier_list)) + "): ",end="")
-    for x in frontier_list:
-        #print(str(x.ID),end=" ")
-        print(str(x),end=" ")
-    print()
+    if PRINT_DETAILED_STATS:
+        print("-- (" + str(len(frontier_list)) + "): ",end="")
+        for x in frontier_list:
+            #print(str(x.ID),end=" ")
+            print(str(x),end=" ")
+        print()
+    else:
+        print("-- (" + str(len(frontier_list)) + ")") 
 frontiers_length = len(frontiers)
 if len(frontiers[frontiers_length-1]) != 0:
     print ("Error]: final frontier is not empty.")
 print()
-print("frontier costs (cost=length of frontier), len: " + str(len(frontier_costs))+":")
-for x in frontier_costs:
-    print("-- ",end="")
-    print(str(x))
-print()
+if PRINT_DETAILED_STATS:
+    print("frontier costs (cost=length of frontier), len: " + str(len(frontier_costs))+":")
+    for x in frontier_costs:
+        print("-- ",end="")
+        print(str(x))
+    print()
 sum_of_partition_costs = 0
 for x in all_frontier_costs:
     words = x.split(':')
@@ -1155,16 +1190,16 @@ for x in all_frontier_costs:
     sum_of_partition_costs += cost
 print("all frontier costs, len: " + str(len(all_frontier_costs)) + ", sum: " 
     + str(sum_of_partition_costs))
-i = 0
-costs_per_line = 13
-for x in all_frontier_costs:
-    if (i < costs_per_line):
-        print(str(x),end=" ")
-    else:
-        print(str(x))
-        i = 0
-    i += 1
-
+if PRINT_DETAILED_STATS:
+    i = 0
+    costs_per_line = 13
+    for x in all_frontier_costs:
+        if (i < costs_per_line):
+            print(str(x),end=" ")
+        else:
+            print(str(x))
+            i = 0
+        i += 1
 
 print()
 print()
