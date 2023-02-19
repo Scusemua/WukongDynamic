@@ -1206,6 +1206,15 @@ print()
 #visualize()
 #input('Press <ENTER> to continue')
 
+# ToDo: Determine whether a node in current frontier is dependent or
+# independent. Independent means it does not have an ancestor (parent
+# or a parent of a parent, etc) that is a child of a node in the 
+# previous frontier? (We can add multiple frontiers to a partition
+# but some of the nodes in the first frontier added will be parents
+# of nodes in the seconf frontier added, etc. If P is a parent of a 
+# node N in this partition then N inherets the independant/dependant
+# of P?  (This is an issue if we can put multiple frontiers in a 
+# partition vs only one/)
 #
 # When pop 86, 86 was put in frontier because at that time (foo) 86 had
 # 1 unvisited child 77 after parent traversal so put 86 in queue. But
@@ -1220,14 +1229,14 @@ print()
 # 
 # So is it better to check all the parents of the children that become visited
 # or adjust the queue and frontier after return from dfs_parent
-# to bfs? Where we might wan to do continue partitioning the result of
+# to bfs? Where we might want to do continue partitioning the result of
 # bfs's dfs_parent. The constant child checking during dfs_parent is costly?
 # as opposed to just doing it for only the nodes in the queue and the nodes
 # in the frontier, i.e., just the nodes for which it is possble to prune.
 # 
 # And we perhaps want to identify singletons anyway in this same frontier
 # reduction? Noet that leaving the nodes with no unvisited chldren in the 
-# queue does not hurt sincebfs will ignore them anyway. Although
+# queue does not hurt since bfs will ignore them anyway. Although
 # the queue is inaccurate that might not affect the partitioning of
 # bsf's dfs_parent result for large partitions returned to bfs.
 #
