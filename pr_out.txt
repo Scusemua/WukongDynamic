@@ -1,0 +1,3601 @@
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+in_neighbors: []
+pagerank_sum: 0
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.024999999999999998
+
+
+in_neighbors: [<__main__.Node object at 0x000001D971C1D310>]
+pagerank_sum: 0.024999999999999998
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.04625
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A5C9580>]
+pagerank_sum: 0.04625
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.0643125
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59B0A0>]
+pagerank_sum: 0.0643125
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.07966562499999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BEB0>]
+pagerank_sum: 0.07966562499999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.09271578124999999
+
+
+in_neighbors: [<__main__.Node object at 0x000001D97A59BDF0>]
+pagerank_sum: 0.09271578124999999
+d:0.15 n: 6 random_jumping: 0.024999999999999998
+self.pagerank: 0.10380841406249998
+
+
+[0.061 0.112 0.156 0.193 0.225 0.252]
