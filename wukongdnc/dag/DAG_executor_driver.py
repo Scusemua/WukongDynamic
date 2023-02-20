@@ -4,6 +4,10 @@
 
 # Where are we: 
 # check code
+# Note in ADG orchestrator, line 392 we tabbed this stuff
+#  right so it's part of no-trigger else. this is becuase
+#  of the return when we do trigger, so this code is only
+#  executed when no trigger. It was correct but misleading.
 # test all
 # - Lock the get and set in message handler lambda createif? Note:
 #   for fanouts there is only one synch op performed on
