@@ -162,3 +162,6 @@ graph2.txt
 4,5
 5,1
 """
+
+# Normalize
+# not using previous!

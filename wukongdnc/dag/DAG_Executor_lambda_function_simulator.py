@@ -692,10 +692,13 @@ Note: We only need the creation message if not pre-created ojects.
 
 
 
-# collection of simuated functions
+# manages a collection of simuated functions
 class InfiniD:
 	def __init__(self, DAG_info):
+		# ech lambda invoked by the DAG_orchestrator gets a 
+		# copy of the DAG_info
 		self.dag_orchestrator = DAG_orchestrator(DAG_info)
+		# DAG_info is a representtation of the DAG.
 		self.DAG_info = DAG_info
 		self.DAG_map = DAG_info.get_DAG_map()
 		self.DAG_states = DAG_info.get_DAG_states()
@@ -705,7 +708,7 @@ class InfiniD:
 		self.all_faninNB_sizes = DAG_info.get_all_faninNB_sizes()
 		self.all_fanout_task_names = DAG_info.get_all_fanout_task_names()
 		self.DAG_leaf_tasks = DAG_info.get_DAG_leaf_tasks()
-		# Assuming each sync object will be in a separate function. We may
+		# Assuming each sync object will be stored in a separate function. We may eventualy
 		# assign several objects to a function, e.g., input sets of objects that go in 
 		# the same function in which case the number of functions will be the 
 		# number of sets.
@@ -714,7 +717,10 @@ class InfiniD:
 			len(self.all_faninNB_task_names)) + (
 			len(self.DAG_leaf_tasks))
 		self.list_of_Lambda_Function_Simulators = []
+		# functions that will be invoked multiple times have each invocation locked
+		# so that the current invocation must end befoer the next can start.
 		self.list_of_function_locks = []
+		# maps synch object name to a function index of list_of_Lambda_Function_Simulators
 		self.function_map = {}
 
 	# not currently used.
@@ -728,49 +734,58 @@ class InfiniD:
 		# function, which is function 0. In this case we create a single 
 		# function, which we do by breaking the creating loop after one
 		# function has been created.
+		# 
 		# Create function and a lock used to ensure there are no concurrent invoctions
 		# of the function.
 		for _ in range(0,self.num_Lambda_Function_Simulators):
 			self.list_of_Lambda_Function_Simulators.append(Lambda_Function_Simulator())	
 			self.list_of_function_locks.append(Lock())
-			# if using a single function to store all objects, break to loop. 
+			# if using a single function to store all objects, break the loop at one funnction
 			if using_single_lambda_function:
 				break
 
-	# map an object using its function name to one of the functions via its function indez
+	# map an object using its function name to one of the functions via the function's indez
 	def map_synchronization_object(self, object_name, object_index):
 			self.function_map[object_name] = object_index
 
-	# get function, if mapping objects to functions, returns the object name was mapped to;
-	# otherwise, it returns an anonyous function. Note: This function can only be invoked
-	# once snce we have no way to refer to it by name (index or deploment name).
-	# Noet: this here is all for simulated functions.
+	# get function, if mapping objects to functions, returns the function the object name was mapped to;
+	# otherwise, it returns an anonyous function. Note: An anonyous function can only be invoked
+	# once snce we have no way to refer to it by name (index or deploment name) to invoke it again.
+	# Note: an anymous function could open a socket to the tcp_server_lambda and accept multple
+	# messages instead of being invoked multiple times. The function could also save its
+	# state and terminate so we could invoke it "again", i.e., invoke another anymous
+	# function with the saved state.
+	# Note: This is all for simulated functions, for now.
 	def get_simulated_lambda_function(self, object_name):
 		if map_objects_to_lambda_functions:
 			return self.list_of_Lambda_Function_Simulators[self.function_map[object_name]]
 		else:
+			# anonymous fnction
 			return Lambda_Function_Simulator()
 	def get_function_lock(self, object_name):
 		if map_objects_to_lambda_functions:
 			return self.list_of_function_locks[self.function_map[object_name]]
 		else:
+			# anonyous functions called only once so no need to lock them
 			return None
 	
 	def get_real_lambda_function(self, object_name):
-		# returns the deployment name that object_name is mapped to
+		# returns the deployment name that object_name is mapped to. Here we 
+		# assume that the function with index i is mapped to deployment "DAG_executor_i"
 		if map_objects_to_lambda_functions:
 			i = self.function_map[object_name]
-			deployment_name = "DAG_executor"+str(i)
+			deployment_name = "DAG_executor_"+str(i)
 			return deployment_name
 		else:
+			# This is the deployment for anonymous functions
 			return "DAG_executor"
 
 	# map the fanins/fanouts/faninNBs to a function, currently one object per function
 	# where order does not matter
 	def map_object_names_to_functions(self):
-		# For fanouts, the fanin object size is always 1
-		# map function name to a pair (empty_list,i) where i is an index, where
-		# i is either the list index of the function or i is used to generate
+		# For fanouts, the fanin object size is always 1,
+		# Map function name to a pair (empty_list,i) where i is an index, which
+		# is either the list index of the function or i is used to generate
 		# the deployment name of a real lambda, e.g., "DAG_executor_1" for i=1.
 		# If use_single_lambda_function then we map all the names to a single
 		# function, which is function 0. We do this by skippng the increment
@@ -779,23 +794,27 @@ class InfiniD:
 		# map multiple names to the same function, in which case we can input
 		# sets of names, so "a" and "b" mapped to 1, "c" and "d" mapped to 2, etc.
 		# Note: We map_object_name_to_triggers in a separate method since
-		# we want to do that mapping even if we do not do this object names
-		# to functions mapping.
+		# we want to do that mapping even if we do not map object names
+		# to functions. That is, an anonymous lambda can still trigger its 
+		# fanin task to run in the same lambda. This works fine for DAGs, i.e.,
+		# no mapping of (sync object) names to functions is needed.
 		i=0
 		for object_name in self.all_faninNB_task_names:
-			# mapping to an index i not a string and not a func(), so we do not need
-			# to have created the functions yet. If usng real lambdas, then, of course,
+			# Mapping name to an index i not a string and not a func(), so we do not need
+			# to have created the functions yet. If using real lambdas, then, of course,
 			# we do not "create a function"; we have the deployment name and we can
 			# call a function using its deployment name. 
-			# Note: we can use deployments "DAG_executor_i" so we can still map to
+			# Note: we can use deployment names "DAG_executor_i" so we can still map to
 			# an index i.
 			self.map_synchronization_object(object_name,i)
 			if not using_single_lambda_function:
 				i += 1
 			# Each name is mapped to a pair, which is (empty_list,n). The 
-			# list collects results for the fan_in and fanin/fanot size n is 
+			# list collects results for the fan_in and fanin/fanout size n is 
 			# used to determine when all of the results have been collected.
-			# For a fanout, we can use a faninNB object with a size of 1.
+			# For a fanout, we use a faninNB object with a size of 1. That is
+			# we pass the results to fanout to the faninNB of size 1 and it
+			# immediately trigers its fanin (really fanout) task.
 
 		for object_name in self.all_fanin_task_names:
 			self.map_synchronization_object(object_name,i)
@@ -812,9 +831,9 @@ class InfiniD:
 			if not using_single_lambda_function:
 				i += 1
 
-	# map the fanins/fanouts/faninNBs to a function, currently one object per function
-	# where order does not matter
-	def map_object_name_to_triggers(self):
+	# map the fanins/fanouts/faninNBs to a trigger, which is a pair pair (empty_list,n).
+	# The list is used by the ADG_orchestrator to store the fan_in ops for a fanin object.
+	def map_object_names_to_triggers(self):
 		# for fanouts, the fanin object size is always 1
 		# map function name to a pair (empty_list,n) where n is size of fanin/faninNB.
 		# if use_single_lambda_function then we map all the names to a single
@@ -842,18 +861,22 @@ class InfiniD:
 			n = 1 # a fanout is a fanin of size 1
 			self.dag_orchestrator.map_object_name_to_trigger(object_name,n)
 
-	# call enqueue of DAG_orchestrator. The DAG_orchestrator will eithor store the jsn_message, which is 
+	# Call enqueue of DAG_orchestrator. The DAG_orchestrator will eithor store the jason_message, which is 
 	# for a fanin/fanout op in the list of operations for the associated object, or if all n operaations
-	# have been performed, t will invoke the function storing that objct and pass the list of operations
-	# to be performed on the object. The function call will be locked with the function's lock.
+	# have been performed, it will invoke the function storing that object and pass the list of operations
+	# to be performed on the object. If the synch objct names are mapped to functions,
+	# the function call will be locked with the function's lock. This would allow multiple
+	# non-overlapping invocations of the function (serialized by the lock). Since fnin/fanout
+	# objects only require one invocation, they are not mapped, instead we use anonymous
+	# functions wnd the invocation do not need to be locked.
 	def enqueue(self,json_message):
 		sync_object_name = json_message.get("name", None)
-#ToDo: if create objects on fly then there are no functions/locks to get?
-#      Don't need to lock since only ever one caller of the function.
-#      So: if not create functions on-the-fly: get func/lock 
-# 		else: Create anonymous function/lock on the fly? Or if real lambdas 
-#        use the single deployment.
 		simulated_lambda_function = self.get_simulated_lambda_function(sync_object_name)
+		# If we are using anonymous functions (no mapping names to functions) then we
+		# do not need function invocations to be locked. In this case,  get_function_lock()
+		# returns None. Method enqueue will check whether we are using mapped or
+		# anonymous functions and if we are using anonymous functins it will not
+		# attempt to lock the lock.
 		simulated_lambda_function_lock = self.get_function_lock(sync_object_name)
 		logger.debug("XXXXXXXXXXXXXXXXXXXX InfiniD enqueue: calling self.dag_orchestrator.enqueue for sync_object " + sync_object_name)
 		return_value = self.dag_orchestrator.enqueue(json_message, simulated_lambda_function, simulated_lambda_function_lock)

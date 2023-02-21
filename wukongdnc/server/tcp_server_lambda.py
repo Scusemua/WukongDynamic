@@ -1731,7 +1731,7 @@ class TCPServer(object):
             # can be triggered. The list of fanin ops is the saved fanins
             # that will be given to the fanin object one by one when it is 
             # triggered.
-            self.infiniD.map_object_name_to_triggers()
+            self.infiniD.map_object_names_to_triggers()
 
             logger.debug("tcp_server_lambda: function map" + str(self.infiniD.function_map))
             # Note: call lambda_function = infiniX.get_function(sync_object_name) to get 
