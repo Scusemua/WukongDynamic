@@ -3,16 +3,129 @@ import matplotlib.pyplot as plt
 
 import logging 
 
+from collections import defaultdict
+
 logger = logging.getLogger(__name__)
 #logger.setLevel(logging.DEBUG)
-logger.setLevel(logging.ERROR)
+logger.setLevel(logging.DEBUG)
 #formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 formatter = logging.Formatter('%(levelname)s: %(message)s')
 ch = logging.StreamHandler()
 #ch.setLevel(logging.DEBUG)
-ch.setLevel(logging.ERROR)
+ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
+
+class Graph:
+
+    def __init__(self, vertices=0):
+        # No. of vertices
+        self.V = vertices
+
+        # default dictionary to store graph
+        self.graph = defaultdict(list)
+
+        self.Time = 0
+
+    # added to code
+    def setV(self,V):
+        self.V = V
+
+	# function to add an edge to graph
+    def addEdge(self, u, v):
+        self.graph[u].append(v)
+
+    def printEdges(self):
+        print("graph scc_graph: num_vertices:" + str(self.V))
+        for k, v in self.graph.items():
+            for item in v:
+                print(str(k) + "," + str(item))
+        """
+        for i in range(1,(self.V+1)):
+            edges_of_i = self.graph[i]
+            for edge in edges_of_i:
+                print(str(i) + "," + str(edge))
+        """
+
+    def clear(self):
+        print("clear")
+        self.graph = defaultdict(list)
+        self.V = 0
+        self.Time = 0
+
+    """
+    A recursive function that find finds and prints strongly connected
+    components using DFS traversal
+    u --> The vertex to be visited next
+    disc[] --> Stores discovery times of visited vertices
+    low[] -- >> earliest visited vertex (the vertex with minimum
+                discovery time) that can be reached from subtree
+                rooted with current vertex
+    st -- >> To store all the connected ancestors (could be part
+        of SCC)
+    stackMember[] --> bit/index array for faster check whether
+                a node is in stack
+    """
+
+    def SCCUtil(self, u, low, disc, stackMember, st):
+
+        # Initialize discovery time and low value
+        disc[u] = self.Time
+        low[u] = self.Time
+        self.Time += 1
+        stackMember[u] = True
+        st.append(u)
+
+        # Go through all vertices adjacent to this
+        for v in self.graph[u]:
+
+            # If v is not visited yet, then recur for it
+            if disc[v] == -1:
+
+                self.SCCUtil(v, low, disc, stackMember, st)
+
+                # Check if the subtree rooted with v has a connection to
+                # one of the ancestors of u
+                # Case 1 (per above discussion on Disc and Low value)
+                low[u] = min(low[u], low[v])
+
+            elif stackMember[v] == True:
+
+                '''Update low value of 'u' only if 'v' is still in stack
+                (i.e. it's a back edge, not cross edge).
+                Case 2 (per above discussion on Disc and Low value) '''
+                low[u] = min(low[u], disc[v])
+
+        # head node found, pop the stack and print an SCC
+        w = -1 # To store stack extracted vertices
+        if low[u] == disc[u]:
+            while w != u:
+                w = st.pop()
+                print(w, end=" ")
+                stackMember[w] = False
+
+            print()
+
+    # The function to do DFS traversal.
+    # It uses recursive SCCUtil()
+
+    def SCC(self):
+
+        # Mark all the vertices as not visited
+        # and Initialize parent and visited,
+        # and ap(articulation point) arrays
+        disc = [-1] * (self.V)
+        low = [-1] * (self.V)
+        stackMember = [False] * (self.V)
+        st = []
+
+        # Call the recursive helper function
+        # to find articulation points
+        # in DFS tree rooted with vertex 'i'
+        for i in range(self.V):
+            if disc[i] == -1:
+                self.SCCUtil(i, low, disc, stackMember, st)
+
 
 graph = {
   '5' : ['3','7'],
@@ -236,8 +349,11 @@ all_frontier_costs = []
 IDENTIFY_SINGLETONS = False
 TRACK_PARTITION_LOOPS = False
 CHECK_UNVISITED_CHILDREN = False
-DEBUG = False
-PRINT_DETAILED_STATS = False
+DEBUG_ON = True
+PRINT_DETAILED_STATS = True
+
+scc_graph = Graph(0)
+scc_num_vertices = 0
 
 """
 # Regular bfs.
@@ -373,9 +489,27 @@ def dfs_parent(visited, graph, node):  #function for dfs
     else:
         logger.debug ("dfs_parent node " + str(node.ID) + " visit parents")
 
+
+
     # visit parents
     for neighbor_index in node.parents:
+
+
+        logger.debug ("dfs_parent add edge: " + str(neighbor_index) + "," + str(node.ID))
+        #logger.debug ("dfs_parent add edge: " + str(node.ID) + "," + str(neighbor_index))
+ 
         parent_node = nodes[neighbor_index]
+
+        if parent_node.partition_number == -1:
+            # parent is not in previous partition, i.e., node is a child of
+            # a parent node that was in previous partition
+            # add edge from parent to node
+            scc_graph.addEdge(neighbor_index, node.ID)
+            # add edge from node to parent
+            # scc_graph.addEdge(node.ID,neighbor_index)
+            global scc_num_vertices
+            scc_num_vertices += 1
+
         if parent_node.ID not in visited:
             logger.debug ("dfs_parent visit node " + str(parent_node.ID))
             dfs_parent(visited, graph, parent_node)
@@ -407,7 +541,7 @@ def dfs_parent(visited, graph, node):  #function for dfs
     else:
         queue.append(node.ID)
         #queue.append(-1)
-        if DEBUG:
+        if DEBUG_ON:
             print("queue after add " + str(node.ID) + ":", end=" ")
             for x in queue:
                 #logger.debug(x.ID, end=" ")
@@ -415,7 +549,7 @@ def dfs_parent(visited, graph, node):  #function for dfs
             print()
         #frontier.append(node)
         frontier.append(node.ID)
-        if DEBUG:
+        if DEBUG_ON:
             print("frontier after add " + str(node.ID) + ":", end=" ")
             for x in frontier:
                 #logger.debug(x.ID, end=" ")
@@ -576,7 +710,7 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
             else:
                 #queue.append(node)
                 queue.append(node.ID)
-                if DEBUG:
+                if DEBUG_ON:
                     print("queue after add " + str(node.ID) + ":", end=" ")
                     for x in queue:
                         #logger.debug(x.ID, end=" ")
@@ -584,7 +718,7 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
                     print()
                 #frontier.append(node)
                 frontier.append(node.ID)
-                if DEBUG:
+                if DEBUG_ON:
                     print("frontier after add " + str(node.ID) + ":", end=" ")
                     for x in frontier:
                         #logger.debug(x.ID, end=" ")
@@ -604,7 +738,7 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
         else:
                 #queue.append(node)
                 queue.append(node.ID)
-                if DEBUG:
+                if DEBUG_ON:
                     print("queue after add " + str(node.ID) + ":", end=" ")
                     for x in queue:
                         #logger.debug(x.ID, end=" ")
@@ -612,7 +746,7 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
                     print()
                 #frontier.append(node)
                 frontier.append(node.ID)
-                if DEBUG:
+                if DEBUG_ON:
                     print("frontier after add " + str(node.ID) + ":", end=" ")
                     for x in frontier:
                         #logger.debug(x.ID, end=" ")
@@ -657,7 +791,14 @@ def bfs(visited, graph, node): #function for BFS
 
 #rhc: 
     queue.append(-1)
+    global scc_num_vertices
+    scc_num_vertices += 1
     dfs_parent(visited, graph, node)
+    logger.debug("BFS set V to " + str(scc_num_vertices))
+    scc_graph.setV(scc_num_vertices)
+    scc_graph.printEdges()
+    scc_graph.clear()
+
 
     dfs_parent_end_partition_size = len(current_partition)
     dfs_parent_end_frontier_size = len(frontier)
@@ -726,6 +867,9 @@ def bfs(visited, graph, node): #function for BFS
                 ID = queue.pop(0)
                 logger.debug("bfs after pop -1 pop node " + str(ID) + " from queue") 
                 queue.append(-1)
+
+                scc_graph.printEdges()
+                scc_graph.clear()
             else:
                 break
 
@@ -849,7 +993,8 @@ def bfs(visited, graph, node): #function for BFS
         except ValueError:
             logger.debug("*******bfs: " + str(node.ID)
                 + " not in frontier.")
-        if DEBUG:
+
+        if DEBUG_ON:
             print("frontier after remove " + str(node.ID) + ":", end=" ")
             for x in frontier:
                 #logger.debug(x.ID, end=" ")
@@ -881,9 +1026,9 @@ def input_graph():
     p sp 20 23
     """
     #graph_file = open('100.gr', 'r')
-    #graph_file = open('graph_20.gr', 'r')
+    graph_file = open('graph_20.gr', 'r')
     #graph_file = open('graph_3000.gr', 'r')
-    graph_file = open('graph_30000.gr', 'r')
+    #graph_file = open('graph_30000.gr', 'r')
     count = 0
     file_name_line = graph_file.readline()
     count += 1
@@ -1206,6 +1351,15 @@ print()
 #visualize()
 #input('Press <ENTER> to continue')
 
+# 1. Check the edges, draw the graph20
+# 2. To do scc, we need nodes in range 0 .. num_vertices-1, so collapse
+# node IDs so node.ID goes to next as you see the nodes, with a map to get 
+# back to original IDs, map(next,node.ID). Then the SCC is a set of ids 
+# x, y, ... where the actual node IDs are map(x) and map(y). Do back map
+# before printing the scc's.
+# 3. Consider tracing the single component SCCs, i.e., non-loops, so we
+# don't have to run SCC on the entire frontier.
+#
 # ToDo: Determine whether a node in current frontier is dependent or
 # independent. Independent means it does not have an ancestor (parent
 # or a parent of a parent, etc) that is a child of a node in the 
