@@ -21,11 +21,31 @@ class Graph:
     def __init__(self, vertices=0):
         # No. of vertices
         self.V = vertices
+        self.num_edges = 0
 
         # default dictionary to store graph
         self.graph = defaultdict(list)
 
         self.Time = 0
+
+        self.scc_NodeID_to_GraphID_map = {}
+        self.scc_GraphID_to_NodeID_map = {}
+        self.next_scc_ID = 0
+
+    def map_nodeID_to_GraphID(self,ID):
+        if ID not in self.scc_NodeID_to_GraphID_map:
+            self.scc_NodeID_to_GraphID_map[ID] = self.next_scc_ID
+            self.scc_GraphID_to_NodeID_map[self.next_scc_ID] = ID
+            self.next_scc_ID += 1
+            self.V += 1
+
+    def print_ID_map(self):
+        logger.debug("scc_NodeID_to_GraphID_map:")
+        for i in self.scc_NodeID_to_GraphID_map:
+            print (i, self.scc_NodeID_to_GraphID_map[i])
+        logger.debug("scc_NodeID_to_GraphID_map:")
+        for i in self.scc_GraphID_to_NodeID_map:
+            print (i, self.scc_GraphID_to_NodeID_map[i])
 
     # added to code
     def setV(self,V):
@@ -34,24 +54,24 @@ class Graph:
 	# function to add an edge to graph
     def addEdge(self, u, v):
         self.graph[u].append(v)
+        self.num_edges += 1
 
     def printEdges(self):
-        print("graph scc_graph: num_vertices:" + str(self.V))
+        print("graph scc_graph: num_vertices: " + str(self.V) 
+            + ", num_edges: " + str(self.num_edges) + ": ")
         for k, v in self.graph.items():
             for item in v:
                 print(str(k) + "," + str(item))
-        """
-        for i in range(1,(self.V+1)):
-            edges_of_i = self.graph[i]
-            for edge in edges_of_i:
-                print(str(i) + "," + str(edge))
-        """
 
     def clear(self):
-        print("clear")
+        print("clear scc_graph")
         self.graph = defaultdict(list)
         self.V = 0
+        self.num_edges = 0
         self.Time = 0
+        self.scc_NodeID_to_GraphID_map = {}
+        self.scc_GraphID_to_NodeID_map = {}
+        self.next_scc_ID = 0
 
     """
     A recursive function that find finds and prints strongly connected
@@ -489,26 +509,27 @@ def dfs_parent(visited, graph, node):  #function for dfs
     else:
         logger.debug ("dfs_parent node " + str(node.ID) + " visit parents")
 
-
+    scc_graph.map_nodeID_to_GraphID(node.ID)
 
     # visit parents
     for neighbor_index in node.parents:
-
-
-        logger.debug ("dfs_parent add edge: " + str(neighbor_index) + "," + str(node.ID))
-        #logger.debug ("dfs_parent add edge: " + str(node.ID) + "," + str(neighbor_index))
  
         parent_node = nodes[neighbor_index]
 
-        if parent_node.partition_number == -1:
+        if parent_node.partition_number == -1 or parent_node.partition_number == current_partition_number:
             # parent is not in previous partition, i.e., node is a child of
             # a parent node that was in previous partition
             # add edge from parent to node
+            logger.debug ("dfs_parent: parent_node.partition_number: " 
+                + str(parent_node.partition_number) 
+                + ", current_partition_number:" + str(current_partition_number))
+            scc_graph.map_nodeID_to_GraphID(neighbor_index)
             scc_graph.addEdge(neighbor_index, node.ID)
-            # add edge from node to parent
-            # scc_graph.addEdge(node.ID,neighbor_index)
-            global scc_num_vertices
-            scc_num_vertices += 1
+            logger.debug ("dfs_parent add edge: " + str(neighbor_index) + "," + str(node.ID))
+            logger.debug("dfs_parent: Graph after add edge:")
+            scc_graph.printEdges()
+            #global scc_num_vertices
+            #scc_num_vertices += 1
 
         if parent_node.ID not in visited:
             logger.debug ("dfs_parent visit node " + str(parent_node.ID))
@@ -791,13 +812,13 @@ def bfs(visited, graph, node): #function for BFS
 
 #rhc: 
     queue.append(-1)
-    global scc_num_vertices
-    scc_num_vertices += 1
+    #global scc_num_vertices
+    #scc_num_vertices += 1
     dfs_parent(visited, graph, node)
-    logger.debug("BFS set V to " + str(scc_num_vertices))
-    scc_graph.setV(scc_num_vertices)
-    scc_graph.printEdges()
-    scc_graph.clear()
+    #logger.debug("BFS set V to " + str(scc_num_vertices))
+    #scc_graph.setV(scc_num_vertices)
+    #scc_graph.printEdges()
+    #scc_graph.clear()
 
 
     dfs_parent_end_partition_size = len(current_partition)
@@ -863,13 +884,14 @@ def bfs(visited, graph, node): #function for BFS
 
         if ID == -1:
             end_of_current_frontier = True
+
             if queue:
                 ID = queue.pop(0)
                 logger.debug("bfs after pop -1 pop node " + str(ID) + " from queue") 
                 queue.append(-1)
 
-                scc_graph.printEdges()
-                scc_graph.clear()
+                #scc_graph.printEdges()
+                #scc_graph.clear()
             else:
                 break
 
@@ -893,8 +915,9 @@ def bfs(visited, graph, node): #function for BFS
         # visited, and add C to the partition but not the queue.
         # Note: handling singletons here is more efficent since we don;t waste time 
         # checkng for singletons in dfs_parent when most nodes are not singletons.
-#rhc: ToDo: partitions based on frontier?
+
         if end_of_current_frontier:
+            logger.debug("BFS: end_of_current_frontier")
             end_of_current_frontier = False
             if len(current_partition) > 0:
             #if len(current_partition) >= num_nodes/5:
@@ -904,6 +927,15 @@ def bfs(visited, graph, node): #function for BFS
                 global total_loop_nodes_added
                 total_loop_nodes_added += loop_nodes_added
                 loop_nodes_added = 0
+                # usin to determine whether parent is in current partition
+                global current_partition_number
+                current_partition_number += 1
+                scc_graph.printEdges()
+                scc_graph.print_ID_map()
+                #logger.debug("SCCs:")
+                #scc_graph.SCC()
+                #logger.debug("")
+                scc_graph.clear()
 #rhc: Q: 
 # - So some nodes are in current_partition. Some of these nodes that are in the 
 # current_partition are in the frontier and some aer not in the frontier. For example, 
