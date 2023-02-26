@@ -16,6 +16,8 @@ ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
+USING_BFS = False
+
 class Graph:
 
     def __init__(self, vertices=0):
@@ -34,10 +36,18 @@ class Graph:
 
     def map_nodeID_to_GraphID(self,ID):
         if ID not in self.scc_NodeID_to_GraphID_map:
-            self.scc_NodeID_to_GraphID_map[ID] = self.next_scc_ID
+            Graph_ID = self.next_scc_ID
+            self.scc_NodeID_to_GraphID_map[ID] = Graph_ID
             self.scc_GraphID_to_NodeID_map[self.next_scc_ID] = ID
             self.next_scc_ID += 1
             self.V += 1
+            return Graph_ID
+        else:
+            return self.scc_NodeID_to_GraphID_map[ID]
+    def get_GraphID(self,ID):
+        return self.scc_NodeID_to_GraphID_map[ID]
+    def get_nodeID_from_GraphID(self,ID):
+            return self.scc_GraphID_to_NodeID_map[ID]
 
     def print_ID_map(self):
         logger.debug("scc_NodeID_to_GraphID_map:")
@@ -57,11 +67,16 @@ class Graph:
         self.num_edges += 1
 
     def printEdges(self):
-        print("graph scc_graph: num_vertices: " + str(self.V) 
+        print("graph scc_graph GraphIDs: num_vertices: " + str(self.V) 
             + ", num_edges: " + str(self.num_edges) + ": ")
         for k, v in self.graph.items():
             for item in v:
                 print(str(k) + "," + str(item))
+        print("graph scc_graph node IDs: num_vertices: " + str(self.V) 
+            + ", num_edges: " + str(self.num_edges) + ": ")
+        for k, v in self.graph.items():
+            for item in v:
+                print(str(self.get_nodeID_from_GraphID(k)) + "," + str(self.get_nodeID_from_GraphID(item)))
 
     def clear(self):
         print("clear scc_graph")
@@ -87,7 +102,8 @@ class Graph:
                 a node is in stack
     """
 
-    def SCCUtil(self, u, low, disc, stackMember, st):
+    def SCCUtil(self, u, low, disc, stackMember, st, list_of_sccs):
+        # added list_of_sccs
 
         # Initialize discovery time and low value
         disc[u] = self.Time
@@ -98,11 +114,12 @@ class Graph:
 
         # Go through all vertices adjacent to this
         for v in self.graph[u]:
-
+            # added for debug
+            #print("v: " + str(v))
             # If v is not visited yet, then recur for it
             if disc[v] == -1:
 
-                self.SCCUtil(v, low, disc, stackMember, st)
+                self.SCCUtil(v, low, disc, stackMember, st, list_of_sccs)
 
                 # Check if the subtree rooted with v has a connection to
                 # one of the ancestors of u
@@ -117,14 +134,27 @@ class Graph:
                 low[u] = min(low[u], disc[v])
 
         # head node found, pop the stack and print an SCC
+
         w = -1 # To store stack extracted vertices
         if low[u] == disc[u]:
+            one_scc = []
             while w != u:
                 w = st.pop()
-                print(w, end=" ")
+                # added: if this is a call from BFS then remap back to Node IDs
+                global USING_BFS
+                if USING_BFS:
+                    ID = self.get_nodeID_from_GraphID(w)
+                    print(ID, end=" ")
+                    one_scc.append(ID)
+                else:
+                    print(w, end=" ")
+
                 stackMember[w] = False
+                
 
             print()
+            if USING_BFS:
+                list_of_sccs.append(one_scc)
 
     # The function to do DFS traversal.
     # It uses recursive SCCUtil()
@@ -134,18 +164,23 @@ class Graph:
         # Mark all the vertices as not visited
         # and Initialize parent and visited,
         # and ap(articulation point) arrays
+        # added for debug
+        #print("SCC: V:" + str(self.V))
         disc = [-1] * (self.V)
         low = [-1] * (self.V)
         stackMember = [False] * (self.V)
         st = []
+        #added
+        list_of_sccs = []
 
         # Call the recursive helper function
         # to find articulation points
         # in DFS tree rooted with vertex 'i'
         for i in range(self.V):
             if disc[i] == -1:
-                self.SCCUtil(i, low, disc, stackMember, st)
+                self.SCCUtil(i, low, disc, stackMember, st, list_of_sccs)
 
+        return list_of_sccs
 
 graph = {
   '5' : ['3','7'],
@@ -509,12 +544,12 @@ def dfs_parent(visited, graph, node):  #function for dfs
     else:
         logger.debug ("dfs_parent node " + str(node.ID) + " visit parents")
 
-    scc_graph.map_nodeID_to_GraphID(node.ID)
+    node_GraphID = scc_graph.map_nodeID_to_GraphID(node.ID)
 
     # visit parents
-    for neighbor_index in node.parents:
+    for parent_index in node.parents:
  
-        parent_node = nodes[neighbor_index]
+        parent_node = nodes[parent_index]
 
         if parent_node.partition_number == -1 or parent_node.partition_number == current_partition_number:
             # parent is not in previous partition, i.e., node is a child of
@@ -523,9 +558,11 @@ def dfs_parent(visited, graph, node):  #function for dfs
             logger.debug ("dfs_parent: parent_node.partition_number: " 
                 + str(parent_node.partition_number) 
                 + ", current_partition_number:" + str(current_partition_number))
-            scc_graph.map_nodeID_to_GraphID(neighbor_index)
-            scc_graph.addEdge(neighbor_index, node.ID)
-            logger.debug ("dfs_parent add edge: " + str(neighbor_index) + "," + str(node.ID))
+            parent_GraphID = scc_graph.map_nodeID_to_GraphID(parent_index)
+            scc_graph.addEdge(parent_GraphID, node_GraphID)
+            logger.debug ("dfs_parent add (unmapped) edge: " + str(parent_index) + "," + str(node.ID))
+            logger.debug ("dfs_parent add (mapped) edge: " + str(parent_GraphID) + "," + str(node_GraphID))
+
             logger.debug("dfs_parent: Graph after add edge:")
             scc_graph.printEdges()
             #global scc_num_vertices
@@ -929,13 +966,40 @@ def bfs(visited, graph, node): #function for BFS
                 loop_nodes_added = 0
                 # usin to determine whether parent is in current partition
                 global current_partition_number
-                current_partition_number += 1
+                
+                global scc_graph
                 scc_graph.printEdges()
                 scc_graph.print_ID_map()
-                #logger.debug("SCCs:")
-                #scc_graph.SCC()
-                #logger.debug("")
+                logger.debug("SCCs (node IDs):")
+                list_of_sccs = scc_graph.SCC()
+                logger.debug("len of list_of_sccs: " + str(len(list_of_sccs)))
+                list_of_lambdas = []
+                no_loop = []
+                has_a_no_loop_function = False
+                for list in list_of_sccs:
+                    if len(list) == 1:
+                        has_a_no_loop_function = True
+                        no_loop = no_loop + list
+                    else:
+                        list_of_lambdas.append(list)
+                if len(no_loop) > 0:
+                    list_of_lambdas.append(no_loop) 
+                i = 0
+                logger.debug("Serverless Function Inputs:")
+                for serverless_function in list_of_lambdas:
+                    if has_a_no_loop_function and i == (len(list_of_lambdas)-1):
+                        f_string = "   F" + str(current_partition_number) + "_" + str(i) + " (no-loop-function): "
+                    else:
+                        f_string = "   F" + str(current_partition_number) + "_" + str(i) + ": "
+                    print("DEBUG: " + f_string,end="")
+                    for node_index in serverless_function:
+                        print(str(node_index),end=" ") 
+                    print()
+                    i = i+1
+
+                current_partition_number += 1
                 scc_graph.clear()
+                #scc_graph = Graph(0)
 #rhc: Q: 
 # - So some nodes are in current_partition. Some of these nodes that are in the 
 # current_partition are in the frontier and some aer not in the frontier. For example, 
@@ -1226,6 +1290,10 @@ def input_graph():
     graph_file.close()
 
 # Driver Code
+
+# if USING_BFS is true then when we print SCC components we will 
+# map the scc IDs back to Node IDs. Kluge for now.
+USING_BFS = True
 
 logger.debug("Following is the Breadth-First Search")
 input_graph()
