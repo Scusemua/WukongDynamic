@@ -865,8 +865,8 @@ def bfs(visited, graph, node): #function for BFS
         loop_nodes_added_end - loop_nodes_added_start)
     dfs_parent_change_in_frontier_size = (dfs_parent_end_frontier_size - dfs_parent_start_frontier_size) - (
         loop_nodes_added_end - loop_nodes_added_start)
-    logger.debug("dfs_parent_change_in_partition_size: " + str(dfs_parent_change_in_partition_size))
-    logger.debug("dfs_parent_change_in_frontier_size: " + str(dfs_parent_change_in_frontier_size))
+    logger.debug("dfs_parent(root)_change_in_partition_size: " + str(dfs_parent_change_in_partition_size))
+    logger.debug("dfs_parent(root)_change_in_frontier_size: " + str(dfs_parent_change_in_frontier_size))
     dfs_parent_changes_in_partiton_size.append(dfs_parent_change_in_partition_size)
     dfs_parent_changes_in_frontier_size.append(dfs_parent_change_in_frontier_size)
 
@@ -1061,8 +1061,8 @@ def bfs(visited, graph, node): #function for BFS
                     loop_nodes_added_end - loop_nodes_added_start)
                 dfs_parent_change_in_frontier_size = (dfs_parent_end_frontier_size - dfs_parent_start_frontier_size) - (
                     loop_nodes_added_end - loop_nodes_added_start)
-                logger.debug("dfs_parent_change_in_partition_size: " + str(dfs_parent_change_in_partition_size))
-                logger.debug("dfs_parent_change_in_frontier_size: " + str(dfs_parent_change_in_frontier_size))
+                logger.debug("dfs_parent("+str(node.ID) + ")_change_in_partition_size: " + str(dfs_parent_change_in_partition_size))
+                logger.debug("dfs_parent("+str(node.ID) + ")_change_in_frontier_size: " + str(dfs_parent_change_in_frontier_size))
                 dfs_parent_changes_in_partiton_size.append(dfs_parent_change_in_partition_size)
                 dfs_parent_changes_in_frontier_size.append(dfs_parent_change_in_frontier_size)
 
