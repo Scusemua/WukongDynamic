@@ -1,9 +1,13 @@
 import networkx as nx
 import matplotlib.pyplot as plt
+import numpy as np
 
 import logging 
+import cloudpickle
 
 from collections import defaultdict
+
+from .DFS_visit import state_info
 
 logger = logging.getLogger(__name__)
 #logger.setLevel(logging.DEBUG)
@@ -198,11 +202,26 @@ class Node:
         self.parents = []
         self.children = []
         self.partition = -1
+        self.pagerank = 0
 #rhc: un
-        self.unvisited = []
+        # not used
+        #self.unvisited = []
 
     def __eq__(self,other):
         return self.ID == other.ID
+
+    def update_pagerank(self, damping_factor, num_nodes):
+        in_nodes = self.parents
+        print("update_pagerank: node " + str(self.ID))
+        print("update_pagerank: in_nodes: " + str(in_nodes))
+        pagerank_sum = sum((nodes[node_index].pagerank / len(nodes[node_index].children)) for node_index in in_nodes)
+        print("update_pagerank: pagerank_sum: " + str(pagerank_sum))
+        random_jumping = damping_factor / num_nodes
+        print("damping_factor:" + str(damping_factor) + " num_nodes: " + str(num_nodes) + " random_jumping: " + str(random_jumping))
+        self.pagerank = random_jumping + (1-damping_factor) * pagerank_sum
+        print ("update_pagerank: pagerank of node: " + str(self.ID) + ": " + str(self.pagerank))
+        print()
+        print()
 
 """
 N5 = Node(5)
@@ -1328,6 +1347,131 @@ if len(current_partition) > 0:
 else:
     # always do this - below we assert final frontier is empty
     frontiers.append(frontier.copy())
+
+def generate_DAG_info(graph_name):
+    # from DFS_visit
+    DAG_map = {} # map from state (per task) to the fanin/fanout/faninNB operations executed after the task is executed
+    DAG_states = {} # map from String task_name to the state that task is executed (one state per task)
+    DAG_leaf_task_start_states = []
+    DAG_leaf_tasks = []
+    DAG_leaf_task_inputs = []
+    DAG_tasks = {} # map from task name to task, e.g., "add" to add()
+    all_fanout_task_names = []	# list of all fanout task names in the DAG
+    all_fanin_task_names = []
+    all_faninNB_task_names = []
+    all_collapse_task_names = []  # if task A is followed only by a fanout to task B: A --> B then we collapse B and A
+    all_fanin_sizes = [] # all_fanin_sizes[i] is the size of all_fanin_task_names[i] 
+    all_faninNB_sizes = []
+
+    # graph_20
+    DAG_map = {}
+    DAG_states = {}
+    DAG_leaf_tasks = ["PR1"]
+    DAG_leaf_task_start_states = [1]
+    DAG_leaf_task_inputs = [[5,17,1]]
+    all_fanout_task_names = ["PR2_1", "PR2_3"]	# list of all fanout task names in the DAG
+    all_fanin_task_names = []
+    all_faninNB_task_names = ["PR2_2"]
+    all_collapse_task_names = ["PR3_1", "PR3_2"]
+    all_fanin_sizes = []
+    all_faninNB_sizes = [2]
+    key_list = ["PR1", "PR2_1", "PR2_2", "PR2_3", "PR3_1", "PR3_2"]
+    DAG_tasks = dict.fromkeys(key_list,PageRank)
+
+    # per state
+
+    state = 1
+    fanouts = ["PR2_1", "PR2_3"]	# list of task_names of fanout tasks of T --> fanout
+    fanins = []	    # list of task_names of fanin tasks of T --> fanin, where there will be a become
+    faninNBs = ["PR2_2"]   # list of task_names of fanin tasks of T --> fanin, where there will be no become (NB)
+    collapse = []   # list of task_names of collapsed tasks of T --> collapse, where there will be one succ (pred) edge of T (collapse)
+    fanin_sizes = [] # sizes of fanins by position in fanins
+    faninNB_sizes = [1] # sizes of faninNBs by position in faninNBs  
+    DAG_map[state] = state_info("PR1", fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, [5,17,1])
+    DAG_states["PR1"] = state
+
+    state = 2
+    fanouts = []	
+    fanins = []	    
+    faninNBs = ["PR2_2"]   
+    collapse = []   
+    fanin_sizes = [] 
+    faninNB_sizes = [1]
+    DAG_map[state] = state_info("PR2_1", fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, None)
+    DAG_states["PR2_1"] = state
+
+    state = 3
+    fanouts = []	
+    fanins = []	    
+    faninNBs = []   
+    collapse = ["PR3_1"]   
+    fanin_sizes = [] 
+    faninNB_sizes = []
+    DAG_map[state] = state_info("PR2_2", fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, None)
+    DAG_states["PR2_2"] = state
+
+    state = 4
+    fanouts = []	
+    fanins = []	    
+    faninNBs = []   
+    collapse = ["PR3_2"]   
+    fanin_sizes = [] 
+    faninNB_sizes = []
+    DAG_map[state] = state_info("PR2_3", fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, None)
+    DAG_states["PR2_3"] = state
+
+    state = 5
+    fanouts = []	
+    fanins = []	    
+    faninNBs = []   
+    collapse = []   
+    fanin_sizes = [] 
+    faninNB_sizes = []
+    DAG_map[state] = state_info("PR3_1", fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, None)
+    DAG_states["PR3_1"] = state
+
+    state = 6
+    fanouts = []	
+    fanins = []	    
+    faninNBs = []   
+    collapse = []   
+    fanin_sizes = [] 
+    faninNB_sizes = []
+    DAG_map[state] = state_info("PR3_2", fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, None)
+    DAG_states["PR3_2"] = state
+
+    DAG_info = {}
+    DAG_info["DAG_map"] = DAG_map
+    DAG_info["DAG_states"] = DAG_states
+    DAG_info["DAG_leaf_tasks"] = DAG_leaf_tasks
+    DAG_info["DAG_leaf_task_start_states"] = DAG_leaf_task_start_states
+    DAG_info["DAG_leaf_task_inputs"] = DAG_leaf_task_inputs
+    DAG_info["all_fanout_task_names"] = all_fanout_task_names
+    DAG_info["all_fanin_task_names"] = all_fanin_task_names
+    DAG_info["all_faninNB_task_names"] = all_faninNB_task_names
+    DAG_info["all_collapse_task_names"] = all_collapse_task_names
+    DAG_info["all_fanin_sizes"] = all_fanin_sizes
+    DAG_info["all_faninNB_sizes"] = all_faninNB_sizes
+    DAG_info["DAG_tasks"] = DAG_tasks
+    file_name = "./"+graph_name+".pickle"
+    with open(file_name, 'wb') as handle:
+        cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+
+
+def PageRank_one_iter(nodes,target_nodes,damping_factor):
+    for target_node_index in target_nodes:
+        nodes[target_node_index].update_pagerank(damping_factor, len(nodes))
+    #graph.normalize_pagerank()
+
+def PageRank(nodes,target_nodes):
+    damping_factor=0.15
+    iteration=int(100)
+    for _ in range(iteration):
+        PageRank_one_iter(nodes,target_nodes,damping_factor)
+
+def get_pagerank_list(nodes):
+    pagerank_list = np.asarray([node.pagerank for node in nodes], dtype='float32')
+    return np.round(pagerank_list, 3)
 
 #partitions.append(current_partition.copy())
 #frontiers.append(frontier.copy())
