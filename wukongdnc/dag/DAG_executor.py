@@ -1254,10 +1254,84 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
             # and the leaf task inputs in state_info.task_inputs for each leaf task (which is also in 
             # DAG_info) We do this since for lambdas we pass DAG_info in the payload and we don't want to 
             # pass all those leaf task inputs in DAG_info in each payload.
+            #
+            # For example: 
+            # leaf task inc0: task_inputs: (1,)
+            # non-leaf task add: task_inputs: 
+            #   ('increment-1cce17d3-5948-48d6-9141-01a9eaa1ca40', 'increment-ed04c96b-fcf6-4fab-9d13-d0560be0ef21')
             task_inputs = state_info.task_inputs    
             is_leaf_task = state_info.task_name in DAG_info.get_DAG_leaf_tasks()
             logger.debug("is_leaf_task: " + str(is_leaf_task))
             logger.debug("task_inputs: " + str(task_inputs))
+
+            # So for a call to pagerank, the task_input is the name of the executed task
+            # that is supplying the input (non-leaf task). For this input task, e.g., "PR1"
+            # the data dictionary will have the results of: "PR1" --> [dependent_node_1,
+            # dependent_node_2, ... dependent_node_n], where PR1 is sending different 
+            # node pagerank values to different tasks: PR1 fanout node 5 to PR2_1, 
+            # faninNB node 17 to PR2_2, and fanout node 1 to PR2_3. So these are the 
+            # dependent nodes needed by PR2_1, PR2_2, and PR2_3. For simplicty, to get 
+            # things started, ech task hs all the nodes, so we can just overwrite 
+            # nodes[dependent_node_i.ID].pagerank with dependent_node_i.pagerank.
+            #
+            # Q: How to give each task the nodes? In DAG_info since
+            # nodes are part of the input along with the DAG. Easy for now.
+            # DAG_info["PageRankNodes"] = nodes
+
+            """
+            def pack_data(o, d, key_types=object):
+                #Merge known data into tuple or dict
+
+                Parameters
+                ----------
+                o:
+                    core data structures containing literals and keys
+                d: dict
+                    mapping of keys to data
+
+                Examples
+                --------
+                >>> data = {'x': 1}
+                >>> pack_data(('x', 'y'), data)
+                (1, 'y')
+                >>> pack_data({'a': 'x', 'b': 'y'}, data)  # doctest: +SKIP
+                {'a': 1, 'b': 'y'}
+                >>> pack_data({'a': ['x'], 'b': 'y'}, data)  # doctest: +SKIP
+                {'a': [1], 'b': 'y'}
+                
+                typ = type(o)
+                try:
+                    if isinstance(o, key_types) and str(o) in d:
+                        return d[str(o)]
+                except TypeError:
+                    pass
+
+                if typ in (tuple, list, set, frozenset):
+                    return typ([pack_data(x, d, key_types=key_types) for x in o])
+                elif typ is dict:
+                    return {k: pack_data(v, d, key_types=key_types) for k, v in o.items()}
+                else:
+                    return o
+
+                    # Example:
+                    # 
+                    # task = (func_obj, "task1", "task2", "task3")
+                    # func = task[0]
+                    # args = task[1:] # everything but the 0'th element, ("task1", "task2", "task3")
+
+                    # # Intermediate data; from executing other tasks.
+                    # # task IDs and their outputs
+                    # data_dict = {
+                    #     "task1": 1, 
+                    #     "task2": 10,
+                    #     "task3": 3
+                    # }
+
+                    # args2 = pack_data(args, data_dict) # (1, 10, 3)
+
+                    # func(*args2)
+            """
+
             if not is_leaf_task:
                 logger.debug("Packing data. Task inputs: %s. Data dict (keys only): %s" % (str(task_inputs), str(data_dict.keys())))
                 # task_inputs is a tuple of task_names
@@ -1278,12 +1352,11 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
 
             # using map DAG_tasks from task_name to task
             task = DAG_tasks[state_info.task_name]
-            #output = execute_task(task,input)
+            
             output = execute_task(task,args)
             """ where:
                 def execute_task(task,args):
                     logger.debug("input of execute_task is: " + str(args))
-                    #output = task(input)
                     output = task(*args)
                     return output
             """

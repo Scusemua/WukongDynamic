@@ -19,13 +19,13 @@ run_all_tasks_locally = True         # vs run tasks remotely (in Lambdas)
 # machine on which the threads are executing.  If we are using multiprocessing
 # or Lambdas, this must be False. When False, the synch objects are stored
 # on the tcp_server or in InfiniX lambdas.
-store_fanins_faninNBs_locally = False    # vs remotely
+store_fanins_faninNBs_locally = True    # vs remotely
 # True when all FanIn and FanInNB objects are created locally or on the
 # tcp_server or IniniX all at once at the start of the DAG execution. If
 # False, synch objects are created on the fly, i.e, we execute create-and-fanin
 # operations that create a synch object if it has not been created yet and then
 # execute a Fan_in operaation on the created object.
-create_all_fanins_faninNBs_on_start = False
+create_all_fanins_faninNBs_on_start = True
 
 # True if the DAG is executed by a "pool" of threads/processes. False, if we are
 # using Lambdas or we are using threads to simulate the use of Lambdas. In the latter
@@ -83,7 +83,7 @@ map_objects_to_lambda_functions = False
 # (by name or by index).
 # ToDo: integrate using_single_lambda_function with this mapping stuff. that
 # is, map names to lambda functions, and sometimes there is only one function.
-use_anonymous_lambda_functions = True
+use_anonymous_lambda_functions = False
 # For all: remote objects, using select objects:
 # 1. run_all_tasks_locally = True, create objects on start = True:
 # TTFFTF: no trigger and no DAG_orchestrator, but map objects (anon is false) and create objects on start

@@ -7,7 +7,7 @@ import cloudpickle
 
 from collections import defaultdict
 
-from .DFS_visit import state_info
+#from .DFS_visit import state_info
 
 logger = logging.getLogger(__name__)
 #logger.setLevel(logging.DEBUG)
@@ -21,6 +21,51 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 USING_BFS = False
+
+class state_info:
+    def __init__(self, task_name, fanouts = None, fanins = None, faninNBs = None, collapse = None,
+        fanin_sizes = None, faninNB_sizes = None, task_inputs = None):
+        self.task_name = task_name
+        self.fanouts = fanouts      # see comment below for examples
+        self.fanins = fanins
+        self.faninNBs = faninNBs
+        self.fanin_sizes = fanin_sizes
+        self.faninNB_sizes = faninNB_sizes
+        self.collapse = collapse
+        self.task_inputs = task_inputs
+    def __str__(self):
+        if self.fanouts != None:
+            fanouts_string = str(self.fanouts)
+        else:
+            fanouts_string = "None"
+        if self.fanins != None:
+            fanins_string = str(self.fanins)
+        else:
+            fanins_string = "None"
+        if self.faninNBs != None:
+            faninNBs_string = str(self.faninNBs)
+        else:
+            faninNBs_string = "None"
+        if self.collapse != None:
+            collapse_string = str(self.collapse)
+        else:
+            collapse_string = "None"
+        if self.fanin_sizes != None:
+            fanin_sizes_string = str(self.fanin_sizes)
+        else:
+            fanin_sizes_string = "None"
+        if self.faninNB_sizes != None:
+            faninNB_sizes_string = str(self.faninNB_sizes)
+        else:
+            faninNB_sizes_string = "None"         
+        if self.task_inputs != None:
+            task_inputs_string = str(self.task_inputs)
+        else:
+            task_inputs_string = "None"          
+        return (" task: " + self.task_name + ", fanouts:" + fanouts_string + ", fanins:" + fanins_string + ", faninsNB:" + faninNBs_string 
+            + ", collapse:" + collapse_string + ", fanin_sizes:" + fanin_sizes_string
+            + ", faninNB_sizes:" + faninNB_sizes_string + ", task_inputs: " + task_inputs_string)
+
 
 class Graph:
 
@@ -210,7 +255,7 @@ class Node:
     def __eq__(self,other):
         return self.ID == other.ID
 
-    def update_pagerank(self, damping_factor, num_nodes):
+    def update_PageRank(self, damping_factor, num_nodes):
         in_nodes = self.parents
         print("update_pagerank: node " + str(self.ID))
         print("update_pagerank: in_nodes: " + str(in_nodes))
@@ -1348,7 +1393,7 @@ else:
     # always do this - below we assert final frontier is empty
     frontiers.append(frontier.copy())
 
-def generate_DAG_info(graph_name):
+def generate_DAG_info(graph_name, nodes):
     # from DFS_visit
     DAG_map = {} # map from state (per task) to the fanin/fanout/faninNB operations executed after the task is executed
     DAG_states = {} # map from String task_name to the state that task is executed (one state per task)
@@ -1453,23 +1498,124 @@ def generate_DAG_info(graph_name):
     DAG_info["all_fanin_sizes"] = all_fanin_sizes
     DAG_info["all_faninNB_sizes"] = all_faninNB_sizes
     DAG_info["DAG_tasks"] = DAG_tasks
+
+    # For now, add graph nodes to DAG_info, where DAG_info is the DAG
+    # for computing the pagerank of the nodes.
+    DAG_info["PageRank_nodes"] = nodes
+
     file_name = "./"+graph_name+".pickle"
     with open(file_name, 'wb') as handle:
         cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
 
+    num_fanins = len(all_fanin_task_names)
+    num_fanouts = len(all_fanout_task_names)
+    num_faninNBs = len(all_faninNB_task_names)
+    num_collapse = len(all_collapse_task_names)
 
-def PageRank_one_iter(nodes,target_nodes,damping_factor):
+    print("DAG_map:")
+    for key, value in DAG_map.items():
+        print(key, ' : ', value)
+    print()
+    print("states:")         
+    for key, value in DAG_states.items():
+        print(key, ' : ', value)
+    print()
+    print("num_fanins:" + str(num_fanins) + " num_fanouts:" + str(num_fanouts) + " num_faninNBs:" 
+            + str(num_faninNBs) + " num_collapse:" + str(num_collapse))
+    print()  
+    print("all_fanout_task_names")
+    for name in all_fanout_task_names:
+        print(name)
+    print()
+    print("all_fanin_task_names")
+    for name in all_fanin_task_names :
+        print(name)
+    print()
+    print("all_faninNB_task_names")
+    for name in all_faninNB_task_names:
+        print(name)
+    print()
+    print("all_collapse_task_names")
+    for name in all_collapse_task_names:
+        print(name)
+    print()
+    print("leaf task start states")
+    for start_state in DAG_leaf_task_start_states:
+        print(start_state)
+    print()
+    print("DAG_tasks:")
+    for key, value in DAG_tasks.items():
+        print(key, ' : ', value)
+    print()
+    print("DAG_leaf_tasks:")
+    for task_name in DAG_leaf_tasks:
+        print(task_name)
+    print() 
+    print("DAG_leaf_task_inputs:")
+    for inp in DAG_leaf_task_inputs:
+        print(inp)
+    print()   
+
+# We just reuses the DAG_executr and DAG_executor_processes but we need
+# a different workloop for pagerank?
+# DAG_executor_workloop_pagerank(...):
+# - get nodes from payload
+# - partition_file_name = "./"+task_name+".pickle"
+# - partition = input_PageRank_partition(partition_file_name)
+# - PageRank(nodes,partition)
+
+# Called by DAG task to read its partition from storage.
+# DAG with name task_name calls:
+#    partition_file_name = "./"+task_name+".pickle"
+#    partition = input_PageRank_partition(partition_file_name)
+def input_PageRank_partition(partition_file_name):
+    # Example file name: './PA1_partition.pickle'
+    with open(partition_file_name, 'rb') as handle:
+        partition = cloudpickle.load(handle)
+    # Example partition, for "PR1" of graph_20: [5, 17, 1]
+    return partition
+
+def normalize_PageRank(nodes):
+    pagerank_sum = sum(node.pagerank for node in nodes)
+    for node in nodes:
+        node.pagerank /= pagerank_sum
+
+def PageRank_one_iter(nodes,partition,damping_factor):
     for target_node_index in target_nodes:
-        nodes[target_node_index].update_pagerank(damping_factor, len(nodes))
-    #graph.normalize_pagerank()
+        nodes[target_node_index].update_PageRank(damping_factor, len(nodes))
+    normalize_PageRank(nodes)
 
-def PageRank(nodes,target_nodes):
+def PageRank_main(nodes, partition):
+    print("PageRank: partition is: " + str(partition))
     damping_factor=0.15
-    iteration=int(100)
-    for _ in range(iteration):
-        PageRank_one_iter(nodes,target_nodes,damping_factor)
+    iteration=int(10)
+    for i in range(iteration):
+        print("***** PageRank: iteration " + str(i))
+        print()
+        PageRank_one_iter(nodes,partition,damping_factor)
+    print("PageRank: partition is: " + str(partition))
 
-def get_pagerank_list(nodes):
+# DAG task PRi will get all nodes in DAG_info, to simplify things
+# for now. The task will input its partition from storage and
+# get dependents from its input tasks (via fanout or fan_ins).
+# Task will invoke PageRank by passing the nodes it got from 
+# its payload after overwriting the dependent nodes in nodes with
+# their pageran values, so PageRank here just needs its nodes
+# and its partition.
+# This will change as we increentally update the functionality.
+# Using input_PageRank_partition
+def PageRank(nodes,partition):
+    # partition = input_partition(partition_file_name)
+    print("PageRank: partition is: " + str(partition))
+    damping_factor=0.15
+    iteration=int(10)
+    for i in range(iteration):
+        print("***** PageRank: iteration " + str(i))
+        print()
+        PageRank_one_iter(nodes,partition,damping_factor)
+    print("PageRank: partition is: " + str(partition))
+
+def get_PageRank_list(nodes):
     pagerank_list = np.asarray([node.pagerank for node in nodes], dtype='float32')
     return np.round(pagerank_list, 3)
 
@@ -1594,6 +1740,11 @@ print()
 print()
 #visualize()
 #input('Press <ENTER> to continue')
+generate_DAG_info("graph20_DAG", nodes)
+target_nodes = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
+PageRank_main(nodes,target_nodes)
+np_array = get_PageRank_list(nodes)
+print(str(np_array))
 
 # 1. Check the edges, draw the graph20
 # 2. To do scc, we need nodes in range 0 .. num_vertices-1, so collapse

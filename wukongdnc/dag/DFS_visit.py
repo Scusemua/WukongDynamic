@@ -65,10 +65,10 @@ class state_info:
         if self.task_inputs != None:
             task_inputs_string = str(self.task_inputs)
         else:
-            task_inputs_string = "None"          
-        return (" task: " + self.task_name+", " + "fanouts:" + fanouts_string + "," + "fanins:" + fanins_string + "," + "faninsNB:" + faninNBs_string + "," 
-            + "collapse:" + collapse_string + "fanin_sizes:" + fanin_sizes_string + "," 
-            + "faninNB_sizes:" + faninNB_sizes_string + "task_inputs: " + task_inputs_string)
+            task_inputs_string = "None"
+        return (" task: " + self.task_name+", fanouts:" + fanouts_string + ", fanins:" + fanins_string + ", faninsNB:" + faninNBs_string
+            + ", collapse:" + collapse_string + ", fanin_sizes:" + fanin_sizes_string
+            + ", faninNB_sizes:" + faninNB_sizes_string + ", task_inputs: " + task_inputs_string)
 	
 """ Examples of fanouts, fanins, and faninNBs (No Becomes)
   n2   n3
