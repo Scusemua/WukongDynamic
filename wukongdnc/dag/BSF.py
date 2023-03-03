@@ -1501,7 +1501,13 @@ def generate_DAG_info(graph_name, nodes):
 
     # For now, add graph nodes to DAG_info, where DAG_info is the DAG
     # for computing the pagerank of the nodes.
-    DAG_info["PageRank_nodes"] = nodes
+    # No, write the nodes and each partition to a file: (nodes,partition)
+    # Seems like yuo need to write the dependents that will be inputs to the
+    # faninNBs and fanouts. Example For "PR1", partition is [5,17,1] and
+    # dependents for "P2_1" are [5] and for "P2_2" are [17] and "P2_3" are [1].
+    # So iputs sent to fanouts and faninNBs are list of dependents, which is 
+    # different for each fanout/faninNB.
+    #DAG_info["PageRank_nodes"] = nodes
 
     file_name = "./"+graph_name+".pickle"
     with open(file_name, 'wb') as handle:
@@ -1556,19 +1562,22 @@ def generate_DAG_info(graph_name, nodes):
         print(inp)
     print()   
 
-# We just reuses the DAG_executr and DAG_executor_processes but we need
-# a different workloop for pagerank?
-# DAG_executor_workloop_pagerank(...):
-# - get nodes from payload
+# We just reuses the DAG_executor and DAG_executor_processes with work loop.
+# DAG_executor_workloop_pagerank(...): No. Executing DAG so no changes
+# to the work loop
+# - get nodes from payload: No, one payload per worker not per task
+#
+#   So PankRank should do this
 # - partition_file_name = "./"+task_name+".pickle"
-# - partition = input_PageRank_partition(partition_file_name)
+# - partition = input_PageRank_nodes_and_partition(partition_file_name)
+#   For now, input both.
 # - PageRank(nodes,partition)
 
 # Called by DAG task to read its partition from storage.
 # DAG with name task_name calls:
 #    partition_file_name = "./"+task_name+".pickle"
 #    partition = input_PageRank_partition(partition_file_name)
-def input_PageRank_partition(partition_file_name):
+def input_PageRank_nodes_and_partition(partition_file_name):
     # Example file name: './PA1_partition.pickle'
     with open(partition_file_name, 'rb') as handle:
         partition = cloudpickle.load(handle)
@@ -1596,16 +1605,13 @@ def PageRank_main(nodes, partition):
     print("PageRank: partition is: " + str(partition))
 
 # DAG task PRi will get all nodes in DAG_info, to simplify things
-# for now. The task will input its partition from storage and
+# for now. The task will input its nodes and partition from storage and
 # get dependents from its input tasks (via fanout or fan_ins).
-# Task will invoke PageRank by passing the nodes it got from 
-# its payload after overwriting the dependent nodes in nodes with
-# their pageran values, so PageRank here just needs its nodes
-# and its partition.
-# This will change as we increentally update the functionality.
-# Using input_PageRank_partition
-def PageRank(nodes,partition):
-    # partition = input_partition(partition_file_name)
+# This will change as we incrementally update the functionality.
+# Using input_PageRank_nodes_and_partition
+def PageRank(dependents):
+    # nodes_and_partition = input_PageRank_nodes_and_partition(partition_file_name)
+    # overwite nodes[i] with delegate i
     print("PageRank: partition is: " + str(partition))
     damping_factor=0.15
     iteration=int(10)
