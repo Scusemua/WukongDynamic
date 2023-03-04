@@ -1341,7 +1341,7 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                 if not (store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks):
                     args = task_inputs
                 else:
-                    # else the laf task was triggered by a fanin operation on the fann object
+                    # else the leaf task was triggered by a fanin operation on the fann object
                     # for the leaf task and the fanin result, as usual, maps the task that
                     # sent the input to the input. For leaf tasks, the task that sent the 
                     # input is "DAG_executor_driver", whuch is not a real DAG task. So
@@ -1349,6 +1349,11 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     # which is the leaf task input. The only input to a leaf task is this
                     # input.
                     args = task_inputs['DAG_executor_driver']
+
+#rhc: pagerank: Some DAGs may use a single paramaterized function, e.g., PageRank, that 
+# needs its inputs, which are captured by args, but also its task_name, so it 
+# e.g., input values for its specific task, e.g., its partition in file task_name+".pickle".
+# Perhaps: based on first example, task_inputs.append(task_name)
 
             # using map DAG_tasks from task_name to task
             task = DAG_tasks[state_info.task_name]

@@ -24,7 +24,8 @@ USING_BFS = False
 
 class state_info:
     def __init__(self, task_name, fanouts = None, fanins = None, faninNBs = None, collapse = None,
-        fanin_sizes = None, faninNB_sizes = None, task_inputs = None):
+        fanin_sizes = None, faninNB_sizes = None, task_inputs = None, 
+        dependents_per_fanout=None, dependents_per_faninNB=None, dependents_per_collapse=None):
         self.task_name = task_name
         self.fanouts = fanouts      # see comment below for examples
         self.fanins = fanins
@@ -33,6 +34,10 @@ class state_info:
         self.faninNB_sizes = faninNB_sizes
         self.collapse = collapse
         self.task_inputs = task_inputs
+        # Added for pagerank
+        self.dependents_per_fanout = dependents_per_fanout
+        self.dependents_per_faninNB = dependents_per_faninNB
+        self.dependents_per_collapse = dependents_per_collapse
     def __str__(self):
         if self.fanouts != None:
             fanouts_string = str(self.fanouts)
@@ -61,10 +66,25 @@ class state_info:
         if self.task_inputs != None:
             task_inputs_string = str(self.task_inputs)
         else:
-            task_inputs_string = "None"          
+            task_inputs_string = "None"  
+        if self.dependents_per_fanout != None:
+            dependents_per_fanout_string = str(self.dependents_per_fanout)
+        else:
+            dependents_per_fanout_string = "None" 
+        if self.dependents_per_faninNB != None:
+            dependents_per_faninNB_string = str(self.dependents_per_faninNB)
+        else:
+            dependents_per_faninNB_string = "None"  
+        if self.dependents_per_collpase != None:
+            dependents_per_collpase_string = str(self.dependents_per_collpase)
+        else:
+            dependents_per_collpase_string = "None"        
         return (" task: " + self.task_name + ", fanouts:" + fanouts_string + ", fanins:" + fanins_string + ", faninsNB:" + faninNBs_string 
             + ", collapse:" + collapse_string + ", fanin_sizes:" + fanin_sizes_string
-            + ", faninNB_sizes:" + faninNB_sizes_string + ", task_inputs: " + task_inputs_string)
+            + ", faninNB_sizes:" + faninNB_sizes_string + ", task_inputs: " + task_inputs_string
+            + ", dependents_per_fanout: " + dependents_per_fanout_string 
+            + ", dependents_per_faninNB: " + dependents_per_faninNB_string
+            + ", dependents_per_collpase: " + dependents_per_collpase_string)
 
 
 class Graph:
@@ -1432,7 +1452,14 @@ def generate_DAG_info(graph_name, nodes):
     collapse = []   # list of task_names of collapsed tasks of T --> collapse, where there will be one succ (pred) edge of T (collapse)
     fanin_sizes = [] # sizes of fanins by position in fanins
     faninNB_sizes = [1] # sizes of faninNBs by position in faninNBs  
-    DAG_map[state] = state_info("PR1", fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, [5,17,1])
+    fanout1 = [5]
+    fanout2 = [1]
+    faninNB1 = [17]
+    fanout_dependents = [fanout1,fanout2]
+    faninNB_dependents = [faninNB1]
+    collapse_dependents = []
+    DAG_map[state] = state_info("PR1", fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, [5,17,1],
+        fanout_dependents, faninNB_dependents,collapse_dependents)
     DAG_states["PR1"] = state
 
     state = 2
@@ -1442,7 +1469,12 @@ def generate_DAG_info(graph_name, nodes):
     collapse = []   
     fanin_sizes = [] 
     faninNB_sizes = [1]
-    DAG_map[state] = state_info("PR2_1", fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, None)
+    faninNB1 = [2]
+    fanout_dependents = []
+    faninNB_dependents = [faninNB1]
+    collapse_dependents = []
+    DAG_map[state] = state_info("PR2_1", fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, ["PR1"],
+        fanout_dependents, faninNB_dependents,collapse_dependents)
     DAG_states["PR2_1"] = state
 
     state = 3
@@ -1452,7 +1484,12 @@ def generate_DAG_info(graph_name, nodes):
     collapse = ["PR3_1"]   
     fanin_sizes = [] 
     faninNB_sizes = []
-    DAG_map[state] = state_info("PR2_2", fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, None)
+    collapse1 = [8,11]
+    fanout_dependents = []
+    faninNB_dependents = []
+    collapse_dependents = [collapse1]
+    DAG_map[state] = state_info("PR2_2", fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, ["PR1","PR2_1"],
+        fanout_dependents, faninNB_dependents,collapse_dependents)
     DAG_states["PR2_2"] = state
 
     state = 4
@@ -1462,7 +1499,12 @@ def generate_DAG_info(graph_name, nodes):
     collapse = ["PR3_2"]   
     fanin_sizes = [] 
     faninNB_sizes = []
-    DAG_map[state] = state_info("PR2_3", fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, None)
+    collapse1 = [8,11]
+    fanout_dependents = []
+    faninNB_dependents = []
+    collapse_dependents = [collapse1]
+    DAG_map[state] = state_info("PR2_3", fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, ["PR1"],
+        fanout_dependents, faninNB_dependents,collapse_dependents)
     DAG_states["PR2_3"] = state
 
     state = 5
@@ -1472,7 +1514,11 @@ def generate_DAG_info(graph_name, nodes):
     collapse = []   
     fanin_sizes = [] 
     faninNB_sizes = []
-    DAG_map[state] = state_info("PR3_1", fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, None)
+    fanout_dependents = []
+    faninNB_dependents = []
+    collapse_dependents = []
+    DAG_map[state] = state_info("PR3_1", fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, ["PR2_2"],
+        fanout_dependents, faninNB_dependents,collapse_dependents)
     DAG_states["PR3_1"] = state
 
     state = 6
@@ -1482,7 +1528,11 @@ def generate_DAG_info(graph_name, nodes):
     collapse = []   
     fanin_sizes = [] 
     faninNB_sizes = []
-    DAG_map[state] = state_info("PR3_2", fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, None)
+    fanout_dependents = []
+    faninNB_dependents = []
+    collapse_dependents = []
+    DAG_map[state] = state_info("PR3_2", fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, ("PR2_3"),
+        fanout_dependents, faninNB_dependents,collapse_dependents)
     DAG_states["PR3_2"] = state
 
     DAG_info = {}
@@ -1580,9 +1630,11 @@ def generate_DAG_info(graph_name, nodes):
 def input_PageRank_nodes_and_partition(partition_file_name):
     # Example file name: './PA1_partition.pickle'
     with open(partition_file_name, 'rb') as handle:
-        partition = cloudpickle.load(handle)
+        nodes_and_partition = cloudpickle.load(handle)
+    nodes = nodes_and_partition["nodes"]
+    partition = nodes_and_partition["partition"]
     # Example partition, for "PR1" of graph_20: [5, 17, 1]
-    return partition
+    return nodes, partition
 
 def normalize_PageRank(nodes):
     pagerank_sum = sum(node.pagerank for node in nodes)
@@ -1604,13 +1656,18 @@ def PageRank_main(nodes, partition):
         PageRank_one_iter(nodes,partition,damping_factor)
     print("PageRank: partition is: " + str(partition))
 
-# DAG task PRi will get all nodes in DAG_info, to simplify things
-# for now. The task will input its nodes and partition from storage and
-# get dependents from its input tasks (via fanout or fan_ins).
+# We are using the DAG_excutor routines to execure DAG, like normal.
+# PageRank specific actions need to be done by the PageRank task.
 # This will change as we incrementally update the functionality.
 # Using input_PageRank_nodes_and_partition
-def PageRank(dependents):
-    # nodes_and_partition = input_PageRank_nodes_and_partition(partition_file_name)
+def PageRank(dependents,task_name):
+#rhc: not clear whether we can add task_name as an arg to the task in the 
+# DAG_executor_work_loop. If so, we could also add nodes and partition
+# as parms (for small sizes)?
+# ToDo: Added the fanout/faninNB/collapse dependents to the state_info
+# what's next?
+    partition_file_name = "./" + task_name + "_nodes_and_partition.pickle"
+    nodes, partition = input_PageRank_nodes_and_partition(partition_file_name)
     # overwite nodes[i] with delegate i
     print("PageRank: partition is: " + str(partition))
     damping_factor=0.15
