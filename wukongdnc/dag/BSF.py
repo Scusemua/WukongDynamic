@@ -11,12 +11,12 @@ from collections import defaultdict
 
 logger = logging.getLogger(__name__)
 #logger.setLevel(logging.DEBUG)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.ERROR)
 #formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 formatter = logging.Formatter('%(levelname)s: %(message)s')
 ch = logging.StreamHandler()
 #ch.setLevel(logging.DEBUG)
-ch.setLevel(logging.DEBUG)
+ch.setLevel(logging.ERROR)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
@@ -484,12 +484,14 @@ frontier_cost = []
 frontiers = []
 frontier = []
 all_frontier_costs = []
+frontier_groups_sum = 0
+frontier_groups = 0
 
 IDENTIFY_SINGLETONS = False
 TRACK_PARTITION_LOOPS = False
 CHECK_UNVISITED_CHILDREN = False
-DEBUG_ON = True
-PRINT_DETAILED_STATS = True
+DEBUG_ON = False
+PRINT_DETAILED_STATS = False
 
 scc_graph = Graph(0)
 scc_num_vertices = 0
@@ -643,14 +645,15 @@ def dfs_parent(visited, graph, node):  #function for dfs
                 + str(parent_node.partition_number) 
                 + ", current_partition_number:" + str(current_partition_number))
             parent_GraphID = scc_graph.map_nodeID_to_GraphID(parent_index)
-            scc_graph.addEdge(parent_GraphID, node_GraphID)
+            #scc_graph.addEdge(parent_GraphID, node_GraphID)
             logger.debug ("dfs_parent add (unmapped) edge: " + str(parent_index) + "," + str(node.ID))
             logger.debug ("dfs_parent add (mapped) edge: " + str(parent_GraphID) + "," + str(node_GraphID))
 
             logger.debug("dfs_parent: Graph after add edge:")
-            scc_graph.printEdges()
+            #scc_graph.printEdges()
             #global scc_num_vertices
             #scc_num_vertices += 1
+        #else: parent is in previous partition, (must be current_partition - 1)
 
         if parent_node.ID not in visited:
             logger.debug ("dfs_parent visit node " + str(parent_node.ID))
@@ -1052,11 +1055,13 @@ def bfs(visited, graph, node): #function for BFS
                 global current_partition_number
                 
                 global scc_graph
+                """
                 scc_graph.printEdges()
                 scc_graph.print_ID_map()
                 logger.debug("SCCs (node IDs):")
                 list_of_sccs = scc_graph.SCC()
                 logger.debug("len of list_of_sccs: " + str(len(list_of_sccs)))
+                
                 list_of_lambdas = []
                 no_loop = []
                 has_a_no_loop_function = False
@@ -1080,9 +1085,15 @@ def bfs(visited, graph, node): #function for BFS
                         print(str(node_index),end=" ") 
                     print()
                     i = i+1
-
+                """
                 current_partition_number += 1
-                scc_graph.clear()
+                #scc_graph.clear()
+                global frontier_groups_sum
+                global frontier_groups
+                print("Debug: frontier groups: " + str(frontier_groups))
+                if frontier_groups > 10:
+                    frontier_groups_sum += frontier_groups
+                frontier_groups = 0
                 #scc_graph = Graph(0)
 #rhc: Q: 
 # - So some nodes are in current_partition. Some of these nodes that are in the 
@@ -1149,6 +1160,7 @@ def bfs(visited, graph, node): #function for BFS
                 logger.debug("dfs_parent("+str(node.ID) + ")_change_in_frontier_size: " + str(dfs_parent_change_in_frontier_size))
                 dfs_parent_changes_in_partiton_size.append(dfs_parent_change_in_partition_size)
                 dfs_parent_changes_in_frontier_size.append(dfs_parent_change_in_frontier_size)
+                frontier_groups += 1
 
                 """
                 # dfs_parent decides whether to queue the node to queue and frontier. 
@@ -1206,9 +1218,9 @@ def input_graph():
     p sp 20 23
     """
     #graph_file = open('100.gr', 'r')
-    graph_file = open('graph_20.gr', 'r')
+    #graph_file = open('graph_20.gr', 'r')
     #graph_file = open('graph_3000.gr', 'r')
-    #graph_file = open('graph_30000.gr', 'r')
+    graph_file = open('graph_30000.gr', 'r')
     count = 0
     file_name_line = graph_file.readline()
     count += 1
@@ -1452,6 +1464,10 @@ def generate_DAG_info(graph_name, nodes):
     collapse = []   # list of task_names of collapsed tasks of T --> collapse, where there will be one succ (pred) edge of T (collapse)
     fanin_sizes = [] # sizes of fanins by position in fanins
     faninNB_sizes = [1] # sizes of faninNBs by position in faninNBs  
+    
+#rhc: No, PageRank needs to generate its outputs by idntifying the dependents and
+    #grouping them by fanout followed by fanins.
+
     fanout1 = [5]
     fanout2 = [1]
     faninNB1 = [17]
@@ -1761,7 +1777,7 @@ for x in partitions:
 print()
 # final frontier shoudl always be empty
 # assert: 
-print("frontiers: (final fronter should be empty), len: " + str(len(frontiers))+":")
+print("frontiers: (final fronter should be empty), len: " + str(len(frontiers)-18)+":")
 for frontier_list in frontiers:
     if PRINT_DETAILED_STATS:
         print("-- (" + str(len(frontier_list)) + "): ",end="")
@@ -1798,16 +1814,18 @@ if PRINT_DETAILED_STATS:
             print(str(x))
             i = 0
         i += 1
-
 print()
+print ("Average number of frontier groups: " + (str(frontier_groups_sum / len(frontiers)-1)))
 print()
 #visualize()
 #input('Press <ENTER> to continue')
+"""
 generate_DAG_info("graph20_DAG", nodes)
 target_nodes = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
 PageRank_main(nodes,target_nodes)
 np_array = get_PageRank_list(nodes)
 print(str(np_array))
+"""
 
 # 1. Check the edges, draw the graph20
 # 2. To do scc, we need nodes in range 0 .. num_vertices-1, so collapse
