@@ -76,7 +76,7 @@ class state_info:
         else:
             dependents_per_faninNB_string = "None"  
         if self.dependents_per_collapse != None:
-            dependents_per_collpase_string = str(self.dependents_per_collpase)
+            dependents_per_collpase_string = str(self.dependents_per_collapse)
         else:
             dependents_per_collpase_string = "None"        
         return (" task: " + self.task_name + ", fanouts:" + fanouts_string + ", fanins:" + fanins_string + ", faninsNB:" + faninNBs_string 
@@ -267,7 +267,7 @@ class Node:
         self.parents = []
         self.children = []
         self.partition = -1
-        self.pagerank = 0
+        self.pagerank = 0.00
         # a list of tuples (frontier, frontier_group) if this is a parent node
         # on the frontier (and so must be sent to its children's partitions).
         # We may send it to multiple chldren in differetn partitions or
@@ -291,7 +291,7 @@ class Node:
     def update_PageRank(self, damping_factor, num_nodes):
         in_nodes = self.parents
         print("update_pagerank: node " + str(self.ID))
-        print("update_pagerank: in_nodes: " + str(in_nodes))
+        print("update_pagerank: parent_nodes: " + str(in_nodes))
         pagerank_sum = sum((nodes[node_index].pagerank / len(nodes[node_index].children)) for node_index in in_nodes)
         print("update_pagerank: pagerank_sum: " + str(pagerank_sum))
         random_jumping = damping_factor / num_nodes
@@ -499,6 +499,7 @@ current_partition_number = 1
 dfs_parent_changes_in_partiton_size = []
 dfs_parent_changes_in_frontier_size = []
 loop_nodes_added = 0
+shadow_nodes_added = 0
 total_loop_nodes_added = 0
 frontier_costs = []
 frontier_cost = []
@@ -661,11 +662,13 @@ def dfs_parent(visited, graph, node):  #function for dfs
     # part of SCC computation
     #node_GraphID = scc_graph.map_nodeID_to_GraphID(node.ID)
 
-    parent_in_previous_partition = False
+    parents_in_previous_partition = False
     # visit parents
+    list_of_parents_in_previous_partition = []
     for parent_index in node.parents:
  
         parent_node = nodes[parent_index]
+        logger.debug("parent_node: " + str(parent_node))
 
         if parent_node.partition_number == -1 or parent_node.partition_number == current_partition_number:
             # parent is not in previous partition, i.e., node is a child of
@@ -673,7 +676,8 @@ def dfs_parent(visited, graph, node):  #function for dfs
             # add edge from parent to node
             logger.debug ("dfs_parent: parent_node.partition_number: " 
                 + str(parent_node.partition_number) 
-                + ", current_partition_number:" + str(current_partition_number))
+                + ", current_partition_number:" + str(current_partition_number)
+                + ", parent_index: " + str(parent_index))
 
             # part of SCC computation
             #parent_GraphID = scc_graph.map_nodeID_to_GraphID(parent_index)
@@ -687,7 +691,9 @@ def dfs_parent(visited, graph, node):  #function for dfs
 
         #else: parent is in previous partition, (must be current_partition - 1)
         else:
-            parent_in_previous_partition = True
+            parents_in_previous_partition = True
+            list_of_parents_in_previous_partition.append(parent_node)
+# rhc: need a list of these parent node IDs so we can add them all?
 
         if parent_node.ID not in visited:
             logger.debug ("dfs_parent visit node " + str(parent_node.ID))
@@ -740,33 +746,37 @@ def dfs_parent(visited, graph, node):  #function for dfs
         if node.partition_number == -1:
             logger.debug ("dfs_parent add " + str(node.ID) + " to partition")
             node.partition_number = current_partition_number
+            logger.debug("set " + str(node.ID) + " partition number to " + str(node.partition_number))
             #current_partition.append(node.ID)
             #rhc: append node 
-            if parent_in_previous_partition:
-                pass # add shadow node first
-                            # index of child just added (we just visited it because it ws an 
-                # unvisited child) to partition
-                child_index = len(current_partition) - 1
-                # shadow node is a parent Node on frontier of previous partition
-                shadow_node = Node(node.ID)
-                shadow_node.isShadowNode = True
-                # insert shadow_node before child (so only shift one)
-                #current_partition.insert(child_index,shadow_node)
+            if parents_in_previous_partition:
+                for parent_node in list_of_parents_in_previous_partition:
+                    # index of child just added (we just visited it because it ws an 
+                    # unvisited child) to partition
+                    child_index = len(current_partition)
+                    # shadow node is a parent Node on frontier of previous partition
+                    shadow_node = Node(parent_node.ID)
+                    shadow_node.isShadowNode = True
+                    # insert shadow_node before child (so only shift one)
+                    #current_partition.insert(child_index,shadow_node)
 
-                current_partition.append(node)
+                    current_partition.append(shadow_node)
+                    global shadow_nodes_added
+                    shadow_nodes_added += 1
 
-                # remember where the frontier_parent node should be placed when the 
-                # partition the PageRank task sends it to receives it. 
-                frontier_parent_tuple = (current_partition_number,frontier_groups,child_index-dfs_parent_start_partition_size)
-                logger.debug ("bfs frontier_parent_tuple: " + str(frontier_parent_tuple))
-                # mark this node as one that PageRank needs to send in its output to the 
-                # next partition (via fanout/faninNB).That is, the fact that list
-                # frontier_parent is not empty indicates it needs to be sent in the 
-                # PageRank output. The tuple indictes which frontier group it should 
-                # be sent to. PageRank may send frontier_parent nodes to mulltiple groups
-                # of multiple partitions
-                nodes[node.ID].frontier_parents.append(frontier_parent_tuple)
-
+                    # remember where the frontier_parent node should be placed when the 
+                    # partition the PageRank task sends it to receives it. 
+                    logger.debug ("frontier_groups: " + str(frontier_groups) + ", child_index: " + str(child_index)
+                        + ", dfs_parent_start_partition_size:" + str(dfs_parent_start_partition_size))
+                    frontier_parent_tuple = (current_partition_number,frontier_groups,child_index-dfs_parent_start_partition_size)
+                    logger.debug ("bfs frontier_parent_tuple: " + str(frontier_parent_tuple))
+                    # mark this node as one that PageRank needs to send in its output to the 
+                    # next partition (via fanout/faninNB).That is, the fact that list
+                    # frontier_parent is not empty indicates it needs to be sent in the 
+                    # PageRank output. The tuple indictes which frontier group it should 
+                    # be sent to. PageRank may send frontier_parent nodes to mulltiple groups
+                    # of multiple partitions
+                    nodes[parent_node.ID].frontier_parents.append(frontier_parent_tuple)
 
             current_partition.append(node)
         else:
@@ -1162,8 +1172,10 @@ def bfs(visited, graph, node): #function for BFS
                 global frontier_groups_sum
                 global frontier_groups
                 print("Debug: frontier groups: " + str(frontier_groups))
-                if frontier_groups > 10:
-                    frontier_groups_sum += frontier_groups
+
+                # use this if to filter the very small numbers of groups
+                #if frontier_groups > 10:
+                frontier_groups_sum += frontier_groups
                 frontier_groups = 0
                 #scc_graph = Graph(0)
 #rhc: Q: 
@@ -1219,8 +1231,12 @@ def bfs(visited, graph, node): #function for BFS
 
                 frontier_groups += 1
                 #dfs_p_new(visited, graph, neighbor)
+                logger.debug("bfs: before dfs_parent: node 4 partition number: " + str(nodes[4].partition_number))
                 dfs_parent(visited, graph, neighbor)
+                logger.debug("bfs: after dfs_parent: node 4 partition number: " + str(nodes[4].partition_number))
+ 
 
+                """
                 # index of child just added (we just visited it because it ws an 
                 # unvisited child) to partition
                 child_index = len(current_partition) - 1
@@ -1240,7 +1256,8 @@ def bfs(visited, graph, node): #function for BFS
                 # be sent to. PageRank may send frontier_parent nodes to mulltiple groups
                 # of multiple partitions
                 nodes[node.ID].frontier_parents.append(frontier_parent_tuple)
-
+                """
+                
                 dfs_parent_end_partition_size = len(current_partition)
                 dfs_parent_end_frontier_size = len(frontier)
                 loop_nodes_added_end = loop_nodes_added
@@ -1748,19 +1765,21 @@ def normalize_PageRank(nodes):
     for node in nodes:
         node.pagerank /= pagerank_sum
 
-def PageRank_one_iter(nodes,partition,damping_factor):
+def PageRank_one_iter(target_nodes,partition,damping_factor):
     for target_node_index in target_nodes:
         nodes[target_node_index].update_PageRank(damping_factor, len(nodes))
+        print("PageRank: target_index isShadowNode: " 
+            + str(nodes[target_node_index].isShadowNode))
     normalize_PageRank(nodes)
 
-def PageRank_main(nodes, partition):
-    print("PageRank: partition is: " + str(partition))
+def PageRank_main(target_nodes, partition):
+    print("PageRank:partition is:" + str(partition))
     damping_factor=0.15
-    iteration=int(10)
+    iteration=int(1)
     for i in range(iteration):
         print("***** PageRank: iteration " + str(i))
         print()
-        PageRank_one_iter(nodes,partition,damping_factor)
+        PageRank_one_iter(target_nodes,partition,damping_factor)
     print("PageRank: partition is: " + str(partition))
 
 # We are using the DAG_excutor routines to execure DAG, like normal.
@@ -1808,7 +1827,7 @@ print("final current_partition length: " + str(len(current_partition)-loop_nodes
 sum_of_partition_lengths = 0
 for x in partitions:
     sum_of_partition_lengths += len(x)
-sum_of_partition_lengths -= total_loop_nodes_added
+sum_of_partition_lengths -= (total_loop_nodes_added + shadow_nodes_added)
 #if (len(current_partition)-loop_nodes_added) != num_nodes
 print("sum_of_partition_lengths (not counting total_loop_nodes_added): " 
     + str(sum_of_partition_lengths))
@@ -1820,7 +1839,7 @@ if sum_of_partition_lengths != num_nodes:
 print()
 
 # adjusting for loop_nodes_added in dfs_p
-sum_of_changes = sum(dfs_parent_changes_in_partiton_size)
+sum_of_changes = sum(dfs_parent_changes_in_partiton_size)-shadow_nodes_added
 avg_change = sum_of_changes / len(dfs_parent_changes_in_partiton_size)
 print("dfs_parent_changes_in_partiton_size length, len: " 
     + str(len(dfs_parent_changes_in_partiton_size)) + ", sum_of_changes: " 
@@ -1912,6 +1931,7 @@ if PRINT_DETAILED_STATS:
             i = 0
         i += 1
 print()
+print()
 if PRINT_DETAILED_STATS:
     print("Nodes:")
     for node in nodes:
@@ -1919,19 +1939,24 @@ if PRINT_DETAILED_STATS:
         for parent_tuple in node.frontier_parents:
             print(str(parent_tuple), end=" ")
         print()
-    else:
-        print("-- (" + str(len(x)) + ")")
-print ("Average number of frontier groups: " + (str(frontier_groups_sum / len(frontiers)-1)))
+else:
+    print("-- (" + str(len(x)) + ")")
+print()
+print("frontier_groups_sum: " + str(frontier_groups_sum) + ", len(frontiers)-1): " 
+    +  str(len(frontiers)-1))
+print("Average number of frontier groups: " + (str(frontier_groups_sum / len(frontiers)-1)))
+print()
 print()
 #visualize()
 #input('Press <ENTER> to continue')
 """
 generate_DAG_info("graph20_DAG", nodes)
+"""
 target_nodes = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
-PageRank_main(nodes,target_nodes)
+PageRank_main(target_nodes,target_nodes)
 np_array = get_PageRank_list(nodes)
 print(str(np_array))
-"""
+
 
 # 1. Check the edges, draw the graph20
 # 2. To do scc, we need nodes in range 0 .. num_vertices-1, so collapse
