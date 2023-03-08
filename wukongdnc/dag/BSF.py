@@ -289,10 +289,10 @@ class Node:
         return self.ID == other.ID
 
     def update_PageRank(self, damping_factor, num_nodes):
-        in_nodes = self.parents
+        parent_nodes = self.parents
         print("update_pagerank: node " + str(self.ID))
-        print("update_pagerank: parent_nodes: " + str(in_nodes))
-        pagerank_sum = sum((nodes[node_index].pagerank / len(nodes[node_index].children)) for node_index in in_nodes)
+        print("update_pagerank: parent_nodes: " + str(parent_nodes))
+        pagerank_sum = sum((nodes[node_index].pagerank / len(nodes[node_index].children)) for node_index in parent_nodes)
         print("update_pagerank: pagerank_sum: " + str(pagerank_sum))
         random_jumping = damping_factor / num_nodes
         print("damping_factor:" + str(damping_factor) + " num_nodes: " + str(num_nodes) + " random_jumping: " + str(random_jumping))
@@ -508,6 +508,19 @@ frontier = []
 all_frontier_costs = []
 frontier_groups_sum = 0
 frontier_groups = 0
+groups = []
+current_group = []
+group_number_in_fronter = 1
+group_names = []
+# map the inex of a node in nodes to its index in its partition group.
+# node i in nodes is in position i. When we place a node in a partition group, 
+# this node is not assumed to be in postion i; nodes are added to the grou
+# one by one using append. We map node i, whch we know is at position i in nodes,
+# to it position in its group. Example node 5 in nodes at position 5 is mapped 
+# to position 0 in group if it's the first node added to the group.
+current_nodes_to_group_map = {}
+# collection of all nodes_to_group_map maps, one fr each group
+nodes_to_group_maps = []
 
 dfs_parent_start_partition_size = 0
 loop_nodes_added_start = 0
@@ -761,6 +774,7 @@ def dfs_parent(visited, graph, node):  #function for dfs
                     #current_partition.insert(child_index,shadow_node)
 
                     current_partition.append(shadow_node)
+                    current_group.append(shadow_node)
                     global shadow_nodes_added
                     shadow_nodes_added += 1
 
@@ -779,6 +793,10 @@ def dfs_parent(visited, graph, node):  #function for dfs
                     nodes[parent_node.ID].frontier_parents.append(frontier_parent_tuple)
 
             current_partition.append(node)
+            current_group.append(node)
+            global current_nodes_to_group_map
+            current_nodes_to_group_map[str(node.ID)] = len(current_partition)-1
+
         else:
             logger.debug ("dfs_parent do not add " + str(node.ID) + " to partition "
                 + current_partition_number + " since it is already in partition " 
@@ -1025,6 +1043,22 @@ def bfs(visited, graph, node): #function for BFS
     #scc_graph.printEdges()
     #scc_graph.clear()
 
+    global current_group
+    global groups
+    groups.append(current_group)
+    current_group = []
+
+    global nodes_to_group_maps
+    global current_nodes_to_group_map
+    nodes_to_group_maps.append(current_nodes_to_group_map)
+    current_nodes_to_group_map = {}
+
+    global current_partition_number
+    global group_number_in_fronter
+    group_name = "PR" + str(current_partition_number) + "_" + str(group_number_in_fronter)
+    # group_number_in_fronter stays at 1 since this is the only group in the frontier_list
+    # partition and thus the first group in the next parttio is also group 1
+    group_names.append(group_name)
 
     dfs_parent_end_partition_size = len(current_partition)
     dfs_parent_end_frontier_size = len(frontier)
@@ -1129,11 +1163,10 @@ def bfs(visited, graph, node): #function for BFS
                 logger.debug("BFS: create sub-partition at end of current frontier")
                 partitions.append(current_partition.copy())
                 current_partition = []
+
                 global total_loop_nodes_added
                 total_loop_nodes_added += loop_nodes_added
                 loop_nodes_added = 0
-                # usin to determine whether parent is in current partition
-                global current_partition_number
 
                 """
                  global scc_graph
@@ -1168,7 +1201,10 @@ def bfs(visited, graph, node): #function for BFS
                     i = i+1
                 #scc_graph.clear()
                 """
+
+                # using this to determine whether parent is in current partition
                 current_partition_number += 1
+                group_number_in_fronter = 1
                 global frontier_groups_sum
                 global frontier_groups
                 print("Debug: frontier groups: " + str(frontier_groups))
@@ -1257,7 +1293,22 @@ def bfs(visited, graph, node): #function for BFS
                 # of multiple partitions
                 nodes[node.ID].frontier_parents.append(frontier_parent_tuple)
                 """
-                
+
+                #global current_group
+                #global groups
+                groups.append(current_group)
+                current_group = []
+                group_name = "PR" + str(current_partition_number) + "_" + str(group_number_in_fronter)
+                group_number_in_fronter += 1
+                group_names.append(group_name)
+
+
+
+                #global nodes_to_group_maps
+                #global current_nodes_to_group_map
+                nodes_to_group_maps.append(current_nodes_to_group_map)
+                current_nodes_to_group_map = {}
+
                 dfs_parent_end_partition_size = len(current_partition)
                 dfs_parent_end_frontier_size = len(frontier)
                 loop_nodes_added_end = loop_nodes_added
@@ -1523,6 +1574,13 @@ if len(current_partition) > 0:
     logger.debug("BFS: create final sub-partition")
     partitions.append(current_partition.copy())
     current_partition = []
+
+    groups.append(current_group)
+    current_group = []
+
+    nodes_to_group_maps.append(current_nodes_to_group_map)
+    current_nodes_to_group_map = {}
+
     #global total_loop_nodes_added
     total_loop_nodes_added += loop_nodes_added
     loop_nodes_added = 0
@@ -1772,6 +1830,10 @@ def PageRank_one_iter(target_nodes,partition,damping_factor):
             + str(nodes[target_node_index].isShadowNode))
     normalize_PageRank(nodes)
 
+#rhc: the actual pagerank will be working on Nodes not node indices?
+# So we need a new PageRank for the DAG execution.
+# The first node will be in position 0? Normally node i is in position i
+# but there is no node 0 so no Node in position 0.
 def PageRank_main(target_nodes, partition):
     print("PageRank:partition is:" + str(partition))
     damping_factor=0.15
@@ -1781,6 +1843,61 @@ def PageRank_main(target_nodes, partition):
         print()
         PageRank_one_iter(target_nodes,partition,damping_factor)
     print("PageRank: partition is: " + str(partition))
+
+"""
+rhc: ToDo: If we add one or more shadow nodes before each dependent node in 
+the partition (where a dependent node is a node whose parent is in the 
+previous partition), we have to either (1) add an if-statement to the 
+pagernk calculation so that we do not calculate the pagerank values for 
+shadow nodes, since we do not want to change the pagerank values of 
+shadow nodes, or (2) we do something to ensure that the value caclulated
+the shadow node is always the same as the original value. For the latter
+case, we would not need an if-statement in the pagerank caclulation which 
+may speed it up. 
+
+Note: This branch would be pretty random and hard to predict
+by the branch_predictor? Also, we can implement the nodes as a strct of
+arrays instead of an array of structs, which minimizes the cache misses
+for nodes. The PageRank calculation instructions are small and should easily
+fit in the i-cache. Pagerank is a loop so we might want to try to make sure
+it is being detected by the Loop Stream Detector aad is small enough to be 
+executd out of the decoded micro-op cache:
+https://www.anandtech.com/show/3922/intels-sandy-bridge-architecture-exposed/2
+or whatever happens in the latest archtectures.
+
+The PageRank code is:
+    parent_nodes = self.parents
+    # for shadow nodes, there is only one node_index and its value is i (see below)
+    pagerank_sum = sum((nodes[node_index].pagerank / len(nodes[node_index].children)) for node_index in in_nodes)
+    random_jumping = damping_factor / num_nodes
+    print("damping_factor:" + str(damping_factor) + " num_nodes: " + str(num_nodes) + " random_jumping: " + str(random_jumping))
+    self.pagerank = random_jumping + (1-damping_factor) * pagerank_sum
+    where nodes is an array of Nodes and node i is strored at nodes[i]
+
+Assume the shadow node index is i and its pagerank value is pr. 
+Set the shadows node's only parent to be parent_index and only child to be itself.
+  The parent_index will be the index of a node that is not in the partition, i.e.,
+  if the partition is nodes 1..20 then the parent_index can be the node at position 21.
+We want the value computed for self.pagerank to always be pr.
+Let the value of random_jumping be j., and the value of (1-damping_factor) be nd.
+Given the statement to compute the value of self.pagerank:
+    self.pagerank = random_jumping + (1-damping_factor) * pagerank_sum,
+this evaluates to 
+    self.pagerank = j + nd * pagerank_sum.
+We want self.pagerank to evaluate to pr. We can only control the value of 
+pagerank_sum, so 
+    pr = j + nd * pagerank_sum ==>  pagerank_sum = (pr - j) / nd.
+Since pagerank_sum is the pagerank value of the shadow node's parent
+divided by 1, we should set the shadow nodes's parent's pagerank value to be 
+(pr - j) / nd. This guarantees that we will always compute a pagerank of pr for
+the shadow node. 
+
+As I mentioned, we can add a parent node for each shadow node at postions just
+past the end of the partition. Since these parent nodes are not in the partition
+their pagerank values will not be changed and thus the shadow node's pagerank
+values will not change.
+
+"""
 
 # We are using the DAG_excutor routines to execure DAG, like normal.
 # PageRank specific actions need to be done by the PageRank task.
@@ -1877,20 +1994,6 @@ if PRINT_DETAILED_STATS:
 #for x in frontier_cost:
 #    print(str(x), end=" ")
 #print()
-print("partitions, len: " + str(len(partitions))+":")
-for x in partitions:
-    if PRINT_DETAILED_STATS:
-        print("-- (" + str(len(x)) + "):", end=" ")
-        for node in x:
-            print(node,end=" ")
-            #if not node.isShadowNode:
-            #    print(str(index),end=" ")
-            #else:
-            #   print(str(index)+"-s",end=" ")
-        print()
-    else:
-        print("-- (" + str(len(x)) + ")")
-print()
 # final frontier shoudl always be empty
 # assert: 
 print("frontiers: (final fronter should be empty), len: " + str(len(frontiers)-18)+":")
@@ -1906,6 +2009,45 @@ for frontier_list in frontiers:
 frontiers_length = len(frontiers)
 if len(frontiers[frontiers_length-1]) != 0:
     print ("Error]: final frontier is not empty.")
+print()
+print("partitions, len: " + str(len(partitions))+":")
+for x in partitions:
+    if PRINT_DETAILED_STATS:
+        print("-- (" + str(len(x)) + "):", end=" ")
+        for node in x:
+            print(node,end=" ")
+            #if not node.isShadowNode:
+            #    print(str(index),end=" ")
+            #else:
+            #   print(str(index)+"-s",end=" ")
+        print()
+    else:
+        print("-- (" + str(len(x)) + ")")
+print()
+print("groups, len: " + str(len(groups))+":")
+for g in groups:
+    if PRINT_DETAILED_STATS:
+        print("-- (" + str(len(g)) + "):", end=" ")
+        for node in g:
+            print(node,end=" ")
+        print()
+    else:
+        print("-- (" + str(len(g)) + ")")
+print()
+print("group names, len: " + str(len(group_names))+":")
+for name in group_names:
+    if PRINT_DETAILED_STATS:
+        print("-- " + name)
+print()
+print("nodes_to_group_maps, len: " + str(len(nodes_to_group_maps))+":")
+for m in nodes_to_group_maps:
+    if PRINT_DETAILED_STATS:
+        print("-- (" + str(len(m)) + "):", end=" ")
+        for k, v in m.items():
+            print((k, v),end=" ")
+        print()
+    else:
+        print("-- (" + str(len(m)) + ")")
 print()
 if PRINT_DETAILED_STATS:
     print("frontier costs (cost=length of frontier), len: " + str(len(frontier_costs))+":")
