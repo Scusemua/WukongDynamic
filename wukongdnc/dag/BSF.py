@@ -266,7 +266,8 @@ class Node:
         self.ID = ID
         self.parents = []
         self.children = []
-        self.partition = -1
+#rhc: ToDo
+        # this will be in Partition_Node not here
         self.pagerank = 0.00
         # a list of tuples (frontier, frontier_group) if this is a parent node
         # on the frontier (and so must be sent to its children's partitions).
@@ -280,13 +281,57 @@ class Node:
         # in the partition. The pagerank value of this node was computer by 
         # the previous parition and sent to this partition so the child in this
         # partition can use it for their pagerank computation.
+#rhc: ToDo
+        # this will be in Partition_Node not here
         self.isShadowNode = False
-#rhc: un
-        # not used
-        #self.unvisited = []
+
+#rhc: ToDo
+    # this will be in Partition_Node not here
+    def update_PageRank(self, damping_factor, num_nodes):
+        parent_nodes = self.parents
+        print("update_pagerank: node " + str(self.ID))
+        print("update_pagerank: parent_nodes: " + str(parent_nodes))
+        pagerank_sum = sum((nodes[node_index].pagerank / len(nodes[node_index].children)) for node_index in parent_nodes)
+        print("update_pagerank: pagerank_sum: " + str(pagerank_sum))
+        random_jumping = damping_factor / num_nodes
+        print("damping_factor:" + str(damping_factor) + " num_nodes: " + str(num_nodes) + " random_jumping: " + str(random_jumping))
+        self.pagerank = random_jumping + (1-damping_factor) * pagerank_sum
+        print ("update_pagerank: pagerank of node: " + str(self.ID) + ": " + str(self.pagerank))
+        print()
+        print()
 
     def __eq__(self,other):
         return self.ID == other.ID
+
+#rhc: ToDo
+    # change this if move shadow node
+    def __str__(self):
+        shadow = ""
+        if self.isShadowNode:
+            shadow = "-s"
+        return str(self.ID) + shadow
+
+class Partition_Node:
+    def __init__(self,ID):
+        #self.partition_number = -1
+        self.ID = ID
+        self.parents = []
+        self.numChildren = 0
+        #self.children = []
+        self.pagerank = 0.00
+        # a list of tuples (frontier, frontier_group) if this is a parent node
+        # on the frontier (and so must be sent to its children's partitions).
+        # We may send it to multiple chldren in differetn partitions or
+        # multiple children in the same partition. For the latter we only 
+        # send one copy to the one partition. 
+        #self.frontier_parents =  []
+        # True if this is a shadow node, i.e., a place holder for the actual
+        # parent node that will be sent (via  fanout/faninNB) to the partition
+        # containing this node. Shadow nodes immediately precede their children
+        # in the partition. The pagerank value of this node was computer by 
+        # the previous parition and sent to this partition so the child in this
+        # partition can use it for their pagerank computation.
+        self.isShadowNode = False
 
     def update_PageRank(self, damping_factor, num_nodes):
         parent_nodes = self.parents
@@ -300,6 +345,9 @@ class Node:
         print ("update_pagerank: pagerank of node: " + str(self.ID) + ": " + str(self.pagerank))
         print()
         print()
+
+    def __eq__(self,other):
+        return self.ID == other.ID
 
     def __str__(self):
         shadow = ""
@@ -510,15 +558,16 @@ frontier_groups_sum = 0
 frontier_groups = 0
 groups = []
 current_group = []
+patch_parent_mapping = []
 group_number_in_fronter = 1
 group_names = []
-# map the inex of a node in nodes to its index in its partition group.
+# map the index of a node in nodes to its index in its partition group.
 # node i in nodes is in position i. When we place a node in a partition group, 
 # this node is not assumed to be in postion i; nodes are added to the grou
 # one by one using append. We map node i, whch we know is at position i in nodes,
 # to it position in its group. Example node 5 in nodes at position 5 is mapped 
 # to position 0 in group if it's the first node added to the group.
-current_nodes_to_group_map = {}
+nodeIndex_to_partitionIndex_map = {}
 # collection of all nodes_to_group_map maps, one fr each group
 nodes_to_group_maps = []
 
@@ -768,13 +817,17 @@ def dfs_parent(visited, graph, node):  #function for dfs
                     # unvisited child) to partition
                     child_index = len(current_partition)
                     # shadow node is a parent Node on frontier of previous partition
-                    shadow_node = Node(parent_node.ID)
+                    #shadow_node = Node(parent_node.ID)
+                    shadow_node = Partition_Node(parent_node.ID)
                     shadow_node.isShadowNode = True
                     # insert shadow_node before child (so only shift one)
                     #current_partition.insert(child_index,shadow_node)
 
                     current_partition.append(shadow_node)
                     current_group.append(shadow_node)
+
+                    global nodeIndex_to_partitionIndex_map
+                    nodeIndex_to_partitionIndex_map[shadow_node.ID] = len(current_partition)-1
                     global shadow_nodes_added
                     shadow_nodes_added += 1
 
@@ -792,10 +845,31 @@ def dfs_parent(visited, graph, node):  #function for dfs
                     # of multiple partitions
                     nodes[parent_node.ID].frontier_parents.append(frontier_parent_tuple)
 
-            current_partition.append(node)
-            current_group.append(node)
-            global current_nodes_to_group_map
-            current_nodes_to_group_map[str(node.ID)] = len(current_partition)-1
+            partition_node = Partition_Node(node.ID)
+            partition_node.ID = node.ID
+            
+            for parent in node.parents:
+                new_index = nodeIndex_to_partitionIndex_map.get(parent)
+                if new_index != None:
+                    partition_node.parents.append(new_index)
+                else:
+                    # going to do this partition_node when the group
+                    # has finished and all parents hve been mapped.
+                    partition_node.parents = []
+                    patch_parent_mapping.append(partition_node)
+            #partition_node.parents = node.parents
+            
+            partition_node.num_children = len(node.children)
+            # these are the default values so we do not need these assignments 
+            partition_node.pagerank = 0.0
+            partition_node.isShadowNode = False
+
+            #current_partition.append(node)
+            #current_group.append(node)
+            current_partition.append(partition_node)
+            current_group.append(partition_node)
+
+            nodeIndex_to_partitionIndex_map[partition_node.ID] = len(current_partition)-1
 
         else:
             logger.debug ("dfs_parent do not add " + str(node.ID) + " to partition "
@@ -927,7 +1001,33 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
                 if node.partition_number == -1:
                     logger.debug ("dfs_parent add " + str(node.ID) + " to partition")
                     node.partition_number = current_partition_number
-                    current_partition.append(node.ID)
+
+                    partition_node = Partition_Node(node.ID)
+                    partition_node.ID = node.ID
+                    # The parents of node must already be in the partition and thus
+                    # in the nodeIndex_to_partitionIndex_map
+                    """
+                    global nodeIndex_to_partitionIndex_map
+                    for parent in node.parents:
+                        new_index = nodeIndex_to_partitionIndex_map.get(parent)
+                        if new_index != None:
+                            partition_node.parents.append(new_index)
+                        else:
+                            patch_parent_mapping.append(partition_node)
+                    #partition_node.parents = node.parents
+                    """
+                    partition_node.num_children = len(node.children)
+                    # these are the default values so we do not need these assignments 
+                    partition_node.pagerank = 0.0
+                    partition_node.isShadowNode = False
+
+                    #current_partition.append(node.ID)
+                    current_partition.append(partition_node)
+                    current_group.append(partition_node)
+
+                    global nodeIndex_to_partitionIndex_map
+                    nodeIndex_to_partitionIndex_map[partition_node.ID] = len(current_partition)-1
+
                 else:
                     logger.debug ("dfs_parent do not add " + str(node.ID) + " to partition "
                         + current_partition_number + " since it is already in partition " 
@@ -935,7 +1035,24 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
                 if unvisited_child.partition_number == -1:
                     logger.debug ("dfs_parent add " + str(unvisited_child.ID) + " to partition")
                     unvisited_child.partition_number = current_partition_number
-                    current_partition.append(unvisited_child.ID)
+
+                    partition_node = Partition_Node(unvisited_child.ID)
+                    partition_node.ID = unvisited_child.ID
+                    """
+                    for parent in unvisited_child.parents:
+                        partition_node.parents.append(nodeIndex_to_partitionIndex_map[parent])
+                    #partition_node.parents = unvisited_child.parents
+                    """
+                    partition_node.num_children = len(unvisited_child.children)
+                    # these are the default values so we do not need these assignments 
+                    partition_node.pagerank = 0.0
+                    partition_node.isShadowNode = False
+
+                    #current_partition.append(unvisited_child.ID)
+                    current_partition.append(partition_node)
+                    current_group.append(partition_node)
+
+                    nodeIndex_to_partitionIndex_map[partition_node.ID] = len(current_partition)-1
                 else:
                     # assert: this is an Error
                     logger.debug ("dfs_parent do not add " + str(unvisited_child.ID) + " to partition "
@@ -965,7 +1082,26 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
                 if node.partition_number == -1:
                     logger.debug ("dfs_parent add " + str(node.ID) + " to partition")
                     node.partition_number = current_partition_number
-                    current_partition.append(node.ID)
+
+                    partition_node = Partition_Node(node.ID)
+                    partition_node.ID = node.ID
+                    """
+                    for parent in node.parents:
+                        partition_node.parents.append(nodeIndex_to_partitionIndex_map[parent])
+                    #partition_node.parents = node.parents
+                    """
+                    partition_node.num_children = len(node.children)
+                    # these are the default values so we do not need these assignments 
+                    partition_node.pagerank = 0.0
+                    partition_node.isShadowNode = False
+                    
+                    #current_partition.append(node.ID)
+                    current_partition.append(partition_node)
+                    current_group.append(partition_node)
+
+                    nodeIndex_to_partitionIndex_map[partition_node.ID] = len(current_partition)-1
+
+
                 else:
                     logger.debug ("dfs_parent do not add " + str(node.ID) + " to partition "
                         + current_partition_number + " since it is already in partition " 
@@ -993,7 +1129,25 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
                 if node.partition_number == -1:
                     logger.debug ("dfs_parent add " + str(node.ID) + " to partition")
                     node.partition_number = current_partition_number
-                    current_partition.append(node.ID)
+
+                    partition_node = Partition_Node(node.ID)
+                    partition_node.ID = node.ID
+                    """
+                    for parent in node.parents:
+                        partition_node.parents.append(nodeIndex_to_partitionIndex_map[parent])
+                    #partition_node.parents = node.parents
+                    """
+                    partition_node.num_children = len(node.children)
+                    # these are the default values so we do not need these assignments 
+                    partition_node.pagerank = 0.0
+                    partition_node.isShadowNode = False
+
+                    #current_partition.append(node.ID)
+                    current_partition.append(partition_node)
+                    current_group.append(partition_node)
+
+                    nodeIndex_to_partitionIndex_map[partition_node.ID] = len(current_partition)-1
+
                 else:
                     logger.debug ("dfs_parent do not add " + str(node.ID) + " to partition "
                         + current_partition_number + " since it is already in partition " 
@@ -1004,7 +1158,27 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
         if node.partition_number == -1:
             logger.debug("dfs_parent add " + str(node.ID) + " to partition")
             node.partition_number = current_partition_number
-            current_partition.append(node.ID)
+
+
+            partition_node = Partition_Node(node.ID)
+            partition_node.ID = node.ID
+            """
+            for parent in node.parents:
+                partition_node.parents.append(nodeIndex_to_partitionIndex_map[parent])
+            #partition_node.parents = node.parents
+            """
+            partition_node.num_children = len(node.children)
+            # these are the default values so we do not need these assignments 
+            partition_node.pagerank = 0.0
+            partition_node.isShadowNode = False
+
+            #current_partition.append(node.ID)
+            current_partition.append(partition_node)
+            current_group.append(partition_node)
+
+            nodeIndex_to_partitionIndex_map[partition_node.ID] = len(current_partition)-1
+
+
         else:
             logger.debug("dfs_parent do not add " + str(node.ID) + " to partition "
                 + current_partition_number + " since it is already in partition " 
@@ -1049,9 +1223,9 @@ def bfs(visited, graph, node): #function for BFS
     current_group = []
 
     global nodes_to_group_maps
-    global current_nodes_to_group_map
-    nodes_to_group_maps.append(current_nodes_to_group_map)
-    current_nodes_to_group_map = {}
+    global nodeIndex_to_partitionIndex_map
+    nodes_to_group_maps.append(nodeIndex_to_partitionIndex_map)
+    nodeIndex_to_partitionIndex_map = {}
 
     global current_partition_number
     global group_number_in_fronter
@@ -1164,12 +1338,26 @@ def bfs(visited, graph, node): #function for BFS
                 partitions.append(current_partition.copy())
                 current_partition = []
 
+                global patch_parent_mapping
+                logger.debug("XXXXXXXXXXXXXXXXXXXxXX partition_nodes to patch: ")
+                for partition_node in patch_parent_mapping:
+                    logger.debug(str(partition_node.ID) + "," )
+                patch_parent_mapping = []
+
+#rhc: ToDo: where this goes is based on option:  
+#rhc: issue: Did this (already above) so do it here not above if gonf to 
+# leave this here? Or if group then do it above, but not here since above
+# is a group, and when do group, but if partition then do it here and not above 
+# and not when do group.              
+                nodes_to_group_maps.append(nodeIndex_to_partitionIndex_map)
+                nodeIndex_to_partitionIndex_map = {}
+
                 global total_loop_nodes_added
                 total_loop_nodes_added += loop_nodes_added
                 loop_nodes_added = 0
 
                 """
-                 global scc_graph
+                global scc_graph
                 scc_graph.printEdges()
                 scc_graph.print_ID_map()
                 logger.debug("SCCs (node IDs):")
@@ -1303,11 +1491,11 @@ def bfs(visited, graph, node): #function for BFS
                 group_names.append(group_name)
 
 
-
+#rhc: ToDo: where this goes is based on option:
                 #global nodes_to_group_maps
                 #global current_nodes_to_group_map
-                nodes_to_group_maps.append(current_nodes_to_group_map)
-                current_nodes_to_group_map = {}
+                #nodes_to_group_maps.append(nodeIndex_to_partitionIndex_map)
+                #nodeIndex_to_partitionIndex_map = {}
 
                 dfs_parent_end_partition_size = len(current_partition)
                 dfs_parent_end_frontier_size = len(frontier)
@@ -1578,8 +1766,8 @@ if len(current_partition) > 0:
     groups.append(current_group)
     current_group = []
 
-    nodes_to_group_maps.append(current_nodes_to_group_map)
-    current_nodes_to_group_map = {}
+    nodes_to_group_maps.append(nodeIndex_to_partitionIndex_map)
+    nodeIndex_to_partitionIndex_map = {}
 
     #global total_loop_nodes_added
     total_loop_nodes_added += loop_nodes_added
@@ -2039,7 +2227,7 @@ for name in group_names:
     if PRINT_DETAILED_STATS:
         print("-- " + name)
 print()
-print("nodes_to_group_maps, len: " + str(len(nodes_to_group_maps))+":")
+print("nodes_to_group_maps (no shadow nodes), len: " + str(len(nodes_to_group_maps))+":")
 for m in nodes_to_group_maps:
     if PRINT_DETAILED_STATS:
         print("-- (" + str(len(m)) + "):", end=" ")
@@ -2094,11 +2282,12 @@ print()
 """
 generate_DAG_info("graph20_DAG", nodes)
 """
+"""
 target_nodes = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
 PageRank_main(target_nodes,target_nodes)
 np_array = get_PageRank_list(nodes)
 print(str(np_array))
-
+"""
 
 # 1. Check the edges, draw the graph20
 # 2. To do scc, we need nodes in range 0 .. num_vertices-1, so collapse
