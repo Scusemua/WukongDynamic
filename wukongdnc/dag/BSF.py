@@ -262,7 +262,7 @@ graph = {
 
 class Node:
     def __init__(self,ID):
-        self.partition_number = -1
+        #self.partition_number = -1
         self.ID = ID
         self.parents = []
         self.children = []
@@ -313,7 +313,8 @@ class Node:
 
 class Partition_Node:
     def __init__(self,ID):
-        #self.partition_number = -1
+        self.partition_number = -1
+        self.group_number = -1
         self.ID = ID
         self.parents = []
         self.numChildren = 0
@@ -321,10 +322,10 @@ class Partition_Node:
         self.pagerank = 0.00
         # a list of tuples (frontier, frontier_group) if this is a parent node
         # on the frontier (and so must be sent to its children's partitions).
-        # We may send it to multiple chldren in differetn partitions or
+        # We may send it to multiple chldren in different partitions or
         # multiple children in the same partition. For the latter we only 
         # send one copy to the one partition. 
-        #self.frontier_parents =  []
+        self.frontier_parents =  []
         # True if this is a shadow node, i.e., a place holder for the actual
         # parent node that will be sent (via  fanout/faninNB) to the partition
         # containing this node. Shadow nodes immediately precede their children
@@ -332,6 +333,7 @@ class Partition_Node:
         # the previous parition and sent to this partition so the child in this
         # partition can use it for their pagerank computation.
         self.isShadowNode = False
+        # Note: can't be a shadow node and have a non-empty frontier_parents
 
     def update_PageRank(self, damping_factor, num_nodes):
         parent_nodes = self.parents
@@ -559,17 +561,30 @@ frontier_groups = 0
 groups = []
 current_group = []
 patch_parent_mapping = []
-group_number_in_fronter = 1
+current_group_number = 1
 group_names = []
-# map the index of a node in nodes to its index in its partition group.
-# node i in nodes is in position i. When we place a node in a partition group, 
-# this node is not assumed to be in postion i; nodes are added to the grou
+# map the index of a node in nodes to its index in its partition.
+# node i in nodes is in position i. When we place a node in a partition, 
+# this node is not assumed to be in postion i; nodes are added to the partition
 # one by one using append. We map node i, whch we know is at position i in nodes,
-# to it position in its group. Example node 5 in nodes at position 5 is mapped 
-# to position 0 in group if it's the first node added to the group.
+# to its position in its partition. Example node 25 in nodes at position 25 is mapped 
+# to position 4 in its partition.
 nodeIndex_to_partitionIndex_map = {}
 # collection of all nodes_to_group_map maps, one fr each group
 nodes_to_group_maps = []
+# map a noe to its partition number, partition index, group number ans group index.
+# A "global map"for nodes. May supercede nodeIndex_to_partitionIndex_map. We need
+# a nodes position in its partition if we map partitions to functions and we need
+# a nodes position in its group if we map groups to functions. This map supports
+# both partition mapping and group mapping.
+# Q: We can remove the nodes in Pi from this map after we have finished 
+# computing Pi+1 since we will no longer need to know this info for 
+# the nodes in Pi? We may want to remove these nodes to free the space.
+# Note: If a node is in Pi+1 all of its parents are in Pi+1 or Pi,
+# by definition, since Pi+1 contains all the children of Pi and
+# all of the parents (actually, ancestor) of these Pi+1 nodes that 
+# are not in Pi.
+nodeIndex_to_partition_partitionIndex_group_groupIndex_map = {}
 
 dfs_parent_start_partition_size = 0
 loop_nodes_added_start = 0
@@ -733,9 +748,24 @@ def dfs_parent(visited, graph, node):  #function for dfs
         logger.debug("parent_node: " + str(parent_node))
 
         if parent_node.partition_number == -1 or parent_node.partition_number == current_partition_number:
-            # parent is not in previous partition, i.e., node is a child of
-            # a parent node that was in previous partition
-            # add edge from parent to node
+            # parent is not in previous partition, i.e., node is not a child of
+            # a parent node that was in previous partition. This means
+            # parent is in this partition and it is either in the same 
+            # group as node or it is in a different group, which was computed
+            # previously.
+            #
+            # If parent is in the same group then we do not need shadow nodes;
+            # otherwise, we need shadow_nodes just like the case in which the
+            # parent is in a different partition, which is like saying that 
+            # the parent is in a group of a different partition, but we presumably
+            # are not tracking groups, just partitions.
+            #
+            # The parent is in a different group if: it has a different group
+            # number. Either have to look in the global node to partition/group
+            # map or have a group_number member of Node.
+
+
+
             logger.debug ("dfs_parent: parent_node.partition_number: " 
                 + str(parent_node.partition_number) 
                 + ", current_partition_number:" + str(current_partition_number)
@@ -743,6 +773,7 @@ def dfs_parent(visited, graph, node):  #function for dfs
 
             # part of SCC computation
             #parent_GraphID = scc_graph.map_nodeID_to_GraphID(parent_index)
+            # add edge from parent to node
             #scc_graph.addEdge(parent_GraphID, node_GraphID)
             #logger.debug ("dfs_parent add (unmapped) edge: " + str(parent_index) + "," + str(node.ID))
             #logger.debug ("dfs_parent add (mapped) edge: " + str(parent_GraphID) + "," + str(node_GraphID))
@@ -828,6 +859,13 @@ def dfs_parent(visited, graph, node):  #function for dfs
 
                     global nodeIndex_to_partitionIndex_map
                     nodeIndex_to_partitionIndex_map[shadow_node.ID] = len(current_partition)-1
+                    #N ote: We do not add shadow_node to the 
+                    # X map. But shadw_node IDs should be mapped to their positions
+                    # when we are computing the group since f the shadow node
+                    # is a parent of node n then n.parents are remapped to their 
+                    # position in the group and one of n's parents will be the shadow
+                    # node so we need its position in the group.
+                  
                     global shadow_nodes_added
                     shadow_nodes_added += 1
 
@@ -843,11 +881,14 @@ def dfs_parent(visited, graph, node):  #function for dfs
                     # PageRank output. The tuple indictes which frontier group it should 
                     # be sent to. PageRank may send frontier_parent nodes to mulltiple groups
                     # of multiple partitions
+#rhc: ToDo: This should not be nodes, it should be in the partition/group
                     nodes[parent_node.ID].frontier_parents.append(frontier_parent_tuple)
 
             partition_node = Partition_Node(node.ID)
             partition_node.ID = node.ID
-            
+
+#rhc: Todo: Can we do this as part of for each parent loop?
+# instead of looping again.
             for parent in node.parents:
                 new_index = nodeIndex_to_partitionIndex_map.get(parent)
                 if new_index != None:
@@ -863,6 +904,7 @@ def dfs_parent(visited, graph, node):  #function for dfs
             # these are the default values so we do not need these assignments 
             partition_node.pagerank = 0.0
             partition_node.isShadowNode = False
+            partition_node.frontier_parents = []
 
             #current_partition.append(node)
             #current_group.append(node)
@@ -870,6 +912,14 @@ def dfs_parent(visited, graph, node):  #function for dfs
             current_group.append(partition_node)
 
             nodeIndex_to_partitionIndex_map[partition_node.ID] = len(current_partition)-1
+
+            global nodeIndex_to_partition_partitionIndex_group_groupIndex_map
+            partition_number = current_partition_number
+            partition_index = len(current_partition)-1
+            group_number = current_group_number
+            group_index = len(current_group)-1
+            pg_tuple = (partition_number,partition_index,group_number,group_index)
+            nodeIndex_to_partition_partitionIndex_group_groupIndex_map[partition_node.ID] = pg_tuple
 
         else:
             logger.debug ("dfs_parent do not add " + str(node.ID) + " to partition "
@@ -1020,6 +1070,7 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
                     # these are the default values so we do not need these assignments 
                     partition_node.pagerank = 0.0
                     partition_node.isShadowNode = False
+                    partition_node.frontier_parents = []
 
                     #current_partition.append(node.ID)
                     current_partition.append(partition_node)
@@ -1027,6 +1078,14 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
 
                     global nodeIndex_to_partitionIndex_map
                     nodeIndex_to_partitionIndex_map[partition_node.ID] = len(current_partition)-1
+
+                    global nodeIndex_to_partition_partitionIndex_group_groupIndex_map
+                    partition_number = current_partition_number
+                    partition_index = len(current_partition)-1
+                    group_number = current_group_number
+                    group_index = len(current_group)-1
+                    pg_tuple = (partition_number,partition_index,group_number,group_index)
+                    nodeIndex_to_partition_partitionIndex_group_groupIndex_map[partition_node.ID] = pg_tuple
 
                 else:
                     logger.debug ("dfs_parent do not add " + str(node.ID) + " to partition "
@@ -1047,12 +1106,21 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
                     # these are the default values so we do not need these assignments 
                     partition_node.pagerank = 0.0
                     partition_node.isShadowNode = False
+                    partition_node.frontier_parents = []
 
                     #current_partition.append(unvisited_child.ID)
                     current_partition.append(partition_node)
                     current_group.append(partition_node)
 
                     nodeIndex_to_partitionIndex_map[partition_node.ID] = len(current_partition)-1
+                    
+                    partition_number = current_partition_number
+                    partition_index = len(current_partition)-1
+                    group_number = current_group_number
+                    group_index = len(current_group)-1
+                    pg_tuple = (partition_number,partition_index,group_number,group_index)
+                    nodeIndex_to_partition_partitionIndex_group_groupIndex_map[partition_node.ID] = pg_tuple
+
                 else:
                     # assert: this is an Error
                     logger.debug ("dfs_parent do not add " + str(unvisited_child.ID) + " to partition "
@@ -1094,6 +1162,7 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
                     # these are the default values so we do not need these assignments 
                     partition_node.pagerank = 0.0
                     partition_node.isShadowNode = False
+                    partition_node.frontier_parents = []
                     
                     #current_partition.append(node.ID)
                     current_partition.append(partition_node)
@@ -1101,6 +1170,12 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
 
                     nodeIndex_to_partitionIndex_map[partition_node.ID] = len(current_partition)-1
 
+                    partition_number = current_partition_number
+                    partition_index = len(current_partition)-1
+                    group_number = current_group_number
+                    group_index = len(current_group)-1
+                    pg_tuple = (partition_number,partition_index,group_number,group_index)
+                    nodeIndex_to_partition_partitionIndex_group_groupIndex_map[partition_node.ID] = pg_tuple
 
                 else:
                     logger.debug ("dfs_parent do not add " + str(node.ID) + " to partition "
@@ -1141,12 +1216,21 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
                     # these are the default values so we do not need these assignments 
                     partition_node.pagerank = 0.0
                     partition_node.isShadowNode = False
+                    partition_node.frontier_parents = []
 
                     #current_partition.append(node.ID)
                     current_partition.append(partition_node)
                     current_group.append(partition_node)
 
                     nodeIndex_to_partitionIndex_map[partition_node.ID] = len(current_partition)-1
+
+                    partition_number = current_partition_number
+                    partition_index = len(current_partition)-1
+                    group_number = current_group_number
+                    group_index = len(current_group)-1
+                    pg_tuple = (partition_number,partition_index,group_number,group_index)
+                    nodeIndex_to_partition_partitionIndex_group_groupIndex_map[partition_node.ID] = pg_tuple
+
 
                 else:
                     logger.debug ("dfs_parent do not add " + str(node.ID) + " to partition "
@@ -1171,6 +1255,7 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
             # these are the default values so we do not need these assignments 
             partition_node.pagerank = 0.0
             partition_node.isShadowNode = False
+            partition_node.frontier_parents = []
 
             #current_partition.append(node.ID)
             current_partition.append(partition_node)
@@ -1178,6 +1263,13 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
 
             nodeIndex_to_partitionIndex_map[partition_node.ID] = len(current_partition)-1
 
+
+            partition_number = current_partition_number
+            partition_index = len(current_partition)-1
+            group_number = current_group_number
+            group_index = len(current_group)-1
+            pg_tuple = (partition_number,partition_index,group_number,group_index)
+            nodeIndex_to_partition_partitionIndex_group_groupIndex_map[partition_node.ID] = pg_tuple
 
         else:
             logger.debug("dfs_parent do not add " + str(node.ID) + " to partition "
@@ -1228,8 +1320,8 @@ def bfs(visited, graph, node): #function for BFS
     nodeIndex_to_partitionIndex_map = {}
 
     global current_partition_number
-    global group_number_in_fronter
-    group_name = "PR" + str(current_partition_number) + "_" + str(group_number_in_fronter)
+    global current_group_number
+    group_name = "PR" + str(current_partition_number) + "_" + str(current_group_number)
     # group_number_in_fronter stays at 1 since this is the only group in the frontier_list
     # partition and thus the first group in the next parttio is also group 1
     group_names.append(group_name)
@@ -1392,7 +1484,7 @@ def bfs(visited, graph, node): #function for BFS
 
                 # using this to determine whether parent is in current partition
                 current_partition_number += 1
-                group_number_in_fronter = 1
+                current_group_number = 1
                 global frontier_groups_sum
                 global frontier_groups
                 print("Debug: frontier groups: " + str(frontier_groups))
@@ -1486,8 +1578,8 @@ def bfs(visited, graph, node): #function for BFS
                 #global groups
                 groups.append(current_group)
                 current_group = []
-                group_name = "PR" + str(current_partition_number) + "_" + str(group_number_in_fronter)
-                group_number_in_fronter += 1
+                group_name = "PR" + str(current_partition_number) + "_" + str(current_group_number)
+                current_group_number += 1
                 group_names.append(group_name)
 
 
@@ -2276,6 +2368,14 @@ print("frontier_groups_sum: " + str(frontier_groups_sum) + ", len(frontiers)-1):
     +  str(len(frontiers)-1))
 print("Average number of frontier groups: " + (str(frontier_groups_sum / len(frontiers)-1)))
 print()
+print("nodeIndex_to_partition_partitionIndex_group_groupIndex_map, len: " + str(len(nodeIndex_to_partition_partitionIndex_group_groupIndex_map)) + ":")
+print("shadow nodes not mapped and not shown")
+if PRINT_DETAILED_STATS:
+    for k, v in nodeIndex_to_partition_partitionIndex_group_groupIndex_map.items():
+        print((k, v))
+    print()
+else:
+    print("-- (" + str(len(nodeIndex_to_partition_partitionIndex_group_groupIndex_map)) + ")")
 print()
 #visualize()
 #input('Press <ENTER> to continue')
