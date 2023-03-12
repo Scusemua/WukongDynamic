@@ -933,7 +933,7 @@ def dfs_parent(visited, graph, node):  #function for dfs
                     # work for both partitions and groups? Just ignore group
                     # number if using partitions? (when forming function names)
                     # Or just use group number of 0 when using partitions?
-                    current_group.append(copy.copy(shadow_node))
+                    current_group.append(copy.deepcopy(shadow_node))
 
                     global nodeIndex_to_partitionIndex_map
                     global nodeIndex_to_groupIndex_map
@@ -1103,7 +1103,7 @@ def dfs_parent(visited, graph, node):  #function for dfs
             #current_partition.append(node)
             #current_group.append(node)
             current_partition.append(partition_node)
-            current_group.append(copy.copy(partition_node))
+            current_group.append(copy.deepcopy(partition_node))
 
             nodeIndex_to_partitionIndex_map[partition_node.ID] = len(current_partition)-1
             nodeIndex_to_groupIndex_map[partition_node.ID] = len(current_partition)-1
