@@ -104,6 +104,11 @@ class Graph:
         self.scc_GraphID_to_NodeID_map = {}
         self.next_scc_ID = 0
 
+    # We need nodes in range 0 .. num_vertices-1, so collapse node IDs.
+    # node.ID mapped to next as you see the nodes, with another map to get 
+    # back to original IDs, map(next,node.ID). Then the SCC is a set of ids 
+    # x, y, ... where the actual node IDs are map(x) and map(y). Map back
+    # before printing the scc's.
     def map_nodeID_to_GraphID(self,ID):
         if ID not in self.scc_NodeID_to_GraphID_map:
             Graph_ID = self.next_scc_ID
@@ -157,109 +162,6 @@ class Graph:
         self.scc_NodeID_to_GraphID_map = {}
         self.scc_GraphID_to_NodeID_map = {}
         self.next_scc_ID = 0
-
-    """
-    A recursive function that find finds and prints strongly connected
-    components using DFS traversal
-    u --> The vertex to be visited next
-    disc[] --> Stores discovery times of visited vertices
-    low[] -- >> earliest visited vertex (the vertex with minimum
-                discovery time) that can be reached from subtree
-                rooted with current vertex
-    st -- >> To store all the connected ancestors (could be part
-        of SCC)
-    stackMember[] --> bit/index array for faster check whether
-                a node is in stack
-    """
-
-    def SCCUtil(self, u, low, disc, stackMember, st, list_of_sccs):
-        # added list_of_sccs
-
-        # Initialize discovery time and low value
-        disc[u] = self.Time
-        low[u] = self.Time
-        self.Time += 1
-        stackMember[u] = True
-        st.append(u)
-
-        # Go through all vertices adjacent to this
-        for v in self.graph[u]:
-            # added for debug
-            #print("v: " + str(v))
-            # If v is not visited yet, then recur for it
-            if disc[v] == -1:
-
-                self.SCCUtil(v, low, disc, stackMember, st, list_of_sccs)
-
-                # Check if the subtree rooted with v has a connection to
-                # one of the ancestors of u
-                # Case 1 (per above discussion on Disc and Low value)
-                low[u] = min(low[u], low[v])
-
-            elif stackMember[v] == True:
-
-                '''Update low value of 'u' only if 'v' is still in stack
-                (i.e. it's a back edge, not cross edge).
-                Case 2 (per above discussion on Disc and Low value) '''
-                low[u] = min(low[u], disc[v])
-
-        # head node found, pop the stack and print an SCC
-
-        w = -1 # To store stack extracted vertices
-        if low[u] == disc[u]:
-            one_scc = []
-            while w != u:
-                w = st.pop()
-                # added: if this is a call from BFS then remap back to Node IDs
-                global USING_BFS
-                if USING_BFS:
-                    ID = self.get_nodeID_from_GraphID(w)
-                    print(ID, end=" ")
-                    one_scc.append(ID)
-                else:
-                    print(w, end=" ")
-
-                stackMember[w] = False
-                
-
-            print()
-            if USING_BFS:
-                list_of_sccs.append(one_scc)
-
-    # The function to do DFS traversal.
-    # It uses recursive SCCUtil()
-
-    def SCC(self):
-
-        # Mark all the vertices as not visited
-        # and Initialize parent and visited,
-        # and ap(articulation point) arrays
-        # added for debug
-        #print("SCC: V:" + str(self.V))
-        disc = [-1] * (self.V)
-        low = [-1] * (self.V)
-        stackMember = [False] * (self.V)
-        st = []
-        #added
-        list_of_sccs = []
-
-        # Call the recursive helper function
-        # to find articulation points
-        # in DFS tree rooted with vertex 'i'
-        for i in range(self.V):
-            if disc[i] == -1:
-                self.SCCUtil(i, low, disc, stackMember, st, list_of_sccs)
-
-        return list_of_sccs
-
-graph = {
-  '5' : ['3','7'],
-  '3' : ['2', '4'],
-  '7' : ['8'],
-  '2' : [],
-  '4' : ['8'],
-  '8' : []
-}
 
 class Node:
     def __init__(self,ID):
@@ -359,62 +261,7 @@ class Partition_Node:
             shadow = "-s"
         return str(self.ID) + shadow
 
-
-
-"""
-N5 = Node(5)
-N3 = Node(3)
-N7 = Node(7)
-N2 = Node(2)
-N4 = Node(4)
-N8 = Node(8)
-N9 = Node(9)
-
-#N5.ID = 5
-N5.children = [N3,N7]
-N5.parents = []
-
-#N3.ID = 3
-N3.children = [N2,N4]
-N3.parents = [N5,N9]
-
-#N7.ID = 7
-N7.children = [N8]
-N7.parents = [N5]
-
-#N2.ID = 2
-N2.children = [N9]
-N2.parents = [N3]
-
-#N4.ID = 4
-N4.children = [N8]
-N4.parents = [N3]
-
-#N8.ID = 8
-N8.children = []
-N8.parents = [N7,N4]
-
-#N9.ID = 9
-N9.children = [N3,N5]
-N9.parents = [N2]
-"""
-
 nodes = []
-
-"""
-N1 = Node(1)
-N2= Node(2)
-N3 = Node(3)
-N4 = Node(4)
-N5 = Node(5)
-N6 = Node(6)
-N7 = Node(7)
-N8 = Node(8)
-N9 = Node(9)
-N10 = Node(10)
-N11 = Node(11)
-N12 = Node(12)
-"""
 
 num_nodes = 0
 num_edges = 0
@@ -705,7 +552,8 @@ def dfs_parent_pre_parent_traversal(node,visited,list_of_unvisited_children):
     
     return check_list_of_unvisited_chldren_after_visiting_parents
 
-def dfs_parent(visited, graph, node):  #function for dfs 
+#def dfs_parent(visited, graph, node):  #function for dfs 
+def dfs_parent(visited, node):  #function for dfs 
     # e.g. dfs(3) where bfs is visiting 3 as a child of enqueued node
     # so 3 is not visited yet
     logger.debug ("dfs_parent from node " + str(node.ID))
@@ -859,7 +707,16 @@ def dfs_parent(visited, graph, node):  #function for dfs
 
         if parent_node.ID not in visited:
             logger.debug ("dfs_parent visit node " + str(parent_node.ID))
-            dfs_parent(visited, graph, parent_node)
+            #dfs_parent(visited, graph, parent_node)
+            dfs_parent(visited, 
+            
+            
+            
+            
+            
+            
+            
+            parent_node)
         else:
             # loop detected - mark this loop in partition (for debugging for now)
             logger.debug ("dfs_parent neighbor " + str(parent_node.ID) + " already visited")
@@ -1512,7 +1369,8 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
                 + current_partition_number + " since it is already in partition " 
                 + node.partition_number)
 
-def bfs(visited, graph, node): #function for BFS
+#def bfs(visited, graph, node): #function for BFS
+def bfs(visited, node): #function for BFS
     logger.debug ("bfs mark " + str(node.ID) + " as visited and add to queue")
     #rhc: add to visited is done in dfs_parent
     #visited.append(node.ID)
@@ -1541,7 +1399,8 @@ def bfs(visited, graph, node): #function for BFS
     queue.append(-1)
     #global scc_num_vertices
     #scc_num_vertices += 1
-    dfs_parent(visited, graph, node)
+    #dfs_parent(visited, graph, node)
+    dfs_parent(visited, node)
     #logger.debug("BFS set V to " + str(scc_num_vertices))
     #scc_graph.setV(scc_num_vertices)
     #scc_graph.printEdges()
@@ -1551,6 +1410,9 @@ def bfs(visited, graph, node): #function for BFS
     global groups
     groups.append(current_group)
     current_group = []
+    global frontier_groups_sum
+    # root group
+    frontier_groups_sum += 1
 
     # this first group ends here after first dfs_parent
     global nodeIndex_to_groupIndex_maps
@@ -1783,7 +1645,7 @@ def bfs(visited, graph, node): #function for BFS
                 # using this to determine whether parent is in current partition
                 current_partition_number += 1
                 current_group_number = 1
-                global frontier_groups_sum
+                #global frontier_groups_sum
                 global num_frontier_groups
                 print("Debug: frontier groups: " + str(num_frontier_groups))
 
@@ -1846,7 +1708,8 @@ def bfs(visited, graph, node): #function for BFS
 
                 num_frontier_groups += 1
                 #dfs_p_new(visited, graph, neighbor)
-                dfs_parent(visited, graph, neighbor) 
+                #dfs_parent(visited, graph, neighbor) 
+                dfs_parent(visited, neighbor)
 
                 """
                 # index of child just added (we just visited it because it ws an 
@@ -2191,7 +2054,8 @@ logger.debug(nx.is_connected(G))
 for i in range(1,num_nodes+1):
     if i not in visited:
         logger.debug("*************Driver call BFS " + str(i))
-        bfs(visited, graph, nodes[i])    # function calling
+        #bfs(visited, graph, nodes[i])    # function calling
+        bfs(visited, nodes[i])    # function calling
 
 if len(current_partition) > 0:
     logger.debug("BFS: create final sub-partition")
@@ -2688,7 +2552,7 @@ for name in group_names:
     if PRINT_DETAILED_STATS:
         print("-- " + name)
 print()
-print("nodes_to_partition_maps (no shadow nodes), len: " + str(len(nodeIndex_to_partitionIndex_maps))+":")
+print("nodes_to_partition_maps (incl. shadow nodes), len: " + str(len(nodeIndex_to_partitionIndex_maps))+":")
 for m in nodeIndex_to_partitionIndex_maps:
     if PRINT_DETAILED_STATS:
         print("-- (" + str(len(m)) + "):", end=" ")
@@ -2698,7 +2562,7 @@ for m in nodeIndex_to_partitionIndex_maps:
     else:
         print("-- (" + str(len(m)) + ")")
 print()
-print("nodes_to_group_maps (no shadow nodes), len: " + str(len(nodeIndex_to_groupIndex_maps))+":")
+print("nodes_to_group_maps, (incl. shadow nodes), len: " + str(len(nodeIndex_to_groupIndex_maps))+":")
 for m in nodeIndex_to_groupIndex_maps:
     if PRINT_DETAILED_STATS:
         print("-- (" + str(len(m)) + "):", end=" ")
@@ -2776,7 +2640,7 @@ if PRINT_DETAILED_STATS:
 else:
     print("-- (" + str(len(x)) + ")")
 print()
-print("frontier_groups_sum: " + str(frontier_groups_sum) + ", len(frontiers)-1): " 
+print("frontier_groups_sum: " + str(frontier_groups_sum) + ", len(frontiers)-1: " 
     +  str(len(frontiers)-1))
 print("Average number of frontier groups: " + (str(frontier_groups_sum / len(frontiers)-1)))
 print()
@@ -2801,14 +2665,219 @@ np_array = get_PageRank_list(nodes)
 print(str(np_array))
 """
 
-# 1. Check the edges, draw the graph20
-# 2. To do scc, we need nodes in range 0 .. num_vertices-1, so collapse
-# node IDs so node.ID goes to next as you see the nodes, with a map to get 
-# back to original IDs, map(next,node.ID). Then the SCC is a set of ids 
-# x, y, ... where the actual node IDs are map(x) and map(y). Do back map
-# before printing the scc's.
-# 3. Consider tracing the single component SCCs, i.e., non-loops, so we
-# don't have to run SCC on the entire frontier.
+# This was moved down to here, out of the way. 
+"""
+A recursive function that find finds and prints strongly connected
+components using DFS traversal
+u --> The vertex to be visited next
+disc[] --> Stores discovery times of visited vertices
+low[] -- >> earliest visited vertex (the vertex with minimum
+            discovery time) that can be reached from subtree
+            rooted with current vertex
+st -- >> To store all the connected ancestors (could be part
+    of SCC)
+stackMember[] --> bit/index array for faster check whether
+            a node is in stack
+"""
+
+def SCCUtil(self, u, low, disc, stackMember, st, list_of_sccs):
+    # added list_of_sccs
+
+    # Initialize discovery time and low value
+    disc[u] = self.Time
+    low[u] = self.Time
+    self.Time += 1
+    stackMember[u] = True
+    st.append(u)
+
+    # Go through all vertices adjacent to this
+    for v in self.graph[u]:
+        # added for debug
+        #print("v: " + str(v))
+        # If v is not visited yet, then recur for it
+        if disc[v] == -1:
+
+            self.SCCUtil(v, low, disc, stackMember, st, list_of_sccs)
+
+            # Check if the subtree rooted with v has a connection to
+            # one of the ancestors of u
+            # Case 1 (per above discussion on Disc and Low value)
+            low[u] = min(low[u], low[v])
+
+        elif stackMember[v] == True:
+
+            '''Update low value of 'u' only if 'v' is still in stack
+            (i.e. it's a back edge, not cross edge).
+            Case 2 (per above discussion on Disc and Low value) '''
+            low[u] = min(low[u], disc[v])
+
+    # head node found, pop the stack and print an SCC
+
+    w = -1 # To store stack extracted vertices
+    if low[u] == disc[u]:
+        one_scc = []
+        while w != u:
+            w = st.pop()
+            # added: if this is a call from BFS then remap back to Node IDs
+            global USING_BFS
+            if USING_BFS:
+                ID = self.get_nodeID_from_GraphID(w)
+                print(ID, end=" ")
+                one_scc.append(ID)
+            else:
+                print(w, end=" ")
+
+            stackMember[w] = False
+            
+
+        print()
+        if USING_BFS:
+            list_of_sccs.append(one_scc)
+
+# The function to do DFS traversal.
+# It uses recursive SCCUtil()
+
+def SCC(self):
+
+    # Mark all the vertices as not visited
+    # and Initialize parent and visited,
+    # and ap(articulation point) arrays
+    # added for debug
+    #print("SCC: V:" + str(self.V))
+    disc = [-1] * (self.V)
+    low = [-1] * (self.V)
+    stackMember = [False] * (self.V)
+    st = []
+    #added
+    list_of_sccs = []
+
+    # Call the recursive helper function
+    # to find articulation points
+    # in DFS tree rooted with vertex 'i'
+    for i in range(self.V):
+        if disc[i] == -1:
+            self.SCCUtil(i, low, disc, stackMember, st, list_of_sccs)
+
+    return list_of_sccs
+
+# This is the graph parameter in the old calls to BFS and dfs_parent.
+# It was used in the starter BFS.
+graph = {
+  '5' : ['3','7'],
+  '3' : ['2', '4'],
+  '7' : ['8'],
+  '2' : [],
+  '4' : ['8'],
+  '8' : []
+}
+
+# moved down from its top position right after class Partition_Node
+"""
+N5 = Node(5)
+N3 = Node(3)
+N7 = Node(7)
+N2 = Node(2)
+N4 = Node(4)
+N8 = Node(8)
+N9 = Node(9)
+
+#N5.ID = 5
+N5.children = [N3,N7]
+N5.parents = []
+
+#N3.ID = 3
+N3.children = [N2,N4]
+N3.parents = [N5,N9]
+
+#N7.ID = 7
+N7.children = [N8]
+N7.parents = [N5]
+
+#N2.ID = 2
+N2.children = [N9]
+N2.parents = [N3]
+
+#N4.ID = 4
+N4.children = [N8]
+N4.parents = [N3]
+
+#N8.ID = 8
+N8.children = []
+N8.parents = [N7,N4]
+
+#N9.ID = 9
+N9.children = [N3,N5]
+N9.parents = [N2]
+"""
+
+#nodes = []
+
+"""
+N1 = Node(1)
+N2= Node(2)
+N3 = Node(3)
+N4 = Node(4)
+N5 = Node(5)
+N6 = Node(6)
+N7 = Node(7)
+N8 = Node(8)
+N9 = Node(9)
+N10 = Node(10)
+N11 = Node(11)
+N12 = Node(12)
+"""
+#num_nodes = 0
+#num_edges = 0
+"""
+num_nodes = 12
+#put non-null elements in place
+for x in range(num_nodes+1):
+    nodes.append(Node(x))
+"""
+
+"""
+# Assign above nodes
+nodes[0] = Node(0)  # not used; num_nodes does not include nodes[0]
+nodes[1] = N1
+nodes[2] = N2
+nodes[3] = N3
+nodes[4] = N4
+nodes[5] = N5
+nodes[6] = N6
+nodes[7] = N7
+nodes[8] = N8
+nodes[9] = N9
+nodes[10] = N10
+nodes[11] = N11
+nodes[12] = N12
+"""
+"""
+N1.children = [N3,N2]
+N1.parents = []
+N2.children = [N9,N8]
+N2.parents = [N1]
+N3.children = [N11,N10]
+N3.parents = [N1,N4]
+N4.children = [N3]
+N4.parents = [N5,N6]
+N5.children = [N4]
+N5.parents = []
+N6.children = [N7]
+N6.parents = []
+N7.children = []
+N7.parents = [N6]
+N8.children = []
+N8.parents = [N2]
+N9.children = []
+N9.parents = [N2]
+N10.children = []
+N10.parents = [N3]
+N11.children = []
+N11.parents = [N3]
+"""
+
+# Consider: for Loop Groups, separate non-loop parents from parents so we 
+# only do non-loop parents once at beginning).
 #
 # ToDo: Determine whether a node in current frontier is dependent or
 # independent. Independent means it does not have an ancestor (parent
@@ -2839,7 +2908,7 @@ print(str(np_array))
 # in the frontier, i.e., just the nodes for which it is possble to prune.
 # 
 # And we perhaps want to identify singletons anyway in this same frontier
-# reduction? Noet that leaving the nodes with no unvisited chldren in the 
+# reduction? Note that leaving the nodes with no unvisited chldren in the 
 # queue does not hurt since bfs will ignore them anyway. Although
 # the queue is inaccurate that might not affect the partitioning of
 # bsf's dfs_parent result for large partitions returned to bfs.
@@ -2861,8 +2930,6 @@ print(str(np_array))
 # queue then not in there but stil in frontier. If dfs_parent removes X
 # from queue and frontier then BFS will find X is no longer in frontier
 # when it finishes visiting all children of X and tries to remove X.
-
-# ToDo: get rid of visited parameter?
 
 """
 # ToDo: This can be part of code to reduce size of frontier? Look for these
@@ -2907,8 +2974,8 @@ print(str(np_array))
         # partition, but node is in frontier and we can now remove it
         #visited.append(node.ID)
         frontier.remove(node.ID)
-# 
 """
+
 """
 # old code: BFS origially called dfs_p() for nodes that were dequeued.
 # dfs_p_new is essentially dfs_parent. So dequeued nodes are no longer
