@@ -561,6 +561,13 @@ def dfs_parent(visited, node):  #function for dfs
     list_of_unvisited_children = []
     check_list_of_unvisited_chldren_after_visiting_parents = False
 
+    # Fill these in below, e.g., we have to remap the parents since 
+    # parent IS is not in position ID in the partition/group.
+    partition_node = Partition_Node(node.ID)
+    partition_node.ID = node.ID
+    group_node = Partition_Node(node.ID)
+    group_node.ID = node.ID
+
     # Get unvisited children, which affects whether ndoe is addded to the queue
     # in the post traversal.
     # For example, assume 4's parent is 6 and 6 has no parents and only
@@ -590,8 +597,14 @@ def dfs_parent(visited, node):  #function for dfs
 # node in dfs_parent path?
         visited.append(node.ID)
 
+    #Note: dfs_parent_pre_parent_traversal will mark node as visitd
+
     
-    # put node in the global node map with -1 as the partition and group number.
+    # Note: BFS will not call dfs_parent(child) if chld has been visited. So
+    # if child has been visited and thus has been added to global map, we will 
+    # not be resetting the pg_tuple here of such a child.
+    #
+    # Put node in the global node map with -1 as the partition and group number.
     # replace the -1 when we eventually put the node in a partition and group.
     # until then, we'll get -1 to indicate that we haven't placed the node yet.
     partition_number = current_partition_number
@@ -630,97 +643,30 @@ def dfs_parent(visited, node):  #function for dfs
     parents_in_previous_group = False
     # visit parents
     list_of_parents_in_previous_group = []
+
     for parent_index in node.parents:
  
         parent_node = nodes[parent_index]
         logger.debug("parent_node: " + str(parent_node))
 
-        if parent_node.partition_number == -1 or parent_node.partition_number == current_partition_number:
-            # parent is not in previous partition, i.e., node is not a child of
-            # a parent node that was in previous partition. This means
-            # parent is in this partition and it is either in the same 
-            # group as node or it is in a different group, which was computed
-            # previously.
-            #
-            # If parent is in the same group then we do not need shadow nodes;
-            # otherwise, we need shadow_nodes just like the case in which the
-            # parent is in a different partition, which is like saying that 
-            # the parent is in a group of a different partition, but we presumably
-            # are not tracking groups, just partitions.
-            #
-            # The parent is in a different group if: it has a different group
-            # number. Either have to look in the global node to partition/group
-            # map or have a group_number member of Node.
+        """
+        Note: This entire check of different partition/group was moved down to after 
+        call to dfs_parent.
 
-            logger.debug ("dfs_parent: parent in same partition: parent_node.partition_number: " 
-                + str(parent_node.partition_number) 
-                + ", current_partition_number:" + str(current_partition_number)
-                + ", parent ID: " + str(parent_index))
-
-            partition_group_tuple = nodeIndex_to_partition_partitionIndex_group_groupIndex_map.get(parent_node.ID)
-            parent_group_number = None
-            if partition_group_tuple != None:
-                parent_group_number = partition_group_tuple[2]
-                if parent_group_number != current_group_number:
-
-                    logger.debug ("dfs_parent: parent in different group: parent_group_number: " 
-                        + str(parent_group_number) 
-                        + ", current_group_number: " + str(current_group_number)
-                        + ", parent ID: " + str(parent_index))
-                    parents_in_previous_group = True
-                    list_of_parents_in_previous_group.append(parent_node)
-
-            else: 
-                logger.debug ("dfs_parent: parent in same group: parent_group_number: " 
-                    + str(parent_group_number)
-                    + ", parent ID: " + str(parent_index))
-            # we haven't seen parent parent_node yet so it is not in a previous group.
-            # For example, root 1's parent is 17 so we call dfs_parent(17) and 17 will
-            # be in the sme group. Here, we have not seen 17 yet so it is not in
-            # nodeIndex_to_partition_partitionIndex_group_groupIndex_map. Noet that 1
-            # will be aded to nodeIndex_to_partition_partitionIndex_group_groupIndex_map
-            # at start of dfs_parent then 1 does this check on its parent 17
-            # before calling dfs_parent(17).
-
-
-
-            # part of SCC computation
-            #parent_GraphID = scc_graph.map_nodeID_to_GraphID(parent_index)
-            # add edge from parent to node
-            #scc_graph.addEdge(parent_GraphID, node_GraphID)
-            #logger.debug ("dfs_parent add (unmapped) edge: " + str(parent_index) + "," + str(node.ID))
-            #logger.debug ("dfs_parent add (mapped) edge: " + str(parent_GraphID) + "," + str(node_GraphID))
-            #logger.debug("dfs_parent: Graph after add edge:")
-            #scc_graph.printEdges()
-            #global scc_num_vertices
-            #scc_num_vertices += 1
-
-
-        else:
-            #parent is in previous partition, (must be current_partition - 1)
-            logger.debug ("dfs_parent: parent in different partition: parent_node.partition_number: " 
-                + str(parent_node.partition_number) 
-                + ", current_partition_number:" + str(current_partition_number)
-                + ", parent ID: " + str(parent_index))
-            parents_in_previous_partition = True
-            list_of_parents_in_previous_partition.append(parent_node)
+        partition_group_tuple = nodeIndex_to_partition_partitionIndex_group_groupIndex_map.get(parent_node.ID)
+        parent_partition_number = None
+        parent_group_number = None
+        if partition_group_tuple != None:
+        """
 
         if parent_node.ID not in visited:
             logger.debug ("dfs_parent visit node " + str(parent_node.ID))
             #dfs_parent(visited, graph, parent_node)
-            dfs_parent(visited, 
-            
-            
-            
-            
-            
-            
-            
-            parent_node)
+            dfs_parent(visited, parent_node)
         else:
             # loop detected - mark this loop in partition (for debugging for now)
             logger.debug ("dfs_parent neighbor " + str(parent_node.ID) + " already visited")
-            if TRACK_PARTITION_LOOPS and parent_node.partition_number == -1:
+            if TRACK_PARTITION_LOOPS and parent_partition_number == -1:
                 # Example: 1 5 6 7 3(Lp) 12(Lp) 11 11(Lc) 12 4 3 2 10 9 8
                 # Here, 3 is a parent of 11 that 11 finds visited so when visiting
                 # 11 in dfs_parent 11 will output 3(Lprnt_of_11). Same for when 
@@ -737,6 +683,286 @@ def dfs_parent(visited, node):  #function for dfs
                     + ", loop indicator: " + loop_indicator)
                 global loop_nodes_added
                 loop_nodes_added += 1
+
+        partition_group_tuple = nodeIndex_to_partition_partitionIndex_group_groupIndex_map.get(parent_node.ID)
+        parent_partition_number = None
+        parent_group_number = None
+        if partition_group_tuple != None:
+            parent_partition_number = partition_group_tuple[0]
+            if parent_partition_number == -1 or parent_partition_number == current_partition_number:
+                # parent is not in previous partition, i.e., node is not a child of
+                # a parent node that was in previous partition. This means
+                # parent is in this partition and it is either in the same 
+                # group as node or it is in a different group, which was computed
+                # previously.
+                #
+                # If parent is in the same group then we do not need shadow nodes;
+                # otherwise, we need shadow_nodes just like the case in which the
+                # parent is in a different partition, which is like saying that 
+                # the parent is in a group of a different partition, but we presumably
+                # are not tracking groups, just partitions.
+                #
+                # The parent is in a different group if: it has a different group
+                # number and it's not -1. Either have to look in the global node to partition/group
+                # map or have a group_number member of Node.
+
+                logger.debug ("dfs_parent: parent in same partition: parent_partition_number: " 
+                    + str(parent_partition_number) 
+                    + ", current_partition_number:" + str(current_partition_number)
+                    + ", parent ID: " + str(parent_index))
+
+                #partition_group_tuple = nodeIndex_to_partition_partitionIndex_group_groupIndex_map.get(parent_node.ID)
+                #parent_group_number = None
+                # This must be true (leave this if for now)
+                if partition_group_tuple != None:
+                    # we have visited parent, but if visit was part of a loop then 
+                    # the parent may not have been assigned to a partition or group
+                    # yet. (the assignment is done when recursion bcks up to the parent.)
+                    # If the group number is not the same as the current group
+                    # then the parent is in a different group.
+                    # Q: is there any other result possible? we've visited parent and it
+                    # cant have been part of this group's parent traversal. Answer: For
+                    # example, if this node and parent are parents of each other, then 
+                    # the second parent to be visited will see the other as a parent 
+                    # and that other will be in the global map with a group number of -1.
+                    # In general, if this is part of a loop, we will cal dfs_parent on 
+                    # a parent node P that was visited by dfs_parent(p) already and as
+                    # part of traversing p's parents we will call dfs_parent(p) again. 
+                    # P will be in the map and will have a partition_number and group_number
+                    # of -1.
+                    parent_group_number = partition_group_tuple[2]
+                    if parent_group_number == -1 or parent_group_number == current_group_number:
+                        logger.debug ("dfs_parent: parent in same group: parent_group_number: " 
+                            + str(parent_group_number)
+                            + ", current_group_number: " + str(current_group_number)
+                            + ", parent ID: " + str(parent_index)) 
+                    else:
+                        logger.debug ("dfs_parent: parent in different group: parent_group_number: " 
+                            + str(parent_group_number) 
+                            + ", current_group_number: " + str(current_group_number)
+                            + ", parent ID: " + str(parent_index))
+                        parents_in_previous_group = True
+                        list_of_parents_in_previous_group.append(parent_node) 
+
+                        #logger.debug ("dfs_parent: found parent in previous group: " + str(parent_node.ID))
+                        # index of child just added (we just visited it because it ws an 
+                        # unvisited child) to partition
+                        child_index = len(current_group)
+                        # shadow node is a parent Node on frontier of previous partition
+                        #shadow_node = Node(parent_node.ID)
+                        shadow_node = Partition_Node(parent_node.ID)
+                        shadow_node.isShadowNode = True
+                        # insert shadow_node before child (so only shift one)
+                        #current_partition.insert(child_index,shadow_node)
+
+    #rhc: ToDo:
+                        # only do part/group if using part/group or option to do both
+                        # for debugging? No, if in different group but same partition 
+                        # then no shadow node in partition as no need to send pr values
+                        # to same partition,
+                        #current_partition.append(shadow_node)
+                        current_group.append(shadow_node)
+
+    #rhc: ToDo:
+                        # only do part/group if using part/group or option to do both
+                        # for debugging? No, see above.
+                        #nodeIndex_to_partitionIndex_map[shadow_node.ID] = len(current_partition)-1
+
+                        nodeIndex_to_groupIndex_map[shadow_node.ID] = len(current_group)-1
+                        # Note: We do not add shadow_node to the 
+                        # X map. But shadw_node IDs should be mapped to their positions
+                        # when we are computing the group since f the shadow node
+                        # is a parent of node n then n.parents are remapped to their 
+                        # position in the group and one of n's parents will be the shadow
+                        # node so we need its position in the group.
+                    
+                        global shadow_nodes_added_to_groups
+                        shadow_nodes_added_to_groups += 1
+
+                        # remember where the frontier_parent node should be placed when the 
+                        # partition the PageRank task sends it to receives it. 
+                        logger.debug ("frontier_groups: " + str(num_frontier_groups) + ", child_index: " + str(child_index))
+
+                        
+                        #d1 = child_index-dfs_parent_start_partition_size
+                        #logger.debug("ZZZZZZZZZZZZZZZZZZZZZZZZZ child_index: " + str(child_index) + " d1: " + str(d1))
+                        #if child_index != d1:
+                        #    logger.debug("ZZZZZZZZZZZZZZZZZZZZZZZZZ Difference: " 
+                        #       + " child_index: " + str(child_index) + " d1: " + str(d1))
+                        #else:
+                        #   logger.debug("ZZZZZZZZZZZZZZZZZZZZZZZZZ No Difference: ") 
+                        
+                        #logger.debug("ZZZZZZZZZZZ")
+                        frontier_parent_tuple = (current_partition_number,num_frontier_groups,child_index)
+                        logger.debug ("bfs frontier_parent_tuple: " + str(frontier_parent_tuple))
+                        # mark this node as one that PageRank needs to send in its output to the 
+                        # next partition (via fanout/faninNB).That is, the fact that list
+                        # frontier_parent is not empty indicates it needs to be sent in the 
+                        # PageRank output. The tuple indictes which frontier group it should 
+                        # be sent to. PageRank may send frontier_parent nodes to mulltiple groups
+                        # of multiple partitions
+                        #
+                        # need to use the current partition, not nodes as the current
+                        # partition is what the functions will be using to compute pr
+                        # nodes[parent_node.ID].frontier_parents.append(frontier_parent_tuple)
+                        partition_group_tuple = nodeIndex_to_partition_partitionIndex_group_groupIndex_map[parent_node.ID]
+                        parent_group_number = partition_group_tuple[2]
+                        parent_group_parent_index = partition_group_tuple[3]
+                        # parent_group_number is the number of the group in the 
+                        # current partition. We are working on the current group,
+                        # which is the next group to be added to groups. The 
+                        # current group number is num_frontier_groups and it 
+                        # will be added at position len(groups) in groups. Note that group 
+                        # numbers in a partition start at 1 not 0. The parent group position
+                        # in groups is before that, i.e., len(groups) - i. What is i?
+                        # Note: we are working back from the end of the groups list 
+                        # to find the parent position.
+                        # The current group is num_frontier_groups. The group of the parent
+                        # (in this partition) is parent_group_number, which is 
+                        # less than num_frontier_groups. If current group = num_frontier_groups
+                        # is 2, and parent group is 1, then we want the group at 
+                        # len(groups) - (current_group-parent_group). Example, if len(groups)
+                        # is 2, the 2 existing groups, groups (1 and 2) are in positions [0] 
+                        # and [1]. The current group will be the third group and will be added 
+                        # at position [2]. Since len(groups) is 2, and (current_group-parent_group) 
+                        # is (2-1) = 1, then the parent group we want is at groups[2-1], which is groups[1].
+                        parent_group_position = len(groups) - (num_frontier_groups-parent_group_number)
+                        parent_group = groups[parent_group_position]
+                        logger.debug("add tuple to parent group " 
+                            + "len(groups): " + str(len(groups)) + ", parent_group_number: " + str(parent_group_number)
+                            + ", num_frontier_groups: " + str(num_frontier_groups) 
+                            + ", parent_group_position: " + str(parent_group_position)
+                            + ", parent_group_parent_index: " + str(parent_group_parent_index)
+                            + ", frontier_parent_tuple: " + str(frontier_parent_tuple))
+                        parent_group[parent_group_parent_index].frontier_parents.append(frontier_parent_tuple)
+
+               
+                else:
+                    logger.error("[Error] Internal Error. dfs_parent: partition_group_tuple " 
+                        + "is None should be unreachable.")
+                    # if there's no entry in the global map then we have not visited the
+                    # parent yet so it's not in the same group.
+                    # Note that this check is before the call to dfs_parent(parent_index).
+                    # If it were after, then the partition_group_tuple could not be None
+                    # since we add parent to the global map at the start of dfs_parent()
+                    logger.debug ("dfs_parent: parent in same group: parent_group_number: " 
+                        + str(parent_group_number)
+                        + ", parent ID: " + str(parent_index))
+                # we haven't seen parent parent_node yet so it is not in a previous group.
+                # For example, root 1's parent is 17 so we call dfs_parent(17) and 17 will
+                # be in the sme group. Here, we have not seen 17 yet so it is not in
+                # nodeIndex_to_partition_partitionIndex_group_groupIndex_map. Noet that 1
+                # will be aded to nodeIndex_to_partition_partitionIndex_group_groupIndex_map
+                # at start of dfs_parent then 1 does this check on its parent 17
+                # before calling dfs_parent(17).
+
+                # part of SCC computation
+                #parent_GraphID = scc_graph.map_nodeID_to_GraphID(parent_index)
+                # add edge from parent to node
+                #scc_graph.addEdge(parent_GraphID, node_GraphID)
+                #logger.debug ("dfs_parent add (unmapped) edge: " + str(parent_index) + "," + str(node.ID))
+                #logger.debug ("dfs_parent add (mapped) edge: " + str(parent_GraphID) + "," + str(node_GraphID))
+                #logger.debug("dfs_parent: Graph after add edge:")
+                #scc_graph.printEdges()
+                #global scc_num_vertices
+                #scc_num_vertices += 1
+
+            else:
+                #parent is in different/previous partition, (must be current_partition - 1)
+                logger.debug ("dfs_parent: parent in different partition: parent_partition_number: " 
+                    + str(parent_partition_number) 
+                    + ", current_partition_number:" + str(current_partition_number)
+                    + ", parent ID: " + str(parent_index))
+                parents_in_previous_partition = True
+                list_of_parents_in_previous_partition.append(parent_node)
+
+                # take care of this now
+                # index of child just added (we just visited it because it ws an 
+                # unvisited child) to partition
+                child_index = len(current_partition)
+                # shadow node is a parent Node on frontier of previous partition
+                #shadow_node = Node(parent_node.ID)
+                shadow_node = Partition_Node(parent_node.ID)
+                shadow_node.isShadowNode = True
+                # insert shadow_node before child (so only shift one)
+                #current_partition.insert(child_index,shadow_node)
+
+                current_partition.append(shadow_node)
+#rhc: ToDo:
+                # only do part/group if using part/group or option to do both
+                # for debugging? If in differet partition then if using parts then
+                # add to part and if using group then add to group and if using 
+                # both then add to both.  
+                # wait: but add tuple to node in partition if using partitions 
+                # and group if using groups. So do both for now? Does tuple
+                # work for both partitions and groups? Just ignore group
+                # number if using partitions? (when forming function names)
+                # Or just use group number of 0 when using partitions?
+                current_group.append(copy.deepcopy(shadow_node))
+
+                global nodeIndex_to_partitionIndex_map
+                #global nodeIndex_to_groupIndex_map
+                nodeIndex_to_partitionIndex_map[shadow_node.ID] = len(current_partition)-1
+#rhc: ToDo:
+                # only do part/group if using part/group or option to do both
+                # for debugging?
+                nodeIndex_to_groupIndex_map[shadow_node.ID] = len(current_group)-1
+                # Note: We do not add shadow_node to the 
+                # X map. But shadw_node IDs should be mapped to their positions
+                # when we are computing the group since f the shadow node
+                # is a parent of node n then n.parents are remapped to their 
+                # position in the group and one of n's parents will be the shadow
+                # node so we need its position in the group.
+            
+                global shadow_nodes_added_to_partitions
+                #global shadow_nodes_added_to_groups
+                shadow_nodes_added_to_partitions += 1
+                shadow_nodes_added_to_groups += 1
+
+                # remember where the frontier_parent node should be placed when the 
+                # partition the PageRank task sends it to receives it. 
+                logger.debug ("num_frontier_groups: " + str(num_frontier_groups) + ", child_index: " + str(child_index))
+# rhc: ToDo: if we are using partition then we just need partition number and index
+# but we won't use group number? That is, the names aer PR1, PR2, etc, so we ignore'
+# the group number when we form partition name for target funtion with shadow nodes?
+# Rather: just use group node of 0 when using partitions, so PR1_0, PR2_0,...
+                # Note : For partitions, the child_index is the index relatve to the 
+                # start of the partition. child_index is len(current_partition).
+                # The calculation for groups (below) is a bit difference.
+                # Q: Use 0 instead of num_frontier_groups so we can just grab the 0
+                frontier_parent_tuple = (current_partition_number,0,child_index)
+                logger.debug ("bfs frontier_parent_tuple: " + str(frontier_parent_tuple))
+                # mark this node as one that PageRank needs to send in its output to the 
+                # next partition (via fanout/faninNB).That is, the fact that list
+                # frontier_parent is not empty indicates it needs to be sent in the 
+                # PageRank output. The tuple indictes which frontier group it should 
+                # be sent to. PageRank may send frontier_parent nodes to mulltiple groups
+                # of multiple partitions
+                #
+                # need to use the current partition, not nodes as the current
+                # partition is what the functions will be using to compute pr
+                # nodes[parent_node.ID].frontier_parents.append(frontier_parent_tuple)
+                partition_group_tuple = nodeIndex_to_partition_partitionIndex_group_groupIndex_map[parent_node.ID]
+                parent_partition_number = partition_group_tuple[0]
+                parent_partition_index = partition_group_tuple[1]
+                # partition numbers start at 1 not 0
+                parent_partition = partitions[parent_partition_number-1]
+                parent_partition[parent_partition_index].frontier_parents.append(frontier_parent_tuple)
+
+
+        else:
+            logger.error("[Error] Internal Error. dfs_parent: partition_group_tuple" 
+                + " of parent is None should be unreachable since this is after calling "
+                + " dfs_parent() on the parent.")
+            # if there's no entry in the global map then we have not visited the
+            # parent before so it's not in a different/previous partition.
+            # Note that this check is before the call to dfs_parent(parent_index).
+            # If it were after, then the partition_group_tuple could not be None
+            # since we add parent to the global map at the start of dfs_parent()
+            logger.debug ("dfs_parent: parent in same partition/group: parent_partition_number:" 
+                + " parent_partition_number: " + str(parent_partition_number)
+                + " parent_group_number: " + str(parent_group_number)
+                + ", parent ID: " + str(parent_index))
 
     if CHECK_UNVISITED_CHILDREN:
         # process children after parent traversal
@@ -762,14 +988,22 @@ def dfs_parent(visited, node):  #function for dfs
         # make sure parent in partition before any if its children. We visit parents of nodein dfs_parents 
         # and they are added to partition in dfs_parents after their parents are added 
         # in dfs_parents then here we add node to partition.  
+
+#rhc: Can this be false? can we dfs_parent visit a node that has already been visited
+# and that already has been put in a partition?
+
         if node.partition_number == -1:
             logger.debug ("dfs_parent add " + str(node.ID) + " to partition")
             node.partition_number = current_partition_number
             logger.debug("set " + str(node.ID) + " partition number to " + str(node.partition_number))
             #current_partition.append(node.ID)
             #rhc: append node 
+
+            """
+            ### moved this up inside parent loop.
+
             if parents_in_previous_partition:
-                # Noet: May be adding multiple shadow nodes before partition_node
+                # Note: May be adding multiple shadow nodes before partition_node
                 for parent_node in list_of_parents_in_previous_partition:
                     # index of child just added (we just visited it because it ws an 
                     # unvisited child) to partition
@@ -842,11 +1076,18 @@ def dfs_parent(visited, node):  #function for dfs
                     # partition numbers start at 1 not 0
                     parent_partition = partitions[parent_partition_number-1]
                     parent_partition[parent_partition_index].frontier_parents.append(frontier_parent_tuple)
+            """
 
 #rhc: Set group tuples but not partition since not sending pr values if nodes
 # are in different groups but the same partitions
+            """
+            ### moved this up inside parent loop.
+
             if parents_in_previous_group:
                 for parent_node in list_of_parents_in_previous_group:
+                    
+                    ### moved this up inside parent loop.
+
                     logger.debug ("dfs_parent: found parent in previous group: " + str(parent_node.ID))
                     # index of child just added (we just visited it because it ws an 
                     # unvisited child) to partition
@@ -886,15 +1127,15 @@ def dfs_parent(visited, node):  #function for dfs
                     # partition the PageRank task sends it to receives it. 
                     logger.debug ("frontier_groups: " + str(num_frontier_groups) + ", child_index: " + str(child_index))
 
-                    """
-                    d1 = child_index-dfs_parent_start_partition_size
-                    logger.debug("ZZZZZZZZZZZZZZZZZZZZZZZZZ child_index: " + str(child_index) + " d1: " + str(d1))
-                    if child_index != d1:
-                        logger.debug("ZZZZZZZZZZZZZZZZZZZZZZZZZ Difference: " 
-                            + " child_index: " + str(child_index) + " d1: " + str(d1))
-                    else:
-                        logger.debug("ZZZZZZZZZZZZZZZZZZZZZZZZZ No Difference: ") 
-                    """
+                    
+                    #d1 = child_index-dfs_parent_start_partition_size
+                    #logger.debug("ZZZZZZZZZZZZZZZZZZZZZZZZZ child_index: " + str(child_index) + " d1: " + str(d1))
+                    #if child_index != d1:
+                    #    logger.debug("ZZZZZZZZZZZZZZZZZZZZZZZZZ Difference: " 
+                    #       + " child_index: " + str(child_index) + " d1: " + str(d1))
+                    #else:
+                    #   logger.debug("ZZZZZZZZZZZZZZZZZZZZZZZZZ No Difference: ") 
+                    
                     #logger.debug("ZZZZZZZZZZZ")
                     frontier_parent_tuple = (current_partition_number,num_frontier_groups,child_index)
                     logger.debug ("bfs frontier_parent_tuple: " + str(frontier_parent_tuple))
@@ -939,13 +1180,41 @@ def dfs_parent(visited, node):  #function for dfs
                         + ", frontier_parent_tuple: " + str(frontier_parent_tuple))
                     parent_group[parent_group_parent_index].frontier_parents.append(frontier_parent_tuple)
 
-            partition_node = Partition_Node(node.ID)
-            partition_node.ID = node.ID
-            group_node = Partition_Node(node.ID)
-            group_node.ID = node.ID
+            """
+            #partition_node = Partition_Node(node.ID)
+            #partition_node.ID = node.ID
+            #group_node = Partition_Node(node.ID)
+            #group_node.ID = node.ID
+
 
 #rhc: Todo: Can we do this as part of for each parent loop? instead of looping again?
-# Noet: parent remaps to different index epending on partiton or group!!
+# Note: parent remaps to different index depending on partiton or group!!
+#
+# Cases for remappng parent:
+# parent is in same partition or group: 
+# - partition/group number is -1: then we need to patch so append -1
+#   to parents[] and create and save path tuple. In this case, there
+#   are no shadow nodes (plural) and the parent is part of our loop
+#   in this partition/group so patch will be the index of parent.
+# - partition/group number is not -1, then we do not need to patch,
+#   but the parent may be in this partition/group or not.
+#   - parent is in this partition/group: no shadow nodes so we
+#     can append parent index to parents[]
+#   - parent is not in this partition/group: we will push
+#     a shadow node in front of this partition_node so the parent 
+#     index should be the shadow node's index.
+#     Note: this node may have multiple parents in a different
+#     partition/group and we will push a shadow node for each of
+#     these parents *before* we push the partition node. The 
+#     partition node's parents should inclde all of these shadow
+#     nodes.
+#rhc: handle multiple shadow nodes? Note that we do not push the 
+#     partition/group node until after we process all the parents
+#     So?
+#   
+# so we can 
+#   append partition/group index to parents[]
+# use index in this current partition/group
             i = 0
             for parent_index in node.parents:
                 # new_index = nodeIndex_to_partitionIndex_map.get(parent)
