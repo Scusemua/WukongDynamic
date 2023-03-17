@@ -608,10 +608,10 @@ def dfs_parent(visited, node):  #function for dfs
     # replace the -1 when we eventually put the node in a partition and group.
     # until then, we'll get -1 to indicate that we haven't placed the node yet.
     partition_number = current_partition_number
-    partition_index = -1
+    parent_partition_index = -1
     group_number = current_group_number
-    group_index = -1
-    pg_tuple = (partition_number,partition_index,group_number,group_index)
+    parent_group_index = -1
+    pg_tuple = (partition_number,parent_partition_index,group_number,parent_group_index)
     global nodeIndex_to_partition_partitionIndex_group_groupIndex_map
     nodeIndex_to_partition_partitionIndex_group_groupIndex_map[node.ID] = pg_tuple
 
@@ -653,7 +653,8 @@ def dfs_parent(visited, node):  #function for dfs
 
         """
         Note: This entire check of different partition/group was moved down to after 
-        call to dfs_parent.
+        call to dfs_parent, when we determine that parent is in same partition,
+        instead of here before the call.
 
         partition_group_tuple = nodeIndex_to_partition_partitionIndex_group_groupIndex_map.get(parent_node.ID)
         parent_partition_number = None
@@ -666,40 +667,43 @@ def dfs_parent(visited, node):  #function for dfs
             #dfs_parent(visited, graph, parent_node)
             dfs_parent(visited, parent_node)
 
-            """
+
 #rhc: case: no shadow nodes since parent is in this partition/group as we have not 
 # visited parent previously. Check if this is a loop and parent partition/group
 # number is -1
+            # assert:
             pg_tuple = nodeIndex_to_partition_partitionIndex_group_groupIndex_map[parent_index]
-            # parent has been mapped but the partition and group indices
-            # might be -1. From above:
+            # parent has been mapped but, in general, the partition and group indices
+            # might be -1. Here, they should not be -1 since the parent was unvisited
+            # and loops require a parent that has already been visited. (This already
+            # visited parent visits its parent ,which visits its parent etc until we try
+            # to revisit the already visited parent. Note: this applies also fro loops
+            # within loops since in such a case we must still try to visit an already 
+            # visited parent, From above, for documentation, a nodes's global map
+            # info is initialized at start of dfs_parent as:
             #partition_number = current_partition_number
             #partition_index = -1
             #group_number = current_group_number
             #group_index = -1
-            parent_partition_number = pg_tuple[0]
-            partition_index = pg_tuple[1]
-            group_index = pg_tuple[3]
-            if partition_index != -1:
+            parent_partition_index = pg_tuple[1]
+            if parent_partition_index == -1:
                 # assert group_index is also -1
-                partition_node.parents.append(partition_index)
-                group_node.parents.append(group_index)
-            else:
-                partition_node.parents.append(-1)
-                group_node.parents.append(-1)
-                # finish this partition_node and group_node parent ermapping 
-                # when the parent/group has finished and all parents hve been mapped.
-                patch_tuple = (parent_index,partition_node.parents,group_node.parents,index_of_parent,node.ID)
-                logger.debug("YYYYYYYYY patch_tuple: " +str(patch_tuple))
-                patch_parent_mapping_for_partitions.append(patch_tuple)
-                patch_parent_mapping_for_groups.append(patch_tuple)
-            """
+                logger.debug("[Error]: Internal Error: dfs_parent call to unvisited"
+                    + " parent resulted in parent partition index of -1, which means"
+                    + " a loop was detected at an unvisited parent.")
+
+            # assert group_index is also not -1
+            parent_group_index = pg_tuple[3]
+            partition_node.parents.append(parent_partition_index)
+            group_node.parents.append(parent_group_index)
 
         else:
             # loop detected - mark this loop in partition (for debugging for now)
             logger.debug ("dfs_parent neighbor " + str(parent_node.ID) + " already visited")
             parent_node_visited_tuple = (parent_node,index_of_parent)
             already_visited_parents.append(parent_node_visited_tuple)
+            partition_node.parents.append(-1)
+            group_node.parents.append(-1)
     
             #rhc: Note: Not clear whether we will be tracking loops here and if so what 
             # we wan to do when we find a loop. For now, TRACK_PARTITION_LOOPS is False
@@ -732,8 +736,10 @@ def dfs_parent(visited, node):  #function for dfs
     # and saving the frontier_node in the parent in different partition/group
     for parent_node_visited_tuple in already_visited_parents:
         visited_parent_node = parent_node_visited_tuple[0]
+        index_of_parent = parent_node_visited_tuple[1]
         #where: parent_node_visited_tuple = (parent_node,index_of_parent) 
         partition_group_tuple = nodeIndex_to_partition_partitionIndex_group_groupIndex_map.get(visited_parent_node.ID)
+        # this is also used in the else: part for debugging so declare here
         parent_partition_number = None
         parent_group_number = None
         if partition_group_tuple != None:
@@ -760,8 +766,42 @@ def dfs_parent(visited, node):  #function for dfs
                     + ", current_partition_number:" + str(current_partition_number)
                     + ", parent ID: " + str(parent_index))
 
-#rhc: case: visited parent before and it is is same partition so set the parent
-# at index index_of_parent to parent_partition_index = partition_group_tuple[0]
+                # Check if this is a loop and parent partition/group number is -1. A loop is possible
+                # since parent is in the same partition/group. If not a loop, then parent is in 
+                # previous partition or group, and that is handled next.
+                #pg_tuple = nodeIndex_to_partition_partitionIndex_group_groupIndex_map[parent_index]
+                # parent has been mapped but the partition and group indices
+                # might be -1. From above, for documentation, a node's
+                # global map info is initialized at start of dfs_parent as:
+                #partition_number = current_partition_number
+                #partition_index = -1
+                #group_number = current_group_number
+                #group_index = -1
+                parent_partition_index = partition_group_tuple[1]
+                parent_group_index = partition_group_tuple[3]
+
+#rhc: case: visited parent before and it is is same partition so no shadow node.
+# parent may be in a loop so check for loop and if parent indicates a loop
+# then need to patch
+                if parent_partition_index != -1:
+                    # No need to patch the parent index. We will need a shadow node
+                    # if the parent is in a different partition/group in whcih case
+                    # we will make this partition_node / group_node's parent be
+                    # the shadow node(s).
+                    # assert group_index is also -1
+                    partition_node.parents[index_of_parent] = parent_partition_index
+                    group_node.parents[index_of_parent] = parent_group_index
+                else:
+                    # need to patch the parent index
+                    partition_node.parents[index_of_parent] = -1
+                    group_node.parents[index_of_parent] = -1
+                    # finish this partition_node and group_node parent ermapping 
+                    # when the parent/group has finished and all parents hve been mapped.
+                    patch_tuple = (parent_index,partition_node.parents,group_node.parents,index_of_parent,node.ID)
+                    logger.debug("YYYYYYYYY patch_tuple: " +str(patch_tuple))
+                    patch_parent_mapping_for_partitions.append(patch_tuple)
+                    patch_parent_mapping_for_groups.append(patch_tuple)
+
                 """
                 parent_partition_index = partition_group_tuple[1]
                 partition_node.parents[index_of_parent] = parent_partition_index
@@ -793,8 +833,17 @@ def dfs_parent(visited, node):  #function for dfs
                             + ", current_group_number: " + str(current_group_number)
                             + ", parent ID: " + str(parent_index)) 
 
-# rhc: case: visited parent before and it is is same partition so set the parent
-# at index index_of_parent to parent_partition_index = partition_group_tuple[0]
+# rhc: case: visited parent before and it is is same group.  So no shadow node and 
+# we already checked to see if parent indicates a loop.
+                        # Note: The parent is in the same group and could indicate
+                        # a loop; however, we already checked for this when we saw
+                        # that the parent was in the same partition. (Note: parent in the 
+                        # same group ==> parent in same partition. Also, if the parent 
+                        # indicates there is a loop in the current group/partition, then
+                        # this parent wil also indicate there is a loop in the current
+                        # partition/group.). If the checked showed a loop in the partition
+                        # then we created a path tuple for the partition and group.
+ 
                         """
                         parent_group_index = partition_group_tuple[3]
                         partition_node.parents[index_of_parent] = parent_group_index
@@ -850,6 +899,9 @@ def dfs_parent(visited, node):  #function for dfs
                         # is a parent of node n then n.parents are remapped to their 
                         # position in the group and one of n's parents will be the shadow
                         # node so we need its position in the group.
+
+#rhc: ToDo: made group node's parent be this shadow node
+                        group_node.parents[index_of_parent] = len(current_group)-1
                     
                         global shadow_nodes_added_to_groups
                         shadow_nodes_added_to_groups += 1
@@ -1007,6 +1059,10 @@ def dfs_parent(visited, node):  #function for dfs
                 # is a parent of node n then n.parents are remapped to their 
                 # position in the group and one of n's parents will be the shadow
                 # node so we need its position in the group.
+
+#rhc: ToDo: made group node's parent be this shadow node
+                partition_node.parents[index_of_parent] = len(current_partition)-1
+                group_node.parents[index_of_parent] = len(current_group)-1
             
                 global shadow_nodes_added_to_partitions
                 #global shadow_nodes_added_to_groups
@@ -1293,14 +1349,14 @@ def dfs_parent(visited, node):  #function for dfs
 # - partition/group number is not -1, then we do not need to patch,
 #   but the parent may be in this partition/group or not.
 #   - parent is in this partition/group: no shadow nodes so we
-#     can append parent index to parents[]
+#     can set parents[] to parent's index
 #   - parent is not in this partition/group: we will push
 #     a shadow node in front of this partition_node so the parent 
-#     index should be the shadow node's index.
+#     index should be the shadow node's index ot the actul parent,
 #     Note: this node may have multiple parents in a different
 #     partition/group and we will push a shadow node for each of
 #     these parents *before* we push the partition node. The 
-#     partition node's parents should inclde all of these shadow
+#     partition node's parents should include all of these shadow
 #     nodes.
 #rhc: handle multiple shadow nodes? Note that we do not push the 
 #     partition/group node until after we process all the parents
@@ -1308,7 +1364,8 @@ def dfs_parent(visited, node):  #function for dfs
 #   
 # so we can 
 #   append partition/group index to parents[]
-# use index in this current partition/group
+
+            """
             i = 0
             for parent_index in node.parents:
                 # new_index = nodeIndex_to_partitionIndex_map.get(parent)
@@ -1319,12 +1376,12 @@ def dfs_parent(visited, node):  #function for dfs
                 #partition_index = -1
                 #group_number = current_group_number
                 #group_index = -1
-                partition_index = pg_tuple[1]
-                group_index = pg_tuple[3]
-                if partition_index != -1:
+                parent_partition_index = pg_tuple[1]
+                parent_group_index = pg_tuple[3]
+                if parent_partition_index != -1:
                     # assert group_index is also -1
-                    partition_node.parents.append(partition_index)
-                    group_node.parents.append(group_index)
+                    partition_node.parents.append(parent_partition_index)
+                    group_node.parents.append(parent_group_index)
                 else:
                     partition_node.parents.append(-1)
                     group_node.parents.append(-1)
@@ -1335,6 +1392,8 @@ def dfs_parent(visited, node):  #function for dfs
                     patch_parent_mapping_for_partitions.append(patch_tuple)
                     patch_parent_mapping_for_groups.append(patch_tuple)
                 i += 1
+            """
+
             #partition_node.parents = node.parents
             
             partition_node.num_children = len(node.children)
@@ -1365,11 +1424,11 @@ def dfs_parent(visited, node):  #function for dfs
             # group but same partition then we only add a shadow node to the group
             # in a position right before node in the group. 
             partition_number = current_partition_number
-            partition_index = len(current_partition)-1
+            parent_partition_index = len(current_partition)-1
 #rhc: ToDo: if using partitions, then set group number to 0, so PR1_0, PR2_0, etc
             group_number = current_group_number
-            group_index = len(current_group)-1
-            pg_tuple = (partition_number,partition_index,group_number,group_index)
+            parent_group_index = len(current_group)-1
+            pg_tuple = (partition_number,parent_partition_index,group_number,parent_group_index)
             nodeIndex_to_partition_partitionIndex_group_groupIndex_map[partition_node.ID] = pg_tuple
 
         else:
@@ -3016,7 +3075,7 @@ if PRINT_DETAILED_STATS:
 else:
     print("-- (" + str(len(nodeIndex_to_partition_partitionIndex_group_groupIndex_map)) + ")")
 print()
-print("Partition Node parents, len: " + str(len(partitions))+":")
+print("Partition Node parents (shad. node is a parent), len: " + str(len(partitions))+":")
 for x in partitions:
     if PRINT_DETAILED_STATS:
         #print("-- (" + str(len(x)) + "):", end=" ")
@@ -3033,7 +3092,7 @@ for x in partitions:
     else:
         print("-- (" + str(len(x)) + ")")
 print()
-print("Group Node parents, len: " + str(len(partitions))+":")
+print("Group Node parents (shad. node is a parent), len: " + str(len(partitions))+":")
 for x in groups:
     if PRINT_DETAILED_STATS:
         #print("-- (" + str(len(x)) + "):", end=" ")
