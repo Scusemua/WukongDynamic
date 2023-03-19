@@ -239,7 +239,7 @@ class Partition_Node:
         self.isShadowNode = False
         # Note: can't be a shadow node and have a non-empty frontier_parents
 
-    def update_PageRank_main(self, damping_factor, num_nodes):
+    def update_PageRank_main(self, damping_factor):
         parent_nodes = self.parents
         print("update_pagerank: node " + str(self.ID))
         print("update_pagerank: parent_nodes: " + str(parent_nodes))
@@ -247,13 +247,13 @@ class Partition_Node:
         #Note: a paent has at least one child so len(children) is not 0
         pagerank_sum = sum((nodes[node_index].pagerank / len(nodes[node_index].children)) for node_index in parent_nodes)
         print("update_pagerank: pagerank_sum: " + str(pagerank_sum))
-        random_jumping = damping_factor / num_nodes
-        print("damping_factor:" + str(damping_factor) + " num_nodes: " + str(num_nodes) + " random_jumping: " + str(random_jumping))
+        random_jumping = damping_factor / total_num_nodes
+        print("damping_factor:" + str(damping_factor) + " num_nodes: " + str(total_num_nodes) + " random_jumping: " + str(random_jumping))
         self.pagerank = random_jumping + (1-damping_factor) * pagerank_sum
         print ("update_pagerank: pagerank of node: " + str(self.ID) + ": " + str(self.pagerank))
         print()
 
-    def update_PageRank_of_PageRank_Function(self, partition_or_group,damping_factor, num_nodes):
+    def update_PageRank_of_PageRank_Function(self, partition_or_group,damping_factor, total_num_nodes):
         parent_nodes = self.parents
         print("update_pagerank: node " + str(self.ID))
         print("update_pagerank: parent_nodes: " + str(parent_nodes))
@@ -261,8 +261,8 @@ class Partition_Node:
         #Note: a paent has at least one child so num_children is not 0
         pagerank_sum = sum((partition_or_group[node_index].pagerank / partition_or_group[node_index].num_children) for node_index in parent_nodes)
         print("update_pagerank: pagerank_sum: " + str(pagerank_sum))
-        random_jumping = damping_factor / num_nodes
-        print("damping_factor:" + str(damping_factor) + " num_nodes: " + str(num_nodes) + " random_jumping: " + str(random_jumping))
+        random_jumping = damping_factor / total_num_nodes
+        print("damping_factor:" + str(damping_factor) + " num_nodes: " + str(total_num_nodes) + " random_jumping: " + str(random_jumping))
         self.pagerank = random_jumping + ((1-damping_factor) * pagerank_sum)
         print ("update_pagerank: pagerank of node: " + str(self.ID) + ": " + str(self.pagerank))
         print()
@@ -629,7 +629,9 @@ def dfs_parent(visited, node):  #function for dfs
     parent_partition_index = -1
     group_number = current_group_number
     parent_group_index = -1
-    pg_tuple = (partition_number,parent_partition_index,group_number,parent_group_index)
+    index_in_groups_list = -1
+    pg_tuple = (partition_number,parent_partition_index,group_number,parent_group_index,index_in_groups_list)
+
     global nodeIndex_to_partition_partitionIndex_group_groupIndex_map
     nodeIndex_to_partition_partitionIndex_group_groupIndex_map[node.ID] = pg_tuple
 
@@ -1023,7 +1025,7 @@ def dfs_parent(visited, node):  #function for dfs
                 # take care of this now
                 # index of child just added (we just visited it because it ws an 
                 # unvisited child) to partition
-                child_index_in_current_group = len(current_partition)
+                child_index_in_current_partition = len(current_partition)
                 # shadow node is a parent Node on frontier of previous partition
                 #shadow_node = Node(parent_node.ID)
                 shadow_node = Partition_Node(visited_parent_node.ID)
@@ -1089,7 +1091,8 @@ def dfs_parent(visited, node):  #function for dfs
 
                 # remember where the frontier_parent node should be placed when the 
                 # partition the PageRank task sends it to receives it. 
-                logger.debug ("num_frontier_groups: " + str(num_frontier_groups) + ", child_index: " + str(child_index_in_current_group))
+                logger.debug ("num partitions: " + str(current_partition_number) + ", child_index_in_current_partition: " + str(child_index_in_current_partition))
+                logger.debug ("num_frontier_groups: " + str(num_frontier_groups) + ", child_index_in_current_group: " + str(child_index_in_current_group))
 # rhc: ToDo: if we are using partition then we just need partition number and index
 # but we won't use group number? That is, the names aer PR1, PR2, etc, so we ignore'
 # the group number when we form partition name for target funtion with shadow nodes?
@@ -1098,8 +1101,11 @@ def dfs_parent(visited, node):  #function for dfs
                 # start of the partition. child_index is len(current_partition).
                 # The calculation for groups (below) is a bit difference.
                 # Q: Use 0 instead of num_frontier_groups so we can just grab the 0
-                frontier_parent_tuple = (current_partition_number,0,child_index_in_current_group)
-                logger.debug ("bfs frontier_parent_tuple: " + str(frontier_parent_tuple))
+                frontier_parent_partition_tuple = (current_partition_number,0,child_index_in_current_partition)
+                frontier_parent_group_tuple = (current_partition_number,num_frontier_groups,child_index_in_current_group)
+                logger.debug ("bfs frontier_parent_partition_tuple: " + str(frontier_parent_partition_tuple))
+                logger.debug ("bfs frontier_parent_group_tuple: " + str(frontier_parent_group_tuple))
+ 
                 # mark this node as one that PageRank needs to send in its output to the 
                 # next partition (via fanout/faninNB).That is, the fact that list
                 # frontier_parent is not empty indicates it needs to be sent in the 
@@ -1110,12 +1116,20 @@ def dfs_parent(visited, node):  #function for dfs
                 # need to use the current partition, not nodes as the current
                 # partition is what the functions will be using to compute pr
                 # nodes[parent_node.ID].frontier_parents.append(frontier_parent_tuple)
+                logger.debug ("visited_parent_node.ID " + str(visited_parent_node.ID))
                 partition_group_tuple = nodeIndex_to_partition_partitionIndex_group_groupIndex_map[visited_parent_node.ID]
                 parent_partition_number = partition_group_tuple[0]
                 parent_partition_index = partition_group_tuple[1]
+                parent_group_number = partition_group_tuple[2]
+                parent_group_index = partition_group_tuple[3]
+                index_in_groups_list = partition_group_tuple[4]
+                logger.debug ("partition_group_tuple " + str(partition_group_tuple))
                 # partition numbers start at 1 not 0
                 parent_partition = partitions[parent_partition_number-1]
-                parent_partition[parent_partition_index].frontier_parents.append(frontier_parent_tuple)
+                parent_partition[parent_partition_index].frontier_parents.append(frontier_parent_partition_tuple)
+                logger.debug ("add frontier tuple to parent group " + str(parent_group_number-1))
+                parent_group = groups[parent_group_number-1]
+                parent_group[parent_group_index].frontier_parents.append(frontier_parent_group_tuple)
 
 
         else:
@@ -1446,7 +1460,18 @@ def dfs_parent(visited, node):  #function for dfs
 #rhc: ToDo: if using partitions, then set group number to 0, so PR1_0, PR2_0, etc
             group_number = current_group_number
             parent_group_index = len(current_group)-1
-            pg_tuple = (partition_number,parent_partition_index,group_number,parent_group_index)
+#rhc ToDo: We need postion in groups (frontier_groups-1) when we add a frontier tuple
+# to a group. That is, if say 13 is a child of 8, we need to add a frontier_tuple
+# to 8.  group_number is the number of the group in a partition, e.g., 8 might be
+# in group 2 in partition 2, but any partition can have a group 2, so we cannot 
+# use the group number 2 to access this group 2 of 8 in the groups list. We need
+# to know group 2's position in the groups list, which could be anything.
+# So for 8 we will save it's partition number and its partition index, where
+# partition number i is always in position i-1 of the partitions list. We also
+# save 8's group number and group index, and 8's position in groups so we can 
+# get 8's group from the groups list when we need it.
+            index_in_groups_list = num_frontier_groups-1
+            pg_tuple = (partition_number,parent_partition_index,group_number,parent_group_index,index_in_groups_list)
             nodeIndex_to_partition_partitionIndex_group_groupIndex_map[partition_node.ID] = pg_tuple
 
         else:
@@ -1614,7 +1639,8 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
                     partition_index = len(current_partition)-1
                     group_number = current_group_number
                     group_index = len(current_group)-1
-                    pg_tuple = (partition_number,partition_index,group_number,group_index)
+                    index_in_groups_list = num_frontier_groups-1
+                    pg_tuple = (partition_number,partition_index,group_number,group_index,index_in_groups_list)
                     nodeIndex_to_partition_partitionIndex_group_groupIndex_map[partition_node.ID] = pg_tuple
 
                 else:
@@ -1649,7 +1675,8 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
                     partition_index = len(current_partition)-1
                     group_number = current_group_number
                     group_index = len(current_group)-1
-                    pg_tuple = (partition_number,partition_index,group_number,group_index)
+                    index_in_groups_list = num_frontier_groups-1
+                    pg_tuple = (partition_number,partition_index,group_number,group_index,index_in_groups_list)
                     nodeIndex_to_partition_partitionIndex_group_groupIndex_map[partition_node.ID] = pg_tuple
 
                 else:
@@ -1706,7 +1733,8 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
                     partition_index = len(current_partition)-1
                     group_number = current_group_number
                     group_index = len(current_group)-1
-                    pg_tuple = (partition_number,partition_index,group_number,group_index)
+                    index_in_groups_list = num_frontier_groups-1
+                    pg_tuple = (partition_number,partition_index,group_number,group_index,index_in_groups_list)
                     nodeIndex_to_partition_partitionIndex_group_groupIndex_map[partition_node.ID] = pg_tuple
 
                 else:
@@ -1761,7 +1789,8 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
                     partition_index = len(current_partition)-1
                     group_number = current_group_number
                     group_index = len(current_group)-1
-                    pg_tuple = (partition_number,partition_index,group_number,group_index)
+                    index_in_groups_list = num_frontier_groups - 1
+                    pg_tuple = (partition_number,partition_index,group_number,group_index,index_in_groups_list)
                     nodeIndex_to_partition_partitionIndex_group_groupIndex_map[partition_node.ID] = pg_tuple
 
 
@@ -1801,7 +1830,8 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
             partition_index = len(current_partition)-1
             group_number = current_group_number
             group_index = len(current_group)-1
-            pg_tuple = (partition_number,partition_index,group_number,group_index)
+            index_in_groups_list = num_frontier_groups - 1
+            pg_tuple = (partition_number,partition_index,group_number,group_index,index_in_groups_list)
             nodeIndex_to_partition_partitionIndex_group_groupIndex_map[partition_node.ID] = pg_tuple
 
         else:
@@ -2790,12 +2820,12 @@ def PageRank_one_iter(target_nodes,partition,damping_factor):
     normalize_PageRank(nodes)
 
 
-def PageRank_Function_one_iter(partition_or_group,damping_factor,actual_num_nodes):
+def PageRank_Function_one_iter(partition_or_group,damping_factor,total_num_nodes):
     for index in range(len(partition_or_group)):
         # Need number of non-shadow nodes'
 #rhc: handle shadow nodes
         if not partition_or_group[index].isShadowNode:
-            partition_or_group[index].update_PageRank_of_PageRank_Function(partition_or_group, damping_factor, actual_num_nodes)
+            partition_or_group[index].update_PageRank_of_PageRank_Function(partition_or_group, damping_factor, total_num_nodes)
         print("PageRank: node at position " + str(index) + " isShadowNode: " 
             + str(partition_or_group[index].isShadowNode))
         print()
@@ -2803,7 +2833,7 @@ def PageRank_Function_one_iter(partition_or_group,damping_factor,actual_num_node
     #normalize_PageRank(nodes)
 
 
-def PageRank_Function(task_file_name,dict_of_results):
+def PageRank_Function(task_file_name,total_num_nodes,dict_of_results):
         with open(task_file_name, 'rb') as handle:
             partition_or_group = (cloudpickle.load(handle))
         logger.debug("PageRank_Function output partition_or_group (node:parents):")
@@ -2826,22 +2856,22 @@ def PageRank_Function(task_file_name,dict_of_results):
             if node.isShadowNode:
                 num_shadow_nodes += 1
 
-        actual_num_nodes = len(partition_or_group)-num_shadow_nodes
+        #actual_num_nodes = len(partition_or_group)-num_shadow_nodes
 
         damping_factor=0.15
         iteration=int(1)
         for i in range(iteration):
             print("***** PageRank: iteration " + str(i))
             print()
-            PageRank_Function_one_iter(partition_or_group,damping_factor,actual_num_nodes)
+            PageRank_Function_one_iter(partition_or_group,damping_factor,total_num_nodes)
         for i in range(len(partition_or_group)):
             print (partition_or_group[i].toString_PageRank())
 
-def PageRank_Task(name,payload):
+def PageRank_Task(name,total_num_nodes,payload):
     dict_of_results = payload['input']
     task_name = "PR1_1"
     task_file_name = './'+task_name+'.pickle'
-    PageRank_Function(task_file_name,dict_of_results)
+    PageRank_Function(task_file_name,total_num_nodes,dict_of_results)
 
 
 #rhc: the actual pagerank will be working on Nodes not node indices?
@@ -3218,7 +3248,8 @@ input_partitions()
 task_name = "PR1_1"
 payload = {}
 payload['input'] = ()
-PageRank_Task(name,payload)
+total_num_nodes = 20
+PageRank_Task(name,total_num_nodes,payload)
 
 
 """
