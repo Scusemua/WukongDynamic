@@ -2904,7 +2904,14 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
         random_jumping = damping_factor / total_num_nodes
         one_minus_dumping_factor = 1 - damping_factor
 
+        iteration = -1
+        if not task_file_name.endswith('L'):
+            iteration=int(1)
+        else:
+            iteration=int(10)
+
         num_nodes_for_pagerank_computation = len(partition_or_group)
+
         i=0
         for tup in input_tuples:
             shadow_node_index = tup[0]
@@ -2966,8 +2973,6 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
                 print(",",end=" ")
         print()
 
-
-        iteration=int(1)
         for i in range(iteration):
             print("***** PageRank: iteration " + str(i))
             print()
@@ -3428,13 +3433,16 @@ payload = {}
 payload['input'] = PR2_1_input_from_PR_1_1
 PageRank_output_from_PR_2_1 = PageRank_Task(task_name,total_num_nodes,payload)
 PR2_2_input_from_PR_2_1 = PageRank_output_from_PR_2_1["PR2_2"]
-task_name = "PR2_2"
+task_name = "PR2_2L"
 payload = {}
 PR2_2_input = PR2_2_input_from_PR_1_1 + PR2_2_input_from_PR_2_1
 payload['input'] = PR2_2_input
 PageRank_output_from_PR_2_2 = PageRank_Task(task_name,total_num_nodes,payload)
-
-
+#ToDo: Finish groups, but PR2_2 is a loop so need prev? or we will wait for parents?
+#ToDo: Need loop indicator 'L' so we know how many iterations to use. We can
+#  hardcode this for now.
+# ToDo: add 'L' to task_name when you see parent is in same partition/group and
+#   parent has been visited; this code is already there - it's the patching code.
 
 
 """
