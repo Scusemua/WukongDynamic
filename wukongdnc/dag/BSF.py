@@ -307,46 +307,7 @@ for x in range(num_nodes+1):
     nodes.append(Node(x))
 """
 
-"""
-# Assign above nodes
-nodes[0] = Node(0)  # not used; num_nodes does not include nodes[0]
-nodes[1] = N1
-nodes[2] = N2
-nodes[3] = N3
-nodes[4] = N4
-nodes[5] = N5
-nodes[6] = N6
-nodes[7] = N7
-nodes[8] = N8
-nodes[9] = N9
-nodes[10] = N10
-nodes[11] = N11
-nodes[12] = N12
-"""
-"""
-N1.children = [N3,N2]
-N1.parents = []
-N2.children = [N9,N8]
-N2.parents = [N1]
-N3.children = [N11,N10]
-N3.parents = [N1,N4]
-N4.children = [N3]
-N4.parents = [N5,N6]
-N5.children = [N4]
-N5.parents = []
-N6.children = [N7]
-N6.parents = []
-N7.children = []
-N7.parents = [N6]
-N8.children = []
-N8.parents = [N2]
-N9.children = []
-N9.parents = [N2]
-N10.children = []
-N10.parents = [N3]
-N11.children = []
-N11.parents = [N3]
-"""
+
 
 # visual is a list which stores all the set of edges that constitutes a graph
 visual = []
@@ -363,67 +324,6 @@ def visualize():
     # comment 
     #nx.draw_planar(G,with_labels = True, alpha=0.8) #NEW FUNCTION
     fig.canvas.draw()
-
-"""
-N1.children = [3,2]
-N1.parents = []
-temp = [1,3]
-visual.append(temp)
-temp = [1,2]
-visual.append(temp)
-
-N2.children = [9,8]
-N2.parents = [1]
-temp = [2,9]
-visual.append(temp)
-temp = [2,8]
-visual.append(temp)
-
-N3.children = [11,10]
-N3.parents = [1,4]
-temp = [3,11]
-visual.append(temp)
-temp = [3,10]
-visual.append(temp)
-
-N4.children = [3]
-N4.parents = [5,6,12]
-temp = [4,3]
-visual.append(temp)
-
-N5.children = [4]
-N5.parents = []
-temp = [5,4]
-visual.append(temp)
-
-N6.children = [7,4]
-N6.parents = []
-temp = [6,7]
-visual.append(temp)
-temp = [6,4]
-visual.append(temp)
-
-N7.children = []
-N7.parents = [6]
-N8.children = []
-N8.parents = [2]
-N9.children = []
-N9.parents = [2]
-N10.children = []
-N10.parents = [3]
-
-N11.children = [12]
-N11.parents = [3,12]
-temp = [11,12]
-visual.append(temp)
-
-N12.children = [4,11]
-N12.parents = [11]
-temp = [12,4]
-visual.append(temp)
-temp = [12,11]
-visual.append(temp)
-"""
 
 visited = [] # List for visited nodes.
 queue = []     #Initialize a queue
@@ -450,6 +350,8 @@ patch_parent_mapping_for_groups = []
 current_group_number = 1
 group_names = []
 partition_names = []
+current_partition_isLoop = False
+current_group_isLoop = False
 # map the index of a node in nodes to its index in its partition/group.
 # node i in nodes is in position i. When we place a node in a partition/group, 
 # this node is not assumed to be in postion i; nodes are added to the partition/group
@@ -495,21 +397,7 @@ PRINT_DETAILED_STATS = True
 scc_graph = Graph(0)
 scc_num_vertices = 0
 
-"""
-# Regular bfs.
-def bfs(visited, graph, node): #function for BFS
-  visited.append(node)
-  queue.append(node)
 
-  while queue:          # Creating loop to visit each node
-    m = queue.pop(0) 
-    print (m, end = " ") 
-
-    for neighbor in graph[m]:
-      if neighbor not in visited:
-        visited.append(neighbor)
-        queue.append(neighbor)
-"""
 
 # process children before parent traversal
 def dfs_parent_pre_parent_traversal(node,visited,list_of_unvisited_children):
@@ -839,6 +727,14 @@ def dfs_parent(visited, node):  #function for dfs
                     patch_parent_mapping_for_partitions.append(patch_tuple)
                     patch_parent_mapping_for_groups.append(patch_tuple)
 
+                    # Detected loop. When we compute pagerank for a group, the number
+                    # of iterations for a loop-group is more than 1, while the number
+                    # of iterations for a non-loop group is 1. The name for a group
+                    # or partition with a loop ends with "L".
+                    logger.debug("dfs_parent set current_partition_isLoop to True.")
+                    global current_partition_isLoop
+                    current_partition_isLoop = True
+
                 """
                 parent_partition_index = partition_group_tuple[1]
                 partition_node.parents[index_of_parent] = parent_partition_index
@@ -880,6 +776,14 @@ def dfs_parent(visited, node):  #function for dfs
                         # this parent will also indicate there is a loop in the current
                         # partition/group.). If the checked showed a loop in the partition
                         # then we created a path tuple for the partition and group.
+
+                        # Detected loop. When we compute pagerank for a group, the number
+                        # of iterations for a loop-group is more than 1, while the number
+                        # of iterations for a non-loop group is 1. The name for a group
+                        # or partition with a loop ends with "L".
+                        global current_group_isLoop
+                        if parent_partition_index == -1:
+                            current_group_isLoop = True
  
                         """
                         parent_group_index = partition_group_tuple[3]
@@ -1916,6 +1820,10 @@ def bfs(visited, node): #function for BFS
     group_name = "PR" + str(current_partition_number) + "_" + str(current_group_number)
     # group_number_in_fronter stays at 1 since this is the only group in the frontier_list
     # partition and thus the first group in the next parttio is also group 1
+
+    global current_group_isLoop
+    if current_group_isLoop:
+        group_name = group_name + "L"
     group_names.append(group_name)
 
     dfs_parent_end_partition_size = len(current_partition)
@@ -2025,7 +1933,12 @@ def bfs(visited, node): #function for BFS
                 current_partition = []
 
 #rhc: ToDo: generate/print partition name for partition_names here (like for groups)
-                partition_name = "PR" + str(current_partition_number) + "_0"
+                partition_name = "PR" + str(current_partition_number) + "_1"
+                global current_partition_isLoop
+                if current_partition_isLoop:
+                    partition_name = partition_name + "L"
+
+                current_partition_isLoop = False
                 partition_names.append(partition_name)
 
                 global patch_parent_mapping_for_partitions
@@ -2278,6 +2191,9 @@ def bfs(visited, node): #function for BFS
                 groups.append(current_group)
                 current_group = []
                 group_name = "PR" + str(current_partition_number) + "_" + str(current_group_number)
+                if current_group_isLoop:
+                    group_name = group_name + "L"
+                current_group_isLoop = False
                 current_group_number += 1
                 group_names.append(group_name)
 
@@ -2861,7 +2777,7 @@ def PageRank_Function_one_iter(partition_or_group,damping_factor,
             damping_factor,one_minus_dumping_factor,random_jumping,total_num_nodes)
 
         if partition_or_group[index].isShadowNode:
-            print("PageRank: after pagerank computation: node at position " 
+            print("PageRank:  after pagerank computation: node at position " 
             + str(index) + " isShadowNode: " 
             + str(partition_or_group[index].isShadowNode) 
             + ", pagerank: " + str(partition_or_group[index].pagerank)
@@ -2873,8 +2789,13 @@ def PageRank_Function_one_iter(partition_or_group,damping_factor,
 #rhc: ToDo: do this?
     #normalize_PageRank(nodes)
 
-def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
-        with open(task_file_name, 'rb') as handle:
+def PageRank_Function(task_file_name,total_num_nodes,input_tuples,results):
+        # task_file_name is, e.g., "PR1_1" not "PR1_1.pickle"
+        # We check for task_file_name ending with "L" for loop below,
+        # so we make this check esy by having 'L' at the end (endswith)
+        # instead of having to parse ("PR1_1.pickle")
+        complete_task_file_name = './'+task_name+'.pickle'
+        with open(complete_task_file_name, 'rb') as handle:
             partition_or_group = (cloudpickle.load(handle))
         print("PageRank_Function output partition_or_group (node:parents):")
         for node in partition_or_group:
@@ -2973,17 +2894,19 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
                 print(",",end=" ")
         print()
 
-        for i in range(iteration):
+        for i in range(1,iteration+1):
             print("***** PageRank: iteration " + str(i))
             print()
             PageRank_Function_one_iter(partition_or_group,damping_factor,one_minus_dumping_factor,random_jumping,total_num_nodes,num_nodes_for_pagerank_computation)
         print("PageRanks: ")
-        for i in range(len(partition_or_group)):
+        for i in range(num_nodes_for_pagerank_computation):
             if not partition_or_group[i].isShadowNode:
                 my_ID = str(partition_or_group[i].ID)
+                results[partition_or_group[i].ID] = partition_or_group[i].pagerank
             else:
                 my_ID = str(partition_or_group[i].ID) + "-s"
             print(partition_or_group[i].toString_PageRank())
+            
         print()
         print("Frontier Parents:")
         for i in range(len(partition_or_group)):
@@ -3019,7 +2942,7 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
         print()
         return PageRank_output
 
-def PageRank_Task(task_name,total_num_nodes,payload):
+def PageRank_Task(task_file_name,total_num_nodes,payload,results):
     input_tuples = payload['input']
     # sort inut tuples so that they are in shadow_node order, left to right.
     # The first index of tuple is index of the shadow_node in the input_tuples
@@ -3030,13 +2953,12 @@ def PageRank_Task(task_name,total_num_nodes,payload):
     #
     # This sort is not necessary; it just helps with the visual during debugging.
     input_tuples.sort()
-    task_file_name = './'+task_name+'.pickle'
     print(task_name + " input tuples: ")
     for tup in input_tuples:
         print(tup,end=" ")
     print()
     print()
-    PageRank_output = PageRank_Function(task_file_name,total_num_nodes,input_tuples)
+    PageRank_output = PageRank_Function(task_file_name,total_num_nodes,input_tuples,results)
     return PageRank_output
 
 #rhc: the actual pagerank will be working on Nodes not node indices?
@@ -3420,29 +3342,60 @@ logger.debug("Ouput partitions/groups")
 output_partitions()
 logger.debug("Input partitions/groups")
 input_partitions()
+
 task_name = "PR1_1"
 payload = {}
 payload['input'] = []
 total_num_nodes = 20
-PageRank_output_from_PR_1_1 = PageRank_Task(task_name,total_num_nodes,payload)
+results = []
+for _ in range(total_num_nodes+1):
+    results.append(-1)
+PageRank_output_from_PR_1_1 = PageRank_Task(task_name,total_num_nodes,payload,results)
 PR2_1_input_from_PR_1_1 = PageRank_output_from_PR_1_1["PR2_1"]
 PR2_2_input_from_PR_1_1 = PageRank_output_from_PR_1_1["PR2_2"]
-PR2_3_inputfrom_PR_1_1 = PageRank_output_from_PR_1_1["PR2_3"]
+PR2_3_input_from_PR_1_1 = PageRank_output_from_PR_1_1["PR2_3"]
 task_name = "PR2_1"
 payload = {}
 payload['input'] = PR2_1_input_from_PR_1_1
-PageRank_output_from_PR_2_1 = PageRank_Task(task_name,total_num_nodes,payload)
+PageRank_output_from_PR_2_1 = PageRank_Task(task_name,total_num_nodes,payload,results)
 PR2_2_input_from_PR_2_1 = PageRank_output_from_PR_2_1["PR2_2"]
 task_name = "PR2_2L"
 payload = {}
 PR2_2_input = PR2_2_input_from_PR_1_1 + PR2_2_input_from_PR_2_1
 payload['input'] = PR2_2_input
-PageRank_output_from_PR_2_2 = PageRank_Task(task_name,total_num_nodes,payload)
+PageRank_output_from_PR_2_2 = PageRank_Task(task_name,total_num_nodes,payload,results)
+PR3_1_input_from_PR_2_2 = PageRank_output_from_PR_2_2["PR3_1"]
+PR3_2_input_from_PR_2_2 = PageRank_output_from_PR_2_2["PR3_2"]
+task_name = "PR2_3"
+payload = {}
+PR2_3_input = PR2_3_input_from_PR_1_1
+payload['input'] = PR2_3_input
+PageRank_output_from_PR_2_3 = PageRank_Task(task_name,total_num_nodes,payload,results)
+PR3_3_input_from_PR_2_3 = PageRank_output_from_PR_2_3["PR3_3"]
+task_name = "PR3_1"
+payload = {}
+PR3_1_input = PR3_1_input_from_PR_2_2
+payload['input'] = PR3_1_input
+PageRank_output_from_PR_3_1 = PageRank_Task(task_name,total_num_nodes,payload,results)
+PR3_2_input_from_PR_3_1 = PageRank_output_from_PR_3_1["PR3_2"]
+task_name = "PR3_2"
+payload = {}
+PR3_2_input = PR3_2_input_from_PR_2_2 + PR3_2_input_from_PR_3_1
+payload['input'] = PR3_2_input
+PageRank_output_from_PR_3_2 = PageRank_Task(task_name,total_num_nodes,payload,results)
+task_name = "PR3_3"
+payload = {}
+PR3_3_input = PR3_3_input_from_PR_2_3
+payload['input'] = PR3_3_input
+PageRank_output_from_PR_3_3 = PageRank_Task(task_name,total_num_nodes,payload,results)
 #ToDo: Finish groups, but PR2_2 is a loop so need prev? or we will wait for parents?
 #ToDo: Need loop indicator 'L' so we know how many iterations to use. We can
 #  hardcode this for now.
 # ToDo: add 'L' to task_name when you see parent is in same partition/group and
 #   parent has been visited; this code is already there - it's the patching code.
+print("Results:")
+for i in range(len(results)):
+    print ("ID:"+str(i) + " pagerank:" + str(results[i]))
 
 
 """
@@ -3664,6 +3617,22 @@ N10.children = []
 N10.parents = [N3]
 N11.children = []
 N11.parents = [N3]
+"""
+
+"""
+# Regular bfs.
+def bfs(visited, graph, node): #function for BFS
+  visited.append(node)
+  queue.append(node)
+
+  while queue:          # Creating loop to visit each node
+    m = queue.pop(0) 
+    print (m, end = " ") 
+
+    for neighbor in graph[m]:
+      if neighbor not in visited:
+        visited.append(neighbor)
+        queue.append(neighbor)
 """
 
 # Consider: for Loop Groups, separate non-loop parents from parents so we 
