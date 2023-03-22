@@ -352,6 +352,12 @@ group_names = []
 partition_names = []
 current_partition_isLoop = False
 current_group_isLoop = False
+#For DAG generation, map sending task to list of Reveiving tasks, and 
+# map receiving task to list of Sending tasks.
+Partition_senders = {}
+Partition_receivers = {}
+Group_senders = {}
+Group_receivers = {}
 # map the index of a node in nodes to its index in its partition/group.
 # node i in nodes is in position i. When we place a node in a partition/group, 
 # this node is not assumed to be in postion i; nodes are added to the partition/group
@@ -864,6 +870,7 @@ def dfs_parent(visited, node):  #function for dfs
                         #logger.debug("ZZZZZZZZZZZ")
                         frontier_parent_tuple = (current_partition_number,num_frontier_groups,child_index_in_current_group)
                         logger.debug ("bfs frontier_parent_tuple: " + str(frontier_parent_tuple))
+
                         # mark this node as one that PageRank needs to send in its output to the 
                         # next partition (via fanout/faninNB).That is, the fact that list
                         # frontier_parent is not empty indicates it needs to be sent in the 
@@ -905,6 +912,17 @@ def dfs_parent(visited, node):  #function for dfs
                             + ", frontier_parent_tuple: " + str(frontier_parent_tuple))
                         parent_group[parent_group_parent_index].frontier_parents.append(frontier_parent_tuple)
             
+                        # generate dependency in DAG
+                        sending_group = "PR"+str(parent_partition_number)+"_"+str(parent_group_number)
+                        receiving_group = "PR"+str(current_partition_number)+"_"+str(num_frontier_groups)
+                        sender_set = Group_senders.get(sending_group)
+                        if sender_set == None:
+                            Group_senders[sending_group] = set()
+                        Group_senders[sending_group].add(receiving_group)
+                        receiver_set = Group_receivers.get(receiving_group)
+                        if receiver_set == None:
+                            Group_receivers[receiving_group] = set()
+                        Group_receivers[receiving_group].add(sending_group)
                 else:
                     logger.error("[Error] Internal Error. dfs_parent: partition_group_tuple " 
                         + "is None should be unreachable.")
@@ -1024,7 +1042,7 @@ def dfs_parent(visited, node):  #function for dfs
                 # start of the partition. child_index is len(current_partition).
                 # The calculation for groups (below) is a bit difference.
                 # Q: Use 0 instead of num_frontier_groups so we can just grab the 0
-                frontier_parent_partition_tuple = (current_partition_number,0,child_index_in_current_partition)
+                frontier_parent_partition_tuple = (current_partition_number,1,child_index_in_current_partition)
                 frontier_parent_group_tuple = (current_partition_number,num_frontier_groups,child_index_in_current_group)
                 logger.debug ("bfs frontier_parent_partition_tuple: " + str(frontier_parent_partition_tuple))
                 logger.debug ("bfs frontier_parent_group_tuple: " + str(frontier_parent_group_tuple))
@@ -1055,6 +1073,28 @@ def dfs_parent(visited, node):  #function for dfs
                 parent_group = groups[index_in_groups_list]
                 parent_group[parent_group_index].frontier_parents.append(frontier_parent_group_tuple)
 
+                # generate dependency in DAG
+                sending_partition = "PR"+str(parent_partition_number)+"_1"
+                receiving_partition = "PR"+str(current_partition_number)+"_1"
+                sender_set = Partition_senders.get(sending_partition)
+                if sender_set == None:
+                    Partition_senders[sending_partition] = set()
+                Partition_senders[sending_partition].add(receiving_partition)
+                receiver_set = Partition_receivers.get(receiving_partition)
+                if receiver_set == None:
+                    Partition_receivers[receiving_partition] = set()
+                Partition_receivers[receiving_partition].add(sending_partition)
+                # generate dependency in DAG
+                sending_group = "PR"+str(parent_partition_number)+"_"+str(parent_group_number)
+                receiving_group = "PR"+str(current_partition_number)+"_"+str(num_frontier_groups)
+                sender_set = Group_senders.get(sending_group)
+                if sender_set == None:
+                    Group_senders[sending_group] = set()
+                Group_senders[sending_group].add(receiving_group)
+                receiver_set = Group_receivers.get(receiving_group)
+                if receiver_set == None:
+                    Group_receivers[receiving_group] = set()
+                Group_receivers[receiving_group].add(sending_group)
 
         else:
             logger.error("[Error] Internal Error. dfs_parent: partition_group_tuple" 
@@ -2516,7 +2556,129 @@ else:
     # does not require a deepcop
     frontiers.append(frontier.copy())
 
-def generate_DAG_info(graph_name, nodes):
+def generate_DAG_info():
+    #Given Partition_senders, Partition_receivers, Group_senders, Grou_receievers
+
+#rhc: ToDo: Do we want to use collapse? fanin? If so, one task will input
+# its partition/grup and then input the collapse/fanin group, etc. Need
+# to clear the old partition/group before doing next?
+# If we pre-load the partitions, thn we would want to do fanouts/faninNBs
+# so we can use the pre-loaded partition?
+
+#rhc: Need:
+    """
+        #rhc: ToDo: leaf partition/groups are those that are not a key in the Receiver
+        # map? Yes. 
+        DAG_leaf_tasks = ["PR1"]
+        DAG_leaf_task_start_states = [1]
+        # No inputs, inputs are parent prs not partition nodes
+        DAG_leaf_task_inputs = [[5,17,1]]
+
+        all_fanout_task_names = ["PR2_1", "PR2_3"]	# list of all fanout task names in the DAG
+        all_fanin_task_names = []
+        all_faninNB_task_names = ["PR2_2"]
+        all_collapse_task_names = ["PR3_1", "PR3_2"]
+        all_fanin_sizes = []
+        all_faninNB_sizes = [2]
+    """
+
+    Partition_all_fanout_task_names = set()
+    Partition_all_fanin_task_names = set()
+    Partition_all_faninNB_task_names = set()
+    Partition_all_collapse_task_names = set()
+    Partition_all_fanin_sizes = set()
+    Partition_all_faninNB_sizes = set()
+
+    Group_all_fanout_task_names = set()
+    Group_all_fanin_task_names = set()
+    Group_all_faninNB_task_names = set()
+    Group_all_collapse_task_names = set()
+    Group_all_fanin_sizes = set()
+    Group_all_faninNB_sizes = set()
+
+    print("Partition DAG:")
+    # partition i has a collapse to partition i+1
+    for senderX in Partition_senders:
+        receiver_set_for_senderX = Partition_senders[senderX]
+        for receiverY in receiver_set_for_senderX:
+            sender_set_for_receiverY = Partition_receivers[receiverY]
+            length_of_sender_set_for_receiverY = len(sender_set_for_receiverY)
+            length_of_receiver_set_for_senderX = len(receiver_set_for_senderX)
+            if length_of_sender_set_for_receiverY == 1:
+                # collapse or fanout
+                if length_of_receiver_set_for_senderX == 1:
+                    print("sender " + senderX + " --> " + receiverY + " : Collapse")
+                    Partition_all_collapse_task_names.add(receiverY)
+                else:
+                    print("sender " + senderX + " --> " + receiverY + " : Fanout")
+                    Partition_all_fanout_task_names.add(receiverY)
+            else:
+                # fanin or fannNB
+                isFaninNB = False
+                for senderZ in sender_set_for_receiverY:
+                    receiver_set_for_senderZ = Partition_senders[senderZ]
+                    if len(receiver_set_for_senderZ) > 1:
+                        isFaninNB = True
+                        break
+                if isFaninNB:
+                    print("sender " + senderX + " --> " + receiverY + " : FaninNB")
+                    Partition_all_faninNB_task_names.add(receiverY)
+                    Partition_all_faninNB_sizes.add(length_of_sender_set_for_receiverY)
+                else:
+                    print("sender " + senderX + " --> " + receiverY + " : Fanin")
+                    Partition_all_fanin_task_names.add(receiverY)
+                    Partition_all_fanin_sizes.add(length_of_sender_set_for_receiverY)
+    print()
+
+    print("Group DAG:")
+    for senderX in Group_senders:
+        receiver_set_for_senderX = Group_senders[senderX]
+        for receiverY in receiver_set_for_senderX:
+            sender_set_for_receiverY = Group_receivers[receiverY]
+            length_of_sender_set_for_receiverY = len(sender_set_for_receiverY)
+            length_of_receiver_set_for_senderX = len(receiver_set_for_senderX)
+            if length_of_sender_set_for_receiverY == 1:
+                # collapse or fanout
+                if length_of_receiver_set_for_senderX == 1:
+                    print("sender " + senderX + " --> " + receiverY + " : Collapse")
+                    Group_all_collapse_task_names.add(receiverY)
+                else:
+                    print("sender " + senderX + " --> " + receiverY + " : Fanout")
+                    Group_all_fanout_task_names.add(receiverY)
+            else:
+                # fanin or fannNB
+                isFaninNB = False
+                for senderZ in sender_set_for_receiverY:
+                    receiver_set_for_senderZ = Group_senders[senderZ]
+                    if len(receiver_set_for_senderZ) > 1:
+                        isFaninNB = True
+                        break
+                if isFaninNB:
+                    print("sender " + senderX + " --> " + receiverY + " : FaninNB")
+                    Group_all_faninNB_task_names.add(receiverY)
+                    Group_all_faninNB_sizes.add(length_of_sender_set_for_receiverY)
+
+                else:
+                    print("sender " + senderX + " --> " + receiverY + " : Fanin")
+                    Group_all_fanin_task_names.add(receiverY)
+                    Group_all_fanin_sizes.add(length_of_sender_set_for_receiverY)
+ 
+    print("Partition_all_fanout_task_names: " + str(Partition_all_fanout_task_names))
+    print("Partition_all_fanin_task_names: " + str(Partition_all_fanin_task_names))
+    print("Partition_all_faninNB_task_names: " + str(Partition_all_faninNB_task_names))
+    print("Partition_all_collapse_task_names: " + str(Partition_all_collapse_task_names))
+    print("Partition_all_fanin_sizes: " + str(Partition_all_fanin_sizes))
+    print("Partition_all_faninNB_sizes: " + str(Partition_all_faninNB_sizes))
+
+    print("Group_all_fanout_task_names: " + str(Group_all_fanout_task_names))
+    print("Group_all_fanin_task_names: " + str(Group_all_fanin_task_names))
+    print("Group_all_faninNB_task_names: " + str(Group_all_faninNB_task_names))
+    print("Group_all_collapse_task_names: " + str(Group_all_collapse_task_names))
+    print("Group_all_fanin_sizes: " + str(Group_all_fanin_sizes))
+    print("Group_all_faninNB_sizes: " + str(Group_all_faninNB_sizes))
+
+
+def generate_DAG_info_OLD(graph_name, nodes):
     # from DFS_visit
     DAG_map = {} # map from state (per task) to the fanin/fanout/faninNB operations executed after the task is executed
     DAG_states = {} # map from String task_name to the state that task is executed (one state per task)
@@ -2535,7 +2697,7 @@ def generate_DAG_info(graph_name, nodes):
     DAG_map = {}
     DAG_states = {}
     DAG_leaf_tasks = ["PR1"]
-    DAG_leaf_task_start_states = [1]
+    DAG_leaf_task_start_states = [1]# No inputs, inputs are parent prs not partition nodes
     DAG_leaf_task_inputs = [[5,17,1]]
     all_fanout_task_names = ["PR2_1", "PR2_3"]	# list of all fanout task names in the DAG
     all_fanin_task_names = []
@@ -3336,8 +3498,43 @@ for x in groups:
     else:
         print("-- (" + str(len(x)) + ")")
 print()
+print("Partition_senders, len: " + str(len(Partition_senders)) + ":")
+if PRINT_DETAILED_STATS:
+    for k, v in Partition_senders.items():
+        print((k, v))
+    print()
+else:
+    print("-- (" + str(len(Partition_senders)) + ")")
+    print()
+print("Partition_receivers, len: " + str(len(Partition_receivers)) + ":")
+if PRINT_DETAILED_STATS:
+    for k, v in Partition_receivers.items():
+        print((k, v))
+    print()
+else:
+    print("-- (" + str(len(Partition_receivers)) + ")")
+    print()
+print("Group_senders, len: " + str(len(Group_senders)) + ":")
+if PRINT_DETAILED_STATS:
+    for k, v in Group_senders.items():
+        print((k, v))
+    print()
+else:
+    print("-- (" + str(len(Group_senders)) + ")")
+    print()
+print("Group_receivers, len: " + str(len(Group_receivers)) + ":")
+if PRINT_DETAILED_STATS:
+    for k, v in Group_receivers.items():
+        print((k, v))
+    print()
+else:
+    print("-- (" + str(len(Group_receivers)) + ")")
+    print()
+generate_DAG_info()
 #visualize()
 #input('Press <ENTER> to continue')
+
+"""
 logger.debug("Ouput partitions/groups")
 output_partitions()
 logger.debug("Input partitions/groups")
@@ -3388,15 +3585,10 @@ payload = {}
 PR3_3_input = PR3_3_input_from_PR_2_3
 payload['input'] = PR3_3_input
 PageRank_output_from_PR_3_3 = PageRank_Task(task_name,total_num_nodes,payload,results)
-#ToDo: Finish groups, but PR2_2 is a loop so need prev? or we will wait for parents?
-#ToDo: Need loop indicator 'L' so we know how many iterations to use. We can
-#  hardcode this for now.
-# ToDo: add 'L' to task_name when you see parent is in same partition/group and
-#   parent has been visited; this code is already there - it's the patching code.
 print("Results:")
 for i in range(len(results)):
     print ("ID:"+str(i) + " pagerank:" + str(results[i]))
-
+"""
 
 """
 generate_DAG_info("graph20_DAG", nodes)
