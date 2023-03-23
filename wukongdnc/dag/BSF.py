@@ -35,10 +35,6 @@ class state_info:
         self.faninNB_sizes = faninNB_sizes
         self.collapse = collapse
         self.task_inputs = task_inputs
-        # Added for pagerank
-        self.dependents_per_fanout = dependents_per_fanout
-        self.dependents_per_faninNB = dependents_per_faninNB
-        self.dependents_per_collapse = dependents_per_collapse
     def __str__(self):
         if self.fanouts != None:
             fanouts_string = str(self.fanouts)
@@ -68,24 +64,10 @@ class state_info:
             task_inputs_string = str(self.task_inputs)
         else:
             task_inputs_string = "None"  
-        if self.dependents_per_fanout != None:
-            dependents_per_fanout_string = str(self.dependents_per_fanout)
-        else:
-            dependents_per_fanout_string = "None" 
-        if self.dependents_per_faninNB != None:
-            dependents_per_faninNB_string = str(self.dependents_per_faninNB)
-        else:
-            dependents_per_faninNB_string = "None"  
-        if self.dependents_per_collapse != None:
-            dependents_per_collpase_string = str(self.dependents_per_collapse)
-        else:
-            dependents_per_collpase_string = "None"        
         return (" task: " + self.task_name + ", fanouts:" + fanouts_string + ", fanins:" + fanins_string + ", faninsNB:" + faninNBs_string 
             + ", collapse:" + collapse_string + ", fanin_sizes:" + fanin_sizes_string
             + ", faninNB_sizes:" + faninNB_sizes_string + ", task_inputs: " + task_inputs_string
-            + ", dependents_per_fanout: " + dependents_per_fanout_string 
-            + ", dependents_per_faninNB: " + dependents_per_faninNB_string
-            + ", dependents_per_collpase: " + dependents_per_collpase_string)
+        )
 
 
 class Graph:
@@ -2565,73 +2547,227 @@ def generate_DAG_info():
 # If we pre-load the partitions, thn we would want to do fanouts/faninNBs
 # so we can use the pre-loaded partition?
 
-#rhc: Need:
-    """
-        #rhc: ToDo: leaf partition/groups are those that are not a key in the Receiver
-        # map? Yes. 
-        DAG_leaf_tasks = ["PR1"]
-        DAG_leaf_task_start_states = [1]
-        # No inputs, inputs are parent prs not partition nodes
-        DAG_leaf_task_inputs = [[5,17,1]]
-
-        all_fanout_task_names = ["PR2_1", "PR2_3"]	# list of all fanout task names in the DAG
-        all_fanin_task_names = []
-        all_faninNB_task_names = ["PR2_2"]
-        all_collapse_task_names = ["PR3_1", "PR3_2"]
-        all_fanin_sizes = []
-        all_faninNB_sizes = [2]
-    """
-
     Partition_all_fanout_task_names = set()
     Partition_all_fanin_task_names = set()
     Partition_all_faninNB_task_names = set()
     Partition_all_collapse_task_names = set()
-    Partition_all_fanin_sizes = set()
-    Partition_all_faninNB_sizes = set()
+    Partition_all_fanin_sizes = []
+    Partition_all_faninNB_sizes = []
+
+    Partition_DAG_leaf_tasks = []
+    Partition_DAG_leaf_task_start_states = []
+    # no inputs for leaf tasks
+    Partition_DAG_leaf_task_inputs = []
+    Partition_DAG_map = {}
+    Partition_DAG_states = {}
+
+    print("Partition DAG:")
+    state = 1
+    # partition i has a collapse to partition i+1
+    # Task senderX sends inputs to one or more other tasks
+    for senderX in Partition_senders:
+        fanouts = []
+        faninNBs = []
+        fanins = []
+        collapse = []
+        fanin_sizes = []
+        faninNB_sizes = []
+        # tasks that receive inputs from senderX
+        receiver_set_for_senderX = Partition_senders[senderX]
+        # task receiverY receives inputs from other tasks (all tasks receive
+        # inputs from other tasks except leaf tasks)
+        for receiverY in receiver_set_for_senderX:
+            # tasks that send inputs to receiverY
+            sender_set_for_receiverY = Partition_receivers[receiverY]
+            length_of_sender_set_for_receiverY = len(sender_set_for_receiverY)
+            length_of_receiver_set_for_senderX = len(receiver_set_for_senderX)
+            if length_of_sender_set_for_receiverY == 1:
+                # collapse or fanout as receiverY receives on input
+                if length_of_receiver_set_for_senderX == 1:
+                    # only one task sends input to receiverY and this sending 
+                    # task only sends to one task, so collapse receiverY, i.e.,
+                    # senderX becomes receiverY
+                    print("sender " + senderX + " --> " + receiverY + " : Collapse")
+                    if not receiverY in Partition_all_collapse_task_names:
+                        Partition_all_collapse_task_names.add(receiverY)
+                    else:
+                        pass # error only one task can collapse a given task
+                    collapse.append(receiverY)
+                else:
+                    # only one task sends input to receiverY and this sending 
+                    # task sends to other tasks too, so senderX does a fanout 
+                    # to receiverY         
+                    print("sender " + senderX + " --> " + receiverY + " : Fanout")
+                    if not receiverY in Partition_all_fanout_task_names:
+                        Partition_all_fanout_task_names.add(receiverY)
+                    fanouts.append(receiverY)
+            else:
+                # fanin or fannNB since receiverY receives inputs from multiple tasks
+                isFaninNB = False
+                 # senderZ sends an input to receiverY
+                for senderZ in sender_set_for_receiverY:
+                    # tasks to which senderX sends an input
+                    receiver_set_for_senderZ = Partition_senders[senderZ]
+                    # since senderX sends inputs to more than one task, receiverY
+                    # is a faninNB task (as senderX cannot become receiverY)
+                    if len(receiver_set_for_senderZ) > 1:
+                        # if any task sends inputs to reciverY and any other task(s)
+                        # then receiverY must be a faninNB task since some sender cannot 
+                        # become receiverY.
+                        isFaninNB = True
+                        break
+                if isFaninNB:
+                    print("sender " + senderX + " --> " + receiverY + " : FaninNB")
+                    if not receiverY in Partition_all_faninNB_task_names:
+                        Partition_all_faninNB_task_names.add(receiverY)
+                        Partition_all_faninNB_sizes.append(length_of_sender_set_for_receiverY)
+                    faninNBs.append(receiverY)
+                    faninNB_sizes.append(length_of_sender_set_for_receiverY)
+                else:
+                    # senderX sends an input only to receiverY, same for any other
+                    # tasks that sends inputs to receiverY so receiverY is a fanin task.
+                    print("sender " + senderX + " --> " + receiverY + " : Fanin")
+                    if not receiverY in Partition_all_fanin_task_names:
+                        Partition_all_fanin_task_names.add(receiverY)
+                        Partition_all_fanin_sizes.append(length_of_sender_set_for_receiverY)
+                    fanins.append(receiverY)
+                    fanin_sizes.append(length_of_sender_set_for_receiverY)
+
+        # get the tasks that send to senderX, i.e., provide inputs for senderX
+        sender_set_for_senderX = Partition_receivers.get(senderX)
+        if sender_set_for_senderX == None:
+            # senderX is a leaf task since it is not a receiver
+            Partition_DAG_leaf_tasks.append(senderX)
+            Partition_DAG_leaf_task_start_states.append(state)
+            task_inputs = ()
+        else:
+            # sender_set_for_senderX provides input for senderX
+            task_inputs = tuple(sender_set_for_senderX)
+        Partition_DAG_map[state] = state_info(senderX, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs)
+        Partition_DAG_states[senderX] = state
+
+        state += 1
+
+    # Finish by doing the receivers that are not senders (opposite of leaf tasks);
+    # these are reeivers tht send no nputs to other tasks. They have no fanins/
+    # faninBs, fanouts or collapses, but they do have task inputs.
+    for receiverY in Partition_receivers:
+        if not receiverY in Partition_DAG_states:
+            fanouts = []
+            faninNBs = []
+            fanins = []
+            collapse = []
+            fanin_sizes = []
+            faninNB_sizes = []
+            sender_set_for_receiverY = Partition_receivers[receiverY]
+            task_inputs = tuple(sender_set_for_receiverY)
+            Partition_DAG_map[state] = state_info(receiverY, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs)
+            Partition_DAG_states[receiverY] = state
+            state += 1
+
+#rhc: ToDo: DAG_tasks
+    DAG_tasks = {}
+
+    print()
+    DAG_info = {}
+    DAG_info["DAG_map"] = Partition_DAG_map
+    DAG_info["DAG_states"] = Partition_DAG_states
+    DAG_info["DAG_leaf_tasks"] = Partition_DAG_leaf_tasks
+    DAG_info["DAG_leaf_task_start_states"] = Partition_DAG_leaf_task_start_states
+    DAG_info["DAG_leaf_task_inputs"] = Partition_DAG_leaf_task_inputs
+    DAG_info["all_fanout_task_names"] = Partition_all_fanout_task_names
+    DAG_info["all_fanin_task_names"] = Partition_all_fanin_task_names
+    DAG_info["all_faninNB_task_names"] = Partition_all_faninNB_task_names
+    DAG_info["all_collapse_task_names"] = Partition_all_collapse_task_names
+    DAG_info["all_fanin_sizes"] = Partition_all_fanin_sizes
+    DAG_info["all_faninNB_sizes"] = Partition_all_faninNB_sizes
+    DAG_info["DAG_tasks"] = DAG_tasks
+
+    file_name = "./DAG_info_Partition.pickle"
+    with open(file_name, 'wb') as handle:
+        cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+
+    num_fanins = len(Partition_all_fanin_task_names)
+    num_fanouts = len(Partition_all_fanout_task_names)
+    num_faninNBs = len(Partition_all_faninNB_task_names)
+    num_collapse = len(Partition_all_collapse_task_names)
+
+    print("DAG_map:")
+    for key, value in Partition_DAG_map.items():
+        print(key, ' : ', value)
+    print()
+    print("states:")        
+    for key, value in Partition_DAG_states.items():
+        print(key, ' : ', value)
+    print()
+    print("num_fanins:" + str(num_fanins) + " num_fanouts:" + str(num_fanouts) + " num_faninNBs:"
+    + str(num_faninNBs) + " num_collapse:" + str(num_collapse))
+    print()  
+    print("Partition_all_fanout_task_names:")
+    for name in Partition_all_fanout_task_names:
+        print(name)
+    print
+    print("all_fanin_task_names:")
+    for name in Partition_all_fanin_task_names :
+        print(name)
+    print()
+    print("all_fanin_sizes:")
+    for s in Partition_all_fanin_sizes :
+        print(s)
+    print()
+    print("all_faninNB_task_names:")
+    for name in Partition_all_faninNB_task_names:
+        print(name)
+    print()
+    print("all_faninNB_sizes:")
+    for s in Partition_all_faninNB_sizes:
+        print(s)
+    print()
+    print("Partition_all_collapse_task_names:")
+    for name in Partition_all_collapse_task_names:
+        print(name)
+    print()
+    print("leaf task start states:")
+    for start_state in Partition_DAG_leaf_task_start_states:
+        print(start_state)
+    print()
+    print("DAG_tasks:")
+    for key, value in DAG_tasks.items():
+        print(key, ' : ', value)
+    print()
+    print("DAG_leaf_tasks:")
+    for task_name in Partition_DAG_leaf_tasks:
+        print(task_name)
+    print()
+    print("DAG_leaf_task_inputs:")
+    for inp in Partition_DAG_leaf_task_inputs:
+        print(inp)
+    print()
 
     Group_all_fanout_task_names = set()
     Group_all_fanin_task_names = set()
     Group_all_faninNB_task_names = set()
     Group_all_collapse_task_names = set()
-    Group_all_fanin_sizes = set()
-    Group_all_faninNB_sizes = set()
+    Group_all_fanin_sizes = []
+    Group_all_faninNB_sizes = []
 
-    print("Partition DAG:")
-    # partition i has a collapse to partition i+1
-    for senderX in Partition_senders:
-        receiver_set_for_senderX = Partition_senders[senderX]
-        for receiverY in receiver_set_for_senderX:
-            sender_set_for_receiverY = Partition_receivers[receiverY]
-            length_of_sender_set_for_receiverY = len(sender_set_for_receiverY)
-            length_of_receiver_set_for_senderX = len(receiver_set_for_senderX)
-            if length_of_sender_set_for_receiverY == 1:
-                # collapse or fanout
-                if length_of_receiver_set_for_senderX == 1:
-                    print("sender " + senderX + " --> " + receiverY + " : Collapse")
-                    Partition_all_collapse_task_names.add(receiverY)
-                else:
-                    print("sender " + senderX + " --> " + receiverY + " : Fanout")
-                    Partition_all_fanout_task_names.add(receiverY)
-            else:
-                # fanin or fannNB
-                isFaninNB = False
-                for senderZ in sender_set_for_receiverY:
-                    receiver_set_for_senderZ = Partition_senders[senderZ]
-                    if len(receiver_set_for_senderZ) > 1:
-                        isFaninNB = True
-                        break
-                if isFaninNB:
-                    print("sender " + senderX + " --> " + receiverY + " : FaninNB")
-                    Partition_all_faninNB_task_names.add(receiverY)
-                    Partition_all_faninNB_sizes.add(length_of_sender_set_for_receiverY)
-                else:
-                    print("sender " + senderX + " --> " + receiverY + " : Fanin")
-                    Partition_all_fanin_task_names.add(receiverY)
-                    Partition_all_fanin_sizes.add(length_of_sender_set_for_receiverY)
-    print()
+    Group_DAG_leaf_tasks = []
+    Group_DAG_leaf_task_start_states = []
+    # no inputs for leaf tasks
+    Group_DAG_leaf_task_inputs = []
+    Group_DAG_map = {}
+    Group_DAG_states = {}
 
     print("Group DAG:")
+    state = 1
     for senderX in Group_senders:
+        print("senderX: " + senderX)
+        fanouts = []
+        fanins = []
+        faninNBs = []
+        collapse = []
+        fanin_sizes = []
+        faninNB_sizes = []
         receiver_set_for_senderX = Group_senders[senderX]
         for receiverY in receiver_set_for_senderX:
             sender_set_for_receiverY = Group_receivers[receiverY]
@@ -2640,42 +2776,201 @@ def generate_DAG_info():
             if length_of_sender_set_for_receiverY == 1:
                 # collapse or fanout
                 if length_of_receiver_set_for_senderX == 1:
+                    # only one task sends input to receiverY and this sending 
+                    # task only sends to one task, so collapse receiverY, i.e.,
+                    # senderX becomes receiverY
                     print("sender " + senderX + " --> " + receiverY + " : Collapse")
-                    Group_all_collapse_task_names.add(receiverY)
+                    if not receiverY in Group_all_collapse_task_names:
+                        Group_all_collapse_task_names.add(receiverY)
+                    else:
+                        pass # this is an error, only one task can collapse a given task
+                    collapse.append(receiverY)
                 else:
+                    # only one task sends input to receiverY and this sending 
+                    # task sends to other tasks too, so senderX does a fanout 
+                    # to receiverY   
                     print("sender " + senderX + " --> " + receiverY + " : Fanout")
-                    Group_all_fanout_task_names.add(receiverY)
+                    if not receiverY in Group_all_fanout_task_names:
+                        Group_all_fanout_task_names.add(receiverY)
+                    fanouts.append(receiverY)
             else:
-                # fanin or fannNB
+                # fanin or fannNB since receiverY receives inputs from multiple tasks
                 isFaninNB = False
+                 # senderZ sends an input to receiverY
                 for senderZ in sender_set_for_receiverY:
+                    # tasks to which senderX sends an input
                     receiver_set_for_senderZ = Group_senders[senderZ]
+                    # since senderX sends inputs to more than one task, receiverY
+                    # is a faninNB task (as senderX cannot become receiverY)
                     if len(receiver_set_for_senderZ) > 1:
+                        # if any task sends inputs to reciverY and any other task(s)
+                        # then receiverY must be a faninNB task since some sender cannot 
+                        # become receiverY.
                         isFaninNB = True
                         break
                 if isFaninNB:
                     print("sender " + senderX + " --> " + receiverY + " : FaninNB")
-                    Group_all_faninNB_task_names.add(receiverY)
-                    Group_all_faninNB_sizes.add(length_of_sender_set_for_receiverY)
-
+                    if not receiverY in Group_all_faninNB_task_names:
+                        Group_all_faninNB_task_names.add(receiverY)
+                        Group_all_faninNB_sizes.append(length_of_sender_set_for_receiverY)
+                    print ("after Group_all_faninNBs_sizes append: " + str(Group_all_faninNB_sizes))
+                    print ("faninNBs append: " + receiverY)
+                    faninNBs.append(receiverY)
+                    faninNB_sizes.append(length_of_sender_set_for_receiverY)
                 else:
+                    # senderX sends an input only to receiverY, same for any other
+                    # tasks that sends inputs to receiverY so receiverY is a fanin task.
                     print("sender " + senderX + " --> " + receiverY + " : Fanin")
-                    Group_all_fanin_task_names.add(receiverY)
-                    Group_all_fanin_sizes.add(length_of_sender_set_for_receiverY)
- 
-    print("Partition_all_fanout_task_names: " + str(Partition_all_fanout_task_names))
-    print("Partition_all_fanin_task_names: " + str(Partition_all_fanin_task_names))
-    print("Partition_all_faninNB_task_names: " + str(Partition_all_faninNB_task_names))
-    print("Partition_all_collapse_task_names: " + str(Partition_all_collapse_task_names))
-    print("Partition_all_fanin_sizes: " + str(Partition_all_fanin_sizes))
-    print("Partition_all_faninNB_sizes: " + str(Partition_all_faninNB_sizes))
+                    if not receiverY in Group_all_fanin_task_names:
+                        Group_all_fanin_task_names.add(receiverY)
+                        Group_all_fanin_sizes.append(length_of_sender_set_for_receiverY)
+                    fanins.append(receiverY)
+                    fanin_sizes.append(length_of_sender_set_for_receiverY)
 
-    print("Group_all_fanout_task_names: " + str(Group_all_fanout_task_names))
-    print("Group_all_fanin_task_names: " + str(Group_all_fanin_task_names))
-    print("Group_all_faninNB_task_names: " + str(Group_all_faninNB_task_names))
-    print("Group_all_collapse_task_names: " + str(Group_all_collapse_task_names))
-    print("Group_all_fanin_sizes: " + str(Group_all_fanin_sizes))
-    print("Group_all_faninNB_sizes: " + str(Group_all_faninNB_sizes))
+        # get the tasks that send to senderX, i.e., provide inputs for senderX
+        sender_set_for_senderX = Group_receivers.get(senderX)
+        if sender_set_for_senderX == None:
+            # senderX is a leaf task since it is not a receiver
+            Group_DAG_leaf_tasks.append(senderX)
+            Group_DAG_leaf_task_start_states.append(state)
+            task_inputs = ()
+        else:
+            # sender_set_for_senderX provide input for senderX
+            task_inputs = tuple(sender_set_for_senderX)
+        Group_DAG_map[state] = state_info(senderX, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs)
+        Group_DAG_states[senderX] = state
+
+        state += 1
+
+    # Finish by doing the receivers that are not senders (opposite of leaf tasks);
+    # these are reeivers tht send no nputs to other tasks. They have no fanins/
+    # faninBs, fanouts or collapses, but they do have task inputs.
+    for receiverY in Group_receivers:
+        if not receiverY in Group_DAG_states:
+            fanouts = []
+            faninNBs = []
+            fanins = []
+            collapse = []
+            fanin_sizes = []
+            faninNB_sizes = []
+            sender_set_for_receiverY = Group_receivers[receiverY]
+            task_inputs = tuple(sender_set_for_receiverY)
+            Group_DAG_map[state] = state_info(receiverY, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs)
+            Group_DAG_states[receiverY] = state
+            state += 1
+
+    print()
+    DAG_info = {}
+    DAG_info["DAG_map"] = Group_DAG_map
+    DAG_info["DAG_states"] = Group_DAG_states
+    DAG_info["DAG_leaf_tasks"] = Group_DAG_leaf_tasks
+    DAG_info["DAG_leaf_task_start_states"] = Group_DAG_leaf_task_start_states
+    DAG_info["DAG_leaf_task_inputs"] = Group_DAG_leaf_task_inputs
+    DAG_info["all_fanout_task_names"] = Group_all_fanout_task_names
+    DAG_info["all_fanin_task_names"] = Group_all_fanin_task_names
+    DAG_info["all_faninNB_task_names"] = Group_all_faninNB_task_names
+    DAG_info["all_collapse_task_names"] = Group_all_collapse_task_names
+    DAG_info["all_fanin_sizes"] = Group_all_fanin_sizes
+    DAG_info["all_faninNB_sizes"] = Group_all_faninNB_sizes
+    DAG_info["DAG_tasks"] = DAG_tasks
+
+    file_name = "./DAG_info_Group.pickle"
+    with open(file_name, 'wb') as handle:
+        cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+
+    num_fanins = len(Group_all_fanin_task_names)
+    num_fanouts = len(Group_all_fanout_task_names)
+    num_faninNBs = len(Group_all_faninNB_task_names)
+    num_collapse = len(Group_all_collapse_task_names)
+
+    print("GroupDAG_map:")
+    for key, value in Group_DAG_map.items():
+        print(key, ' : ', value)
+    print()
+    print("states:")        
+    for key, value in Group_DAG_states.items():
+        print(key, ' : ', value)
+    print()
+    print("num_fanins:" + str(num_fanins) + " num_fanouts:" + str(num_fanouts) + " num_faninNBs:"
+    + str(num_faninNBs) + " num_collapse:" + str(num_collapse))
+    print()  
+    print("all_fanout_task_names:")
+    for name in Group_all_fanout_task_names:
+        print(name)
+    print()
+    print("all_fanin_task_names:")
+    for name in Group_all_fanin_task_names :
+        print(name)
+    print()
+    print("all_fanin_sizes:")
+    for s in Group_all_fanin_sizes :
+        print(s)
+    print()
+    print("all_faninNB_task_names:")
+    for name in Group_all_faninNB_task_names:
+        print(name)
+    print()
+    print("all_faninNB_sizes:")
+    for s in Group_all_faninNB_sizes :
+        print(s)
+    print()
+    print("all_collapse_task_names:")
+    for name in Group_all_collapse_task_names:
+        print(name)
+    print()
+    print("leaf task start states:")
+    for start_state in Group_DAG_leaf_task_start_states:
+        print(start_state)
+    print()
+    print("DAG_tasks:")
+    for key, value in DAG_tasks.items():
+        print(key, ' : ', value)
+    print()
+    print("DAG_leaf_tasks:")
+    for task_name in Group_DAG_leaf_tasks:
+        print(task_name)
+    print()
+    print("DAG_leaf_task_inputs:")
+    for inp in Group_DAG_leaf_task_inputs:
+        print(inp)
+    print()
+
+
+
+"""
+
+Perhaps:
+    group_name_list = ["PR1_1", "PR2_1", "PR2_2", "PR2_3", "PR3_1", "PR3_2"]
+    DAG_tasks = dict.fromkeys(key_list,PageRank)
+partition_name_list = ["PR1_1", "PR2_1", "PR3_1"]
+where:
+    def func(value=i):
+        print value
+    funcs.append(func)
+where:
+#new_func='def receiverY(task_name, set, input2):\n  return x+1'
+
+first = True
+comma = ""
+PageRank_func = "def " + receiverY + "(task_name, "
+for receiverY in Receivers:
+sender_set_for_receiverY = Receivers[receiverY]
+for senderZ in sender_set_for_receiverY:
+if first:
+pass
+else:
+comma = ","
+first = False
+new_func += comma + senderZ
+PageRank_func = PageRank_func += "):\n  FOOO"
+where FOOO is a simple body for PageRank_task, which calls the actual task
+or
+for i, senderZ in enumerate(sender_set_for_receiverY):
+  if i: new_func += "," + str(senderZ)
+  else: new_func += str(senderZ)
+
+the_code=compile(new_func,'<string>','exec')
+"""
 
 
 def generate_DAG_info_OLD(graph_name, nodes):
