@@ -2539,7 +2539,7 @@ else:
     frontiers.append(frontier.copy())
 
 def generate_DAG_info():
-    #Given Partition_senders, Partition_receivers, Group_senders, Grou_receievers
+    #Given Partition_senders, Partition_receivers, Group_senders, Group_receievers
 
 #rhc: ToDo: Do we want to use collapse? fanin? If so, one task will input
 # its partition/grup and then input the collapse/fanin group, etc. Need
@@ -2937,40 +2937,43 @@ def generate_DAG_info():
 
 
 
-"""
+    """
 
-Perhaps:
-    group_name_list = ["PR1_1", "PR2_1", "PR2_2", "PR2_3", "PR3_1", "PR3_2"]
-    DAG_tasks = dict.fromkeys(key_list,PageRank)
-partition_name_list = ["PR1_1", "PR2_1", "PR3_1"]
-where:
-    def func(value=i):
-        print value
-    funcs.append(func)
-where:
-#new_func='def receiverY(task_name, set, input2):\n  return x+1'
+    Perhaps:
+        group_name_list = ["PR1_1", "PR2_1", "PR2_2", "PR2_3", "PR3_1", "PR3_2"]
+        DAG_tasks = dict.fromkeys(key_list,PageRank)
+    partition_name_list = ["PR1_1", "PR2_1", "PR3_1"]
+    where:
+        def func(value=i):
+            print value
+        funcs.append(func)
+    where:
+    #new_func='def receiverY(task_name, set, input2):\n  return x+1'
+    """
 
-first = True
-comma = ""
-PageRank_func = "def " + receiverY + "(task_name, "
-for receiverY in Receivers:
-sender_set_for_receiverY = Receivers[receiverY]
-for senderZ in sender_set_for_receiverY:
-if first:
-pass
-else:
-comma = ","
-first = False
-new_func += comma + senderZ
-PageRank_func = PageRank_func += "):\n  FOOO"
-where FOOO is a simple body for PageRank_task, which calls the actual task
-or
-for i, senderZ in enumerate(sender_set_for_receiverY):
-  if i: new_func += "," + str(senderZ)
-  else: new_func += str(senderZ)
+    first = True
+    comma = ""
+    receiverY = "PR2_1"
+    PageRank_func = "def " + receiverY + "(task_name, "
+    #for receiverY in Receivers:
+    sender_set_for_receiverY = Partition_receivers[receiverY]
+    for senderZ in sender_set_for_receiverY:
+        if first:
+            pass
+        else:
+            comma = ","
+            first = False
+        PageRank_func += comma + str(senderZ)
+        PageRank_func += "):\n  print(1)"
+        #where FOOO is a simple body for PageRank_task, which calls the actual task
+    #or
+    #for i, senderZ in enumerate(sender_set_for_receiverY):
+    #if i: new_func += "," + str(senderZ)
+    #else: new_func += str(senderZ)
+    print("PageRank_func: ")
+    print(PageRank_func)
+    the_code=compile(PageRank_func,'<string>','exec')
 
-the_code=compile(new_func,'<string>','exec')
-"""
 
 
 def generate_DAG_info_OLD(graph_name, nodes):
