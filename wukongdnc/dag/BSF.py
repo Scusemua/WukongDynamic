@@ -221,7 +221,7 @@ class Partition_Node:
         self.isShadowNode = False
         # Note: can't be a shadow node and have a non-empty frontier_parents
 
-    def update_PageRank_main(self, damping_factor):
+    def update_PageRank_main(self, damping_factor,total_num_nodes):
         parent_nodes = self.parents
         print("update_pagerank: node " + str(self.ID))
         print("update_pagerank: parent_nodes: " + str(parent_nodes))
@@ -2561,6 +2561,8 @@ def generate_DAG_info():
     Partition_DAG_map = {}
     Partition_DAG_states = {}
 
+    # sink nodes, i.e., nodes that do not send any inputs
+    Partition_sink_set = set()
     print("Partition DAG:")
     state = 1
     # partition i has a collapse to partition i+1
@@ -2577,6 +2579,9 @@ def generate_DAG_info():
         # task receiverY receives inputs from other tasks (all tasks receive
         # inputs from other tasks except leaf tasks)
         for receiverY in receiver_set_for_senderX:
+            sender_set_for_receiverY = Partition_senders.get(receiverY)
+            if sender_set_for_receiverY == None:
+                Partition_sink_set.add(receiverY)
             # tasks that send inputs to receiverY
             sender_set_for_receiverY = Partition_receivers[receiverY]
             length_of_sender_set_for_receiverY = len(sender_set_for_receiverY)
@@ -2651,19 +2656,19 @@ def generate_DAG_info():
     # Finish by doing the receivers that are not senders (opposite of leaf tasks);
     # these are reeivers tht send no nputs to other tasks. They have no fanins/
     # faninBs, fanouts or collapses, but they do have task inputs.
-    for receiverY in Partition_receivers:
-        if not receiverY in Partition_DAG_states:
-            fanouts = []
-            faninNBs = []
-            fanins = []
-            collapse = []
-            fanin_sizes = []
-            faninNB_sizes = []
-            sender_set_for_receiverY = Partition_receivers[receiverY]
-            task_inputs = tuple(sender_set_for_receiverY)
-            Partition_DAG_map[state] = state_info(receiverY, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs)
-            Partition_DAG_states[receiverY] = state
-            state += 1
+    for receiverY in Partition_sink_set: # Partition_receivers:
+        #if not receiverY in Partition_DAG_states:
+        fanouts = []
+        faninNBs = []
+        fanins = []
+        collapse = []
+        fanin_sizes = []
+        faninNB_sizes = []
+        sender_set_for_receiverY = Partition_receivers[receiverY]
+        task_inputs = tuple(sender_set_for_receiverY)
+        Partition_DAG_map[state] = state_info(receiverY, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs)
+        Partition_DAG_states[receiverY] = state
+        state += 1
 
 #rhc: ToDo: DAG_tasks
     DAG_tasks = {}
@@ -2758,6 +2763,8 @@ def generate_DAG_info():
     Group_DAG_map = {}
     Group_DAG_states = {}
 
+    # sink nodes, i.e., nodes that do not send any inputs
+    Group_sink_set = set()
     print("Group DAG:")
     state = 1
     for senderX in Group_senders:
@@ -2770,6 +2777,9 @@ def generate_DAG_info():
         faninNB_sizes = []
         receiver_set_for_senderX = Group_senders[senderX]
         for receiverY in receiver_set_for_senderX:
+            sender_set_for_receiverY = Group_senders.get(receiverY)
+            if sender_set_for_receiverY == None:
+                Group_sink_set.add(receiverY)
             sender_set_for_receiverY = Group_receivers[receiverY]
             length_of_sender_set_for_receiverY = len(sender_set_for_receiverY)
             length_of_receiver_set_for_senderX = len(receiver_set_for_senderX)
@@ -2845,8 +2855,8 @@ def generate_DAG_info():
     # Finish by doing the receivers that are not senders (opposite of leaf tasks);
     # these are reeivers tht send no nputs to other tasks. They have no fanins/
     # faninBs, fanouts or collapses, but they do have task inputs.
-    for receiverY in Group_receivers:
-        if not receiverY in Group_DAG_states:
+    for receiverY in Group_sink_set: # Partition_receivers:
+        #if not receiverY in Partition_DAG_states:
             fanouts = []
             faninNBs = []
             fanins = []
@@ -2973,8 +2983,6 @@ def generate_DAG_info():
     print("PageRank_func: ")
     print(PageRank_func)
     the_code=compile(PageRank_func,'<string>','exec')
-
-
 
 def generate_DAG_info_OLD(graph_name, nodes):
     # from DFS_visit
@@ -3254,7 +3262,7 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples,results):
         # We check for task_file_name ending with "L" for loop below,
         # so we make this check esy by having 'L' at the end (endswith)
         # instead of having to parse ("PR1_1.pickle")
-        complete_task_file_name = './'+task_name+'.pickle'
+        complete_task_file_name = './'+task_file_name+'.pickle'
         with open(complete_task_file_name, 'rb') as handle:
             partition_or_group = (cloudpickle.load(handle))
         print("PageRank_Function output partition_or_group (node:parents):")
@@ -3413,7 +3421,7 @@ def PageRank_Task(task_file_name,total_num_nodes,payload,results):
     #
     # This sort is not necessary; it just helps with the visual during debugging.
     input_tuples.sort()
-    print(task_name + " input tuples: ")
+    print(task_file_name + " input tuples: ")
     for tup in input_tuples:
         print(tup,end=" ")
     print()
@@ -3832,7 +3840,7 @@ generate_DAG_info()
 #visualize()
 #input('Press <ENTER> to continue')
 
-"""
+
 logger.debug("Ouput partitions/groups")
 output_partitions()
 logger.debug("Input partitions/groups")
@@ -3886,14 +3894,15 @@ PageRank_output_from_PR_3_3 = PageRank_Task(task_name,total_num_nodes,payload,re
 print("Results:")
 for i in range(len(results)):
     print ("ID:"+str(i) + " pagerank:" + str(results[i]))
-"""
+
 
 """
 generate_DAG_info("graph20_DAG", nodes)
 """
 """
 target_nodes = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
-PageRank_main(target_nodes,target_nodes)
+total_num_nodes = 20
+PageRank_main(target_nodes,target_nodes,total_num_nodes)
 np_array = get_PageRank_list(nodes)
 print(str(np_array))
 """
