@@ -549,11 +549,11 @@ def dfs_parent(visited, node):  #function for dfs
     # part of SCC computation
     #node_GraphID = scc_graph.map_nodeID_to_GraphID(node.ID)
 
-    parents_in_previous_partition = False
+    #parents_in_previous_partition = False
     # visit parents
     list_of_parents_in_previous_partition = []
 
-    parents_in_previous_group = False
+    #parents_in_previous_group = False
     # visit parents
     list_of_parents_in_previous_group = []
 
@@ -783,7 +783,7 @@ def dfs_parent(visited, node):  #function for dfs
                             + str(parent_group_number) 
                             + ", current_group_number: " + str(current_group_number)
                             + ", parent ID: " + str(parent_index))
-                        parents_in_previous_group = True
+                        #parents_in_previous_group = True
                         list_of_parents_in_previous_group.append(visited_parent_node.ID) 
 
                         #logger.debug ("dfs_parent: found parent in previous group: " + str(parent_node.ID))
@@ -941,7 +941,7 @@ def dfs_parent(visited, node):  #function for dfs
                     + str(parent_partition_number) 
                     + ", current_partition_number:" + str(current_partition_number)
                     + ", parent ID: " + str(parent_index))
-                parents_in_previous_partition = True
+                #parents_in_previous_partition = True
                 list_of_parents_in_previous_partition.append(visited_parent_node.ID)
 
                 # take care of this now

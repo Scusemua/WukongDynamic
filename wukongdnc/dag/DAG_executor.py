@@ -36,6 +36,7 @@ from .DAG_executor_constants import create_all_fanins_faninNBs_on_start, using_w
 from .DAG_executor_constants import using_threads_not_processes, use_multithreaded_multiprocessing
 from .DAG_executor_constants import process_work_queue_Type, FanInNB_Type, using_Lambda_Function_Simulators_to_Store_Objects
 from .DAG_executor_constants import sync_objects_in_lambdas_trigger_their_tasks, store_sync_objects_in_lambdas
+from .DAG_executor_constants import tasks_use_result_dictionary_parameter
 #from .DAG_work_queue_for_threads import thread_work_queue
 from .DAG_executor_work_queue_for_threads import work_queue
 from .DAG_data_dict_for_threads import data_dict
@@ -79,6 +80,19 @@ def execute_task(task, args):
     #    print("Argument #%d: %s" % (i, str(args[i])))
     output = task(*args)
     return output
+
+def execute_task_with_result_dictionary(task,task_name,resultDictionary):
+    #commented out for MM
+    thread_name = threading.current_thread().name
+    logger.debug(thread_name + ": execute_task_with_result_dictionary: input of execute_task is: " 
+        + str(resultDictionary))
+    #output = task(input)
+    #for i in range(0, len(args)):
+    #    print("Type of argument #%d: %s" % (i, type(args[i])))
+    #    print("Argument #%d: %s" % (i, str(args[i])))
+    output = task(task_name,resultDictionary)
+    return output
+
 
 def create_and_faninNB_remotely(websocket,**keyword_arguments):
     # pass
@@ -1264,19 +1278,10 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
             logger.debug("is_leaf_task: " + str(is_leaf_task))
             logger.debug("task_inputs: " + str(task_inputs))
 
-            # So for a call to pagerank, the task_input is the name of the executed task
-            # that is supplying the input (non-leaf task). For this input task, e.g., "PR1"
-            # the data dictionary will have the results of: "PR1" --> [dependent_node_1,
-            # dependent_node_2, ... dependent_node_n], where PR1 is sending different 
-            # node pagerank values to different tasks: PR1 fanout node 5 to PR2_1, 
-            # faninNB node 17 to PR2_2, and fanout node 1 to PR2_3. So these are the 
-            # dependent nodes needed by PR2_1, PR2_2, and PR2_3. For simplicty, to get 
-            # things started, ech task hs all the nodes, so we can just overwrite 
-            # nodes[dependent_node_i.ID].pagerank with dependent_node_i.pagerank.
-            #
-            # Q: How to give each task the nodes? In DAG_info since
-            # nodes are part of the input along with the DAG. Easy for now.
-            # DAG_info["PageRankNodes"] = nodes
+            #rhc: Some DAGs, e.g., pagerank, may use a single paramaterized function, 
+            # e.g., PageRank, that needs its inputs, which are captured by args, but also 
+            # its task_name, so it e.g., can input values for its specific task, 
+            # e.g., its partition in file task_name+".pickle".
 
             """
             def pack_data(o, d, key_types=object):
@@ -1336,33 +1341,66 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                 logger.debug("Packing data. Task inputs: %s. Data dict (keys only): %s" % (str(task_inputs), str(data_dict.keys())))
                 # task_inputs is a tuple of task_names
                 args = pack_data(task_inputs, data_dict)
+                if tasks_use_result_dictionary_parameter:
+                    resultDictionary =  {}
+                    # task_inputs = ('task1','task2'), args = (1,2) results in a resultDictionary
+                    # where resultDictionary['task1'] = 1 and resultDictionary['task2'] = 2.
+                    # We pass resultDictionary of inputs instead of the tuple (1,2).
+                    if len(task_inputs) == len(args):
+                        resultDictionary = {task_inputs[i] : args[i] for i, _ in enumerate(args)}
+
             else:
-                # if not triggering tasks in lambdas task_inputs is a tuple of input values, e.g., '1'
+                # if not triggering tasks in lambdas task_inputs is a tuple of input values, e.g., (1,)
                 if not (store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks):
                     args = task_inputs
                 else:
-                    # else the leaf task was triggered by a fanin operation on the fann object
+                    # else the leaf task was triggered by a fanin operation on the fanin object
                     # for the leaf task and the fanin result, as usual, maps the task that
                     # sent the input to the input. For leaf tasks, the task that sent the 
-                    # input is "DAG_executor_driver", whuch is not a real DAG task. So
+                    # input is "DAG_executor_driver", which is not a real DAG task. So
                     # we have to grab the value that DAG_executor_driver is mapped to,
                     # which is the leaf task input. The only input to a leaf task is this
-                    # input.
+                    # input. Note: When triggering tasks, the DAG_executor_driver calls
+                    # the tcp_server_lambda to invoke a fanout, like any other triggered
+                    # fanout, using process_leaf_tasks_batch.
+                    # args will be a tuple of input values, e.g., (1,), as usual
                     args = task_inputs['DAG_executor_driver']
-
-#rhc: pagerank: Some DAGs may use a single paramaterized function, e.g., PageRank, that 
-# needs its inputs, which are captured by args, but also its task_name, so it 
-# e.g., input values for its specific task, e.g., its partition in file task_name+".pickle".
-# Perhaps: based on first example, task_inputs.append(task_name)
+                if tasks_use_result_dictionary_parameter:
+                    resultDictionary =  {}
+                    # ith arg has a key DAG_executor_driver_i that is mapped to it
+                    # leaf tasks do not have a task that sent inputs to the leaf task,
+                    # so we create dummy input tasks DAG_executor_driver_i.
+                    task_input_tuple = () # e.g., ('DAG_executor_driver_0','DAG_executor_driver_1')
+                    j = 0
+                    for _ in args:
+                        # make the key values in task_input_tuple unique. 
+                        task_input_tuple += ('DAG_executor_driver_'+str(j))
+                        j += 1
+                    # task_input_tuple = ('DAG_executor_driver_0'), args = (1,) results in a resultDictionary
+                    # where resultDictionary['DAG_executor_driver_0'] = 1.
+                    # We pass resultDictionary of inputs to the task instead of a tuple of inputs, e.g.,(1,).
+                    # Lenngths will match since we looped through args to create task_input_tuple
+                    if len(task_input_tuple) == len(args):
+                        # The enumerate() method adds a counter to an iterable and returns the enumerate object.
+                        resultDictionary = {task_input_tuple[i] : args[i] for i, _ in enumerate(args)}
 
             # using map DAG_tasks from task_name to task
             task = DAG_tasks[state_info.task_name]
-            
-            output = execute_task(task,args)
+            if not tasks_use_result_dictionary_parameter:
+                # we will call the task with tuple args and unfold args: task(*args)
+                output = execute_task(task,args)
+            else:
+                # we will call the task with: task(task_name,resultDictionary)
+                output = execute_task_with_result_dictionary(task,state_info.task_name,resultDictionary)
             """ where:
                 def execute_task(task,args):
                     logger.debug("input of execute_task is: " + str(args))
                     output = task(*args)
+                    return output
+            """
+            """
+                def execute_task_with_result_dictionary(task,task_name,resultDictionary):
+                    output = task(task_name,resultDictionary)
                     return output
             """
 

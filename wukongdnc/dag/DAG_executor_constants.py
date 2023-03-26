@@ -145,6 +145,13 @@ if sync_objects_in_lambdas_trigger_their_tasks:
 # simulators or using the DAG_orchestrator
 using_single_lambda_function = False
 
+# True when executed task uses a dictionary parameter that contains its inputs
+# instead of a tuple Dask-style. This is True for the PageRank. For pagerank
+# we use a single pagerank task and, if using lambdas, a single lambda excutor.
+# PageRank tasks have varying numbers of inputs (for fanoins/faninNBs) that are
+# passed to the PageRank task in a dictionary.
+tasks_use_result_dictionary_parameter = False
+
 
 
 A1 = A1_Server = A1_FunctionSimulator = A1_SingleFunction = A1_Orchestrator = False
