@@ -150,7 +150,7 @@ using_single_lambda_function = False
 # we use a single pagerank task and, if using lambdas, a single lambda excutor.
 # PageRank tasks have varying numbers of inputs (for fanoins/faninNBs) that are
 # passed to the PageRank task in a dictionary.
-tasks_use_result_dictionary_parameter = False
+tasks_use_result_dictionary_parameter = True
 
 
 

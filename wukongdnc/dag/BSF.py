@@ -4,11 +4,13 @@ import numpy as np
 
 import logging 
 import cloudpickle
+import os
 
 from collections import defaultdict
 import copy
 
 #from .DFS_visit import state_info
+#from .DAG_info import DAG_Info
 
 logger = logging.getLogger(__name__)
 #logger.setLevel(logging.DEBUG)
@@ -22,6 +24,42 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 USING_BFS = False
+
+def input_DAG_info(file_name):
+    with open(file_name, 'rb') as handle:
+        DAG_info = cloudpickle.load(handle)
+    return DAG_info
+
+class DAG_Info(object):
+    def __init__(self,file_name = './DAG_info.pickle'):
+        self.file_name = file_name
+        self.DAG_info = input_DAG_info(file_name)
+    def get_DAG_map(self):
+        return self.DAG_info["DAG_map"]
+    def get_DAG_states(self):
+        return self.DAG_info["DAG_states"]
+    def get_all_fanin_task_names(self):
+        return self.DAG_info["all_fanin_task_names"]
+    def get_all_fanin_sizes(self):
+        return self.DAG_info["all_fanin_sizes"]
+    def get_all_faninNB_task_names(self):
+        return self.DAG_info["all_faninNB_task_names"]
+    def get_all_faninNB_sizes(self):
+        return self.DAG_info["all_faninNB_sizes"]
+    def get_all_fanout_task_names(self):
+        return self.DAG_info["all_fanout_task_names"]
+    def get_DAG_leaf_tasks(self):
+        return self.DAG_info["DAG_leaf_tasks"]
+    def get_DAG_leaf_task_start_states(self):
+        return self.DAG_info["DAG_leaf_task_start_states"]
+    def get_DAG_leaf_task_inputs(self):
+        return self.DAG_info["DAG_leaf_task_inputs"]
+    # After the driver gets the leaf task inputs it sets DAG_info["DAG_leaf_task_inputs"]
+    # to None so that we are not passing all of these inputs to each Lambda executor.
+    def set_DAG_leaf_task_inputs_to_None(self):
+        self.DAG_info["DAG_leaf_task_inputs"] = None
+    def get_DAG_tasks(self):
+        return self.DAG_info["DAG_tasks"]
 
 class state_info:
     def __init__(self, task_name, fanouts = None, fanins = None, faninNBs = None, collapse = None,
@@ -2560,6 +2598,7 @@ def generate_DAG_info():
     Partition_DAG_leaf_task_inputs = []
     Partition_DAG_map = {}
     Partition_DAG_states = {}
+    Partition_DAG_tasks = {}
 
     # sink nodes, i.e., nodes that do not send any inputs
     Partition_sink_set = set()
@@ -2645,6 +2684,7 @@ def generate_DAG_info():
             Partition_DAG_leaf_tasks.append(senderX)
             Partition_DAG_leaf_task_start_states.append(state)
             task_inputs = ()
+            Partition_DAG_leaf_task_inputs.append(task_inputs)
         else:
             # sender_set_for_senderX provides input for senderX
             task_inputs = tuple(sender_set_for_senderX)
@@ -2670,8 +2710,8 @@ def generate_DAG_info():
         Partition_DAG_states[receiverY] = state
         state += 1
 
-#rhc: ToDo: DAG_tasks
-    DAG_tasks = {}
+    for key in Partition_DAG_states:
+        Partition_DAG_tasks[key] = PageRank_Function_Driver
 
     print()
     DAG_info = {}
@@ -2686,7 +2726,7 @@ def generate_DAG_info():
     DAG_info["all_collapse_task_names"] = Partition_all_collapse_task_names
     DAG_info["all_fanin_sizes"] = Partition_all_fanin_sizes
     DAG_info["all_faninNB_sizes"] = Partition_all_faninNB_sizes
-    DAG_info["DAG_tasks"] = DAG_tasks
+    DAG_info["DAG_tasks"] = Partition_DAG_tasks
 
     file_name = "./DAG_info_Partition.pickle"
     with open(file_name, 'wb') as handle:
@@ -2737,7 +2777,7 @@ def generate_DAG_info():
         print(start_state)
     print()
     print("DAG_tasks:")
-    for key, value in DAG_tasks.items():
+    for key, value in Partition_DAG_tasks.items():
         print(key, ' : ', value)
     print()
     print("DAG_leaf_tasks:")
@@ -2748,6 +2788,56 @@ def generate_DAG_info():
     for inp in Partition_DAG_leaf_task_inputs:
         print(inp)
     print()
+
+    DAG_info_partition_read = DAG_Info(file_name = "./DAG_info_Partition.pickle")
+    
+    DAG_map = DAG_info_partition_read.get_DAG_map()
+    all_fanin_task_names = DAG_info_partition_read.get_all_fanin_task_names()
+    all_fanin_sizes = DAG_info_partition_read.get_all_fanin_sizes()
+    all_faninNB_task_names = DAG_info_partition_read.get_all_faninNB_task_names()
+    all_faninNB_sizes = DAG_info_partition_read.get_all_faninNB_sizes()
+    all_fanout_task_names = DAG_info_partition_read.get_all_fanout_task_names()
+    # Note: all fanout_sizes is not needed since fanouts are fanins that have size 1
+    DAG_states = DAG_info_partition_read.get_DAG_states()
+    DAG_leaf_tasks = DAG_info_partition_read.get_DAG_leaf_tasks()
+    DAG_leaf_task_start_states = DAG_info_partition_read.get_DAG_leaf_task_start_states()
+    DAG_tasks = DAG_info_partition_read.get_DAG_tasks()
+
+    DAG_leaf_task_inputs = DAG_info_partition_read.get_DAG_leaf_task_inputs()
+
+    print()
+    print("DAG_info partition after read:")
+    output_DAG = True
+    # add-0bec4d19-bce6-4394-ad62-9b0eab3081a9
+    if output_DAG:
+        # FYI:
+        print("DAG_map:")
+        for key, value in DAG_map.items():
+            print(key)
+            print(value)
+        print("  ")
+        print("DAG states:")         
+        for key, value in DAG_states.items():
+            print(key)
+            print(value)
+        print("   ")
+        print("DAG leaf task start states")
+        for start_state in DAG_leaf_task_start_states:
+            print(start_state)
+        print()
+        print("DAG_tasks:")
+        for key, value in DAG_tasks.items():
+            print(key, ' : ', value)
+        print()
+        print("DAG_leaf_tasks:")
+        for task_name in DAG_leaf_tasks:
+            print(task_name)
+        print() 
+        print("DAG_leaf_task_inputs:")
+        for inp in DAG_leaf_task_inputs:
+            print(inp)
+        #print() 
+        print()
 
     Group_all_fanout_task_names = set()
     Group_all_fanin_task_names = set()
@@ -2762,6 +2852,7 @@ def generate_DAG_info():
     Group_DAG_leaf_task_inputs = []
     Group_DAG_map = {}
     Group_DAG_states = {}
+    Group_DAG_tasks = {}
 
     # sink nodes, i.e., nodes that do not send any inputs
     Group_sink_set = set()
@@ -2844,6 +2935,7 @@ def generate_DAG_info():
             Group_DAG_leaf_tasks.append(senderX)
             Group_DAG_leaf_task_start_states.append(state)
             task_inputs = ()
+            Group_DAG_leaf_task_inputs.append(task_inputs)
         else:
             # sender_set_for_senderX provide input for senderX
             task_inputs = tuple(sender_set_for_senderX)
@@ -2869,6 +2961,9 @@ def generate_DAG_info():
             Group_DAG_states[receiverY] = state
             state += 1
 
+    for key in Group_DAG_states:
+        Group_DAG_tasks[key] = PageRank_Function_Driver
+
     print()
     DAG_info = {}
     DAG_info["DAG_map"] = Group_DAG_map
@@ -2882,7 +2977,7 @@ def generate_DAG_info():
     DAG_info["all_collapse_task_names"] = Group_all_collapse_task_names
     DAG_info["all_fanin_sizes"] = Group_all_fanin_sizes
     DAG_info["all_faninNB_sizes"] = Group_all_faninNB_sizes
-    DAG_info["DAG_tasks"] = DAG_tasks
+    DAG_info["DAG_tasks"] = Group_DAG_tasks
 
     file_name = "./DAG_info_Group.pickle"
     with open(file_name, 'wb') as handle:
@@ -2933,7 +3028,7 @@ def generate_DAG_info():
         print(start_state)
     print()
     print("DAG_tasks:")
-    for key, value in DAG_tasks.items():
+    for key, value in Group_DAG_tasks.items():
         print(key, ' : ', value)
     print()
     print("DAG_leaf_tasks:")
@@ -2944,6 +3039,56 @@ def generate_DAG_info():
     for inp in Group_DAG_leaf_task_inputs:
         print(inp)
     print()
+
+    DAG_info_partition_read = DAG_Info(file_name = "./DAG_info_Group.pickle")
+    
+    DAG_map = DAG_info_partition_read.get_DAG_map()
+    all_fanin_task_names = DAG_info_partition_read.get_all_fanin_task_names()
+    all_fanin_sizes = DAG_info_partition_read.get_all_fanin_sizes()
+    all_faninNB_task_names = DAG_info_partition_read.get_all_faninNB_task_names()
+    all_faninNB_sizes = DAG_info_partition_read.get_all_faninNB_sizes()
+    all_fanout_task_names = DAG_info_partition_read.get_all_fanout_task_names()
+    # Note: all fanout_sizes is not needed since fanouts are fanins that have size 1
+    DAG_states = DAG_info_partition_read.get_DAG_states()
+    DAG_leaf_tasks = DAG_info_partition_read.get_DAG_leaf_tasks()
+    DAG_leaf_task_start_states = DAG_info_partition_read.get_DAG_leaf_task_start_states()
+    DAG_tasks = DAG_info_partition_read.get_DAG_tasks()
+
+    DAG_leaf_task_inputs = DAG_info_partition_read.get_DAG_leaf_task_inputs()
+
+    print()
+    print("DAG_info group after read:")
+    output_DAG = True
+    # add-0bec4d19-bce6-4394-ad62-9b0eab3081a9
+    if output_DAG:
+        # FYI:
+        print("DAG_map:")
+        for key, value in DAG_map.items():
+            print(key)
+            print(value)
+        print("  ")
+        print("DAG states:")         
+        for key, value in DAG_states.items():
+            print(key)
+            print(value)
+        print("   ")
+        print("DAG leaf task start states")
+        for start_state in DAG_leaf_task_start_states:
+            print(start_state)
+        print()
+        print("DAG_tasks:")
+        for key, value in DAG_tasks.items():
+            print(key, ' : ', value)
+        print()
+        print("DAG_leaf_tasks:")
+        for task_name in DAG_leaf_tasks:
+            print(task_name)
+        print() 
+        print("DAG_leaf_task_inputs:")
+        for inp in DAG_leaf_task_inputs:
+            print(inp)
+        #print() 
+        print()
 
 
 
@@ -2961,6 +3106,7 @@ def generate_DAG_info():
     #new_func='def receiverY(task_name, set, input2):\n  return x+1'
     """
 
+    """
     first = True
     comma = ""
     receiverY = "PR2_1"
@@ -2983,6 +3129,7 @@ def generate_DAG_info():
     print("PageRank_func: ")
     print(PageRank_func)
     the_code=compile(PageRank_func,'<string>','exec')
+    """
 
 def generate_DAG_info_OLD(graph_name, nodes):
     # from DFS_visit
@@ -3257,7 +3404,20 @@ def PageRank_Function_one_iter(partition_or_group,damping_factor,
 #rhc: ToDo: do this?
     #normalize_PageRank(nodes)
 
-def PageRank_Function(task_file_name,total_num_nodes,input_tuples,results):
+def PageRank_Function_Driver(task_file_name,total_num_nodes,results_dictionary):
+    input_tuples = []
+    for (k,v) in results_dictionary.items():
+        if not v == ():
+            input_tuples += v
+
+    logger.debug("input tuples XXX: " + str(input_tuples))
+
+    logger.debug("call  PageRank_Function: ")
+
+    PageRank_Function(task_file_name,total_num_nodes,input_tuples)
+
+#def PageRank_Function(task_file_name,total_num_nodes,input_tuples,results):
+def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
         # task_file_name is, e.g., "PR1_1" not "PR1_1.pickle"
         # We check for task_file_name ending with "L" for loop below,
         # so we make this check esy by having 'L' at the end (endswith)
@@ -3300,6 +3460,14 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples,results):
             iteration=int(10)
 
         num_nodes_for_pagerank_computation = len(partition_or_group)
+
+        #Note:
+        #Informs the logging system to perform an orderly shutdown by flushing 
+        #and closing all handlers. This should be called at application exit and no 
+        #further use of the logging system should be made after this call.
+        logging.shutdown()
+        #time.sleep(3)   #not needed due to shutdwn
+        os._exit(0)
 
         i=0
         for tup in input_tuples:
@@ -3366,6 +3534,8 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples,results):
             print("***** PageRank: iteration " + str(i))
             print()
             PageRank_Function_one_iter(partition_or_group,damping_factor,one_minus_dumping_factor,random_jumping,total_num_nodes,num_nodes_for_pagerank_computation)
+        
+        """
         print("PageRanks: ")
         for i in range(num_nodes_for_pagerank_computation):
             if not partition_or_group[i].isShadowNode:
@@ -3374,7 +3544,8 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples,results):
             else:
                 my_ID = str(partition_or_group[i].ID) + "-s"
             print(partition_or_group[i].toString_PageRank())
-            
+        """
+
         print()
         print("Frontier Parents:")
         for i in range(len(partition_or_group)):
@@ -3426,7 +3597,8 @@ def PageRank_Task(task_file_name,total_num_nodes,payload,results):
         print(tup,end=" ")
     print()
     print()
-    PageRank_output = PageRank_Function(task_file_name,total_num_nodes,input_tuples,results)
+    #PageRank_output = PageRank_Function(task_file_name,total_num_nodes,input_tuples,results)
+    PageRank_output = PageRank_Function(task_file_name,total_num_nodes,input_tuples)
     return PageRank_output
 
 #rhc: the actual pagerank will be working on Nodes not node indices?
@@ -3843,6 +4015,7 @@ generate_DAG_info()
 
 logger.debug("Ouput partitions/groups")
 output_partitions()
+"""
 logger.debug("Input partitions/groups")
 input_partitions()
 
@@ -3894,7 +4067,7 @@ PageRank_output_from_PR_3_3 = PageRank_Task(task_name,total_num_nodes,payload,re
 print("Results:")
 for i in range(len(results)):
     print ("ID:"+str(i) + " pagerank:" + str(results[i]))
-
+"""
 
 """
 generate_DAG_info("graph20_DAG", nodes)

@@ -81,7 +81,8 @@ def execute_task(task, args):
     output = task(*args)
     return output
 
-def execute_task_with_result_dictionary(task,task_name,resultDictionary):
+#rhc: ToDo: total_num_nodes is hardcoded
+def execute_task_with_result_dictionary(task,task_name,total_num_nodes,resultDictionary):
     #commented out for MM
     thread_name = threading.current_thread().name
     logger.debug(thread_name + ": execute_task_with_result_dictionary: input of execute_task is: " 
@@ -90,7 +91,7 @@ def execute_task_with_result_dictionary(task,task_name,resultDictionary):
     #for i in range(0, len(args)):
     #    print("Type of argument #%d: %s" % (i, type(args[i])))
     #    print("Argument #%d: %s" % (i, str(args[i])))
-    output = task(task_name,resultDictionary)
+    output = task(task_name,total_num_nodes,resultDictionary)
     return output
 
 
@@ -1336,18 +1337,36 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
 
                     # func(*args2)
             """
-
+            result_dictionary =  {}
             if not is_leaf_task:
                 logger.debug("Packing data. Task inputs: %s. Data dict (keys only): %s" % (str(task_inputs), str(data_dict.keys())))
                 # task_inputs is a tuple of task_names
                 args = pack_data(task_inputs, data_dict)
                 if tasks_use_result_dictionary_parameter:
-                    resultDictionary =  {}
                     # task_inputs = ('task1','task2'), args = (1,2) results in a resultDictionary
                     # where resultDictionary['task1'] = 1 and resultDictionary['task2'] = 2.
                     # We pass resultDictionary of inputs instead of the tuple (1,2).
                     if len(task_inputs) == len(args):
-                        resultDictionary = {task_inputs[i] : args[i] for i, _ in enumerate(args)}
+                        result_dictionary = {task_inputs[i] : args[i] for i, _ in enumerate(args)}
+                
+                if tasks_use_result_dictionary_parameter:
+                    # ith arg has a key DAG_executor_driver_i that is mapped to it
+                    # leaf tasks do not have a task that sent inputs to the leaf task,
+                    # so we create dummy input tasks DAG_executor_driver_i.
+                    task_input_tuple = () # e.g., ('DAG_executor_driver_0','DAG_executor_driver_1')
+                    j = 0
+                    for _ in args:
+                        logger.debug("FOOO")
+                        # make the key values in task_input_tuple unique. 
+                        task_input_tuple += ('DAG_executor_driver_'+str(j))
+                        j += 1
+                    # task_input_tuple = ('DAG_executor_driver_0'), args = (1,) results in a resultDictionary
+                    # where resultDictionary['DAG_executor_driver_0'] = 1.
+                    # We pass resultDictionary of inputs to the task instead of a tuple of inputs, e.g.,(1,).
+                    # Lengths will match since we looped through args to create task_input_tuple
+                    if len(task_input_tuple) == len(args):
+                        # The enumerate() method adds a counter to an iterable and returns the enumerate object.
+                        result_dictionary = {task_input_tuple[i] : args[i] for i, _ in enumerate(args)}
 
             else:
                 # if not triggering tasks in lambdas task_inputs is a tuple of input values, e.g., (1,)
@@ -1365,24 +1384,13 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     # fanout, using process_leaf_tasks_batch.
                     # args will be a tuple of input values, e.g., (1,), as usual
                     args = task_inputs['DAG_executor_driver']
+
                 if tasks_use_result_dictionary_parameter:
-                    resultDictionary =  {}
-                    # ith arg has a key DAG_executor_driver_i that is mapped to it
-                    # leaf tasks do not have a task that sent inputs to the leaf task,
-                    # so we create dummy input tasks DAG_executor_driver_i.
-                    task_input_tuple = () # e.g., ('DAG_executor_driver_0','DAG_executor_driver_1')
-                    j = 0
-                    for _ in args:
-                        # make the key values in task_input_tuple unique. 
-                        task_input_tuple += ('DAG_executor_driver_'+str(j))
-                        j += 1
-                    # task_input_tuple = ('DAG_executor_driver_0'), args = (1,) results in a resultDictionary
-                    # where resultDictionary['DAG_executor_driver_0'] = 1.
-                    # We pass resultDictionary of inputs to the task instead of a tuple of inputs, e.g.,(1,).
-                    # Lenngths will match since we looped through args to create task_input_tuple
-                    if len(task_input_tuple) == len(args):
-                        # The enumerate() method adds a counter to an iterable and returns the enumerate object.
-                        resultDictionary = {task_input_tuple[i] : args[i] for i, _ in enumerate(args)}
+                    result_dictionary['DAG_executor_driver_0'] = ()
+
+            logger.debug("args: " + str(args))
+ 
+            logger.debug(thread_name + " result_dictionary: " + str(result_dictionary))
 
             # using map DAG_tasks from task_name to task
             task = DAG_tasks[state_info.task_name]
@@ -1391,7 +1399,7 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                 output = execute_task(task,args)
             else:
                 # we will call the task with: task(task_name,resultDictionary)
-                output = execute_task_with_result_dictionary(task,state_info.task_name,resultDictionary)
+                output = execute_task_with_result_dictionary(task,state_info.task_name,20,result_dictionary)
             """ where:
                 def execute_task(task,args):
                     logger.debug("input of execute_task is: " + str(args))
@@ -1403,6 +1411,14 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     output = task(task_name,resultDictionary)
                     return output
             """
+            
+            #Note:
+            #Informs the logging system to perform an orderly shutdown by flushing 
+            #and closing all handlers. This should be called at application exit and no 
+            #further use of the logging system should be made after this call.
+            logging.shutdown()
+            #time.sleep(3)   #not needed due to shutdwn
+            os._exit(0)
 
             # data_dict may be local (A1) to process/lambda or global (A2) to threads
             logger.debug(thread_name + " execute_task output: " + str(output))

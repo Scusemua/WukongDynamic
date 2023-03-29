@@ -962,6 +962,7 @@ def run():
                         work_tuple = (state,dict_of_results)
                         work_queue.put(work_tuple)
                         #work_queue.put(state)
+
                 #else: Nothing to do; we do not use a work_queue if we are not using workers
             else:
                 if using_workers:
@@ -1028,6 +1029,7 @@ def run():
                             dict_of_results[task_name] = task_inputs
                             work_tuple = (state,dict_of_results)
                             work_queue.put(work_tuple)
+
                             #work_queue.put(state)
                 # This is true: not (run_all_tasks_locally and using_workers), i.e.,
                 # one of the conditions is false.
@@ -1206,10 +1208,10 @@ def run():
         # one worker and at most num_worker workers. If we are using workers, there may be more
         # leaf tasks than workers, but that is okay since we put all the leaf task states in the 
         # work queue and the created workers will withdraw them.
+
         if not (not run_all_tasks_locally and store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks):
             # we are not having sync objects trigger their tasks in lambdas
             for start_state, task_name, inp in zip(DAG_leaf_task_start_states, DAG_leaf_tasks, DAG_leaf_task_inputs):
-
                 # The state of a DAG executor contains only one application specific member, which is the
                 # state number of the task to execute. Leaf task information is in DAG_leaf_task_start_states
                 # and DAG_leaf_tasks (which are the task names).
@@ -1337,12 +1339,13 @@ def run():
                             # Using workers so do not pass to them a start_state (use state = 0); 
                             # they get their start state from the work_queue
                             DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = 0)
-                            logger.debug("DAG_executor_driver: Starting DAG_executor worker for non-leaf task " + task_name)
                             payload = {
                                 "DAG_executor_state": DAG_exec_state
                             }
                             thread_name_prefix = "Worker_thread_non-leaf_"
-                            thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=(thread_name_prefix+str(start_state)), args=(payload,))
+                            non_leaf_task_name = thread_name_prefix+str(start_state)
+                            logger.debug("DAG_executor_driver: Starting DAG_executor worker for non-leaf task " + non_leaf_task_name)
+                            thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=(non_leaf_task_name), args=(payload,))
                             thread_proc_list.append(thread)
                             #thread.start()
                             num_threads_created += 1

@@ -1,13 +1,14 @@
 import cloudpickle
 
-def input_DAG_info():
-    with open('./DAG_info.pickle', 'rb') as handle:
+def input_DAG_info(file_name):
+    with open(file_name, 'rb') as handle:
         DAG_info = cloudpickle.load(handle)
     return DAG_info
 
 class DAG_Info(object):
-    def __init__(self):
-        self.DAG_info = input_DAG_info()
+    def __init__(self,file_name = './DAG_info.pickle'):
+        self.file_name = file_name
+        self.DAG_info = input_DAG_info(file_name)
     def get_DAG_map(self):
         return self.DAG_info["DAG_map"]
     def get_DAG_states(self):
