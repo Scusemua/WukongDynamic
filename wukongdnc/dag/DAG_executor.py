@@ -1207,7 +1207,7 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     #commented out for MM
                     #logger.debug("DAG_executor: Worker accessed work_queue: process state: ") # + str(DAG_executor_state.state))
                 else:
-                    logger.debug(thread_name + "DAG_executor: Worker doesn't access work_queue")
+                    logger.debug(thread_name + " DAG_executor: Worker doesn't access work_queue")
                     logger.debug("**********************" + thread_name + " process state: " + str(DAG_executor_state.state))
                 
                 num_tasks_executed = counter.increment_and_get()
@@ -1232,6 +1232,9 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     #return
             # else: # Config: A1. A2, A3
 
+            # If we got a become task when we processed fanouts, we set
+            # DAG_executor_state.state to the become task state so we
+            # will be processing the become state here. 
             logger.debug (thread_name + ": access DAG_map with state " + str(DAG_executor_state.state))
             state_info = DAG_map[DAG_executor_state.state]
             ##logger.debug ("access DAG_map with state " + str(state))
@@ -1358,7 +1361,8 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     for _ in args:
                         logger.debug("FOOO")
                         # make the key values in task_input_tuple unique. 
-                        task_input_tuple += ('DAG_executor_driver_'+str(j))
+                        key = "DAG_executor_driver_" + str(j)
+                        task_input_tuple += tuple(key)
                         j += 1
                     # task_input_tuple = ('DAG_executor_driver_0'), args = (1,) results in a resultDictionary
                     # where resultDictionary['DAG_executor_driver_0'] = 1.
@@ -1367,6 +1371,14 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     if len(task_input_tuple) == len(args):
                         # The enumerate() method adds a counter to an iterable and returns the enumerate object.
                         result_dictionary = {task_input_tuple[i] : args[i] for i, _ in enumerate(args)}
+                    logger.debug(thread_name + " result_dictionary: " + str(result_dictionary))
+                    #Note:
+                    #Informs the logging system to perform an orderly shutdown by flushing 
+                    #and closing all handlers. This should be called at application exit and no 
+                    #further use of the logging system should be made after this call.
+                    logging.shutdown()
+                    #time.sleep(3)   #not needed due to shutdwn
+                    os._exit(0)
 
             else:
                 # if not triggering tasks in lambdas task_inputs is a tuple of input values, e.g., (1,)
@@ -1386,6 +1398,13 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     args = task_inputs['DAG_executor_driver']
 
                 if tasks_use_result_dictionary_parameter:
+                    # Passing am emoty inut tuple to the PageRank task,
+                    # This results in a rresult_dictionary
+                    # of "DAG_executor_driver_0" --> (), where
+                    # DAG_executor_driver_0 is used to mean that the DAG_excutor_driver
+                    # provided an empty input tuple for the leaf task. In the 
+                    # PageRank_Function_Driver we just ignore empty input tuples so 
+                    # that the input_tuples provided to the PageRank_Function will be an empty list.
                     result_dictionary['DAG_executor_driver_0'] = ()
 
             logger.debug("args: " + str(args))
@@ -1411,14 +1430,49 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     output = task(task_name,resultDictionary)
                     return output
             """
-            
-            #Note:
-            #Informs the logging system to perform an orderly shutdown by flushing 
-            #and closing all handlers. This should be called at application exit and no 
-            #further use of the logging system should be made after this call.
-            logging.shutdown()
-            #time.sleep(3)   #not needed due to shutdwn
-            os._exit(0)
+            """
+            output is a dictionary mapping task name to list of tuples.
+            output = {'PR2_1': [(2, 0.0075)], 'PR2_2': [(5, 0.010687499999999999)], 'PR2_3': [(3, 0.012042187499999999)]}
+            This is the PR1_1 output. We put it in the data_dict as
+                data_dict["PR1_1"] = output
+            but we then send this output to process_fanouts. The become
+            task is PR2_1 and the non-become task is PR_2_3. In general,
+            we fanout all non-become tasks with this same output. We should
+            actually fanout tasks with their indivisual output from the 
+            dictionary. Currently, for each name in set fanouts:
+                dict_of_results =  {}
+                dict_of_results[calling_task_name] = output
+                work_tuple = (DAG_states[name],dict_of_results)
+                work_queue.put(work_tuple)
+            which assigns dict_of_results[calling_task_name] = output.
+            But we want to assign instead:
+                dict_of_results[name] = output[name]
+            when we have per-fanout outputs instead of all fanouts get the 
+            same output.
+            No. We curretly have:
+                sender_set_for_senderX = Group_receivers.get(senderX)
+                if sender_set_for_senderX == None:
+                    # senderX is a leaf task since it is not a receiver
+                    Group_DAG_leaf_tasks.append(senderX)
+                    Group_DAG_leaf_task_start_states.append(state)
+                    task_inputs = ()
+                    Group_DAG_leaf_task_inputs.append(task_inputs)
+                else:
+                    # sender_set_for_senderX provide input for senderX
+                    task_inputs = tuple(sender_set_for_senderX)
+            So the task_input for fanout PR2_3 is ("PR1_1) since PR1_1 sends
+            its output to PR2_3. And we put the output in the data_dict
+            as data_dict["PR1_1"] = output so we'll be grabbing the 
+            entire output as the input of PR2_1.
+            Note: process_fanouts put a work tuple for PR2_1 in the work 
+            queue and set the DAG_executor_state.state to the become
+            task state, so the non-leaf executor, will next do the 
+            faninNB and then do the become task.
+            Note: The ss1 excutor will get the work_tuple for PR2_3
+            and try to execute it. The inputs are "PR1_1" since PR1_1
+            sends it output to PR2_3. Using the data_dict["Pr1_1"] value
+            the input for PR2_3 is the entire output of PR1_1.
+            """
 
             # data_dict may be local (A1) to process/lambda or global (A2) to threads
             logger.debug(thread_name + " execute_task output: " + str(output))
@@ -1507,7 +1561,7 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     if using_workers:   # we are become task so we have more work
                         # Config: A4_local, A4_Remote, A5, A6
                         worker_needs_input = False
-                        logger.debug(thread_name + " work_loop: fanouts: set worker_needs_input to True.")
+                        logger.debug(thread_name + " work_loop: fanouts: set worker_needs_input to False.")
                     #Don't add to thread_work_queue just do it = False
                     #thread_work_queue.put(DAG_executor_state.state)
                     # else: Config: A1, A2, A3

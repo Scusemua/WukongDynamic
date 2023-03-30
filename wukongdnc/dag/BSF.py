@@ -3129,210 +3129,7 @@ def generate_DAG_info():
     print("PageRank_func: ")
     print(PageRank_func)
     the_code=compile(PageRank_func,'<string>','exec')
-    """
-
-def generate_DAG_info_OLD(graph_name, nodes):
-    # from DFS_visit
-    DAG_map = {} # map from state (per task) to the fanin/fanout/faninNB operations executed after the task is executed
-    DAG_states = {} # map from String task_name to the state that task is executed (one state per task)
-    DAG_leaf_task_start_states = []
-    DAG_leaf_tasks = []
-    DAG_leaf_task_inputs = []
-    DAG_tasks = {} # map from task name to task, e.g., "add" to add()
-    all_fanout_task_names = []	# list of all fanout task names in the DAG
-    all_fanin_task_names = []
-    all_faninNB_task_names = []
-    all_collapse_task_names = []  # if task A is followed only by a fanout to task B: A --> B then we collapse B and A
-    all_fanin_sizes = [] # all_fanin_sizes[i] is the size of all_fanin_task_names[i] 
-    all_faninNB_sizes = []
-
-    # graph_20
-    DAG_map = {}
-    DAG_states = {}
-    DAG_leaf_tasks = ["PR1"]
-    DAG_leaf_task_start_states = [1]# No inputs, inputs are parent prs not partition nodes
-    DAG_leaf_task_inputs = [[5,17,1]]
-    all_fanout_task_names = ["PR2_1", "PR2_3"]	# list of all fanout task names in the DAG
-    all_fanin_task_names = []
-    all_faninNB_task_names = ["PR2_2"]
-    all_collapse_task_names = ["PR3_1", "PR3_2"]
-    all_fanin_sizes = []
-    all_faninNB_sizes = [2]
-    key_list = ["PR1", "PR2_1", "PR2_2", "PR2_3", "PR3_1", "PR3_2"]
-    DAG_tasks = dict.fromkeys(key_list,PageRank)
-
-    # per state
-
-    state = 1
-    fanouts = ["PR2_1", "PR2_3"]	# list of task_names of fanout tasks of T --> fanout
-    fanins = []	    # list of task_names of fanin tasks of T --> fanin, where there will be a become
-    faninNBs = ["PR2_2"]   # list of task_names of fanin tasks of T --> fanin, where there will be no become (NB)
-    collapse = []   # list of task_names of collapsed tasks of T --> collapse, where there will be one succ (pred) edge of T (collapse)
-    fanin_sizes = [] # sizes of fanins by position in fanins
-    faninNB_sizes = [1] # sizes of faninNBs by position in faninNBs  
-    
-#rhc: No, PageRank needs to generate its outputs by idntifying the dependents and
-    #grouping them by fanout followed by fanins.
-
-    fanout1 = [5]
-    fanout2 = [1]
-    faninNB1 = [17]
-    fanout_dependents = [fanout1,fanout2]
-    faninNB_dependents = [faninNB1]
-    collapse_dependents = []
-    DAG_map[state] = state_info("PR1", fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, [5,17,1],
-        fanout_dependents, faninNB_dependents,collapse_dependents)
-    DAG_states["PR1"] = state
-
-    state = 2
-    fanouts = []	
-    fanins = []	    
-    faninNBs = ["PR2_2"]   
-    collapse = []   
-    fanin_sizes = [] 
-    faninNB_sizes = [1]
-    faninNB1 = [2]
-    fanout_dependents = []
-    faninNB_dependents = [faninNB1]
-    collapse_dependents = []
-    DAG_map[state] = state_info("PR2_1", fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, ["PR1"],
-        fanout_dependents, faninNB_dependents,collapse_dependents)
-    DAG_states["PR2_1"] = state
-
-    state = 3
-    fanouts = []	
-    fanins = []	    
-    faninNBs = []   
-    collapse = ["PR3_1"]   
-    fanin_sizes = [] 
-    faninNB_sizes = []
-    collapse1 = [8,11]
-    fanout_dependents = []
-    faninNB_dependents = []
-    collapse_dependents = [collapse1]
-    DAG_map[state] = state_info("PR2_2", fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, ["PR1","PR2_1"],
-        fanout_dependents, faninNB_dependents,collapse_dependents)
-    DAG_states["PR2_2"] = state
-
-    state = 4
-    fanouts = []	
-    fanins = []	    
-    faninNBs = []   
-    collapse = ["PR3_2"]   
-    fanin_sizes = [] 
-    faninNB_sizes = []
-    collapse1 = [8,11]
-    fanout_dependents = []
-    faninNB_dependents = []
-    collapse_dependents = [collapse1]
-    DAG_map[state] = state_info("PR2_3", fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, ["PR1"],
-        fanout_dependents, faninNB_dependents,collapse_dependents)
-    DAG_states["PR2_3"] = state
-
-    state = 5
-    fanouts = []	
-    fanins = []	    
-    faninNBs = []   
-    collapse = []   
-    fanin_sizes = [] 
-    faninNB_sizes = []
-    fanout_dependents = []
-    faninNB_dependents = []
-    collapse_dependents = []
-    DAG_map[state] = state_info("PR3_1", fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, ["PR2_2"],
-        fanout_dependents, faninNB_dependents,collapse_dependents)
-    DAG_states["PR3_1"] = state
-
-    state = 6
-    fanouts = []	
-    fanins = []	    
-    faninNBs = []   
-    collapse = []   
-    fanin_sizes = [] 
-    faninNB_sizes = []
-    fanout_dependents = []
-    faninNB_dependents = []
-    collapse_dependents = []
-    DAG_map[state] = state_info("PR3_2", fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, ("PR2_3"),
-        fanout_dependents, faninNB_dependents,collapse_dependents)
-    DAG_states["PR3_2"] = state
-
-    DAG_info = {}
-    DAG_info["DAG_map"] = DAG_map
-    DAG_info["DAG_states"] = DAG_states
-    DAG_info["DAG_leaf_tasks"] = DAG_leaf_tasks
-    DAG_info["DAG_leaf_task_start_states"] = DAG_leaf_task_start_states
-    DAG_info["DAG_leaf_task_inputs"] = DAG_leaf_task_inputs
-    DAG_info["all_fanout_task_names"] = all_fanout_task_names
-    DAG_info["all_fanin_task_names"] = all_fanin_task_names
-    DAG_info["all_faninNB_task_names"] = all_faninNB_task_names
-    DAG_info["all_collapse_task_names"] = all_collapse_task_names
-    DAG_info["all_fanin_sizes"] = all_fanin_sizes
-    DAG_info["all_faninNB_sizes"] = all_faninNB_sizes
-    DAG_info["DAG_tasks"] = DAG_tasks
-
-    # For now, add graph nodes to DAG_info, where DAG_info is the DAG
-    # for computing the pagerank of the nodes.
-    # No, write the nodes and each partition to a file: (nodes,partition)
-    # Seems like yuo need to write the dependents that will be inputs to the
-    # faninNBs and fanouts. Example For "PR1", partition is [5,17,1] and
-    # dependents for "P2_1" are [5] and for "P2_2" are [17] and "P2_3" are [1].
-    # So iputs sent to fanouts and faninNBs are list of dependents, which is 
-    # different for each fanout/faninNB.
-    #DAG_info["PageRank_nodes"] = nodes
-
-    file_name = "./"+graph_name+".pickle"
-    with open(file_name, 'wb') as handle:
-        cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
-
-    num_fanins = len(all_fanin_task_names)
-    num_fanouts = len(all_fanout_task_names)
-    num_faninNBs = len(all_faninNB_task_names)
-    num_collapse = len(all_collapse_task_names)
-
-    print("DAG_map:")
-    for key, value in DAG_map.items():
-        print(key, ' : ', value)
-    print()
-    print("states:")         
-    for key, value in DAG_states.items():
-        print(key, ' : ', value)
-    print()
-    print("num_fanins:" + str(num_fanins) + " num_fanouts:" + str(num_fanouts) + " num_faninNBs:" 
-            + str(num_faninNBs) + " num_collapse:" + str(num_collapse))
-    print()  
-    print("all_fanout_task_names")
-    for name in all_fanout_task_names:
-        print(name)
-    print()
-    print("all_fanin_task_names")
-    for name in all_fanin_task_names :
-        print(name)
-    print()
-    print("all_faninNB_task_names")
-    for name in all_faninNB_task_names:
-        print(name)
-    print()
-    print("all_collapse_task_names")
-    for name in all_collapse_task_names:
-        print(name)
-    print()
-    print("leaf task start states")
-    for start_state in DAG_leaf_task_start_states:
-        print(start_state)
-    print()
-    print("DAG_tasks:")
-    for key, value in DAG_tasks.items():
-        print(key, ' : ', value)
-    print()
-    print("DAG_leaf_tasks:")
-    for task_name in DAG_leaf_tasks:
-        print(task_name)
-    print() 
-    print("DAG_leaf_task_inputs:")
-    for inp in DAG_leaf_task_inputs:
-        print(inp)
-    print()   
+    """ 
 
 # We just reuses the DAG_executor and DAG_executor_processes with work loop.
 # DAG_executor_workloop_pagerank(...): No. Executing DAG so no changes
@@ -3407,14 +3204,16 @@ def PageRank_Function_one_iter(partition_or_group,damping_factor,
 def PageRank_Function_Driver(task_file_name,total_num_nodes,results_dictionary):
     input_tuples = []
     for (k,v) in results_dictionary.items():
-        if not v == ():
+        # pagerank leaf tasks have no input. This results in a rresult_dictionary
+        # in DAG_executor of "DAG_executor_driver_0" --> (), where
+        # DAG_executor_driver_0 is used to mean that eh DAG_excutor_driver
+        # provided an empty input tuple fpr the leaf task. Here, we just ignore
+        # empty input tuples so that the input_tuples provided to the 
+        # PageRank_Function will be an empty list.
+        if not v ==  ():
             input_tuples += v
-
-    logger.debug("input tuples XXX: " + str(input_tuples))
-
-    logger.debug("call  PageRank_Function: ")
-
-    PageRank_Function(task_file_name,total_num_nodes,input_tuples)
+    output = PageRank_Function(task_file_name,total_num_nodes,input_tuples)
+    return output
 
 #def PageRank_Function(task_file_name,total_num_nodes,input_tuples,results):
 def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
@@ -3439,6 +3238,7 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
         for node in partition_or_group:
             print(str(node)+":"+str(node.num_children),end=", ")
         print()
+
         print()
         # node's children set when the partition/grup node created
 
@@ -3460,14 +3260,6 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
             iteration=int(10)
 
         num_nodes_for_pagerank_computation = len(partition_or_group)
-
-        #Note:
-        #Informs the logging system to perform an orderly shutdown by flushing 
-        #and closing all handlers. This should be called at application exit and no 
-        #further use of the logging system should be made after this call.
-        logging.shutdown()
-        #time.sleep(3)   #not needed due to shutdwn
-        os._exit(0)
 
         i=0
         for tup in input_tuples:
@@ -4513,4 +4305,210 @@ def dfs_p(visited, graph, node):
     dfs_p_change_in_partitiob_size = (dfs_p_end_partition_size - dfs_p_start_partition_size) - (
         loop_nodes_added_end - loop_nodes_added_start)
     print("dfs_p_change_in_partition_size: " + str(dfs_p_change_in_partitiob_size))
-    dfs_p_changes_in_partiton_size.append(dfs_p_change_in_partitiob_size)"""
+    dfs_p_changes_in_partiton_size.append(dfs_p_change_in_partitiob_size)
+"""
+
+"""
+    def generate_DAG_info_OLD(graph_name, nodes):
+    # from DFS_visit
+    DAG_map = {} # map from state (per task) to the fanin/fanout/faninNB operations executed after the task is executed
+    DAG_states = {} # map from String task_name to the state that task is executed (one state per task)
+    DAG_leaf_task_start_states = []
+    DAG_leaf_tasks = []
+    DAG_leaf_task_inputs = []
+    DAG_tasks = {} # map from task name to task, e.g., "add" to add()
+    all_fanout_task_names = []	# list of all fanout task names in the DAG
+    all_fanin_task_names = []
+    all_faninNB_task_names = []
+    all_collapse_task_names = []  # if task A is followed only by a fanout to task B: A --> B then we collapse B and A
+    all_fanin_sizes = [] # all_fanin_sizes[i] is the size of all_fanin_task_names[i] 
+    all_faninNB_sizes = []
+
+    # graph_20
+    DAG_map = {}
+    DAG_states = {}
+    DAG_leaf_tasks = ["PR1"]
+    DAG_leaf_task_start_states = [1]# No inputs, inputs are parent prs not partition nodes
+    DAG_leaf_task_inputs = [[5,17,1]]
+    all_fanout_task_names = ["PR2_1", "PR2_3"]	# list of all fanout task names in the DAG
+    all_fanin_task_names = []
+    all_faninNB_task_names = ["PR2_2"]
+    all_collapse_task_names = ["PR3_1", "PR3_2"]
+    all_fanin_sizes = []
+    all_faninNB_sizes = [2]
+    key_list = ["PR1", "PR2_1", "PR2_2", "PR2_3", "PR3_1", "PR3_2"]
+    DAG_tasks = dict.fromkeys(key_list,PageRank)
+
+    # per state
+
+    state = 1
+    fanouts = ["PR2_1", "PR2_3"]	# list of task_names of fanout tasks of T --> fanout
+    fanins = []	    # list of task_names of fanin tasks of T --> fanin, where there will be a become
+    faninNBs = ["PR2_2"]   # list of task_names of fanin tasks of T --> fanin, where there will be no become (NB)
+    collapse = []   # list of task_names of collapsed tasks of T --> collapse, where there will be one succ (pred) edge of T (collapse)
+    fanin_sizes = [] # sizes of fanins by position in fanins
+    faninNB_sizes = [1] # sizes of faninNBs by position in faninNBs  
+    
+#rhc: No, PageRank needs to generate its outputs by idntifying the dependents and
+    #grouping them by fanout followed by fanins.
+
+    fanout1 = [5]
+    fanout2 = [1]
+    faninNB1 = [17]
+    fanout_dependents = [fanout1,fanout2]
+    faninNB_dependents = [faninNB1]
+    collapse_dependents = []
+    DAG_map[state] = state_info("PR1", fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, [5,17,1],
+        fanout_dependents, faninNB_dependents,collapse_dependents)
+    DAG_states["PR1"] = state
+
+    state = 2
+    fanouts = []	
+    fanins = []	    
+    faninNBs = ["PR2_2"]   
+    collapse = []   
+    fanin_sizes = [] 
+    faninNB_sizes = [1]
+    faninNB1 = [2]
+    fanout_dependents = []
+    faninNB_dependents = [faninNB1]
+    collapse_dependents = []
+    DAG_map[state] = state_info("PR2_1", fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, ["PR1"],
+        fanout_dependents, faninNB_dependents,collapse_dependents)
+    DAG_states["PR2_1"] = state
+
+    state = 3
+    fanouts = []	
+    fanins = []	    
+    faninNBs = []   
+    collapse = ["PR3_1"]   
+    fanin_sizes = [] 
+    faninNB_sizes = []
+    collapse1 = [8,11]
+    fanout_dependents = []
+    faninNB_dependents = []
+    collapse_dependents = [collapse1]
+    DAG_map[state] = state_info("PR2_2", fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, ["PR1","PR2_1"],
+        fanout_dependents, faninNB_dependents,collapse_dependents)
+    DAG_states["PR2_2"] = state
+
+    state = 4
+    fanouts = []	
+    fanins = []	    
+    faninNBs = []   
+    collapse = ["PR3_2"]   
+    fanin_sizes = [] 
+    faninNB_sizes = []
+    collapse1 = [8,11]
+    fanout_dependents = []
+    faninNB_dependents = []
+    collapse_dependents = [collapse1]
+    DAG_map[state] = state_info("PR2_3", fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, ["PR1"],
+        fanout_dependents, faninNB_dependents,collapse_dependents)
+    DAG_states["PR2_3"] = state
+
+    state = 5
+    fanouts = []	
+    fanins = []	    
+    faninNBs = []   
+    collapse = []   
+    fanin_sizes = [] 
+    faninNB_sizes = []
+    fanout_dependents = []
+    faninNB_dependents = []
+    collapse_dependents = []
+    DAG_map[state] = state_info("PR3_1", fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, ["PR2_2"],
+        fanout_dependents, faninNB_dependents,collapse_dependents)
+    DAG_states["PR3_1"] = state
+
+    state = 6
+    fanouts = []	
+    fanins = []	    
+    faninNBs = []   
+    collapse = []   
+    fanin_sizes = [] 
+    faninNB_sizes = []
+    fanout_dependents = []
+    faninNB_dependents = []
+    collapse_dependents = []
+    DAG_map[state] = state_info("PR3_2", fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, ("PR2_3"),
+        fanout_dependents, faninNB_dependents,collapse_dependents)
+    DAG_states["PR3_2"] = state
+
+    DAG_info = {}
+    DAG_info["DAG_map"] = DAG_map
+    DAG_info["DAG_states"] = DAG_states
+    DAG_info["DAG_leaf_tasks"] = DAG_leaf_tasks
+    DAG_info["DAG_leaf_task_start_states"] = DAG_leaf_task_start_states
+    DAG_info["DAG_leaf_task_inputs"] = DAG_leaf_task_inputs
+    DAG_info["all_fanout_task_names"] = all_fanout_task_names
+    DAG_info["all_fanin_task_names"] = all_fanin_task_names
+    DAG_info["all_faninNB_task_names"] = all_faninNB_task_names
+    DAG_info["all_collapse_task_names"] = all_collapse_task_names
+    DAG_info["all_fanin_sizes"] = all_fanin_sizes
+    DAG_info["all_faninNB_sizes"] = all_faninNB_sizes
+    DAG_info["DAG_tasks"] = DAG_tasks
+
+    # For now, add graph nodes to DAG_info, where DAG_info is the DAG
+    # for computing the pagerank of the nodes.
+    # No, write the nodes and each partition to a file: (nodes,partition)
+    # Seems like yuo need to write the dependents that will be inputs to the
+    # faninNBs and fanouts. Example For "PR1", partition is [5,17,1] and
+    # dependents for "P2_1" are [5] and for "P2_2" are [17] and "P2_3" are [1].
+    # So iputs sent to fanouts and faninNBs are list of dependents, which is 
+    # different for each fanout/faninNB.
+    #DAG_info["PageRank_nodes"] = nodes
+
+    file_name = "./"+graph_name+".pickle"
+    with open(file_name, 'wb') as handle:
+        cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+
+    num_fanins = len(all_fanin_task_names)
+    num_fanouts = len(all_fanout_task_names)
+    num_faninNBs = len(all_faninNB_task_names)
+    num_collapse = len(all_collapse_task_names)
+
+    print("DAG_map:")
+    for key, value in DAG_map.items():
+        print(key, ' : ', value)
+    print()
+    print("states:")         
+    for key, value in DAG_states.items():
+        print(key, ' : ', value)
+    print()
+    print("num_fanins:" + str(num_fanins) + " num_fanouts:" + str(num_fanouts) + " num_faninNBs:" 
+            + str(num_faninNBs) + " num_collapse:" + str(num_collapse))
+    print()  
+    print("all_fanout_task_names")
+    for name in all_fanout_task_names:
+        print(name)
+    print()
+    print("all_fanin_task_names")
+    for name in all_fanin_task_names :
+        print(name)
+    print()
+    print("all_faninNB_task_names")
+    for name in all_faninNB_task_names:
+        print(name)
+    print()
+    print("all_collapse_task_names")
+    for name in all_collapse_task_names:
+        print(name)
+    print()
+    print("leaf task start states")
+    for start_state in DAG_leaf_task_start_states:
+        print(start_state)
+    print()
+    print("DAG_tasks:")
+    for key, value in DAG_tasks.items():
+        print(key, ' : ', value)
+    print()
+    print("DAG_leaf_tasks:")
+    for task_name in DAG_leaf_tasks:
+        print(task_name)
+    print() 
+    print("DAG_leaf_task_inputs:")
+    for inp in DAG_leaf_task_inputs:
+        print(inp)
+    print()  
+"""
