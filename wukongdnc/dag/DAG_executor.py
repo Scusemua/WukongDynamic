@@ -1446,10 +1446,10 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                 work_queue.put(work_tuple)
             which assigns dict_of_results[calling_task_name] = output.
             But we want to assign instead:
-                dict_of_results[name] = output[name]
+                dict_of_results[str(calling_task_name+"-"+name)] = output[name]
             when we have per-fanout outputs instead of all fanouts get the 
-            same output.
-            No. We curretly have:
+            same output. 
+            Also, we currently have:
                 sender_set_for_senderX = Group_receivers.get(senderX)
                 if sender_set_for_senderX == None:
                     # senderX is a leaf task since it is not a receiver
@@ -1470,13 +1470,42 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
             faninNB and then do the become task.
             Note: The ss1 excutor will get the work_tuple for PR2_3
             and try to execute it. The inputs are "PR1_1" since PR1_1
-            sends it output to PR2_3. Using the data_dict["Pr1_1"] value
+            sends it output to PR2_3. Using the data_dict["PR1_1"] value
             the input for PR2_3 is the entire output of PR1_1.
+
+            So: the output of a PageRank task is a dictionary that maps
+            each of its fanout/faninNB/collapse/fanin tasks to a list if
+            input tuples. We need to divide the output into one output
+            per fanout/faninNB/collapse/fanin task. These outputs are
+            keyed by a string, e.g., "PR1_1-PR2_3", and this string 
+            needs to be used in the DAG_info task_inputs tuple.
             """
 
             # data_dict may be local (A1) to process/lambda or global (A2) to threads
             logger.debug(thread_name + " execute_task output: " + str(output))
+            # if not output_per_fanin:
             data_dict[state_info.task_name] = output
+            # else:
+            #   Example: task PR1_1 producs an output for fanouts PR2_1
+            #   and PR2_3 and faninNB PR2_2.
+            #       output = {'PR2_1': [(2, 0.0075)], 'PR2_2': [(5, 0.010687499999999999)], 'PR2_3': [(3, 0.012042187499999999)]}
+            #   for (k,v) in output.items():
+            #       # example: "PR2_3"
+            #       data_dict_key = str(state_info.task_name+"-"+k)
+            #       # list of input tuples. Example: list of single tuple:
+            #       # [(3, 0.012042187499999999)], hich says that the pagerank
+            #       # value of the shadow_node in position 3 of PR2_3's 
+            #       # partition is 0.012042187499999999. This is the pagerank
+            #       # value of a parent node of the node in position 4 of 
+            #       # PR2_3's partition. We set the shadow nodes's value before
+            #       # we start the pagerank calculation. There is a trick used
+            #       # to make sure the hadow node's pageran value is not changed 
+            #       # by the pagerank calculation. (We compute the shadow node's 
+            #       # new paerank but we hardcode the shadow node's (dummy) parent
+            #       # pagerank vaue so that the new shadow node pagerank is he same 
+            #       # as the old value.)
+            #       data_dict_value = output[k]
+            #       data_dict[data_dict_key] = data_dict_value
 
             logger.debug("data_dict: " + str(data_dict))
 

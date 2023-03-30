@@ -3203,7 +3203,7 @@ def PageRank_Function_one_iter(partition_or_group,damping_factor,
 
 def PageRank_Function_Driver(task_file_name,total_num_nodes,results_dictionary):
     input_tuples = []
-    for (k,v) in results_dictionary.items():
+    for (_,v) in results_dictionary.items():
         # pagerank leaf tasks have no input. This results in a rresult_dictionary
         # in DAG_executor of "DAG_executor_driver_0" --> (), where
         # DAG_executor_driver_0 is used to mean that eh DAG_excutor_driver
