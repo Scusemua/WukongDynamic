@@ -152,6 +152,12 @@ using_single_lambda_function = False
 # passed to the PageRank task in a dictionary.
 tasks_use_result_dictionary_parameter = True
 
+# a task that has multiple fanouts/faninNBs sends the same output
+# to all of them; otherwise, the task sends a possibly different 
+# output to each. This same_output_per_fanout_fanin flag is False
+# for pagerank.
+same_output_for_all_fanout_fanin = False
+
 
 
 A1 = A1_Server = A1_FunctionSimulator = A1_SingleFunction = A1_Orchestrator = False

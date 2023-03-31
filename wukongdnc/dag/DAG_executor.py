@@ -36,7 +36,7 @@ from .DAG_executor_constants import create_all_fanins_faninNBs_on_start, using_w
 from .DAG_executor_constants import using_threads_not_processes, use_multithreaded_multiprocessing
 from .DAG_executor_constants import process_work_queue_Type, FanInNB_Type, using_Lambda_Function_Simulators_to_Store_Objects
 from .DAG_executor_constants import sync_objects_in_lambdas_trigger_their_tasks, store_sync_objects_in_lambdas
-from .DAG_executor_constants import tasks_use_result_dictionary_parameter
+from .DAG_executor_constants import tasks_use_result_dictionary_parameter, same_output_for_all_fanout_fanin
 #from .DAG_work_queue_for_threads import thread_work_queue
 from .DAG_executor_work_queue_for_threads import work_queue
 from .DAG_data_dict_for_threads import data_dict
@@ -195,8 +195,13 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
         keyword_arguments['start_state_fanin_task'] = start_state_fanin_task
         # We will use local datadict for each multiprocess; process will receve
         # the faninNB results and put them in the data_dict
-        keyword_arguments['result'] = output
-        keyword_arguments['calling_task_name'] = calling_task_name
+        if same_output_for_all_fanout_fanin:
+            keyword_arguments['result'] = output
+            keyword_arguments['calling_task_name'] = calling_task_name
+        else:
+            qualified_name = str(calling_task_name) + "-" + str(name)
+            keyword_arguments['result'] = output[name]
+            keyword_arguments['calling_task_name'] = qualified_name
         #ToDo: Don't do/need this?
         #keyword_arguments['DAG_executor_State'] = new_DAG_exec_state # given to the thread/lambda that executes the fanin task.
         keyword_arguments['server'] = server
@@ -808,7 +813,20 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                 # to speed up DAG processing. (For threads if piggyback: return a list of work 
                 # to add to the local work queue.)
                 dict_of_results =  {}
-                dict_of_results[calling_task_name] = output
+                if same_output_for_all_fanout_fanin:
+                    # each fanout of a task gets the same output, i.e., 
+                    # the output of the task.
+                    dict_of_results[calling_task_name] = output
+                else:
+                    # Each fanout of a task gets its own output; use qualified names
+                    # e.g., "PR1_1-PR2_3" as the calling task instead of 
+                    # just "PR1_1". Assuming the output is a dictionary
+                    # where keys are fanout/faninNB names and the valus are
+                    # the outputs for that fanout/faninNB,
+                    qualfied_name = str(calling_task_name) + "-" + str(name)
+                    dict_of_results[qualfied_name] = output[name]
+                logger.debug(thread_name + ": process_fanouts: dict_of_results for fanout " + name)
+                logger.debug(str(dict_of_results))
                 work_tuple = (DAG_states[name],dict_of_results)
                 #work_queue.put(DAG_states[name])
                 work_queue.put(work_tuple)
@@ -1149,7 +1167,7 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                         dict_of_results = work_tuple[1]
                         logger.debug("work_loop: got work for thread " + thread_name)
                         if dict_of_results != None:
-                            logger.debug("dict_of_results: ")
+                            logger.debug("dict_of_results from work_tuple: ")
                             for key, value in dict_of_results.items():
                                 logger.debug(str(key) + " -> " + str(value))
                             for key, value in dict_of_results.items():
@@ -1168,7 +1186,7 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                         dict_of_results = work_tuple[1]
                         logger.debug("work_loop: got work for thread " + thread_name)
                         if dict_of_results != None:
-                            logger.debug("dict_of_results: ")
+                            logger.debug("dict_of_results from work_tuple: ")
                             for key, value in dict_of_results.items():
                                 logger.debug(str(key) + " -> " + str(value))
                             # Threads put task outputs in a data_dict that is global to the threads
@@ -1359,7 +1377,6 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     task_input_tuple = () # e.g., ('DAG_executor_driver_0','DAG_executor_driver_1')
                     j = 0
                     for _ in args:
-                        logger.debug("FOOO")
                         # make the key values in task_input_tuple unique. 
                         key = "DAG_executor_driver_" + str(j)
                         task_input_tuple += tuple(key)
@@ -1376,9 +1393,9 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     #Informs the logging system to perform an orderly shutdown by flushing 
                     #and closing all handlers. This should be called at application exit and no 
                     #further use of the logging system should be made after this call.
-                    logging.shutdown()
+                    #logging.shutdown()
                     #time.sleep(3)   #not needed due to shutdwn
-                    os._exit(0)
+                    #os._exit(0)
 
             else:
                 # if not triggering tasks in lambdas task_inputs is a tuple of input values, e.g., (1,)
@@ -1482,30 +1499,31 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
             """
 
             # data_dict may be local (A1) to process/lambda or global (A2) to threads
-            logger.debug(thread_name + " execute_task output: " + str(output))
-            # if not output_per_fanin:
-            data_dict[state_info.task_name] = output
-            # else:
+            logger.debug(thread_name + " executed task " + state_info.task_name + "'s output: " + str(output))
+            if same_output_for_all_fanout_fanin:
+                data_dict[state_info.task_name] = output
+            else:
             #   Example: task PR1_1 producs an output for fanouts PR2_1
             #   and PR2_3 and faninNB PR2_2.
             #       output = {'PR2_1': [(2, 0.0075)], 'PR2_2': [(5, 0.010687499999999999)], 'PR2_3': [(3, 0.012042187499999999)]}
-            #   for (k,v) in output.items():
-            #       # example: "PR2_3"
-            #       data_dict_key = str(state_info.task_name+"-"+k)
-            #       # list of input tuples. Example: list of single tuple:
-            #       # [(3, 0.012042187499999999)], hich says that the pagerank
-            #       # value of the shadow_node in position 3 of PR2_3's 
-            #       # partition is 0.012042187499999999. This is the pagerank
-            #       # value of a parent node of the node in position 4 of 
-            #       # PR2_3's partition. We set the shadow nodes's value before
-            #       # we start the pagerank calculation. There is a trick used
-            #       # to make sure the hadow node's pageran value is not changed 
-            #       # by the pagerank calculation. (We compute the shadow node's 
-            #       # new paerank but we hardcode the shadow node's (dummy) parent
-            #       # pagerank vaue so that the new shadow node pagerank is he same 
-            #       # as the old value.)
-            #       data_dict_value = output[k]
-            #       data_dict[data_dict_key] = data_dict_value
+                for (k,v) in output.items():
+                    # example: state_info.task_name = "PR1_1" and 
+                    # k is "PR2_3" so data_dict_key is "PR1_1-PR2_3"
+                    data_dict_key = str(state_info.task_name+"-"+k)
+                    # list of input tuples. Example: list of single tuple:
+                    # [(3, 0.012042187499999999)], hich says that the pagerank
+                    # value of the shadow_node in position 3 of PR2_3's 
+                    # partition is 0.012042187499999999. This is the pagerank
+                    # value of a parent node of the node in position 4 of 
+                    # PR2_3's partition. We set the shadow nodes's value before
+                    # we start the pagerank calculation. There is a trick used
+                    # to make sure the hadow node's pageran value is not changed 
+                    # by the pagerank calculation. (We compute the shadow node's 
+                    # new paerank but we hardcode the shadow node's (dummy) parent
+                    # pagerank vaue so that the new shadow node pagerank is he same 
+                    # as the old value.)
+                    data_dict_value = v
+                    data_dict[data_dict_key] = data_dict_value
 
             logger.debug("data_dict: " + str(data_dict))
 

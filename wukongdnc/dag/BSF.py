@@ -2686,8 +2686,21 @@ def generate_DAG_info():
             task_inputs = ()
             Partition_DAG_leaf_task_inputs.append(task_inputs)
         else:
+            # create a new set from sender_set_for_senderX. For 
+            # each name in sender_set_for_senderX, qualify name by
+            # prexing it with "senderX-". Example: senderX is "PR1_1"
+            # and name is "PR2_3" so the qualified name is "PR1_1-PR2_3".
+            # We use qualified names since the fanouts/faninNBs for a 
+            # task in a pagerank DAG may al have diffent values. This
+            # is unlike Dask DAGs in which all fanouts/faninNBs of a task
+            # receive the same value. We denote the different outputs
+            # of a task A having, e.g., fanouts B and C as "A-B" and "A-C"
+            sender_set_for_senderX_with_qualified_names = set()
+            for name in sender_set_for_senderX:
+                qualified_name = str(name) + "-" + str(senderX)
+                sender_set_for_senderX_with_qualified_names.add(qualified_name)
             # sender_set_for_senderX provides input for senderX
-            task_inputs = tuple(sender_set_for_senderX)
+            task_inputs = tuple(sender_set_for_senderX_with_qualified_names)
         Partition_DAG_map[state] = state_info(senderX, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs)
         Partition_DAG_states[senderX] = state
 
@@ -2704,8 +2717,28 @@ def generate_DAG_info():
         collapse = []
         fanin_sizes = []
         faninNB_sizes = []
+
         sender_set_for_receiverY = Partition_receivers[receiverY]
-        task_inputs = tuple(sender_set_for_receiverY)
+        #task_inputs = tuple(sender_set_for_receiverY)
+
+        # create a new set from sender_set_for_senderX. For 
+        # each name in sender_set_for_senderX, qualify name by
+        # prexing it with "senderX-". Example: senderX is "PR1_1"
+        # and name is "PR2_3" so the qualified name is "PR1_1-PR2_3".
+        # We use qualified names since the fanouts/faninNBs for a 
+        # task in a pagerank DAG may al have diffent values. This
+        # is unlike Dask DAGs in which all fanouts/faninNBs of a task
+        # receive the same value. We denote the different outputs
+        # of a task A having, e.g., fanouts B and C as "A-B" and "A-C"
+        sender_set_for_receiverY_with_qualified_names = set()
+        # for each task senderX that sends input to receiverY, the 
+        # qualified name of the sender is senderX+"-"+senderX
+        for senderX in sender_set_for_receiverY:
+            qualified_name = str(senderX) + "-" + str(receiverY)
+            sender_set_for_receiverY_with_qualified_names.add(qualified_name)
+        # sender_set_for_senderX provides input for senderX
+        task_inputs = tuple(sender_set_for_receiverY_with_qualified_names)
+
         Partition_DAG_map[state] = state_info(receiverY, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs)
         Partition_DAG_states[receiverY] = state
         state += 1
@@ -2937,8 +2970,23 @@ def generate_DAG_info():
             task_inputs = ()
             Group_DAG_leaf_task_inputs.append(task_inputs)
         else:
-            # sender_set_for_senderX provide input for senderX
-            task_inputs = tuple(sender_set_for_senderX)
+            # create a new set from sender_set_for_senderX. For 
+            # each name in sender_set_for_senderX, qualify name by
+            # prexing it with "senderX-". Example: senderX is "PR1_1"
+            # and name is "PR2_3" so the qualified name is "PR1_1-PR2_3".
+            # We use qualified names since the fanouts/faninNBs for a 
+            # task in a pagerank DAG may al have diffent values. This
+            # is unlike Dask DAGs in which all fanouts/faninNBs of a task
+            # receive the same value. We denote the different outputs
+            # of a task A having, e.g., fanouts B and C as "A-B" and "A-C"
+            sender_set_for_senderX_with_qualified_names = set()
+            # for each task name that sends input to senderX, the 
+            # qualified name of the sender is name+"-"+senderX
+            for name in sender_set_for_senderX:
+                qualified_name = str(name) + "-" + str(senderX)
+                sender_set_for_senderX_with_qualified_names.add(qualified_name)
+            # sender_set_for_senderX provides input for senderX
+            task_inputs = tuple(sender_set_for_senderX_with_qualified_names)
         Group_DAG_map[state] = state_info(senderX, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs)
         Group_DAG_states[senderX] = state
 
@@ -2955,8 +3003,26 @@ def generate_DAG_info():
             collapse = []
             fanin_sizes = []
             faninNB_sizes = []
+
             sender_set_for_receiverY = Group_receivers[receiverY]
-            task_inputs = tuple(sender_set_for_receiverY)
+            #task_inputs = tuple(sender_set_for_receiverY)
+
+            # create a new set from sender_set_for_senderX. For 
+            # each name in sender_set_for_senderX, qualify name by
+            # prexing it with "senderX-". Example: senderX is "PR1_1"
+            # and name is "PR2_3" so the qualified name is "PR1_1-PR2_3".
+            # We use qualified names since the fanouts/faninNBs for a 
+            # task in a pagerank DAG may al have diffent values. This
+            # is unlike Dask DAGs in which all fanouts/faninNBs of a task
+            # receive the same value. We denote the different outputs
+            # of a task A having, e.g., fanouts B and C as "A-B" and "A-C"
+            sender_set_for_receiverY_with_qualified_names = set()
+            for senderX in sender_set_for_receiverY:
+                qualified_name = str(senderX) + "-" + str(receiverY)
+                sender_set_for_receiverY_with_qualified_names.add(qualified_name)
+            # sender_set_for_senderX provides input for senderX
+            task_inputs = tuple(sender_set_for_receiverY_with_qualified_names)
+
             Group_DAG_map[state] = state_info(receiverY, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs)
             Group_DAG_states[receiverY] = state
             state += 1
