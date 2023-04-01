@@ -220,7 +220,7 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
                 # given to the thread/lambda that executes the fanin task.
                 if not create_all_fanins_faninNBs_on_start:
                     try:
-                        logger.debug(thread_name + ": process_faninNBs: Starting create_and_fanin for faninNB " + name)
+                        logger.debug(thread_name + ": process_faninNBs: Starting asynch simulation create_and_fanin task for faninNB " + name)
                         NBthread = threading.Thread(target=create_and_faninNB_task_locally, name=("create_and_faninNB_task_"+name), args=(keyword_arguments,))
                         NBthread.start()
                     except Exception as ex:
@@ -229,7 +229,7 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
                         return 0
                 else:
                     try:
-                        logger.debug(thread_name + ": process_faninNBs: Starting faninNB_task for faninNB " + name)
+                        logger.debug(thread_name + ": process_faninNBs: Starting asynch simulation faninNB_task for faninNB " + name)
                         NBthread = threading.Thread(target=faninNB_task_locally, name=("faninNB_task_"+name), args=(keyword_arguments,))
                         NBthread.start()
                     except Exception as ex:
@@ -1534,6 +1534,17 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
             #if DAG_executor_state.state == 1:
             #    time.sleep(0.5)
 
+            # If len(state_info.fanouts) > 0 then we will make one 
+            # fanout task a become task and remove this task from
+            # fanouts. Thus, starting_number_of_fanouts allows to 
+            # remember whether we will have a become task. If
+            # we are using threads to simulat lambdas and real lambdas
+            # then we should not return after processing the fanouts
+            # and faninNBs since we can continue and execure the 
+            # become task. The check of starting_number_of_fanouts
+            # is below.
+            starting_number_of_fanouts = len(state_info.fanouts)
+
             if len(state_info.collapse) > 0:
                 if len(state_info.fanins) + len(state_info.fanouts) + len(state_info.faninNBs) > 0:
                     logger.error("Error1")
@@ -1781,9 +1792,36 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                 # are using Lambdas. So faninNBs cannot generate more work for a worker since the 
                 # work is given to a new thread.)
 
-                if (not using_workers) and len(state_info.fanouts) == 0:
+                # rhc: If we are not using workers then this is a thread simulating
+                # a lambda or a real lambda. The faninNBs started a thread or a 
+                # real lambda to xecute the faninNB task so we may or may not
+                # have more work to do. If we are the become task, then we have more 
+                # to do. In that case, the DAG_executor_state.state is the state of the 
+                # become task so we can just keep going and this state will be used
+                # in the next iteration of the work loop. We are the become task if 
+                # we started this iteration with len(state_info.fanouts) > 0. This
+                # is because when there are more than one fanouts we grab the first
+                # one as the become task. (The situation where there is only one
+                # fanout task and no faninNB tasks is handled as making this fanout 
+                # task the collapse task so the number of collpase tasks 
+                # will be > 0 and the number of fanout tasks will be 0). When we 
+                # take a become task, we remove it from fanouts and there may not be
+                # any other fanouts (there are faninNBs) so len(state_info.fanouts)
+                # will become 0. Thus, we captire the length of fanouts at the 
+                # begining in starting_number_of_fanouts. If starting_number_of_fanouts
+                # was > 0, then we made one fanout the become task and we should 
+                # not return here, i.e., we should continue and execute the become task.
+                # Note: without this check of starting_number_of_fanouts,
+                # we will return prematurley in the case that there is 
+                # one fanouts and one or more faninNBs, as the number of 
+                # fanouts will become 0 when we remove the become task 
+                #if (not using_workers) and len(state_info.fannouts) == 0:
+                if (not using_workers) and starting_number_of_fanouts == 0:
                     # Config: A1, A2, A3
+                    logger.debug(thread_name + ": returning after process fanouts/faninNBs")
                     return
+                else:
+                    logger.debug(thread_name + ": Not returning after process fanouts/faninNBs; execute become task.")
                 #else: # Config: A4_local, A4_Remote, A5, A6
 
             elif len(state_info.fanins) > 0:
@@ -2046,7 +2084,7 @@ def DAG_executor_task(payload):
     DAG_executor_state = payload['DAG_executor_state']
     if DAG_executor_state != None:
         # DAG_executor_state is None when using workers
-        logger.debug("DAG_executor_task: call DAG_excutor, state is " + str(DAG_executor_state.state))
+        logger.debug("DAG_executor_task: call DAG_executor, state is " + str(DAG_executor_state.state))
     DAG_executor(payload)
     
 def main():

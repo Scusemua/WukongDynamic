@@ -183,167 +183,7 @@ class Graph:
         self.scc_GraphID_to_NodeID_map = {}
         self.next_scc_ID = 0
 
-class Node:
-    def __init__(self,ID):
-        self.partition_number = -1
-        self.group_number = -1
-        self.ID = ID
-        self.parents = []
-        self.children = []
-#rhc: ToDo
-        # this will be in Partition_Node not here
-        self.pagerank = 0.00
-        # a list of tuples (frontier, frontier_group) if this is a parent node
-        # on the frontier (and so must be sent to its children's partitions).
-        # We may send it to multiple chldren in differetn partitions or
-        # multiple children in the same partition. For the latter we only 
-        # send one copy to the one partition. 
-        self.frontier_parents =  []
-        # True if this is a shadow node, i.e., a place holder for the actual
-        # parent node that will be sent (via  fanout/faninNB) to the partition
-        # containing this node. Shadow nodes immediately precede their children
-        # in the partition. The pagerank value of this node was computer by 
-        # the previous parition and sent to this partition so the child in this
-        # partition can use it for their pagerank computation.
-#rhc: ToDo
-        # this will be in Partition_Node not here
-        self.isShadowNode = False
 
-#rhc: ToDo
-    # this will be in Partition_Node not here
-    def update_PageRank(self, damping_factor, num_nodes):
-        parent_nodes = self.parents
-        print("update_pagerank: node " + str(self.ID))
-        print("update_pagerank: parent_nodes: " + str(parent_nodes))
-        pagerank_sum = sum((nodes[node_index].pagerank / len(nodes[node_index].children)) for node_index in parent_nodes)
-        print("update_pagerank: pagerank_sum: " + str(pagerank_sum))
-        random_jumping = damping_factor / num_nodes
-        print("damping_factor:" + str(damping_factor) + " num_nodes: " + str(num_nodes) + " random_jumping: " + str(random_jumping))
-        self.pagerank = random_jumping + (1-damping_factor) * pagerank_sum
-        print ("update_pagerank: pagerank of node: " + str(self.ID) + ": " + str(self.pagerank))
-        print()
-        print()
-
-    def __eq__(self,other):
-        return self.ID == other.ID
-
-#rhc: ToDo
-    # change this if move shadow node
-    def __str__(self):
-        shadow = ""
-        if self.isShadowNode:
-            shadow = "-s"
-        return str(self.ID) + shadow
-
-class Partition_Node:
-    def __init__(self,ID):
-        self.partition_number = -1
-        self.group_number = -1
-        self.ID = ID
-        self.parents = []
-        self.num_children = 0
-        #self.children = []
-        self.pagerank = 0.00
-        # a list of tuples (frontier, frontier_group) if this is a parent node
-        # on the frontier (and so must be sent to its children's partitions).
-        # We may send it to multiple chldren in different partitions or
-        # multiple children in the same partition. For the latter we only 
-        # send one copy to the one partition. 
-        self.frontier_parents =  []
-        # True if this is a shadow node, i.e., a place holder for the actual
-        # parent node that will be sent (via  fanout/faninNB) to the partition
-        # containing this node. Shadow nodes immediately precede their children
-        # in the partition. The pagerank value of this node was computer by 
-        # the previous parition and sent to this partition so the child in this
-        # partition can use it for their pagerank computation.
-        self.isShadowNode = False
-        # Note: can't be a shadow node and have a non-empty frontier_parents
-
-    def update_PageRank_main(self, damping_factor,total_num_nodes):
-        parent_nodes = self.parents
-        print("update_pagerank: node " + str(self.ID))
-        print("update_pagerank: parent_nodes: " + str(parent_nodes))
-        print("update_pagerank: num_children: " + str(self.num_children))
-        #Note: a paent has at least one child so len(children) is not 0
-        pagerank_sum = sum((nodes[node_index].pagerank / len(nodes[node_index].children)) for node_index in parent_nodes)
-        print("update_pagerank: pagerank_sum: " + str(pagerank_sum))
-        random_jumping = damping_factor / total_num_nodes
-        print("damping_factor:" + str(damping_factor) + " num_nodes: " + str(total_num_nodes) + " random_jumping: " + str(random_jumping))
-        self.pagerank = random_jumping + (1-damping_factor) * pagerank_sum
-        print ("update_pagerank: pagerank of node: " + str(self.ID) + ": " + str(self.pagerank))
-        print()
-
-    def update_PageRank_of_PageRank_Function(self, partition_or_group,damping_factor,
-        one_minus_dumping_factor,random_jumping,total_num_nodes):
-        parent_nodes = self.parents
-        if not self.isShadowNode:
-            my_ID = str(self.ID)
-        else:
-            my_ID = str(self.ID) + "-s"
-        print("update_pagerank: node " + my_ID)
-        print("update_pagerank: parent_nodes: " + str(parent_nodes))
-        print("update_pagerank: num_children: " + str(self.num_children))
-        """
-        if self.ID == 16:
-            parent1 = partition_or_group[1]
-            parent2 = partition_or_group[2]
-            print("16 parent : " + str(parent1.ID) + " num_children: " + str(parent1.num_children))
-            print("16 parent : " + str(parent2.ID) + " num_children: " + str(parent2.num_children))
-        """
-        #Note: a paent has at least one child so num_children is not 0
-        pagerank_sum = sum((partition_or_group[node_index].pagerank / partition_or_group[node_index].num_children) for node_index in parent_nodes)
-        print("update_pagerank: pagerank_sum: " + str(pagerank_sum))
-        #random_jumping = damping_factor / total_num_nodes
-        print("damping_factor:" + str(damping_factor) + " 1-damping_factor:" + str(1-damping_factor) + " num_nodes: " + str(total_num_nodes) + " random_jumping: " + str(random_jumping))
-        #self.pagerank = random_jumping + ((1-damping_factor) * pagerank_sum)
-        self.pagerank = random_jumping + (one_minus_dumping_factor * pagerank_sum)
-        print ("update_pagerank: pagerank of node: " + str(self.ID) + ": " + str(self.pagerank))
-        print()
-
-    def __eq__(self,other):
-        return self.ID == other.ID
-
-    def __str__(self):
-        shadow = ""
-        if self.isShadowNode:
-            shadow = "-s"
-        return str(self.ID) + shadow
-
-    def toString_PageRank(self):
-        if not self.isShadowNode:
-            my_ID = str(self.ID)
-        else:
-            my_ID = str(self.ID) + "-s"
-        return("ID:" + my_ID + " pr:" + str(self.pagerank) + " num_children:"+str(self.num_children))
-
-nodes = []
-
-num_nodes = 0
-num_edges = 0
-"""
-num_nodes = 12
-#put non-null elements in place
-for x in range(num_nodes+1):
-    nodes.append(Node(x))
-"""
-
-
-
-# visual is a list which stores all the set of edges that constitutes a graph
-visual = []
-def visualize():
-    fig = plt.figure()
-    #fig.set_size_inches(width,height)
-    fig.set_figheight(8)
-    fig.set_figwidth(12)
-    fig.show()
-    G = nx.DiGraph()
-    G.add_edges_from(visual)
-    nx.draw_networkx(G)
-    #plt.show()
-    # comment 
-    #nx.draw_planar(G,with_labels = True, alpha=0.8) #NEW FUNCTION
-    fig.canvas.draw()
 
 visited = [] # List for visited nodes.
 queue = []     #Initialize a queue
@@ -419,11 +259,166 @@ TRACK_PARTITION_LOOPS = False
 CHECK_UNVISITED_CHILDREN = False
 DEBUG_ON = True
 PRINT_DETAILED_STATS = True
+debug_pagerank = False
 
-scc_graph = Graph(0)
+#scc_graph = Graph(0)
 scc_num_vertices = 0
 
+class Node:
+    def __init__(self,ID):
+        self.partition_number = -1
+        self.group_number = -1
+        self.ID = ID
+        self.parents = []
+        self.children = []
+#rhc: ToDo
+        # this will be in Partition_Node not here
+        self.pagerank = 0.00
+        # a list of tuples (frontier, frontier_group) if this is a parent node
+        # on the frontier (and so must be sent to its children's partitions).
+        # We may send it to multiple chldren in differetn partitions or
+        # multiple children in the same partition. For the latter we only 
+        # send one copy to the one partition. 
+        self.frontier_parents =  []
+        # True if this is a shadow node, i.e., a place holder for the actual
+        # parent node that will be sent (via  fanout/faninNB) to the partition
+        # containing this node. Shadow nodes immediately precede their children
+        # in the partition. The pagerank value of this node was computer by 
+        # the previous parition and sent to this partition so the child in this
+        # partition can use it for their pagerank computation.
+#rhc: ToDo
+        # this will be in Partition_Node not here
+        self.isShadowNode = False
 
+    def __eq__(self,other):
+        return self.ID == other.ID
+
+#rhc: ToDo
+    # change this if move shadow node
+    def __str__(self):
+        shadow = ""
+        if self.isShadowNode:
+            shadow = "-s"
+        return str(self.ID) + shadow
+
+class Partition_Node:
+    def __init__(self,ID):
+        self.partition_number = -1
+        self.group_number = -1
+        self.ID = ID
+        self.parents = []
+        self.num_children = 0
+        #self.children = []
+        self.pagerank = 0.00
+        # a list of tuples (frontier, frontier_group) if this is a parent node
+        # on the frontier (and so must be sent to its children's partitions).
+        # We may send it to multiple chldren in different partitions or
+        # multiple children in the same partition. For the latter we only 
+        # send one copy to the one partition. 
+        self.frontier_parents =  []
+        # True if this is a shadow node, i.e., a place holder for the actual
+        # parent node that will be sent (via  fanout/faninNB) to the partition
+        # containing this node. Shadow nodes immediately precede their children
+        # in the partition. The pagerank value of this node was computer by 
+        # the previous parition and sent to this partition so the child in this
+        # partition can use it for their pagerank computation.
+        self.isShadowNode = False
+        # Note: can't be a shadow node and have a non-empty frontier_parents
+
+    def update_PageRank_main(self, damping_factor,total_num_nodes):
+        parent_nodes = self.parents
+        print("update_pagerankM: node " + str(self.ID))
+        print("update_pagerankM: parent_nodes: " + str(parent_nodes))
+        print("update_pagerankM: num_children: " + str(self.num_children))
+        #Note: a paent has at least one child so len(children) is not 0
+        pagerank_sum = sum((nodes[node_index].pagerank / len(nodes[node_index].children)) for node_index in parent_nodes)
+        print("update_pagerankM: pagerank_sum: " + str(pagerank_sum))
+        random_jumping = damping_factor / total_num_nodes
+        print("update_pagerankM: damping_factor:" + str(damping_factor) + " num_nodes: " + str(total_num_nodes) + " random_jumping: " + str(random_jumping))
+        self.pagerank = random_jumping + (1-damping_factor) * pagerank_sum
+        print ("update_pagerankM: update_pagerank: pagerank of node: " + str(self.ID) + ": " + str(self.pagerank))
+        print()
+
+    def update_PageRank_of_PageRank_Function(self, partition_or_group,damping_factor,
+        one_minus_dumping_factor,random_jumping,total_num_nodes):
+        parent_nodes = self.parents
+        if not self.isShadowNode:
+            my_ID = str(self.ID)
+        else:
+            my_ID = str(self.ID) + "-s"
+
+        global debug_pagerank
+        print("debug_pagerank: "  + str(debug_pagerank))
+        if (debug_pagerank):
+            print("update_pagerank: node " + my_ID)
+            print("update_pagerank: parent_nodes: " + str(parent_nodes))
+            print("update_pagerank: num_children: " + str(self.num_children))
+        
+        """
+        if self.ID == 16:
+            parent1 = partition_or_group[1]
+            parent2 = partition_or_group[2]
+            if (debug_pagerank):
+                print("16 parent : " + str(parent1.ID) + " num_children: " + str(parent1.num_children))
+                print("16 parent : " + str(parent2.ID) + " num_children: " + str(parent2.num_children))
+        """
+        #Note: a paent has at least one child so num_children is not 0
+        pagerank_sum = sum((partition_or_group[node_index].pagerank / partition_or_group[node_index].num_children) for node_index in parent_nodes)
+        if (debug_pagerank):
+            print("update_pagerank: pagerank_sum: " + str(pagerank_sum))
+        #random_jumping = damping_factor / total_num_nodes
+        if (debug_pagerank):
+            print("damping_factor:" + str(damping_factor) + " 1-damping_factor:" + str(1-damping_factor) + " num_nodes: " + str(total_num_nodes) + " random_jumping: " + str(random_jumping))
+        #self.pagerank = random_jumping + ((1-damping_factor) * pagerank_sum)
+        self.pagerank = random_jumping + (one_minus_dumping_factor * pagerank_sum)
+        if (debug_pagerank):
+            print ("update_pagerank: pagerank of node: " + str(self.ID) + ": " + str(self.pagerank))
+            print()
+
+
+
+    def __eq__(self,other):
+        return self.ID == other.ID
+
+    def __str__(self):
+        shadow = ""
+        if self.isShadowNode:
+            shadow = "-s"
+        return str(self.ID) + shadow
+
+    def toString_PageRank(self):
+        if not self.isShadowNode:
+            my_ID = str(self.ID)
+        else:
+            my_ID = str(self.ID) + "-s"
+        return("ID:" + my_ID + " pr:" + str(self.pagerank) + " num_children:"+str(self.num_children))
+
+nodes = []
+
+num_nodes = 0
+num_edges = 0
+"""
+num_nodes = 12
+#put non-null elements in place
+for x in range(num_nodes+1):
+    nodes.append(Node(x))
+"""
+
+# visual is a list which stores all the set of edges that constitutes a graph
+visual = []
+def visualize():
+    fig = plt.figure()
+    #fig.set_size_inches(width,height)
+    fig.set_figheight(8)
+    fig.set_figwidth(12)
+    fig.show()
+    G = nx.DiGraph()
+    G.add_edges_from(visual)
+    nx.draw_networkx(G)
+    #plt.show()
+    # comment 
+    #nx.draw_planar(G,with_labels = True, alpha=0.8) #NEW FUNCTION
+    fig.canvas.draw()
 
 # process children before parent traversal
 def dfs_parent_pre_parent_traversal(node,visited,list_of_unvisited_children):
@@ -3241,29 +3236,32 @@ def PageRank_Function_one_iter(partition_or_group,damping_factor,
         # Need number of non-shadow nodes'
 #rhc: handle shadow nodes
         if partition_or_group[index].isShadowNode:
-            print("PageRank: before pagerank computation: node at position " 
-            + str(index) + " isShadowNode: " 
-            + str(partition_or_group[index].isShadowNode) 
-            + ", pagerank: " + str(partition_or_group[index].pagerank)
-            + ", parent: " + str(partition_or_group[index].parents[0])
-            + ", (real) parent's num_children: " + str(partition_or_group[index].num_children)
-            )
-        print()
+            if (debug_pagerank):
+                print("PageRank: before pagerank computation: node at position " 
+                + str(index) + " isShadowNode: " 
+                + str(partition_or_group[index].isShadowNode) 
+                + ", pagerank: " + str(partition_or_group[index].pagerank)
+                + ", parent: " + str(partition_or_group[index].parents[0])
+                + ", (real) parent's num_children: " + str(partition_or_group[index].num_children)
+                )
+        if (debug_pagerank):
+            print()
 
         #if not partition_or_group[index].isShadowNode:
         partition_or_group[index].update_PageRank_of_PageRank_Function(partition_or_group, 
             damping_factor,one_minus_dumping_factor,random_jumping,total_num_nodes)
 
         if partition_or_group[index].isShadowNode:
-            print("PageRank:  after pagerank computation: node at position " 
-            + str(index) + " isShadowNode: " 
-            + str(partition_or_group[index].isShadowNode) 
-            + ", pagerank: " + str(partition_or_group[index].pagerank)
-            + ", parent: " + str(partition_or_group[index].parents[0])
-            + ", (real) parent's num_children: " + str(partition_or_group[index].num_children)
-            )
-
-        print()
+            if (debug_pagerank):
+                print("PageRank:  after pagerank computation: node at position " 
+                + str(index) + " isShadowNode: " 
+                + str(partition_or_group[index].isShadowNode) 
+                + ", pagerank: " + str(partition_or_group[index].pagerank)
+                + ", parent: " + str(partition_or_group[index].parents[0])
+                + ", (real) parent's num_children: " + str(partition_or_group[index].num_children)
+                )
+        if (debug_pagerank):
+            print()
 #rhc: ToDo: do this?
     #normalize_PageRank(nodes)
 
@@ -3290,22 +3288,23 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
         complete_task_file_name = './'+task_file_name+'.pickle'
         with open(complete_task_file_name, 'rb') as handle:
             partition_or_group = (cloudpickle.load(handle))
-        print("PageRank_Function output partition_or_group (node:parents):")
-        for node in partition_or_group:
-            print(node,end=":")
-            for parent in node.parents:
-                print(parent,end=" ")
-            if len(node.parents) == 0:
-                print(",",end=" ")
-            else:
-                print(",",end=" ")
-        print()
-        print("PageRank_Function output partition_or_group (node:num_children):")
-        for node in partition_or_group:
-            print(str(node)+":"+str(node.num_children),end=", ")
-        print()
+        if (debug_pagerank):
+            print("PageRank_Function output partition_or_group (node:parents):")
+            for node in partition_or_group:
+                print(node,end=":")
+                for parent in node.parents:
+                    print(parent,end=" ")
+                if len(node.parents) == 0:
+                    print(",",end=" ")
+                else:
+                    print(",",end=" ")
+            print()
+            print("PageRank_Function output partition_or_group (node:num_children):")
+            for node in partition_or_group:
+                print(str(node)+":"+str(node.num_children),end=", ")
+            print()
 
-        print()
+            print()
         # node's children set when the partition/grup node created
 
         num_shadow_nodes = 0
@@ -3368,7 +3367,8 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
             # the pagerank of the shadow_node we alwas get the same value.
             parent_of_shadow_node.pagerank = (
                 (partition_or_group[shadow_node_index].pagerank - random_jumping)  / one_minus_dumping_factor)
-            print(parent_of_shadow_node_ID + " pagerank set to: " + str(parent_of_shadow_node.pagerank))
+            if (debug_pagerank):
+                print(parent_of_shadow_node_ID + " pagerank set to: " + str(parent_of_shadow_node.pagerank))
             # num_children = 1 makes the computation easier; the computation assumed
             # num_children was set to 1
             parent_of_shadow_node.num_children = 1
@@ -3376,21 +3376,23 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
             partition_or_group.append(parent_of_shadow_node)
             partition_or_group[shadow_node_index].parents[0] = num_nodes_for_pagerank_computation + i
             i += i+1
-        print()
-        print("PageRank_Function output partition_or_group after add " + str(len(input_tuples)) + " SN parents (node:parents):")
-        for node in partition_or_group:
-            print(node,end=":")
-            for parent in node.parents:
-                print(parent,end=" ")
-            if len(node.parents) == 0:
-                print(" ,",end=" ")
-            else:
-                print(",",end=" ")
-        print()
+        if (debug_pagerank):
+            print()
+            print("PageRank_Function output partition_or_group after add " + str(len(input_tuples)) + " SN parents (node:parents):")
+            for node in partition_or_group:
+                print(node,end=":")
+                for parent in node.parents:
+                    print(parent,end=" ")
+                if len(node.parents) == 0:
+                    print(" ,",end=" ")
+                else:
+                    print(",",end=" ")
+            print()
 
         for i in range(1,iteration+1):
-            print("***** PageRank: iteration " + str(i))
-            print()
+            if (debug_pagerank):
+                print("***** PageRank: iteration " + str(i))
+                print()
             PageRank_Function_one_iter(partition_or_group,damping_factor,one_minus_dumping_factor,random_jumping,total_num_nodes,num_nodes_for_pagerank_computation)
         
         """
@@ -3403,16 +3405,16 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
                 my_ID = str(partition_or_group[i].ID) + "-s"
             print(partition_or_group[i].toString_PageRank())
         """
-
-        print()
-        print("Frontier Parents:")
-        for i in range(len(partition_or_group)):
-            if not partition_or_group[i].isShadowNode:
-                my_ID = str(partition_or_group[i].ID)
-            else:
-                my_ID = str(partition_or_group[i].ID) + "-s"
-            print("ID:" + my_ID + " frontier_parents: " + str(partition_or_group[i].frontier_parents))
-        print()
+        if (debug_pagerank):
+            print()
+            print("Frontier Parents:")
+            for i in range(len(partition_or_group)):
+                if not partition_or_group[i].isShadowNode:
+                    my_ID = str(partition_or_group[i].ID)
+                else:
+                    my_ID = str(partition_or_group[i].ID) + "-s"
+                print("ID:" + my_ID + " frontier_parents: " + str(partition_or_group[i].frontier_parents))
+            print()
         """
         ID:5 frontier_parents: [(2, 1, 2)]
         ID:17 frontier_parents: [(2, 2, 5)]
@@ -3432,6 +3434,7 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
                     output_tuple = (parent_or_group_index,partition_or_group[i].pagerank)
                     output_list.append(output_tuple)
                     PageRank_output[partition_or_group_name] = output_list
+        #if (debug_pagerank):
         print("PageRank output tuples:")
         for k, v in PageRank_output.items():
             print((k, v),end=" ")
@@ -3450,6 +3453,7 @@ def PageRank_Task(task_file_name,total_num_nodes,payload,results):
     #
     # This sort is not necessary; it just helps with the visual during debugging.
     input_tuples.sort()
+    #if (debug_pagerank):
     print(task_file_name + " input tuples: ")
     for tup in input_tuples:
         print(tup,end=" ")

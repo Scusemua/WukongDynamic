@@ -1420,8 +1420,8 @@ def run():
     stop_time = time.time()
     duration = stop_time - start_time
 
-    logger.debug("DAG_executor_driver: Sleeping 3.0 seconds...")
-    time.sleep(3.0)
+    logger.debug("DAG_executor_driver: Sleeping 6.0 seconds...")
+    time.sleep(6.0)
     print("DAG_executor_driver: DAG_Execution finished in %f seconds." % duration)
 		
     #ToDo:  close_all(websocket)

@@ -39,3 +39,4 @@ To generate the necessary pickle file, execute the following command:
 Next, to run the local experiment itself, execute the following commands (in order):
 'python -m wukongdnc.server.tcp_server'
 `python -m wukongdnc.dag.DAG_executor_driver`
+`python -m wukongdnc.dag.BFS`
