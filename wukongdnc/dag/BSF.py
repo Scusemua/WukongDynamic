@@ -1136,7 +1136,7 @@ def dfs_parent(visited, node):  #function for dfs
                 #logger.debug(x.ID, end=" ")
                 print_val = print_val + str(x) + " "
             logger.debug(print_val)
-            logger.debug()
+            logger.debug("")
         #frontier.append(node)
         frontier.append(node.ID)
         if DEBUG_ON:
@@ -1146,7 +1146,7 @@ def dfs_parent(visited, node):  #function for dfs
                 #logger.info(x, end=" ")
                 print_val = print_val + str(x) + " "
             logger.debug(print_val)
-            logger.debug()
+            logger.debug("")
         # make sure parent in partition before any if its children. We visit parents of nodein dfs_parents 
         # and they are added to partition in dfs_parents after their parents are added 
         # in dfs_parents then here we add node to partition.  
@@ -2306,7 +2306,7 @@ def bfs(visited, node): #function for BFS
                 #logger.debug(x.ID, end=" ")
                 print_val = print_val + str(x) + " "
             logger.debug(print_val)
-            logger.debug()
+            logger.debug("")
     
     """
     if len(current_partition) >= 0:
@@ -3582,17 +3582,17 @@ def get_PageRank_list(nodes):
 #frontiers.append(frontier.copy())
 #frontier_cost = "END" + ":" + str(len(frontier))
 #frontier_costs.append(frontier_cost)
-logger.info()
+logger.info("")
 logger.info("input_file: generated: num_nodes: " + str(num_nodes) + " num_edges: " + str(num_edges))
-logger.info()
+logger.info("")
 logger.info("visited length: " + str(len(visited)))
 if len(visited) != num_nodes:
     logger.error("[Error]: visited length is " + str(len(visited))
         + " but num_nodes is " + str(num_nodes))
 for x in visited:
     print(x, end=" ")
-logger.info()
-logger.info()
+logger.info("")
+logger.info("")
 logger.info("final current_partition length: " + str(len(current_partition)-loop_nodes_added))
 sum_of_partition_lengths = 0
 for x in partitions:
@@ -3606,7 +3606,7 @@ logger.info("sum_of_partition_lengths (not counting total_loop_nodes_added or sh
 if sum_of_partition_lengths != num_nodes:
     logger.error("[Error]: sum_of_partition_lengths is " + str(sum_of_partition_lengths)
         + " but num_nodes is " + str(num_nodes))
-logger.info()
+logger.info("")
 sum_of_groups_lengths = 0
 for x in groups:
     sum_of_groups_lengths += len(x)
@@ -3622,7 +3622,7 @@ if sum_of_groups_lengths != num_nodes:
 
 #for x in current_partition:
 #    logger.info(x, end=" ")
-logger.info()
+logger.info("")
 
 # adjusting for loop_nodes_added in dfs_p
 sum_of_changes = sum(dfs_parent_changes_in_partiton_size)-shadow_nodes_added_to_partitions
