@@ -15,8 +15,8 @@ import copy
 logger = logging.getLogger(__name__)
 #logger.setLevel(logging.DEBUG)
 logger.setLevel(logging.DEBUG)
-#formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
-formatter = logging.Formatter('%(levelname)s: %(message)s')
+formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
+#formatter = logging.Formatter('%(levelname)s: %(message)s')
 ch = logging.StreamHandler()
 #ch.setLevel(logging.DEBUG)
 ch.setLevel(logging.DEBUG)
@@ -128,7 +128,7 @@ class Graph:
     # node.ID mapped to next as you see the nodes, with another map to get 
     # back to original IDs, map(next,node.ID). Then the SCC is a set of ids 
     # x, y, ... where the actual node IDs are map(x) and map(y). Map back
-    # before printing the scc's.
+    # before logger.infoing the scc's.
     def map_nodeID_to_GraphID(self,ID):
         if ID not in self.scc_NodeID_to_GraphID_map:
             Graph_ID = self.next_scc_ID
@@ -144,13 +144,13 @@ class Graph:
     def get_nodeID_from_GraphID(self,ID):
             return self.scc_GraphID_to_NodeID_map[ID]
 
-    def print_ID_map(self):
+    def logger.info_ID_map(self):
         logger.debug("scc_NodeID_to_GraphID_map:")
         for i in self.scc_NodeID_to_GraphID_map:
-            print (i, self.scc_NodeID_to_GraphID_map[i])
+            logger.info (i, self.scc_NodeID_to_GraphID_map[i])
         logger.debug("scc_NodeID_to_GraphID_map:")
         for i in self.scc_GraphID_to_NodeID_map:
-            print (i, self.scc_GraphID_to_NodeID_map[i])
+            logger.info (i, self.scc_GraphID_to_NodeID_map[i])
 
     # added to code
     def setV(self,V):
@@ -161,20 +161,20 @@ class Graph:
         self.graph[u].append(v)
         self.num_edges += 1
 
-    def printEdges(self):
-        print("graph scc_graph GraphIDs: num_vertices: " + str(self.V) 
+    def logger.infoEdges(self):
+        logger.info("graph scc_graph GraphIDs: num_vertices: " + str(self.V) 
             + ", num_edges: " + str(self.num_edges) + ": ")
         for k, v in self.graph.items():
             for item in v:
-                print(str(k) + "," + str(item))
-        print("graph scc_graph node IDs: num_vertices: " + str(self.V) 
+                logger.info(str(k) + "," + str(item))
+        logger.info("graph scc_graph node IDs: num_vertices: " + str(self.V) 
             + ", num_edges: " + str(self.num_edges) + ": ")
         for k, v in self.graph.items():
             for item in v:
-                print(str(self.get_nodeID_from_GraphID(k)) + "," + str(self.get_nodeID_from_GraphID(item)))
+                logger.info(str(self.get_nodeID_from_GraphID(k)) + "," + str(self.get_nodeID_from_GraphID(item)))
 
     def clear(self):
-        print("clear scc_graph")
+        logger.info("clear scc_graph")
         self.graph = defaultdict(list)
         self.V = 0
         self.num_edges = 0
@@ -258,7 +258,7 @@ IDENTIFY_SINGLETONS = False
 TRACK_PARTITION_LOOPS = False
 CHECK_UNVISITED_CHILDREN = False
 DEBUG_ON = True
-PRINT_DETAILED_STATS = True
+logger.info_DETAILED_STATS = True
 debug_pagerank = False
 
 #scc_graph = Graph(0)
@@ -327,17 +327,17 @@ class Partition_Node:
 
     def update_PageRank_main(self, damping_factor,total_num_nodes):
         parent_nodes = self.parents
-        print("update_pagerankM: node " + str(self.ID))
-        print("update_pagerankM: parent_nodes: " + str(parent_nodes))
-        print("update_pagerankM: num_children: " + str(self.num_children))
+        logger.info("update_pagerankM: node " + str(self.ID))
+        logger.info("update_pagerankM: parent_nodes: " + str(parent_nodes))
+        logger.info("update_pagerankM: num_children: " + str(self.num_children))
         #Note: a paent has at least one child so len(children) is not 0
         pagerank_sum = sum((nodes[node_index].pagerank / len(nodes[node_index].children)) for node_index in parent_nodes)
-        print("update_pagerankM: pagerank_sum: " + str(pagerank_sum))
+        logger.info("update_pagerankM: pagerank_sum: " + str(pagerank_sum))
         random_jumping = damping_factor / total_num_nodes
-        print("update_pagerankM: damping_factor:" + str(damping_factor) + " num_nodes: " + str(total_num_nodes) + " random_jumping: " + str(random_jumping))
+        logger.info("update_pagerankM: damping_factor:" + str(damping_factor) + " num_nodes: " + str(total_num_nodes) + " random_jumping: " + str(random_jumping))
         self.pagerank = random_jumping + (1-damping_factor) * pagerank_sum
-        print ("update_pagerankM: update_pagerank: pagerank of node: " + str(self.ID) + ": " + str(self.pagerank))
-        print()
+        logger.info ("update_pagerankM: update_pagerank: pagerank of node: " + str(self.ID) + ": " + str(self.pagerank))
+        logger.info()
 
     def update_PageRank_of_PageRank_Function(self, partition_or_group,damping_factor,
         one_minus_dumping_factor,random_jumping,total_num_nodes):
@@ -348,32 +348,32 @@ class Partition_Node:
             my_ID = str(self.ID) + "-s"
 
         global debug_pagerank
-        print("debug_pagerank: "  + str(debug_pagerank))
-        if (debug_pagerank):
-            print("update_pagerank: node " + my_ID)
-            print("update_pagerank: parent_nodes: " + str(parent_nodes))
-            print("update_pagerank: num_children: " + str(self.num_children))
+        logger.info("debug_pagerank: "  + str(debug_pagerank))
+        #if (debug_pagerank):
+        logger.debug("update_pagerank: node " + my_ID)
+        logger.debug("update_pagerank: parent_nodes: " + str(parent_nodes))
+        logger.debug("update_pagerank: num_children: " + str(self.num_children))
         
         """
         if self.ID == 16:
             parent1 = partition_or_group[1]
             parent2 = partition_or_group[2]
             if (debug_pagerank):
-                print("16 parent : " + str(parent1.ID) + " num_children: " + str(parent1.num_children))
-                print("16 parent : " + str(parent2.ID) + " num_children: " + str(parent2.num_children))
+                logger.info("16 parent : " + str(parent1.ID) + " num_children: " + str(parent1.num_children))
+                logger.info("16 parent : " + str(parent2.ID) + " num_children: " + str(parent2.num_children))
         """
         #Note: a paent has at least one child so num_children is not 0
         pagerank_sum = sum((partition_or_group[node_index].pagerank / partition_or_group[node_index].num_children) for node_index in parent_nodes)
-        if (debug_pagerank):
-            print("update_pagerank: pagerank_sum: " + str(pagerank_sum))
+        #if (debug_pagerank):
+        logger.debug("update_pagerank: pagerank_sum: " + str(pagerank_sum))
         #random_jumping = damping_factor / total_num_nodes
-        if (debug_pagerank):
-            print("damping_factor:" + str(damping_factor) + " 1-damping_factor:" + str(1-damping_factor) + " num_nodes: " + str(total_num_nodes) + " random_jumping: " + str(random_jumping))
+        #if (debug_pagerank):
+        logger.debug("damping_factor:" + str(damping_factor) + " 1-damping_factor:" + str(1-damping_factor) + " num_nodes: " + str(total_num_nodes) + " random_jumping: " + str(random_jumping))
         #self.pagerank = random_jumping + ((1-damping_factor) * pagerank_sum)
         self.pagerank = random_jumping + (one_minus_dumping_factor * pagerank_sum)
-        if (debug_pagerank):
-            print ("update_pagerank: pagerank of node: " + str(self.ID) + ": " + str(self.pagerank))
-            print()
+        #if (debug_pagerank):
+        logger.debug ("update_pagerank: pagerank of node: " + str(self.ID) + ": " + str(self.pagerank))
+        logger.debug()
 
 
 
@@ -563,15 +563,15 @@ def dfs_parent(visited, node):  #function for dfs
 
     """
     # for debugging
-    print("nodeIndex_to_partition_partitionIndex_group_groupIndex_map, len: " + str(len(nodeIndex_to_partition_partitionIndex_group_groupIndex_map)) + ":")
-    print("shadow nodes not mapped and not shown")
-    if PRINT_DETAILED_STATS:
+    logger.info("nodeIndex_to_partition_partitionIndex_group_groupIndex_map, len: " + str(len(nodeIndex_to_partition_partitionIndex_group_groupIndex_map)) + ":")
+    logger.info("shadow nodes not mapped and not shown")
+    if logger.info_DETAILED_STATS:
         for k, v in nodeIndex_to_partition_partitionIndex_group_groupIndex_map.items():
-            print((k, v))
-        print()
+            logger.info((k, v))
+        logger.info()
     else:
-        print("-- (" + str(len(nodeIndex_to_partition_partitionIndex_group_groupIndex_map)) + ")")
-    print()
+        logger.info("-- (" + str(len(nodeIndex_to_partition_partitionIndex_group_groupIndex_map)) + ")")
+    logger.info()
     """
 
     if not len(node.parents):
@@ -964,7 +964,7 @@ def dfs_parent(visited, node):  #function for dfs
                 #logger.debug ("dfs_parent add (unmapped) edge: " + str(parent_index) + "," + str(node.ID))
                 #logger.debug ("dfs_parent add (mapped) edge: " + str(parent_GraphID) + "," + str(node_GraphID))
                 #logger.debug("dfs_parent: Graph after add edge:")
-                #scc_graph.printEdges()
+                #scc_graph.logger.infoEdges()
                 #global scc_num_vertices
                 #scc_num_vertices += 1
 
@@ -1133,19 +1133,19 @@ def dfs_parent(visited, node):  #function for dfs
         queue.append(node.ID)
         #queue.append(-1)
         if DEBUG_ON:
-            print("queue after add " + str(node.ID) + ":", end=" ")
+            logger.info("queue after add " + str(node.ID) + ":", end=" ")
             for x in queue:
                 #logger.debug(x.ID, end=" ")
-                print(x, end=" ")
-            print()
+                logger.info(x, end=" ")
+            logger.info()
         #frontier.append(node)
         frontier.append(node.ID)
         if DEBUG_ON:
-            print("frontier after add " + str(node.ID) + ":", end=" ")
+            logger.info("frontier after add " + str(node.ID) + ":", end=" ")
             for x in frontier:
                 #logger.debug(x.ID, end=" ")
-                print(x, end=" ")
-            print()
+                logger.info(x, end=" ")
+            logger.info()
         # make sure parent in partition before any if its children. We visit parents of nodein dfs_parents 
         # and they are added to partition in dfs_parents after their parents are added 
         # in dfs_parents then here we add node to partition.  
@@ -1489,7 +1489,7 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
 
     loop_indicator = ""
     first = True
-    print_loop_indicator = False
+    logger.info_loop_indicator = False
     # unvisited_children_after_parent_loop: is the children that were unvisited
     # before the parent traversal and that aer still unvisited after the parent
     # traversal. unvisited_children_after_parent_loop may be a subset of 
@@ -1516,7 +1516,7 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
                 logger.debug_loop_indicator = True
             else:
                 logger.debug("unvisited child " + str(unvisited_child) + " was not visited during parent traversal")
-        if print_loop_indicator:
+        if logger.info_loop_indicator:
             # a loop involving child 'c' as in (L'c')
             # Example: 1 5 6 7 3(Lp) 12(Lp) 11 11(Lc) 12 4 3 2 10 9 8
             # Here, 11 is a child of 12, and also 12 is a child of 11. When we visit 12
@@ -1668,19 +1668,19 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
                 #queue.append(node)
                 queue.append(node.ID)
                 if DEBUG_ON:
-                    print("queue after add " + str(node.ID) + ":", end=" ")
+                    logger.info("queue after add " + str(node.ID) + ":", end=" ")
                     for x in queue:
                         #logger.debug(x.ID, end=" ")
-                        print(x, end=" ")
-                    print()
+                        logger.info(x, end=" ")
+                    logger.info()
                 #frontier.append(node)
                 frontier.append(node.ID)
                 if DEBUG_ON:
-                    print("frontier after add " + str(node.ID) + ":", end=" ")
+                    logger.info("frontier after add " + str(node.ID) + ":", end=" ")
                     for x in frontier:
                         #logger.debug(x.ID, end=" ")
-                        print(x, end=" ")
-                    print()
+                        logger.info(x, end=" ")
+                    logger.info()
                 # make sure parent in partition before any if its children. We visit parents of nodein dfs_parents 
                 # and they are added to partition in dfs_parents after their parents are added 
                 # in dfs_parents then here we add node to partition.  
@@ -1724,19 +1724,19 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
                 #queue.append(node)
                 queue.append(node.ID)
                 if DEBUG_ON:
-                    print("queue after add " + str(node.ID) + ":", end=" ")
+                    logger.info("queue after add " + str(node.ID) + ":", end=" ")
                     for x in queue:
                         #logger.debug(x.ID, end=" ")
-                        print(x, end=" ")
-                    print()
+                        logger.info(x, end=" ")
+                    logger.info()
                 #frontier.append(node)
                 frontier.append(node.ID)
                 if DEBUG_ON:
-                    print("frontier after add " + str(node.ID) + ":", end=" ")
+                    logger.info("frontier after add " + str(node.ID) + ":", end=" ")
                     for x in frontier:
                         #logger.debug(x.ID, end=" ")
-                        print(x, end=" ")
-                    print()
+                        logger.info(x, end=" ")
+                    logger.info()
                 # make sure parent in partition before any if its children. We visit parents of nodein dfs_parents 
                 # and they are added to partition in dfs_parents after their parents are added 
                 # in dfs_parents then here we add node to partition.  
@@ -1852,7 +1852,7 @@ def bfs(visited, node): #function for BFS
     dfs_parent(visited, node)
     #logger.debug("BFS set V to " + str(scc_num_vertices))
     #scc_graph.setV(scc_num_vertices)
-    #scc_graph.printEdges()
+    #scc_graph.logger.infoEdges()
     #scc_graph.clear()
 
     global current_group
@@ -1951,7 +1951,7 @@ def bfs(visited, node): #function for BFS
                 logger.debug("bfs after pop -1 pop node " + str(ID) + " from queue") 
                 queue.append(-1)
 
-                #scc_graph.printEdges()
+                #scc_graph.logger.infoEdges()
                 #scc_graph.clear()
             else:
                 break
@@ -1987,7 +1987,7 @@ def bfs(visited, node): #function for BFS
                 partitions.append(current_partition.copy())
                 current_partition = []
 
-#rhc: ToDo: generate/print partition name for partition_names here (like for groups)
+#rhc: ToDo: generate/logger.info partition name for partition_names here (like for groups)
                 partition_name = "PR" + str(current_partition_number) + "_1"
                 global current_partition_isLoop
                 if current_partition_isLoop:
@@ -2068,8 +2068,8 @@ def bfs(visited, node): #function for BFS
 
                 """
                 global scc_graph
-                scc_graph.printEdges()
-                scc_graph.print_ID_map()
+                scc_graph.logger.infoEdges()
+                scc_graph.logger.info_ID_map()
                 logger.debug("SCCs (node IDs):")
                 list_of_sccs = scc_graph.SCC()
                 logger.debug("len of list_of_sccs: " + str(len(list_of_sccs)))
@@ -2092,10 +2092,10 @@ def bfs(visited, node): #function for BFS
                         f_string = "   F" + str(current_partition_number) + "_" + str(i) + " (no-loop-function): "
                     else:
                         f_string = "   F" + str(current_partition_number) + "_" + str(i) + ": "
-                    print("DEBUG: " + f_string,end="")
+                    logger.info("DEBUG: " + f_string,end="")
                     for node_index in serverless_function:
-                        print(str(node_index),end=" ") 
-                    print()
+                        logger.info(str(node_index),end=" ") 
+                    logger.info()
                     i = i+1
                 #scc_graph.clear()
                 """
@@ -2105,7 +2105,7 @@ def bfs(visited, node): #function for BFS
                 current_group_number = 1
                 #global frontier_groups_sum
                 global num_frontier_groups
-                print("Debug: frontier groups: " + str(num_frontier_groups))
+                logger.info("Debug: frontier groups: " + str(num_frontier_groups))
 
                 # use this if to filter the very small numbers of groups
                 #if frontier_groups > 10:
@@ -2293,11 +2293,11 @@ def bfs(visited, node): #function for BFS
                 + " not in frontier.")
 
         if DEBUG_ON:
-            print("frontier after remove " + str(node.ID) + ":", end=" ")
+            logger.info("frontier after remove " + str(node.ID) + ":", end=" ")
             for x in frontier:
                 #logger.debug(x.ID, end=" ")
-                print(x, end=" ")
-            print()
+                logger.info(x, end=" ")
+            logger.info()
     
     """
     if len(current_partition) >= 0:
@@ -2364,7 +2364,7 @@ def input_graph():
     num_nodes = int(words[2])
     global num_edges
     num_edges = int(words[3])
-    print("input_file: read: num_nodes:" + str(num_nodes) + " num_edges:" + str(num_edges))
+    logger.info("input_file: read: num_nodes:" + str(num_nodes) + " num_edges:" + str(num_edges))
 
     # if num_nodes is 100, this fills nodes[0] ... nodes[100]
     # Note: nodes[0] is not used
@@ -2501,26 +2501,26 @@ def input_partitions():
     for name in group_names:
         with open('./'+name+'.pickle', 'rb') as handle:
             group_inputs.append(cloudpickle.load(handle))
-    print("Group Nodes w/parents:")
+    logger.info("Group Nodes w/parents:")
     for group in groups:
         for node in group:
-            print(node,end=":")
+            logger.info(node,end=":")
             for parent in node.parents:
-                print(parent,end=" ")
-            print()
-        print()
-    print("Group Nodes w/Frontier parent tuples:")
+                logger.info(parent,end=" ")
+            logger.info()
+        logger.info()
+    logger.info("Group Nodes w/Frontier parent tuples:")
     for group in groups:
         for node in group:
-            print(node,end=":")
+            logger.info(node,end=":")
             for tup in node.frontier_parents:
-                print(tup,end=" ")
-            print()
-        print()
+                logger.info(tup,end=" ")
+            logger.info()
+        logger.info()
   
 # Driver Code
 
-# if USING_BFS is true then when we print SCC components we will 
+# if USING_BFS is true then when we logger.info SCC components we will 
 # map the scc IDs back to Node IDs. Kluge for now.
 USING_BFS = True
 
@@ -2597,7 +2597,7 @@ def generate_DAG_info():
 
     # sink nodes, i.e., nodes that do not send any inputs
     Partition_sink_set = set()
-    print("Partition DAG:")
+    logger.info("Partition DAG:")
     state = 1
     # partition i has a collapse to partition i+1
     # Task senderX sends inputs to one or more other tasks
@@ -2626,7 +2626,7 @@ def generate_DAG_info():
                     # only one task sends input to receiverY and this sending 
                     # task only sends to one task, so collapse receiverY, i.e.,
                     # senderX becomes receiverY
-                    print("sender " + senderX + " --> " + receiverY + " : Collapse")
+                    logger.info("sender " + senderX + " --> " + receiverY + " : Collapse")
                     if not receiverY in Partition_all_collapse_task_names:
                         Partition_all_collapse_task_names.add(receiverY)
                     else:
@@ -2636,7 +2636,7 @@ def generate_DAG_info():
                     # only one task sends input to receiverY and this sending 
                     # task sends to other tasks too, so senderX does a fanout 
                     # to receiverY         
-                    print("sender " + senderX + " --> " + receiverY + " : Fanout")
+                    logger.info("sender " + senderX + " --> " + receiverY + " : Fanout")
                     if not receiverY in Partition_all_fanout_task_names:
                         Partition_all_fanout_task_names.add(receiverY)
                     fanouts.append(receiverY)
@@ -2656,7 +2656,7 @@ def generate_DAG_info():
                         isFaninNB = True
                         break
                 if isFaninNB:
-                    print("sender " + senderX + " --> " + receiverY + " : FaninNB")
+                    logger.info("sender " + senderX + " --> " + receiverY + " : FaninNB")
                     if not receiverY in Partition_all_faninNB_task_names:
                         Partition_all_faninNB_task_names.add(receiverY)
                         Partition_all_faninNB_sizes.append(length_of_sender_set_for_receiverY)
@@ -2665,7 +2665,7 @@ def generate_DAG_info():
                 else:
                     # senderX sends an input only to receiverY, same for any other
                     # tasks that sends inputs to receiverY so receiverY is a fanin task.
-                    print("sender " + senderX + " --> " + receiverY + " : Fanin")
+                    logger.info("sender " + senderX + " --> " + receiverY + " : Fanin")
                     if not receiverY in Partition_all_fanin_task_names:
                         Partition_all_fanin_task_names.add(receiverY)
                         Partition_all_fanin_sizes.append(length_of_sender_set_for_receiverY)
@@ -2741,7 +2741,7 @@ def generate_DAG_info():
     for key in Partition_DAG_states:
         Partition_DAG_tasks[key] = PageRank_Function_Driver
 
-    print()
+    logger.info()
     DAG_info = {}
     DAG_info["DAG_map"] = Partition_DAG_map
     DAG_info["DAG_states"] = Partition_DAG_states
@@ -2765,57 +2765,57 @@ def generate_DAG_info():
     num_faninNBs = len(Partition_all_faninNB_task_names)
     num_collapse = len(Partition_all_collapse_task_names)
 
-    print("DAG_map:")
+    logger.info("DAG_map:")
     for key, value in Partition_DAG_map.items():
-        print(key, ' : ', value)
-    print()
-    print("states:")        
+        logger.info(key, ' : ', value)
+    logger.info()
+    logger.info("states:")        
     for key, value in Partition_DAG_states.items():
-        print(key, ' : ', value)
-    print()
-    print("num_fanins:" + str(num_fanins) + " num_fanouts:" + str(num_fanouts) + " num_faninNBs:"
+        logger.info(key, ' : ', value)
+    logger.info()
+    logger.info("num_fanins:" + str(num_fanins) + " num_fanouts:" + str(num_fanouts) + " num_faninNBs:"
     + str(num_faninNBs) + " num_collapse:" + str(num_collapse))
-    print()  
-    print("Partition_all_fanout_task_names:")
+    logger.info()  
+    logger.info("Partition_all_fanout_task_names:")
     for name in Partition_all_fanout_task_names:
-        print(name)
-    print
-    print("all_fanin_task_names:")
+        logger.info(name)
+    logger.info
+    logger.info("all_fanin_task_names:")
     for name in Partition_all_fanin_task_names :
-        print(name)
-    print()
-    print("all_fanin_sizes:")
+        logger.info(name)
+    logger.info()
+    logger.info("all_fanin_sizes:")
     for s in Partition_all_fanin_sizes :
-        print(s)
-    print()
-    print("all_faninNB_task_names:")
+        logger.info(s)
+    logger.info()
+    logger.info("all_faninNB_task_names:")
     for name in Partition_all_faninNB_task_names:
-        print(name)
-    print()
-    print("all_faninNB_sizes:")
+        logger.info(name)
+    logger.info()
+    logger.info("all_faninNB_sizes:")
     for s in Partition_all_faninNB_sizes:
-        print(s)
-    print()
-    print("Partition_all_collapse_task_names:")
+        logger.info(s)
+    logger.info()
+    logger.info("Partition_all_collapse_task_names:")
     for name in Partition_all_collapse_task_names:
-        print(name)
-    print()
-    print("leaf task start states:")
+        logger.info(name)
+    logger.info()
+    logger.info("leaf task start states:")
     for start_state in Partition_DAG_leaf_task_start_states:
-        print(start_state)
-    print()
-    print("DAG_tasks:")
+        logger.info(start_state)
+    logger.info()
+    logger.info("DAG_tasks:")
     for key, value in Partition_DAG_tasks.items():
-        print(key, ' : ', value)
-    print()
-    print("DAG_leaf_tasks:")
+        logger.info(key, ' : ', value)
+    logger.info()
+    logger.info("DAG_leaf_tasks:")
     for task_name in Partition_DAG_leaf_tasks:
-        print(task_name)
-    print()
-    print("DAG_leaf_task_inputs:")
+        logger.info(task_name)
+    logger.info()
+    logger.info("DAG_leaf_task_inputs:")
     for inp in Partition_DAG_leaf_task_inputs:
-        print(inp)
-    print()
+        logger.info(inp)
+    logger.info()
 
     DAG_info_partition_read = DAG_Info(file_name = "./DAG_info_Partition.pickle")
     
@@ -2833,39 +2833,39 @@ def generate_DAG_info():
 
     DAG_leaf_task_inputs = DAG_info_partition_read.get_DAG_leaf_task_inputs()
 
-    print()
-    print("DAG_info partition after read:")
+    logger.info()
+    logger.info("DAG_info partition after read:")
     output_DAG = True
     # add-0bec4d19-bce6-4394-ad62-9b0eab3081a9
     if output_DAG:
         # FYI:
-        print("DAG_map:")
+        logger.info("DAG_map:")
         for key, value in DAG_map.items():
-            print(key)
-            print(value)
-        print("  ")
-        print("DAG states:")         
+            logger.info(key)
+            logger.info(value)
+        logger.info("  ")
+        logger.info("DAG states:")         
         for key, value in DAG_states.items():
-            print(key)
-            print(value)
-        print("   ")
-        print("DAG leaf task start states")
+            logger.info(key)
+            logger.info(value)
+        logger.info("   ")
+        logger.info("DAG leaf task start states")
         for start_state in DAG_leaf_task_start_states:
-            print(start_state)
-        print()
-        print("DAG_tasks:")
+            logger.info(start_state)
+        logger.info()
+        logger.info("DAG_tasks:")
         for key, value in DAG_tasks.items():
-            print(key, ' : ', value)
-        print()
-        print("DAG_leaf_tasks:")
+            logger.info(key, ' : ', value)
+        logger.info()
+        logger.info("DAG_leaf_tasks:")
         for task_name in DAG_leaf_tasks:
-            print(task_name)
-        print() 
-        print("DAG_leaf_task_inputs:")
+            logger.info(task_name)
+        logger.info() 
+        logger.info("DAG_leaf_task_inputs:")
         for inp in DAG_leaf_task_inputs:
-            print(inp)
-        #print() 
-        print()
+            logger.info(inp)
+        #logger.info() 
+        logger.info()
 
     Group_all_fanout_task_names = set()
     Group_all_fanin_task_names = set()
@@ -2884,10 +2884,10 @@ def generate_DAG_info():
 
     # sink nodes, i.e., nodes that do not send any inputs
     Group_sink_set = set()
-    print("Group DAG:")
+    logger.info("Group DAG:")
     state = 1
     for senderX in Group_senders:
-        print("senderX: " + senderX)
+        logger.info("senderX: " + senderX)
         fanouts = []
         fanins = []
         faninNBs = []
@@ -2908,7 +2908,7 @@ def generate_DAG_info():
                     # only one task sends input to receiverY and this sending 
                     # task only sends to one task, so collapse receiverY, i.e.,
                     # senderX becomes receiverY
-                    print("sender " + senderX + " --> " + receiverY + " : Collapse")
+                    logger.info("sender " + senderX + " --> " + receiverY + " : Collapse")
                     if not receiverY in Group_all_collapse_task_names:
                         Group_all_collapse_task_names.add(receiverY)
                     else:
@@ -2918,7 +2918,7 @@ def generate_DAG_info():
                     # only one task sends input to receiverY and this sending 
                     # task sends to other tasks too, so senderX does a fanout 
                     # to receiverY   
-                    print("sender " + senderX + " --> " + receiverY + " : Fanout")
+                    logger.info("sender " + senderX + " --> " + receiverY + " : Fanout")
                     if not receiverY in Group_all_fanout_task_names:
                         Group_all_fanout_task_names.add(receiverY)
                     fanouts.append(receiverY)
@@ -2938,18 +2938,18 @@ def generate_DAG_info():
                         isFaninNB = True
                         break
                 if isFaninNB:
-                    print("sender " + senderX + " --> " + receiverY + " : FaninNB")
+                    logger.info("sender " + senderX + " --> " + receiverY + " : FaninNB")
                     if not receiverY in Group_all_faninNB_task_names:
                         Group_all_faninNB_task_names.add(receiverY)
                         Group_all_faninNB_sizes.append(length_of_sender_set_for_receiverY)
-                    print ("after Group_all_faninNBs_sizes append: " + str(Group_all_faninNB_sizes))
-                    print ("faninNBs append: " + receiverY)
+                    logger.info ("after Group_all_faninNBs_sizes append: " + str(Group_all_faninNB_sizes))
+                    logger.info ("faninNBs append: " + receiverY)
                     faninNBs.append(receiverY)
                     faninNB_sizes.append(length_of_sender_set_for_receiverY)
                 else:
                     # senderX sends an input only to receiverY, same for any other
                     # tasks that sends inputs to receiverY so receiverY is a fanin task.
-                    print("sender " + senderX + " --> " + receiverY + " : Fanin")
+                    logger.info("sender " + senderX + " --> " + receiverY + " : Fanin")
                     if not receiverY in Group_all_fanin_task_names:
                         Group_all_fanin_task_names.add(receiverY)
                         Group_all_fanin_sizes.append(length_of_sender_set_for_receiverY)
@@ -3025,7 +3025,7 @@ def generate_DAG_info():
     for key in Group_DAG_states:
         Group_DAG_tasks[key] = PageRank_Function_Driver
 
-    print()
+    logger.info()
     DAG_info = {}
     DAG_info["DAG_map"] = Group_DAG_map
     DAG_info["DAG_states"] = Group_DAG_states
@@ -3049,57 +3049,57 @@ def generate_DAG_info():
     num_faninNBs = len(Group_all_faninNB_task_names)
     num_collapse = len(Group_all_collapse_task_names)
 
-    print("GroupDAG_map:")
+    logger.info("GroupDAG_map:")
     for key, value in Group_DAG_map.items():
-        print(key, ' : ', value)
-    print()
-    print("states:")        
+        logger.info(key, ' : ', value)
+    logger.info()
+    logger.info("states:")        
     for key, value in Group_DAG_states.items():
-        print(key, ' : ', value)
-    print()
-    print("num_fanins:" + str(num_fanins) + " num_fanouts:" + str(num_fanouts) + " num_faninNBs:"
+        logger.info(key, ' : ', value)
+    logger.info()
+    logger.info("num_fanins:" + str(num_fanins) + " num_fanouts:" + str(num_fanouts) + " num_faninNBs:"
     + str(num_faninNBs) + " num_collapse:" + str(num_collapse))
-    print()  
-    print("all_fanout_task_names:")
+    logger.info()  
+    logger.info("all_fanout_task_names:")
     for name in Group_all_fanout_task_names:
-        print(name)
-    print()
-    print("all_fanin_task_names:")
+        logger.info(name)
+    logger.info()
+    logger.info("all_fanin_task_names:")
     for name in Group_all_fanin_task_names :
-        print(name)
-    print()
-    print("all_fanin_sizes:")
+        logger.info(name)
+    logger.info()
+    logger.info("all_fanin_sizes:")
     for s in Group_all_fanin_sizes :
-        print(s)
-    print()
-    print("all_faninNB_task_names:")
+        logger.info(s)
+    logger.info()
+    logger.info("all_faninNB_task_names:")
     for name in Group_all_faninNB_task_names:
-        print(name)
-    print()
-    print("all_faninNB_sizes:")
+        logger.info(name)
+    logger.info()
+    logger.info("all_faninNB_sizes:")
     for s in Group_all_faninNB_sizes :
-        print(s)
-    print()
-    print("all_collapse_task_names:")
+        logger.info(s)
+    logger.info()
+    logger.info("all_collapse_task_names:")
     for name in Group_all_collapse_task_names:
-        print(name)
-    print()
-    print("leaf task start states:")
+        logger.info(name)
+    logger.info()
+    logger.info("leaf task start states:")
     for start_state in Group_DAG_leaf_task_start_states:
-        print(start_state)
-    print()
-    print("DAG_tasks:")
+        logger.info(start_state)
+    logger.info()
+    logger.info("DAG_tasks:")
     for key, value in Group_DAG_tasks.items():
-        print(key, ' : ', value)
-    print()
-    print("DAG_leaf_tasks:")
+        logger.info(key, ' : ', value)
+    logger.info()
+    logger.info("DAG_leaf_tasks:")
     for task_name in Group_DAG_leaf_tasks:
-        print(task_name)
-    print()
-    print("DAG_leaf_task_inputs:")
+        logger.info(task_name)
+    logger.info()
+    logger.info("DAG_leaf_task_inputs:")
     for inp in Group_DAG_leaf_task_inputs:
-        print(inp)
-    print()
+        logger.info(inp)
+    logger.info()
 
     DAG_info_partition_read = DAG_Info(file_name = "./DAG_info_Group.pickle")
     
@@ -3117,39 +3117,39 @@ def generate_DAG_info():
 
     DAG_leaf_task_inputs = DAG_info_partition_read.get_DAG_leaf_task_inputs()
 
-    print()
-    print("DAG_info group after read:")
+    logger.info()
+    logger.info("DAG_info group after read:")
     output_DAG = True
     # add-0bec4d19-bce6-4394-ad62-9b0eab3081a9
     if output_DAG:
         # FYI:
-        print("DAG_map:")
+        logger.info("DAG_map:")
         for key, value in DAG_map.items():
-            print(key)
-            print(value)
-        print("  ")
-        print("DAG states:")         
+            logger.info(key)
+            logger.info(value)
+        logger.info("  ")
+        logger.info("DAG states:")         
         for key, value in DAG_states.items():
-            print(key)
-            print(value)
-        print("   ")
-        print("DAG leaf task start states")
+            logger.info(key)
+            logger.info(value)
+        logger.info("   ")
+        logger.info("DAG leaf task start states")
         for start_state in DAG_leaf_task_start_states:
-            print(start_state)
-        print()
-        print("DAG_tasks:")
+            logger.info(start_state)
+        logger.info()
+        logger.info("DAG_tasks:")
         for key, value in DAG_tasks.items():
-            print(key, ' : ', value)
-        print()
-        print("DAG_leaf_tasks:")
+            logger.info(key, ' : ', value)
+        logger.info()
+        logger.info("DAG_leaf_tasks:")
         for task_name in DAG_leaf_tasks:
-            print(task_name)
-        print() 
-        print("DAG_leaf_task_inputs:")
+            logger.info(task_name)
+        logger.info() 
+        logger.info("DAG_leaf_task_inputs:")
         for inp in DAG_leaf_task_inputs:
-            print(inp)
-        #print() 
-        print()
+            logger.info(inp)
+        #logger.info() 
+        logger.info()
 
 
 
@@ -3161,7 +3161,7 @@ def generate_DAG_info():
     partition_name_list = ["PR1_1", "PR2_1", "PR3_1"]
     where:
         def func(value=i):
-            print value
+            logger.info value
         funcs.append(func)
     where:
     #new_func='def receiverY(task_name, set, input2):\n  return x+1'
@@ -3181,14 +3181,14 @@ def generate_DAG_info():
             comma = ","
             first = False
         PageRank_func += comma + str(senderZ)
-        PageRank_func += "):\n  print(1)"
+        PageRank_func += "):\n  logger.info(1)"
         #where FOOO is a simple body for PageRank_task, which calls the actual task
     #or
     #for i, senderZ in enumerate(sender_set_for_receiverY):
     #if i: new_func += "," + str(senderZ)
     #else: new_func += str(senderZ)
-    print("PageRank_func: ")
-    print(PageRank_func)
+    logger.info("PageRank_func: ")
+    logger.info(PageRank_func)
     the_code=compile(PageRank_func,'<string>','exec')
     """ 
 
@@ -3224,7 +3224,7 @@ def normalize_PageRank(nodes):
 def PageRank_one_iter(target_nodes,partition,damping_factor):
     for target_node_index in target_nodes:
         nodes[target_node_index].update_PageRank_main(damping_factor, len(nodes))
-        print("PageRank: target_index isShadowNode: " 
+        logger.info("PageRank: target_index isShadowNode: " 
             + str(nodes[target_node_index].isShadowNode))
     normalize_PageRank(nodes)
 
@@ -3236,32 +3236,32 @@ def PageRank_Function_one_iter(partition_or_group,damping_factor,
         # Need number of non-shadow nodes'
 #rhc: handle shadow nodes
         if partition_or_group[index].isShadowNode:
-            if (debug_pagerank):
-                print("PageRank: before pagerank computation: node at position " 
-                + str(index) + " isShadowNode: " 
-                + str(partition_or_group[index].isShadowNode) 
-                + ", pagerank: " + str(partition_or_group[index].pagerank)
-                + ", parent: " + str(partition_or_group[index].parents[0])
-                + ", (real) parent's num_children: " + str(partition_or_group[index].num_children)
-                )
-        if (debug_pagerank):
-            print()
+            #if (debug_pagerank):
+            logger.debug("PageRank: before pagerank computation: node at position " 
+            + str(index) + " isShadowNode: " 
+            + str(partition_or_group[index].isShadowNode) 
+            + ", pagerank: " + str(partition_or_group[index].pagerank)
+            + ", parent: " + str(partition_or_group[index].parents[0])
+            + ", (real) parent's num_children: " + str(partition_or_group[index].num_children)
+            )
+        #if (debug_pagerank):
+        #    logger.debug()
 
         #if not partition_or_group[index].isShadowNode:
         partition_or_group[index].update_PageRank_of_PageRank_Function(partition_or_group, 
             damping_factor,one_minus_dumping_factor,random_jumping,total_num_nodes)
 
         if partition_or_group[index].isShadowNode:
-            if (debug_pagerank):
-                print("PageRank:  after pagerank computation: node at position " 
-                + str(index) + " isShadowNode: " 
-                + str(partition_or_group[index].isShadowNode) 
-                + ", pagerank: " + str(partition_or_group[index].pagerank)
-                + ", parent: " + str(partition_or_group[index].parents[0])
-                + ", (real) parent's num_children: " + str(partition_or_group[index].num_children)
-                )
-        if (debug_pagerank):
-            print()
+            #if (debug_pagerank):
+            logger.debug("PageRank:  after pagerank computation: node at position " 
+            + str(index) + " isShadowNode: " 
+            + str(partition_or_group[index].isShadowNode) 
+            + ", pagerank: " + str(partition_or_group[index].pagerank)
+            + ", parent: " + str(partition_or_group[index].parents[0])
+            + ", (real) parent's num_children: " + str(partition_or_group[index].num_children)
+            )
+        #if (debug_pagerank):
+        logger.debug()
 #rhc: ToDo: do this?
     #normalize_PageRank(nodes)
 
@@ -3288,23 +3288,23 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
         complete_task_file_name = './'+task_file_name+'.pickle'
         with open(complete_task_file_name, 'rb') as handle:
             partition_or_group = (cloudpickle.load(handle))
-        if (debug_pagerank):
-            print("PageRank_Function output partition_or_group (node:parents):")
-            for node in partition_or_group:
-                print(node,end=":")
-                for parent in node.parents:
-                    print(parent,end=" ")
-                if len(node.parents) == 0:
-                    print(",",end=" ")
-                else:
-                    print(",",end=" ")
-            print()
-            print("PageRank_Function output partition_or_group (node:num_children):")
-            for node in partition_or_group:
-                print(str(node)+":"+str(node.num_children),end=", ")
-            print()
+        #if (debug_pagerank):
+        logger.debug("PageRank_Function output partition_or_group (node:parents):")
+        for node in partition_or_group:
+            logger.debug(node,end=":")
+            for parent in node.parents:
+                logger.debug(parent,end=" ")
+            if len(node.parents) == 0:
+                logger.debug(",",end=" ")
+            else:
+                logger.debug(",",end=" ")
+        logger.debug()
+        logger.debug("PageRank_Function output partition_or_group (node:num_children):")
+        for node in partition_or_group:
+            logger.debug(str(node)+":"+str(node.num_children),end=", ")
+        logger.debug()
 
-            print()
+        logger.debug()
         # node's children set when the partition/grup node created
 
         num_shadow_nodes = 0
@@ -3367,8 +3367,8 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
             # the pagerank of the shadow_node we alwas get the same value.
             parent_of_shadow_node.pagerank = (
                 (partition_or_group[shadow_node_index].pagerank - random_jumping)  / one_minus_dumping_factor)
-            if (debug_pagerank):
-                print(parent_of_shadow_node_ID + " pagerank set to: " + str(parent_of_shadow_node.pagerank))
+            # if (debug_pagerank):
+            logger.debug(parent_of_shadow_node_ID + " pagerank set to: " + str(parent_of_shadow_node.pagerank))
             # num_children = 1 makes the computation easier; the computation assumed
             # num_children was set to 1
             parent_of_shadow_node.num_children = 1
@@ -3376,45 +3376,45 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
             partition_or_group.append(parent_of_shadow_node)
             partition_or_group[shadow_node_index].parents[0] = num_nodes_for_pagerank_computation + i
             i += i+1
-        if (debug_pagerank):
-            print()
-            print("PageRank_Function output partition_or_group after add " + str(len(input_tuples)) + " SN parents (node:parents):")
-            for node in partition_or_group:
-                print(node,end=":")
-                for parent in node.parents:
-                    print(parent,end=" ")
-                if len(node.parents) == 0:
-                    print(" ,",end=" ")
-                else:
-                    print(",",end=" ")
-            print()
+        #if (debug_pagerank):
+        logger.debug()
+        logger.debug("PageRank_Function output partition_or_group after add " + str(len(input_tuples)) + " SN parents (node:parents):")
+        for node in partition_or_group:
+            logger.debug(node,end=":")
+            for parent in node.parents:
+                logger.debug(parent,end=" ")
+            if len(node.parents) == 0:
+                logger.debug(" ,",end=" ")
+            else:
+                logger.debug(",",end=" ")
+        logger.debug()
 
         for i in range(1,iteration+1):
-            if (debug_pagerank):
-                print("***** PageRank: iteration " + str(i))
-                print()
+            # if (debug_pagerank):
+            logger.debug("***** PageRank: iteration " + str(i))
+            logger.debug()
             PageRank_Function_one_iter(partition_or_group,damping_factor,one_minus_dumping_factor,random_jumping,total_num_nodes,num_nodes_for_pagerank_computation)
         
         """
-        print("PageRanks: ")
+        logger.info("PageRanks: ")
         for i in range(num_nodes_for_pagerank_computation):
             if not partition_or_group[i].isShadowNode:
                 my_ID = str(partition_or_group[i].ID)
                 results[partition_or_group[i].ID] = partition_or_group[i].pagerank
             else:
                 my_ID = str(partition_or_group[i].ID) + "-s"
-            print(partition_or_group[i].toString_PageRank())
+            logger.info(partition_or_group[i].toString_PageRank())
         """
-        if (debug_pagerank):
-            print()
-            print("Frontier Parents:")
-            for i in range(len(partition_or_group)):
-                if not partition_or_group[i].isShadowNode:
-                    my_ID = str(partition_or_group[i].ID)
-                else:
-                    my_ID = str(partition_or_group[i].ID) + "-s"
-                print("ID:" + my_ID + " frontier_parents: " + str(partition_or_group[i].frontier_parents))
-            print()
+        # if (debug_pagerank):
+        logger.debug()
+        logger.debug("Frontier Parents:")
+        for i in range(len(partition_or_group)):
+            if not partition_or_group[i].isShadowNode:
+                my_ID = str(partition_or_group[i].ID)
+            else:
+                my_ID = str(partition_or_group[i].ID) + "-s"
+            logger.debug("ID:" + my_ID + " frontier_parents: " + str(partition_or_group[i].frontier_parents))
+        logger.debug()
         """
         ID:5 frontier_parents: [(2, 1, 2)]
         ID:17 frontier_parents: [(2, 2, 5)]
@@ -3435,11 +3435,11 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
                     output_list.append(output_tuple)
                     PageRank_output[partition_or_group_name] = output_list
         #if (debug_pagerank):
-        print("PageRank output tuples:")
+        logger.debug("PageRank output tuples:")
         for k, v in PageRank_output.items():
-            print((k, v),end=" ")
-        print()
-        print()
+            logger.debug((k, v),end=" ")
+        logger.debug()
+        logger.debug()
         return PageRank_output
 
 def PageRank_Task(task_file_name,total_num_nodes,payload,results):
@@ -3454,11 +3454,11 @@ def PageRank_Task(task_file_name,total_num_nodes,payload,results):
     # This sort is not necessary; it just helps with the visual during debugging.
     input_tuples.sort()
     #if (debug_pagerank):
-    print(task_file_name + " input tuples: ")
+    logger.debug(task_file_name + " input tuples: ")
     for tup in input_tuples:
-        print(tup,end=" ")
-    print()
-    print()
+        logger.debug(tup,end=" ")
+    logger.debug()
+    logger.debug()
     #PageRank_output = PageRank_Function(task_file_name,total_num_nodes,input_tuples,results)
     PageRank_output = PageRank_Function(task_file_name,total_num_nodes,input_tuples)
     return PageRank_output
@@ -3468,14 +3468,14 @@ def PageRank_Task(task_file_name,total_num_nodes,payload,results):
 # The first node will be in position 0? Normally node i is in position i
 # but there is no node 0 so no Node in position 0.
 def PageRank_main(target_nodes, partition):
-    print("PageRank:partition is:" + str(partition))
+    logger.info("PageRank:partition is:" + str(partition))
     damping_factor=0.15
     iteration=int(1)
     for i in range(iteration):
-        print("***** PageRank: iteration " + str(i))
-        print()
+        logger.info("***** PageRank: iteration " + str(i))
+        logger.info()
         PageRank_one_iter(target_nodes,partition,damping_factor)
-    print("PageRank: partition is: " + str(partition))
+    logger.info("PageRank: partition is: " + str(partition))
 
 """
 rhc: ToDo: If we add one or more shadow nodes before each dependent node in 
@@ -3503,7 +3503,7 @@ The PageRank code is:
     # for shadow nodes, there is only one node_index and its value is i (see below)
     pagerank_sum = sum((nodes[node_index].pagerank / len(nodes[node_index].children)) for node_index in in_nodes)
     random_jumping = damping_factor / num_nodes
-    print("damping_factor:" + str(damping_factor) + " num_nodes: " + str(num_nodes) + " random_jumping: " + str(random_jumping))
+    logger.info("damping_factor:" + str(damping_factor) + " num_nodes: " + str(num_nodes) + " random_jumping: " + str(random_jumping))
     self.pagerank = random_jumping + (1-damping_factor) * pagerank_sum
     where nodes is an array of Nodes and node i is strored at nodes[i]
 
@@ -3545,14 +3545,14 @@ def PageRank(dependents,task_name):
     partition_file_name = "./" + task_name + "_nodes_and_partition.pickle"
     nodes, partition = input_PageRank_nodes_and_partition(partition_file_name)
     # overwite nodes[i] with delegate i
-    print("PageRank: partition is: " + str(partition))
+    logger.info("PageRank: partition is: " + str(partition))
     damping_factor=0.15
     iteration=int(10)
     for i in range(iteration):
-        print("***** PageRank: iteration " + str(i))
-        print()
+        logger.info("***** PageRank: iteration " + str(i))
+        logger.info()
         PageRank_one_iter(nodes,partition,damping_factor)
-    print("PageRank: partition is: " + str(partition))
+    logger.info("PageRank: partition is: " + str(partition))
 
 def get_PageRank_list(nodes):
     pagerank_list = np.asarray([node.pagerank for node in nodes], dtype='float32')
@@ -3562,18 +3562,18 @@ def get_PageRank_list(nodes):
 #frontiers.append(frontier.copy())
 #frontier_cost = "END" + ":" + str(len(frontier))
 #frontier_costs.append(frontier_cost)
-print()
-print("input_file: generated: num_nodes: " + str(num_nodes) + " num_edges: " + str(num_edges))
-print()
-print("visited length: " + str(len(visited)))
+logger.info()
+logger.info("input_file: generated: num_nodes: " + str(num_nodes) + " num_edges: " + str(num_edges))
+logger.info()
+logger.info("visited length: " + str(len(visited)))
 if len(visited) != num_nodes:
     logger.error("[Error]: visited length is " + str(len(visited))
         + " but num_nodes is " + str(num_nodes))
 for x in visited:
-    print(x, end=" ")
-print()
-print()
-print("final current_partition length: " + str(len(current_partition)-loop_nodes_added))
+    logger.info(x, end=" ")
+logger.info()
+logger.info()
+logger.info("final current_partition length: " + str(len(current_partition)-loop_nodes_added))
 sum_of_partition_lengths = 0
 for x in partitions:
     sum_of_partition_lengths += len(x)
@@ -3581,12 +3581,12 @@ for x in partitions:
 logger.debug("shadow_nodes_added: " + str(shadow_nodes_added_to_partitions))
 sum_of_partition_lengths -= (total_loop_nodes_added + shadow_nodes_added_to_partitions)
 #if (len(current_partition)-loop_nodes_added) != num_nodes
-print("sum_of_partition_lengths (not counting total_loop_nodes_added or shadow_nodes_added): " 
+logger.info("sum_of_partition_lengths (not counting total_loop_nodes_added or shadow_nodes_added): " 
     + str(sum_of_partition_lengths))
 if sum_of_partition_lengths != num_nodes:
     logger.error("[Error]: sum_of_partition_lengths is " + str(sum_of_partition_lengths)
         + " but num_nodes is " + str(num_nodes))
-print()
+logger.info()
 sum_of_groups_lengths = 0
 for x in groups:
     sum_of_groups_lengths += len(x)
@@ -3594,282 +3594,282 @@ for x in groups:
 logger.debug("shadow_nodes_added: " + str(shadow_nodes_added_to_groups))
 sum_of_groups_lengths -= (total_loop_nodes_added + shadow_nodes_added_to_groups)
 #if (len(current_partition)-loop_nodes_added) != num_nodes
-print("sum_of_groups_lengths (not counting total_loop_nodes_added or shadow_nodes_added): " 
+logger.info("sum_of_groups_lengths (not counting total_loop_nodes_added or shadow_nodes_added): " 
     + str(sum_of_groups_lengths))
 if sum_of_groups_lengths != num_nodes:
     logger.error("[Error]: sum_of_groups_lengths is " + str(sum_of_groups_lengths)
         + " but num_nodes is " + str(num_nodes))
 
 #for x in current_partition:
-#    print(x, end=" ")
-print()
+#    logger.info(x, end=" ")
+logger.info()
 
 # adjusting for loop_nodes_added in dfs_p
 sum_of_changes = sum(dfs_parent_changes_in_partiton_size)-shadow_nodes_added_to_partitions
 avg_change = sum_of_changes / len(dfs_parent_changes_in_partiton_size)
-print("dfs_parent_changes_in_partiton_size length, len: " 
+logger.info("dfs_parent_changes_in_partiton_size length, len: " 
     + str(len(dfs_parent_changes_in_partiton_size)) + ", sum_of_changes: " 
     + str(sum_of_changes), end="")
-print(", average dfs_parent change: %.1f" % avg_change)
-if PRINT_DETAILED_STATS:
+logger.info(", average dfs_parent change: %.1f" % avg_change)
+if logger.info_DETAILED_STATS:
     if sum_of_changes != num_nodes:
         logger.error("[Error]: sum_of_changes is " + str(sum_of_changes)
             + " but num_nodes is " + str(num_nodes))
     for x in dfs_parent_changes_in_partiton_size:
-        print(x, end=" ")
+        logger.info(x, end=" ")
 
-print()
-print()
-if PRINT_DETAILED_STATS:
+logger.info()
+logger.info()
+if logger.info_DETAILED_STATS:
     # adjusting for loop_nodes_added in dfs_p
     sum_of_changes = sum(dfs_parent_changes_in_frontier_size)
-    print("dfs_parent_changes_in_frontier_size length, len: " + str(len(dfs_parent_changes_in_frontier_size))
+    logger.info("dfs_parent_changes_in_frontier_size length, len: " + str(len(dfs_parent_changes_in_frontier_size))
         + ", sum_of_changes: " + str(sum_of_changes))
     if sum_of_changes != num_nodes:
         logger.error("[Error]: sum_of_changes is " + str(sum_of_changes)
             + " but num_nodes is " + str(num_nodes))
     for x in dfs_parent_changes_in_frontier_size:
-        print(x, end=" ")
-    print()
-    print()
-#print("frontier length: " + str(len(frontier)))
+        logger.info(x, end=" ")
+    logger.info()
+    logger.info()
+#logger.info("frontier length: " + str(len(frontier)))
 #if len(frontier) != 0:
 #    logger.error("[Error]: frontier length is " + str(len(frontier))
 #       + " but num_nodes is " + str(num_nodes))
 #for x in frontier:
-#    print(str(x.ID), end=" ")
-#print()
-#print("frontier cost: " + str(len(frontier_cost)))
+#    logger.info(str(x.ID), end=" ")
+#logger.info()
+#logger.info("frontier cost: " + str(len(frontier_cost)))
 #for x in frontier_cost:
-#    print(str(x), end=" ")
-#print()
+#    logger.info(str(x), end=" ")
+#logger.info()
 # final frontier shoudl always be empty
 # assert: 
-print("frontiers: (final fronter should be empty), len: " + str(len(frontiers))+":")
+logger.info("frontiers: (final fronter should be empty), len: " + str(len(frontiers))+":")
 for frontier_list in frontiers:
-    if PRINT_DETAILED_STATS:
-        print("-- (" + str(len(frontier_list)) + "): ",end="")
+    if logger.info_DETAILED_STATS:
+        logger.info("-- (" + str(len(frontier_list)) + "): ",end="")
         for x in frontier_list:
-            #print(str(x.ID),end=" ")
-            print(str(x),end=" ")
-        print()
+            #logger.info(str(x.ID),end=" ")
+            logger.info(str(x),end=" ")
+        logger.info()
     else:
-        print("-- (" + str(len(frontier_list)) + ")") 
+        logger.info("-- (" + str(len(frontier_list)) + ")") 
 frontiers_length = len(frontiers)
 if len(frontiers[frontiers_length-1]) != 0:
-    print ("Error]: final frontier is not empty.")
-print()
-print("partitions, len: " + str(len(partitions))+":")
+    logger.info ("Error]: final frontier is not empty.")
+logger.info()
+logger.info("partitions, len: " + str(len(partitions))+":")
 for x in partitions:
-    if PRINT_DETAILED_STATS:
-        print("-- (" + str(len(x)) + "):", end=" ")
+    if logger.info_DETAILED_STATS:
+        logger.info("-- (" + str(len(x)) + "):", end=" ")
         for node in x:
-            print(node,end=" ")
+            logger.info(node,end=" ")
             #if not node.isShadowNode:
-            #    print(str(index),end=" ")
+            #    logger.info(str(index),end=" ")
             #else:
-            #   print(str(index)+"-s",end=" ")
-        print()
+            #   logger.info(str(index)+"-s",end=" ")
+        logger.info()
     else:
-        print("-- (" + str(len(x)) + ")")
-print()
-print("partition names, len: " + str(len(partition_names))+":")
+        logger.info("-- (" + str(len(x)) + ")")
+logger.info()
+logger.info("partition names, len: " + str(len(partition_names))+":")
 for name in partition_names:
-    if PRINT_DETAILED_STATS:
-        print("-- " + name)
-print()
-print("groups, len: " + str(len(groups))+":")
+    if logger.info_DETAILED_STATS:
+        logger.info("-- " + name)
+logger.info()
+logger.info("groups, len: " + str(len(groups))+":")
 for g in groups:
-    if PRINT_DETAILED_STATS:
-        print("-- (" + str(len(g)) + "):", end=" ")
+    if logger.info_DETAILED_STATS:
+        logger.info("-- (" + str(len(g)) + "):", end=" ")
         for node in g:
-            print(node,end=" ")
-        print()
+            logger.info(node,end=" ")
+        logger.info()
     else:
-        print("-- (" + str(len(g)) + ")")
-print()
-print("group names, len: " + str(len(group_names))+":")
+        logger.info("-- (" + str(len(g)) + ")")
+logger.info()
+logger.info("group names, len: " + str(len(group_names))+":")
 for name in group_names:
-    if PRINT_DETAILED_STATS:
-        print("-- " + name)
-print()
-print("nodes_to_partition_maps (incl. shadow nodes), len: " + str(len(nodeIndex_to_partitionIndex_maps))+":")
+    if logger.info_DETAILED_STATS:
+        logger.info("-- " + name)
+logger.info()
+logger.info("nodes_to_partition_maps (incl. shadow nodes), len: " + str(len(nodeIndex_to_partitionIndex_maps))+":")
 for m in nodeIndex_to_partitionIndex_maps:
-    if PRINT_DETAILED_STATS:
-        print("-- (" + str(len(m)) + "):", end=" ")
+    if logger.info_DETAILED_STATS:
+        logger.info("-- (" + str(len(m)) + "):", end=" ")
         for k, v in m.items():
-            print((k, v),end=" ")
-        print()
+            logger.info((k, v),end=" ")
+        logger.info()
     else:
-        print("-- (" + str(len(m)) + ")")
-print()
-print("nodes_to_group_maps, (incl. shadow nodes), len: " + str(len(nodeIndex_to_groupIndex_maps))+":")
+        logger.info("-- (" + str(len(m)) + ")")
+logger.info()
+logger.info("nodes_to_group_maps, (incl. shadow nodes), len: " + str(len(nodeIndex_to_groupIndex_maps))+":")
 for m in nodeIndex_to_groupIndex_maps:
-    if PRINT_DETAILED_STATS:
-        print("-- (" + str(len(m)) + "):", end=" ")
+    if logger.info_DETAILED_STATS:
+        logger.info("-- (" + str(len(m)) + "):", end=" ")
         for k, v in m.items():
-            print((k, v),end=" ")
-        print()
+            logger.info((k, v),end=" ")
+        logger.info()
     else:
-        print("-- (" + str(len(m)) + ")")
-print()
-if PRINT_DETAILED_STATS:
-    print("frontier costs (cost=length of frontier), len: " + str(len(frontier_costs))+":")
+        logger.info("-- (" + str(len(m)) + ")")
+logger.info()
+if logger.info_DETAILED_STATS:
+    logger.info("frontier costs (cost=length of frontier), len: " + str(len(frontier_costs))+":")
     for x in frontier_costs:
-        print("-- ",end="")
-        print(str(x))
-    print()
+        logger.info("-- ",end="")
+        logger.info(str(x))
+    logger.info()
 sum_of_partition_costs = 0
 for x in all_frontier_costs:
     words = x.split(':')
     cost = int(words[1])
     sum_of_partition_costs += cost
-print("all frontier costs, len: " + str(len(all_frontier_costs)) + ", sum: " 
+logger.info("all frontier costs, len: " + str(len(all_frontier_costs)) + ", sum: " 
     + str(sum_of_partition_costs))
-if PRINT_DETAILED_STATS:
+if logger.info_DETAILED_STATS:
     i = 0
     costs_per_line = 13
     for x in all_frontier_costs:
         if (i < costs_per_line):
-            print(str(x),end=" ")
+            logger.info(str(x),end=" ")
         else:
-            print(str(x))
+            logger.info(str(x))
             i = 0
         i += 1
-print()
+logger.info()
 """
 # Doing this for each node in each partition now (next)
-print()
-if PRINT_DETAILED_STATS:
-    print("Node frontier_parent_tuples:")
+logger.info()
+if logger.info_DETAILED_STATS:
+    logger.info("Node frontier_parent_tuples:")
     for node in nodes:
-        print(str(node.ID) + ": frontier_parent_tuples: ", end = " ")
+        logger.info(str(node.ID) + ": frontier_parent_tuples: ", end = " ")
         for parent_tuple in node.frontier_parents:
-            print(str(parent_tuple), end=" ")
-        print()
+            logger.info(str(parent_tuple), end=" ")
+        logger.info()
 else:
-    print("-- (" + str(len(x)) + ")")
+    logger.info("-- (" + str(len(x)) + ")")
 """
-print()
-if PRINT_DETAILED_STATS:
-    print("partition nodes' frontier_parent_tuples:")
+logger.info()
+if logger.info_DETAILED_STATS:
+    logger.info("partition nodes' frontier_parent_tuples:")
     for x in partitions:
-        if PRINT_DETAILED_STATS:
-            print("-- (" + str(len(x)) + "):", end=" ")
+        if logger.info_DETAILED_STATS:
+            logger.info("-- (" + str(len(x)) + "):", end=" ")
             for node in x:
-                print(node.ID,end=": ")
+                logger.info(node.ID,end=": ")
                 for parent_tuple in node.frontier_parents:
-                    print(str(parent_tuple), end=" ")
-            print()
+                    logger.info(str(parent_tuple), end=" ")
+            logger.info()
         else:
-            print("-- (" + str(len(x)) + ")")
+            logger.info("-- (" + str(len(x)) + ")")
 else:
-    print("-- (" + str(len(x)) + ")")
-print()
-if PRINT_DETAILED_STATS:
-    print("group nodes' frontier_parent_tuples:")
+    logger.info("-- (" + str(len(x)) + ")")
+logger.info()
+if logger.info_DETAILED_STATS:
+    logger.info("group nodes' frontier_parent_tuples:")
     for x in groups:
-        if PRINT_DETAILED_STATS:
-            print("-- (" + str(len(x)) + "):", end=" ")
+        if logger.info_DETAILED_STATS:
+            logger.info("-- (" + str(len(x)) + "):", end=" ")
             for node in x:
-                print(node.ID,end=": ")
+                logger.info(node.ID,end=": ")
                 for parent_tuple in node.frontier_parents:
-                    print(str(parent_tuple), end=" ")
-            print()
+                    logger.info(str(parent_tuple), end=" ")
+            logger.info()
         else:
-            print("-- (" + str(len(x)) + ")")
+            logger.info("-- (" + str(len(x)) + ")")
 else:
-    print("-- (" + str(len(x)) + ")")
-print()
-print("frontier_groups_sum: " + str(frontier_groups_sum) + ", len(frontiers)-1: " 
+    logger.info("-- (" + str(len(x)) + ")")
+logger.info()
+logger.info("frontier_groups_sum: " + str(frontier_groups_sum) + ", len(frontiers)-1: " 
     +  str(len(frontiers)-1))
-print("Average number of frontier groups: " + (str(frontier_groups_sum / len(frontiers)-1)))
-print()
-print("nodeIndex_to_partition_partitionIndex_group_groupIndex_map, len: " + str(len(nodeIndex_to_partition_partitionIndex_group_groupIndex_map)) + ":")
-print("shadow nodes not mapped and not shown")
-if PRINT_DETAILED_STATS:
+logger.info("Average number of frontier groups: " + (str(frontier_groups_sum / len(frontiers)-1)))
+logger.info()
+logger.info("nodeIndex_to_partition_partitionIndex_group_groupIndex_map, len: " + str(len(nodeIndex_to_partition_partitionIndex_group_groupIndex_map)) + ":")
+logger.info("shadow nodes not mapped and not shown")
+if logger.info_DETAILED_STATS:
     for k, v in nodeIndex_to_partition_partitionIndex_group_groupIndex_map.items():
-        print((k, v))
-    print()
+        logger.info((k, v))
+    logger.info()
 else:
-    print("-- (" + str(len(nodeIndex_to_partition_partitionIndex_group_groupIndex_map)) + ")")
-print()
-print("Partition Node parents (shad. node is a parent), len: " + str(len(partitions))+":")
+    logger.info("-- (" + str(len(nodeIndex_to_partition_partitionIndex_group_groupIndex_map)) + ")")
+logger.info()
+logger.info("Partition Node parents (shad. node is a parent), len: " + str(len(partitions))+":")
 for x in partitions:
-    if PRINT_DETAILED_STATS:
-        #print("-- (" + str(len(x)) + "):", end=" ")
+    if logger.info_DETAILED_STATS:
+        #logger.info("-- (" + str(len(x)) + "):", end=" ")
         for node in x:
-            print(node,end=":")
+            logger.info(node,end=":")
             for parent in node.parents:
-                print(parent,end=" ")
-            print()
+                logger.info(parent,end=" ")
+            logger.info()
             #if not node.isShadowNode:
-            #    print(str(index),end=" ")
+            #    logger.info(str(index),end=" ")
             #else:
-            #   print(str(index)+"-s",end=" ")
-        print()
+            #   logger.info(str(index)+"-s",end=" ")
+        logger.info()
     else:
-        print("-- (" + str(len(x)) + ")")
-print()
-print("Group Node parents (shad. node is a parent), len: " + str(len(partitions))+":")
+        logger.info("-- (" + str(len(x)) + ")")
+logger.info()
+logger.info("Group Node parents (shad. node is a parent), len: " + str(len(partitions))+":")
 for x in groups:
-    if PRINT_DETAILED_STATS:
-        #print("-- (" + str(len(x)) + "):", end=" ")
+    if logger.info_DETAILED_STATS:
+        #logger.info("-- (" + str(len(x)) + "):", end=" ")
         for node in x:
-            print(node,end=":")
+            logger.info(node,end=":")
             for parent in node.parents:
-                print(parent,end=" ")
-            print()
+                logger.info(parent,end=" ")
+            logger.info()
             #if not node.isShadowNode:
-            #    print(str(index),end=" ")
+            #    logger.info(str(index),end=" ")
             #else:
-            #   print(str(index)+"-s",end=" ")
-        print()
+            #   logger.info(str(index)+"-s",end=" ")
+        logger.info()
     else:
-        print("-- (" + str(len(x)) + ")")
-print()
-print("Group Node num_children, len: " + str(len(groups))+":")
+        logger.info("-- (" + str(len(x)) + ")")
+logger.info()
+logger.info("Group Node num_children, len: " + str(len(groups))+":")
 for x in groups:
-    if PRINT_DETAILED_STATS:
-        #print("-- (" + str(len(x)) + "):", end=" ")
+    if logger.info_DETAILED_STATS:
+        #logger.info("-- (" + str(len(x)) + "):", end=" ")
         for node in x:
-            print(str(node) + ":" + str(node.num_children),end=", ")
-        print()
+            logger.info(str(node) + ":" + str(node.num_children),end=", ")
+        logger.info()
     else:
-        print("-- (" + str(len(x)) + ")")
-print()
-print("Partition_senders, len: " + str(len(Partition_senders)) + ":")
-if PRINT_DETAILED_STATS:
+        logger.info("-- (" + str(len(x)) + ")")
+logger.info()
+logger.info("Partition_senders, len: " + str(len(Partition_senders)) + ":")
+if logger.info_DETAILED_STATS:
     for k, v in Partition_senders.items():
-        print((k, v))
-    print()
+        logger.info((k, v))
+    logger.info()
 else:
-    print("-- (" + str(len(Partition_senders)) + ")")
-    print()
-print("Partition_receivers, len: " + str(len(Partition_receivers)) + ":")
-if PRINT_DETAILED_STATS:
+    logger.info("-- (" + str(len(Partition_senders)) + ")")
+    logger.info()
+logger.info("Partition_receivers, len: " + str(len(Partition_receivers)) + ":")
+if logger.info_DETAILED_STATS:
     for k, v in Partition_receivers.items():
-        print((k, v))
-    print()
+        logger.info((k, v))
+    logger.info()
 else:
-    print("-- (" + str(len(Partition_receivers)) + ")")
-    print()
-print("Group_senders, len: " + str(len(Group_senders)) + ":")
-if PRINT_DETAILED_STATS:
+    logger.info("-- (" + str(len(Partition_receivers)) + ")")
+    logger.info()
+logger.info("Group_senders, len: " + str(len(Group_senders)) + ":")
+if logger.info_DETAILED_STATS:
     for k, v in Group_senders.items():
-        print((k, v))
-    print()
+        logger.info((k, v))
+    logger.info()
 else:
-    print("-- (" + str(len(Group_senders)) + ")")
-    print()
-print("Group_receivers, len: " + str(len(Group_receivers)) + ":")
-if PRINT_DETAILED_STATS:
+    logger.info("-- (" + str(len(Group_senders)) + ")")
+    logger.info()
+logger.info("Group_receivers, len: " + str(len(Group_receivers)) + ":")
+if logger.info_DETAILED_STATS:
     for k, v in Group_receivers.items():
-        print((k, v))
-    print()
+        logger.info((k, v))
+    logger.info()
 else:
-    print("-- (" + str(len(Group_receivers)) + ")")
-    print()
+    logger.info("-- (" + str(len(Group_receivers)) + ")")
+    logger.info()
 generate_DAG_info()
 #visualize()
 #input('Press <ENTER> to continue')
@@ -3926,9 +3926,9 @@ payload = {}
 PR3_3_input = PR3_3_input_from_PR_2_3
 payload['input'] = PR3_3_input
 PageRank_output_from_PR_3_3 = PageRank_Task(task_name,total_num_nodes,payload,results)
-print("Results:")
+logger.info("Results:")
 for i in range(len(results)):
-    print ("ID:"+str(i) + " pagerank:" + str(results[i]))
+    logger.info ("ID:"+str(i) + " pagerank:" + str(results[i]))
 """
 
 """
@@ -3939,12 +3939,12 @@ target_nodes = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
 total_num_nodes = 20
 PageRank_main(target_nodes,target_nodes,total_num_nodes)
 np_array = get_PageRank_list(nodes)
-print(str(np_array))
+logger.info(str(np_array))
 """
 
 # This was moved down to here, out of the way. 
 """
-A recursive function that find finds and prints strongly connected
+A recursive function that find finds and logger.infos strongly connected
 components using DFS traversal
 u --> The vertex to be visited next
 disc[] --> Stores discovery times of visited vertices
@@ -3970,7 +3970,7 @@ def SCCUtil(self, u, low, disc, stackMember, st, list_of_sccs):
     # Go through all vertices adjacent to this
     for v in self.graph[u]:
         # added for debug
-        #print("v: " + str(v))
+        #logger.info("v: " + str(v))
         # If v is not visited yet, then recur for it
         if disc[v] == -1:
 
@@ -3988,7 +3988,7 @@ def SCCUtil(self, u, low, disc, stackMember, st, list_of_sccs):
             Case 2 (per above discussion on Disc and Low value) '''
             low[u] = min(low[u], disc[v])
 
-    # head node found, pop the stack and print an SCC
+    # head node found, pop the stack and logger.info an SCC
 
     w = -1 # To store stack extracted vertices
     if low[u] == disc[u]:
@@ -3999,15 +3999,15 @@ def SCCUtil(self, u, low, disc, stackMember, st, list_of_sccs):
             global USING_BFS
             if USING_BFS:
                 ID = self.get_nodeID_from_GraphID(w)
-                print(ID, end=" ")
+                logger.info(ID, end=" ")
                 one_scc.append(ID)
             else:
-                print(w, end=" ")
+                logger.info(w, end=" ")
 
             stackMember[w] = False
             
 
-        print()
+        logger.info()
         if USING_BFS:
             list_of_sccs.append(one_scc)
 
@@ -4020,7 +4020,7 @@ def SCC(self):
     # and Initialize parent and visited,
     # and ap(articulation point) arrays
     # added for debug
-    #print("SCC: V:" + str(self.V))
+    #logger.info("SCC: V:" + str(self.V))
     disc = [-1] * (self.V)
     low = [-1] * (self.V)
     stackMember = [False] * (self.V)
@@ -4161,7 +4161,7 @@ def bfs(visited, graph, node): #function for BFS
 
   while queue:          # Creating loop to visit each node
     m = queue.pop(0) 
-    print (m, end = " ") 
+    logger.info (m, end = " ") 
 
     for neighbor in graph[m]:
       if neighbor not in visited:
@@ -4256,7 +4256,7 @@ def bfs(visited, graph, node): #function for BFS
         # at this child and child has no other parents so all of the child's
         # parents (which is just this node) are in the current partition.  
         # So just add child and node to current partition. 
-        print ("dfs_parent add node " + str(node.ID) + " and child " +
+        logger.info ("dfs_parent add node " + str(node.ID) + " and child " +
             node.children[0].ID + " to visited since this is the only child"
             + " and child has no children and only one parent which is node")
         visited.append(node.children[0].ID)
@@ -4278,7 +4278,7 @@ def bfs(visited, graph, node): #function for BFS
 def dfs_p_new(visited, graph, node):  #function for dfs 
     # e.g. dfs(3) where bfs is visiting 3 as a child of enqueued node
     # so 3 is not visited yet
-    print ("dfs_p_new from node " + str(node.ID))
+    logger.info ("dfs_p_new from node " + str(node.ID))
 
     #dfs_p_start_partition_size = len(current_partition)
     #global loop_nodes_added
@@ -4287,28 +4287,28 @@ def dfs_p_new(visited, graph, node):  #function for dfs
     list_of_unvisited_children = []
     check_list_of_unvisited_chldren_after_visiting_parents = False
 
-    print("in dfs_p_new start: list_of_unvisited_children:" + str(list_of_unvisited_children))
+    logger.info("in dfs_p_new start: list_of_unvisited_children:" + str(list_of_unvisited_children))
 
     # process children before parent traversal
     #list_of_unvisited_children, 
     check_list_of_unvisited_chldren_after_visiting_parents = dfs_parent_pre_parent_traversal(node,
         visited,list_of_unvisited_children)
 
-    print("in dfs_p_new after pre: list_of_unvisited_children:" + str(list_of_unvisited_children))
+    logger.info("in dfs_p_new after pre: list_of_unvisited_children:" + str(list_of_unvisited_children))
 
     if not len(node.parents):
-        print ("dfs_p node " + str(node.ID) + " has no parents")
+        logger.info ("dfs_p node " + str(node.ID) + " has no parents")
     else:
-        print ("dfs_p node " + str(node.ID) + " visit parents")
+        logger.info ("dfs_p node " + str(node.ID) + " visit parents")
 
     # visit parents
     for neighbor_index in node.parents:
         neighbor = nodes[neighbor_index]
         if neighbor.ID not in visited:
-            print ("dfs_p visit node " + str(neighbor.ID))
+            logger.info ("dfs_p visit node " + str(neighbor.ID))
             dfs_parent(visited, graph, neighbor)
         else:
-            print ("dfs_p neighbor.ID " + str(neighbor.ID) + " already visited")
+            logger.info ("dfs_p neighbor.ID " + str(neighbor.ID) + " already visited")
             if neighbor.partition_number == -1:
                 # Example: 1 5 6 7 3(Lp) 12(Lp) 11 11(Lc) 12 4 3 2 10 9 8
                 # Here, 3 is a parent of 11 that 11 finds visited so when visiting
@@ -4322,7 +4322,7 @@ def dfs_p_new(visited, graph, node):  #function for dfs
                 # indicates the loop detected when 11 saw it's parent 12 was visited.
                 loop_indicator = str(neighbor.ID)+"(Lprnt_of_" + str(node.ID) + ")"
                 current_partition.append(loop_indicator)
-                print("[Info]: Possible parent loop detected, start and end with " + str(neighbor.ID)
+                logger.info("[Info]: Possible parent loop detected, start and end with " + str(neighbor.ID)
                     + ", loop indicator: " + loop_indicator)
                 loop_nodes_added += 1
 
@@ -4334,27 +4334,27 @@ def dfs_p_new(visited, graph, node):  #function for dfs
     #loop_nodes_added_end = loop_nodes_added
     #dfs_p_change_in_partitiob_size = (dfs_p_end_partition_size - dfs_p_start_partition_size) - (
     #    loop_nodes_added_end - loop_nodes_added_start)
-    #print("dfs_p_change_in_partition_size: " + str(dfs_p_change_in_partitiob_size))
+    #logger.info("dfs_p_change_in_partition_size: " + str(dfs_p_change_in_partitiob_size))
     #dfs_p_changes_in_partiton_size.append(dfs_p_change_in_partitiob_size)
 
 def dfs_p(visited, graph, node):
-    print ("dfs_p from node " + str(node.ID))
+    logger.info ("dfs_p from node " + str(node.ID))
     dfs_p_start_partition_size = len(current_partition)
     loop_nodes_added_start = loop_nodes_added
 
     # target child node c of dfs_p(c) in bfs was to to visited in bfs before call to dfs_p(c)
     if not len(node.parents):
-        print ("dfs_p node " + str(node.ID) + " has no parents")
+        logger.info ("dfs_p node " + str(node.ID) + " has no parents")
     else:
-        print ("dfs_p node " + str(node.ID) + " visit parents")
+        logger.info ("dfs_p node " + str(node.ID) + " visit parents")
 
     for neighbor_index in node.parents:
         neighbor = nodes[neighbor_index]
         if neighbor.ID not in visited:
-            print ("dfs_p visit node " + str(neighbor.ID))
+            logger.info ("dfs_p visit node " + str(neighbor.ID))
             dfs_parent(visited, graph, neighbor)
         else:
-            print ("dfs_p neighbor.ID " + str(neighbor.ID) + " already visited")
+            logger.info ("dfs_p neighbor.ID " + str(neighbor.ID) + " already visited")
 
 
     # make sure parent in partition before any if its children. We visit parents of node 
@@ -4362,11 +4362,11 @@ def dfs_p(visited, graph, node):
     # are added in dfs_parents then here we add node to partition. node is the target 
     # of dfs_p(node)  
     if node.partition_number == -1:
-        print ("dfs_p add " + str(node.ID) + " to partition")
+        logger.info ("dfs_p add " + str(node.ID) + " to partition")
         node.partition_number = current_partition_number
         current_partition.append(node.ID)
     else:
-        print ("dfs_p do not add " + str(node.ID) + " to partition "
+        logger.info ("dfs_p do not add " + str(node.ID) + " to partition "
             + str(current_partition_number) + " since it is already in partition " 
             + str(node.partition_number))
 
@@ -4374,7 +4374,7 @@ def dfs_p(visited, graph, node):
     loop_nodes_added_end = loop_nodes_added
     dfs_p_change_in_partitiob_size = (dfs_p_end_partition_size - dfs_p_start_partition_size) - (
         loop_nodes_added_end - loop_nodes_added_start)
-    print("dfs_p_change_in_partition_size: " + str(dfs_p_change_in_partitiob_size))
+    logger.info("dfs_p_change_in_partition_size: " + str(dfs_p_change_in_partitiob_size))
     dfs_p_changes_in_partiton_size.append(dfs_p_change_in_partitiob_size)
 """
 
@@ -4538,47 +4538,47 @@ def dfs_p(visited, graph, node):
     num_faninNBs = len(all_faninNB_task_names)
     num_collapse = len(all_collapse_task_names)
 
-    print("DAG_map:")
+    logger.info("DAG_map:")
     for key, value in DAG_map.items():
-        print(key, ' : ', value)
-    print()
-    print("states:")         
+        logger.info(key, ' : ', value)
+    logger.info()
+    logger.info("states:")         
     for key, value in DAG_states.items():
-        print(key, ' : ', value)
-    print()
-    print("num_fanins:" + str(num_fanins) + " num_fanouts:" + str(num_fanouts) + " num_faninNBs:" 
+        logger.info(key, ' : ', value)
+    logger.info()
+    logger.info("num_fanins:" + str(num_fanins) + " num_fanouts:" + str(num_fanouts) + " num_faninNBs:" 
             + str(num_faninNBs) + " num_collapse:" + str(num_collapse))
-    print()  
-    print("all_fanout_task_names")
+    logger.info()  
+    logger.info("all_fanout_task_names")
     for name in all_fanout_task_names:
-        print(name)
-    print()
-    print("all_fanin_task_names")
+        logger.info(name)
+    logger.info()
+    logger.info("all_fanin_task_names")
     for name in all_fanin_task_names :
-        print(name)
-    print()
-    print("all_faninNB_task_names")
+        logger.info(name)
+    logger.info()
+    logger.info("all_faninNB_task_names")
     for name in all_faninNB_task_names:
-        print(name)
-    print()
-    print("all_collapse_task_names")
+        logger.info(name)
+    logger.info()
+    logger.info("all_collapse_task_names")
     for name in all_collapse_task_names:
-        print(name)
-    print()
-    print("leaf task start states")
+        logger.info(name)
+    logger.info()
+    logger.info("leaf task start states")
     for start_state in DAG_leaf_task_start_states:
-        print(start_state)
-    print()
-    print("DAG_tasks:")
+        logger.info(start_state)
+    logger.info()
+    logger.info("DAG_tasks:")
     for key, value in DAG_tasks.items():
-        print(key, ' : ', value)
-    print()
-    print("DAG_leaf_tasks:")
+        logger.info(key, ' : ', value)
+    logger.info()
+    logger.info("DAG_leaf_tasks:")
     for task_name in DAG_leaf_tasks:
-        print(task_name)
-    print() 
-    print("DAG_leaf_task_inputs:")
+        logger.info(task_name)
+    logger.info() 
+    logger.info("DAG_leaf_task_inputs:")
     for inp in DAG_leaf_task_inputs:
-        print(inp)
-    print()  
+        logger.info(inp)
+    logger.info()  
 """
