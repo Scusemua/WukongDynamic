@@ -2782,11 +2782,11 @@ def generate_DAG_info():
 
     logger.info("DAG_map:")
     for key, value in Partition_DAG_map.items():
-        logger.info(key, ' : ', value)
+        logger.info(str(key) + ' : ' + str(value))
     logger.info("")
     logger.info("states:")        
     for key, value in Partition_DAG_states.items():
-        logger.info(key, ' : ', value)
+        logger.info(str(key) + ' : ' + str(value))
     logger.info("")
     logger.info("num_fanins:" + str(num_fanins) + " num_fanouts:" + str(num_fanouts) + " num_faninNBs:"
     + str(num_faninNBs) + " num_collapse:" + str(num_collapse))
@@ -2821,7 +2821,7 @@ def generate_DAG_info():
     logger.info("")
     logger.info("DAG_tasks:")
     for key, value in Partition_DAG_tasks.items():
-        logger.info(key, ' : ', value)
+        logger.info(str(key) + ' : ' + str(value))
     logger.info("")
     logger.info("DAG_leaf_tasks:")
     for task_name in Partition_DAG_leaf_tasks:
@@ -2870,7 +2870,7 @@ def generate_DAG_info():
         logger.info("")
         logger.info("DAG_tasks:")
         for key, value in DAG_tasks.items():
-            logger.info(key, ' : ', value)
+            logger.info(str(key) + ' : ' + str(value))
         logger.info("")
         logger.info("DAG_leaf_tasks:")
         for task_name in DAG_leaf_tasks:
@@ -3066,11 +3066,11 @@ def generate_DAG_info():
 
     logger.info("GroupDAG_map:")
     for key, value in Group_DAG_map.items():
-        logger.info(key, ' : ', value)
+        logger.info(str(key) + ' : ' + str(value))
     logger.info("")
     logger.info("states:")        
     for key, value in Group_DAG_states.items():
-        logger.info(key, ' : ', value)
+        logger.info(str(key) + ' : ' + str(value))
     logger.info("")
     logger.info("num_fanins:" + str(num_fanins) + " num_fanouts:" + str(num_fanouts) + " num_faninNBs:"
     + str(num_faninNBs) + " num_collapse:" + str(num_collapse))
@@ -3105,7 +3105,7 @@ def generate_DAG_info():
     logger.info("")
     logger.info("DAG_tasks:")
     for key, value in Group_DAG_tasks.items():
-        logger.info(key, ' : ', value)
+        logger.info(str(key) + ' : ' + str(value))
     logger.info("")
     logger.info("DAG_leaf_tasks:")
     for task_name in Group_DAG_leaf_tasks:
@@ -3154,7 +3154,7 @@ def generate_DAG_info():
         logger.info("")
         logger.info("DAG_tasks:")
         for key, value in DAG_tasks.items():
-            logger.info(key, ' : ', value)
+            logger.info(str(key) + ' : ' + str(value))
         logger.info("")
         logger.info("DAG_leaf_tasks:")
         for task_name in DAG_leaf_tasks:
@@ -4588,11 +4588,11 @@ def dfs_p(visited, graph, node):
 
     logger.info("DAG_map:")
     for key, value in DAG_map.items():
-        logger.info(key, ' : ', value)
+        logger.info(str(key) + ' : ' + str(value))
     logger.info("")
     logger.info("states:")         
     for key, value in DAG_states.items():
-        logger.info(key, ' : ', value)
+        logger.info(str(key) + ' : ' + str(value))
     logger.info("")
     logger.info("num_fanins:" + str(num_fanins) + " num_fanouts:" + str(num_fanouts) + " num_faninNBs:" 
             + str(num_faninNBs) + " num_collapse:" + str(num_collapse))
@@ -4619,7 +4619,7 @@ def dfs_p(visited, graph, node):
     logger.info("")
     logger.info("DAG_tasks:")
     for key, value in DAG_tasks.items():
-        logger.info(key, ' : ', value)
+        logger.info(str(key) + ' : ' + str(value))
     logger.info("")
     logger.info("DAG_leaf_tasks:")
     for task_name in DAG_leaf_tasks:
