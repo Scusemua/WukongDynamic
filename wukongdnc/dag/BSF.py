@@ -3861,7 +3861,7 @@ for x in groups:
     if logger.info_DETAILED_STATS:
         #logger.info("-- (" + str(len(x)) + "):", end=" ")
         for node in x:
-            logger.info(node,end=":")
+            print(node,end=":")
             for parent in node.parents:
                 print(parent,end=" ")
             logger.info("")
