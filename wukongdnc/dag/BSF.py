@@ -3461,8 +3461,11 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
                     PageRank_output[partition_or_group_name] = output_list
         #if (debug_pagerank):
         logger.debug("PageRank output tuples:")
+        print_val = ""
         for k, v in PageRank_output.items():
-            print((k, v),end=" ")
+            print_val += "(%s, %s) " % (k, v)
+            # print((k, v),end=" ")
+        logger.debug(print_val)
         logger.debug("")
         logger.debug("")
         return PageRank_output
@@ -3635,16 +3638,18 @@ logger.info("")
 # adjusting for loop_nodes_added in dfs_p
 sum_of_changes = sum(dfs_parent_changes_in_partiton_size)-shadow_nodes_added_to_partitions
 avg_change = sum_of_changes / len(dfs_parent_changes_in_partiton_size)
-logger.info("dfs_parent_changes_in_partiton_size length, len: " 
-    + str(len(dfs_parent_changes_in_partiton_size)) + ", sum_of_changes: " 
-    + str(sum_of_changes), end="")
-logger.info(", average dfs_parent change: %.1f" % avg_change)
+print_val = "dfs_parent_changes_in_partiton_size length, len: " + str(len(dfs_parent_changes_in_partiton_size)) + ", sum_of_changes: " + str(sum_of_changes)
+print_val += ", average dfs_parent change: %.1f" % avg_change
+logger.info(print_val)
 if logger.info_DETAILED_STATS:
     if sum_of_changes != num_nodes:
         logger.error("[Error]: sum_of_changes is " + str(sum_of_changes)
             + " but num_nodes is " + str(num_nodes))
+    print_val = ""
     for x in dfs_parent_changes_in_partiton_size:
-        print(x, end=" ")
+        print_val += str(x) + " "
+        # print(x, end=" ")
+    logger.info(print_val)
 
 logger.info("")
 logger.info("")
@@ -3676,10 +3681,12 @@ if logger.info_DETAILED_STATS:
 logger.info("frontiers: (final fronter should be empty), len: " + str(len(frontiers))+":")
 for frontier_list in frontiers:
     if logger.info_DETAILED_STATS:
-        logger.info("-- (" + str(len(frontier_list)) + "): ",end="")
+        print_val = "-- (" + str(len(frontier_list)) + "): "
         for x in frontier_list:
             #logger.info(str(x.ID),end=" ")
-            print(str(x),end=" ")
+            print_val += str(x) + " "
+            #print(str(x),end=" ")
+        logger.info(print_val)
         logger.info("")
     else:
         logger.info("-- (" + str(len(frontier_list)) + ")") 
@@ -3743,9 +3750,12 @@ for m in nodeIndex_to_groupIndex_maps:
 logger.info("")
 if logger.info_DETAILED_STATS:
     logger.info("frontier costs (cost=length of frontier), len: " + str(len(frontier_costs))+":")
+    print_val = ""
     for x in frontier_costs:
-        logger.info("-- ",end="")
-        logger.info(str(x))
+        print_val += "-- str(x)"
+        #logger.info("-- ",end="")
+        #logger.info(str(x))
+    logger.info(print_val)
     logger.info("")
 sum_of_partition_costs = 0
 for x in all_frontier_costs:
