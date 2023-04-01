@@ -375,8 +375,6 @@ class Partition_Node:
         logger.debug ("update_pagerank: pagerank of node: " + str(self.ID) + ": " + str(self.pagerank))
         logger.debug()
 
-
-
     def __eq__(self,other):
         return self.ID == other.ID
 
@@ -1134,17 +1132,22 @@ def dfs_parent(visited, node):  #function for dfs
         #queue.append(-1)
         if DEBUG_ON:
             logger.info("queue after add " + str(node.ID) + ":", end=" ")
+            print_val = ""
             for x in queue:
                 #logger.debug(x.ID, end=" ")
-                logger.info(x, end=" ")
+                print_val = print_val + str(x) + " "
+            logger.info(print_val)
             logger.info()
         #frontier.append(node)
         frontier.append(node.ID)
         if DEBUG_ON:
             logger.info("frontier after add " + str(node.ID) + ":", end=" ")
+            print_val = ""
             for x in frontier:
                 #logger.debug(x.ID, end=" ")
-                logger.info(x, end=" ")
+                #logger.info(x, end=" ")
+                print_val = print_val + str(x) + " "
+            logger.info(print_val)
             logger.info()
         # make sure parent in partition before any if its children. We visit parents of nodein dfs_parents 
         # and they are added to partition in dfs_parents after their parents are added 
