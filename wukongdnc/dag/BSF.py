@@ -3400,13 +3400,18 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
         logger.debug("")
         logger.debug("PageRank_Function output partition_or_group after add " + str(len(input_tuples)) + " SN parents (node:parents):")
         for node in partition_or_group:
-            print(node,end=":")
+            print_val = str(node) + ":"
+            # print(node,end=":")
             for parent in node.parents:
-                print(parent,end=" ")
+                #print(parent,end=" ")
+                print_val += str(parent) + " "
             if len(node.parents) == 0:
-                print(" ,",end=" ")
+                #print(" ,",end=" ")
+                print_val += " ,"
             else:
-                print(",",end=" ")
+                #print(",",end=" ")
+                print_val += ","
+            logger.debug(print_val)
         logger.debug("")
 
         for i in range(1,iteration+1):
@@ -3620,8 +3625,11 @@ if sum_of_groups_lengths != num_nodes:
     logger.error("[Error]: sum_of_groups_lengths is " + str(sum_of_groups_lengths)
         + " but num_nodes is " + str(num_nodes))
 
-#for x in current_partition:
-#    logger.info(x, end=" ")
+print_val = ""
+for x in current_partition:
+   print_val += str(x) + " "
+   # logger.info(x, end=" ")
+logger.info(print_val)
 logger.info("")
 
 # adjusting for loop_nodes_added in dfs_p
