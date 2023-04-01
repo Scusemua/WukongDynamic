@@ -1131,24 +1131,22 @@ def dfs_parent(visited, node):  #function for dfs
         queue.append(node.ID)
         #queue.append(-1)
         if DEBUG_ON:
-            logger.info("queue after add " + str(node.ID) + ":", end=" ")
-            print_val = ""
+            print_val = "queue after add " + str(node.ID) + ": "
             for x in queue:
                 #logger.debug(x.ID, end=" ")
                 print_val = print_val + str(x) + " "
-            logger.info(print_val)
-            logger.info()
+            logger.debug(print_val)
+            logger.debug()
         #frontier.append(node)
         frontier.append(node.ID)
         if DEBUG_ON:
-            logger.info("frontier after add " + str(node.ID) + ":", end=" ")
-            print_val = ""
+            print_val = "frontier after add " + str(node.ID) + ":"
             for x in frontier:
                 #logger.debug(x.ID, end=" ")
                 #logger.info(x, end=" ")
                 print_val = print_val + str(x) + " "
-            logger.info(print_val)
-            logger.info()
+            logger.debug(print_val)
+            logger.debug()
         # make sure parent in partition before any if its children. We visit parents of nodein dfs_parents 
         # and they are added to partition in dfs_parents after their parents are added 
         # in dfs_parents then here we add node to partition.  
@@ -1671,19 +1669,22 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
                 #queue.append(node)
                 queue.append(node.ID)
                 if DEBUG_ON:
-                    logger.info("queue after add " + str(node.ID) + ":", end=" ")
+                    # logger.debug(, end=" ")
+                    print_val = "queue after add " + str(node.ID) + ": "
                     for x in queue:
                         #logger.debug(x.ID, end=" ")
-                        logger.info(x, end=" ")
-                    logger.info()
+                        print_val = print_val + str(x) + " "
+                    logger.debug(print_val)
+                    logger.debug()
                 #frontier.append(node)
                 frontier.append(node.ID)
                 if DEBUG_ON:
-                    logger.info("frontier after add " + str(node.ID) + ":", end=" ")
+                    print_val = "frontier after add " + str(node.ID) + ": "
                     for x in frontier:
                         #logger.debug(x.ID, end=" ")
-                        logger.info(x, end=" ")
-                    logger.info()
+                        print_val = print_val + str(x) + " "
+                    logger.debug(print_val)
+                    logger.debug()
                 # make sure parent in partition before any if its children. We visit parents of nodein dfs_parents 
                 # and they are added to partition in dfs_parents after their parents are added 
                 # in dfs_parents then here we add node to partition.  
@@ -1727,19 +1728,23 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
                 #queue.append(node)
                 queue.append(node.ID)
                 if DEBUG_ON:
-                    logger.info("queue after add " + str(node.ID) + ":", end=" ")
+                    print_val = "queue after add " + str(node.ID) + ":"
                     for x in queue:
                         #logger.debug(x.ID, end=" ")
-                        logger.info(x, end=" ")
-                    logger.info()
+                        #logger.debug(x, end=" ")
+                        print_val = print_val + str(x) + " "
+                    logger.debug(print_val)
+                    logger.debug()
                 #frontier.append(node)
                 frontier.append(node.ID)
                 if DEBUG_ON:
-                    logger.info("frontier after add " + str(node.ID) + ":", end=" ")
+                    print_val = "frontier after add " + str(node.ID) + ":"
                     for x in frontier:
                         #logger.debug(x.ID, end=" ")
-                        logger.info(x, end=" ")
-                    logger.info()
+                        #logger.debug(x, end=" ")
+                        print_val = print_val + str(x) + " "
+                    logger.debug(print_val)
+                    logger.debug()
                 # make sure parent in partition before any if its children. We visit parents of nodein dfs_parents 
                 # and they are added to partition in dfs_parents after their parents are added 
                 # in dfs_parents then here we add node to partition.  
@@ -2296,11 +2301,12 @@ def bfs(visited, node): #function for BFS
                 + " not in frontier.")
 
         if DEBUG_ON:
-            logger.info("frontier after remove " + str(node.ID) + ":", end=" ")
+            print_val = "frontier after remove " + str(node.ID) + ": "
             for x in frontier:
                 #logger.debug(x.ID, end=" ")
-                logger.info(x, end=" ")
-            logger.info()
+                print_val = print_val + str(x) + " "
+            logger.debug(print_val)
+            logger.debug()
     
     """
     if len(current_partition) >= 0:
@@ -2507,17 +2513,23 @@ def input_partitions():
     logger.info("Group Nodes w/parents:")
     for group in groups:
         for node in group:
-            logger.info(node,end=":")
+            #logger.info(node,end=":")
+            print_val = str(node) + ":"
             for parent in node.parents:
-                logger.info(parent,end=" ")
+                print_val += str(parent) + " "
+                #logger.info(parent,end=" ")
+            logger.info(print_val)
             logger.info()
         logger.info()
     logger.info("Group Nodes w/Frontier parent tuples:")
     for group in groups:
         for node in group:
-            logger.info(node,end=":")
+            #logger.info(node,end=":")
+            print_val = str(node) + ":"
             for tup in node.frontier_parents:
-                logger.info(tup,end=" ")
+                print_val += str(tup) + " "
+                # logger.info(tup,end=" ")
+            logger.info(print_val)
             logger.info()
         logger.info()
   
@@ -3294,13 +3306,18 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
         #if (debug_pagerank):
         logger.debug("PageRank_Function output partition_or_group (node:parents):")
         for node in partition_or_group:
-            logger.debug(node,end=":")
+            #logger.debug(node,end=":")
+            print_val = str(node) + ":"
             for parent in node.parents:
-                logger.debug(parent,end=" ")
+                print_val += str(parent) + " "
+                #logger.debug(parent,end=" ")
             if len(node.parents) == 0:
-                logger.debug(",",end=" ")
+                #logger.debug(",",end=" ")
+                print_val += ", "
             else:
-                logger.debug(",",end=" ")
+                #logger.debug(",",end=" ")
+                print_val += ", "
+            logger.debug(print_val)
         logger.debug()
         logger.debug("PageRank_Function output partition_or_group (node:num_children):")
         for node in partition_or_group:
@@ -3383,13 +3400,13 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
         logger.debug()
         logger.debug("PageRank_Function output partition_or_group after add " + str(len(input_tuples)) + " SN parents (node:parents):")
         for node in partition_or_group:
-            logger.debug(node,end=":")
+            print(node,end=":")
             for parent in node.parents:
-                logger.debug(parent,end=" ")
+                print(parent,end=" ")
             if len(node.parents) == 0:
-                logger.debug(" ,",end=" ")
+                print(" ,",end=" ")
             else:
-                logger.debug(",",end=" ")
+                print(",",end=" ")
         logger.debug()
 
         for i in range(1,iteration+1):
@@ -3440,7 +3457,7 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
         #if (debug_pagerank):
         logger.debug("PageRank output tuples:")
         for k, v in PageRank_output.items():
-            logger.debug((k, v),end=" ")
+            print((k, v),end=" ")
         logger.debug()
         logger.debug()
         return PageRank_output
@@ -3459,7 +3476,7 @@ def PageRank_Task(task_file_name,total_num_nodes,payload,results):
     #if (debug_pagerank):
     logger.debug(task_file_name + " input tuples: ")
     for tup in input_tuples:
-        logger.debug(tup,end=" ")
+        print(tup,end=" ")
     logger.debug()
     logger.debug()
     #PageRank_output = PageRank_Function(task_file_name,total_num_nodes,input_tuples,results)
@@ -3573,7 +3590,7 @@ if len(visited) != num_nodes:
     logger.error("[Error]: visited length is " + str(len(visited))
         + " but num_nodes is " + str(num_nodes))
 for x in visited:
-    logger.info(x, end=" ")
+    print(x, end=" ")
 logger.info()
 logger.info()
 logger.info("final current_partition length: " + str(len(current_partition)-loop_nodes_added))
@@ -3619,7 +3636,7 @@ if logger.info_DETAILED_STATS:
         logger.error("[Error]: sum_of_changes is " + str(sum_of_changes)
             + " but num_nodes is " + str(num_nodes))
     for x in dfs_parent_changes_in_partiton_size:
-        logger.info(x, end=" ")
+        print(x, end=" ")
 
 logger.info()
 logger.info()
@@ -3632,7 +3649,7 @@ if logger.info_DETAILED_STATS:
         logger.error("[Error]: sum_of_changes is " + str(sum_of_changes)
             + " but num_nodes is " + str(num_nodes))
     for x in dfs_parent_changes_in_frontier_size:
-        logger.info(x, end=" ")
+        print(x, end=" ")
     logger.info()
     logger.info()
 #logger.info("frontier length: " + str(len(frontier)))
@@ -3654,7 +3671,7 @@ for frontier_list in frontiers:
         logger.info("-- (" + str(len(frontier_list)) + "): ",end="")
         for x in frontier_list:
             #logger.info(str(x.ID),end=" ")
-            logger.info(str(x),end=" ")
+            print(str(x),end=" ")
         logger.info()
     else:
         logger.info("-- (" + str(len(frontier_list)) + ")") 
@@ -3665,9 +3682,9 @@ logger.info()
 logger.info("partitions, len: " + str(len(partitions))+":")
 for x in partitions:
     if logger.info_DETAILED_STATS:
-        logger.info("-- (" + str(len(x)) + "):", end=" ")
+        print("-- (" + str(len(x)) + "):", end=" ")
         for node in x:
-            logger.info(node,end=" ")
+            print(node,end=" ")
             #if not node.isShadowNode:
             #    logger.info(str(index),end=" ")
             #else:
@@ -3684,9 +3701,9 @@ logger.info()
 logger.info("groups, len: " + str(len(groups))+":")
 for g in groups:
     if logger.info_DETAILED_STATS:
-        logger.info("-- (" + str(len(g)) + "):", end=" ")
+        print("-- (" + str(len(g)) + "):", end=" ")
         for node in g:
-            logger.info(node,end=" ")
+            print(node,end=" ")
         logger.info()
     else:
         logger.info("-- (" + str(len(g)) + ")")
@@ -3699,9 +3716,9 @@ logger.info()
 logger.info("nodes_to_partition_maps (incl. shadow nodes), len: " + str(len(nodeIndex_to_partitionIndex_maps))+":")
 for m in nodeIndex_to_partitionIndex_maps:
     if logger.info_DETAILED_STATS:
-        logger.info("-- (" + str(len(m)) + "):", end=" ")
+        print("-- (" + str(len(m)) + "):", end=" ")
         for k, v in m.items():
-            logger.info((k, v),end=" ")
+            print((k, v),end=" ")
         logger.info()
     else:
         logger.info("-- (" + str(len(m)) + ")")
@@ -3709,9 +3726,9 @@ logger.info()
 logger.info("nodes_to_group_maps, (incl. shadow nodes), len: " + str(len(nodeIndex_to_groupIndex_maps))+":")
 for m in nodeIndex_to_groupIndex_maps:
     if logger.info_DETAILED_STATS:
-        logger.info("-- (" + str(len(m)) + "):", end=" ")
+        print("-- (" + str(len(m)) + "):", end=" ")
         for k, v in m.items():
-            logger.info((k, v),end=" ")
+            print((k, v),end=" ")
         logger.info()
     else:
         logger.info("-- (" + str(len(m)) + ")")
@@ -3734,7 +3751,7 @@ if logger.info_DETAILED_STATS:
     costs_per_line = 13
     for x in all_frontier_costs:
         if (i < costs_per_line):
-            logger.info(str(x),end=" ")
+            print(str(x),end=" ")
         else:
             logger.info(str(x))
             i = 0
@@ -3758,11 +3775,11 @@ if logger.info_DETAILED_STATS:
     logger.info("partition nodes' frontier_parent_tuples:")
     for x in partitions:
         if logger.info_DETAILED_STATS:
-            logger.info("-- (" + str(len(x)) + "):", end=" ")
+            print("-- (" + str(len(x)) + "):", end=" ")
             for node in x:
                 logger.info(node.ID,end=": ")
                 for parent_tuple in node.frontier_parents:
-                    logger.info(str(parent_tuple), end=" ")
+                    print(str(parent_tuple), end=" ")
             logger.info()
         else:
             logger.info("-- (" + str(len(x)) + ")")
@@ -3773,11 +3790,11 @@ if logger.info_DETAILED_STATS:
     logger.info("group nodes' frontier_parent_tuples:")
     for x in groups:
         if logger.info_DETAILED_STATS:
-            logger.info("-- (" + str(len(x)) + "):", end=" ")
+            print("-- (" + str(len(x)) + "):", end=" ")
             for node in x:
                 logger.info(node.ID,end=": ")
                 for parent_tuple in node.frontier_parents:
-                    logger.info(str(parent_tuple), end=" ")
+                    print(str(parent_tuple), end=" ")
             logger.info()
         else:
             logger.info("-- (" + str(len(x)) + ")")
@@ -3804,7 +3821,7 @@ for x in partitions:
         for node in x:
             logger.info(node,end=":")
             for parent in node.parents:
-                logger.info(parent,end=" ")
+                print(parent,end=" ")
             logger.info()
             #if not node.isShadowNode:
             #    logger.info(str(index),end=" ")
@@ -3821,7 +3838,7 @@ for x in groups:
         for node in x:
             logger.info(node,end=":")
             for parent in node.parents:
-                logger.info(parent,end=" ")
+                print(parent,end=" ")
             logger.info()
             #if not node.isShadowNode:
             #    logger.info(str(index),end=" ")
@@ -4002,10 +4019,10 @@ def SCCUtil(self, u, low, disc, stackMember, st, list_of_sccs):
             global USING_BFS
             if USING_BFS:
                 ID = self.get_nodeID_from_GraphID(w)
-                logger.info(ID, end=" ")
+                print(ID, end=" ")
                 one_scc.append(ID)
             else:
-                logger.info(w, end=" ")
+                print(w, end=" ")
 
             stackMember[w] = False
             
