@@ -144,7 +144,7 @@ class Graph:
     def get_nodeID_from_GraphID(self,ID):
             return self.scc_GraphID_to_NodeID_map[ID]
 
-    def logger.info_ID_map(self):
+    def print_ID_map(self):
         logger.debug("scc_NodeID_to_GraphID_map:")
         for i in self.scc_NodeID_to_GraphID_map:
             logger.info (i, self.scc_NodeID_to_GraphID_map[i])
@@ -161,7 +161,7 @@ class Graph:
         self.graph[u].append(v)
         self.num_edges += 1
 
-    def logger.infoEdges(self):
+    def printEdges(self):
         logger.info("graph scc_graph GraphIDs: num_vertices: " + str(self.V) 
             + ", num_edges: " + str(self.num_edges) + ": ")
         for k, v in self.graph.items():
