@@ -3794,10 +3794,14 @@ if logger.info_DETAILED_STATS:
     for x in partitions:
         if logger.info_DETAILED_STATS:
             print("-- (" + str(len(x)) + "):", end=" ")
+            print_val = ""
             for node in x:
-                logger.info(node.ID,end=": ")
+                print_val += str(node.ID) + ": " 
+                # logger.info(node.ID,end=": ")
                 for parent_tuple in node.frontier_parents:
-                    print(str(parent_tuple), end=" ")
+                    print_val += str(parent_tuple) + " "
+                    # print(str(parent_tuple), end=" ")
+            logger.info(print_val)
             logger.info("")
         else:
             logger.info("-- (" + str(len(x)) + ")")
@@ -3808,11 +3812,14 @@ if logger.info_DETAILED_STATS:
     logger.info("group nodes' frontier_parent_tuples:")
     for x in groups:
         if logger.info_DETAILED_STATS:
-            print("-- (" + str(len(x)) + "):", end=" ")
+            print_val = "-- (" + str(len(x)) + "): "
             for node in x:
-                logger.info(node.ID,end=": ")
+                print_val += str(node.ID) + ": "
+                # logger.info(node.ID,end=": ")
                 for parent_tuple in node.frontier_parents:
-                    print(str(parent_tuple), end=" ")
+                    print_val += str(parent_tuple) + " "
+                    # print(str(parent_tuple), end=" ")
+            logger.info(print_val)
             logger.info("")
         else:
             logger.info("-- (" + str(len(x)) + ")")
