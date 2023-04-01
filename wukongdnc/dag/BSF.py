@@ -3320,8 +3320,11 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
             logger.debug(print_val)
         logger.debug("")
         logger.debug("PageRank_Function output partition_or_group (node:num_children):")
+        print_val = ""
         for node in partition_or_group:
-            logger.debug(str(node)+":"+str(node.num_children),end=", ")
+            print_val += str(node)+":"+str(node.num_children) + ", "
+            # logger.debug(str(node)+":"+str(node.num_children),end=", ")
+        logger.debug(print_val)
         logger.debug("")
 
         logger.debug("")
@@ -3878,7 +3881,7 @@ for x in groups:
     if logger.info_DETAILED_STATS:
         #logger.info("-- (" + str(len(x)) + "):", end=" ")
         for node in x:
-            logger.info(str(node) + ":" + str(node.num_children),end=", ")
+            print(str(node) + ":" + str(node.num_children),end=", ")
         logger.info("")
     else:
         logger.info("-- (" + str(len(x)) + ")")
