@@ -156,6 +156,13 @@ tasks_use_result_dictionary_parameter = True
 # to all of them; otherwise, the task sends a possibly different 
 # output to each. This same_output_per_fanout_fanin flag is False
 # for pagerank.
+# Note: For DAG generation, for each state we execute a task and 
+# for each task T we have to say what T's task_inputs are - these are the 
+# names of tasks that give inputs to T. When we have per-fanout output
+# instead of having the same output for all fanouts, we specify the 
+# task_inputs as "sending task - receiving task". So a sending task
+# S might send outputs to fanouts A and B so we use "S-A" and "S-B"
+# as the task_inputs, instad of just using "S", which is the Dask way.
 same_output_for_all_fanout_fanin = False
 
 

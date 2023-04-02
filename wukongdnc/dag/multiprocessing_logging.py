@@ -15,7 +15,7 @@ import logging.handlers
 def listener_configurer():
     root = logging.getLogger()
     #h = logging.handlers.RotatingFileHandler('mptest.log', 'a', 300, 10)
-    h = logging.handlers.RotatingFileHandler('mptest.log', 'w',50000)
+    h = logging.handlers.RotatingFileHandler('mptestNew.log', 'w',50000)
     #h = logging.handlers.FileHandler('mp.log', 'a')
     f = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s] [%(name)s] [%(levelname)s]: %(message)s')
     #Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')

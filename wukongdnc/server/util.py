@@ -4,8 +4,9 @@ import base64
 
 import logging 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
 """
+logger.setLevel(logging.ERROR)
+
 formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)

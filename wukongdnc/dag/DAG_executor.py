@@ -195,7 +195,14 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
         keyword_arguments['n'] = n
         keyword_arguments['start_state_fanin_task'] = start_state_fanin_task
         # We will use local datadict for each multiprocess; process will receve
-        # the faninNB results and put them in the data_dict
+        # the faninNB results and put them in the data_dict.
+        # Note: For DAG generation, for each state we execute a task and 
+        # for each task T we have t say what T;s task_inputs are - these are the 
+        # names of tasks that give inputs to T. When we have per-fanout output
+        # instead of having the same output for all fanouts, we specify the 
+        # task_inputs as "sending task - receiving task". So a sending task
+        # S might send outputs to fanouts A and B so we use "S-A" and "S-B"
+        # as the task_inputs, instad of just using "S", which is the Dask way.
         if same_output_for_all_fanout_fanin:
             keyword_arguments['result'] = output
             keyword_arguments['calling_task_name'] = calling_task_name
@@ -788,6 +795,27 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
             #thread_work_queue.put(DAG_states[name])
             if not using_threads_not_processes: # using processes
                 dict_of_results =  {}
+                if same_output_for_all_fanout_fanin:
+                    # each fanout of a task gets the same output, i.e., 
+                    # the output of the task.
+                    dict_of_results[calling_task_name] = output
+                else:
+                    # Each fanout of a task gets its own output; use qualified names
+                    # e.g., "PR1_1-PR2_3" as the calling task instead of 
+                    # just "PR1_1". Assuming the output is a dictionary
+                    # where keys are fanout/faninNB names and the valus are
+                    # the outputs for that fanout/faninNB.
+                    # Note: For DAG generation, for each state we execute a task and 
+                    # for each task T we have t say what T;s task_inputs are - these are the 
+                    # names of tasks that give inputs to T. When we have per-fanout output
+                    # instead of having the same output for all fanouts, we specify the 
+                    # task_inputs as "sending task - receiving task". So a sending task
+                    # S might send outputs to fanouts A and B so we use "S-A" and "S-B"
+                    # as the task_inputs, instad of just using "S", which is the Dask way.
+                    qualfied_name = str(calling_task_name) + "-" + str(name)
+                    dict_of_results[qualfied_name] = output[name]
+                logger.debug(thread_name + ": process_fanouts: dict_of_results for fanout " + name)
+                logger.debug(str(dict_of_results))
                 dict_of_results[calling_task_name] = output
                 work_tuple = (DAG_states[name],dict_of_results)
                 #work_queue.put(DAG_states[name])
@@ -813,6 +841,13 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                 # processng FanInNBs for threads just yet, as we will likely be using processes
                 # to speed up DAG processing. (For threads if piggyback: return a list of work 
                 # to add to the local work queue.)
+                # Note: For DAG generation, for each state we execute a task and 
+                # for each task T we have t say what T;s task_inputs are - these are the 
+                # names of tasks that give inputs to T. When we have per-fanout output
+                # instead of having the same output for all fanouts, we specify the 
+                # task_inputs as "sending task - receiving task". So a sending task
+                # S might send outputs to fanouts A and B so we use "S-A" and "S-B"
+                # as the task_inputs, instad of just using "S", which is the Dask way.
                 dict_of_results =  {}
                 if same_output_for_all_fanout_fanin:
                     # each fanout of a task gets the same output, i.e., 
@@ -853,6 +888,30 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                     # rhc: DES
                     task_DAG_executor_State = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = fanout_task_start_state)
 
+                    # Note: if not same_output_for_all_fanout_fanin then
+                    # we would need to extract the fanout's particular
+                    # output from output and pass it in payload. See the 
+                    # code for this above where we are using workers.
+                    # as in:
+                    """
+                    dict_of_results =  {}
+                    if same_output_for_all_fanout_fanin:
+                        # each fanout of a task gets the same output, i.e., 
+                        # the output of the task.
+                        dict_of_results[calling_task_name] = output
+                    else:
+                        # Each fanout of a task gets its own output; use qualified names
+                        # e.g., "PR1_1-PR2_3" as the calling task instead of 
+                        # just "PR1_1". Assuming the output is a dictionary
+                        # where keys are fanout/faninNB names and the valus are
+                        # the outputs for that fanout/faninNB,
+                        qualfied_name = str(calling_task_name) + "-" + str(name)
+                        dict_of_results[qualfied_name] = output[name]
+                    logger.debug(thread_name + ": process_fanouts: dict_of_results for fanout " + name)
+                    logger.debug(str(dict_of_results))
+                    # Below we would use: "input": dict_of_results,
+                    """
+
                     #output_tuple = (calling_task_name,)
                     #output_dict[calling_task_name] = output
                     logger.debug (thread_name + ": process_fanouts: fanout payload for " + name + " is " + str(fanout_task_start_state) + "," + str(output))
@@ -869,7 +928,9 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                         # but may use it to be consistent with lambdas: ==> pass state and input
                         # to the threads that simulate Lambdas. (We could also pass DAG_info to be
                         # consistent with Lambda version.)
-
+                        #
+                        # See the note above about dict_of_results.
+                        #
                         #"input": output,
                         "DAG_executor_state": task_DAG_executor_State,
                         #"DAG_info": DAG_info,
@@ -892,13 +953,39 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                     lambda_DAG_executor_state.blocking = False
                     logger.info(thread_name + ": process_fanouts: Starting Lambda function %s." % lambda_DAG_executor_state.function_name)
                     #logger.debug("lambda_DAG_executor_State: " + str(lambda_DAG_executor_State))
-                    results = {}
-                    results[calling_task_name] = output
+
+                    dict_of_results =  {}
+                    if same_output_for_all_fanout_fanin:
+                        # each fanout of a task gets the same output, i.e., 
+                        # the output of the task.
+                        dict_of_results[calling_task_name] = output
+                    else:
+                        # Each fanout of a task gets its own output; use qualified names
+                        # e.g., "PR1_1-PR2_3" as the calling task instead of 
+                        # just "PR1_1". Assuming the output is a dictionary
+                        # where keys are fanout/faninNB names and the valus are
+                        # the outputs for that fanout/faninNB.
+                        # Note: For DAG generation, for each state we execute a task and 
+                        # for each task T we have t say what T;s task_inputs are - these are the 
+                        # names of tasks that give inputs to T. When we have per-fanout output
+                        # instead of having the same output for all fanouts, we specify the 
+                        # task_inputs as "sending task - receiving task". So a sending task
+                        # S might send outputs to fanouts A and B so we use "S-A" and "S-B"
+                        # as the task_inputs, instad of just using "S", which is the Dask way.
+                        qualfied_name = str(calling_task_name) + "-" + str(name)
+                        dict_of_results[qualfied_name] = output[name]
+                    logger.debug(thread_name + ": process_fanouts: dict_of_results for fanout " + name)
+                    logger.debug(str(dict_of_results))
+
+                    #results = {}
+                    #results[calling_task_name] = output
+
                     payload = {
 #ToDo: Lambda:          # use parallel invoker with list piggybacked on batch fanonNBs, as usual
                         #"state": int(fanout_task_start_state),
                         #"input": output,
-                        "input": results,
+                        #"input": results,
+                        "input": dict_of_results,
                         "DAG_executor_state": lambda_DAG_executor_state,
                         "DAG_info": DAG_info
                         #"server": server   # used to mock server during testing
@@ -1359,6 +1446,13 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
 
                     # func(*args2)
             """
+            # Note: For DAG generation, for each state we execute a task and 
+            # for each task T we have t say what T;s task_inputs are - these are the 
+            # names of tasks that give inputs to T. When we have per-fanout output
+            # instead of having the same output for all fanouts, we specify the 
+            # task_inputs as "sending task - receiving task". So a sending task
+            # S might send outputs to fanouts A and B so we use "S-A" and "S-B"
+            # as the task_inputs, instad of just using "S", which is the Dask way.
             result_dictionary =  {}
             if not is_leaf_task:
                 logger.debug("Packing data. Task inputs: %s. Data dict (keys only): %s" % (str(task_inputs), str(data_dict.keys())))

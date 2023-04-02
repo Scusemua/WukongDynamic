@@ -6,14 +6,14 @@ import threading
 
 import logging 
 logger = logging.getLogger(__name__)
-
+"""
 logger.setLevel(logging.ERROR)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
-
+"""
 
 
 def create_and_run_threads_for_multiT_multiP(process_name,payload,counter,log_queue,worker_configurer):

@@ -13,6 +13,8 @@ from .util import decode_and_deserialize, isTry_and_getMethodName, isSelect, mak
 from ..dag.DAG_executor_constants import run_all_tasks_locally, process_work_queue_Type
 from ..dag.DAG_executor_constants import create_all_fanins_faninNBs_on_start
 from ..dag.DAG_executor_constants import FanInNB_Type, FanIn_Type, store_fanins_faninNBs_locally
+from ..dag.DAG_executor_constants import same_output_for_all_fanout_fanin
+from ..dag.DAG_executor_constants import using_workers, using_threads_not_processes
 from ..dag.DAG_info import DAG_Info
 from ..dag.DAG_executor_State import DAG_executor_State
 
@@ -300,14 +302,20 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
         # assert:
         if async_call:
-            # must be running real lambdas to execute tasks. Note: If we are using threads to simulate
+            # must be running real lambdas to execute tasks or running workr processes
+            # and not worker_needs_input so here we won't be sending any work back
+            # and there is no reason to wait for this process_fannNBs method to finish.
+            # Note: If we are using threads to simulate
             # lambdas we do not call tcp_server.process_faninNBs_batch. If we are not storing objects
             # in lamdas, we call process_fninNBs to process the faninNBs one by one. If we are
             # storing objects in lambdas we do call process_faninNBs_batch but we will be running
             # tcp_server_lambda so we will not call this version in tcp_server.
-            if not (not run_all_tasks_locally):
+            #if not (not run_all_tasks_locally):
+            # This matches the if statement in the work_loop.
+            # Note: using_workers and not using_threads_not_processes means we 
+            # will be calling process_faninNBs_batch (i.e., this method)
+            if not (not run_all_tasks_locally or (run_all_tasks_locally and using_workers and not using_threads_not_processes and not worker_needs_input)):
                 logger.error("[Error: Internal Error: synchronize_process_faninNBs_batch: async_call but not (not run_all_tasks_locally).")
-
 
         # Note: If we are using lambdas, then we are not using workers (for now) so worker_needs_input
         # must be false. Also, we are currently not piggybacking the fanouts so there should be no 
@@ -351,6 +359,13 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # otherwise, the worker will have a become task so worker_needs_input will be false (and this
         # list may or may not be empty depending on whether there are any more fanouts.)
         if len(list_of_fanout_values) > 0:
+            # Note: In DAG_executor process_fanouts , if each fanout has its own output then
+            # we extract that output from output and change the callin_task_name
+            # to reflect that we are sending values for this specific fanout task.
+            # When we batch fannNBs we also batch fanouts in which case process_fanouts
+            # puts the work items in a list and returns the list which is given
+            # to process_faninNBs_batch.
+            #
             # if run_all_tasks_locally then we are not using lambdas so add fanouts as work in the 
             # work queue. If we are using workers, we already used one fanout as a become task
             # so these fanouts can be put in the work queue.
@@ -408,6 +423,27 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 # deposit_all return value is 0 and restart is False
         else:
             logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": no fanout work to deposit")
+
+        # if not same_output_for_all_fanout_fanin then we are nto sending 
+        # the same output to each faninNB. Instead, we extract a faninNBs
+        # particular output from the output and change the calling_task_name
+        # to reflect this scheme. Example. Output is a dictionary with 
+        # values for tasks PR2_1 and PR2_2 where calling_task_name is PR1_1.
+        # then we set the calling task name to PR1_1-PR2_1 and grab
+        # output["PR2_1"] and use these values for the PR2_1 faninNB. Likewise
+        # for faninNB PR2_2.
+        # Note: For DAG generation, for each state we execute a task and 
+        # for each task T we have t say what T;s task_inputs are - these are the 
+        # names of tasks that give inputs to T. When we have per-fanout output
+        # instead of having the same output for all fanouts, we specify the 
+        # task_inputs as "sending task - receiving task". So a sending task
+        # S might send outputs to fanouts A and B so we use "S-A" and "S-B"
+        # as the task_inputs, instad of just using "S", which is the Dask way.
+        output = None
+        calling_task_name = ""
+        if not same_output_for_all_fanout_fanin:
+            output = DAG_exec_state.keyword_arguments['result']
+            calling_task_name = DAG_exec_state.keyword_arguments['calling_task_name']
 
         for name in faninNBs:
             start_state_fanin_task  = DAG_states_of_faninNBs_fanouts[name]
@@ -491,6 +527,24 @@ class TCPHandler(socketserver.StreamRequestHandler):
             # These are per FaninNB
             DAG_exec_state.keyword_arguments['fanin_task_name'] = name
             DAG_exec_state.keyword_arguments['start_state_fanin_task'] = start_state_fanin_task
+   
+            if same_output_for_all_fanout_fanin:
+                # the result output and the callng task name have alrady 
+                # been set accordingly - same output to all faninNBS.
+                # Note: For DAG generation, for each state we execute a task and 
+                # for each task T we have t say what T;s task_inputs are - these are the 
+                # names of tasks that give inputs to T. When we have per-fanout output
+                # instead of having the same output for all fanouts, we specify the 
+                # task_inputs as "sending task - receiving task". So a sending task
+                # S might send outputs to fanouts A and B so we use "S-A" and "S-B"
+                # as the task_inputs, instad of just using "S", which is the Dask way.
+                        pass
+            else:
+                # create per-faninNB output as shown in example above,
+                qualified_name = str(calling_task_name) + "-" + str(name)
+                DAG_exec_state.keyword_arguments['result'] = output[name]
+                DAG_exec_state.keyword_arguments['calling_task_name'] = qualified_name
+
 
             logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": calling synchronizer.synchronize.")
 #rhc: select replace this

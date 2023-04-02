@@ -282,10 +282,10 @@
 import logging 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.ERROR)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 ch = logging.StreamHandler()
-ch.setLevel(logging.INFO)
+ch.setLevel(logging.ERROR)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
@@ -1420,8 +1420,8 @@ def run():
     stop_time = time.time()
     duration = stop_time - start_time
 
-    logger.debug("DAG_executor_driver: Sleeping 6.0 seconds...")
-    time.sleep(6.0)
+    logger.debug("DAG_executor_driver: Sleeping 3.0 seconds...")
+    time.sleep(3.0)
     print("DAG_executor_driver: DAG_Execution finished in %f seconds." % duration)
 		
     #ToDo:  close_all(websocket)

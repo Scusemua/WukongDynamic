@@ -3542,14 +3542,14 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
                     output_list.append(output_tuple)
                     PageRank_output[partition_or_group_name] = output_list
         #if (debug_pagerank):
-        logger.debug("PageRank output tuples:")
-        print_val = ""
-        for k, v in PageRank_output.items():
-            print_val += "(%s, %s) " % (k, v)
-            # print((k, v),end=" ")
-        logger.debug(print_val)
-        logger.debug("")
-        logger.debug("")
+        #print("PageRank output tuples:")
+        #print_val = ""
+        #for k, v in PageRank_output.items():
+        #    print_val += "(%s, %s) " % (k, v)
+        #    # print((k, v),end=" ")
+        #print(print_val)
+        #print()
+        #print()
         return PageRank_output
 
 def PageRank_Task(task_file_name,total_num_nodes,payload,results):

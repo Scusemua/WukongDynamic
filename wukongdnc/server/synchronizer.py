@@ -21,7 +21,7 @@ from .util import isTry_and_getMethodName, isSelect #, make_json_serializable, d
 
 import logging 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
+logger.setLevel(logging.DEBUG)
 """
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 ch = logging.StreamHandler()
