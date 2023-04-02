@@ -86,19 +86,23 @@ map_objects_to_lambda_functions = False
 use_anonymous_lambda_functions = False
 # For all: remote objects, using select objects:
 # 1. run_all_tasks_locally = True, create objects on start = True:
-# TTFFTF: no trigger and no DAG_orchestrator, but map objects (anon is false) and create objects on start
+# TTFFTF: no trigger and no DAG_orchestrator, but map objects 
+# (anon is false) and create objects on start
+# variations:
 # - change D_O to T, 
-# - D_O to T, change map to F, and anon to T: Note: no function lock since anon caled only once
+# - change map to F, and anon to T: Note: no function lock since anon caled only once
 # - change D_O to F, map F, anon T: Note: no function lock since anon caled only once
+#
 # 2. run_all_tasks_locally = False, create objects on start = True:
 # Note: not running real lambdas yet, so need TTT, i.e., not using threads
 #       to simulate lambdas and not running real lambdas yet, so need to
-#       trigger lambdas, whcih means store objects in lambdas and they call
+#       trigger lambdas, which means store objects in lambdas and they call
 #       DAG_excutor_Lambda to execute task (i.e., "trigger task to run in 
 #       the same lambda"). Eventually we'll have tests for use real 
 #       non-triggered lambdas to run tasks (invoked at fanouts/faninNBS)
 #       and objects stored in lambdas or on server.
 # TTTTTF: trigger and DAG_orchestrator, map objects (anon is false) and create objects on start
+# variations:
 # - change map to F, and anon to T and create on start to F: Note: no function lock since anon called only once
 # - change DAG_orchestrator to F - so not going through enqueue so will
 #   create on fly in other places besides equeue.
@@ -109,7 +113,7 @@ use_anonymous_lambda_functions = False
 #    still, using this scheme we can call same function more than once, 
 #    as long as you dynamically map the objects to the name of the 
 #    function (chosen at run time) that they are stored in. So either
-#    way you need to map sync object names to functions if yoy want to 
+#    way you need to map sync object names to functions if you want to 
 #    invoke the function to do an op on the object more than once.
 
 #assert:
@@ -145,6 +149,9 @@ if sync_objects_in_lambdas_trigger_their_tasks:
 # simulators or using the DAG_orchestrator
 using_single_lambda_function = False
 
+# These are fr PageRank: set tasks_use_result_dictionary_parameter = True
+# and same_output_for_all_fanout_fanin = False.
+#
 # True when executed task uses a dictionary parameter that contains its inputs
 # instead of a tuple Dask-style. This is True for the PageRank. For pagerank
 # we use a single pagerank task and, if using lambdas, a single lambda excutor.
