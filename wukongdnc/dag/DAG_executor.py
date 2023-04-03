@@ -3,14 +3,14 @@ import logging
 
 logger = None
 logger = logging.getLogger(__name__)
-"""
+
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
-"""
+
 
 
 import threading
@@ -207,8 +207,16 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
             keyword_arguments['result'] = output
             keyword_arguments['calling_task_name'] = calling_task_name
         else:
-            qualified_name = str(calling_task_name) + "-" + str(name)
-            keyword_arguments['result'] = output[name]
+            
+            print(thread_name + ": process_faninNBs: output:" + str(output))
+            if name.endswith('L'):  
+                keyword_arguments['result'] = output[name[:-1]]
+                qualified_name = str(calling_task_name) + "-" + str(name[:-1])
+            else:
+                keyword_arguments['result'] = output[name]
+                qualified_name = str(calling_task_name) + "-" + str(name)
+            print(thread_name + ": process_faninNBs: name:" + str(name) 
+                + " qualified_name: " + qualified_name)
             keyword_arguments['calling_task_name'] = qualified_name
         #ToDo: Don't do/need this?
         #keyword_arguments['DAG_executor_State'] = new_DAG_exec_state # given to the thread/lambda that executes the fanin task.
@@ -812,11 +820,17 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                     # task_inputs as "sending task - receiving task". So a sending task
                     # S might send outputs to fanouts A and B so we use "S-A" and "S-B"
                     # as the task_inputs, instad of just using "S", which is the Dask way.
-                    qualfied_name = str(calling_task_name) + "-" + str(name)
-                    dict_of_results[qualfied_name] = output[name]
+                    
+                    if name.endswith('L'):  
+                        dict_of_results[qualfied_name] = output[name[:-1]]
+                        qualfied_name = str(calling_task_name) + "-" + str(name[:-1])
+                    else:
+                        dict_of_results[qualfied_name] = output[name]
+                        qualfied_name = str(calling_task_name) + "-" + str(name)
+                    #dict_of_results[qualfied_name] = output[name]
                 logger.debug(thread_name + ": process_fanouts: dict_of_results for fanout " + name)
                 logger.debug(str(dict_of_results))
-                dict_of_results[calling_task_name] = output
+                #dict_of_results[calling_task_name] = output
                 work_tuple = (DAG_states[name],dict_of_results)
                 #work_queue.put(DAG_states[name])
 
@@ -859,8 +873,14 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                     # just "PR1_1". Assuming the output is a dictionary
                     # where keys are fanout/faninNB names and the valus are
                     # the outputs for that fanout/faninNB,
-                    qualfied_name = str(calling_task_name) + "-" + str(name)
-                    dict_of_results[qualfied_name] = output[name]
+                   
+                    if name.endswith('L'):  
+                        dict_of_results[qualfied_name] = output[name[:-1]]
+                        qualfied_name = str(calling_task_name) + "-" + str(name[:-1])
+                    else:
+                        dict_of_results[qualfied_name] = output[name]
+                        qualfied_name = str(calling_task_name) + "-" + str(name)
+                    #dict_of_results[qualfied_name] = output[name]
                 logger.debug(thread_name + ": process_fanouts: dict_of_results for fanout " + name)
                 logger.debug(str(dict_of_results))
                 work_tuple = (DAG_states[name],dict_of_results)
@@ -905,8 +925,13 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                         # just "PR1_1". Assuming the output is a dictionary
                         # where keys are fanout/faninNB names and the valus are
                         # the outputs for that fanout/faninNB,
-                        qualfied_name = str(calling_task_name) + "-" + str(name)
-                        dict_of_results[qualfied_name] = output[name]
+                        if name.endswith('L'):  
+                            dict_of_results[qualfied_name] = output[name[:-1]]
+                            qualfied_name = str(calling_task_name) + "-" + str(name[:-1])
+                        else:
+                            dict_of_results[qualfied_name] = output[name]
+                            qualfied_name = str(calling_task_name) + "-" + str(name)
+                        #dict_of_results[qualfied_name] = output[name]
                     logger.debug(thread_name + ": process_fanouts: dict_of_results for fanout " + name)
                     logger.debug(str(dict_of_results))
                     # Below we would use: "input": dict_of_results,
@@ -972,8 +997,14 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                         # task_inputs as "sending task - receiving task". So a sending task
                         # S might send outputs to fanouts A and B so we use "S-A" and "S-B"
                         # as the task_inputs, instad of just using "S", which is the Dask way.
-                        qualfied_name = str(calling_task_name) + "-" + str(name)
-                        dict_of_results[qualfied_name] = output[name]
+                        
+                        if name.endswith('L'):  
+                            dict_of_results[qualfied_name] = output[name[:-1]]
+                            qualfied_name = str(calling_task_name) + "-" + str(name[:-1])
+                        else:
+                            dict_of_results[qualfied_name] = output[name]
+                            qualfied_name = str(calling_task_name) + "-" + str(name)
+                        #dict_of_results[qualfied_name] = output[name]
                     logger.debug(thread_name + ": process_fanouts: dict_of_results for fanout " + name)
                     logger.debug(str(dict_of_results))
 

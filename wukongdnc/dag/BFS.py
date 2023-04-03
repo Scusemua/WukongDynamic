@@ -218,6 +218,12 @@ Partition_senders = {}
 Partition_receivers = {}
 Group_senders = {}
 Group_receivers = {}
+# These are the names of the partitions that have a loop. In the 
+# DAG, we will append an 'L' to the name.
+Partition_loops = set()
+# These are the names of the groups that have a loop. In the 
+# DAG, we will append an 'L' to the name.
+Group_loops = set()
 # map the index of a node in nodes to its index in its partition/group.
 # node i in nodes is in position i. When we place a node in a partition/group, 
 # this node is not assumed to be in postion i; nodes are added to the partition/group
@@ -348,11 +354,11 @@ class Partition_Node:
             my_ID = str(self.ID) + "-s"
 
         global debug_pagerank
-        logger.debug("debug_pagerank: "  + str(debug_pagerank))
-        #if (debug_pagerank):
-        logger.debug("update_pagerank: node " + my_ID)
-        logger.debug("update_pagerank: parent_nodes: " + str(parent_nodes))
-        logger.debug("update_pagerank: num_children: " + str(self.num_children))
+        #logger.debug("debug_pagerank: "  + str(debug_pagerank))
+        if (debug_pagerank):
+            logger.debug("update_pagerank: node " + my_ID)
+            logger.debug("update_pagerank: parent_nodes: " + str(parent_nodes))
+            logger.debug("update_pagerank: num_children: " + str(self.num_children))
         
         
         #if self.ID == 16:
@@ -364,16 +370,16 @@ class Partition_Node:
         
         #Note: a paent has at least one child so num_children is not 0
         pagerank_sum = sum((partition_or_group[node_index].pagerank / partition_or_group[node_index].num_children) for node_index in parent_nodes)
-        #if (debug_pagerank):
-        logger.debug("update_pagerank: pagerank_sum: " + str(pagerank_sum))
+        if (debug_pagerank):
+            logger.debug("update_pagerank: pagerank_sum: " + str(pagerank_sum))
         #random_jumping = damping_factor / total_num_nodes
-        #if (debug_pagerank):
-        logger.debug("damping_factor:" + str(damping_factor) + " 1-damping_factor:" + str(1-damping_factor) + " num_nodes: " + str(total_num_nodes) + " random_jumping: " + str(random_jumping))
+        if (debug_pagerank):
+            logger.debug("damping_factor:" + str(damping_factor) + " 1-damping_factor:" + str(1-damping_factor) + " num_nodes: " + str(total_num_nodes) + " random_jumping: " + str(random_jumping))
         #self.pagerank = random_jumping + ((1-damping_factor) * pagerank_sum)
         self.pagerank = random_jumping + (one_minus_dumping_factor * pagerank_sum)
-        #if (debug_pagerank):
-        logger.debug ("update_pagerank: pagerank of node: " + str(self.ID) + ": " + str(self.pagerank))
-        logger.debug("")
+        if (debug_pagerank):
+            logger.debug ("update_pagerank: pagerank of node: " + str(self.ID) + ": " + str(self.pagerank))
+            logger.debug("")
 
     def __eq__(self,other):
         return self.ID == other.ID
@@ -1964,7 +1970,17 @@ def bfs(visited, node): #function for BFS
 
     global current_group_isLoop
     if current_group_isLoop:
+        # These are the names of the groups that have a loop. In the 
+        # DAG, we will append an 'L' to the name.
+        Group_loops.add(group_name)
         group_name = group_name + "L"
+    current_group_isLoop = False
+    # Note: not incrementing current_group_number. This root group is the 
+    # only group in this partition. We consider it to be group 1, 
+    # which is the initial value of current_group_number. We do not increment
+    # it since we are done with the groups in the first partition, so 
+    # current_group_number will be 1 wen we find the first group of the 
+    # next partition.
     group_names.append(group_name)
 
     dfs_parent_end_partition_size = len(current_partition)
@@ -2077,8 +2093,10 @@ def bfs(visited, node): #function for BFS
                 partition_name = "PR" + str(current_partition_number) + "_1"
                 global current_partition_isLoop
                 if current_partition_isLoop:
+                    # These are the names of the partitions that have a loop. In the 
+                    # DAG, we will append an 'L' to the name.
+                    Partition_loops.add(partition_name)
                     partition_name = partition_name + "L"
-
                 current_partition_isLoop = False
                 partition_names.append(partition_name)
 
@@ -2333,6 +2351,9 @@ def bfs(visited, node): #function for BFS
                 current_group = []
                 group_name = "PR" + str(current_partition_number) + "_" + str(current_group_number)
                 if current_group_isLoop:
+                    # These are the names of the groups that have a loop. In the 
+                    # DAG, we will append an 'L' to the name.
+                    Group_loops.add(group_name)
                     group_name = group_name + "L"
                 current_group_isLoop = False
                 current_group_number += 1
@@ -2688,6 +2709,115 @@ def generate_DAG_info():
     Partition_DAG_states = {}
     Partition_DAG_tasks = {}
 
+    print()
+    print("Partition_loops:" + str(Partition_loops))
+    Partition_senders_Copy = Partition_senders.copy()
+    for sender_name,receiver_name_set in Partition_senders_Copy.items():
+        print("sender_name:" + sender_name + " receiver_name_set: " + str(receiver_name_set))
+        receiver_name_set_new = set()
+        for receiver_name in receiver_name_set:
+            if receiver_name in Partition_loops:
+                receiver_name_with_L_at_end = str(receiver_name) + "L"
+                receiver_name_set_new.add(receiver_name_with_L_at_end)
+            else:
+                receiver_name_set_new.add(receiver_name)
+        Partition_senders[sender_name] = receiver_name_set_new
+        if sender_name in Partition_loops: 
+            sender_name_with_L_at_end = str(sender_name) + "L"
+            Partition_senders[sender_name_with_L_at_end] = Partition_senders[sender_name]
+            del Partition_senders[sender_name]
+
+    Partition_receivers_Copy = Partition_receivers.copy()
+    for receiver_name,sender_name_set in Partition_receivers_Copy.items():
+        print("receiver_name:" + receiver_name + " sender_name_set: " + str(sender_name_set))
+        sender_name_set_new = set()
+        for sender_name in sender_name_set:
+            if sender_name in Partition_loops:
+                sender_name_with_L_at_end = str(sender_name) + "L"
+                sender_name_set_new.add(sender_name_with_L_at_end)
+            else:
+                sender_name_set_new.add(sender_name)
+        Partition_receivers[receiver_name] = sender_name_set_new
+        if receiver_name in Partition_loops: 
+            receiver_name_with_L_at_end = str(receiver_name) + "L"
+            Partition_receivers[receiver_name_with_L_at_end] = Partition_receivers[receiver_name]
+            del Partition_receivers[receiver_name]
+
+    print("New Partition_senders:")
+    for sender_name,receiver_name_set in Partition_senders.items():
+        print("sender:" + sender_name)
+        print("receiver_name_set:" + str(receiver_name_set))
+
+    print("New Partition_receivers:")
+    for receiver_name,sender_name_set in Partition_receivers.items():
+        print("receiver:" + receiver_name)
+        print("sender_name_set:" + str(sender_name_set))
+
+    print()
+    print("Group_loops:" + str(Group_loops))
+    Group_senders_Copy = Group_senders.copy()
+    for sender_name,receiver_name_set in Group_senders_Copy.items():
+        print("sender_name:" + sender_name + " receiver_name_set: " + str(receiver_name_set))
+        receiver_name_set_new = set()
+        for receiver_name in receiver_name_set:
+            if receiver_name in Group_loops:
+                receiver_name_with_L_at_end = str(receiver_name) + "L"
+                receiver_name_set_new.add(receiver_name_with_L_at_end)
+            else:
+                receiver_name_set_new.add(receiver_name)
+        Group_senders[sender_name] = receiver_name_set_new
+        if sender_name in Group_loops: 
+            sender_name_with_L_at_end = str(sender_name) + "L"
+            Group_senders[sender_name_with_L_at_end] = Group_senders[sender_name]
+            del Group_senders[sender_name]
+
+    Group_receivers_Copy = Group_receivers.copy()
+    for receiver_name,sender_name_set in Group_receivers_Copy.items():
+        print("receiver_name:" + receiver_name + " sender_name_set: " + str(sender_name_set))
+        sender_name_set_new = set()
+        for sender_name in sender_name_set:
+            if sender_name in Group_loops:
+                sender_name_with_L_at_end = str(sender_name) + "L"
+                sender_name_set_new.add(sender_name_with_L_at_end)
+            else:
+                sender_name_set_new.add(sender_name)
+        Group_receivers[receiver_name] = sender_name_set_new
+        if receiver_name in Group_loops: 
+            receiver_name_with_L_at_end = str(receiver_name) + "L"
+            Group_receivers[receiver_name_with_L_at_end] = Group_receivers[receiver_name]
+            del Group_receivers[receiver_name]
+
+    print("New Group_senders:")
+    for sender_name,receiver_name_set in Group_senders.items():
+        print("sender:" + sender_name)
+        print("receiver_name_set:" + str(receiver_name_set))
+
+    print("New Group_receivers:")
+    for receiver_name,sender_name_set in Group_receivers.items():
+        print("receiver:" + receiver_name)
+        print("sender_name_set:" + str(sender_name_set))
+
+
+    #Note:
+    #Informs the logging system to perform an orderly shutdown by flushing 
+    #and closing all handlers. This should be called at application exit and no 
+    #further use of the logging system should be made after this call.
+    #logging.shutdown()
+    #time.sleep(3)   #not needed due to shutdwn
+    #os._exit(0)
+
+    """
+    for group_name in Group_loops:
+        group_name_with_L_at_end += str(group_name) + "L"
+        Group_senders[group_name_with_L_at_end] = Group_senders[group_name]
+        del Group_senders[group_name]
+    """
+
+#rhc: ToDo: use the loop map to change the nambes in the 
+# Partition/roup senders and receivers.
+#dictionary[new_key] = dictionary[old_key]
+#del dictionary[old_key]
+
     # sink nodes, i.e., nodes that do not send any inputs
     Partition_sink_set = set()
     logger.info("Partition DAG:")
@@ -2974,6 +3104,11 @@ def generate_DAG_info():
     Group_DAG_map = {}
     Group_DAG_states = {}
     Group_DAG_tasks = {}
+
+#rhc: ToDo: use the loop map to change the nambes in the 
+# Partition/roup senders and receivers.
+#dictionary[new_key] = dictionary[old_key]
+#del dictionary[old_key]
 
     # sink nodes, i.e., nodes that do not send any inputs
     Group_sink_set = set()
@@ -3382,32 +3517,32 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
         complete_task_file_name = './'+task_file_name+'.pickle'
         with open(complete_task_file_name, 'rb') as handle:
             partition_or_group = (cloudpickle.load(handle))
-        #if (debug_pagerank):
-        logger.debug("PageRank_Function output partition_or_group (node:parents):")
-        for node in partition_or_group:
-            #logger.debug(node,end=":")
-            print_val = str(node) + ":"
-            for parent in node.parents:
-                print_val += str(parent) + " "
-                #logger.debug(parent,end=" ")
-            if len(node.parents) == 0:
-                #logger.debug(",",end=" ")
-                print_val += ", "
-            else:
-                #logger.debug(",",end=" ")
-                print_val += ", "
+        if (debug_pagerank):
+            logger.debug("PageRank_Function output partition_or_group (node:parents):")
+            for node in partition_or_group:
+                #logger.debug(node,end=":")
+                print_val = str(node) + ":"
+                for parent in node.parents:
+                    print_val += str(parent) + " "
+                    #logger.debug(parent,end=" ")
+                if len(node.parents) == 0:
+                    #logger.debug(",",end=" ")
+                    print_val += ", "
+                else:
+                    #logger.debug(",",end=" ")
+                    print_val += ", "
+                logger.debug(print_val)
+            logger.debug("")
+            logger.debug("PageRank_Function output partition_or_group (node:num_children):")
+            print_val = ""
+            for node in partition_or_group:
+                print_val += str(node)+":"+str(node.num_children) + ", "
+                # logger.debug(str(node)+":"+str(node.num_children),end=", ")
             logger.debug(print_val)
-        logger.debug("")
-        logger.debug("PageRank_Function output partition_or_group (node:num_children):")
-        print_val = ""
-        for node in partition_or_group:
-            print_val += str(node)+":"+str(node.num_children) + ", "
-            # logger.debug(str(node)+":"+str(node.num_children),end=", ")
-        logger.debug(print_val)
-        logger.debug("")
+            logger.debug("")
 
-        logger.debug("")
-        # node's children set when the partition/grup node created
+            logger.debug("")
+            # node's children set when the partition/grup node created
 
         num_shadow_nodes = 0
         for node in partition_or_group:
@@ -3430,6 +3565,7 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
 
         i=0
         for tup in input_tuples:
+            print("tup:" + str(tup))
             shadow_node_index = tup[0]
             pagerank_value = tup[1]
             # assert
@@ -3478,28 +3614,28 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
             partition_or_group.append(parent_of_shadow_node)
             partition_or_group[shadow_node_index].parents[0] = num_nodes_for_pagerank_computation + i
             i += i+1
-        #if (debug_pagerank):
-        logger.debug("")
-        logger.debug("PageRank_Function output partition_or_group after add " + str(len(input_tuples)) + " SN parents (node:parents):")
-        for node in partition_or_group:
-            print_val = str(node) + ":"
-            # print(node,end=":")
-            for parent in node.parents:
-                #print(parent,end=" ")
-                print_val += str(parent) + " "
-            if len(node.parents) == 0:
-                #print(" ,",end=" ")
-                print_val += " ,"
-            else:
-                #print(",",end=" ")
-                print_val += ","
-            logger.debug(print_val)
-        logger.debug("")
+        if (debug_pagerank):
+            logger.debug("")
+            logger.debug("PageRank_Function output partition_or_group after add " + str(len(input_tuples)) + " SN parents (node:parents):")
+            for node in partition_or_group:
+                print_val = str(node) + ":"
+                # print(node,end=":")
+                for parent in node.parents:
+                    #print(parent,end=" ")
+                    print_val += str(parent) + " "
+                if len(node.parents) == 0:
+                    #print(" ,",end=" ")
+                    print_val += " ,"
+                else:
+                    #print(",",end=" ")
+                    print_val += ","
+                logger.debug(print_val)
+            logger.debug("")
 
         for i in range(1,iteration+1):
-            # if (debug_pagerank):
-            logger.debug("***** PageRank: iteration " + str(i))
-            logger.debug("")
+            if (debug_pagerank):
+                logger.debug("***** PageRank: iteration " + str(i))
+                logger.debug("")
             PageRank_Function_one_iter(partition_or_group,damping_factor,one_minus_dumping_factor,random_jumping,total_num_nodes,num_nodes_for_pagerank_computation)
         
         """
@@ -3512,16 +3648,16 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
                 my_ID = str(partition_or_group[i].ID) + "-s"
             logger.info(partition_or_group[i].toString_PageRank())
         """
-        # if (debug_pagerank):
-        logger.debug("")
-        logger.debug("Frontier Parents:")
-        for i in range(len(partition_or_group)):
-            if not partition_or_group[i].isShadowNode:
-                my_ID = str(partition_or_group[i].ID)
-            else:
-                my_ID = str(partition_or_group[i].ID) + "-s"
-            logger.debug("ID:" + my_ID + " frontier_parents: " + str(partition_or_group[i].frontier_parents))
-        logger.debug("")
+        if (debug_pagerank):
+            logger.debug("")
+            logger.debug("Frontier Parents:")
+            for i in range(len(partition_or_group)):
+                if not partition_or_group[i].isShadowNode:
+                    my_ID = str(partition_or_group[i].ID)
+                else:
+                    my_ID = str(partition_or_group[i].ID) + "-s"
+                logger.debug("ID:" + my_ID + " frontier_parents: " + str(partition_or_group[i].frontier_parents))
+            logger.debug("")
         """
         ID:5 frontier_parents: [(2, 1, 2)]
         ID:17 frontier_parents: [(2, 2, 5)]
