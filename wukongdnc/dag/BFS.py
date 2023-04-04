@@ -13,13 +13,13 @@ import copy
 #from .DAG_info import DAG_Info
 
 logger = logging.getLogger(__name__)
-#logger.setLevel(logging.DEBUG)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
+#logger.setLevel(logging.INFO)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 #formatter = logging.Formatter('%(levelname)s: %(message)s')
 ch = logging.StreamHandler()
-#ch.setLevel(logging.DEBUG)
-ch.setLevel(logging.INFO)
+ch.setLevel(logging.DEBUG)
+#ch.setLevel(logging.INFO)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
@@ -208,8 +208,8 @@ current_group = []
 patch_parent_mapping_for_partitions = []
 patch_parent_mapping_for_groups = []
 current_group_number = 1
-group_names = []
 partition_names = []
+group_names = []
 current_partition_isLoop = False
 current_group_isLoop = False
 #For DAG generation, map sending task to list of Reveiving tasks, and 
@@ -264,7 +264,7 @@ IDENTIFY_SINGLETONS = False
 TRACK_PARTITION_LOOPS = False
 CHECK_UNVISITED_CHILDREN = False
 DEBUG_ON = True
-logger.info_DETAILED_STATS = True
+PRINT_DETAILED_STATS = True
 debug_pagerank = False
 
 #scc_graph = Graph(0)
@@ -638,16 +638,15 @@ def dfs_parent(visited, node):  #function for dfs
     group_number = current_group_number
     parent_group_index = -1
     index_in_groups_list = -1
-    pg_tuple = (partition_number,parent_partition_index,group_number,parent_group_index,index_in_groups_list)
-
+    init_pg_tuple = (partition_number,parent_partition_index,group_number,parent_group_index,index_in_groups_list)
     global nodeIndex_to_partition_partitionIndex_group_groupIndex_map
-    nodeIndex_to_partition_partitionIndex_group_groupIndex_map[node.ID] = pg_tuple
+    nodeIndex_to_partition_partitionIndex_group_groupIndex_map[node.ID] = init_pg_tuple
 
     """
     # for debugging
     logger.info("nodeIndex_to_partition_partitionIndex_group_groupIndex_map, len: " + str(len(nodeIndex_to_partition_partitionIndex_group_groupIndex_map)) + ":")
     logger.info("shadow nodes not mapped and not shown")
-    if logger.info_DETAILED_STATS:
+    if PRINT_DETAILED_STATS:
         for k, v in nodeIndex_to_partition_partitionIndex_group_groupIndex_map.items():
             logger.info((k, v))
         logger.info("")
@@ -690,16 +689,19 @@ def dfs_parent(visited, node):  #function for dfs
         if partition_group_tuple != None:
         """
 
+        # declaration of pg_tuple moved here before the if statement since 
+        # pg_tuple is used in both the then and else part
+        pg_tuple = None
+
         if parent_node.ID not in visited:
             logger.debug ("dfs_parent visit node " + str(parent_node.ID))
             #dfs_parent(visited, graph, parent_node)
             dfs_parent(visited, parent_node)
 
-
 #rhc: case: no shadow nodes since parent is in this partition/group as we have not 
 # visited parent previously. Check if this is a loop and parent partition/group
 # number is -1
-            # assert:
+            # get pg_tuple after dfs_parent returns so parent has been processed
             pg_tuple = nodeIndex_to_partition_partitionIndex_group_groupIndex_map[parent_index]
             # parent has been mapped but, in general, the partition and group indices
             # might be -1. Here, they should not be -1 since the parent was unvisited
@@ -714,14 +716,12 @@ def dfs_parent(visited, node):  #function for dfs
             #group_number = current_group_number
             #group_index = -1
             parent_partition_index = pg_tuple[1]
-            if parent_partition_index == -1:
+            parent_group_index = pg_tuple[3]
+            if (parent_partition_index == -1) or (parent_group_index == -1):
                 # assert group_index is also -1
                 logger.debug("[Error]: Internal Error: dfs_parent call to unvisited"
-                    + " parent resulted in parent partition index of -1, which means"
+                    + " parent resulted in parent/group partition index of -1, which means"
                     + " a loop was detected at an unvisited parent.")
-
-            # assert group_index is also not -1
-            parent_group_index = pg_tuple[3]
             partition_node.parents.append(parent_partition_index)
             group_node.parents.append(parent_group_index)
 
@@ -733,12 +733,25 @@ def dfs_parent(visited, node):  #function for dfs
             partition_node.parents.append(-1)
             group_node.parents.append(-1)
     
+            # parent node has been processed so get its info and determine whether
+            # this indicates a loop
+            pg_tuple = nodeIndex_to_partition_partitionIndex_group_groupIndex_map[parent_index]
+            parent_partition_index = pg_tuple[1]
+
             #rhc: Note: Not clear whether we will be tracking loops here and if so what 
-            # we wan to do when we find a loop. For now, TRACK_PARTITION_LOOPS is False
+            # we want to do when we find a loop. For now, TRACK_PARTITION_LOOPS is False
             if TRACK_PARTITION_LOOPS:
-                pg_tuple = nodeIndex_to_partition_partitionIndex_group_groupIndex_map[parent_index]
-                parent_partition_number = pg_tuple[0]
-                if parent_partition_number == -1:
+                # this pg_tuple was moved up before this if since it is also used
+                # after the if.
+                #pg_tuple = nodeIndex_to_partition_partitionIndex_group_groupIndex_map[parent_index]
+
+                # parent_partition_number = pg_tuple[0]
+                # Changed to parent_partition_index since we set the the 
+                #parent_partition_number to current_partition_number at the
+                # beginning of dfs_parents().
+                # parent_partition_index = pg_tuple[1]
+                if parent_partition_index == -1:
+                #if parent_partition_number == -1:
                     # Example: 1 5 6 7 3(Lp) 12(Lp) 11 11(Lc) 12 4 3 2 10 9 8
                     # Here, 3 is a parent of 11 that 11 finds visited so when visiting
                     # 11 in dfs_parent 11 will output 3(Lprnt_of_11). Same for when 
@@ -756,7 +769,40 @@ def dfs_parent(visited, node):  #function for dfs
                     global loop_nodes_added
                     loop_nodes_added += 1
 
+            # Detect a loop here instead of below when we check each parent_node_visited_tuple
+            # since this allows us to detect a loop now and hence use a partition or group
+            # name with an 'L' at the end, e.g., "PR2_2L" when we crate frontier tuples
+            # and add names to the Senders and Receivers structures used for DAG creation.
+            if parent_partition_index == -1:
+                logger.debug("XXXXXXXXXXXXXXXXX dfs_parent: Loop Detected: "
+                    + "PR" + str(current_partition_number) + "_" + str(num_frontier_groups))
+                global current_partition_isLoop
+                current_partition_isLoop = True
+                # assert:
+                if parent_group_index != -1:
+                    logger.error("[Error] Internal Error: parent_partition_index is -1"
+                        + " indicating that current partition is a loop but "
+                        + " parent_group_index is not -1, when the group should also be a loop.") 
+                global current_group_isLoop
+                current_group_isLoop = True
+            else:
+                logger.debug("YYYYYYYYYYYYY dfs_parent: No Loop Detected: "
+                    + "PR" + str(current_partition_number) + "_" + str(num_frontier_groups))
+
+
         index_of_parent += 1
+
+    # The name of the current partition/group depends on whether it
+    # has a loop. If so we add an 'L' to the end of the name.
+    # Example: "PR2_2" becomes "PR2_2L".
+    current_partition_name = "PR" + str(current_partition_number) + "_1"
+    current_group_name = "PR" + str(current_partition_number) + "_" + str(num_frontier_groups)
+
+    if current_partition_isLoop:
+        current_partition_name += "L"
+
+    if current_group_isLoop:
+        current_group_name += "L"
 
     # can't add shadow nodes and associated node until all parents added via dfs_parent
     # Q: Can we do this as part of else and then finish the appends here?
@@ -826,7 +872,7 @@ def dfs_parent(visited, node):  #function for dfs
                     # finish this partition_node and group_node parent ermapping 
                     # when the parent/group has finished and all parents hve been mapped.
                     patch_tuple = (parent_index,partition_node.parents,group_node.parents,index_of_parent,node.ID)
-                    logger.debug("YYYYYYYYY patch_tuple: " +str(patch_tuple))
+                    logger.debug("patch_tuple: " +str(patch_tuple))
                     patch_parent_mapping_for_partitions.append(patch_tuple)
                     patch_parent_mapping_for_groups.append(patch_tuple)
 
@@ -834,9 +880,19 @@ def dfs_parent(visited, node):  #function for dfs
                     # of iterations for a loop-group is more than 1, while the number
                     # of iterations for a non-loop group is 1. The name for a group
                     # or partition with a loop ends with "L".
-                    logger.debug("dfs_parent set current_partition_isLoop to True.")
-                    global current_partition_isLoop
-                    current_partition_isLoop = True
+                    # Note: We now detect loops above when we generate the parent_node_visited_tuples
+                    # so we can use the L-based partition/grou names for partitions/groups that
+                    # have a loop. Here we just assert that the just detected loop should also
+                    # have been detected earlier.
+
+                    #logger.debug("dfs_parent set current_partition_isLoop to True.")
+                    #global current_partition_isLoop
+                    #current_partition_isLoop = True
+                    # assert: we should have detected a loop above 
+                    if current_partition_isLoop == False:
+                        logger.error("[Error] Internal Error: detected partition loop when"
+                            + " processing parent_node_visited_tuple that was not"
+                            + " detected when generating parent_node_visited_tuple")
 
                 """
                 parent_partition_index = partition_group_tuple[1]
@@ -884,9 +940,17 @@ def dfs_parent(visited, node):  #function for dfs
                         # of iterations for a loop-group is more than 1, while the number
                         # of iterations for a non-loop group is 1. The name for a group
                         # or partition with a loop ends with "L".
-                        global current_group_isLoop
-                        if parent_partition_index == -1:
-                            current_group_isLoop = True
+
+                        # Changed this to an assert. The loop should have also been
+                        # detected above when we generated parent_node_visited_tuples.
+                        # assert: already detectd loop
+                        #global current_group_isLoop
+                        #if parent_partition_index == -1:
+                        #    current_group_isLoop = True
+                        if current_group_isLoop == False:
+                            logger.error("[Error] Internal Error: detected group loop when"
+                                + " processing parent_node_visited_tuple that was not"
+                                + " detected when generating parent_node_visited_tuple")
  
                         """
                         parent_group_index = partition_group_tuple[3]
@@ -898,6 +962,14 @@ def dfs_parent(visited, node):  #function for dfs
                             + str(parent_group_number) 
                             + ", current_group_number: " + str(current_group_number)
                             + ", parent ID: " + str(parent_index))
+
+                        # The name of the current partition/group depends on whether it
+                        # has a loop. If so we add an 'L' to the end of the name.
+                        # Example: "PR2_2" becomes "PR2_2L".
+                        #current_group_name = "PR" + str(current_partition_number) + "_" + str(num_frontier_groups)
+                        #if current_group_isLoop:
+                        #    current_group_name += "L"
+
                         #parents_in_previous_group = True
                         list_of_parents_in_previous_group.append(visited_parent_node.ID) 
 
@@ -965,7 +1037,11 @@ def dfs_parent(visited, node):  #function for dfs
                         #   logger.debug("ZZZZZZZZZZZZZZZZZZZZZZZZZ No Difference: ") 
                         
                         #logger.debug("ZZZZZZZZZZZ")
-                        frontier_parent_tuple = (current_partition_number,num_frontier_groups,child_index_in_current_group)
+
+                        # Note: Added a partition/group name field to the tuple since we need an 'L'
+                        # in the name of the current partition/group if it is a loop. We probably won't
+                        # need the current_partition_number/num_frontier_groups but it's available for now for debugging.
+                        frontier_parent_tuple = (current_partition_number,num_frontier_groups,child_index_in_current_group,current_group_name)
                         logger.debug ("bfs frontier_parent_tuple: " + str(frontier_parent_tuple))
 
                         # mark this node as one that PageRank needs to send in its output to the 
@@ -1056,6 +1132,17 @@ def dfs_parent(visited, node):  #function for dfs
                     + str(parent_partition_number) 
                     + ", current_partition_number:" + str(current_partition_number)
                     + ", parent ID: " + str(parent_index))
+
+                # The name of the current partition/group depends on whether it
+                # has a loop. If so we add an 'L' to the end of the name.
+                # Example: "PR2_2" becomes "PR2_2L".
+                #current_partition_name = "PR" + str(current_partition_number) + "_1"
+                #current_group_name = "PR" + str(current_partition_number) + "_" + str(num_frontier_groups)
+                #if current_partition_isLoop:
+                #    current_partition_name += "L"
+                #if current_group_isLoop:
+                #    current_group_name += "L"
+
                 #parents_in_previous_partition = True
                 list_of_parents_in_previous_partition.append(visited_parent_node.ID)
 
@@ -1138,9 +1225,13 @@ def dfs_parent(visited, node):  #function for dfs
                 # Note : For partitions, the child_index is the index relatve to the 
                 # start of the partition. child_index is len(current_partition).
                 # The calculation for groups (below) is a bit difference.
-                # Q: Use 0 instead of num_frontier_groups so we can just grab the 0
-                frontier_parent_partition_tuple = (current_partition_number,1,child_index_in_current_partition)
-                frontier_parent_group_tuple = (current_partition_number,num_frontier_groups,child_index_in_current_group)
+                # Q: Use 0 instead of num_frontier_groups so we can just grab the 0.
+                #
+                # Note: Added a partition/group name field to the tuple since we need an 'L'
+                # in the name of the current partition/group if it is a loop. We probably won't
+                # need the current_partition_number/num_frontier_groups but it's available for now for debugging.
+                frontier_parent_partition_tuple = (current_partition_number,1,child_index_in_current_partition,current_partition_name)
+                frontier_parent_group_tuple = (current_partition_number,num_frontier_groups,child_index_in_current_group,current_group_name)
                 logger.debug ("bfs frontier_parent_partition_tuple: " + str(frontier_parent_partition_tuple))
                 logger.debug ("bfs frontier_parent_group_tuple: " + str(frontier_parent_group_tuple))
  
@@ -1171,8 +1262,16 @@ def dfs_parent(visited, node):  #function for dfs
                 parent_group[parent_group_index].frontier_parents.append(frontier_parent_group_tuple)
 
                 # generate dependency in DAG
-                sending_partition = "PR"+str(parent_partition_number)+"_1"
-                receiving_partition = "PR"+str(current_partition_number)+"_1"
+                #
+                # Need to use L-based names. The recever is the name of the 
+                # current partition/group. The sender's name is the name
+                # assigned when the dfs_parent() for that partition/group completed.
+                #sending_partition = "PR"+str(parent_partition_number)+"_1"
+                # parent_partition_numbers start with 1, e.g. the "PR1" in "PR1_1"
+                # but the partition_names are a list with the fitrst name at position 0
+                sending_partition = partition_names[parent_partition_number-1]
+                #receiving_partition = "PR"+str(current_partition_number)+"_1"
+                receiving_partition = current_partition_name
                 sender_set = Partition_senders.get(sending_partition)
                 if sender_set == None:
                     Partition_senders[sending_partition] = set()
@@ -1181,9 +1280,13 @@ def dfs_parent(visited, node):  #function for dfs
                 if receiver_set == None:
                     Partition_receivers[receiving_partition] = set()
                 Partition_receivers[receiving_partition].add(sending_partition)
+
                 # generate dependency in DAG
-                sending_group = "PR"+str(parent_partition_number)+"_"+str(parent_group_number)
-                receiving_group = "PR"+str(current_partition_number)+"_"+str(num_frontier_groups)
+                #sending_group = "PR"+str(parent_partition_number)+"_"+str(parent_group_number)
+                # index in groups list is the actual index, sarting with index 0
+                sending_group = group_names[index_in_groups_list]
+                #receiving_group = "PR"+str(current_partition_number)+"_"+str(num_frontier_groups)
+                receiving_group = current_group_name
                 sender_set = Group_senders.get(sending_group)
                 if sender_set == None:
                     Group_senders[sending_group] = set()
@@ -1519,11 +1622,15 @@ def dfs_parent(visited, node):  #function for dfs
             # node in partition and group. But if a node's parent is in a different 
             # group but same partition then we only add a shadow node to the group
             # in a position right before node in the group. 
+
+            # information for this partition node
+            # There are n partitions, this node is in partition partition_number
             partition_number = current_partition_number
-            parent_partition_index = len(current_partition)-1
-#rhc: ToDo: if using partitions, then set group number to 0, so PR1_0, PR2_0, etc
+            # In this partition, this node is at position partition_index
+            partition_index = len(current_partition)-1
+            # Likewise for groups
             group_number = current_group_number
-            parent_group_index = len(current_group)-1
+            group_index = len(current_group)-1
 #rhc ToDo: We need postion in groups (frontier_groups-1) when we add a frontier tuple
 # to a group. That is, if say 13 is a child of 8, we need to add a frontier_tuple
 # to 8.  group_number is the number of the group in a partition, e.g., 8 might be
@@ -1535,7 +1642,7 @@ def dfs_parent(visited, node):  #function for dfs
 # save 8's group number and group index, and 8's position in groups so we can 
 # get 8's group from the groups list when we need it.
             index_in_groups_list = num_frontier_groups
-            pg_tuple = (partition_number,parent_partition_index,group_number,parent_group_index,index_in_groups_list)
+            pg_tuple = (partition_number,partition_index,group_number,group_index,index_in_groups_list)
             nodeIndex_to_partition_partitionIndex_group_groupIndex_map[partition_node.ID] = pg_tuple
 
         else:
@@ -1796,6 +1903,7 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
                     nodeIndex_to_partitionIndex_map[partition_node.ID] = len(current_partition)-1         
                     nodeIndex_to_groupIndex_map[partition_node.ID] = len(current_group)-1
 
+                    #information for this partition node
                     partition_number = current_partition_number
                     partition_index = len(current_partition)-1
                     group_number = current_group_number
@@ -1856,6 +1964,7 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
                     nodeIndex_to_partitionIndex_map[partition_node.ID] = len(current_partition)-1
                     nodeIndex_to_groupIndex_map[partition_node.ID] = len(current_group)-1
 
+                    # information for this partition node
                     partition_number = current_partition_number
                     partition_index = len(current_partition)-1
                     group_number = current_group_number
@@ -1897,6 +2006,7 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
             nodeIndex_to_partitionIndex_map[partition_node.ID] = len(current_partition)-1
             nodeIndex_to_groupIndex_map[partition_node.ID] = len(current_group)-1
 
+            # information for this partition node
             partition_number = current_partition_number
             partition_index = len(current_partition)-1
             group_number = current_group_number
@@ -2079,6 +2189,13 @@ def bfs(visited, node): #function for BFS
         # Note: handling singletons here is more efficent since we don;t waste time 
         # checkng for singletons in dfs_parent when most nodes are not singletons.
 
+#rhc: problem: we don't find partition loop until we dfs_parent(17) so the 
+# frontier tuple for the 5 is in different partition than 16 is wring since
+# we will use PR2_1 for partition. So don't do partition tuples until after
+# finish partition, where we know whether partition has a loop or not?
+# save frontier tuples with empty name and then patch the name before you
+# process the tuple.
+
         if end_of_current_frontier:
             logger.debug("BFS: end_of_current_frontier")
             end_of_current_frontier = False
@@ -2101,7 +2218,7 @@ def bfs(visited, node): #function for BFS
                 partition_names.append(partition_name)
 
                 global patch_parent_mapping_for_partitions
-                logger.debug("XXXXXXXXXXXXXXXXXXXxXX partition_nodes to patch: ")
+                logger.debug("partition_nodes to patch: ")
                 for parent_tuple in patch_parent_mapping_for_partitions:
                     logger.debug("parent_tuple: " + str(parent_tuple) + "," )
                     # where: patch_tuple = (parent_index,partition_node.parents,
@@ -2297,7 +2414,7 @@ def bfs(visited, node): #function for BFS
 
                 #global patch_parent_mapping_for_partitions
                 global patch_parent_mapping_for_groups
-                logger.debug("XXXXXXXXXXXXXXXXXXXxXX partition_nodes to patch: ")
+                logger.debug("partition_nodes to patch: ")
                 for parent_tuple in patch_parent_mapping_for_groups:
                     logger.debug("parent_tuple: " + str(parent_tuple) + "," )
                     # where: patch_tuple = (parent_index,partition_node.parents,
@@ -2709,6 +2826,7 @@ def generate_DAG_info():
     Partition_DAG_states = {}
     Partition_DAG_tasks = {}
 
+    """
     print()
     print("Partition_loops:" + str(Partition_loops))
     Partition_senders_Copy = Partition_senders.copy()
@@ -2742,17 +2860,19 @@ def generate_DAG_info():
             receiver_name_with_L_at_end = str(receiver_name) + "L"
             Partition_receivers[receiver_name_with_L_at_end] = Partition_receivers[receiver_name]
             del Partition_receivers[receiver_name]
+    """
 
-    print("New Partition_senders:")
+    print("Partition_senders:")
     for sender_name,receiver_name_set in Partition_senders.items():
         print("sender:" + sender_name)
         print("receiver_name_set:" + str(receiver_name_set))
 
-    print("New Partition_receivers:")
+    print("Partition_receivers:")
     for receiver_name,sender_name_set in Partition_receivers.items():
         print("receiver:" + receiver_name)
         print("sender_name_set:" + str(sender_name_set))
 
+    """
     print()
     print("Group_loops:" + str(Group_loops))
     Group_senders_Copy = Group_senders.copy()
@@ -2786,13 +2906,14 @@ def generate_DAG_info():
             receiver_name_with_L_at_end = str(receiver_name) + "L"
             Group_receivers[receiver_name_with_L_at_end] = Group_receivers[receiver_name]
             del Group_receivers[receiver_name]
-
-    print("New Group_senders:")
+    """
+    print()
+    print("Group_senders:")
     for sender_name,receiver_name_set in Group_senders.items():
         print("sender:" + sender_name)
         print("receiver_name_set:" + str(receiver_name_set))
 
-    print("New Group_receivers:")
+    print("Group_receivers:")
     for receiver_name,sender_name_set in Group_receivers.items():
         print("receiver:" + receiver_name)
         print("sender_name_set:" + str(sender_name_set))
@@ -3667,10 +3788,13 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
         for i in range(len(partition_or_group)):
             if len(partition_or_group[i].frontier_parents) > 0:
                 for frontier_parent in partition_or_group[i].frontier_parents:
-                    partition_number = frontier_parent[0]
-                    group_number = frontier_parent[1]
+                    #partition_number = frontier_parent[0]
+                    #group_number = frontier_parent[1]
                     parent_or_group_index = frontier_parent[2]
-                    partition_or_group_name = "PR"+str(partition_number)+"_"+str(group_number)
+                    # Passing name in tuple so that name for loop partition/groups
+                    # will have an "l" at the end
+                    #partition_or_group_name = "PR"+str(partition_number)+"_"+str(group_number)
+                    partition_or_group_name = frontier_parent[3]
                     output_list = PageRank_output.get(partition_or_group_name)
                     if output_list == None:
                         output_list = []
@@ -3859,7 +3983,7 @@ avg_change = sum_of_changes / len(dfs_parent_changes_in_partiton_size)
 print_val = "dfs_parent_changes_in_partiton_size length, len: " + str(len(dfs_parent_changes_in_partiton_size)) + ", sum_of_changes: " + str(sum_of_changes)
 print_val += ", average dfs_parent change: %.1f" % avg_change
 logger.info(print_val)
-if logger.info_DETAILED_STATS:
+if PRINT_DETAILED_STATS:
     if sum_of_changes != num_nodes:
         logger.error("[Error]: sum_of_changes is " + str(sum_of_changes)
             + " but num_nodes is " + str(num_nodes))
@@ -3871,7 +3995,7 @@ if logger.info_DETAILED_STATS:
 
 logger.info("")
 logger.info("")
-if logger.info_DETAILED_STATS:
+if PRINT_DETAILED_STATS:
     # adjusting for loop_nodes_added in dfs_p
     sum_of_changes = sum(dfs_parent_changes_in_frontier_size)
     logger.info("dfs_parent_changes_in_frontier_size length, len: " + str(len(dfs_parent_changes_in_frontier_size))
@@ -3898,7 +4022,7 @@ if logger.info_DETAILED_STATS:
 # assert: 
 logger.info("frontiers: (final fronter should be empty), len: " + str(len(frontiers))+":")
 for frontier_list in frontiers:
-    if logger.info_DETAILED_STATS:
+    if PRINT_DETAILED_STATS:
         print_val = "-- (" + str(len(frontier_list)) + "): "
         for x in frontier_list:
             #logger.info(str(x.ID),end=" ")
@@ -3914,7 +4038,7 @@ if len(frontiers[frontiers_length-1]) != 0:
 logger.info("")
 logger.info("partitions, len: " + str(len(partitions))+":")
 for x in partitions:
-    if logger.info_DETAILED_STATS:
+    if PRINT_DETAILED_STATS:
         print("-- (" + str(len(x)) + "):", end=" ")
         for node in x:
             print(node,end=" ")
@@ -3928,12 +4052,12 @@ for x in partitions:
 logger.info("")
 logger.info("partition names, len: " + str(len(partition_names))+":")
 for name in partition_names:
-    if logger.info_DETAILED_STATS:
+    if PRINT_DETAILED_STATS:
         logger.info("-- " + name)
 logger.info("")
 logger.info("groups, len: " + str(len(groups))+":")
 for g in groups:
-    if logger.info_DETAILED_STATS:
+    if PRINT_DETAILED_STATS:
         print("-- (" + str(len(g)) + "):", end=" ")
         for node in g:
             print(node,end=" ")
@@ -3943,12 +4067,12 @@ for g in groups:
 logger.info("")
 logger.info("group names, len: " + str(len(group_names))+":")
 for name in group_names:
-    if logger.info_DETAILED_STATS:
+    if PRINT_DETAILED_STATS:
         logger.info("-- " + name)
 logger.info("")
 logger.info("nodes_to_partition_maps (incl. shadow nodes), len: " + str(len(nodeIndex_to_partitionIndex_maps))+":")
 for m in nodeIndex_to_partitionIndex_maps:
-    if logger.info_DETAILED_STATS:
+    if PRINT_DETAILED_STATS:
         print("-- (" + str(len(m)) + "):", end=" ")
         for k, v in m.items():
             print((k, v),end=" ")
@@ -3958,7 +4082,7 @@ for m in nodeIndex_to_partitionIndex_maps:
 logger.info("")
 logger.info("nodes_to_group_maps, (incl. shadow nodes), len: " + str(len(nodeIndex_to_groupIndex_maps))+":")
 for m in nodeIndex_to_groupIndex_maps:
-    if logger.info_DETAILED_STATS:
+    if PRINT_DETAILED_STATS:
         print("-- (" + str(len(m)) + "):", end=" ")
         for k, v in m.items():
             print((k, v),end=" ")
@@ -3966,7 +4090,7 @@ for m in nodeIndex_to_groupIndex_maps:
     else:
         logger.info("-- (" + str(len(m)) + ")")
 logger.info("")
-if logger.info_DETAILED_STATS:
+if PRINT_DETAILED_STATS:
     logger.info("frontier costs (cost=length of frontier), len: " + str(len(frontier_costs))+":")
     print_val = ""
     for x in frontier_costs:
@@ -3982,7 +4106,7 @@ for x in all_frontier_costs:
     sum_of_partition_costs += cost
 logger.info("all frontier costs, len: " + str(len(all_frontier_costs)) + ", sum: " 
     + str(sum_of_partition_costs))
-if logger.info_DETAILED_STATS:
+if PRINT_DETAILED_STATS:
     i = 0
     costs_per_line = 13
     for x in all_frontier_costs:
@@ -3996,7 +4120,7 @@ logger.info("")
 """
 # Doing this for each node in each partition now (next)
 logger.info("")
-if logger.info_DETAILED_STATS:
+if PRINT_DETAILED_STATS:
     logger.info("Node frontier_parent_tuples:")
     for node in nodes:
         logger.info(str(node.ID) + ": frontier_parent_tuples: ", end = " ")
@@ -4007,10 +4131,10 @@ else:
     logger.info("-- (" + str(len(x)) + ")")
 """
 logger.info("")
-if logger.info_DETAILED_STATS:
+if PRINT_DETAILED_STATS:
     logger.info("partition nodes' frontier_parent_tuples:")
     for x in partitions:
-        if logger.info_DETAILED_STATS:
+        if PRINT_DETAILED_STATS:
             print("-- (" + str(len(x)) + "):", end=" ")
             print_val = ""
             for node in x:
@@ -4026,10 +4150,10 @@ if logger.info_DETAILED_STATS:
 else:
     logger.info("-- (" + str(len(x)) + ")")
 logger.info("")
-if logger.info_DETAILED_STATS:
+if PRINT_DETAILED_STATS:
     logger.info("group nodes' frontier_parent_tuples:")
     for x in groups:
-        if logger.info_DETAILED_STATS:
+        if PRINT_DETAILED_STATS:
             print_val = "-- (" + str(len(x)) + "): "
             for node in x:
                 print_val += str(node.ID) + ": "
@@ -4050,7 +4174,7 @@ logger.info("Average number of frontier groups: " + (str(frontier_groups_sum / l
 logger.info("")
 logger.info("nodeIndex_to_partition_partitionIndex_group_groupIndex_map, len: " + str(len(nodeIndex_to_partition_partitionIndex_group_groupIndex_map)) + ":")
 logger.info("shadow nodes not mapped and not shown")
-if logger.info_DETAILED_STATS:
+if PRINT_DETAILED_STATS:
     for k, v in nodeIndex_to_partition_partitionIndex_group_groupIndex_map.items():
         logger.info((k, v))
     logger.info("")
@@ -4059,7 +4183,7 @@ else:
 logger.info("")
 logger.info("Partition Node parents (shad. node is a parent), len: " + str(len(partitions))+":")
 for x in partitions:
-    if logger.info_DETAILED_STATS:
+    if PRINT_DETAILED_STATS:
         #logger.info("-- (" + str(len(x)) + "):", end=" ")
         for node in x:
             print(node,end=":")
@@ -4076,7 +4200,7 @@ for x in partitions:
 logger.info("")
 logger.info("Group Node parents (shad. node is a parent), len: " + str(len(partitions))+":")
 for x in groups:
-    if logger.info_DETAILED_STATS:
+    if PRINT_DETAILED_STATS:
         #logger.info("-- (" + str(len(x)) + "):", end=" ")
         for node in x:
             print(node,end=":")
@@ -4093,7 +4217,7 @@ for x in groups:
 logger.info("")
 logger.info("Group Node num_children, len: " + str(len(groups))+":")
 for x in groups:
-    if logger.info_DETAILED_STATS:
+    if PRINT_DETAILED_STATS:
         #logger.info("-- (" + str(len(x)) + "):", end=" ")
         for node in x:
             print(str(node) + ":" + str(node.num_children),end=", ")
@@ -4102,7 +4226,7 @@ for x in groups:
         logger.info("-- (" + str(len(x)) + ")")
 logger.info("")
 logger.info("Partition_senders, len: " + str(len(Partition_senders)) + ":")
-if logger.info_DETAILED_STATS:
+if PRINT_DETAILED_STATS:
     for k, v in Partition_senders.items():
         logger.info((k, v))
     logger.info("")
@@ -4110,7 +4234,7 @@ else:
     logger.info("-- (" + str(len(Partition_senders)) + ")")
     logger.info("")
 logger.info("Partition_receivers, len: " + str(len(Partition_receivers)) + ":")
-if logger.info_DETAILED_STATS:
+if PRINT_DETAILED_STATS:
     for k, v in Partition_receivers.items():
         logger.info((k, v))
     logger.info("")
@@ -4118,7 +4242,7 @@ else:
     logger.info("-- (" + str(len(Partition_receivers)) + ")")
     logger.info("")
 logger.info("Group_senders, len: " + str(len(Group_senders)) + ":")
-if logger.info_DETAILED_STATS:
+if PRINT_DETAILED_STATS:
     for k, v in Group_senders.items():
         logger.info((k, v))
     logger.info("")
@@ -4126,7 +4250,7 @@ else:
     logger.info("-- (" + str(len(Group_senders)) + ")")
     logger.info("")
 logger.info("Group_receivers, len: " + str(len(Group_receivers)) + ":")
-if logger.info_DETAILED_STATS:
+if PRINT_DETAILED_STATS:
     for k, v in Group_receivers.items():
         logger.info((k, v))
     logger.info("")
