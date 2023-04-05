@@ -207,6 +207,10 @@ groups = []
 current_group = []
 patch_parent_mapping_for_partitions = []
 patch_parent_mapping_for_groups = []
+frontier_parent_partition_patch_tuple_list = []
+frontier_parent_group_patch_tuple_list = []
+sender_receiver_partition_patch_tuple_list = []
+sender_receiver_group_patch_tuple_list = []
 current_group_number = 1
 partition_names = []
 group_names = []
@@ -1077,6 +1081,10 @@ def dfs_parent(visited, node):  #function for dfs
                         # is (2-1) = 1, then the parent group we want is at groups[2-1], which is groups[1].
                         parent_group_position = len(groups) - (num_frontier_groups-parent_group_number)
                         parent_group = groups[parent_group_position]
+#rhc: ToDo we can get:               
+#    index_in_groups_list = partition_group_tuple[4]
+# and assert it is the same as parent_group_position, so in partition code for group
+# we used index_in_groups_list instead of computing parent_group_position.
                         logger.debug("add tuple to parent group " 
                             + "len(groups): " + str(len(groups)) + ", parent_group_number: " + str(parent_group_number)
                             + ", num_frontier_groups: " + str(num_frontier_groups) 
@@ -1084,7 +1092,17 @@ def dfs_parent(visited, node):  #function for dfs
                             + ", parent_group_parent_index: " + str(parent_group_parent_index)
                             + ", frontier_parent_tuple: " + str(frontier_parent_tuple))
                         parent_group[parent_group_parent_index].frontier_parents.append(frontier_parent_tuple)
-            
+         
+                        if not current_group_isLoop:
+                            position_in_frontier_parents_group_list = len(parent_group[parent_group_parent_index].frontier_parents)-1
+                            frontier_parent_group_patch_tuple = (parent_group_position,parent_group_parent_index,position_in_frontier_parents_group_list)
+                            frontier_parent_group_patch_tuple_list.append(frontier_parent_group_patch_tuple)
+
+                        # assert:
+                        if not current_partition_isLoop == current_group_isLoop:
+                            logger.error("[Error]: Internal Error: dfs_parent: current_partition_isLoop != current_group_isLoop")
+        
+#rhc: ToDO: Update this to use current name
                         # generate dependency in DAG
                         sending_group = "PR"+str(parent_partition_number)+"_"+str(parent_group_number)
                         receiving_group = "PR"+str(current_partition_number)+"_"+str(num_frontier_groups)
@@ -1096,6 +1114,12 @@ def dfs_parent(visited, node):  #function for dfs
                         if receiver_set == None:
                             Group_receivers[receiving_group] = set()
                         Group_receivers[receiving_group].add(sending_group)
+
+                        if not current_group_isLoop:
+                            sender_receiver_group_patch_tuple = (index_in_groups_list,receiving_group)
+                            sender_receiver_group_patch_tuple_list.append(sender_receiver_group_patch_tuple)
+        
+
                 else:
                     logger.error("[Error] Internal Error. dfs_parent: partition_group_tuple " 
                         + "is None should be unreachable.")
@@ -1260,6 +1284,31 @@ def dfs_parent(visited, node):  #function for dfs
                 #parent_group = groups[parent_group_number-1]
                 parent_group = groups[index_in_groups_list]
                 parent_group[parent_group_index].frontier_parents.append(frontier_parent_group_tuple)
+                # It's possible that even though we have not seen a loop yet in this partition,
+                # we will. At that point current_partition_isLoop will be set to true and the 
+                # current_partition_name will become an L-name, i.e., it will have an 'L'
+                # at the end. That means the frontier parent tuples created up to that point
+                # were using the wrong name and need to be "patched", i.e., corrected. So we
+                # save all the frontier tuples that are created with (not current_partition_name)
+                # so that when the partition ends, if we find current_partition_name is True we
+                # can iterate through this list and make the changes. If no loop is dected then 
+                # no changes need to be made.
+                if not current_partition_isLoop:
+                    position_in_frontier_parents_partition_list = len(parent_partition[parent_partition_index].frontier_parents)-1
+                    frontier_parent_partition_patch_tuple = (parent_partition_number,parent_partition_index,position_in_frontier_parents_partition_list)
+                    frontier_parent_partition_patch_tuple_list.append(frontier_parent_partition_patch_tuple)
+
+                # Note: in white board group 2_2, when 20 sees 2 it detects no loop
+                # and then it sees 19 and detects a loop, so 20 uses "PR2_2L" as
+                # the name of its group.
+                if not current_group_isLoop:
+                    position_in_frontier_parents_group_list = len(parent_group[parent_group_index].frontier_parents)-1
+                    frontier_parent_group_patch_tuple = (index_in_groups_list,parent_group_index,position_in_frontier_parents_group_list)
+                    frontier_parent_group_patch_tuple_list.append(frontier_parent_group_patch_tuple)
+
+                # assert:
+                if not current_partition_isLoop == current_group_isLoop:
+                    logger.error("[Error]: Internal Error: dfs_parent: current_partition_isLoop != current_group_isLoop")
 
                 # generate dependency in DAG
                 #
@@ -1280,6 +1329,18 @@ def dfs_parent(visited, node):  #function for dfs
                 if receiver_set == None:
                     Partition_receivers[receiving_partition] = set()
                 Partition_receivers[receiving_partition].add(sending_partition)
+                # It's possible that even though we have not seen a loop yet in this partition,
+                # we will. At that point current_partition_isLoop will be set to true and the 
+                # current_partition_name will become an L-name, i.e., it will have an 'L'
+                # at the end. That means the sender/receiver names used up to that point
+                # were using the wrong name and need to be "patched", i.e., corrected. So we
+                # save information about the senders/receivers that were created with (not current_partition_name)
+                # so that when the partition ends, if we find current_partition_name is True we
+                # can iterate through this list and make the changes to the sender/receiver names.
+                # If no loop is dected then no changes need to be made.
+                if not current_partition_isLoop:
+                    sender_receiver_partition_patch_tuple = (parent_partition_number,receiving_partition)
+                    sender_receiver_partition_patch_tuple_list.append(sender_receiver_partition_patch_tuple)
 
                 # generate dependency in DAG
                 #sending_group = "PR"+str(parent_partition_number)+"_"+str(parent_group_number)
@@ -1295,6 +1356,11 @@ def dfs_parent(visited, node):  #function for dfs
                 if receiver_set == None:
                     Group_receivers[receiving_group] = set()
                 Group_receivers[receiving_group].add(sending_group)
+
+                if not current_group_isLoop:
+                    sender_receiver_group_patch_tuple = (index_in_groups_list,receiving_group)
+                    sender_receiver_group_patch_tuple_list.append(sender_receiver_group_patch_tuple)
+ 
 
         else:
             logger.error("[Error] Internal Error. dfs_parent: partition_group_tuple" 
@@ -2214,6 +2280,72 @@ def bfs(visited, node): #function for BFS
                     # DAG, we will append an 'L' to the name.
                     Partition_loops.add(partition_name)
                     partition_name = partition_name + "L"
+                # Patch the partition name of the frontier_parent tuples. 
+                if current_partition_isLoop:
+                    # When the tuples in frontier_parent_partition_patch_tuple_list were created,
+                    # no loop had been detectd in the partition so we used a partitiob name that 
+                    # did not end in 'L'. At some point a loop was detected so we need to
+                    # change the partition name in the tuple so that it ends with 'L'. If no loop
+                    # is detectd, then current_partition_isLoop will be false and no changes
+                    # need to be made.
+                    logger.debug("XXXXXXXXXXX BFS: patch partition frontier_parent tuples: ")
+                    # frontier_parent_partition_patch_tuple was created as:
+                    #   (parent_partition_number,parent_partition_index,(current_partition_number,1,child_index_in_current_partition,current_partition_name))
+                    for frontier_parent_partition_patch_tuple in frontier_parent_partition_patch_tuple_list:
+                        # These values were used to create the tuples in dfs_parent()
+                        parent_partition_number = frontier_parent_partition_patch_tuple[0]
+                        parent_partition_index = frontier_parent_partition_patch_tuple[1]
+                        position_in_frontier_parents_partition_list = frontier_parent_partition_patch_tuple[2]
+
+                        # get the tuple that has the wrong name
+                        parent_partition = partitions[parent_partition_number-1]
+                        frontier_parents = parent_partition[parent_partition_index].frontier_parents
+                        frontier_parent_partition_tuple_to_patch = frontier_parents[position_in_frontier_parents_partition_list]
+                        logger.debug("XXXXXXX BFS: patching partition frontier_tuple name "
+                            + frontier_parent_partition_tuple_to_patch[3] + " to " + partition_name)
+                        # create a new tuple that reuses the first 3 fields and chnages the name in the last field
+                        first_field = frontier_parent_partition_tuple_to_patch[0]
+                        second_field = frontier_parent_partition_tuple_to_patch[1]
+                        third_field = frontier_parent_partition_tuple_to_patch[2]
+                        new_frontier_parent_partition_tuple = (first_field,second_field,third_field,partition_name)
+                        # delete the old tuples
+                        del frontier_parents[position_in_frontier_parents_partition_list]
+                        # append the new tuple, order of tuples may change but order is not important
+                        frontier_parents.append(new_frontier_parent_partition_tuple)
+                        logger.debug("XXXXXXX BFS:  new frontier_parents: " + str(frontier_parents))
+
+                frontier_parent_partition_patch_tuple_list.clear()
+
+                if current_partition_isLoop:
+                    # When the tuples in sender_receiver_partition_patch_tuple_list were created,
+                    # no loop had been detectd in the partition so we used a partitiom name 
+                    # for the receiver name that did not end in 'L'. At some point a loop was detected so we need to
+                    # change the receiver name so that it ends with 'L'. If no loop
+                    # is detectd, then current_partition_isLoop will be false and no changes
+                    # need to be made.
+                    logger.debug("XXXXXXXXXXX BFS: patch sender/receiver names: ")
+                    for sender_receiver_partition_patch_tuple in sender_receiver_partition_patch_tuple_list:
+                        # sender_receiver_partition_patch_tuple crated as:
+                        #   sender_receiver_partition_patch_tuple = (parent_partition_number,receiving_partition)
+                        parent_partition_number = sender_receiver_partition_patch_tuple[0]
+                        receiving_partition = sender_receiver_partition_patch_tuple[1]
+
+                        sending_partition = partition_names[parent_partition_number-1]
+                        sender_set = Partition_senders[sending_partition]
+                        logger.debug("XXXXXXX BFS: patching sender_set receiver name "
+                            + receiving_partition + " to " + partition_name)
+                        sender_set.remove(receiving_partition)
+                        sender_set.add(partition_name)
+                        logger.debug("XXXXXXX BFS:  new sender_Set: " + str(sender_set))
+
+                        logger.debug("XXXXXXX BFS: patching Partition_receivers receiver name "
+                            + receiving_partition + " to " + partition_name)
+                        Partition_receivers[partition_name] = Partition_receivers[receiving_partition]
+                        del Partition_receivers[receiving_partition]
+                        logger.debug("XXXXXXX BFS:  new Partition_receivers[partition_name]: " + str(Partition_receivers[partition_name]))
+                
+                sender_receiver_partition_patch_tuple_list.clear()
+
                 current_partition_isLoop = False
                 partition_names.append(partition_name)
 
@@ -2462,8 +2594,15 @@ def bfs(visited, node): #function for BFS
 
                 patch_parent_mapping_for_groups = []
 
-                #global current_group
-                #global groups
+#rhc: 1. patch the frontier groups and group receiver names
+# 2. move parent mapping patch to after other two like for partition?
+# 3. clear instead of re-init?
+# 4. Really need to patch groups? If no assert no patching. Note:
+#       we find loops on backup nd we don't do atch stuff until after
+#       we see all backups, so can we do patch stuff without knowing 
+#       about loop that will be detected later?
+
+                # Note: append() uses a shallow copy.
                 groups.append(current_group)
                 current_group = []
                 group_name = "PR" + str(current_partition_number) + "_" + str(current_group_number)
