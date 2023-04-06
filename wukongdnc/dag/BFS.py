@@ -2291,7 +2291,6 @@ def bfs(visited, node): #function for BFS
                 partitions.append(current_partition.copy())
                 current_partition = []
 
-#rhc: ToDo: generate/logger.info partition name for partition_names here (like for groups)
                 partition_name = "PR" + str(current_partition_number) + "_1"
                 global current_partition_isLoop
                 if current_partition_isLoop:
@@ -2342,7 +2341,7 @@ def bfs(visited, node): #function for BFS
                     # change the receiver name so that it ends with 'L'. If no loop
                     # is detectd, then current_partition_isLoop will be false and no changes
                     # need to be made.
-                    logger.debug("XXXXXXXXXXX BFS: patch sender/receiver names: ")
+                    logger.debug("XXXXXXXXXXX BFS: patch partition sender/receiver names: ")
                     for sender_receiver_partition_patch_tuple in sender_receiver_partition_patch_tuple_list:
                         # sender_receiver_partition_patch_tuple crated as:
                         #   sender_receiver_partition_patch_tuple = (parent_partition_number,receiving_partition)
@@ -2350,12 +2349,12 @@ def bfs(visited, node): #function for BFS
                         receiving_partition = sender_receiver_partition_patch_tuple[1]
 
                         sending_partition = partition_names[parent_partition_number-1]
-                        sender_set = Partition_senders[sending_partition]
-                        logger.debug("XXXXXXX BFS: patching sender_set receiver name "
+                        sender_name_set = Partition_senders[sending_partition]
+                        logger.debug("XXXXXXX BFS: patching partition sender_set receiver name "
                             + receiving_partition + " to " + partition_name)
-                        sender_set.remove(receiving_partition)
-                        sender_set.add(partition_name)
-                        logger.debug("XXXXXXX BFS:  new sender_Set: " + str(sender_set))
+                        sender_name_set.remove(receiving_partition)
+                        sender_name_set.add(partition_name)
+                        logger.debug("XXXXXXX BFS:  new partition sender_Set: " + str(sender_name_set))
 
                         logger.debug("XXXXXXX BFS: patching Partition_receivers receiver name "
                             + receiving_partition + " to " + partition_name)
@@ -2369,9 +2368,9 @@ def bfs(visited, node): #function for BFS
                 partition_names.append(partition_name)
 
                 global patch_parent_mapping_for_partitions
-                logger.debug("partition_nodes to patch: ")
+                logger.debug("BFS: partition_nodes to patch: ")
                 for parent_tuple in patch_parent_mapping_for_partitions:
-                    logger.debug("parent_tuple: " + str(parent_tuple) + "," )
+                    logger.debug("BFS: parent_tuple: " + str(parent_tuple) + "," )
                     # where: patch_tuple = (parent_index,partition_node.parents,
                     # group_node.parents,i,node.ID)
                     #
@@ -2407,12 +2406,12 @@ def bfs(visited, node): #function for BFS
                         # assert group_index is also -1
                         list_of_parents_of_partition_node[i] = partition_index_of_parent
                         #list_of_parents_of_group_node[i] = group_index_of_parent
-                        logger.debug("end of frontier: remapping parent " + str(parent_index)
+                        logger.debug("BFS: end of frontier: remapping parent " + str(parent_index)
                             + " of " + str(node_ID) +  " to " + str(partition_index_of_parent) 
                             + " for partition node.")
                             #+ group_index_of_parent + " for group node")
                     else:
-                        logger.error("global map index of " + parent_index + " is -1")
+                        logger.error("BFS: global map index of " + parent_index + " is -1")
 
                 # Q: where do this? After partition is done since we need to patch
                 # partition then and that is after last group is done.
@@ -2438,7 +2437,7 @@ def bfs(visited, node): #function for BFS
                 total_loop_nodes_added += loop_nodes_added
                 loop_nodes_added = 0
 
-                """
+                """ GLOBAL SCC GRAPH HERE ***
                 global scc_graph
                 scc_graph.logger.infoEdges()
                 scc_graph.logger.info_ID_map()
@@ -2477,7 +2476,7 @@ def bfs(visited, node): #function for BFS
                 current_group_number = 1
                 #global frontier_groups_sum
                 global num_frontier_groups
-                logger.info("Debug: frontier groups: " + str(num_frontier_groups))
+                logger.info("BFS: frontier groups: " + str(num_frontier_groups))
 
                 # use this if to filter the very small numbers of groups
                 #if frontier_groups > 10:
@@ -2578,18 +2577,77 @@ def bfs(visited, node): #function for BFS
                     group_name = group_name + "L"
                     
 
-#rhc: 1. patch the frontier groups and group receiver names
-# 3. clear instead of re-init?
-# 4. Really need to patch groups? If no assert no patching. Note:
+#rhc:
+# 1. clear instead of re-init?
+# 2. Really need to patch groups? If no assert no patching. Note:
 #       we find loops on backup nd we don't do atch stuff until after
 #       we see all backups, so can we do patch stuff without knowing 
 #       about loop that will be detected later?
 
                 if current_group_isLoop:
-                    pass
+                    # When the tuples in frontier_parent_partition_patch_tuple_list were created,
+                    # no loop had been detectd in the partition so we used a partitiob name that 
+                    # did not end in 'L'. At some point a loop was detected so we need to
+                    # change the partition name in the tuple so that it ends with 'L'. If no loop
+                    # is detectd, then current_partition_isLoop will be false and no changes
+                    # need to be made.
+                    logger.debug("XXXXXXXXXXX BFS: patch group frontier_parent tuples: ")
+                    # frontier_parent_partition_patch_tuple was created as:
+                    #   (parent_partition_number,parent_partition_index,(current_partition_number,1,child_index_in_current_partition,current_partition_name))
+                    for frontier_parent_group_patch_tuple in frontier_parent_group_patch_tuple_list:
+                        # These values were used to create the tuples in dfs_parent()
+                        index_in_groups_list = frontier_parent_group_patch_tuple[0]
+                        parent_group_parent_index = frontier_parent_group_patch_tuple[1]
+                        position_in_frontier_parents_group_list = frontier_parent_group_patch_tuple[2]
+
+                        # get the tuple that has the wrong name
+                        parent_group = groups[index_in_groups_list]
+                        frontier_parents = parent_group[parent_group_parent_index].frontier_parents
+                        frontier_parent_group_tuple_to_patch = frontier_parents[position_in_frontier_parents_group_list]
+                        logger.debug("XXXXXXX BFS: patching group frontier_tuple name "
+                            + frontier_parent_group_tuple_to_patch[3] + " to " + group_name)
+                        # create a new tuple that reuses the first 3 fields and chnages the name in the last field
+                        first_field = frontier_parent_group_tuple_to_patch[0]
+                        second_field = frontier_parent_group_tuple_to_patch[1]
+                        third_field = frontier_parent_group_tuple_to_patch[2]
+                        new_frontier_parent_group_tuple = (first_field,second_field,third_field,group_name)
+                        # delete the old tuples
+                        del frontier_parents[position_in_frontier_parents_group_list]
+                        # append the new tuple, order of tuples may change but order is not important
+                        frontier_parents.append(new_frontier_parent_group_tuple)
+                        logger.debug("XXXXXXX BFS:  new frontier_parents: " + str(frontier_parents))
+
+                frontier_parent_group_patch_tuple_list.clear()
 
                 if current_group_isLoop:
-                    pass
+                    # When the tuples in sender_receiver_partition_patch_tuple_list were created,
+                    # no loop had been detectd in the partition so we used a partitiom name 
+                    # for the receiver name that did not end in 'L'. At some point a loop was detected so we need to
+                    # change the receiver name so that it ends with 'L'. If no loop
+                    # is detectd, then current_partition_isLoop will be false and no changes
+                    # need to be made.
+                    logger.debug("XXXXXXXXXXX BFS: patch group sender/receiver names: ")
+                    for sender_receiver_group_patch_tuple in sender_receiver_group_patch_tuple_list:
+                        # sender_receiver_partition_patch_tuple crated as:
+                        #   sender_receiver_partition_patch_tuple = (parent_partition_number,receiving_partition)
+                        index_in_groups_list = sender_receiver_group_patch_tuple[0]
+                        receiving_group = sender_receiver_group_patch_tuple[1]
+
+                        sending_group = partition_names[index_in_groups_list]
+                        sender_name_set = Group_senders[sending_group]
+                        logger.debug("XXXXXXX BFS: patching group sender_set receiving_group "
+                            + receiving_group + " to " + group_name)
+                        sender_name_set.remove(receiving_group)
+                        sender_name_set.add(group_name)
+                        logger.debug("XXXXXXX BFS:  new group sender_Set: " + str(sender_name_set))
+
+                        logger.debug("XXXXXXX BFS: patching Group_receivers receiver name "
+                            + receiving_group + " to " + group_name)
+                        Group_receivers[group_name] = Group_receivers[receiving_group]
+                        del Group_receivers[receiving_group]
+                        logger.debug("XXXXXXX BFS:  new Group_receivers[group_name]: " + str(Group_receivers[group_name]))
+                
+                sender_receiver_group_patch_tuple_list.clear()
 
                 current_group_isLoop = False
                 current_group_number += 1
