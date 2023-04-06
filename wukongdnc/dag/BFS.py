@@ -13,12 +13,12 @@ import copy
 #from .DAG_info import DAG_Info
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.ERROR)
 #logger.setLevel(logging.INFO)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 #formatter = logging.Formatter('%(levelname)s: %(message)s')
 ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
+ch.setLevel(logging.ERROR)
 #ch.setLevel(logging.INFO)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
@@ -3913,7 +3913,7 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
 
         i=0
         for tup in input_tuples:
-            print("tup:" + str(tup))
+            logger.debug("PageRank_Function: input tuple:" + str(tup))
             shadow_node_index = tup[0]
             pagerank_value = tup[1]
             # assert
@@ -4029,14 +4029,14 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
                     output_list.append(output_tuple)
                     PageRank_output[partition_or_group_name] = output_list
         #if (debug_pagerank):
-        #print("PageRank output tuples:")
-        #print_val = ""
-        #for k, v in PageRank_output.items():
-        #    print_val += "(%s, %s) " % (k, v)
-        #    # print((k, v),end=" ")
+        print("PageRank output tuples for " + task_file_name + ":")
+        print_val = ""
+        for k, v in PageRank_output.items():
+            #print_val += "(%s, %s) " % (k, v)
+            print((k, v),end=" ")
         #print(print_val)
-        #print()
-        #print()
+        print("")
+        print("")
         return PageRank_output
 
 def PageRank_Task(task_file_name,total_num_nodes,payload,results):
