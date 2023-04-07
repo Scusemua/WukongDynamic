@@ -11,14 +11,15 @@ import copy
 
 #from .DFS_visit import state_info
 #from .DAG_info import DAG_Info
+#from .DAG_executor_constants import run_all_tasks_locally, using_threads_not_processes
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
+logger.setLevel(logging.DEBUG)
 #logger.setLevel(logging.INFO)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 #formatter = logging.Formatter('%(levelname)s: %(message)s')
 ch = logging.StreamHandler()
-ch.setLevel(logging.ERROR)
+ch.setLevel(logging.DEBUG)
 #ch.setLevel(logging.INFO)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
@@ -803,6 +804,12 @@ def dfs_parent(visited, node):  #function for dfs
 
         index_of_parent += 1
 
+    #N ote: If a loops is detecte current_partition_isLoop and current_group_isLoop are
+    # both set to True. current_partition_isLoop remains True until the end 
+    # of the partition is reached. current_group_isLoop is set to False when the 
+    # end of the group is reached. So it is possible that current_partition_isLoop is
+    # True and current_partition_isLoop is False.
+
     # The name of the current partition/group depends on whether it
     # has a loop. If so we add an 'L' to the end of the name.
     # Example: "PR2_2" becomes "PR2_2L".
@@ -1090,28 +1097,31 @@ def dfs_parent(visited, node):  #function for dfs
                         parent_group_position = len(groups) - (num_frontier_groups-parent_group_number)
                         # asssert
                         if not index_in_groups_list == parent_group_position:
-                            logger.error("[Error]: Internal Error: dfs_parent:"
-                                + " index_in_groups_list != parent_group_position")
+                            logger.error("[Error]: Internal Error: dfs_parent: for parent " + str(parent_index)
+                                + " index_in_groups_list != parent_group_position"
+                                + " index_in_groups_list: " + str(index_in_groups_list)
+                                + " parent_group_position: " + str(parent_group_position))
 
                         parent_group = groups[index_in_groups_list]
 
-                        logger.debug("add tuple to parent group " 
-                            + "len(groups): " + str(len(groups)) + ", parent_group_number: " + str(parent_group_number)
+                        logger.debug("groupOOOOOOOOOOOOOOO add tuple to parent group: ")
+                        for n in parent_group:
+                            logger.debug(str(n))
+                        logger.debug("len(groups): " + str(len(groups)) + ", parent_group_number: " + str(parent_group_number)
                             + ", num_frontier_groups: " + str(num_frontier_groups) 
                             + ", index_in_groups_list: " + str(index_in_groups_list)
                             + ", parent_group_parent_index: " + str(parent_group_parent_index)
                             + ", frontier_parent_tuple: " + str(frontier_parent_tuple))
                         parent_group[parent_group_parent_index].frontier_parents.append(frontier_parent_tuple)
-         
+                        logger.debug("parent_group[parent_group_parent_index].ID: " + str(parent_group[parent_group_parent_index].ID))
+                        logger.debug("frontier tuples:")
+                        for t in  parent_group[parent_group_parent_index].frontier_parents:
+                            logger.debug(str(t))
                         if not current_group_isLoop:
                             position_in_frontier_parents_group_list = len(parent_group[parent_group_parent_index].frontier_parents)-1
                             frontier_parent_group_patch_tuple = (index_in_groups_list,parent_group_parent_index,position_in_frontier_parents_group_list)
                             frontier_parent_group_patch_tuple_list.append(frontier_parent_group_patch_tuple)
-
-                        # assert:
-                        if not current_partition_isLoop == current_group_isLoop:
-                            logger.error("[Error]: Internal Error: dfs_parent: current_partition_isLoop != current_group_isLoop")
-        
+       
                         # generate dependency in DAG
                         #sending_group = "PR"+str(parent_partition_number)+"_"+str(parent_group_number)
                         # index in groups list is the actual index, starting with index 0
@@ -1287,6 +1297,8 @@ def dfs_parent(visited, node):  #function for dfs
                 parent_partition_parent_index = partition_group_tuple[1]
                 parent_group_number = partition_group_tuple[2]
                 parent_group_parent_index = partition_group_tuple[3]
+                        
+
                 # cannot use parent_group_number to index groups; parent_group_number
                 # is a number within a partition, e.g., PR2_2 has a group index of 2,
                 # but this is not necessarily the 2nd group overall.
@@ -1295,7 +1307,7 @@ def dfs_parent(visited, node):  #function for dfs
                 # partition numbers start at 1 not 0
                 parent_partition = partitions[parent_partition_number-1]
                 parent_partition[parent_partition_parent_index].frontier_parents.append(frontier_parent_partition_tuple)
-                logger.debug ("add frontier tuple to parent group " + str(parent_group_number-1))
+                logger.debug ("partitionOOOOOOOOOOOOOOOOOOOOO add frontier tuple to parent group ")
                 #parent_group = groups[parent_group_number-1]
                 parent_group = groups[index_in_groups_list]
                 parent_group[parent_group_parent_index].frontier_parents.append(frontier_parent_group_tuple)
@@ -1320,10 +1332,6 @@ def dfs_parent(visited, node):  #function for dfs
                     position_in_frontier_parents_group_list = len(parent_group[parent_group_parent_index].frontier_parents)-1
                     frontier_parent_group_patch_tuple = (index_in_groups_list,parent_group_parent_index,position_in_frontier_parents_group_list)
                     frontier_parent_group_patch_tuple_list.append(frontier_parent_group_patch_tuple)
-
-                # assert:
-                if not current_partition_isLoop == current_group_isLoop:
-                    logger.error("[Error]: Internal Error: dfs_parent: current_partition_isLoop != current_group_isLoop")
 
                 # generate dependency in DAG
                 #
@@ -1722,10 +1730,11 @@ def dfs_parent(visited, node):  #function for dfs
 # partition number i is always in position i-1 of the partitions list. We also
 # save 8's group number and group index, and 8's position in groups so we can 
 # get 8's group from the groups list when we need it.
-            index_in_groups_list = num_frontier_groups
+            index_in_groups_list = frontier_groups_sum-1
             pg_tuple = (partition_number,partition_index,group_number,group_index,index_in_groups_list)
             nodeIndex_to_partition_partitionIndex_group_groupIndex_map[partition_node.ID] = pg_tuple
-
+            logger.debug("HHHHHHHHHHHHHHHH dfs_parent: pg_tuple generate for " + str(partition_node.ID)
+                + str(pg_tuple))
         else:
             logger.debug ("dfs_parent do not add " + str(node.ID) + " to partition "
                 + current_partition_number + " since it is already in partition " 
@@ -1891,7 +1900,7 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
                     partition_index = len(current_partition)-1
                     group_number = current_group_number
                     group_index = len(current_group)-1
-                    index_in_groups_list = num_frontier_groups
+                    index_in_groups_list = frontier_groups_sum-1
                     pg_tuple = (partition_number,partition_index,group_number,group_index,index_in_groups_list)
                     nodeIndex_to_partition_partitionIndex_group_groupIndex_map[partition_node.ID] = pg_tuple
 
@@ -1927,7 +1936,7 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
                     partition_index = len(current_partition)-1
                     group_number = current_group_number
                     group_index = len(current_group)-1
-                    index_in_groups_list = num_frontier_groups
+                    index_in_groups_list = frontier_groups_sum-1
                     pg_tuple = (partition_number,partition_index,group_number,group_index,index_in_groups_list)
                     nodeIndex_to_partition_partitionIndex_group_groupIndex_map[partition_node.ID] = pg_tuple
 
@@ -1989,7 +1998,7 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
                     partition_index = len(current_partition)-1
                     group_number = current_group_number
                     group_index = len(current_group)-1
-                    index_in_groups_list = num_frontier_groups
+                    index_in_groups_list = frontier_groups_sum -1
                     pg_tuple = (partition_number,partition_index,group_number,group_index,index_in_groups_list)
                     nodeIndex_to_partition_partitionIndex_group_groupIndex_map[partition_node.ID] = pg_tuple
 
@@ -2050,10 +2059,9 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
                     partition_index = len(current_partition)-1
                     group_number = current_group_number
                     group_index = len(current_group)-1
-                    index_in_groups_list = num_frontier_groups
+                    index_in_groups_list = frontier_groups_sum-1
                     pg_tuple = (partition_number,partition_index,group_number,group_index,index_in_groups_list)
                     nodeIndex_to_partition_partitionIndex_group_groupIndex_map[partition_node.ID] = pg_tuple
-
 
                 else:
                     logger.debug ("dfs_parent do not add " + str(node.ID) + " to partition "
@@ -2092,9 +2100,11 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
             partition_index = len(current_partition)-1
             group_number = current_group_number
             group_index = len(current_group)-1
-            index_in_groups_list = num_frontier_groups
+            index_in_groups_list = frontier_groups_sum-1
             pg_tuple = (partition_number,partition_index,group_number,group_index,index_in_groups_list)
             nodeIndex_to_partition_partitionIndex_group_groupIndex_map[partition_node.ID] = pg_tuple
+            logger.debug("HHHHHHHHHHHHHHHH dfs_parent: pg_tuple generate for " + str(partition_node.ID)
+                + str(pg_tuple))
 
         else:
             logger.debug("dfs_parent do not add " + str(node.ID) + " to partition "
@@ -2132,6 +2142,10 @@ def bfs(visited, node): #function for BFS
     #global scc_num_vertices
     #scc_num_vertices += 1
     #dfs_parent(visited, graph, node)
+    global num_frontier_groups
+    num_frontier_groups = 1
+    global frontier_groups_sum
+    frontier_groups_sum = 1
     dfs_parent(visited, node)
     #logger.debug("BFS set V to " + str(scc_num_vertices))
     #scc_graph.setV(scc_num_vertices)
@@ -2142,9 +2156,9 @@ def bfs(visited, node): #function for BFS
     global groups
     groups.append(current_group)
     current_group = []
-    global frontier_groups_sum
+    #global frontier_groups_sum
     # root group
-    frontier_groups_sum += 1
+    #frontier_groups_sum += 1
 
     # this first group ends here after first dfs_parent
     global nodeIndex_to_groupIndex_maps
@@ -2475,12 +2489,13 @@ def bfs(visited, node): #function for BFS
                 current_partition_number += 1
                 current_group_number = 1
                 #global frontier_groups_sum
-                global num_frontier_groups
+                #global num_frontier_groups
                 logger.info("BFS: frontier groups: " + str(num_frontier_groups))
 
                 # use this if to filter the very small numbers of groups
                 #if frontier_groups > 10:
-                frontier_groups_sum += num_frontier_groups
+                # frontier_groups_sum += num_frontier_groups
+                logger.info("BFS: frontier_groups_sum: " + str(frontier_groups_sum))
                 num_frontier_groups = 0
                 #scc_graph = Graph(0)
 #rhc: Q: 
@@ -2536,6 +2551,7 @@ def bfs(visited, node): #function for BFS
                 dfs_parent_start_frontier_size = len(frontier)
 
                 num_frontier_groups += 1
+                frontier_groups_sum += 1
                 #dfs_p_new(visited, graph, neighbor)
                 #dfs_parent(visited, graph, neighbor) 
                 dfs_parent(visited, neighbor)
@@ -2706,6 +2722,26 @@ def bfs(visited, node): #function for BFS
                 # track groups here; track partitions when frontier ends above
                 nodeIndex_to_groupIndex_maps.append(nodeIndex_to_groupIndex_map)
                 nodeIndex_to_groupIndex_map = {}
+
+                logger.info("")
+                if PRINT_DETAILED_STATS:
+                    logger.info("KKKKKKKKKKKKKKKKKKKKK group nodes' frontier_parent_tuples:")
+                    for x in groups:
+                        if PRINT_DETAILED_STATS:
+                            print_val = "-- (" + str(len(x)) + "): "
+                            for node in x:
+                                print_val += str(node.ID) + ": "
+                                # logger.info(node.ID,end=": ")
+                                for parent_tuple in node.frontier_parents:
+                                    print_val += str(parent_tuple) + " "
+                                    # print(str(parent_tuple), end=" ")
+                            logger.info(print_val)
+                            logger.info("")
+                        else:
+                            logger.info("-- (" + str(len(x)) + ")")
+                else:
+                    logger.info("-- (" + str(len(x)) + ")")
+                logger.info("")
 
                 dfs_parent_end_partition_size = len(current_partition)
                 dfs_parent_end_frontier_size = len(frontier)
@@ -3856,6 +3892,10 @@ def PageRank_Function_Driver(task_file_name,total_num_nodes,results_dictionary):
     output = PageRank_Function(task_file_name,total_num_nodes,input_tuples)
     return output
 
+#results = []
+#for i in range(num_nodes+1):
+#    results.append(0.0)
+
 #def PageRank_Function(task_file_name,total_num_nodes,input_tuples,results):
 def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
         # task_file_name is, e.g., "PR1_1" not "PR1_1.pickle"
@@ -3987,15 +4027,17 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
             PageRank_Function_one_iter(partition_or_group,damping_factor,one_minus_dumping_factor,random_jumping,total_num_nodes,num_nodes_for_pagerank_computation)
         
         """
-        logger.info("PageRanks: ")
-        for i in range(num_nodes_for_pagerank_computation):
-            if not partition_or_group[i].isShadowNode:
-                my_ID = str(partition_or_group[i].ID)
-                results[partition_or_group[i].ID] = partition_or_group[i].pagerank
-            else:
-                my_ID = str(partition_or_group[i].ID) + "-s"
-            logger.info(partition_or_group[i].toString_PageRank())
+        if run_all_tasks_locally and using_threads_not_processes:
+            logger.info("PageRanks: ")
+            for i in range(num_nodes_for_pagerank_computation):
+                if not partition_or_group[i].isShadowNode:
+                    my_ID = str(partition_or_group[i].ID)
+                    results[partition_or_group[i].ID] = partition_or_group[i].pagerank
+                else:
+                    my_ID = str(partition_or_group[i].ID) + "-s"
+                logger.info(partition_or_group[i].toString_PageRank())
         """
+
         if (debug_pagerank):
             logger.debug("")
             logger.debug("Frontier Parents:")
