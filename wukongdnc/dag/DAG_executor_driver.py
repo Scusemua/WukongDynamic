@@ -1423,7 +1423,6 @@ def run():
     logger.debug("DAG_executor_driver: Sleeping 3.0 seconds...")
     time.sleep(3.0)
     print("DAG_executor_driver: DAG_Execution finished in %f seconds." % duration)
-		
     #ToDo:  close_all(websocket)
 
 # create fanin and faninNB messages to be passed to the tcp_server for creating

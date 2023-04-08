@@ -208,7 +208,7 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
             keyword_arguments['calling_task_name'] = calling_task_name
         else:
             
-            logger.debug(thread_name + ": process_faninNBs: output:" + str(output))
+            logger.debug("**********************" + thread_name + ": process_faninNBs:  for " + calling_task_name + " faninNB "  + name+ " output is :" + str(output))
 
             #if name.endswith('L'):  
             #    keyword_arguments['result'] = output[name[:-1]]
