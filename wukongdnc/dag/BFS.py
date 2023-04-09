@@ -300,9 +300,12 @@ class Node:
         self.ID = ID
         self.parents = []
         self.children = []
+        self.num_children  = 0
 #rhc: ToDo
         # this will be in Partition_Node not here
         self.pagerank = 0.00
+        # Same for prev - we have these here so we can compute PageRank over all Nodes.
+        self.prev = 0.00
         # a list of tuples (frontier, frontier_group) if this is a parent node
         # on the frontier (and so must be sent to its children's partitions).
         # We may send it to multiple chldren in differetn partitions or
@@ -329,6 +332,42 @@ class Node:
         if self.isShadowNode:
             shadow = "-s"
         return str(self.ID) + shadow
+
+    def update_PageRank_of_PageRank_Function_loop(self, partition_or_group,damping_factor,
+        one_minus_dumping_factor,random_jumping,total_num_nodes):
+        parent_nodes = self.parents
+        if not self.isShadowNode:
+            my_ID = str(self.ID)
+        else:
+            my_ID = str(self.ID) + "-s"
+
+        global debug_pagerank
+        #logger.debug("debug_pagerank: "  + str(debug_pagerank))
+        if (debug_pagerank):
+            logger.debug("update_pagerank: node " + my_ID)
+            logger.debug("update_pagerank: parent_nodes: " + str(parent_nodes))
+            logger.debug("update_pagerank: num_children: " + str(self.num_children))
+        
+        #if self.ID == 16:
+        #    parent1 = partition_or_group[1]
+        #    parent2 = partition_or_group[2]
+        #    if (debug_pagerank):
+        #        logger.info("16 parent : " + str(parent1.ID) + " num_children: " + str(parent1.num_children))
+        #       logger.info("16 parent : " + str(parent2.ID) + " num_children: " + str(parent2.num_children))
+        
+        #Note: a paent has at least one child so num_children is not 0
+        pagerank_sum = sum((partition_or_group[node_index].prev / partition_or_group[node_index].num_children) for node_index in parent_nodes)
+        if (debug_pagerank):
+            logger.debug("update_pagerank: pagerank_sum: " + str(pagerank_sum))
+        #random_jumping = damping_factor / total_num_nodes
+        if (debug_pagerank):
+            logger.debug("damping_factor:" + str(damping_factor) + " 1-damping_factor:" + str(1-damping_factor) + " num_nodes: " + str(total_num_nodes) + " random_jumping: " + str(random_jumping))
+        #self.pagerank = random_jumping + ((1-damping_factor) * pagerank_sum)
+        self.pagerank = random_jumping + (one_minus_dumping_factor * pagerank_sum)
+        if (debug_pagerank):
+            logger.debug ("update_pagerank: pagerank of node: " + str(self.ID) + ": " + str(self.pagerank))
+            logger.debug("")
+
 
 class Partition_Node:
     def __init__(self,ID):
@@ -2823,8 +2862,8 @@ def input_graph():
     num_edges = int(words[3])
     logger.info("input_file: read: num_nodes:" + str(num_nodes) + " num_edges:" + str(num_edges))
 
-    # if num_nodes is 100, this fills nodes[0] ... nodes[100]
-    # Note: nodes[0] is not used
+    # if num_nodes is 100, this fills nodes[0] ... nodes[100], length of nodes is 101
+    # Note: nodes[0] is not used, 
     for x in range(num_nodes+1):
         nodes.append(Node(x))
 
@@ -2913,6 +2952,13 @@ def input_graph():
     i = 1
     while i <= num_nodes:
         node = nodes[i]
+
+#rhc: Too: Note: nodes has num_children so we can use the same pagerank
+# computation on a Node that we do on a partition_node. A Node does not 
+# really need num_children.
+        node.num_children = len(node.children)
+
+
         #logger.debug (str(i) + ": get children: " + str(len(node.children)))
         count_child_edges += len(node.children)
         i += 1
@@ -2998,6 +3044,74 @@ G = nx.DiGraph()
 G.add_edges_from(visual)
 logger.debug(nx.is_connected(G))
 """
+def PageRank_Function_Main(nodes,total_num_nodes):
+    if (debug_pagerank):
+        logger.debug("PageRank_Function output partition_or_group (node:parents):")
+        for node in nodes:
+            #logger.debug(node,end=":")
+            print_val = str(node) + ":"
+            for parent in node.parents:
+                print_val += str(parent) + " "
+                #logger.debug(parent,end=" ")
+            if len(node.parents) == 0:
+                #logger.debug(",",end=" ")
+                print_val += ", "
+            else:
+                #logger.debug(",",end=" ")
+                print_val += ", "
+            logger.debug(print_val)
+        logger.debug("")
+        logger.debug("PageRank_Function output partition_or_group (node:num_children):")
+        print_val = ""
+        for node in nodes:
+            print_val += str(node)+":"+str(node.num_children) + ", "
+            # logger.debug(str(node)+":"+str(node.num_children),end=", ")
+        logger.debug(print_val)
+        logger.debug("")
+        logger.debug("")
+        # node's children set when the partition/grup node created
+
+    damping_factor=0.15
+    random_jumping = damping_factor / total_num_nodes
+    one_minus_dumping_factor = 1 - damping_factor
+
+    iteration = int(1000)
+
+    num_nodes_for_pagerank_computation = len(nodes)
+
+    for index in range(num_nodes_for_pagerank_computation):
+        nodes[index].prev = (1/total_num_nodes)
+
+    for i in range(1,iteration+1): # if 10 iterations then i ranges from 1 to 10
+        if (debug_pagerank):
+            logger.debug("***** PageRank: iteration " + str(i))
+            logger.debug("")
+
+        for index in range(1,num_nodes_for_pagerank_computation):
+            nodes[index].update_PageRank_of_PageRank_Function_loop(nodes, 
+                damping_factor,one_minus_dumping_factor,random_jumping,total_num_nodes)
+        for index in range(1,num_nodes_for_pagerank_computation):
+            nodes[index].prev = nodes[index].pagerank
+    
+    print("PageRank result:")
+    for i in range(num_nodes_for_pagerank_computation):
+        print(str(nodes[i].ID) + ":" + str(nodes[i].pagerank))
+    print()
+    print()
+
+PageRank_Function_Main(nodes,num_nodes)
+# where if we input 20 nodes, nodes[] has Nodes in nodes[0] .. nodes[21]
+# and nodes[] has a length of 21.
+# The pagernk computation is the range:
+# for index in range(1,num_nodes) so from Node 1 to Node 20, where num_nodes is 21.
+
+#Note:
+#Informs the logging system to perform an orderly shutdown by flushing 
+#and closing all handlers. This should be called at application exit and no 
+#further use of the logging system should be made after this call.
+#logging.shutdown()
+#time.sleep(3)   #not needed due to shutdwn
+#os._exit(0)
 
 #bfs(visited, graph, '5')    # function calling
 # example: num_nodes = 100, so Nodes in nodes[1] to nodes[100]
@@ -3861,8 +3975,6 @@ def PageRank_Function_Driver(task_file_name,total_num_nodes,results_dictionary):
     output = PageRank_Function(task_file_name,total_num_nodes,input_tuples)
     return output
 
-#rhc: ToDO: Do a version of this for al nodes, with 10 iterations:
-# PageRank_Function_Main(nodes,total_num_nodes):
 
 #def PageRank_Function(task_file_name,total_num_nodes,input_tuples,results):
 def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
@@ -3913,9 +4025,9 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
 
         iteration = -1
         if not task_file_name.endswith('L'):
-            iteration=int(1)
+            iteration = int(1)
         else:
-            iteration=int(10)
+            iteration = int(1000)
 
         num_nodes_for_pagerank_computation = len(partition_or_group)
 
