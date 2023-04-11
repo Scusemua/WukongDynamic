@@ -3,14 +3,14 @@ import logging
 
 logger = None
 logger = logging.getLogger(__name__)
-"""
+
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
-"""
+
 
 
 import threading
@@ -929,11 +929,11 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                         # just "PR1_1". Assuming the output is a dictionary
                         # where keys are fanout/faninNB names and the valus are
                         # the outputs for that fanout/faninNB,
-                        if name.endswith('L'): 
-                            qualfied_name = str(calling_task_name) + "-" + str(name[:-1]) 
-                            dict_of_results[qualfied_name] = output[name[:-1]]
+                        #if name.endswith('L'): 
+                        #    qualfied_name = str(calling_task_name) + "-" + str(name[:-1]) 
+                        #    dict_of_results[qualfied_name] = output[name[:-1]]
                             
-                        else:
+                        #else:
                             qualfied_name = str(calling_task_name) + "-" + str(name)
                             dict_of_results[qualfied_name] = output[name]
                         #dict_of_results[qualfied_name] = output[name]
