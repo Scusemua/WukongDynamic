@@ -33,10 +33,13 @@ def generate_DAG_info():
 # If we pre-load the partitions, thn we would want to do fanouts/faninNBs
 # so we can use the pre-loaded partition?
 
-    Partition_all_fanout_task_names = set()
-    Partition_all_fanin_task_names = set()
-    Partition_all_faninNB_task_names = set()
-    Partition_all_collapse_task_names = set()
+
+#rhc: Problem: Need lists for faninNB and fanin names
+    Partition_all_fanout_task_names = []
+    Partition_all_fanin_task_names = []
+    Partition_all_faninNB_task_names = []
+    Partition_all_collapse_task_names = []
+
     Partition_all_fanin_sizes = []
     Partition_all_faninNB_sizes = []
 
@@ -194,7 +197,7 @@ def generate_DAG_info():
                     # senderX becomes receiverY
                     logger.info("sender " + senderX + " --> " + receiverY + " : Collapse")
                     if not receiverY in Partition_all_collapse_task_names:
-                        Partition_all_collapse_task_names.add(receiverY)
+                        Partition_all_collapse_task_names.append(receiverY)
                     else:
                         pass # error only one task can collapse a given task
                     collapse.append(receiverY)
@@ -204,7 +207,7 @@ def generate_DAG_info():
                     # to receiverY         
                     logger.info("sender " + senderX + " --> " + receiverY + " : Fanout")
                     if not receiverY in Partition_all_fanout_task_names:
-                        Partition_all_fanout_task_names.add(receiverY)
+                        Partition_all_fanout_task_names.append(receiverY)
                     fanouts.append(receiverY)
             else:
                 # fanin or fannNB since receiverY receives inputs from multiple tasks
@@ -224,7 +227,7 @@ def generate_DAG_info():
                 if isFaninNB:
                     logger.info("sender " + senderX + " --> " + receiverY + " : FaninNB")
                     if not receiverY in Partition_all_faninNB_task_names:
-                        Partition_all_faninNB_task_names.add(receiverY)
+                        Partition_all_faninNB_task_names.append(receiverY)
                         Partition_all_faninNB_sizes.append(length_of_sender_set_for_receiverY)
                     faninNBs.append(receiverY)
                     faninNB_sizes.append(length_of_sender_set_for_receiverY)
@@ -233,7 +236,7 @@ def generate_DAG_info():
                     # tasks that sends inputs to receiverY so receiverY is a fanin task.
                     logger.info("sender " + senderX + " --> " + receiverY + " : Fanin")
                     if not receiverY in Partition_all_fanin_task_names:
-                        Partition_all_fanin_task_names.add(receiverY)
+                        Partition_all_fanin_task_names.append(receiverY)
                         Partition_all_fanin_sizes.append(length_of_sender_set_for_receiverY)
                     fanins.append(receiverY)
                     fanin_sizes.append(length_of_sender_set_for_receiverY)
@@ -432,10 +435,10 @@ def generate_DAG_info():
         #logger.info("") 
         logger.info("")
 
-    Group_all_fanout_task_names = set()
-    Group_all_fanin_task_names = set()
-    Group_all_faninNB_task_names = set()
-    Group_all_collapse_task_names = set()
+    Group_all_fanout_task_names = []
+    Group_all_fanin_task_names = []
+    Group_all_faninNB_task_names = []
+    Group_all_collapse_task_names = []
     Group_all_fanin_sizes = []
     Group_all_faninNB_sizes = []
 
@@ -480,7 +483,7 @@ def generate_DAG_info():
                     # senderX becomes receiverY
                     logger.info("sender " + senderX + " --> " + receiverY + " : Collapse")
                     if not receiverY in Group_all_collapse_task_names:
-                        Group_all_collapse_task_names.add(receiverY)
+                        Group_all_collapse_task_names.append(receiverY)
                     else:
                         pass # this is an error, only one task can collapse a given task
                     collapse.append(receiverY)
@@ -490,7 +493,7 @@ def generate_DAG_info():
                     # to receiverY   
                     logger.info("sender " + senderX + " --> " + receiverY + " : Fanout")
                     if not receiverY in Group_all_fanout_task_names:
-                        Group_all_fanout_task_names.add(receiverY)
+                        Group_all_fanout_task_names.append(receiverY)
                     fanouts.append(receiverY)
             else:
                 # fanin or fannNB since receiverY receives inputs from multiple tasks
@@ -510,7 +513,7 @@ def generate_DAG_info():
                 if isFaninNB:
                     logger.info("sender " + senderX + " --> " + receiverY + " : FaninNB")
                     if not receiverY in Group_all_faninNB_task_names:
-                        Group_all_faninNB_task_names.add(receiverY)
+                        Group_all_faninNB_task_names.append(receiverY)
                         Group_all_faninNB_sizes.append(length_of_sender_set_for_receiverY)
                     logger.info ("after Group_all_faninNBs_sizes append: " + str(Group_all_faninNB_sizes))
                     logger.info ("faninNBs append: " + receiverY)
@@ -521,7 +524,7 @@ def generate_DAG_info():
                     # tasks that sends inputs to receiverY so receiverY is a fanin task.
                     logger.info("sender " + senderX + " --> " + receiverY + " : Fanin")
                     if not receiverY in Group_all_fanin_task_names:
-                        Group_all_fanin_task_names.add(receiverY)
+                        Group_all_fanin_task_names.append(receiverY)
                         Group_all_fanin_sizes.append(length_of_sender_set_for_receiverY)
                     fanins.append(receiverY)
                     fanin_sizes.append(length_of_sender_set_for_receiverY)

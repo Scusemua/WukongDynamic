@@ -827,9 +827,9 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                     #    dict_of_results[qualfied_name] = output[name[:-1]]
                     #    qualfied_name = str(calling_task_name) + "-" + str(name[:-1])
                     #else:
-
-                    dict_of_results[qualfied_name] = output[name]
                     qualfied_name = str(calling_task_name) + "-" + str(name)
+                    dict_of_results[qualfied_name] = output[name]
+
                     #dict_of_results[qualfied_name] = output[name]
                 logger.debug(thread_name + ": process_fanouts: dict_of_results for fanout " + name)
                 logger.debug(str(dict_of_results))
@@ -881,9 +881,9 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                     #    dict_of_results[qualfied_name] = output[name[:-1]]
                     #    qualfied_name = str(calling_task_name) + "-" + str(name[:-1])
                     #else:
-
-                    dict_of_results[qualfied_name] = output[name]
                     qualfied_name = str(calling_task_name) + "-" + str(name)
+                    dict_of_results[qualfied_name] = output[name]
+
                     #dict_of_results[qualfied_name] = output[name]
                 logger.debug(thread_name + ": process_fanouts: dict_of_results for fanout " + name)
                 logger.debug(str(dict_of_results))
@@ -929,12 +929,13 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                         # just "PR1_1". Assuming the output is a dictionary
                         # where keys are fanout/faninNB names and the valus are
                         # the outputs for that fanout/faninNB,
-                        if name.endswith('L'):  
+                        if name.endswith('L'): 
+                            qualfied_name = str(calling_task_name) + "-" + str(name[:-1]) 
                             dict_of_results[qualfied_name] = output[name[:-1]]
-                            qualfied_name = str(calling_task_name) + "-" + str(name[:-1])
+                            
                         else:
-                            dict_of_results[qualfied_name] = output[name]
                             qualfied_name = str(calling_task_name) + "-" + str(name)
+                            dict_of_results[qualfied_name] = output[name]
                         #dict_of_results[qualfied_name] = output[name]
                     logger.debug(thread_name + ": process_fanouts: dict_of_results for fanout " + name)
                     logger.debug(str(dict_of_results))
@@ -1006,9 +1007,9 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                         #    dict_of_results[qualfied_name] = output[name[:-1]]
                         #    qualfied_name = str(calling_task_name) + "-" + str(name[:-1])
                         #else:
-                        
-                        dict_of_results[qualfied_name] = output[name]
                         qualfied_name = str(calling_task_name) + "-" + str(name)
+                        dict_of_results[qualfied_name] = output[name]
+
                         #dict_of_results[qualfied_name] = output[name]
                     logger.debug(thread_name + ": process_fanouts: dict_of_results for fanout " + name)
                     logger.debug(str(dict_of_results))

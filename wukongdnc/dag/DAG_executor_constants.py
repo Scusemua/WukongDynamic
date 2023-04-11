@@ -14,18 +14,18 @@ logger.addHandler(ch)
 #
 # True if we are not using Lambdas, i.e., executing tasks with threads or processes
 # local, i.e., on one machine.
-run_all_tasks_locally = True         # vs run tasks remotely (in Lambdas)
+run_all_tasks_locally = False         # vs run tasks remotely (in Lambdas)
 # True if synch objects are stored locally, i.e., in the memory of the single
 # machine on which the threads are executing.  If we are using multiprocessing
 # or Lambdas, this must be False. When False, the synch objects are stored
 # on the tcp_server or in InfiniX lambdas.
-store_fanins_faninNBs_locally = True    # vs remotely
+store_fanins_faninNBs_locally = False    # vs remotely
 # True when all FanIn and FanInNB objects are created locally or on the
 # tcp_server or IniniX all at once at the start of the DAG execution. If
 # False, synch objects are created on the fly, i.e, we execute create-and-fanin
 # operations that create a synch object if it has not been created yet and then
 # execute a Fan_in operaation on the created object.
-create_all_fanins_faninNBs_on_start = True
+create_all_fanins_faninNBs_on_start = False
 
 # True if the DAG is executed by a "pool" of threads/processes. False, if we are
 # using Lambdas or we are using threads to simulate the use of Lambdas. In the latter
@@ -45,21 +45,21 @@ num_threads_for_multithreaded_multiprocessing = 2
 # if using lambdas to store synch objects, run tcp_server_lambda.
 # if store in regular python functions instead of real Lambdas
 # set using_Lambda_Function_Simulator = True
-FanIn_Type = "DAG_executor_FanIn"
-FanInNB_Type = "DAG_executor_FanInNB"
-process_work_queue_Type = "BoundedBuffer"
-#FanIn_Type = "DAG_executor_FanIn_Select"
-#FanInNB_Type = "DAG_executor_FanInNB_Select"
-#process_work_queue_Type = "BoundedBuffer_Select"
+#FanIn_Type = "DAG_executor_FanIn"
+#FanInNB_Type = "DAG_executor_FanInNB"
+#process_work_queue_Type = "BoundedBuffer"
+FanIn_Type = "DAG_executor_FanIn_Select"
+FanInNB_Type = "DAG_executor_FanInNB_Select"
+process_work_queue_Type = "BoundedBuffer_Select"
 
 # if running real lambdas or storing synch objects in real lambdas:
 #   Set SERVERLESS_SYNC to True or False in wukongdnc constants !!!!!!!!!!!!!!
 #
 
 # Currently, this is for storing synch objects in simulated lambdas;
-store_sync_objects_in_lambdas = False
-using_Lambda_Function_Simulators_to_Store_Objects = False
-sync_objects_in_lambdas_trigger_their_tasks = False
+store_sync_objects_in_lambdas = True
+using_Lambda_Function_Simulators_to_Store_Objects = True
+sync_objects_in_lambdas_trigger_their_tasks = True
 # use orchestrator to invoke functions (e.g., when all fanin/fanout results are available)
 using_DAG_orchestrator = False
 # map ech synch object by name to the function it resided in. if we create
@@ -83,7 +83,7 @@ map_objects_to_lambda_functions = False
 # (by name or by index).
 # ToDo: integrate using_single_lambda_function with this mapping stuff. that
 # is, map names to lambda functions, and sometimes there is only one function.
-use_anonymous_lambda_functions = False
+use_anonymous_lambda_functions = True
 # For all: remote objects, using select objects:
 # 1. run_all_tasks_locally = True, create objects on start = True:
 # TTFFTF: no trigger and no DAG_orchestrator, but map objects 

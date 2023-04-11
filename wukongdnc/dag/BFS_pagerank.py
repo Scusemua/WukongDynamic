@@ -187,7 +187,7 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
         if not task_file_name.endswith('L'):
             iteration = int(1)
         else:
-            iteration = int(1000)
+            iteration = int(10)
 
         num_nodes_for_pagerank_computation = len(partition_or_group)
 
@@ -374,6 +374,14 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
                 print(str(partition_or_group[i].ID) + ":" + str(partition_or_group[i].pagerank),end=" ")
         print()
         print()
+        """
+        logger.debug("PageRank result for " + task_file_name + ":")
+        for i in range(num_nodes_for_pagerank_computation):
+            if not partition_or_group[i].isShadowNode:
+                print(str(partition_or_group[i].ID) + ":" + str(partition_or_group[i].pagerank))
+        logger.debug("")
+        logger.debug("")
+        """
         return PageRank_output
 
 def PageRank_Task(task_file_name,total_num_nodes,payload,results):
