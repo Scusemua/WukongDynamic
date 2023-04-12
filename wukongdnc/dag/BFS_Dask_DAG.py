@@ -1,75 +1,24 @@
 import logging
 import cloudpickle
+# May want to use numpy arrays eventually for better cache performance
 #import numpy as np
 from .BFS_Partition_Node import Partition_Node
-#from dask.utils import apply
-
 
 logger = logging.getLogger(__name__)
-
-logger.setLevel(logging.DEBUG)
-#logger.setLevel(logging.INFO)
+logger.setLevel(logging.INFO)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
-#formatter = logging.Formatter('%(levelname)s: %(message)s')
 ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
-#ch.setLevel(logging.INFO)
+ch.setLevel(logging.INFO)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
-
-# Note: pagerank leaf tasks have no input. This results in a result_dictionary
-# of "DAG_executor_driver_0" --> (), where
-# DAG_executor_driver_0 is used to mean that the DAG_excutor_driver
-# provided an empty input tuple for the leaf task. Here, we just ignore
-# empty input tuples so that the input_tuples provided to the 
-# PageRank_Function will be an empty list.
-
-"""
-Note:
-def apply(func, args, kwargs=None):
-    #Apply a function given its positional and keyword arguments.
-
-    Equivalent to ``func(*args, **kwargs)``
-    Most Dask users will never need to use the ``apply`` function.
-    It is typically only used by people who need to inject
-    keyword argument values into a low level Dask task graph.
-
-    Parameters
-    ----------
-    func : callable
-        The function you want to apply.
-    args : tuple
-        A tuple containing all the positional arguments needed for ``func``
-        (eg: ``(arg_1, arg_2, arg_3)``)
-    kwargs : dict, optional
-        A dictionary mapping the keyword arguments
-        (eg: ``{"kwarg_1": value, "kwarg_2": value}``
-
-    Examples
-    --------
-    >>> from dask.utils import apply
-    >>> def add(number, second_number=5):
-    ...     return number + second_number
-    ...
-    >>> apply(add, (10,), {"second_number": 2})  # equivalent to add(*args, **kwargs)
-    12
-
-    >>> task = apply(add, (10,), {"second_number": 2})
-    >>> dsk = {'task-name': task}  # adds the task to a low level Dask task graph
-    """
-# Implementation:
-"""
-    if kwargs:
-        return func(*args, **kwargs)
-    else:
-        return func(*args)
-"""
-#PR1_1_Task = apply(PR1_1, ("PR1_1", ), ????)
-#   >>> task = apply(add, (10,), {"second_number": 2})
-#    >>> dsk = {'task-name': task}  # adds the task to a low level Dask task graph
-
+# Note: The pagerank function needs to know the total number of nodes
+# in the graph. This value could be assigned here when we generate 
+# this program. Or Wukng could input it somehow.
 total_num_nodes = 20
+
+# Note: Turning off debug for everything except outputting the computed 
+# pagerank values, which are output at the end of PageRank_Function.
 debug_pagerank = False
 
 def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
@@ -77,6 +26,9 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
         # We check for task_file_name ending with "L" for loop below,
         # so we make this check esy by having 'L' at the end (endswith)
         # instead of having to parse ("PR1_1.pickle")
+
+# ToDo: Adjust input scheme for Wukong.
+
         complete_task_file_name = './'+task_file_name+'.pickle'
         with open(complete_task_file_name, 'rb') as handle:
             partition_or_group = (cloudpickle.load(handle))
@@ -138,8 +90,9 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
             # shadow nodes of y are immediatley preceeding y) then shadow_node x
             # represents a parent node of y that was in a different partition P or 
             # group G. P/G will send the pagerank value for parent to the partition
-            # or group for x and y. We ser the pagerank for the shadow_node equal to this
+            # or group for x and y. We set the pagerank for the shadow_node equal to this
             # received pagerank value. 
+            #
             # We will use the shadow_node's pagerank as the pagerank value for one of 
             # y's parents (there may be shadow_nodes for other parents of y and y may
             # have parents in its grup/partition). We have two choices: (1) do not compuet
@@ -207,8 +160,9 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
             #PageRank_Function_one_iter(partition_or_group,damping_factor,one_minus_dumping_factor,random_jumping,total_num_nodes,num_nodes_for_pagerank_computation)
     
             for index in range(num_nodes_for_pagerank_computation):
-                # Need number of non-shadow nodes'
-        #rhc: handle shadow nodes
+                # Need number of non-shadow nodes
+                """
+                #logger.debug(str(partition_or_group[index].ID) + " type of node: " + str(type(partition_or_group[index])))
                 if partition_or_group[index].isShadowNode:
                     #if (debug_pagerank):
                     logger.debug("PageRank: before pagerank computation: node at position " 
@@ -218,12 +172,10 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
                     + ", parent: " + str(partition_or_group[index].parents[0])
                     + ", (real) parent's num_children: " + str(partition_or_group[index].num_children)
                     )
+                """
 
-                #if (debug_pagerank):
-                #    logger.debug("")
-
-                #print(str(partition_or_group[index].ID) + " type of node: " + str(type(partition_or_group[index])))
-                #if not partition_or_group[index].isShadowNode:
+                if (debug_pagerank):
+                    logger.debug("")
 
                 if not task_file_name.endswith('L'):
                     partition_or_group[index].update_PageRank_of_PageRank_Function(partition_or_group, 
@@ -232,6 +184,7 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
                     partition_or_group[index].update_PageRank_of_PageRank_Function_loop(partition_or_group, 
                         damping_factor,one_minus_dumping_factor,random_jumping,total_num_nodes)
     
+                """
                 if partition_or_group[index].isShadowNode:
                     #if (debug_pagerank):
                     logger.debug("PageRank:  after pagerank computation: node at position " 
@@ -241,9 +194,10 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
                     + ", parent: " + str(partition_or_group[index].parents[0])
                     + ", (real) parent's num_children: " + str(partition_or_group[index].num_children)
                     )
+                """
 
-                #if (debug_pagerank):
-                #logger.debug("")
+                if (debug_pagerank):
+                    logger.debug("")
 
             if task_file_name.endswith('L'):
                 for index in range(num_nodes_for_pagerank_computation):
@@ -293,34 +247,65 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
                     output_tuple = (parent_or_group_index,partition_or_group[i].pagerank)
                     output_list.append(output_tuple)
                     PageRank_output[partition_or_group_name] = output_list
-        #if (debug_pagerank):
-        print("PageRank output tuples for " + task_file_name + ":")
-        print_val = ""
-        for k, v in PageRank_output.items():
-            #print_val += "(%s, %s) " % (k, v)
-            print((k, v),end=" ")
-        #print(print_val)
-        print()
-        print()
+        if (debug_pagerank):
+            logger.debug("PageRank output tuples for " + task_file_name + ":")
+            print_val = ""
+            for k, v in PageRank_output.items():
+                print_val += "(%s, %s) " % (k, v)
+            logger.debug(print_val)
+            logger.debug("")
+            logger.debug("")
 
-        print("PageRank result for " + task_file_name + ":", end=" ")
-        for i in range(num_nodes_for_pagerank_computation):
-            if not partition_or_group[i].isShadowNode:
-                print(str(partition_or_group[i].ID) + ":" + str(partition_or_group[i].pagerank),end=" ")
-        print()
-        print()
-        """
+# ToDo: Adjust output scheme for Wukong.
+
         logger.debug("PageRank result for " + task_file_name + ":")
         for i in range(num_nodes_for_pagerank_computation):
             if not partition_or_group[i].isShadowNode:
                 print(str(partition_or_group[i].ID) + ":" + str(partition_or_group[i].pagerank))
         logger.debug("")
         logger.debug("")
-        """
+
         return PageRank_output
 
-#output = execute_task_with_result_dictionary(task,state_info.task_name,20,result_dictionary)
+def PageRank_Function_Driver(task_file_name,total_num_nodes,results_dictionary):
+    input_tuples = []
+    for (_,v) in results_dictionary.items():
+        if not v == ():
+            input_tuples += v
+    output = PageRank_Function(task_file_name,total_num_nodes,input_tuples)
+    return output
 
+dsk = { 'PR1_1':  (PageRank_Function_Driver            ),
+        'PR2_1':  (PageRank_Function_Driver,   'PR1_1' ),
+        'PR2_2L': (PageRank_Function_Driver,  ['PR1_1'  , 'PR2_1']),
+        'PR2_3':  (PageRank_Function_Driver,   'PR1_1' ),
+        'PR3_1':  (PageRank_Function_Driver,   'PR2_2L'),
+        'PR3_2':  (PageRank_Function_Driver,  ['PR2_2L' , 'PR3_1']),
+        'PR3_3':  (PageRank_Function_Driver,   'PR2_3' ) 
+    }
+
+from dask.threaded import get
+get(dsk, ['PR3_1','PR3_2', 'PR3_3'])  # executes in parallel
+
+# Questions:
+# 1. Leaf tasks like PR1_1 have no inputs; is this sepecified correctly
+#    in dsk DAG?
+# 2. The tasks need to input their partitions. I use the task name as the file
+#    name for the partition. Wukong needs to get this file somehow. 
+# 3. Every pagerank task has an output. Right now, I just print the pagerank
+#    values. Wukong can store the values somewhere. Dask DAGS are tree-structured,
+#    like D&C DAGs, with a bunch of fanouts followed by a bunch of fanins.
+#    For these DAGs it is convenient to have a "result" fanin at the end.
+#    Pagerank doesn't have this tree structure so a "result" fanin is not
+#    as convenient. Wuong can store the pagerank values wherever, including 
+#    calling a "result" synchronization object on the server, which would 
+#    gather the results. Whatever Wukong does bear in mind that there can be 
+#    a large number of pagerank values to collect from lots of pagerank 
+#    serverless functions.
+
+"""
+Note: The other option is to have one function per DAG task, which results 
+in a lot more Python functions. 
 def PR1_1(task_file_name,total_num_nodes,results_dictionary):
     input_tuples = []
     for (_,v) in results_dictionary.items():
@@ -370,17 +355,7 @@ def PR3_3(task_file_name,total_num_nodes,results_dictionary):
             input_tuples += v
     output = PageRank_Function(task_file_name,total_num_nodes,input_tuples)
     return output
-
-dsk = {'PR1_1':  (PR1_1),
-        'PR2_1': (PR2_1, 'PR1_1'),
-        'PR2_2L':(PR2_2L, ['PR1_1', 'PR2_1']),
-        'PR2_3': (PR2_3, 'PR1_1'),
-        'PR3_1': (PR3_1, 'PR2_2L'),
-        'PR3_2': (PR3_2, ['PR2_2L', 'PR3_1']),
-        'PR3_3': (PR3_3, 'PR2_3')}
-
-from dask.threaded import get
-get(dsk, ['PR3_1','PR3_2', 'PR3_3'])  # executes in parallel
+"""
 
 
   

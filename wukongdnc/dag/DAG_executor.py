@@ -1495,32 +1495,46 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                 logger.debug("Packing data. Task inputs: %s. Data dict (keys only): %s" % (str(task_inputs), str(data_dict.keys())))
                 # task_inputs is a tuple of task_names
                 args = pack_data(task_inputs, data_dict)
+                logger.debug(thread_name + " argsX: " + str(args))
                 if tasks_use_result_dictionary_parameter:
+                    logger.debug("Foo1a")
                     # task_inputs = ('task1','task2'), args = (1,2) results in a resultDictionary
                     # where resultDictionary['task1'] = 1 and resultDictionary['task2'] = 2.
                     # We pass resultDictionary of inputs instead of the tuple (1,2).
+
                     if len(task_inputs) == len(args):
+                        logger.debug("Foo1b")
                         result_dictionary = {task_inputs[i] : args[i] for i, _ in enumerate(args)}
+                        logger.debug(thread_name + " result_dictionaryX: " + str(result_dictionary))
                 
                 if tasks_use_result_dictionary_parameter:
+                    logger.debug("Foo2a")
                     # ith arg has a key DAG_executor_driver_i that is mapped to it
                     # leaf tasks do not have a task that sent inputs to the leaf task,
                     # so we create dummy input tasks DAG_executor_driver_i.
                     task_input_tuple = () # e.g., ('DAG_executor_driver_0','DAG_executor_driver_1')
                     j = 0
+
                     for _ in args:
                         # make the key values in task_input_tuple unique. 
                         key = "DAG_executor_driver_" + str(j)
                         task_input_tuple += tuple(key)
+#rhc: issue: making a tuple of ech char in string?
+# Why are we doing this? Not using it? Not even for leaves?
                         j += 1
                     # task_input_tuple = ('DAG_executor_driver_0'), args = (1,) results in a resultDictionary
                     # where resultDictionary['DAG_executor_driver_0'] = 1.
                     # We pass resultDictionary of inputs to the task instead of a tuple of inputs, e.g.,(1,).
                     # Lengths will match since we looped through args to create task_input_tuple
+                    logger.debug(thread_name + " args: " + str(args)
+                        + " len(args): " + str(len(args))
+                        + " len(task_input_tuple): " + str(len(task_input_tuple))
+                        + " task_input_tuple: " + str(task_input_tuple))
                     if len(task_input_tuple) == len(args):
                         # The enumerate() method adds a counter to an iterable and returns the enumerate object.
+                        logger.debug("Foo2b")
                         result_dictionary = {task_input_tuple[i] : args[i] for i, _ in enumerate(args)}
-                    logger.debug(thread_name + " result_dictionary: " + str(result_dictionary))
+                        logger.debug(thread_name + " result_dictionaryy: " + str(result_dictionary))
                     #Note:
                     #Informs the logging system to perform an orderly shutdown by flushing 
                     #and closing all handlers. This should be called at application exit and no 
@@ -1545,6 +1559,7 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     # fanout, using process_leaf_tasks_batch.
                     # args will be a tuple of input values, e.g., (1,), as usual
                     args = task_inputs['DAG_executor_driver']
+                    logger.debug(thread_name + " argsY: " + str(args))
 
                 if tasks_use_result_dictionary_parameter:
                     # Passing am emoty inut tuple to the PageRank task,
@@ -1556,9 +1571,9 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     # that the input_tuples provided to the PageRank_Function will be an empty list.
                     result_dictionary['DAG_executor_driver_0'] = ()
 
-            logger.debug("args: " + str(args))
+            logger.debug("argsZ: " + str(args))
  
-            logger.debug(thread_name + " result_dictionary: " + str(result_dictionary))
+            logger.debug(thread_name + " result_dictionaryZ: " + str(result_dictionary))
 
             # using map DAG_tasks from task_name to task
             task = DAG_tasks[state_info.task_name]

@@ -511,3 +511,50 @@ PageRank_main(target_nodes,target_nodes,total_num_nodes)
 np_array = get_PageRank_list(nodes)
 logger.info(str(np_array))
 """
+
+
+
+"""
+Note:
+def apply(func, args, kwargs=None):
+    #Apply a function given its positional and keyword arguments.
+
+    Equivalent to ``func(*args, **kwargs)``
+    Most Dask users will never need to use the ``apply`` function.
+    It is typically only used by people who need to inject
+    keyword argument values into a low level Dask task graph.
+
+    Parameters
+    ----------
+    func : callable
+        The function you want to apply.
+    args : tuple
+        A tuple containing all the positional arguments needed for ``func``
+        (eg: ``(arg_1, arg_2, arg_3)``)
+    kwargs : dict, optional
+        A dictionary mapping the keyword arguments
+        (eg: ``{"kwarg_1": value, "kwarg_2": value}``
+
+    Examples
+    --------
+    >>> from dask.utils import apply
+    >>> def add(number, second_number=5):
+    ...     return number + second_number
+    ...
+    >>> apply(add, (10,), {"second_number": 2})  # equivalent to add(*args, **kwargs)
+    12
+
+    >>> task = apply(add, (10,), {"second_number": 2})
+    >>> dsk = {'task-name': task}  # adds the task to a low level Dask task graph
+    """
+# Implementation:
+"""
+    if kwargs:
+        return func(*args, **kwargs)
+    else:
+        return func(*args)
+"""
+#PR1_1_Task = apply(PR1_1, ("PR1_1", ), ????)
+#   >>> task = apply(add, (10,), {"second_number": 2})
+#    >>> dsk = {'task-name': task}  # adds the task to a low level Dask task graph
+
