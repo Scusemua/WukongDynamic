@@ -1507,6 +1507,9 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                         result_dictionary = {task_inputs[i] : args[i] for i, _ in enumerate(args)}
                         logger.debug(thread_name + " result_dictionaryX: " + str(result_dictionary))
                 
+                """
+                # This might be useful for leaves that have more than one input?
+                # But leaves always have one input, e.g., (1, )?
                 if tasks_use_result_dictionary_parameter:
                     logger.debug("Foo2a")
                     # ith arg has a key DAG_executor_driver_i that is mapped to it
@@ -1514,14 +1517,13 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     # so we create dummy input tasks DAG_executor_driver_i.
                     task_input_tuple = () # e.g., ('DAG_executor_driver_0','DAG_executor_driver_1')
                     j = 0
-
+                    key_list = []
                     for _ in args:
                         # make the key values in task_input_tuple unique. 
                         key = "DAG_executor_driver_" + str(j)
-                        task_input_tuple += tuple(key)
-#rhc: issue: making a tuple of ech char in string?
-# Why are we doing this? Not using it? Not even for leaves?
+                        key_list.append(key)
                         j += 1
+                    task_input_tuple = tuple(key_list)
                     # task_input_tuple = ('DAG_executor_driver_0'), args = (1,) results in a resultDictionary
                     # where resultDictionary['DAG_executor_driver_0'] = 1.
                     # We pass resultDictionary of inputs to the task instead of a tuple of inputs, e.g.,(1,).
@@ -1539,10 +1541,10 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     #Informs the logging system to perform an orderly shutdown by flushing 
                     #and closing all handlers. This should be called at application exit and no 
                     #further use of the logging system should be made after this call.
-                    #logging.shutdown()
+                    logging.shutdown()
                     #time.sleep(3)   #not needed due to shutdwn
-                    #os._exit(0)
-
+                    os._exit(0)
+                """
             else:
                 # if not triggering tasks in lambdas task_inputs is a tuple of input values, e.g., (1,)
                 if not (store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks):
