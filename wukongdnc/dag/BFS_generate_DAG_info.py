@@ -87,11 +87,13 @@ def generate_DAG_info():
             del Partition_receivers[receiver_name]
     """
 
+    print()
     print("Partition_senders:")
     for sender_name,receiver_name_set in Partition_senders.items():
         print("sender:" + sender_name)
         print("receiver_name_set:" + str(receiver_name_set))
-
+    print()
+    print()
     print("Partition_receivers:")
     for receiver_name,sender_name_set in Partition_receivers.items():
         print("receiver:" + receiver_name)
@@ -137,7 +139,8 @@ def generate_DAG_info():
     for sender_name,receiver_name_set in Group_senders.items():
         print("sender:" + sender_name)
         print("receiver_name_set:" + str(receiver_name_set))
-
+    print()
+    print()
     print("Group_receivers:")
     for receiver_name,sender_name_set in Group_receivers.items():
         print("receiver:" + receiver_name)
@@ -409,13 +412,13 @@ def generate_DAG_info():
         # FYI:
         logger.info("DAG_map:")
         for key, value in DAG_map.items():
-            logger.info(key)
-            logger.info(value)
+            logger.info(str(key) + ' : ' + str(value))
+            #logger.info(key)
+            #logger.info(value)
         logger.info("  ")
-        logger.info("DAG states:")         
+        logger.info("DAG states:")      
         for key, value in DAG_states.items():
-            logger.info(key)
-            logger.info(value)
+            logger.info(str(key) + ' : ' + str(value))
         logger.info("   ")
         logger.info("DAG leaf task start states")
         for start_state in DAG_leaf_task_start_states:
@@ -698,13 +701,19 @@ def generate_DAG_info():
         # FYI:
         logger.info("DAG_map:")
         for key, value in DAG_map.items():
-            logger.info(key)
-            logger.info(value)
+            print_str = ""
+            print_str = str(key) + " " + str(value)
+            logger.info(print_str)
+            #logger.info(key)
+            #logger.info(value)
         logger.info("  ")
         logger.info("DAG states:")         
         for key, value in DAG_states.items():
-            logger.info(key)
-            logger.info(value)
+            print_str = ""
+            print_str = str(key) + " " + str(value)
+            logger.info(print_str)
+            #logger.info(key)
+            #logger.info(value)
         logger.info("   ")
         logger.info("DAG leaf task start states")
         for start_state in DAG_leaf_task_start_states:
