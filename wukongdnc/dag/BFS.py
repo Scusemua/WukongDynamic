@@ -97,16 +97,20 @@ Group_loops = set()
 # in the global map nodeIndex_to_partition_partitionIndex_group_groupIndex_map since
 # a shadow node ID and a non-shadow node for ID would have the same key. We could 
 # use string keys and use, e.g, "5" and "5s" for "shadow" so the keys would be unique.
+# Note: A shadow node can be addedmore than once, in which case the index of the 
+# shadow node will be its last index, e.g., if shadow node in positions 0 and 2 its
+# index will be 2. We do not use the shadow node's index'
 nodeIndex_to_partitionIndex_map = {}
 nodeIndex_to_groupIndex_map = {}
 # collection of all nodes_to_group_map maps, one for each group
 nodeIndex_to_partitionIndex_maps = []
 nodeIndex_to_groupIndex_maps = []
-# map a noe to its partition number, partition index, group number ans group index.
+# map a node to its partition number, partition index, group number ans group index.
 # A "global map"for nodes. May supercede nodeIndex_to_partitionIndex_map. We need
 # a nodes position in its partition if we map partitions to functions and we need
 # a nodes position in its group if we map groups to functions. This map supports
 # both partition mapping and group mapping.
+# Note: We do not map shadow nodes in this map.
 # Q: We can remove the nodes in Pi from this map after we have finished 
 # computing Pi+1 since we will no longer need to know this info for 
 # the nodes in Pi? We may want to remove these nodes to free the space.
@@ -856,8 +860,10 @@ def dfs_parent(visited, node):  #function for dfs
                 # need to use the current partition, not nodes as the current
                 # partition is what the functions will be using to compute pr
                 # nodes[parent_node.ID].frontier_parents.append(frontier_parent_tuple)
-                logger.debug ("visited_parent_node.ID " + str(visited_parent_node.ID))
+
                 partition_group_tuple = nodeIndex_to_partition_partitionIndex_group_groupIndex_map[visited_parent_node.ID]
+                logger.debug ("visited_parent_node.ID " + str(visited_parent_node.ID)
+                    + "partition_group_tuple:" + str(partition_group_tuple))
                 parent_partition_number = partition_group_tuple[0]
                 parent_partition_parent_index = partition_group_tuple[1]
                 parent_group_number = partition_group_tuple[2]
@@ -1127,7 +1133,10 @@ def bfs(visited, node): #function for BFS
     global num_frontier_groups
     num_frontier_groups = 1
     global frontier_groups_sum
-    frontier_groups_sum = 1
+    # This is used as the index into groups for the current group.
+    # frontier_groups_sum inited to 0 so this makes it 1. Note that
+    # if we call bfs() again then this does not reset frontier_groups_sum
+    frontier_groups_sum += 1
     dfs_parent(visited, node)
 
     # SCC 4
@@ -2251,7 +2260,7 @@ for name in group_names:
     if PRINT_DETAILED_STATS:
         logger.info("-- " + name)
 logger.info("")
-logger.info("nodes_to_partition_maps (incl. shadow nodes), len: " + str(len(nodeIndex_to_partitionIndex_maps))+":")
+logger.info("nodes_to_partition_maps (incl. shadow nodes but only last index), len: " + str(len(nodeIndex_to_partitionIndex_maps))+":")
 for m in nodeIndex_to_partitionIndex_maps:
     if PRINT_DETAILED_STATS:
         print_val = ""
@@ -2264,7 +2273,7 @@ for m in nodeIndex_to_partitionIndex_maps:
     else:
         logger.info("-- (" + str(len(m)) + ")")
 logger.info("")
-logger.info("nodes_to_group_maps, (incl. shadow nodes), len: " + str(len(nodeIndex_to_groupIndex_maps))+":")
+logger.info("nodes_to_group_maps, ( but only last index), len: " + str(len(nodeIndex_to_groupIndex_maps))+":")
 for m in nodeIndex_to_groupIndex_maps:
     if PRINT_DETAILED_STATS:
         #print("-- (" + str(len(m)) + "):", end=" ")
@@ -2361,7 +2370,7 @@ else:
 logger.info("")
 logger.info("frontier_groups_sum: " + str(frontier_groups_sum) + ", len(frontiers)-1: " 
     +  str(len(frontiers)-1))
-logger.info("Average number of frontier groups: " + (str(frontier_groups_sum / len(frontiers)-1)))
+logger.info("Average number of frontier groups: " + (str(frontier_groups_sum / (len(frontiers)-1))))
 logger.info("")
 logger.info("nodeIndex_to_partition_partitionIndex_group_groupIndex_map, len: " + str(len(nodeIndex_to_partition_partitionIndex_group_groupIndex_map)) + ":")
 logger.info("shadow nodes not mapped and not shown")
