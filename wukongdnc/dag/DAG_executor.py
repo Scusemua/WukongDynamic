@@ -3,14 +3,14 @@ import logging
 
 logger = None
 logger = logging.getLogger(__name__)
-
+"""
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
-
+"""
 
 
 import threading
@@ -1115,11 +1115,29 @@ def process_fanins(websocket,fanins, faninNB_sizes, calling_task_name, DAG_state
 
     keyword_arguments = {}
     logger.debug(thread_name + ": process_fanins: fanins" + str(fanins))
+    # there is only one fanin name
     keyword_arguments['fanin_task_name'] = fanins[0]
     keyword_arguments['n'] = faninNB_sizes[0]
     #keyword_arguments['start_state_fanin_task'] = DAG_states[fanins[0]]
-    keyword_arguments['result'] = output
-    keyword_arguments['calling_task_name'] = calling_task_name
+    #keyword_arguments['result'] = output
+    #keyword_arguments['calling_task_name'] = calling_task_name
+    if same_output_for_all_fanout_fanin:
+        keyword_arguments['result'] = output
+        keyword_arguments['calling_task_name'] = calling_task_name
+    else:
+        name = fanins[0]
+        logger.debug("**********************" + thread_name + ": process_fanins:  for " + calling_task_name + " faninNB "  + name + " output is :" + str(output))
+
+        #if name.endswith('L'):  
+        #    keyword_arguments['result'] = output[name[:-1]]
+        #    qualified_name = str(calling_task_name) + "-" + str(name[:-1])
+        #else:
+        keyword_arguments['result'] = output[name]
+        qualified_name = str(calling_task_name) + "-" + str(name)
+
+        logger.debug(thread_name + ": process_fanins: name:" + str(name) 
+            + " qualified_name: " + qualified_name)
+        keyword_arguments['calling_task_name'] = qualified_name
     # Don't do/need this.
     #keyword_arguments['DAG_executor_State'] = DAG_exec_state
     keyword_arguments['server'] = server
@@ -1128,8 +1146,25 @@ def process_fanins(websocket,fanins, faninNB_sizes, calling_task_name, DAG_state
         DAG_exec_state.keyword_arguments = {}
         DAG_exec_state.keyword_arguments['fanin_task_name'] = fanins[0]
         DAG_exec_state.keyword_arguments['n'] = faninNB_sizes[0]
-        DAG_exec_state.keyword_arguments['result'] = output
-        DAG_exec_state.keyword_arguments['calling_task_name'] = calling_task_name
+        #DAG_exec_state.keyword_arguments['result'] = output
+        #DAG_exec_state.keyword_arguments['calling_task_name'] = calling_task_name
+        if same_output_for_all_fanout_fanin:
+            DAG_exec_state.keyword_arguments['result'] = output
+            DAG_exec_state.keyword_arguments['calling_task_name'] = calling_task_name
+        else:
+            name = fanins[0]
+            logger.debug("**********************" + thread_name + ": process_fanins:  for " + calling_task_name + " faninNB "  + name + " output is :" + str(output))
+
+            #if name.endswith('L'):  
+            #    keyword_arguments['result'] = output[name[:-1]]
+            #    qualified_name = str(calling_task_name) + "-" + str(name[:-1])
+            #else:
+            DAG_exec_state.keyword_arguments['result'] = output[name]
+            qualified_name = str(calling_task_name) + "-" + str(name)
+
+            logger.debug(thread_name + ": process_fanins: name:" + str(name) 
+                + " qualified_name: " + qualified_name)
+            DAG_exec_state.keyword_arguments['calling_task_name'] = qualified_name
         #DAG_exec_state.keyword_arguments['DAG_executor_State'] = DAG_exec_state
         DAG_exec_state.keyword_arguments['server'] = server
 

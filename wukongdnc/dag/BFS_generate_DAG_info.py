@@ -182,11 +182,12 @@ def generate_DAG_info():
         faninNB_sizes = []
         # tasks that receive inputs from senderX
         receiver_set_for_senderX = Partition_senders[senderX]
-        # task receiverY receives inputs from other tasks (all tasks receive
+        # task receiverY may receive inputs from other tasks (all tasks receive
         # inputs from other tasks except leaf tasks)
         for receiverY in receiver_set_for_senderX:
-            sender_set_for_receiverY = Partition_senders.get(receiverY)
-            if sender_set_for_receiverY == None:
+            receiver_set_for_receiverY = Partition_senders.get(receiverY)
+            if receiver_set_for_receiverY == None:
+                # receiverY does not send any inputs so it is a sink
                 Partition_sink_set.add(receiverY)
             # tasks that send inputs to receiverY
             sender_set_for_receiverY = Partition_receivers[receiverY]
@@ -472,8 +473,9 @@ def generate_DAG_info():
         faninNB_sizes = []
         receiver_set_for_senderX = Group_senders[senderX]
         for receiverY in receiver_set_for_senderX:
-            sender_set_for_receiverY = Group_senders.get(receiverY)
-            if sender_set_for_receiverY == None:
+            receiver_set_for_receiverY = Group_senders.get(receiverY)
+            if receiver_set_for_receiverY == None:
+                # receiverY does not send any inputs so it is a sink
                 Group_sink_set.add(receiverY)
             sender_set_for_receiverY = Group_receivers[receiverY]
             length_of_sender_set_for_receiverY = len(sender_set_for_receiverY)
@@ -732,3 +734,88 @@ def generate_DAG_info():
             logger.info(inp)
         #logger.info("") 
         logger.info("")
+
+    """
+    dsk = { 
+            'PR1_1':  (PageRank_Function_Driver            ),
+            'PR2_1':  (PageRank_Function_Driver,   'PR1_1' ),
+            'PR2_2L': (PageRank_Function_Driver,  ['PR1_1'  , 'PR2_1']),
+            'PR2_3':  (PageRank_Function_Driver,   'PR1_1' ),
+            'PR3_1':  (PageRank_Function_Driver,   'PR2_2L'),
+            'PR3_2':  (PageRank_Function_Driver,  ['PR2_2L' , 'PR3_1']),
+            'PR3_3':  (PageRank_Function_Driver,   'PR2_3' ) 
+    }
+
+    """
+    logger.debug("")
+    driver = "PageRank_Function_Driver"
+    dsk_lines = []
+    header_line = "\t" + "dsk = {"
+    dsk_lines.append(header_line)
+    for leaf_task in Partition_DAG_leaf_tasks:
+        leaf_line = "\t\t\t" + "\'" + str(leaf_task) + "\': (" + driver + "),"
+        dsk_lines.append(leaf_line)
+
+    for receiverX in Partition_receivers:
+        logger.debug("receiverX:" + receiverX)
+        sender_set_for_receiverX = Partition_receivers.get(receiverX)
+        logger.debug("sender_set_for_receiverX:" + str(sender_set_for_receiverX))
+        non_leaf_line_prefix = "\t\t\t" + "\'" + str(receiverX) + "\': (" + driver + ", "
+        if len(sender_set_for_receiverX) > 1:
+            non_leaf_line = "["
+            first = True
+            for sender_task in sender_set_for_receiverX:
+                if first:
+                    first = False
+                    non_leaf_line += "\'" + str(sender_task) + "\'"
+                else:
+                    non_leaf_line += ", " + "\'" + str(sender_task) + "\'"
+            non_leaf_line += "]),"
+        else:
+            sender_task = tuple(sender_set_for_receiverX)[0]
+            non_leaf_line = "\'" + sender_task + "\'),"
+        dsk_lines.append(non_leaf_line_prefix + non_leaf_line)
+
+    dsk_lines[len(dsk_lines)-1] = dsk_lines[len(dsk_lines)-1][:-1]
+    footer_line = "\t\t" + "}"
+    dsk_lines.append(footer_line)
+
+    logger.debug("dsk lines for Partitions:")
+    for line in dsk_lines:
+        logger.debug(line)
+
+    logger.debug("")
+    logger.debug("")
+    dsk_lines = []
+    dsk_lines.append(header_line)
+    for leaf_task in Group_DAG_leaf_tasks:
+        leaf_line = "\t\t\t" + "\'" + str(leaf_task) + "\': (" + driver + "),"
+        dsk_lines.append(leaf_line)
+
+    for receiverX in Group_receivers:
+        logger.debug("receiverX:" + receiverX)
+        sender_set_for_receiverX = Group_receivers.get(receiverX)
+        logger.debug("sender_set_for_receiverX:" + str(sender_set_for_receiverX))
+        non_leaf_line_prefix = "\t\t\t" + "\'" + str(receiverX) + "\': (" + driver + ", "
+        if len(sender_set_for_receiverX) > 1:
+            non_leaf_line = "["
+            first = True
+            for sender_task in sender_set_for_receiverX:
+                if first:
+                    first = False
+                    non_leaf_line += "\'" + str(sender_task) + "\'"
+                else:
+                    non_leaf_line += ", " + "\'" + str(sender_task) + "\'"
+            non_leaf_line += "]),"
+        else:
+            sender_task = tuple(sender_set_for_receiverX)[0]
+            non_leaf_line = "\'" + sender_task + "\'),"
+        dsk_lines.append(non_leaf_line_prefix + non_leaf_line)
+
+    dsk_lines[len(dsk_lines)-1] = dsk_lines[len(dsk_lines)-1][:-1]
+    footer_line = "\t\t" + "}"
+    dsk_lines.append(footer_line)
+
+    logger.debug("dsk lines for Groups:")
+    for line in dsk_lines:
+        logger.debug(line)
