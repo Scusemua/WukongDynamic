@@ -133,6 +133,7 @@ CHECK_UNVISITED_CHILDREN = False
 DEBUG_ON = True
 PRINT_DETAILED_STATS = True
 debug_pagerank = False
+generate_networkx_file = False
 
 nodes = []
 
@@ -1684,6 +1685,7 @@ def bfs(visited, node): #function for BFS
                 nodeIndex_to_groupIndex_maps.append(nodeIndex_to_groupIndex_map)
                 nodeIndex_to_groupIndex_map = {}
 
+                """
                 logger.info("")
                 if PRINT_DETAILED_STATS:
                     logger.info("KKKKKKKKKKKKKKKKKKKKK group nodes' frontier_parent_tuples:")
@@ -1703,7 +1705,7 @@ def bfs(visited, node): #function for BFS
                 else:
                     logger.info("-- (" + str(len(x)) + ")")
                 logger.info("")
-
+                """
                 dfs_parent_end_partition_size = len(current_partition)
                 dfs_parent_end_frontier_size = len(frontier)
                 loop_nodes_added_end = loop_nodes_added
@@ -1772,10 +1774,14 @@ def input_graph():
     c Max. edge             :3
     p sp 20 23
     """
-    #graph_file = open('100.gr', 'r')
-    graph_file = open('graph_40.gr', 'r')
-    #graph_file = open('graph_3000.gr', 'r')
-    #graph_file = open('graph_30000.gr', 'r')
+    # usd to convert the gaph to networkX format so we can run networkX 
+    # algorithms on it, e.g., fnd_cycle, diameter.
+    networkX_lines = []
+    fname = "graph_3000"
+    #graph_file = open(fname, 'r')
+    #graph_file = open(fname, 'r')
+    graph_file = open(fname+".gr", 'r')
+    #graph_file = open(fname, 'r')
     count = 0
     file_name_line = graph_file.readline()
     count += 1
@@ -1877,6 +1883,10 @@ def input_graph():
         target_node.parents.append(source)
         num_parent_appends +=  1
 
+        if generate_networkx_file:
+            networkX_line = str(source) + " " + str(target) + '\n'
+            networkX_lines.append(networkX_line)
+
         # Only visualize small graphs
         #temp = [source,target]
         #visual.append(temp)
@@ -1947,10 +1957,43 @@ def input_graph():
 
     graph_file.close()
 
+    if generate_networkx_file:
+        file = open(fname+"_networkX.txt",'w')
+        file.writelines(networkX_lines)
+        file.close()   
+
+        """
+        nx.write_edgelist(nx.path_graph(4), "test.edgelist")
+        G = nx.read_edgelist("test.edgelist")
+        or
+        fh = open("test.edgelist", "rb")
+        G = nx.read_edgelist(fh)
+        fh.close()
+
+        edges = [(0, 0), (0, 1), (0, 2), (1, 2), (2, 0), (2, 1), (2, 2)]
+        G = nx.DiGraph(edges)
+        sorted(nx.simple_cycles(G))
+        [[0], [0, 1, 2], [0, 2], [1, 2], [2]]
+
+        G = nx.Graph([(1, 2), (1, 3), (1, 4), (3, 4), (3, 5), (4, 5)])
+        nx.diameter(G)
+        3
+
+        Algorithms for directed acyclic graphs (DAGs):
+        https://networkx.org/documentation/stable/reference/algorithms/dag.html
+        
+        periphery(G, e=None, usebounds=False, weight=None)[source]
+        Returns the periphery of the graph G. The periphery is the set of 
+        nodes with eccentricity equal to the diameter.
+        """     
+
 def output_partitions():
+    pass
+    """
     for name, partition in zip(group_names, groups):
             with open('./'+name + '.pickle', 'wb') as handle:
                 cloudpickle.dump(partition, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+    """
   
 def input_partitions():
     group_inputs = []
