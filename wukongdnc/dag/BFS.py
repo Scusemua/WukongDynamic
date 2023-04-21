@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import logging 
 import cloudpickle
 import os
+import time
+from statistics import mean
 
 import copy
 
@@ -1988,12 +1990,9 @@ def input_graph():
         """     
 
 def output_partitions():
-    pass
-    """
     for name, partition in zip(group_names, groups):
             with open('./'+name + '.pickle', 'wb') as handle:
                 cloudpickle.dump(partition, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
-    """
   
 def input_partitions():
     group_inputs = []
@@ -2516,4 +2515,26 @@ generate_DAG_info()
 #input('Press <ENTER> to continue')
 
 logger.debug("Output partitions/groups")
-output_partitions()
+#output_partitions()
+
+"""
+logger.debug("Sorted simple cycles:")
+G = nx.read_edgelist("graph_3000_networkX.txt", create_using=nx.DiGraph)
+sorted(nx.simple_cycles(G))
+# diameter will fail if the directed graph is not strongly connected.
+#"You cannot compute diameter for either 1) a weakly-connected directed graph or 2) a disconnected graph"
+# https://stackoverflow.com/questions/33114746/why-does-networkx-say-my-directed-graph-is-disconnected-when-finding-diameter
+#nx.diameter(G)
+#This finds the maximum distance of a list containing the shortest paths 
+#between any two nodes in G (computed with Dijkstra's algorithm), regardless of 
+#what component they may belong to. Technically, diameter is infinite for 
+#disconnected graphs which is why NetworkX's built-in method does not work. 
+#The method above will find the largest diameter amongst all components within 
+#G, but is not the diameter of G itself.
+diameter = max([max(j.values()) for (i,j) in nx.shortest_path_length(G)])
+logger.debug("Diameter:" + str(diameter))
+aspl = mean([max(j.values()) for (i,j) in nx.shortest_path_length(G)])
+logger.debug("avg shortest path lengh:" + str(aspl))
+
+# (node for node, in_degree in G.in_degree() if in_degree == 0)
+"""

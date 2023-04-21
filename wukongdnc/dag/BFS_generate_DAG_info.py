@@ -736,17 +736,35 @@ def generate_DAG_info():
         logger.info("")
 
     """
-    dsk = { 
-            'PR1_1':  (PageRank_Function_Driver            ),
-            'PR2_1':  (PageRank_Function_Driver,   'PR1_1' ),
-            'PR2_2L': (PageRank_Function_Driver,  ['PR1_1'  , 'PR2_1']),
-            'PR2_3':  (PageRank_Function_Driver,   'PR1_1' ),
-            'PR3_1':  (PageRank_Function_Driver,   'PR2_2L'),
-            'PR3_2':  (PageRank_Function_Driver,  ['PR2_2L' , 'PR3_1']),
-            'PR3_3':  (PageRank_Function_Driver,   'PR2_3' ) 
+    dsk = {
+            'PR1_1': (PageRank_Function_Driver),
+            'PR9_1': (PageRank_Function_Driver),
+            'PR2_1': (PageRank_Function_Driver, 'PR1_1'),
+            'PR3_1': (PageRank_Function_Driver, 'PR2_1'),
+            'PR3_2': (PageRank_Function_Driver, 'PR2_1'),
+            'PR3_3': (PageRank_Function_Driver, 'PR2_1'),
+            'PR4_1': (PageRank_Function_Driver, 'PR3_1'),
+            'PR4_2': (PageRank_Function_Driver, 'PR3_3'),
+            'PR4_3': (PageRank_Function_Driver, 'PR3_3'),
+            'PR5_1': (PageRank_Function_Driver, 'PR4_2'),
+            'PR5_2': (PageRank_Function_Driver, 'PR4_2'),
+            'PR5_3': (PageRank_Function_Driver, 'PR4_3'),
+            'PR5_4': (PageRank_Function_Driver, ['PR5_2', 'PR4_3']),
+            'PR6_1': (PageRank_Function_Driver, 'PR5_1'),
+            'PR6_2': (PageRank_Function_Driver, ['PR5_3', 'PR5_1']),
+            'PR6_3': (PageRank_Function_Driver, 'PR5_3'),
+            'PR7_1': (PageRank_Function_Driver, 'PR6_3'),
+            'PR7_2': (PageRank_Function_Driver, 'PR6_3'),
+            'PR8_1': (PageRank_Function_Driver, 'PR7_1'),
+            'PR8_2': (PageRank_Function_Driver, 'PR7_2'),
+            'PR8_3': (PageRank_Function_Driver, 'PR7_2'),
+            'PR10_1': (PageRank_Function_Driver, 'PR9_1'),
+            'PR10_2': (PageRank_Function_Driver, 'PR9_1'),
+            'PR10_3': (PageRank_Function_Driver, 'PR9_1'),
+            'PR11_1': (PageRank_Function_Driver, ['PR10_2', 'PR10_3'])
     }
-
     """
+    
     logger.debug("")
     driver = "PageRank_Function_Driver"
     dsk_lines = []

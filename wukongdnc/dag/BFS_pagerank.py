@@ -558,3 +558,21 @@ def apply(func, args, kwargs=None):
 #   >>> task = apply(add, (10,), {"second_number": 2})
 #    >>> dsk = {'task-name': task}  # adds the task to a low level Dask task graph
 
+"""
+An estimate of the number of iterations needed to converge to a tolerance τ is log10 τ / log10 α [1]. For τ = 10
+-6 and α =0.85, it can take roughly 85 iterations to converge. For α = 0.95, and α = 0.75,
+with the same tolerance τ = 10-6, it takes roughly 269 and 48 iterations
+respectively. For τ = 10-9, and τ = 10-3, with the same damping factor α =2
+0.85, it takes roughly 128 and 43 iterations respectively. Thus, adjusting the
+damping factor or the tolerance parameters of the PageRank algorithm can
+have a significant effect on the convergence rate.
+
+Is this estimate based on the total number of nodes? Looks like it isn't. A 
+loop group is just part of the nodes.
+
+Adjustment of the damping factor α is a delicate balancing act. For smaller
+values of α, the convergence is fast, but the link structure of the graph used
+to determine ranks is less true. Slightly different values for α can produce 3
+very different rank vectors. Moreover, as α → 1, convergence slows down
+drastically, and sensitivity issues begin to surface [1].
+"""
