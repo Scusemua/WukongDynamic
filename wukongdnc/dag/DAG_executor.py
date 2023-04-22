@@ -51,6 +51,14 @@ import logging.handlers
 import multiprocessing
 import os
 
+#rhc shared
+shared_partition = []
+shared_groups = []
+# maps partition "P" to its position/size in shared_partition/shared_groups
+shared_partition_map = {}
+shared_groups_map = {}
+
+
 total_time = 0
 num_fanins_timed = 0
 

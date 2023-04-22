@@ -60,6 +60,10 @@ class Partition_Node:
         logger.info("")
     """
 
+#rhc shared
+# parent indices re relative to partition_or_group, so we need to translate them 
+# too? So need new shared version of thse update functions. Pass the starting 
+# position so we can use [startng_position + index]. Same for loop.
     def update_PageRank_of_PageRank_Function(self, partition_or_group,damping_factor,
         one_minus_dumping_factor,random_jumping,total_num_nodes):
         parent_nodes = self.parents
@@ -83,7 +87,7 @@ class Partition_Node:
         #        logger.info("16 parent : " + str(parent1.ID) + " num_children: " + str(parent1.num_children))
         #       logger.info("16 parent : " + str(parent2.ID) + " num_children: " + str(parent2.num_children))
         
-        #Note: a paent has at least one child so num_children is not 0
+        #Note: a parent has at least one child so num_children is not 0
         pagerank_sum = sum((partition_or_group[node_index].pagerank / partition_or_group[node_index].num_children) for node_index in parent_nodes)
         if (debug_pagerank):
             logger.debug("update_pagerank: pagerank_sum: " + str(pagerank_sum))

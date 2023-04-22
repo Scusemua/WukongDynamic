@@ -4,9 +4,9 @@ import matplotlib.pyplot as plt
 
 import logging 
 import cloudpickle
-import os
-import time
-from statistics import mean
+#import os
+#import time
+#from statistics import mean
 
 import copy
 
@@ -14,7 +14,9 @@ from .BFS_Node import Node
 from .BFS_Partition_Node import Partition_Node
 from .BFS_generate_DAG_info import generate_DAG_info
 from .BFS_generate_DAG_info import Partition_senders, Partition_receivers, Group_senders, Group_receivers
-
+#rhc shared
+from .DAG_executor import shared_partition, shared_groups
+from .DAG_executor import shared_partition_map, shared_groups_map
 
 #from .DAG_executor_constants import run_all_tasks_locally, using_threads_not_processes
 
@@ -1779,7 +1781,8 @@ def input_graph():
     # usd to convert the gaph to networkX format so we can run networkX 
     # algorithms on it, e.g., fnd_cycle, diameter.
     networkX_lines = []
-    fname = "graph_3000"
+    #fname = "graph_3000"
+    fname = "graph_20"
     #graph_file = open(fname, 'r')
     #graph_file = open(fname, 'r')
     graph_file = open(fname+".gr", 'r')
@@ -2141,7 +2144,25 @@ else:
     # does not require a deepcop
     frontiers.append(frontier.copy())
 
+#rhc shared
+# copy to shared partition and groups
+next = 0
 
+for name, group in zip(group_names, groups):
+    group_position = next
+    group_size = len(group)
+    for p_node in group:
+        shared_groups.append(p_node)
+        next += 1
+    group_tuple = (group_position,group_size)
+    shared_groups_map[name] = group_tuple
+logger.debug("shared_groups_map:")
+for (k,v) in shared_groups_map.items():
+    logger.debug(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + ")")
+logger.debug("shared_groups")
+for p_node in shared_groups:
+    logger.debug(p_node)
+logger.debug("")
 
 #partitions.append(current_partition.copy())
 #frontiers.append(frontier.copy())
