@@ -58,6 +58,12 @@ dfs_parent_changes_in_frontier_size = []
 loop_nodes_added = 0
 shadow_nodes_added_to_partitions = 0
 shadow_nodes_added_to_groups = 0
+start_num_shadow_nodes_for_partitions = 0
+end_num_shadow_nodes_for_partitions = 0
+start_num_shadow_nodes_for_groups = 0
+end_num_shadow_nodes_for_groups = 0
+partitions_num_shadow_nodes = {}
+groups_num_shadow_nodes = {}
 total_loop_nodes_added = 0
 frontier_costs = []
 frontier_cost = []
@@ -1118,6 +1124,11 @@ def bfs(visited, node): #function for BFS
     global dfs_parent_end_partition_size
     global loop_nodes_added_end
     global dfs_parent_end_frontier_size
+    #rhc shared
+    global start_num_shadow_nodes_for_partitions
+    global end_num_shadow_nodes_for_partitions
+    global start_num_shadow_nodes_for_groups
+    global end_num_shadow_nodes_for_groups
 
 #rhc: q:
     # are not these lengths 0?
@@ -1125,11 +1136,17 @@ def bfs(visited, node): #function for BFS
     dfs_parent_start_frontier_size = len(frontier)
     global loop_nodes_added
     loop_nodes_added_start = loop_nodes_added
+    #rhc shared
+    start_num_shadow_nodes_for_partitions = shadow_nodes_added_to_partitions
+    start_num_shadow_nodes_for_groups = shadow_nodes_added_to_groups
 
     #dfs_p(visited, graph, node)
     #dfs_p_new(visited, graph, node)
 
 #rhc: 
+    # start with -1 in the queue; after call to dfs_parent, which will 
+    # collect node and its ancestors, we will pop the -1 fron the 
+    # queue, which will end the current partition.
     queue.append(-1)
 
     # SCC 3
@@ -1144,7 +1161,13 @@ def bfs(visited, node): #function for BFS
     frontier_groups_sum += 1
     dfs_parent(visited, node)
 
+    # Note: No shadow_nodes can be added during first call to dfs_parent
+    # as the generated group has no parents; it is the first group.
     # SCC 4
+
+    # Note: -1 is a the front of the queue so we will pop the -1 which 
+    # means this is the end of the current partition, which is node and its 
+    # ancestors.
 
     global current_group
     global groups
@@ -1169,14 +1192,13 @@ def bfs(visited, node): #function for BFS
     global current_group_isLoop
     if current_group_isLoop:
         # These are the names of the groups that have a loop. In the 
-        # DAG, we will append an 'L' to the name.
-        # These are the names of the groups that have a loop. In the 
         # DAG, we will append an 'L' to the name. Not used since we 
-        # use loop names (with 'L") as we generate Sender and Recevers.
+        # use loop names (with 'L") as we generate Sender and Receivers.
         # instead of modifying the names of senders/receievers before we 
         # generate the DAG.
-        Group_loops.add(group_name)
         group_name = group_name + "L"
+        Group_loops.add(group_name)
+
     current_group_isLoop = False
     # Note: not incrementing current_group_number. This root group is the 
     # only group in this partition. We consider it to be group 1, 
@@ -1185,7 +1207,13 @@ def bfs(visited, node): #function for BFS
     # current_group_number will be 1 wen we find the first group of the 
     # next partition.
     group_names.append(group_name)
+    #rhc shared
+    # assert: first partition/group has no shadow_nodes
+    change_in_shadow_nodes__for_group = end_num_shadow_nodes_for_groups - start_num_shadow_nodes_for_groups
+    groups_num_shadow_nodes[group_name] = change_in_shadow_nodes__for_group
 
+    # These are tracked per dfs_parent() call, so we compute them here and 
+    # at after the calls to dfs_parent() below.
     dfs_parent_end_partition_size = len(current_partition)
     dfs_parent_end_frontier_size = len(frontier)
     loop_nodes_added_end = loop_nodes_added
@@ -1245,7 +1273,7 @@ def bfs(visited, node): #function for BFS
         bfs node 17 already visited
         frontier after remove 5: 17 1 2 10 16
         """
-        # but no -1 after 5. So coul put -1 after 5 if we replaced 5 on queue
+        # but no -1 after 5. So could put -1 after 5 if we replaced 5 on queue
         # with all its parent cild stuff?
 
         if ID == -1:
@@ -1303,9 +1331,10 @@ def bfs(visited, node): #function for BFS
                 global current_partition_isLoop
                 if current_partition_isLoop:
                     # These are the names of the partitions that have a loop. In the 
-                    # DAG, we will append an 'L' to the name.
-                    Partition_loops.add(partition_name)
+                    # DAG, we will append an 'L' to the name. Not using this anymore.
                     partition_name = partition_name + "L"
+                    Partition_loops.add(partition_name)
+
                 # Patch the partition name of the frontier_parent tuples. 
                 if current_partition_isLoop:
                     # When the tuples in frontier_parent_partition_patch_tuple_list were created,
@@ -1460,6 +1489,12 @@ def bfs(visited, node): #function for BFS
                 logger.info("BFS: frontier_groups_sum: " + str(frontier_groups_sum))
                 num_frontier_groups = 0
 
+                #rhc shared
+                end_num_shadow_nodes_for_partitions = shadow_nodes_added_to_partitions
+                change_in_shadow_nodes_partitions = end_num_shadow_nodes_for_partitions - start_num_shadow_nodes_for_partitions
+                partitions_num_shadow_nodes[partition_name] = change_in_shadow_nodes_partitions
+                start_num_shadow_nodes_for_partitions = shadow_nodes_added_to_partitions
+
                 # SCC 7
 
 #rhc: Q: 
@@ -1555,9 +1590,8 @@ def bfs(visited, node): #function for BFS
                     # use loop names (with 'L") as we generate Sender and Recevers.
                     # instead of modifying the names of senders/receievers before we 
                     # generate the DAG.
-                    Group_loops.add(group_name)
                     group_name = group_name + "L"
-                    
+                    Group_loops.add(group_name)
 
 #rhc:
 # 1. clear instead of re-init?
@@ -1635,6 +1669,11 @@ def bfs(visited, node): #function for BFS
                 current_group_number += 1
                 group_names.append(group_name)
 
+                end_num_shadow_nodes_for_groups = shadow_nodes_added_to_groups
+                change_in_shadow_nodes_groups = end_num_shadow_nodes_for_groups - start_num_shadow_nodes_for_groups
+                groups_num_shadow_nodes[group_name] = change_in_shadow_nodes_groups
+                start_num_shadow_nodes_for_groups = shadow_nodes_added_to_groups
+
                 #global patch_parent_mapping_for_partitions
                 global patch_parent_mapping_for_groups
                 logger.debug("partition_nodes to patch: ")
@@ -1710,6 +1749,13 @@ def bfs(visited, node): #function for BFS
                     logger.info("-- (" + str(len(x)) + ")")
                 logger.info("")
                 """
+
+                # Tracking changes to partition size and frontier size
+                # for every call to dfs_parent. So these are after
+                # dfs_parent() calls. They are not when we end a frontier
+                # since the changes are tracked for dfs_parent() call.
+                # Note: dfs_parent() genertes a group so they are in essence
+                # per group also.
                 dfs_parent_end_partition_size = len(current_partition)
                 dfs_parent_end_frontier_size = len(frontier)
                 loop_nodes_added_end = loop_nodes_added
@@ -2146,6 +2192,7 @@ else:
 
 #rhc shared
 # copy to shared partition and groups
+#rhc ToDo: copy to Partition
 next = 0
 
 for name, group in zip(group_names, groups):
@@ -2154,6 +2201,11 @@ for name, group in zip(group_names, groups):
     for p_node in group:
         shared_groups.append(p_node)
         next += 1
+    num_shadow_nodes = groups_num_shadow_nodes[name]
+    for i in range(num_shadow_nodes):
+        shared_groups.append(Partition_Node(-1))
+        next += 1
+        group_size += 1
     group_tuple = (group_position,group_size)
     shared_groups_map[name] = group_tuple
 logger.debug("shared_groups_map:")
