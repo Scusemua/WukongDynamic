@@ -420,7 +420,7 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
         #complete_task_file_name = './'+task_file_name+'.pickle'
         #with open(complete_task_file_name, 'rb') as handle:
         #    partition_or_group = (cloudpickle.load(handle))
-        partition_or_group = shared_nodes
+        #partition_or_group = shared_nodes
         position_size_tuple = shared_map[task_file_name]
         starting_position_in_partition_group = position_size_tuple[0]
         size_of_partition_group = position_size_tuple[1]
@@ -539,16 +539,41 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
             #
             # pagerank of shadow_node is the pagerank value (of a parent of the 
             # shadow_node received from the parents partition/group executor.
-#rhc_shared: ToDo: need to append parents of shadow_nodes before we add the
-# partition/group to shared so they are already there. We need to know the
-# number of shadow nodes - we can do num = end - start and keep list of nums.
-# 1. append shadow node parents before we append to shared - need num shadow
-# nodes, 2. Fix this parent code 3. New updates with sarting position parm
-# instead of partition_or_group. 4. New task function when building DAG -
-# need an option to use shared, 5. Call this function with al its parms
-# from DAG_executor when shared option.
-# when printing stats at end, if we are using shared then we add shadow
-# nodes and parents so we have to subtract 2*num_shadow_nodes_added
+            
+            #rhc_shared 
+            """
+            Changes:
+            1. new PageRank Shared functions. These are used for executing tasks
+               when using shared partitions/groups. This includes the update
+               functions in Partition_Node. When we generate DAGs, we use these
+               new functions as the task in the DAG. 
+            2. At the end of BFS, if we are using shared, we copy the Partition_Nodes
+               to shared partitions and groups. At this point we also append the parents
+               of the shadow nodes at the end. Note: Eventually we can just add
+               the Partition_Nodes directly to shared instead of adding them to the 
+               individual partitions/groups and then copying the Partition_Nodes in the 
+               collected partitions/groups to shared.
+            3. We keep for each partition/group the numner of shadow nodes so we can append
+               an equal number of parents. This means when we collect a new partition/group
+               we collect in addition to the partition/group name the number of shadow nodes
+               for the partition/group. so we have three parallel lists or names, 
+               partitions/groups, and num shadow nodes. For collecting num shadow nodes
+               we have start and end values for the global num_shadow_nodes so we can compute
+               end - start when we collect a new partition/group and save the value in the
+               list of num shadow nodes.
+            4. When DAG_executor execute a task it calls the non-shared or shared version
+               of the pagerank task. There is also an option to use the partitions or
+               the groups. This has to be tied into the generate DAG code which will
+               generate a DAG_info file that constains a DAG of partitions or a DAG 
+               of groups.
+            5. When printing stats at end, if we are using shared then we add shadow
+               nodes and parents to the partitions/groups so we have to subtract 
+               (2*num_shadow_nodes_added)from the total number of nodes in the 
+               partitions/groups (and subtract the loop nodes added) to check that the 
+               number of nodes in the grapk is equal to the number of nodes in the 
+               paritions/groups.
+            """
+
             #rhc shared
             shared_nodes[position_of_shadow_node].pagerank = pagerank_value
             #partition_or_group[shadow_node_index].pagerank = pagerank_value
@@ -667,10 +692,10 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
                 #        damping_factor,one_minus_dumping_factor,random_jumping,total_num_nodes)
                 
                 if not task_file_name.endswith('L'):
-                    shared_nodes[node_index].update_PageRank_of_PageRank_Function(partition_or_group, 
+                    shared_nodes[node_index].update_PageRank_of_PageRank_Function_Shared(shared_nodes, position_size_tuple, 
                         damping_factor,one_minus_dumping_factor,random_jumping,total_num_nodes)
                 else:
-                    shared_nodes[node_index].update_PageRank_of_PageRank_Function_loop(partition_or_group, 
+                    shared_nodes[node_index].update_PageRank_of_PageRank_Function_loop_Shared(shared_nodes, position_size_tuple,
                         damping_factor,one_minus_dumping_factor,random_jumping,total_num_nodes)
     
                 #rhc shared

@@ -38,6 +38,7 @@ from .DAG_executor_constants import using_threads_not_processes, use_multithread
 from .DAG_executor_constants import process_work_queue_Type, FanInNB_Type, using_Lambda_Function_Simulators_to_Store_Objects
 from .DAG_executor_constants import sync_objects_in_lambdas_trigger_their_tasks, store_sync_objects_in_lambdas
 from .DAG_executor_constants import tasks_use_result_dictionary_parameter, same_output_for_all_fanout_fanin
+from .DAG_executor_constants import use_shared_partitions_groups, use_page_rank_group_partitions
 #from .DAG_work_queue_for_threads import thread_work_queue
 from .DAG_executor_work_queue_for_threads import work_queue
 from .DAG_data_dict_for_threads import data_dict
@@ -102,6 +103,19 @@ def execute_task_with_result_dictionary(task,task_name,total_num_nodes,resultDic
     #    print("Argument #%d: %s" % (i, str(args[i])))
     output = task(task_name,total_num_nodes,resultDictionary)
     return output
+
+def execute_task_with_result_dictionary_shared(task,task_name,total_num_nodes,resultDictionary,shared_map, shared_nodes):
+    #commented out for MM
+    thread_name = threading.current_thread().name
+    logger.debug(thread_name + ": execute_task_with_result_dictionary: input of execute_task is: " 
+        + str(resultDictionary))
+    #output = task(input)
+    #for i in range(0, len(args)):
+    #    print("Type of argument #%d: %s" % (i, type(args[i])))
+    #    print("Argument #%d: %s" % (i, str(args[i])))
+    output = task(task_name,total_num_nodes,resultDictionary,shared_map,shared_nodes)
+    return output
+
 
 
 def create_and_faninNB_remotely(websocket,**keyword_arguments):
@@ -1626,8 +1640,15 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                 # we will call the task with tuple args and unfold args: task(*args)
                 output = execute_task(task,args)
             else:
-                # we will call the task with: task(task_name,resultDictionary)
-                output = execute_task_with_result_dictionary(task,state_info.task_name,20,result_dictionary)
+                #def PageRank_Function_Driver_Shared(task_file_name,total_num_nodes,results_dictionary,shared_map,shared_nodes):
+                if not use_shared_partitions_groups:
+                    # we will call the task with: task(task_name,resultDictionary)
+                    output = execute_task_with_result_dictionary(task,state_info.task_name,20,result_dictionary)
+                else:
+                    if use_page_rank_group_partitions:
+                        execute_task_with_result_dictionary_shared(task,state_info.task_name,20,result_dictionary,shared_groups_map,shared_groups)
+                    else: # use the partition partitions
+                        execute_task_with_result_dictionary_shared(task,state_info.task_name,20,result_dictionary,shared_partition_map,shared_partition)
             """ where:
                 def execute_task(task,args):
                     logger.debug("input of execute_task is: " + str(args))
@@ -1636,6 +1657,11 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
             """
             """
                 def execute_task_with_result_dictionary(task,task_name,resultDictionary):
+                    output = task(task_name,resultDictionary)
+                    return output
+            """
+            """
+                def execute_task_with_result_dictionary_shared(task,task_name,total_num_nodes,resultDictionary,shared_map, shared_nodes):
                     output = task(task_name,resultDictionary)
                     return output
             """

@@ -2,7 +2,8 @@ import logging
 import cloudpickle
 from .DAG_info import DAG_Info
 from .DFS_visit import state_info
-from .BFS_pagerank import PageRank_Function_Driver
+from .BFS_pagerank import PageRank_Function_Driver, PageRank_Function_Driver_Shared
+from .DAG_executor_constants import use_shared_partitions_groups
 
 logger = logging.getLogger(__name__)
 
@@ -311,8 +312,12 @@ def generate_DAG_info():
         Partition_DAG_states[receiverY] = state
         state += 1
 
-    for key in Partition_DAG_states:
-        Partition_DAG_tasks[key] = PageRank_Function_Driver
+    if not use_shared_partitions_groups:
+        for key in Partition_DAG_states:
+            Partition_DAG_tasks[key] = PageRank_Function_Driver
+    else:
+        for key in Partition_DAG_states:
+            Partition_DAG_tasks[key] = PageRank_Function_Driver_Shared   
 
     logger.info("")
     DAG_info = {}
@@ -600,8 +605,12 @@ def generate_DAG_info():
             Group_DAG_states[receiverY] = state
             state += 1
 
-    for key in Group_DAG_states:
-        Group_DAG_tasks[key] = PageRank_Function_Driver
+    if not use_shared_partitions_groups:
+        for key in Partition_DAG_states:
+            Group_DAG_tasks[key] = PageRank_Function_Driver
+    else:
+        for key in Partition_DAG_states:
+            Group_DAG_tasks[key] = PageRank_Function_Driver_Shared  
 
     logger.info("")
     DAG_info = {}
@@ -764,9 +773,13 @@ def generate_DAG_info():
             'PR11_1': (PageRank_Function_Driver, ['PR10_2', 'PR10_3'])
     }
     """
-    
+
     logger.debug("")
-    driver = "PageRank_Function_Driver"
+    
+    if not use_shared_partitions_groups:
+        driver = "PageRank_Function_Driver"
+    else:
+        driver = "PageRank_Function_Driver_Shared"
     dsk_lines = []
     header_line = "\t" + "dsk = {"
     dsk_lines.append(header_line)

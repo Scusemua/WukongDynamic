@@ -61,6 +61,10 @@ class Partition_Node:
     """
 
 #rhc shared
+
+#    position_size_tuple = shared_map[task_file_name]
+#    starting_position_in_partition_group = position_size_tuple[0]
+#    size_of_partition_group = position_size_tuple[1]
 # parent indices re relative to partition_or_group, so we need to translate them 
 # too? So need new shared version of thse update functions. Pass the starting 
 # position so we can use [startng_position + index]. Same for loop.
@@ -124,6 +128,88 @@ class Partition_Node:
         
         #Note: a paent has at least one child so num_children is not 0
         pagerank_sum = sum((partition_or_group[node_index].prev / partition_or_group[node_index].num_children) for node_index in parent_nodes)
+        if (debug_pagerank):
+            logger.debug("update_pagerank: pagerank_sum: " + str(pagerank_sum))
+        #random_jumping = damping_factor / total_num_nodes
+        if (debug_pagerank):
+            logger.debug("damping_factor:" + str(damping_factor) + " 1-damping_factor:" + str(1-damping_factor) + " num_nodes: " + str(total_num_nodes) + " random_jumping: " + str(random_jumping))
+        #self.pagerank = random_jumping + ((1-damping_factor) * pagerank_sum)
+        self.pagerank = random_jumping + (one_minus_dumping_factor * pagerank_sum)
+        if (debug_pagerank):
+            logger.debug ("update_pagerank: pagerank of node: " + str(self.ID) + ": " + str(self.pagerank))
+            logger.debug("")
+
+    
+#rhc shared
+
+#    position_size_tuple = shared_map[task_file_name]
+#    starting_position_in_partition_group = position_size_tuple[0]
+#    size_of_partition_group = position_size_tuple[1]
+# parent indices re relative to partition_or_group, so we need to translate them 
+# too? So need new shared version of thse update functions. Pass the starting 
+# position so we can use [startng_position + index]. Same for loop.
+    def update_PageRank_of_PageRank_Function_Shared(self, shared_nodes, position_size_tuple, damping_factor,
+        one_minus_dumping_factor,random_jumping,total_num_nodes):
+
+        starting_position_in_partition_group = position_size_tuple[0]
+        # FYI:
+        #size_of_partition_group = position_size_tuple[1]
+
+        parent_nodes = self.parents
+        if not self.isShadowNode:
+            my_ID = str(self.ID)
+        else:
+            my_ID = str(self.ID) + "-s"
+
+        global debug_pagerank
+        #logger.debug("debug_pagerank: "  + str(debug_pagerank))
+        if (debug_pagerank):
+            logger.debug("update_pagerank: node " + my_ID)
+            logger.debug("update_pagerank: parent_nodes: " + str(parent_nodes))
+            logger.debug("update_pagerank: num_children: " + str(self.num_children))
+        
+        #Note: a parent has at least one child so num_children is not 0
+        pagerank_sum = sum((shared_nodes[node_index+starting_position_in_partition_group].pagerank / shared_nodes[node_index].num_children) for node_index in parent_nodes)
+        if (debug_pagerank):
+            logger.debug("update_pagerank: pagerank_sum: " + str(pagerank_sum))
+        #random_jumping = damping_factor / total_num_nodes
+        if (debug_pagerank):
+            logger.debug("damping_factor:" + str(damping_factor) + " 1-damping_factor:" + str(1-damping_factor) + " num_nodes: " + str(total_num_nodes) + " random_jumping: " + str(random_jumping))
+        #self.pagerank = random_jumping + ((1-damping_factor) * pagerank_sum)
+        self.pagerank = random_jumping + (one_minus_dumping_factor * pagerank_sum)
+        if (debug_pagerank):
+            logger.debug ("update_pagerank: pagerank of node: " + str(self.ID) + ": " + str(self.pagerank))
+            logger.debug("")
+
+    def update_PageRank_of_PageRank_Function_loop_Shared(self, shared_nodes, position_size_tuple ,damping_factor,
+        one_minus_dumping_factor,random_jumping,total_num_nodes):
+
+        starting_position_in_partition_group = position_size_tuple[0]
+        # FYI:
+        #size_of_partition_group = position_size_tuple[1]
+
+        parent_nodes = self.parents
+        if not self.isShadowNode:
+            my_ID = str(self.ID)
+        else:
+            my_ID = str(self.ID) + "-s"
+
+        global debug_pagerank
+        #logger.debug("debug_pagerank: "  + str(debug_pagerank))
+        if (debug_pagerank):
+            logger.debug("update_pagerank: node " + my_ID)
+            logger.debug("update_pagerank: parent_nodes: " + str(parent_nodes))
+            logger.debug("update_pagerank: num_children: " + str(self.num_children))
+        
+        #if self.ID == 16:
+        #    parent1 = partition_or_group[1]
+        #    parent2 = partition_or_group[2]
+        #    if (debug_pagerank):
+        #        logger.info("16 parent : " + str(parent1.ID) + " num_children: " + str(parent1.num_children))
+        #       logger.info("16 parent : " + str(parent2.ID) + " num_children: " + str(parent2.num_children))
+        
+        #Note: a paent has at least one child so num_children is not 0
+        pagerank_sum = sum((shared_nodes[node_index + starting_position_in_partition_group].prev / shared_nodes[node_index].num_children) for node_index in parent_nodes)
         if (debug_pagerank):
             logger.debug("update_pagerank: pagerank_sum: " + str(pagerank_sum))
         #random_jumping = damping_factor / total_num_nodes

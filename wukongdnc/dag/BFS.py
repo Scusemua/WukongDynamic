@@ -17,6 +17,7 @@ from .BFS_generate_DAG_info import Partition_senders, Partition_receivers, Group
 #rhc shared
 from .DAG_executor import shared_partition, shared_groups
 from .DAG_executor import shared_partition_map, shared_groups_map
+from .DAG_executor_constants import use_shared_partitions_groups, use_page_rank_group_partitions
 
 #from .DAG_executor_constants import run_all_tasks_locally, using_threads_not_processes
 
@@ -62,8 +63,8 @@ start_num_shadow_nodes_for_partitions = 0
 end_num_shadow_nodes_for_partitions = 0
 start_num_shadow_nodes_for_groups = 0
 end_num_shadow_nodes_for_groups = 0
-partitions_num_shadow_nodes = {}
-groups_num_shadow_nodes = {}
+partitions_num_shadow_nodes = []
+groups_num_shadow_nodes = []
 total_loop_nodes_added = 0
 frontier_costs = []
 frontier_cost = []
@@ -1137,8 +1138,9 @@ def bfs(visited, node): #function for BFS
     global loop_nodes_added
     loop_nodes_added_start = loop_nodes_added
     #rhc shared
-    start_num_shadow_nodes_for_partitions = shadow_nodes_added_to_partitions
-    start_num_shadow_nodes_for_groups = shadow_nodes_added_to_groups
+    if use_shared_partitions_groups:
+        start_num_shadow_nodes_for_partitions = shadow_nodes_added_to_partitions
+        start_num_shadow_nodes_for_groups = shadow_nodes_added_to_groups
 
     #dfs_p(visited, graph, node)
     #dfs_p_new(visited, graph, node)
@@ -1207,10 +1209,13 @@ def bfs(visited, node): #function for BFS
     # current_group_number will be 1 wen we find the first group of the 
     # next partition.
     group_names.append(group_name)
-    #rhc shared
-    # assert: first partition/group has no shadow_nodes
-    change_in_shadow_nodes__for_group = end_num_shadow_nodes_for_groups - start_num_shadow_nodes_for_groups
-    groups_num_shadow_nodes[group_name] = change_in_shadow_nodes__for_group
+    
+    if use_shared_partitions_groups:
+        #rhc shared
+        # assert: first partition/group has no shadow_nodes
+        change_in_shadow_nodes_for_group = end_num_shadow_nodes_for_groups - start_num_shadow_nodes_for_groups
+        groups_num_shadow_nodes.append(change_in_shadow_nodes_for_group)
+        start_num_shadow_nodes_for_groups = shadow_nodes_added_to_groups
 
     # These are tracked per dfs_parent() call, so we compute them here and 
     # at after the calls to dfs_parent() below.
@@ -1404,6 +1409,13 @@ def bfs(visited, node): #function for BFS
                 current_partition_isLoop = False
                 partition_names.append(partition_name)
 
+                if use_shared_partitions_groups:
+                    #rhc shared
+                    end_num_shadow_nodes_for_partitions = shadow_nodes_added_to_partitions
+                    change_in_shadow_nodes_for_partitions = end_num_shadow_nodes_for_partitions - start_num_shadow_nodes_for_partitions
+                    partitions_num_shadow_nodes.append(change_in_shadow_nodes_for_partitions)
+                    start_num_shadow_nodes_for_partitions = shadow_nodes_added_to_partitions
+
                 global patch_parent_mapping_for_partitions
                 logger.debug("BFS: partition_nodes to patch: ")
                 for parent_tuple in patch_parent_mapping_for_partitions:
@@ -1488,12 +1500,6 @@ def bfs(visited, node): #function for BFS
                 # frontier_groups_sum += num_frontier_groups
                 logger.info("BFS: frontier_groups_sum: " + str(frontier_groups_sum))
                 num_frontier_groups = 0
-
-                #rhc shared
-                end_num_shadow_nodes_for_partitions = shadow_nodes_added_to_partitions
-                change_in_shadow_nodes_partitions = end_num_shadow_nodes_for_partitions - start_num_shadow_nodes_for_partitions
-                partitions_num_shadow_nodes[partition_name] = change_in_shadow_nodes_partitions
-                start_num_shadow_nodes_for_partitions = shadow_nodes_added_to_partitions
 
                 # SCC 7
 
@@ -1669,10 +1675,12 @@ def bfs(visited, node): #function for BFS
                 current_group_number += 1
                 group_names.append(group_name)
 
-                end_num_shadow_nodes_for_groups = shadow_nodes_added_to_groups
-                change_in_shadow_nodes_groups = end_num_shadow_nodes_for_groups - start_num_shadow_nodes_for_groups
-                groups_num_shadow_nodes[group_name] = change_in_shadow_nodes_groups
-                start_num_shadow_nodes_for_groups = shadow_nodes_added_to_groups
+                if use_shared_partitions_groups:
+                    #rhc shared
+                    end_num_shadow_nodes_for_groups = shadow_nodes_added_to_groups
+                    change_in_shadow_nodes_for_groups = end_num_shadow_nodes_for_groups - start_num_shadow_nodes_for_groups
+                    groups_num_shadow_nodes.append(change_in_shadow_nodes_for_groups)
+                    start_num_shadow_nodes_for_groups = shadow_nodes_added_to_groups
 
                 #global patch_parent_mapping_for_partitions
                 global patch_parent_mapping_for_groups
@@ -2170,8 +2178,49 @@ if len(current_partition) > 0:
     partitions.append(current_partition.copy())
     current_partition = []
 
+    #rhc shared: added all the name stuff - should have been there
+    partition_name = "PR" + str(current_partition_number) + "_1"
+    #global current_partition_isLoop
+    if current_partition_isLoop:
+        # These are the names of the partitions that have a loop. In the 
+        # DAG, we will append an 'L' to the name. Not using this anymore.
+        partition_name = partition_name + "L"
+        Partition_loops.add(partition_name)
+
+    current_partition_isLoop = False
+    partition_names.append(partition_name)
+
+    if use_shared_partitions_groups:
+        #rhc shared
+        end_num_shadow_nodes_for_partitions = shadow_nodes_added_to_partitions
+        change_in_shadow_nodes_for_partitions = end_num_shadow_nodes_for_partitions - start_num_shadow_nodes_for_partitions
+        partitions_num_shadow_nodes.append(change_in_shadow_nodes_for_partitions)
+        # not needed here since we are done but kept to be consisent with use above
+        start_num_shadow_nodes_for_partitions = shadow_nodes_added_to_partitions
+
     groups.append(current_group)
     current_group = []
+
+    group_name = "PR" + str(current_partition_number) + "_" + str(current_group_number)
+    if current_group_isLoop:
+        # These are the names of the groups that have a loop. In the 
+        # DAG, we will append an 'L' to the name. Not used since we 
+        # use loop names (with 'L") as we generate Sender and Recevers.
+        # instead of modifying the names of senders/receievers before we 
+        # generate the DAG.
+        group_name = group_name + "L"
+        Group_loops.add(group_name)
+
+    current_group_isLoop = False
+    group_names.append(group_name)
+
+    if use_shared_partitions_groups:
+        #rhc shared
+        end_num_shadow_nodes_for_groups = shadow_nodes_added_to_groups
+        change_in_shadow_nodes_for_groups = end_num_shadow_nodes_for_groups - start_num_shadow_nodes_for_groups
+        groups_num_shadow_nodes.append(change_in_shadow_nodes_for_groups)
+        # not needed here since we are done but kept to be consisent with use above
+        start_num_shadow_nodes_for_groups = shadow_nodes_added_to_groups
 
     nodeIndex_to_partitionIndex_maps.append(nodeIndex_to_partitionIndex_map)
     nodeIndex_to_partitionIndex_map = {}
@@ -2190,31 +2239,50 @@ else:
     # does not require a deepcop
     frontiers.append(frontier.copy())
 
-#rhc shared
-# copy to shared partition and groups
-#rhc ToDo: copy to Partition
-next = 0
-
-for name, group in zip(group_names, groups):
-    group_position = next
-    group_size = len(group)
-    for p_node in group:
-        shared_groups.append(p_node)
-        next += 1
-    num_shadow_nodes = groups_num_shadow_nodes[name]
-    for i in range(num_shadow_nodes):
-        shared_groups.append(Partition_Node(-1))
-        next += 1
-        group_size += 1
-    group_tuple = (group_position,group_size)
-    shared_groups_map[name] = group_tuple
-logger.debug("shared_groups_map:")
-for (k,v) in shared_groups_map.items():
-    logger.debug(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + ")")
-logger.debug("shared_groups")
-for p_node in shared_groups:
-    logger.debug(p_node)
-logger.debug("")
+if use_shared_partitions_groups:
+    #rhc shared
+    if not use_page_rank_group_partitions:
+        next = 0
+        for name, partition, num_shadow_nodes in zip(partition_names, partitions, partitions_num_shadow_nodes):
+            partition_position = next
+            partition_size = len(partition)
+            for p_node in partition:
+                shared_partition.append(p_node)
+                next += 1
+            for i in range(num_shadow_nodes):
+                shared_partition.append(Partition_Node(-1))
+                next += 1
+                partition_size += 1
+            partition_tuple = (partition_position,partition_size)
+            shared_partition_map[name] = partition_tuple
+        logger.debug("shared_partition_map:")
+        for (k,v) in shared_partition_map.items():
+            logger.debug(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + ")")
+        logger.debug("shared_partition")
+        for p_node in shared_partition:
+            logger.debug(p_node)
+        logger.debug("")
+    else:
+        next = 0
+        for name, group, num_shadow_nodes in zip(group_names, groups, groups_num_shadow_nodes):
+            group_position = next
+            group_size = len(group)
+            for p_node in group:
+                shared_groups.append(p_node)
+                next += 1
+            for i in range(num_shadow_nodes):
+                shared_groups.append(Partition_Node(-1))
+                next += 1
+                group_size += 1
+            group_tuple = (group_position,group_size)
+            shared_groups_map[name] = group_tuple
+        logger.debug("shared_groups_map:")
+        for (k,v) in shared_groups_map.items():
+            logger.debug(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + ")")
+        logger.debug("shared_groups")
+        for p_node in shared_groups:
+            logger.debug(p_node)
+        logger.debug("")
 
 #partitions.append(current_partition.copy())
 #frontiers.append(frontier.copy())
@@ -2242,9 +2310,13 @@ for x in partitions:
     logger.debug(str(i) + ":length of partition: " + str(len(x)))
     i += 1
 logger.debug("shadow_nodes_added: " + str(shadow_nodes_added_to_partitions))
-sum_of_partition_lengths -= (total_loop_nodes_added + shadow_nodes_added_to_partitions)
+if not use_shared_partitions_groups:
+    sum_of_partition_lengths -= (total_loop_nodes_added + shadow_nodes_added_to_partitions)
+else:
+    # added shadow nodes and their parents
+    sum_of_partition_lengths -= (total_loop_nodes_added + (2*shadow_nodes_added_to_partitions))
 #if (len(current_partition)-loop_nodes_added) != num_nodes
-logger.info("sum_of_partition_lengths (not counting total_loop_nodes_added or shadow_nodes_added): " 
+logger.info("sum_of_partition_lengths (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
     + str(sum_of_partition_lengths))
 if sum_of_partition_lengths != num_nodes:
     logger.error("[Error]: sum_of_partition_lengths is " + str(sum_of_partition_lengths)
@@ -2257,9 +2329,12 @@ for x in groups:
     logger.debug(str(i) + ": length of group: " + str(len(x)))
     i+=1
 logger.debug("shadow_nodes_added: " + str(shadow_nodes_added_to_groups))
-sum_of_groups_lengths -= (total_loop_nodes_added + shadow_nodes_added_to_groups)
+if not use_shared_partitions_groups:
+    sum_of_groups_lengths -= (total_loop_nodes_added + shadow_nodes_added_to_groups)
+else:
+    sum_of_groups_lengths -= (total_loop_nodes_added + (2*shadow_nodes_added_to_groups))
 #if (len(current_partition)-loop_nodes_added) != num_nodes
-logger.info("sum_of_groups_lengths (not counting total_loop_nodes_added or shadow_nodes_added): " 
+logger.info("sum_of_groups_lengths (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
     + str(sum_of_groups_lengths))
 if sum_of_groups_lengths != num_nodes:
     logger.error("[Error]: sum_of_groups_lengths is " + str(sum_of_groups_lengths)
