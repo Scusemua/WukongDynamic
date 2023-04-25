@@ -1662,7 +1662,7 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
             """
             """
                 def execute_task_with_result_dictionary_shared(task,task_name,total_num_nodes,resultDictionary,shared_map, shared_nodes):
-                    output = task(task_name,resultDictionary)
+                    output = task(task_name,total_num_nodes,resultDictionary,shared_map,shared_nodes)
                     return output
             """
             """

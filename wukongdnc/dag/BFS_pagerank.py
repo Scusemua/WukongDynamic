@@ -407,7 +407,7 @@ def PageRank_Function_Driver_Shared(task_file_name,total_num_nodes,results_dicti
         # PageRank_Function will be an empty list.
         if not v ==  ():
             input_tuples += v
-    output = PageRank_Function(task_file_name,total_num_nodes,input_tuples)
+    output = PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_map,shared_nodes)
     return output
 
 #def PageRank_Function(task_file_name,total_num_nodes,input_tuples,results):
@@ -572,6 +572,12 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
                partitions/groups (and subtract the loop nodes added) to check that the 
                number of nodes in the grapk is equal to the number of nodes in the 
                paritions/groups.
+            ToDO:
+            Test
+            test all w/ partitions instad of groups
+            cut in partions vs groups option
+            partial DAG generation
+            run with real lambdas
             """
 
             #rhc shared
@@ -764,6 +770,10 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
         ID:17 frontier_parents: [(2, 2, 5)]
         ID:1 frontier_parents: [(2, 3, 3)]
         """
+        #rhc: Note: Instead of looping, we could give each partition/group 
+        # output tuples that indited where the nodes with non-empty
+        # frontoer parents are. These loops may be ong for large 
+        # partitions/groups.
         PageRank_output = {}
         #rhc shared
         for node_index in range (starting_position_in_partition_group,starting_position_in_partition_group+size_of_partition_group):

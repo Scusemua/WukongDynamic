@@ -57,14 +57,14 @@ dfs_parent_changes_in_frontier_size = []
 # This is used in the pre/post dfs_parent code when adding L-nodes to
 # partitions.
 loop_nodes_added = 0
-shadow_nodes_added_to_partitions = 0
-shadow_nodes_added_to_groups = 0
+num_shadow_nodes_added_to_partitions = 0
+num_shadow_nodes_added_to_groups = 0
 start_num_shadow_nodes_for_partitions = 0
 end_num_shadow_nodes_for_partitions = 0
 start_num_shadow_nodes_for_groups = 0
 end_num_shadow_nodes_for_groups = 0
-partitions_num_shadow_nodes = []
-groups_num_shadow_nodes = []
+partitions_num_shadow_nodes_list = []
+groups_num_shadow_nodes_list = []
 total_loop_nodes_added = 0
 frontier_costs = []
 frontier_cost = []
@@ -132,10 +132,10 @@ nodeIndex_to_groupIndex_maps = []
 nodeIndex_to_partition_partitionIndex_group_groupIndex_map = {}
 
 dfs_parent_start_partition_size = 0
-loop_nodes_added_start = 0
+dfs_parent_loop_nodes_added_start = 0
 dfs_parent_start_frontier_size = 0
 dfs_parent_end_partition_size = 0
-loop_nodes_added_end = 0
+dfs_parent_loop_nodes_added_end = 0
 dfs_parent_end_frontier_size = 0
 
 IDENTIFY_SINGLETONS = False
@@ -628,8 +628,8 @@ def dfs_parent(visited, node):  #function for dfs
                         #rhc: make group node's parent be this shadow node
                         group_node.parents[index_of_parent] = len(current_group)-1
                     
-                        global shadow_nodes_added_to_groups
-                        shadow_nodes_added_to_groups += 1
+                        global num_shadow_nodes_added_to_groups
+                        num_shadow_nodes_added_to_groups += 1
 
                         # remember where the frontier_parent node should be placed when the 
                         # partition the PageRank task sends it to receives it. 
@@ -836,10 +836,10 @@ def dfs_parent(visited, node):  #function for dfs
                 partition_node.parents[index_of_parent] = len(current_partition)-1
                 group_node.parents[index_of_parent] = len(current_group)-1
             
-                global shadow_nodes_added_to_partitions
+                global num_shadow_nodes_added_to_partitions
                 #global shadow_nodes_added_to_groups
-                shadow_nodes_added_to_partitions += 1
-                shadow_nodes_added_to_groups += 1
+                num_shadow_nodes_added_to_partitions += 1
+                num_shadow_nodes_added_to_groups += 1
 
                 # remember where the frontier_parent node should be placed when the 
                 # partition the PageRank task sends it to receives it. 
@@ -1120,27 +1120,31 @@ def bfs(visited, node): #function for BFS
 
 
     global dfs_parent_start_partition_size
-    global loop_nodes_added_start
+    global dfs_parent_loop_nodes_added_start
     global dfs_parent_start_frontier_size
     global dfs_parent_end_partition_size
-    global loop_nodes_added_end
+    global dfs_parent_loop_nodes_added_end
     global dfs_parent_end_frontier_size
     #rhc shared
     global start_num_shadow_nodes_for_partitions
     global end_num_shadow_nodes_for_partitions
     global start_num_shadow_nodes_for_groups
     global end_num_shadow_nodes_for_groups
+    global num_shadow_nodes_added_to_partitions
+    global num_shadow_nodes_added_to_groups
 
 #rhc: q:
     # are not these lengths 0?
+    # These are per dfs_parent() stats not per partition
     dfs_parent_start_partition_size = len(current_partition)
     dfs_parent_start_frontier_size = len(frontier)
     global loop_nodes_added
-    loop_nodes_added_start = loop_nodes_added
+    dfs_parent_loop_nodes_added_start = loop_nodes_added
     #rhc shared
     if use_shared_partitions_groups:
-        start_num_shadow_nodes_for_partitions = shadow_nodes_added_to_partitions
-        start_num_shadow_nodes_for_groups = shadow_nodes_added_to_groups
+        start_num_shadow_nodes_for_partitions = num_shadow_nodes_added_to_partitions
+        # start it here before root cal to dfs_parents()
+        start_num_shadow_nodes_for_groups = num_shadow_nodes_added_to_groups
 
     #dfs_p(visited, graph, node)
     #dfs_p_new(visited, graph, node)
@@ -1214,19 +1218,23 @@ def bfs(visited, node): #function for BFS
         #rhc shared
         # assert: first partition/group has no shadow_nodes
         change_in_shadow_nodes_for_group = end_num_shadow_nodes_for_groups - start_num_shadow_nodes_for_groups
-        groups_num_shadow_nodes.append(change_in_shadow_nodes_for_group)
-        start_num_shadow_nodes_for_groups = shadow_nodes_added_to_groups
+        groups_num_shadow_nodes_list.append(change_in_shadow_nodes_for_group)
+        # start it here before next call to dfs_parent but note that we 
+        # may not call dfs_parent() since the node may not have any (unvisited)
+        # children in which case we will generate a final partition/group
+        # and we need to have called start here.
+        start_num_shadow_nodes_for_groups = num_shadow_nodes_added_to_groups
 
     # These are tracked per dfs_parent() call, so we compute them here and 
     # at after the calls to dfs_parent() below.
     dfs_parent_end_partition_size = len(current_partition)
     dfs_parent_end_frontier_size = len(frontier)
-    loop_nodes_added_end = loop_nodes_added
+    dfs_parent_loop_nodes_added_end = loop_nodes_added
 #rhc: Q: are not these sizes len(current_partition) and len(frontier)/
     dfs_parent_change_in_partition_size = (dfs_parent_end_partition_size - dfs_parent_start_partition_size) - (
-        loop_nodes_added_end - loop_nodes_added_start)
+        dfs_parent_loop_nodes_added_end - dfs_parent_loop_nodes_added_start)
     dfs_parent_change_in_frontier_size = (dfs_parent_end_frontier_size - dfs_parent_start_frontier_size) - (
-        loop_nodes_added_end - loop_nodes_added_start)
+        dfs_parent_loop_nodes_added_end - dfs_parent_loop_nodes_added_start)
     logger.debug("dfs_parent(root)_change_in_partition_size: " + str(dfs_parent_change_in_partition_size))
     logger.debug("dfs_parent(root)_change_in_frontier_size: " + str(dfs_parent_change_in_frontier_size))
     dfs_parent_changes_in_partiton_size.append(dfs_parent_change_in_partition_size)
@@ -1411,10 +1419,10 @@ def bfs(visited, node): #function for BFS
 
                 if use_shared_partitions_groups:
                     #rhc shared
-                    end_num_shadow_nodes_for_partitions = shadow_nodes_added_to_partitions
+                    end_num_shadow_nodes_for_partitions = num_shadow_nodes_added_to_partitions
                     change_in_shadow_nodes_for_partitions = end_num_shadow_nodes_for_partitions - start_num_shadow_nodes_for_partitions
-                    partitions_num_shadow_nodes.append(change_in_shadow_nodes_for_partitions)
-                    start_num_shadow_nodes_for_partitions = shadow_nodes_added_to_partitions
+                    partitions_num_shadow_nodes_list.append(change_in_shadow_nodes_for_partitions)
+                    start_num_shadow_nodes_for_partitions = num_shadow_nodes_added_to_partitions
 
                 global patch_parent_mapping_for_partitions
                 logger.debug("BFS: partition_nodes to patch: ")
@@ -1539,7 +1547,6 @@ def bfs(visited, node): #function for BFS
                 frontier_costs.append(frontier_cost)
                 frontier.clear()
 
-
         if not len(node.children):
             logger.debug ("bfs node " + str(node.ID) + " has no children")
         else:
@@ -1554,9 +1561,9 @@ def bfs(visited, node): #function for BFS
                 logger.debug ("bfs dfs_parent("+ str(neighbor.ID) + ")")
 
                 dfs_parent_start_partition_size = len(current_partition)
-                loop_nodes_added_start = loop_nodes_added
+                dfs_parent_loop_nodes_added_start = loop_nodes_added
                 dfs_parent_start_frontier_size = len(frontier)
-
+ 
                 num_frontier_groups += 1
                 frontier_groups_sum += 1
                 #dfs_p_new(visited, graph, neighbor)
@@ -1677,10 +1684,14 @@ def bfs(visited, node): #function for BFS
 
                 if use_shared_partitions_groups:
                     #rhc shared
-                    end_num_shadow_nodes_for_groups = shadow_nodes_added_to_groups
+                    end_num_shadow_nodes_for_groups = num_shadow_nodes_added_to_groups
                     change_in_shadow_nodes_for_groups = end_num_shadow_nodes_for_groups - start_num_shadow_nodes_for_groups
-                    groups_num_shadow_nodes.append(change_in_shadow_nodes_for_groups)
-                    start_num_shadow_nodes_for_groups = shadow_nodes_added_to_groups
+                    groups_num_shadow_nodes_list.append(change_in_shadow_nodes_for_groups)
+                    # call start here before next call to dfs_parents(), if any, since we 
+                    # may not call dfs_parents() again as node may not have any (unvisited) children.
+                    # if no call to dfs_parent() we may still have a final partition/group and we
+                    # need to have called start before then.
+                    start_num_shadow_nodes_for_groups = num_shadow_nodes_added_to_groups
 
                 #global patch_parent_mapping_for_partitions
                 global patch_parent_mapping_for_groups
@@ -1766,11 +1777,11 @@ def bfs(visited, node): #function for BFS
                 # per group also.
                 dfs_parent_end_partition_size = len(current_partition)
                 dfs_parent_end_frontier_size = len(frontier)
-                loop_nodes_added_end = loop_nodes_added
+                dfs_parent_loop_nodes_added_end = loop_nodes_added
                 dfs_parent_change_in_partition_size = (dfs_parent_end_partition_size - dfs_parent_start_partition_size) - (
-                    loop_nodes_added_end - loop_nodes_added_start)
+                    dfs_parent_loop_nodes_added_end - dfs_parent_loop_nodes_added_start)
                 dfs_parent_change_in_frontier_size = (dfs_parent_end_frontier_size - dfs_parent_start_frontier_size) - (
-                    loop_nodes_added_end - loop_nodes_added_start)
+                    dfs_parent_loop_nodes_added_end - dfs_parent_loop_nodes_added_start)
                 logger.debug("dfs_parent("+str(node.ID) + ")_change_in_partition_size: " + str(dfs_parent_change_in_partition_size))
                 logger.debug("dfs_parent("+str(node.ID) + ")_change_in_frontier_size: " + str(dfs_parent_change_in_frontier_size))
                 dfs_parent_changes_in_partiton_size.append(dfs_parent_change_in_partition_size)
@@ -2192,11 +2203,11 @@ if len(current_partition) > 0:
 
     if use_shared_partitions_groups:
         #rhc shared
-        end_num_shadow_nodes_for_partitions = shadow_nodes_added_to_partitions
+        end_num_shadow_nodes_for_partitions = num_shadow_nodes_added_to_partitions
         change_in_shadow_nodes_for_partitions = end_num_shadow_nodes_for_partitions - start_num_shadow_nodes_for_partitions
-        partitions_num_shadow_nodes.append(change_in_shadow_nodes_for_partitions)
+        partitions_num_shadow_nodes_list.append(change_in_shadow_nodes_for_partitions)
         # not needed here since we are done but kept to be consisent with use above
-        start_num_shadow_nodes_for_partitions = shadow_nodes_added_to_partitions
+        start_num_shadow_nodes_for_partitions = num_shadow_nodes_added_to_partitions
 
     groups.append(current_group)
     current_group = []
@@ -2216,11 +2227,11 @@ if len(current_partition) > 0:
 
     if use_shared_partitions_groups:
         #rhc shared
-        end_num_shadow_nodes_for_groups = shadow_nodes_added_to_groups
+        end_num_shadow_nodes_for_groups = num_shadow_nodes_added_to_groups
         change_in_shadow_nodes_for_groups = end_num_shadow_nodes_for_groups - start_num_shadow_nodes_for_groups
-        groups_num_shadow_nodes.append(change_in_shadow_nodes_for_groups)
+        groups_num_shadow_nodes_list.append(change_in_shadow_nodes_for_groups)
         # not needed here since we are done but kept to be consisent with use above
-        start_num_shadow_nodes_for_groups = shadow_nodes_added_to_groups
+        start_num_shadow_nodes_for_groups = num_shadow_nodes_added_to_groups
 
     nodeIndex_to_partitionIndex_maps.append(nodeIndex_to_partitionIndex_map)
     nodeIndex_to_partitionIndex_map = {}
@@ -2228,8 +2239,11 @@ if len(current_partition) > 0:
     nodeIndex_to_groupIndex_map = {}
 
     #global total_loop_nodes_added
+    # if we didn't call dfs_parent() can this be non-zero?
     total_loop_nodes_added += loop_nodes_added
-    loop_nodes_added = 0
+    # use loop_nodes_added below when printing stats so do not reset it
+    # and besides BFS is done.
+    #loop_nodes_added = 0
     # does not require a deepcopy
     frontiers.append(frontier.copy())
     frontier_cost = "atEnd:" + str(len(frontier))
@@ -2241,48 +2255,54 @@ else:
 
 if use_shared_partitions_groups:
     #rhc shared
-    if not use_page_rank_group_partitions:
-        next = 0
-        for name, partition, num_shadow_nodes in zip(partition_names, partitions, partitions_num_shadow_nodes):
-            partition_position = next
-            partition_size = len(partition)
-            for p_node in partition:
-                shared_partition.append(p_node)
-                next += 1
-            for i in range(num_shadow_nodes):
-                shared_partition.append(Partition_Node(-1))
-                next += 1
-                partition_size += 1
-            partition_tuple = (partition_position,partition_size)
-            shared_partition_map[name] = partition_tuple
-        logger.debug("shared_partition_map:")
-        for (k,v) in shared_partition_map.items():
-            logger.debug(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + ")")
-        logger.debug("shared_partition")
-        for p_node in shared_partition:
-            logger.debug(p_node)
-        logger.debug("")
-    else:
-        next = 0
-        for name, group, num_shadow_nodes in zip(group_names, groups, groups_num_shadow_nodes):
-            group_position = next
-            group_size = len(group)
-            for p_node in group:
-                shared_groups.append(p_node)
-                next += 1
-            for i in range(num_shadow_nodes):
-                shared_groups.append(Partition_Node(-1))
-                next += 1
-                group_size += 1
-            group_tuple = (group_position,group_size)
-            shared_groups_map[name] = group_tuple
-        logger.debug("shared_groups_map:")
-        for (k,v) in shared_groups_map.items():
-            logger.debug(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + ")")
-        logger.debug("shared_groups")
-        for p_node in shared_groups:
-            logger.debug(p_node)
-        logger.debug("")
+    #if not use_page_rank_group_partitions:
+    next = 0
+    for name, partition, num_shadow_nodes in zip(partition_names, partitions, partitions_num_shadow_nodes_list):
+        partition_position = next
+        partition_size = len(partition)
+        for p_node in partition:
+            shared_partition.append(p_node)
+            next += 1
+        for i in range(num_shadow_nodes):
+            shared_partition.append(Partition_Node(-2))
+            next += 1
+            partition_size += 1
+        partition_tuple = (partition_position,partition_size)
+        shared_partition_map[name] = partition_tuple
+    logger.debug("Number of shadow nodes for partitions:")
+    for num in partitions_num_shadow_nodes_list:
+        logger.debug(num)
+    logger.debug("shared_partition_map:")
+    for (k,v) in shared_partition_map.items():
+        logger.debug(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + ")")
+    logger.debug("shared_partition")
+    for p_node in shared_partition:
+        logger.debug(p_node)
+    logger.debug("")
+    #else:
+    next = 0
+    for name, group, num_shadow_nodes in zip(group_names, groups, groups_num_shadow_nodes_list):
+        group_position = next
+        group_size = len(group)
+        for p_node in group:
+            shared_groups.append(p_node)
+            next += 1
+        for i in range(num_shadow_nodes):
+            shared_groups.append(Partition_Node(-2))
+            next += 1
+            group_size += 1
+        group_tuple = (group_position,group_size)
+        shared_groups_map[name] = group_tuple
+    logger.debug("Number of shadow nodes for groups:")
+    for num in groups_num_shadow_nodes_list:
+        logger.debug(num)
+    logger.debug("shared_groups_map:")
+    for (k,v) in shared_groups_map.items():
+        logger.debug(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + ")")
+    logger.debug("shared_groups")
+    for p_node in shared_groups:
+        logger.debug(p_node)
+    logger.debug("")
 
 #partitions.append(current_partition.copy())
 #frontiers.append(frontier.copy())
@@ -2309,18 +2329,23 @@ for x in partitions:
     sum_of_partition_lengths += len(x)
     logger.debug(str(i) + ":length of partition: " + str(len(x)))
     i += 1
-logger.debug("shadow_nodes_added: " + str(shadow_nodes_added_to_partitions))
+logger.debug("shadow_nodes_added: " + str(num_shadow_nodes_added_to_partitions))
 if not use_shared_partitions_groups:
-    sum_of_partition_lengths -= (total_loop_nodes_added + shadow_nodes_added_to_partitions)
+    sum_of_partition_lengths -= (total_loop_nodes_added + num_shadow_nodes_added_to_partitions)
+    logger.info("sum_of_partition_lengths (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
+        + str(sum_of_partition_lengths))
+    if sum_of_partition_lengths != num_nodes:
+        logger.error("[Error]: sum_of_partition_lengths is " + str(sum_of_partition_lengths)
+            + " but num_nodes is " + str(num_nodes))
 else:
+    shared_partition_length = len(shared_partition)
     # added shadow nodes and their parents
-    sum_of_partition_lengths -= (total_loop_nodes_added + (2*shadow_nodes_added_to_partitions))
-#if (len(current_partition)-loop_nodes_added) != num_nodes
-logger.info("sum_of_partition_lengths (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
-    + str(sum_of_partition_lengths))
-if sum_of_partition_lengths != num_nodes:
-    logger.error("[Error]: sum_of_partition_lengths is " + str(sum_of_partition_lengths)
-        + " but num_nodes is " + str(num_nodes))
+    shared_partition_length -= (total_loop_nodes_added + (2*num_shadow_nodes_added_to_partitions))
+    logger.info("shared_partition_length (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
+        + str(shared_partition_length))
+    if shared_partition_length != num_nodes:
+        logger.error("[Error]: shared_partition_length is " + str(shared_partition_length)
+            + " but num_nodes is " + str(num_nodes))
 logger.info("")
 sum_of_groups_lengths = 0
 i = 1
@@ -2328,17 +2353,25 @@ for x in groups:
     sum_of_groups_lengths += len(x)
     logger.debug(str(i) + ": length of group: " + str(len(x)))
     i+=1
-logger.debug("shadow_nodes_added: " + str(shadow_nodes_added_to_groups))
+logger.debug("shadow_nodes_added: " + str(num_shadow_nodes_added_to_groups))
 if not use_shared_partitions_groups:
-    sum_of_groups_lengths -= (total_loop_nodes_added + shadow_nodes_added_to_groups)
+    sum_of_groups_lengths -= (total_loop_nodes_added + num_shadow_nodes_added_to_groups)
+    logger.info("sum_of_groups_lengths (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
+        + str(sum_of_groups_lengths))
+    if sum_of_groups_lengths != num_nodes:
+        logger.error("[Error]: sum_of_groups_lengths is " + str(sum_of_groups_lengths)
+            + " but num_nodes is " + str(num_nodes))
 else:
-    sum_of_groups_lengths -= (total_loop_nodes_added + (2*shadow_nodes_added_to_groups))
+    shared_groups_length = len(shared_groups)
+    # added shadow nodes and their parents
+    shared_groups_length -= (total_loop_nodes_added + (2*num_shadow_nodes_added_to_groups))
+    logger.info("shared_groups_length (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
+        + str(shared_groups_length))
+    if shared_groups_length != num_nodes:
+        logger.error("[Error]: shared_groups_length is " + str(shared_groups_length)
+            + " but num_nodes is " + str(num_nodes))
 #if (len(current_partition)-loop_nodes_added) != num_nodes
-logger.info("sum_of_groups_lengths (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
-    + str(sum_of_groups_lengths))
-if sum_of_groups_lengths != num_nodes:
-    logger.error("[Error]: sum_of_groups_lengths is " + str(sum_of_groups_lengths)
-        + " but num_nodes is " + str(num_nodes))
+
 
 print_val = ""
 for x in current_partition:
@@ -2348,7 +2381,7 @@ logger.info(print_val)
 logger.info("")
 
 # adjusting for loop_nodes_added in dfs_p
-sum_of_changes = sum(dfs_parent_changes_in_partiton_size)-shadow_nodes_added_to_partitions
+sum_of_changes = sum(dfs_parent_changes_in_partiton_size)-num_shadow_nodes_added_to_partitions
 avg_change = sum_of_changes / len(dfs_parent_changes_in_partiton_size)
 print_val = "dfs_parent_changes_in_partiton_size length, len: " + str(len(dfs_parent_changes_in_partiton_size)) + ", sum_of_changes: " + str(sum_of_changes)
 print_val += ", average dfs_parent change: %.1f" % avg_change
@@ -2427,6 +2460,10 @@ for x in partitions:
     else:
         logger.info("-- (" + str(len(x)) + ")")
 logger.info("")
+logger.debug("Number of shadow nodes:")
+for num in partitions_num_shadow_nodes_list:
+    logger.debug(num)
+logger.info("")
 logger.info("partition names, len: " + str(len(partition_names))+":")
 for name in partition_names:
     if PRINT_DETAILED_STATS:
@@ -2444,6 +2481,10 @@ for g in groups:
         logger.info("")
     else:
         logger.info("-- (" + str(len(g)) + ")")
+logger.info("")
+logger.debug("Number of shadow nodes:")
+for num in groups_num_shadow_nodes_list:
+    logger.debug(num)
 logger.info("")
 logger.info("group names, len: " + str(len(group_names))+":")
 for name in group_names:
