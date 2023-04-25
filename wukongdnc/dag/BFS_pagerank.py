@@ -593,6 +593,8 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
             # The parent nodes are already in the partition/groups, we grab
             # these parent nodes one-by-one using index j
             parent_of_shadow_node = shared_nodes[j]
+            #rhc shared
+            parent_of_shadow_node.ID = parent_of_shadow_node_ID
             #parent_of_shadow_node = Partition_Node(parent_of_shadow_node_ID)
  
             # set the pagerank of the parent_of_shadow_node so that when we recompute
@@ -620,28 +622,6 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
             #i += 1
             j += 1
 
-        if (debug_pagerank):
-            logger.debug("")
-            logger.debug("PageRank_Function output partition_or_group after add " + str(len(input_tuples)) + " SN parents (node:parents):")
-            #rhc shared
-            for node_index in range (starting_position_in_partition_group,starting_position_in_partition_group+size_of_partition_group):
-            #for node in partition_or_group:
-                #rhc shared
-                node = shared_nodes[node_index]
-                print_val = str(node) + ":"
-                # print(node,end=":")
-                for parent in node.parents:
-                    #print(parent,end=" ")
-                    print_val += str(parent) + " "
-                if len(node.parents) == 0:
-                    #print(" ,",end=" ")
-                    print_val += " ,"
-                else:
-                    #print(",",end=" ")
-                    print_val += ","
-                logger.debug(print_val)
-            logger.debug("")
-
         if task_file_name.endswith('L'):
             # init prev for loops
             #rhc shared
@@ -650,6 +630,30 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
                 #rhc shared
                 shared_nodes[node_index].prev = (1/total_num_nodes)
                 #partition_or_group[index].prev = (1/total_num_nodes)
+
+        if (debug_pagerank):
+            logger.debug("")
+            logger.debug("PageRank_Function output partition_or_group after add " + str(len(input_tuples)) + " SN parents (node:parents):")
+            #rhc shared
+            for node_index in range (starting_position_in_partition_group,starting_position_in_partition_group+size_of_partition_group):
+            #for node in partition_or_group:
+                #rhc shared
+                node = shared_nodes[node_index]
+                print_val = str(node) + ": "
+                print_val += str(node.ID) + ", pr:" + str(node.pagerank) + ", prev:" + str(node.prev) + "par ["
+                # print(node,end=":")
+                for parent in node.parents:
+                    #print(parent,end=" ")
+                    print_val += str(parent) + " "
+                print_val += "] "
+                if len(node.parents) == 0:
+                    #print(" ,",end=" ")
+                    print_val += " ,"
+                else:
+                    #print(",",end=" ")
+                    print_val += ","
+                logger.debug(print_val)
+            logger.debug("")
 
         for i in range(1,iteration+1):
             if (debug_pagerank):
@@ -726,7 +730,6 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
 
                 #if (debug_pagerank):
                 #logger.debug("")
-
 
             if task_file_name.endswith('L'):
                 # save current pagerank in prev
