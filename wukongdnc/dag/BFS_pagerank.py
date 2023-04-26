@@ -498,7 +498,7 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
         #num_nodes_for_pagerank_computation = size_of_partition_group
         #num_nodes_for_pagerank_computation = len(partition_or_group)
         num_nodes_for_pagerank_computation = size_of_partition_group - num_shadow_nodes
-        starting_position_of_parents_of_shadow_nodes = starting_position_in_partition_group + num_nodes_for_pagerank_computation
+        starting_position_of_parents_of_shadow_nodes = num_nodes_for_pagerank_computation
 
         #rhc shared
         # used i as increment past the end of the partition/group for the next parent
@@ -595,7 +595,7 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
             #rhc shared
             # The parent nodes are already in the partition/groups, we grab
             # these parent nodes one-by-one using index j
-            parent_of_shadow_node = shared_nodes[j]
+            parent_of_shadow_node = shared_nodes[j+starting_position_in_partition_group]
             #rhc shared
             parent_of_shadow_node.ID = parent_of_shadow_node_ID
             #parent_of_shadow_node = Partition_Node(parent_of_shadow_node_ID)
