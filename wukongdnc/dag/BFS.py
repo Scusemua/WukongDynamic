@@ -15,9 +15,13 @@ from .BFS_Partition_Node import Partition_Node
 from .BFS_generate_DAG_info import generate_DAG_info
 from .BFS_generate_DAG_info import Partition_senders, Partition_receivers, Group_senders, Group_receivers
 #rhc shared
-from .DAG_executor import shared_partition, shared_groups
-from .DAG_executor import shared_partition_map, shared_groups_map
+#from .DAG_executor import shared_partition, shared_groups
+#from .DAG_executor import shared_partition_map, shared_groups_map
+#from .Shared import shared_partition, shared_groups, shared_partition_map,  shared_groups_map
+from . import Shared
+
 from .DAG_executor_constants import use_shared_partitions_groups, use_page_rank_group_partitions
+from .DAG_executor_driver import run
 
 #from .DAG_executor_constants import run_all_tasks_locally, using_threads_not_processes
 
@@ -150,6 +154,14 @@ nodes = []
 
 num_nodes = 0
 num_edges = 0
+
+#Shared.shared_partition = []
+#Shared.shared_groups = []
+# maps partition "P" to its position/size in shared_partition/shared_groups
+#Shared.shared_partition_map = {}
+#Shared.shared_group_map = {}
+Shared.initialize()
+
 """
 num_nodes = 12
 #put non-null elements in place
@@ -2261,22 +2273,22 @@ if use_shared_partitions_groups:
         partition_position = next
         partition_size = len(partition)
         for p_node in partition:
-            shared_partition.append(p_node)
+            Shared.shared_partition.append(p_node)
             next += 1
         for i in range(num_shadow_nodes):
-            shared_partition.append(Partition_Node(-2))
+            Shared.shared_partition.append(Partition_Node(-2))
             next += 1
             partition_size += 1
         partition_tuple = (partition_position,partition_size)
-        shared_partition_map[name] = partition_tuple
+        Shared.shared_partition_map[name] = partition_tuple
     logger.debug("Number of shadow nodes for partitions:")
     for num in partitions_num_shadow_nodes_list:
         logger.debug(num)
     logger.debug("shared_partition_map:")
-    for (k,v) in shared_partition_map.items():
+    for (k,v) in Shared.shared_partition_map.items():
         logger.debug(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + ")")
     logger.debug("shared_partition")
-    for p_node in shared_partition:
+    for p_node in Shared.shared_partition:
         logger.debug(p_node)
     logger.debug("")
     #else:
@@ -2285,22 +2297,22 @@ if use_shared_partitions_groups:
         group_position = next
         group_size = len(group)
         for p_node in group:
-            shared_groups.append(p_node)
+            Shared.shared_groups.append(p_node)
             next += 1
         for i in range(num_shadow_nodes):
-            shared_groups.append(Partition_Node(-2))
+            Shared.shared_groups.append(Partition_Node(-2))
             next += 1
             group_size += 1
         group_tuple = (group_position,group_size)
-        shared_groups_map[name] = group_tuple
+        Shared.shared_groups_map[name] = group_tuple
     logger.debug("Number of shadow nodes for groups:")
     for num in groups_num_shadow_nodes_list:
         logger.debug(num)
     logger.debug("shared_groups_map:")
-    for (k,v) in shared_groups_map.items():
+    for (k,v) in Shared.shared_groups_map.items():
         logger.debug(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + ")")
     logger.debug("shared_groups")
-    for p_node in shared_groups:
+    for p_node in Shared.shared_groups:
         logger.debug(p_node)
     logger.debug("")
 
@@ -2338,7 +2350,7 @@ if not use_shared_partitions_groups:
         logger.error("[Error]: sum_of_partition_lengths is " + str(sum_of_partition_lengths)
             + " but num_nodes is " + str(num_nodes))
 else:
-    shared_partition_length = len(shared_partition)
+    shared_partition_length = len(Shared.shared_partition)
     # added shadow nodes and their parents
     shared_partition_length -= (total_loop_nodes_added + (2*num_shadow_nodes_added_to_partitions))
     logger.info("shared_partition_length (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
@@ -2362,7 +2374,7 @@ if not use_shared_partitions_groups:
         logger.error("[Error]: sum_of_groups_lengths is " + str(sum_of_groups_lengths)
             + " but num_nodes is " + str(num_nodes))
 else:
-    shared_groups_length = len(shared_groups)
+    shared_groups_length = len(Shared.shared_groups)
     # added shadow nodes and their parents
     shared_groups_length -= (total_loop_nodes_added + (2*num_shadow_nodes_added_to_groups))
     logger.info("shared_groups_length (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
@@ -2704,7 +2716,8 @@ generate_DAG_info()
 #input('Press <ENTER> to continue')
 
 logger.debug("Output partitions/groups")
-#output_partitions()
+output_partitions()
+run()
 
 """
 logger.debug("Sorted simple cycles:")

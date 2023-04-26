@@ -4,7 +4,7 @@ import logging
 
 logger = None
 logger = logging.getLogger(__name__)
-"""
+
 logger.setLevel(logging.DEBUG)
 #logger.setLevel(logging.INFO)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
@@ -14,9 +14,9 @@ ch.setLevel(logging.DEBUG)
 #ch.setLevel(logging.INFO)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
-"""
 
-debug_pagerank = False
+
+debug_pagerank = True
 
 class Partition_Node:
     def __init__(self,ID):
@@ -169,7 +169,7 @@ class Partition_Node:
             logger.debug("update_pagerank: num_children: " + str(self.num_children))
         
         #Note: a parent has at least one child so num_children is not 0
-        pagerank_sum = sum((shared_nodes[node_index+starting_position_in_partition_group].pagerank / shared_nodes[node_index].num_children) for node_index in parent_nodes)
+        pagerank_sum = sum((shared_nodes[node_index].pagerank / shared_nodes[node_index].num_children) for node_index in parent_nodes)
         if (debug_pagerank):
             logger.debug("update_pagerank: pagerank_sum: " + str(pagerank_sum))
         #random_jumping = damping_factor / total_num_nodes
@@ -208,8 +208,8 @@ class Partition_Node:
         #        logger.info("16 parent : " + str(parent1.ID) + " num_children: " + str(parent1.num_children))
         #       logger.info("16 parent : " + str(parent2.ID) + " num_children: " + str(parent2.num_children))
         
-        #Note: a paent has at least one child so num_children is not 0
-        pagerank_sum = sum((shared_nodes[node_index + starting_position_in_partition_group].prev / shared_nodes[node_index].num_children) for node_index in parent_nodes)
+        #Note: a parent has at least one child so num_children is not 0
+        pagerank_sum = sum((shared_nodes[node_index].prev / shared_nodes[node_index].num_children) for node_index in parent_nodes)
         if (debug_pagerank):
             logger.debug("update_pagerank: pagerank_sum: " + str(pagerank_sum))
         #random_jumping = damping_factor / total_num_nodes

@@ -606,10 +606,10 @@ def generate_DAG_info():
             state += 1
 
     if not use_shared_partitions_groups:
-        for key in Partition_DAG_states:
+        for key in Group_DAG_states:
             Group_DAG_tasks[key] = PageRank_Function_Driver
     else:
-        for key in Partition_DAG_states:
+        for key in Group_DAG_states:
             Group_DAG_tasks[key] = PageRank_Function_Driver_Shared  
 
     logger.info("")

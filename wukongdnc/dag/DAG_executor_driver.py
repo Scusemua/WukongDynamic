@@ -282,10 +282,10 @@
 import logging 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
+logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 ch = logging.StreamHandler()
-ch.setLevel(logging.ERROR)
+ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
@@ -323,6 +323,7 @@ from .DAG_executor_countermp import CounterMP
 from .DAG_boundedbuffer_work_queue import BoundedBuffer_Work_Queue
 from .DAG_executor_create_multithreaded_multiprocessing_processes import create_multithreaded_multiprocessing_processes #, create_and_run_threads_for_multiT_multiP
 import copy
+
 
 """
 The DAG_executor executes a DAG using multiple threads/processes/Lambdas, each excuting a DFS path through
@@ -892,7 +893,8 @@ def run():
             state_info = DAG_map[start_state]
             state_info.task_inputs = None
 
-    output_DAG = False
+#rhc cleanup
+    output_DAG = True
     # add-0bec4d19-bce6-4394-ad62-9b0eab3081a9
     if output_DAG:
         # FYI:
@@ -923,6 +925,13 @@ def run():
             print(inp)
         #print() 
         print()
+
+
+#rhc cleanup
+        from . import Shared
+        logger.error("shared_groups_mapDDDD:")
+        for (k,v) in Shared.shared_groups_map.items():
+            logger.error(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + ")")
 
     #ResetRedis()
     
@@ -1256,7 +1265,7 @@ def run():
                                 thread.start()
                             num_threads_created += 1
                         except Exception as ex:
-                            logger.debug("[ERROR] DAG_executor_driver: Failed to start DAG_executor thread for state " + start_state)
+                            logger.debug("[ERROR] DAG_executor_driver: Failed to start DAG_executor thread for state " + str(start_state))
                             logger.debug(ex)
                     else:   # multiprocessing - must be using a process pool
                         # Config: A5

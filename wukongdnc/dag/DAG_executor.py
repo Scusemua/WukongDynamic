@@ -3,14 +3,14 @@ import logging
 
 logger = None
 logger = logging.getLogger(__name__)
-"""
+
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
-"""
+
 
 
 import threading
@@ -52,13 +52,19 @@ import logging.handlers
 import multiprocessing
 import os
 
+#rhc cleanup
+#from .BFS import shared_partition, shared_groups
+#from .BFS import shared_partition_map, shared_groups_map
+#from .Shared import shared_partition, shared_groups, shared_partition_map,  shared_groups_map
+from . import Shared
+"""
 #rhc shared
 shared_partition = []
 shared_groups = []
 # maps partition "P" to its position/size in shared_partition/shared_groups
 shared_partition_map = {}
 shared_groups_map = {}
-
+"""
 
 total_time = 0
 num_fanins_timed = 0
@@ -1634,8 +1640,13 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
  
             logger.debug(thread_name + " result_dictionaryZ: " + str(result_dictionary))
 
+#rhc cleanup
+            #for key, value in DAG_tasks.items():
+            #    logger.error(str(key) + ' : ' + str(value))
+
             # using map DAG_tasks from task_name to task
             task = DAG_tasks[state_info.task_name]
+
             if not tasks_use_result_dictionary_parameter:
                 # we will call the task with tuple args and unfold args: task(*args)
                 output = execute_task(task,args)
@@ -1646,9 +1657,13 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     output = execute_task_with_result_dictionary(task,state_info.task_name,20,result_dictionary)
                 else:
                     if use_page_rank_group_partitions:
-                        execute_task_with_result_dictionary_shared(task,state_info.task_name,20,result_dictionary,shared_groups_map,shared_groups)
+#rhc cleanup
+                        #logger.error("shared_groups_mapFFFF:")
+                        #for (k,v) in Shared.shared_groups_map.items():
+                        #    logger.error(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + ")")
+                        output = execute_task_with_result_dictionary_shared(task,state_info.task_name,20,result_dictionary,Shared.shared_groups_map,Shared.shared_groups)
                     else: # use the partition partitions
-                        execute_task_with_result_dictionary_shared(task,state_info.task_name,20,result_dictionary,shared_partition_map,shared_partition)
+                        output = execute_task_with_result_dictionary_shared(task,state_info.task_name,20,result_dictionary,Shared.shared_partition_map,Shared.shared_partition)
             """ where:
                 def execute_task(task,args):
                     logger.debug("input of execute_task is: " + str(args))

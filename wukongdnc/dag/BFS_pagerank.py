@@ -4,7 +4,7 @@ import cloudpickle
 from .BFS_Partition_Node import Partition_Node
 
 logger = logging.getLogger(__name__)
-"""
+
 logger.setLevel(logging.DEBUG)
 #logger.setLevel(logging.INFO)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
@@ -14,9 +14,9 @@ ch.setLevel(logging.DEBUG)
 #ch.setLevel(logging.INFO)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
-"""
 
-debug_pagerank = False
+
+debug_pagerank = True
 
 """
 
@@ -424,6 +424,9 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
         position_size_tuple = shared_map[task_file_name]
         starting_position_in_partition_group = position_size_tuple[0]
         size_of_partition_group = position_size_tuple[1]
+
+        debug_pagerank = True
+
         if (debug_pagerank):
             logger.debug("PageRank_Function output partition_or_group (node:parents):")
 
@@ -495,7 +498,7 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
         #num_nodes_for_pagerank_computation = size_of_partition_group
         #num_nodes_for_pagerank_computation = len(partition_or_group)
         num_nodes_for_pagerank_computation = size_of_partition_group - num_shadow_nodes
-        starting_position_of_parents_of_shadow_nodes = num_nodes_for_pagerank_computation
+        starting_position_of_parents_of_shadow_nodes = starting_position_in_partition_group + num_nodes_for_pagerank_computation
 
         #rhc shared
         # used i as increment past the end of the partition/group for the next parent
@@ -663,7 +666,7 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
             #PageRank_Function_one_iter(partition_or_group,damping_factor,one_minus_dumping_factor,random_jumping,total_num_nodes,num_nodes_for_pagerank_computation)
     
             #rhc shared
-            for node_index in range (starting_position_in_partition_group,starting_position_in_partition_group+size_of_partition_group):
+            for node_index in range (starting_position_in_partition_group,starting_position_in_partition_group+num_nodes_for_pagerank_computation):
             #for index in range(num_nodes_for_pagerank_computation):
                 # Need number of non-shadow nodes'
         #rhc: handle shadow nodes
@@ -773,10 +776,11 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
         ID:17 frontier_parents: [(2, 2, 5)]
         ID:1 frontier_parents: [(2, 3, 3)]
         """
-        #rhc: Note: Instead of looping, we could give each partition/group 
-        # output tuples that indited where the nodes with non-empty
-        # frontoer parents are. These loops may be ong for large 
-        # partitions/groups.
+#rhc: Note: Instead of looping, we could give each partition/group 
+# output tuples that indited where the nodes with non-empty
+# frontoer parents are. These loops may be ong for large 
+# partitions/groups. For shared we can keep a global map like 
+# shared_map or just add a tuple to shared_map?
         PageRank_output = {}
         #rhc shared
         for node_index in range (starting_position_in_partition_group,starting_position_in_partition_group+size_of_partition_group):
