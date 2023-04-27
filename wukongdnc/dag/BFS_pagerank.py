@@ -5,18 +5,17 @@ from .BFS_Partition_Node import Partition_Node
 
 logger = logging.getLogger(__name__)
 
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.ERROR)
 #logger.setLevel(logging.INFO)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 #formatter = logging.Formatter('%(levelname)s: %(message)s')
 ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
+ch.setLevel(logging.ERROR)
 #ch.setLevel(logging.INFO)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
-
-debug_pagerank = True
+debug_pagerank = False
 
 """
 
@@ -132,9 +131,14 @@ def PageRank_Function_Driver(task_file_name,total_num_nodes,results_dictionary):
         # PageRank_Function will be an empty list.
         if not v ==  ():
             input_tuples += v
+    # This sort is not necessary. Sorting ensures that shadow nodes are processed
+    # in ascending order of their IDs, i.e., 2 before 17, so that the parents of
+    # the shadow nodes are placed in the partition in the order of their associated
+    # shadow nodes. Helps visualize thing during debugging.
+    if (debug_pagerank):
+        input_tuples.sort()
     output = PageRank_Function(task_file_name,total_num_nodes,input_tuples)
     return output
-
 
 #def PageRank_Function(task_file_name,total_num_nodes,input_tuples,results):
 def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
@@ -370,7 +374,7 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
                     output_list.append(output_tuple)
                     PageRank_output[partition_or_group_name] = output_list
         #if (debug_pagerank):
-        print("PageRank output tuples for " + task_file_name + ":")
+        print("XXPageRank output tuples for " + task_file_name + ":")
         print_val = ""
         for k, v in PageRank_output.items():
             #print_val += "(%s, %s) " % (k, v)
@@ -379,7 +383,7 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
         print()
         print()
 
-        print("PageRank result for " + task_file_name + ":", end=" ")
+        print("XXPageRank result for " + task_file_name + ":", end=" ")
         for i in range(num_nodes_for_pagerank_computation):
             if not partition_or_group[i].isShadowNode:
                 print(str(partition_or_group[i].ID) + ":" + str(partition_or_group[i].pagerank),end=" ")
@@ -407,6 +411,12 @@ def PageRank_Function_Driver_Shared(task_file_name,total_num_nodes,results_dicti
         # PageRank_Function will be an empty list.
         if not v ==  ():
             input_tuples += v
+    # This sort is not necessary. Sorting ensures that shadow nodes are processed
+    # in ascending order of their IDs, i.e., 2 before 17, so that the parents of
+    # the shadow nodes are placed in the partition in the order of their associated
+    # shadow nodes. Helps visualize thing during debugging.
+    if (debug_pagerank):
+        input_tuples.sort()
     output = PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_map,shared_nodes)
     return output
 
@@ -515,7 +525,7 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
             position_of_shadow_node = starting_position_in_partition_group + shadow_node_index
             #if not partition_or_group[shadow_node_index].isShadowNode:
             if not shared_nodes[position_of_shadow_node].isShadowNode:
-                logger.debug("[Error]: Internal Error: input tuple " + str(tup)
+                logger.error("[Error]: Internal Error: input tuple " + str(tup)
                     + " position " + str(position_of_shadow_node) + " is not a shadow node.")
             # If shadow_node x is a shadow_node for node y (where the one or more
             # shadow nodes of y are immediatley preceeding y) then shadow_node x
@@ -606,8 +616,8 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
                 #rhc shared
                 (shared_nodes[position_of_shadow_node].pagerank - random_jumping)  / one_minus_dumping_factor)
                 #(partition_or_group[shadow_node_index].pagerank - random_jumping)  / one_minus_dumping_factor)
-            # if (debug_pagerank):
-            logger.debug(parent_of_shadow_node_ID + " pagerank set to: " + str(parent_of_shadow_node.pagerank))
+            if (debug_pagerank):
+                logger.debug(parent_of_shadow_node_ID + " pagerank set to: " + str(parent_of_shadow_node.pagerank))
             # num_children = 1 makes the computation easier; the computation assumed
             # num_children was set to 1
             parent_of_shadow_node.num_children = 1
@@ -624,15 +634,6 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
             # rhc shared
             #i += 1
             j += 1
-
-        if task_file_name.endswith('L'):
-            # init prev for loops
-            #rhc shared
-            for node_index in range (starting_position_in_partition_group,starting_position_in_partition_group+size_of_partition_group):
-            #for index in range(num_nodes_for_pagerank_computation):
-                #rhc shared
-                shared_nodes[node_index].prev = (1/total_num_nodes)
-                #partition_or_group[index].prev = (1/total_num_nodes)
 
         if (debug_pagerank):
             logger.debug("")
@@ -658,6 +659,15 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
                 logger.debug(print_val)
             logger.debug("")
 
+        if task_file_name.endswith('L'):
+            # init prev for loops
+            #rhc shared
+            for node_index in range (starting_position_in_partition_group,starting_position_in_partition_group+num_nodes_for_pagerank_computation):
+            #for index in range(num_nodes_for_pagerank_computation):
+                #rhc shared
+                shared_nodes[node_index].prev = (1/total_num_nodes)
+                #partition_or_group[index].prev = (1/total_num_nodes)
+
         for i in range(1,iteration+1):
             if (debug_pagerank):
                 logger.debug("***** PageRank: iteration " + str(i))
@@ -681,14 +691,14 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
                     #+ ", (real) parent's num_children: " + str(partition_or_group[index].num_children)
                     #)
                 if shared_nodes[node_index].isShadowNode:
-                    #if (debug_pagerank):
-                    logger.debug("PageRank: before pagerank computation: node at position " 
-                    + str(node_index) + " isShadowNode: " 
-                    + str(shared_nodes[node_index].isShadowNode) 
-                    + ", pagerank: " + str(shared_nodes[node_index].pagerank)
-                    + ", parent: " + str(shared_nodes[node_index].parents[0])
-                    + ", (real) parent's num_children: " + str(shared_nodes[node_index].num_children)
-                    )
+                    if (debug_pagerank):
+                        logger.debug("PageRank: before pagerank computation: node at position " 
+                            + str(node_index) + " isShadowNode: " 
+                            + str(shared_nodes[node_index].isShadowNode) 
+                            + ", pagerank: " + str(shared_nodes[node_index].pagerank)
+                            + ", parent: " + str(shared_nodes[node_index].parents[0])
+                            + ", (real) parent's num_children: " + str(shared_nodes[node_index].num_children)
+                            )
 
                 #if (debug_pagerank):
                 #    logger.debug("")
@@ -722,14 +732,14 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
                 #    + ", (real) parent's num_children: " + str(partition_or_group[index].num_children)
                 #   )
                 if shared_nodes[node_index].isShadowNode:
-                    #if (debug_pagerank):
-                    logger.debug("PageRank:  after pagerank computation: node at position " 
-                    + str(node_index) + " isShadowNode: " 
-                    + str(shared_nodes[node_index].isShadowNode) 
-                    + ", pagerank: " + str(shared_nodes[node_index].pagerank)
-                    + ", parent: " + str(shared_nodes[node_index].parents[0])
-                    + ", (real) parent's num_children: " + str(shared_nodes[node_index].num_children)
-                    )
+                    if (debug_pagerank):
+                        logger.debug("PageRank:  after pagerank computation: node at position " 
+                        + str(node_index) + " isShadowNode: " 
+                        + str(shared_nodes[node_index].isShadowNode) 
+                        + ", pagerank: " + str(shared_nodes[node_index].pagerank)
+                        + ", parent: " + str(shared_nodes[node_index].parents[0])
+                        + ", (real) parent's num_children: " + str(shared_nodes[node_index].num_children)
+                        )
 
                 #if (debug_pagerank):
                 #logger.debug("")
@@ -737,7 +747,7 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
             if task_file_name.endswith('L'):
                 # save current pagerank in prev
                 #rhc shared
-                for node_index in range (starting_position_in_partition_group,starting_position_in_partition_group+size_of_partition_group):
+                for node_index in range (starting_position_in_partition_group,starting_position_in_partition_group+num_nodes_for_pagerank_computation):
                 #for index in range(num_nodes_for_pagerank_computation):
                     shared_nodes[node_index].prev = shared_nodes[node_index].pagerank
         
@@ -818,7 +828,7 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
 
         print("PageRank result for " + task_file_name + ":", end=" ")
         #rhc shared
-        for node_index in range (starting_position_in_partition_group,starting_position_in_partition_group+size_of_partition_group):
+        for node_index in range (starting_position_in_partition_group,starting_position_in_partition_group+num_nodes_for_pagerank_computation):
         #for i in range(num_nodes_for_pagerank_computation):
             #rhc shared
             #if not partition_or_group[i].isShadowNode:

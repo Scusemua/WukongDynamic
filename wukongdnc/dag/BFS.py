@@ -1,3 +1,21 @@
+"""
+ToDO:
+Document the debug flag stuff
+Note: We run BFS which calls DFS and uses Shared for comm
+Fix DAG_info thing!!
+Document BFS all
+Create a output tuples map so each PR task can set the result of its
+  dependents, then no input tuples since a PR task sets the values 
+  itself instead of sending them to its dependents. So the task
+  will get its tuples from the Output Tuple Map and set them 
+  in the Shared array instea of iterating through its partition/group
+  and creating its output tuples and outputting them. So no input 
+  tuples for R shared task and no output since no output tuples (which
+  then become input tuples via fanouts/fanins). So no values sent to 
+  fanouts/fanins - use empty dictionariesf for now.
+"""
+
+
 import networkx as nx
 import matplotlib.pyplot as plt
 #import numpy as np
@@ -26,12 +44,13 @@ from .DAG_executor_driver import run
 #from .DAG_executor_constants import run_all_tasks_locally, using_threads_not_processes
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+
+logger.setLevel(logging.ERROR)
 #logger.setLevel(logging.INFO)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 #formatter = logging.Formatter('%(levelname)s: %(message)s')
 ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
+ch.setLevel(logging.ERROR)
 #ch.setLevel(logging.INFO)
 ch.setFormatter(formatter)
 logger.addHandler(ch)

@@ -3,14 +3,14 @@ import logging
 
 logger = None
 logger = logging.getLogger(__name__)
-
+"""
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
-
+"""
 
 
 import threading
@@ -1657,10 +1657,6 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     output = execute_task_with_result_dictionary(task,state_info.task_name,20,result_dictionary)
                 else:
                     if use_page_rank_group_partitions:
-#rhc cleanup
-                        #logger.error("shared_groups_mapFFFF:")
-                        #for (k,v) in Shared.shared_groups_map.items():
-                        #    logger.error(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + ")")
                         output = execute_task_with_result_dictionary_shared(task,state_info.task_name,20,result_dictionary,Shared.shared_groups_map,Shared.shared_groups)
                     else: # use the partition partitions
                         output = execute_task_with_result_dictionary_shared(task,state_info.task_name,20,result_dictionary,Shared.shared_partition_map,Shared.shared_partition)
