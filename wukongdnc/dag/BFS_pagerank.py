@@ -445,6 +445,9 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
                 #rhc shared
                 node = shared_nodes[node_index]
                 #logger.debug(node,end=":")
+                # str(node) will print the node ID with an "-s" appended if 
+                # the node is a shadow node. Parent nodes of shadow nodes
+                # have an ID of -2, which uis changed below.
                 print_val = str(node) + ":"
                 for parent in node.parents:
                     print_val += str(parent) + " "
@@ -600,6 +603,13 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
             #rhc shared
             shadow_node_ID = shared_nodes[position_of_shadow_node].ID
             #shadow_node_ID = partition_or_group[shadow_node_index].ID
+            # The shadow node ID is an integer, e.g. 1, which does not have
+            # a "-s" at the end. The "-s" is appwnsws by the __str__ of the partition
+            # node. The parent node ID of a shadow node with ID n is "n-s-p". This 
+            # is the actual node ID, unlike shadow nodes which have an int ID and when 
+            # the ID is printed by Partition_Node's __str__ function "-s" is appended.
+            # Note: Partition_Nodes do not have a member like isShadowNode thatindicates
+            # that the ndoe is the parent of a shadow node. So we just use "n-s-p" as the node ID.
             parent_of_shadow_node_ID = str(shadow_node_ID) + "-s-p"
 
             #rhc shared
@@ -643,6 +653,11 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
             #for node in partition_or_group:
                 #rhc shared
                 node = shared_nodes[node_index]
+                # str(node) for shadow nodes will append "-s" to the int ID. For parents
+                # node of hadow nodes, __str__ will not append any value since the actual 
+                # node ID of a parent node is "n-s-p" so "n-s-p" will be printed by __str__.
+                # For shadow nodes, ID is an int, e.g., n and for parent modes, ID is "n-s-p",
+                # so for shadow nodes yo get "n-s: n" and for parent nodes "n-s-p: n-s-p".
                 print_val = str(node) + ": "
                 print_val += str(node.ID) + ", pr:" + str(node.pagerank) + ", prev:" + str(node.prev) + "par ["
                 # print(node,end=":")
@@ -776,6 +791,8 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
                 #   my_ID = str(partition_or_group[i].ID) + "-s"
                 #logger.debug("ID:" + my_ID + " frontier_parents: " + str(partition_or_group[i].frontier_parents))
                 if not shared_nodes[node_index].isShadowNode:
+                    # for parent nodes, ID is e.g., "n-s-p", for non-parent "n" and
+                    # for shadow nodes the else part gives "n-s"
                     my_ID = str(shared_nodes[node_index].ID)
                 else:
                     my_ID = str(shared_nodes[node_index].ID) + "-s"
@@ -793,6 +810,15 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
 # shared_map or just add a tuple to shared_map?
         PageRank_output = {}
         #rhc shared
+        # Note: this shows frontiers of all the nodes including shadow nodes
+        # and parent nodes for debugging, where the frontier tuples of shadow
+        # nodes and parent nodes is always empty. There is a frontier tuples for
+        # each output of the task. If the task has a pagerank value in position p that 
+        # needs to be sent to anoher partition/group then the tuple will indicate the
+        # name of the destination partition/group and the position in this (sending) tasks'
+        # partition/group of the pagerank value to be sent.  Example: 
+        # ID:5 frontier_parents: [(2, 1, 2)] meaning send to partition number 2 group
+        # 1 the pagerank vaue in position 2
         for node_index in range (starting_position_in_partition_group,starting_position_in_partition_group+size_of_partition_group):
         #for i in range(len(partition_or_group)):
             #rhc shared
