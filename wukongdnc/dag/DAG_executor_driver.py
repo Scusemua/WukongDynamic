@@ -928,9 +928,9 @@ def run():
 
 
 #rhc cleanup
-        from . import Shared
+        from . import BFS_Shared
         logger.error("shared_groups_mapDDDD:")
-        for (k,v) in Shared.shared_groups_map.items():
+        for (k,v) in BFS_Shared.shared_groups_map.items():
             logger.error(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + ")")
 
     #ResetRedis()

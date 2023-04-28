@@ -56,7 +56,7 @@ import os
 #from .BFS import shared_partition, shared_groups
 #from .BFS import shared_partition_map, shared_groups_map
 #from .Shared import shared_partition, shared_groups, shared_partition_map,  shared_groups_map
-from . import Shared
+from . import BFS_Shared
 """
 #rhc shared
 shared_partition = []
@@ -1657,9 +1657,9 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     output = execute_task_with_result_dictionary(task,state_info.task_name,20,result_dictionary)
                 else:
                     if use_page_rank_group_partitions:
-                        output = execute_task_with_result_dictionary_shared(task,state_info.task_name,20,result_dictionary,Shared.shared_groups_map,Shared.shared_groups)
+                        output = execute_task_with_result_dictionary_shared(task,state_info.task_name,20,result_dictionary,BFS_Shared.shared_groups_map,BFS_Shared.shared_groups)
                     else: # use the partition partitions
-                        output = execute_task_with_result_dictionary_shared(task,state_info.task_name,20,result_dictionary,Shared.shared_partition_map,Shared.shared_partition)
+                        output = execute_task_with_result_dictionary_shared(task,state_info.task_name,20,result_dictionary,BFS_Shared.shared_partition_map,BFS_Shared.shared_partition)
             """ where:
                 def execute_task(task,args):
                     logger.debug("input of execute_task is: " + str(args))
