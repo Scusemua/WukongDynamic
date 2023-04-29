@@ -840,15 +840,15 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
             if len(shared_nodes[node_index].frontier_parents) > 0:
             #if len(partition_or_group[i].frontier_parents) > 0:
                 #rhc shared
-                for frontier_parent in shared_nodes[node_index].frontier_parents:
+                for frontier_parent_tuple in shared_nodes[node_index].frontier_parents:
                 #for frontier_parent in partition_or_group[i].frontier_parents:
                     #partition_number = frontier_parent[0]
                     #group_number = frontier_parent[1]
-                    parent_or_group_index = frontier_parent[2]
+                    parent_or_group_index = frontier_parent_tuple[2]
                     # Passing name in tuple so that name for loop partition/groups
                     # will have an "l" at the end
                     #partition_or_group_name = "PR"+str(partition_number)+"_"+str(group_number)
-                    partition_or_group_name = frontier_parent[3]
+                    partition_or_group_name = frontier_parent_tuple[3]
                     output_list = PageRank_output.get(partition_or_group_name)
                     if output_list == None:
                         output_list = []
@@ -869,7 +869,7 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
         # of the pagrank values to be copied from this task to the receiving task
         # (to a shadow node in the receiving task.)
         list_of_frontier_tuples = shared_frontier_map[task_file_name]
-        for frontier_parent in list_of_frontier_tuples:
+        for frontier_parent_tuple in list_of_frontier_tuples:
             # Each frontier tuple represents a pageran value of this task that should
             # be output to a dependent task. partition_or_group_name_of_output_task
             # is the task name of the task that is receiving a pagerank value from 
@@ -883,16 +883,16 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
 
             #partition_number = frontier_parent[0]
             #group_number = frontier_parent[1]
-            position_or_group_index_of_output_task = frontier_parent[2]
-            partition_or_group_name_of_output_task = frontier_parent[3]
+            position_or_group_index_of_output_task = frontier_parent_tuple[2]
+            partition_or_group_name_of_output_task = frontier_parent_tuple[3]
             # Note: We added this field to the frontier tuple so that when
             # we ar using a shared_nodes array or multithreading we can
             # copy vlaues from shared_nodes[i] to shared_nodes[j] instead of 
             # having the tasks input/output these values , as they do when 
             # each task has its won partition and the alues need to be sent
             # and received instead of copied.
-            parent_or_group_index_of_this_task_to_be_output = frontier_parent[4]
-            logger.debug("frontier_parent: " + str(frontier_parent))
+            parent_or_group_index_of_this_task_to_be_output = frontier_parent_tuple[4]
+            logger.debug("frontier_parent: " + str(frontier_parent_tuple))
 
             # Note: At the top, the starting position of this task in shared_nodes is
             # starting_position_in_partition_group = position_size_tuple[0]
