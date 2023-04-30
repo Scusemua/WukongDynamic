@@ -2,22 +2,22 @@ import logging
 import cloudpickle
 #import numpy as np
 from .BFS_Partition_Node import Partition_Node
-from . import BFS_shared
+from . import BFS_Shared
 from .DAG_executor_constants import use_page_rank_group_partitions
 
 logger = logging.getLogger(__name__)
 
-logger.setLevel(logging.ERROR)
+logger.setLevel(logging.DEBUG)
 #logger.setLevel(logging.INFO)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 #formatter = logging.Formatter('%(levelname)s: %(message)s')
 ch = logging.StreamHandler()
-ch.setLevel(logging.ERROR)
+ch.setLevel(logging.DEBUG)
 #ch.setLevel(logging.INFO)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
-debug_pagerank = False
+debug_pagerank = True
 
 """
 
@@ -861,14 +861,19 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
         # NEW:
         logger.debug("Copy frontier values:")
         if use_page_rank_group_partitions:
-            shared_frontier_map = BFS_shared.shared_groups_frontier_parents_map
+            shared_frontier_map = BFS_Shared.shared_groups_frontier_parents_map
         else:
-            shared_frontier_map = BFS_shared.shared_partition_frontier_parents_map
+            shared_frontier_map = BFS_Shared.shared_partition_frontier_parents_map
         
         # Get the postition in this task and the position in the receiving task
         # of the pagrank values to be copied from this task to the receiving task
         # (to a shadow node in the receiving task.)
-        list_of_frontier_tuples = shared_frontier_map[task_file_name]
+        #list_of_frontier_tuples = shared_frontier_map[task_file_name]
+        # if task task_file_name has no frontier tuples then list_of_frontier_tuples
+        # will be None.
+        list_of_frontier_tuples = shared_frontier_map.get(task_file_name)
+        if list_of_frontier_tuples == None:
+            list_of_frontier_tuples = []
         for frontier_parent_tuple in list_of_frontier_tuples:
             # Each frontier tuple represents a pageran value of this task that should
             # be output to a dependent task. partition_or_group_name_of_output_task
@@ -893,22 +898,27 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
             # and received instead of copied.
             parent_or_group_index_of_this_task_to_be_output = frontier_parent_tuple[4]
             logger.debug("frontier_parent: " + str(frontier_parent_tuple))
-
+            logger.debug("starting_position_in_partition_group: " + str(starting_position_in_partition_group))
+            logger.debug("parent_or_group_index_in_this_task_to_be_output: " + str(parent_or_group_index_of_this_task_to_be_output))
             # Note: At the top, the starting position of this task in shared_nodes is
             # starting_position_in_partition_group = position_size_tuple[0]
 
             # This tuple has the starting position and size of the receiving task's
             # partition/group in the shared array, pulled from the shared_map as above.
+            logger.debug("partition_or_group_name_of_output_task: " + str(partition_or_group_name_of_output_task))
             position_size_tuple_of_output_task = shared_map[partition_or_group_name_of_output_task]
+            logger.debug("position_size_tuple_of_output_task: " + str(position_size_tuple_of_output_task))
             starting_position_in_partition_group_of_output_task = position_size_tuple_of_output_task[0]
-            # FYI: position_size_tuple_of_output_task[1] is the size of the partition or group
-            logger.debug("copy from position " + str(starting_position_in_partition_group+parent_or_group_index_of_this_task_to_be_output)
-                + " to position " + str(starting_position_in_partition_group_of_output_task + position_or_group_index_of_output_task) 
-                + " the value " + shared_nodes[starting_position_in_partition_group+parent_or_group_index_of_this_task_to_be_output])
-            shared_nodes[starting_position_in_partition_group_of_output_task + position_or_group_index_of_output_task] = (
-                shared_nodes[starting_position_in_partition_group+parent_or_group_index_of_this_task_to_be_output]
-            )
+            fromPosition = starting_position_in_partition_group+parent_or_group_index_of_this_task_to_be_output
+            logger.debug("fromPosition: " + str(fromPosition))
+            toPosition = starting_position_in_partition_group_of_output_task + position_or_group_index_of_output_task
+            logger.debug("toPosition: " + str(toPosition))
 
+            # FYI: position_size_tuple_of_output_task[1] is the size of the partition or group
+            logger.debug("copy from position " + str(fromPosition)
+                + " to position " + str(toPosition) 
+                + " the value " + str(shared_nodes[fromPosition]))
+            #shared_nodes[toPosition] = shared_nodes[fromPartition]
 
         #if (debug_pagerank):
         print("PageRank output tuples for " + task_file_name + ":")

@@ -45,12 +45,12 @@ from .DAG_executor_driver import run
 
 logger = logging.getLogger(__name__)
 
-logger.setLevel(logging.ERROR)
+logger.setLevel(logging.DEBUG)
 #logger.setLevel(logging.INFO)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 #formatter = logging.Formatter('%(levelname)s: %(message)s')
 ch = logging.StreamHandler()
-ch.setLevel(logging.ERROR)
+ch.setLevel(logging.DEBUG)
 #ch.setLevel(logging.INFO)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
@@ -769,54 +769,54 @@ def dfs_parent(visited, node):  #function for dfs
                         DEBUG: (2, 2, 0, 'PR2_2L')
                         """
        
-# rhc shared: ToDo: do this in partition code too for partition and group map
-# use if partition else group?
+                        if True: # use_shared_partitions_groups:
+                            task_name_of_parent = "PR" + str(parent_partition_number) + "_" + str(parent_group_number)
+                            shared_frontier_parent_tuple = (current_partition_number,num_frontier_groups,child_index_in_current_group,current_group_name,parent_group_parent_index)
+                            list_of_parent_frontier_tuples = BFS_Shared.shared_groups_frontier_parents_map.get(task_name_of_parent)
+                            if list_of_parent_frontier_tuples == None:
+                                list_of_parent_frontier_tuples = []
+                            logger.debug("groupOGOGOGOGOGOGOGOG add shared tuple to parent group: ")
+                            for n in parent_group:
+                                logger.debug(str(n))
+                            logger.debug("task_name_of_parent: " + task_name_of_parent
+                                + ", frontier_parent_tuple: " + str(frontier_parent_tuple))
+                            logger.debug("list_of_parent_frontier_tuples before appending tuple: " 
+                                + str(list_of_parent_frontier_tuples))
+                            list_of_parent_frontier_tuples.append(shared_frontier_parent_tuple)
+                            BFS_Shared.shared_groups_frontier_parents_map[task_name_of_parent] = list_of_parent_frontier_tuples
+                            logger.debug("New BFS_Shared.shared_groups_frontier_parents_map:")
+                            for (k,v) in BFS_Shared.shared_groups_frontier_parents_map.items():
+                                logger.debug(str(k) + ": " + str(v))                            
 
-                        task_name_of_parent = "PR" + str(parent_partition_number) + "_" + str(parent_group_number)
-                        shared_frontier_parent_tuple = (current_partition_number,num_frontier_groups,child_index_in_current_group,current_group_name,parent_group_parent_index)
-                        list_of_parent_frontier_tuples = BFS_Shared.shared_groups_frontier_parents_map.get(task_name_of_parent)
-                        if list_of_parent_frontier_tuples == None:
-                            list_of_parent_frontier_tuples = []
-                        logger.debug("groupOXOXOXOXOXOXOXOX add shared tuple to parent group: ")
-                        for n in parent_group:
-                            logger.debug(str(n))
-                        logger.debug("task_name_of_parent: " + task_name_of_parent
-                            + ", frontier_parent_tuple: " + str(frontier_parent_tuple))
-                        logger.debug("list_of_parent_frontier_tuples before appending tuple: " 
-                            + str(list_of_parent_frontier_tuples))
-                        list_of_parent_frontier_tuples.append(shared_frontier_parent_tuple)
-                        BFS_Shared.shared_groups_frontier_parents_map[task_name_of_parent] = list_of_parent_frontier_tuples
-                        logger.debug("New BFS_Shared.shared_groups_frontier_parents_map:")
-                        for (k,v) in BFS_Shared.shared_groups_frontier_parents_map:
-                            logger.debug(str(k) + ": " + str(v))
 
-                        """
-                        where:  in bfs_pagerank, we grab the shared_frontier_parent_tuple
-                        and its fields using:
-                                #FYI:
-                                # partition_number = frontier_parent[0]
-                                # group_number = frontier_parent[1]
 
-                                position_or_group_index_of_output_task = frontier_parent_tuple[2]
-                                partition_or_group_name_of_output_task = frontier_parent_tuple[3]
-                                # Note: We added this field [4] to the frontier tuple so that when
-                                # we are using a shared_nodes array or multithreading we can
-                                # copy values from shared_nodes[i] to shared_nodes[j] instead of 
-                                # having the tasks input/output these values , as they do when 
-                                # each task has its won partition and the alues need to be sent
-                                # and received instead of copied.
-                                parent_or_group_index_of_this_task_to_be_output = frontier_parent_tuple[4]
-                        """
+                            """
+                            where:  in bfs_pagerank, we grab the shared_frontier_parent_tuple
+                            and its fields using:
+                                    #FYI:
+                                    # partition_number = frontier_parent[0]
+                                    # group_number = frontier_parent[1]
 
-                        # The current partition/group name in [3] may not have an "L" but if we later 
-                        # find a loop we'll need to append an "L" to this name in the frontier tuple
-                        # so we need to patch this name (of this task, which is receiving task) but
-                        # not the sname of parent, which has already been determined (loop or not)
-                        # as it is a different partition/group from this one so already processed.
-                        if not current_group_isLoop:
-                            position_in_list_of_parent_frontier_tuples = len(list_of_parent_frontier_tuples)-1
-                            shared_frontier_parent_group_patch_tuple = (task_name_of_parent,position_in_list_of_parent_frontier_tuples)
-                            shared_frontier_parent_groups_patch_tuple_list.append(shared_frontier_parent_group_patch_tuple)
+                                    position_or_group_index_of_output_task = frontier_parent_tuple[2]
+                                    partition_or_group_name_of_output_task = frontier_parent_tuple[3]
+                                    # Note: We added this field [4] to the frontier tuple so that when
+                                    # we are using a shared_nodes array or multithreading we can
+                                    # copy values from shared_nodes[i] to shared_nodes[j] instead of 
+                                    # having the tasks input/output these values , as they do when 
+                                    # each task has its won partition and the alues need to be sent
+                                    # and received instead of copied.
+                                    parent_or_group_index_of_this_task_to_be_output = frontier_parent_tuple[4]
+                            """
+
+                            # The current partition/group name in [3] may not have an "L" but if we later 
+                            # find a loop we'll need to append an "L" to this name in the frontier tuple
+                            # so we need to patch this name (of this task, which is receiving task) but
+                            # not the sname of parent, which has already been determined (loop or not)
+                            # as it is a different partition/group from this one so already processed.
+                            if not current_group_isLoop:
+                                position_in_list_of_parent_frontier_tuples = len(list_of_parent_frontier_tuples)-1
+                                shared_frontier_parent_group_patch_tuple = (task_name_of_parent,position_in_list_of_parent_frontier_tuples)
+                                shared_frontier_parent_groups_patch_tuple_list.append(shared_frontier_parent_group_patch_tuple)
 
                         # generate dependency in DAG
                         #sending_group = "PR"+str(parent_partition_number)+"_"+str(parent_group_number)
@@ -1036,81 +1036,83 @@ def dfs_parent(visited, node):  #function for dfs
                 add frontier tuple to parent group
                 """
 
-                # shared partitions frontier code:
-                task_name_of_parent = "PR" + str(parent_partition_number) + "_" + str(parent_group_number)
-                shared_frontier_parent_tuple = (current_partition_number,num_frontier_groups,child_index_in_current_partition,current_partition_name,parent_partition_parent_index)
-                list_of_parent_frontier_tuples = BFS_Shared.shared_groups_frontier_parents_map.get(task_name_of_parent)
-                if list_of_parent_frontier_tuples == None:
-                    list_of_parent_frontier_tuples = []
-                logger.debug("groupOYOYOYOYOYOYOY add shared tuple to parent group: ")
-                for n in parent_group:
-                    logger.debug(str(n))
-                logger.debug("task_name_of_parent: " + task_name_of_parent
-                    + ", frontier_parent_tuple: " + str(frontier_parent_tuple))
-                logger.debug("list_of_parent_frontier_tuples before appending tuple: " 
-                    + str(list_of_parent_frontier_tuples))
-                list_of_parent_frontier_tuples.append(shared_frontier_parent_tuple)
-                BFS_Shared.shared_partition_frontier_parents_map[task_name_of_parent] = list_of_parent_frontier_tuples
-                logger.debug("New BFS_Shared.shared_partition_frontier_parents_map:")
-                for (k,v) in BFS_Shared.shared_partition_frontier_parents_map:
-                    logger.debug(str(k) + ": " + str(v))
+                if True: # use_shared_partitions_groups:
+                    # shared partitions frontier code:
+                    task_name_of_parent = "PR" + str(parent_partition_number) + "_" + "1"
+                    shared_frontier_parent_tuple = (current_partition_number,1,child_index_in_current_partition,current_partition_name,parent_partition_parent_index)
+                    list_of_parent_frontier_tuples = BFS_Shared.shared_partition_frontier_parents_map.get(task_name_of_parent)
+                    if list_of_parent_frontier_tuples == None:
+                        list_of_parent_frontier_tuples = []
+                    logger.debug("groupOPOPOPOPOPOP add shared tuple to parent group: ")
+                    for n in parent_group:
+                        logger.debug(str(n))
+                    logger.debug("task_name_of_parent: " + task_name_of_parent
+                        + ", shared_frontier_parent_tuple: " + str(shared_frontier_parent_tuple))
+                    logger.debug("list_of_parent_frontier_tuples before appending tuple: " 
+                        + str(list_of_parent_frontier_tuples))
+                    list_of_parent_frontier_tuples.append(shared_frontier_parent_tuple)
+                    BFS_Shared.shared_partition_frontier_parents_map[task_name_of_parent] = list_of_parent_frontier_tuples
+                    logger.debug("New BFS_Shared.shared_partition_frontier_parents_map:")
+                    for (k,v) in BFS_Shared.shared_partition_frontier_parents_map.items():
+                        logger.debug(str(k) + ": " + str(v))
 
-                """
-                where:  in bfs_pagerank, we grab the shared_frontier_parent_tuple
-                   and its fields using:
-                        #FYI:
-                        # partition_number = frontier_parent[0]
-                        # group_number = frontier_parent[1]
+                    """
+                    where:  in bfs_pagerank, we grab the shared_frontier_parent_tuple
+                    and its fields using:
+                            #FYI:
+                            # partition_number = frontier_parent[0]
+                            # group_number = frontier_parent[1]
 
-                        position_or_group_index_of_output_task = frontier_parent_tuple[2]
-                        partition_or_group_name_of_output_task = frontier_parent_tuple[3]
-                        # Note: We added this field [4] to the frontier tuple so that when
-                        # we ar using a shared_nodes array or multithreading we can
-                        # copy values from shared_nodes[i] to shared_nodes[j] instead of 
-                        # having the tasks input/output these values , as they do when 
-                        # each task has its won partition and the alues need to be sent
-                        # and received instead of copied.
-                        parent_or_group_index_of_this_task_to_be_output = frontier_parent_tuple[4]
-                """
+                            position_or_group_index_of_output_task = frontier_parent_tuple[2]
+                            partition_or_group_name_of_output_task = frontier_parent_tuple[3]
+                            # Note: We added this field [4] to the frontier tuple so that when
+                            # we ar using a shared_nodes array or multithreading we can
+                            # copy values from shared_nodes[i] to shared_nodes[j] instead of 
+                            # having the tasks input/output these values , as they do when 
+                            # each task has its won partition and the alues need to be sent
+                            # and received instead of copied.
+                            parent_or_group_index_of_this_task_to_be_output = frontier_parent_tuple[4]
+                    """
 
-                # The current partition/group name in [3] may not have an "L" but if we later 
-                # find a loop we'll need to append an "L" to this name in the frontier tuple
-                # so we need to patch this name (of this task, which is receiving task) but
-                # not the sname of parent, which has already been determined (loop or not)
-                # as it is a different partition/group from this one so already processed.
-                if not current_partition_isLoop:
-                    position_in_list_of_parent_frontier_tuples = len(list_of_parent_frontier_tuples)-1
-                    shared_frontier_parent_partition_patch_tuple = (task_name_of_parent,position_in_list_of_parent_frontier_tuples)
-                    shared_frontier_parent_partition_patch_tuple_list.append(shared_frontier_parent_partition_patch_tuple)
+                if True: # use_shared_partitions_groups:
+                    # The current partition/group name in [3] may not have an "L" but if we later 
+                    # find a loop we'll need to append an "L" to this name in the frontier tuple
+                    # so we need to patch this name (of this task, which is receiving task) but
+                    # not the sname of parent, which has already been determined (loop or not)
+                    # as it is a different partition/group from this one so already processed.
+                    if not current_partition_isLoop:
+                        position_in_list_of_parent_frontier_tuples = len(list_of_parent_frontier_tuples)-1
+                        shared_frontier_parent_partition_patch_tuple = (task_name_of_parent,position_in_list_of_parent_frontier_tuples)
+                        shared_frontier_parent_partition_patch_tuple_list.append(shared_frontier_parent_partition_patch_tuple)
 
-                # shared groups frontier code:
-                task_name_of_parent = "PR" + str(parent_partition_number) + "_" + str(parent_group_number)
-                shared_frontier_parent_tuple = (current_partition_number,num_frontier_groups,child_index_in_current_group,current_group_name,parent_group_parent_index)
-                list_of_parent_frontier_tuples = BFS_Shared.shared_groups_frontier_parents_map.get(task_name_of_parent)
-                if list_of_parent_frontier_tuples == None:
-                    list_of_parent_frontier_tuples = []
-                logger.debug("groupOXOXOXOXOXOXOXOX add shared tuple to parent group: ")
-                for n in parent_group:
-                    logger.debug(str(n))
-                logger.debug("task_name_of_parent: " + task_name_of_parent
-                    + ", frontier_parent_tuple: " + str(frontier_parent_tuple))
-                logger.debug("list_of_parent_frontier_tuples before appending tuple: " 
-                    + str(list_of_parent_frontier_tuples))
-                list_of_parent_frontier_tuples.append(shared_frontier_parent_tuple)
-                BFS_Shared.shared_groups_frontier_parents_map[task_name_of_parent] = list_of_parent_frontier_tuples
-                logger.debug("New BFS_Shared.shared_groups_frontier_parents_map:")
-                for (k,v) in BFS_Shared.shared_groups_frontier_parents_map:
-                    logger.debug(str(k) + ": " + str(v))
+                    # shared groups frontier code:
+                    task_name_of_parent = "PR" + str(parent_partition_number) + "_" + str(parent_group_number)
+                    shared_frontier_parent_tuple = (current_partition_number,num_frontier_groups,child_index_in_current_group,current_group_name,parent_group_parent_index)
+                    list_of_parent_frontier_tuples = BFS_Shared.shared_groups_frontier_parents_map.get(task_name_of_parent)
+                    if list_of_parent_frontier_tuples == None:
+                        list_of_parent_frontier_tuples = []
+                    logger.debug("groupOGPOGPOGPOGPOGPOGPOGP add shared tuple to parent group: ")
+                    for n in parent_group:
+                        logger.debug(str(n))
+                    logger.debug("task_name_of_parent: " + task_name_of_parent
+                        + ", shared_frontier_parent_tuple: " + str(shared_frontier_parent_tuple))
+                    logger.debug("list_of_parent_frontier_tuples before appending tuple: " 
+                        + str(list_of_parent_frontier_tuples))
+                    list_of_parent_frontier_tuples.append(shared_frontier_parent_tuple)
+                    BFS_Shared.shared_groups_frontier_parents_map[task_name_of_parent] = list_of_parent_frontier_tuples
+                    logger.debug("New BFS_Shared.shared_groups_frontier_parents_map:")
+                    for (k,v) in BFS_Shared.shared_groups_frontier_parents_map.items():
+                        logger.debug(str(k) + ": " + str(v))
 
-                # The current partition/group name in [3] may not have an "L" but if we later 
-                # find a loop we'll need to append an "L" to this name in the frontier tuple
-                # so we need to patch this name (of this task, which is receiving task) but
-                # not the sname of parent, which has already been determined (loop or not)
-                # as it is a different partition/group from this one so already processed.
-                if not current_group_isLoop:
-                    position_in_list_of_parent_frontier_tuples = len(list_of_parent_frontier_tuples)-1
-                    shared_frontier_parent_group_patch_tuple = (task_name_of_parent,position_in_list_of_parent_frontier_tuples)
-                    shared_frontier_parent_groups_patch_tuple_list.append(shared_frontier_parent_group_patch_tuple)
+                    # The current partition/group name in [3] may not have an "L" but if we later 
+                    # find a loop we'll need to append an "L" to this name in the frontier tuple
+                    # so we need to patch this name (of this task, which is receiving task) but
+                    # not the sname of parent, which has already been determined (loop or not)
+                    # as it is a different partition/group from this one so already processed.
+                    if not current_group_isLoop:
+                        position_in_list_of_parent_frontier_tuples = len(list_of_parent_frontier_tuples)-1
+                        shared_frontier_parent_group_patch_tuple = (task_name_of_parent,position_in_list_of_parent_frontier_tuples)
+                        shared_frontier_parent_groups_patch_tuple_list.append(shared_frontier_parent_group_patch_tuple)
 
                 # generate dependency in DAG
                 #
@@ -1581,32 +1583,36 @@ def bfs(visited, node): #function for BFS
 
                 frontier_parent_partition_patch_tuple_list.clear()
 
-                # Given:
-                # shared_frontier_parent_partition_patch_tuple = (task_name_of_parent,position_in_list_of_parent_frontier_tuples)
-                if current_partition_isLoop:
-                    logger.debug("XXXXXXXXXXX BFS: patch shared partition frontier_parent tuples: ")
-                    for shared_frontier_parent_partition_patch_tuple in shared_frontier_parent_partition_patch_tuple_list:
-                        # These values were used to create the tuples in dfs_parent()
-                        task_name_of_parent = shared_frontier_parent_partition_patch_tuple[0]
-                        position_of_tuple_in_list_of_parent_frontier_tuples = shared_frontier_parent_partition_patch_tuple[1]
+                if True: # use_shared_partitions_groups:
+                    # Given:
+                    # shared_frontier_parent_partition_patch_tuple = (task_name_of_parent,position_in_list_of_parent_frontier_tuples)
+                    if current_partition_isLoop:
+                        logger.debug("X-X-X-X-X-X-X BFS: patch shared partition frontier_parent tuples: ")
+                        for shared_frontier_parent_partition_patch_tuple in shared_frontier_parent_partition_patch_tuple_list:
+                            # These values were used to create the tuples in dfs_parent()
+                            task_name_of_parent = shared_frontier_parent_partition_patch_tuple[0]
+                            position_of_tuple_in_list_of_parent_frontier_tuples = shared_frontier_parent_partition_patch_tuple[1]
 
-                        list_of_parent_frontier_tuples = BFS_Shared.shared_partition_frontier_parents_map.get(task_name_of_parent)
-                        frontier_parent_partition_tuple_to_patch = list_of_parent_frontier_tuples[position_of_tuple_in_list_of_parent_frontier_tuples]
-                        # Given:
-                        #shared_frontier_parent_tuple = (current_partition_number,num_frontier_groups,child_index_in_current_partition,current_partition_name,parent_partition_parent_index)
-                        first_field = frontier_parent_partition_tuple_to_patch[0]
-                        second_field = frontier_parent_partition_tuple_to_patch[1]
-                        third_field = frontier_parent_partition_tuple_to_patch[2]
-                        # FYI: [3] is the partition name to be patched with the new name ending in "L"
-                        # e.g., "PR2_1" --> "PR2_1L". Partition name was appended with "L" above
-                        fifth_field = frontier_parent_partition_tuple_to_patch[4]
-                        new_frontier_parent_partition_tuple = (first_field,second_field,third_field,partition_name,fifth_field)
-                        del list_of_parent_frontier_tuples[position_of_tuple_in_list_of_parent_frontier_tuples]
-                        # append the new tuple, order of tuples may change but order is not important
-                        list_of_parent_frontier_tuples.append(new_frontier_parent_partition_tuple)
-                        logger.debug("X-X-X-X-X-X-X BFS:  new frontier_parents for " + task_name_of_parent + " is " +  str(list_of_parent_frontier_tuples))
+                            list_of_parent_frontier_tuples = BFS_Shared.shared_partition_frontier_parents_map.get(task_name_of_parent)
+                            frontier_parent_partition_tuple_to_patch = list_of_parent_frontier_tuples[position_of_tuple_in_list_of_parent_frontier_tuples]
+                            logger.debug("X-X-X-X-X-X-X BFS: patching shared partition frontier_tuple name "
+                            + frontier_parent_partition_tuple_to_patch[3] + " to " + partition_name)
+ 
+                            # Given:
+                            #shared_frontier_parent_tuple = (current_partition_number,num_frontier_groups,child_index_in_current_partition,current_partition_name,parent_partition_parent_index)
+                            first_field = frontier_parent_partition_tuple_to_patch[0]
+                            second_field = frontier_parent_partition_tuple_to_patch[1]
+                            third_field = frontier_parent_partition_tuple_to_patch[2]
+                            # FYI: [3] is the partition name to be patched with the new name ending in "L"
+                            # e.g., "PR2_1" --> "PR2_1L". Partition name was appended with "L" above
+                            fifth_field = frontier_parent_partition_tuple_to_patch[4]
+                            new_frontier_parent_partition_tuple = (first_field,second_field,third_field,partition_name,fifth_field)
+                            del list_of_parent_frontier_tuples[position_of_tuple_in_list_of_parent_frontier_tuples]
+                            # append the new tuple, order of tuples may change but order is not important
+                            list_of_parent_frontier_tuples.append(new_frontier_parent_partition_tuple)
+                            logger.debug("X-X-X-X-X-X-X BFS:  new shared partition frontier_parent tuples for " + task_name_of_parent + " is " +  str(list_of_parent_frontier_tuples))
 
-                shared_frontier_parent_partition_patch_tuple_list.clear()
+                    shared_frontier_parent_partition_patch_tuple_list.clear()
 
                 if current_partition_isLoop:
                     # When the tuples in sender_receiver_partition_patch_tuple_list were created,
@@ -1872,33 +1878,34 @@ def bfs(visited, node): #function for BFS
 
                 frontier_parent_group_patch_tuple_list.clear()
 
-                # Given:
-                # shared_frontier_parent_partition_patch_tuple = (task_name_of_parent,position_in_list_of_parent_frontier_tuples)
-                if current_group_isLoop:
-                    logger.debug("XXXXXXXXXXX BFS: patch shared groups frontier_parent tuples: ")
-                    for shared_frontier_parent_groups_patch_tuple in shared_frontier_parent_groups_patch_tuple_list:
-                        # These values were used to create the tuples in dfs_parent()
-                        task_name_of_parent = shared_frontier_parent_groups_patch_tuple[0]
-                        position_of_tuple_in_list_of_parent_frontier_tuples = shared_frontier_parent_groups_patch_tuple[1]
+                if True: # use_shared_partitions_groups:
+                    # Given:
+                    # shared_frontier_parent_partition_patch_tuple = (task_name_of_parent,position_in_list_of_parent_frontier_tuples)
+                    if current_group_isLoop:
+                        logger.debug("X-X-X-X-X-X-X BFS: patch shared groups frontier_parent tuples: ")
+                        for shared_frontier_parent_groups_patch_tuple in shared_frontier_parent_groups_patch_tuple_list:
+                            # These values were used to create the tuples in dfs_parent()
+                            task_name_of_parent = shared_frontier_parent_groups_patch_tuple[0]
+                            position_of_tuple_in_list_of_parent_frontier_tuples = shared_frontier_parent_groups_patch_tuple[1]
 
-                        list_of_parent_frontier_tuples = BFS_Shared.shared_partition_frontier_group_map.get(task_name_of_parent)
-                        logger.debug("X-X-X-X-X-X-X BFS:  old frontier_parents for " + task_name_of_parent + " is " +  str(list_of_parent_frontier_tuples))
-                        frontier_parent_group_tuple_to_patch = list_of_parent_frontier_tuples[position_of_tuple_in_list_of_parent_frontier_tuples]
-                        # Given:
-                        #shared_frontier_parent_tuple = (current_partition_number,num_frontier_groups,child_index_in_current_partition,current_partition_name,parent_partition_parent_index)
-                        first_field = frontier_parent_partition_tuple_to_patch[0]
-                        second_field = frontier_parent_partition_tuple_to_patch[1]
-                        third_field = frontier_parent_partition_tuple_to_patch[2]
-                        # FYI: [3] is the group name to be patched with the new name ending in "L"
-                        # e.g., "PR2_2" --> "PR2_2L". Partition name was appended with "L" above
-                        fifth_field = frontier_parent_partition_tuple_to_patch[4]
-                        new_frontier_parent_partition_tuple = (first_field,second_field,third_field,group_name,fifth_field)
-                        del list_of_parent_frontier_tuples[position_of_tuple_in_list_of_parent_frontier_tuples]
-                        # append the new tuple, order of tuples may change but order is not important
-                        list_of_parent_frontier_tuples.append(new_frontier_parent_partition_tuple)
-                        logger.debug("X-X-X-X-X-X-X BFS:  new frontier_parents for " + task_name_of_parent + " is " +  str(list_of_parent_frontier_tuples))
+                            list_of_parent_frontier_tuples = BFS_Shared.shared_partition_frontier_group_map.get(task_name_of_parent)
+                            logger.debug("X-X-X-X-X-X-X BFS:  old shared groups frontier_parents for " + task_name_of_parent + " is " +  str(list_of_parent_frontier_tuples))
+                            frontier_parent_group_tuple_to_patch = list_of_parent_frontier_tuples[position_of_tuple_in_list_of_parent_frontier_tuples]
+                            # Given:
+                            #shared_frontier_parent_tuple = (current_partition_number,num_frontier_groups,child_index_in_current_partition,current_partition_name,parent_partition_parent_index)
+                            first_field = frontier_parent_partition_tuple_to_patch[0]
+                            second_field = frontier_parent_partition_tuple_to_patch[1]
+                            third_field = frontier_parent_partition_tuple_to_patch[2]
+                            # FYI: [3] is the group name to be patched with the new name ending in "L"
+                            # e.g., "PR2_2" --> "PR2_2L". Partition name was appended with "L" above
+                            fifth_field = frontier_parent_partition_tuple_to_patch[4]
+                            new_frontier_parent_partition_tuple = (first_field,second_field,third_field,group_name,fifth_field)
+                            del list_of_parent_frontier_tuples[position_of_tuple_in_list_of_parent_frontier_tuples]
+                            # append the new tuple, order of tuples may change but order is not important
+                            list_of_parent_frontier_tuples.append(new_frontier_parent_partition_tuple)
+                            logger.debug("X-X-X-X-X-X-X BFS:  new shared groups frontier_parents for " + task_name_of_parent + " is " +  str(list_of_parent_frontier_tuples))
 
-                shared_frontier_parent_groups_patch_tuple_list.clear()
+                    shared_frontier_parent_groups_patch_tuple_list.clear()
 
                 if current_group_isLoop:
                     # When the tuples in sender_receiver_partition_patch_tuple_list were created,
@@ -2855,6 +2862,16 @@ logger.info("frontier_groups_sum: " + str(frontier_groups_sum) + ", len(frontier
     +  str(len(frontiers)-1))
 logger.info("Average number of frontier groups: " + (str(frontier_groups_sum / (len(frontiers)-1))))
 logger.info("")
+if True: # use_shared_partitions_groups: 
+    logger.info("Shared partition map frontier_parent_tuples:")                 
+    for (k,v) in BFS_Shared.shared_partition_frontier_parents_map.items():
+        logger.debug(str(k) + ": " + str(v))
+    logger.info("")
+if True: # use_shared_partitions_groups:  
+    logger.info("Shared groups map frontier_parent_tuples:")                  
+    for (k,v) in BFS_Shared.shared_groups_frontier_parents_map.items():
+        logger.debug(str(k) + ": " + str(v))
+    logger.info("")
 logger.info("nodeIndex_to_partition_partitionIndex_group_groupIndex_map, len: " + str(len(nodeIndex_to_partition_partitionIndex_group_groupIndex_map)) + ":")
 logger.info("shadow nodes not mapped and not shown")
 if PRINT_DETAILED_STATS:
