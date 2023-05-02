@@ -180,7 +180,7 @@ same_output_for_all_fanout_fanin = False
 # when the task suns, we have one global shared array with all the 
 # partitions/groups and the threads access that array when they do their
 # tasks.
-use_shared_partitions_groups = True
+use_shared_partitions_groups = False
 
 # For PageRank:
 # Execute page rank partitions or execute page rank groups

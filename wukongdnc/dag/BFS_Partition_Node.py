@@ -201,13 +201,6 @@ class Partition_Node:
             logger.debug("update_pagerank: parent_nodes: " + str(parent_nodes))
             logger.debug("update_pagerank: num_children: " + str(self.num_children))
         
-        #if self.ID == 16:
-        #    parent1 = partition_or_group[1]
-        #    parent2 = partition_or_group[2]
-        #    if (debug_pagerank):
-        #        logger.info("16 parent : " + str(parent1.ID) + " num_children: " + str(parent1.num_children))
-        #       logger.info("16 parent : " + str(parent2.ID) + " num_children: " + str(parent2.num_children))
-        
         #Note: a parent has at least one child so num_children is not 0
         pagerank_sum = sum((shared_nodes[node_index+starting_position_in_partition_group].prev / shared_nodes[node_index+starting_position_in_partition_group].num_children) for node_index in parent_nodes)
         if (debug_pagerank):

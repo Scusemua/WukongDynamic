@@ -7,17 +7,17 @@ from .DAG_executor_constants import use_page_rank_group_partitions
 
 logger = logging.getLogger(__name__)
 
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.ERROR)
 #logger.setLevel(logging.INFO)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 #formatter = logging.Formatter('%(levelname)s: %(message)s')
 ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
+ch.setLevel(logging.ERROR)
 #ch.setLevel(logging.INFO)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
-debug_pagerank = True
+debug_pagerank = False
 
 """
 
@@ -437,7 +437,7 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
         starting_position_in_partition_group = position_size_tuple[0]
         size_of_partition_group = position_size_tuple[1]
 
-        debug_pagerank = True
+        debug_pagerank = False
 
         if (debug_pagerank):
             logger.debug("PageRank_Function output partition_or_group (node:parents):")
@@ -1143,4 +1143,28 @@ values of α, the convergence is fast, but the link structure of the graph used
 to determine ranks is less true. Slightly different values for α can produce 3
 very different rank vectors. Moreover, as α → 1, convergence slows down
 drastically, and sensitivity issues begin to surface [1].
+"""
+
+
+"""
+numpy.empty
+numpy.empty(shape, dtype=float, order='C', *, like=None)
+Return a new array of given shape and type, without initializing entries.
+
+Parameters:
+shapeint or tuple of int
+Shape of the empty array, e.g., (2, 3) or 2.
+
+dtypedata-type, optional
+Desired output data-type for the array, e.g, numpy.int8. Default is numpy.float64.
+
+order{‘C’, ‘F’}, optional, default: ‘C’
+Whether to store multi-dimensional data in row-major (C-style) or column-major (Fortran-style) order in memory.
+
+likearray_like, optional
+Reference object to allow the creation of arrays which are not NumPy arrays. If an array-like passed in as like supports the __array_function__ protocol, the result will be defined by it. In this case, it ensures the creation of an array object compatible with that passed in via this argument.
+
+import numpy as np
+arr = np.array([1, 2, 3, 4])
+print(arr[0])
 """
