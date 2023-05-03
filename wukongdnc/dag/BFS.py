@@ -18,7 +18,7 @@ Create a output tuples map so each PR task can set the result of its
 
 import networkx as nx
 import matplotlib.pyplot as plt
-#import numpy as np
+import numpy as np
 
 import logging 
 import cloudpickle
@@ -39,6 +39,7 @@ from .BFS_generate_DAG_info import Partition_senders, Partition_receivers, Group
 from . import BFS_Shared
 
 from .DAG_executor_constants import use_shared_partitions_groups, use_page_rank_group_partitions
+from .DAG_executor_constants import use_struct_of_arrays_for_pagrank
 from .DAG_executor_driver import run
 
 #from .DAG_executor_constants import run_all_tasks_locally, using_threads_not_processes
@@ -175,6 +176,8 @@ nodes = []
 
 num_nodes = 0
 num_edges = 0
+# used to compute size of numPy parents array for pagerank calculation
+num_parent_appends = 0 
 
 #Shared.shared_partition = []
 #Shared.shared_groups = []
@@ -2155,6 +2158,7 @@ def input_graph():
     for x in range(num_nodes+1):
         nodes.append(Node(x))
 
+    global num_parent_appends
     num_parent_appends = 0
     num_children_appends = 0
     num_self_loops = 0
@@ -2442,6 +2446,7 @@ for i in range(1,num_nodes+1):
         #bfs(visited, graph, nodes[i])    # function calling
         bfs(visited, nodes[i])    # function calling
 
+# Do last partition/group if there is one
 if len(current_partition) > 0:
     logger.debug("BFS: create final sub-partition")
     # does not require a deepcop
@@ -2512,56 +2517,213 @@ else:
     # does not require a deepcop
     frontiers.append(frontier.copy())
 
+# generate shared array of partitions/groups if using multithreaded workers
+# or threads to simulate lambdas
+
 if use_shared_partitions_groups:
-    #rhc shared
-    #if not use_page_rank_group_partitions:
-    next = 0
-    for name, partition, num_shadow_nodes in zip(partition_names, partitions, partitions_num_shadow_nodes_list):
-        partition_position = next
-        partition_size = len(partition)
-        for p_node in partition:
-            BFS_Shared.shared_partition.append(p_node)
-            next += 1
-        for i in range(num_shadow_nodes):
-            BFS_Shared.shared_partition.append(Partition_Node(-2))
-            next += 1
-            partition_size += 1
-        partition_tuple = (partition_position,partition_size)
-        BFS_Shared.shared_partition_map[name] = partition_tuple
-    logger.debug("Number of shadow nodes for partitions:")
-    for num in partitions_num_shadow_nodes_list:
-        logger.debug(num)
-    logger.debug("shared_partition_map:")
-    for (k,v) in BFS_Shared.shared_partition_map.items():
-        logger.debug(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + ")")
-    logger.debug("shared_partition")
-    for p_node in BFS_Shared.shared_partition:
-        logger.debug(p_node)
-    logger.debug("")
-    #else:
-    next = 0
-    for name, group, num_shadow_nodes in zip(group_names, groups, groups_num_shadow_nodes_list):
-        group_position = next
-        group_size = len(group)
-        for p_node in group:
-            BFS_Shared.shared_groups.append(p_node)
-            next += 1
-        for i in range(num_shadow_nodes):
-            BFS_Shared.shared_groups.append(Partition_Node(-2))
-            next += 1
-            group_size += 1
-        group_tuple = (group_position,group_size)
-        BFS_Shared.shared_groups_map[name] = group_tuple
-    logger.debug("Number of shadow nodes for groups:")
-    for num in groups_num_shadow_nodes_list:
-        logger.debug(num)
-    logger.debug("shared_groups_map:")
-    for (k,v) in BFS_Shared.shared_groups_map.items():
-        logger.debug(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + ")")
-    logger.debug("shared_groups")
-    for p_node in BFS_Shared.shared_groups:
-        logger.debug(p_node)
-    logger.debug("")
+    # Either the values needed for pagerank are stored in individual 
+    # Partition_Node in a single shared array, or we have multiple
+    # arrays, one for each of the needed values, e.g., array of 
+    # num_children values, array of num_parents values, etc.
+    if not use_struct_of_arrays_for_pagrank:
+        #rhc shared
+        #if not use_page_rank_group_partitions:
+        if not use_page_rank_group_partitions:
+            next = 0
+            for name, partition, num_shadow_nodes in zip(partition_names, partitions, partitions_num_shadow_nodes_list):
+                partition_position = next
+                partition_size = len(partition)
+                for p_node in partition:
+                    BFS_Shared.shared_partition.append(p_node)
+                    next += 1
+                for i in range(num_shadow_nodes):
+                    BFS_Shared.shared_partition.append(Partition_Node(-2))
+                    next += 1
+                    partition_size += 1
+                partition_tuple = (partition_position,partition_size)
+                BFS_Shared.shared_partition_map[name] = partition_tuple
+            logger.debug("Number of shadow nodes for partitions:")
+            for num in partitions_num_shadow_nodes_list:
+                logger.debug(num)
+            logger.debug("shared_partition_map:")
+            for (k,v) in BFS_Shared.shared_partition_map.items():
+                logger.debug(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + ")")
+            logger.debug("shared_partition")
+            for p_node in BFS_Shared.shared_partition:
+                logger.debug(p_node)
+            logger.debug("")
+        else:
+            next = 0
+            for name, group, num_shadow_nodes in zip(group_names, groups, groups_num_shadow_nodes_list):
+                group_position = next
+                group_size = len(group)
+                for p_node in group:
+                    BFS_Shared.shared_groups.append(p_node)
+                    next += 1
+                for i in range(num_shadow_nodes):
+                    BFS_Shared.shared_groups.append(Partition_Node(-2))
+                    next += 1
+                    group_size += 1
+                group_tuple = (group_position,group_size)
+                BFS_Shared.shared_groups_map[name] = group_tuple
+            logger.debug("Number of shadow nodes for groups:")
+            for num in groups_num_shadow_nodes_list:
+                logger.debug(num)
+            logger.debug("shared_groups_map:")
+            for (k,v) in BFS_Shared.shared_groups_map.items():
+                logger.debug(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + ")")
+            logger.debug("shared_groups")
+            for p_node in BFS_Shared.shared_groups:
+                logger.debug(p_node)
+            logger.debug("")
+    else: 
+        """ In BFS_Shared.py:
+        global pagerank
+        global previous
+
+        global number_of_children
+        global number_of_parents
+        global starting_indices_of_parents
+        global parents
+        """
+        #rhc shared
+        #if not use_page_rank_group_partitions:
+        next = 0
+        next_parent_index = 0
+
+        if not use_page_rank_group_partitions:
+            np_arrays_size_for_shared_partition = num_nodes + (
+                (2*num_shadow_nodes_added_to_partitions) + ((len(partitions)-1)*16)
+            )
+
+            np_arrays_size_for_shared_groups_pagerank_and_previous = num_parent_appends + ((len(partitions)-1)*8)
+
+            BFS_Shared.pagerank = np.empty(np_arrays_size_for_shared_partition,dtype=np.double)
+            # prev[i] is previous pagerank value of i
+            BFS_Shared.previous = np.full(np_arrays_size_for_shared_partition,float((1/num_nodes)))
+            # num_chldren[i] is number of child nodes of node i
+            # rhc: Q: make these short or something shorter than int?
+            BFS_Shared.number_of_children = np.empty(np_arrays_size_for_shared_partition,dtype=np.intc)
+            # numParents[i] is number of parent nodes of node i
+            BFS_Shared.number_of_parents = np.empty(np_arrays_size_for_shared_partition,dtype=np.intc)
+            # parent_index[i] is the index in parents[] of the first of 
+            # num_parents parents of node i
+            BFS_Shared.starting_indices_of_parents = np.empty(np_arrays_size_for_shared_partition,dtype=np.intc)
+            # parents - to get the parents of node i: num_parents = numParents[i];
+            # parent_index = parent_index[i]; 
+            # for j in (parent_index,num_parents) parent = parents[j]
+            BFS_Shared.parents = np.empty(np_arrays_size_for_shared_partition,dtype=np.intc)
+            for name, partition, num_shadow_nodes in zip(partition_names, partitions, partitions_num_shadow_nodes_list):
+                partition_position = next
+                partition_size = len(partition)
+                for p_node in partition:
+                    #BFS_Shared.shared_partition.append(p_node)
+                    BFS_Shared.number_of_children[next] = p_node.num_children
+                    BFS_Shared.number_of_parents[next] = len(p_node.parents)
+                    BFS_Shared.starting_indices_of_parents[next] = next_parent_index
+                    for parent in p_node.parents:
+                        BFS_Shared.parents[next_parent_index] = parent
+                        next_parent_index += 1
+                    next += 1
+                for i in range(num_shadow_nodes):
+                    #BFS_Shared.shared_partition.append(Partition_Node(-2))
+                    BFS_Shared.number_of_children[next] = -2 
+                    BFS_Shared.number_of_parents[next] = -2
+                    BFS_Shared.starting_indices_of_parents[next] = -2
+                    next += 1
+                    partition_size += 1
+                # 64 byte padding : 64 bit float and 32 bit ints
+                int_padding = [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0]
+                #float_padding = [1.0,1.0,1.0,1.0, 1.0,1.0,1.0,1.0]
+                #BFS_Shared.shared_partition.append(Partition_Node(-2))
+                BFS_Shared.number_of_children.extend(int_padding)
+                BFS_Shared.number_of_parents.extend(int_padding)
+                BFS_Shared.starting_indices_of_parents.extend(int_padding)
+                next += 16
+                partition_size += 16
+                partition_tuple = (partition_position,partition_size)
+
+                # init pagerank and prev
+
+                BFS_Shared.shared_partition_map[name] = partition_tuple
+            logger.debug("Number of shadow nodes for partitions:")
+            for num in partitions_num_shadow_nodes_list:
+                logger.debug(num)
+            logger.debug("shared_partition_map:")
+            for (k,v) in BFS_Shared.shared_partition_map.items():
+                logger.debug(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + ")")
+            logger.debug("shared_partition")
+            for p_node in BFS_Shared.shared_partition:
+                logger.debug(p_node)
+            logger.debug("")
+        else:
+            np_arrays_size_for_shared_groups = num_nodes + (
+                (2*num_shadow_nodes_added_to_groups) + ((len(groups)-1)*16)
+            )
+            np_arrays_size_for_shared_groups_pagerank_and_previous = num_parent_appends + ((len(groups)-1)*8)
+
+            BFS_Shared.pagerank = np.empty(np_arrays_size_for_shared_groups_pagerank_and_previous,dtype=np.double)
+            # prev[i] is previous pagerank value of i
+            BFS_Shared.previous = np.full(np_arrays_size_for_shared_groups_pagerank_and_previous,float((1/num_nodes)))
+            # num_chldren[i] is number of child nodes of node i
+            # rhc: Q: make these short or something shorter than int?
+            BFS_Shared.number_of_children = np.empty(np_arrays_size_for_shared_groups,dtype=np.intc)
+            # numParents[i] is number of parent nodes of node i
+            BFS_Shared.number_of_parents = np.empty(np_arrays_size_for_shared_groups,dtype=np.intc)
+            # parent_index[i] is the index in parents[] of the first of 
+            # num_parents parents of node i
+            BFS_Shared.starting_indices_of_parents = np.empty(np_arrays_size_for_shared_groups,dtype=np.intc)
+            # parents - to get the parents of node i: num_parents = numParents[i];
+            # parent_index = parent_index[i]; 
+            # for j in (parent_index,num_parents) parent = parents[j]
+            BFS_Shared.parents = np.empty(np_arrays_size_for_shared_groups,dtype=np.intc)
+ 
+            next = 0
+            next_parent_index = 0
+            for name, group, num_shadow_nodes in zip(group_names, groups, groups_num_shadow_nodes_list):
+                group_position = next
+                group_size = len(group)
+                for p_node in group:
+                    #BFS_Shared.shared_groups.append(p_node)
+                    BFS_Shared.number_of_children[next] = p_node.num_children
+                    BFS_Shared.number_of_parents[next] = len(p_node.parents)
+                    BFS_Shared.starting_indices_of_parents[next] = next_parent_index
+                    for parent in p_node.parents:
+                        BFS_Shared.parents[next_parent_index] = parent
+                        next_parent_index += 1
+                    next += 1
+                for i in range(num_shadow_nodes):
+                    #BFS_Shared.shared_groups.append(Partition_Node(-2))
+                    BFS_Shared.number_of_children[next] = -2 
+                    BFS_Shared.number_of_parents[next] = -2
+                    BFS_Shared.starting_indices_of_parents[next] = -2
+                    next += 1
+                    group_size += 1
+                # 64 byte padding : 64 bit float and 32 bit ints
+                int_padding = [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0]
+                #float_padding = [1.0,1.0,1.0,1.0, 1.0,1.0,1.0,1.0]
+                #BFS_Shared.shared_partition.append(Partition_Node(-2))
+                BFS_Shared.number_of_children.extend(int_padding)
+                BFS_Shared.number_of_parents.extend(int_padding)
+                BFS_Shared.starting_indices_of_parents.extend(int_padding)
+                next += 16
+                group_size += 16
+                
+                # init pagerank and prev
+
+                group_tuple = (group_position,group_size)
+                BFS_Shared.shared_groups_map[name] = group_tuple
+            logger.debug("Number of shadow nodes for groups:")
+            for num in groups_num_shadow_nodes_list:
+                logger.debug(num)
+            logger.debug("shared_groups_map:")
+            for (k,v) in BFS_Shared.shared_groups_map.items():
+                logger.debug(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + ")")
+            logger.debug("shared_groups")
+            for p_node in BFS_Shared.shared_groups:
+                logger.debug(p_node)
+            logger.debug("")
+
 
 #partitions.append(current_partition.copy())
 #frontiers.append(frontier.copy())
@@ -2630,7 +2792,6 @@ else:
         logger.error("[Error]: shared_groups_length is " + str(shared_groups_length)
             + " but num_nodes is " + str(num_nodes))
 #if (len(current_partition)-loop_nodes_added) != num_nodes
-
 
 print_val = ""
 for x in current_partition:

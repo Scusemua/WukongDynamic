@@ -40,7 +40,7 @@ def initialize_struct_of_arrays(number_of_nodes,number_of_parent_nodes):
     global previous
     global number_of_children
     global number_of_parents
-    global parent_index
+    #global parent_index
     global starting_indices_of_parents
     global parents
 

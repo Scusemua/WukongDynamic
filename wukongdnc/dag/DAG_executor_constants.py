@@ -182,10 +182,21 @@ same_output_for_all_fanout_fanin = False
 # tasks.
 use_shared_partitions_groups = False
 
+if use_shared_partitions_groups and not run_all_tasks_locally or not using_threads_not_processes:
+    logger.error("[Error]: Configuration error: if using a single shared array of"
+        + " partitions or groups then must run_tasks_locally and be using_threads_not_processes.")
+
 # For PageRank:
 # Execute page rank partitions or execute page rank groups
 use_page_rank_group_partitions = True
 
+# For pagerank
+# Use a struct of arrays to improve cache performance
+use_struct_of_arrays_for_pagerank = False
+
+if use_struct_of_arrays_for_pagerank and not use_shared_partitions_groups:
+    logger.error("[Error]: Configuration error: if use_struct_of_arrays_for_pagerank"
+        + " then must use_shared_partitions_groups.")
 
 A1 = A1_Server = A1_FunctionSimulator = A1_SingleFunction = A1_Orchestrator = False
 A2 = False
