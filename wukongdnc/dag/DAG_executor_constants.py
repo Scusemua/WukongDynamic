@@ -1,4 +1,5 @@
 import logging
+import os
 
 logger = None
 logger = logging.getLogger(__name__)
@@ -124,6 +125,8 @@ if create_all_fanins_faninNBs_on_start and not run_all_tasks_locally:
         # function an object is in.
         logger.error("[Error]: Configuration error: if create_all_fanins_faninNBs_on_start"
             + " then map_objects_to_functions must be True.")
+        logging.shutdown()
+        os._exit(0)
 
 #assert:
 if map_objects_to_lambda_functions:
@@ -132,6 +135,8 @@ if map_objects_to_lambda_functions:
         # that we can determine the function an object is in.
         logger.error("[Error]: Configuration error: if map_objects_to_lambda_functions"
             + " then use_anonymous_lambda_functions must be False.")
+        logging.shutdown()
+        os._exit(0)
 
 #assert:
 if sync_objects_in_lambdas_trigger_their_tasks:
@@ -140,6 +145,8 @@ if sync_objects_in_lambdas_trigger_their_tasks:
         # that we can determine the function an object is in.
         logger.error("[Error]: Configuration error: if sync_objects_in_lambdas_trigger_their_tasks"
             + " then not run_all_tasks_locally must be True.")
+        logging.shutdown()
+        os._exit(0)
 
 # So if create on start then must map objects and cannot use anonymous functions.
 # If want to use anonymous functions then no create objects on statr and no mapping.
@@ -185,6 +192,8 @@ use_shared_partitions_groups = False
 if use_shared_partitions_groups and not run_all_tasks_locally or not using_threads_not_processes:
     logger.error("[Error]: Configuration error: if using a single shared array of"
         + " partitions or groups then must run_tasks_locally and be using_threads_not_processes.")
+    logging.shutdown()
+    os._exit(0)
 
 # For PageRank:
 # Execute page rank partitions or execute page rank groups
@@ -197,6 +206,8 @@ use_struct_of_arrays_for_pagerank = False
 if use_struct_of_arrays_for_pagerank and not use_shared_partitions_groups:
     logger.error("[Error]: Configuration error: if use_struct_of_arrays_for_pagerank"
         + " then must use_shared_partitions_groups.")
+    logging.shutdown()
+    os._exit(0)
 
 A1 = A1_Server = A1_FunctionSimulator = A1_SingleFunction = A1_Orchestrator = False
 A2 = False
