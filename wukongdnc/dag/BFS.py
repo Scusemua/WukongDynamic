@@ -39,19 +39,19 @@ from .BFS_generate_DAG_info import Partition_senders, Partition_receivers, Group
 from . import BFS_Shared
 
 from .DAG_executor_constants import use_shared_partitions_groups, use_page_rank_group_partitions
-from .DAG_executor_constants import use_struct_of_arrays_for_pagrank
+from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
 from .DAG_executor_driver import run
 
 #from .DAG_executor_constants import run_all_tasks_locally, using_threads_not_processes
 
 logger = logging.getLogger(__name__)
 
-logger.setLevel(logging.ERROR)
+logger.setLevel(logging.DEBUG)
 #logger.setLevel(logging.INFO)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 #formatter = logging.Formatter('%(levelname)s: %(message)s')
 ch = logging.StreamHandler()
-ch.setLevel(logging.ERROR)
+ch.setLevel(logging.DEBUG)
 #ch.setLevel(logging.INFO)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
@@ -773,20 +773,21 @@ def dfs_parent(visited, node):  #function for dfs
                         """
        
                         if True: # use_shared_partitions_groups:
-                            task_name_of_parent = "PR" + str(parent_partition_number) + "_" + str(parent_group_number)
+                            task_name_of_parent_group = group_names[parent_group_number-1]
+                            #task_name_of_parent = "PR" + str(parent_partition_number) + "_" + str(parent_group_number)
                             shared_frontier_parent_tuple = (current_partition_number,num_frontier_groups,child_index_in_current_group,current_group_name,parent_group_parent_index)
-                            list_of_parent_frontier_tuples = BFS_Shared.shared_groups_frontier_parents_map.get(task_name_of_parent)
+                            list_of_parent_frontier_tuples = BFS_Shared.shared_groups_frontier_parents_map.get(task_name_of_parent_group)
                             if list_of_parent_frontier_tuples == None:
                                 list_of_parent_frontier_tuples = []
                             logger.debug("groupOGOGOGOGOGOGOGOG add shared tuple to parent group: ")
                             for n in parent_group:
                                 logger.debug(str(n))
-                            logger.debug("task_name_of_parent: " + task_name_of_parent
+                            logger.debug("task_name_of_parent: " + task_name_of_parent_group
                                 + ", frontier_parent_tuple: " + str(frontier_parent_tuple))
                             logger.debug("list_of_parent_frontier_tuples before appending tuple: " 
                                 + str(list_of_parent_frontier_tuples))
                             list_of_parent_frontier_tuples.append(shared_frontier_parent_tuple)
-                            BFS_Shared.shared_groups_frontier_parents_map[task_name_of_parent] = list_of_parent_frontier_tuples
+                            BFS_Shared.shared_groups_frontier_parents_map[task_name_of_parent_group] = list_of_parent_frontier_tuples
                             logger.debug("New BFS_Shared.shared_groups_frontier_parents_map:")
                             for (k,v) in BFS_Shared.shared_groups_frontier_parents_map.items():
                                 logger.debug(str(k) + ": " + str(v))                            
@@ -818,7 +819,7 @@ def dfs_parent(visited, node):  #function for dfs
                             # as it is a different partition/group from this one so already processed.
                             if not current_group_isLoop:
                                 position_in_list_of_parent_frontier_tuples = len(list_of_parent_frontier_tuples)-1
-                                shared_frontier_parent_group_patch_tuple = (task_name_of_parent,position_in_list_of_parent_frontier_tuples)
+                                shared_frontier_parent_group_patch_tuple = (task_name_of_parent_group,position_in_list_of_parent_frontier_tuples)
                                 shared_frontier_parent_groups_patch_tuple_list.append(shared_frontier_parent_group_patch_tuple)
 
                         # generate dependency in DAG
@@ -892,7 +893,7 @@ def dfs_parent(visited, node):  #function for dfs
                 shadow_node.isShadowNode = True
                 shadow_node.num_children = len(visited_parent_node.children)
                 # this will possibly be overwritten; the parent may be a
-                # node after the end of the partiton with a pageran value
+                # node after the end of the partiton with a pagerank value
                 # that keeps he shadow_node's pagerank value constant.
                 shadow_node.parents.append(-1)
                 # insert shadow_node before child (so only shift one)
@@ -1041,20 +1042,21 @@ def dfs_parent(visited, node):  #function for dfs
 
                 if True: # use_shared_partitions_groups:
                     # shared partitions frontier code:
-                    task_name_of_parent = "PR" + str(parent_partition_number) + "_" + "1"
+                    task_name_of_parent_partition = partition_names[parent_partition_number-1]
+                    #task_name_of_parent = "PR" + str(parent_partition_number) + "_" + "1"
                     shared_frontier_parent_tuple = (current_partition_number,1,child_index_in_current_partition,current_partition_name,parent_partition_parent_index)
-                    list_of_parent_frontier_tuples = BFS_Shared.shared_partition_frontier_parents_map.get(task_name_of_parent)
+                    list_of_parent_frontier_tuples = BFS_Shared.shared_partition_frontier_parents_map.get(task_name_of_parent_partition)
                     if list_of_parent_frontier_tuples == None:
                         list_of_parent_frontier_tuples = []
                     logger.debug("groupOPOPOPOPOPOP add shared tuple to parent group: ")
                     for n in parent_group:
                         logger.debug(str(n))
-                    logger.debug("task_name_of_parent: " + task_name_of_parent
+                    logger.debug("task_name_of_parent: " + task_name_of_parent_partition
                         + ", shared_frontier_parent_tuple: " + str(shared_frontier_parent_tuple))
                     logger.debug("list_of_parent_frontier_tuples before appending tuple: " 
                         + str(list_of_parent_frontier_tuples))
                     list_of_parent_frontier_tuples.append(shared_frontier_parent_tuple)
-                    BFS_Shared.shared_partition_frontier_parents_map[task_name_of_parent] = list_of_parent_frontier_tuples
+                    BFS_Shared.shared_partition_frontier_parents_map[task_name_of_parent_partition] = list_of_parent_frontier_tuples
                     logger.debug("New BFS_Shared.shared_partition_frontier_parents_map:")
                     for (k,v) in BFS_Shared.shared_partition_frontier_parents_map.items():
                         logger.debug(str(k) + ": " + str(v))
@@ -1076,8 +1078,6 @@ def dfs_parent(visited, node):  #function for dfs
                             # and received instead of copied.
                             parent_or_group_index_of_this_task_to_be_output = frontier_parent_tuple[4]
                     """
-
-                if True: # use_shared_partitions_groups:
                     # The current partition/group name in [3] may not have an "L" but if we later 
                     # find a loop we'll need to append an "L" to this name in the frontier tuple
                     # so we need to patch this name (of this task, which is receiving task) but
@@ -1085,24 +1085,26 @@ def dfs_parent(visited, node):  #function for dfs
                     # as it is a different partition/group from this one so already processed.
                     if not current_partition_isLoop:
                         position_in_list_of_parent_frontier_tuples = len(list_of_parent_frontier_tuples)-1
-                        shared_frontier_parent_partition_patch_tuple = (task_name_of_parent,position_in_list_of_parent_frontier_tuples)
+                        shared_frontier_parent_partition_patch_tuple = (task_name_of_parent_partition,position_in_list_of_parent_frontier_tuples)
                         shared_frontier_parent_partition_patch_tuple_list.append(shared_frontier_parent_partition_patch_tuple)
 
+                if True: # use_shared_partitions_groups:
                     # shared groups frontier code:
-                    task_name_of_parent = "PR" + str(parent_partition_number) + "_" + str(parent_group_number)
+                    task_name_of_parent_group = group_names[parent_group_number-1]
+                    #task_name_of_parent = "PR" + str(parent_partition_number) + "_" + str(parent_group_number)
                     shared_frontier_parent_tuple = (current_partition_number,num_frontier_groups,child_index_in_current_group,current_group_name,parent_group_parent_index)
-                    list_of_parent_frontier_tuples = BFS_Shared.shared_groups_frontier_parents_map.get(task_name_of_parent)
+                    list_of_parent_frontier_tuples = BFS_Shared.shared_groups_frontier_parents_map.get(task_name_of_parent_group)
                     if list_of_parent_frontier_tuples == None:
                         list_of_parent_frontier_tuples = []
                     logger.debug("groupOGPOGPOGPOGPOGPOGPOGP add shared tuple to parent group: ")
                     for n in parent_group:
                         logger.debug(str(n))
-                    logger.debug("task_name_of_parent: " + task_name_of_parent
+                    logger.debug("task_name_of_parent_group: " + task_name_of_parent_group
                         + ", shared_frontier_parent_tuple: " + str(shared_frontier_parent_tuple))
                     logger.debug("list_of_parent_frontier_tuples before appending tuple: " 
                         + str(list_of_parent_frontier_tuples))
                     list_of_parent_frontier_tuples.append(shared_frontier_parent_tuple)
-                    BFS_Shared.shared_groups_frontier_parents_map[task_name_of_parent] = list_of_parent_frontier_tuples
+                    BFS_Shared.shared_groups_frontier_parents_map[task_name_of_parent_group] = list_of_parent_frontier_tuples
                     logger.debug("New BFS_Shared.shared_groups_frontier_parents_map:")
                     for (k,v) in BFS_Shared.shared_groups_frontier_parents_map.items():
                         logger.debug(str(k) + ": " + str(v))
@@ -1114,7 +1116,7 @@ def dfs_parent(visited, node):  #function for dfs
                     # as it is a different partition/group from this one so already processed.
                     if not current_group_isLoop:
                         position_in_list_of_parent_frontier_tuples = len(list_of_parent_frontier_tuples)-1
-                        shared_frontier_parent_group_patch_tuple = (task_name_of_parent,position_in_list_of_parent_frontier_tuples)
+                        shared_frontier_parent_group_patch_tuple = (task_name_of_parent_group,position_in_list_of_parent_frontier_tuples)
                         shared_frontier_parent_groups_patch_tuple_list.append(shared_frontier_parent_group_patch_tuple)
 
                 # generate dependency in DAG
@@ -2525,7 +2527,7 @@ if use_shared_partitions_groups:
     # Partition_Node in a single shared array, or we have multiple
     # arrays, one for each of the needed values, e.g., array of 
     # num_children values, array of num_parents values, etc.
-    if not use_struct_of_arrays_for_pagrank:
+    if not use_struct_of_arrays_for_pagerank:
         #rhc shared
         if not use_page_rank_group_partitions:
             next = 0
@@ -2624,19 +2626,61 @@ if use_shared_partitions_groups:
             for name, partition, num_shadow_nodes in zip(partition_names, partitions, partitions_num_shadow_nodes_list):
                 partition_position = next
                 partition_size = len(partition)
+                # Note: in dfs_parent:
+                # shadow_node.num_children = len(visited_parent_node.children)
+                # shadow_node.parents.append(-1)
+                # This -1 will be overwritten; the parent is a node after
+                # the end of the partiton with a pagerank value
+                # that keeps the shadow_node's pagerank value constant.
+                num_shadow_nodes = 0
                 for p_node in partition:
                     #BFS_Shared.shared_partition.append(p_node)
+                    # For shadow nodes:
+                    # - num_children was set to num children of
+                    # actual parent node in the different partition/group.
+                    # - number of parents will be one since -1 was appended
+                    # to the shadow node's parent list
                     BFS_Shared.number_of_children[next] = p_node.num_children
                     BFS_Shared.number_of_parents[next] = len(p_node.parents)
                     BFS_Shared.starting_indices_of_parents[next] = next_parent_index
+                    # For shadow nodes, the value -1 was appended to its
+                    # parents, so len(p_node.parents) is the correct value
+                    # but need to change -1 to the actual position of shadow
+                    # nodes parent, which will be partition_size plus the 
+                    # number of shadow_nodes we have already processed. That is,
+                    # we will add he parent nodes to the partition after we have
+                    # processed all of the p_nodes. So the first shadow node will
+                    # have a parent that is the first parent node added. This
+                    # parent, if the size of the partition is initially partition_size 
+                    # will be at position partition_size (i.e., if partition_size is 3 
+                    # the positions of the p_nodes are 0, 1, and 2, so the next 
+                    # position is 3 = partition_size + num_shadow_nodes = 3+0, where
+                    # num_shadow_nodes is initially 0, and is incremented
+                    # *after* we use it to get the position of the next parent.)
+                    if p_node.isShadowNode:
+                        # Note: we are not changing partition_size as we are not
+                        # adding a parent node here. The parent nodes are added
+                        # next and partition_size is incremented as we add parents.
+                        p_node.parents[0] = partition_size + num_shadow_nodes
+                        num_shadow_nodes += 1
                     for parent in p_node.parents:
+                        # Note: Shadow nodes have one parent, which is a parent node,
+                        # and this parent index was just set to (partition_size + num_shadow_nodes)
                         BFS_Shared.parents[next_parent_index] = parent
                         next_parent_index += 1
                     next += 1
+
                 for i in range(num_shadow_nodes):
                     #BFS_Shared.shared_partition.append(Partition_Node(-2))
-                    BFS_Shared.number_of_children[next] = -2 
-                    BFS_Shared.number_of_parents[next] = -2
+                    # Note: The pagerank value of the parent node will be 
+                    # set when the shadow node's pagerank value is set, i.e.,
+                    # the hsadow node shadows a node in a different 
+                    # partition/group PG, and when this partition/group PG is 
+                    # executed, after PGs pagerank values are computed PG will
+                    # will set all the associated shadow nodes and their
+                    # parents with pagerank values computed by PG.
+                    BFS_Shared.number_of_children[next] = 1
+                    BFS_Shared.number_of_parents[next] = 0
                     BFS_Shared.starting_indices_of_parents[next] = -2
                     next += 1
                     partition_size += 1
@@ -2761,14 +2805,15 @@ if not use_shared_partitions_groups:
         logger.error("[Error]: sum_of_partition_lengths is " + str(sum_of_partition_lengths)
             + " but num_nodes is " + str(num_nodes))
 else:
-    shared_partition_length = len(BFS_Shared.shared_partition)
-    # added shadow nodes and their parents
-    shared_partition_length -= (total_loop_nodes_added + (2*num_shadow_nodes_added_to_partitions))
-    logger.info("shared_partition_length (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
-        + str(shared_partition_length))
-    if shared_partition_length != num_nodes:
-        logger.error("[Error]: shared_partition_length is " + str(shared_partition_length)
-            + " but num_nodes is " + str(num_nodes))
+    if not use_page_rank_group_partitions:
+        shared_partition_length = len(BFS_Shared.shared_partition)
+        # added shadow nodes and their parents
+        shared_partition_length -= (total_loop_nodes_added + (2*num_shadow_nodes_added_to_partitions))
+        logger.info("shared_partition_length (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
+            + str(shared_partition_length))
+        if shared_partition_length != num_nodes:
+            logger.error("[Error]: shared_partition_length is " + str(shared_partition_length)
+                + " but num_nodes is " + str(num_nodes))
 logger.info("")
 sum_of_groups_lengths = 0
 i = 1
@@ -2785,14 +2830,15 @@ if not use_shared_partitions_groups:
         logger.error("[Error]: sum_of_groups_lengths is " + str(sum_of_groups_lengths)
             + " but num_nodes is " + str(num_nodes))
 else:
-    shared_groups_length = len(BFS_Shared.shared_groups)
-    # added shadow nodes and their parents
-    shared_groups_length -= (total_loop_nodes_added + (2*num_shadow_nodes_added_to_groups))
-    logger.info("shared_groups_length (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
-        + str(shared_groups_length))
-    if shared_groups_length != num_nodes:
-        logger.error("[Error]: shared_groups_length is " + str(shared_groups_length)
-            + " but num_nodes is " + str(num_nodes))
+    if use_page_rank_group_partitions:
+        shared_groups_length = len(BFS_Shared.shared_groups)
+        # added shadow nodes and their parents
+        shared_groups_length -= (total_loop_nodes_added + (2*num_shadow_nodes_added_to_groups))
+        logger.info("shared_groups_length (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
+            + str(shared_groups_length))
+        if shared_groups_length != num_nodes:
+            logger.error("[Error]: shared_groups_length is " + str(shared_groups_length)
+                + " but num_nodes is " + str(num_nodes))
 #if (len(current_partition)-loop_nodes_added) != num_nodes
 
 print_val = ""

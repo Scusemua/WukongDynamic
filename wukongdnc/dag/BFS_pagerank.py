@@ -7,17 +7,17 @@ from .DAG_executor_constants import use_page_rank_group_partitions
 
 logger = logging.getLogger(__name__)
 
-logger.setLevel(logging.ERROR)
+logger.setLevel(logging.DEBUG)
 #logger.setLevel(logging.INFO)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 #formatter = logging.Formatter('%(levelname)s: %(message)s')
 ch = logging.StreamHandler()
-ch.setLevel(logging.ERROR)
+ch.setLevel(logging.DEBUG)
 #ch.setLevel(logging.INFO)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
-debug_pagerank = False
+debug_pagerank = True
 
 """
 
@@ -598,7 +598,20 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
             run with real lambdas
             """
 
+# rhc: ToDo: do the copy below and assert here that the shadow node's pagerank
+# value is pagerank_value. Note: Still would have to set parent's pagerank
+# vaue here since we did not set it when partition was created and we do not
+# yet set it when we copy the output values to the shadow nodes. We will
+# do this and then we will not need the input/output tuples.
             #rhc shared
+            if not shared_nodes[position_of_shadow_node].pagerank == pagerank_value:
+                logger.error("[Error]: Internal Error: " 
+                    + task_file_name + " Copied value is not equal to input value,"
+                    + " shared_nodes[position_of_shadow_node].pagerank: " 
+                    + str(shared_nodes[position_of_shadow_node].pagerank)
+                    + " pagerank_value: " + str(pagerank_value))
+            else:
+                logger.error(task_file_name + ": Fooooooooooooooooooooo")
             shared_nodes[position_of_shadow_node].pagerank = pagerank_value
             #partition_or_group[shadow_node_index].pagerank = pagerank_value
             # IDs: -1, -2, -3, etc
@@ -858,6 +871,9 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
                     output_list.append(output_tuple)
                     PageRank_output[partition_or_group_name] = output_list
 
+#rhc: ToDo: Need to set shadow node parents, and parent pagerank values.
+# Above, we use:
+#  (shared_nodes[position_of_shadow_node].pagerank - random_jumping)  / one_minus_dumping_factor)
         # NEW:
         logger.debug("Copy frontier values:")
         if use_page_rank_group_partitions:
@@ -875,7 +891,7 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
         if list_of_frontier_tuples == None:
             list_of_frontier_tuples = []
         for frontier_parent_tuple in list_of_frontier_tuples:
-            # Each frontier tuple represents a pageran value of this task that should
+            # Each frontier tuple represents a pagerank value of this task that should
             # be output to a dependent task. partition_or_group_name_of_output_task
             # is the task name of the task that is receiving a pagerank value from 
             # this task. parent_or_group_index_of_output_task is the position in the 
@@ -915,10 +931,12 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
             logger.debug("toPosition: " + str(toPosition))
 
             # FYI: position_size_tuple_of_output_task[1] is the size of the partition or group
-            logger.debug("copy from position " + str(fromPosition)
+            logger.error(task_file_name + " copy from position " + str(fromPosition)
                 + " to position " + str(toPosition) 
-                + " the value " + str(shared_nodes[fromPosition]))
-            #shared_nodes[toPosition] = shared_nodes[fromPartition]
+                + " the value " + str(shared_nodes[fromPosition].pagerank))
+            shared_nodes[toPosition].pagerank = shared_nodes[fromPosition].pagerank
+#rhc: ToDo: Note: we can use the above to: get the shadow_node's parent and 
+# set the pagerank value of the parent.
 
         #if (debug_pagerank):
         print("PageRank output tuples for " + task_file_name + ":")
