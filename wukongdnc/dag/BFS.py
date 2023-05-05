@@ -773,7 +773,7 @@ def dfs_parent(visited, node):  #function for dfs
                         """
        
                         if True: # use_shared_partitions_groups:
-                            task_name_of_parent_group = group_names[parent_group_number-1]
+                            task_name_of_parent_group = group_names[index_in_groups_list]
                             #task_name_of_parent = "PR" + str(parent_partition_number) + "_" + str(parent_group_number)
                             shared_frontier_parent_tuple = (current_partition_number,num_frontier_groups,child_index_in_current_group,current_group_name,parent_group_parent_index)
                             list_of_parent_frontier_tuples = BFS_Shared.shared_groups_frontier_parents_map.get(task_name_of_parent_group)
@@ -1090,7 +1090,7 @@ def dfs_parent(visited, node):  #function for dfs
 
                 if True: # use_shared_partitions_groups:
                     # shared groups frontier code:
-                    task_name_of_parent_group = group_names[parent_group_number-1]
+                    task_name_of_parent_group = group_names[index_in_groups_list]
                     #task_name_of_parent = "PR" + str(parent_partition_number) + "_" + str(parent_group_number)
                     shared_frontier_parent_tuple = (current_partition_number,num_frontier_groups,child_index_in_current_group,current_group_name,parent_group_parent_index)
                     list_of_parent_frontier_tuples = BFS_Shared.shared_groups_frontier_parents_map.get(task_name_of_parent_group)
@@ -2591,6 +2591,8 @@ if use_shared_partitions_groups:
         #if not use_page_rank_group_partitions:
         next = 0
         next_parent_index = 0
+        # 64 byte padding : 64 bit float and 32 bit ints
+        int_padding = np.array([0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0])
         if not use_page_rank_group_partitions:
             # size of pagerank and previos is n floats, where n is the number of 
             # nodes in the input graph + the number of hadow nodes and their 
@@ -2684,12 +2686,10 @@ if use_shared_partitions_groups:
                     BFS_Shared.starting_indices_of_parents[next] = -2
                     next += 1
                     partition_size += 1
-                # 64 byte padding : 64 bit float and 32 bit ints
-                int_padding = [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0]
                 #BFS_Shared.shared_partition.append(Partition_Node(-2))
-                BFS_Shared.number_of_children.extend(int_padding)
-                BFS_Shared.number_of_parents.extend(int_padding)
-                BFS_Shared.starting_indices_of_parents.extend(int_padding)
+                np.concatenate((BFS_Shared.number_of_children,int_padding))
+                np.concatenate((BFS_Shared.number_of_parents,int_padding))
+                np.concatenate((BFS_Shared.starting_indices_of_parents,int_padding))
                 next += 16
                 partition_size += 16
                 partition_tuple = (partition_position,partition_size)
@@ -2749,12 +2749,10 @@ if use_shared_partitions_groups:
                     BFS_Shared.starting_indices_of_parents[next] = -2
                     next += 1
                     group_size += 1
-                # 64 byte padding : 64 bit float and 32 bit ints
-                int_padding = [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0]
                 #BFS_Shared.shared_partition.append(Partition_Node(-2))
-                BFS_Shared.number_of_children.extend(int_padding)
-                BFS_Shared.number_of_parents.extend(int_padding)
-                BFS_Shared.starting_indices_of_parents.extend(int_padding)
+                np.concatenate((BFS_Shared.number_of_children,int_padding))
+                np.concatenate((BFS_Shared.number_of_parents,int_padding))
+                np.concatenate((BFS_Shared.starting_indices_of_parents,int_padding))
                 next += 16
                 group_size += 16
 
