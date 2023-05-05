@@ -937,6 +937,23 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
             shared_nodes[toPosition].pagerank = shared_nodes[fromPosition].pagerank
 #rhc: ToDo: Note: we can use the above to: get the shadow_node's parent and 
 # set the pagerank value of the parent.
+            """
+            index_of_parent_of_shadow_node = shared_nodes[fromPosition].parents[0]
+            parent_of_shadow_node = shared_nodes[starting_position_in_partition_group_of_output_task + index_of_parent_of_shadow_node]
+            parent_of_shadow_node_ID = parent_of_shadow_node.ID
+            pagerank_of_shadow_node = shared_nodes[fromPosition].pagerank
+            parent_of_shadow_node.pagerank = (
+                #rhc shared
+                (pagerank_of_shadow_node - random_jumping)  / one_minus_dumping_factor)
+                #(partition_or_group[shadow_node_index].pagerank - random_jumping)  / one_minus_dumping_factor)
+            if (debug_pagerank):
+                logger.debug(parent_of_shadow_node_ID + " pagerank set to: " + str(parent_of_shadow_node.pagerank))
+            """
+
+#rhc: ToDo: 
+# Not an issue for Python, but for others: memory barriers okay? any synch op will do? 
+# blank input/output tuples
+# New version of set output above for fast pagerank
 
         #if (debug_pagerank):
         print("PageRank output tuples for " + task_file_name + ":")
