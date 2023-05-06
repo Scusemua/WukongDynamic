@@ -598,11 +598,8 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
             run with real lambdas
             """
 
-# rhc: ToDo: do the copy below and assert here that the shadow node's pagerank
-# value is pagerank_value. Note: Still would have to set parent's pagerank
-# vaue here since we did not set it when partition was created and we do not
-# yet set it when we copy the output values to the shadow nodes. We will
-# do this and then we will not need the input/output tuples.
+# rhc: ToDo: Try with empty input tuples and output. this loop will not run since
+# no input tuples. Need to turn off output loop so PageRank_output = {} is empty.
             #rhc shared
             if not shared_nodes[position_of_shadow_node].pagerank == pagerank_value:
                 logger.error("[Error]: Internal Error: " 
@@ -634,15 +631,29 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
             #rhc shared
             parent_of_shadow_node.ID = parent_of_shadow_node_ID
             #parent_of_shadow_node = Partition_Node(parent_of_shadow_node_ID)
- 
+
+            pagerank_value_of_parent_node = ((shared_nodes[position_of_shadow_node].pagerank - random_jumping)  / one_minus_dumping_factor)
+            #rhc shared
+            if not parent_of_shadow_node.pagerank == pagerank_value_of_parent_node:
+                logger.error("[Error]: Internal Error: " 
+                    + task_file_name + " pagerank value to be set for parent of shadow node: "
+                    + str(pagerank_value_of_parent_node)
+                    + " is not the current pagerank value of the parent node: "
+                    + str(parent_of_shadow_node.pagerank))
+            else:
+                logger.error(task_file_name + ": Foxoxoxoxoxoxoxoxoxoxoxox")
+
             # set the pagerank of the parent_of_shadow_node so that when we recompute
             # the pagerank of the shadow_node we alwas get the same value.
             parent_of_shadow_node.pagerank = (
                 #rhc shared
-                (shared_nodes[position_of_shadow_node].pagerank - random_jumping)  / one_minus_dumping_factor)
+                (pagerank_value_of_parent_node)
+            )
                 #(partition_or_group[shadow_node_index].pagerank - random_jumping)  / one_minus_dumping_factor)
             if (debug_pagerank):
                 logger.debug(parent_of_shadow_node_ID + " pagerank set to: " + str(parent_of_shadow_node.pagerank))
+
+
             # num_children = 1 makes the computation easier; the computation assumed
             # num_children was set to 1
             parent_of_shadow_node.num_children = 1
@@ -906,6 +917,8 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
             #group_number = frontier_parent[1]
             position_or_group_index_of_output_task = frontier_parent_tuple[2]
             partition_or_group_name_of_output_task = frontier_parent_tuple[3]
+            # assert: partition_or_group_name_of_output_task == task_file_name
+
             # Note: We added this field to the frontier tuple so that when
             # we ar using a shared_nodes array or multithreading we can
             # copy vlaues from shared_nodes[i] to shared_nodes[j] instead of 
@@ -928,17 +941,17 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
             fromPosition = starting_position_in_partition_group+parent_or_group_index_of_this_task_to_be_output
             logger.debug("fromPosition: " + str(fromPosition))
             toPosition = starting_position_in_partition_group_of_output_task + position_or_group_index_of_output_task
-            logger.debug("toPosition: " + str(toPosition))
+            logger.debug("toPosition (of shadow_node): " + str(toPosition))
 
             # FYI: position_size_tuple_of_output_task[1] is the size of the partition or group
             logger.error(task_file_name + " copy from position " + str(fromPosition)
                 + " to position " + str(toPosition) 
                 + " the value " + str(shared_nodes[fromPosition].pagerank))
             shared_nodes[toPosition].pagerank = shared_nodes[fromPosition].pagerank
-#rhc: ToDo: Note: we can use the above to: get the shadow_node's parent and 
-# set the pagerank value of the parent.
-            """
-            index_of_parent_of_shadow_node = shared_nodes[fromPosition].parents[0]
+
+            logger.debug("len of shared_nodes[toPosition].parents: " 
+                + str(len(shared_nodes[toPosition].parents)))
+            index_of_parent_of_shadow_node = shared_nodes[toPosition].parents[0]
             parent_of_shadow_node = shared_nodes[starting_position_in_partition_group_of_output_task + index_of_parent_of_shadow_node]
             parent_of_shadow_node_ID = parent_of_shadow_node.ID
             pagerank_of_shadow_node = shared_nodes[fromPosition].pagerank
@@ -948,7 +961,6 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
                 #(partition_or_group[shadow_node_index].pagerank - random_jumping)  / one_minus_dumping_factor)
             if (debug_pagerank):
                 logger.debug(parent_of_shadow_node_ID + " pagerank set to: " + str(parent_of_shadow_node.pagerank))
-            """
 
 #rhc: ToDo: 
 # Not an issue for Python, but for others: memory barriers okay? any synch op will do? 

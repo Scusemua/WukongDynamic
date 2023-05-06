@@ -2534,11 +2534,34 @@ if use_shared_partitions_groups:
             for name, partition, num_shadow_nodes in zip(partition_names, partitions, partitions_num_shadow_nodes_list):
                 partition_position = next
                 partition_size = len(partition)
+                num_shadow_nodes_seen = 0
                 for p_node in partition:
                     BFS_Shared.shared_partition.append(p_node)
+                    # For shadow nodes, the value -1 was appended to its
+                    # parents, so len(p_node.parents) is the correct value
+                    # but need to change -1 to the actual position of shadow
+                    # nodes parent, which will be partition_size plus the 
+                    # number of shadow_nodes we have already processed. That is,
+                    # we will add he parent nodes to the partition after we have
+                    # processed all of the p_nodes. So the first shadow node will
+                    # have a parent that is the first parent node added. This
+                    # parent, if the size of the partition is initially partition_size 
+                    # will be at position partition_size (i.e., if partition_size is 3 
+                    # the positions of the p_nodes are 0, 1, and 2, so the next 
+                    # position is 3 = partition_size + num_shadow_nodes = 3+0, where
+                    # num_shadow_nodes is initially 0, and is incremented
+                    # *after* we use it to get the position of the next parent.)
+                    if p_node.isShadowNode:
+                        # Note: we are not changing partition_size as we are not
+                        # adding a parent node here. The parent nodes are added
+                        # next and partition_size is incremented as we add parents.
+                        p_node.parents[0] = partition_size + num_shadow_nodes_seen
+                        num_shadow_nodes_seen += 1
                     next += 1
                 for i in range(num_shadow_nodes):
-                    BFS_Shared.shared_partition.append(Partition_Node(-2))
+                    parent_node = Partition_Node(-2)
+                    parent_node.num_children = 1
+                    BFS_Shared.shared_partition.append(parent_node)
                     next += 1
                     partition_size += 1
                 partition_tuple = (partition_position,partition_size)
@@ -2558,11 +2581,34 @@ if use_shared_partitions_groups:
             for name, group, num_shadow_nodes in zip(group_names, groups, groups_num_shadow_nodes_list):
                 group_position = next
                 group_size = len(group)
+                num_shadow_nodes_seen = 0
                 for p_node in group:
                     BFS_Shared.shared_groups.append(p_node)
+                    # For shadow nodes, the value -1 was appended to its
+                    # parents, so len(p_node.parents) is the correct value
+                    # but need to change -1 to the actual position of shadow
+                    # nodes parent, which will be partition_size plus the 
+                    # number of shadow_nodes we have already processed. That is,
+                    # we will add he parent nodes to the partition after we have
+                    # processed all of the p_nodes. So the first shadow node will
+                    # have a parent that is the first parent node added. This
+                    # parent, if the size of the partition is initially partition_size 
+                    # will be at position partition_size (i.e., if partition_size is 3 
+                    # the positions of the p_nodes are 0, 1, and 2, so the next 
+                    # position is 3 = partition_size + num_shadow_nodes = 3+0, where
+                    # num_shadow_nodes is initially 0, and is incremented
+                    # *after* we use it to get the position of the next parent.)
+                    if p_node.isShadowNode:
+                        # Note: we are not changing partition_size as we are not
+                        # adding a parent node here. The parent nodes are added
+                        # next and partition_size is incremented as we add parents.
+                        p_node.parents[0] = group_size + num_shadow_nodes_seen
+                        num_shadow_nodes_seen += 1
                     next += 1
                 for i in range(num_shadow_nodes):
-                    BFS_Shared.shared_groups.append(Partition_Node(-2))
+                    parent_node = Partition_Node(-2)
+                    parent_node.num_children = 1
+                    BFS_Shared.shared_groups.append(parent_node)
                     next += 1
                     group_size += 1
                 group_tuple = (group_position,group_size)
@@ -2634,7 +2680,7 @@ if use_shared_partitions_groups:
                 # This -1 will be overwritten; the parent is a node after
                 # the end of the partiton with a pagerank value
                 # that keeps the shadow_node's pagerank value constant.
-                num_shadow_nodes = 0
+                num_shadow_nodes_seen = 0
                 for p_node in partition:
                     #BFS_Shared.shared_partition.append(p_node)
                     # For shadow nodes:
@@ -2663,8 +2709,8 @@ if use_shared_partitions_groups:
                         # Note: we are not changing partition_size as we are not
                         # adding a parent node here. The parent nodes are added
                         # next and partition_size is incremented as we add parents.
-                        p_node.parents[0] = partition_size + num_shadow_nodes
-                        num_shadow_nodes += 1
+                        p_node.parents[0] = partition_size + num_shadow_nodes_seen
+                        num_shadow_nodes_seen += 1
                     for parent in p_node.parents:
                         # Note: Shadow nodes have one parent, which is a parent node,
                         # and this parent index was just set to (partition_size + num_shadow_nodes)
@@ -2733,19 +2779,40 @@ if use_shared_partitions_groups:
             for name, group, num_shadow_nodes in zip(group_names, groups, groups_num_shadow_nodes_list):
                 group_position = next
                 group_size = len(group)
+                num_shadow_nodes_seen = 0
                 for p_node in group:
                     #BFS_Shared.shared_groups.append(p_node)
                     BFS_Shared.number_of_children[next] = p_node.num_children
                     BFS_Shared.number_of_parents[next] = len(p_node.parents)
                     BFS_Shared.starting_indices_of_parents[next] = next_parent_index
+                    # For shadow nodes, the value -1 was appended to its
+                    # parents, so len(p_node.parents) is the correct value
+                    # but need to change -1 to the actual position of shadow
+                    # nodes parent, which will be partition_size plus the 
+                    # number of shadow_nodes we have already processed. That is,
+                    # we will add he parent nodes to the partition after we have
+                    # processed all of the p_nodes. So the first shadow node will
+                    # have a parent that is the first parent node added. This
+                    # parent, if the size of the partition is initially partition_size 
+                    # will be at position partition_size (i.e., if partition_size is 3 
+                    # the positions of the p_nodes are 0, 1, and 2, so the next 
+                    # position is 3 = partition_size + num_shadow_nodes = 3+0, where
+                    # num_shadow_nodes is initially 0, and is incremented
+                    # *after* we use it to get the position of the next parent.)
+                    if p_node.isShadowNode:
+                        # Note: we are not changing partition_size as we are not
+                        # adding a parent node here. The parent nodes are added
+                        # next and partition_size is incremented as we add parents.
+                        p_node.parents[0] = group_size + num_shadow_nodes_seen
+                        num_shadow_nodes_seen += 1
                     for parent in p_node.parents:
                         BFS_Shared.parents[next_parent_index] = parent
                         next_parent_index += 1
                     next += 1
                 for i in range(num_shadow_nodes):
                     #BFS_Shared.shared_groups.append(Partition_Node(-2))
-                    BFS_Shared.number_of_children[next] = -2 
-                    BFS_Shared.number_of_parents[next] = -2
+                    BFS_Shared.number_of_children[next] = 1
+                    BFS_Shared.number_of_parents[next] = 0
                     BFS_Shared.starting_indices_of_parents[next] = -2
                     next += 1
                     group_size += 1
