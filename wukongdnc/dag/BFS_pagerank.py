@@ -404,26 +404,43 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
 #rhc shared
 def PageRank_Function_Driver_Shared(task_file_name,total_num_nodes,results_dictionary,shared_map,shared_nodes):
     input_tuples = []
+    if (debug_pagerank):
+        logger.debug("")
     for (_,v) in results_dictionary.items():
+        if (debug_pagerank):
+            logger.debug("PageRank_Function_Driver_Shared:" + str(v))
         # pagerank leaf tasks have no input. This results in a result_dictionary
         # in DAG_executor of "DAG_executor_driver_0" --> (), where
-        # DAG_executor_driver_0 is used to mean that eh DAG_excutor_driver
-        # provided an empty input tuple fpr the leaf task. Here, we just ignore
+        # DAG_executor_driver_0 is used to mean that the DAG_excutor_driver
+        # provided an empty input tuple for the leaf task. Here, we just ignore
         # empty input tuples so that the input_tuples provided to the 
         # PageRank_Function will be an empty list.
-        if not v ==  ():
+        if not v == ():
+            # v is a list of tuples so ths is concatenating two lists of tuples 
+            # to get a list.
             input_tuples += v
+
     # This sort is not necessary. Sorting ensures that shadow nodes are processed
     # in ascending order of their IDs, i.e., 2 before 17, so that the parents of
     # the shadow nodes are placed in the partition in the order of their associated
     # shadow nodes. Helps visualize thing during debugging.
     if (debug_pagerank):
         input_tuples.sort()
+
+    if (debug_pagerank):
+        logger.debug("PageRank_Function_Driver_Shared: input_tuples: " + str(input_tuples))
+
     output = PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_map,shared_nodes)
     return output
 
 #def PageRank_Function(task_file_name,total_num_nodes,input_tuples,results):
 def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_map,shared_nodes):
+
+        # rhc shared
+        # We do not need the input tuples that supply the shadow node values since
+        # we set the shadow nodes and their parents for the output partitions
+        # at the end.
+       
         #rhc shared
         ## task_file_name is, e.g., "PR1_1" not "PR1_1.pickle"
         ## We check for task_file_name ending with "L" for loop below,
@@ -436,6 +453,9 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
         position_size_tuple = shared_map[task_file_name]
         starting_position_in_partition_group = position_size_tuple[0]
         size_of_partition_group = position_size_tuple[1]
+        #rhc shared
+        #num_shadow_nodes = len(input_tuples)
+        num_shadow_nodes = position_size_tuple[2]
 
         debug_pagerank = False
 
@@ -477,9 +497,6 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
 
             logger.debug("")
             # node's children set when the partition/grup node created
-
-        #rhc shared
-        num_shadow_nodes = len(input_tuples)
 
         #num_shadow_nodes = 0
         #rhc shared
@@ -673,7 +690,7 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
 
         if (debug_pagerank):
             logger.debug("")
-            logger.debug("PageRank_Function output partition_or_group after add " + str(len(input_tuples)) + " SN parents (node:parents):")
+            logger.debug("PageRank_Function output partition_or_group after adding " + len(num_shadow_nodes) + " shadow node parents (node:parents):")
             #rhc shared
             for node_index in range (starting_position_in_partition_group,starting_position_in_partition_group+size_of_partition_group):
             #for node in partition_or_group:
@@ -847,6 +864,8 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
 # partitions/groups. For shared we can keep a global map like 
 # shared_map or just add a tuple to shared_map?
         PageRank_output = {}
+
+        """
         #rhc shared
         # Note: this shows frontiers of all the nodes including shadow nodes
         # and parent nodes for debugging, where the frontier tuples of shadow
@@ -881,10 +900,8 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
                     #output_tuple = (parent_or_group_index,partition_or_group[i].pagerank)
                     output_list.append(output_tuple)
                     PageRank_output[partition_or_group_name] = output_list
+        """
 
-#rhc: ToDo: Need to set shadow node parents, and parent pagerank values.
-# Above, we use:
-#  (shared_nodes[position_of_shadow_node].pagerank - random_jumping)  / one_minus_dumping_factor)
         # NEW:
         logger.debug("Copy frontier values:")
         if use_page_rank_group_partitions:
@@ -961,6 +978,22 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
                 #(partition_or_group[shadow_node_index].pagerank - random_jumping)  / one_minus_dumping_factor)
             if (debug_pagerank):
                 logger.debug(parent_of_shadow_node_ID + " pagerank set to: " + str(parent_of_shadow_node.pagerank))
+
+            partition_or_group_name_of_output_task = frontier_parent_tuple[3]
+            #output_list = PageRank_output.get(partition_or_group_name_of_output_task)
+            #if output_list == None:
+            #    output_list = []
+            #rhc shared
+            #output_tuple = (parent_or_group_index,shared_nodes[node_index].pagerank)
+            #output_tuple = (parent_or_group_index,partition_or_group[i].pagerank)
+            #output_list.append(output_tuple)
+
+            # There is no output so output_list is an empty list, which means a list
+            # having no output tuples, which means task inputs will be empty lists
+            # of input tuples which is effecively no inputs.
+            output_list = []
+            PageRank_output[partition_or_group_name_of_output_task] = output_list
+
 
 #rhc: ToDo: 
 # Not an issue for Python, but for others: memory barriers okay? any synch op will do? 

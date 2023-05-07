@@ -25,6 +25,7 @@ import cloudpickle
 #import os
 #import time
 #from statistics import mean
+import queue
 
 import copy
 
@@ -72,7 +73,7 @@ class PageRank_results:
 """
 
 visited = [] # List for visited nodes.
-queue = []     #Initialize a queue
+BFS_queue = []     #Initialize a queue
 partitions = []
 current_partition = []
 current_partition_number = 1
@@ -1190,11 +1191,11 @@ def dfs_parent(visited, node):  #function for dfs
         dfs_parent_post_parent_traversal(node, visited,
             list_of_unvisited_children, check_list_of_unvisited_chldren_after_visiting_parents)
     else:
-        queue.append(node.ID)
+        BFS_queue.append(node.ID)
         #queue.append(-1)
         if DEBUG_ON:
             print_val = "queue after add " + str(node.ID) + ": "
-            for x in queue:
+            for x in BFS_queue:
                 #logger.debug(x.ID, end=" ")
                 print_val = print_val + str(x) + " "
             logger.debug(print_val)
@@ -1356,7 +1357,7 @@ def bfs(visited, node): #function for BFS
     # start with -1 in the queue; after call to dfs_parent, which will 
     # collect node and its ancestors, we will pop the -1 fron the 
     # queue, which will end the current partition.
-    queue.append(-1)
+    BFS_queue.append(-1)
 
     # SCC 3
 
@@ -1446,9 +1447,9 @@ def bfs(visited, node): #function for BFS
     # queue.append(node) and frontier.append(node) done optionally in dfs_parent
 #rhc
     end_of_current_frontier = False
-    while queue:          # Creating loop to visit each node
+    while BFS_queue:          # Creating loop to visit each node
         #node = queue.pop(0) 
-        ID = queue.pop(0) 
+        ID = BFS_queue.pop(0) 
         logger.debug("bfs pop node " + str(ID) + " from queue") 
 #rhc
         # issue: if we add queue.append(-1) in dfs_parent, we get smaller partitions
@@ -1495,10 +1496,10 @@ def bfs(visited, node): #function for BFS
         if ID == -1:
             end_of_current_frontier = True
 
-            if queue:
-                ID = queue.pop(0)
+            if BFS_queue:
+                ID = BFS_queue.pop(0)
                 logger.debug("bfs after pop -1 pop node " + str(ID) + " from queue") 
-                queue.append(-1)
+                BFS_queue.append(-1)
 
                 # SCC 5
 
@@ -2535,6 +2536,7 @@ if use_shared_partitions_groups:
                 partition_position = next
                 partition_size = len(partition)
                 num_shadow_nodes_seen = 0
+                queue_of_shadow_node_IDs = BFS_queue.Queue()
                 for p_node in partition:
                     BFS_Shared.shared_partition.append(p_node)
                     # For shadow nodes, the value -1 was appended to its
@@ -2556,22 +2558,25 @@ if use_shared_partitions_groups:
                         # adding a parent node here. The parent nodes are added
                         # next and partition_size is incremented as we add parents.
                         p_node.parents[0] = partition_size + num_shadow_nodes_seen
+                        queue_of_shadow_node_IDs.put(p_node.ID)
                         num_shadow_nodes_seen += 1
                     next += 1
                 for i in range(num_shadow_nodes):
-                    parent_node = Partition_Node(-2)
+                    my_ID = queue_of_shadow_node_IDs.get()
+                    my_ID = str(my_ID) + "-s-p"
+                    parent_node = Partition_Node(my_ID)
                     parent_node.num_children = 1
                     BFS_Shared.shared_partition.append(parent_node)
                     next += 1
                     partition_size += 1
-                partition_tuple = (partition_position,partition_size)
-                BFS_Shared.shared_partition_map[name] = partition_tuple
+                partition_triple = (partition_position,partition_size,num_shadow_nodes)
+                BFS_Shared.shared_partition_map[name] = partition_triple
             logger.debug("Number of shadow nodes for partitions:")
             for num in partitions_num_shadow_nodes_list:
                 logger.debug(num)
             logger.debug("shared_partition_map:")
             for (k,v) in BFS_Shared.shared_partition_map.items():
-                logger.debug(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + ")")
+                logger.debug(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + "," + str(v[2]) + ")")
             logger.debug("shared_partition")
             for p_node in BFS_Shared.shared_partition:
                 logger.debug(p_node)
@@ -2582,6 +2587,7 @@ if use_shared_partitions_groups:
                 group_position = next
                 group_size = len(group)
                 num_shadow_nodes_seen = 0
+                queue_of_shadow_node_IDs = queue.Queue()
                 for p_node in group:
                     BFS_Shared.shared_groups.append(p_node)
                     # For shadow nodes, the value -1 was appended to its
@@ -2603,22 +2609,25 @@ if use_shared_partitions_groups:
                         # adding a parent node here. The parent nodes are added
                         # next and partition_size is incremented as we add parents.
                         p_node.parents[0] = group_size + num_shadow_nodes_seen
+                        queue_of_shadow_node_IDs.put(p_node.ID)
                         num_shadow_nodes_seen += 1
                     next += 1
                 for i in range(num_shadow_nodes):
-                    parent_node = Partition_Node(-2)
+                    my_ID = queue_of_shadow_node_IDs.get()
+                    my_ID = str(my_ID) + "-s-p"
+                    parent_node = Partition_Node(my_ID)
                     parent_node.num_children = 1
                     BFS_Shared.shared_groups.append(parent_node)
                     next += 1
                     group_size += 1
-                group_tuple = (group_position,group_size)
-                BFS_Shared.shared_groups_map[name] = group_tuple
+                group_triple = (group_position,group_size,num_shadow_nodes)
+                BFS_Shared.shared_groups_map[name] = group_triple
             logger.debug("Number of shadow nodes for groups:")
             for num in groups_num_shadow_nodes_list:
                 logger.debug(num)
             logger.debug("shared_groups_map:")
             for (k,v) in BFS_Shared.shared_groups_map.items():
-                logger.debug(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + ")")
+                logger.debug(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + "," + str(v[2]) + ")")
             logger.debug("shared_groups")
             for p_node in BFS_Shared.shared_groups:
                 logger.debug(p_node)
@@ -2671,6 +2680,9 @@ if use_shared_partitions_groups:
             # parent_index = parent_index[i]; 
             # for j in (parent_index,num_parents) parent = parents[j]
             BFS_Shared.parents = np.empty(np_arrays_size_for_shared_partition,dtype=np.intc)
+
+#rhc: ToDO: IDs? with put/get of shadow_node IDs
+
             for name, partition, num_shadow_nodes in zip(partition_names, partitions, partitions_num_shadow_nodes_list):
                 partition_position = next
                 partition_size = len(partition)
@@ -2738,18 +2750,33 @@ if use_shared_partitions_groups:
                 np.concatenate((BFS_Shared.starting_indices_of_parents,int_padding))
                 next += 16
                 partition_size += 16
-                partition_tuple = (partition_position,partition_size)
-
-                BFS_Shared.shared_partition_map[name] = partition_tuple
+                partition_triple = (partition_position,partition_size,num_shadow_nodes)
+                BFS_Shared.shared_partition_map[name] = partition_triple
             logger.debug("Number of shadow nodes for partitions:")
             for num in partitions_num_shadow_nodes_list:
                 logger.debug(num)
             logger.debug("shared_partition_map:")
             for (k,v) in BFS_Shared.shared_partition_map.items():
-                logger.debug(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + ")")
-            logger.debug("shared_partition")
-            for p_node in BFS_Shared.shared_partition:
-                logger.debug(p_node)
+                logger.debug(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + "," + str(v[2]) + ")")
+            logger.debug("Shared_Arrays")
+            logger.debug("BFS_Shared.pagerank:")
+            for element in BFS_Shared.pagerank:
+                logger.debug(str(element)+",")
+            logger.debug("BFS_Shared.previous:")
+            for element in BFS_Shared.previous:
+                logger.debug(str(element)+",")
+            logger.debug("BFS_Shared.number_of_children:")
+            for element in BFS_Shared.number_of_children:
+                logger.debug(str(element)+",")
+            logger.debug("BFS_Shared.number_of_parents: ")
+            for element in BFS_Shared.number_of_parents:
+                logger.debug(str(element)+",")
+            logger.debug("BFS_Shared.starting_indices_of_parents:")
+            for element in BFS_Shared.starting_indices_of_parents:
+                logger.debug(str(element)+",")
+            logger.debug("BFS_Shared.parents:")
+            for element in BFS_Shared.parents:
+                logger.debug(str(element)+",")
             logger.debug("")
         else:
             # See the comment above about these values
@@ -2822,18 +2849,34 @@ if use_shared_partitions_groups:
                 np.concatenate((BFS_Shared.starting_indices_of_parents,int_padding))
                 next += 16
                 group_size += 16
-
-                group_tuple = (group_position,group_size)
-                BFS_Shared.shared_groups_map[name] = group_tuple
+                group_triple = (group_position,group_size,num_shadow_nodes)
+                BFS_Shared.shared_groups_map[name] = group_triple
             logger.debug("Number of shadow nodes for groups:")
             for num in groups_num_shadow_nodes_list:
                 logger.debug(num)
             logger.debug("shared_groups_map:")
             for (k,v) in BFS_Shared.shared_groups_map.items():
-                logger.debug(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + ")")
-            logger.debug("shared_groups")
-            for p_node in BFS_Shared.shared_groups:
-                logger.debug(p_node)
+                logger.debug(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + "," + str(v[2]) + ")")
+                logger.debug(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + "," + str(v[2]) + ")")
+            logger.debug("Shared_Arrays")
+            logger.debug("BFS_Shared.pagerank:")
+            for element in BFS_Shared.pagerank:
+                logger.debug(str(element)+",")
+            logger.debug("BFS_Shared.previous:")
+            for element in BFS_Shared.previous:
+                logger.debug(str(element)+",")
+            logger.debug("BFS_Shared.number_of_children:")
+            for element in BFS_Shared.number_of_children:
+                logger.debug(str(element)+",")
+            logger.debug("BFS_Shared.number_of_parents: ")
+            for element in BFS_Shared.number_of_parents:
+                logger.debug(str(element)+",")
+            logger.debug("BFS_Shared.starting_indices_of_parents:")
+            for element in BFS_Shared.starting_indices_of_parents:
+                logger.debug(str(element)+",")
+            logger.debug("BFS_Shared.parents:")
+            for element in BFS_Shared.parents:
+                logger.debug(str(element)+",")
             logger.debug("")
 
 #partitions.append(current_partition.copy())
