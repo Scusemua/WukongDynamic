@@ -34,32 +34,35 @@ def initialize():
     # maps a group "G" to its list of frontier tuples
     shared_groups_frontier_parents_map = {}
 
-def initialize_struct_of_arrays(number_of_nodes,number_of_parent_nodes):
+def initialize_struct_of_arrays(num_nodes, np_arrays_size_for_shared_partition,
+        np_arrays_size_for_shared_partition_parents):
 
     global pagerank
     global previous
     global number_of_children
     global number_of_parents
-    #global parent_index
     global starting_indices_of_parents
     global parents
+    global IDs
 
-    #pagerank = []
-    pagerank = np.empty(number_of_nodes,dtype=np.double)
+    pagerank = np.empty(np_arrays_size_for_shared_partition,dtype=np.double)
     # prev[i] is previous pagerank value of i
-    previous = np.full(number_of_nodes,float((1/number_of_nodes)))
+    previous = np.full(np_arrays_size_for_shared_partition,float((1/num_nodes)))
     # num_chldren[i] is number of child nodes of node i
     # rhc: Q: make these short or something shorter than int?
-    number_of_children = np.empty(number_of_nodes,dtype=np.intc)
+    #number_of_children = np.empty(np_arrays_size_for_shared_partition,dtype=np.intc)
+    number_of_children = np.full(np_arrays_size_for_shared_partition, -3,dtype=np.intc)
     # numParents[i] is number of parent nodes of node i
-    number_of_parents = np.empty(number_of_nodes,dtype=np.intc)
+    number_of_parents = np.full(np_arrays_size_for_shared_partition, -3,dtype=np.intc)
     # parent_index[i] is the index in parents[] of the first of 
     # num_parents parents of node i
-    starting_indices_of_parents = np.empty(number_of_nodes,dtype=np.intc)
+    starting_indices_of_parents = np.full(np_arrays_size_for_shared_partition, -3,dtype=np.intc)
+    # node IDs
+    IDs = np.full(np_arrays_size_for_shared_partition, -3, dtype=np.intc)
     # parents - to get the parents of node i: num_parents = numParents[i];
     # parent_index = parent_index[i]; 
     # for j in (parent_index,num_parents) parent = parents[j]
-    parents = np.empty(number_of_parent_nodes,dtype=np.intc)
+    parents = np.full(np_arrays_size_for_shared_partition_parents, -3, dtype=np.intc)
 
 def update_PageRank_of_PageRank_Function_loop_Shared(shared_nodes, position_size_tuple ,damping_factor,
     one_minus_dumping_factor,random_jumping,total_num_nodes):
@@ -88,11 +91,6 @@ def update_PageRank_of_PageRank_Function_loop_Shared(shared_nodes, position_size
         #parent_nodes = self.parents
         global number_of_parents
         num_parents = number_of_parents[node_index]
-
-        global previous
-        global number_of_children
-        global parents
-        global pagerank
     
     #Note: a parent has at least one child so num_children is not 0
     #pagerank_sum = sum((shared_nodes[node_index+starting_position_in_partition_group].prev / shared_nodes[node_index+starting_position_in_partition_group].num_children) for node_index in parent_nodes)
