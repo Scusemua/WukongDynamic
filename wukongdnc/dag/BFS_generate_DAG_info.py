@@ -3,7 +3,9 @@ import cloudpickle
 from .DAG_info import DAG_Info
 from .DFS_visit import state_info
 from .BFS_pagerank import PageRank_Function_Driver, PageRank_Function_Driver_Shared
-from .DAG_executor_constants import use_shared_partitions_groups
+from .BFS_Shared import PageRank_Function_Driver_Shared_Fast
+from .DAG_executor_constants import use_shared_partitions_groups, use_page_rank_group_partitions
+from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
 
 logger = logging.getLogger(__name__)
 
@@ -316,8 +318,12 @@ def generate_DAG_info():
         for key in Partition_DAG_states:
             Partition_DAG_tasks[key] = PageRank_Function_Driver
     else:
-        for key in Partition_DAG_states:
-            Partition_DAG_tasks[key] = PageRank_Function_Driver_Shared   
+        if not use_struct_of_arrays_for_pagerank:
+            for key in Partition_DAG_states:
+                Partition_DAG_tasks[key] = PageRank_Function_Driver_Shared 
+        else:
+            for key in Partition_DAG_states:
+                Partition_DAG_tasks[key] = PageRank_Function_Driver_Shared_Fast  
 
     logger.info("")
     DAG_info = {}
@@ -337,6 +343,11 @@ def generate_DAG_info():
     file_name = "./DAG_info_Partition.pickle"
     with open(file_name, 'wb') as handle:
         cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+
+    if not use_page_rank_group_partitions:
+        file_name = "./DAG_info.pickle"
+        with open(file_name, 'wb') as handle:
+            cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
 
     num_fanins = len(Partition_all_fanin_task_names)
     num_fanouts = len(Partition_all_fanout_task_names)
@@ -609,8 +620,12 @@ def generate_DAG_info():
         for key in Group_DAG_states:
             Group_DAG_tasks[key] = PageRank_Function_Driver
     else:
-        for key in Group_DAG_states:
-            Group_DAG_tasks[key] = PageRank_Function_Driver_Shared  
+        if not use_struct_of_arrays_for_pagerank:
+            for key in Group_DAG_states:
+                Group_DAG_tasks[key] = PageRank_Function_Driver_Shared 
+        else:
+            for key in Group_DAG_states:
+                Group_DAG_tasks[key] = PageRank_Function_Driver_Shared_Fast  
 
     logger.info("")
     DAG_info = {}
@@ -630,6 +645,11 @@ def generate_DAG_info():
     file_name = "./DAG_info_Group.pickle"
     with open(file_name, 'wb') as handle:
         cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+
+    if use_page_rank_group_partitions:
+        file_name = "./DAG_info.pickle"
+        with open(file_name, 'wb') as handle:
+            cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
 
     num_fanins = len(Group_all_fanin_task_names)
     num_fanouts = len(Group_all_fanout_task_names)

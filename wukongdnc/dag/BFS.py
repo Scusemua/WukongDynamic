@@ -2813,7 +2813,7 @@ if use_shared_partitions_groups:
                         BFS_Shared.parents[next_parent_index] = int_padding[j]
                         next += 1
                         next_parent_index += 1
-                    partition_size += 16
+                    #partition_size += 16
                     next_parent_index += 16
                 partition_triple = (partition_position,partition_size,num_shadow_nodes)
                 BFS_Shared.shared_partition_map[name] = partition_triple
@@ -2935,7 +2935,7 @@ if use_shared_partitions_groups:
                         BFS_Shared.parents[next_parent_index] = int_padding[j]
                         next += 1
                         next_parent_index += 1
-                    group_size += 16
+                    #group_size += 16
                     logger.debug("after padding: next_parent_index: " + str(next_parent_index))
                 group_triple = (group_position,group_size,num_shadow_nodes)
                 BFS_Shared.shared_groups_map[name] = group_triple
@@ -2945,7 +2945,6 @@ if use_shared_partitions_groups:
                 logger.debug(num)
             logger.debug("shared_groups_map:")
             for (k,v) in BFS_Shared.shared_groups_map.items():
-                logger.debug(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + "," + str(v[2]) + ")")
                 logger.debug(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + "," + str(v[2]) + ")")
             logger.debug("Shared_Arrays")
             logger.debug("BFS_Shared.pagerank:")
@@ -2971,8 +2970,8 @@ if use_shared_partitions_groups:
                 logger.debug(str(element)+",")
             logger.debug("")
 
-logging.shutdown()
-os._exit(0)
+#logging.shutdown()
+#os._exit(0)
 
 #partitions.append(current_partition.copy())
 #frontiers.append(frontier.copy())
