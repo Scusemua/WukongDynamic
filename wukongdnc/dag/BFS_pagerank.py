@@ -457,7 +457,7 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
         #num_shadow_nodes = len(input_tuples)
         num_shadow_nodes = position_size_tuple[2]
 
-        debug_pagerank = False
+        debug_pagerank = True
 
         if (debug_pagerank):
             logger.debug("PageRank_Function output partition_or_group (node:parents):")
@@ -690,7 +690,7 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
 
         if (debug_pagerank):
             logger.debug("")
-            logger.debug("PageRank_Function output partition_or_group after adding " + len(num_shadow_nodes) + " shadow node parents (node:parents):")
+            logger.debug("PageRank_Function output partition_or_group after adding " + str(num_shadow_nodes) + " shadow node parents (node:parents):")
             #rhc shared
             for node_index in range (starting_position_in_partition_group,starting_position_in_partition_group+size_of_partition_group):
             #for node in partition_or_group:
@@ -976,8 +976,7 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
                 #rhc shared
                 (pagerank_of_shadow_node - random_jumping)  / one_minus_dumping_factor)
                 #(partition_or_group[shadow_node_index].pagerank - random_jumping)  / one_minus_dumping_factor)
-            if (debug_pagerank):
-                logger.debug(parent_of_shadow_node_ID + " pagerank set to: " + str(parent_of_shadow_node.pagerank))
+            logger.debug(parent_of_shadow_node_ID + " pagerank set to: " + str(parent_of_shadow_node.pagerank))
 
             partition_or_group_name_of_output_task = frontier_parent_tuple[3]
             #output_list = PageRank_output.get(partition_or_group_name_of_output_task)

@@ -16,7 +16,7 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 
-debug_pagerank = False
+debug_pagerank = True
 
 class Partition_Node:
     def __init__(self,ID):
