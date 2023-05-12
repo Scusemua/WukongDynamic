@@ -201,7 +201,7 @@ use_page_rank_group_partitions = True
 
 # For pagerank
 # Use a struct of arrays to improve cache performance
-use_struct_of_arrays_for_pagerank = True
+use_struct_of_arrays_for_pagerank = False
 
 if use_struct_of_arrays_for_pagerank and not use_shared_partitions_groups:
     logger.error("[Error]: Configuration error: if use_struct_of_arrays_for_pagerank"

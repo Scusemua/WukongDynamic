@@ -457,7 +457,7 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
         #num_shadow_nodes = len(input_tuples)
         num_shadow_nodes = position_size_tuple[2]
 
-        debug_pagerank = False
+        debug_pagerank = True
 
         if (debug_pagerank):
             logger.debug("PageRank_Function output partition_or_group (node:parents):")
@@ -772,6 +772,9 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
                 #    partition_or_group[index].update_PageRank_of_PageRank_Function_loop(partition_or_group, 
                 #        damping_factor,one_minus_dumping_factor,random_jumping,total_num_nodes)
                 
+                if (debug_pagerank):
+                    logger.debug("FOOOOOOOOOOOO")
+                    
                 if not task_file_name.endswith('L'):
                     shared_nodes[node_index].update_PageRank_of_PageRank_Function_Shared(shared_nodes, position_size_tuple, 
                         damping_factor,one_minus_dumping_factor,random_jumping,total_num_nodes)

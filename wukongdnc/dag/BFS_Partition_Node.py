@@ -115,9 +115,14 @@ class Partition_Node:
         global debug_pagerank
         #logger.debug("debug_pagerank: "  + str(debug_pagerank))
         if (debug_pagerank):
-            logger.debug("update_pagerank: node " + my_ID)
-            logger.debug("update_pagerank: parent_nodes: " + str(parent_nodes))
-            logger.debug("update_pagerank: num_children: " + str(self.num_children))
+            logger.debug("update_pagerank: of node " + my_ID)
+            logger.debug("update_pagerank: parent_nodes of " + my_ID + ": " + str(parent_nodes))
+            logger.debug("update_pagerank of node " + my_ID + ": num_children: " + str(self.num_children))
+
+            for node_indexD in parent_nodes:
+                logger.debug("node_indexD: " + str(node_indexD))
+                logger.debug("partition_or_group[node_indexD].prev: " + str(partition_or_group[node_indexD].prev))
+                logger.debug("partition_or_group[node_indexD].num_children: " + str(partition_or_group[node_indexD].num_children))
         
         #if self.ID == 16:
         #    parent1 = partition_or_group[1]
@@ -200,7 +205,13 @@ class Partition_Node:
             logger.debug("update_pagerank: node " + my_ID)
             logger.debug("update_pagerank: parent_nodes: " + str(parent_nodes))
             logger.debug("update_pagerank: num_children: " + str(self.num_children))
-        
+
+            for node_indexD in parent_nodes:
+                logger.debug("node_indexD: " + str(node_indexD))
+                logger.debug("shared_nodes[node_index+starting_position_in_partition_group].prev : " + str(shared_nodes[node_indexD+starting_position_in_partition_group].prev))
+                logger.debug("shared_nodes[node_index+starting_position_in_partition_group].num_children: " + str(shared_nodes[node_indexD+starting_position_in_partition_group].num_children))
+
+
         #Note: a parent has at least one child so num_children is not 0
         pagerank_sum = sum((shared_nodes[node_index+starting_position_in_partition_group].prev / shared_nodes[node_index+starting_position_in_partition_group].num_children) for node_index in parent_nodes)
         if (debug_pagerank):
