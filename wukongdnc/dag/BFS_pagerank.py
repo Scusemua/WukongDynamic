@@ -17,7 +17,7 @@ ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
-debug_pagerank = True
+debug_pagerank = False
 
 """
 
@@ -457,7 +457,7 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
         #num_shadow_nodes = len(input_tuples)
         num_shadow_nodes = position_size_tuple[2]
 
-        debug_pagerank = True
+        debug_pagerank = False
 
         if (debug_pagerank):
             logger.debug("PageRank_Function output partition_or_group (node:parents):")

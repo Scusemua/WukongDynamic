@@ -83,7 +83,7 @@ def PageRank_Function_Driver_Shared_Fast(task_file_name,total_num_nodes,results_
         # in DAG_executor of "DAG_executor_driver_0" --> (), where
         # DAG_executor_driver_0 is used to mean that the DAG_excutor_driver
         # provided an empty input tuple for the leaf task. Here, we just ignore
-        # empty input tuples so that the input_tuples provided to the 
+        debug_pagerank# empty input tuples so that the input_tuples provided to the 
         # PageRank_Function will be an empty list.
         if not v == ():
             # v is a list of tuples so ths is concatenating two lists of tuples 
@@ -759,7 +759,6 @@ def update_PageRank_of_PageRank_Function_Shared_Fast(task_file_name,
                 logger.debug("ID: " + str(IDs[node_index]))
                 logger.debug("starting_index_of_parent: " + str(starting_index_of_parent))
                 logger.debug("num_parents: " + str(num_parents))
-                logger.debug("parents[starting_index_of_parent]: " + str(parents[starting_index_of_parent]))
                 for parent_indexD in parents[starting_index_of_parent:(starting_index_of_parent+num_parents)]:
                     logger.debug("parent index: " + str(parent_indexD))
                     logger.debug("pagerank[starting_position_in_partition_group+parent_index]: " + str(pagerank[starting_position_in_partition_group+parent_indexD]))
@@ -779,6 +778,7 @@ def update_PageRank_of_PageRank_Function_Shared_Fast(task_file_name,
                 logger.debug ("update_pagerank: pagerank of node: " + str(node_index) + ": " + str(pagerank[node_index]))
                 logger.debug("")
 
+        """
         print("PageRank result for " + task_file_name + ":", end=" ")
         #rhc shared
         for node_index in range (starting_position_in_partition_group,starting_position_in_partition_group+num_nodes_for_pagerank_computation):
@@ -786,6 +786,7 @@ def update_PageRank_of_PageRank_Function_Shared_Fast(task_file_name,
             print(str(IDs[node_index]) + ":" + str(pagerank[node_index]),end=" ")
         print()
         print()
+        """
 
 def update_PageRank_of_PageRank_Function_loop_Shared_Fast(task_file_name,
     position_size_tuple, num_nodes_for_pagerank_computation,
@@ -793,6 +794,10 @@ def update_PageRank_of_PageRank_Function_loop_Shared_Fast(task_file_name,
 
     starting_position_in_partition_group = position_size_tuple[0]
     iterations = 10
+
+
+    #Note: Previous[] is initialized when we create
+
     for i in range(1,iterations+1):
         if (debug_pagerank):
             logger.debug("***** PageRank: iteration " + str(i))
@@ -806,10 +811,19 @@ def update_PageRank_of_PageRank_Function_loop_Shared_Fast(task_file_name,
             #parent_nodes = self.parents
             global number_of_parents
             num_parents = number_of_parents[node_index]
-        
+            if debug_pagerank:
+                logger.debug("node_index: " + str(node_index))
+                logger.debug("ID: " + str(IDs[node_index]))
+                logger.debug("starting_index_of_parent: " + str(starting_index_of_parent))
+                logger.debug("num_parents: " + str(num_parents))
+                for parent_indexD in parents[starting_index_of_parent:(starting_index_of_parent+num_parents)]:
+                    logger.debug("parent index: " + str(parent_indexD))
+                    logger.debug("previous[starting_position_in_partition_group+parent_index]: " + str(previous[starting_position_in_partition_group+parent_indexD]))
+                    logger.debug("number_of_children[starting_position_in_partition_group+parent_index]: " + str(number_of_children[starting_position_in_partition_group+parent_indexD]))
+
             #Note: a parent has at least one child so num_children is not 0
             #pagerank_sum = sum((shared_nodes[node_index+starting_position_in_partition_group].prev / shared_nodes[node_index+starting_position_in_partition_group].num_children) for node_index in parent_nodes)
-            pagerank_sum = sum((previous[parent_index] / number_of_children[parent_index]) for parent_index in parents[starting_index_of_parent:(starting_index_of_parent+num_parents)])
+            pagerank_sum = sum((previous[starting_position_in_partition_group+parent_index] / number_of_children[starting_position_in_partition_group+parent_index]) for parent_index in parents[starting_index_of_parent:(starting_index_of_parent+num_parents)])
             if (debug_pagerank):
                 logger.debug("update_pagerank: pagerank_sum: " + str(pagerank_sum))
             #random_jumping = damping_factor / total_num_nodes
@@ -825,11 +839,12 @@ def update_PageRank_of_PageRank_Function_loop_Shared_Fast(task_file_name,
             #rhc shared
             for node_index in range (starting_position_in_partition_group,starting_position_in_partition_group+num_nodes_for_pagerank_computation):
                 previous[node_index] = pagerank[node_index]
-
-        print("PageRank result for " + task_file_name + ":", end=" ")
+    """
+    print("PageRank result for " + task_file_name + ":", end=" ")
+    #rhc shared
+    for node_index in range (starting_position_in_partition_group,starting_position_in_partition_group+num_nodes_for_pagerank_computation):
         #rhc shared
-        for node_index in range (starting_position_in_partition_group,starting_position_in_partition_group+num_nodes_for_pagerank_computation):
-            #rhc shared
-            print(str(IDs[node_index]) + ":" + str(pagerank[node_index]),end=" ")
-        print()
-        print()
+        print(str(IDs[node_index]) + ":" + str(pagerank[node_index]),end=" ")
+    print()
+    print()
+    """
