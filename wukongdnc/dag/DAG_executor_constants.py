@@ -154,7 +154,7 @@ if sync_objects_in_lambdas_trigger_their_tasks:
 # use a single lambda function to store all of the synchroization objects
 # to make an easy test case. This cannot be used when using the function 
 # simulators or using the DAG_orchestrator
-using_single_lambda_function = False
+using_single_lambda_function = True
 
 # For PageRank:
 # set tasks_use_result_dictionary_parameter = True

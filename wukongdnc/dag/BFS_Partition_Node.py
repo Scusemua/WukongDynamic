@@ -190,6 +190,7 @@ class Partition_Node:
         one_minus_dumping_factor,random_jumping,total_num_nodes):
 
         starting_position_in_partition_group = position_size_tuple[0]
+        logger.debug("starting_position_in_partition_group: " + str(starting_position_in_partition_group))
         # FYI:
         #size_of_partition_group = position_size_tuple[1]
 
@@ -203,17 +204,17 @@ class Partition_Node:
         #logger.debug("debug_pagerank: "  + str(debug_pagerank))
         if (debug_pagerank):
             logger.debug("update_pagerank: node " + my_ID)
-            logger.debug("update_pagerank: parent_nodes: " + str(parent_nodes))
-            logger.debug("update_pagerank: num_children: " + str(self.num_children))
+            logger.debug("update_pagerank: " + str(my_ID) + " parent_nodes: " + str(parent_nodes))
+            logger.debug("update_pagerank: " + str(my_ID) + " num_children: " + str(self.num_children))
 
-            for node_indexD in parent_nodes:
-                logger.debug("node_indexD: " + str(node_indexD))
-                logger.debug("shared_nodes[node_index+starting_position_in_partition_group].prev : " + str(shared_nodes[node_indexD+starting_position_in_partition_group].prev))
-                logger.debug("shared_nodes[node_index+starting_position_in_partition_group].num_children: " + str(shared_nodes[node_indexD+starting_position_in_partition_group].num_children))
+            for parent_indexD in parent_nodes:
+                logger.debug("parent_indexD: " + str(parent_indexD))
+                logger.debug("shared_nodes[parent_indexD+starting_position_in_partition_group].prev : " + str(shared_nodes[parent_indexD+starting_position_in_partition_group].prev))
+                logger.debug("shared_nodes[parent_indexD+starting_position_in_partition_group].num_children: " + str(shared_nodes[parent_indexD+starting_position_in_partition_group].num_children))
 
 
         #Note: a parent has at least one child so num_children is not 0
-        pagerank_sum = sum((shared_nodes[node_index+starting_position_in_partition_group].prev / shared_nodes[node_index+starting_position_in_partition_group].num_children) for node_index in parent_nodes)
+        pagerank_sum = sum((shared_nodes[parent_index+starting_position_in_partition_group].prev / shared_nodes[parent_index+starting_position_in_partition_group].num_children) for parent_index in parent_nodes)
         if (debug_pagerank):
             logger.debug("update_pagerank: pagerank_sum: " + str(pagerank_sum))
         #random_jumping = damping_factor / total_num_nodes

@@ -447,7 +447,8 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
             for node_index in range (starting_position_in_partition_group,starting_position_in_partition_group+num_nodes_for_pagerank_computation):
             #for index in range(num_nodes_for_pagerank_computation):
                 #rhc shared
-                shared_nodes[node_index].prev = (1/total_num_nodes)
+                if not shared_nodes[node_index].isShadowNode:
+                    shared_nodes[node_index].prev = (1/total_num_nodes)
                 #partition_or_group[index].prev = (1/total_num_nodes)
         """
 
