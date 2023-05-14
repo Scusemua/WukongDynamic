@@ -187,7 +187,7 @@ same_output_for_all_fanout_fanin = False
 # when the task suns, we have one global shared array with all the 
 # partitions/groups and the threads access that array when they do their
 # tasks.
-use_shared_partitions_groups = True
+use_shared_partitions_groups = False
 
 if use_shared_partitions_groups and not run_all_tasks_locally or not using_threads_not_processes:
     logger.error("[Error]: Configuration error: if using a single shared array of"

@@ -344,7 +344,11 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
                     + " pagerank_value: " + str(pagerank_value))
             else:
                 logger.error(task_file_name + ": Fooooooooooooooooooooo")
-            shared_nodes[position_of_shadow_node].pagerank = pagerank_value
+            #shared_nodes[position_of_shadow_node].pagerank = pagerank_value
+            if not task_file_name.endswith('L'):
+                shared_nodes[position_of_shadow_node].pagerank = pagerank_value
+            else:
+                shared_nodes[position_of_shadow_node].prev = pagerank_value
             #partition_or_group[shadow_node_index].pagerank = pagerank_value
             # IDs: -1, -2, -3, etc
             #rhc shared
@@ -380,15 +384,25 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
 
             # set the pagerank of the parent_of_shadow_node so that when we recompute
             # the pagerank of the shadow_node we alwas get the same value.
-            parent_of_shadow_node.pagerank = (
-                #rhc shared
-                (pagerank_value_of_parent_node)
-            )
-                #(partition_or_group[shadow_node_index].pagerank - random_jumping)  / one_minus_dumping_factor)
-            if (debug_pagerank):
-                logger.debug(parent_of_shadow_node_ID + " pagerank set to: " + str(parent_of_shadow_node.pagerank))
+            #parent_of_shadow_node.pagerank = (
+            #    #rhc shared
+            #   (pagerank_value_of_parent_node)
+            #)
+            ##    #(partition_or_group[shadow_node_index].pagerank - random_jumping)  / one_minus_dumping_factor)
+            #if (debug_pagerank):
+            #    logger.debug(parent_of_shadow_node_ID + " pagerank set to: " + str(parent_of_shadow_node.pagerank))
 
-
+           if not task_file_name.endswith('L'):
+                parent_of_shadow_node.pagerank = (
+                    (pagerank_value_of_parent_node)
+                # if (debug_pagerank):
+                logger.debug("parent " + parent_of_shadow_node_ID + " pagerank set to: " + str(parent_of_shadow_node.pagerank))
+            else:
+                parent_of_shadow_node.prev = (
+                    (pagerank_value_of_parent_node)
+                # if (debug_pagerank):
+                logger.debug("parent " + parent_of_shadow_node_ID + " prev set to: " + str(parent_of_shadow_node.prev))
+ 
             # num_children = 1 makes the computation easier; the computation assumed
             # num_children was set to 1
             parent_of_shadow_node.num_children = 1
@@ -439,7 +453,7 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
             logger.debug("")
         """
 
-#rhc: ToDo: Already did this
+#rhc: ToDo: Already did this when initialized arrays
         """
         if task_file_name.endswith('L'):
             # init prev for loops
@@ -811,7 +825,6 @@ def update_PageRank_of_PageRank_Function_loop_Shared_Fast(task_file_name,
         if (debug_pagerank):
             logger.debug("***** PageRank: iteration " + str(i))
             logger.debug("")
-            logger.debug("prev of 19: " + str(previous[46]))
 
         for node_index in range (starting_position_in_partition_group,starting_position_in_partition_group+num_nodes_for_pagerank_computation):
 
@@ -847,15 +860,11 @@ def update_PageRank_of_PageRank_Function_loop_Shared_Fast(task_file_name,
                 logger.debug ("update_pagerank: pagerank of node: " + str(node_index) + ": " + str(pagerank[node_index]))
                 logger.debug("")
 
-
-            logger.debug("prev of 19: " + str(previous[46]))
-
         # save current pagerank in prev
         #rhc shared
         for node_index in range (starting_position_in_partition_group,starting_position_in_partition_group+num_nodes_for_pagerank_computation):
             previous[node_index] = pagerank[node_index]
 
-        logger.debug("prev of 19: " + str(previous[46]))
     """
     print("PageRank result for " + task_file_name + ":", end=" ")
     #rhc shared
@@ -865,3 +874,69 @@ def update_PageRank_of_PageRank_Function_loop_Shared_Fast(task_file_name,
     print()
     print()
     """
+
+
+"""
+Shared memory in multiprocessing
+https://stackoverflow.com/questions/14124588/shared-memory-in-multiprocessing
+(and see: https://mingze-gao.com/posts/python-shared-memory-in-multiprocessing/)
+
+# one dimension of the 2d array which is shared
+dim = 5000
+
+import numpy as np
+from multiprocessing import shared_memory, Process, Lock
+from multiprocessing import cpu_count, current_process
+import time
+
+lock = Lock()
+
+def add_one(shr_name):
+
+Note: he general rule is that if there is a write on thread A and read
+ on thread B for the same location, A has to execute a release operation 
+ as part of its write or as a subsequent memory barrier, and B has to 
+ execute an acquire operation as part of its read or as a preceding 
+ memory barrier, otherwise there is no guarantee that B will read the 
+ value written by A
+
+    existing_shm = shared_memory.SharedMemory(name=shr_name)
+    np_array = np.ndarray((dim, dim,), dtype=np.int64, buffer=existing_shm.buf)
+    lock.acquire()
+    np_array[:] = np_array[0] + 1
+    lock.release()
+    time.sleep(10) # pause, to see the memory usage in top
+    print('added one')
+    existing_shm.close()
+
+def create_shared_block():
+
+    a = np.ones(shape=(dim, dim), dtype=np.int64)  # Start with an existing NumPy array
+
+    shm = shared_memory.SharedMemory(create=True, size=a.nbytes)
+    # # Now create a NumPy array backed by shared memory
+    np_array = np.ndarray(a.shape, dtype=np.int64, buffer=shm.buf)
+    np_array[:] = a[:]  # Copy the original data into shared memory
+    return shm, np_array
+
+if current_process().name == "MainProcess":
+    print("creating shared block")
+    shr, np_array = create_shared_block()
+
+    processes = []
+    for i in range(cpu_count()):
+        _process = Process(target=add_one, args=(shr.name,))
+        processes.append(_process)
+        _process.start()
+
+    for _process in processes:
+        _process.join()
+
+    print("Final array")
+    print(np_array[:10])
+    print(np_array[10:])
+
+    shr.close()
+    shr.unlink()
+Note that because of the 64 bit ints this code can take about 1gb of ram to run, so make sure that you won't freeze your system using it. ^_^
+"""

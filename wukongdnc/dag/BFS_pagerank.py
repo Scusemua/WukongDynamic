@@ -241,16 +241,27 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
             # pagerank of shadow_node is the pagerank value (of a parent of the 
             # shadow_node received from the parents partition/group executor.
             partition_or_group[shadow_node_index].pagerank = pagerank_value
+            if not task_file_name.endswith('L'):
+                partition_or_group[shadow_node_index].pagerank = pagerank_value
+            else:
+                partition_or_group[shadow_node_index].prev = pagerank_value
             # IDs: -1, -2, -3, etc
             shadow_node_ID = partition_or_group[shadow_node_index].ID
             parent_of_shadow_node_ID = str(shadow_node_ID) + "-s-p"
             parent_of_shadow_node = Partition_Node(parent_of_shadow_node_ID)
             # set the pagerank of the parent_of_shadow_node so that when we recompute
             # the pagerank of the shadow_node we alwas get the same value.
-            parent_of_shadow_node.pagerank = (
-                (partition_or_group[shadow_node_index].pagerank - random_jumping)  / one_minus_dumping_factor)
-            # if (debug_pagerank):
-            logger.debug(parent_of_shadow_node_ID + " pagerank set to: " + str(parent_of_shadow_node.pagerank))
+            if not task_file_name.endswith('L'):
+                parent_of_shadow_node.pagerank = (
+                    (partition_or_group[shadow_node_index].pagerank - random_jumping)  / one_minus_dumping_factor)
+                # if (debug_pagerank):
+                logger.debug("parent " + parent_of_shadow_node_ID + " pagerank set to: " + str(parent_of_shadow_node.pagerank))
+            else:
+                parent_of_shadow_node.prev = (
+                    (partition_or_group[shadow_node_index].pagerank - random_jumping)  / one_minus_dumping_factor)
+                # if (debug_pagerank):
+                logger.debug("parent " + parent_of_shadow_node_ID + " prev set to: " + str(parent_of_shadow_node.pagerank))
+ 
             # num_children = 1 makes the computation easier; the computation assumed
             # num_children was set to 1
             parent_of_shadow_node.num_children = 1
@@ -292,16 +303,26 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
             for index in range(num_nodes_for_pagerank_computation):
                 # Need number of non-shadow nodes'
         #rhc: handle shadow nodes
-                if partition_or_group[index].isShadowNode:
-                    #if (debug_pagerank):
-                    logger.debug("PageRank: before pagerank computation: node at position " 
-                    + str(index) + " isShadowNode: " 
-                    + str(partition_or_group[index].isShadowNode) 
-                    + ", pagerank: " + str(partition_or_group[index].pagerank)
-                    + ", parent: " + str(partition_or_group[index].parents[0])
-                    + ", (real) parent's num_children: " + str(partition_or_group[index].num_children)
-                    )
-
+                if not task_file_name.endswith('L'):
+                    if partition_or_group[index].isShadowNode:
+                        #if (debug_pagerank):
+                        logger.debug("PageRank: before pagerank computation: node at position " 
+                        + str(index) + " isShadowNode: " 
+                        + str(partition_or_group[index].isShadowNode) 
+                        + ", pagerank: " + str(partition_or_group[index].pagerank)
+                        + ", parent: " + str(partition_or_group[index].parents[0])
+                        + ", (real) parent's num_children: " + str(partition_or_group[index].num_children)
+                        )
+                else:
+                    if partition_or_group[index].isShadowNode:
+                        #if (debug_pagerank):
+                        logger.debug("PageRank: before pagerank computation: node at position " 
+                        + str(index) + " isShadowNode: " 
+                        + str(partition_or_group[index].isShadowNode) 
+                        + ", prev: " + str(partition_or_group[index].prev)
+                        + ", parent: " + str(partition_or_group[index].parents[0])
+                        + ", (real) parent's num_children: " + str(partition_or_group[index].num_children)
+                        )
                 #if (debug_pagerank):
                 #    logger.debug("")
 
@@ -314,7 +335,12 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
                 else:
                     partition_or_group[index].update_PageRank_of_PageRank_Function_loop(partition_or_group, 
                         damping_factor,one_minus_dumping_factor,random_jumping,total_num_nodes)
-    
+
+                # we used prev to compute pagerank so show pagerank.
+                # The pagerank value should always be the same, i.e., for the first
+                # computation pagerank will be the asme as prev, and this will be true 
+                # for every iteration that follows. (The shadow node's parrent pagerank
+                # value has been set so this is true.)
                 if partition_or_group[index].isShadowNode:
                     #if (debug_pagerank):
                     logger.debug("PageRank:  after pagerank computation: node at position " 
@@ -830,6 +856,11 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
                 #    + ", (real) parent's num_children: " + str(partition_or_group[index].num_children)
                 #   )
 
+                # we used prev to compute pagerank so show pagerank.
+                # The pagerank value should always be the same, i.e., for the first
+                # computation pagerank will be the asme as prev, and this will be true 
+                # for every iteration that follows. (The shadow node's parrent pagerank
+                # value has been set so this is true.)
                 if shared_nodes[node_index].isShadowNode:
                     if (debug_pagerank):
                         logger.debug("PageRank: after pagerank computation: node at position " 
