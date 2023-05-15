@@ -1,6 +1,7 @@
 import logging
 import numpy as np
 import os
+from multiprocessing import shared_memory, cpu_count
 
 from .DAG_executor_constants import use_page_rank_group_partitions
 
@@ -68,6 +69,113 @@ def initialize_struct_of_arrays(num_nodes, np_arrays_size_for_shared_partition,
     # parent_index = parent_index[i]; 
     # for j in (parent_index,num_parents) parent = parents[j]
     parents = np.full(np_arrays_size_for_shared_partition_parents, -3, dtype=np.intc)
+
+
+def initialize_struct_of_arrays_shared_memory(num_nodes, np_arrays_size_for_shared_partition,
+        np_arrays_size_for_shared_partition_parents):
+
+    global shm_pagerank
+    global shm_previous
+    global shm_number_of_children
+    global shm_number_of_parents
+    global shm_starting_indices_of_parents
+    global shm_parents
+    global shm_IDs
+    
+    global pagerank
+    global previous
+    global number_of_children
+    global number_of_parents
+    global starting_indices_of_parents
+    global parents
+    global IDs
+
+#rhc: ToDo: we can use empty instead of full but full is easier to debug for now.
+
+    nonshared_pagerank = np.empty(np_arrays_size_for_shared_partition,dtype=np.double)
+    # prev[i] is previous pagerank value of i
+    nonshared_previous = np.full(np_arrays_size_for_shared_partition,float((1/num_nodes)))
+    # num_chldren[i] is number of child nodes of node i
+    # rhc: Q: make these short or something shorter than int?
+    #number_of_children = np.empty(np_arrays_size_for_shared_partition,dtype=np.intc)
+    nonshared_number_of_children = np.full(np_arrays_size_for_shared_partition, -3,dtype=np.intc)
+    # numParents[i] is number of parent nodes of node i
+    nonshared_number_of_parents = np.full(np_arrays_size_for_shared_partition, -3,dtype=np.intc)
+    # parent_index[i] is the index in parents[] of the first of 
+    # num_parents parents of node i
+    nonshared_starting_indices_of_parents = np.full(np_arrays_size_for_shared_partition, -3,dtype=np.intc)
+    # node IDs
+    nonshared_IDs = np.full(np_arrays_size_for_shared_partition, -3, dtype=np.intc)
+    # parents - to get the parents of node i: num_parents = numParents[i];
+    # parent_index = parent_index[i]; 
+    # for j in (parent_index,num_parents) parent = parents[j]
+    nonshared_parents = np.full(np_arrays_size_for_shared_partition_parents, -3, dtype=np.intc)
+
+    shm_pagerank = shared_memory.SharedMemory(create=True, size=nonshared_pagerank.nbytes)
+    shm_previous = shared_memory.SharedMemory(create=True, size=nonshared_previous.nbytes)
+    shm_number_of_children = shared_memory.SharedMemory(create=True, size=nonshared_number_of_children.nbytes)
+    shm_number_of_parents = shared_memory.SharedMemory(create=True, size=nonshared_number_of_parents.nbytes)
+    shm_starting_indices_of_parents = shared_memory.SharedMemory(create=True, size=nonshared_starting_indices_of_parents.nbytes)
+    shm_IDs = shared_memory.SharedMemory(create=True, size=nonshared_IDs.nbytes)
+    shm_parents = shared_memory.SharedMemory(create=True, size=nonshared_parents.nbytes)
+
+    pagerank = np.ndarray(nonshared_pagerank.shape, dtype=np.double, buffer=shm_pagerank.buf)
+    previous = np.ndarray(nonshared_previous.shape, dtype=np.double, buffer=shm_previous.buf)
+    number_of_children = np.ndarray(nonshared_previous.shape, dtype=np.intc, buffer=shm_number_of_children.buf)
+    number_of_parents = np.ndarray(nonshared_number_of_parents.shape, dtype=np.intc, buffer=shm_number_of_parents.buf)
+    starting_indices_of_parents = np.ndarray(nonshared_starting_indices_of_parents.shape, dtype=np.intc, buffer=shm_starting_indices_of_parents.buf)
+    IDs = np.ndarray(nonshared_IDs.shape, dtype=np.intc, buffer=shm_IDs.buf)
+    parents = np.ndarray(nonshared_parents.shape, dtype=np.intc, buffer=shm_parents.buf)
+
+    pagerank[:] = nonshared_pagerank[:]
+    previous[:] = nonshared_previous[:]
+    number_of_children[:] = nonshared_number_of_children[:]
+    number_of_parents[:] = nonshared_number_of_parents[:]
+    starting_indices_of_parents[:] = nonshared_starting_indices_of_parents[:]
+    IDs[:] = nonshared_IDs[:]
+    parents[:] = nonshared_parents[:]
+
+    #where:in DAG_executor_driver:
+    #_process = Process(target=Foo, args=(shm_pagerank.name,shm_previous.name, ...etc))
+
+def close_shared_memory():
+
+    shm_pagerank.close()
+    shm_previous.close()
+    shm_number_of_children.close()
+    shm_number_of_parents.close()
+    shm_starting_indices_of_parents.close()
+    shm_parents.close()
+    shm_IDs.close()
+
+def unlink_shared_memory():
+
+    shm_pagerank.unlink()
+    shm_previous.unlink()
+    shm_number_of_children.unlink()
+    shm_number_of_parents.unlink()
+    shm_starting_indices_of_parents.unlink()
+    shm_parents.unlink()
+    shm_IDs.unlink()
+
+# as in:
+"""
+    processes = []
+    for i in range(cpu_count()):
+        _process = Process(target=Foo, args=(shm_pagerank.name,shm_previous.name, ...etc))
+        processes.append(_process)
+        _process.start()
+
+    for _process in processes:
+        _process.join()
+
+    print(pagerank)
+
+    shm_pagerank.close()
+    shm_previous.unlink()
+    ...
+"""
+
 
 debug_pagerank = True
 
@@ -880,7 +988,7 @@ def update_PageRank_of_PageRank_Function_loop_Shared_Fast(task_file_name,
 Shared memory in multiprocessing
 https://stackoverflow.com/questions/14124588/shared-memory-in-multiprocessing
 (and see: https://mingze-gao.com/posts/python-shared-memory-in-multiprocessing/)
-
+(and see: https://docs.python.org/3/library/multiprocessing.shared_memory.html)
 # one dimension of the 2d array which is shared
 dim = 5000
 
@@ -891,8 +999,6 @@ import time
 
 lock = Lock()
 
-def add_one(shr_name):
-
 Note: he general rule is that if there is a write on thread A and read
  on thread B for the same location, A has to execute a release operation 
  as part of its write or as a subsequent memory barrier, and B has to 
@@ -900,6 +1006,13 @@ Note: he general rule is that if there is a write on thread A and read
  memory barrier, otherwise there is no guarantee that B will read the 
  value written by A
 
+Note:
+Maybe you need to use a memory barrier to force the data to be seen by another cpu?
+Maybe use shm lock operation to sync both sides?
+Googling I see people talking about using stdatomic.h for this.
+But I am far from clear what you would need to do.
+
+def add_one(shr_name):
     existing_shm = shared_memory.SharedMemory(name=shr_name)
     np_array = np.ndarray((dim, dim,), dtype=np.int64, buffer=existing_shm.buf)
     lock.acquire()
@@ -939,4 +1052,22 @@ if current_process().name == "MainProcess":
     shr.close()
     shr.unlink()
 Note that because of the 64 bit ints this code can take about 1gb of ram to run, so make sure that you won't freeze your system using it. ^_^
+"""
+"""
+# In the first Python interactive shell
+import numpy as np
+a = np.array([1, 1, 2, 3, 5, 8])  # Start with an existing NumPy array
+from multiprocessing import shared_memory
+shm = shared_memory.SharedMemory(create=True, size=a.nbytes)
+# Now create a NumPy array backed by shared memory
+b = np.ndarray(a.shape, dtype=a.dtype, buffer=shm.buf)
+b[:] = a[:]  # Copy the original data into shared memory
+b
+array([1, 1, 2, 3, 5, 8])
+type(b)
+<class 'numpy.ndarray'>
+type(a)
+<class 'numpy.ndarray'>
+shm.name  # We did not specify a name so one was chosen for us
+'psm_21467_46075'
 """
