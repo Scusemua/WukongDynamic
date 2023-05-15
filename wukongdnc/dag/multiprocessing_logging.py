@@ -1,7 +1,7 @@
 import logging
 import logging.handlers
 
-# Because you'll want to define the logging configurations for listener and workers, the
+# "Because you'll want to define the logging configurations for listener and workers, the
 # listener and worker process functions take a configurer parameter which is a callable
 # for configuring logging for that process. These functions are also passed the queue,
 # which they use for communication.
@@ -9,14 +9,16 @@ import logging.handlers
 # In practice, you can configure the listener however you want, but note that in this
 # simple example, the listener does not apply level or filter logic to received records.
 # In practice, you would probably want to do this logic in the worker processes, to avoid
-# sending events which would be filtered out between processes.
+# sending events which would be filtered out between processes.""
 #
 # The size of the rotated files is made small so you can see the results easily.
 def listener_configurer():
+
     root = logging.getLogger()
     #h = logging.handlers.RotatingFileHandler('mptest.log', 'a', 300, 10)
     h = logging.handlers.RotatingFileHandler('mptestNew.log', 'w',50000)
     #h = logging.handlers.FileHandler('mp.log', 'a')
+    #h = logging.FileHandler('mp.log', 'a')
     f = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s] [%(name)s] [%(levelname)s]: %(message)s')
     #Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
     h.setFormatter(f)
@@ -24,9 +26,20 @@ def listener_configurer():
     
     # In theory, this code will set the logging level for ALL loggers.
     # https://stackoverflow.com/q/54036637
+    # get Pylint error about root logger - just turning error off since:
+    # "This is because Pylint is not smart enough to grasp that you'll get MyLogger 
+    #  instances on calling getLogger."
+    # https://stackoverflow.com/questions/20965287/instance-of-rootlogger-has-no-trace-member-but-some-types-could-not-be-infe
+
+""" 
+    # pylint: disable=E1103
     loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
+    # pylint: enable=E1103
+
     for logger in loggers:
         logger.setLevel(logging.DEBUG) # Specify the log level here.
+"""
+
 """
 class logging.handlers.RotatingFileHandler(filename, mode='a', maxBytes=0, backupCount=0, encoding=None, 
 delay=False, errors=None)
@@ -69,6 +82,17 @@ def listener_process(queue, configurer):
 #LEVELS = [logging.DEBUG, logging.INFO, logging.WARNING,
 #          logging.ERROR, logging.CRITICAL]
 
+LEVELS = [logging.DEBUG, logging.INFO, logging.WARNING,
+          logging.ERROR, logging.CRITICAL]
+
+LOGGERS = ['a.b.c', 'd.e.f']
+
+MESSAGES = [
+    'Random message #1',
+    'Random message #2',
+    'Random message #3',
+]
+
 # Note that on Windows you can't rely on fork semantics, so each process
 # will run the logging configuration code when it starts.
 def worker_configurer(queue):
@@ -81,7 +105,10 @@ def worker_configurer(queue):
 # This is the worker process top-level loop, which just logs ten events with
 # random intervening delays before terminating.
 # The print messages are just so you know it's doing something!
-"""
+
+from random import choice, random
+import time
+
 def worker_process(queue, configurer):
     configurer(queue)
     name = multiprocessing.current_process().name
@@ -93,4 +120,24 @@ def worker_process(queue, configurer):
         message = choice(MESSAGES)
         logger.log(level, message)
     print('Worker finished: %s' % name)
-"""
+
+import multiprocessing
+
+def main():
+    queue = multiprocessing.Queue(-1)
+    listener = multiprocessing.Process(target=listener_process,
+                                       args=(queue, listener_configurer))
+    listener.start()
+    workers = []
+    for i in range(10):
+        worker = multiprocessing.Process(target=worker_process,
+                                         args=(queue, worker_configurer))
+        workers.append(worker)
+        worker.start()
+    for w in workers:
+        w.join()
+    queue.put_nowait(None)
+    listener.join()
+
+if __name__ == '__main__':
+    main()

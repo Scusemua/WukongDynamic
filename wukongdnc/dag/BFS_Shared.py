@@ -121,7 +121,7 @@ def initialize_struct_of_arrays_shared_memory(num_nodes, np_arrays_size_for_shar
 
     pagerank = np.ndarray(nonshared_pagerank.shape, dtype=np.double, buffer=shm_pagerank.buf)
     previous = np.ndarray(nonshared_previous.shape, dtype=np.double, buffer=shm_previous.buf)
-    number_of_children = np.ndarray(nonshared_previous.shape, dtype=np.intc, buffer=shm_number_of_children.buf)
+    number_of_children = np.ndarray(nonshared_number_of_children.shape, dtype=np.intc, buffer=shm_number_of_children.buf)
     number_of_parents = np.ndarray(nonshared_number_of_parents.shape, dtype=np.intc, buffer=shm_number_of_parents.buf)
     starting_indices_of_parents = np.ndarray(nonshared_starting_indices_of_parents.shape, dtype=np.intc, buffer=shm_starting_indices_of_parents.buf)
     IDs = np.ndarray(nonshared_IDs.shape, dtype=np.intc, buffer=shm_IDs.buf)
@@ -139,7 +139,11 @@ def initialize_struct_of_arrays_shared_memory(num_nodes, np_arrays_size_for_shar
     #_process = Process(target=Foo, args=(shm_pagerank.name,shm_previous.name, ...etc))
 
 def close_shared_memory():
-
+# Closes access to the shared memory from this instance. In order to ensure 
+# proper cleanup of resources, all instances should call close() once the 
+# instance is no longer needed. Note that calling close() 
+# does not cause the shared memory block itself to be destroyed.
+# https://docs.python.org/3/library/multiprocessing.shared_memory.html
     shm_pagerank.close()
     shm_previous.close()
     shm_number_of_children.close()
@@ -149,7 +153,15 @@ def close_shared_memory():
     shm_IDs.close()
 
 def unlink_shared_memory():
-
+# Requests that the underlying shared memory block be destroyed. In order to 
+# ensure proper cleanup of resources, unlink() should be called once (and 
+# only once) across all processes which have need for the shared memory block. 
+# After requesting its destruction, a shared memory block may or may not be 
+# immediately destroyed and this behavior may differ across platforms. Attempts 
+# to access data inside the shared memory block after unlink() has been called 
+# may result in memory access errors. Note: the last process relinquishing i
+# ts hold on a shared memory block may call unlink() and close() in either order.
+# https://docs.python.org/3/library/multiprocessing.shared_memory.html
     shm_pagerank.unlink()
     shm_previous.unlink()
     shm_number_of_children.unlink()
@@ -160,6 +172,9 @@ def unlink_shared_memory():
 
 # as in:
 """
+    np.set_printoptions(threshold=np.inf)
+    # https://numpy.org/doc/stable/reference/generated/numpy.set_printoptions.html
+
     processes = []
     for i in range(cpu_count()):
         _process = Process(target=Foo, args=(shm_pagerank.name,shm_previous.name, ...etc))

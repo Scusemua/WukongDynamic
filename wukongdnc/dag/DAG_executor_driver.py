@@ -282,10 +282,10 @@
 import logging 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
+logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 ch = logging.StreamHandler()
-ch.setLevel(logging.ERROR)
+ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
@@ -894,7 +894,7 @@ def run():
             state_info.task_inputs = None
 
 #rhc cleanup
-    output_DAG = True
+    output_DAG = False
     # add-0bec4d19-bce6-4394-ad62-9b0eab3081a9
     if output_DAG:
         # FYI:

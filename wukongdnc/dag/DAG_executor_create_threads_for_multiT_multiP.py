@@ -36,6 +36,7 @@ def create_and_run_threads_for_multiT_multiP(process_name,payload,counter,log_qu
     logger.debug(process_name + ": DAG_executor_driver: create_and_run_threads_for_multiT_multiP: Starting threads for multhreaded multipocessing.")
     iteration = 1
     #while True:
+    # num_threads_for_multithreaded_multiprocessing defined in DAG_executor_constants
     while num_threads_created_for_multiP < num_threads_for_multithreaded_multiprocessing:
         logger.debug(process_name + ": iterate: " + str(iteration))
         try:
@@ -76,5 +77,4 @@ def create_and_run_threads_for_multiT_multiP(process_name,payload,counter,log_qu
     for thread in thread_list:
         thread.join()	
 
-
-    # return and join multithreaded_multiprocessing_processes
+    # return and join multithreaded_multiprocessing_processes in DAG_excutor_driver

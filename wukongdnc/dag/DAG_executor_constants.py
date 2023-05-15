@@ -20,7 +20,7 @@ run_all_tasks_locally = True         # vs run tasks remotely (in Lambdas)
 # machine on which the threads are executing.  If we are using multiprocessing
 # or Lambdas, this must be False. When False, the synch objects are stored
 # on the tcp_server or in InfiniX lambdas.
-store_fanins_faninNBs_locally = True    # vs remotely
+store_fanins_faninNBs_locally = False    # vs remotely
 # True when all FanIn and FanInNB objects are created locally or on the
 # tcp_server or IniniX all at once at the start of the DAG execution. If
 # False, synch objects are created on the fly, i.e, we execute create-and-fanin
@@ -36,11 +36,11 @@ create_all_fanins_faninNBs_on_start = True
 using_workers = True
 # True when we ae not using Lambas and tasks are executed by threads instead of processes. 
 # False when we are not using lambdas and are using multiprocesssing 
-using_threads_not_processes = True
+using_threads_not_processes = False
 # When using_workers, this is how many threads or processes in the pool.
-num_workers = 1
+num_workers = 2
 # Use one or more worker processes (num_workers) with one or more threads
-use_multithreaded_multiprocessing = False
+use_multithreaded_multiprocessing = True
 num_threads_for_multithreaded_multiprocessing = 2
 
 # if using lambdas to store synch objects, run tcp_server_lambda.
@@ -156,16 +156,10 @@ if sync_objects_in_lambdas_trigger_their_tasks:
 # simulators or using the DAG_orchestrator
 using_single_lambda_function = True
 
-# For PageRank:
-# set tasks_use_result_dictionary_parameter = True
-# and same_output_for_all_fanout_fanin = False.
-#
-# True when executed task uses a dictionary parameter that contains its inputs
-# instead of a tuple Dask-style. This is True for the PageRank. For pagerank
-# we use a single pagerank task and, if using lambdas, a single lambda excutor.
-# PageRank tasks have varying numbers of inputs (for fanoins/faninNBs) that are
-# passed to the PageRank task in a dictionary.
-tasks_use_result_dictionary_parameter = True
+# For PageRank
+# Indicates that we are computing pagerank and thus that the pagerank
+# options are active and pagerank asserts should hold
+compute_pagerank = False
 
 # For PageRank:
 # a task that has multiple fanouts/faninNBs sends the same output
@@ -179,7 +173,25 @@ tasks_use_result_dictionary_parameter = True
 # task_inputs as "sending task - receiving task". So a sending task
 # S might send outputs to fanouts A and B so we use "S-A" and "S-B"
 # as the task_inputs, instad of just using "S", which is the Dask way.
-same_output_for_all_fanout_fanin = False
+same_output_for_all_fanout_fanin = True
+
+
+if not same_output_for_all_fanout_fanin and not compute_pagerank:
+    logger.error("[Error]: Configuration error: if same_output_for_all_fanout_fanin"
+        + " then must be computing pagerank.")
+    logging.shutdown()
+    os._exit(0)
+
+# For PageRank:
+# set tasks_use_result_dictionary_parameter = True
+# and same_output_for_all_fanout_fanin = False.
+#
+# True when executed task uses a dictionary parameter that contains its inputs
+# instead of a tuple Dask-style. This is True for the PageRank. For pagerank
+# we use a single pagerank task and, if using lambdas, a single lambda excutor.
+# PageRank tasks have varying numbers of inputs (for fanoins/faninNBs) that are
+# passed to the PageRank task in a dictionary.
+tasks_use_result_dictionary_parameter = compute_pagerank and True
 
 # For PageRank:
 # When we run_tasks_locally and we use threads to simulate lambdas or
@@ -187,9 +199,9 @@ same_output_for_all_fanout_fanin = False
 # when the task suns, we have one global shared array with all the 
 # partitions/groups and the threads access that array when they do their
 # tasks.
-use_shared_partitions_groups = False
+use_shared_partitions_groups = compute_pagerank and False
 
-if use_shared_partitions_groups and not run_all_tasks_locally or not using_threads_not_processes:
+if compute_pagerank and (use_shared_partitions_groups and not run_all_tasks_locally or not using_threads_not_processes):
     logger.error("[Error]: Configuration error: if using a single shared array of"
         + " partitions or groups then must run_tasks_locally and be using_threads_not_processes.")
     logging.shutdown()
@@ -197,13 +209,13 @@ if use_shared_partitions_groups and not run_all_tasks_locally or not using_threa
 
 # For PageRank:
 # Execute page rank partitions or execute page rank groups
-use_page_rank_group_partitions = True
+use_page_rank_group_partitions = compute_pagerank and True
 
 # For pagerank
 # Use a struct of arrays to improve cache performance
-use_struct_of_arrays_for_pagerank = False
+use_struct_of_arrays_for_pagerank = compute_pagerank and False
 
-if use_struct_of_arrays_for_pagerank and not use_shared_partitions_groups:
+if compute_pagerank and (use_struct_of_arrays_for_pagerank and not use_shared_partitions_groups):
     logger.error("[Error]: Configuration error: if use_struct_of_arrays_for_pagerank"
         + " then must use_shared_partitions_groups.")
     logging.shutdown()

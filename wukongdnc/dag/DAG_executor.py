@@ -1,16 +1,17 @@
 
 import logging
 
+
 logger = None
 logger = logging.getLogger(__name__)
-"""
+
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
-"""
+
 
 import threading
 import _thread
@@ -2211,6 +2212,10 @@ def DAG_executor_processes(payload,counter,log_queue, worker_configurer):
         #logger.setLevel(logging.ERROR)
     else:
         # Config: A6
+        # Try this?
+        #worker_configurer(log_queue)
+        #logger = logging.getLogger("multiP")
+        #logger.setLevel(logging.DEBUG)
         logger = log_queue
 
     proc_name = multiprocessing.current_process().name
