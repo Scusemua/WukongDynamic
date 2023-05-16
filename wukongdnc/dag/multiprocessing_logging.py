@@ -1,6 +1,8 @@
 import logging
 import logging.handlers
 
+# https://docs.python.org/3/howto/logging-cookbook.html
+#
 # "Because you'll want to define the logging configurations for listener and workers, the
 # listener and worker process functions take a configurer parameter which is a callable
 # for configuring logging for that process. These functions are also passed the queue,
@@ -19,7 +21,7 @@ def listener_configurer():
     h = logging.handlers.RotatingFileHandler('mptestNew.log', 'w',50000)
     #h = logging.handlers.FileHandler('mp.log', 'a')
     #h = logging.FileHandler('mp.log', 'a')
-    f = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s] [%(name)s] [%(levelname)s]: %(message)s')
+    f = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
     #Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
     h.setFormatter(f)
     root.addHandler(h)
@@ -102,6 +104,7 @@ def worker_configurer(queue):
     # send all messages, for demo; no other level or filter logic applied.
     root.setLevel(logging.DEBUG)
 
+# Testing the above:
 # This is the worker process top-level loop, which just logs ten events with
 # random intervening delays before terminating.
 # The print messages are just so you know it's doing something!

@@ -49,8 +49,7 @@ logger = logging.getLogger(__name__)
 
 logger.setLevel(logging.DEBUG)
 #logger.setLevel(logging.INFO)
-formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
-#formatter = logging.Formatter('%(levelname)s: %(message)s')
+formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 #ch.setLevel(logging.INFO)
@@ -2426,7 +2425,7 @@ def PageRank_Function_Main(nodes,total_num_nodes):
     print()
     print()
 
-PageRank_Function_Main(nodes,num_nodes)
+#PageRank_Function_Main(nodes,num_nodes)
 # where if we input 20 nodes, nodes[] has Nodes in nodes[0] .. nodes[21]
 # and nodes[] has a length of 21.
 # The pagernk computation is the range:
@@ -3385,7 +3384,8 @@ generate_DAG_info()
 
 logger.debug("Output partitions/groups")
 output_partitions()
-run()
+
+#run()
 
 """
 logger.debug("Sorted simple cycles:")

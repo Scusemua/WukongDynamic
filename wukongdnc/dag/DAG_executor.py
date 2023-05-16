@@ -6,7 +6,7 @@ logger = None
 logger = logging.getLogger(__name__)
 
 logger.setLevel(logging.DEBUG)
-formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
+formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
@@ -1302,7 +1302,7 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
     proc_name = multiprocessing.current_process().name
     thread_name = threading.current_thread().name
     logger.debug("DAG_executor_work_loop: proc " + proc_name + " " + " thread " + thread_name + ": started.")
-    
+
     #ToDo:
     #if input == None:
         #pass  # withdraw input from payload.synchronizer_name
@@ -2199,24 +2199,26 @@ def DAG_executor(payload):
 
 # Config: A5, A6
 # def DAG_executor_processes(payload,counter,process_work_queue,data_dict,log_queue, configurer):
-def DAG_executor_processes(payload,counter,log_queue, worker_configurer):
+def DAG_executor_processes(payload,counter,log_queue_or_logger, worker_configurer):
     # Use for multiprocessing workers
+    # Note: log_queue_or_logger is either a queue or a logger. If not 
+    # use_multithreaded_multiprocessing it is a queue; otheriwise it is a logger.
 
     #- read DAG_info, create DAG_exec_state, thread_work_queue is parm
     if not use_multithreaded_multiprocessing:
         # Config: A5
-        global logger
+        #global logger
 #rhc: logging
-        #worker_configurer(log_queue)
-        #logger = logging.getLogger("multiP")
-        #logger.setLevel(logging.ERROR)
+        worker_configurer(log_queue_or_logger)
+        logger = logging.getLogger("multiP")
     else:
         # Config: A6
-        # Try this?
         #worker_configurer(log_queue)
         #logger = logging.getLogger("multiP")
         #logger.setLevel(logging.DEBUG)
-        logger = log_queue
+
+        # log_queue_or_logger is the logger, which was passed to each thread
+        logger = log_queue_or_logger
 
     proc_name = multiprocessing.current_process().name
     thread_name = threading.current_thread().name

@@ -3,12 +3,13 @@ from .DAG_executor_constants import run_all_tasks_locally, num_threads_for_multi
 
 from . import DAG_executor
 import threading
+import os
 
 import logging 
 logger = logging.getLogger(__name__)
 """
 logger.setLevel(logging.ERROR)
-formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
+formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
@@ -20,14 +21,34 @@ def create_and_run_threads_for_multiT_multiP(process_name,payload,counter,log_qu
     # create, start, and join the threads in the thread pool for a multi process
 #def create_and_run_threads_for_multiT_multiP(process_name,payload,counter,process_work_queue,data_dict,log_queue,worker_configurer):
 
-    global logger
+    #global logger
 #rhc: logging
-    #worker_configurer(log_queue)
-    #logger = logging.getLogger("multiP")
+    #
+    # This is the start of the process code - get logger for multiprocessing.
+    # Note that this logger is passed to the threads for each process:
+    #  args=(payload,counter,logger,worker_configurer,)
+    # The thread bodies are: target=DAG_executor.DAG_executor_processes
+    # where the parameters are:
+    #   DAG_executor_processes(payload,counter,logger = log_queue_or_logger, worker_configurer)
+    # Note: "logger = log_queue_or_logger" is a queue when we are not using multithreaded
+    # mutiprocessing, i.e., we are using redular worker proccesses which
+    # are single threaded. In that case, DAG_executor.DAG_executor_processes is
+    # the start of the process code so DAG_executor.DAG_executor_processes 
+    # executes the "worker_configurer(log_queue)" at the start of the process
+    # code. When we are using multithreaded multiprocessing, we have worker
+    # processes, as usual, but these processes have multiple threads and each
+    # thread runs DAG_executor.DAG_executor_processes as its body. This means
+    # the start of the process code is this  method
+    # create_and_run_threads_for_multiT_multiP so this method eecutes
+    # worker_configurer(log_queue); logger = logging.getLogger("multiP")
+    # and passes the logger to each created thread as an argument, but this
+    # arument matches parameter "log_queue" of DAG_executor.DAG_executor_processes
+    # so the threads will execute logger = logger = log_queue_or_logger.
+    worker_configurer(log_queue)
+    logger = logging.getLogger("multiP")
     #logger.setLevel(logging.DEBUG)
 
     logger.debug(process_name + ": multiT_multiP")
-
 
     thread_list = []
     num_threads_created_for_multiP = 0
@@ -63,7 +84,6 @@ def create_and_run_threads_for_multiT_multiP(process_name,payload,counter,log_qu
 
     logger.debug(process_name + ": DAG_executor_driver: create_and_run_threads_for_multiT_multiP: "
         + process_name + " created " + str(len(thread_list)) + " threads")
-
 
     for thread in thread_list:
         thread.start()

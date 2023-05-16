@@ -14,7 +14,7 @@ from wukongdnc.constants import REDIS_IP_PRIVATE, TCP_SERVER_IP
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
+formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
 
 SLEEP_INTERVAL = 0.120
 

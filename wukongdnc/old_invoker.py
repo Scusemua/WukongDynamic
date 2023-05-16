@@ -8,7 +8,7 @@ from .state import State
 import logging 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
+formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
 
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)

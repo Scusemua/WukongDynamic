@@ -5,7 +5,7 @@ logger = None
 logger = logging.getLogger(__name__)
 
 logger.setLevel(logging.DEBUG)
-formatter = logging.Formatter('[%(asctime)s] [%(threadName)s] %(levelname)s: %(message)s')
+formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
@@ -40,7 +40,7 @@ using_threads_not_processes = False
 # When using_workers, this is how many threads or processes in the pool.
 num_workers = 2
 # Use one or more worker processes (num_workers) with one or more threads
-use_multithreaded_multiprocessing = True
+use_multithreaded_multiprocessing = False
 num_threads_for_multithreaded_multiprocessing = 2
 
 # if using lambdas to store synch objects, run tcp_server_lambda.
@@ -154,12 +154,12 @@ if sync_objects_in_lambdas_trigger_their_tasks:
 # use a single lambda function to store all of the synchroization objects
 # to make an easy test case. This cannot be used when using the function 
 # simulators or using the DAG_orchestrator
-using_single_lambda_function = True
+using_single_lambda_function = False
 
 # For PageRank
 # Indicates that we are computing pagerank and thus that the pagerank
 # options are active and pagerank asserts should hold
-compute_pagerank = False
+compute_pagerank = True
 
 # For PageRank:
 # a task that has multiple fanouts/faninNBs sends the same output
@@ -173,8 +173,7 @@ compute_pagerank = False
 # task_inputs as "sending task - receiving task". So a sending task
 # S might send outputs to fanouts A and B so we use "S-A" and "S-B"
 # as the task_inputs, instad of just using "S", which is the Dask way.
-same_output_for_all_fanout_fanin = True
-
+same_output_for_all_fanout_fanin = False
 
 if not same_output_for_all_fanout_fanin and not compute_pagerank:
     logger.error("[Error]: Configuration error: if same_output_for_all_fanout_fanin"
@@ -201,7 +200,7 @@ tasks_use_result_dictionary_parameter = compute_pagerank and True
 # tasks.
 use_shared_partitions_groups = compute_pagerank and False
 
-if compute_pagerank and (use_shared_partitions_groups and not run_all_tasks_locally or not using_threads_not_processes):
+if compute_pagerank and (use_shared_partitions_groups and (not run_all_tasks_locally or not using_threads_not_processes)):
     logger.error("[Error]: Configuration error: if using a single shared array of"
         + " partitions or groups then must run_tasks_locally and be using_threads_not_processes.")
     logging.shutdown()

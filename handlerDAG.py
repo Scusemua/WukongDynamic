@@ -15,7 +15,7 @@ from wukongdnc.dag.DAG_executor import DAG_executor_lambda
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
+formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
 
 SLEEP_INTERVAL = 0.120
 
