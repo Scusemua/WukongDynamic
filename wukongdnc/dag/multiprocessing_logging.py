@@ -116,7 +116,7 @@ def worker_process(queue, configurer):
     configurer(queue)
     name = multiprocessing.current_process().name
     print('Worker started: %s' % name)
-    for i in range(10):
+    for _ in range(10):
         time.sleep(random())
         logger = logging.getLogger(choice(LOGGERS))
         level = choice(LEVELS)
@@ -132,7 +132,7 @@ def main():
                                        args=(queue, listener_configurer))
     listener.start()
     workers = []
-    for i in range(10):
+    for _ in range(10):
         worker = multiprocessing.Process(target=worker_process,
                                          args=(queue, worker_configurer))
         workers.append(worker)

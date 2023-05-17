@@ -11,7 +11,7 @@
 # to a List of String (i.e., List of fanout task names)
 # This creates file DAG_info.pickle, which is used by the DAG_executor.
 
-import pickle
+#import pickle
 import cloudpickle
 
 import logging 

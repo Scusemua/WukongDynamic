@@ -38,7 +38,7 @@ from .DAG_executor_constants import using_threads_not_processes, use_multithread
 from .DAG_executor_constants import process_work_queue_Type, FanInNB_Type, using_Lambda_Function_Simulators_to_Store_Objects
 from .DAG_executor_constants import sync_objects_in_lambdas_trigger_their_tasks, store_sync_objects_in_lambdas
 from .DAG_executor_constants import tasks_use_result_dictionary_parameter, same_output_for_all_fanout_fanin
-from .DAG_executor_constants import use_shared_partitions_groups, use_page_rank_group_partitions
+from .DAG_executor_constants import compute_pagerank, use_shared_partitions_groups, use_page_rank_group_partitions
 #from .DAG_work_queue_for_threads import thread_work_queue
 from .DAG_executor_work_queue_for_threads import work_queue
 from .DAG_data_dict_for_threads import data_dict
@@ -2199,7 +2199,7 @@ def DAG_executor(payload):
 
 # Config: A5, A6
 # def DAG_executor_processes(payload,counter,process_work_queue,data_dict,log_queue, configurer):
-def DAG_executor_processes(payload,counter,log_queue_or_logger, worker_configurer):
+def DAG_executor_processes(payload,counter,log_queue_or_logger, worker_configurer,**kwargs):
     # Use for multiprocessing workers
     # Note: log_queue_or_logger is either a queue or a logger. If not 
     # use_multithreaded_multiprocessing it is a queue; otheriwise it is a logger.
@@ -2219,6 +2219,15 @@ def DAG_executor_processes(payload,counter,log_queue_or_logger, worker_configure
 
         # log_queue_or_logger is the logger, which was passed to each thread
         logger = log_queue_or_logger
+
+    if compute_pagerank and use_shared_partitions_groups:
+        BFS_Shared.pagerank = kwargs['pagerank']
+        BFS_Shared.previous = kwargs['previous']
+        BFS_Shared.number_of_children = kwargs['number_of_children']
+        BFS_Shared.number_of_parents = kwargs['number_of_parents']     
+        BFS_Shared.starting_indices_of_parents = kwargs['starting_indices_of_parents']
+        BFS_Shared.parents = kwargs['starting_indices_of_parents'] 
+        BFS_Shared.IDs = kwargs['IDs']
 
     proc_name = multiprocessing.current_process().name
     thread_name = threading.current_thread().name

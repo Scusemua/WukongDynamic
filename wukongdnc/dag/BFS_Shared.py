@@ -1,7 +1,7 @@
 import logging
 import numpy as np
 import os
-from multiprocessing import shared_memory, cpu_count
+from multiprocessing import shared_memory
 
 from .DAG_executor_constants import use_page_rank_group_partitions
 
@@ -14,6 +14,14 @@ ch.setLevel(logging.DEBUG)
 #ch.setLevel(logging.INFO)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
+
+pagerank_sent_to_processes = None
+previous_sent_to_processes = None
+number_of_children_sent_to_processes = None
+number_of_parents_sent_to_processes = None
+starting_indices_of_parents_sent_to_processes = None
+parents_sent_to_processes = None
+IDs_sent_to_processes = None
 
 def initialize(): 
     global shared_partition
@@ -73,23 +81,14 @@ def initialize_struct_of_arrays(num_nodes, np_arrays_size_for_shared_partition,
 def initialize_struct_of_arrays_shared_memory(num_nodes, np_arrays_size_for_shared_partition,
         np_arrays_size_for_shared_partition_parents):
 
-    global shm_pagerank
-    global shm_previous
-    global shm_number_of_children
-    global shm_number_of_parents
-    global shm_starting_indices_of_parents
-    global shm_parents
-    global shm_IDs
-    
-    global pagerank
-    global previous
-    global number_of_children
-    global number_of_parents
-    global starting_indices_of_parents
-    global parents
-    global IDs
-
 #rhc: ToDo: we can use empty instead of full but full is easier to debug for now.
+    global nonshared_pagerank
+    global nonshared_previous
+    global nonshared_number_of_children
+    global nonshared_number_of_parents
+    global nonshared_starting_indices_of_parents
+    global nonshared_parents
+    global nonshared_IDs
 
     nonshared_pagerank = np.empty(np_arrays_size_for_shared_partition,dtype=np.double)
     # prev[i] is previous pagerank value of i
@@ -110,6 +109,34 @@ def initialize_struct_of_arrays_shared_memory(num_nodes, np_arrays_size_for_shar
     # for j in (parent_index,num_parents) parent = parents[j]
     nonshared_parents = np.full(np_arrays_size_for_shared_partition_parents, -3, dtype=np.intc)
 
+def generate_struct_of_arrays_shared_memory():
+
+    global shm_pagerank
+    global shm_previous
+    global shm_number_of_children
+    global shm_number_of_parents
+    global shm_starting_indices_of_parents
+    global shm_parents
+    global shm_IDs
+
+    global pagerank
+    global previous
+    global number_of_children
+    global number_of_parents
+    global starting_indices_of_parents
+    global parents
+    global IDs
+
+    
+    global pagerank_sent_to_processes
+    global previous_sent_to_processes
+    global number_of_children_sent_to_processes
+    global number_of_parents_sent_to_processes
+    global starting_indices_of_parents_sent_to_processes
+    global parents_sent_to_processes
+    global IDs_sent_to_processes
+    
+
     shm_pagerank = shared_memory.SharedMemory(create=True, size=nonshared_pagerank.nbytes)
     shm_previous = shared_memory.SharedMemory(create=True, size=nonshared_previous.nbytes)
     shm_number_of_children = shared_memory.SharedMemory(create=True, size=nonshared_number_of_children.nbytes)
@@ -118,22 +145,32 @@ def initialize_struct_of_arrays_shared_memory(num_nodes, np_arrays_size_for_shar
     shm_IDs = shared_memory.SharedMemory(create=True, size=nonshared_IDs.nbytes)
     shm_parents = shared_memory.SharedMemory(create=True, size=nonshared_parents.nbytes)
 
-    pagerank = np.ndarray(nonshared_pagerank.shape, dtype=np.double, buffer=shm_pagerank.buf)
-    previous = np.ndarray(nonshared_previous.shape, dtype=np.double, buffer=shm_previous.buf)
-    number_of_children = np.ndarray(nonshared_number_of_children.shape, dtype=np.intc, buffer=shm_number_of_children.buf)
-    number_of_parents = np.ndarray(nonshared_number_of_parents.shape, dtype=np.intc, buffer=shm_number_of_parents.buf)
-    starting_indices_of_parents = np.ndarray(nonshared_starting_indices_of_parents.shape, dtype=np.intc, buffer=shm_starting_indices_of_parents.buf)
-    IDs = np.ndarray(nonshared_IDs.shape, dtype=np.intc, buffer=shm_IDs.buf)
-    parents = np.ndarray(nonshared_parents.shape, dtype=np.intc, buffer=shm_parents.buf)
+    pagerank_sent_to_processes = np.ndarray(nonshared_pagerank.shape, dtype=np.double, buffer=shm_pagerank.buf)
+    previous_sent_to_processes = np.ndarray(nonshared_previous.shape, dtype=np.double, buffer=shm_previous.buf)
+    number_of_children_sent_to_processes = np.ndarray(nonshared_number_of_children.shape, dtype=np.intc, buffer=shm_number_of_children.buf)
+    number_of_parents_sent_to_processes = np.ndarray(nonshared_number_of_parents.shape, dtype=np.intc, buffer=shm_number_of_parents.buf)
+    starting_indices_of_parents_sent_to_processes = np.ndarray(nonshared_starting_indices_of_parents.shape, dtype=np.intc, buffer=shm_starting_indices_of_parents.buf)
+    IDs_sent_to_processes = np.ndarray(nonshared_IDs.shape, dtype=np.intc, buffer=shm_IDs.buf)
+    parents_sent_to_processes = np.ndarray(nonshared_parents.shape, dtype=np.intc, buffer=shm_parents.buf)
 
-    pagerank[:] = nonshared_pagerank[:]
-    previous[:] = nonshared_previous[:]
-    number_of_children[:] = nonshared_number_of_children[:]
-    number_of_parents[:] = nonshared_number_of_parents[:]
-    starting_indices_of_parents[:] = nonshared_starting_indices_of_parents[:]
-    IDs[:] = nonshared_IDs[:]
-    parents[:] = nonshared_parents[:]
+    pagerank_sent_to_processes[:] = nonshared_pagerank[:]
+    previous_sent_to_processes[:] = nonshared_previous[:]
+    number_of_children_sent_to_processes[:] = nonshared_number_of_children[:]
+    number_of_parents_sent_to_processes[:] = nonshared_number_of_parents[:]
+    starting_indices_of_parents_sent_to_processes[:] = nonshared_starting_indices_of_parents[:]
+    IDs_sent_to_processes[:] = nonshared_IDs[:]
+    parents_sent_to_processes[:] = nonshared_parents[:]
 
+    print(pagerank_sent_to_processes[:10])
+
+
+    pagerank = None
+    previous = None
+    number_of_children = None
+    number_of_parents = None
+    starting_indices_of_parents = None
+    IDs = None
+    parents = None
     #where:in DAG_executor_driver:
     #_process = Process(target=Foo, args=(shm_pagerank.name,shm_previous.name, ...etc))
 

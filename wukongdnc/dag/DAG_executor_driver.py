@@ -312,6 +312,7 @@ from .DAG_executor_constants import create_all_fanins_faninNBs_on_start, using_w
 from .DAG_executor_constants import num_workers,using_threads_not_processes
 from .DAG_executor_constants import FanIn_Type, FanInNB_Type, process_work_queue_Type
 from .DAG_executor_constants import store_sync_objects_in_lambdas, sync_objects_in_lambdas_trigger_their_tasks
+from .DAG_executor_constants import compute_pagerank, use_shared_partitions_groups
 #from .DAG_work_queue_for_threads import thread_work_queue
 from .DAG_executor_work_queue_for_threads import work_queue
 from .DAG_executor_synchronizer import server
@@ -323,6 +324,10 @@ from .DAG_executor_countermp import CounterMP
 from .DAG_boundedbuffer_work_queue import BoundedBuffer_Work_Queue
 from .DAG_executor_create_multithreaded_multiprocessing_processes import create_multithreaded_multiprocessing_processes #, create_and_run_threads_for_multiT_multiP
 import copy
+from . import BFS_Shared
+#from .BFS_Shared import pagerank_sent_to_processes, previous_sent_to_processes, number_of_children_sent_to_processes
+#from .BFS_Shared import number_of_parents_sent_to_processes, starting_indices_of_parents_sent_to_processes
+#from .BFS_Shared import parents_sent_to_processes, IDs_sent_to_processes
 
 
 """
@@ -928,7 +933,7 @@ def run():
 
 
 #rhc cleanup
-        from . import BFS_Shared
+        #from . import BFS_Shared
         logger.debug("shared_groups_mapDDDD:")
         for (k,v) in BFS_Shared.shared_groups_map.items():
             logger.debug(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + ")")
@@ -1283,14 +1288,26 @@ def run():
                             # processes share these objects: counter,process_work_queue,data_dict,log_queue,worker_configurer.
                             # The worker_configurer() funcion is used for multiprocess logging
                             #proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,counter,process_work_queue,data_dict,log_queue,worker_configurer,))
-                            proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,counter,log_queue,worker_configurer,))
+                            if not (compute_pagerank and use_shared_partitions_groups):
+                                proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,counter,log_queue,worker_configurer,))
+                            else:
+                                keywords = {}
+                                print(str(BFS_Shared.pagerank_sent_to_processes[:10]))
+                                keywords['pagerank'] = BFS_Shared.pagerank_sent_to_processes
+                                keywords['previous'] = BFS_Shared.previous_sent_to_processes
+                                keywords['number_of_children'] = BFS_Shared.number_of_children_sent_to_processes
+                                keywords['number_of_parents'] = BFS_Shared.number_of_parents_sent_to_processes
+                                keywords['starting_indices_of_parents'] = BFS_Shared.starting_indices_of_parents_sent_to_processes
+                                keywords['"parents'] = BFS_Shared.parents_sent_to_processes
+                                keywords['IDs'] = BFS_Shared.IDs_sent_to_processes
+                                proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,counter,log_queue,worker_configurer,), kwargs=keywords)
                             #proc.start()
                             thread_proc_list.append(proc)
                             #thread.start()
                             num_threads_created += 1
                             #_thread.start_new_thread(DAG_executor.DAG_executor_task, (payload,))
                         except Exception as ex:
-                            logger.debug("[ERROR] DAG_executor_driver: Failed to start DAG_executor process for state " + start_state)
+                            logger.debug("[ERROR] DAG_executor_driver: Failed to start DAG_executor process for state " + str(start_state))
                             logger.debug(ex)     
 
                     if using_workers and num_threads_created == num_workers:

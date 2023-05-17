@@ -198,9 +198,10 @@ tasks_use_result_dictionary_parameter = compute_pagerank and True
 # when the task suns, we have one global shared array with all the 
 # partitions/groups and the threads access that array when they do their
 # tasks.
-use_shared_partitions_groups = compute_pagerank and False
+use_shared_partitions_groups = compute_pagerank and True
 
-if compute_pagerank and (use_shared_partitions_groups and (not run_all_tasks_locally or not using_threads_not_processes)):
+#if compute_pagerank and (use_shared_partitions_groups and not run_all_tasks_locally)):#
+if compute_pagerank and (use_shared_partitions_groups and not run_all_tasks_locally):
     logger.error("[Error]: Configuration error: if using a single shared array of"
         + " partitions or groups then must run_tasks_locally and be using_threads_not_processes.")
     logging.shutdown()
@@ -212,7 +213,7 @@ use_page_rank_group_partitions = compute_pagerank and True
 
 # For pagerank
 # Use a struct of arrays to improve cache performance
-use_struct_of_arrays_for_pagerank = compute_pagerank and False
+use_struct_of_arrays_for_pagerank = compute_pagerank and True
 
 if compute_pagerank and (use_struct_of_arrays_for_pagerank and not use_shared_partitions_groups):
     logger.error("[Error]: Configuration error: if use_struct_of_arrays_for_pagerank"
