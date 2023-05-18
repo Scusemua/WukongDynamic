@@ -90,7 +90,7 @@ def initialize_struct_of_arrays_shared_memory(num_nodes, np_arrays_size_for_shar
     global nonshared_parents
     global nonshared_IDs
 
-    nonshared_pagerank = np.empty(np_arrays_size_for_shared_partition,dtype=np.double)
+    nonshared_pagerank = np.full(np_arrays_size_for_shared_partition,float(0.0)) # dtype=np.double)
     # prev[i] is previous pagerank value of i
     nonshared_previous = np.full(np_arrays_size_for_shared_partition,float((1/num_nodes)))
     # num_chldren[i] is number of child nodes of node i
@@ -226,7 +226,6 @@ def unlink_shared_memory():
     shm_previous.unlink()
     ...
 """
-
 
 debug_pagerank = True
 
@@ -882,6 +881,23 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
         print("")
 
 #rhc: ToDo: print array values
+        #print("PageRank result for " + task_file_name + ":", end=" ")
+        #rhc shared
+        print_val = "PageRank result for " + task_file_name + ":"
+        for node_index in range (starting_position_in_partition_group,starting_position_in_partition_group+num_nodes_for_pagerank_computation):
+        #for i in range(num_nodes_for_pagerank_computation):
+            #rhc shared
+            #if not partition_or_group[i].isShadowNode:
+            #if not shared_nodes[node_index].isShadowNode:
+            #rhc shared
+            #print(str(partition_or_group[i].ID) + ":" + str(partition_or_group[i].pagerank),end=" ")
+            print_val += str(IDs[node_index]) + ":" + str(pagerank[node_index])
+            #logger.debug(str(IDs[node_index]) + ":" + str(pagerank[node_index]),end=" ")
+        logger.debug(print_val)
+        logger.debug("")
+        logger.debug("pagerank:")
+        logger.debug(str(pagerank))
+
         print("PageRank result for " + task_file_name + ":", end=" ")
         #rhc shared
         for node_index in range (starting_position_in_partition_group,starting_position_in_partition_group+num_nodes_for_pagerank_computation):

@@ -312,7 +312,7 @@ from .DAG_executor_constants import create_all_fanins_faninNBs_on_start, using_w
 from .DAG_executor_constants import num_workers,using_threads_not_processes
 from .DAG_executor_constants import FanIn_Type, FanInNB_Type, process_work_queue_Type
 from .DAG_executor_constants import store_sync_objects_in_lambdas, sync_objects_in_lambdas_trigger_their_tasks
-from .DAG_executor_constants import compute_pagerank, use_shared_partitions_groups
+from .DAG_executor_constants import compute_pagerank, use_shared_partitions_groups,use_page_rank_group_partitions
 #from .DAG_work_queue_for_threads import thread_work_queue
 from .DAG_executor_work_queue_for_threads import work_queue
 from .DAG_executor_synchronizer import server
@@ -1289,8 +1289,9 @@ def run():
                             # The worker_configurer() funcion is used for multiprocess logging
                             #proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,counter,process_work_queue,data_dict,log_queue,worker_configurer,))
                             if not (compute_pagerank and use_shared_partitions_groups):
-                                proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,counter,log_queue,worker_configurer,))
+                                proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,counter,log_queue,worker_configurer,1,))
                             else:
+                                """
                                 keywords = {}
                                 print(str(BFS_Shared.pagerank_sent_to_processes[:10]))
                                 keywords['pagerank'] = BFS_Shared.pagerank_sent_to_processes
@@ -1300,7 +1301,21 @@ def run():
                                 keywords['starting_indices_of_parents'] = BFS_Shared.starting_indices_of_parents_sent_to_processes
                                 keywords['"parents'] = BFS_Shared.parents_sent_to_processes
                                 keywords['IDs'] = BFS_Shared.IDs_sent_to_processes
-                                proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,counter,log_queue,worker_configurer,), kwargs=keywords)
+                                """
+                                if use_page_rank_group_partitions:
+                                    shared_nodes = BFS_Shared.shared_groups
+                                    shared_map = BFS_Shared.shared_groups_map
+                                    shared_frontier_map = BFS_Shared.shared_groups_frontier_parents_map
+                                else:
+                                    shared_nodes = BFS_Shared.shared_partition
+                                    shared_map = BFS_Shared.shared_partition_map
+                                    shared_frontier_map = BFS_Shared.shared_partition_frontier_parents_map
+
+                                proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,counter,log_queue,worker_configurer,
+                                    shared_nodes,shared_map,shared_frontier_map,
+                                    BFS_Shared.pagerank_sent_to_processes,BFS_Shared.previous_sent_to_processes,BFS_Shared.number_of_children_sent_to_processes,
+                                    BFS_Shared.number_of_parents_sent_to_processes,BFS_Shared.starting_indices_of_parents_sent_to_processes,
+                                    BFS_Shared.parents_sent_to_processes,BFS_Shared.IDs_sent_to_processes,))
                             #proc.start()
                             thread_proc_list.append(proc)
                             #thread.start()
@@ -1389,7 +1404,21 @@ def run():
                             }
                             proc_name_prefix = "Worker_process_non-leaf_"
                             #proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"p"+str(num_threads_created + 1)), args=(payload,counter,process_work_queue,data_dict,log_queue,worker_configurer,))
-                            proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"p"+str(num_threads_created + 1)), args=(payload,counter,log_queue,worker_configurer,))
+
+                            if use_page_rank_group_partitions:
+                                shared_nodes = BFS_Shared.shared_groups
+                                shared_map = BFS_Shared.shared_groups_map
+                                shared_frontier_map = BFS_Shared.shared_groups_frontier_parents_map
+                            else:
+                                shared_nodes = BFS_Shared.shared_partition
+                                shared_map = BFS_Shared.shared_partition_map
+                                shared_frontier_map = BFS_Shared.shared_partition_frontier_parents_map
+
+                            proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"p"+str(num_threads_created + 1)), args=(payload,counter,log_queue,worker_configurer,
+                                    shared_nodes,shared_map,shared_frontier_map,
+                                    BFS_Shared.pagerank_sent_to_processes,BFS_Shared.previous_sent_to_processes,BFS_Shared.number_of_children_sent_to_processes,
+                                    BFS_Shared.number_of_parents_sent_to_processes,BFS_Shared.starting_indices_of_parents_sent_to_processes,
+                                    BFS_Shared.parents_sent_to_processes,BFS_Shared.IDs_sent_to_processes,))
                             #proc.start()
                             thread_proc_list.append(proc)
                             num_threads_created += 1                      
@@ -1447,7 +1476,8 @@ def run():
     duration = stop_time - start_time
 
     logger.debug("DAG_executor_driver: Sleeping 3.0 seconds...")
-    time.sleep(3.0)
+    time.sleep(10.0)
+    #print(BFS_Shared.pagerank_sent_to_processes)
     print("DAG_executor_driver: DAG_Execution finished in %f seconds." % duration)
     #ToDo:  close_all(websocket)
 
