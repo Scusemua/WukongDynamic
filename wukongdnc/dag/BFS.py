@@ -2435,6 +2435,23 @@ def PageRank_Function_Main(nodes,total_num_nodes):
 #os._exit(0)
 
 
+#Note: 
+#In case your main module imports another module in which global 
+# variables or class member variables are defined and initialized 
+# to (or using) some new objects, you may have to condition that 
+# import in the same way:
+# as in
+"""
+    if __name__ == '__main__':       
+        import librosa
+        import os
+        import pandas as pd
+        run_my_program()
+https://stackoverflow.com/questions/18204782/runtimeerror-on-windows-trying-python-multiprocessing
+"""
+
+#Q: Should we guard the BFS.py imports in the above way?
+
 if __name__ == '__main__':
 
     logger.debug("Following is the Breadth-First Search")

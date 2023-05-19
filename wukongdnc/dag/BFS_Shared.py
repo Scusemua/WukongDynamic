@@ -23,6 +23,12 @@ starting_indices_of_parents_sent_to_processes = None
 parents_sent_to_processes = None
 IDs_sent_to_processes = None
 
+#Note: For Linux, this looks like a better way to do the shared memory.
+# Linux uses fork and windows uses spawn. For fork, the child inherits 
+# a copy of the parent's address spade, which this code seems to rely on
+# (see comment on lines 11-12).
+# https://gist.github.com/rossant/7a46c18601a2577ac527f958dd4e452f
+
 def initialize(): 
     global shared_partition
     global shared_groups

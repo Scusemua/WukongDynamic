@@ -1416,6 +1416,13 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     logger.debug(thread_name + " DAG_executor: Worker doesn't access work_queue")
                     logger.debug("**********************" + thread_name + " process state: " + str(DAG_executor_state.state))
                 
+                #Note: This executed a memory barrier - so the pagerank writes to 
+                # the shared memory (if used) just performed by this process P1 
+                # will be flushed, which means the downstream pagerank tasks 
+                # that read these values will get the values written by P1.
+                # So we need a memory barrier between a task and its downstream
+                # tasks. Use this counter or if we ermove this counter, sometning 
+                # else need to provide the barrier.
                 num_tasks_executed = counter.increment_and_get()
                 logger.debug("DAG_executor: " + thread_name + " before processing " + str(DAG_executor_state.state) 
                     + " num_tasks_executed: " + str(num_tasks_executed) 
