@@ -278,6 +278,34 @@
 # The single node groups are at the bottom and are exccuted concurrently. Some way to 
 # collapse groups? It's like you want nodes at bottom and nodes at top in same group since 
 # they may be executed at different times though they are logically concurrent.
+#
+#
+# PageRank: Executing the whiteboard DAG: We used 2 processes to execute the 
+# 7 task DAG. Only P! executed any tasks since the DAG is small and P1 could execute
+# several tasks before P2 starts:
+# P1 executes PR1_1, which is a leaf task
+# P! fanout PR2_3, PR2_1 and faninNB PR2_2L, 
+# so P1 becomes PR2_3, fansout PR2_1 putting PR2_1 work in the work queue and
+#    does fanin on faninNB PR2_2L (where fanouts and faninNB are batched. Note
+#    that P1 becomes PR2_3 so it did not need any work from batch, i.e., PR2_1
+#    work was added to work queue instead of returned to P1. P1 was first caller
+#    to faninNB PR2_2L.
+# P1 execute PR2_3
+# P1 execute PR3_3 since PR3_3 is in the collpase set for PR2_3, i.e., PR3_3
+#    has only one input and it's from PR2_3, which has only on output, which is PR3_3
+# P1 get work from work queue, which is PR2_1
+# P2 starts and calls getwork and blocks
+# P1 execute PR2_1 and do faninNB PR2_2L as a batch
+# P1 is last to call fanin on PR2_2L and P1 needs work so P1 gets PR2_2L work
+# P1 execute PR2_2L
+# P1 do fanout PR3_1 and faninNB PR3_2 as batch. P1 is first to call Fanin on PR3_2
+#    and P1 becomes PR3_1
+# P1 execute PR3_1
+# P1 do faninNB PR3_2 (as batch) and is last task so P1 gets PR3_2 work
+# P1 execute PR3_2, this is the 7th of 7 tasks so P1 deposit -1 in work queue
+# P2 whcih was bocked withdraws -1 and deposits -1 in work queue and returns from work looop
+# P1 needs work and withdraws -1 and deposits -1 in work queue and returns from work loop
+# (Note: work queue ends with -1 in it)
 
 import logging 
 
@@ -1289,19 +1317,9 @@ def run():
                             # The worker_configurer() funcion is used for multiprocess logging
                             #proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,counter,process_work_queue,data_dict,log_queue,worker_configurer,))
                             if not (compute_pagerank and use_shared_partitions_groups):
-                                proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,counter,log_queue,worker_configurer,1,))
+                                proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,counter,log_queue,worker_configurer,
+                                    None,None,None,None,None,None,None,None,None,None))
                             else:
-                                """
-                                keywords = {}
-                                print(str(BFS_Shared.pagerank_sent_to_processes[:10]))
-                                keywords['pagerank'] = BFS_Shared.pagerank_sent_to_processes
-                                keywords['previous'] = BFS_Shared.previous_sent_to_processes
-                                keywords['number_of_children'] = BFS_Shared.number_of_children_sent_to_processes
-                                keywords['number_of_parents'] = BFS_Shared.number_of_parents_sent_to_processes
-                                keywords['starting_indices_of_parents'] = BFS_Shared.starting_indices_of_parents_sent_to_processes
-                                keywords['"parents'] = BFS_Shared.parents_sent_to_processes
-                                keywords['IDs'] = BFS_Shared.IDs_sent_to_processes
-                                """
                                 if use_page_rank_group_partitions:
                                     shared_nodes = BFS_Shared.shared_groups
                                     shared_map = BFS_Shared.shared_groups_map
@@ -1405,21 +1423,24 @@ def run():
                             proc_name_prefix = "Worker_process_non-leaf_"
                             #proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"p"+str(num_threads_created + 1)), args=(payload,counter,process_work_queue,data_dict,log_queue,worker_configurer,))
 
-                            if use_page_rank_group_partitions:
-                                shared_nodes = BFS_Shared.shared_groups
-                                shared_map = BFS_Shared.shared_groups_map
-                                shared_frontier_map = BFS_Shared.shared_groups_frontier_parents_map
+                            if not (compute_pagerank and use_shared_partitions_groups):
+                                proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"p"+str(num_threads_created + 1)), args=(payload,counter,log_queue,worker_configurer,
+                                    None,None,None,None,None,None,None,None,None,None))
                             else:
-                                shared_nodes = BFS_Shared.shared_partition
-                                shared_map = BFS_Shared.shared_partition_map
-                                shared_frontier_map = BFS_Shared.shared_partition_frontier_parents_map
-
-                            proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"p"+str(num_threads_created + 1)), args=(payload,counter,log_queue,worker_configurer,
-                                    shared_nodes,shared_map,shared_frontier_map,
-                                    BFS_Shared.pagerank_sent_to_processes,BFS_Shared.previous_sent_to_processes,BFS_Shared.number_of_children_sent_to_processes,
-                                    BFS_Shared.number_of_parents_sent_to_processes,BFS_Shared.starting_indices_of_parents_sent_to_processes,
-                                    BFS_Shared.parents_sent_to_processes,BFS_Shared.IDs_sent_to_processes,))
-                            #proc.start()
+                                if use_page_rank_group_partitions:
+                                    shared_nodes = BFS_Shared.shared_groups
+                                    shared_map = BFS_Shared.shared_groups_map
+                                    shared_frontier_map = BFS_Shared.shared_groups_frontier_parents_map
+                                else:
+                                    shared_nodes = BFS_Shared.shared_partition
+                                    shared_map = BFS_Shared.shared_partition_map
+                                    shared_frontier_map = BFS_Shared.shared_partition_frontier_parents_map
+                                proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"p"+str(num_threads_created + 1)), args=(payload,counter,log_queue,worker_configurer,
+                                        shared_nodes,shared_map,shared_frontier_map,
+                                        BFS_Shared.pagerank_sent_to_processes,BFS_Shared.previous_sent_to_processes,BFS_Shared.number_of_children_sent_to_processes,
+                                        BFS_Shared.number_of_parents_sent_to_processes,BFS_Shared.starting_indices_of_parents_sent_to_processes,
+                                        BFS_Shared.parents_sent_to_processes,BFS_Shared.IDs_sent_to_processes,))
+                                #proc.start()
                             thread_proc_list.append(proc)
                             num_threads_created += 1                      
                         except Exception as ex:

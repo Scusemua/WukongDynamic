@@ -2241,7 +2241,6 @@ def DAG_executor_processes(payload,counter,log_queue_or_logger, worker_configure
         BFS_Shared.parents = parents_sent_to_processes
         BFS_Shared.IDs = IDs_sent_to_processes
         
-
     proc_name = multiprocessing.current_process().name
     thread_name = threading.current_thread().name
     logger.debug("proc " + proc_name + " " + " thread " + thread_name + ": started.")
