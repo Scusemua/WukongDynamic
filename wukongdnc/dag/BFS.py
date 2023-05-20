@@ -3645,6 +3645,16 @@ if __name__ == '__main__':
 
     run()
 
+    if use_shared_partitions_groups and use_struct_of_arrays_for_pagerank:
+        logger.debug("\nBFS:Close and unlink shared memory.")
+        try:
+            BFS_Shared.close_shared_memory()
+            BFS_Shared.unlink_shared_memory()
+        except Exception as ex:
+            logger.debug("[ERROR] BFS: Failed to close or unlink shared memory.")
+            logger.debug(ex)
+
+
 """
 logger.debug("Sorted simple cycles:")
 G = nx.read_edgelist("graph_3000_networkX.txt", create_using=nx.DiGraph)

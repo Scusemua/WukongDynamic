@@ -1801,6 +1801,29 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     # Config: A4_local, A4_Remote, A5, A6
                     worker_needs_input = False
                 # else: # Config: A1. A2, A3
+#rhc: Consider run-time task clustering: 
+#   elif len(cluster_queue>0):
+#      process fanout/fanin tasks that have been clustered 
+#      - a clustered task is represented as work in the work queue:
+#        from process_fanouts: work_tuple = (DAG_states[name],dict_of_results)
+#      - so grab work from the cluster_queue and treat it like normal work
+#        obtained from the work queue: 
+#           work_tuple = cluster_queue.get()
+#           DAG_executor_state.state = work_tuple[0]
+#           dict_of_results = work_tuple[1]
+#           put results in the data dictionary
+#           worker_needs_input = False
+#           etc
+#       - So process_fanouts can make the clustering decision and generate 
+#         a work tuple as usual and put it in the cluster queue instead of 
+#       - the work queue or a list of work to be passed to the batch() method.
+#    Note: for multithreaded worked, no differene between adding work to the 
+#    work queue and adding it to the cluster_queue, i.e., dosn;t eliminate 
+#    any overhead. The difference is when using multiprocessing or lambdas
+#    (where lambdas are really just processes.) So for multiP we aer putting
+#    work in lists and sendinfg it to the tcp_server for deposit into the 
+#    work_queue; instead, we will cluster it. Likwse, we will cluster instead
+#    of starting a lambda for the (non-become) fanouts.
 
             elif len(state_info.faninNBs) > 0 or len(state_info.fanouts) > 0:
                 # assert len(collapse) + len(fanin) == 0
