@@ -226,8 +226,12 @@ def dfs_parent(visited, node):  #function for dfs
 
     # Fill these in below, e.g., we have to remap the parents since 
     # parent IS is not in position ID in the partition/group.
+
+#rhc : ******* Partition
     partition_node = Partition_Node(node.ID)
     partition_node.ID = node.ID
+
+#rhc : ******* Group
     group_node = Partition_Node(node.ID)
     group_node.ID = node.ID
 
@@ -270,6 +274,8 @@ def dfs_parent(visited, node):  #function for dfs
     # Put node in the global node map with -1 as the partition and group number.
     # replace the -1 when we eventually put the node in a partition and group.
     # until then, we'll get -1 to indicate that we haven't placed the node yet.
+
+# rhc : ******* Partition and Group
     partition_number = current_partition_number
     parent_partition_parent_index = -1
     group_number = current_group_number
@@ -299,10 +305,12 @@ def dfs_parent(visited, node):  #function for dfs
 
     # SCC 1
 
+# rhc : ******* Partition
     #parents_in_previous_partition = False
     # visit parents
     list_of_parents_in_previous_partition = []
 
+# rhc : ******* Group
     #parents_in_previous_group = False
     # visit parents
     list_of_parents_in_previous_group = []
@@ -358,15 +366,19 @@ def dfs_parent(visited, node):  #function for dfs
                 logger.debug("[Error]: Internal Error: dfs_parent call to unvisited"
                     + " parent resulted in parent/group partition index of -1, which means"
                     + " a loop was detected at an unvisited parent.")
+# rhc : ******* Partition
             partition_node.parents.append(parent_partition_parent_index)
+# rhc : ******* Group
             group_node.parents.append(parent_group_parent_index)
 
         else:
             # loop detected - mark this loop in partition (for debugging for now)
             logger.debug ("dfs_parent parent " + str(parent_node.ID) + " of " + str(node.ID) + " already visited"
                 + " append parent " + str(parent_node.ID) + " to already_visited_parents.")
+# rhc : ******* Partition
             parent_node_visited_tuple = (parent_node,index_of_parent)
             already_visited_parents.append(parent_node_visited_tuple)
+# rhc : ******* Group
             partition_node.parents.append(-1)
             group_node.parents.append(-1)
     
@@ -410,11 +422,13 @@ def dfs_parent(visited, node):  #function for dfs
             # since this allows us to detect a loop now and hence use a partition or group
             # name with an 'L' at the end, e.g., "PR2_2L" when we crate frontier tuples
             # and add names to the Senders and Receivers structures used for DAG creation.
+# rhc : ******* Partition
             if parent_partition_parent_index == -1:
                 logger.debug("XXXXXXXXXXXXXXXXX dfs_parent: Loop Detected: "
                     + "PR" + str(current_partition_number) + "_" + str(num_frontier_groups))
                 global current_partition_isLoop
                 current_partition_isLoop = True
+# rhc : ******* Group
                 # assert:
                 if parent_group_parent_index != -1:
                     logger.error("[Error] Internal Error: parent_partition_parent_index is -1"
@@ -429,7 +443,7 @@ def dfs_parent(visited, node):  #function for dfs
 
         index_of_parent += 1
 
-    #N ote: If a loops is detecte current_partition_isLoop and current_group_isLoop are
+    # Note: If a loops is detecte current_partition_isLoop and current_group_isLoop are
     # both set to True. current_partition_isLoop remains True until the end 
     # of the partition is reached. current_group_isLoop is set to False when the 
     # end of the group is reached. So it is possible that current_partition_isLoop is
@@ -438,12 +452,14 @@ def dfs_parent(visited, node):  #function for dfs
     # The name of the current partition/group depends on whether it
     # has a loop. If so we add an 'L' to the end of the name.
     # Example: "PR2_2" becomes "PR2_2L".
-    current_partition_name = "PR" + str(current_partition_number) + "_1"
-    current_group_name = "PR" + str(current_partition_number) + "_" + str(num_frontier_groups)
 
+# rhc : ******* Partition
+    current_partition_name = "PR" + str(current_partition_number) + "_1"
     if current_partition_isLoop:
         current_partition_name += "L"
 
+# rhc : ******* Group
+    current_group_name = "PR" + str(current_partition_number) + "_" + str(num_frontier_groups)
     if current_group_isLoop:
         current_group_name += "L"
 
@@ -463,6 +479,12 @@ def dfs_parent(visited, node):  #function for dfs
         parent_group_number = None
         if partition_group_tuple != None:
             parent_partition_number = partition_group_tuple[0]
+            # If parent is not in the previous partition, the parent may still
+            # be in a previous group (same partition). So in this branch we will 
+            # check below to see if the parent is in the same group.
+            # If the parent is in the previous partition, it is also in a previous 
+            # group. So in the else branch we have foudn parent that is in the
+            # previous partition and a previous group (in a different partition.)
             if parent_partition_number == -1 or parent_partition_number == current_partition_number:
                 # parent is not in previous partition, i.e., node is not a child of
                 # a parent node that was in previous partition. This means
@@ -508,17 +530,23 @@ def dfs_parent(visited, node):  #function for dfs
                     # we will make this partition_node / group_node's parent be
                     # the shadow node(s).
                     # assert group_index is also -1
+# rhc : ******* Partition
                     partition_node.parents[index_of_parent] = parent_partition_parent_index
+# rhc : ******* Group
                     group_node.parents[index_of_parent] = parent_group_parent_index
                 else:
                     # need to patch the parent index
+# rhc : ******* Partition
                     partition_node.parents[index_of_parent] = -1
+# rhc : ******* Group
                     group_node.parents[index_of_parent] = -1
                     # finish this partition_node and group_node parent mapping 
                     # when the parent/group has finished and all parents have been mapped.
                     patch_tuple = (parent_index,partition_node.parents,group_node.parents,index_of_parent,node.ID)
                     logger.debug("patch_tuple: " +str(patch_tuple))
+# rhc : ******* Partition
                     patch_parent_mapping_for_partitions.append(patch_tuple)
+# rhc : ******* Group
                     patch_parent_mapping_for_groups.append(patch_tuple)
 
                     # Detected loop. When we compute pagerank for a group, the number
@@ -544,6 +572,7 @@ def dfs_parent(visited, node):  #function for dfs
                 partition_node.parents[index_of_parent] = parent_partition_parent_index
                 """
 
+# rhc : ******* Group
                 #partition_group_tuple = nodeIndex_to_partition_partitionIndex_group_groupIndex_map.get(parent_node.ID)
                 #parent_group_number = None
                 # This must be true (leave this if for now)
@@ -863,10 +892,11 @@ def dfs_parent(visited, node):  #function for dfs
                 # before calling dfs_parent(17).
 
                 # SCC 2
+# rhc : ******* END Group
 
             else:
                 #parent is in different/previous partition, (must be current_partition - 1)
-                logger.debug ("dfs_parent: parent in different partition: parent_partition_number: " 
+                logger.debug ("dfs_parent: parent in different partition/group: parent_partition_number: " 
                     + str(parent_partition_number) 
                     + ", current_partition_number:" + str(current_partition_number)
                     + ", parent ID: " + str(visited_parent_node.ID))
@@ -881,6 +911,7 @@ def dfs_parent(visited, node):  #function for dfs
                 #if current_group_isLoop:
                 #    current_group_name += "L"
 
+# rhc : ******* Partition
                 #parents_in_previous_partition = True
                 list_of_parents_in_previous_partition.append(visited_parent_node.ID)
 
@@ -919,6 +950,7 @@ def dfs_parent(visited, node):  #function for dfs
                 # number if using partitions? (when forming function names)
                 # Or just use group number of 0 when using partitions?
 
+# rhc : ******* Group
                 child_index_in_current_group = len(current_group)
                 current_group.append(copy.deepcopy(shadow_node))
                 logger.debug("dfs_parent: add shadow node to group: " + str(visited_parent_node.ID) + "-s")
@@ -929,10 +961,12 @@ def dfs_parent(visited, node):  #function for dfs
                 partition_node.parents[index_of_parent] = parent_group_parent_index
                 """
 
+# rhc : ******* Partition
                 global nodeIndex_to_partitionIndex_map
                 #global nodeIndex_to_groupIndex_map
                 nodeIndex_to_partitionIndex_map[shadow_node.ID] = len(current_partition)-1
 #rhc: ToDo:
+# rhc : ******* Group
                 # only do part/group if using part/group or option to do both
                 # for debugging?
                 nodeIndex_to_groupIndex_map[shadow_node.ID] = len(current_group)-1
@@ -943,18 +977,24 @@ def dfs_parent(visited, node):  #function for dfs
                 # position in the group and one of n's parents will be the shadow
                 # node so we need its position in the group.
 
+# rhc : ******* Partition
                 #rhc: make group node's parent be this shadow node
                 partition_node.parents[index_of_parent] = len(current_partition)-1
+# rhc : ******* Group
                 group_node.parents[index_of_parent] = len(current_group)-1
             
+# rhc : ******* Partition
                 global num_shadow_nodes_added_to_partitions
                 #global shadow_nodes_added_to_groups
+# rhc : ******* Partition or Group
                 num_shadow_nodes_added_to_partitions += 1
                 num_shadow_nodes_added_to_groups += 1
 
+# rhc : ******* Partition
                 # remember where the frontier_parent node should be placed when the 
                 # partition the PageRank task sends it to receives it. 
                 logger.debug ("num partitions: " + str(current_partition_number) + ", child_index_in_current_partition: " + str(child_index_in_current_partition))
+# rhc : ******* Group
                 logger.debug ("num_frontier_groups: " + str(num_frontier_groups) + ", child_index_in_current_group: " + str(child_index_in_current_group))
 # rhc: ToDo: if we are using partition then we just need partition number and index
 # but we won't use group number? That is, the names aer PR1, PR2, etc, so we ignore'
@@ -968,9 +1008,11 @@ def dfs_parent(visited, node):  #function for dfs
                 # Note: Added a partition/group name field to the tuple since we need an 'L'
                 # in the name of the current partition/group if it is a loop. We probably won't
                 # need the current_partition_number/num_frontier_groups but it's available for now for debugging.
+# rhc : ******* Partition
                 frontier_parent_partition_tuple = (current_partition_number,1,child_index_in_current_partition,current_partition_name)
-                frontier_parent_group_tuple = (current_partition_number,num_frontier_groups,child_index_in_current_group,current_group_name)
                 logger.debug ("bfs frontier_parent_partition_tuple (pnum,1,childindx,pname): " + str(frontier_parent_partition_tuple))
+# rhc : ******* Group
+                frontier_parent_group_tuple = (current_partition_number,num_frontier_groups,child_index_in_current_group,current_group_name)
                 logger.debug ("bfs frontier_parent_group_tuple: (pnum,gnum,chldinx,gname) " + str(frontier_parent_group_tuple))
  
                 # mark this node as one that PageRank needs to send in its output to the 
@@ -996,11 +1038,13 @@ def dfs_parent(visited, node):  #function for dfs
                 # but this is not necessarily the 2nd group overall.
                 index_in_groups_list = partition_group_tuple[4]
 
+# rhc : ******* Partition
                 logger.debug ("partition_group_tuple of parent " + str(visited_parent_node.ID) + " (pnum,pindx,gnum,gindx,posingroupslist): " + str(partition_group_tuple))
                 # partition numbers start at 1 not 0
                 logger.debug ("add frontier tuple to parent partition")
                 parent_partition = partitions[parent_partition_number-1]
                 parent_partition[parent_partition_parent_index].frontier_parents.append(frontier_parent_partition_tuple)
+# rhc : ******* Group
                 logger.debug ("add frontier tuple to parent group")
                 #parent_group = groups[parent_group_number-1]
                 parent_group = groups[index_in_groups_list]
@@ -1014,11 +1058,13 @@ def dfs_parent(visited, node):  #function for dfs
                 # so that when the partition ends, if we find current_partition_name is True we
                 # can iterate through this list and make the changes. If no loop is dected then 
                 # no changes need to be made.
+# rhc : ******* Partition
                 if not current_partition_isLoop:
                     position_in_frontier_parents_partition_list = len(parent_partition[parent_partition_parent_index].frontier_parents)-1
                     frontier_parent_partition_patch_tuple = (parent_partition_number,parent_partition_parent_index,position_in_frontier_parents_partition_list)
                     frontier_parent_partition_patch_tuple_list.append(frontier_parent_partition_patch_tuple)
 
+# rhc : ******* Group
                 # Note: in white board group 2_2, when 20 sees 2 it detects no loop
                 # and then it sees 19 and detects a loop, so 20 uses "PR2_2L" as
                 # the name of its group.
@@ -1041,6 +1087,7 @@ def dfs_parent(visited, node):  #function for dfs
                 add frontier tuple to parent group
                 """
 
+# rhc : ******* Partition
                 if True: # use_shared_partitions_groups:
                     # shared partitions frontier code:
                     task_name_of_parent_partition = partition_names[parent_partition_number-1]
@@ -1089,6 +1136,7 @@ def dfs_parent(visited, node):  #function for dfs
                         shared_frontier_parent_partition_patch_tuple = (task_name_of_parent_partition,position_in_list_of_parent_frontier_tuples)
                         shared_frontier_parent_partition_patch_tuple_list.append(shared_frontier_parent_partition_patch_tuple)
 
+# rhc : ******* Group
                 if True: # use_shared_partitions_groups:
                     # shared groups frontier code:
                     task_name_of_parent_group = group_names[index_in_groups_list]
@@ -1127,7 +1175,8 @@ def dfs_parent(visited, node):  #function for dfs
                 # assigned when the dfs_parent() for that partition/group completed.
                 #sending_partition = "PR"+str(parent_partition_number)+"_1"
                 # parent_partition_numbers start with 1, e.g. the "PR1" in "PR1_1"
-                # but the partition_names are a list with the fitrst name at position 0
+                # but the partition_names are a list with the fitrst name at position 
+# rhc : ******* Partition
                 sending_partition = partition_names[parent_partition_number-1]
                 #receiving_partition = "PR"+str(current_partition_number)+"_1"
                 receiving_partition = current_partition_name
@@ -1152,6 +1201,7 @@ def dfs_parent(visited, node):  #function for dfs
                     sender_receiver_partition_patch_tuple = (parent_partition_number,receiving_partition)
                     sender_receiver_partition_patch_tuple_list.append(sender_receiver_partition_patch_tuple)
 
+# rhc : ******* Group
                 # generate dependency in DAG
                 #sending_group = "PR"+str(parent_partition_number)+"_"+str(parent_group_number)
                 # index in groups list is the actual index, sarting with index 0
@@ -1253,27 +1303,32 @@ def dfs_parent(visited, node):  #function for dfs
 #   append partition/group index to parents[]
 
             #partition_node.parents = node.parents
-            
+# rhc : ******* Partition    
             partition_node.num_children = len(node.children)
             # these are the default values so we do not need these assignments 
             partition_node.pagerank = 0.0
             partition_node.isShadowNode = False
             partition_node.frontier_parents = []
 
+# rhc : ******* Group
             group_node.num_children = len(node.children)
             # these are the default values so we do not need these assignments 
             group_node.pagerank = 0.0
             group_node.isShadowNode = False
             group_node.frontier_parents = []
 
+# rhc : ******* Partition
             #current_partition.append(node)
             #current_group.append(node)
             current_partition.append(partition_node)
+# rhc : ******* Group
             #current_group.append(copy.deepcopy(partition_node))
             current_group.append(group_node)
 
             # partition_node.ID and group_node.ID are the same
+# rhc : ******* Partition
             nodeIndex_to_partitionIndex_map[partition_node.ID] = len(current_partition)-1
+# rhc : ******* Group
             nodeIndex_to_groupIndex_map[partition_node.ID] = len(current_group)-1
             
             # Note: if node's parent is in different partition then we'll add a 
@@ -1282,14 +1337,17 @@ def dfs_parent(visited, node):  #function for dfs
             # group but same partition then we only add a shadow node to the group
             # in a position right before node in the group. 
 
+# rhc : ******* Partition
             # information for this partition node
             # There are n partitions, this node is in partition partition_number
             partition_number = current_partition_number
             # In this partition, this node is at position partition_index
             partition_index = len(current_partition)-1
+# rhc : ******* Group
             # Likewise for groups
             group_number = current_group_number
             group_index = len(current_group)-1
+
 #rhc ToDo: We need postion in groups (frontier_groups-1) when we add a frontier tuple
 # to a group. That is, if say 13 is a child of 8, we need to add a frontier_tuple
 # to 8.  group_number is the number of the group in a partition, e.g., 8 might be
@@ -1313,6 +1371,7 @@ def dfs_parent(visited, node):  #function for dfs
 # process children after parent traversal
 def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, check_list_of_unvisited_chldren_after_visiting_parents):
     pass
+# this is in a seperate file
 
 #def bfs(visited, graph, node): #function for BFS
 def bfs(visited, node): #function for BFS
