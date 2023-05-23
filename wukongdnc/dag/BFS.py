@@ -33,6 +33,8 @@ from .BFS_Node import Node
 from .BFS_Partition_Node import Partition_Node
 from .BFS_generate_DAG_info import generate_DAG_info
 from .BFS_generate_DAG_info import Partition_senders, Partition_receivers, Group_senders, Group_receivers
+from .BFS_generate_DAG_info import leaf_tasks_of_partitions, leaf_tasks_of_groups
+
 #rhc shared
 #from .DAG_executor import shared_partition, shared_groups
 #from .DAG_executor import shared_partition_map, shared_groups_map
@@ -282,6 +284,7 @@ def dfs_parent(visited, node):  #function for dfs
     parent_group_parent_index = -1
     index_in_groups_list = -1
     init_pg_tuple = (partition_number,parent_partition_parent_index,group_number,parent_group_parent_index,index_in_groups_list)
+    
     global nodeIndex_to_partition_partitionIndex_group_groupIndex_map
     nodeIndex_to_partition_partitionIndex_group_groupIndex_map[node.ID] = init_pg_tuple
 
@@ -375,11 +378,13 @@ def dfs_parent(visited, node):  #function for dfs
             # loop detected - mark this loop in partition (for debugging for now)
             logger.debug ("dfs_parent parent " + str(parent_node.ID) + " of " + str(node.ID) + " already visited"
                 + " append parent " + str(parent_node.ID) + " to already_visited_parents.")
-# rhc : ******* Partition
+
             parent_node_visited_tuple = (parent_node,index_of_parent)
             already_visited_parents.append(parent_node_visited_tuple)
-# rhc : ******* Group
+
+# rhc : ******* Partition
             partition_node.parents.append(-1)
+# rhc : ******* Group
             group_node.parents.append(-1)
     
             # parent node has been processed so get its info and determine whether
@@ -387,6 +392,7 @@ def dfs_parent(visited, node):  #function for dfs
             pg_tuple = nodeIndex_to_partition_partitionIndex_group_groupIndex_map[parent_index]
             parent_partition_parent_index = pg_tuple[1]
 
+# rhc : ******* Partition
             #rhc: Note: Not clear whether we will be tracking loops here and if so what 
             # we want to do when we find a loop. For now, TRACK_PARTITION_LOOPS is False
             if TRACK_PARTITION_LOOPS:
@@ -417,29 +423,31 @@ def dfs_parent(visited, node):  #function for dfs
                         + ", loop indicator: " + loop_indicator)
                     global loop_nodes_added
                     loop_nodes_added += 1
+# rhc : ******* end Partition - only track loops for partitions, for now
 
             # Detect a loop here instead of below when we check each parent_node_visited_tuple
             # since this allows us to detect a loop now and hence use a partition or group
             # name with an 'L' at the end, e.g., "PR2_2L" when we crate frontier tuples
             # and add names to the Senders and Receivers structures used for DAG creation.
-# rhc : ******* Partition
+
             if parent_partition_parent_index == -1:
                 logger.debug("XXXXXXXXXXXXXXXXX dfs_parent: Loop Detected: "
                     + "PR" + str(current_partition_number) + "_" + str(num_frontier_groups))
+# rhc : ******* Partition
                 global current_partition_isLoop
                 current_partition_isLoop = True
-# rhc : ******* Group
+
                 # assert:
                 if parent_group_parent_index != -1:
                     logger.error("[Error] Internal Error: parent_partition_parent_index is -1"
                         + " indicating that current partition is a loop but "
                         + " parent_group_parent_index is not -1, when the group should also be a loop.") 
+# rhc : ******* Group
                 global current_group_isLoop
                 current_group_isLoop = True
             else:
                 logger.debug("YYYYYYYYYYYYY dfs_parent: No Loop Detected: "
                     + "PR" + str(current_partition_number) + "_" + str(num_frontier_groups))
-
 
         index_of_parent += 1
 
@@ -823,7 +831,6 @@ def dfs_parent(visited, node):  #function for dfs
                                 logger.debug(str(k) + ": " + str(v))                            
 
 
-
                             """
                             where:  in bfs_pagerank, we grab the shared_frontier_parent_tuple
                             and its fields using:
@@ -852,7 +859,21 @@ def dfs_parent(visited, node):  #function for dfs
                                 shared_frontier_parent_group_patch_tuple = (task_name_of_parent_group,position_in_list_of_parent_frontier_tuples)
                                 shared_frontier_parent_groups_patch_tuple_list.append(shared_frontier_parent_group_patch_tuple)
 
-                        # generate dependency in DAG
+                        # generate dependency in DAG. If parent in group i has an dge
+                        # to child in group j, i!=j, then add edge i-->j to dag. Doing this
+                        # by adding j to the receivers of i, and adding i to the receivers
+                        # of j. 
+                        # Note: If we want to construct DAG incrementally, thrn we might want to 
+                        # specifically add the edhe i-->j, e.g., by depositing i-->j no a bounded
+                        # buffer that a DAG-generator thread withdraws and uses for generating
+                        # the incremental DAG_info object. As opposed to generating at some point
+                        # all-at-once the DAG_info object for all the edges that have been generated so far.
+                        # Note: incremental DAG generation must handle the leaf nodes at the beginning
+                        # of the DAG, which will be part of the first DAG increment, and the terminal 
+                        # nodes at the end of the DAG, which have no outputs, i.e.,
+                        # fanouts/fanins. The end of the incremental DAG might also have
+                        # such nodes, i.e., nodes with no outputs/fanouts/fanins since these
+                        # are in the rest of the DAG.
                         #sending_group = "PR"+str(parent_partition_number)+"_"+str(parent_group_number)
                         # index in groups list is the actual index, starting with index 0
                         sending_group = group_names[index_in_groups_list]
@@ -1175,7 +1196,7 @@ def dfs_parent(visited, node):  #function for dfs
                 # assigned when the dfs_parent() for that partition/group completed.
                 #sending_partition = "PR"+str(parent_partition_number)+"_1"
                 # parent_partition_numbers start with 1, e.g. the "PR1" in "PR1_1"
-                # but the partition_names are a list with the fitrst name at position 
+                # but the partition_names are a list with the first name at position 0.
 # rhc : ******* Partition
                 sending_partition = partition_names[parent_partition_number-1]
                 #receiving_partition = "PR"+str(current_partition_number)+"_1"
@@ -1440,20 +1461,25 @@ def bfs(visited, node): #function for BFS
 
     global current_group
     global groups
+# rhc : ******* Group
     groups.append(current_group)
     current_group = []
     #global frontier_groups_sum
     # root group
     #frontier_groups_sum += 1
 
+
     # this first group ends here after first dfs_parent
     global nodeIndex_to_groupIndex_maps
     global nodeIndex_to_groupIndex_map
     nodeIndex_to_groupIndex_maps.append(nodeIndex_to_groupIndex_map)
     nodeIndex_to_groupIndex_map = {}
+# rhc : ******* end Group
 
     global current_partition_number
     global current_group_number
+
+# rhc : ******* Group
     group_name = "PR" + str(current_partition_number) + "_" + str(current_group_number)
     # group_number_in_fronter stays at 1 since this is the only group in the frontier_list
     # partition and thus the first group in the next parttio is also group 1
@@ -1476,6 +1502,13 @@ def bfs(visited, node): #function for BFS
     # current_group_number will be 1 wen we find the first group of the 
     # next partition.
     group_names.append(group_name)
+
+    # The first group collected by call to BFS() is a leaf node of the DAG.
+    # There may be many calls to BFS(). Below, we will collect the first
+    # partition. Set is_leaf_node to True so we know it is the first partition
+    # collected on this call to BFS()
+    leaf_tasks_of_groups.add(group_name)
+    is_leaf_node = True
     
     if use_shared_partitions_groups:
         #rhc shared
@@ -1487,21 +1520,25 @@ def bfs(visited, node): #function for BFS
         # children in which case we will generate a final partition/group
         # and we need to have called start here.
         start_num_shadow_nodes_for_groups = num_shadow_nodes_added_to_groups
+# rhc : ******* end Group
+
+    dfs_parent_loop_nodes_added_end = loop_nodes_added
+
+# rhc : ******* Partition
+    dfs_parent_end_partition_size = len(current_partition)
+    dfs_parent_change_in_partition_size = (dfs_parent_end_partition_size - dfs_parent_start_partition_size) - (
+        dfs_parent_loop_nodes_added_end - dfs_parent_loop_nodes_added_start)
+    dfs_parent_changes_in_partiton_size.append(dfs_parent_change_in_partition_size)
+    logger.debug("dfs_parent(root)_change_in_partition_size: " + str(dfs_parent_change_in_partition_size))
+# rhc : ******* end Partition
 
     # These are tracked per dfs_parent() call, so we compute them here and 
     # at after the calls to dfs_parent() below.
-    dfs_parent_end_partition_size = len(current_partition)
     dfs_parent_end_frontier_size = len(frontier)
-    dfs_parent_loop_nodes_added_end = loop_nodes_added
-#rhc: Q: are not these sizes len(current_partition) and len(frontier)/
-    dfs_parent_change_in_partition_size = (dfs_parent_end_partition_size - dfs_parent_start_partition_size) - (
-        dfs_parent_loop_nodes_added_end - dfs_parent_loop_nodes_added_start)
     dfs_parent_change_in_frontier_size = (dfs_parent_end_frontier_size - dfs_parent_start_frontier_size) - (
         dfs_parent_loop_nodes_added_end - dfs_parent_loop_nodes_added_start)
-    logger.debug("dfs_parent(root)_change_in_partition_size: " + str(dfs_parent_change_in_partition_size))
-    logger.debug("dfs_parent(root)_change_in_frontier_size: " + str(dfs_parent_change_in_frontier_size))
-    dfs_parent_changes_in_partiton_size.append(dfs_parent_change_in_partition_size)
     dfs_parent_changes_in_frontier_size.append(dfs_parent_change_in_frontier_size)
+    logger.debug("dfs_parent(root)_change_in_frontier_size: " + str(dfs_parent_change_in_frontier_size))
 
     # queue.append(node) and frontier.append(node) done optionally in dfs_parent
 #rhc
@@ -1596,6 +1633,8 @@ def bfs(visited, node): #function for BFS
         if end_of_current_frontier:
             logger.debug("BFS: end_of_current_frontier")
             end_of_current_frontier = False
+
+# rhc : ******* Partition
             if len(current_partition) > 0:
             #if len(current_partition) >= num_nodes/5:
                 logger.debug("BFS: create sub-partition at end of current frontier")
@@ -1604,12 +1643,20 @@ def bfs(visited, node): #function for BFS
                 current_partition = []
 
                 partition_name = "PR" + str(current_partition_number) + "_1"
+
                 global current_partition_isLoop
                 if current_partition_isLoop:
                     # These are the names of the partitions that have a loop. In the 
                     # DAG, we will append an 'L' to the name. Not using this anymore.
                     partition_name = partition_name + "L"
                     Partition_loops.add(partition_name)
+
+                # The first partition collected by any call to BFS() is a leaf node of the DAG.
+                # There may be many calls to BFS(). We set is_leaf_node = True at thr
+                # start of BFS.
+                if is_leaf_node:
+                    leaf_tasks_of_partitions.add(partition_name)
+                    is_leaf_node = False
 
                 # Patch the partition name of the frontier_parent tuples. 
                 if current_partition_isLoop:
@@ -1648,6 +1695,7 @@ def bfs(visited, node): #function for BFS
 
                 frontier_parent_partition_patch_tuple_list.clear()
 
+                # Patch the partition name of the frontier_parent tuples. 
                 if True: # use_shared_partitions_groups:
                     # Given:
                     # shared_frontier_parent_partition_patch_tuple = (task_name_of_parent,position_in_list_of_parent_frontier_tuples)
@@ -1679,6 +1727,7 @@ def bfs(visited, node): #function for BFS
 
                     shared_frontier_parent_partition_patch_tuple_list.clear()
 
+                # patch receiver name
                 if current_partition_isLoop:
                     # When the tuples in sender_receiver_partition_patch_tuple_list were created,
                     # no loop had been detectd in the partition so we used a partitiom name 
@@ -1785,10 +1834,12 @@ def bfs(visited, node): #function for BFS
                 # thus, we could remove them from the map, where partition i-1 is 
                 # saved in partitions[] so we can get the nodes in partition i-1.
 
+# rhc : ******* end Partition Group
+
                 global total_loop_nodes_added
                 total_loop_nodes_added += loop_nodes_added
                 loop_nodes_added = 0
-
+           
                 # SCC 6
 
                 # using this to determine whether parent is in current partition
@@ -1802,6 +1853,8 @@ def bfs(visited, node): #function for BFS
                 #if frontier_groups > 10:
                 # frontier_groups_sum += num_frontier_groups
                 logger.info("BFS: frontier_groups_sum: " + str(frontier_groups_sum))
+                # this was incrementd in dfs_parent for each unvsited child of a 
+                # parent, i.e., when a new group was generated.
                 num_frontier_groups = 0
 
                 # SCC 7
@@ -1859,7 +1912,10 @@ def bfs(visited, node): #function for BFS
                 dfs_parent_loop_nodes_added_start = loop_nodes_added
                 dfs_parent_start_frontier_size = len(frontier)
  
+                # number of groups in current partition/sum
                 num_frontier_groups += 1
+                # total number of groups, if this is i then this group will
+                # be stored in groups[i]
                 frontier_groups_sum += 1
                 #dfs_p_new(visited, graph, neighbor)
                 #dfs_parent(visited, graph, neighbor) 
@@ -1887,6 +1943,7 @@ def bfs(visited, node): #function for BFS
                 nodes[node.ID].frontier_parents.append(frontier_parent_tuple)
                 """
 
+# rhc : ******* Group
                 # Note: append() uses a shallow copy.
                 groups.append(current_group)
                 # this is a list of partition_nodes in the current group
@@ -2093,22 +2150,27 @@ def bfs(visited, node): #function for BFS
                 logger.info("")
                 """
 
+# rhc : ******* end Group
                 # Tracking changes to partition size and frontier size
                 # for every call to dfs_parent. So these are after
                 # dfs_parent() calls. They are not when we end a frontier
                 # since the changes are tracked for dfs_parent() call.
                 # Note: dfs_parent() genertes a group so they are in essence
                 # per group also.
-                dfs_parent_end_partition_size = len(current_partition)
-                dfs_parent_end_frontier_size = len(frontier)
+
                 dfs_parent_loop_nodes_added_end = loop_nodes_added
+
+# rhc : ******* Partition
+                dfs_parent_end_partition_size = len(current_partition)
                 dfs_parent_change_in_partition_size = (dfs_parent_end_partition_size - dfs_parent_start_partition_size) - (
                     dfs_parent_loop_nodes_added_end - dfs_parent_loop_nodes_added_start)
+                logger.debug("dfs_parent("+str(node.ID) + ")_change_in_partition_size: " + str(dfs_parent_change_in_partition_size))
+                dfs_parent_changes_in_partiton_size.append(dfs_parent_change_in_partition_size)
+              
+                dfs_parent_end_frontier_size = len(frontier)
                 dfs_parent_change_in_frontier_size = (dfs_parent_end_frontier_size - dfs_parent_start_frontier_size) - (
                     dfs_parent_loop_nodes_added_end - dfs_parent_loop_nodes_added_start)
-                logger.debug("dfs_parent("+str(node.ID) + ")_change_in_partition_size: " + str(dfs_parent_change_in_partition_size))
                 logger.debug("dfs_parent("+str(node.ID) + ")_change_in_frontier_size: " + str(dfs_parent_change_in_frontier_size))
-                dfs_parent_changes_in_partiton_size.append(dfs_parent_change_in_partition_size)
                 dfs_parent_changes_in_frontier_size.append(dfs_parent_change_in_frontier_size)
 
                 """
@@ -2383,37 +2445,70 @@ def input_graph():
         """     
 
 def output_partitions():
-    for name, partition in zip(group_names, groups):
+    if use_page_rank_group_partitions:
+        for name, group in zip(group_names, groups):
+            with open('./'+name + '.pickle', 'wb') as handle:
+                cloudpickle.dump(group, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+    else:
+        for name, partition in zip(partition_names, partitions):
             with open('./'+name + '.pickle', 'wb') as handle:
                 cloudpickle.dump(partition, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
-  
+
 def input_partitions():
-    group_inputs = []
-    for name in group_names:
-        with open('./'+name+'.pickle', 'rb') as handle:
-            group_inputs.append(cloudpickle.load(handle))
-    logger.info("Group Nodes w/parents:")
-    for group in groups:
-        for node in group:
-            #logger.info(node,end=":")
-            print_val = str(node) + ":"
-            for parent in node.parents:
-                print_val += str(parent) + " "
-                #logger.info(parent,end=" ")
-            logger.info(print_val)
+    if use_page_rank_group_partitions:
+        group_inputs = []
+        for name in group_names:
+            with open('./'+name+'.pickle', 'rb') as handle:
+                group_inputs.append(cloudpickle.load(handle))
+        logger.info("Group Nodes w/parents:")
+        for group in groups:
+            for node in group:
+                #logger.info(node,end=":")
+                print_val = str(node) + ":"
+                for parent in node.parents:
+                    print_val += str(parent) + " "
+                    #logger.info(parent,end=" ")
+                logger.info(print_val)
+                logger.info("")
             logger.info("")
-        logger.info("")
-    logger.info("Group Nodes w/Frontier parent tuples:")
-    for group in groups:
-        for node in group:
-            #logger.info(node,end=":")
-            print_val = str(node) + ":"
-            for tup in node.frontier_parents:
-                print_val += str(tup) + " "
-                # logger.info(tup,end=" ")
-            logger.info(print_val)
+        logger.info("Group Nodes w/Frontier parent tuples:")
+        for group in groups:
+            for node in group:
+                #logger.info(node,end=":")
+                print_val = str(node) + ":"
+                for tup in node.frontier_parents:
+                    print_val += str(tup) + " "
+                    # logger.info(tup,end=" ")
+                logger.info(print_val)
+                logger.info("")
             logger.info("")
-        logger.info("")
+    else:
+        partition_inputs = []
+        for name in partition_names:
+            with open('./'+name+'.pickle', 'rb') as handle:
+                partition_inputs.append(cloudpickle.load(handle))
+        logger.info("Partition Nodes w/parents:")
+        for partition in partitions:
+            for node in partition:
+                #logger.info(node,end=":")
+                print_val = str(node) + ":"
+                for parent in node.parents:
+                    print_val += str(parent) + " "
+                    #logger.info(parent,end=" ")
+                logger.info(print_val)
+                logger.info("")
+            logger.info("")
+        logger.info("Partition Nodes w/Frontier parent tuples:")
+        for partition in partitions:
+            for node in partition:
+                #logger.info(node,end=":")
+                print_val = str(node) + ":"
+                for tup in node.frontier_parents:
+                    print_val += str(tup) + " "
+                    # logger.info(tup,end=" ")
+                logger.info(print_val)
+                logger.info("")
+            logger.info("")
   
 # Driver Code
 
@@ -2525,9 +2620,11 @@ if __name__ == '__main__':
     # i start = 1 as nodes[0] not used, i end is (num_nodes+1) - 1  = 100
     for i in range(1,num_nodes+1):
         if i not in visited:
-            logger.debug("*************Driver call BFS " + str(i))
+            logger.debug("*************Driver call BFS for node[" + str(i) + "]")
             #bfs(visited, graph, nodes[i])    # function calling
             bfs(visited, nodes[i])    # function calling
+
+# rhc : ******* Partition
 
     # Do last partition/group if there is one
     if len(current_partition) > 0:
@@ -2556,6 +2653,8 @@ if __name__ == '__main__':
             # not needed here since we are done but kept to be consisent with use above
             start_num_shadow_nodes_for_partitions = num_shadow_nodes_added_to_partitions
 
+# rhc : ******* Group
+# ToDo: if len(current_group) > 0:
         groups.append(current_group)
         current_group = []
 

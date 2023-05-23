@@ -26,6 +26,9 @@ Partition_receivers = {}
 Group_senders = {}
 Group_receivers = {}
 
+leaf_tasks_of_partitions = set()
+leaf_tasks_of_groups = set()
+
 def generate_DAG_info():
     #Given Partition_senders, Partition_receivers, Group_senders, Group_receievers
 
@@ -100,6 +103,11 @@ def generate_DAG_info():
     for receiver_name,sender_name_set in Partition_receivers.items():
         print("receiver:" + receiver_name)
         print("sender_name_set:" + str(sender_name_set))
+    print()
+    print()
+    print("Leaf nodes of partitions:")
+    for name in leaf_tasks_of_partitions:
+        print(name + " ")
 
     """
     print()
@@ -147,7 +155,11 @@ def generate_DAG_info():
     for receiver_name,sender_name_set in Group_receivers.items():
         print("receiver:" + receiver_name)
         print("sender_name_set:" + str(sender_name_set))
-
+    print()
+    print()
+    print("Leaf nodes of groups:")
+    for name in leaf_tasks_of_groups:
+        print(name + " ")
 
     #Note:
     #Informs the logging system to perform an orderly shutdown by flushing 
@@ -255,6 +267,13 @@ def generate_DAG_info():
             Partition_DAG_leaf_task_start_states.append(state)
             task_inputs = ()
             Partition_DAG_leaf_task_inputs.append(task_inputs)
+
+            if not senderX in leaf_tasks_of_partitions:
+                logger.error("partition " + senderX + " receives no inputs"
+                    + " but it is not in leaf_tasks_of_partitions.")
+            else:
+                # we have generated a state for leaf task senderX. 
+                leaf_tasks_of_partitions.remove(senderX)
         else:
             # create a new set from sender_set_for_senderX. For 
             # each name in sender_set_for_senderX, qualify name by
@@ -276,8 +295,37 @@ def generate_DAG_info():
 
         state += 1
 
+    if not len(leaf_tasks_of_partitions) == 0:
+        # there is a partition that is a leaf task but it is not a sender and not 
+        # a receiver so this leaf task is not connected to any other node in the 
+        # DAG. Above we see leaf tasks when we iterate thru Senders but since this
+        # leaf task is not a Sender and ny definition t is not a Receiver, we will
+        # not see it above so we take care of it here.
+        # Note: leaf tasks are the first partition/grouo collected by any call to 
+        # BFS(). There may be many cals to BFS(). 
+        # Note: We could have more than one leaf partition/group that is 
+        # disconnected. 
+        logger.debug("generate_DAG_info: len(leaf_tasks_of_partitions)>0, add leaf tasks")
+        fanouts = []
+        faninNBs = []
+        fanins = []
+        collapse = []
+        fanin_sizes = []
+        faninNB_sizes = []
+
+        task_inputs = ()
+        for name in leaf_tasks_of_partitions:
+            logger.debug("generate_DAG_info: add leaf task for partition " + name)
+            Partition_DAG_leaf_tasks.append(name)
+            Partition_DAG_leaf_task_start_states.append(state)
+            Partition_DAG_leaf_task_inputs.append(task_inputs)
+
+            Partition_DAG_map[state] = state_info(name, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs)
+            Partition_DAG_states[name] = state
+            state += 1
+
     # Finish by doing the receivers that are not senders (opposite of leaf tasks);
-    # these are reeivers tht send no nputs to other tasks. They have no fanins/
+    # these are reeivers that send no inputs to other tasks. They have no fanins/
     # faninBs, fanouts or collapses, but they do have task inputs.
     for receiverY in Partition_sink_set: # Partition_receivers:
         #if not receiverY in Partition_DAG_states:
@@ -557,6 +605,13 @@ def generate_DAG_info():
             Group_DAG_leaf_task_start_states.append(state)
             task_inputs = ()
             Group_DAG_leaf_task_inputs.append(task_inputs)
+
+            if not senderX in leaf_tasks_of_groups:
+                logger.error("partition " + senderX + " receives no inputs"
+                    + " but it is not in leaf_tasks_of_groups.")
+            else:
+                # we have generated a state for leaf task senderX. 
+                leaf_tasks_of_groups.remove(senderX)
         else:
             # create a new set from sender_set_for_senderX. For 
             # each name in sender_set_for_senderX, qualify name by
@@ -579,6 +634,26 @@ def generate_DAG_info():
         Group_DAG_states[senderX] = state
 
         state += 1
+
+    if not len(leaf_tasks_of_groups) == 0:
+        logger.debug("generate_DAG_info: len(leaf_tasks_of_groups)>0, add leaf tasks")
+        fanouts = []
+        faninNBs = []
+        fanins = []
+        collapse = []
+        fanin_sizes = []
+        faninNB_sizes = []
+
+        task_inputs = ()
+        for name in leaf_tasks_of_groups:
+            logger.debug("generate_DAG_info: add leaf task for group " + name)
+            Partition_DAG_leaf_tasks.append(name)
+            Partition_DAG_leaf_task_start_states.append(state)
+            Partition_DAG_leaf_task_inputs.append(task_inputs)
+
+            Partition_DAG_map[state] = state_info(name, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs)
+            Partition_DAG_states[name] = state
+            state += 1
 
     # Finish by doing the receivers that are not senders (opposite of leaf tasks);
     # these are reeivers tht send no nputs to other tasks. They have no fanins/
