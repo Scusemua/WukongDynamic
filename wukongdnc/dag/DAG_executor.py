@@ -48,6 +48,9 @@ from wukongdnc.wukong.invoker import invoke_lambda_DAG_executor
 from .DAG_boundedbuffer_work_queue import BoundedBuffer_Work_Queue
 from .util import pack_data
 
+# Note: avoiding circular imports:
+# https://stackoverflow.com/questions/744373/what-happens-when-using-mutual-or-circular-cyclic-imports
+
 import logging.handlers
 import multiprocessing
 import os

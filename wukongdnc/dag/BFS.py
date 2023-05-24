@@ -2233,7 +2233,8 @@ def input_graph():
     # algorithms on it, e.g., fnd_cycle, diameter.
     networkX_lines = []
     #fname = "graph_3000"
-    fname = "graph_20"
+    #fname = "graph_20"
+    fname = "graph_27"
     #graph_file = open(fname, 'r')
     #graph_file = open(fname, 'r')
     graph_file = open(fname+".gr", 'r')
@@ -2267,7 +2268,7 @@ def input_graph():
     
     vertices_edges_line = graph_file.readline()
     count += 1
-    logger.debug("vertices_edges_line{}: {}".format(count, vertices_edges_line.strip()))
+    logger.debug("vertices_edges_line {}: {}".format(count, vertices_edges_line.strip()))
 
     words = vertices_edges_line.split(' ')
     logger.debug("nodes:" + words[2] + " edges:" + words[3])
@@ -3438,8 +3439,9 @@ if __name__ == '__main__':
         sum_of_groups_lengths += len(x)
         logger.debug(str(i) + ": length of group: " + str(len(x)))
         i+=1
-    logger.debug("shadow_nodes_added: " + str(num_shadow_nodes_added_to_groups))
+    logger.debug("num_shadow_nodes_added_to_groups: " + str(num_shadow_nodes_added_to_groups))
     if not use_shared_partitions_groups:
+        logger.info("total_loop_nodes_added : " + str(total_loop_nodes_added))
         sum_of_groups_lengths -= (total_loop_nodes_added + num_shadow_nodes_added_to_groups)
         logger.info("sum_of_groups_lengths (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
             + str(sum_of_groups_lengths))
@@ -3449,7 +3451,10 @@ if __name__ == '__main__':
     else:
         if use_page_rank_group_partitions:
             shared_groups_length = len(BFS_Shared.shared_groups)
+            logger.info("shared_groups_length first value: " + str(shared_groups_length))
             # added shadow nodes and their parents
+            logger.info("total_loop_nodes_added : " + str(total_loop_nodes_added))
+            logger.info("(2*num_shadow_nodes_added_to_groups):" + str(2*num_shadow_nodes_added_to_groups))
             shared_groups_length -= (total_loop_nodes_added + (2*num_shadow_nodes_added_to_groups))
             logger.info("shared_groups_length (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
                 + str(shared_groups_length))
@@ -3510,7 +3515,7 @@ if __name__ == '__main__':
     #logger.info("")
     # final frontier shoudl always be empty
     # assert: 
-    logger.info("frontiers: (final fronter should be empty), len: " + str(len(frontiers))+":")
+    logger.info("frontiers: (final fronter should be empty), number of frontiers: " + str(len(frontiers))+ " (length):")
     for frontier_list in frontiers:
         if PRINT_DETAILED_STATS:
             print_val = "-- (" + str(len(frontier_list)) + "): "
@@ -3526,7 +3531,7 @@ if __name__ == '__main__':
     if len(frontiers[frontiers_length-1]) != 0:
         logger.info ("Error]: final frontier is not empty.")
     logger.info("")
-    logger.info("partitions, len: " + str(len(partitions))+":")
+    logger.info("partitions, number of partitions: " + str(len(partitions))+" (length):")
 
     for x in partitions:
         if PRINT_DETAILED_STATS:
@@ -3799,10 +3804,10 @@ if __name__ == '__main__':
     #input('Press <ENTER> to continue')
 
     logger.debug("Output partitions/groups")
-    output_partitions()
 
-    run()
-
+    #output_partitions()
+    #run()
+    """
     if use_shared_partitions_groups and use_struct_of_arrays_for_pagerank:
         logger.debug("\nBFS:Close and unlink shared memory.")
         try:
@@ -3811,7 +3816,7 @@ if __name__ == '__main__':
         except Exception as ex:
             logger.debug("[ERROR] BFS: Failed to close or unlink shared memory.")
             logger.debug(ex)
-
+    """
 
 """
 logger.debug("Sorted simple cycles:")

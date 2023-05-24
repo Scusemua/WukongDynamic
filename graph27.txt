@@ -1,0 +1,38 @@
+c FILE                  :graph1.gr.gr
+c No. of vertices       :27
+c No. of edges          :30
+c Max. weight           :1
+c Min. weight           :1
+c Min. edge             :1
+c Max. edge             :3
+p sp 27 30
+a 1 12 1
+a 2 20 1
+a 2 10 1
+a 3 19 1
+a 4 6 1
+a 4 18 1
+a 5 16 1
+a 5 17 1
+a 6 14 1
+a 6 9 1
+a 7 15 1
+a 8 11 1
+a 8 13 1
+a 9 18 1
+a 10 16 1
+a 11 3 1
+a 11 15 1
+a 13 7 1
+a 14 12 1
+a 17 1 1
+a 17 19 1
+a 19 20 1
+a 20 8 1
+a 21 23 1  --> vertices = 23
+a 22 21 1  --> edges = 26
+a 23 22 1
+a 24 26 1  --> vertices = 26
+a 25 24 1  --> edges = 29
+a 26 25 1
+a 24 27 1  --> vertices = 27 edges = 30

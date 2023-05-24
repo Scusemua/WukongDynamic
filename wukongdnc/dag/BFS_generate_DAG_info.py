@@ -412,26 +412,22 @@ def generate_DAG_info():
     logger.info("num_fanins:" + str(num_fanins) + " num_fanouts:" + str(num_fanouts) + " num_faninNBs:"
     + str(num_faninNBs) + " num_collapse:" + str(num_collapse))
     logger.info("")  
+    logger.info("Note: partitions only have collapse sets.")
     logger.info("Partition_all_fanout_task_names:")
     for name in Partition_all_fanout_task_names:
         logger.info(name)
-    logger.info
     logger.info("all_fanin_task_names:")
     for name in Partition_all_fanin_task_names :
         logger.info(name)
-    logger.info("")
     logger.info("all_fanin_sizes:")
     for s in Partition_all_fanin_sizes :
         logger.info(s)
-    logger.info("")
     logger.info("all_faninNB_task_names:")
     for name in Partition_all_faninNB_task_names:
         logger.info(name)
-    logger.info("")
     logger.info("all_faninNB_sizes:")
     for s in Partition_all_faninNB_sizes:
         logger.info(s)
-    logger.info("")
     logger.info("Partition_all_collapse_task_names:")
     for name in Partition_all_collapse_task_names:
         logger.info(name)
@@ -647,12 +643,12 @@ def generate_DAG_info():
         task_inputs = ()
         for name in leaf_tasks_of_groups:
             logger.debug("generate_DAG_info: add leaf task for group " + name)
-            Partition_DAG_leaf_tasks.append(name)
-            Partition_DAG_leaf_task_start_states.append(state)
-            Partition_DAG_leaf_task_inputs.append(task_inputs)
+            Group_DAG_leaf_tasks.append(name)
+            Group_DAG_leaf_task_start_states.append(state)
+            Group_DAG_leaf_task_inputs.append(task_inputs)
 
-            Partition_DAG_map[state] = state_info(name, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs)
-            Partition_DAG_states[name] = state
+            Group_DAG_map[state] = state_info(name, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs)
+            Group_DAG_states[name] = state
             state += 1
 
     # Finish by doing the receivers that are not senders (opposite of leaf tasks);
