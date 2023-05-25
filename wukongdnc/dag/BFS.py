@@ -187,6 +187,11 @@ num_parent_appends = 0
 # maps partition "P" to its position/size in shared_partition/shared_groups
 #Shared.shared_partition_map = {}
 #Shared.shared_group_map = {}
+
+#rhc: ToDo: need condition: move to 2708? No, we access BFS_Shared map in
+# dfs_parent as we map, so need to init before we finish BFS(). But where
+# to put this init? Notw: we will eventually add to the struct of arrays
+# arrays as we go to0, so need those inits earlier too.
 BFS_Shared.initialize()
 
 """
@@ -2233,8 +2238,8 @@ def input_graph():
     # algorithms on it, e.g., fnd_cycle, diameter.
     networkX_lines = []
     #fname = "graph_3000"
-    #fname = "graph_20"
-    fname = "graph_27"
+    fname = "graph_20"
+    #fname = "graph_27"
     #graph_file = open(fname, 'r')
     #graph_file = open(fname, 'r')
     graph_file = open(fname+".gr", 'r')
@@ -2865,13 +2870,22 @@ if __name__ == '__main__':
                 np_arrays_size_for_shared_partition = num_nodes + (
                     (2*num_shadow_nodes_added_to_partitions) + ((len(partitions)-1)*16)
                 )
+                logger.debug("num_nodes: " + str(num_nodes) 
+                    + " (2*num_shadow_nodes_added_to_partitions):" + str((2*num_shadow_nodes_added_to_partitions))
+                    + " ((len(partitions)-1)*16): " + str(((len(partitions)-1)*16)))
+                logger.debug("np_arrays_size_for_shared_partition: " 
+                    + str(np_arrays_size_for_shared_partition))
                 # the size of the parent array is the total number of parents for all the 
                 # nodes, which is trackd as num_parent_appends in the input_graph() method
                 # (incrementing whenever we append to a parents list) plus the padding
                 # between partitions/groups which is 16 ints that are added between 
                 # the partitions/groups so we pad len(partitions/groups)-1 times.
                 np_arrays_size_for_shared_partition_parents = num_parent_appends + num_shadow_nodes_added_to_partitions + ((len(partitions)-1)*16)
-
+                logger.debug("num_parent_appends: " + str(num_parent_appends) 
+                    + " num_shadow_nodes_added_to_partitions:" + str(num_shadow_nodes_added_to_partitions)
+                    + " ((len(partitions)-1)*16): " + str(((len(partitions)-1)*16)))
+                logger.debug("np_arrays_size_for_shared_partition_parents: "
+                    + str(np_arrays_size_for_shared_partition_parents))
                 # 1/num_nodes is used for the initial value of pagerank
                 if using_threads_not_processes:
                     BFS_Shared.initialize_struct_of_arrays(num_nodes, 
@@ -2902,8 +2916,9 @@ if __name__ == '__main__':
     #rhc: ToDO: IDs? with put/get of shadow_node IDs
 
                 if using_threads_not_processes:
-                    num_groups_processed = 0
+                    num_partitions_processed = 0
                     for name, partition, num_shadow_nodes in zip(partition_names, partitions, partitions_num_shadow_nodes_list):
+                        logger.debug("name: " + name)
                         partition_position = next
                         partition_size = len(partition)
                         # Note: in dfs_parent:
@@ -2949,7 +2964,10 @@ if __name__ == '__main__':
                                 p_node.parents[0] = partition_size + num_shadow_nodes_seen_so_far
                                 queue_of_shadow_node_IDs.put(p_node.ID)
                                 num_shadow_nodes_seen_so_far += 1
+                            logger.debug("len(p_node.parents: " + str(len(p_node.parents)))
                             for parent in p_node.parents:
+                                logger.debug("parent loop: next_parent_index:" + str(next_parent_index))
+
                                 # Note: Shadow nodes have one parent, which is a parent node,
                                 # and this parent index was just set to (partition_size + num_shadow_nodes)
                                 BFS_Shared.parents[next_parent_index] = parent
@@ -2990,19 +3008,23 @@ if __name__ == '__main__':
                             next += 1
                             partition_size += 1
 
-                        if num_groups_processed < len(partitions)-1:
+                        if num_partitions_processed < len(partitions)-1:
                             for j in range(len(int_padding)):
+                                logger.debug("padding loop j: " + str(j) + " next: " + str(next)
+                                    + " next_parent_index:" + str(next_parent_index))
                                 BFS_Shared.number_of_children[next] = int_padding[j]
+                                BFS_Shared.number_of_parents[next] = int_padding[j]
                                 BFS_Shared.starting_indices_of_parents[next] = int_padding[j]
                                 BFS_Shared.IDs[next] = int_padding[j]
+#rhc: ToDo: What if nodes in partition have no parents? Then no padding?
                                 BFS_Shared.parents[next_parent_index] = int_padding[j]
                                 next += 1
                                 next_parent_index += 1
                             #partition_size += 16
-                            next_parent_index += 16
+                            #next_parent_index += 16
                         partition_triple = (partition_position,partition_size,num_shadow_nodes)
                         BFS_Shared.shared_partition_map[name] = partition_triple
-                        num_groups_processed += 1
+                        num_partitions_processed += 1
                     logger.debug("Number of shadow nodes for partitions:")
                     for num in partitions_num_shadow_nodes_list:
                         logger.debug(num)
@@ -3030,7 +3052,7 @@ if __name__ == '__main__':
                         logger.debug(str(element)+",")
                     logger.debug("")
                 else:
-                    num_groups_processed = 0
+                    num_partitions_processed = 0
                     for name, partition, num_shadow_nodes in zip(partition_names, partitions, partitions_num_shadow_nodes_list):
                         partition_position = next
                         partition_size = len(partition)
@@ -3118,19 +3140,20 @@ if __name__ == '__main__':
                             next += 1
                             partition_size += 1
 
-                        if num_groups_processed < len(partitions)-1:
+                        if num_partitions_processed < len(partitions)-1:
                             for j in range(len(int_padding)):
                                 BFS_Shared.nonshared_number_of_children[next] = int_padding[j]
                                 BFS_Shared.nonshared_starting_indices_of_parents[next] = int_padding[j]
+                                BFS_Shared.number_of_parents[next] = int_padding[j]
                                 BFS_Shared.nonshared_IDs[next] = int_padding[j]
                                 BFS_Shared.nonshared_parents[next_parent_index] = int_padding[j]
                                 next += 1
                                 next_parent_index += 1
                             #partition_size += 16
-                            next_parent_index += 16
+                            #next_parent_index += 16
                         partition_triple = (partition_position,partition_size,num_shadow_nodes)
                         BFS_Shared.nonshared_shared_partition_map[name] = partition_triple
-                        num_groups_processed += 1
+                        num_partitions_processed += 1
                     logger.debug("Number of shadow nodes for partitions:")
                     for num in partitions_num_shadow_nodes_list:
                         logger.debug(num)
@@ -3247,6 +3270,8 @@ if __name__ == '__main__':
                             group_size += 1
                         if num_groups_processed < (len(groups)-1):
                             for j in range(len(int_padding)):
+                                logger.debug("padding loop j: " + str(j) + " next: " + str(next)
+                                    + " next_parent_index:" + str(next_parent_index))
                                 BFS_Shared.number_of_children[next] = int_padding[j]
                                 BFS_Shared.number_of_parents[next] = int_padding[j]
                                 BFS_Shared.starting_indices_of_parents[next] = int_padding[j]
@@ -3805,8 +3830,8 @@ if __name__ == '__main__':
 
     logger.debug("Output partitions/groups")
 
-    #output_partitions()
-    #run()
+    output_partitions()
+    run()
     """
     if use_shared_partitions_groups and use_struct_of_arrays_for_pagerank:
         logger.debug("\nBFS:Close and unlink shared memory.")
