@@ -3072,9 +3072,9 @@ if __name__ == '__main__':
                             # - number of parents will be one since -1 was appended
                             # to the shadow node's parent list
                             BFS_Shared.nonshared_number_of_children[next] = p_node.num_children
-                            BFS_Shared.nonsharednumber_of_parents[next] = len(p_node.parents)
-                            BFS_Shared.nonsharedstarting_indices_of_parents[next] = next_parent_index
-                            BFS_Shared.nonsharedIDs[next] = p_node.ID
+                            BFS_Shared.nonshared_number_of_parents[next] = len(p_node.parents)
+                            BFS_Shared.nonshared_starting_indices_of_parents[next] = next_parent_index
+                            BFS_Shared.nonshared_IDs[next] = p_node.ID
                             # For shadow nodes, the value -1 was appended to its
                             # parents, so len(p_node.parents) is the correct value
                             # but need to change -1 to the actual position of shadow
@@ -3144,7 +3144,7 @@ if __name__ == '__main__':
                             for j in range(len(int_padding)):
                                 BFS_Shared.nonshared_number_of_children[next] = int_padding[j]
                                 BFS_Shared.nonshared_starting_indices_of_parents[next] = int_padding[j]
-                                BFS_Shared.number_of_parents[next] = int_padding[j]
+                                BFS_Shared.nonshared_number_of_parents[next] = int_padding[j]
                                 BFS_Shared.nonshared_IDs[next] = int_padding[j]
                                 BFS_Shared.nonshared_parents[next_parent_index] = int_padding[j]
                                 next += 1
@@ -3152,7 +3152,7 @@ if __name__ == '__main__':
                             #partition_size += 16
                             #next_parent_index += 16
                         partition_triple = (partition_position,partition_size,num_shadow_nodes)
-                        BFS_Shared.nonshared_shared_partition_map[name] = partition_triple
+                        BFS_Shared.shared_partition_map[name] = partition_triple
                         num_partitions_processed += 1
                     logger.debug("Number of shadow nodes for partitions:")
                     for num in partitions_num_shadow_nodes_list:
@@ -3168,13 +3168,13 @@ if __name__ == '__main__':
                     for element in BFS_Shared.nonshared_previous:
                         logger.debug(str(element)+",")
                     logger.debug("BFS_Shared.nonshared_number_of_children:")
-                    for element in BFS_Shared.number_of_children:
+                    for element in BFS_Shared.nonshared_number_of_children:
                         logger.debug(str(element)+",")
                     logger.debug("BFS_Shared.nonshared_number_of_parents: ")
-                    for element in BFS_Shared.number_of_parents:
+                    for element in BFS_Shared.nonshared_number_of_parents:
                         logger.debug(str(element)+",")
                     logger.debug("BFS_Shared.nonshared_starting_indices_of_parents:")
-                    for element in BFS_Shared.starting_indices_of_parents:
+                    for element in BFS_Shared.nonshared_starting_indices_of_parents:
                         logger.debug(str(element)+",")
                     logger.debug("BFS_Shared.nonshared_parents:")
                     for element in BFS_Shared.nonshared_parents:
