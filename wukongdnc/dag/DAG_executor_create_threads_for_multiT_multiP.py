@@ -1,9 +1,11 @@
-
-from .DAG_executor_constants import run_all_tasks_locally, num_threads_for_multithreaded_multiprocessing
-
-from . import DAG_executor
 import threading
 import os
+
+from .DAG_executor_constants import run_all_tasks_locally, num_threads_for_multithreaded_multiprocessing
+from .DAG_executor_constants import compute_pagerank, use_shared_partitions_groups,use_page_rank_group_partitions
+from . import DAG_executor
+
+from . import BFS_Shared
 
 import logging 
 logger = logging.getLogger(__name__)
@@ -17,7 +19,10 @@ logger.addHandler(ch)
 """
 
 
-def create_and_run_threads_for_multiT_multiP(process_name,payload,counter,log_queue,worker_configurer):
+#def create_and_run_threads_for_multiT_multiP(process_name,payload,counter,log_queue,worker_configurer):
+def create_and_run_threads_for_multiT_multiP(process_name,payload,counter,log_queue,worker_configurer,
+    shared_nodes,shared_map,shared_frontier_map,
+    pagerank_sent_to_processes,previous_sent_to_processes,number_of_children_sent_to_processes,number_of_parents_sent_to_processes,starting_indices_of_parents_sent_to_processes,parents_sent_to_processes,IDs_sent_to_processes,):
     # create, start, and join the threads in the thread pool for a multi process
 #def create_and_run_threads_for_multiT_multiP(process_name,payload,counter,process_work_queue,data_dict,log_queue,worker_configurer):
 
@@ -57,6 +62,9 @@ def create_and_run_threads_for_multiT_multiP(process_name,payload,counter,log_qu
     logger.debug(process_name + ": DAG_executor_driver: create_and_run_threads_for_multiT_multiP: Starting threads for multhreaded multipocessing.")
     iteration = 1
     #while True:
+    
+    #print("pagerank_sent_to_processes: " + str(pagerank_sent_to_processes[:10]))
+
     # num_threads_for_multithreaded_multiprocessing defined in DAG_executor_constants
     while num_threads_created_for_multiP < num_threads_for_multithreaded_multiprocessing:
         logger.debug(process_name + ": iterate: " + str(iteration))
@@ -67,7 +75,10 @@ def create_and_run_threads_for_multiT_multiP(process_name,payload,counter,log_qu
             }
             thread_name = process_name+"_thread"+str(num_threads_created_for_multiP+1)
             #thread = threading.Thread(target=DAG_executor.DAG_executor_processes, name=(thread_name), args=(payload,counter,log_queue,worker_configurer,))
-            thread = threading.Thread(target=DAG_executor.DAG_executor_processes, name=(thread_name), args=(payload,counter,logger,worker_configurer,))
+            #thread = threading.Thread(target=DAG_executor.DAG_executor_processes, name=(thread_name), args=(payload,counter,logger,worker_configurer,))
+            thread = threading.Thread(target=DAG_executor.DAG_executor_processes, name=(thread_name), args=(payload,counter,logger,worker_configurer,
+                shared_nodes,shared_map,shared_frontier_map,
+                pagerank_sent_to_processes,previous_sent_to_processes,number_of_children_sent_to_processes,number_of_parents_sent_to_processes,starting_indices_of_parents_sent_to_processes,parents_sent_to_processes,IDs_sent_to_processes,))
 
             thread_list.append(thread)
             #thread.start()

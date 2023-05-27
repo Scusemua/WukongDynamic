@@ -39,6 +39,7 @@ from .DAG_executor_constants import process_work_queue_Type, FanInNB_Type, using
 from .DAG_executor_constants import sync_objects_in_lambdas_trigger_their_tasks, store_sync_objects_in_lambdas
 from .DAG_executor_constants import tasks_use_result_dictionary_parameter, same_output_for_all_fanout_fanin
 from .DAG_executor_constants import compute_pagerank, use_shared_partitions_groups, use_page_rank_group_partitions
+from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
 #from .DAG_work_queue_for_threads import thread_work_queue
 from .DAG_executor_work_queue_for_threads import work_queue
 from .DAG_data_dict_for_threads import data_dict
@@ -2256,7 +2257,7 @@ def DAG_executor_processes(payload,counter,log_queue_or_logger, worker_configure
         logger = log_queue_or_logger
 
     if compute_pagerank and use_shared_partitions_groups:
-        print(str(pagerank_sent_to_processes[:10]))
+        #print(str(pagerank_sent_to_processes[:10]))
         if use_page_rank_group_partitions:
             BFS_Shared.shared_groups = shared_nodes
             BFS_Shared.shared_groups_map = shared_map
@@ -2265,14 +2266,14 @@ def DAG_executor_processes(payload,counter,log_queue_or_logger, worker_configure
             BFS_Shared.shared_partition = shared_nodes
             BFS_Shared.shared_partition_map = shared_map
             BFS_Shared.shared_partition_frontier_parents_map = shared_frontier_map
-
-        BFS_Shared.pagerank = pagerank_sent_to_processes
-        BFS_Shared.previous = previous_sent_to_processes
-        BFS_Shared.number_of_children = number_of_children_sent_to_processes
-        BFS_Shared.number_of_parents = number_of_parents_sent_to_processes  
-        BFS_Shared.starting_indices_of_parents = starting_indices_of_parents_sent_to_processes
-        BFS_Shared.parents = parents_sent_to_processes
-        BFS_Shared.IDs = IDs_sent_to_processes
+        if use_struct_of_arrays_for_pagerank:
+            BFS_Shared.pagerank = pagerank_sent_to_processes
+            BFS_Shared.previous = previous_sent_to_processes
+            BFS_Shared.number_of_children = number_of_children_sent_to_processes
+            BFS_Shared.number_of_parents = number_of_parents_sent_to_processes  
+            BFS_Shared.starting_indices_of_parents = starting_indices_of_parents_sent_to_processes
+            BFS_Shared.parents = parents_sent_to_processes
+            BFS_Shared.IDs = IDs_sent_to_processes
         
     proc_name = multiprocessing.current_process().name
     thread_name = threading.current_thread().name

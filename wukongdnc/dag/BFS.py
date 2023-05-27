@@ -3447,16 +3447,23 @@ if __name__ == '__main__':
         if sum_of_partition_lengths != num_nodes:
             logger.error("[Error]: sum_of_partition_lengths is " + str(sum_of_partition_lengths)
                 + " but num_nodes is " + str(num_nodes))
-    else:
+    else: # use_shared_partitions_groups so computing PageRank
         if not use_page_rank_group_partitions:
-            shared_partition_length = len(BFS_Shared.shared_partition)
-            # added shadow nodes and their parents
-            shared_partition_length -= (total_loop_nodes_added + (2*num_shadow_nodes_added_to_partitions))
-            logger.info("shared_partition_length (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
-                + str(shared_partition_length))
-            if shared_partition_length != num_nodes:
-                logger.error("[Error]: shared_partition_length is " + str(shared_partition_length)
-                    + " but num_nodes is " + str(num_nodes))
+            if not use_struct_of_arrays_for_pagerank:
+                shared_partition_length = len(BFS_Shared.shared_partition)
+                # added shadow nodes and their parents
+                shared_partition_length -= (total_loop_nodes_added + (2*num_shadow_nodes_added_to_partitions))
+                logger.info("shared_partition_length (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
+                    + str(shared_partition_length))
+                if shared_partition_length != num_nodes:
+                    logger.error("[Error]: shared_partition_length is " + str(shared_partition_length)
+                        + " but num_nodes is " + str(num_nodes))
+            else:
+                pass
+                # we are not asserting anything about the length of the arrays
+                # in the struct_of_arrays. These arrays length were calculated
+                # and we are not checking that calculation here.
+
     logger.info("")
     sum_of_groups_lengths = 0
     i = 1
@@ -3473,19 +3480,26 @@ if __name__ == '__main__':
         if sum_of_groups_lengths != num_nodes:
             logger.error("[Error]: sum_of_groups_lengths is " + str(sum_of_groups_lengths)
                 + " but num_nodes is " + str(num_nodes))
-    else:
+    else: # use_shared_partitions_groups so computing PageRank
         if use_page_rank_group_partitions:
-            shared_groups_length = len(BFS_Shared.shared_groups)
-            logger.info("shared_groups_length first value: " + str(shared_groups_length))
-            # added shadow nodes and their parents
-            logger.info("total_loop_nodes_added : " + str(total_loop_nodes_added))
-            logger.info("(2*num_shadow_nodes_added_to_groups):" + str(2*num_shadow_nodes_added_to_groups))
-            shared_groups_length -= (total_loop_nodes_added + (2*num_shadow_nodes_added_to_groups))
-            logger.info("shared_groups_length (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
-                + str(shared_groups_length))
-            if shared_groups_length != num_nodes:
-                logger.error("[Error]: shared_groups_length is " + str(shared_groups_length)
-                    + " but num_nodes is " + str(num_nodes))
+            if not use_struct_of_arrays_for_pagerank:
+                shared_groups_length = len(BFS_Shared.shared_groups)
+                logger.info("shared_groups_length first value: " + str(shared_groups_length))
+                # added shadow nodes and their parents
+                logger.info("total_loop_nodes_added : " + str(total_loop_nodes_added))
+                logger.info("(2*num_shadow_nodes_added_to_groups):" + str(2*num_shadow_nodes_added_to_groups))
+                shared_groups_length -= (total_loop_nodes_added + (2*num_shadow_nodes_added_to_groups))
+                logger.info("shared_groups_length (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
+                    + str(shared_groups_length))
+                if shared_groups_length != num_nodes:
+                    logger.error("[Error]: shared_groups_length is " + str(shared_groups_length)
+                        + " but num_nodes is " + str(num_nodes))
+            else:
+                pass
+                # we are not asserting anything about the length of the arrays
+                # in the struct_of_arrays. These arrays length were calculated
+                # and we are not checking that calculation here.
+
     #if (len(current_partition)-loop_nodes_added) != num_nodes
 
     print_val = ""

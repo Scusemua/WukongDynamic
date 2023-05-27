@@ -341,6 +341,7 @@ from .DAG_executor_constants import num_workers,using_threads_not_processes
 from .DAG_executor_constants import FanIn_Type, FanInNB_Type, process_work_queue_Type
 from .DAG_executor_constants import store_sync_objects_in_lambdas, sync_objects_in_lambdas_trigger_their_tasks
 from .DAG_executor_constants import compute_pagerank, use_shared_partitions_groups,use_page_rank_group_partitions
+from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
 #from .DAG_work_queue_for_threads import thread_work_queue
 from .DAG_executor_work_queue_for_threads import work_queue
 from .DAG_executor_synchronizer import server
@@ -1319,7 +1320,9 @@ def run():
                             if not (compute_pagerank and use_shared_partitions_groups):
                                 proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,counter,log_queue,worker_configurer,
                                     None,None,None,None,None,None,None,None,None,None))
-                            else:
+                            else: 
+                                #Note: In DAG_executor_constants, we use: use_shared_partitions_groups = compute_pagerank and True
+                                # So if use_shared_partitions_groups is True then compute_pagerank is True
                                 if use_page_rank_group_partitions:
                                     shared_nodes = BFS_Shared.shared_groups
                                     shared_map = BFS_Shared.shared_groups_map
@@ -1329,11 +1332,17 @@ def run():
                                     shared_map = BFS_Shared.shared_partition_map
                                     shared_frontier_map = BFS_Shared.shared_partition_frontier_parents_map
 
-                                proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,counter,log_queue,worker_configurer,
-                                    shared_nodes,shared_map,shared_frontier_map,
-                                    BFS_Shared.pagerank_sent_to_processes,BFS_Shared.previous_sent_to_processes,BFS_Shared.number_of_children_sent_to_processes,
-                                    BFS_Shared.number_of_parents_sent_to_processes,BFS_Shared.starting_indices_of_parents_sent_to_processes,
-                                    BFS_Shared.parents_sent_to_processes,BFS_Shared.IDs_sent_to_processes,))
+                                if use_struct_of_arrays_for_pagerank:
+                                    proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,counter,log_queue,worker_configurer,
+                                        shared_nodes,shared_map,shared_frontier_map,
+                                        BFS_Shared.pagerank_sent_to_processes,BFS_Shared.previous_sent_to_processes,BFS_Shared.number_of_children_sent_to_processes,
+                                        BFS_Shared.number_of_parents_sent_to_processes,BFS_Shared.starting_indices_of_parents_sent_to_processes,
+                                        BFS_Shared.parents_sent_to_processes,BFS_Shared.IDs_sent_to_processes,))
+                                else:
+                                    proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,counter,log_queue,worker_configurer,
+                                        shared_nodes,shared_map,shared_frontier_map,
+                                        None,None,None,None,None,None,None))
+ 
                             #proc.start()
                             thread_proc_list.append(proc)
                             #thread.start()
@@ -1435,11 +1444,18 @@ def run():
                                     shared_nodes = BFS_Shared.shared_partition
                                     shared_map = BFS_Shared.shared_partition_map
                                     shared_frontier_map = BFS_Shared.shared_partition_frontier_parents_map
-                                proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"p"+str(num_threads_created + 1)), args=(payload,counter,log_queue,worker_configurer,
+                                
+                                if use_struct_of_arrays_for_pagerank:
+                                    proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"p"+str(num_threads_created + 1)), args=(payload,counter,log_queue,worker_configurer,
                                         shared_nodes,shared_map,shared_frontier_map,
                                         BFS_Shared.pagerank_sent_to_processes,BFS_Shared.previous_sent_to_processes,BFS_Shared.number_of_children_sent_to_processes,
                                         BFS_Shared.number_of_parents_sent_to_processes,BFS_Shared.starting_indices_of_parents_sent_to_processes,
                                         BFS_Shared.parents_sent_to_processes,BFS_Shared.IDs_sent_to_processes,))
+                                else:
+                                    proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"p"+str(num_threads_created + 1)), args=(payload,counter,log_queue,worker_configurer,
+                                        shared_nodes,shared_map,shared_frontier_map,
+                                        None,None,None,None,None,None,None))
+
                                 #proc.start()
                             thread_proc_list.append(proc)
                             num_threads_created += 1                      

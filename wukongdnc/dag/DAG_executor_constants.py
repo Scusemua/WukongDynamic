@@ -36,11 +36,11 @@ create_all_fanins_faninNBs_on_start = True
 using_workers = True
 # True when we ae not using Lambas and tasks are executed by threads instead of processes. 
 # False when we are not using lambdas and are using multiprocesssing 
-using_threads_not_processes = True
+using_threads_not_processes = False
 # When using_workers, this is how many threads or processes in the pool.
 num_workers = 2
 # Use one or more worker processes (num_workers) with one or more threads
-use_multithreaded_multiprocessing = False
+use_multithreaded_multiprocessing = True
 num_threads_for_multithreaded_multiprocessing = 1
 
 # if using lambdas to store synch objects, run tcp_server_lambda.
@@ -198,7 +198,7 @@ tasks_use_result_dictionary_parameter = compute_pagerank and True
 # when the task suns, we have one global shared array with all the 
 # partitions/groups and the threads access that array when they do their
 # tasks.
-use_shared_partitions_groups = compute_pagerank and False
+use_shared_partitions_groups = compute_pagerank and True
 
 #if compute_pagerank and (use_shared_partitions_groups and not run_all_tasks_locally)):#
 if compute_pagerank and (use_shared_partitions_groups and not run_all_tasks_locally):
@@ -213,7 +213,7 @@ use_page_rank_group_partitions = compute_pagerank and False
 
 # For pagerank
 # Use a struct of arrays to improve cache performance
-use_struct_of_arrays_for_pagerank = compute_pagerank and False
+use_struct_of_arrays_for_pagerank = compute_pagerank and True
 
 if compute_pagerank and (use_struct_of_arrays_for_pagerank and not use_shared_partitions_groups):
     logger.error("[Error]: Configuration error: if use_struct_of_arrays_for_pagerank"
