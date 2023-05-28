@@ -54,7 +54,7 @@ from .util import pack_data
 
 import logging.handlers
 import multiprocessing
-import os
+#import os
 
 #rhc cleanup
 #from .BFS import shared_partition, shared_groups
