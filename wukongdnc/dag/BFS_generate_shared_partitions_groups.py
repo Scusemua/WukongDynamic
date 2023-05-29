@@ -185,12 +185,10 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
         """ In BFS_Shared.py:
         global pagerank
         global previous
-
         global number_of_children
         global number_of_parents
         global starting_indices_of_parents
         global IDs
-
         global parents
         """
         #rhc shared
@@ -242,6 +240,11 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
                     np_arrays_size_for_shared_partition,
                     np_arrays_size_for_shared_partition_parents)
             """
+            ToDo: For now we use full instead of empty for pagerank so we
+            can fill it will a sentinal value that helps for debugging, i.e.,
+            we see all -4's or something for pagerank values that have not
+            yet been computed, instead of random values. Using empty will
+            save time.
             BFS_Shared.pagerank = np.empty(np_arrays_size_for_shared_partition,dtype=np.double)
             # prev[i] is previous pagerank value of i
             BFS_Shared.previous = np.full(np_arrays_size_for_shared_partition,float((1/num_nodes)))
@@ -259,8 +262,6 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
             # for j in (parent_index,num_parents) parent = parents[j]
             BFS_Shared.parents = np.empty(np_arrays_size_for_shared_partition_parents,dtype=np.intc)
             """
-#rhc: ToDO: IDs? with put/get of shadow_node IDs
-
             if using_threads_not_processes:
                 num_partitions_processed = 0
                 for name, partition, num_shadow_nodes in zip(partition_names, partitions, partitions_num_shadow_nodes_list):
@@ -362,7 +363,15 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
                             BFS_Shared.number_of_parents[next] = int_padding[j]
                             BFS_Shared.starting_indices_of_parents[next] = int_padding[j]
                             BFS_Shared.IDs[next] = int_padding[j]
-#rhc: ToDo: What if nodes in partition have no parents? Then no padding?
+                            # rhc: It is possible that a root node of BFS (there may be more than one)
+                            # does not have any parents, whcih happens if it is the only node in its
+                            # partition/group. Then we will still add padding between the zero parents
+                            # of the root partition/group and the parents of the next partition/group.
+                            # We do this since we assume there will be padding between all the partitions/groups
+                            # when we calculate the size of the np array at the start. 
+                            # ToDo: During BFS we can count the number of partitions/groups that have
+                            # no parents and thus how many paddings we should drop when we compute
+                            # the size of the np array of parents.
                             BFS_Shared.parents[next_parent_index] = int_padding[j]
                             next += 1
                             next_parent_index += 1
@@ -546,6 +555,11 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
                     np_arrays_size_for_shared_groups_parents)
 
             """
+            ToDo: For now we use full instead of empty for pagerank so we
+            can fill it will a sentinal value that helps for debugging, i.e.,
+            we see all -4's or something for pagerank values that have not
+            yet been computed, instead of random values. Using empty will
+            save time.
             BFS_Shared.pagerank = np.empty(np_arrays_size_for_shared_groups_pagerank_and_previous,dtype=np.double)
             # prev[i] is previous pagerank value of i
             BFS_Shared.previous = np.full(np_arrays_size_for_shared_groups_pagerank_and_previous,float((1/num_nodes)))
@@ -622,6 +636,15 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
                             BFS_Shared.number_of_parents[next] = int_padding[j]
                             BFS_Shared.starting_indices_of_parents[next] = int_padding[j]
                             BFS_Shared.IDs[next] = int_padding[j]
+                            # rhc: It is possible that a root node of BFS (there may be more than one)
+                            # does not have any parents, whcih happens if it is the only node in its
+                            # partition/group. Then we will still add padding between the zero parents
+                            # of the root partition/group and the parents of the next partition/group.
+                            # We do this since we assume there will be padding between all the partitions/groups
+                            # when we calculate the size of the np array at the start. 
+                            # ToDo: During BFS we can count the number of partitions/groups that have
+                            # no parents and thus how many paddings we should drop when we compute
+                            # the size of the np array of parents.
                             BFS_Shared.parents[next_parent_index] = int_padding[j]
                             next += 1
                             next_parent_index += 1

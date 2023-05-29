@@ -1,6 +1,6 @@
 import logging
 import numpy as np
-import os
+#import os
 from multiprocessing import shared_memory
 
 from .DAG_executor_constants import use_page_rank_group_partitions
