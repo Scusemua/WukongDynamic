@@ -78,13 +78,13 @@ def create_and_faninNB_task_locally(kwargs):
     logger.debug("create_and_faninNB_task: call create_and_faninNB_locally")
     server = kwargs['server']
     # Not using return_value from faninNB since faninNB starts the fanin task, i.e., there is No Become
-    return_value_ignored = server.create_and_faninNB_locally(**kwargs)
+    _return_value_ignored = server.create_and_faninNB_locally(**kwargs)
 
 def faninNB_task_locally(kwargs):
     logger.debug("faninNB_task: call faninNB_locally")
     server = kwargs['server']
     # Not using return_value from faninNB since faninNB starts the fanin task, i.e., there is No Become
-    return_value_ignored = server.faninNB_locally(**kwargs)
+    _return_value_ignored = server.faninNB_locally(**kwargs)
 
 # used to execute a task; need to give the task its "input" map
 #name_to_function_map = {'inc0': inc0, 'inc1': inc1, 'add': add, 'multiply': multiply, 'triple': triple, 'square': square, 'divide':divide}
@@ -294,12 +294,12 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
                     logger.debug(thread_name + ": process_faninNBs: call create_and_faninNB_locally")
                     #server = kwargs['server']
                     # Not using return_value from faninNB since faninNB starts the fanin task, i.e., there is No Become
-                    return_value_ignored = server.create_and_faninNB_locally(**keyword_arguments)
+                    _return_value_ignored = server.create_and_faninNB_locally(**keyword_arguments)
                 else:
                     logger.debug(thread_name + ": process_faninNBs: call faninNB_locally")
                     #server = kwargs['server']
                     # Not using return_value from faninNB since faninNB starts the fanin task, i.e., there is No Become
-                    return_value_ignored = server.faninNB_locally(**keyword_arguments)
+                    _return_value_ignored = server.faninNB_locally(**keyword_arguments)
 
             #Note: returning 0 since when running locally the faninNB will start 
             # the fanin task so there is nothing to do. Process fanouts next.

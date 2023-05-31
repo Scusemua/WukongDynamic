@@ -120,14 +120,14 @@ class DAG_executor_Synchronizer(object):
                 return_value = FanIn.fan_in(**keyword_arguments)
                 FanIn.unlock()
             else:
-                return_value, restart_value_ignored = FanIn.fan_in(**keyword_arguments)
+                return_value, _restart_value_ignored = FanIn.fan_in(**keyword_arguments)
         else:
             if is_select:
                 #FanIn.lock()
                 return_value = FanIn.fan_in(**keyword_arguments)
                 FanIn.unlock()
             else:
-                return_value, restart_value_ignored = FanIn.fan_in(**keyword_arguments)
+                return_value, _restart_value_ignored = FanIn.fan_in(**keyword_arguments)
 
             # try_fan_in never returns true. If we are not the last fan_in then we
             # get a return_value of 0; otherwise, we get the other fan_in results,
@@ -220,14 +220,14 @@ class DAG_executor_Synchronizer(object):
                 return_value = FanIn.fan_in(**keyword_arguments)
                 FanIn.unlock()
             else:
-                return_value, restart_value_ignored = FanIn.fan_in(**keyword_arguments)
+                return_value, _restart_value_ignored = FanIn.fan_in(**keyword_arguments)
         else:
             if is_select:
                 #FanIn.lock()
                 return_value = FanIn.fan_in(**keyword_arguments)
                 FanIn.unlock()
             else:
-                return_value, restart_value_ignored = FanIn.fan_in(**keyword_arguments)
+                return_value, _restart_value_ignored = FanIn.fan_in(**keyword_arguments)
 
             logger.debug("calling_task_name:" + keyword_arguments['calling_task_name'])
             # try_fan_in never returns true. If we are not the last fan_in then we
@@ -328,12 +328,12 @@ class DAG_executor_Synchronizer(object):
         # we ust skip calling it here.
         if not is_select:
             # return is: None, restart, where restart is always 0 and return_value is None; and makes no change to DAG_executor_State	
-            return_value_ignored, restart_value_ignored = FanInNB.fan_in(**keyword_arguments)
+            _return_value_ignored, _restart_value_ignored = FanInNB.fan_in(**keyword_arguments)
         else:
             # hold the mutex lock but do this as usual anyway
             FanInNB.lock()
             # non-blocking
-            return_value_ignored = FanInNB.fan_in(**keyword_arguments)
+            _return_value_ignored = FanInNB.fan_in(**keyword_arguments)
             FanInNB.unlock()
 
         self.mutex.release()
@@ -387,7 +387,7 @@ class DAG_executor_Synchronizer(object):
 
         # return is: None, restart, where restart is always 0 and return_value is None; and makes no change to DAG_executor_State	
         # Not using "asynch" here as no way to implement "asynch" locally.
-        return_value_ignored, restart_value_ignored = FanInNB.fan_in(**keyword_arguments)
+        _return_value_ignored, _restart_value_ignored = FanInNB.fan_in(**keyword_arguments)
 
         #if we decide we always wan to return a state, we can use this:
         """
