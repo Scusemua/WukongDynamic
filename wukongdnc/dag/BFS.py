@@ -319,9 +319,157 @@ BFS(node):
                 current_group_number = 1
 
             for neighbor_index in node.children:
+                neighbor = nodes[neighbor_index]
+                if neighbor.ID not in visited:
+ 
+                    # number of groups in current partition/sum
+                    current_group_number += 1
+                    # total number of groups, if this is i then this group will
+                    # be stored in groups[i]
+                    total_num_of_groups += 1
+
+                    # dfs search based on parents - enqueue all parents for BFS
+                    # The parents (ancestors) are adde to the current group
+                    dfs_parent(visited, neighbor)
+
+                    # process the current group (of the current partition)
+
+                    groups.append(current_group)
+                    current_group = []
+
+                    group_name = "PR" + str(current_partition_number) + "_" + str(current_group_number)
+                    if current_group_isLoop:
+                        group_name = group_name + "L"
+                        Group_loops.add(group_name)
+                    group_names.append(group_name)
+
+                     if current_group_isLoop:
+                        # various things need to be done if the current group is a loop group
+                        # ...
+
+                    current_group_number += 1
+                else:
+                    # already visited
+
+# The main method performs a standard BFS (with calls to DFS wihin)
+if __name__ == '__main__':
+
+    logger.debug("Following is the Breadth-First Search")
+    input_graph()
+    logger.debug("num_nodes after input graph: " + str(num_nodes))
+
+    for i in range(1,num_nodes+1):
+        if i not in visited:
+            bfs(visited, nodes[i])    # function calling
+
+    # hande the last partition/group that was generated, same as above
+    if len(current_partition) > 0:
+        logger.debug("BFS: create final sub-partition")
+
+        partitions.append(current_partition.copy())
+        current_partition = []
+        partition_name = "PR" + str(current_partition_number) + "_1"
+        if current_partition_isLoop:
+            partition_name = partition_name + "L"
+            Partition_loops.add(partition_name)
+        partition_names.append(partition_name)
+
+        groups.append(current_group)
+        current_group = []
+        group_name = "PR" + str(current_partition_number) + "_" + str(current_group_number)
+        if current_group_isLoop:
+            group_name = group_name + "L"
+            Group_loops.add(group_name)
+        group_names.append(group_name)
+
+        # various other simple things are not shown
+
+    dfs_parent(visited, node)
+
+    # rhc : ******* Partition
+        partition_node = Partition_Node(node.ID)
+        partition_node.ID = node.ID
+        list_of_parents_in_previous_partition = []
+
+    # rhc : ******* Group
+        group_node = Partition_Node(node.ID)
+        group_node.ID = node.ID
+        list_of_parents_in_previous_group = []
+
+        visited.append(node.ID)
+
+        already_visited_parents = []
+        index_of_parent = 0
+        for parent_index in node.parents:
+ 
+            parent_node = nodes[parent_index]
+            logger.debug("parent_node: " + str(parent_node))
+
+            pg_tuple = None
+
+            if parent_node.ID not in visited:
+                logger.debug ("dfs_parent visit parent node " + str(parent_node.ID))
+                dfs_parent(visited, parent_node)
+
+                pg_tuple = nodeIndex_to_partition_partitionIndex_group_groupIndex_map[parent_index]
+
+                parent_partition_parent_index = pg_tuple[1]
+                parent_group_parent_index = pg_tuple[3]
+                if (parent_partition_parent_index == -1) or (parent_group_parent_index == -1):
+                    # assert group_index is also -1
+                    logger.debug("[Error]: Internal Error: dfs_parent call to unvisited"
+                        + " parent resulted in parent/group partition index of -1, which means"
+                        + " a loop was detected at an unvisited parent.")
+    # rhc : ******* Partition
+                partition_node.parents.append(parent_partition_parent_index)
+    # rhc : ******* Group
+                group_node.parents.append(parent_group_parent_index)
+
+            else:
+                # loop detected - mark this loop in partition (for debugging for now)
+                logger.debug ("dfs_parent parent " + str(parent_node.ID) + " of " + str(node.ID) + " already visited"
+                    + " append parent " + str(parent_node.ID) + " to already_visited_parents.")
+
+                parent_node_visited_tuple = (parent_node,index_of_parent)
+                already_visited_parents.append(parent_node_visited_tuple)
+
+    # rhc : ******* Partition
+                partition_node.parents.append(-1)
+    # rhc : ******* Group
+                group_node.parents.append(-1)
+        
+                # parent node has been processed so get its info and determine whether
+                # this indicates a loop
+                pg_tuple = nodeIndex_to_partition_partitionIndex_group_groupIndex_map[parent_index]
+                parent_partition_parent_index = pg_tuple[1]
+
+                # Detect a loop here instead of below when we check each parent_node_visited_tuple
+                # since this allows us to detect a loop now and hence use a partition or group
+                # name with an 'L' at the end, e.g., "PR2_2L" when we crate frontier tuples
+                # and add names to the Senders and Receivers structures used for DAG creation.
+
+                if parent_partition_parent_index == -1:
+                    logger.debug("XXXXXXXXXXXXXXXXX dfs_parent: Loop Detected: "
+                        + "PR" + str(current_partition_number) + "_" + str(num_frontier_groups))
+    # rhc : ******* Partition
+                    global current_partition_isLoop
+                    current_partition_isLoop = True
+
+                    # assert:
+                    if parent_group_parent_index != -1:
+                        logger.error("[Error] Internal Error: parent_partition_parent_index is -1"
+                            + " indicating that current partition is a loop but "
+                            + " parent_group_parent_index is not -1, when the group should also be a loop.") 
+    # rhc : ******* Group
+                    global current_group_isLoop
+                    current_group_isLoop = True
+                else:
+                    logger.debug("YYYYYYYYYYYYY dfs_parent: No Loop Detected: "
+                        + "PR" + str(current_partition_number) + "_" + str(num_frontier_groups))
+
+            index_of_parent += 1
 
 """
-
 
 import networkx as nx
 import matplotlib.pyplot as plt
