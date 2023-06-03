@@ -384,7 +384,21 @@ if __name__ == '__main__':
 
         # various other simple things are not shown
 
-    dfs_parent(visited, node)
+def dfs_parent(visited, node)
+# Do a dfs search of node and its parents and their parents, etc.
+# The nodes collected are a group, if we are generating a DAG of groups 
+# or just part of the current partition if we are collectng groups.
+# (A partition consists of one or more groups.)
+# A parent node may have already been visited, either because this is
+# a loop-group or loop-partition, or because the parent node is part of a
+# group or partition collected earlier. This type of parent-child relationship,
+# i.e., from a node in on partition/group to a node in a previous partition/group
+# forms an edge in the DAG. Thus, an edge in the DAG between a partitions/groups
+# represents a parent node that is in a different partition/group then its
+# child node. For a node N in partition/group PR_i/PRi_j, all of N's parents are 
+# either in the same partition/group PR(i)PR(i)_(j) as N, or are in partition 
+# (PR(i-1)) or a group PR(i-1)_k of PR(i-1). This means that all of the edges
+# from partition Pi, if any, are to partition Pi+1.
 
     # rhc : ******* Partition
         partition_node = Partition_Node(node.ID)
@@ -398,41 +412,72 @@ if __name__ == '__main__':
 
         visited.append(node.ID)
 
+        # parents that have been visited before we try to visit them. These parents
+        # may be in a partition/group different from node's or we may be searching 
+        # nodes (including node) that are in a loop/cycle and are in the same 
+        # partition/group as node.
         already_visited_parents = []
+        # we will be adding nodes to the current partition/group and we need to know
+        # their position. This is the current position in the partition, starting with 0
         index_of_parent = 0
         for parent_index in node.parents:
- 
+            # nodes is an aray of integer IDs, so get the actual parent node
             parent_node = nodes[parent_index]
             logger.debug("parent_node: " + str(parent_node))
 
+            #pg_tuple is a map that accumlates information about each node.
             pg_tuple = None
 
             if parent_node.ID not in visited:
                 logger.debug ("dfs_parent visit parent node " + str(parent_node.ID))
+                # recursively visit parent
                 dfs_parent(visited, parent_node)
 
+                # Get the stored information about the parent node we just visited
+                # i.e., on the rcursive dfs_parent call that just returned
                 pg_tuple = nodeIndex_to_partition_partitionIndex_group_groupIndex_map[parent_index]
 
+                # the list of parents for node is a list of the parent's position
+                # in this current partition/group. Get these positions from the pg_tuple.
                 parent_partition_parent_index = pg_tuple[1]
                 parent_group_parent_index = pg_tuple[3]
-                if (parent_partition_parent_index == -1) or (parent_group_parent_index == -1):
-                    # assert group_index is also -1
-                    logger.debug("[Error]: Internal Error: dfs_parent call to unvisited"
-                        + " parent resulted in parent/group partition index of -1, which means"
-                        + " a loop was detected at an unvisited parent.")
+
+                # Partition_node and Group_node were created at the start of
+                # dfs_parent. We will add them to the partition/group and fill
+                # in information about them. A Partition_node is smaller than
+                # the regular Nodes in a graph. e.g., Partition_nodes don't
+                # have a list of children since we don't need this list when
+                # we compute pagerank; we only need a list of the node's parents.
     # rhc : ******* Partition
                 partition_node.parents.append(parent_partition_parent_index)
     # rhc : ******* Group
                 group_node.parents.append(parent_group_parent_index)
 
             else:
-                # loop detected - mark this loop in partition (for debugging for now)
+                # This parent was already visited. Below we determine whether node
+                # and this parent are part of a loop and thus in the same partition/group
+                # or are in different partitiions/groups and thus we need to add an edge
+                # to the DAG.
+
                 logger.debug ("dfs_parent parent " + str(parent_node.ID) + " of " + str(node.ID) + " already visited"
                     + " append parent " + str(parent_node.ID) + " to already_visited_parents.")
 
+                # save the parent and its position in a list of already_visited_parents
+                # so we can check them later.
                 parent_node_visited_tuple = (parent_node,index_of_parent)
                 already_visited_parents.append(parent_node_visited_tuple)
 
+                # If the parent node P is in a previous partition/group, then 
+                # it is a parent of node N, and P's position should be in N's
+                # parent list, but P will not be placed in this partition as it
+                # already is in a preious partition. Instad, we will create a 
+                # "shadow_node" SN that is a proxy for P and place SN in this
+                # partition. After computing the pagerank for P, we will send
+                # P's pagerank to the thread/process/function computing the
+                # pagerank of N. That sent value will be assigned to the 
+                # shadow node SN and used to compute the pagerank of N.
+                # It's also possible that parent P is in a loop with N so we
+                # don't yet know what to do with P.
     # rhc : ******* Partition
                 partition_node.parents.append(-1)
     # rhc : ******* Group
@@ -443,10 +488,29 @@ if __name__ == '__main__':
                 pg_tuple = nodeIndex_to_partition_partitionIndex_group_groupIndex_map[parent_index]
                 parent_partition_parent_index = pg_tuple[1]
 
-                # Detect a loop here instead of below when we check each parent_node_visited_tuple
-                # since this allows us to detect a loop now and hence use a partition or group
-                # name with an 'L' at the end, e.g., "PR2_2L" when we crate frontier tuples
-                # and add names to the Senders and Receivers structures used for DAG creation.
+                # At this point, we try to detect a loop. If the parent P's position
+                # in it's partition is not -1, then P has been visited and already been added to a previous 
+                # partition/group and we are not in a loop. 
+                # 
+                # Tricky: Suppose BFS dequeues a node N. BFS will set N to visited and call
+                # dfs_parent(N). Note that we only add a node N to a partition/group *after* we have 
+                # recursively called dfs_parent on all of N's parents. If we call dfs_parent(N) and make 
+                # recursive calls dfs_parent ... dfs_parent ... on N's parents and grandparents etc
+                # and N is part of a loop, we will try to visit N again. While N will
+                # have been marked visited, it will not have a position in any partition 
+                # assigned to it yet (we only add N to a partition after all of its calls
+                # to dfs_parent have unwould and we are not there yet.) So N is part of a loop.
+                # If N is not part of a loop and it is visited then we will have added N to
+                # some previous partition/group when its recursion was completely unwound.
+                
+                # If we detect a loop here we can  use a partition or group
+                # name with an 'L' at the end, e.g., "PR2_2L". This is the proper name for a 
+                # loop. But not that N may be in a loop that we just have not detected yet,
+                # i.e., N and its parent P1 are not in a loop but N and its parent P2 are
+                # in a loop. When we detect a loop we set current_partition_isLoop and
+                # current_group_isLoop to True. (If the current group is in a loop the 
+                # current partition, which is the partition the current group is in, is 
+                # also in a loop.)
 
                 if parent_partition_parent_index == -1:
                     logger.debug("XXXXXXXXXXXXXXXXX dfs_parent: Loop Detected: "
@@ -455,20 +519,92 @@ if __name__ == '__main__':
                     global current_partition_isLoop
                     current_partition_isLoop = True
 
-                    # assert:
-                    if parent_group_parent_index != -1:
-                        logger.error("[Error] Internal Error: parent_partition_parent_index is -1"
-                            + " indicating that current partition is a loop but "
-                            + " parent_group_parent_index is not -1, when the group should also be a loop.") 
     # rhc : ******* Group
                     global current_group_isLoop
                     current_group_isLoop = True
                 else:
-                    logger.debug("YYYYYYYYYYYYY dfs_parent: No Loop Detected: "
+                    logger.debug("YYYYYYYYYYYYY dfs_parent: No Loop Detected (yet): "
                         + "PR" + str(current_partition_number) + "_" + str(num_frontier_groups))
 
+            # next parent will be in next position in parent list
             index_of_parent += 1
 
+# if we found a loop then add 'L' to the partition/group name
+# Note: If a loop is detected current_partition_isLoop and current_group_isLoop are
+# both set to True. current_partition_isLoop remains True until the end 
+# of the partition is reached. current_group_isLoop is set to False when the 
+# end of the group is reached. So it is possible that current_partition_isLoop is
+# True and current_group_isLoop is False.
+
+# rhc : ******* Partition
+    current_partition_name = "PR" + str(current_partition_number) + "_1"
+    if current_partition_isLoop:
+        current_partition_name += "L"
+
+# rhc : ******* Group
+    current_group_name = "PR" + str(current_partition_number) + "_" + str(num_frontier_groups)
+    if current_group_isLoop:
+        current_group_name += "L"
+
+
+# stop
+
+    for parent_node_visited_tuple in already_visited_parents:
+        visited_parent_node = parent_node_visited_tuple[0]
+        index_of_parent = parent_node_visited_tuple[1]
+        #where: parent_node_visited_tuple = (parent_node,index_of_parent) 
+        partition_group_tuple = nodeIndex_to_partition_partitionIndex_group_groupIndex_map.get(visited_parent_node.ID)
+        # this is also used in the else: part for debugging so declare here
+        parent_partition_number = None
+        parent_group_number = None
+        if partition_group_tuple != None:
+            parent_partition_number = partition_group_tuple[0]
+            # If parent is not in the previous partition, the parent may still
+            # be in a previous group (same partition). So in this branch we will 
+            # check below to see if the parent is in the same group.
+            # If the parent is in the previous partition, it is also in a previous 
+            # group. So in the else branch we have foudn parent that is in the
+            # previous partition and a previous group (in a different partition.)
+            if parent_partition_number == -1 or parent_partition_number == current_partition_number:
+                # parent is not in previous partition, i.e., node is not a child of
+                # a parent node that was in previous partition. This means
+                # parent is in this partition and it is either in the same 
+                # group as node or it is in a different group, which was computed
+                # previously.
+                #
+                # If parent is in the same group then we do not need shadow nodes;
+                # otherwise, we need shadow_nodes just like the case in which the
+                # parent is in a different partition, which is like saying that 
+                # the parent is in a group of a different partition, but we presumably
+                # are not tracking groups, just partitions.
+                #
+                # The parent is in a different group if: it has a different group
+                # number and it's not -1. Either have to look in the global node to partition/group
+                # map or have a group_number member of Node.
+
+                logger.debug ("dfs_parent: parent in same partition: parent_partition_number: " 
+                    + str(parent_partition_number) 
+                    + ", current_partition_number:" + str(current_partition_number)
+                    + ", parent ID: " + str(parent_index))
+
+                # Check if this is a loop and parent partition/group number is -1. A loop is possible
+                # since parent is in the same partition/group. If not a loop, then parent is in 
+                # previous partition or group, and that is handled next.
+                #pg_tuple = nodeIndex_to_partition_partitionIndex_group_groupIndex_map[parent_index]
+                # parent has been mapped but the partition and group indices
+                # might be -1. From above, for documentation, a node's
+                # global map info is initialized at start of dfs_parent as:
+                #partition_number = current_partition_number
+                #partition_index = -1
+                #group_number = current_group_number
+                #group_index = -1
+                parent_partition_parent_index = partition_group_tuple[1]
+                parent_group_parent_index = partition_group_tuple[3]
+
+#rhc: case: visited parent before and it is is same partition so no shadow node.
+# parent may be in a loop so check for loop and if parent indicates a loop
+# then need to patch
+                if parent_partition_parent_index != -1:
 """
 
 import networkx as nx
@@ -909,7 +1045,7 @@ def dfs_parent(visited, node):  #function for dfs
     # both set to True. current_partition_isLoop remains True until the end 
     # of the partition is reached. current_group_isLoop is set to False when the 
     # end of the group is reached. So it is possible that current_partition_isLoop is
-    # True and current_partition_isLoop is False.
+    # True and current_group_isLoop is False.
 
     # The name of the current partition/group depends on whether it
     # has a loop. If so we add an 'L' to the end of the name.
