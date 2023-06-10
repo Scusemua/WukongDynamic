@@ -1382,7 +1382,7 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                             for key, value in dict_of_results.items():
                                 logger.debug(str(key) + " -> " + str(value))
                             # Threads put task outputs in a data_dict that is global to the threads
-                            # so there is no need to do it again, when getting work from the work_queue.
+                            # so there is no need to do it again here, when getting work from the work_queue.
                             #for key, value in dict_of_results.items():
                             #    data_dict[key] = value                    
                         
@@ -1392,13 +1392,15 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                         logger.debug("DAG_executor: state is -1 so deposit another -1 and return.")
                         #Note: we are not passing the DAG_executor_state of this 
                         # DAG_executor to tcp_server. We are not using a work_queue
-                        # with Lamdas so we are not going to woory about using the
+                        # with Lamdas so we are not going to worry about using the
                         # convention that we pass DAG_executor_state in case we want to 
                         # do a restart - again, we wll not be restarting Lambdas due
                         # to blocking on a work_queue get() so we do not pass
                         # DAG_executor_state here. 
                         # Also, this makes the thread and process work_queues have the 
                         # same interface.
+#rhc: Keep track of how many workers have returned and when this equals num_workers
+# then do not add a -1 to the work queue.
                         if not using_threads_not_processes:
                             # Config: A5, A6
                             work_tuple = (-1,None)
@@ -1410,6 +1412,34 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                             work_tuple = (-1,None)
                             #work_queue.put(-1)
                             work_queue.put(work_tuple)
+                        # worker is returning from work loop so worker will terminate
+                        # and be joined by DAG_executor_driver
+#rhc: If doing incremental DAG and the DAG is not complete, then do not 
+# return; instead, call continue.withdraw to wait for the new DAG_info.
+# So all workers will call continue.withdraw and receive a new DAG_info.
+# Those with continue tasks in their continue queue will execute these tasks
+# instead of getting work from the work queue and presumably their cluster
+# queue was empty since they tries to get work from the work queue ang got a -1.
+# So:
+# - no get work if cluster queue is not empty or continue queue is not empty.
+# = need to know have correct values for cmparison of 
+# num_tasks_executed == num_tasks_to_execute. Can just keep num_tasks_executed
+# as it is, but num_tasks_to_execute changes? where
+#  num_tasks_to_execute = len(DAG_tasks)
+# So make sure len(DAG_tasks) does not include any "continued" tasks or adjust 
+# accordingly, as in:
+# if incremental_generation and not DAG_complete
+#   num_tasks_to_execute = len(DAG_tasks)-1
+# else:
+#   num_tasks_to_execute = len(DAG_tasks)
+#
+# #rhc: perhaps here: workers_terminated += 1
+# and above:
+# if workers_terminated < num_workers-1
+# But for multiP, need shared workers_terminated, which can be treated just 
+# like the counter for num_tasks_executed, i.e., thread sand processes
+# access the counter, which is a global variable for threads and a shared
+# variable for multiP.
                         return  
 
                     # Note: using_workers is checked above and must be True
@@ -1425,8 +1455,8 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                 # will be flushed, which means the downstream pagerank tasks 
                 # that read these values will get the values written by P1.
                 # So we need a memory barrier between a task and its downstream
-                # tasks. Use this counter or if we ermove this counter, sometning 
-                # else need to provide the barrier.
+                # tasks. Use this counter or if we remove this counter, something 
+                # else needs to provide the barrier.
                 num_tasks_executed = counter.increment_and_get()
                 logger.debug("DAG_executor: " + thread_name + " before processing " + str(DAG_executor_state.state) 
                     + " num_tasks_executed: " + str(num_tasks_executed) 
@@ -1446,6 +1476,14 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                         work_tuple = (-1,None)
                         #work_queue.put(-1)
                         work_queue.put(work_tuple)
+                    
+                    # No return here. Th worker that executes the last task will
+                    # add a -1 to the work queue (-1,None) so that the next worker
+                    # to try to get work will get a -1. That worker will add a
+                    # -1 to the work queue and return from the work loop (so terminate)
+                    # The next worker will get this -1 etc. Note tha the last worker
+                    # will also add a -1 to the work_queue that will not be withdrawn.
+                    # So the work_queue has a -1 at the end of DAG_execution.
                     #return
             # else: # Config: A1. A2, A3
 
@@ -1786,6 +1824,21 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
             starting_number_of_fanouts = len(state_info.fanouts)
 
             if len(state_info.collapse) > 0:
+#rhc: If we run-time cluster, then we may have work in the cluster queue.
+# We can put the collpase work in the cluster queue too. If the cluster queue is
+# empty, thn we'll just execute the colpase task next; otherwise, we will add
+# the collapsed work at the end of the cluster queue and do it after all the 
+# clustered work. 
+# The work for collpase will have to be in the same orm as the clustered work,
+# e.g., a becomes task from fanouts. So:
+# - put all becomes work and collapsed work, etc in the cluster queue a
+# - get work from the non-empty cluster queue rather then from the work queue.
+#   If only a become task or collased task in the cluster queue then not 
+#   worker_needs_input is true and the work is in the cluster queue. Can 
+#   assert not worker_needs_input when non-empty cluster queue. (But clustering 
+#   fanouts etc. might afect the worker_needs_input flag - cluster many fanouts 
+#   then worker_needs_input stays true after getting work.)
+
                 if len(state_info.fanins) + len(state_info.fanouts) + len(state_info.faninNBs) > 0:
                     logger.error("Error1")
                 # execute collapsed task next - transition to new state and iterate loop
