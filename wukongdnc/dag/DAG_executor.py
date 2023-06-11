@@ -40,6 +40,8 @@ from .DAG_executor_constants import sync_objects_in_lambdas_trigger_their_tasks,
 from .DAG_executor_constants import tasks_use_result_dictionary_parameter, same_output_for_all_fanout_fanin
 from .DAG_executor_constants import compute_pagerank, use_shared_partitions_groups, use_page_rank_group_partitions
 from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
+#rhc: counter:
+from .DAG_executor_constants import num_workers
 #from .DAG_work_queue_for_threads import thread_work_queue
 from .DAG_executor_work_queue_for_threads import work_queue
 from .DAG_data_dict_for_threads import data_dict
@@ -1296,6 +1298,9 @@ def process_fanins(websocket,fanins, faninNB_sizes, calling_task_name, DAG_state
 """
 
 #def DAG_executor_work_loop(logger, server, counter, work_queue, DAG_executor_state, DAG_info, data_dict):
+
+#rhc: counter
+# tasks_completed_counter, workers_completed_counter
 def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info, work_queue):
 
     DAG_map = DAG_info.get_DAG_map()
@@ -1315,6 +1320,9 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
     # of worker_needs_input to True is guarded by "if using_workers" so worker_needs_input is never
     # set to True if not using_workers.
     worker_needs_input = using_workers
+
+#rhc: cluster queue:
+#   cluster_queue = queue.Queue()
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
         global store_fanins_faninNBs_locally
@@ -1399,14 +1407,34 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                         # DAG_executor_state here. 
                         # Also, this makes the thread and process work_queues have the 
                         # same interface.
-#rhc: Keep track of how many workers have returned and when this equals num_workers
-# then do not add a -1 to the work queue.
+
+                        #rhc: Keep track of how many workers have returned and when this equals num_workers
+                        # then do not add a -1 to the work queue.
                         if not using_threads_not_processes:
+#rhc: counter: 
+# workers_completed = workers_completed_counter.increment_and_get()
+# if workers_completed < num_workers:
+# logger.debug("DAG_executor: Work_Loop: workers_completed:  " + str(workers_completed)
+#   + " put -1 in work queue.")
+# ...
+# else:
+# logger.debug("DAG_executor: Work_Loop: all workers_completed:  " + str(workers_completed)
+#   + " do not put -1 in work queue.")
+
                             # Config: A5, A6
                             work_tuple = (-1,None)
                             #work_queue.put(-1)
                             work_queue.put(work_tuple)
                         else:
+#rhc: counter: 
+# workers_completed = workers_completed_counter.increment_and_get()
+# if workers_completed < num_workers:
+# logger.debug("DAG_executor: Work_Loop: workers_completed:  " + str(workers_completed)
+#   + " put -1 in work queue.")
+# ...
+# else:
+# logger.debug("DAG_executor: Work_Loop: all workers_completed:  " + str(workers_completed)
+#   + " do not put -1 in work queue.")
                             # Config: A4_local, A4_Remote
                             #thread_work_queue.put(-1)
                             work_tuple = (-1,None)
@@ -1422,7 +1450,7 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
 # queue was empty since they tries to get work from the work queue ang got a -1.
 # So:
 # - no get work if cluster queue is not empty or continue queue is not empty.
-# = need to know have correct values for cmparison of 
+# = need to know have correct values for cmoparison of 
 # num_tasks_executed == num_tasks_to_execute. Can just keep num_tasks_executed
 # as it is, but num_tasks_to_execute changes? where
 #  num_tasks_to_execute = len(DAG_tasks)
@@ -1433,13 +1461,6 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
 # else:
 #   num_tasks_to_execute = len(DAG_tasks)
 #
-# #rhc: perhaps here: workers_terminated += 1
-# and above:
-# if workers_terminated < num_workers-1
-# But for multiP, need shared workers_terminated, which can be treated just 
-# like the counter for num_tasks_executed, i.e., thread sand processes
-# access the counter, which is a global variable for threads and a shared
-# variable for multiP.
                         return  
 
                     # Note: using_workers is checked above and must be True
@@ -1457,6 +1478,8 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                 # So we need a memory barrier between a task and its downstream
                 # tasks. Use this counter or if we remove this counter, something 
                 # else needs to provide the barrier.
+#rhc: counter
+# tasks_completed_counter,
                 num_tasks_executed = counter.increment_and_get()
                 logger.debug("DAG_executor: " + thread_name + " before processing " + str(DAG_executor_state.state) 
                     + " num_tasks_executed: " + str(num_tasks_executed) 
@@ -1823,20 +1846,55 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
             # is below.
             starting_number_of_fanouts = len(state_info.fanouts)
 
+#rhc: cluster queue:
+# Note: if this just executed task T has a clusgter task then T has no
+# fanouts/fanins/faninNBs, so next it will execute the clustered task
+# with the results it just placed in the data_dict.
+# Note: if the just executed task T has multiple fanouts and it clusters them
+# then the fanouts will be added to the cluster queue, i.e., their state
+# returned by DAG_info.get_DAG_states() will be added to the cluster queue.
+# We were going to add the fanouts to the work queue (minus the become
+# task). For the become task, we only set DAG_executor_state.state and execute
+# that task next, so just like a collapsed task. Notice that the input for
+# the become task (a fanout task) will be retieved from the data_dict, i.e., 
+# after T was excuted, we saved its output in the data dict so we know it
+# is there (in our local data dict if we are a process or lambda or the 
+# global data dict if we are a thread.) So we only put the state in the 
+# cluster queue, not the output of T since the output of T is in the data dict.
+# For clustered fanouts, we can also only put the state in the cluster queue 
+# since the output we need to execute them is T's output and it is in our
+# data dict.
+# Note: A fanin task can also be a become task. So we will want to add
+# such become tasks to the cluster queue, in the same way. Note that 
+# a fanin op returns all the results that were sent to the fanin and we 
+# put them in the data dict when the fanin op returns. So they will be
+# there when we execute the fanin task. That is, when we add the fanin 
+# task to the cluster queue it may be behind one or more clustered tasks
+# but when we eventually execute, we will have its inputs in our data dict.
+# 
+#if len(state_info.collapse) > 0:
+#   DAG_executor_state.state = DAG_info.get_DAG_states()[state_info.collapse[0]]
+#   collapse_queue.put(DAG_executor_state.state)
+# then:
+#if len(collapse_queue) > 0:
+# ...
+#   DAG_executor_state.state = collapse_queue.get()
+# ...
+
             if len(state_info.collapse) > 0:
 #rhc: If we run-time cluster, then we may have work in the cluster queue.
 # We can put the collpase work in the cluster queue too. If the cluster queue is
 # empty, thn we'll just execute the colpase task next; otherwise, we will add
 # the collapsed work at the end of the cluster queue and do it after all the 
 # clustered work. 
-# The work for collpase will have to be in the same orm as the clustered work,
+# The work for collapse will have to be in the same orm as the clustered work,
 # e.g., a becomes task from fanouts. So:
 # - put all becomes work and collapsed work, etc in the cluster queue a
 # - get work from the non-empty cluster queue rather then from the work queue.
 #   If only a become task or collased task in the cluster queue then not 
 #   worker_needs_input is true and the work is in the cluster queue. Can 
 #   assert not worker_needs_input when non-empty cluster queue. (But clustering 
-#   fanouts etc. might afect the worker_needs_input flag - cluster many fanouts 
+#   fanouts etc. might affect the worker_needs_input flag - cluster many fanouts 
 #   then worker_needs_input stays true after getting work.)
 
                 if len(state_info.fanins) + len(state_info.fanouts) + len(state_info.faninNBs) > 0:
@@ -1940,13 +1998,13 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     #thread_work_queue.put(DAG_executor_state.state)
                     # else: Config: A1, A2, A3
                 else:
-                    # No fanouts so no become task and fanins do not generate
-                    # work for us so we will need input.
+                    # No fanouts so no become task and if faninNBs do not generate
+                    # work for us we will need input, so set to True here as default.
                     #Note: setting worker_needs_input = True must be guarded by using_workers
                     if using_workers: 
                         # Config: A4_local, A4_Remote, A5, A6
                         worker_needs_input = True
-                        logger.debug(thread_name + " work_loop: fanouts: set worker_needs_input to False.")
+                        logger.debug(thread_name + " work_loop: fanouts: set worker_needs_input to True.")
                     # else: Config: A1, A2, A3
 
                 if len(state_info.faninNBs) > 0:
@@ -2058,13 +2116,14 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     # there can be faninNBs and fanouts.
 
                 else:
-                    # Currently, we are not pigybacking fanouts if we are using lambdas. when using lambdas, we 
-                    # start a lambda in process_fanouts for each fanout task. This code is for the case
-                    # that we are piggybacking fanouts on the process faninNB call but we did not 
+                    # Currently, we are not piggybacking fanouts if we are using lambdas or worker threads. 
+                    # When using lambdas, we start a lambda in process_fanouts 
+                    # for each fanout task. This code is for the case that we are using worker processes
+                    # piggybacking fanouts on the process faninNB call but we did not 
                     # have any faninNBs so we did not get a chance to piggyback the fanouts and thus we
-                    # need to process the fanouts here. For non-lambda, that means put the fanout tasks
+                    # need to process the fanouts here. For worker processes, that means put the fanout tasks
                     # in the work queue. For Lambdas, we will want to send the fanouts to the tcp_server
-                    # for parallel invocation.
+                    # for parallel invocation. For worker threads, we processed fanouts.
                     if run_all_tasks_locally and using_workers and not using_threads_not_processes:
                         # Config: A5, A6
                         # we are batching faninNBs and piggybacking fanouts on process_faninNB_batch
@@ -2282,10 +2341,14 @@ def DAG_executor(payload):
 
     #DAG_info = payload['DAG_info']
     #DAG_executor_work_loop(logger, server, counter, thread_work_queue, DAG_executor_state, DAG_info, data_dict)
+#rhc: counter
+# tasks_completed_counter, workers_completed_counter
     DAG_executor_work_loop(logger, server, counter, DAG_exec_state, DAG_info, work_queue)
 
 # Config: A5, A6
-# def DAG_executor_processes(payload,counter,process_work_queue,data_dict,log_queue, configurer):
+# def DAG_executor_processes(payload,counter,process_work_queue,data_dict,log_queue, configurer)
+#rhc: counter
+# tasks_completed_counter, workers_completed_counter
 def DAG_executor_processes(payload,counter,log_queue_or_logger, worker_configurer,
     shared_nodes,shared_map,shared_frontier_map,
     pagerank_sent_to_processes,previous_sent_to_processes,number_of_children_sent_to_processes,number_of_parents_sent_to_processes,starting_indices_of_parents_sent_to_processes,parents_sent_to_processes,IDs_sent_to_processes,):
@@ -2369,6 +2432,8 @@ def DAG_executor_processes(payload,counter,log_queue_or_logger, worker_configure
 
     #DAG_info = payload['DAG_info']
     #DAG_executor_work_loop(logger, server, counter, process_work_queue, DAG_exec_state, DAG_info, data_dict)
+#rhc: counter
+# tasks_completed_counter, workers_completed_counter
     DAG_executor_work_loop(logger, server, counter, DAG_exec_state, DAG_info, work_queue)
     logger.debug("DAG_executor_processes: returning after work_loop.")
     return
@@ -2418,6 +2483,8 @@ def DAG_executor_lambda(payload):
     # server and counter are None
     # logger is local lambda logger
 
+#rhc: counter
+# tasks_completed_counter, workers_completed_counter
     DAG_executor_work_loop(logger, server, counter, DAG_exec_state, DAG_info, work_queue )
     logger.debug("DAG_executor_processes: returning after work_loop.")
     return

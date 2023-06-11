@@ -1229,6 +1229,9 @@ def run():
         # putting -1 in the work_queue - when worker gets -1 it puts -1 for the next worker. So execution
         # ends with -1 in the work queue, which is put there by the last worker to stop.)
         counter = CounterMP()
+#rhc: counter
+# tasks_completed_counter = CounterMP()
+# workers_completed_counter = CounterMP()
         # used by a logger for multiprocessing
         log_queue = multiprocessing.Queue(-1)
         # used for multiprocessor logging - receives log messages from processes
@@ -1241,6 +1244,8 @@ def run():
         multithreaded_multiprocessing_process_list = []
         num_processes_created_for_multithreaded_multiprocessing = 0
         #num_processes_created_for_multithreaded_multiprocessing = create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,counter,process_work_queue,data_dict,log_queue,worker_configurer)
+#rhc: counter
+# # tasks_completed_counter, workers_completed_counter
         num_processes_created_for_multithreaded_multiprocessing = create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,counter,log_queue,worker_configurer)
         start_time = time.time()
         for thread_proc in multithreaded_multiprocessing_process_list:
@@ -1318,6 +1323,8 @@ def run():
                             # The worker_configurer() funcion is used for multiprocess logging
                             #proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,counter,process_work_queue,data_dict,log_queue,worker_configurer,))
                             if not (compute_pagerank and use_shared_partitions_groups):
+#rhc: counter 
+# tasks_completed_counter, workers_completed_counter
                                 proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,counter,log_queue,worker_configurer,
                                     None,None,None,None,None,None,None,None,None,None))
                             else: 
@@ -1333,12 +1340,16 @@ def run():
                                     shared_frontier_map = BFS_Shared.shared_partition_frontier_parents_map
 
                                 if use_struct_of_arrays_for_pagerank:
+#rhc: counter 
+# tasks_completed_counter, workers_completed_counter
                                     proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,counter,log_queue,worker_configurer,
                                         shared_nodes,shared_map,shared_frontier_map,
                                         BFS_Shared.pagerank_sent_to_processes,BFS_Shared.previous_sent_to_processes,BFS_Shared.number_of_children_sent_to_processes,
                                         BFS_Shared.number_of_parents_sent_to_processes,BFS_Shared.starting_indices_of_parents_sent_to_processes,
                                         BFS_Shared.parents_sent_to_processes,BFS_Shared.IDs_sent_to_processes,))
                                 else:
+#rhc: counter 
+# tasks_completed_counter, workers_completed_counter
                                     proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,counter,log_queue,worker_configurer,
                                         shared_nodes,shared_map,shared_frontier_map,
                                         None,None,None,None,None,None,None))
@@ -1433,6 +1444,8 @@ def run():
                             #proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"p"+str(num_threads_created + 1)), args=(payload,counter,process_work_queue,data_dict,log_queue,worker_configurer,))
 
                             if not (compute_pagerank and use_shared_partitions_groups):
+#rhc: counter 
+# tasks_completed_counter, workers_completed_counter
                                 proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"p"+str(num_threads_created + 1)), args=(payload,counter,log_queue,worker_configurer,
                                     None,None,None,None,None,None,None,None,None,None))
                             else:
@@ -1452,6 +1465,8 @@ def run():
                                         BFS_Shared.number_of_parents_sent_to_processes,BFS_Shared.starting_indices_of_parents_sent_to_processes,
                                         BFS_Shared.parents_sent_to_processes,BFS_Shared.IDs_sent_to_processes,))
                                 else:
+#rhc: counter 
+# tasks_completed_counter, workers_completed_counter
                                     proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"p"+str(num_threads_created + 1)), args=(payload,counter,log_queue,worker_configurer,
                                         shared_nodes,shared_map,shared_frontier_map,
                                         None,None,None,None,None,None,None))

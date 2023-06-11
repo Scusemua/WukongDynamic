@@ -15,6 +15,15 @@ class Counter(object):
             self.value += 1
             return self.value
 
+#rhc: counter 
+# tasks_completed_counter
+
 counter = None
 if using_workers and using_threads_not_processes:
     counter = Counter(0)
+
+#rhc: counter 
+# workers_completed_counter
+#workers_completed_counter = None
+#if using_workers and using_threads_not_processes:
+#    workers_completed_counter = Counter(0)
