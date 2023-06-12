@@ -45,7 +45,7 @@ from .DAG_executor_constants import num_workers
 #from .DAG_work_queue_for_threads import thread_work_queue
 from .DAG_executor_work_queue_for_threads import work_queue
 from .DAG_data_dict_for_threads import data_dict
-from .DAG_executor_counter import counter
+from .DAG_executor_counter import completed_tasks_counter, completed_workers_counter
 from .DAG_executor_synchronizer import server
 from wukongdnc.wukong.invoker import invoke_lambda_DAG_executor
 from .DAG_boundedbuffer_work_queue import BoundedBuffer_Work_Queue
@@ -1301,7 +1301,7 @@ def process_fanins(websocket,fanins, faninNB_sizes, calling_task_name, DAG_state
 
 #rhc: counter
 # tasks_completed_counter, workers_completed_counter
-def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info, work_queue):
+def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_workers_counter, DAG_executor_state, DAG_info, work_queue):
 
     DAG_map = DAG_info.get_DAG_map()
     DAG_tasks = DAG_info.get_DAG_tasks()
@@ -1397,7 +1397,7 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     logger.debug("**********************withdrawn state for thread: " + thread_name + " :" + str(DAG_executor_state.state))
 
                     if DAG_executor_state.state == -1:
-                        logger.debug("DAG_executor: state is -1 so deposit another -1 and return.")
+                        #logger.debug("DAG_executor: state is -1 so deposit another -1 and return.")
                         #Note: we are not passing the DAG_executor_state of this 
                         # DAG_executor to tcp_server. We are not using a work_queue
                         # with Lamdas so we are not going to worry about using the
@@ -1408,40 +1408,39 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                         # Also, this makes the thread and process work_queues have the 
                         # same interface.
 
-                        #rhc: Keep track of how many workers have returned and when this equals num_workers
+                        # Keep track of how many workers have returned and when this equals num_workers
                         # then do not add a -1 to the work queue.
                         if not using_threads_not_processes:
-#rhc: counter: 
-# workers_completed = workers_completed_counter.increment_and_get()
-# if workers_completed < num_workers:
-# logger.debug("DAG_executor: Work_Loop: workers_completed:  " + str(workers_completed)
-#   + " put -1 in work queue.")
-# ...
-# else:
-# logger.debug("DAG_executor: Work_Loop: all workers_completed:  " + str(workers_completed)
-#   + " do not put -1 in work queue.")
-
-                            # Config: A5, A6
-                            work_tuple = (-1,None)
-                            #work_queue.put(-1)
-                            work_queue.put(work_tuple)
+#rhc: counter:
+                            completed_workers = completed_workers_counter.increment_and_get()
+                            if completed_workers < num_workers:
+                                logger.debug("DAG_executor: Work_Loop: workers_completed:  " + str(completed_workers)
+                                    + " put -1 in work queue.")
+                                # Config: A5, A6
+                                work_tuple = (-1,None)
+                                #work_queue.put(-1)
+                                work_queue.put(work_tuple)
+                            else:
+                                logger.debug("DAG_executor: Work_Loop: completed_workers:  " + str(completed_workers)
+                                    + " do not put -1 in work queue.")
                         else:
-#rhc: counter: 
-# workers_completed = workers_completed_counter.increment_and_get()
-# if workers_completed < num_workers:
-# logger.debug("DAG_executor: Work_Loop: workers_completed:  " + str(workers_completed)
-#   + " put -1 in work queue.")
-# ...
-# else:
-# logger.debug("DAG_executor: Work_Loop: all workers_completed:  " + str(workers_completed)
-#   + " do not put -1 in work queue.")
-                            # Config: A4_local, A4_Remote
-                            #thread_work_queue.put(-1)
-                            work_tuple = (-1,None)
-                            #work_queue.put(-1)
-                            work_queue.put(work_tuple)
+#rhc: counter:
+                            completed_workers = completed_workers_counter.increment_and_get()
+                            if completed_workers < num_workers:
+                                logger.debug("DAG_executor: Work_Loop: workers_completed:  " + str(completed_workers)
+                                    + " put -1 in work queue.")
+
+                                # Config: A4_local, A4_Remote
+                                #thread_work_queue.put(-1)
+                                work_tuple = (-1,None)
+                                #work_queue.put(-1)
+                                work_queue.put(work_tuple)
+                            else:
+                                logger.debug("DAG_executor: Work_Loop: completed_workers:  " + str(completed_workers)
+                                    + " do not put -1 in work queue.")
                         # worker is returning from work loop so worker will terminate
                         # and be joined by DAG_executor_driver
+
 #rhc: If doing incremental DAG and the DAG is not complete, then do not 
 # return; instead, call continue.withdraw to wait for the new DAG_info.
 # So all workers will call continue.withdraw and receive a new DAG_info.
@@ -1461,6 +1460,30 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
 # else:
 #   num_tasks_to_execute = len(DAG_tasks)
 #
+# Add a continue method to the work queue, so it's a WorkQueue object instead
+# of BB. Calls to continue are to get the next DAG_info object. DAG_info has a 
+# version number, initially 1. Each time we generate a new DAG_info we inc
+# the version number. Calls to continue() pass the current version number of
+# the DAG_info being used by the worker. If worker is using an old DAG_info
+# i.e., workers version_number < current_version_number then rturn the 
+# current version of the DAG_info, else worker wants a new DAG_info and
+# has to wait for it. The DAG_ingo generator will generate the new DAG_info
+# and call 
+# def set_DAG_info(new_DAG_info,new_current_version_number):
+#   self.current_version = new_DAG_info
+#   assert new_current_version_number = current_version_number+1
+#   self.current_version_number = new_current_version_number
+# where:
+# __init__(self.current_version):
+#   self.current_version_number = 1
+#   self.current_version = None
+# and:
+# continue(worker_current_version_number):
+#   if worker_current_version_number < self.current_version_number:
+#       return current_version
+#   else:
+#       new.version.waitC()
+#       return current_version
                         return  
 
                     # Note: using_workers is checked above and must be True
@@ -1479,8 +1502,8 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                 # tasks. Use this counter or if we remove this counter, something 
                 # else needs to provide the barrier.
 #rhc: counter
-# tasks_completed_counter,
-                num_tasks_executed = counter.increment_and_get()
+# completed_tasks_counter,
+                num_tasks_executed = completed_tasks_counter.increment_and_get()
                 logger.debug("DAG_executor: " + thread_name + " before processing " + str(DAG_executor_state.state) 
                     + " num_tasks_executed: " + str(num_tasks_executed) 
                     + " num_tasks_to_execute: " + str(num_tasks_to_execute))
@@ -1505,8 +1528,9 @@ def DAG_executor_work_loop(logger, server, counter, DAG_executor_state, DAG_info
                     # to try to get work will get a -1. That worker will add a
                     # -1 to the work queue and return from the work loop (so terminate)
                     # The next worker will get this -1 etc. Note tha the last worker
-                    # will also add a -1 to the work_queue that will not be withdrawn.
-                    # So the work_queue has a -1 at the end of DAG_execution.
+                    # will not add a -1 to the work_queue.
+                    # (The last worker used to also add a -1 to the work queue, so 
+                    # the work_queue has a -1 at the end of DAG_execution.
                     #return
             # else: # Config: A1. A2, A3
 
@@ -2343,13 +2367,13 @@ def DAG_executor(payload):
     #DAG_executor_work_loop(logger, server, counter, thread_work_queue, DAG_executor_state, DAG_info, data_dict)
 #rhc: counter
 # tasks_completed_counter, workers_completed_counter
-    DAG_executor_work_loop(logger, server, counter, DAG_exec_state, DAG_info, work_queue)
+    DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_workers_counter, DAG_exec_state, DAG_info, work_queue)
 
 # Config: A5, A6
 # def DAG_executor_processes(payload,counter,process_work_queue,data_dict,log_queue, configurer)
 #rhc: counter
 # tasks_completed_counter, workers_completed_counter
-def DAG_executor_processes(payload,counter,log_queue_or_logger, worker_configurer,
+def DAG_executor_processes(payload,completed_tasks_counter,completed_workers_counter,log_queue_or_logger, worker_configurer,
     shared_nodes,shared_map,shared_frontier_map,
     pagerank_sent_to_processes,previous_sent_to_processes,number_of_children_sent_to_processes,number_of_parents_sent_to_processes,starting_indices_of_parents_sent_to_processes,parents_sent_to_processes,IDs_sent_to_processes,):
     # Use for multiprocessing workers
@@ -2434,7 +2458,7 @@ def DAG_executor_processes(payload,counter,log_queue_or_logger, worker_configure
     #DAG_executor_work_loop(logger, server, counter, process_work_queue, DAG_exec_state, DAG_info, data_dict)
 #rhc: counter
 # tasks_completed_counter, workers_completed_counter
-    DAG_executor_work_loop(logger, server, counter, DAG_exec_state, DAG_info, work_queue)
+    DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_workers_counter, DAG_exec_state, DAG_info, work_queue)
     logger.debug("DAG_executor_processes: returning after work_loop.")
     return
 
@@ -2485,7 +2509,7 @@ def DAG_executor_lambda(payload):
 
 #rhc: counter
 # tasks_completed_counter, workers_completed_counter
-    DAG_executor_work_loop(logger, server, counter, DAG_exec_state, DAG_info, work_queue )
+    DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_workers_counter, DAG_exec_state, DAG_info, work_queue )
     logger.debug("DAG_executor_processes: returning after work_loop.")
     return
                         

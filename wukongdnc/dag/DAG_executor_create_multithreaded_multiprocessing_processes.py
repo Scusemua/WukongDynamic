@@ -19,7 +19,8 @@ logger.addHandler(ch)
 """
 
 #def create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,counter,process_work_queue,data_dict,log_queue,worker_configurer):
-def create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,counter,log_queue,worker_configurer):
+#def create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,counter,log_queue,worker_configurer):
+def create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,completed_tasks_counter,completed_workers_counter,log_queue,worker_configurer):
 
     logger.debug("DAG_executor_driver: Starting multi processors for multhreaded multipocessing.")
     iteration = 1
@@ -40,7 +41,7 @@ def create_multithreaded_multiprocessing_processes(num_processes_created_for_mul
             #proc = Process(target=create_and_run_threads_for_multiT_multiP, name=(process_name), args=(process_name,payload,counter,log_queue,worker_configurer,))
 
             if not (compute_pagerank and use_shared_partitions_groups):
-                proc = Process(target=create_and_run_threads_for_multiT_multiP, name=(process_name), args=(process_name,payload,counter,log_queue,worker_configurer,
+                proc = Process(target=create_and_run_threads_for_multiT_multiP, name=(process_name), args=(process_name,payload,completed_tasks_counter,completed_workers_counter,log_queue,worker_configurer,
                     None,None,None,None,None,None,None,None,None,None))
             else:
                 if use_page_rank_group_partitions:
@@ -53,13 +54,15 @@ def create_multithreaded_multiprocessing_processes(num_processes_created_for_mul
                     shared_frontier_map = BFS_Shared.shared_partition_frontier_parents_map
 
                 if use_struct_of_arrays_for_pagerank:
-                    proc = Process(target=create_and_run_threads_for_multiT_multiP, name=(process_name), args=(process_name,payload,counter,log_queue,worker_configurer,
+                    #proc = Process(target=create_and_run_threads_for_multiT_multiP, name=(process_name), args=(process_name,payload,counter,log_queue,worker_configurer,
+                    proc = Process(target=create_and_run_threads_for_multiT_multiP, name=(process_name), args=(process_name,payload,completed_tasks_counter,completed_workers_counter,log_queue,worker_configurer,
                         shared_nodes,shared_map,shared_frontier_map,
                         BFS_Shared.pagerank_sent_to_processes,BFS_Shared.previous_sent_to_processes,BFS_Shared.number_of_children_sent_to_processes,
                         BFS_Shared.number_of_parents_sent_to_processes,BFS_Shared.starting_indices_of_parents_sent_to_processes,
                         BFS_Shared.parents_sent_to_processes,BFS_Shared.IDs_sent_to_processes,))
                 else:
-                    proc = Process(target=create_and_run_threads_for_multiT_multiP, name=(process_name), args=(process_name,payload,counter,log_queue,worker_configurer,
+                    #proc = Process(target=create_and_run_threads_for_multiT_multiP, name=(process_name), args=(process_name,payload,counter,log_queue,worker_configurer,
+                    proc = Process(target=create_and_run_threads_for_multiT_multiP, name=(process_name), args=(process_name,payload,completed_tasks_counter,completed_workers_counter,log_queue,worker_configurer,
                         shared_nodes,shared_map,shared_frontier_map,
                         None,None,None,None,None,None,None))
 
