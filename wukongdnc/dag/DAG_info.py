@@ -9,6 +9,7 @@ class DAG_Info(object):
     def __init__(self,file_name = './DAG_info.pickle'):
         self.file_name = file_name
         self.DAG_info = input_DAG_info(file_name)
+
     def get_DAG_map(self):
         return self.DAG_info["DAG_map"]
     def get_DAG_states(self):
@@ -35,3 +36,10 @@ class DAG_Info(object):
         self.DAG_info["DAG_leaf_task_inputs"] = None
     def get_DAG_tasks(self):
         return self.DAG_info["DAG_tasks"]
+#rhc: continue
+# Assuming we set version_number and DAG_info_is_complete when we 
+# generate DAG. Default is version_number=1. DAG_info_is_complete=True
+    def get_version_number(self):
+        return self.DAG_info["version_number"]
+    def get_DAG_info_is_complete(self):
+        return self.DAG_info["DAG_info_is_complete"]

@@ -1523,11 +1523,11 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         #work_queue.put(-1)
                         work_queue.put(work_tuple)
                     
-                    # No return here. Th worker that executes the last task will
+                    # No return here. The worker that executes the last task will
                     # add a -1 to the work queue (-1,None) so that the next worker
                     # to try to get work will get a -1. That worker will add a
                     # -1 to the work queue and return from the work loop (so terminate)
-                    # The next worker will get this -1 etc. Note tha the last worker
+                    # The next worker will get this -1 etc. Note that the last worker
                     # will not add a -1 to the work_queue.
                     # (The last worker used to also add a -1 to the work queue, so 
                     # the work_queue has a -1 at the end of DAG_execution.
