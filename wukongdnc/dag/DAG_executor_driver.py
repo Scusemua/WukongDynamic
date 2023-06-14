@@ -350,7 +350,7 @@ import uuid
 from wukongdnc.server.api import create_all_sync_objects, synchronize_trigger_leaf_tasks
 from .multiprocessing_logging import listener_configurer, listener_process, worker_configurer
 from .DAG_executor_countermp import CounterMP
-from .DAG_boundedbuffer_work_queue import BoundedBuffer_Work_Queue
+from .DAG_boundedbuffer_work_queue import Work_Queue_Client
 from .DAG_executor_create_multithreaded_multiprocessing_processes import create_multithreaded_multiprocessing_processes #, create_and_run_threads_for_multiT_multiP
 import copy
 from . import BFS_Shared
@@ -1041,7 +1041,7 @@ def run():
                         #num_DAG_tasks = len(DAG_tasks)
                         #process_work_queue = manager.Queue(maxsize = num_DAG_tasks)
                         num_tasks_to_execute = len(DAG_tasks)
-                        process_work_queue = BoundedBuffer_Work_Queue(websocket,2*num_tasks_to_execute)
+                        process_work_queue = Work_Queue_Client(websocket,2*num_tasks_to_execute)
                         #process_work_queue.create()
                         create_fanins_and_faninNBs_and_work_queue(websocket,num_tasks_to_execute,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
                         #Note: you can reversed() this list of leaf node start states to reverse the order of 
@@ -1129,7 +1129,7 @@ def run():
                         #num_DAG_tasks = len(DAG_tasks)
                         #process_work_queue = manager.Queue(maxsize = num_DAG_tasks)
                         num_tasks_to_execute = len(DAG_tasks)
-                        process_work_queue = BoundedBuffer_Work_Queue(websocket,2*num_tasks_to_execute)
+                        process_work_queue = Work_Queue_Client(websocket,2*num_tasks_to_execute)
                         process_work_queue.create()
                         list_of_work_queue_values = []
                         for state in DAG_leaf_task_start_states:

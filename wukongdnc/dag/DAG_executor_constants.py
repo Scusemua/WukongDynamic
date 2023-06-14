@@ -175,6 +175,9 @@ compute_pagerank = True
 # as the task_inputs, instad of just using "S", which is the Dask way.
 same_output_for_all_fanout_fanin = False
 
+# True if DAG generation and DAG_execution are overlapped. 
+use_incremental_DAG_generation = False
+
 if not same_output_for_all_fanout_fanin and not compute_pagerank:
     logger.error("[Error]: Configuration error: if same_output_for_all_fanout_fanin"
         + " then must be computing pagerank.")

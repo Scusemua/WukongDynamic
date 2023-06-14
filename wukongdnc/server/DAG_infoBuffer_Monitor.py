@@ -20,16 +20,16 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         super(DAG_infoBuffer_Monitor, self).__init__(monitor_name=monitor_name)
 
     #def init(self, **kwargs):
-    def init(self,current_version_DAG_Info=None):
+    def init(self,**kwargs):
         # initialize with a DAG_info object. This will be version 1 of the DAG
-        self.current_version_DAG_Info = current_version_DAG_Info
-        self.current_version_number_DAG_info = self.current_version_DAG_Info.get_version_number()
+        self.current_version_DAG_info = kwargs['current_version_DAG_info']
+        self.current_version_number_DAG_info = self.current_version_DAG_info.get_version_number()
         self._next_version=super().get_condition_variable(condition_name="_next_version")
         # if use kwargs, it looks like:
         # self._capacity = kwargs["n"]
         # logger.info(kwargs)
 
-    def deposit(self,new_current_version_DAG_Info):
+    def deposit(self,**kwargs):
         # deposit a new DAG_info object. It's version number will be one more
         # than the current DAG_info object.
         # Wake up any workes waiting for the next version of the DAG. Workers
@@ -49,25 +49,26 @@ class DAG_infoBuffer_Monitor(MonitorSU):
             return 0
 
         logger.debug(" deposit() entered monitor, len(self._new_version) ="+str(len(self._next_version)))
-        self.current_version_DAG_Info = new_current_version_DAG_Info
-        self.current_version_number_DAG_info = self.current_version_DAG_Info.get_version_number()
-        #logger.debug("DAG_info to deposit: " + str(self.current_version_DAG_Info))
+        self.current_version_DAG_info = kwargs['new_current_version_DAG_info']
+        self.current_version_number_DAG_info = self.current_version_DAG_info.get_version_number()
+        #logger.debug("DAG_info to deposit: " + str(self.current_version_DAG_info))
         restart = False
         self._next_version.signal_c_and_exit_monitor()
         return 0, restart
 
-    def withdraw(self, requested_current_version_number):
+    def withdraw(self, **kwargs):
         # request a new version of the DAG. A worker that finishes version 
         # i will request i+1. Noet that i+1 may <= current_version. If so
         # return the current version. If not, then the worker is requesting
         # the next version of the DAG, which hasn't been generated yet.
         super().enter_monitor(method_name = "withdraw")
+        requested_current_version_number = kwargs['requested_current_version_number']
         logger.debug("withdraw() entered monitor, requested_current_version_number = "
             + str(requested_current_version_number) + " len(self._new_version) = " + str(len(self._next_version)))
         DAG_info = None
         restart = False
         if requested_current_version_number <= self.current_version_number_DAG_info:
-            DAG_info = self.current_version_DAG_Info
+            DAG_info = self.current_version_DAG_info
             logger.debug(" withdraw got " + str(DAG_info.get_value())
                 + " with version number " + str(DAG_info.get_version_number()))
             super().exit_monitor()
@@ -75,7 +76,7 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         else:
             logger.debug("withdraw waiting for version " + str(requested_current_version_number))
             self._next_version.wait_c()
-            DAG_info = self.current_version_DAG_Info
+            DAG_info = self.current_version_DAG_info
             # cascaded wakeup, i.e., if there are more than one worker waiting,
             # the deposit() will wakeup the first worker with its
             # signal_c_and_exit_monitor(). The firsy waitng worker will wakeup
@@ -117,19 +118,26 @@ class Dummy_DAG_info:
 def taskD(b : DAG_infoBuffer_Monitor):
     time.sleep(3)
     DAG_info = Dummy_DAG_info("DAG_info2",2)
-    b.deposit(DAG_info)
+    keyword_arguments = {}
+    keyword_arguments['new_current_version_DAG_info'] = DAG_info
+    logger.debug("taskD Calling withdraw")
+    b.deposit(**keyword_arguments)
     logger.debug("Successfully called deposit version 2")
 
 def taskW1(b : DAG_infoBuffer_Monitor):
-    logger.debug("Calling withdraw")
-    DAG_info, restart = b.withdraw(1)
+    logger.debug("taskW1 Calling withdraw")
+    keyword_arguments = {}
+    keyword_arguments['requested_current_version_number'] = 1
+    DAG_info, restart = b.withdraw(**keyword_arguments)
     logger.debug("Successfully called withdraw, ret is " 
         + str(DAG_info.get_value()) + "," + str(DAG_info.get_version_number())
         + " restart " + str(restart))
 
 def taskW2(b : DAG_infoBuffer_Monitor):
-    logger.debug("Calling withdraw")
-    DAG_info, restart = b.withdraw(2)
+    logger.debug("taskW2 Calling withdraw")
+    keyword_arguments = {}
+    keyword_arguments['requested_current_version_number'] = 2
+    DAG_info, restart = b.withdraw(**keyword_arguments)
     logger.debug("Successfully called withdraw, ret is " 
         + str(DAG_info.get_value()) + "," + str(DAG_info.get_version_number())
         + " restart " + str(restart))
@@ -137,7 +145,9 @@ def taskW2(b : DAG_infoBuffer_Monitor):
 def main(): 
     b = DAG_infoBuffer_Monitor(monitor_name="DAG_infoBuffer_Monitor")
     DAG_info = Dummy_DAG_info("DAG_info1",1)
-    b.init(DAG_info)
+    keyword_arguments = {}
+    keyword_arguments['current_version_DAG_info'] = DAG_info
+    b.init(**keyword_arguments)
     try:
         logger.debug("Starting D thread")
         _thread.start_new_thread(taskD, (b,))

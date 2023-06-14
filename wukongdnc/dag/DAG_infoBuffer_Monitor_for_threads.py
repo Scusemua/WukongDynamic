@@ -1,0 +1,7 @@
+from .DAG_executor_constants import using_threads_not_processes, using_workers
+from .DAG_executor_constants import use_incremental_DAG_generation
+from wukongdnc.server.DAG_infoBuffer_Monitor import DAG_infoBuffer_Monitor
+
+DAG_infobuffer_monitor = None
+if using_workers and use_incremental_DAG_generation and using_threads_not_processes:
+    DAG_infobuffer_monitor = DAG_infoBuffer_Monitor()

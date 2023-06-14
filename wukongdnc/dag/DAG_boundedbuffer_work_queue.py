@@ -12,7 +12,7 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 """
 
-class BoundedBuffer_Work_Queue:
+class Work_Queue_Client:
     def __init__(self,websocket, n):
         self.websocket = websocket
         self.n = n

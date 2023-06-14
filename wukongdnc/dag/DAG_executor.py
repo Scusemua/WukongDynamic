@@ -40,6 +40,7 @@ from .DAG_executor_constants import sync_objects_in_lambdas_trigger_their_tasks,
 from .DAG_executor_constants import tasks_use_result_dictionary_parameter, same_output_for_all_fanout_fanin
 from .DAG_executor_constants import compute_pagerank, use_shared_partitions_groups, use_page_rank_group_partitions
 from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
+from .DAG_executor_constants import use_incremental_DAG_generation
 #rhc: counter:
 from .DAG_executor_constants import num_workers
 #from .DAG_work_queue_for_threads import thread_work_queue
@@ -48,8 +49,9 @@ from .DAG_data_dict_for_threads import data_dict
 from .DAG_executor_counter import completed_tasks_counter, completed_workers_counter
 from .DAG_executor_synchronizer import server
 from wukongdnc.wukong.invoker import invoke_lambda_DAG_executor
-from .DAG_boundedbuffer_work_queue import BoundedBuffer_Work_Queue
+from .DAG_boundedbuffer_work_queue import Work_Queue_Client
 from .util import pack_data
+from .DAG_infoBuffer_Monitor_Client import DAG_infoBuffer_Monitor_Client
 
 # Note: avoiding circular imports:
 # https://stackoverflow.com/questions/744373/what-happens-when-using-mutual-or-circular-cyclic-imports
@@ -1344,7 +1346,14 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             #
             # each thread in multithreading multiprocesssing needs its own socket.
             # each process when single threaded multiprocessing needs its own socket.
-            work_queue = BoundedBuffer_Work_Queue(websocket,2*num_tasks_to_execute)
+            work_queue = Work_Queue_Client(websocket,2*num_tasks_to_execute)
+
+#rhc: continue
+            # we are only using incremental_DAG_generation when we
+            # are computing pagerank, so far. Pagerank DAGS are the
+            # only DAGS we generate ourselves, so far.
+            if compute_pagerank and use_incremental_DAG_generation:
+                DAG_infobuffer_monitor = DAG_infoBuffer_Monitor_Client(websocket)
 
         #else: # Config: A1, A2, A3, A4_local, A4_Remote
 
@@ -1355,6 +1364,21 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
         # - faninB: no becomes - last caller does put, all callers need to do gets
             if using_workers:
                 # Config: A4_local, A4_Remote, A5, A6
+# So:
+# - no get work if cluster queue is not empty or continue queue is not empty.
+# - need to know have correct values for comparison of 
+# num_tasks_executed == num_tasks_to_execute. Can just keep num_tasks_executed
+# as it is, but num_tasks_to_execute changes? where
+#  num_tasks_to_execute = len(DAG_tasks)
+# So make sure len(DAG_tasks) does not include any "continued" tasks or adjust 
+# accordingly, as in:
+# if incremental_generation and not DAG_complete
+#   num_tasks_to_execute = len(DAG_tasks)-1
+# else:
+#   num_tasks_to_execute = len(DAG_tasks)
+# Not sure where we will cut off the incremental task - last tasks to 
+# excute or the incomplete tasks that are targets of the last tasks to execute
+
                 if worker_needs_input:
                     #DAG_executor_state.state = thread_work_queue.get(block=True)
                     if not using_threads_not_processes:
@@ -1441,50 +1465,52 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         # worker is returning from work loop so worker will terminate
                         # and be joined by DAG_executor_driver
 
-#rhc: If doing incremental DAG and the DAG is not complete, then do not 
+#rhc continue: If doing incremental DAG and the DAG is not complete, then do not 
 # return; instead, call continue.withdraw to wait for the new DAG_info.
 # So all workers will call continue.withdraw and receive a new DAG_info.
 # Those with continue tasks in their continue queue will execute these tasks
 # instead of getting work from the work queue and presumably their cluster
-# queue was empty since they tries to get work from the work queue ang got a -1.
-# So:
-# - no get work if cluster queue is not empty or continue queue is not empty.
-# = need to know have correct values for cmoparison of 
-# num_tasks_executed == num_tasks_to_execute. Can just keep num_tasks_executed
-# as it is, but num_tasks_to_execute changes? where
-#  num_tasks_to_execute = len(DAG_tasks)
-# So make sure len(DAG_tasks) does not include any "continued" tasks or adjust 
-# accordingly, as in:
-# if incremental_generation and not DAG_complete
-#   num_tasks_to_execute = len(DAG_tasks)-1
-# else:
-#   num_tasks_to_execute = len(DAG_tasks)
-#
-# Add a continue method to the work queue, so it's a WorkQueue object instead
-# of BB. Calls to continue are to get the next DAG_info object. DAG_info has a 
-# version number, initially 1. Each time we generate a new DAG_info we inc
-# the version number. Calls to continue() pass the current version number of
-# the DAG_info being used by the worker. If worker is using an old DAG_info
-# i.e., workers version_number < current_version_number then rturn the 
-# current version of the DAG_info, else worker wants a new DAG_info and
-# has to wait for it. The DAG_ingo generator will generate the new DAG_info
-# and call 
-# def set_DAG_info(new_DAG_info,new_current_version_number):
-#   self.current_version = new_DAG_info
-#   assert new_current_version_number = current_version_number+1
-#   self.current_version_number = new_current_version_number
-# where:
-# __init__(self.current_version):
-#   self.current_version_number = 1
-#   self.current_version = None
-# and:
-# continue(worker_current_version_number):
-#   if worker_current_version_number < self.current_version_number:
-#       return current_version
-#   else:
-#       new.version.waitC()
-#       return current_version
-                        return  
+# queue was empty since they tried to get work from the work queue and got a -1.
+
+                        if compute_pagerank and use_incremental_DAG_generation:
+                            if not DAG_info.get_DAG_info_is_complete():
+                                requested_current_version_number = DAG_info.get_version_number() + 1
+    #rhc: ToDo: withdraw returns DAG_info, restart. When we use client wrapper,
+    # it takes care of this, but local call will get restart so need wrapper
+    # for local too? Note: for work_queue, local was queue.Queue so no restart issue.
+    # So: DAG_infobuffer_monitor = Remote_Client vs Local_Client
+    # where for work_queue we do same thing: local client that wraps a Queue,
+    # just like local Client for DAG_infoBuffer_Monitor wraps a DAG_infoBuffer_Monitor
+                                new_DAG_info = DAG_infobuffer_monitor.withdraw(requested_current_version_number)
+                                DAG_info = new_DAG_info
+
+    #rhc: continue: Next we will need to get work or do continue tasks
+    # so are we in a get work loop? Or do we just check continue queue
+    # here and if nothing then get work from work queue?
+    # Note: Above, we can;t chck continue_queue since we don't want
+    # to process continued work until we get a new DAG_info, but then
+    # keep processing continue queue until we've done all continued work.
+    # So turn process_continue_queue flag on here then turn it off when it
+    # is done? Perhaps f you get something from continue queue and queue
+    # becomes empty then done? So if process_continue_queue and continue_queue
+    # is not empty then get work from continue_queue, else set process_continue 
+    # queue to false (whether it was on or not) if cluster_queue is 
+    # not empty then get work from cluster_queue else get work from 
+    # work queue. This is different from imagined scheme where we 
+    # just don't get work from work queue if contimue and cluster queue are not empty
+    # and we then check the continue queue then cluster queue.
+    # We can't check continue queue unless we are in process_continue_queue
+    # phase, and we don't set this on until we get -1 fromwork queue
+    # and then withdraw returns a DAG_info. And we need to set
+    # process_continue_queue off when done with continued tasks,
+    # so may need the nwe version with all the queue checks up front.
+
+#rhc: Check this logic for return
+
+                            else:
+                                return
+                        else:
+                            return  
 
                     # Note: using_workers is checked above and must be True
                     worker_needs_input = False # default
