@@ -51,8 +51,9 @@ from .DAG_executor_synchronizer import server
 from wukongdnc.wukong.invoker import invoke_lambda_DAG_executor
 from .DAG_boundedbuffer_work_queue import Work_Queue_Client
 from .util import pack_data
-from .DAG_infoBuffer_Monitor_Client import DAG_infoBuffer_Monitor_Client
-
+#rhc continue
+from .Remote_Client_for_DAG_infoBuffer_Monitor import Remote_Client_for_DAG_infoBuffer_Monitor
+from .DAG_infoBuffer_Monitor_for_threads import DAG_infobuffer_monitor
 # Note: avoiding circular imports:
 # https://stackoverflow.com/questions/744373/what-happens-when-using-mutual-or-circular-cyclic-imports
 
@@ -1303,7 +1304,9 @@ def process_fanins(websocket,fanins, faninNB_sizes, calling_task_name, DAG_state
 
 #rhc: counter
 # tasks_completed_counter, workers_completed_counter
-def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_workers_counter, DAG_executor_state, DAG_info, work_queue):
+def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_workers_counter, DAG_executor_state, DAG_info, 
+#rhc continue
+    work_queue,DAG_infobuffer_monitor):
 
     DAG_map = DAG_info.get_DAG_map()
     DAG_tasks = DAG_info.get_DAG_tasks()
@@ -1338,7 +1341,9 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
         #print("socketname: " + websocket.getsockname())   # ->  (127.0.0.1,26386)
         #print(websocket.getpeername())   # ->  (127.0.0.1, 8888)
 
-        
+#rhc continue  
+        process_continue_queue = False
+
         # ... unless its this work_queue when we use processes. (Lambdas do not use a work_queue, for now):)
         if (run_all_tasks_locally and using_workers and not using_threads_not_processes): 
             # Config: A5, A6
@@ -1353,7 +1358,15 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             # are computing pagerank, so far. Pagerank DAGS are the
             # only DAGS we generate ourselves, so far.
             if compute_pagerank and use_incremental_DAG_generation:
-                DAG_infobuffer_monitor = DAG_infoBuffer_Monitor_Client(websocket)
+                DAG_infobuffer_monitor = Remote_Client_for_DAG_infoBuffer_Monitor(websocket)
+#rhc: continue
+# ToDo: need to create the remote DAG_infobuffer_monitor. The remote
+#       work queue is created by the DAG_executor_driver since the driver
+#       needs to deposit leaf task work in the work queue before
+#       creating the worker processes.
+#       We can create it here? or let the driver create it and 
+#       just make calls to deposit and withdraw in DAG_executor,
+#       as we do for the work queue.
 
         #else: # Config: A1, A2, A3, A4_local, A4_Remote
 
@@ -1483,6 +1496,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
     # just like local Client for DAG_infoBuffer_Monitor wraps a DAG_infoBuffer_Monitor
                                 new_DAG_info = DAG_infobuffer_monitor.withdraw(requested_current_version_number)
                                 DAG_info = new_DAG_info
+                                process_continue_queue = True
 
     #rhc: continue: Next we will need to get work or do continue tasks
     # so are we in a get work loop? Or do we just check continue queue
@@ -2388,12 +2402,16 @@ def DAG_executor(payload):
     # DAG_executor_work_queue_for_threads.py for Queue creation.
 
     global work_queue
+#rhc continue
+    global DAG_infobuffer_monitor
 
     #DAG_info = payload['DAG_info']
     #DAG_executor_work_loop(logger, server, counter, thread_work_queue, DAG_executor_state, DAG_info, data_dict)
 #rhc: counter
 # tasks_completed_counter, workers_completed_counter
-    DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_workers_counter, DAG_exec_state, DAG_info, work_queue)
+    DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_workers_counter, DAG_exec_state, DAG_info, 
+#rhc continue
+        work_queue,DAG_infobuffer_monitor)
 
 # Config: A5, A6
 # def DAG_executor_processes(payload,counter,process_work_queue,data_dict,log_queue, configurer)
@@ -2479,12 +2497,16 @@ def DAG_executor_processes(payload,completed_tasks_counter,completed_workers_cou
     # will create a BoundedBuffer_Work_Queue object, which wraps the websocket creatd in the 
     # work loop and the code to send work to the work queue on the tcp_server.
     work_queue = None
+#rhc continue
+    DAG_infobuffer_monitor = None
 
     #DAG_info = payload['DAG_info']
     #DAG_executor_work_loop(logger, server, counter, process_work_queue, DAG_exec_state, DAG_info, data_dict)
 #rhc: counter
 # tasks_completed_counter, workers_completed_counter
-    DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_workers_counter, DAG_exec_state, DAG_info, work_queue)
+    DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_workers_counter, DAG_exec_state, DAG_info, 
+#rhc continue
+        work_queue, DAG_infobuffer_monitor)
     logger.debug("DAG_executor_processes: returning after work_loop.")
     return
 
@@ -2529,13 +2551,17 @@ def DAG_executor_lambda(payload):
 
     # lambdas do not use work_queues, for now.
     work_queue = None
+#rhc continue
+    DAG_infobuffer_monitor = None
 
     # server and counter are None
     # logger is local lambda logger
 
 #rhc: counter
 # tasks_completed_counter, workers_completed_counter
-    DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_workers_counter, DAG_exec_state, DAG_info, work_queue )
+    DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_workers_counter, DAG_exec_state, DAG_info, 
+#rhc continue
+        work_queue,DAG_infobuffer_monitor )
     logger.debug("DAG_executor_processes: returning after work_loop.")
     return
                         

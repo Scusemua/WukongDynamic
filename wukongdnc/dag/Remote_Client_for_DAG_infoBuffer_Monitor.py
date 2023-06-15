@@ -12,7 +12,14 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 """
 
-class DAG_infoBuffer_Monitor_Client:
+# local wrapper for a DAG_infoBuffer_Monitor. there is also a 
+# local wrapper: Local_Client_for_DAG_infoBuffer_Monitor
+# This wrapper deals with the keword argument parameters
+# that need to be sent to the DAG_infoBuffer_Monitor
+# and the restart value returned by the DAG_infoBuffer_Monitor,
+# which is not used. It calls server.api methods to make remote
+# calls to the DAG_infoBuffer_Monitor
+class Remote_Client_for_DAG_infoBuffer_Monitor:
     def __init__(self,websocket):
         self.websocket = websocket
 
@@ -20,6 +27,7 @@ class DAG_infoBuffer_Monitor_Client:
         dummy_state =  DAG_executor_State()
         # name of objects is process_DAG_infoBuffer_Monitor, type is DAG_infoBuffer_Monitor
         create(self.websocket, "create", "DAG_infoBuffer_Monitor", "process_DAG_infoBuffer_Monitor", dummy_state)
+
 
     def deposit(self,DAG_info):
         # bounded buffer is blocking; using same interface as Manager.Queue
@@ -32,5 +40,7 @@ class DAG_infoBuffer_Monitor_Client:
         dummy_state = DAG_executor_State()
         dummy_state.keyword_arguments['requested_current_version_number'] = requested_current_version_number
         # name of object is process_DAG_infoBuffer_Monitor, type specified on create
+        # This call returns a new DAG_info object that is being 
+        # constructed incrementally.
         dummy_state = synchronize_sync(self.websocket,"synchronize_sync", "process_DAG_infoBuffer_Monitor", "withdraw", dummy_state)
         return dummy_state.return_value
