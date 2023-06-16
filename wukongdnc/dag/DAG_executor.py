@@ -1367,6 +1367,12 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 #       We can create it here? or let the driver create it and 
 #       just make calls to deposit and withdraw in DAG_executor,
 #       as we do for the work queue.
+#       Note: the driver either creates the work queue at the start
+#       in which case is does not need to call create() or the
+#       fanins/fanouts/faninNBs are crated on demand in which case
+#       since the driver needs to use the work queue it calls create().
+#
+
 
         #else: # Config: A1, A2, A3, A4_local, A4_Remote
 
@@ -1548,7 +1554,31 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     + " num_tasks_executed: " + str(num_tasks_executed) 
                     + " num_tasks_to_execute: " + str(num_tasks_to_execute))
                 if num_tasks_executed == num_tasks_to_execute:
-                    #thread_work_queue.put(-1)
+                    # Note: This worker has work to do, and this work is the last
+                    # task to be executed. So this worker and any other workers
+                    # can finish (if the DAG is not incremental or it is incremental
+                    # and complete) This worker starts the worker shutdown (or pause
+                    # for the new incremental DAG) by putting a -1 in the work queue.
+                    # Any worker that is waiting for work or that tries to get more 
+                    # work will get this -1. Note that this worker here that is adding
+                    # -1 may get this -1 when it tries to get work after executing
+                    # this last task. Workers who get -1 from the work queue put
+                    # a -1 back in the work queue if there are still workers who
+                    # have not completed (i.e., called get work). We have a counter
+                    # to track the number of completed (paused) workers.
+                    #
+                    # Note: No worker calls DAG_infobufer_Monitor.withdraw to get a 
+                    # new incrmental DAG untul all the tasks in the current version
+                    # of the incremental DAG have been executed. This is because,
+                    # the workers must first get a -1 from the work queue, at which 
+                    # point they may deposit anotgher -1 (if some workers have not
+                    # got their -1 yet) and then thwy will call DAG_infobufer_Monitor.withdraw
+                    # instead of returning. Note too that they only call 
+                    # DAG_infobufer_Monitor.withdraw if the current version of the 
+                    # incremental DAG is not complete, so the withdraw() will return 
+                    # a new version of the increnetal DAG. Eventuallly, the DAG will 
+                    # be complete and the workers will return (terminate) instead of 
+                    # calling DAG_infobufer_Monitor.withdraw.
                     if not using_threads_not_processes:
                         # Config: A5, A6
                         logger.debug(thread_name + ": DAG_executor: num_tasks_executed == num_tasks_to_execute: depositing -1 in work queue.")
