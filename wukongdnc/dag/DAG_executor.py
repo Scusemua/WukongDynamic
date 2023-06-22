@@ -865,6 +865,8 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                     #    qualfied_name = str(calling_task_name) + "-" + str(name[:-1])
                     #else:
                     qualfied_name = str(calling_task_name) + "-" + str(name)
+                    # Q: Can we pull output[name] value from data_dict since
+                    # we put output in data_dict?
                     dict_of_results[qualfied_name] = output[name]
 
                     #dict_of_results[qualfied_name] = output[name]
@@ -1398,6 +1400,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 # Not sure where we will cut off the incremental task - last tasks to 
 # excute or the incomplete tasks that are targets of the last tasks to execute
 
+                # Note: If workers got a new incremental DAG from the
+                # work queue then this will be true for each worker since
+                # before they got the DAG they had to try to get work
+                # so this must have been true for them to try to get work.
                 if worker_needs_input:
                     #DAG_executor_state.state = thread_work_queue.get(block=True)
                     if not using_threads_not_processes:
@@ -1535,7 +1541,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # Note: using_workers is checked above and must be True
                     worker_needs_input = False # default
                     #commented out for MM
-                    #logger.debug("DAG_executor: Worker accessed work_queue: process state: ") # + str(DAG_executor_state.state))
+                    logger.debug("DAG_executor: Worker accessed work_queue: process state: ") # + str(DAG_executor_state.state))
                 else:
                     logger.debug(thread_name + " DAG_executor: Worker doesn't access work_queue")
                     logger.debug("**********************" + thread_name + " process state: " + str(DAG_executor_state.state))
@@ -2263,33 +2269,79 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 
                 # rhc: If we are not using workers then this is a thread simulating
                 # a lambda or a real lambda. The faninNBs started a thread or a 
-                # real lambda to xecute the faninNB task so we may or may not
-                # have more work to do. If we are the become task, then we have more 
-                # to do. In that case, the DAG_executor_state.state is the state of the 
-                # become task so we can just keep going and this state will be used
-                # in the next iteration of the work loop. We are the become task if 
-                # we started this iteration with len(state_info.fanouts) > 0. This
-                # is because when there are more than one fanouts we grab the first
-                # one as the become task. (The situation where there is only one
-                # fanout task and no faninNB tasks is handled as making this fanout 
-                # task the collapse task so the number of collpase tasks 
-                # will be > 0 and the number of fanout tasks will be 0). When we 
-                # take a become task, we remove it from fanouts and there may not be
-                # any other fanouts (there are faninNBs) so len(state_info.fanouts)
-                # will become 0. Thus, we captire the length of fanouts at the 
-                # begining in starting_number_of_fanouts. If starting_number_of_fanouts
+                # real lambda to execute the faninNB task, i.e, we never become a faninNB
+                # task as all the faninNB tasks are execute by strting  new lambda.
+                # So we (the simulated or real lambda) may or may not have more work to do,
+                # epending on whether or not we became a fanout task. If we are the 
+                # become task of a fanout then we have more work to do. In that case, 
+                # the DAG_executor_state.state is the state of the become task (a fanout task) 
+                # so we can just keep going and this state will be used
+                # in the next iteration of the work loop. 
+                # 
+                # We will execute a become task if we started this iteration with len(state_info.fanouts) > 0. 
+                # This is because when there are more than one fanouts we grab the first
+                # one as the become task. (The situation where the ADG has only one
+                # fanout task and no faninNB tasks is handled by making this fanout 
+                # task the "collapse task" so the number of collapse tasks in the state
+                # will be > 0 and the number of fanout tasks will be 0). 
+                # 
+                # When we take a become task, we remove it from state_info.fanouts
+                # and there may not be any other fanouts (there are faninNBs since we are 
+                # here) so len(state_info.fanouts) will become 0. Thus, we capture the length of 
+                # fanouts at the begining in starting_number_of_fanouts. If starting_number_of_fanouts
                 # was > 0, then we made one fanout the become task and we should 
                 # not return here, i.e., we should continue and execute the become task.
                 # Note: without this check of starting_number_of_fanouts,
                 # we will return prematurley in the case that there is 
-                # one fanouts and one or more faninNBs, as the number of 
+                # one fanout and one or more faninNBs, as the number of 
                 # fanouts will become 0 when we remove the become task 
                 #if (not using_workers) and len(state_info.fannouts) == 0:
                 if (not using_workers) and starting_number_of_fanouts == 0:
                     # Config: A1, A2, A3
-                    logger.debug(thread_name + ": returning after process fanouts/faninNBs")
+                    # we are a thread simulating a lambda or a real lamda and there
+                    # were no fanout tasks (and by definition of using lambdas the 
+                    # faninNB tasks were executed by starting new threads/lambdas)
+                    # so we have nothing else to do (we are not a worker that can get more
+                    # work) so we can return/terinate the thread/lambda.
+                    # Note: It is imporant to note that when using threads to
+                    # simulate lambdas or real lambdas, we do not get work from
+                    # faninNBs, i.e., we cannot become a faninNB task since faninNB
+                    # tasks are always executed by starting a new thread/lambda.
+                    # Note: The whole reason we have faninNBs is because of the 
+                    # situation where we have fanouts, and so will become a fanout
+                    # task, and one or more "fanins", which means we cannot become
+                    # any of the fanin tasks. In this case we use faninNB (fanin No
+                    # Becomes) objects. We only use "FanIn" objects when there are
+                    # no fanouts so we can become a "Fanin" task.
+                    # Note: Furthermore, we only use a FanIn object when there are
+                    # no fanouts and there is only one fanin. If there are no 
+                    # fanouts but multiple fanins, then all the fanins are FaninNBs.
+                    # There is this note in DFS_visit:
+                    #   if a fanin s has an enabler e that has more than one dependent 
+                    #   then s is a faninNB. Where "an enabler e of s" is a predecessor
+                    #   node of s, i.e., e has an output that is an input of s.
+                    #   ToDo: Optimize fanins: if no fanouts, but many fanins/faninNBs, 
+                    #     we can have one fanin object and many faninNB objcts. 
+                    # That would make the work llop logic more complicated,
+                    # Currently we either have one or more fanouts and one or more fanonNBs 
+                    # or we have a single fanin. this optimization would add more
+                    # cases to check for (the case where we have no fanouts but we
+                    # have a fanin and one or more faninNBs. We would want to do 
+                    # the fanin, and see whether we are the become task, and then 
+                    # do the faninNBs, where if we are not the bcome task for the 
+                    # fanin and we are using workers then we would become the 
+                    # tanin task for one of the faninNBs.)
+
+                    logger.debug(thread_name + " : returning after process fanouts/faninNBs")
                     return
                 else:
+                    # we are a worker so even if we will not become a fanout task 
+                    # (starting_number_of_fanouts == 0) we can get more more from 
+                    # the work queue, 
+                    # or we are not a worker (not using_workers), which means we are a 
+                    # thread simulating a lambda or a real lambda) and there was at least one fanout task 
+                    # so we will become a fanout task (not starting_number_of_fanouts == 0); 
+                    # thus, we should not terminate.
                     logger.debug(thread_name + ": Not returning after process fanouts/faninNBs; execute become task.")
                 #else: # Config: A4_local, A4_Remote, A5, A6
 
@@ -2352,14 +2404,16 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 
             else:
                 logger.debug(thread_name + ": state " + str(DAG_executor_state.state) + " after executing task " +  state_info.task_name + " has no fanouts, fanins, or faninNBs.")
-                ##logger.debug("1state " + str(state) + " after executing task " +  state_info.task_name + " has no fanouts, fanins, or faninNBs; return")
+                ##logger.debug("1state " + str(state) + " after executing task " +  state_info.task_name + " has no collapse, fanouts, fanins, or faninNBs; return")
                 #Note: setting worker_needs_input = True must be guarded by using_workers
                 if using_workers:
                     # Config: A4_local, A4_Remote, A5, A6
+                    logger.debug("state " + str(DAG_executor_state.state) + " after executing task " +  state_info.task_name + " has no collapse, fanouts, fanins, or faninNBs; using workers so no return.")
                     logger.debug(thread_name + " set worker_needs_input to true")
                     worker_needs_input = True
                 else:
                     # Config: A1, A2, A3
+                    logger.debug("state " + str(DAG_executor_state.state) + " after executing task " +  state_info.task_name + " has no collapse, fanouts, fanins, or faninNBs; not a worker so return.")
                     logger.debug(thread_name + " return")
                     return
 
