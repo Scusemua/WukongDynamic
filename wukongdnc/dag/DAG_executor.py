@@ -196,10 +196,10 @@ def create_and_faninNB_remotely_batch(websocket,**keyword_arguments):
 
 #def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_states, DAG_exec_state, output, DAG_info, server):
 def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_states, 
-    DAG_exec_state, output, DAG_info, server, work_queue,worker_needs_input):
+    DAG_exec_state, output, DAG_info, server, work_queue,worker_needs_input,
 
 #rhc cluster:
-    #cluster_queue):
+    cluster_queue):
     thread_name = threading.current_thread().name
     logger.debug(thread_name + ": process_faninNBs")
     logger.debug(thread_name + ": process_faninNBs: worker_needs_input: " + str(worker_needs_input))
@@ -384,7 +384,7 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
 
                         DAG_exec_state.state = start_state_fanin_task
 #rhc cluster:
-                        # cluster_queue.put(DAG_exec_state.state)
+                        cluster_queue.put(DAG_exec_state.state)
 #rhc cluster:
                         # Do this since we get it as return value
                         worker_needs_input = False
@@ -528,9 +528,9 @@ def faninNB_remotely_batch(websocket, **keyword_arguments):
 def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_states, 
     DAG_exec_state, output, DAG_info, work_queue,worker_needs_input,
     list_of_work_queue_or_payload_fanout_values,
-    async_call, fanouts):
+    async_call, fanouts,
 #rhc cluster:
-    #cluster_queue):
+    cluster_queue):
 
     thread_name = threading.current_thread().name
     logger.debug(thread_name + ": process_faninNBs_batch: " + calling_task_name)
@@ -685,7 +685,7 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
 
                 DAG_exec_state.state = start_state_fanin_task
 #rhc: cluster:
-                #cluster_queue.put(DAG_exec_state.state)
+                cluster_queue.put(DAG_exec_state.state)
 #rhc: cluster: Do this
                 # keep work and do it next
                 worker_needs_input = False
@@ -1381,7 +1381,11 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
         # Note: if not using_workers then worker_needs_input is initialized to False and every set 
         # of worker_needs_input to True is guarded by "if using_workers" so worker_needs_input is never
         # set to True if not using_workers.
-        worker_needs_input = using_workers
+        #
+        worker_needs_input = False # set to False and stays False
+        #
+        #worker_needs_input = using_workers # set to False and stays False
+
 #rhc continue  
         process_continue_queue = False
         cluster_queue = queue.Queue()
@@ -1414,9 +1418,12 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # so this must have been true for them to try to get work.
 
 #rhc cluster:
+                # just take worker_needs_input out of it.
                 #worker_needs_input = cluster_queue.qsize() == 0
 
-                if worker_needs_input:
+                if cluster_queue.qsize() == 0:
+#rhc cluster:
+                #if worker_needs_input:
                     if not using_threads_not_processes:
                         # Config: A5, A6
                         logger.debug("DAG_executor_work_loop: proc " + proc_name + " " + " thread " + thread_name + ": get work.")
@@ -1500,12 +1507,12 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         if compute_pagerank and use_incremental_DAG_generation:
                             if not DAG_info.get_DAG_info_is_complete():
                                 requested_current_version_number = DAG_info.get_version_number() + 1
-    #rhc: ToDo: withdraw returns DAG_info, restart. When we use client wrapper,
-    # it takes care of this, but local call will get restart so need wrapper
-    # for local too? Note: for work_queue, local was queue.Queue so no restart issue.
-    # So: DAG_infobuffer_monitor = Remote_Client vs Local_Client
-    # where for work_queue we do same thing: local client that wraps a Queue,
-    # just like local Client for DAG_infoBuffer_Monitor wraps a DAG_infoBuffer_Monitor
+                                #rhc: withdraw returns DAG_info. The DAG_infobuffer_monitor is either
+                                # a Remote_Client_for_DAG_infoBuffer_Monitor or a Local_Client_.... These
+                                # are wrappers that consime the rstart value returned by withdraw so that 
+                                # here e only get the new DAG_info returned by withdraw.
+                                # Note: for work_queue, the Local queue is a queue.Queue so there is no erstart
+                                # value that can be returned and hence no wrapper is needed.
                                 new_DAG_info = DAG_infobuffer_monitor.withdraw(requested_current_version_number)
                                 DAG_info = new_DAG_info
                                 process_continue_queue = True
@@ -1547,23 +1554,20 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # may add work to the cluster_queue, e.g., if we become
                     # a fanout task. We do need work when we start procssing 
                     # # the continue queue. If we do not need a new DAG_info then 
-                    # we will continue progessing work nd we do need work at this
-                    # point. 
-                    # Note: We always set worker_needs_input = cluster_queue.qsize()==0
-                    # at the top so worker_needs_input can change when we add work
-                    # to the cluster_queue. 
+                    # we will continue progessing work nd we do need work at this point. 
 
-#rhc cluster:
                     # Question: Do not do this.
                     #worker_needs_input = cluster_queue.qsize() == 0
 
                     #assert:
                     # cluster_queue was empty so we got work, which means th ecluster_queue should still be empty.
-                    # if not cluster_queue.qsize() == 0:
-                    #   logger.error("[Error]: Internal Error: cluster_queue.qsize() == 0 was true before"
-                    #       + " we got work from worker queue but not after - queue size should not change."")
+                    if not cluster_queue.qsize() == 0:
+                        logger.error("[Error]: Internal Error: cluster_queue.qsize() == 0 was true before"
+                            + " we got work from worker queue but not after - queue size should not change.")
 
-                    worker_needs_input = False # default
+#rhc cluster:
+                    # Do not do this
+                    #worker_needs_input = False # default
 
                     #comment out for MM
                     logger.debug("DAG_executor: Worker accessed work_queue: process state: ") # + str(DAG_executor_state.state))
@@ -1576,14 +1580,14 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # collapse task, so the cluster_queue will have only one
                     # piece of work in it.
                     DAG_executor_state.state = cluster_queue.get()
-                    
                     # Question: Do not do this
                     #worker_needs_input = cluster_queue.qsize() == 0
 
+#rhc cluster:
                     #assert:
-                    #if not cluster_queue.qsize() == 0:
-                    #    logger.error("[Error]: DAG_executor: Internal Error: cluster_queue contained"
-                    #    + " more than one item of work - queue size > 0 after cluster_queue.get")
+                    if not cluster_queue.qsize() == 0:
+                        logger.error("[Error]: DAG_executor: Internal Error: cluster_queue contained"
+                            + " more than one item of work - queue size > 0 after cluster_queue.get")
 
                     logger.debug(thread_name + " DAG_executor: Worker doesn't access work_queue")
                     logger.debug("**********************" + thread_name + " process cluster_queue state: " + str(DAG_executor_state.state))
@@ -1596,7 +1600,6 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # tasks. Use this counter or if we remove this counter, something 
                 # else needs to provide the barrier.
 #rhc: counter
-# completed_tasks_counter,
                 num_tasks_executed = completed_tasks_counter.increment_and_get()
                 logger.debug("DAG_executor: " + thread_name + " before processing " + str(DAG_executor_state.state) 
                     + " num_tasks_executed: " + str(num_tasks_executed) 
@@ -2012,16 +2015,15 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 # task to the cluster queue it may be behind one or more clustered tasks
 # but when we eventually execute, we will have its inputs in our data dict.
 # 
-#if len(state_info.collapse) > 0:
-#   DAG_executor_state.state = DAG_info.get_DAG_states()[state_info.collapse[0]]
-#   cluster_queue.put(DAG_executor_state.state)
-# then above we will (eventually) get the collapse task from the cluster_queue
-#if len(cluster_queue) > 0:
-# ...
-#   DAG_executor_state.state = v.get()
-# ...
-
             if len(state_info.collapse) > 0:
+
+                if len(state_info.fanins) + len(state_info.fanouts) + len(state_info.faninNBs) > 0:
+                    logger.error("Error1")
+
+                DAG_executor_state.state = DAG_info.get_DAG_states()[state_info.collapse[0]]
+                cluster_queue.put(DAG_executor_state.state)
+
+            #if len(state_info.collapse) > 0:
 #rhc: If we run-time cluster, then we may have work in the cluster queue.
 # We can put the collpase work in the cluster queue too. If the cluster queue is
 # empty, thn we'll just execute the collapase task next; otherwise, we will add
@@ -2035,22 +2037,20 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 #   If only a become task or collased task in the cluster queue then not 
 #   cluster_queue is not empty and the work is in the cluster queue. 
 
-                if len(state_info.fanins) + len(state_info.fanouts) + len(state_info.faninNBs) > 0:
-                    logger.error("Error1")
                 # execute collapsed task next - transition to new state and iterate loop
                 # collapse is a list [] so get task name of the collapsed task which is collapse[0],
                 # the only name in this list
                 DAG_executor_state.state = DAG_info.get_DAG_states()[state_info.collapse[0]]
 
 #hc: cluster:
-                #cluster_queue.put(DAG_executor_state.state)
+                cluster_queue.put(DAG_executor_state.state)
 #rhc: cluster:
                 # Do NOT do this
-                # Don't add to thread_work_queue just do it
-                if using_workers: 
-                    # Config: A4_local, A4_Remote, A5, A6
-                    worker_needs_input = False
-                # else: # Config: A1. A2, A3
+                ## Don't add to thread_work_queue just do it
+                #if using_workers: 
+                #    # Config: A4_local, A4_Remote, A5, A6
+                #    worker_needs_input = False
+                ## else: # Config: A1. A2, A3
 
 #rhc: Consider run-time task clustering: 
 #   elif len(cluster_queue>0):
@@ -2114,15 +2114,15 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # else: # Config: A1, A2, A3, A4_local, A4_Remote
 
 #rhc: cluster:      # Add become task to cluster queue
-                    #cluster_queue.put(DAG_executor_state.state)
+                    cluster_queue.put(DAG_executor_state.state)
 #rhc: cluster:
                     #Do NOT do this.
-                    # We get new state_info and then state_info.task_inputs when we iterate
-                    if using_workers:   # we are become task so we have more work
-                        # Config: A4_local, A4_Remote, A5, A6
-                        worker_needs_input = False
-                        logger.debug(thread_name + " work_loop: fanouts: set worker_needs_input to False.")
-                    # else: Config: A1, A2, A3
+                    ## We get new state_info and then state_info.task_inputs when we iterate
+                    #if using_workers:   # we are become task so we have more work
+                    #    # Config: A4_local, A4_Remote, A5, A6
+                    #    worker_needs_input = False
+                    #    logger.debug(thread_name + " work_loop: fanouts: set worker_needs_input to False.")
+                    ## else: Config: A1, A2, A3
                 else:
                     # No fanouts so no become task and if faninNBs do not generate
                     # work for us we will need input, so set to True here as default.
@@ -2133,15 +2133,15 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         logger.error("[Error] Internal error: No fanouts but cluster_queue.qsize() > 0.")
 #rhc cluster:
                     #Do NOT do this.
-                    if using_workers: 
-                        # Config: A4_local, A4_Remote, A5, A6
-                        worker_needs_input = True
-                        logger.debug(thread_name + " work_loop: no fanouts: set worker_needs_input to True.")
-                    # else: Config: A1, A2, A3
+                    #if using_workers: 
+                    #    # Config: A4_local, A4_Remote, A5, A6
+                    #    worker_needs_input = True
+                    #   logger.debug(thread_name + " work_loop: no fanouts: set worker_needs_input to True.")
+                    ## else: Config: A1, A2, A3
 
 #rhc cluster:
                 # Need worker_needs input to be set corrctly in case len(state_info.faninNBs) is 0
-                #worker_needs_input = cluster_queue.qsize()==0
+                worker_needs_input = cluster_queue.qsize()==0
 
                 if len(state_info.faninNBs) > 0:
                     # this is the condition for batch processing; whether we use 
@@ -2237,15 +2237,15 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 
                         #Note: using worker processes - batch calls to fan_in for FaninNBs
                         worker_needs_input = process_faninNBs_batch(websocket,state_info.faninNBs, state_info.faninNB_sizes, 
-                        state_info.task_name, DAG_info.get_DAG_states(), DAG_executor_state, 
+                            state_info.task_name, DAG_info.get_DAG_states(), DAG_executor_state, 
                             output, DAG_info,work_queue,worker_needs_input, list_of_work_queue_or_payload_fanout_values,
 
-                            async_call, state_info.fanouts)
-#rhc cluster:
-                            #cluster_queue):
+                            async_call, state_info.fanouts,
+#rhc: cluster:
+                            cluster_queue)
 #rhc: cluster:
                         # assert:
-                        #if using_workers and worker_needs_input != save_worker_needs_input:
+                        if using_workers and worker_needs_input != save_worker_needs_input:
                         #    # Note: worker_needs_input was True at now it is false. 
                         #    # Note: process_faninNBs does not set process_faninNBs to True. It
                         #    # can only set worker_needs_input to False. So either worker_needs_input
@@ -2256,10 +2256,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         #    # When process_faninNBs sets worker_needs_input to False, it is because it
                         #    # also deposted a become task in the cluster queue, so the cluster_queue
                         #    # shudl not be different.
-                        #    if cluster_queue.qsize() == 0:
-                        #       logger.error("[Error]: Internal error: process_faninNBs_batch set"
-                        #            + " worker_needs_input to False when using workers but cluster_queue"
-                        #            + " size is 0.")
+                            if cluster_queue.qsize() == 0:
+                                logger.error("[Error]: Internal error: process_faninNBs_batch set"
+                                    + " worker_needs_input to False when using workers but cluster_queue"
+                                    + " size is 0.")
                     else: 
                         # Config: A2, A4_local, A4_Remote
                         # not using workers, or using worker threads not processes, or using threads to simualate running lambdas,
@@ -2278,17 +2278,17 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 
                         worker_needs_input = process_faninNBs(websocket,state_info.faninNBs, state_info.faninNB_sizes, 
                             state_info.task_name, DAG_info.get_DAG_states(), DAG_executor_state, 
-                            output, DAG_info, server,work_queue,worker_needs_input)
+                            output, DAG_info, server,work_queue,worker_needs_input,
 #rhc: cluster:
-                            #cluster_queue)
+                            cluster_queue)
 #rhc: cluster:
                         # assert:
-                        #if using_workers and worker_needs_input != save_worker_needs_input:
+                        if using_workers and worker_needs_input != save_worker_needs_input:
                         #    # Note: See comment in same assertion above.
-                        #    if cluster_queue.qsize() == 0:
-                        #       logger.error("[Error]: Internal error: process_faninNBs set"
-                        #            + " worker_needs_input to False when using workers but cluster_queue"
-                        #            + " size is 0.")
+                            if cluster_queue.qsize() == 0:
+                                logger.error("[Error]: Internal error: process_faninNBs set"
+                                    + " worker_needs_input to False when using workers but cluster_queue"
+                                    + " size is 0.")
 
                     # there can be faninNBs and fanouts.
 
@@ -2311,8 +2311,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
  
 # rhc: cluster:
                             # assert:
-                            # if cluster_queue.qsize()==0:
-                            if worker_needs_input:
+                            if cluster_queue.qsize()==0:
+                            #if worker_needs_input:
                                 # when there is at least one fanout we will become one of the fanout tasks
                                 # so we should not need work.
                                 logger.error("[Error]: work loop: Internal Error: fanouts but worker needs work.")
@@ -2446,9 +2446,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     #Do not do this.
                     #Note: setting worker_needs_input = True must be guarded by using_workers
                     if using_workers:
-                        # Config: A4_local, A4_Remote, A5, A6
-                        logger.debug(thread_name + ": After call to process_fanin: return value is 0; using workers so set worker_needs_input = True")
-                        worker_needs_input = True
+                        ## Config: A4_local, A4_Remote, A5, A6
+                        #logger.debug(thread_name + ": After call to process_fanin: return value is 0; using workers so set worker_needs_input = True")
+                        #worker_needs_input = True
+                        pass
                     else:
                         # Config: A1, A2, A3
                         # this dfs path is finished
@@ -2460,7 +2461,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         # data dictionay. If we are the become task for a fanin, we receive the 
                         # fanin task inputs and we put them in the data dctionary. Same for lambdas.
                         #dict_of_results = returned_state.return_value
-#rhc: cluster: using DAG_exec_state instad of "returned_state"
+#rhc: cluster: Note: using "DAG_exec_state" instead of "returned_state"
                         dict_of_results = DAG_exec_state.return_value
                         
                         # Also, don't pass in the multp data_dict, so will use the global.
@@ -2478,8 +2479,9 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         # or a dfs thread.
 #rhc: cluster:
                         #Question: Do not do this
-                        logger.debug(thread_name + ": After call to process_fanin: return value not 0, using workers so set worker_needs_input = False")
-                        worker_needs_input = False
+                        logger.debug(thread_name + ": After call to process_fanin: return value not 0.")
+                        #logger.debug(thread_name + ": After call to process_fanin: return value not 0, using workers so set worker_needs_input = False")
+                        #worker_needs_input = False
                     #else: # Config: A2, A3
                         # do not add results to data_dict when using threads
                         # to simulate lambdas since these threads already
@@ -2491,8 +2493,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # simulate lamdas as they add their results to the 
                     # gloval data_dict before dong the fanin so the 
                     # results are already in the global data_dict and there 
-                    # is not reason to ad them here. But for all cases, we 
-                    # need to add the returned DAG_exec_state.state to the cluster_queue.
+                    # is not reason to ad them here. 
+                    # 
+                    # But for all cases, we need to add the returned 
+                    # DAG_exec_state.state to the cluster_queue.
                     cluster_queue.put(DAG_exec_state.state)
 
             else:
@@ -2503,8 +2507,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     logger.debug("state " + str(DAG_executor_state.state) + " after executing task " +  state_info.task_name + " has no collapse, fanouts, fanins, or faninNBs; using workers so no return.")
 #rhc: cluster:
                     #Do NOT do this.
-                    logger.debug(thread_name + " set worker_needs_input to true")
-                    worker_needs_input = True
+                    #logger.debug(thread_name + " set worker_needs_input to true")
+                    #worker_needs_input = True
                 else:
                     # Config: A1, A2, A3
                     logger.debug("state " + str(DAG_executor_state.state) + " after executing task " +  state_info.task_name + " has no collapse, fanouts, fanins, or faninNBs; not a worker so return.")
