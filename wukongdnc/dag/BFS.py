@@ -21,21 +21,21 @@ and then it starts a BFS traversal:
     for i in range(1,num_nodes+1):
         if i not in visited:
             logger.debug("*************Driver call BFS for node[" + str(i) + "]")
-            #bfs(visited, graph, nodes[i])    # function calling
             bfs(visited, nodes[i])    # function calling
 where visited is a set of visited nodes and nodes[] are the nodes input by input_graph().
 
 BFS() generates collctions of nodes that are either called partitions or groups. A group
 is essentially a sub-partition, i.e., a partition can be partitioned into one or more groups.
-When using partitions, we compuet the pageranks of the nodes in the partitions in ascending
-order, i.e., P1, P2, ... Pn. Thus. there is no parallelism in processing the partitions.
-So the partitions form a DAG but there is a sngle directed edge from Pi to Pi+1. The DAG
-represented by the groups has more parallelism and the granlarity is finer. In fact the 
-granularity may be too fine and it may spped up DAG execution to cluster groups. There is
+When using partitions, we compute the pageranks of the nodes in the partitions in ascending
+order of partitions Pi, i.e., P1, P2, ... Pn. Thus. there is no parallelism in processing the 
+partitions. So the partitions form a DAG but there is a sngle directed edge from Pi to Pi+1. 
+
+The DAG represented by the groups has more parallelism and the granlarity is finer. In fact the 
+granularity may be too fine and it may speed up DAG execution to cluster groups. There is
 a lot of flexibility in the granlarity and amount of parellelism when executing a DAG of groups.
 
 BFS() uses DFS(), so the pagerank partitions/groups are generated using a combinaion of
-BFS and DFS6 ,as explained below.
+BFS and DFS, as explained below.
 
 For the whiteboard example, there 20 nodes and the DAG has three partitions:
 
@@ -53,30 +53,39 @@ G5: 13
 G6: 7 15
 G7: 9 18
 
+(See the DAG below.)
+
 Partitions/groups are not required to be equal in size. The nodes in a partion/group
 are in "descendent order", e.g., 5 is the parent of 17 is the parent of 1 in the 
-input graph. (The nodes of a group are determined using a DFS. For example, for G,
+input graph. (The nodes of a group are determined using a DFS. For example, for G1,
 we start with node 1, and do a DFS search based on the parent-relationship - the
 parent of 1 is 17, and the parent of 17 is 5, and 5 has no parents. so DFS(1) followed
 by DFS(17) followed by DFS(5) followed by return, return, return. During DFS, 
-we enqueue 5, 17, and 1 (in that order) and switch back to BFS, which deques 5
-and DFS searches the chldren of 5, then DFS searches the children of 17, then 
-DFS searches the children of 1, enqueing the parents of these children, and so on.)
+we enqueue 5, 17, and 1 (in that order) and switch back to BFS when the DFS finished,
+So BFS deques 5 and DFS searches the children of 5, then BFS deques 17 and DFS searches the 
+children of 17, then BFS deques 1 and DFS searches the children of 1, enqueing the parents 
+of these children during the DFS of the children, and so on. (For example, the children
+of 5 are 17 and 16. Node 17 has already been searched so there is no FS of 17 for the
+child 17 of 5. There is however a DFS of child 16 which visits nodes 10 and 2. Nodes
+2 and 10 (in that order, which means when DFS recursion unwinds back to the node) ar
+enqueed for BFS.
 
 Note that partiton P2 has been partitioned into three groups G2, G3, and G4, and that 
 the descendent order in P2 has been retained in G2, G3, and G4.
 
 The "descendents order" within a partition/group is very important. The pagrank
-for a node depends on the pagrank of that node's parents. Note that for a node 
+for a node depends on the pagrank of that node's parents (and this indirectly
+on the parents of that node's parents, etc) Note that for a node 
 N in a group, many of N's parents are in the same group. For example, for node 1
 above, its only parent 17 is in the same group, likewse, the only parent 5
 of node 17 is in the same group as 17. Node 5 has no parents. Thus, all the nodes
 needed to compute the pageranks of the nodes in partition/group P1/G1, are in P1/G1.
 If P1/G1 is assigned to "compute node" CN1, then CN1 dos not need to communicate
 with any other compute node in order to compute its assigned pagerank values.
-As shown below, the parent(s) of a node N may not be in the N's partition/group,
-which means the some communication of pagerank values between compute nodes
-will be required to compte the pagerank value of N. This communicatin is restricted
+The parent(s) of a node N may not be in the N's partition/group. For example, parent
+5 or node 16 is in a different partiton/group. This means that
+some communication of pagerank values between compute nodes
+will be required to compute the pagerank value of such an N. This communicatin is restricted
 since the parent nodes of N are either in the same partition/group as N or they 
 are in the previous partition or a sub-partitiion (i.e., group) of the pervious
 partition, i.e., the communication is restrictd by the fanin structure of the DAG.
@@ -88,8 +97,8 @@ Partiton P2 is a loop partition since there is a cycle:
   ^             |
   |--------------   # (backedge from 19 to 20)
 
-  This means G3: 20 8 11 3 19 is a loop group. The fact that groups isolate the loops
-  is very important. When computing pagerank, there may be many iterations needed
+  This means G3: 20 8 11 3 19 is a loop group. The fact that partitions/groups isolate 
+  the loops is very important. When computing pagerank, there may be many iterations needed
   for the values to converge due to loops. So, say, 100 iterations may be needed to 
   compute the pagerank values of the nodes in a loop group. However, a non-loop group
   requires only a single iteration. Thus, when computing pagerank for
@@ -97,9 +106,21 @@ Partiton P2 is a loop partition since there is a cycle:
   there will be 100 iterations were each iteration computes pagerank for all 12 nodes;
   thus, page rank will be computed 12 * 100 = 1200 times.
   Compare this to using 1 iteration for the nodes in G2, 100 iterations for the nodes
-  in G3, and one iterations for the nodes in G4, for a total of 3 + 500 + 4 = 507
+  in G3, and one iteration for the nodes in G4, for a total of 3 + 500 + 4 = 507
   pagrank computations. So DAGs of groups will have more parallelism and less pagerank
-  computations.
+  computations. The DAG structure also decreases the amount of communication between
+  compute nodes. A DAG also temporally partitions the pagerank computation. For example,
+  in the DAG above there is not reason to allocate compute resouces for (the nodes in)
+  G5, G6 and G7 until after the other groups have been processed. (Graphlab for 
+  example distributes the nodes in G5, G6, and G7 (and other nodes) to servers and 
+  must run these servers over the entire pagerank computation in case these node's
+  pagerank values are needed. Serverless functions ned not be allocated for G5, G6, and
+  G7 until the pagerank values for nodes in these groups are computed.  Consider again,
+  group G2. The parent nodes of all the nodes in G2 are either in G2 or G1. Thus, the 
+  pagerank values for the nodes in G2 can be computed in one iteration, starting with the 
+  greatest ancestor(s), which is left-to-right in the pictures. These pagerank
+  computations may use paret values that have been received from other compute 
+  nodes (as part of a fanout or fanin).
 
   The group-based DAG for the whiteboard example is:
 
@@ -110,7 +131,7 @@ Partiton P2 is a loop partition since there is a cycle:
         G2----> G3L   G4     # G3L indicates G3 is a loop group, likewise for P2L
              /   |    |
             /    |    |
-          v      v     v
+          v      v    v
         G5----> G6    G7
 
 This DAG is based on the parent-relationship between the nodes within a group.
