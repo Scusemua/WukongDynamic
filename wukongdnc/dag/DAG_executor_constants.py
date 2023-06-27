@@ -20,7 +20,7 @@ run_all_tasks_locally = True         # vs run tasks remotely (in Lambdas)
 # machine on which the threads are executing.  If we are using multiprocessing
 # or Lambdas, this must be False. When False, the synch objects are stored
 # on the tcp_server or in InfiniX lambdas.
-store_fanins_faninNBs_locally = False    # vs remotely
+store_fanins_faninNBs_locally = True    # vs remotely
 # True when all FanIn and FanInNB objects are created locally or on the
 # tcp_server or IniniX all at once at the start of the DAG execution. If
 # False, synch objects are created on the fly, i.e, we execute create-and-fanin
@@ -36,7 +36,7 @@ create_all_fanins_faninNBs_on_start = True
 using_workers = True
 # True when we ae not using Lambas and tasks are executed by threads instead of processes. 
 # False when we are not using lambdas and are using multiprocesssing 
-using_threads_not_processes = False
+using_threads_not_processes = True
 # When using_workers, this is how many threads or processes in the pool.
 num_workers = 2
 # Use one or more worker processes (num_workers) with one or more threads
@@ -159,7 +159,7 @@ using_single_lambda_function = False
 # For PageRank
 # Indicates that we are computing pagerank and thus that the pagerank
 # options are active and pagerank asserts should hold
-compute_pagerank = True
+compute_pagerank = False # True
 
 # For PageRank:
 # a task that has multiple fanouts/faninNBs sends the same output
@@ -173,7 +173,7 @@ compute_pagerank = True
 # task_inputs as "sending task - receiving task". So a sending task
 # S might send outputs to fanouts A and B so we use "S-A" and "S-B"
 # as the task_inputs, instad of just using "S", which is the Dask way.
-same_output_for_all_fanout_fanin = False
+same_output_for_all_fanout_fanin = not compute_pagerank
 
 # True if DAG generation and DAG_execution are overlapped. 
 use_incremental_DAG_generation = False
