@@ -246,6 +246,15 @@ the whiteboard DAG is to compute the pagerank values of nodes 5, 17, and 1. The 
 would compute the pagerank for all the nodes, including 5, 17, and 1, and would compute the 
 pageranks for 5, 17, and 1 on multiple iterations, with inter-server communication on each iteration.
 
+Note that other parallel/distributed pagerank methods also use a node partitioning.
+so while the BFS/DFS partitioning tasks time, so do the other partioning methods.
+Also, the BFS/DFS partition can be done incrementally, i.e., we can start executing
+the DAG before we finish the partition. It is not known yet whether partitioning the 
+nodes (generating the DAG) takes more or les time than executing the DAG nodes.
+The partitioning reduces communication between the compute nodes, which may or
+may not reduce the total time (partitioning + execution). The DAG structure
+may significantly reduce cost, whether or not it reduces the execution time.
+
 The outline of BFS is as follows:
 
 BFS(node):
