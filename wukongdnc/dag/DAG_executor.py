@@ -1376,19 +1376,24 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
         #else: # Config: A1, A2, A3, A4_local, A4_Remote
 
 #rhc: cluster:
-        # Question: This is fine since set to false for non-worker configs and
-        # overwrite it with cluster_queue empty test below
-        # Note: if not using_workers then worker_needs_input is initialized to False and every set 
-        # of worker_needs_input to True is guarded by "if using_workers" so worker_needs_input is never
+        # worker_needs_input initialized to false and stays false
+        # for non-worker configs. Set worker_needs_input based on
+        # cluster_queue is empty test below when using workers.
+        # Note: if not using_workers then worker_needs_input is initialized 
+        # to False and every set of worker_needs_input to True is guarded 
+        # by "if using_workers" so worker_needs_input is never
         # set to True if not using_workers.
         #
-        worker_needs_input = False # set to False and stays False
-        #
         #worker_needs_input = using_workers # set to False and stays False
+        worker_needs_input = False # set to False and stays False if not using workers
+
 
 #rhc continue  
+#rhc: cluster:
         process_continue_queue = False
         cluster_queue = queue.Queue()
+        continue_queue = queue.Queue()
+        continued_task = False
 
         while (True):
 
@@ -1412,250 +1417,284 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 # Not sure where we will cut off the incremental task - last tasks to 
 # excute or the incomplete tasks that are targets of the last tasks to execute
 
-                # Note: If workers got a new incremental DAG from the
-                # work queue then this will be true for each worker since
-                # before they got the DAG they had to try to get work
-                # so this must have been true for them to try to get work.
+#rhc continue 
+
+                if process_continue_queue:
+                    continued_state = continue_queue.get()
+                    continued_output = "Do this?"
+                    continued_task = True
+                    if len(continue_queue) == 0:
+                        process_continue_queue = False
+                else: # not process_continue_queue
+                    # Note: If workers got a new incremental DAG from the
+                    # work queue then this will be true for each worker since
+                    # before they got the DAG they had to try to get work
+                    # so this must have been true for them to try to get work.
 
 #rhc: cluster:
-                # just take worker_needs_input out of it.
-                #worker_needs_input = cluster_queue.qsize() == 0
+                    # just take worker_needs_input out of it.
+                    #worker_needs_input = cluster_queue.qsize() == 0
 
-                if cluster_queue.qsize() == 0:
-                #if worker_needs_input:
-                    logger.debug("DAG_executor_work_loop: cluster_queue.qsize() == 0 so"
-                        + " get work")
-                    if not using_threads_not_processes:
-                        # Config: A5, A6
-                        logger.debug("DAG_executor_work_loop: proc " + proc_name + " " + " thread " + thread_name + ": get work.")
-                        work_tuple = work_queue.get()
-                        DAG_executor_state.state = work_tuple[0]
-                        dict_of_results = work_tuple[1]
-                        logger.debug("work_loop: got work for thread " + thread_name)
-                        if dict_of_results != None:
-                            logger.debug("dict_of_results from work_tuple: ")
-                            for key, value in dict_of_results.items():
-                                logger.debug(str(key) + " -> " + str(value))
-                            for key, value in dict_of_results.items():
-                                data_dict[key] = value
-                    else:
-                        # Config: A4_local, A4_Remote
-                        logger.debug("work_loop: get work for thread " + thread_name)
-                        work_tuple = work_queue.get()
-                        DAG_executor_state.state = work_tuple[0]
-                        dict_of_results = work_tuple[1]
-                        logger.debug("work_loop: got work for thread " + thread_name)
-                        if dict_of_results != None:
-                            logger.debug("dict_of_results from work_tuple: ")
-                            for key, value in dict_of_results.items():
-                                logger.debug(str(key) + " -> " + str(value))
-                            # Threads put task outputs in a data_dict that is global to the threads
-                            # so there is no need to do it again here, when getting work from the work_queue.
-                            #for key, value in dict_of_results.items():
-                            #    data_dict[key] = value                    
-                        
-                    logger.debug("**********************withdrawn state for thread: " + thread_name + " :" + str(DAG_executor_state.state))
-
-                    if DAG_executor_state.state == -1:
-                        #logger.debug("DAG_executor: state is -1 so deposit another -1 and return.")
-                        #Note: we are not passing the DAG_executor_state of this 
-                        # DAG_executor to tcp_server. We are not using a work_queue
-                        # with Lamdas so we are not going to worry about using the
-                        # convention that we pass DAG_executor_state in case we want to 
-                        # do a restart - again, we wll not be restarting Lambdas due
-                        # to blocking on a work_queue get() so we do not pass
-                        # DAG_executor_state here. 
-                        # Also, this makes the thread and process work_queues have the 
-                        # same interface.
-
-                        # Keep track of how many workers have returned and when this equals num_workers
-                        # then do not add a -1 to the work queue.
+                    # here
+                    if cluster_queue.qsize() == 0:
+                    #if worker_needs_input:
+                        logger.debug("DAG_executor_work_loop: cluster_queue.qsize() == 0 so"
+                            + " get work")
                         if not using_threads_not_processes:
-#rhc: counter:
-                            completed_workers = completed_workers_counter.increment_and_get()
-                            if completed_workers < num_workers:
-                                logger.debug("DAG_executor: Work_Loop: workers_completed:  " + str(completed_workers)
-                                    + " put -1 in work queue.")
-                                # Config: A5, A6
-                                work_tuple = (-1,None)
-                                work_queue.put(work_tuple)
-                            else:
-                                logger.debug("DAG_executor: Work_Loop: completed_workers:  " + str(completed_workers)
-                                    + " do not put -1 in work queue.")
+                            # Config: A5, A6
+                            logger.debug("DAG_executor_work_loop: proc " + proc_name + " " + " thread " + thread_name + ": get work.")
+                            work_tuple = work_queue.get()
+                            DAG_executor_state.state = work_tuple[0]
+                            dict_of_results = work_tuple[1]
+                            logger.debug("work_loop: got work for thread " + thread_name)
+                            if dict_of_results != None:
+                                logger.debug("dict_of_results from work_tuple: ")
+                                for key, value in dict_of_results.items():
+                                    logger.debug(str(key) + " -> " + str(value))
+                                for key, value in dict_of_results.items():
+                                    data_dict[key] = value
                         else:
-#rhc: counter:
-                            completed_workers = completed_workers_counter.increment_and_get()
-                            if completed_workers < num_workers:
-                                logger.debug("DAG_executor: Work_Loop: workers_completed:  " + str(completed_workers)
-                                    + " put -1 in work queue.")
+                            # Config: A4_local, A4_Remote
+                            logger.debug("work_loop: get work for thread " + thread_name)
+                            work_tuple = work_queue.get()
+                            DAG_executor_state.state = work_tuple[0]
+                            dict_of_results = work_tuple[1]
+                            logger.debug("work_loop: got work for thread " + thread_name)
+                            if dict_of_results != None:
+                                logger.debug("dict_of_results from work_tuple: ")
+                                for key, value in dict_of_results.items():
+                                    logger.debug(str(key) + " -> " + str(value))
+                                # Threads put task outputs in a data_dict that is global to the threads
+                                # so there is no need to do it again here, when getting work from the work_queue.
+                                #for key, value in dict_of_results.items():
+                                #    data_dict[key] = value                    
+                            
+                        logger.debug("**********************withdrawn state for thread: " + thread_name + " :" + str(DAG_executor_state.state))
 
-                                # Config: A4_local, A4_Remote
-                                work_tuple = (-1,None)
-                                work_queue.put(work_tuple)
+                        if DAG_executor_state.state == -1:
+                            #logger.debug("DAG_executor: state is -1 so deposit another -1 and return.")
+                            #Note: we are not passing the DAG_executor_state of this 
+                            # DAG_executor to tcp_server. We are not using a work_queue
+                            # with Lamdas so we are not going to worry about using the
+                            # convention that we pass DAG_executor_state in case we want to 
+                            # do a restart - again, we wll not be restarting Lambdas due
+                            # to blocking on a work_queue get() so we do not pass
+                            # DAG_executor_state here. 
+                            # Also, this makes the thread and process work_queues have the 
+                            # same interface.
+
+                            # Keep track of how many workers have returned and when this equals num_workers
+                            # then do not add a -1 to the work queue.
+                            if not using_threads_not_processes:
+    #rhc: counter:
+                                completed_workers = completed_workers_counter.increment_and_get()
+                                if completed_workers < num_workers:
+                                    logger.debug("DAG_executor: Work_Loop: workers_completed:  " + str(completed_workers)
+                                        + " put -1 in work queue.")
+                                    # Config: A5, A6
+                                    work_tuple = (-1,None)
+                                    work_queue.put(work_tuple)
+                                else:
+                                    logger.debug("DAG_executor: Work_Loop: completed_workers:  " + str(completed_workers)
+                                        + " do not put -1 in work queue.")
                             else:
-                                logger.debug("DAG_executor: Work_Loop: completed_workers:  " + str(completed_workers)
-                                    + " do not put -1 in work queue.")
-                        # worker is returning from work loop so worker will terminate
-                        # and be joined by DAG_executor_driver
+    #rhc: counter:
+                                completed_workers = completed_workers_counter.increment_and_get()
+                                if completed_workers < num_workers:
+                                    logger.debug("DAG_executor: Work_Loop: workers_completed:  " + str(completed_workers)
+                                        + " put -1 in work queue.")
 
-#rhc continue: If doing incremental DAG and the DAG is not complete, then do not 
-# return; instead, call continue.withdraw to wait for the new DAG_info.
-# So all workers will call continue.withdraw and receive a new DAG_info.
-# Those with continue tasks in their continue queue will execute these tasks
-# instead of getting work from the work queue and presumably their cluster
-# queue was empty since they tried to get work from the work queue and got a -1.
+                                    # Config: A4_local, A4_Remote
+                                    work_tuple = (-1,None)
+                                    work_queue.put(work_tuple)
+                                else:
+                                    logger.debug("DAG_executor: Work_Loop: completed_workers:  " + str(completed_workers)
+                                        + " do not put -1 in work queue.")
+                            # worker is returning from work loop so worker will terminate
+                            # and be joined by DAG_executor_driver
 
-                        if compute_pagerank and use_incremental_DAG_generation:
-                            if not DAG_info.get_DAG_info_is_complete():
-                                requested_current_version_number = DAG_info.get_version_number() + 1
-                                #rhc: withdraw returns DAG_info. The DAG_infobuffer_monitor is either
-                                # a Remote_Client_for_DAG_infoBuffer_Monitor or a Local_Client_.... These
-                                # are wrappers that consime the rstart value returned by withdraw so that 
-                                # here e only get the new DAG_info returned by withdraw.
-                                # Note: for work_queue, the Local queue is a queue.Queue so there is no erstart
-                                # value that can be returned and hence no wrapper is needed.
-                                new_DAG_info = DAG_infobuffer_monitor.withdraw(requested_current_version_number)
-                                DAG_info = new_DAG_info
-                                process_continue_queue = True
+    #rhc continue: If doing incremental DAG and the DAG is not complete, then do not 
+    # return; instead, call continue.withdraw to wait for the new DAG_info.
+    # So all workers will call continue.withdraw and receive a new DAG_info.
+    # Those with continue tasks in their continue queue will execute these tasks
+    # instead of getting work from the work queue and presumably their cluster
+    # queue was empty since they tried to get work from the work queue and got a -1.
 
-    #rhc: continue: Next we will need to get work or do continue tasks
-    # so are we in a get work loop? Or do we just check continue queue
-    # here and if nothing then get work from work queue?
-    # Note: Above, we can't chck continue_queue since we don't want
-    # to process continued work until we get a new DAG_info, but then
-    # keep processing continue queue until we've done all continued work.
-    # So turn process_continue_queue flag on here then turn it off when it
-    # is done? Perhaps f you get something from continue queue and queue
-    # becomes empty then done? So if process_continue_queue and continue_queue
-    # is not empty then get work from continue_queue, else set process_continue 
-    # queue to false (whether it was on or not) if cluster_queue is 
-    # not empty then get work from cluster_queue else get work from 
-    # work queue. This is different from imagined scheme where we 
-    # just don't get work from work queue if contimue and cluster queue are not empty
-    # and we then check the continue queue then cluster queue.
-    # We can't check continue queue unless we are in process_continue_queue
-    # phase, and we don't set this on until we get -1 fromwork queue
-    # and then withdraw returns a DAG_info. And we need to set
-    # process_continue_queue off when done with continued tasks,
-    # so may need the nwe version with all the queue checks up front.
+                            if compute_pagerank and use_incremental_DAG_generation:
+                                if not DAG_info.get_DAG_info_is_complete():
+                                    requested_current_version_number = DAG_info.get_version_number() + 1
+                                    #rhc: withdraw returns DAG_info. The DAG_infobuffer_monitor is either
+                                    # a Remote_Client_for_DAG_infoBuffer_Monitor or a Local_Client_.... These
+                                    # are wrappers that consime the rstart value returned by withdraw so that 
+                                    # here e only get the new DAG_info returned by withdraw.
+                                    # Note: for work_queue, the Local queue is a queue.Queue so there is no erstart
+                                    # value that can be returned and hence no wrapper is needed.
+                                    new_DAG_info = DAG_infobuffer_monitor.withdraw(requested_current_version_number)
+                                    DAG_info = new_DAG_info
+                                    # assert: 
+                                    if len(continue_queue) > 0:
+                                        continued_state = continue_queue.get()
+                                        continued_output = "Do this?"
+                                        continued_task = True
+                                        if len(continue_queue) == 0:
+                                            # only one state was in continue_queue
+                                            process_continue_queue = False
+                                        else:
+                                            # process states in continue_queue, which
+                                            # is done above
+                                            process_continue_queue = True
+                                    # else:
+                                        # Got a new DAG_info.
+                                        # We had no continued tasks, and to get here we
+                                        # have to have an empty cluster_queue too, i.e.,
+                                        # we requested work from the work queue so the 
+                                        # cluster_queue must have been empty. So
+                                        # we will not try to get work from the work queue.
 
-#rhc: Check this logic for return
+        #rhc: continue: Next we will need to get work or do continue tasks
+        # so are we in a get work loop? Or do we just check continue queue
+        # here and if nothing then get work from work queue?
+        # Note: Above, we can't chck continue_queue since we don't want
+        # to process continued work until we get a new DAG_info, but then
+        # keep processing continue queue until we've done all continued work.
+        # So turn process_continue_queue flag on here then turn it off when it
+        # is done? Perhaps f you get something from continue queue and queue
+        # becomes empty then done? So if process_continue_queue and continue_queue
+        # is not empty then get work from continue_queue, else set process_continue 
+        # queue to false (whether it was on or not) if cluster_queue is 
+        # not empty then get work from cluster_queue else get work from 
+        # work queue. This is different from imagined scheme where we 
+        # just don't get work from work queue if contimue and cluster queue are not empty
+        # and we then check the continue queue then cluster queue.
+        # We can't check continue queue unless we are in process_continue_queue
+        # phase, and we don't set this on until we get -1 fromwork queue
+        # and then withdraw returns a DAG_info. And we need to set
+        # process_continue_queue off when done with continued tasks,
+        # so may need the nwe version with all the queue checks up front.
 
+    #rhc: Check this logic for return
+
+                                else:
+                                    return
                             else:
-                                return
-                        else:
-                            return  
+                                return  
 
-                    # Note: using_workers is checked above and must be True
+                        # Note: using_workers is checked above and must be True
 
-#rhc: cluster:
-                    # cluster_queue was empty so we got work, which means the
-                    # cluster_queue is still empty. If we end up getting a new
-                    # DAG_info then we will process the continue_queue, which
-                    # may add work to the cluster_queue, e.g., if we become
-                    # a fanout task. We do need work when we start procssing 
-                    # # the continue queue. If we do not need a new DAG_info then 
-                    # we will continue progessing work nd we do need work at this point. 
+    #rhc: cluster:
+                        # cluster_queue was empty so we got work, which means the
+                        # cluster_queue is still empty. If we end up getting a new
+                        # DAG_info then we will process the continue_queue, which
+                        # may add work to the cluster_queue, e.g., if we become
+                        # a fanout task. We do need work when we start procssing 
+                        # # the continue queue. If we do not need a new DAG_info then 
+                        # we will continue progessing work nd we do need work at this point. 
 
-                    # Question: Do not do this.
-                    #worker_needs_input = cluster_queue.qsize() == 0
+                        # Question: Do not do this.
+                        #worker_needs_input = cluster_queue.qsize() == 0
 
-                    #assert:
-                    # cluster_queue was empty so we got work, which means th ecluster_queue should still be empty.
-                    if not cluster_queue.qsize() == 0:
-                        logger.error("[Error]: Internal Error: cluster_queue.qsize() == 0 was true before"
-                            + " we got work from worker queue but not after - queue size should not change.")
+                        #assert:
+                        # cluster_queue was empty so we got work, which means th ecluster_queue should still be empty.
+                        if not cluster_queue.qsize() == 0:
+                            logger.error("[Error]: Internal Error: cluster_queue.qsize() == 0 was true before"
+                                + " we got work from worker queue but not after - queue size should not change.")
 
-#rhc: cluster:
-                    # Do not do this
-                    #worker_needs_input = False # default
+    #rhc: cluster:
+                        # Do not do this
+                        #worker_needs_input = False # default
 
-                    #comment out for MM
-                    logger.debug("DAG_executor: Worker accessed work_queue: process state: ") # + str(DAG_executor_state.state))
-                else:
-#rhc: cluster:
-                    # worker does not need work since there is work
-                    # in the cluster queue. Get work from cluster_queue.
-                    # Note: Currently, we do not cluster more than one fanout and
-                    # we do not cluster faninNB/fanins, and there is only one
-                    # collapse task, so the cluster_queue will have only one
-                    # piece of work in it.
-                    DAG_executor_state.state = cluster_queue.get()
-                    # Question: Do not do this
-                    #worker_needs_input = cluster_queue.qsize() == 0
-                    logger.debug("DAG_executor_work_loop: cluster_queue contains work:"
-                        + " got state " + str(DAG_executor_state.state))
+                        #comment out for MM
+                        logger.debug("DAG_executor: Worker accessed work_queue: process state: ") # + str(DAG_executor_state.state))
+                    else: # cluster_queue is not empty so worker does not need input
+    #rhc: cluster:
+                        # worker does not need work since there is work
+                        # in the cluster queue. Get work from cluster_queue.
+                        # Note: Currently, we do not cluster more than one fanout and
+                        # we do not cluster faninNB/fanins, and there is only one
+                        # collapse task, so the cluster_queue will have only one
+                        # piece of work in it.
+                        DAG_executor_state.state = cluster_queue.get()
+                        # Question: Do not do this
+                        #worker_needs_input = cluster_queue.qsize() == 0
+                        logger.debug("DAG_executor_work_loop: cluster_queue contains work:"
+                            + " got state " + str(DAG_executor_state.state))
 
-#rhc: cluster:
-                    #assert:
-                    if not cluster_queue.qsize() == 0:
-                        logger.error("[Error]: DAG_executor: Internal Error: cluster_queue contained"
-                            + " more than one item of work - queue size > 0 after cluster_queue.get")
+    #rhc: cluster:
+                        #assert:
+                        if not cluster_queue.qsize() == 0:
+                            logger.error("[Error]: DAG_executor: Internal Error: cluster_queue contained"
+                                + " more than one item of work - queue size > 0 after cluster_queue.get")
 
-                    logger.debug(thread_name + " DAG_executor: Worker doesn't access work_queue")
-                    logger.debug("**********************" + thread_name + " process cluster_queue state: " + str(DAG_executor_state.state))
-                
-                #Note: This executed a memory barrier - so the pagerank writes to 
-                # the shared memory (if used) just performed by this process P1 
-                # will be flushed, which means the downstream pagerank tasks 
-                # that read these values will get the values written by P1.
-                # So we need a memory barrier between a task and its downstream
-                # tasks. Use this counter or if we remove this counter, something 
-                # else needs to provide the barrier.
-#rhc: counter
-                num_tasks_executed = completed_tasks_counter.increment_and_get()
-                logger.debug("DAG_executor: " + thread_name + " before processing " + str(DAG_executor_state.state) 
-                    + " num_tasks_executed: " + str(num_tasks_executed) 
-                    + " num_tasks_to_execute: " + str(num_tasks_to_execute))
-                if num_tasks_executed == num_tasks_to_execute:
-                    # Note: This worker has work to do, and this work is the last
-                    # task to be executed. So this worker and any other workers
-                    # can finish (if the DAG is not incremental or it is incremental
-                    # and complete) This worker starts the worker shutdown (or pause
-                    # for the new incremental DAG) by putting a -1 in the work queue.
-                    # Any worker that is waiting for work or that tries to get more 
-                    # work will get this -1. Note that this worker here that is adding
-                    # -1 may get this -1 when it tries to get work after executing
-                    # this last task. Workers who get -1 from the work queue put
-                    # a -1 back in the work queue if there are still workers who
-                    # have not completed (i.e., called get work). We have a counter
-                    # to track the number of completed (paused) workers.
-                    #
-                    # Note: No worker calls DAG_infobufer_Monitor.withdraw to get a 
-                    # new incrmental DAG untul all the tasks in the current version
-                    # of the incremental DAG have been executed. This is because,
-                    # the workers must first get a -1 from the work queue, at which 
-                    # point they may deposit anotgher -1 (if some workers have not
-                    # got their -1 yet) and then thwy will call DAG_infobufer_Monitor.withdraw
-                    # instead of returning. Note too that they only call 
-                    # DAG_infobufer_Monitor.withdraw if the current version of the 
-                    # incremental DAG is not complete, so the withdraw() will return 
-                    # a new version of the increnetal DAG. Eventuallly, the DAG will 
-                    # be complete and the workers will return (terminate) instead of 
-                    # calling DAG_infobufer_Monitor.withdraw.
-                    if not using_threads_not_processes:
-                        # Config: A5, A6
-                        logger.debug(thread_name + ": DAG_executor: num_tasks_executed == num_tasks_to_execute: depositing -1 in work queue.")
-                        work_tuple = (-1,None)
-                        work_queue.put(work_tuple)
-                    else:
-                        # Config: A4_local, A4_Remote
-                        logger.debug(thread_name + ": DAG_executor: num_tasks_executed == num_tasks_to_execute: depositing -1 in work queue.")
-                        work_tuple = (-1,None)
-                        work_queue.put(work_tuple)
+                        logger.debug(thread_name + " DAG_executor: Worker doesn't access work_queue")
+                        logger.debug("**********************" + thread_name + " process cluster_queue state: " + str(DAG_executor_state.state))
                     
-                    # No return here. The worker that executes the last task will
-                    # add a -1 to the work queue (-1,None) so that the next worker
-                    # to try to get work will get a -1. That worker will add a
-                    # -1 to the work queue and return from the work loop (so terminate)
-                    # The next worker will get this -1 etc. Note that the last worker
-                    # will not add a -1 to the work_queue.
-                    # (The last worker used to also add a -1 to the work queue, so 
-                    # the work_queue has a -1 at the end of DAG_execution.
-                    #return
-            # else: # Config: A1. A2, A3
+                    #Note: This executed a memory barrier - so the pagerank writes to 
+                    # the shared memory (if used) just performed by this process P1 
+                    # will be flushed, which means the downstream pagerank tasks 
+                    # that read these values will get the values written by P1.
+                    # So we need a memory barrier between a task and its downstream
+                    # tasks. Use this counter or if we remove this counter, something 
+                    # else needs to provide the barrier.
+    #rhc: counter
+                    num_tasks_executed = completed_tasks_counter.increment_and_get()
+                    logger.debug("DAG_executor: " + thread_name + " before processing " + str(DAG_executor_state.state) 
+                        + " num_tasks_executed: " + str(num_tasks_executed) 
+                        + " num_tasks_to_execute: " + str(num_tasks_to_execute))
+                    if num_tasks_executed == num_tasks_to_execute:
+                        # Note: This worker has work to do, and this work is the last
+                        # task to be executed. So this worker and any other workers
+                        # can finish (if the DAG is not incremental or it is incremental
+                        # and complete) This worker starts the worker shutdown (or pause
+                        # for the new incremental DAG) by putting a -1 in the work queue.
+                        # Any worker that is waiting for work or that tries to get more 
+                        # work will get this -1. Note that this worker here that is adding
+                        # -1 may get this -1 when it tries to get work after executing
+                        # this last task. Workers who get -1 from the work queue put
+                        # a -1 back in the work queue if there are still workers who
+                        # have not completed (i.e., called get work). We have a counter
+                        # to track the number of completed (paused) workers.
+                        #
+                        # Note: No worker calls DAG_infobufer_Monitor.withdraw to get a 
+                        # new incrmental DAG untul all the tasks in the current version
+                        # of the incremental DAG have been executed. This is because,
+                        # the workers must first get a -1 from the work queue, at which 
+                        # point they may deposit anotgher -1 (if some workers have not
+                        # got their -1 yet) and then thwy will call DAG_infobufer_Monitor.withdraw
+                        # instead of returning. Note too that they only call 
+                        # DAG_infobufer_Monitor.withdraw if the current version of the 
+                        # incremental DAG is not complete, so the withdraw() will return 
+                        # a new version of the increnetal DAG. Eventuallly, the DAG will 
+                        # be complete and the workers will return (terminate) instead of 
+                        # calling DAG_infobufer_Monitor.withdraw.
+                        if not using_threads_not_processes:
+                            # Config: A5, A6
+                            logger.debug(thread_name + ": DAG_executor: num_tasks_executed == num_tasks_to_execute: depositing -1 in work queue.")
+                            work_tuple = (-1,None)
+                            work_queue.put(work_tuple)
+                        else:
+                            # Config: A4_local, A4_Remote
+                            logger.debug(thread_name + ": DAG_executor: num_tasks_executed == num_tasks_to_execute: depositing -1 in work queue.")
+                            work_tuple = (-1,None)
+                            work_queue.put(work_tuple)
+                        
+                        # No return here. The worker that executes the last task will
+                        # add a -1 to the work queue (-1,None) so that the next worker
+                        # to try to get work will get a -1. That worker will add a
+                        # -1 to the work queue and return from the work loop (so terminate)
+                        # The next worker will get this -1 etc. Note that the last worker
+                        # will not add a -1 to the work_queue.
+                        # (The last worker used to also add a -1 to the work queue, so 
+                        # the work_queue has a -1 at the end of DAG_execution.
+                        #return
 
-            # DAG_executor_state.state contains the next state to excute
+                # end not process_continue_queue
+
+            # else: # not using workers: Config: A1. A2, A3
+
+        # while (True) from above continues with work to do in the form
+        #              of DAG_executor_state.state of some task
+
+            # DAG_executor_state.state contains the next state to execute
 
             # If we got a become task when we processed fanouts, we set
             # DAG_executor_state.state to the become task state so we
@@ -1706,271 +1745,281 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             logger.debug("is_leaf_task: " + str(is_leaf_task))
             logger.debug("task_inputs: " + str(task_inputs))
 
-            #rhc: Some DAGs, e.g., pagerank, may use a single paramaterized function, 
-            # e.g., PageRank, that needs its inputs, which are captured by args, but also 
-            # its task_name, so it e.g., can input values for its specific task, 
-            # e.g., its partition in file task_name+".pickle".
+            # we have already executed continued_tasks and put their outputs
+            # in the data_dict
+            if not continued_task:
 
-            """
-            def pack_data(o, d, key_types=object):
-                #Merge known data into tuple or dict
+                #rhc: Some DAGs, e.g., pagerank, may use a single paramaterized function, 
+                # e.g., PageRank, that needs its inputs, which are captured by args, but also 
+                # its task_name, so it e.g., can input values for its specific task, 
+                # e.g., its partition in file task_name+".pickle".
 
-                Parameters
-                ----------
-                o:
-                    core data structures containing literals and keys
-                d: dict
-                    mapping of keys to data
-
-                Examples
-                --------
-                >>> data = {'x': 1}
-                >>> pack_data(('x', 'y'), data)
-                (1, 'y')
-                >>> pack_data({'a': 'x', 'b': 'y'}, data)  # doctest: +SKIP
-                {'a': 1, 'b': 'y'}
-                >>> pack_data({'a': ['x'], 'b': 'y'}, data)  # doctest: +SKIP
-                {'a': [1], 'b': 'y'}
-                
-                typ = type(o)
-                try:
-                    if isinstance(o, key_types) and str(o) in d:
-                        return d[str(o)]
-                except TypeError:
-                    pass
-
-                if typ in (tuple, list, set, frozenset):
-                    return typ([pack_data(x, d, key_types=key_types) for x in o])
-                elif typ is dict:
-                    return {k: pack_data(v, d, key_types=key_types) for k, v in o.items()}
-                else:
-                    return o
-
-                    # Example:
-                    # 
-                    # task = (func_obj, "task1", "task2", "task3")
-                    # func = task[0]
-                    # args = task[1:] # everything but the 0'th element, ("task1", "task2", "task3")
-
-                    # # Intermediate data; from executing other tasks.
-                    # # task IDs and their outputs
-                    # data_dict = {
-                    #     "task1": 1, 
-                    #     "task2": 10,
-                    #     "task3": 3
-                    # }
-
-                    # args2 = pack_data(args, data_dict) # (1, 10, 3)
-
-                    # func(*args2)
-            """
-            # Note: For DAG generation, for each state we execute a task and 
-            # for each task T we have t say what T;s task_inputs are - these are the 
-            # names of tasks that give inputs to T. When we have per-fanout output
-            # instead of having the same output for all fanouts, we specify the 
-            # task_inputs as "sending task - receiving task". So a sending task
-            # S might send outputs to fanouts A and B so we use "S-A" and "S-B"
-            # as the task_inputs, instad of just using "S", which is the Dask way.
-            result_dictionary =  {}
-            if not is_leaf_task:
-                logger.debug("Packing data. Task inputs: %s. Data dict (keys only): %s" % (str(task_inputs), str(data_dict.keys())))
-                # task_inputs is a tuple of task_names
-                args = pack_data(task_inputs, data_dict)
-                logger.debug(thread_name + " argsX: " + str(args))
-                if tasks_use_result_dictionary_parameter:
-                    logger.debug("Foo1a")
-                    # task_inputs = ('task1','task2'), args = (1,2) results in a resultDictionary
-                    # where resultDictionary['task1'] = 1 and resultDictionary['task2'] = 2.
-                    # We pass resultDictionary of inputs instead of the tuple (1,2).
-
-                    if len(task_inputs) == len(args):
-                        logger.debug("Foo1b")
-                        result_dictionary = {task_inputs[i] : args[i] for i, _ in enumerate(args)}
-                        logger.debug(thread_name + " result_dictionaryX: " + str(result_dictionary))
-                
                 """
-                # This might be useful for leaves that have more than one input?
-                # But leaves always have one input, e.g., (1, )?
-                if tasks_use_result_dictionary_parameter:
-                    logger.debug("Foo2a")
-                    # ith arg has a key DAG_executor_driver_i that is mapped to it
-                    # leaf tasks do not have a task that sent inputs to the leaf task,
-                    # so we create dummy input tasks DAG_executor_driver_i.
-                    task_input_tuple = () # e.g., ('DAG_executor_driver_0','DAG_executor_driver_1')
-                    j = 0
-                    key_list = []
-                    for _ in args:
-                        # make the key values in task_input_tuple unique. 
-                        key = "DAG_executor_driver_" + str(j)
-                        key_list.append(key)
-                        j += 1
-                    task_input_tuple = tuple(key_list)
-                    # task_input_tuple = ('DAG_executor_driver_0'), args = (1,) results in a resultDictionary
-                    # where resultDictionary['DAG_executor_driver_0'] = 1.
-                    # We pass resultDictionary of inputs to the task instead of a tuple of inputs, e.g.,(1,).
-                    # Lengths will match since we looped through args to create task_input_tuple
-                    logger.debug(thread_name + " args: " + str(args)
-                        + " len(args): " + str(len(args))
-                        + " len(task_input_tuple): " + str(len(task_input_tuple))
-                        + " task_input_tuple: " + str(task_input_tuple))
-                    if len(task_input_tuple) == len(args):
-                        # The enumerate() method adds a counter to an iterable and returns the enumerate object.
-                        logger.debug("Foo2b")
-                        result_dictionary = {task_input_tuple[i] : args[i] for i, _ in enumerate(args)}
-                        logger.debug(thread_name + " result_dictionaryy: " + str(result_dictionary))
-                    #Note:
-                    #Informs the logging system to perform an orderly shutdown by flushing 
-                    #and closing all handlers. This should be called at application exit and no 
-                    #further use of the logging system should be made after this call.
-                    logging.shutdown()
-                    #time.sleep(3)   #not needed due to shutdwn
-                    os._exit(0)
+                def pack_data(o, d, key_types=object):
+                    #Merge known data into tuple or dict
+
+                    Parameters
+                    ----------
+                    o:
+                        core data structures containing literals and keys
+                    d: dict
+                        mapping of keys to data
+
+                    Examples
+                    --------
+                    >>> data = {'x': 1}
+                    >>> pack_data(('x', 'y'), data)
+                    (1, 'y')
+                    >>> pack_data({'a': 'x', 'b': 'y'}, data)  # doctest: +SKIP
+                    {'a': 1, 'b': 'y'}
+                    >>> pack_data({'a': ['x'], 'b': 'y'}, data)  # doctest: +SKIP
+                    {'a': [1], 'b': 'y'}
+                    
+                    typ = type(o)
+                    try:
+                        if isinstance(o, key_types) and str(o) in d:
+                            return d[str(o)]
+                    except TypeError:
+                        pass
+
+                    if typ in (tuple, list, set, frozenset):
+                        return typ([pack_data(x, d, key_types=key_types) for x in o])
+                    elif typ is dict:
+                        return {k: pack_data(v, d, key_types=key_types) for k, v in o.items()}
+                    else:
+                        return o
+
+                        # Example:
+                        # 
+                        # task = (func_obj, "task1", "task2", "task3")
+                        # func = task[0]
+                        # args = task[1:] # everything but the 0'th element, ("task1", "task2", "task3")
+
+                        # # Intermediate data; from executing other tasks.
+                        # # task IDs and their outputs
+                        # data_dict = {
+                        #     "task1": 1, 
+                        #     "task2": 10,
+                        #     "task3": 3
+                        # }
+
+                        # args2 = pack_data(args, data_dict) # (1, 10, 3)
+
+                        # func(*args2)
                 """
-            else:
-                # if not triggering tasks in lambdas task_inputs is a tuple of input values, e.g., (1,)
-                if not (store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks):
-                    args = task_inputs
+                # Note: For DAG generation, for each state we execute a task and 
+                # for each task T we have t say what T's task_inputs are - these are the 
+                # names of tasks that give inputs to T. When we have per-fanout output
+                # instead of having the same output for all fanouts, we specify the 
+                # task_inputs as "sending task - receiving task". So a sending task
+                # S might send outputs to fanouts A and B so we use "S-A" and "S-B"
+                # as the task_inputs, instad of just using "S", which is the Dask way.
+                result_dictionary =  {}
+                if not is_leaf_task:
+                    logger.debug("Packing data. Task inputs: %s. Data dict (keys only): %s" % (str(task_inputs), str(data_dict.keys())))
+                    # task_inputs is a tuple of task_names
+                    args = pack_data(task_inputs, data_dict)
+                    logger.debug(thread_name + " argsX: " + str(args))
+                    if tasks_use_result_dictionary_parameter:
+                        logger.debug("Foo1a")
+                        # task_inputs = ('task1','task2'), args = (1,2) results in a resultDictionary
+                        # where resultDictionary['task1'] = 1 and resultDictionary['task2'] = 2.
+                        # We pass resultDictionary of inputs instead of the tuple (1,2).
+
+                        if len(task_inputs) == len(args):
+                            logger.debug("Foo1b")
+                            result_dictionary = {task_inputs[i] : args[i] for i, _ in enumerate(args)}
+                            logger.debug(thread_name + " result_dictionaryX: " + str(result_dictionary))
+                    
+                    """
+                    # This might be useful for leaves that have more than one input?
+                    # But leaves always have one input, e.g., (1, )?
+                    if tasks_use_result_dictionary_parameter:
+                        logger.debug("Foo2a")
+                        # ith arg has a key DAG_executor_driver_i that is mapped to it
+                        # leaf tasks do not have a task that sent inputs to the leaf task,
+                        # so we create dummy input tasks DAG_executor_driver_i.
+                        task_input_tuple = () # e.g., ('DAG_executor_driver_0','DAG_executor_driver_1')
+                        j = 0
+                        key_list = []
+                        for _ in args:
+                            # make the key values in task_input_tuple unique. 
+                            key = "DAG_executor_driver_" + str(j)
+                            key_list.append(key)
+                            j += 1
+                        task_input_tuple = tuple(key_list)
+                        # task_input_tuple = ('DAG_executor_driver_0'), args = (1,) results in a resultDictionary
+                        # where resultDictionary['DAG_executor_driver_0'] = 1.
+                        # We pass resultDictionary of inputs to the task instead of a tuple of inputs, e.g.,(1,).
+                        # Lengths will match since we looped through args to create task_input_tuple
+                        logger.debug(thread_name + " args: " + str(args)
+                            + " len(args): " + str(len(args))
+                            + " len(task_input_tuple): " + str(len(task_input_tuple))
+                            + " task_input_tuple: " + str(task_input_tuple))
+                        if len(task_input_tuple) == len(args):
+                            # The enumerate() method adds a counter to an iterable and returns the enumerate object.
+                            logger.debug("Foo2b")
+                            result_dictionary = {task_input_tuple[i] : args[i] for i, _ in enumerate(args)}
+                            logger.debug(thread_name + " result_dictionaryy: " + str(result_dictionary))
+                        #Note:
+                        #Informs the logging system to perform an orderly shutdown by flushing 
+                        #and closing all handlers. This should be called at application exit and no 
+                        #further use of the logging system should be made after this call.
+                        logging.shutdown()
+                        #time.sleep(3)   #not needed due to shutdwn
+                        os._exit(0)
+                    """
                 else:
-                    # else the leaf task was triggered by a fanin operation on the fanin object
-                    # for the leaf task and the fanin result, as usual, maps the task that
-                    # sent the input to the input. For leaf tasks, the task that sent the 
-                    # input is "DAG_executor_driver", which is not a real DAG task. So
-                    # we have to grab the value that DAG_executor_driver is mapped to,
-                    # which is the leaf task input. The only input to a leaf task is this
-                    # input. Note: When triggering tasks, the DAG_executor_driver calls
-                    # the tcp_server_lambda to invoke a fanout, like any other triggered
-                    # fanout, using process_leaf_tasks_batch.
-                    # args will be a tuple of input values, e.g., (1,), as usual
-                    args = task_inputs['DAG_executor_driver']
-                    logger.debug(thread_name + " argsY: " + str(args))
+                    # if not triggering tasks in lambdas task_inputs is a tuple of input values, e.g., (1,)
+                    if not (store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks):
+                        args = task_inputs
+                    else:
+                        # else the leaf task was triggered by a fanin operation on the fanin object
+                        # for the leaf task and the fanin result, as usual, maps the task that
+                        # sent the input to the input. For leaf tasks, the task that sent the 
+                        # input is "DAG_executor_driver", which is not a real DAG task. So
+                        # we have to grab the value that DAG_executor_driver is mapped to,
+                        # which is the leaf task input. The only input to a leaf task is this
+                        # input. Note: When triggering tasks, the DAG_executor_driver calls
+                        # the tcp_server_lambda to invoke a fanout, like any other triggered
+                        # fanout, using process_leaf_tasks_batch.
+                        # args will be a tuple of input values, e.g., (1,), as usual
+                        args = task_inputs['DAG_executor_driver']
+                        logger.debug(thread_name + " argsY: " + str(args))
 
-                if tasks_use_result_dictionary_parameter:
-                    # Passing am emoty inut tuple to the PageRank task,
-                    # This results in a rresult_dictionary
-                    # of "DAG_executor_driver_0" --> (), where
-                    # DAG_executor_driver_0 is used to mean that the DAG_excutor_driver
-                    # provided an empty input tuple for the leaf task. In the 
-                    # PageRank_Function_Driver we just ignore empty input tuples so 
-                    # that the input_tuples provided to the PageRank_Function will be an empty list.
-                    result_dictionary['DAG_executor_driver_0'] = ()
+                    if tasks_use_result_dictionary_parameter:
+                        # Passing am emoty inut tuple to the PageRank task,
+                        # This results in a rresult_dictionary
+                        # of "DAG_executor_driver_0" --> (), where
+                        # DAG_executor_driver_0 is used to mean that the DAG_excutor_driver
+                        # provided an empty input tuple for the leaf task. In the 
+                        # PageRank_Function_Driver we just ignore empty input tuples so 
+                        # that the input_tuples provided to the PageRank_Function will be an empty list.
+                        result_dictionary['DAG_executor_driver_0'] = ()
 
-            logger.debug("argsZ: " + str(args))
- 
-            logger.debug(thread_name + " result_dictionaryZ: " + str(result_dictionary))
+                logger.debug("argsZ: " + str(args))
+    
+                logger.debug(thread_name + " result_dictionaryZ: " + str(result_dictionary))
 
-#rhc cleanup
-            #for key, value in DAG_tasks.items():
-            #    logger.error(str(key) + ' : ' + str(value))
+    #rhc cleanup
+                #for key, value in DAG_tasks.items():
+                #    logger.error(str(key) + ' : ' + str(value))
 
-            # using map DAG_tasks from task_name to task
-            task = DAG_tasks[state_info.task_name]
+                # using map DAG_tasks from task_name to task
+                task = DAG_tasks[state_info.task_name]
 
-            if not tasks_use_result_dictionary_parameter:
-                # we will call the task with tuple args and unfold args: task(*args)
-                output = execute_task(task,args)
-            else:
-                #def PageRank_Function_Driver_Shared(task_file_name,total_num_nodes,results_dictionary,shared_map,shared_nodes):
-                if not use_shared_partitions_groups:
-                    # we will call the task with: task(task_name,resultDictionary)
-                    output = execute_task_with_result_dictionary(task,state_info.task_name,20,result_dictionary)
+                if not tasks_use_result_dictionary_parameter:
+                    # we will call the task with tuple args and unfold args: task(*args)
+                    output = execute_task(task,args)
                 else:
-                    if use_page_rank_group_partitions:
-                        output = execute_task_with_result_dictionary_shared(task,state_info.task_name,20,result_dictionary,BFS_Shared.shared_groups_map,BFS_Shared.shared_groups)
-                    else: # use the partition partitions
-                        output = execute_task_with_result_dictionary_shared(task,state_info.task_name,20,result_dictionary,BFS_Shared.shared_partition_map,BFS_Shared.shared_partition)
-            """ where:
-                def execute_task(task,args):
-                    logger.debug("input of execute_task is: " + str(args))
-                    output = task(*args)
-                    return output
-            """
-            """
-                def execute_task_with_result_dictionary(task,task_name,resultDictionary):
-                    output = task(task_name,resultDictionary)
-                    return output
-            """
-            """
-                def execute_task_with_result_dictionary_shared(task,task_name,total_num_nodes,resultDictionary,shared_map, shared_nodes):
-                    output = task(task_name,total_num_nodes,resultDictionary,shared_map,shared_nodes)
-                    return output
-            """
-            """
-            output is a dictionary mapping task name to list of tuples.
-            output = {'PR2_1': [(2, 0.0075)], 'PR2_2': [(5, 0.010687499999999999)], 'PR2_3': [(3, 0.012042187499999999)]}
-            This is the PR1_1 output. We put it in the data_dict as
-                data_dict["PR1_1"] = output
-            but we then send this output to process_fanouts. The become
-            task is PR2_1 and the non-become task is PR_2_3. In general,
-            we fanout all non-become tasks with this same output. We should
-            actually fanout tasks with their indivisual output from the 
-            dictionary. Currently, for each name in set fanouts:
-                dict_of_results =  {}
-                dict_of_results[calling_task_name] = output
-                work_tuple = (DAG_states[name],dict_of_results)
-                work_queue.put(work_tuple)
-            which assigns dict_of_results[calling_task_name] = output.
-            But we want to assign instead:
-                dict_of_results[str(calling_task_name+"-"+name)] = output[name]
-            when we have per-fanout outputs instead of all fanouts get the 
-            same output. 
-            Also, we currently have:
-                sender_set_for_senderX = Group_receivers.get(senderX)
-                if sender_set_for_senderX == None:
-                    # senderX is a leaf task since it is not a receiver
-                    Group_DAG_leaf_tasks.append(senderX)
-                    Group_DAG_leaf_task_start_states.append(state)
-                    task_inputs = ()
-                    Group_DAG_leaf_task_inputs.append(task_inputs)
+                    #def PageRank_Function_Driver_Shared(task_file_name,total_num_nodes,results_dictionary,shared_map,shared_nodes):
+                    if not use_shared_partitions_groups:
+                        # we will call the task with: task(task_name,resultDictionary)
+                        output = execute_task_with_result_dictionary(task,state_info.task_name,20,result_dictionary)
+                    else:
+                        if use_page_rank_group_partitions:
+                            output = execute_task_with_result_dictionary_shared(task,state_info.task_name,20,result_dictionary,BFS_Shared.shared_groups_map,BFS_Shared.shared_groups)
+                        else: # use the partition partitions
+                            output = execute_task_with_result_dictionary_shared(task,state_info.task_name,20,result_dictionary,BFS_Shared.shared_partition_map,BFS_Shared.shared_partition)
+                """ where:
+                    def execute_task(task,args):
+                        logger.debug("input of execute_task is: " + str(args))
+                        output = task(*args)
+                        return output
+                """
+                """
+                    def execute_task_with_result_dictionary(task,task_name,resultDictionary):
+                        output = task(task_name,resultDictionary)
+                        return output
+                """
+                """
+                    def execute_task_with_result_dictionary_shared(task,task_name,total_num_nodes,resultDictionary,shared_map, shared_nodes):
+                        output = task(task_name,total_num_nodes,resultDictionary,shared_map,shared_nodes)
+                        return output
+                """
+                """
+                output is a dictionary mapping task name to list of tuples.
+                output = {'PR2_1': [(2, 0.0075)], 'PR2_2': [(5, 0.010687499999999999)], 'PR2_3': [(3, 0.012042187499999999)]}
+                This is the PR1_1 output. We put it in the data_dict as
+                    data_dict["PR1_1"] = output
+                but we then send this output to process_fanouts. The become
+                task is PR2_1 and the non-become task is PR_2_3. In general,
+                we fanout all non-become tasks with this same output. We should
+                actually fanout tasks with their indivisual output from the 
+                dictionary. Currently, for each name in set fanouts:
+                    dict_of_results =  {}
+                    dict_of_results[calling_task_name] = output
+                    work_tuple = (DAG_states[name],dict_of_results)
+                    work_queue.put(work_tuple)
+                which assigns dict_of_results[calling_task_name] = output.
+                But we want to assign instead:
+                    dict_of_results[str(calling_task_name+"-"+name)] = output[name]
+                when we have per-fanout outputs instead of all fanouts get the 
+                same output. 
+                Also, we currently have:
+                    sender_set_for_senderX = Group_receivers.get(senderX)
+                    if sender_set_for_senderX == None:
+                        # senderX is a leaf task since it is not a receiver
+                        Group_DAG_leaf_tasks.append(senderX)
+                        Group_DAG_leaf_task_start_states.append(state)
+                        task_inputs = ()
+                        Group_DAG_leaf_task_inputs.append(task_inputs)
+                    else:
+                        # sender_set_for_senderX provide input for senderX
+                        task_inputs = tuple(sender_set_for_senderX)
+                So the task_input for fanout PR2_3 is ("PR1_1) since PR1_1 sends
+                its output to PR2_3. And we put the output in the data_dict
+                as data_dict["PR1_1"] = output so we'll be grabbing the 
+                entire output as the input of PR2_1.
+                Note: process_fanouts put a work tuple for PR2_1 in the work 
+                queue and set the DAG_executor_state.state to the become
+                task state, so the non-leaf executor, will next do the 
+                faninNB and then do the become task.
+                Note: The ss1 excutor will get the work_tuple for PR2_3
+                and try to execute it. The inputs are "PR1_1" since PR1_1
+                sends it output to PR2_3. Using the data_dict["PR1_1"] value
+                the input for PR2_3 is the entire output of PR1_1.
+
+                So: the output of a PageRank task is a dictionary that maps
+                each of its fanout/faninNB/collapse/fanin tasks to a list if
+                input tuples. We need to divide the output into one output
+                per fanout/faninNB/collapse/fanin task. These outputs are
+                keyed by a string, e.g., "PR1_1-PR2_3", and this string 
+                needs to be used in the DAG_info task_inputs tuple.
+                """
+
+                # data_dict may be local (A1) to process/lambda or global (A2) to threads
+                logger.debug(thread_name + " executed task " + state_info.task_name + "'s output: " + str(output))
+                if same_output_for_all_fanout_fanin:
+                    data_dict[state_info.task_name] = output
                 else:
-                    # sender_set_for_senderX provide input for senderX
-                    task_inputs = tuple(sender_set_for_senderX)
-            So the task_input for fanout PR2_3 is ("PR1_1) since PR1_1 sends
-            its output to PR2_3. And we put the output in the data_dict
-            as data_dict["PR1_1"] = output so we'll be grabbing the 
-            entire output as the input of PR2_1.
-            Note: process_fanouts put a work tuple for PR2_1 in the work 
-            queue and set the DAG_executor_state.state to the become
-            task state, so the non-leaf executor, will next do the 
-            faninNB and then do the become task.
-            Note: The ss1 excutor will get the work_tuple for PR2_3
-            and try to execute it. The inputs are "PR1_1" since PR1_1
-            sends it output to PR2_3. Using the data_dict["PR1_1"] value
-            the input for PR2_3 is the entire output of PR1_1.
+                #   Example: task PR1_1 producs an output for fanouts PR2_1
+                #   and PR2_3 and faninNB PR2_2.
+                #       output = {'PR2_1': [(2, 0.0075)], 'PR2_2': [(5, 0.010687499999999999)], 'PR2_3': [(3, 0.012042187499999999)]}
+                    for (k,v) in output.items():
+                        # example: state_info.task_name = "PR1_1" and 
+                        # k is "PR2_3" so data_dict_key is "PR1_1-PR2_3"
+                        data_dict_key = str(state_info.task_name+"-"+k)
+                        # list of input tuples. Example: list of single tuple:
+                        # [(3, 0.012042187499999999)], hich says that the pagerank
+                        # value of the shadow_node in position 3 of PR2_3's 
+                        # partition is 0.012042187499999999. This is the pagerank
+                        # value of a parent node of the node in position 4 of 
+                        # PR2_3's partition. We set the shadow nodes's value before
+                        # we start the pagerank calculation. There is a trick used
+                        # to make sure the hadow node's pageran value is not changed 
+                        # by the pagerank calculation. (We compute the shadow node's 
+                        # new paerank but we hardcode the shadow node's (dummy) parent
+                        # pagerank vaue so that the new shadow node pagerank is he same 
+                        # as the old value.)
+                        data_dict_value = v
+                        data_dict[data_dict_key] = data_dict_value
 
-            So: the output of a PageRank task is a dictionary that maps
-            each of its fanout/faninNB/collapse/fanin tasks to a list if
-            input tuples. We need to divide the output into one output
-            per fanout/faninNB/collapse/fanin task. These outputs are
-            keyed by a string, e.g., "PR1_1-PR2_3", and this string 
-            needs to be used in the DAG_info task_inputs tuple.
-            """
-
-            # data_dict may be local (A1) to process/lambda or global (A2) to threads
-            logger.debug(thread_name + " executed task " + state_info.task_name + "'s output: " + str(output))
-            if same_output_for_all_fanout_fanin:
-                data_dict[state_info.task_name] = output
-            else:
-            #   Example: task PR1_1 producs an output for fanouts PR2_1
-            #   and PR2_3 and faninNB PR2_2.
-            #       output = {'PR2_1': [(2, 0.0075)], 'PR2_2': [(5, 0.010687499999999999)], 'PR2_3': [(3, 0.012042187499999999)]}
-                for (k,v) in output.items():
-                    # example: state_info.task_name = "PR1_1" and 
-                    # k is "PR2_3" so data_dict_key is "PR1_1-PR2_3"
-                    data_dict_key = str(state_info.task_name+"-"+k)
-                    # list of input tuples. Example: list of single tuple:
-                    # [(3, 0.012042187499999999)], hich says that the pagerank
-                    # value of the shadow_node in position 3 of PR2_3's 
-                    # partition is 0.012042187499999999. This is the pagerank
-                    # value of a parent node of the node in position 4 of 
-                    # PR2_3's partition. We set the shadow nodes's value before
-                    # we start the pagerank calculation. There is a trick used
-                    # to make sure the hadow node's pageran value is not changed 
-                    # by the pagerank calculation. (We compute the shadow node's 
-                    # new paerank but we hardcode the shadow node's (dummy) parent
-                    # pagerank vaue so that the new shadow node pagerank is he same 
-                    # as the old value.)
-                    data_dict_value = v
-                    data_dict[data_dict_key] = data_dict_value
+            # end if not continued_task:
+            # this task is either a continued task tht was executed previously
+            # or it is a non-ccontinued tasks that we have just executed. In either
+            # case the task output was previously or just now put in the data_dict.
+            # Process the fanouts/fanins/faninNBs of the task (using outputs in data_dict6.6)
 
             logger.debug("data_dict: " + str(data_dict))
 
@@ -1992,6 +2041,14 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             # is below.
             starting_number_of_fanouts = len(state_info.fanouts)
 
+            TBC = state_info.ToBeContinued
+            if TBC:
+                # if the DAG_info is not complete, we execute a continued
+                # task and put its output in the data_dict but w do not 
+                # process its fanout/fanins/faninNBs until we get the next
+                # DAG_info. Put the task's state in the continue_queue to
+                # be continued when we get the new DAG_info
+                continue_queue.put(DAG_executor_state.state)
 #rhc: cluster queue:
 # Note: if this just executed task T has a collapse task then T has no
 # fanouts/fanins/faninNBs, so next it will execute the clustered task
@@ -2018,7 +2075,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 # task to the cluster queue it may be behind one or more clustered tasks
 # but when we eventually execute, we will have its inputs in our data dict.
 # 
-            if len(state_info.collapse) > 0:
+            elif len(state_info.collapse) > 0:
 
                 if len(state_info.fanins) + len(state_info.fanouts) + len(state_info.faninNBs) > 0:
                     logger.error("Error1")
@@ -2033,8 +2090,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 # e.g., a becomes task from fanouts. So:
 # - put all becomes work and collapsed work, etc in the cluster queue
 # - get work from the non-empty cluster queue rather then from the work queue.
-#   If only a become task or collased task in the cluster queue then not 
-#   cluster_queue is not empty and the work is in the cluster queue. 
+#   If only a become task or collased task is in the cluster queue then not 
+#   cluster_queue is empty and the work is in the cluster queue. 
 
                 # execute collapsed task next - transition to new state and iterate loop
                 # collapse is a list [] so get task name of the collapsed task which is collapse[0],
@@ -2053,19 +2110,12 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 #    worker_needs_input = False
                 ## else: # Config: A1. A2, A3
 
-#rhc: Consider run-time task clustering: 
-#   elif len(cluster_queue>0):
-#      - a becomes fanout task is represented by the start state of the task.
-#       - So process_fanouts can make the clustering decision and generate 
-#         the task start states and put them in the cluster queue instead of 
-#         the work queue or a list of work to be passed to the batch() method.
-#
 #    Note: for multithreaded worked, no differene between adding work to the 
-#    work queue and adding it to the cluster_queue, i.e., dosn't eliminate 
+#    work queue and adding it to the cluster_queue, i.e., doesn't eliminate 
 #    any overhead. The difference is when using multiprocessing or lambdas
 #    (where lambdas are really just processes.) So for multiP we are putting
 #    work in lists and sending it to the tcp_server for deposit into the 
-#    work_queue; instead, we will cluster it locally. Likewise, we will cluster 
+#    work_queue; instead, we will cluster work locally. Likewise, we will cluster 
 #    instead of starting a lambda for the (non-become) fanouts.
 
             elif len(state_info.faninNBs) > 0 or len(state_info.fanouts) > 0:
@@ -2076,7 +2126,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # list of fanouts to deposit into work_queue piggybacking on call to batch fanins.
                 # This is used when using_workers and not using_threads_not_processes, which is 
                 # when we process the faninNBs in a batch
-#rhc: run tasks changed name to include payload
+#rhc: run tasks changed name to include "payload"
                 list_of_work_queue_or_payload_fanout_values = []
 
                 # Check fanouts first so we know whether we have a become task for 
@@ -2143,9 +2193,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     ## else: Config: A1, A2, A3
 
 #rhc: cluster:
-                # Need worker_needs input to be set corrctly in case len(state_info.faninNBs) is 0
-                worker_needs_input = cluster_queue.qsize()==0
-                logger.debug("DAG_executor_work_loop: check cluster_queue size before processing faninNBs:"
+                if using_workers:
+                    # Need worker_needs input to be set corrctly in case len(state_info.faninNBs) is 0
+                    worker_needs_input = cluster_queue.qsize()==0
+                    logger.debug("DAG_executor_work_loop: check cluster_queue size before processing faninNBs:"
                         + " cluster_queue.qsize(): " + str(cluster_queue.qsize()))
 
                 if len(state_info.faninNBs) > 0:
@@ -2248,6 +2299,12 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             async_call, state_info.fanouts,
 #rhc: cluster:
                             cluster_queue)
+
+                        # assert:
+                        if worker_needs_input and not using_workers:
+                            logger.error("[Error]: Internal error: after process_faninNBs_batch"
+                                + " worker_needs_input is True when not using workers.")
+
 #rhc: cluster:
                         # assert:
                         if using_workers and worker_needs_input != save_worker_needs_input:
@@ -2281,11 +2338,16 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         # for assert below
                         save_worker_needs_input = worker_needs_input
 
+                        # Note: ignorning worker_needs_input if we are not using workers.
                         worker_needs_input = process_faninNBs(websocket,state_info.faninNBs, state_info.faninNB_sizes, 
                             state_info.task_name, DAG_info.get_DAG_states(), DAG_executor_state, 
                             output, DAG_info, server,work_queue,worker_needs_input,
 #rhc: cluster:
                             cluster_queue)
+
+                        if worker_needs_input and not using_workers:
+                            logger.error("[Error]: Internal error: after process_faninNBs"
+                                + " worker_needs_input is True when not using workers.")
 #rhc: cluster:
                         # assert:
                         if using_workers and worker_needs_input != save_worker_needs_input:
@@ -2523,6 +2585,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # Config: A1, A2, A3
                     logger.debug(thread_name + ": state " + str(DAG_executor_state.state) + " after executing task " +  state_info.task_name + " has no collapse, fanouts, fanins, or faninNBs; not a worker so return.")
                     return
+        # end while (True)
 
 
 # Config: A2, A3

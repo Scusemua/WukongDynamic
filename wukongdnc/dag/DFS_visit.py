@@ -28,7 +28,10 @@ logger.addHandler(ch)
 
 class state_info:
     def __init__(self, task_name, fanouts = None, fanins = None, faninNBs = None, collapse = None,
-        fanin_sizes = None, faninNB_sizes = None, task_inputs = None):
+        fanin_sizes = None, faninNB_sizes = None, task_inputs = None,
+#rhc continue
+        ToBeContinued = False):
+
         self.task_name = task_name
         self.fanouts = fanouts      # see comment below for examples
         self.fanins = fanins
@@ -37,6 +40,13 @@ class state_info:
         self.faninNB_sizes = faninNB_sizes
         self.collapse = collapse
         self.task_inputs = task_inputs
+#rhc continue
+        # True if we are using incremental DAG_info generation, which is 
+        # currently only for pagerank.  For Dask Dags, we use DFS_visit.py
+        # to convert DASK Dags to our DAGs. For pagerank, we have a seperate
+        # DAG generator.
+        self.ToBeContinued = ToBeContinued
+
     def __str__(self):
         if self.fanouts != None:
             fanouts_string = str(self.fanouts)
@@ -66,9 +76,14 @@ class state_info:
             task_inputs_string = str(self.task_inputs)
         else:
             task_inputs_string = "None"
+
+        ToBeContinued_string = str(self.ToBeContinued)
+
         return (" task: " + self.task_name+", fanouts:" + fanouts_string + ", fanins:" + fanins_string + ", faninsNB:" + faninNBs_string
             + ", collapse:" + collapse_string + ", fanin_sizes:" + fanin_sizes_string
-            + ", faninNB_sizes:" + faninNB_sizes_string + ", task_inputs: " + task_inputs_string)
+            + ", faninNB_sizes:" + faninNB_sizes_string + ", task_inputs: " + task_inputs_string
+#rhc continue
+            + ", ToBeContinued_string:" + ToBeContinued_string)
 	
 """ Examples of fanouts, fanins, and faninNBs (No Becomes)
   n2   n3
@@ -246,7 +261,10 @@ class Node:
         state = self.generate_state(self.get_task_name())
 		
         # if T previously encountered as a dependent, now we add T's information for executing T
-        Node.DAG_map[state] = state_info(self.get_task_name(), fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, self.get_task_inputs())
+        Node.DAG_map[state] = state_info(self.get_task_name(), fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, self.get_task_inputs(),
+#rhc continue : For DASK DAGS we do not generate incremental DAGs - a DAG contains
+            # all the tasks.
+            False)
         Node.DAG_states[self.get_task_name()] = state
         #ToDo: Don't need this if task inputs are in state_info
         if len(self.get_pred()) == 0:
