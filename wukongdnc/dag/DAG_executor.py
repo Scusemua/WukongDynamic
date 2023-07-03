@@ -1395,11 +1395,27 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
         continue_queue = queue.Queue()
         continued_task = False
 
+#hc: cluster:
+        # The work loop checks cluster_queue > 0 to see if there are any 
+        # become states in the cluster_queue. It does this when using workers
+        # and when using lambdas. (When using lambas, we do not use a work_queue
+        # but we do use a cluster queue.) To be consistent with this use of the 
+        # cluster queue, we add the lambas start state to the cluster_queue so 
+        # it can be handled as usual by chcking for cluster_queue > 0. So here
+        # we add the state to the cluster_queue and blow we will immediately
+        # get it from the cluster queue. (Workers when started will not find
+        # any states in their cluster_queues (they each have a queue); instead they
+        # will get work from the work_queue; the driver will put leaf task inputs
+        # in the work_queue before it starts the worker(s).)
+        if (run_all_tasks_locally and not using_workers) or not run_all_tasks_locally:
+            # simulated or real lmabdas are started with a payload that has a state,
+            # put this state in the cluster_queue.
+            cluster_queue.put(DAG_executor_state.state)
+            logger.debug("DAG_executor_work_loop: start of simulated or real lambda:"
+                + " put state " + str(DAG_executor_state.state) + " in cluster_queue.")
+
         while (True):
 
-        # workers don't always get work from the queue. i.e., no get when no put.
-        # - collapse: no get; fanout: become so not get; fanin: - become no get + not-become do gets
-        # - faninB: no becomes - last caller does put, all callers need to do gets
             if using_workers:
                 # Config: A4_local, A4_Remote, A5, A6
 # So:
@@ -1426,16 +1442,25 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     if len(continue_queue) == 0:
                         process_continue_queue = False
                 else: # not process_continue_queue
+                    # Workers don't always get work from the work queue. they may get a state from the cluster
+                    # queue instead. If a worker has a collpase task, it puts the collapse state in 
+                    # the cluster queue and then gets it. For fanouts, the become fanout task/state is 
+                    # put in the cluster_queue, sme for fanin become tasks/states
+                    # For faninB there are no becomes - last caller puts faninNB task in the work queue.
+                    # If we are batching fannNBs (and fanouts), and the worker calling batch() needs
+                    # work (ie., cluster_queue is empty) then the worker may receve work back
+                    # from the tcp_server and the worker will put this work in its cluser_queue.
+
                     # Note: If workers got a new incremental DAG from the
-                    # work queue then this will be true for each worker since
-                    # before they got the DAG they had to try to get work
-                    # so this must have been true for them to try to get work.
+                    # work queue then cluster_queue.qsize() == 0  will be true 
+                    # for each worker, since before they got the new DAG they had 
+                    # to try to get work. so this cluster_queue condition must have been 
+                    # true for them to try to get work.
 
 #rhc: cluster:
-                    # just take worker_needs_input out of it.
+                    # Just take worker_needs_input out of it.
                     #worker_needs_input = cluster_queue.qsize() == 0
 
-                    # here
                     if cluster_queue.qsize() == 0:
                     #if worker_needs_input:
                         logger.debug("DAG_executor_work_loop: cluster_queue.qsize() == 0 so"
@@ -1689,7 +1714,24 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 
                 # end not process_continue_queue
 
-            # else: # not using workers: Config: A1. A2, A3
+#rhc: cluster:
+            else: # not using workers: Config: A1. A2, A3
+                # if we are using simulated or real lambdas, then the lambda
+                # payload has a state to execute. Ths state is added to the 
+                # cluster_queue at the start of the work loop. Lambdas may also
+                # add collpased states to the cluster queue and fanout/fanin
+                # become states are also aded to the cluster queue.
+                if cluster_queue.qsize() > 0:
+                    DAG_executor_state.state = cluster_queue.get()
+                    # Question: Do not do this
+                    #worker_needs_input = cluster_queue.qsize() == 0
+                    logger.debug("DAG_executor_work_loop: simulated or real lambda:"
+                        + " cluster_queue contains work: got state " + str(DAG_executor_state.state))
+#rhc: cluster:
+                    #assert:
+                    if not cluster_queue.qsize() == 0:
+                        logger.error("[Error]: DAG_executor: Internal Error: simulated or real lambda:"
+                            + " cluster_queue contained more than one item of work - queue size > 0 after cluster_queue.get")
 
         # while (True) from above continues with work to do in the form
         #              of DAG_executor_state.state of some task

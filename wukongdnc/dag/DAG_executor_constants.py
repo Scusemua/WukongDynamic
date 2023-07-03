@@ -36,7 +36,7 @@ create_all_fanins_faninNBs_on_start = True
 using_workers = True
 # True when we ae not using Lambas and tasks are executed by threads instead of processes. 
 # False when we are not using lambdas and are using multiprocesssing 
-using_threads_not_processes = True
+using_threads_not_processes = False
 # When using_workers, this is how many threads or processes in the pool.
 num_workers = 2
 # Use one or more worker processes (num_workers) with one or more threads
@@ -116,6 +116,15 @@ use_anonymous_lambda_functions = False
 #    function (chosen at run time) that they are stored in. So either
 #    way you need to map sync object names to functions if you want to 
 #    invoke the function to do an op on the object more than once.
+
+#assert:
+if using_workers and not using_threads_not_processes:
+    if store_fanins_faninNBs_locally:
+        # When using worker processed, synch objects must be stored remoely
+        logger.error("[Error]: Configuration error: if using_workers and not using_threads_not_processes"
+            + " then store_fanins_faninNBs_locally must be False.")
+        logging.shutdown()
+        os._exit(0)
 
 #assert:
 if create_all_fanins_faninNBs_on_start and not run_all_tasks_locally:
