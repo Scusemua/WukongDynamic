@@ -185,7 +185,7 @@ compute_pagerank = False # True
 same_output_for_all_fanout_fanin = not compute_pagerank
 
 # True if DAG generation and DAG_execution are overlapped. 
-use_incremental_DAG_generation = False
+use_incremental_DAG_generation = compute_pagerank and False
 
 if not same_output_for_all_fanout_fanin and not compute_pagerank:
     logger.error("[Error]: Configuration error: if same_output_for_all_fanout_fanin"

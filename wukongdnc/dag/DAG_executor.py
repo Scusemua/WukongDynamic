@@ -1353,13 +1353,13 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             # each process when single threaded multiprocessing needs its own socket.
             work_queue = Work_Queue_Client(websocket,2*num_tasks_to_execute)
 
-#rhc: continue
+#rhc continue
             # we are only using incremental_DAG_generation when we
             # are computing pagerank, so far. Pagerank DAGS are the
             # only DAGS we generate ourselves, so far.
             if compute_pagerank and use_incremental_DAG_generation:
                 DAG_infobuffer_monitor = Remote_Client_for_DAG_infoBuffer_Monitor(websocket)
-#rhc: continue
+#rhc continue
 # ToDo: need to create the remote DAG_infobuffer_monitor. The remote
 #       work queue is created by the DAG_executor_driver since the driver
 #       needs to deposit leaf task work in the work queue before
@@ -1388,12 +1388,15 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
         worker_needs_input = False # set to False and stays False if not using workers
 
 
-#rhc continue  
+ 
 #rhc: cluster:
-        process_continue_queue = False
         cluster_queue = queue.Queue()
-        continue_queue = queue.Queue()
+#rhc continue 
         continued_task = False
+        continue_queue = None
+        process_continue_queue = False
+        if compute_pagerank and use_incremental_DAG_generation:
+            continue_queue = queue.Queue()
 
 #hc: cluster:
         # The work loop checks cluster_queue > 0 to see if there are any 
@@ -1434,10 +1437,13 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 # excute or the incomplete tasks that are targets of the last tasks to execute
 
 #rhc continue 
-
                 if process_continue_queue:
-                    continued_state = continue_queue.get()
-                    continued_output = "Do this?"
+                    # asert
+                    if not (compute_pagerank and use_incremental_DAG_generation):
+                        logger.error("[Error]: work loop: process_continue_queue but"
+                            +  " not compute_pagerank or not use_incremental_DAG_generation.")
+
+                    DAG_executor_state.state = continue_queue.get()
                     continued_task = True
                     if len(continue_queue) == 0:
                         process_continue_queue = False
@@ -1558,8 +1564,9 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                     DAG_info = new_DAG_info
                                     # assert: 
                                     if len(continue_queue) > 0:
-                                        continued_state = continue_queue.get()
-                                        continued_output = "Do this?"
+                                        DAG_executor_state.state = continue_queue.get()
+                                
+#rhc continue
                                         continued_task = True
                                         if len(continue_queue) == 0:
                                             # only one state was in continue_queue
@@ -1576,7 +1583,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                         # cluster_queue must have been empty. So
                                         # we will not try to get work from the work queue.
 
-        #rhc: continue: Next we will need to get work or do continue tasks
+        #rhc continue: Next we will need to get work or do continue tasks
         # so are we in a get work loop? Or do we just check continue queue
         # here and if nothing then get work from work queue?
         # Note: Above, we can't chck continue_queue since we don't want
@@ -2082,15 +2089,22 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             # become task. The check of starting_number_of_fanouts
             # is below.
             starting_number_of_fanouts = len(state_info.fanouts)
+#rhc continue
+            if compute_pagerank and use_incremental_DAG_generation:
+                TBC = state_info.ToBeContinued
+                if TBC:
+                    if process_continue_queue:
+                        logger.error("[Error]: DAG_executor work loop: process_continue_queue but"
+                            +  " we just found a To Be Continued State, i.e., the state was"
+                            +  " continued previously and in procesing it after getting a new"
+                            +  " DAG_info the state is still To Be Continued (in the new DAG_info.")
 
-            TBC = state_info.ToBeContinued
-            if TBC:
-                # if the DAG_info is not complete, we execute a continued
-                # task and put its output in the data_dict but w do not 
-                # process its fanout/fanins/faninNBs until we get the next
-                # DAG_info. Put the task's state in the continue_queue to
-                # be continued when we get the new DAG_info
-                continue_queue.put(DAG_executor_state.state)
+                    # if the DAG_info is not complete, we execute a continued
+                    # task and put its output in the data_dict but w do not 
+                    # process its fanout/fanins/faninNBs until we get the next
+                    # DAG_info. Put the task's state in the continue_queue to
+                    # be continued when we get the new DAG_info
+                    continue_queue.put(DAG_executor_state.state)
 #rhc: cluster queue:
 # Note: if this just executed task T has a collapse task then T has no
 # fanouts/fanins/faninNBs, so next it will execute the clustered task
