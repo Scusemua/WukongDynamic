@@ -387,6 +387,7 @@ class DAG_executor_Synchronizer(object):
 
         # return is: None, restart, where restart is always 0 and return_value is None; and makes no change to DAG_executor_State	
         # Not using "asynch" here as no way to implement "asynch" locally.
+        
         _return_value_ignored, _restart_value_ignored = FanInNB.fan_in(**keyword_arguments)
 
         #if we decide we always wan to return a state, we can use this:

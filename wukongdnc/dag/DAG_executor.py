@@ -2069,7 +2069,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             # the call to fan_in to be last. Last caller can get the faninNB task work, if it has 
             # worker_needs_input = True on call (so the state has no fanouts, as thread will be become
             # task for first fanout so that thread will not need work from its FamInNBs.)
-            #if DAG_executor_state.state == 1:
+            #if DAG_executor_state.state == 8:
             #    time.sleep(0.5)
 
             # If len(state_info.fanouts) > 0 then we will make one 
@@ -2094,7 +2094,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 #rhc: cluster queue:
 # Note: if this just executed task T has a collapse task then T has no
 # fanouts/fanins/faninNBs, so next it will execute the clustered task
-# with the results it just placed in the data_dict.
+# with the resultsleepexecutes it just placed in the data_dict.
 # Note: if the just executed task T has multiple fanouts and it clusters them
 # then the fanouts will be added to the cluster queue, i.e., their state
 # returned by DAG_info.get_DAG_states() will be added to the cluster queue.
@@ -2525,13 +2525,13 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     return
                 else:
                     # we are a worker so even if we will not become a fanout task 
-                    # (starting_number_of_fanouts == 0) we can get more more from 
+                    # (starting_number_of_fanouts == 0) we can get more work from 
                     # the work queue, 
                     # or we are not a worker (not using_workers), which means we are a 
                     # thread simulating a lambda or a real lambda) and there was at least one fanout task 
                     # so we will become a fanout task (not starting_number_of_fanouts == 0); 
                     # thus, we should not terminate.
-                    logger.debug(thread_name + ": Not returning after process fanouts/faninNBs; execute become task.")
+                    logger.debug(thread_name + ": Not returning after process fanouts/faninNBs.")
                 #else: # Config: A4_local, A4_Remote, A5, A6
 
             elif len(state_info.fanins) > 0:
