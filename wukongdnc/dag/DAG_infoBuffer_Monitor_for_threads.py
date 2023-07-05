@@ -14,6 +14,6 @@ if using_workers and use_incremental_DAG_generation and using_threads_not_proces
     # and the restart value returned by the DAG_infoBuffer_Monitor,
     # which is ignored.
     wrapped_DAG_infobuffer_monitor = DAG_infoBuffer_Monitor()
-    # This wraper does not take a websocket for __init__ since the
+    # This wrapper does not take a websocket for __init__ since the
     # DAG_infoBuffer_Monitor is local. 
     DAG_infobuffer_monitor = Local_Client_for_DAG_infoBuffer_Monitor(wrapped_DAG_infobuffer_monitor)

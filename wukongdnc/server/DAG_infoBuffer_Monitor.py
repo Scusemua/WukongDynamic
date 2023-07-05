@@ -18,13 +18,16 @@ logger.addHandler(ch)
 class DAG_infoBuffer_Monitor(MonitorSU):
     def __init__(self, monitor_name = "DAG_infoBuffer_Monitor"):
         super(DAG_infoBuffer_Monitor, self).__init__(monitor_name=monitor_name)
+        # For testing, if we havn't called init() then version number will be 1
+        self.current_version_DAG_info = None
+        self.current_version_number_DAG_info = 1
+        self._next_version=super().get_condition_variable(condition_name="_next_version")
 
     #def init(self, **kwargs):
     def init(self,**kwargs):
         # initialize with a DAG_info object. This will be version 1 of the DAG
         self.current_version_DAG_info = kwargs['current_version_DAG_info']
         self.current_version_number_DAG_info = self.current_version_DAG_info.get_version_number()
-        self._next_version=super().get_condition_variable(condition_name="_next_version")
         # if use kwargs, it looks like:
         # self._capacity = kwargs["n"]
         # logger.info(kwargs)
@@ -64,7 +67,7 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         super().enter_monitor(method_name = "withdraw")
         requested_current_version_number = kwargs['requested_current_version_number']
         logger.debug("withdraw() entered monitor, requested_current_version_number = "
-            + str(requested_current_version_number) + " len(self._new_version) = " + str(len(self._next_version)))
+            + str(requested_current_version_number) + " len(self._next_version) = " + str(len(self._next_version)))
         DAG_info = None
         restart = False
         if requested_current_version_number <= self.current_version_number_DAG_info:

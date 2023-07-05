@@ -1359,6 +1359,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             # only DAGS we generate ourselves, so far.
             if compute_pagerank and use_incremental_DAG_generation:
                 DAG_infobuffer_monitor = Remote_Client_for_DAG_infoBuffer_Monitor(websocket)
+
 #rhc continue
 # ToDo: need to create the remote DAG_infobuffer_monitor. The remote
 #       work queue is created by the DAG_executor_driver since the driver
@@ -1553,7 +1554,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 
                             if compute_pagerank and use_incremental_DAG_generation:
                                 if not DAG_info.get_DAG_info_is_complete():
-                                    requested_current_version_number = DAG_info.get_version_number() + 1
+                                    requested_current_version_number = DAG_info.get_DAG_version_number() + 1
                                     #rhc: withdraw returns DAG_info. The DAG_infobuffer_monitor is either
                                     # a Remote_Client_for_DAG_infoBuffer_Monitor or a Local_Client_.... These
                                     # are wrappers that consime the rstart value returned by withdraw so that 
