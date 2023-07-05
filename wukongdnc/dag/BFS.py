@@ -1487,7 +1487,8 @@ def dfs_parent(visited, node):  #function for dfs
                         DEBUG: (2, 2, 0, 'PR2_2L')
                         """
        
-                        if True: # use_shared_partitions_groups:
+                        # if True: 
+                        if use_shared_partitions_groups:
                             task_name_of_parent_group = group_names[index_in_groups_list]
                             #task_name_of_parent = "PR" + str(parent_partition_number) + "_" + str(parent_group_number)
                             shared_frontier_parent_tuple = (current_partition_number,num_frontier_groups,child_index_in_current_group,current_group_name,parent_group_parent_index)
@@ -1786,7 +1787,8 @@ def dfs_parent(visited, node):  #function for dfs
                 """
 
 # rhc : ******* Partition
-                if True: # use_shared_partitions_groups:
+                #if True: # 
+                if use_shared_partitions_groups:
                     # shared partitions frontier code:
                     task_name_of_parent_partition = partition_names[parent_partition_number-1]
                     #task_name_of_parent = "PR" + str(parent_partition_number) + "_" + "1"
@@ -1835,7 +1837,8 @@ def dfs_parent(visited, node):  #function for dfs
                         shared_frontier_parent_partition_patch_tuple_list.append(shared_frontier_parent_partition_patch_tuple)
 
 # rhc : ******* Group
-                if True: # use_shared_partitions_groups:
+                #if True: # 
+                if use_shared_partitions_groups:
                     # shared groups frontier code:
                     task_name_of_parent_group = group_names[index_in_groups_list]
                     #task_name_of_parent = "PR" + str(parent_partition_number) + "_" + str(parent_group_number)
@@ -3390,11 +3393,11 @@ if __name__ == '__main__':
     # generate shared array of partitions/groups if using multithreaded workers
     # or threads to simulate lambdas
 
-    generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,partition_names,
-        partitions_num_shadow_nodes_list,num_shadow_nodes_added_to_partitions,
-        groups, group_names,groups_num_shadow_nodes_list,num_shadow_nodes_added_to_groups)
+    if use_shared_partitions_groups:
+        generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,partition_names,
+            partitions_num_shadow_nodes_list,num_shadow_nodes_added_to_partitions,
+            groups, group_names,groups_num_shadow_nodes_list,num_shadow_nodes_added_to_groups)
 
-    
     #logging.shutdown()
     #os._exit(0)
 
@@ -3716,12 +3719,14 @@ if __name__ == '__main__':
         +  str(len(frontiers)-1))
     logger.info("Average number of frontier groups: " + (str(frontier_groups_sum / (len(frontiers)-1))))
     logger.info("")
-    if True: # use_shared_partitions_groups: 
+    i#f True: # 
+    if use_shared_partitions_groups: 
         logger.info("Shared partition map frontier_parent_tuples:")                 
         for (k,v) in BFS_Shared.shared_partition_frontier_parents_map.items():
             logger.debug(str(k) + ": " + str(v))
         logger.info("")
-    if True: # use_shared_partitions_groups:  
+    #if True: # 
+    if use_shared_partitions_groups:  
         logger.info("Shared groups map frontier_parent_tuples:")                  
         for (k,v) in BFS_Shared.shared_groups_frontier_parents_map.items():
             logger.debug(str(k) + ": " + str(v))

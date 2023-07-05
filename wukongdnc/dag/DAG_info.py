@@ -39,7 +39,7 @@ class DAG_Info(object):
 #rhc: continue
 # Assuming we set version_number and DAG_info_is_complete when we 
 # generate DAG. Default is version_number=1. DAG_info_is_complete=True
-    def get_version_number(self):
+    def get_DAG_version_number(self):
         return self.DAG_info["version_number"]
     def get_DAG_info_is_complete(self):
         return self.DAG_info["DAG_info_is_complete"]

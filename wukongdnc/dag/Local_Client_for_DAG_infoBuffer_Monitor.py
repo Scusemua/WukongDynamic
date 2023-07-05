@@ -12,7 +12,7 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 """
 
-# local wrapper for a DAG_infoBuffer_Monitor. there is also a 
+# Local wrapper for a DAG_infoBuffer_Monitor. there is also a 
 # remote wrapper: Remote_Client_for_DAG_infoBuffer_Monitor
 # This wrapper deals with the keword argument parameters
 # that need to be sent to the DAG_infoBuffer_Monitor
@@ -22,12 +22,12 @@ class Local_Client_for_DAG_infoBuffer_Monitor:
     def __init__(self,DAG_infobuffer_monitor):
         # This Local_Client_for_DAG_infoBuffer_Monitor 
         # wraps a DAG_infobuffer_monitor
-        self.DAG_infobuffer_monitor = DAG_infobuffer_monitor
+        self.wrapped_DAG_infobuffer_monitor = DAG_infobuffer_monitor
 
     # This Local_Client_for_DAG_infoBuffer_Monitor 
     # wraps a DAG_infobuffer_monitor
     def set_DAG_infoBuffer_Monitor(self,DAG_infobuffer_monitor):
-        self.DAG_infobuffer_monitor = DAG_infobuffer_monitor
+        self.wrapped_DAG_infobuffer_monitor = DAG_infobuffer_monitor
 
     def deposit(self,DAG_info):
         # bounded buffer is blocking; using same interface as Manager.Queue
@@ -35,7 +35,7 @@ class Local_Client_for_DAG_infoBuffer_Monitor:
         keyword_arguments['new_current_version_DAG_info'] = DAG_info
         # name of object is process_DAG_infoBuffer_Monitor, type specified on create
         # _restart return value begins with "_" so PyLint does not report it
-        _return_value_ignored, _restart_value_ignored = self.DAG_infobuffer_monitor.deposit(**keyword_arguments)
+        _return_value_ignored, _restart_value_ignored = self.wrapped_DAG_infobuffer_monitor.deposit(**keyword_arguments)
  
     def withdraw(self,requested_current_version_number):
         keyword_arguments = {}
@@ -43,5 +43,5 @@ class Local_Client_for_DAG_infoBuffer_Monitor:
         # name of object is process_DAG_infoBuffer_Monitor, type specified on create
         # This call returns a new DAG_info object that is being 
         # constructed incrementally.
-        DAG_info, _restart_value_ignored = self.DAG_infobuffer_monitor.withdraw(**keyword_arguments)
+        DAG_info, _restart_value_ignored = self.wrapped_DAG_infobuffer_monitor.withdraw(**keyword_arguments)
         return DAG_info

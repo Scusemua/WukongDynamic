@@ -9,11 +9,11 @@ from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
 
 logger = logging.getLogger(__name__)
 
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 #logger.setLevel(logging.INFO)
 formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
 ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
+ch.setLevel(logging.INFO)
 #ch.setLevel(logging.INFO)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
@@ -387,6 +387,12 @@ def generate_DAG_info():
     DAG_info["all_faninNB_sizes"] = Partition_all_faninNB_sizes
     DAG_info["DAG_tasks"] = Partition_DAG_tasks
 
+    # Defaults are 1 and True
+    DAG_info_version_number = 1
+    DAG_info_is_complete = True
+    DAG_info["version_number"] = DAG_info_version_number
+    DAG_info["DAG_info_is_complete"] = DAG_info_is_complete
+
     file_name = "./DAG_info_Partition.pickle"
     with open(file_name, 'wb') as handle:
         cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
@@ -448,6 +454,12 @@ def generate_DAG_info():
     for inp in Partition_DAG_leaf_task_inputs:
         logger.info(inp)
     logger.info("")
+    logger.info("DAG_version_number:")
+    logger.info(DAG_info_version_number)
+    logger.info("")
+    logger.info("DAG_info_is_complete:")
+    logger.info(DAG_info_is_complete)
+    logger.info("")
 
     DAG_info_partition_read = DAG_Info(file_name = "./DAG_info_Partition.pickle")
     
@@ -463,6 +475,9 @@ def generate_DAG_info():
     DAG_tasks = DAG_info_partition_read.get_DAG_tasks()
 
     DAG_leaf_task_inputs = DAG_info_partition_read.get_DAG_leaf_task_inputs()
+
+    DAG_info_is_complete = DAG_info_partition_read.get_DAG_info_is_complete()
+    DAG_info_version_number = DAG_info_partition_read.get_DAG_version_number()
 
     logger.info("")
     logger.info("DAG_info partition after read:")
@@ -495,7 +510,12 @@ def generate_DAG_info():
         logger.info("DAG_leaf_task_inputs:")
         for inp in DAG_leaf_task_inputs:
             logger.info(inp)
-        #logger.info("") 
+        logger.info("")
+        logger.info("DAG_version_number:")
+        logger.info(DAG_info_version_number)
+        logger.info("")
+        logger.info("DAG_info_is_complete:")
+        logger.info(DAG_info_is_complete)
         logger.info("")
 
     Group_all_fanout_task_names = []
@@ -712,6 +732,11 @@ def generate_DAG_info():
     DAG_info["all_faninNB_sizes"] = Group_all_faninNB_sizes
     DAG_info["DAG_tasks"] = Group_DAG_tasks
 
+    DAG_info_version_number = 1
+    DAG_info_is_complete = True
+    DAG_info["version_number"] = DAG_info_version_number
+    DAG_info["DAG_info_is_complete"] = DAG_info_is_complete
+
     file_name = "./DAG_info_Group.pickle"
     with open(file_name, 'wb') as handle:
         cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
@@ -777,6 +802,12 @@ def generate_DAG_info():
     for inp in Group_DAG_leaf_task_inputs:
         logger.info(inp)
     logger.info("")
+    logger.info("DAG_version_number:")
+    logger.info(DAG_info_version_number)
+    logger.info("")
+    logger.info("DAG_info_is_complete:")
+    logger.info(DAG_info_is_complete)
+    logger.info("")
 
     DAG_info_partition_read = DAG_Info(file_name = "./DAG_info_Group.pickle")
     
@@ -793,6 +824,9 @@ def generate_DAG_info():
     DAG_tasks = DAG_info_partition_read.get_DAG_tasks()
 
     DAG_leaf_task_inputs = DAG_info_partition_read.get_DAG_leaf_task_inputs()
+
+    DAG_info_is_complete = DAG_info_partition_read.get_DAG_info_is_complete()
+    DAG_info_version_number = DAG_info_partition_read.get_DAG_version_number()
 
     logger.info("")
     logger.info("DAG_info group after read:")
@@ -832,6 +866,18 @@ def generate_DAG_info():
         for inp in DAG_leaf_task_inputs:
             logger.info(inp)
         #logger.info("") 
+        logger.info("")
+        logger.info("DAG_info_is_complete:")
+        for inp in DAG_leaf_task_inputs:
+            logger.info(inp)
+        #logger.info("") 
+        logger.info("")
+        logger.info("")
+        logger.info("DAG_version_number:")
+        logger.info(DAG_info_version_number)
+        logger.info("")
+        logger.info("DAG_info_is_complete:")
+        logger.info(DAG_info_is_complete)
         logger.info("")
 
     """

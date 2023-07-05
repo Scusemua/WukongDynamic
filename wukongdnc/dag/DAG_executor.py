@@ -1393,8 +1393,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
         cluster_queue = queue.Queue()
 #rhc continue 
         continued_task = False
-        continue_queue = None
         process_continue_queue = False
+        continue_queue = None
         if compute_pagerank and use_incremental_DAG_generation:
             continue_queue = queue.Queue()
 
@@ -1607,6 +1607,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
     #rhc: Check this logic for return
 
                                 else:
+                                    logger.debug("DAG_executor: DAG_info is_complete so return.")
                                     return
                             else:
                                 return  
@@ -2089,22 +2090,22 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             # become task. The check of starting_number_of_fanouts
             # is below.
             starting_number_of_fanouts = len(state_info.fanouts)
-#rhc continue
-            if compute_pagerank and use_incremental_DAG_generation:
-                TBC = state_info.ToBeContinued
-                if TBC:
-                    if process_continue_queue:
-                        logger.error("[Error]: DAG_executor work loop: process_continue_queue but"
-                            +  " we just found a To Be Continued State, i.e., the state was"
-                            +  " continued previously and in procesing it after getting a new"
-                            +  " DAG_info the state is still To Be Continued (in the new DAG_info.")
 
-                    # if the DAG_info is not complete, we execute a continued
-                    # task and put its output in the data_dict but w do not 
-                    # process its fanout/fanins/faninNBs until we get the next
-                    # DAG_info. Put the task's state in the continue_queue to
-                    # be continued when we get the new DAG_info
-                    continue_queue.put(DAG_executor_state.state)
+#rhc continue
+            if compute_pagerank and use_incremental_DAG_generation and (
+                state_info.ToBeContinued):
+                if process_continue_queue:
+                    logger.error("[Error]: DAG_executor work loop: process_continue_queue but"
+                        +  " we just found a To Be Continued State, i.e., the state was"
+                        +  " continued previously and in procesing it after getting a new"
+                        +  " DAG_info the state is still To Be Continued (in the new DAG_info.")
+
+                # if the DAG_info is not complete, we execute a continued
+                # task and put its output in the data_dict but w do not 
+                # process its fanout/fanins/faninNBs until we get the next
+                # DAG_info. Put the task's state in the continue_queue to
+                # be continued when we get the new DAG_info
+                continue_queue.put(DAG_executor_state.state)
 #rhc: cluster queue:
 # Note: if this just executed task T has a collapse task then T has no
 # fanouts/fanins/faninNBs, so next it will execute the clustered task
@@ -2130,7 +2131,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 # there when we execute the fanin task. That is, when we add the fanin 
 # task to the cluster queue it may be behind one or more clustered tasks
 # but when we eventually execute, we will have its inputs in our data dict.
-# 
+
             elif len(state_info.collapse) > 0:
 
                 if len(state_info.fanins) + len(state_info.fanouts) + len(state_info.faninNBs) > 0:

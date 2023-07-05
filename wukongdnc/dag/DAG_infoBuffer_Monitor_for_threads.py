@@ -4,7 +4,7 @@ from .Local_Client_for_DAG_infoBuffer_Monitor import Local_Client_for_DAG_infoBu
 from wukongdnc.server.DAG_infoBuffer_Monitor import DAG_infoBuffer_Monitor
 
 # The DAG generator (BFS.py) calls deposit() on 
-# DAG_infobuffer_monitor to deposit a new DAG and clinets
+# DAG_infobuffer_monitor to deposit a new DAG and clients
 # call (blocking) withdraw to get a new DAG.
 DAG_infobuffer_monitor = None
 if using_workers and use_incremental_DAG_generation and using_threads_not_processes:
@@ -14,6 +14,6 @@ if using_workers and use_incremental_DAG_generation and using_threads_not_proces
     # and the restart value returned by the DAG_infoBuffer_Monitor,
     # which is ignored.
     wrapped_DAG_infobuffer_monitor = DAG_infoBuffer_Monitor()
-    # this wraper does not take a websocket for __init__ since the
+    # This wraper does not take a websocket for __init__ since the
     # DAG_infoBuffer_Monitor is local. 
     DAG_infobuffer_monitor = Local_Client_for_DAG_infoBuffer_Monitor(wrapped_DAG_infobuffer_monitor)
