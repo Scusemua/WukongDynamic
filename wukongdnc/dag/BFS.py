@@ -671,6 +671,7 @@ import matplotlib.pyplot as plt
 
 import logging 
 import cloudpickle
+import threading
 #import os
 #import time
 #from statistics import mean
@@ -679,7 +680,7 @@ import copy
 
 from .BFS_Node import Node
 from .BFS_Partition_Node import Partition_Node
-from .BFS_generate_DAG_info import generate_DAG_info
+from .BFS_generate_DAG_info import generate_DAG_info, generate_DAG_info_incremental_partitions
 from .BFS_generate_DAG_info import Partition_senders, Partition_receivers, Group_senders, Group_receivers
 from .BFS_generate_DAG_info import leaf_tasks_of_partitions, leaf_tasks_of_groups
 from .BFS_generate_shared_partitions_groups import generate_shared_partitions_groups
@@ -692,6 +693,7 @@ from . import BFS_Shared
 
 from .DAG_executor_constants import use_shared_partitions_groups, use_page_rank_group_partitions
 from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
+from .DAG_executor_constants import use_incremental_DAG_generation
 from .DAG_executor_driver import run
 
 #from .DAG_executor_constants import run_all_tasks_locally, using_threads_not_processes
@@ -844,6 +846,9 @@ num_nodes = 12
 for x in range(num_nodes+1):
     nodes.append(Node(x))
 """
+
+def DAG_executor_driver_Invoker_Thread():
+    run()
 
 # visual is a list which stores all the set of edges that constitutes a graph
 visual = []
@@ -2102,6 +2107,15 @@ def bfs(visited, node): #function for BFS
     global num_shadow_nodes_added_to_partitions
     global num_shadow_nodes_added_to_groups
 
+#rhc incremental
+    # total number of graph nodes that have been added to the 
+    # partitions generated so far. When all nodes have been 
+    # added to a partition, the partitions are complete.
+    # Used for incremental DAG generation where we do not know
+    # the number of partitions so we cannot stop based on the 
+    # number of partitions we have seen.
+    num_nodes_in_partitions = 0
+
 #rhc: q:
     # are not these lengths 0?
     # These are per dfs_parent() stats not per partition
@@ -2279,7 +2293,7 @@ def bfs(visited, node): #function for BFS
 
             if BFS_queue:
                 ID = BFS_queue.pop(0)
-                logger.debug("bfs after pop -1 pop node " + str(ID) + " from queue") 
+                logger.debug("bfs after pop -1; pop node " + str(ID) + " from queue") 
                 BFS_queue.append(-1)
 
                 # SCC 5
@@ -2325,6 +2339,8 @@ def bfs(visited, node): #function for BFS
                 logger.debug("BFS: create sub-partition at end of current frontier")
                 # does not require a deepcopy
                 partitions.append(current_partition.copy())
+#rhc incremental:
+                num_nodes_in_partitions += len(current_partition)
                 current_partition = []
 
                 partition_name = "PR" + str(current_partition_number) + "_1"
@@ -2380,8 +2396,8 @@ def bfs(visited, node): #function for BFS
 
                 frontier_parent_partition_patch_tuple_list.clear()
 
-                # Patch the partition name of the frontier_parent tuples. 
-                if True: # use_shared_partitions_groups:
+                # Patch the partition name of the shared_frontier_parent_partition tuples. 
+                if use_shared_partitions_groups:
                     # Given:
                     # shared_frontier_parent_partition_patch_tuple = (task_name_of_parent,position_in_list_of_parent_frontier_tuples)
                     if current_partition_isLoop:
@@ -2580,6 +2596,28 @@ def bfs(visited, node): #function for BFS
                 frontier_costs.append(frontier_cost)
                 frontier.clear()
 
+#rhc incremental                
+                if use_incremental_DAG_generation:
+                    if use_page_rank_group_partitions:
+                        with open('./'+partition_name + '.pickle', 'wb') as handle:
+                            cloudpickle.dump(partitions[-1], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+                    is_complete = (num_nodes_in_partitions == num_nodes)
+                    DAG_info = generate_DAG_info_incremental_partitions(partition_name,current_partition_number-1,is_complete)
+                    if (current_partition_number-1) == 1:
+                        # we just processed the first partition; we can output the 
+                        # initial DAG_info and start the DAG_executor_driver
+                        if not use_page_rank_group_partitions:
+                            file_name = "./DAG_info.pickle"
+                            with open(file_name, 'wb') as handle:
+                                cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+                        
+                        # Need to call run() but it has to be asynch
+                        thread_name = "DAG_executor_driver_Invoker"
+                        logger.debug("BFS: Starting DAG_executor_driver_Invoker_Thread for incrmental DAG generation.")
+#rhc: incremental
+                        #Question: This thread completes normally?
+                        _invoker_thread = threading.Thread(target=DAG_executor_driver_Invoker_Thread, name=(thread_name), args=())
+  
         if not len(node.children):
             logger.debug ("bfs node " + str(node.ID) + " has no children")
         else:
@@ -2685,7 +2723,7 @@ def bfs(visited, node): #function for BFS
 
                 frontier_parent_group_patch_tuple_list.clear()
 
-                if True: # use_shared_partitions_groups:
+                if use_shared_partitions_groups:
                     # Given:
                     # shared_frontier_parent_partition_patch_tuple = (task_name_of_parent,position_in_list_of_parent_frontier_tuples)
                     if current_group_isLoop:
@@ -3827,6 +3865,8 @@ if __name__ == '__main__':
     else:
         logger.info("-- (" + str(len(Group_receivers)) + ")")
         logger.info("")
+
+
     generate_DAG_info()
     #visualize()
     #input('Press <ENTER> to continue')
