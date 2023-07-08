@@ -684,6 +684,8 @@ from .BFS_generate_DAG_info import generate_DAG_info, generate_DAG_info_incremen
 from .BFS_generate_DAG_info import Partition_senders, Partition_receivers, Group_senders, Group_receivers
 from .BFS_generate_DAG_info import leaf_tasks_of_partitions, leaf_tasks_of_groups
 from .BFS_generate_shared_partitions_groups import generate_shared_partitions_groups
+from .DAG_infoBuffer_Monitor_for_threads import DAG_infobuffer_monitor
+
 
 #rhc shared
 #from .DAG_executor import shared_partition, shared_groups
@@ -2603,7 +2605,13 @@ def bfs(visited, node): #function for BFS
                             cloudpickle.dump(partitions[-1], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
                     is_complete = (num_nodes_in_partitions == num_nodes)
                     DAG_info = generate_DAG_info_incremental_partitions(partition_name,current_partition_number-1,is_complete)
-                    if (current_partition_number-1) == 1:
+                    # can't generate initial DAG until we have partitions 1 and 2, since 
+                    # we don't know partition 1's outputs until we have generated partition 2;
+                    # at that pont, partition 2 is to be continued.
+
+                    DAG_infobuffer_monitor.deposit(DAG_info)
+                    
+                    if (current_partition_number-1) == 2:
                         # we just processed the first partition; we can output the 
                         # initial DAG_info and start the DAG_executor_driver
                         if not use_page_rank_group_partitions:
@@ -2616,7 +2624,10 @@ def bfs(visited, node): #function for BFS
                         logger.debug("BFS: Starting DAG_executor_driver_Invoker_Thread for incrmental DAG generation.")
 #rhc: incremental
                         #Question: This thread completes normally?
-                        _invoker_thread = threading.Thread(target=DAG_executor_driver_Invoker_Thread, name=(thread_name), args=())
+                        # Perhaps BFS can join this thread instad of calling run() when inc dag gen?
+                        #     Then invoker_thread is global?
+                        invoker_thread = threading.Thread(target=DAG_executor_driver_Invoker_Thread, name=(thread_name), args=())
+                        invoker_thread.start()
   
         if not len(node.children):
             logger.debug ("bfs node " + str(node.ID) + " has no children")
@@ -3874,6 +3885,10 @@ if __name__ == '__main__':
     logger.debug("Output partitions/groups")
 
     output_partitions()
+#rhc:  incremental
+# 1. perhaps invoker_thread.join() here when inc dag gen
+# 2. No show DAG_info stats until after join() when inc dag gen?
+#    we will how stats as we gen DAG incrementally?
     run()
     """
     if use_shared_partitions_groups and use_struct_of_arrays_for_pagerank:

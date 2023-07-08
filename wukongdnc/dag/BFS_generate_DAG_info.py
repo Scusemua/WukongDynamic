@@ -939,6 +939,10 @@ def generate_DAG_info():
         Partition_DAG_states[receiverY] = state
         state += 1
 
+#rhc: Note. We could decide the Function in DAG_executor when we are
+# about to execuet the task. The pagerank function is the same 
+# for all tasks, so there is no need to package the same function
+# in all the states of the DAG.
     if not use_shared_partitions_groups:
         for key in Partition_DAG_states:
             Partition_DAG_tasks[key] = PageRank_Function_Driver
