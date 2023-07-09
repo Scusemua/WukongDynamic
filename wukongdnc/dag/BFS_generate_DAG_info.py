@@ -51,9 +51,12 @@ generate state i+1 with to be continued = True
 
 """
 
-def generate_DAG_info_incremental_partitions(partition_name,current_partition_number,is_complete):
+def generate_DAG_info_incremental_partitions(current_partition_name,current_partition_number,to_be_continued):
 
-#rhc: Question: These should be global
+# TODO: Fix DAG_genertor so do not execute continued tasks at all, mans save state and 
+# input for continues task.
+
+#rhc: Question: These should be global.
     global Partition_all_fanout_task_names
     global Partition_all_fanin_task_names
     global Partition_all_faninNB_task_names
@@ -105,13 +108,6 @@ def generate_DAG_info_incremental_partitions(partition_name,current_partition_nu
 
     logger.info("Partition DAG:")
 
-    state = current_partition_number
-
-    # partition i has a collapse to partition i+1
-    # Task senderX sends inputs to one or more other tasks
-
-    next_partition_name = "PR" + str(current_partition_number+1) + "_1"
-
     fanouts = []
     faninNBs = []
     fanins = []
@@ -119,50 +115,71 @@ def generate_DAG_info_incremental_partitions(partition_name,current_partition_nu
     fanin_sizes = []
     faninNB_sizes = []
 
-    Partition_all_collapse_task_names.append(next_partition_name)
-    collapse.append(next_partition_name)
+    current_state = current_partition_number
+    previous_state = current_partition_number-1
+    previous_partition_name = "PR" + str(current_partition_number-1) + "_1"
 
     if current_partition_number == 1:
+        # partition 1 is a leaf
         # assert len ssfsX = None
-        Partition_DAG_leaf_tasks.append(partition_name)
-        Partition_DAG_leaf_task_start_states.append(state)
+        Partition_DAG_leaf_tasks.append(current_partition_name)
+        Partition_DAG_leaf_task_start_states.append(current_state)
         task_inputs = ()
         Partition_DAG_leaf_task_inputs.append(task_inputs)
-        if not partition_name in leaf_tasks_of_partitions:
-            logger.error("partition " + partition_name + " receives no inputs"
+
+        if not current_partition_name in leaf_tasks_of_partitions:
+            logger.error("partition " + current_partition_name + " is the first partition"
                 + " but it is not in leaf_tasks_of_partitions.")
         else:
             # we have generated a state for leaf task senderX. 
-            leaf_tasks_of_partitions.remove(partition_name)
+            leaf_tasks_of_partitions.remove(current_partition_name)
+
+#rhc: ToDo: Only if there is more than 1 partition
+        if not to_be_continued:
+            next_partition_name = "PR" + str(current_partition_number+1) + "_1"
+            # partition i has a collapse to partition i+1
+            Partition_all_collapse_task_names.append(next_partition_name)
+            collapse.append(next_partition_name)
+
+        Partition_DAG_map[current_state] = state_info(current_partition_name, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs)
+#rhc: ToDo: set incomplete if incomplete (parm)
+#       Partition_DAG_map[current_state].ToBeContinued = to_be_continued
+#       actully just add to_be_continued as arg
+        Partition_DAG_states[current_partition_name] = current_state
+
+        if not use_shared_partitions_groups:
+            Partition_DAG_tasks[current_partition_name] = PageRank_Function_Driver
+        else:
+            if not use_struct_of_arrays_for_pagerank:
+                Partition_DAG_tasks[current_partition_name] = PageRank_Function_Driver_Shared 
+            else:
+                Partition_DAG_tasks[current_partition_name] = PageRank_Function_Driver_Shared_Fast  
+
+        return
     else:
-        qualified_name = str(partition_name) + "-" + str(next_partition_name)
+
+#rhc: ToDo: current is TBC and current -1 is complete
+        qualified_name = str(previous_partition_name) + "-" + str(current_partition_name)
         qualified_names = set()
         qualified_names.add(qualified_name)
         # sender_set_for_senderX provides input for senderX
         task_inputs = tuple(qualified_names)
-    Partition_DAG_map[state] = state_info(partition_name, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs)
-    Partition_DAG_states[partition_name] = state
-    if not use_shared_partitions_groups:
-        Partition_DAG_tasks[partition_name] = PageRank_Function_Driver
-    else:
-        if not use_struct_of_arrays_for_pagerank:
-            Partition_DAG_tasks[partition_name] = PageRank_Function_Driver_Shared 
-        else:
-            Partition_DAG_tasks[partition_name] = PageRank_Function_Driver_Shared_Fast  
-    state += 1
-
-    if not is_complete:
-        Partition_DAG_map[state] = state_info(next_partition_name, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs)
-#rhc: ToDo: need to set ToBeContinued to True
-
-        Partition_DAG_states[next_partition_name] = state
+        Partition_DAG_map[current_state] = state_info(current_partition_name, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs)
+#rhc: ToDo: #rhc: ToDo: set to_be_continued if to_be_continued (parm)
+#       Partition_DAG_map[current_state].ToBeContinued = to_be_continued
+        Partition_DAG_states[current_partition_name] = current_state
         if not use_shared_partitions_groups:
-            Partition_DAG_tasks[next_partition_name] = PageRank_Function_Driver
+            Partition_DAG_tasks[current_partition_name] = PageRank_Function_Driver
         else:
             if not use_struct_of_arrays_for_pagerank:
-                Partition_DAG_tasks[next_partition_name] = PageRank_Function_Driver_Shared 
+                Partition_DAG_tasks[current_partition_name] = PageRank_Function_Driver_Shared 
             else:
-                Partition_DAG_tasks[next_partition_name] = PageRank_Function_Driver_Shared_Fast  
+                Partition_DAG_tasks[current_partition_name] = PageRank_Function_Driver_Shared_Fast  
+
+        previous_state_info = Partition_DAG_map[previous_state]
+        previous_state_info.ToBeContinued = False
+#rhc: set to_be_continued to True
+        # we already did collapse for previous state so just make it complete
 
     logger.info("")
     DAG_info = {}
