@@ -53,9 +53,6 @@ generate state i+1 with to be continued = True
 
 def generate_DAG_info_incremental_partitions(current_partition_name,current_partition_number,to_be_continued):
 
-# TODO: Fix DAG_genertor so do not execute continued tasks at all, mans save state and 
-# input for continues task.
-
 #rhc: Question: These should be global.
     global Partition_all_fanout_task_names
     global Partition_all_fanin_task_names

@@ -1439,7 +1439,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 
 #rhc continue 
                 if process_continue_queue:
-                    # asert
+                    # assert
                     if not (compute_pagerank and use_incremental_DAG_generation):
                         logger.error("[Error]: work loop: process_continue_queue but"
                             +  " not compute_pagerank or not use_incremental_DAG_generation.")
@@ -1447,6 +1447,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     DAG_executor_state.state = continue_queue.get()
                     continued_task = True
                     if len(continue_queue) == 0:
+                        # Note: When using partitions this is True, i.e., 
+                        # only one partition can be to-be-continued 
                         process_continue_queue = False
                 else: # not process_continue_queue
                     # Workers don't always get work from the work queue. they may get a state from the cluster
@@ -1758,6 +1760,17 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             #logger.debug("state_info: " + str(state_info))
             logger.debug(thread_name + " execute task: " + state_info.task_name)
 
+            # This task may or may not be a continued task In either
+            # case, the inputs needed by this task are needed: For worker threads
+            # and processes when using partitions, the needed inputs were added to the 
+            # data_dict after the previous partition was executed, so they are
+            # still available, as usual.
+        
+            # For debugging
+            if continued_task:
+                continued_task = False
+                logger.debug(state_info.task_name + " is a continued task.")
+
             # Example:
             # 
             # task = (func_obj, "task1", "task2", "task3")
@@ -1798,279 +1811,276 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 
             # we have already executed continued_tasks and put their outputs
             # in the data_dict
-            if not continued_task:
 
-                #rhc: Some DAGs, e.g., pagerank, may use a single paramaterized function, 
-                # e.g., PageRank, that needs its inputs, which are captured by args, but also 
-                # its task_name, so it e.g., can input values for its specific task, 
-                # e.g., its partition in file task_name+".pickle".
+#rhc continue - OLD
+            #if not continued_task:
+#rhc continue - old
 
-                """
-                def pack_data(o, d, key_types=object):
-                    #Merge known data into tuple or dict
+            #rhc: Some DAGs, e.g., pagerank, may use a single paramaterized function, 
+            # e.g., PageRank, that needs its inputs, which are captured by args, but also 
+            # its task_name, so it e.g., can input values for its specific task, 
+            # e.g., its partition in file task_name+".pickle".
 
-                    Parameters
-                    ----------
-                    o:
-                        core data structures containing literals and keys
-                    d: dict
-                        mapping of keys to data
+            """
+            def pack_data(o, d, key_types=object):
+                #Merge known data into tuple or dict
 
-                    Examples
-                    --------
-                    >>> data = {'x': 1}
-                    >>> pack_data(('x', 'y'), data)
-                    (1, 'y')
-                    >>> pack_data({'a': 'x', 'b': 'y'}, data)  # doctest: +SKIP
-                    {'a': 1, 'b': 'y'}
-                    >>> pack_data({'a': ['x'], 'b': 'y'}, data)  # doctest: +SKIP
-                    {'a': [1], 'b': 'y'}
-                    
-                    typ = type(o)
-                    try:
-                        if isinstance(o, key_types) and str(o) in d:
-                            return d[str(o)]
-                    except TypeError:
-                        pass
+                Parameters
+                ----------
+                o:
+                    core data structures containing literals and keys
+                d: dict
+                    mapping of keys to data
 
-                    if typ in (tuple, list, set, frozenset):
-                        return typ([pack_data(x, d, key_types=key_types) for x in o])
-                    elif typ is dict:
-                        return {k: pack_data(v, d, key_types=key_types) for k, v in o.items()}
-                    else:
-                        return o
+                Examples
+                --------
+                >>> data = {'x': 1}
+                >>> pack_data(('x', 'y'), data)
+                (1, 'y')
+                >>> pack_data({'a': 'x', 'b': 'y'}, data)  # doctest: +SKIP
+                {'a': 1, 'b': 'y'}
+                >>> pack_data({'a': ['x'], 'b': 'y'}, data)  # doctest: +SKIP
+                {'a': [1], 'b': 'y'}
+                
+                typ = type(o)
+                try:
+                    if isinstance(o, key_types) and str(o) in d:
+                        return d[str(o)]
+                except TypeError:
+                    pass
 
-                        # Example:
-                        # 
-                        # task = (func_obj, "task1", "task2", "task3")
-                        # func = task[0]
-                        # args = task[1:] # everything but the 0'th element, ("task1", "task2", "task3")
-
-                        # # Intermediate data; from executing other tasks.
-                        # # task IDs and their outputs
-                        # data_dict = {
-                        #     "task1": 1, 
-                        #     "task2": 10,
-                        #     "task3": 3
-                        # }
-
-                        # args2 = pack_data(args, data_dict) # (1, 10, 3)
-
-                        # func(*args2)
-                """
-                # Note: For DAG generation, for each state we execute a task and 
-                # for each task T we have t say what T's task_inputs are - these are the 
-                # names of tasks that give inputs to T. When we have per-fanout output
-                # instead of having the same output for all fanouts, we specify the 
-                # task_inputs as "sending task - receiving task". So a sending task
-                # S might send outputs to fanouts A and B so we use "S-A" and "S-B"
-                # as the task_inputs, instad of just using "S", which is the Dask way.
-                result_dictionary =  {}
-                if not is_leaf_task:
-                    logger.debug("Packing data. Task inputs: %s. Data dict (keys only): %s" % (str(task_inputs), str(data_dict.keys())))
-                    # task_inputs is a tuple of task_names
-                    args = pack_data(task_inputs, data_dict)
-                    logger.debug(thread_name + " argsX: " + str(args))
-                    if tasks_use_result_dictionary_parameter:
-                        logger.debug("Foo1a")
-                        # task_inputs = ('task1','task2'), args = (1,2) results in a resultDictionary
-                        # where resultDictionary['task1'] = 1 and resultDictionary['task2'] = 2.
-                        # We pass resultDictionary of inputs instead of the tuple (1,2).
-
-                        if len(task_inputs) == len(args):
-                            logger.debug("Foo1b")
-                            result_dictionary = {task_inputs[i] : args[i] for i, _ in enumerate(args)}
-                            logger.debug(thread_name + " result_dictionaryX: " + str(result_dictionary))
-                    
-                    """
-                    # This might be useful for leaves that have more than one input?
-                    # But leaves always have one input, e.g., (1, )?
-                    if tasks_use_result_dictionary_parameter:
-                        logger.debug("Foo2a")
-                        # ith arg has a key DAG_executor_driver_i that is mapped to it
-                        # leaf tasks do not have a task that sent inputs to the leaf task,
-                        # so we create dummy input tasks DAG_executor_driver_i.
-                        task_input_tuple = () # e.g., ('DAG_executor_driver_0','DAG_executor_driver_1')
-                        j = 0
-                        key_list = []
-                        for _ in args:
-                            # make the key values in task_input_tuple unique. 
-                            key = "DAG_executor_driver_" + str(j)
-                            key_list.append(key)
-                            j += 1
-                        task_input_tuple = tuple(key_list)
-                        # task_input_tuple = ('DAG_executor_driver_0'), args = (1,) results in a resultDictionary
-                        # where resultDictionary['DAG_executor_driver_0'] = 1.
-                        # We pass resultDictionary of inputs to the task instead of a tuple of inputs, e.g.,(1,).
-                        # Lengths will match since we looped through args to create task_input_tuple
-                        logger.debug(thread_name + " args: " + str(args)
-                            + " len(args): " + str(len(args))
-                            + " len(task_input_tuple): " + str(len(task_input_tuple))
-                            + " task_input_tuple: " + str(task_input_tuple))
-                        if len(task_input_tuple) == len(args):
-                            # The enumerate() method adds a counter to an iterable and returns the enumerate object.
-                            logger.debug("Foo2b")
-                            result_dictionary = {task_input_tuple[i] : args[i] for i, _ in enumerate(args)}
-                            logger.debug(thread_name + " result_dictionaryy: " + str(result_dictionary))
-                        #Note:
-                        #Informs the logging system to perform an orderly shutdown by flushing 
-                        #and closing all handlers. This should be called at application exit and no 
-                        #further use of the logging system should be made after this call.
-                        logging.shutdown()
-                        #time.sleep(3)   #not needed due to shutdwn
-                        os._exit(0)
-                    """
+                if typ in (tuple, list, set, frozenset):
+                    return typ([pack_data(x, d, key_types=key_types) for x in o])
+                elif typ is dict:
+                    return {k: pack_data(v, d, key_types=key_types) for k, v in o.items()}
                 else:
-                    # if not triggering tasks in lambdas task_inputs is a tuple of input values, e.g., (1,)
-                    if not (store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks):
-                        args = task_inputs
-                    else:
-                        # else the leaf task was triggered by a fanin operation on the fanin object
-                        # for the leaf task and the fanin result, as usual, maps the task that
-                        # sent the input to the input. For leaf tasks, the task that sent the 
-                        # input is "DAG_executor_driver", which is not a real DAG task. So
-                        # we have to grab the value that DAG_executor_driver is mapped to,
-                        # which is the leaf task input. The only input to a leaf task is this
-                        # input. Note: When triggering tasks, the DAG_executor_driver calls
-                        # the tcp_server_lambda to invoke a fanout, like any other triggered
-                        # fanout, using process_leaf_tasks_batch.
-                        # args will be a tuple of input values, e.g., (1,), as usual
-                        args = task_inputs['DAG_executor_driver']
-                        logger.debug(thread_name + " argsY: " + str(args))
+                    return o
 
-                    if tasks_use_result_dictionary_parameter:
-                        # Passing am emoty inut tuple to the PageRank task,
-                        # This results in a rresult_dictionary
-                        # of "DAG_executor_driver_0" --> (), where
-                        # DAG_executor_driver_0 is used to mean that the DAG_excutor_driver
-                        # provided an empty input tuple for the leaf task. In the 
-                        # PageRank_Function_Driver we just ignore empty input tuples so 
-                        # that the input_tuples provided to the PageRank_Function will be an empty list.
-                        result_dictionary['DAG_executor_driver_0'] = ()
+                    # Example:
+                    # 
+                    # task = (func_obj, "task1", "task2", "task3")
+                    # func = task[0]
+                    # args = task[1:] # everything but the 0'th element, ("task1", "task2", "task3")
 
-                logger.debug("argsZ: " + str(args))
-    
-                logger.debug(thread_name + " result_dictionaryZ: " + str(result_dictionary))
+                    # # Intermediate data; from executing other tasks.
+                    # # task IDs and their outputs
+                    # data_dict = {
+                    #     "task1": 1, 
+                    #     "task2": 10,
+                    #     "task3": 3
+                    # }
 
-    #rhc cleanup
-                #for key, value in DAG_tasks.items():
-                #    logger.error(str(key) + ' : ' + str(value))
+                    # args2 = pack_data(args, data_dict) # (1, 10, 3)
 
-                # using map DAG_tasks from task_name to task
-                task = DAG_tasks[state_info.task_name]
+                    # func(*args2)
+            """
+            # Note: For DAG generation, for each state we execute a task and 
+            # for each task T we have t say what T's task_inputs are - these are the 
+            # names of tasks that give inputs to T. When we have per-fanout output
+            # instead of having the same output for all fanouts, we specify the 
+            # task_inputs as "sending task - receiving task". So a sending task
+            # S might send outputs to fanouts A and B so we use "S-A" and "S-B"
+            # as the task_inputs, instad of just using "S", which is the Dask way.
+            result_dictionary =  {}
+            if not is_leaf_task:
+                logger.debug("Packing data. Task inputs: %s. Data dict (keys only): %s" % (str(task_inputs), str(data_dict.keys())))
+                # task_inputs is a tuple of task_names
+                args = pack_data(task_inputs, data_dict)
+                logger.debug(thread_name + " argsX: " + str(args))
+                if tasks_use_result_dictionary_parameter:
+                    logger.debug("Foo1a")
+                    # task_inputs = ('task1','task2'), args = (1,2) results in a resultDictionary
+                    # where resultDictionary['task1'] = 1 and resultDictionary['task2'] = 2.
+                    # We pass resultDictionary of inputs instead of the tuple (1,2).
 
-                if not tasks_use_result_dictionary_parameter:
-                    # we will call the task with tuple args and unfold args: task(*args)
-                    output = execute_task(task,args)
+                    if len(task_inputs) == len(args):
+                        logger.debug("Foo1b")
+                        result_dictionary = {task_inputs[i] : args[i] for i, _ in enumerate(args)}
+                        logger.debug(thread_name + " result_dictionaryX: " + str(result_dictionary))
+                
+                """
+                # This might be useful for leaves that have more than one input?
+                # But leaves always have one input, e.g., (1, )?
+                if tasks_use_result_dictionary_parameter:
+                    logger.debug("Foo2a")
+                    # ith arg has a key DAG_executor_driver_i that is mapped to it
+                    # leaf tasks do not have a task that sent inputs to the leaf task,
+                    # so we create dummy input tasks DAG_executor_driver_i.
+                    task_input_tuple = () # e.g., ('DAG_executor_driver_0','DAG_executor_driver_1')
+                    j = 0
+                    key_list = []
+                    for _ in args:
+                        # make the key values in task_input_tuple unique. 
+                        key = "DAG_executor_driver_" + str(j)
+                        key_list.append(key)
+                        j += 1
+                    task_input_tuple = tuple(key_list)
+                    # task_input_tuple = ('DAG_executor_driver_0'), args = (1,) results in a resultDictionary
+                    # where resultDictionary['DAG_executor_driver_0'] = 1.
+                    # We pass resultDictionary of inputs to the task instead of a tuple of inputs, e.g.,(1,).
+                    # Lengths will match since we looped through args to create task_input_tuple
+                    logger.debug(thread_name + " args: " + str(args)
+                        + " len(args): " + str(len(args))
+                        + " len(task_input_tuple): " + str(len(task_input_tuple))
+                        + " task_input_tuple: " + str(task_input_tuple))
+                    if len(task_input_tuple) == len(args):
+                        # The enumerate() method adds a counter to an iterable and returns the enumerate object.
+                        logger.debug("Foo2b")
+                        result_dictionary = {task_input_tuple[i] : args[i] for i, _ in enumerate(args)}
+                        logger.debug(thread_name + " result_dictionaryy: " + str(result_dictionary))
+                    #Note:
+                    #Informs the logging system to perform an orderly shutdown by flushing 
+                    #and closing all handlers. This should be called at application exit and no 
+                    #further use of the logging system should be made after this call.
+                    logging.shutdown()
+                    #time.sleep(3)   #not needed due to shutdwn
+                    os._exit(0)
+                """
+            else:
+                # if not triggering tasks in lambdas task_inputs is a tuple of input values, e.g., (1,)
+                if not (store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks):
+                    args = task_inputs
                 else:
-                    #def PageRank_Function_Driver_Shared(task_file_name,total_num_nodes,results_dictionary,shared_map,shared_nodes):
-                    if not use_shared_partitions_groups:
-                        # we will call the task with: task(task_name,resultDictionary)
-                        output = execute_task_with_result_dictionary(task,state_info.task_name,20,result_dictionary)
-                    else:
-                        if use_page_rank_group_partitions:
-                            output = execute_task_with_result_dictionary_shared(task,state_info.task_name,20,result_dictionary,BFS_Shared.shared_groups_map,BFS_Shared.shared_groups)
-                        else: # use the partition partitions
-                            output = execute_task_with_result_dictionary_shared(task,state_info.task_name,20,result_dictionary,BFS_Shared.shared_partition_map,BFS_Shared.shared_partition)
-                """ where:
-                    def execute_task(task,args):
-                        logger.debug("input of execute_task is: " + str(args))
-                        output = task(*args)
-                        return output
-                """
-                """
-                    def execute_task_with_result_dictionary(task,task_name,resultDictionary):
-                        output = task(task_name,resultDictionary)
-                        return output
-                """
-                """
-                    def execute_task_with_result_dictionary_shared(task,task_name,total_num_nodes,resultDictionary,shared_map, shared_nodes):
-                        output = task(task_name,total_num_nodes,resultDictionary,shared_map,shared_nodes)
-                        return output
-                """
-                """
-                output is a dictionary mapping task name to list of tuples.
-                output = {'PR2_1': [(2, 0.0075)], 'PR2_2': [(5, 0.010687499999999999)], 'PR2_3': [(3, 0.012042187499999999)]}
-                This is the PR1_1 output. We put it in the data_dict as
-                    data_dict["PR1_1"] = output
-                but we then send this output to process_fanouts. The become
-                task is PR2_1 and the non-become task is PR_2_3. In general,
-                we fanout all non-become tasks with this same output. We should
-                actually fanout tasks with their indivisual output from the 
-                dictionary. Currently, for each name in set fanouts:
-                    dict_of_results =  {}
-                    dict_of_results[calling_task_name] = output
-                    work_tuple = (DAG_states[name],dict_of_results)
-                    work_queue.put(work_tuple)
-                which assigns dict_of_results[calling_task_name] = output.
-                But we want to assign instead:
-                    dict_of_results[str(calling_task_name+"-"+name)] = output[name]
-                when we have per-fanout outputs instead of all fanouts get the 
-                same output. 
-                Also, we currently have:
-                    sender_set_for_senderX = Group_receivers.get(senderX)
-                    if sender_set_for_senderX == None:
-                        # senderX is a leaf task since it is not a receiver
-                        Group_DAG_leaf_tasks.append(senderX)
-                        Group_DAG_leaf_task_start_states.append(state)
-                        task_inputs = ()
-                        Group_DAG_leaf_task_inputs.append(task_inputs)
-                    else:
-                        # sender_set_for_senderX provide input for senderX
-                        task_inputs = tuple(sender_set_for_senderX)
-                So the task_input for fanout PR2_3 is ("PR1_1) since PR1_1 sends
-                its output to PR2_3. And we put the output in the data_dict
-                as data_dict["PR1_1"] = output so we'll be grabbing the 
-                entire output as the input of PR2_1.
-                Note: process_fanouts put a work tuple for PR2_1 in the work 
-                queue and set the DAG_executor_state.state to the become
-                task state, so the non-leaf executor, will next do the 
-                faninNB and then do the become task.
-                Note: The ss1 excutor will get the work_tuple for PR2_3
-                and try to execute it. The inputs are "PR1_1" since PR1_1
-                sends it output to PR2_3. Using the data_dict["PR1_1"] value
-                the input for PR2_3 is the entire output of PR1_1.
+                    # else the leaf task was triggered by a fanin operation on the fanin object
+                    # for the leaf task and the fanin result, as usual, maps the task that
+                    # sent the input to the input. For leaf tasks, the task that sent the 
+                    # input is "DAG_executor_driver", which is not a real DAG task. So
+                    # we have to grab the value that DAG_executor_driver is mapped to,
+                    # which is the leaf task input. The only input to a leaf task is this
+                    # input. Note: When triggering tasks, the DAG_executor_driver calls
+                    # the tcp_server_lambda to invoke a fanout, like any other triggered
+                    # fanout, using process_leaf_tasks_batch.
+                    # args will be a tuple of input values, e.g., (1,), as usual
+                    args = task_inputs['DAG_executor_driver']
+                    logger.debug(thread_name + " argsY: " + str(args))
 
-                So: the output of a PageRank task is a dictionary that maps
-                each of its fanout/faninNB/collapse/fanin tasks to a list if
-                input tuples. We need to divide the output into one output
-                per fanout/faninNB/collapse/fanin task. These outputs are
-                keyed by a string, e.g., "PR1_1-PR2_3", and this string 
-                needs to be used in the DAG_info task_inputs tuple.
-                """
+                if tasks_use_result_dictionary_parameter:
+                    # Passing am emoty inut tuple to the PageRank task,
+                    # This results in a rresult_dictionary
+                    # of "DAG_executor_driver_0" --> (), where
+                    # DAG_executor_driver_0 is used to mean that the DAG_excutor_driver
+                    # provided an empty input tuple for the leaf task. In the 
+                    # PageRank_Function_Driver we just ignore empty input tuples so 
+                    # that the input_tuples provided to the PageRank_Function will be an empty list.
+                    result_dictionary['DAG_executor_driver_0'] = ()
 
-                # data_dict may be local (A1) to process/lambda or global (A2) to threads
-                logger.debug(thread_name + " executed task " + state_info.task_name + "'s output: " + str(output))
-                if same_output_for_all_fanout_fanin:
-                    data_dict[state_info.task_name] = output
+            logger.debug("argsZ: " + str(args))
+
+            logger.debug(thread_name + " result_dictionaryZ: " + str(result_dictionary))
+
+#rhc cleanup
+            #for key, value in DAG_tasks.items():
+            #    logger.error(str(key) + ' : ' + str(value))
+
+            # using map DAG_tasks from task_name to task
+            task = DAG_tasks[state_info.task_name]
+
+            if not tasks_use_result_dictionary_parameter:
+                # we will call the task with tuple args and unfold args: task(*args)
+                output = execute_task(task,args)
+            else:
+                #def PageRank_Function_Driver_Shared(task_file_name,total_num_nodes,results_dictionary,shared_map,shared_nodes):
+                if not use_shared_partitions_groups:
+                    # we will call the task with: task(task_name,resultDictionary)
+                    output = execute_task_with_result_dictionary(task,state_info.task_name,20,result_dictionary)
                 else:
-                #   Example: task PR1_1 producs an output for fanouts PR2_1
-                #   and PR2_3 and faninNB PR2_2.
-                #       output = {'PR2_1': [(2, 0.0075)], 'PR2_2': [(5, 0.010687499999999999)], 'PR2_3': [(3, 0.012042187499999999)]}
-                    for (k,v) in output.items():
-                        # example: state_info.task_name = "PR1_1" and 
-                        # k is "PR2_3" so data_dict_key is "PR1_1-PR2_3"
-                        data_dict_key = str(state_info.task_name+"-"+k)
-                        # list of input tuples. Example: list of single tuple:
-                        # [(3, 0.012042187499999999)], hich says that the pagerank
-                        # value of the shadow_node in position 3 of PR2_3's 
-                        # partition is 0.012042187499999999. This is the pagerank
-                        # value of a parent node of the node in position 4 of 
-                        # PR2_3's partition. We set the shadow nodes's value before
-                        # we start the pagerank calculation. There is a trick used
-                        # to make sure the hadow node's pageran value is not changed 
-                        # by the pagerank calculation. (We compute the shadow node's 
-                        # new paerank but we hardcode the shadow node's (dummy) parent
-                        # pagerank vaue so that the new shadow node pagerank is he same 
-                        # as the old value.)
-                        data_dict_value = v
-                        data_dict[data_dict_key] = data_dict_value
+                    if use_page_rank_group_partitions:
+                        output = execute_task_with_result_dictionary_shared(task,state_info.task_name,20,result_dictionary,BFS_Shared.shared_groups_map,BFS_Shared.shared_groups)
+                    else: # use the partition partitions
+                        output = execute_task_with_result_dictionary_shared(task,state_info.task_name,20,result_dictionary,BFS_Shared.shared_partition_map,BFS_Shared.shared_partition)
+            """ where:
+                def execute_task(task,args):
+                    logger.debug("input of execute_task is: " + str(args))
+                    output = task(*args)
+                    return output
+            """
+            """
+                def execute_task_with_result_dictionary(task,task_name,resultDictionary):
+                    output = task(task_name,resultDictionary)
+                    return output
+            """
+            """
+                def execute_task_with_result_dictionary_shared(task,task_name,total_num_nodes,resultDictionary,shared_map, shared_nodes):
+                    output = task(task_name,total_num_nodes,resultDictionary,shared_map,shared_nodes)
+                    return output
+            """
+            """
+            output is a dictionary mapping task name to list of tuples.
+            output = {'PR2_1': [(2, 0.0075)], 'PR2_2': [(5, 0.010687499999999999)], 'PR2_3': [(3, 0.012042187499999999)]}
+            This is the PR1_1 output. We put it in the data_dict as
+                data_dict["PR1_1"] = output
+            but we then send this output to process_fanouts. The become
+            task is PR2_1 and the non-become task is PR_2_3. In general,
+            we fanout all non-become tasks with this same output. We should
+            actually fanout tasks with their indivisual output from the 
+            dictionary. Currently, for each name in set fanouts:
+                dict_of_results =  {}
+                dict_of_results[calling_task_name] = output
+                work_tuple = (DAG_states[name],dict_of_results)
+                work_queue.put(work_tuple)
+            which assigns dict_of_results[calling_task_name] = output.
+            But we want to assign instead:
+                dict_of_results[str(calling_task_name+"-"+name)] = output[name]
+            when we have per-fanout outputs instead of all fanouts get the 
+            same output. 
+            Also, we currently have:
+                sender_set_for_senderX = Group_receivers.get(senderX)
+                if sender_set_for_senderX == None:
+                    # senderX is a leaf task since it is not a receiver
+                    Group_DAG_leaf_tasks.append(senderX)
+                    Group_DAG_leaf_task_start_states.append(state)
+                    task_inputs = ()
+                    Group_DAG_leaf_task_inputs.append(task_inputs)
+                else:
+                    # sender_set_for_senderX provide input for senderX
+                    task_inputs = tuple(sender_set_for_senderX)
+            So the task_input for fanout PR2_3 is ("PR1_1) since PR1_1 sends
+            its output to PR2_3. And we put the output in the data_dict
+            as data_dict["PR1_1"] = output so we'll be grabbing the 
+            entire output as the input of PR2_1.
+            Note: process_fanouts put a work tuple for PR2_1 in the work 
+            queue and set the DAG_executor_state.state to the become
+            task state, so the non-leaf executor, will next do the 
+            faninNB and then do the become task.
+            Note: The ss1 excutor will get the work_tuple for PR2_3
+            and try to execute it. The inputs are "PR1_1" since PR1_1
+            sends it output to PR2_3. Using the data_dict["PR1_1"] value
+            the input for PR2_3 is the entire output of PR1_1.
 
-            # end if not continued_task:
-            # this task is either a continued task tht was executed previously
-            # or it is a non-ccontinued tasks that we have just executed. In either
-            # case the task output was previously or just now put in the data_dict.
-            # Process the fanouts/fanins/faninNBs of the task (using outputs in data_dict6.6)
+            So: the output of a PageRank task is a dictionary that maps
+            each of its fanout/faninNB/collapse/fanin tasks to a list if
+            input tuples. We need to divide the output into one output
+            per fanout/faninNB/collapse/fanin task. These outputs are
+            keyed by a string, e.g., "PR1_1-PR2_3", and this string 
+            needs to be used in the DAG_info task_inputs tuple.
+            """
+
+            # data_dict may be local (A1) to process/lambda or global (A2) to threads
+            logger.debug(thread_name + " executed task " + state_info.task_name + "'s output: " + str(output))
+            if same_output_for_all_fanout_fanin:
+                data_dict[state_info.task_name] = output
+            else:
+            #   Example: task PR1_1 producs an output for fanouts PR2_1
+            #   and PR2_3 and faninNB PR2_2.
+            #       output = {'PR2_1': [(2, 0.0075)], 'PR2_2': [(5, 0.010687499999999999)], 'PR2_3': [(3, 0.012042187499999999)]}
+                for (k,v) in output.items():
+                    # example: state_info.task_name = "PR1_1" and 
+                    # k is "PR2_3" so data_dict_key is "PR1_1-PR2_3"
+                    data_dict_key = str(state_info.task_name+"-"+k)
+                    # list of input tuples. Example: list of single tuple:
+                    # [(3, 0.012042187499999999)], hich says that the pagerank
+                    # value of the shadow_node in position 3 of PR2_3's 
+                    # partition is 0.012042187499999999. This is the pagerank
+                    # value of a parent node of the node in position 4 of 
+                    # PR2_3's partition. We set the shadow nodes's value before
+                    # we start the pagerank calculation. There is a trick used
+                    # to make sure the hadow node's pageran value is not changed 
+                    # by the pagerank calculation. (We compute the shadow node's 
+                    # new paerank but we hardcode the shadow node's (dummy) parent
+                    # pagerank vaue so that the new shadow node pagerank is he same 
+                    # as the old value.)
+                    data_dict_value = v
+                    data_dict[data_dict_key] = data_dict_value
 
             logger.debug("data_dict: " + str(data_dict))
 
@@ -2156,19 +2166,27 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # the only name in this list
                 DAG_executor_state.state = DAG_info.get_DAG_states()[state_info.collapse[0]]
 
-#hc: cluster:
-                cluster_queue.put(DAG_executor_state.state)
-                logger.debug("DAG_executor_work_loop: put collapsed work in cluster_queue:"
-                        + " state is " + str(DAG_executor_state.state))
-#rhc: cluster:
-                # Do NOT do this
-                ## Don't add to thread_work_queue just do it
-                #if using_workers: 
-                #    # Config: A4_local, A4_Remote, A5, A6
-                #    worker_needs_input = False
-                ## else: # Config: A1. A2, A3
+#rhc continue   
+                if (not (compute_pagerank and use_incremental_DAG_generation)) or (not DAG_executor_state.ToBeContinued) :
+    #hc: cluster:
+                    cluster_queue.put(DAG_executor_state.state)
+                    logger.debug("DAG_executor_work_loop: put collapsed work in cluster_queue:"
+                            + " state is " + str(DAG_executor_state.state))
+    #rhc: cluster:
+                    # Do NOT do this
+                    ## Don't add to thread_work_queue just do it
+                    #if using_workers: 
+                    #    # Config: A4_local, A4_Remote, A5, A6
+                    #    worker_needs_input = False
+                    ## else: # Config: A1. A2, A3
+                else:
+                    continue_queue.put(DAG_executor_state.state)
+                    logger.debug("DAG_executor_work_loop: put collapsed work in cluster_queue:"
+                            + " state is " + str(DAG_executor_state.state))
 
-#    Note: for multithreaded worked, no differene between adding work to the 
+
+
+#    Note: for multithreaded worked, no difference between adding work to the 
 #    work queue and adding it to the cluster_queue, i.e., doesn't eliminate 
 #    any overhead. The difference is when using multiprocessing or lambdas
 #    (where lambdas are really just processes.) So for multiP we are putting
