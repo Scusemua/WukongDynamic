@@ -2585,7 +2585,7 @@ def bfs(visited, node): #function for BFS
 
 #rhc incremental                
                 if compute_pagerank and use_incremental_DAG_generation:
-                    to_be_continued = (num_nodes_in_partitions == num_nodes)
+                    to_be_continued = (num_nodes_in_partitions < num_nodes)
                 
                     if current_partition >=2:
                         # generate complete DAG_info for partition current_partition_number-1 and

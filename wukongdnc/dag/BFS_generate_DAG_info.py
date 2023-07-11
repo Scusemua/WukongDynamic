@@ -51,576 +51,6 @@ generate state i+1 with to be continued = True
 
 """
 
-def generate_DAG_info_incremental_partitions(current_partition_name,current_partition_number,to_be_continued):
-
-#rhc: Question: These should be global.
-    global Partition_all_fanout_task_names
-    global Partition_all_fanin_task_names
-    global Partition_all_faninNB_task_names
-    global Partition_all_collapse_task_names
-
-    global Partition_all_fanin_sizes
-    global Partition_all_faninNB_sizes
-
-    global Partition_DAG_leaf_tasks
-    global Partition_DAG_leaf_task_start_states
-    # no inputs for leaf tasks
-    global Partition_DAG_leaf_task_input
-    global Partition_DAG_map
-    global Partition_DAG_states
-    global Partition_DAG_tasks
-
-    Partition_all_fanout_task_names = []
-    Partition_all_fanin_task_names = []
-    Partition_all_faninNB_task_names = []
-    Partition_all_collapse_task_names = []
-
-    Partition_all_fanin_sizes = []
-    Partition_all_faninNB_sizes = []
-
-    Partition_DAG_leaf_tasks = []
-    Partition_DAG_leaf_task_start_states = []
-    # no inputs for leaf tasks
-    Partition_DAG_leaf_task_inputs = []
-    Partition_DAG_map = {}
-    Partition_DAG_states = {}
-    Partition_DAG_tasks = {}
-
-    print()
-    print("Partition_senders:")
-    for sender_name,receiver_name_set in Partition_senders.items():
-        print("sender:" + sender_name)
-        print("receiver_name_set:" + str(receiver_name_set))
-    print()
-    print()
-    print("Partition_receivers:")
-    for receiver_name,sender_name_set in Partition_receivers.items():
-        print("receiver:" + receiver_name)
-        print("sender_name_set:" + str(sender_name_set))
-    print()
-    print()
-    print("Leaf nodes of partitions:")
-    for name in leaf_tasks_of_partitions:
-        print(name + " ")
-
-    logger.info("Partition DAG:")
-
-    fanouts = []
-    faninNBs = []
-    fanins = []
-    collapse = []
-    fanin_sizes = []
-    faninNB_sizes = []
-
-    current_state = current_partition_number
-    previous_state = current_partition_number-1
-    previous_partition_name = "PR" + str(current_partition_number-1) + "_1"
-
-    if current_partition_number == 1:
-        # partition 1 is a leaf
-        # assert len ssfsX = None
-        Partition_DAG_leaf_tasks.append(current_partition_name)
-        Partition_DAG_leaf_task_start_states.append(current_state)
-        task_inputs = ()
-        Partition_DAG_leaf_task_inputs.append(task_inputs)
-
-        if not current_partition_name in leaf_tasks_of_partitions:
-            logger.error("partition " + current_partition_name + " is the first partition"
-                + " but it is not in leaf_tasks_of_partitions.")
-        else:
-            # we have generated a state for leaf task senderX. 
-            leaf_tasks_of_partitions.remove(current_partition_name)
-
-#rhc: ToDo: Only if there is more than 1 partition
-        if not to_be_continued:
-            next_partition_name = "PR" + str(current_partition_number+1) + "_1"
-            # partition i has a collapse to partition i+1
-            Partition_all_collapse_task_names.append(next_partition_name)
-            collapse.append(next_partition_name)
-
-        Partition_DAG_map[current_state] = state_info(current_partition_name, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs)
-#rhc: ToDo: set incomplete if incomplete (parm)
-#       Partition_DAG_map[current_state].ToBeContinued = to_be_continued
-#       actully just add to_be_continued as arg
-        Partition_DAG_states[current_partition_name] = current_state
-
-        if not use_shared_partitions_groups:
-            Partition_DAG_tasks[current_partition_name] = PageRank_Function_Driver
-        else:
-            if not use_struct_of_arrays_for_pagerank:
-                Partition_DAG_tasks[current_partition_name] = PageRank_Function_Driver_Shared 
-            else:
-                Partition_DAG_tasks[current_partition_name] = PageRank_Function_Driver_Shared_Fast  
-
-        return
-    else:
-
-#rhc: ToDo: current is TBC and current -1 is complete
-        qualified_name = str(previous_partition_name) + "-" + str(current_partition_name)
-        qualified_names = set()
-        qualified_names.add(qualified_name)
-        # sender_set_for_senderX provides input for senderX
-        task_inputs = tuple(qualified_names)
-        Partition_DAG_map[current_state] = state_info(current_partition_name, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs)
-#rhc: ToDo: #rhc: ToDo: set to_be_continued if to_be_continued (parm)
-#       Partition_DAG_map[current_state].ToBeContinued = to_be_continued
-        Partition_DAG_states[current_partition_name] = current_state
-        if not use_shared_partitions_groups:
-            Partition_DAG_tasks[current_partition_name] = PageRank_Function_Driver
-        else:
-            if not use_struct_of_arrays_for_pagerank:
-                Partition_DAG_tasks[current_partition_name] = PageRank_Function_Driver_Shared 
-            else:
-                Partition_DAG_tasks[current_partition_name] = PageRank_Function_Driver_Shared_Fast  
-
-        previous_state_info = Partition_DAG_map[previous_state]
-        previous_state_info.ToBeContinued = False
-#rhc: set to_be_continued to True
-        # we already did collapse for previous state so just make it complete
-
-    logger.info("")
-    DAG_info = {}
-    DAG_info["DAG_map"] = Partition_DAG_map
-    DAG_info["DAG_states"] = Partition_DAG_states
-    DAG_info["DAG_leaf_tasks"] = Partition_DAG_leaf_tasks
-    DAG_info["DAG_leaf_task_start_states"] = Partition_DAG_leaf_task_start_states
-    DAG_info["DAG_leaf_task_inputs"] = Partition_DAG_leaf_task_inputs
-    DAG_info["all_fanout_task_names"] = Partition_all_fanout_task_names
-    DAG_info["all_fanin_task_names"] = Partition_all_fanin_task_names
-    DAG_info["all_faninNB_task_names"] = Partition_all_faninNB_task_names
-    DAG_info["all_collapse_task_names"] = Partition_all_collapse_task_names
-    DAG_info["all_fanin_sizes"] = Partition_all_fanin_sizes
-    DAG_info["all_faninNB_sizes"] = Partition_all_faninNB_sizes
-    DAG_info["DAG_tasks"] = Partition_DAG_tasks
-
-    # Defaults are 1 and True
-    DAG_info_version_number = 1
-    DAG_info_is_complete = False
-    DAG_info["version_number"] = DAG_info_version_number
-    DAG_info["DAG_info_is_complete"] = DAG_info_is_complete
-
-    file_name_incremental = "./DAG_info_Partition_incremental_" + str(current_partition_number) + ".pickle"
-    with open(file_name_incremental, 'wb') as handle:
-        cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
-
-#rhc: Do this? We only read at start.
-
-    #if not use_page_rank_group_partitions:
-    #    file_name = "./DAG_info.pickle"
-    #    with open(file_name, 'wb') as handle:
-    #        cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
-
-    num_fanins = len(Partition_all_fanin_task_names)
-    num_fanouts = len(Partition_all_fanout_task_names)
-    num_faninNBs = len(Partition_all_faninNB_task_names)
-    num_collapse = len(Partition_all_collapse_task_names)
-
-    logger.info("DAG_map:")
-    for key, value in Partition_DAG_map.items():
-        logger.info(str(key) + ' : ' + str(value))
-    logger.info("")
-    logger.info("states:")        
-    for key, value in Partition_DAG_states.items():
-        logger.info(str(key) + ' : ' + str(value))
-    logger.info("")
-    logger.info("num_fanins:" + str(num_fanins) + " num_fanouts:" + str(num_fanouts) + " num_faninNBs:"
-    + str(num_faninNBs) + " num_collapse:" + str(num_collapse))
-    logger.info("")  
-    logger.info("Note: partitions only have collapse sets.")
-    logger.info("Partition_all_fanout_task_names:")
-    for name in Partition_all_fanout_task_names:
-        logger.info(name)
-    logger.info("all_fanin_task_names:")
-    for name in Partition_all_fanin_task_names :
-        logger.info(name)
-    logger.info("all_fanin_sizes:")
-    for s in Partition_all_fanin_sizes :
-        logger.info(s)
-    logger.info("all_faninNB_task_names:")
-    for name in Partition_all_faninNB_task_names:
-        logger.info(name)
-    logger.info("all_faninNB_sizes:")
-    for s in Partition_all_faninNB_sizes:
-        logger.info(s)
-    logger.info("Partition_all_collapse_task_names:")
-    for name in Partition_all_collapse_task_names:
-        logger.info(name)
-    logger.info("")
-    logger.info("leaf task start states:")
-    for start_state in Partition_DAG_leaf_task_start_states:
-        logger.info(start_state)
-    logger.info("")
-    logger.info("DAG_tasks:")
-    for key, value in Partition_DAG_tasks.items():
-        logger.info(str(key) + ' : ' + str(value))
-    logger.info("")
-    logger.info("DAG_leaf_tasks:")
-    for task_name in Partition_DAG_leaf_tasks:
-        logger.info(task_name)
-    logger.info("")
-    logger.info("DAG_leaf_task_inputs:")
-    for inp in Partition_DAG_leaf_task_inputs:
-        logger.info(inp)
-    logger.info("")
-    logger.info("DAG_version_number:")
-    logger.info(DAG_info_version_number)
-    logger.info("")
-    logger.info("DAG_info_is_complete:")
-    logger.info(DAG_info_is_complete)
-    logger.info("")
-
-    DAG_info_partition_read = DAG_Info(file_name_incremental)
-    
-    DAG_map = DAG_info_partition_read.get_DAG_map()
-    #all_fanin_task_names = DAG_info_partition_read.get_all_fanin_task_names()
-    #all_faninNB_task_names = DAG_info_partition_read.get_all_faninNB_task_names()
-    #all_faninNB_sizes = DAG_info_partition_read.get_all_faninNB_sizes()
-    #all_fanout_task_names = DAG_info_partition_read.get_all_fanout_task_names()
-    # Note: all fanout_sizes is not needed since fanouts are fanins that have size 1
-    DAG_states = DAG_info_partition_read.get_DAG_states()
-    DAG_leaf_tasks = DAG_info_partition_read.get_DAG_leaf_tasks()
-    DAG_leaf_task_start_states = DAG_info_partition_read.get_DAG_leaf_task_start_states()
-    DAG_tasks = DAG_info_partition_read.get_DAG_tasks()
-
-    DAG_leaf_task_inputs = DAG_info_partition_read.get_DAG_leaf_task_inputs()
-
-    DAG_info_is_complete = DAG_info_partition_read.get_DAG_info_is_complete()
-    DAG_info_version_number = DAG_info_partition_read.get_DAG_version_number()
-
-    logger.info("")
-    logger.info("DAG_info partition after read:")
-    output_DAG = True
-    if output_DAG:
-        # FYI:
-        logger.info("DAG_map:")
-        for key, value in DAG_map.items():
-            logger.info(str(key) + ' : ' + str(value))
-            #logger.info(key)
-            #logger.info(value)
-        logger.info("  ")
-        logger.info("DAG states:")      
-        for key, value in DAG_states.items():
-            logger.info(str(key) + ' : ' + str(value))
-        logger.info("   ")
-        logger.info("DAG leaf task start states")
-        for start_state in DAG_leaf_task_start_states:
-            logger.info(start_state)
-        logger.info("")
-        logger.info("DAG_tasks:")
-        for key, value in DAG_tasks.items():
-            logger.info(str(key) + ' : ' + str(value))
-        logger.info("")
-        logger.info("DAG_leaf_tasks:")
-        for task_name in DAG_leaf_tasks:
-            logger.info(task_name)
-        logger.info("") 
-        logger.info("DAG_leaf_task_inputs:")
-        for inp in DAG_leaf_task_inputs:
-            logger.info(inp)
-        logger.info("")
-        logger.info("DAG_version_number:")
-        logger.info(DAG_info_version_number)
-        logger.info("")
-        logger.info("DAG_info_is_complete:")
-        logger.info(DAG_info_is_complete)
-        logger.info("")
-
-    return  DAG_info
-
-
-def OLD_generate_DAG_info_incremental_partitions(partition_name,current_partition_number,is_complete):
-    Partition_all_fanout_task_names = []
-    Partition_all_fanin_task_names = []
-    Partition_all_faninNB_task_names = []
-    Partition_all_collapse_task_names = []
-
-    Partition_all_fanin_sizes = []
-    Partition_all_faninNB_sizes = []
-
-    Partition_DAG_leaf_tasks = []
-    Partition_DAG_leaf_task_start_states = []
-    # no inputs for leaf tasks
-    Partition_DAG_leaf_task_inputs = []
-    Partition_DAG_map = {}
-    Partition_DAG_states = {}
-    Partition_DAG_tasks = {}
-
-    print()
-    print("Partition_senders:")
-    for sender_name,receiver_name_set in Partition_senders.items():
-        print("sender:" + sender_name)
-        print("receiver_name_set:" + str(receiver_name_set))
-    print()
-    print()
-    print("Partition_receivers:")
-    for receiver_name,sender_name_set in Partition_receivers.items():
-        print("receiver:" + receiver_name)
-        print("sender_name_set:" + str(sender_name_set))
-    print()
-    print()
-    print("Leaf nodes of partitions:")
-    for name in leaf_tasks_of_partitions:
-        print(name + " ")
-
-    logger.info("Partition DAG:")
-
-    state = 1
-    # partition i has a collapse to partition i+1
-    # Task senderX sends inputs to one or more other tasks
-
-    # sink nodes, i.e., nodes that do not send any inputs
-    Partition_sink_set = set()
-
-    partition_number = 1
-
-    for senderX in Partition_senders:
-        fanouts = []
-        faninNBs = []
-        fanins = []
-        collapse = []
-        fanin_sizes = []
-        faninNB_sizes = []
-        # tasks that receive inputs from senderX
-        receiver_set_for_senderX = Partition_senders[senderX]
-        # assert len = 1
-        receiverY = receiver_set_for_senderX[0]
-
-        receiver_set_for_receiverY = Partition_senders.get(receiverY)
-        if receiver_set_for_receiverY == None:
-            # receiverY does not send any inputs so it is a sink.
-            # This is the last partition
-            Partition_sink_set.add(receiverY)
-
-        sender_set_for_receiverY = Partition_receivers[receiverY]
-        # assert len = 0
-        logger.info("sender " + senderX + " --> " + receiverY + " : Collapse")
-        Partition_all_collapse_task_names.append(receiverY)
-        collapse.append(receiverY)
-        sender_set_for_senderX = Partition_receivers.get(senderX)
-        if partition_number == 1:
-            # assert len ssfsX = None
-            Partition_DAG_leaf_tasks.append(senderX)
-            Partition_DAG_leaf_task_start_states.append(state)
-            task_inputs = ()
-            Partition_DAG_leaf_task_inputs.append(task_inputs)
-            if not senderX in leaf_tasks_of_partitions:
-                logger.error("partition " + senderX + " receives no inputs"
-                    + " but it is not in leaf_tasks_of_partitions.")
-            else:
-                # we have generated a state for leaf task senderX. 
-                leaf_tasks_of_partitions.remove(senderX)
-        else:
-            sender_set_for_senderX_with_qualified_names = set()
-            for name in sender_set_for_senderX:
-                qualified_name = str(name) + "-" + str(senderX)
-                sender_set_for_senderX_with_qualified_names.add(qualified_name)
-            # sender_set_for_senderX provides input for senderX
-            task_inputs = tuple(sender_set_for_senderX_with_qualified_names)
-        Partition_DAG_map[state] = state_info(senderX, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs)
-        Partition_DAG_states[senderX] = state
-        state += 1
-        partition_number += 1
-
-    if partition_number > 2:
-        #assert len Partition_sink_set == 1
-        # get first and only element of set, which is last partition
-        receiverY = next(iter(Partition_sink_set))
-        #if not receiverY in Partition_DAG_states:
-        fanouts = []
-        faninNBs = []
-        fanins = []
-        collapse = []
-        fanin_sizes = []
-        faninNB_sizes = []
-
-        sender_set_for_receiverY = Partition_receivers[receiverY]
-        #task_inputs = tuple(sender_set_for_receiverY)
-
-        # create a new set from sender_set_for_senderX. For 
-        # each name in sender_set_for_senderX, qualify name by
-        # prexing it with "senderX-". Example: senderX is "PR1_1"
-        # and name is "PR2_3" so the qualified name is "PR1_1-PR2_3".
-        # We use qualified names since the fanouts/faninNBs for a 
-        # task in a pagerank DAG may al have diffent values. This
-        # is unlike Dask DAGs in which all fanouts/faninNBs of a task
-        # receive the same value. We denote the different outputs
-        # of a task A having, e.g., fanouts B and C as "A-B" and "A-C"
-        sender_set_for_receiverY_with_qualified_names = set()
-        # for each task senderX that sends input to receiverY, the 
-        # qualified name of the sender is senderX+"-"+senderX
-        for senderX in sender_set_for_receiverY:
-            qualified_name = str(senderX) + "-" + str(receiverY)
-            sender_set_for_receiverY_with_qualified_names.add(qualified_name)
-        # sender_set_for_senderX provides input for senderX
-        task_inputs = tuple(sender_set_for_receiverY_with_qualified_names)
-
-        Partition_DAG_map[state] = state_info(receiverY, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs)
-        Partition_DAG_states[receiverY] = state
-        state += 1
-        partition_number += 1
-
-    if not use_shared_partitions_groups:
-        for key in Partition_DAG_states:
-            Partition_DAG_tasks[key] = PageRank_Function_Driver
-    else:
-        if not use_struct_of_arrays_for_pagerank:
-            for key in Partition_DAG_states:
-                Partition_DAG_tasks[key] = PageRank_Function_Driver_Shared 
-        else:
-            for key in Partition_DAG_states:
-                Partition_DAG_tasks[key] = PageRank_Function_Driver_Shared_Fast  
-
-
-    logger.info("")
-    DAG_info = {}
-    DAG_info["DAG_map"] = Partition_DAG_map
-    DAG_info["DAG_states"] = Partition_DAG_states
-    DAG_info["DAG_leaf_tasks"] = Partition_DAG_leaf_tasks
-    DAG_info["DAG_leaf_task_start_states"] = Partition_DAG_leaf_task_start_states
-    DAG_info["DAG_leaf_task_inputs"] = Partition_DAG_leaf_task_inputs
-    DAG_info["all_fanout_task_names"] = Partition_all_fanout_task_names
-    DAG_info["all_fanin_task_names"] = Partition_all_fanin_task_names
-    DAG_info["all_faninNB_task_names"] = Partition_all_faninNB_task_names
-    DAG_info["all_collapse_task_names"] = Partition_all_collapse_task_names
-    DAG_info["all_fanin_sizes"] = Partition_all_fanin_sizes
-    DAG_info["all_faninNB_sizes"] = Partition_all_faninNB_sizes
-    DAG_info["DAG_tasks"] = Partition_DAG_tasks
-
-    # Defaults are 1 and True
-    DAG_info_version_number = 1
-    DAG_info_is_complete = False
-    DAG_info["version_number"] = DAG_info_version_number
-    DAG_info["DAG_info_is_complete"] = DAG_info_is_complete
-
-    file_name = "./DAG_info_Partition_incremental.pickle"
-    with open(file_name, 'wb') as handle:
-        cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
-
-
-#rhc: Do this? We only read at start.
-
-    if not use_page_rank_group_partitions:
-        file_name = "./DAG_info.pickle"
-        with open(file_name, 'wb') as handle:
-            cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
-
-    num_fanins = len(Partition_all_fanin_task_names)
-    num_fanouts = len(Partition_all_fanout_task_names)
-    num_faninNBs = len(Partition_all_faninNB_task_names)
-    num_collapse = len(Partition_all_collapse_task_names)
-
-    logger.info("DAG_map:")
-    for key, value in Partition_DAG_map.items():
-        logger.info(str(key) + ' : ' + str(value))
-    logger.info("")
-    logger.info("states:")        
-    for key, value in Partition_DAG_states.items():
-        logger.info(str(key) + ' : ' + str(value))
-    logger.info("")
-    logger.info("num_fanins:" + str(num_fanins) + " num_fanouts:" + str(num_fanouts) + " num_faninNBs:"
-    + str(num_faninNBs) + " num_collapse:" + str(num_collapse))
-    logger.info("")  
-    logger.info("Note: partitions only have collapse sets.")
-    logger.info("Partition_all_fanout_task_names:")
-    for name in Partition_all_fanout_task_names:
-        logger.info(name)
-    logger.info("all_fanin_task_names:")
-    for name in Partition_all_fanin_task_names :
-        logger.info(name)
-    logger.info("all_fanin_sizes:")
-    for s in Partition_all_fanin_sizes :
-        logger.info(s)
-    logger.info("all_faninNB_task_names:")
-    for name in Partition_all_faninNB_task_names:
-        logger.info(name)
-    logger.info("all_faninNB_sizes:")
-    for s in Partition_all_faninNB_sizes:
-        logger.info(s)
-    logger.info("Partition_all_collapse_task_names:")
-    for name in Partition_all_collapse_task_names:
-        logger.info(name)
-    logger.info("")
-    logger.info("leaf task start states:")
-    for start_state in Partition_DAG_leaf_task_start_states:
-        logger.info(start_state)
-    logger.info("")
-    logger.info("DAG_tasks:")
-    for key, value in Partition_DAG_tasks.items():
-        logger.info(str(key) + ' : ' + str(value))
-    logger.info("")
-    logger.info("DAG_leaf_tasks:")
-    for task_name in Partition_DAG_leaf_tasks:
-        logger.info(task_name)
-    logger.info("")
-    logger.info("DAG_leaf_task_inputs:")
-    for inp in Partition_DAG_leaf_task_inputs:
-        logger.info(inp)
-    logger.info("")
-    logger.info("DAG_version_number:")
-    logger.info(DAG_info_version_number)
-    logger.info("")
-    logger.info("DAG_info_is_complete:")
-    logger.info(DAG_info_is_complete)
-    logger.info("")
-
-    DAG_info_partition_read = DAG_Info(file_name = "./DAG_info_Partition_incremental.pickle")
-    
-    DAG_map = DAG_info_partition_read.get_DAG_map()
-    #all_fanin_task_names = DAG_info_partition_read.get_all_fanin_task_names()
-    #all_faninNB_task_names = DAG_info_partition_read.get_all_faninNB_task_names()
-    #all_faninNB_sizes = DAG_info_partition_read.get_all_faninNB_sizes()
-    #all_fanout_task_names = DAG_info_partition_read.get_all_fanout_task_names()
-    # Note: all fanout_sizes is not needed since fanouts are fanins that have size 1
-    DAG_states = DAG_info_partition_read.get_DAG_states()
-    DAG_leaf_tasks = DAG_info_partition_read.get_DAG_leaf_tasks()
-    DAG_leaf_task_start_states = DAG_info_partition_read.get_DAG_leaf_task_start_states()
-    DAG_tasks = DAG_info_partition_read.get_DAG_tasks()
-
-    DAG_leaf_task_inputs = DAG_info_partition_read.get_DAG_leaf_task_inputs()
-
-    DAG_info_is_complete = DAG_info_partition_read.get_DAG_info_is_complete()
-    DAG_info_version_number = DAG_info_partition_read.get_DAG_version_number()
-
-    logger.info("")
-    logger.info("DAG_info partition after read:")
-    output_DAG = True
-    if output_DAG:
-        # FYI:
-        logger.info("DAG_map:")
-        for key, value in DAG_map.items():
-            logger.info(str(key) + ' : ' + str(value))
-            #logger.info(key)
-            #logger.info(value)
-        logger.info("  ")
-        logger.info("DAG states:")      
-        for key, value in DAG_states.items():
-            logger.info(str(key) + ' : ' + str(value))
-        logger.info("   ")
-        logger.info("DAG leaf task start states")
-        for start_state in DAG_leaf_task_start_states:
-            logger.info(start_state)
-        logger.info("")
-        logger.info("DAG_tasks:")
-        for key, value in DAG_tasks.items():
-            logger.info(str(key) + ' : ' + str(value))
-        logger.info("")
-        logger.info("DAG_leaf_tasks:")
-        for task_name in DAG_leaf_tasks:
-            logger.info(task_name)
-        logger.info("") 
-        logger.info("DAG_leaf_task_inputs:")
-        for inp in DAG_leaf_task_inputs:
-            logger.info(inp)
-        logger.info("")
-        logger.info("DAG_version_number:")
-        logger.info(DAG_info_version_number)
-        logger.info("")
-        logger.info("DAG_info_is_complete:")
-        logger.info(DAG_info_is_complete)
-        logger.info("")
-
-    return  DAG_info
-
 def generate_DAG_info():
     #Given Partition_senders, Partition_receivers, Group_senders, Group_receievers
 
@@ -1575,3 +1005,301 @@ def generate_DAG_info():
     logger.debug("dsk lines for Groups:")
     for line in dsk_lines:
         logger.debug(line)
+
+
+
+"""
+DELETE THIS
+def OLD_generate_DAG_info_incremental_partitions(partition_name,current_partition_number,is_complete):
+    Partition_all_fanout_task_names = []
+    Partition_all_fanin_task_names = []
+    Partition_all_faninNB_task_names = []
+    Partition_all_collapse_task_names = []
+
+    Partition_all_fanin_sizes = []
+    Partition_all_faninNB_sizes = []
+
+    Partition_DAG_leaf_tasks = []
+    Partition_DAG_leaf_task_start_states = []
+    # no inputs for leaf tasks
+    Partition_DAG_leaf_task_inputs = []
+    Partition_DAG_map = {}
+    Partition_DAG_states = {}
+    Partition_DAG_tasks = {}
+
+    print()
+    print("Partition_senders:")
+    for sender_name,receiver_name_set in Partition_senders.items():
+        print("sender:" + sender_name)
+        print("receiver_name_set:" + str(receiver_name_set))
+    print()
+    print()
+    print("Partition_receivers:")
+    for receiver_name,sender_name_set in Partition_receivers.items():
+        print("receiver:" + receiver_name)
+        print("sender_name_set:" + str(sender_name_set))
+    print()
+    print()
+    print("Leaf nodes of partitions:")
+    for name in leaf_tasks_of_partitions:
+        print(name + " ")
+
+    logger.info("Partition DAG:")
+
+    state = 1
+    # partition i has a collapse to partition i+1
+    # Task senderX sends inputs to one or more other tasks
+
+    # sink nodes, i.e., nodes that do not send any inputs
+    Partition_sink_set = set()
+
+    partition_number = 1
+
+    for senderX in Partition_senders:
+        fanouts = []
+        faninNBs = []
+        fanins = []
+        collapse = []
+        fanin_sizes = []
+        faninNB_sizes = []
+        # tasks that receive inputs from senderX
+        receiver_set_for_senderX = Partition_senders[senderX]
+        # assert len = 1
+        receiverY = receiver_set_for_senderX[0]
+
+        receiver_set_for_receiverY = Partition_senders.get(receiverY)
+        if receiver_set_for_receiverY == None:
+            # receiverY does not send any inputs so it is a sink.
+            # This is the last partition
+            Partition_sink_set.add(receiverY)
+
+        sender_set_for_receiverY = Partition_receivers[receiverY]
+        # assert len = 0
+        logger.info("sender " + senderX + " --> " + receiverY + " : Collapse")
+        Partition_all_collapse_task_names.append(receiverY)
+        collapse.append(receiverY)
+        sender_set_for_senderX = Partition_receivers.get(senderX)
+        if partition_number == 1:
+            # assert len ssfsX = None
+            Partition_DAG_leaf_tasks.append(senderX)
+            Partition_DAG_leaf_task_start_states.append(state)
+            task_inputs = ()
+            Partition_DAG_leaf_task_inputs.append(task_inputs)
+            if not senderX in leaf_tasks_of_partitions:
+                logger.error("partition " + senderX + " receives no inputs"
+                    + " but it is not in leaf_tasks_of_partitions.")
+            else:
+                # we have generated a state for leaf task senderX. 
+                leaf_tasks_of_partitions.remove(senderX)
+        else:
+            sender_set_for_senderX_with_qualified_names = set()
+            for name in sender_set_for_senderX:
+                qualified_name = str(name) + "-" + str(senderX)
+                sender_set_for_senderX_with_qualified_names.add(qualified_name)
+            # sender_set_for_senderX provides input for senderX
+            task_inputs = tuple(sender_set_for_senderX_with_qualified_names)
+        Partition_DAG_map[state] = state_info(senderX, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs)
+        Partition_DAG_states[senderX] = state
+        state += 1
+        partition_number += 1
+
+    if partition_number > 2:
+        #assert len Partition_sink_set == 1
+        # get first and only element of set, which is last partition
+        receiverY = next(iter(Partition_sink_set))
+        #if not receiverY in Partition_DAG_states:
+        fanouts = []
+        faninNBs = []
+        fanins = []
+        collapse = []
+        fanin_sizes = []
+        faninNB_sizes = []
+
+        sender_set_for_receiverY = Partition_receivers[receiverY]
+        #task_inputs = tuple(sender_set_for_receiverY)
+
+        # create a new set from sender_set_for_senderX. For 
+        # each name in sender_set_for_senderX, qualify name by
+        # prexing it with "senderX-". Example: senderX is "PR1_1"
+        # and name is "PR2_3" so the qualified name is "PR1_1-PR2_3".
+        # We use qualified names since the fanouts/faninNBs for a 
+        # task in a pagerank DAG may al have diffent values. This
+        # is unlike Dask DAGs in which all fanouts/faninNBs of a task
+        # receive the same value. We denote the different outputs
+        # of a task A having, e.g., fanouts B and C as "A-B" and "A-C"
+        sender_set_for_receiverY_with_qualified_names = set()
+        # for each task senderX that sends input to receiverY, the 
+        # qualified name of the sender is senderX+"-"+senderX
+        for senderX in sender_set_for_receiverY:
+            qualified_name = str(senderX) + "-" + str(receiverY)
+            sender_set_for_receiverY_with_qualified_names.add(qualified_name)
+        # sender_set_for_senderX provides input for senderX
+        task_inputs = tuple(sender_set_for_receiverY_with_qualified_names)
+
+        Partition_DAG_map[state] = state_info(receiverY, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs)
+        Partition_DAG_states[receiverY] = state
+        state += 1
+        partition_number += 1
+
+    if not use_shared_partitions_groups:
+        for key in Partition_DAG_states:
+            Partition_DAG_tasks[key] = PageRank_Function_Driver
+    else:
+        if not use_struct_of_arrays_for_pagerank:
+            for key in Partition_DAG_states:
+                Partition_DAG_tasks[key] = PageRank_Function_Driver_Shared 
+        else:
+            for key in Partition_DAG_states:
+                Partition_DAG_tasks[key] = PageRank_Function_Driver_Shared_Fast  
+
+
+    logger.info("")
+    DAG_info = {}
+    DAG_info["DAG_map"] = Partition_DAG_map
+    DAG_info["DAG_states"] = Partition_DAG_states
+    DAG_info["DAG_leaf_tasks"] = Partition_DAG_leaf_tasks
+    DAG_info["DAG_leaf_task_start_states"] = Partition_DAG_leaf_task_start_states
+    DAG_info["DAG_leaf_task_inputs"] = Partition_DAG_leaf_task_inputs
+    DAG_info["all_fanout_task_names"] = Partition_all_fanout_task_names
+    DAG_info["all_fanin_task_names"] = Partition_all_fanin_task_names
+    DAG_info["all_faninNB_task_names"] = Partition_all_faninNB_task_names
+    DAG_info["all_collapse_task_names"] = Partition_all_collapse_task_names
+    DAG_info["all_fanin_sizes"] = Partition_all_fanin_sizes
+    DAG_info["all_faninNB_sizes"] = Partition_all_faninNB_sizes
+    DAG_info["DAG_tasks"] = Partition_DAG_tasks
+
+    # Defaults are 1 and True
+    DAG_info_version_number = 1
+    DAG_info_is_complete = False
+    DAG_info["version_number"] = DAG_info_version_number
+    DAG_info["DAG_info_is_complete"] = DAG_info_is_complete
+
+    file_name = "./DAG_info_Partition_incremental.pickle"
+    with open(file_name, 'wb') as handle:
+        cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+
+
+#rhc: Do this? We only read at start.
+
+    if not use_page_rank_group_partitions:
+        file_name = "./DAG_info.pickle"
+        with open(file_name, 'wb') as handle:
+            cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+
+    num_fanins = len(Partition_all_fanin_task_names)
+    num_fanouts = len(Partition_all_fanout_task_names)
+    num_faninNBs = len(Partition_all_faninNB_task_names)
+    num_collapse = len(Partition_all_collapse_task_names)
+
+    logger.info("DAG_map:")
+    for key, value in Partition_DAG_map.items():
+        logger.info(str(key) + ' : ' + str(value))
+    logger.info("")
+    logger.info("states:")        
+    for key, value in Partition_DAG_states.items():
+        logger.info(str(key) + ' : ' + str(value))
+    logger.info("")
+    logger.info("num_fanins:" + str(num_fanins) + " num_fanouts:" + str(num_fanouts) + " num_faninNBs:"
+    + str(num_faninNBs) + " num_collapse:" + str(num_collapse))
+    logger.info("")  
+    logger.info("Note: partitions only have collapse sets.")
+    logger.info("Partition_all_fanout_task_names:")
+    for name in Partition_all_fanout_task_names:
+        logger.info(name)
+    logger.info("all_fanin_task_names:")
+    for name in Partition_all_fanin_task_names :
+        logger.info(name)
+    logger.info("all_fanin_sizes:")
+    for s in Partition_all_fanin_sizes :
+        logger.info(s)
+    logger.info("all_faninNB_task_names:")
+    for name in Partition_all_faninNB_task_names:
+        logger.info(name)
+    logger.info("all_faninNB_sizes:")
+    for s in Partition_all_faninNB_sizes:
+        logger.info(s)
+    logger.info("Partition_all_collapse_task_names:")
+    for name in Partition_all_collapse_task_names:
+        logger.info(name)
+    logger.info("")
+    logger.info("leaf task start states:")
+    for start_state in Partition_DAG_leaf_task_start_states:
+        logger.info(start_state)
+    logger.info("")
+    logger.info("DAG_tasks:")
+    for key, value in Partition_DAG_tasks.items():
+        logger.info(str(key) + ' : ' + str(value))
+    logger.info("")
+    logger.info("DAG_leaf_tasks:")
+    for task_name in Partition_DAG_leaf_tasks:
+        logger.info(task_name)
+    logger.info("")
+    logger.info("DAG_leaf_task_inputs:")
+    for inp in Partition_DAG_leaf_task_inputs:
+        logger.info(inp)
+    logger.info("")
+    logger.info("DAG_version_number:")
+    logger.info(DAG_info_version_number)
+    logger.info("")
+    logger.info("DAG_info_is_complete:")
+    logger.info(DAG_info_is_complete)
+    logger.info("")
+
+    DAG_info_partition_read = DAG_Info(file_name = "./DAG_info_Partition_incremental.pickle")
+    
+    DAG_map = DAG_info_partition_read.get_DAG_map()
+    #all_fanin_task_names = DAG_info_partition_read.get_all_fanin_task_names()
+    #all_faninNB_task_names = DAG_info_partition_read.get_all_faninNB_task_names()
+    #all_faninNB_sizes = DAG_info_partition_read.get_all_faninNB_sizes()
+    #all_fanout_task_names = DAG_info_partition_read.get_all_fanout_task_names()
+    # Note: all fanout_sizes is not needed since fanouts are fanins that have size 1
+    DAG_states = DAG_info_partition_read.get_DAG_states()
+    DAG_leaf_tasks = DAG_info_partition_read.get_DAG_leaf_tasks()
+    DAG_leaf_task_start_states = DAG_info_partition_read.get_DAG_leaf_task_start_states()
+    DAG_tasks = DAG_info_partition_read.get_DAG_tasks()
+
+    DAG_leaf_task_inputs = DAG_info_partition_read.get_DAG_leaf_task_inputs()
+
+    DAG_info_is_complete = DAG_info_partition_read.get_DAG_info_is_complete()
+    DAG_info_version_number = DAG_info_partition_read.get_DAG_version_number()
+
+    logger.info("")
+    logger.info("DAG_info partition after read:")
+    output_DAG = True
+    if output_DAG:
+        # FYI:
+        logger.info("DAG_map:")
+        for key, value in DAG_map.items():
+            logger.info(str(key) + ' : ' + str(value))
+            #logger.info(key)
+            #logger.info(value)
+        logger.info("  ")
+        logger.info("DAG states:")      
+        for key, value in DAG_states.items():
+            logger.info(str(key) + ' : ' + str(value))
+        logger.info("   ")
+        logger.info("DAG leaf task start states")
+        for start_state in DAG_leaf_task_start_states:
+            logger.info(start_state)
+        logger.info("")
+        logger.info("DAG_tasks:")
+        for key, value in DAG_tasks.items():
+            logger.info(str(key) + ' : ' + str(value))
+        logger.info("")
+        logger.info("DAG_leaf_tasks:")
+        for task_name in DAG_leaf_tasks:
+            logger.info(task_name)
+        logger.info("") 
+        logger.info("DAG_leaf_task_inputs:")
+        for inp in DAG_leaf_task_inputs:
+            logger.info(inp)
+        logger.info("")
+        logger.info("DAG_version_number:")
+        logger.info(DAG_info_version_number)
+        logger.info("")
+        logger.info("DAG_info_is_complete:")
+        logger.info(DAG_info_is_complete)
+        logger.info("")
+
+    return  DAG_info
+"""

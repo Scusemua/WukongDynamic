@@ -1418,7 +1418,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             logger.debug("DAG_executor_work_loop: start of simulated or real lambda:"
                 + " put state " + str(DAG_executor_state.state) + " in cluster_queue.")
 
-        while (True):
+        while (True): # main work loop: iterate until worker/lambda is finished
 
             if using_workers:
                 # Config: A4_local, A4_Remote, A5, A6
@@ -1744,7 +1744,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         logger.error("[Error]: DAG_executor: Internal Error: simulated or real lambda:"
                             + " cluster_queue contained more than one item of work - queue size > 0 after cluster_queue.get")
 
-        # while (True) from above continues with work to do in the form
+        # while (True) from above continues next with work to do in the form
         #              of DAG_executor_state.state of some task
 
             # DAG_executor_state.state contains the next state to execute
@@ -2116,7 +2116,12 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # process its fanout/fanins/faninNBs until we get the next
                 # DAG_info. Put the task's state in the continue_queue to
                 # be continued when we get the new DAG_info
-                continue_queue.put(DAG_executor_state.state)
+
+#rhc: continue - finish for Lambdas
+                if using_workers:
+                    continue_queue.put(DAG_executor_state.state)
+                else:
+                    pass # lambdas TBD
 #rhc: cluster queue:
 # Note: if this just executed task T has a collapse task then T has no
 # fanouts/fanins/faninNBs, so next it will execute the clustered task
@@ -2167,7 +2172,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 DAG_executor_state.state = DAG_info.get_DAG_states()[state_info.collapse[0]]
 
 #rhc continue   
-                if (not (compute_pagerank and use_incremental_DAG_generation)) or (not DAG_executor_state.ToBeContinued) :
+                if (not(compute_pagerank and use_incremental_DAG_generation)) or (not DAG_executor_state.ToBeContinued) :
     #hc: cluster:
                     cluster_queue.put(DAG_executor_state.state)
                     logger.debug("DAG_executor_work_loop: put collapsed work in cluster_queue:"
@@ -2180,10 +2185,13 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     #    worker_needs_input = False
                     ## else: # Config: A1. A2, A3
                 else:
-                    continue_queue.put(DAG_executor_state.state)
-                    logger.debug("DAG_executor_work_loop: put collapsed work in cluster_queue:"
-                            + " state is " + str(DAG_executor_state.state))
-
+#rhc: continue - finish for Lambdas
+                    if using_workers:
+                        continue_queue.put(DAG_executor_state.state)
+                        logger.debug("DAG_executor_work_loop: put collapsed work in cluster_queue:"
+                                + " state is " + str(DAG_executor_state.state))
+                    else:
+                        pass # lambdas TBD
 
 
 #    Note: for multithreaded worked, no difference between adding work to the 
