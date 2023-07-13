@@ -187,7 +187,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
     DAG_info["version_number"] = DAG_info_version_number
     DAG_info["DAG_info_is_complete"] = DAG_info_is_complete
 
-    file_name_incremental = "./DAG_info_Partition_incremental_" + str(current_partition_number) + ".pickle"
+    file_name_incremental = "./DAG_info_incremental_Partition_" + str(DAG_info_version_number) + ".pickle"
     with open(file_name_incremental, 'wb') as handle:
         cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
 
