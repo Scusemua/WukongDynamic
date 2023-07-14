@@ -415,7 +415,7 @@ def generate_DAG_info():
 
     # Defaults are 1 and True
     DAG_info_version_number = 1
-    DAG_info_is_complete = False
+    DAG_info_is_complete = True
     DAG_info["version_number"] = DAG_info_version_number
     DAG_info["DAG_info_is_complete"] = DAG_info_is_complete
 

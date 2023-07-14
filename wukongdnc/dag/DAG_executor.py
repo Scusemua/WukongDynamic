@@ -2241,7 +2241,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     #    worker_needs_input = False
                     ## else: # Config: A1. A2, A3
                 else: # we are doing incremental DAG generation
-                    if DAG_executor_state.ToBeContinued:
+                    if state_info.ToBeContinued:
                         # put TBC states in the continue_queue
 #rhc: continue - finish for Lambdas
                         if using_workers:

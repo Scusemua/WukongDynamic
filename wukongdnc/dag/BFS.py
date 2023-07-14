@@ -672,7 +672,7 @@ import matplotlib.pyplot as plt
 import logging 
 import cloudpickle
 import threading
-#import os
+import os
 #import time
 #from statistics import mean
 
@@ -2590,15 +2590,19 @@ def bfs(visited, node): #function for BFS
 
                         to_be_continued = (num_nodes_in_partitions < num_nodes)
                     
+                        logger.debug("BFS: calling generate_DAG_info_incremental_partitions for"
+                            + " partition " + str(partition_name))
+                        
+                        # output partition 1, which s complete
+                        with open('./'+partition_name + '.pickle', 'wb') as handle:
+                            # partition indices in partitions[] start with 0, so current partition i
+                            # is in partitions[i-1] and previous partition is partitions[i-2]
+                            cloudpickle.dump(partitions[0], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+
                         DAG_info = generate_DAG_info_incremental_partitions(partition_name,current_partition_number,to_be_continued)
                         
                         # A DAG with a single partition, and hence a single group is a special case.
-                        if current_partition == 1 and DAG_info.get_DAG_info_is_complete():
-                                # output partition 1, which s complete
-                                with open('./'+partition_name + '.pickle', 'wb') as handle:
-                                    # partition indices in partitions[] start with 0, so current partition i
-                                    # is in partitions[i-1] and previous partition is partitions[i-2]
-                                    cloudpickle.dump(partitions[0], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+                        if current_partition_number == 1 and DAG_info["DAG_info_is_complete"]==True:
                         
                                 # deposit complete DAG_info for workers
                                 DAG_infobuffer_monitor.deposit(DAG_info)
@@ -2631,7 +2635,7 @@ def bfs(visited, node): #function for BFS
                                 invoker_thread = threading.Thread(target=DAG_executor_driver_Invoker_Thread, name=(thread_name), args=())
                                 invoker_thread.start()
 
-                        if current_partition >=2:
+                        if current_partition_number >=2:
                             # generate complete DAG_info for partition current_partition_number-1 and
                             # incomplete DAG_info for partition current_partition_number
                             
@@ -2640,6 +2644,7 @@ def bfs(visited, node): #function for BFS
                             # we complete a partition, we generate the groups in this partition.
                             if not use_page_rank_group_partitions:
                                 #
+                                """
                                 # Note: "PR1_1" is the one and only leaf partition/group
                                 previous_partition_name = "PR"+str(current_partition_number-1)+"_1"
                             
@@ -2648,7 +2653,8 @@ def bfs(visited, node): #function for BFS
                                 with open('./'+previous_partition_name + '.pickle', 'wb') as handle:
                                     # partition indices in partitions[] start with 0, so current partition i
                                     # is in partitions[i-1] and previous partition is partitions[i-2]
-                                    cloudpickle.dump(partitions[current_partition-2], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+                                    cloudpickle.dump(partitions[current_partition_number-2], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+                                """
 
     #rhc: ToDo: deposit every jth partition. Make sure this condition is True for 
     # initial DAG.
@@ -2702,6 +2708,9 @@ def bfs(visited, node): #function for BFS
                                     #     Then invoker_thread is global?
                                     invoker_thread = threading.Thread(target=DAG_executor_driver_Invoker_Thread, name=(thread_name), args=())
                                     invoker_thread.start()
+                                    
+                                #logging.shutdown()
+                                #os._exit(0)  
                     else:
                         pass #complete for lambdas
 

@@ -53,7 +53,7 @@ class DAG_infoBuffer_Monitor(MonitorSU):
 
         logger.debug(" deposit() entered monitor, len(self._new_version) ="+str(len(self._next_version)))
         self.current_version_DAG_info = kwargs['new_current_version_DAG_info']
-        self.current_version_number_DAG_info = self.current_version_DAG_info.get_version_number()
+        self.current_version_number_DAG_info = self.current_version_DAG_info["version_number"]
         #logger.debug("DAG_info to deposit: " + str(self.current_version_DAG_info))
         restart = False
         self._next_version.signal_c_and_exit_monitor()

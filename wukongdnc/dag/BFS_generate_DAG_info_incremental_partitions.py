@@ -1,4 +1,6 @@
 import logging
+import os
+
 import cloudpickle
 from .DAG_info import DAG_Info
 from .DFS_visit import state_info
@@ -63,6 +65,9 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
 
     global version_number
 
+    logger.info("to_be_continued: " + str(to_be_continued))
+    logger.info("current_partition_number: " + str(current_partition_number))
+
     print()
     print("Partition_senders:")
     for sender_name,receiver_name_set in Partition_senders.items():
@@ -79,8 +84,9 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
     print("Leaf nodes of partitions:")
     for name in leaf_tasks_of_partitions:
         print(name + " ")
+    print()
 
-    logger.info("Partition DAG:")
+    logger.info("Partition DAG incrementally:")
 
     fanouts = []
     faninNBs = []
@@ -128,7 +134,18 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
             else:
                 Partition_DAG_tasks[current_partition_name] = PageRank_Function_Driver_Shared_Fast  
 
-        return
+        logger.info("BFS: returning from generate_DAG_info_incremental_partitions for"
+            + " partition " + str(current_partition_name))
+        logger.info("Partition_DAG_map[current_state]: " + str(Partition_DAG_map[current_state] ))
+
+        if to_be_continued:
+            DAG_info = {}
+            # This is the one and only version. Version 1.
+            DAG_info["version_number"] = 1
+            DAG_info["DAG_info_is_complete"] = False
+        else:
+            pass
+        return DAG_info
     else:
 
         # Process current partition 
@@ -146,8 +163,10 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
             Partition_all_collapse_task_names.append(next_partition_name)
             collapse.append(next_partition_name)
 
+
         Partition_DAG_map[current_state] = state_info(current_partition_name, fanouts, fanins, faninNBs, collapse, fanin_sizes, 
             faninNB_sizes, task_inputs,
+            # to_be_continued parameter can be true or false
             to_be_continued)
         Partition_DAG_states[current_partition_name] = current_state
 
@@ -163,7 +182,13 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         # Note: When we generated previous state we added the collapse
         # so now all there is to do is to set TBC to False.
         previous_state_info = Partition_DAG_map[previous_state]
+        # previous partition is now complete
         previous_state_info.ToBeContinued = False
+
+        logger.info("BFS: generate_DAG_info_incremental_partitions for"
+            + " partition " + str(current_partition_name))
+        logger.info("Partition_DAG_map[current_state]: " + str(Partition_DAG_map[current_state] ))
+        logger.info("previous_state_info: " + str(previous_state_info))
 
     logger.info("")
     DAG_info = {}
@@ -180,13 +205,19 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
     DAG_info["all_faninNB_sizes"] = Partition_all_faninNB_sizes
     DAG_info["DAG_tasks"] = Partition_DAG_tasks
 
-    # Defaults are 1 and True
+    # If there is only one partition n the DAG then it is complete and is version 1.
+    # It is returned above. Otherwise, version 1 is the ADG_info with partitions
+    # 1 and 2, where 1 is complete and 2 is complete or incmplete.
     version_number += 1
     DAG_info_version_number = version_number
     DAG_info_is_complete = not to_be_continued
     DAG_info["version_number"] = DAG_info_version_number
     DAG_info["DAG_info_is_complete"] = DAG_info_is_complete
 
+    # filename is based on version number - Note: for partition, say 3, we
+    # have output the DAG_info with partitions 1 and 2 as version 1 so 
+    # the DAG_info for partition 3 will have partitions 1, 2, and 3 and will
+    # be version 2.
     file_name_incremental = "./DAG_info_incremental_Partition_" + str(DAG_info_version_number) + ".pickle"
     with open(file_name_incremental, 'wb') as handle:
         cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
@@ -312,5 +343,9 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         logger.info("DAG_info_is_complete:")
         logger.info(DAG_info_is_complete)
         logger.info("")
+
+    #if not to_be_continued:
+    #   logging.shutdown()
+    #    os._exit(0)
 
     return  DAG_info
