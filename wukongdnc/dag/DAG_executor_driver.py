@@ -904,7 +904,6 @@ def run():
     DAG_leaf_task_start_states = DAG_info.get_DAG_leaf_task_start_states()
     DAG_tasks = DAG_info.get_DAG_tasks()
 
-
     # Note: if we are using_lambdas, we null out DAG_leaf_task_inputs after we get it here
     # (by calling DAG_info.set_DAG_leaf_task_inputs_to_None() below). So make a copy.
     if run_all_tasks_locally:
@@ -993,6 +992,8 @@ def run():
                 server.create_all_fanins_and_faninNBs_locally(DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
 
                 if using_workers:
+                    # Based on assert above, using worker threads when 
+                    # using local synch objects 
                     # leaf task states (a task is identified by its state) are put in work_queue
                     for state in DAG_leaf_task_start_states:
                         #thread_work_queue.put(state)
@@ -1004,6 +1005,7 @@ def run():
                         dict_of_results[task_name] = task_inputs
                         work_tuple = (state,dict_of_results)
                         work_queue.put(work_tuple)
+
                         #work_queue.put(state)
 
                 #else: Nothing to do; we do not use a work_queue if we are not using workers

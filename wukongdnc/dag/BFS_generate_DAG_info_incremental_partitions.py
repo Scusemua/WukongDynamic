@@ -43,6 +43,12 @@ Partition_DAG_tasks = {}
 
 version_number = 0
 
+# Saving current_partition_name as previous_partition_name at the 
+# end. We cannot just subtract one, e.g. PR3_1 becomes PR2_1 since
+# the name of partition 2 might actually be PR2_1L, so we need to 
+# save the actual name "PR2_1L" and retrive it when we process PR3_1
+previous_partition_name = "PR1_1"
+
 def generate_DAG_info_incremental_partitions(current_partition_name,current_partition_number,to_be_continued):
 # to_be_continued is True if num_nodes_in_partitions < num_nodes
 
@@ -64,6 +70,8 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
     global Partition_DAG_tasks
 
     global version_number
+
+    global previous_partition_name
 
     logger.info("to_be_continued: " + str(to_be_continued))
     logger.info("current_partition_number: " + str(current_partition_number))
@@ -97,7 +105,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
 
     current_state = current_partition_number
     previous_state = current_partition_number-1
-    previous_partition_name = "PR" + str(current_partition_number-1) + "_1"
+    #previous_partition_name = "PR" + str(current_partition_number-1) + "_1"
 
     if current_partition_number == 1:
         # partition 1 is a leaf
@@ -115,11 +123,11 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
             leaf_tasks_of_partitions.remove(current_partition_name)
 
         # There is a collapse only if there is more than one partition
-        if to_be_continued:
-            next_partition_name = "PR" + str(current_partition_number+1) + "_1"
-            # partition i has a collapse to partition i+1
-            Partition_all_collapse_task_names.append(next_partition_name)
-            collapse.append(next_partition_name)
+        #if to_be_continued:
+        #    next_partition_name = "PR" + str(current_partition_number+1) + "_1"
+        #    # partition i has a collapse to partition i+1
+        #    Partition_all_collapse_task_names.append(next_partition_name)
+        #    collapse.append(next_partition_name)
 
         Partition_DAG_map[current_state] = state_info(current_partition_name, fanouts, fanins, faninNBs, collapse, fanin_sizes, 
             faninNB_sizes, task_inputs,
@@ -157,12 +165,42 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
 
         # Current partition has a collapse only if it is TBC. If it is not TBC
         # then it is the last partition (and to_be_continued will be False)
-        if to_be_continued:
-            next_partition_name = "PR" + str(current_partition_number+1) + "_1"
-            # partition i has a collapse to partition i+1
-            Partition_all_collapse_task_names.append(next_partition_name)
-            collapse.append(next_partition_name)
+        #if to_be_continued:
+        #    next_partition_name = "PR" + str(current_partition_number+1) + "_1"
+        #    # partition i has a collapse to partition i+1
+        #    Partition_all_collapse_task_names.append(next_partition_name)
+        #    collapse.append(next_partition_name)
 
+        senders = Partition_receivers.get(current_partition_name)
+        # a partition that starts a new connected component (which is 
+        # the first partition collected on a call to BFS() of whihc there 
+        # may be many calls if the graph is not connected) is a leaf
+        # node and thus has no senders.)
+        if not senders == None and len(senders) > 0:
+            # assert:
+            if len(senders) != 1:
+                logger.error("[Error]: Internal Error:  using partitions and a"
+                    + " partition has more than one sending partition.")
+            #assert:
+            sender = next(iter(senders))
+            if not sender == previous_partition_name:
+                logger.error("[Error]: Internal Error:  using partitions and"
+                    + " the sender for a partition is not previous_partition_name.")
+           
+            previous_state = current_state - 1
+            state_info_previous_state = Partition_DAG_map[previous_state]
+            Partition_all_collapse_task_names.append(current_partition_name)
+            collapse_previous_state = state_info_previous_state.collapse
+            collapse_previous_state.append(current_partition_name)
+        else:
+            # the previous partition is in a different connected component
+            # and does not have a collapse for this current_partition
+            # which starts a new connected component.
+            # Ths is a leaf node so we need to add this partition to the 
+            # work queue or start a new lambda for it (like the DAG_executor_driver
+            # does.)
+#rhc ToDo: 
+            pass
 
         Partition_DAG_map[current_state] = state_info(current_partition_name, fanouts, fanins, faninNBs, collapse, fanin_sizes, 
             faninNB_sizes, task_inputs,
@@ -189,6 +227,10 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
             + " partition " + str(current_partition_name))
         logger.info("Partition_DAG_map[current_state]: " + str(Partition_DAG_map[current_state] ))
         logger.info("previous_state_info: " + str(previous_state_info))
+
+        # save current_partition_name as previous_partition_name so we
+        # can access previous_partition_name on the next call.
+        previous_partition_name = current_partition_name
 
     logger.info("")
     DAG_info = {}
