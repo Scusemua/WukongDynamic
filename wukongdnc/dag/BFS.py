@@ -2594,6 +2594,9 @@ def bfs(visited, node): #function for BFS
                         
                         # A DAG with a single partition, and hence a single group is a special case.
                         if current_partition_number == 1:
+                            # if there is one partition in the DAG,
+                            # save the partition and the DAG_info and 
+                            # start the DAG_excutor_driver.
                             if DAG_info["DAG_info_is_complete"]==True:
                         
                                 # output partition 1, which is complete
@@ -2637,11 +2640,12 @@ def bfs(visited, node): #function for BFS
                                 invoker_thread = threading.Thread(target=DAG_executor_driver_Invoker_Thread, name=(thread_name), args=())
                                 #invoker_thread.start()
                             else:
+                                # there is more than one partition in the DAG
                                 pass # empty
                         
                         elif current_partition_number >=2:
-                            # generate complete DAG_info for partition current_partition_number-1 and
-                            # incomplete DAG_info for partition current_partition_number
+                            # generate complete DAG_info for previous partition current_partition_number-1;
+                            # the current partition may be complete or incomplete.
                             
                             # generating partitions, not groups.
                             # Note: For groups, we may still key off partitions, i.e., when 
@@ -2668,7 +2672,7 @@ def bfs(visited, node): #function for BFS
                                     cloudpickle.dump(partitions[current_partition_number-2], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
 
                                 # Current partition might be the last partition in the DAG, if so
-                                # save the partition to a file.
+                                # save the partition to a file. Below we will save the DAG_info.
                                 if DAG_info["DAG_info_is_complete"]:
                                     with open('./'+partition_name + '.pickle', 'wb') as handle:
                                         # partition indices in partitions[] start with 0, so current partition i
@@ -2722,14 +2726,21 @@ def bfs(visited, node): #function for BFS
                                     # Perhaps BFS can join this thread instad of calling run() when inc dag gen?
                                     #     Then invoker_thread is global?
                                     invoker_thread = threading.Thread(target=DAG_executor_driver_Invoker_Thread, name=(thread_name), args=())
+#rhc: ToDo: If we are using partitions, the number of worker threads should be
+#  1 unless there are multiple connected components (#CC), in which case
+# we can use #CC workers since CC leaf tasks can be processed in parallel.
+# We would need to know the number of CCs (leaf nodes) to set # of workers.
                                     #invoker_thread.start()
                                 else:
+                                    # check if the current partition (which is not partition 2) 
+                                    # is the last partition in the DAG; if so, save this last/complete
+                                    # DAG_info to file. (If this is partition 2, we always
+                                    # save the DAG_info since we will also start the DAG_executor_driver.)
                                     if DAG_info["DAG_info_is_complete"]:
                                         file_name = "./DAG_info.pickle"
                                         with open(file_name, 'wb') as handle:
                                             cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
                             
-                                    
                                 #logging.shutdown()
                                 #os._exit(0)  
                             else:
