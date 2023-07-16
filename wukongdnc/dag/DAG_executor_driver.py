@@ -927,7 +927,7 @@ def run():
             state_info.task_inputs = None
 
 #rhc cleanup
-    output_DAG = False
+    output_DAG = True
     # add-0bec4d19-bce6-4394-ad62-9b0eab3081a9
     if output_DAG:
         # FYI:
@@ -962,9 +962,9 @@ def run():
 
 #rhc cleanup
         #from . import BFS_Shared
-        logger.debug("shared_groups_mapDDDD:")
-        for (k,v) in BFS_Shared.shared_groups_map.items():
-            logger.debug(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + ")")
+        #logger.debug("shared_groups_mapDDDD:")
+        #for (k,v) in BFS_Shared.shared_groups_map.items():
+        #    logger.debug(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + ")")
 
     #ResetRedis()
     

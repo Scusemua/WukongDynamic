@@ -680,7 +680,6 @@ import copy
 
 from .BFS_Node import Node
 from .BFS_Partition_Node import Partition_Node
-from .BFS_generate_DAG_info import generate_DAG_info
 from .BFS_generate_DAG_info_incremental_partitions import generate_DAG_info_incremental_partitions
 from .BFS_generate_DAG_info import Partition_senders, Partition_receivers, Group_senders, Group_receivers
 from .BFS_generate_DAG_info import leaf_tasks_of_partitions, leaf_tasks_of_groups
@@ -2586,62 +2585,61 @@ def bfs(visited, node): #function for BFS
 
 #rhc incremental                
                 if compute_pagerank and use_incremental_DAG_generation:
+                    to_be_continued = (num_nodes_in_partitions < num_nodes)
                     if using_workers:
-
-                        to_be_continued = (num_nodes_in_partitions < num_nodes)
-                    
                         logger.debug("BFS: calling generate_DAG_info_incremental_partitions for"
-                            + " partition " + str(partition_name))
+                            + " partition " + str(partition_name) + " using workers.")
                         
-                        # output partition 1, which s complete
-                        with open('./'+partition_name + '.pickle', 'wb') as handle:
-                            # partition indices in partitions[] start with 0, so current partition i
-                            # is in partitions[i-1] and previous partition is partitions[i-2]
-                            cloudpickle.dump(partitions[0], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
-
                         DAG_info = generate_DAG_info_incremental_partitions(partition_name,current_partition_number,to_be_continued)
                         
                         # A DAG with a single partition, and hence a single group is a special case.
-                        if current_partition_number == 1 and DAG_info["DAG_info_is_complete"]==True:
+                        if current_partition_number == 1:
+                            if DAG_info["DAG_info_is_complete"]==True:
                         
-                            # output partition 1, which is complete
-                            with open('./'+partition_name + '.pickle', 'wb') as handle:
-                                # partition indices in partitions[] start with 0, so current partition i
-                                # is in partitions[i-1] and previous partition is partitions[i-2]
-                                cloudpickle.dump(partitions[0], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+                                # output partition 1, which is complete
+                                with open('./'+partition_name + '.pickle', 'wb') as handle:
+                                    # partition indices in partitions[] start with 0, so current partition i
+                                    # is in partitions[i-1] and previous partition is partitions[i-2]
+                                    cloudpickle.dump(partitions[0], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
 
-                            # deposit complete DAG_info for workers
-                            DAG_infobuffer_monitor.deposit(DAG_info)
+                                # Deposit complete DAG_info for workers. Noet that we have 
+                                # not started the DAG_executor_driver yet, so this deposited
+                                # DAG_info will not ever be withdrawn as the lambda leaf task
+                                # for partition 1 will be started by the DAG_executor_driver with 
+                                # the DAG_info it reads from a file (output previously).
+                                DAG_infobuffer_monitor.deposit(DAG_info)
 
-                            # We just processed the first and only partition; so we can output the 
-                            # initial DAG_info and start the DAG_executor_driver. DAG_info
-                            # will have a complete state for partition 1.
-                            #
-                            # Before we start the DAG_executor_driver we need to have
-                            # saved to a file PR1_1's nodes and saved to file DAG_info;
-                            # we also do the DAG_infobuffer_monitor.deposit(DAG_info) though
-                            # it is not strictly required since the DAG_info file can be 
-                            # read by the workers/lambdas.
-                            #
-                            # DAG_info will be read by the worker (threads/proceses)
-                            # and the threads simulating lambdas
-                            # or it will be read by the DAG_executor_driver and given
-                            # to the real (leaf) lambdas as part of their payload.
-                            file_name = "./DAG_info.pickle"
-                            with open(file_name, 'wb') as handle:
-                                cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
-                            
-                            # Need to call run() but it has to be asynch
-                            thread_name = "DAG_executor_driver_Invoker"
-                            logger.debug("BFS: Starting DAG_executor_driver_Invoker_Thread for incrmental DAG generation.")
-#rhc: incremental
-                            #Question: This thread completes normally?
-                            # Perhaps BFS can join this thread instad of calling run() when inc dag gen?
-                            #     Then invoker_thread is global?
-                            invoker_thread = threading.Thread(target=DAG_executor_driver_Invoker_Thread, name=(thread_name), args=())
-                            invoker_thread.start()
-
-                        if current_partition_number >=2:
+                                # We just processed the first and only partition; so we can output the 
+                                # initial DAG_info and start the DAG_executor_driver. DAG_info
+                                # will have a complete state for partition 1.
+                                #
+                                # Before we start the DAG_executor_driver we need to have
+                                # saved to a file PR1_1's nodes and saved to file DAG_info;
+                                # we also do the DAG_infobuffer_monitor.deposit(DAG_info) though
+                                # it is not strictly required since the DAG_info file can be 
+                                # read by the workers/lambdas.
+                                #
+                                # DAG_info will be read by the worker (threads/proceses)
+                                # and the threads simulating lambdas
+                                # or it will be read by the DAG_executor_driver and given
+                                # to the real (leaf) lambdas as part of their payload.
+                                file_name = "./DAG_info.pickle"
+                                with open(file_name, 'wb') as handle:
+                                    cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+                                
+                                # Need to call run() but it has to be asynchronous as BFS needs to continue.
+                                thread_name = "DAG_executor_driver_Invoker"
+                                logger.debug("BFS: Starting DAG_executor_driver_Invoker_Thread for incrmental DAG generation.")
+ #rhc: incremental
+                                #Question: This thread completes normally?
+                                # Perhaps BFS can join this thread instad of calling run() when inc dag gen?
+                                #     Then invoker_thread is global?
+                                invoker_thread = threading.Thread(target=DAG_executor_driver_Invoker_Thread, name=(thread_name), args=())
+                                #invoker_thread.start()
+                            else:
+                                pass # empty
+                        
+                        elif current_partition_number >=2:
                             # generate complete DAG_info for partition current_partition_number-1 and
                             # incomplete DAG_info for partition current_partition_number
                             
@@ -2649,27 +2647,36 @@ def bfs(visited, node): #function for BFS
                             # Note: For groups, we may still key off partitions, i.e., when 
                             # we complete a partition, we generate the groups in this partition.
                             if not use_page_rank_group_partitions:
-                                #
-                                
                                 # Note: "PR1_1" is the one and only leaf partition/group
                                 #previous_partition_name = "PR"+str(current_partition_number-1)+"_1"
                             
-                                #previous partition is complete so save partition to a file
-                                #which will be in cloud for real lambdas
+                                # Previous partition is complete so save partition to a file
+                                # which will be in cloud for real lambdas. (When we process 
+                                # partition i, we compute the indices of the nods whose pageranks should
+                                # be output by partition i-1 and save thse indices in the nodes of
+                                # partition -1 and that makes partition i-1 "complete." These indices
+                                # are of the nodes in partition i-1 that have chidren in partition i.
+                                # Note: Any chldren of nodes in partition i-1 that are in a different
+                                # partition must be in partition i.
+                                # Note: Partition numbers statr at 1 not 0, so name is not in position 
+                                # current_partition_number-1 it is in current_partition_number-2,
+                                # e.g., name for the partition 2 that is previous to partition
+                                # 3 is position 1, whcih is 3-2.
                                 with open('./'+partition_names[current_partition_number-2] + '.pickle', 'wb') as handle:
                                     # partition indices in partitions[] start with 0, so current partition i
                                     # is in partitions[i-1] and previous partition is partitions[i-2]
                                     cloudpickle.dump(partitions[current_partition_number-2], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
 
+                                # Current partition might be the last partition in the DAG, if so
+                                # save the partition to a file.
                                 if DAG_info["DAG_info_is_complete"]:
                                     with open('./'+partition_name + '.pickle', 'wb') as handle:
                                         # partition indices in partitions[] start with 0, so current partition i
                                         # is in partitions[i-1] and previous partition is partitions[i-2]
                                         cloudpickle.dump(partitions[current_partition_number-1], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
 
-  
-    #rhc: ToDo: deposit every jth partition. Make sure this condition is True for 
-    # initial DAG.
+#rhc: ToDo: deposit every jth partition. Make sure this condition is True for 
+# initial DAG.
                                 if True:
                                     # Deposit new incremental DAG. This may be the 
                                     # first DAG and since the workers and lambdas
@@ -2680,33 +2687,29 @@ def bfs(visited, node): #function for BFS
                                     # first DAG (i.e., any version later than version 1.)
                                     DAG_infobuffer_monitor.deposit(DAG_info)
 
-        #rhc: Question: Do we want to dump for debugging all the generated 
-        # DAG_info files? or we will be displaying the generatd DAG_info files
-        # for debugging so no need to save all the DAG_infos to file?
-
                                 if (current_partition_number) == 2:
-                                    # We just processed the second partition; so we can output the 
-                                    # initial DAG_info and start the DAG_executor_driver. DAG_info
+                                    # We just processed the second partition in a DAG that 
+                                    # has more than one partition, so we can output the 
+                                    # initial DAG_info and start the DAG_executor_driver. This DAG_info
                                     # will have a complete state for partition 1 and an incomplete
-                                    # state for P2. Thus, we can start DAG_execution and compute
+                                    # state for 2. Thus, we can start DAG_execution and compute
                                     # pagerank for P1. At that point, since P2 is incomplete, we will
                                     # add the state for P2 to the continue queue and P2 will not be
                                     # executed until new DAG_info is generated.
                                     #
-                                    # We can't generate initial DAG for execuion until we have partitions 
+                                    # We can't generate the initial DAG for execuion until we have partitions 
                                     # 1 and 2, since we don't know partition 1's outputs until we have processed 
                                     # the nodes in partition 2; partition 2 is "to be continued".
                                     #
                                     # So before we start the DAG_executor_driver we need to have
                                     # saved to a file PR1_1's nodes and saved the initial DAG_info;
                                     # we also do the DAG_infobuffer_monitor.deposit(DAG_info) though
-                                    # it is not strictly requried since the ADG_info file can be 
+                                    # it is not strictly requried since the DAG_info file can be 
                                     # read by the workers/lambdas.
                                     #
                                     # DAG_info will be read by the worker (threads/proceses)
-                                    # and the threads simulating lambdas
                                     # or it will be read by the DAG_executor_driver and given
-                                    # to the real (leaf) lambdas as part of their payload.
+                                    # to the real/simulated (leaf) lambdas as part of their payload.
                                     file_name = "./DAG_info.pickle"
                                     with open(file_name, 'wb') as handle:
                                         cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
@@ -2714,25 +2717,28 @@ def bfs(visited, node): #function for BFS
                                     # Need to call run() but it has to be asynch
                                     thread_name = "DAG_executor_driver_Invoker"
                                     logger.debug("BFS: Starting DAG_executor_driver_Invoker_Thread for incrmental DAG generation.")
-        #rhc: incremental
+#rhc: incremental
                                     #Question: This thread completes normally?
                                     # Perhaps BFS can join this thread instad of calling run() when inc dag gen?
                                     #     Then invoker_thread is global?
                                     invoker_thread = threading.Thread(target=DAG_executor_driver_Invoker_Thread, name=(thread_name), args=())
                                     #invoker_thread.start()
-
-#rhc: Delete this - it is just for current test
-
-                                if (current_partition_number) == 3:
-                                    file_name = "./DAG_info.pickle"
-                                    with open(file_name, 'wb') as handle:
-                                        cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
-                    
+                                else:
+                                    if DAG_info["DAG_info_is_complete"]:
+                                        file_name = "./DAG_info.pickle"
+                                        with open(file_name, 'wb') as handle:
+                                            cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+                            
                                     
                                 #logging.shutdown()
                                 #os._exit(0)  
+                            else:
+                                pass # complete for groups
+                        else:
+                            pass # empty else
                     else:
-                        pass #complete for lambdas
+                        pass # complete for lambdas
+ 
 
                 #global frontier_groups_sum
                 #global num_frontier_groups
