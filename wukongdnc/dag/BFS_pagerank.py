@@ -91,16 +91,17 @@ def PageRank_Function_one_iter(partition_or_group,damping_factor,
         # Need number of non-shadow nodes'
 #rhc: handle shadow nodes
         if partition_or_group[index].isShadowNode:
-            #if (debug_pagerank):
-            logger.debug("PageRank: before pagerank computation: node at position " 
-            + str(index) + " isShadowNode: " 
-            + str(partition_or_group[index].isShadowNode) 
-            + ", pagerank: " + str(partition_or_group[index].pagerank)
-            + ", parent: " + str(partition_or_group[index].parents[0])
-            + ", (real) parent's num_children: " + str(partition_or_group[index].num_children)
-            )
-        #if (debug_pagerank):
-        #    logger.debug("")
+            if (debug_pagerank):
+                logger.debug("PageRank: before pagerank computation: node at position " 
+                + str(index) + " isShadowNode: " 
+                + str(partition_or_group[index].isShadowNode) 
+                + ", pagerank: " + str(partition_or_group[index].pagerank)
+                + ", parent: " + str(partition_or_group[index].parents[0])
+                + ", (real) parent's num_children: " + str(partition_or_group[index].num_children)
+                )
+
+        if (debug_pagerank):
+            logger.debug("")
 
         #print(str(partition_or_group[index].ID) + " type of node: " + str(type(partition_or_group[index])))
         #if not partition_or_group[index].isShadowNode:
@@ -108,16 +109,16 @@ def PageRank_Function_one_iter(partition_or_group,damping_factor,
             damping_factor,one_minus_dumping_factor,random_jumping,total_num_nodes)
 
         if partition_or_group[index].isShadowNode:
-            #if (debug_pagerank):
-            logger.debug("PageRank:  after pagerank computation: node at position " 
-            + str(index) + " isShadowNode: " 
-            + str(partition_or_group[index].isShadowNode) 
-            + ", pagerank: " + str(partition_or_group[index].pagerank)
-            + ", parent: " + str(partition_or_group[index].parents[0])
-            + ", (real) parent's num_children: " + str(partition_or_group[index].num_children)
-            )
-        #if (debug_pagerank):
-        logger.debug("")
+            if (debug_pagerank):
+                logger.debug("PageRank:  after pagerank computation: node at position " 
+                + str(index) + " isShadowNode: " 
+                + str(partition_or_group[index].isShadowNode) 
+                + ", pagerank: " + str(partition_or_group[index].pagerank)
+                + ", parent: " + str(partition_or_group[index].parents[0])
+                + ", (real) parent's num_children: " + str(partition_or_group[index].num_children)
+                )
+        if (debug_pagerank):
+            logger.debug("")
 #rhc: ToDo: do this?
     #normalize_PageRank(nodes)
 
@@ -304,26 +305,26 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
         #rhc: handle shadow nodes
                 if not task_file_name.endswith('L'):
                     if partition_or_group[index].isShadowNode:
-                        #if (debug_pagerank):
-                        logger.debug("PageRank: before pagerank computation: node at position " 
-                        + str(index) + " isShadowNode: " 
-                        + str(partition_or_group[index].isShadowNode) 
-                        + ", pagerank: " + str(partition_or_group[index].pagerank)
-                        + ", parent: " + str(partition_or_group[index].parents[0])
-                        + ", (real) parent's num_children: " + str(partition_or_group[index].num_children)
-                        )
+                        if (debug_pagerank):
+                            logger.debug("PageRank: before pagerank computation: node at position " 
+                            + str(index) + " isShadowNode: " 
+                            + str(partition_or_group[index].isShadowNode) 
+                            + ", pagerank: " + str(partition_or_group[index].pagerank)
+                            + ", parent: " + str(partition_or_group[index].parents[0])
+                            + ", (real) parent's num_children: " + str(partition_or_group[index].num_children)
+                            )
                 else:
                     if partition_or_group[index].isShadowNode:
-                        #if (debug_pagerank):
-                        logger.debug("PageRank: before pagerank computation: node at position " 
-                        + str(index) + " isShadowNode: " 
-                        + str(partition_or_group[index].isShadowNode) 
-                        + ", prev: " + str(partition_or_group[index].prev)
-                        + ", parent: " + str(partition_or_group[index].parents[0])
-                        + ", (real) parent's num_children: " + str(partition_or_group[index].num_children)
-                        )
-                #if (debug_pagerank):
-                #    logger.debug("")
+                        if (debug_pagerank):
+                            logger.debug("PageRank: before pagerank computation: node at position " 
+                            + str(index) + " isShadowNode: " 
+                            + str(partition_or_group[index].isShadowNode) 
+                            + ", prev: " + str(partition_or_group[index].prev)
+                            + ", parent: " + str(partition_or_group[index].parents[0])
+                            + ", (real) parent's num_children: " + str(partition_or_group[index].num_children)
+                            )
+                if (debug_pagerank):
+                    logger.debug("")
 
                 #print(str(partition_or_group[index].ID) + " type of node: " + str(type(partition_or_group[index])))
                 #if not partition_or_group[index].isShadowNode:
@@ -341,14 +342,14 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
                 # for every iteration that follows. (The shadow node's parrent pagerank
                 # value has been set so this is true.)
                 if partition_or_group[index].isShadowNode:
-                    #if (debug_pagerank):
-                    logger.debug("PageRank:  after pagerank computation: node at position " 
-                    + str(index) + " isShadowNode: " 
-                    + str(partition_or_group[index].isShadowNode) 
-                    + ", pagerank: " + str(partition_or_group[index].pagerank)
-                    + ", parent: " + str(partition_or_group[index].parents[0])
-                    + ", (real) parent's num_children: " + str(partition_or_group[index].num_children)
-                    )
+                    if (debug_pagerank):
+                        logger.debug("PageRank:  after pagerank computation: node at position " 
+                        + str(index) + " isShadowNode: " 
+                        + str(partition_or_group[index].isShadowNode) 
+                        + ", pagerank: " + str(partition_or_group[index].pagerank)
+                        + ", parent: " + str(partition_or_group[index].parents[0])
+                        + ", (real) parent's num_children: " + str(partition_or_group[index].num_children)
+                        )
 
                 #if (debug_pagerank):
                 #logger.debug("")

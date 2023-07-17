@@ -32,6 +32,49 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         # self._capacity = kwargs["n"]
         # logger.info(kwargs)
 
+    def print_DAG_info(self,DAG_info):
+        DAG_map = DAG_info['DAG_map']
+        #all_fanin_task_names = DAG_info.get_all_fanin_task_names()
+        #all_fanin_sizes = DAG_info.get_all_fanin_sizes()
+        #all_faninNB_task_names = DAG_info.get_all_faninNB_task_names()
+        #all_faninNB_sizes = DAG_info.get_all_faninNB_sizes()
+        #all_fanout_task_names = DAG_info.get_all_fanout_task_names()
+        #all_collapse_task_nams = DAG_info.get_all_collapse_task_names()
+        # Note: all fanout_sizes is not needed since fanouts are fanins that have size 1
+        DAG_states = DAG_info['DAG_states']
+        DAG_leaf_tasks = DAG_info['DAG_leaf_tasks']
+        DAG_leaf_task_start_states = DAG_info['DAG_leaf_task_start_states']
+        DAG_tasks = DAG_info['DAG_tasks']
+        DAG_leaf_task_inputs = DAG_info['DAG_leaf_task_inputs']
+
+        print("DAG_infoBuffer_Monitor: DAG_map:")
+        for key, value in DAG_map.items():
+            print(key)
+            print(value)
+        print("  ")
+        print("DAG_infoBuffer_Monitor: DAG states:")         
+        for key, value in DAG_states.items():
+            print(key)
+            print(value)
+        print("   ")
+        print("DAG_infoBuffer_Monitor: DAG leaf task start states")
+        for start_state in DAG_leaf_task_start_states:
+            print(start_state)
+        print()
+        print("DAG_infoBuffer_Monitor: DAG_tasks:")
+        for key, value in DAG_tasks.items():
+            print(key, ' : ', value)
+        print()
+        print("DAG_infoBuffer_Monitor: DAG_leaf_tasks:")
+        for task_name in DAG_leaf_tasks:
+            print(task_name)
+        print() 
+        print("DAG_infoBuffer_Monitor: DAG_leaf_task_inputs:")
+        for inp in DAG_leaf_task_inputs:
+            print(inp)
+        #print() 
+        print()
+
     def deposit(self,**kwargs):
         # deposit a new DAG_info object. It's version number will be one more
         # than the current DAG_info object.
@@ -54,7 +97,8 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         logger.debug(" deposit() entered monitor, len(self._new_version) ="+str(len(self._next_version)))
         self.current_version_DAG_info = kwargs['new_current_version_DAG_info']
         self.current_version_number_DAG_info = self.current_version_DAG_info["version_number"]
-        #logger.debug("DAG_info to deposit: " + str(self.current_version_DAG_info))
+        logger.debug("DAG_info deposited: ")
+        self.print_DAG_info(self.current_version_DAG_info)
         restart = False
         self._next_version.signal_c_and_exit_monitor()
         return 0, restart
@@ -72,12 +116,14 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         restart = False
         if requested_current_version_number <= self.current_version_number_DAG_info:
             DAG_info = self.current_version_DAG_info
-            logger.debug(" withdraw got " + str(DAG_info.get_value())
-                + " with version number " + str(DAG_info.get_version_number()))
+            logger.debug("DAG_infoBuffer_Monitor: withdraw got DAG_info with version number " 
+                + str(DAG_info.get_version_number()))
+            logger.debug("DAG_info withdrawn: ")
+            self.print_DAG_info(self.current_version_DAG_info)
             super().exit_monitor()
             return DAG_info, restart
         else:
-            logger.debug("withdraw waiting for version " + str(requested_current_version_number))
+            logger.debug("DAG_infoBuffer_Monitor: withdraw waiting for version " + str(requested_current_version_number))
             self._next_version.wait_c()
             DAG_info = self.current_version_DAG_info
             # cascaded wakeup, i.e., if there are more than one worker waiting,
@@ -101,11 +147,16 @@ class DAG_infoBuffer_Monitor(MonitorSU):
             # Note: We could use an SC monitor in which case the second deposit
             # might be allowed to enter the monitor before waiting workers, in 
             # which case the workers would get verson i+1, which is not bad.
-            #
+
+            logger.debug("DAG_infoBuffer_Monitor: withdraw got DAG_info with version number " 
+                + str(DAG_info['version_number']))
+            logger.debug("DAG_info withdrawn: ")
+            self.print_DAG_info(self.current_version_DAG_info)
+
             self._next_version.signal_c_and_exit_monitor()
-            logger.debug(" withdraw got " + str(DAG_info.get_value())
-                + " with version number " + str(DAG_info.get_version_number()))
             return DAG_info, restart
+        
+
 
 class Dummy_DAG_info:
     def __init__(self,value,version_number):

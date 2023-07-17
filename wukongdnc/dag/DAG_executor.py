@@ -1608,12 +1608,12 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                     new_DAG_info = DAG_infobuffer_monitor.withdraw(requested_current_version_number)
                                     DAG_info = new_DAG_info
                                     # assert: 
-                                    if len(continue_queue) > 0:
+                                    if continue_queue.qsize() > 0:
                                         DAG_executor_state.state = continue_queue.get()
                                 
 #rhc continue
                                         continued_task = True
-                                        if len(continue_queue) == 0:
+                                        if continue_queue.qsize() == 0:
                                             # only one state was in continue_queue
                                             process_continue_queue = False
                                         else:
@@ -1727,6 +1727,9 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         + " num_tasks_executed: " + str(num_tasks_executed) 
                         + " num_tasks_to_execute: " + str(num_tasks_to_execute))
                     if num_tasks_executed == num_tasks_to_execute:
+#rhc: ToDo: BUG: for first DAG_info, P1 is complete and P2 is incomplete.
+# we execute P1 then add P2 to cont queue. then will we have num executd = 2
+# but num_to execute 1, or do we avoid this check in that state? 
                         # Note: This worker has work to do, and this work is the last
                         # task to be executed. So this worker and any other workers
                         # can finish (if the DAG is not incremental or it is incremental
@@ -1855,6 +1858,9 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             # non-leaf task add: task_inputs: 
             #   ('increment-1cce17d3-5948-48d6-9141-01a9eaa1ca40', 'increment-ed04c96b-fcf6-4fab-9d13-d0560be0ef21')
             task_inputs = state_info.task_inputs    
+#rhc: ToDo: BUG: , we input a DAG_info object but we get from gen inc DAG_info
+# a dictionary. Should we return a DAG_info object.
+# Likewise in monitor we eposit a dictionary not an oject 
             is_leaf_task = state_info.task_name in DAG_info.get_DAG_leaf_tasks()
             logger.debug("is_leaf_task: " + str(is_leaf_task))
             logger.debug("task_inputs: " + str(task_inputs))
@@ -2241,12 +2247,17 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     #    worker_needs_input = False
                     ## else: # Config: A1. A2, A3
                 else: # we are doing incremental DAG generation
+                    # This is stateinfo of collapse task, not the 
+                    # task just executed.
+                    state_info = DAG_map[DAG_executor_state.state]
+                    logger.debug("DAG_executor_work_loop: check TBC of state: "
+                        + str(state_info))
                     if state_info.ToBeContinued:
                         # put TBC states in the continue_queue
 #rhc: continue - finish for Lambdas
                         if using_workers:
                             continue_queue.put(DAG_executor_state.state)
-                            logger.debug("DAG_executor_work_loop: put collapsed work in cluster_queue:"
+                            logger.debug("DAG_executor_work_loop: put TBC collapsed work in continue_queue:"
                                 + " state is " + str(DAG_executor_state.state))
                         else:
                             pass # lambdas TBD: call Continue object w/output

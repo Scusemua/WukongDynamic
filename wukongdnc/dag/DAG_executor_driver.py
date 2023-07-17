@@ -930,6 +930,7 @@ def run():
     output_DAG = True
     # add-0bec4d19-bce6-4394-ad62-9b0eab3081a9
     if output_DAG:
+        print("DAG_executor_driver at start: Output DAG:")
         # FYI:
         print("DAG_executor_driver: DAG_map:")
         for key, value in DAG_map.items():
