@@ -224,19 +224,19 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         previous_partition_name = current_partition_name
 
     logger.info("")
-    DAG_info = {}
-    DAG_info["DAG_map"] = Partition_DAG_map
-    DAG_info["DAG_states"] = Partition_DAG_states
-    DAG_info["DAG_leaf_tasks"] = Partition_DAG_leaf_tasks
-    DAG_info["DAG_leaf_task_start_states"] = Partition_DAG_leaf_task_start_states
-    DAG_info["DAG_leaf_task_inputs"] = Partition_DAG_leaf_task_inputs
-    DAG_info["all_fanout_task_names"] = Partition_all_fanout_task_names
-    DAG_info["all_fanin_task_names"] = Partition_all_fanin_task_names
-    DAG_info["all_faninNB_task_names"] = Partition_all_faninNB_task_names
-    DAG_info["all_collapse_task_names"] = Partition_all_collapse_task_names
-    DAG_info["all_fanin_sizes"] = Partition_all_fanin_sizes
-    DAG_info["all_faninNB_sizes"] = Partition_all_faninNB_sizes
-    DAG_info["DAG_tasks"] = Partition_DAG_tasks
+    DAG_info_dictionary = {}
+    DAG_info_dictionary["DAG_map"] = Partition_DAG_map
+    DAG_info_dictionary["DAG_states"] = Partition_DAG_states
+    DAG_info_dictionary["DAG_leaf_tasks"] = Partition_DAG_leaf_tasks
+    DAG_info_dictionary["DAG_leaf_task_start_states"] = Partition_DAG_leaf_task_start_states
+    DAG_info_dictionary["DAG_leaf_task_inputs"] = Partition_DAG_leaf_task_inputs
+    DAG_info_dictionary["all_fanout_task_names"] = Partition_all_fanout_task_names
+    DAG_info_dictionary["all_fanin_task_names"] = Partition_all_fanin_task_names
+    DAG_info_dictionary["all_faninNB_task_names"] = Partition_all_faninNB_task_names
+    DAG_info_dictionary["all_collapse_task_names"] = Partition_all_collapse_task_names
+    DAG_info_dictionary["all_fanin_sizes"] = Partition_all_fanin_sizes
+    DAG_info_dictionary["all_faninNB_sizes"] = Partition_all_faninNB_sizes
+    DAG_info_dictionary["DAG_tasks"] = Partition_DAG_tasks
 
     # If there is only one partition n the DAG then it is complete and is version 1.
     # It is returned above. Otherwise, version 1 is the ADG_info with partitions
@@ -244,8 +244,8 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
     version_number += 1
     DAG_info_version_number = version_number
     DAG_info_is_complete = not to_be_continued
-    DAG_info["version_number"] = DAG_info_version_number
-    DAG_info["DAG_info_is_complete"] = DAG_info_is_complete
+    DAG_info_dictionary["version_number"] = DAG_info_version_number
+    DAG_info_dictionary["DAG_info_is_complete"] = DAG_info_is_complete
 
     # filename is based on version number - Note: for partition, say 3, we
     # have output the DAG_info with partitions 1 and 2 as version 1 so 
@@ -253,7 +253,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
     # be version 2.
     file_name_incremental = "./DAG_info_incremental_Partition_" + str(DAG_info_version_number) + ".pickle"
     with open(file_name_incremental, 'wb') as handle:
-        cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+        cloudpickle.dump(DAG_info_dictionary, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
 
 #rhc: Do this? We only read at start.
 
@@ -321,7 +321,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
     logger.info(DAG_info_is_complete)
     logger.info("")
 
-    DAG_info_partition_read = DAG_Info(file_name_incremental)
+    DAG_info_partition_read = DAG_Info.DAG_info_fromfilename(file_name_incremental)
     
     DAG_map = DAG_info_partition_read.get_DAG_map()
     #all_fanin_task_names = DAG_info_partition_read.get_all_fanin_task_names()
@@ -381,4 +381,5 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
     #   logging.shutdown()
     #    os._exit(0)
 
+    DAG_info = DAG_Info.DAG_info_fromdictionary(DAG_info_dictionary)
     return  DAG_info

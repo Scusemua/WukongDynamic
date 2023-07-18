@@ -33,7 +33,7 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         # logger.info(kwargs)
 
     def print_DAG_info(self,DAG_info):
-        DAG_map = DAG_info['DAG_map']
+        DAG_map = DAG_info.get_DAG_map()
         #all_fanin_task_names = DAG_info.get_all_fanin_task_names()
         #all_fanin_sizes = DAG_info.get_all_fanin_sizes()
         #all_faninNB_task_names = DAG_info.get_all_faninNB_task_names()
@@ -41,11 +41,11 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         #all_fanout_task_names = DAG_info.get_all_fanout_task_names()
         #all_collapse_task_nams = DAG_info.get_all_collapse_task_names()
         # Note: all fanout_sizes is not needed since fanouts are fanins that have size 1
-        DAG_states = DAG_info['DAG_states']
-        DAG_leaf_tasks = DAG_info['DAG_leaf_tasks']
-        DAG_leaf_task_start_states = DAG_info['DAG_leaf_task_start_states']
-        DAG_tasks = DAG_info['DAG_tasks']
-        DAG_leaf_task_inputs = DAG_info['DAG_leaf_task_inputs']
+        DAG_states = DAG_info.get_DAG_states()
+        DAG_leaf_tasks = DAG_info.get_DAG_leaf_tasks()
+        DAG_leaf_task_start_states = DAG_info.get_DAG_leaf_task_start_states()
+        DAG_tasks = DAG_info.get_DAG_tasks()
+        DAG_leaf_task_inputs = DAG_info.get_DAG_leaf_task_inputs()
 
         print("DAG_infoBuffer_Monitor: DAG_map:")
         for key, value in DAG_map.items():
@@ -96,7 +96,7 @@ class DAG_infoBuffer_Monitor(MonitorSU):
 
         logger.debug(" deposit() entered monitor, len(self._new_version) ="+str(len(self._next_version)))
         self.current_version_DAG_info = kwargs['new_current_version_DAG_info']
-        self.current_version_number_DAG_info = self.current_version_DAG_info["version_number"]
+        self.current_version_number_DAG_info = self.current_version_DAG_info.get_DAG_version_number()
         logger.debug("DAG_info deposited: ")
         self.print_DAG_info(self.current_version_DAG_info)
         restart = False
@@ -149,7 +149,7 @@ class DAG_infoBuffer_Monitor(MonitorSU):
             # which case the workers would get verson i+1, which is not bad.
 
             logger.debug("DAG_infoBuffer_Monitor: withdraw got DAG_info with version number " 
-                + str(DAG_info['version_number']))
+                + str(DAG_info.get_DAG_version_number()))
             logger.debug("DAG_info withdrawn: ")
             self.print_DAG_info(self.current_version_DAG_info)
 

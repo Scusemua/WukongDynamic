@@ -890,7 +890,8 @@ def run():
             # i.e., schedule tasks using DFS_paths
             logger.error("Error: DAG_executor_driver: if using_workers then run_fanout_tasks_locally must also be true.")
 
-    DAG_info = DAG_Info()
+    # reads from default file './DAG_info.pickle'
+    DAG_info = DAG_Info.DAG_info_fromfilename()
     
     DAG_map = DAG_info.get_DAG_map()
     all_fanin_task_names = DAG_info.get_all_fanin_task_names()

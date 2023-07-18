@@ -487,7 +487,7 @@ def generate_DAG_info():
     logger.info(DAG_info_is_complete)
     logger.info("")
 
-    DAG_info_partition_read = DAG_Info(file_name = "./DAG_info_Partition.pickle")
+    DAG_info_partition_read = DAG_Info.DAG_info_fromfilename(file_name = "./DAG_info_Partition.pickle")
     
     DAG_map = DAG_info_partition_read.get_DAG_map()
     #all_fanin_task_names = DAG_info_partition_read.get_all_fanin_task_names()
@@ -835,7 +835,7 @@ def generate_DAG_info():
     logger.info(DAG_info_is_complete)
     logger.info("")
 
-    DAG_info_partition_read = DAG_Info(file_name = "./DAG_info_Group.pickle")
+    DAG_info_partition_read = DAG_Info.DAG_info_fromfilename(file_name = "./DAG_info_Group.pickle")
     
     DAG_map = DAG_info_partition_read.get_DAG_map()
     #all_fanin_task_names = DAG_info_partition_read.get_all_fanin_task_names()

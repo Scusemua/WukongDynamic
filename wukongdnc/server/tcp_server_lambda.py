@@ -1706,7 +1706,8 @@ class TCPServer(object):
 
             # declared DAG_info global since we assign to it
             global DAG_info
-            DAG_info = DAG_Info()
+            # reads from default file './DAG_info.pickle'
+            DAG_info = DAG_Info.DAG_info_fromfilename()
             # debug
             #if DAG_info == None:
             #    logger.debug("DAG_info is None.")

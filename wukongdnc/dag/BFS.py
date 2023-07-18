@@ -2602,7 +2602,7 @@ def bfs(visited, node): #function for BFS
                             # if there is one partition in the DAG,
                             # save the partition and the DAG_info and 
                             # start the DAG_excutor_driver.
-                            if DAG_info["DAG_info_is_complete"]==True:
+                            if DAG_info.get_DAG_info_is_complete()==True:
                         
                                 # output partition 1, which is complete
                                 with open('./'+partition_name + '.pickle', 'wb') as handle:
@@ -2679,7 +2679,7 @@ def bfs(visited, node): #function for BFS
 
                                 # Current partition might be the last partition in the DAG, if so
                                 # save the partition to a file. Below we will save the DAG_info.
-                                if DAG_info["DAG_info_is_complete"]:
+                                if DAG_info.get_DAG_info_is_complete():
                                     with open('./'+partition_name + '.pickle', 'wb') as handle:
                                         # partition indices in partitions[] start with 0, so current partition i
                                         # is in partitions[i-1] and previous partition is partitions[i-2]
@@ -2724,8 +2724,9 @@ def bfs(visited, node): #function for BFS
                                     # or it will be read by the DAG_executor_driver and given
                                     # to the real/simulated (leaf) lambdas as part of their payload.
                                     file_name = "./DAG_info.pickle"
+                                    DAG_info_dictionary = DAG_info.DAG_info_dictionary
                                     with open(file_name, 'wb') as handle:
-                                        cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+                                        cloudpickle.dump(DAG_info_dictionary, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
                                     
                                     # Need to call run() but it has to be asynch
                                     thread_name = "DAG_executor_driver_Invoker"
@@ -2745,7 +2746,7 @@ def bfs(visited, node): #function for BFS
                                     # is the last partition in the DAG; if so, save this last/complete
                                     # DAG_info to file. (If this is partition 2, we always
                                     # save the DAG_info since we will also start the DAG_executor_driver.)
-                                    if DAG_info["DAG_info_is_complete"]:
+                                    if DAG_info.get_DAG_info_is_complete():
                                         file_name = "./DAG_info.pickle"
                                         with open(file_name, 'wb') as handle:
                                             cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  

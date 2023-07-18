@@ -1607,10 +1607,18 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                     # value that can be returned and hence no wrapper is needed.
                                     new_DAG_info = DAG_infobuffer_monitor.withdraw(requested_current_version_number)
                                     DAG_info = new_DAG_info
+                                    DAG_map = DAG_info.get_DAG_map()
+                                    DAG_tasks = DAG_info.get_DAG_tasks()
                                     # assert: 
                                     if continue_queue.qsize() > 0:
                                         DAG_executor_state.state = continue_queue.get()
-                                
+                                        # This is stateinfo of continued task
+                                        
+                                        state_info = DAG_map[DAG_executor_state.state]
+                                        # The continued task will be executed next
+                                        # so we need its state_info
+                                        logger.debug("For new DAG_info, state: " + str(DAG_executor_state.state)
+                                            +" state_info: " + str(state_info))
 #rhc continue
                                         continued_task = True
                                         if continue_queue.qsize() == 0:
@@ -1620,6 +1628,21 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                             # process states in continue_queue, which
                                             # is done above
                                             process_continue_queue = True
+
+                                    if not use_page_rank_group_partitions:
+                                        # using partitions
+                                        if not DAG_info.get_DAG_info_is_complete():
+                                            num_tasks_to_execute = len(DAG_tasks) - 1
+                                        else:
+                                            num_tasks_to_execute = len(DAG_tasks)
+                                    else:
+                                        # using groups
+                                        if not DAG_info.get_DAG_info_is_complete():
+                            #rhc continue: TBD
+                                            # get number of incomplete groups from DAG_info
+                                            pass
+                                        else:
+                                            num_tasks_to_execute = len(DAG_tasks)
 
                                     # We have a new DAG_executor_state.state from the 
                                     # continue queue, which we would have also obtained 
@@ -1690,7 +1713,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         #worker_needs_input = False # default
 
                         #comment out for MM
-                        logger.debug("DAG_executor: Worker accessed work_queue: process state: ") # + str(DAG_executor_state.state))
+                        logger.debug("DAG_executor: Worker accessed work_queue, then maybe continue_queue: "
+                            + "process state: " + str(DAG_executor_state.state))
                     else: # cluster_queue is not empty so worker does not need input
     #rhc: cluster:
                         # worker does not need work since there is work
@@ -2233,7 +2257,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # the only name in this list
                 DAG_executor_state.state = DAG_info.get_DAG_states()[state_info.collapse[0]]
 
-#rhc continue   
+#rhc continue 
                 if not(compute_pagerank and use_incremental_DAG_generation):
 #rhc: cluster:
                     cluster_queue.put(DAG_executor_state.state)
@@ -2247,12 +2271,12 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     #    worker_needs_input = False
                     ## else: # Config: A1. A2, A3
                 else: # we are doing incremental DAG generation
-                    # This is stateinfo of collapse task, not the 
-                    # task just executed.
-                    state_info = DAG_map[DAG_executor_state.state]
-                    logger.debug("DAG_executor_work_loop: check TBC of state: "
-                        + str(state_info))
-                    if state_info.ToBeContinued:
+                    # This is stateinfo of collapsed task, not the 
+                    # (possibly continued) task just executed.
+                    state_info_of_collapse_task = DAG_map[DAG_executor_state.state]
+                    logger.debug("DAG_executor_work_loop: check TBC of collapsed task state info: "
+                        + str(state_info_of_collapse_task))
+                    if state_info_of_collapse_task.ToBeContinued:
                         # put TBC states in the continue_queue
 #rhc: continue - finish for Lambdas
                         if using_workers:
@@ -2793,7 +2817,8 @@ def DAG_executor(payload):
     #task_payload_inputs = payload['input']
     #logger.debug("DAG_executor starting payload input:" +str(task_payload_inputs) + " payload state: " + str(DAG_executor_state.state) )
   
-    DAG_info = DAG_Info()
+    # reads from default file './DAG_info.pickle'
+    DAG_info = DAG_Info.DAG_info_fromfilename()
 
 #ToDo: Lambda: modify this local storage no workers version to put a threads payload input in the data_dict?
 # Add comment that we are using global but we add here too to check logic. Here we can make sure data
@@ -2905,7 +2930,8 @@ def DAG_executor_processes(payload,completed_tasks_counter,completed_workers_cou
     #task_payload_inputs = payload['input']
     #logger.debug("DAG_executor starting payload input:" +str(task_payload_inputs) + " payload state: " + str(DAG_executor_state.state) )
   
-    DAG_info = DAG_Info()
+    # reads from default file './DAG_info.pickle'
+    DAG_info = DAG_Info.DAG_info_fromfilename()
 
     # The work loop will create a BoundedBuffer_Work_Queue. Each process excuting the work loop
     # will create a BoundedBuffer_Work_Queue object, which wraps the websocket creatd in the 

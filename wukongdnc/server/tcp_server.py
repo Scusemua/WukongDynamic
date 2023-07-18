@@ -1086,7 +1086,8 @@ class TCPServer(object):
             # use or objects will be invoking lambdas (as lambdas need)
             # the DAG_info.
             global DAG_info
-            DAG_info = DAG_Info()
+            # reads from default file './DAG_info.pickle'
+            DAG_info = DAG_Info.DAG_info_fromfilename()
             global create_work_queue_lock
             create_work_queue_lock = Lock()
             global create_synchronization_object_lock
