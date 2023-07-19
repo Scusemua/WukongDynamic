@@ -1617,7 +1617,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                         state_info = DAG_map[DAG_executor_state.state]
                                         # The continued task will be executed next
                                         # so we need its state_info
-                                        logger.debug("For new DAG_info, state: " + str(DAG_executor_state.state)
+                                        logger.debug("For new DAG_info, continued state: " + str(DAG_executor_state.state)
                                             +" state_info: " + str(state_info))
 #rhc continue
                                         continued_task = True

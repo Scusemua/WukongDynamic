@@ -1517,7 +1517,6 @@ def dfs_parent(visited, node):  #function for dfs
                             for (k,v) in BFS_Shared.shared_groups_frontier_parents_map.items():
                                 logger.debug(str(k) + ": " + str(v))                            
 
-
                             """
                             where:  in bfs_pagerank, we grab the shared_frontier_parent_tuple
                             and its fields using:
@@ -3774,10 +3773,11 @@ if __name__ == '__main__':
             else:
                 logger.info("-- (" + str(len(x)) + ")")
         logger.info("")
-        logger.debug("Number of shadow nodes:")
-        for num in partitions_num_shadow_nodes_list:
-            logger.debug(num)
-        logger.info("")
+        if use_shared_partitions_groups:
+            logger.debug("Number of shadow nodes (when use_shared_partitions_groups):")
+            for num in partitions_num_shadow_nodes_list:
+                logger.debug(num)
+            logger.info("")
         logger.info("partition names, len: " + str(len(partition_names))+":")
         for name in partition_names:
             if PRINT_DETAILED_STATS:
@@ -3796,10 +3796,11 @@ if __name__ == '__main__':
             else:
                 logger.info("-- (" + str(len(g)) + ")")
         logger.info("")
-        logger.debug("Number of shadow nodes:")
-        for num in groups_num_shadow_nodes_list:
-            logger.debug(num)
-        logger.info("")
+        if use_shared_partitions_groups:
+            logger.debug("Number of shadow nodes (when use_shared_partitions_groups):")
+            for num in groups_num_shadow_nodes_list:
+                logger.debug(num)
+            logger.info("")
         logger.info("group names, len: " + str(len(group_names))+":")
         for name in group_names:
             if PRINT_DETAILED_STATS:

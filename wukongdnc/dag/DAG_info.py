@@ -28,8 +28,6 @@ class DAG_Info(object):
     def __init__(self,DAG_info,file_name = './DAG_info.pickle'):
         self.file_name = file_name
         self.DAG_info_dictionary = DAG_info
-        print("DAG_Info.__init__: self.DAG_info is of type:", type(self.DAG_info_dictionary))
-
 
     @classmethod
     def DAG_info_fromfilename(cls, file_name = './DAG_info.pickle'):
@@ -43,7 +41,6 @@ class DAG_Info(object):
         return cls(DAG_info)
 
     def get_DAG_map(self):
-        print("DAG_Info.get_DAG_map: self.DAG_info is of type:", type(self.DAG_info_dictionary))
         return self.DAG_info_dictionary["DAG_map"]
     
     def get_DAG_states(self):
