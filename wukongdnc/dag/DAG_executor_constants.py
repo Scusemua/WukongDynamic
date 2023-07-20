@@ -187,6 +187,10 @@ same_output_for_all_fanout_fanin = not compute_pagerank
 # True if DAG generation and DAG_execution are overlapped. 
 use_incremental_DAG_generation = compute_pagerank and True
 
+#rhc: ToDo: what should this be? Used as capacity of boundedbuffer
+# Note: Pythin has no max Int
+work_queue_size_for_incremental_DAG_generation_with_worker_processes =  2**31-1
+
 if not same_output_for_all_fanout_fanin and not compute_pagerank:
     logger.error("[Error]: Configuration error: if same_output_for_all_fanout_fanin"
         + " then must be computing pagerank.")

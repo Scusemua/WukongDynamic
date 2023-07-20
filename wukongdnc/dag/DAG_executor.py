@@ -1481,7 +1481,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 
                     DAG_executor_state.state = continue_queue.get()
                     continued_task = True
-                    if len(continue_queue) == 0:
+                    if continue_queue.qsize() == 0:
                         # Note: When using partitions this is True, i.e., 
                         # only one partition can be to-be-continued 
                         process_continue_queue = False
@@ -1627,6 +1627,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                         else:
                                             # process states in continue_queue, which
                                             # is done above
+                                            logger.debug("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXwork_loop: continue_queue.qsize()>0 set process_continue_queue = True.")
                                             process_continue_queue = True
 
                                     if not use_page_rank_group_partitions:

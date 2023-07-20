@@ -668,7 +668,7 @@ def dfs_parent(visited, node)
 
 import networkx as nx
 import matplotlib.pyplot as plt
-
+import socket
 import logging 
 import cloudpickle
 import threading
@@ -696,7 +696,13 @@ from . import BFS_Shared
 from .DAG_executor_constants import use_shared_partitions_groups, use_page_rank_group_partitions
 from .DAG_executor_constants import use_struct_of_arrays_for_pagerank, compute_pagerank
 from .DAG_executor_constants import use_incremental_DAG_generation, using_workers
+from .DAG_executor_constants import run_all_tasks_locally, using_threads_not_processes
+from .DAG_executor_constants import work_queue_size_for_incremental_DAG_generation_with_worker_processes
 from .DAG_executor_driver import run
+
+from .DAG_executor_work_queue_for_threads import work_queue
+from .DAG_boundedbuffer_work_queue import Work_Queue_Client
+from .Remote_Client_for_DAG_infoBuffer_Monitor import Remote_Client_for_DAG_infoBuffer_Monitor
 
 #from .DAG_executor_constants import run_all_tasks_locally, using_threads_not_processes
 
@@ -849,6 +855,22 @@ for x in range(num_nodes+1):
     nodes.append(Node(x))
 """
 invoker_thread_for_DAG_executor_driver = None
+
+websocket = None
+
+if compute_pagerank and use_incremental_DAG_generation: 
+#rhc continue
+    # we are only using incremental_DAG_generation when we
+    # are computing pagerank, so far. Pagerank DAGS are the
+    # only DAGS we generate ourselves, so far.
+
+    if (run_all_tasks_locally and using_workers and not using_threads_not_processes): 
+        # Config: A5, A6
+        # sent the create() for work_queue to the tcp server in the DAG_executor_driver
+        websocket = (socket.AF_INET, socket.SOCK_STREAM)
+        estimated_num_tasks_to_execute = -1 #??
+        DAG_infobuffer_monitor = Remote_Client_for_DAG_infoBuffer_Monitor(websocket)
+        work_queue = Work_Queue_Client(websocket,work_queue_size_for_incremental_DAG_generation_with_worker_processes)
 
 def DAG_executor_driver_Invoker_Thread():
 
@@ -2698,6 +2720,34 @@ def bfs(visited, node): #function for BFS
                                 logger.debug("BFS: sleeping before calling DAG_infobuffer_monitor.deposit(DAG_info).")
                                 time.sleep(1)
                                 if True:
+
+#rhc ToDo: add work for each leaf task alike driver nd remove each leaf task
+                                    if len(leaf_tasks_of_partitions) > 0:
+                                        DAG_states_incremental = DAG_info.get_DAG_states()
+                                        #DAG_leaf_task_start_states_incremental = DAG_info.get_DAG_leaf_task_start_states()
+                                        DAG_map_incremental = DAG_info.get_DAG_map()
+                                        if using_workers:
+                                            # Based on assert above, using worker threads when 
+                                            # using local synch objects 
+                                            # leaf task states (a task is identified by its state) are put in work_queue
+
+                                            leaf_tasks_of_partitions.clear()
+
+                                            for name in leaf_tasks_of_partitions:
+                                                state_incremental = DAG_states_incremental[name]
+                                                state_info = DAG_map_incremental[state_incremental]
+                                                task_inputs = state_info.task_input
+#rhc: ToDo: assert task_inputs is empty
+                                                task_name = state_info.task_name
+#rhc: ToDo: assert this is name
+#rhc: ToDo: dict stuff? just empty - look at DAG_executor, for pagerank leaf tasks
+                                                dict_of_results =  {}
+                                                dict_of_results[task_name] = task_inputs
+                                                work_tuple = (state_incremental,dict_of_results)
+                                                work_queue.put(work_tuple)
+                                        else:
+                                            pass # complete for lambdas
+
                                     # Deposit new incremental DAG. This may be the 
                                     # first DAG and since the workers and lambdas
                                     # will receive this DAG as a leaf task, they 
