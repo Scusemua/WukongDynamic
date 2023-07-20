@@ -2601,6 +2601,14 @@ def bfs(visited, node): #function for BFS
                             # if there is one partition in the DAG,
                             # save the partition and the DAG_info and 
                             # start the DAG_excutor_driver.
+
+                            if not partition_name in leaf_tasks_of_partitions:
+                                logger.error("partition " + partition_name + " is the first partition"
+                                    + " but it is not in leaf_tasks_of_partitions.")
+                            else:
+                                # we have generated a state for leaf task senderX. 
+                                leaf_tasks_of_partitions.remove(partition_name)
+
                             if DAG_info.get_DAG_info_is_complete()==True:
                         
                                 # output partition 1, which is complete
@@ -2648,7 +2656,7 @@ def bfs(visited, node): #function for BFS
                                 # there is more than one partition in the DAG
                                 pass # empty
                         
-                        elif current_partition_number >=2:
+                        else: # current_partition_number >=2:
                             # generate complete DAG_info for previous partition current_partition_number-1;
                             # the current partition may be complete or incomplete.
                             
@@ -2754,8 +2762,7 @@ def bfs(visited, node): #function for BFS
                                 #os._exit(0)  
                             else:
                                 pass # complete for groups
-                        else:
-                            pass # empty else
+                        # end else #current_partition_number >=2
                     else:
                         pass # complete for lambdas
  
