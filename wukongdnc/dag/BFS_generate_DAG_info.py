@@ -27,6 +27,7 @@ Group_senders = {}
 Group_receivers = {}
 
 leaf_tasks_of_partitions = set()
+leaf_tasks_of_partitions_incremental = set()
 leaf_tasks_of_groups = set()
 
 # ToDo:

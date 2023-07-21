@@ -189,7 +189,8 @@ use_incremental_DAG_generation = compute_pagerank and True
 
 #rhc: ToDo: what should this be? Used as capacity of boundedbuffer
 # Note: Pythin has no max Int
-work_queue_size_for_incremental_DAG_generation_with_worker_processes =  2**31-1
+# rhc: ToDo: Make a bounded_buffer with a dynamic buffer 
+work_queue_size_for_incremental_DAG_generation_with_worker_processes =  2**10-1
 
 if not same_output_for_all_fanout_fanin and not compute_pagerank:
     logger.error("[Error]: Configuration error: if same_output_for_all_fanout_fanin"

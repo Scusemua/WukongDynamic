@@ -18,7 +18,9 @@ logger.addHandler(ch)
 # that need to be sent to the DAG_infoBuffer_Monitor
 # and the restart value returned by the DAG_infoBuffer_Monitor,
 # which is not used. It calls server.api methods to make remote
-# calls to the DAG_infoBuffer_Monitor
+# calls to the DAG_infoBuffer_Monitor.
+#
+# rhc: ToDo: Should we close this at end?
 class Remote_Client_for_DAG_infoBuffer_Monitor:
     def __init__(self,websocket):
         self.websocket = websocket

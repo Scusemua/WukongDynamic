@@ -339,6 +339,7 @@ BFS(node):
                 # start of BFS.
                 if is_leaf_node:
                     leaf_tasks_of_partitions.add(partition_name)
+                    leaf_tasks_of_partitions_incremental.add(partition_name)
                     is_leaf_node = False
 
                 ...  various other things ...
@@ -682,7 +683,7 @@ from .BFS_Partition_Node import Partition_Node
 from .BFS_generate_DAG_info_incremental_partitions import generate_DAG_info_incremental_partitions
 from .BFS_generate_DAG_info import generate_DAG_info
 from .BFS_generate_DAG_info import Partition_senders, Partition_receivers, Group_senders, Group_receivers
-from .BFS_generate_DAG_info import leaf_tasks_of_partitions, leaf_tasks_of_groups
+from .BFS_generate_DAG_info import leaf_tasks_of_partitions, leaf_tasks_of_partitions_incremental, leaf_tasks_of_groups
 from .BFS_generate_shared_partitions_groups import generate_shared_partitions_groups
 from .DAG_infoBuffer_Monitor_for_threads import DAG_infobuffer_monitor
 
@@ -868,9 +869,9 @@ if compute_pagerank and use_incremental_DAG_generation:
         # Config: A5, A6
         # sent the create() for work_queue to the tcp server in the DAG_executor_driver
         websocket = (socket.AF_INET, socket.SOCK_STREAM)
-        estimated_num_tasks_to_execute = -1 #??
+        estimated_num_tasks_to_execute = work_queue_size_for_incremental_DAG_generation_with_worker_processes
         DAG_infobuffer_monitor = Remote_Client_for_DAG_infoBuffer_Monitor(websocket)
-        work_queue = Work_Queue_Client(websocket,work_queue_size_for_incremental_DAG_generation_with_worker_processes)
+        work_queue = Work_Queue_Client(websocket,estimated_num_tasks_to_execute)
 
 def DAG_executor_driver_Invoker_Thread():
 
@@ -2384,6 +2385,7 @@ def bfs(visited, node): #function for BFS
                 # start of BFS.
                 if is_leaf_node:
                     leaf_tasks_of_partitions.add(partition_name)
+                    leaf_tasks_of_partitions_incremental.add(partition_name)
                     is_leaf_node = False
 
                 # Patch the partition name of the frontier_parent tuples. 
@@ -2610,6 +2612,8 @@ def bfs(visited, node): #function for BFS
 
 #rhc incremental                
                 if compute_pagerank and use_incremental_DAG_generation:
+                    # partitioning is over when all graph nodes have been
+                    # put in some partition
                     to_be_continued = (num_nodes_in_partitions < num_nodes)
                     if using_workers:
                         
@@ -2620,18 +2624,21 @@ def bfs(visited, node): #function for BFS
                         
                         # A DAG with a single partition, and hence a single group is a special case.
                         if current_partition_number == 1:
-                            # if there is one partition in the DAG,
-                            # save the partition and the DAG_info and 
-                            # start the DAG_excutor_driver.
 
-                            if not partition_name in leaf_tasks_of_partitions:
+                            if not partition_name in leaf_tasks_of_partitions_incremental:
                                 logger.error("partition " + partition_name + " is the first partition"
-                                    + " but it is not in leaf_tasks_of_partitions.")
+                                    + " but it is not in leaf_tasks_of_partitions_incemental.")
                             else:
                                 # we have generated a state for leaf task senderX. 
-                                leaf_tasks_of_partitions.remove(partition_name)
+                                leaf_tasks_of_partitions_incremental.remove(partition_name)
 
-                            if DAG_info.get_DAG_info_is_complete()==True:
+                            if DAG_info.get_DAG_info_is_complete():
+                                # if there is only one partition in the DAG,
+                                # save the partition and the DAG_info and 
+                                # start the DAG_excutor_driver. Otherwise,
+                                # we do all of this when we get partition 2,
+                                # since when we get partition 2 partition 1
+                                # is complete and can be executed.
                         
                                 # output partition 1, which is complete
                                 with open('./'+partition_name + '.pickle', 'wb') as handle:
@@ -2667,46 +2674,43 @@ def bfs(visited, node): #function for BFS
                                 # Need to call run() but it has to be asynchronous as BFS needs to continue.
                                 thread_name = "DAG_executor_driver_Invoker"
                                 logger.debug("BFS: Starting DAG_executor_driver_Invoker_Thread for incrmental DAG generation.")
- #rhc: incremental
-                                #Question: This thread completes normally?
-                                # Perhaps BFS can join this thread instad of calling run() when inc dag gen?
-                                #     Then invoker_thread is global?
 
                                 invoker_thread_for_DAG_executor_driver = threading.Thread(target=DAG_executor_driver_Invoker_Thread, name=(thread_name), args=())
                                 invoker_thread_for_DAG_executor_driver.start()
                             else:
-                                # there is more than one partition in the DAG
+                                # there is more than one partition in the DAG so DAG is not complete
                                 pass # empty
                         
                         else: # current_partition_number >=2:
                             # generate complete DAG_info for previous partition current_partition_number-1;
                             # the current partition may be complete or incomplete.
-                            
-                            # generating partitions, not groups.
+                            #
                             # Note: For groups, we may still key off partitions, i.e., when 
                             # we complete a partition, we generate the groups in this partition.
                             if not use_page_rank_group_partitions:
-                                # Note: "PR1_1" is the one and only leaf partition/group
                                 #previous_partition_name = "PR"+str(current_partition_number-1)+"_1"
                             
                                 # Previous partition is complete so save partition to a file
                                 # which will be in cloud for real lambdas. (When we process 
-                                # partition i, we compute the indices of the nods whose pageranks should
-                                # be output by partition i-1 and save thse indices in the nodes of
-                                # partition -1 and that makes partition i-1 "complete." These indices
-                                # are of the nodes in partition i-1 that have chidren in partition i.
-                                # Note: Any chldren of nodes in partition i-1 that are in a different
-                                # partition must be in partition i.
-                                # Note: Partition numbers statr at 1 not 0, so name is not in position 
+                                # partition i, we compute the indices of the (parent) nodes in i-1 
+                                # whose pageranks should be output by partition i-1 and input by partition i
+                                # and save thse indices in the nodes of partition i-1; that makes partition i-1 
+                                # "complete." These indices are of the nodes in partition i-1 that have chidren 
+                                # in partition i.
+                                # Note: Any children of nodes in partition i-1 that are in a different
+                                # partition must be in partition, based on how partitions are generated.
+                                # Note: Partition numbers start  at 1 not 0, so the name of partition i-1 is not in position 
                                 # current_partition_number-1 it is in current_partition_number-2,
-                                # e.g., name for the partition 2 that is previous to partition
-                                # 3 is position 1, whcih is 3-2.
+                                # e.g., name for the partition 2 that is previous to current partition
+                                # 3 is position 1, which is 3-2.
+
+                                # always output the previous partition of nodes
                                 with open('./'+partition_names[current_partition_number-2] + '.pickle', 'wb') as handle:
                                     # partition indices in partitions[] start with 0, so current partition i
                                     # is in partitions[i-1] and previous partition is partitions[i-2]
                                     cloudpickle.dump(partitions[current_partition_number-2], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
 
-                                # Current partition might be the last partition in the DAG, if so
+                                # the current partition might be the last partition in the DAG, if so
                                 # save the partition to a file. Below we will save the DAG_info.
                                 if DAG_info.get_DAG_info_is_complete():
                                     with open('./'+partition_name + '.pickle', 'wb') as handle:
@@ -2719,34 +2723,49 @@ def bfs(visited, node): #function for BFS
 
                                 logger.debug("BFS: sleeping before calling DAG_infobuffer_monitor.deposit(DAG_info).")
                                 time.sleep(1)
+                                # Every jth partition, make a new incrementl DAG available.
                                 if True:
-
-#rhc ToDo: add work for each leaf task alike driver nd remove each leaf task
-                                    if len(leaf_tasks_of_partitions) > 0:
+                                    if len(leaf_tasks_of_partitions_incremental) > 0:
+                                        # New leaf task partitions have been generated. Since no task
+                                        # will fanout/fanin these leaf tasks, we must ensure they 
+                                        # get started; if we are using workers, deposit these leaf tasks
+                                        # in the work queue. If we are using lambdas, start lambdas 
+                                        # to execute these leaf tasks/partitions. For non-incremental
+                                        # DAG generation, the DAG_executor_driver starts all leaf tasks
+                                        # at the beginning of DAG excution. 
+                                        # 
+                                        # The leaf tasks are in DAG_info just returned. (They were added
+                                        # on this last call to generate DAG_info or on a previous call. This
+                                        # is the first call to DAG_infobuffer_monitor.deposit(DAG_info) since
+                                        # these leaf tasks were added.)
+                                        # We need the states of these leaf tasks so we can 
+                                        # create the work that is added to the work_queue.
                                         DAG_states_incremental = DAG_info.get_DAG_states()
                                         #DAG_leaf_task_start_states_incremental = DAG_info.get_DAG_leaf_task_start_states()
                                         DAG_map_incremental = DAG_info.get_DAG_map()
                                         if using_workers:
-                                            # Based on assert above, using worker threads when 
-                                            # using local synch objects 
                                             # leaf task states (a task is identified by its state) are put in work_queue
-
-                                            leaf_tasks_of_partitions.clear()
-
-                                            for name in leaf_tasks_of_partitions:
+                                            for name in leaf_tasks_of_partitions_incremental:
                                                 state_incremental = DAG_states_incremental[name]
                                                 state_info = DAG_map_incremental[state_incremental]
                                                 task_inputs = state_info.task_input
-#rhc: ToDo: assert task_inputs is empty
+                                                # assert:
+                                                if len(task_inputs) != 0:
+                                                    logger.debug("[Error]: Internal Error: task_input for leaf"
+                                                        + " task/partition for incremental DAG generation is not empty.")
                                                 task_name = state_info.task_name
-#rhc: ToDo: assert this is name
-#rhc: ToDo: dict stuff? just empty - look at DAG_executor, for pagerank leaf tasks
-                                                dict_of_results =  {}
-                                                dict_of_results[task_name] = task_inputs
-                                                work_tuple = (state_incremental,dict_of_results)
+                                                if not task_name == name:
+                                                    logger.debug("[Error]: Internal Error: task name of leaf task is not"
+                                                        + " name in leaf_tasks_of_partitions_incremental.")
+                                                dict_of_results_incremental =  {}
+                                                dict_of_results_incremental[task_name] = task_inputs
+                                                work_tuple = (state_incremental,dict_of_results_incremental)
                                                 work_queue.put(work_tuple)
                                         else:
                                             pass # complete for lambdas
+                                            # start a lambda with empty input payload (like DAG_executor_driver)
+
+                                        leaf_tasks_of_partitions_incremental.clear()
 
                                     # Deposit new incremental DAG. This may be the 
                                     # first DAG and since the workers and lambdas
@@ -2785,7 +2804,7 @@ def bfs(visited, node): #function for BFS
                                     with open(file_name, 'wb') as handle:
                                         cloudpickle.dump(DAG_info_dictionary, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
                                     
-                                    # Need to call run() but it has to be asynch
+                                    # Need to call DAG_executor_driver.run() but it has to be invoked asynch
                                     thread_name = "DAG_executor_driver_Invoker"
                                     logger.debug("BFS: Starting DAG_executor_driver_Invoker_Thread for incrmental DAG generation.")
 #rhc: incremental
@@ -2799,8 +2818,10 @@ def bfs(visited, node): #function for BFS
 # We would need to know the number of CCs (leaf nodes) to set # of workers.
                                     invoker_thread_for_DAG_executor_driver.start()
                                 else:
-                                    # check if the current partition (which is not partition 2) 
-                                    # is the last partition in the DAG; if so, save this last/complete
+                                    # This is not partition 1 and it is not partition 2 so we do not 
+                                    # start the DAG_executor_driver.run(). However, we still need to 
+                                    # check whether the current partition (which is not partition 2) 
+                                    # is the last partition in the DAG; if so, save this complete
                                     # DAG_info to file. (If this is partition 2, we always
                                     # save the DAG_info since we will also start the DAG_executor_driver.)
                                     if DAG_info.get_DAG_info_is_complete():
@@ -2811,10 +2832,10 @@ def bfs(visited, node): #function for BFS
                                 #logging.shutdown()
                                 #os._exit(0)  
                             else:
-                                pass # complete for groups
+                                pass # complete this code for groups
                         # end else #current_partition_number >=2
                     else:
-                        pass # complete for lambdas
+                        pass # complete this code for lambdas
  
 
                 #global frontier_groups_sum

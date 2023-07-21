@@ -12,6 +12,7 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 """
 
+#rhc: ToDo: Should we close this at end?
 class Work_Queue_Client:
     def __init__(self,websocket, n):
         self.websocket = websocket
