@@ -1323,6 +1323,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
     DAG_tasks = DAG_info.get_DAG_tasks()
 
 #rhc continue
+    num_tasks_to_execute = -1
     if (not using_workers):
         # not using this value when using real or simulated lambdas.
         # this values tells workers when there are no morfe tasks to execute
@@ -1606,6 +1607,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                     # Note: for work_queue, the Local queue is a queue.Queue so there is no erstart
                                     # value that can be returned and hence no wrapper is needed.
                                     new_DAG_info = DAG_infobuffer_monitor.withdraw(requested_current_version_number)
+                                    completed_workers = completed_workers_counter.decrement_and_get()
+                                    logger.debug("DAG_executor: Work_Loop: after withdraw: workers_completed:  " + str(completed_workers))
                                     DAG_info = new_DAG_info
                                     DAG_map = DAG_info.get_DAG_map()
                                     DAG_tasks = DAG_info.get_DAG_tasks()
@@ -1634,8 +1637,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                         # using partitions
                                         if not DAG_info.get_DAG_info_is_complete():
                                             num_tasks_to_execute = len(DAG_tasks) - 1
+                                            logger.debug("BFS: after withdraw: DAG_info not complete: new num_tasks_to_execute: " + str(num_tasks_to_execute))
                                         else:
                                             num_tasks_to_execute = len(DAG_tasks)
+                                            logger.debug("BFS: after withdraw: DAG_info complete new num_tasks_to_execute: " + str(num_tasks_to_execute))
                                     else:
                                         # using groups
                                         if not DAG_info.get_DAG_info_is_complete():

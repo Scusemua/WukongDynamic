@@ -74,6 +74,10 @@ class DAG_infoBuffer_Monitor(MonitorSU):
             print(inp)
         #print() 
         print()
+        print("DAG_infoBuffer_Monitor: DAG_version_number:")
+        print(DAG_info.get_DAG_version_number())
+        print("DAG_infoBuffer_Monitor: DAG_info_is_complete:")
+        print(DAG_info.get_DAG_info_is_complete())
 
     def deposit(self,**kwargs):
         # deposit a new DAG_info object. It's version number will be one more

@@ -14,6 +14,11 @@ class Counter(object):
         with self._lock:
             self.value += 1
             return self.value
+        
+    def decrement_and_get(self):
+        with self._lock:
+            self.value -= 1
+            return self.value
 
 #rhc: counter 
 # tasks_completed_counter

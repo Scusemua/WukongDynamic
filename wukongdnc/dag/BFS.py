@@ -874,7 +874,6 @@ if compute_pagerank and use_incremental_DAG_generation:
         work_queue = Work_Queue_Client(websocket,estimated_num_tasks_to_execute)
 
 def DAG_executor_driver_Invoker_Thread():
-
     run()
 
 # visual is a list which stores all the set of edges that constitutes a graph
@@ -2367,7 +2366,8 @@ def bfs(visited, node): #function for BFS
                 logger.debug("BFS: create sub-partition at end of current frontier")
                 # does not require a deepcopy
                 partitions.append(current_partition.copy())
-#rhc incremental:
+#rhc incremental:   
+                # this includes shadow nodes
                 num_nodes_in_partitions += len(current_partition)
                 current_partition = []
 
@@ -2614,7 +2614,15 @@ def bfs(visited, node): #function for BFS
                 if compute_pagerank and use_incremental_DAG_generation:
                     # partitioning is over when all graph nodes have been
                     # put in some partition
-                    to_be_continued = (num_nodes_in_partitions < num_nodes)
+                    num_graph_nodes_in_partitions = num_nodes_in_partitions - num_shadow_nodes_added_to_partitions
+                    to_be_continued = (num_graph_nodes_in_partitions < num_nodes)
+                    logger.debug("BFS: calling gen DAG incremental"
+                        + " num_nodes_in_partitions: " + str(num_nodes_in_partitions)
+                        + " num_shadow_nodes_added_to_partitions: " + str(num_shadow_nodes_added_to_partitions)
+                        + " num_graph_nodes_in_partitions: " + str(num_graph_nodes_in_partitions)
+                        + " num_nodes: " + str(num_nodes) + " to_be_continued: "
+                        + str(to_be_continued))
+
                     if using_workers:
                         
                         logger.debug("BFS: calling generate_DAG_info_incremental_partitions for"
@@ -3191,7 +3199,8 @@ def input_graph():
     # algorithms on it, e.g., fnd_cycle, diameter.
     networkX_lines = []
     #fname = "graph_3000"
-    fname = "graph_20"
+    #fname = "graph_20"
+    fname = "graph_23"
     #fname = "graph_27"
     #graph_file = open(fname, 'r')
     #graph_file = open(fname, 'r')

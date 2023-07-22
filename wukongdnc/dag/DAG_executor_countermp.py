@@ -13,6 +13,11 @@ class CounterMP(object):
             self.val.value += n
             return self.value
 
+    def decrement_and_get(self, n=1):
+        with self.val.get_lock():
+            self.val.value -= n
+            return self.value
+
     @property
     def value(self):
         return self.val.value
