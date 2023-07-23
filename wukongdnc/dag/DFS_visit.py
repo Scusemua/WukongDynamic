@@ -13,6 +13,7 @@
 
 #import pickle
 import cloudpickle
+import copy
 
 import logging 
 logger = logging.getLogger(__name__)
@@ -47,6 +48,14 @@ class state_info:
         # DAG generator.
         self.ToBeContinued = ToBeContinued
 
+    @classmethod
+    def state_info_fromstate_info(cls, state_info_object):
+        state_info_cls = state_info_object
+        return cls(state_info_cls.task_name, state_info_cls.fanouts, state_info_cls.fanins, state_info_cls.faninNBs, state_info_cls.collapse,
+        state_info_cls.fanin_sizes, state_info_cls.faninNB_sizes, state_info_cls.task_inputs,
+#rhc continue
+        state_info_cls.ToBeContinued)
+
     def __str__(self):
         if self.fanouts != None:
             fanouts_string = str(self.fanouts)
@@ -79,12 +88,29 @@ class state_info:
 
         ToBeContinued_string = str(self.ToBeContinued)
 
-        return (" task: " + self.task_name+", fanouts:" + fanouts_string + ", fanins:" + fanins_string + ", faninsNB:" + faninNBs_string
+        return (" task: " + self.task_name + ", fanouts:" + fanouts_string + ", fanins:" + fanins_string + ", faninsNB:" + faninNBs_string
             + ", collapse:" + collapse_string + ", fanin_sizes:" + fanin_sizes_string
             + ", faninNB_sizes:" + faninNB_sizes_string + ", task_inputs: " + task_inputs_string
 #rhc continue
             + ", ToBeContinued_string:" + ToBeContinued_string)
-	
+
+    def __deepcopy__(self, memodict={}):
+        new_instance = state_info(self.task_name,
+            self.fanouts, self.fanins, self.faninNBs, self.fanin_sizes,
+            self.faninNB_sizes, self.collapse, self.task_inputs, self.ToBeContinued)
+        new_instance.__dict__.update(self.__dict__)
+        new_instance.task_name = copy.deepcopy(self.task_name, memodict)
+        new_instance.fanouts = copy.deepcopy(self.fanouts, memodict)
+        new_instance.fanins = copy.deepcopy(self.fanins, memodict)
+        new_instance.faninNBs = copy.deepcopy(self.faninNBs, memodict)
+        new_instance.collapse = copy.deepcopy(self.collapse, memodict)
+        new_instance.fanin_sizes = copy.deepcopy(self.fanin_sizes, memodict)
+        new_instance.faninNB_sizes = copy.deepcopy(self.faninNB_sizes, memodict)
+        new_instance.task_inputs = copy.deepcopy(self.task_inputs, memodict)
+        new_instance.ToBeContinued = copy.deepcopy(self.ToBeContinued, memodict)
+        
+        return new_instance
+
 """ Examples of fanouts, fanins, and faninNBs (No Becomes)
   n2   n3
     t  t

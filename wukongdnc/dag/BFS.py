@@ -3199,8 +3199,8 @@ def input_graph():
     # algorithms on it, e.g., fnd_cycle, diameter.
     networkX_lines = []
     #fname = "graph_3000"
-    #fname = "graph_20"
-    fname = "graph_23"
+    fname = "graph_20"
+    #fname = "graph_23"
     #fname = "graph_27"
     #graph_file = open(fname, 'r')
     #graph_file = open(fname, 'r')

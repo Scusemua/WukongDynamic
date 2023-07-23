@@ -25,20 +25,20 @@ class DAG_Info(object):
     #    self.file_name = file_name
     #    self.DAG_info = input_DAG_info(file_name)
 
-    def __init__(self,DAG_info,file_name = './DAG_info.pickle'):
+    def __init__(self,DAG_info_dictionary,file_name = './DAG_info.pickle'):
         self.file_name = file_name
-        self.DAG_info_dictionary = DAG_info
+        self.DAG_info_dictionary = DAG_info_dictionary
 
     @classmethod
     def DAG_info_fromfilename(cls, file_name = './DAG_info.pickle'):
         file_name = file_name
-        DAG_info = input_DAG_info(file_name)
-        return cls(DAG_info,file_name)
+        DAG_info_dictionary = input_DAG_info(file_name)
+        return cls(DAG_info_dictionary,file_name)
 
     @classmethod
-    def DAG_info_fromdictionary(cls, DAG_info_dictionary):
-        DAG_info = DAG_info_dictionary
-        return cls(DAG_info)
+    def DAG_info_fromdictionary(cls, DAG_info_dict):
+        DAG_info_dictionary = DAG_info_dict
+        return cls(DAG_info_dictionary)
 
     def get_DAG_map(self):
         return self.DAG_info_dictionary["DAG_map"]
