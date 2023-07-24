@@ -2808,7 +2808,9 @@ def bfs(visited, node): #function for BFS
                                     # or it will be read by the DAG_executor_driver and given
                                     # to the real/simulated (leaf) lambdas as part of their payload.
                                     file_name = "./DAG_info.pickle"
-                                    DAG_info_dictionary = DAG_info.DAG_info_dictionary
+#rhc: incremental
+                                    #DAG_info_dictionary = DAG_info.DAG_info_dictionary
+                                    DAG_info_dictionary = DAG_info.get_DAG_info_dictionary()
                                     with open(file_name, 'wb') as handle:
                                         cloudpickle.dump(DAG_info_dictionary, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
                                     
@@ -3199,8 +3201,8 @@ def input_graph():
     # algorithms on it, e.g., fnd_cycle, diameter.
     networkX_lines = []
     #fname = "graph_3000"
-    fname = "graph_20"
-    #fname = "graph_23"
+    #fname = "graph_20"
+    fname = "graph_23"
     #fname = "graph_27"
     #graph_file = open(fname, 'r')
     #graph_file = open(fname, 'r')
