@@ -855,9 +855,29 @@ num_nodes = 12
 for x in range(num_nodes+1):
     nodes.append(Node(x))
 """
+# used by during incremental DAG generation to invoke the 
+# DAG_excutor_driver. A thread is created to call
+# DAG_executor_driver.run() while BF continues with 
+# incremental ADG generation. BFS joins theis thread
+# at the end of BFS.
 invoker_thread_for_DAG_executor_driver = None
 
+# used during incremental ADG generation by BFS to
+# access the work_queue on the tcp_server when we are
+# using worker processes.
 websocket = None
+
+# count of incremental ADGs generated. Note: we generate 
+# a DAG with the first partition, then we generate a DAG
+# with the first two partitions and start the DAG_executor_driver.
+# Then we use this counter to determine when to generate another
+# DAG. If the incremental_interval is 2, we will generate the next DAG after
+# adding partition 4. This will be the third DAG - one with P1,
+# one with P1 and P2, and one with P!, P2, P3, and P4.
+num_incremental_DAGs_generated = 0
+# generate next DAg when num_incremental_DAGs_generated mod 
+# incremental_interval == 0
+incremental_interval = 3
 
 if compute_pagerank and use_incremental_DAG_generation: 
 #rhc continue
@@ -2133,6 +2153,8 @@ def bfs(visited, node): #function for BFS
     global num_shadow_nodes_added_to_groups
 
     global invoker_thread_for_DAG_executor_driver
+    global num_incremental_DAGs_generated
+    global incremental_interval
 
 #rhc incremental
     # total number of graph nodes that have been added to the 
@@ -2659,6 +2681,10 @@ def bfs(visited, node): #function for BFS
                                 # DAG_info will not ever be withdrawn as the lambda leaf task
                                 # for partition 1 will be started by the DAG_executor_driver with 
                                 # the DAG_info it reads from a file (output previously).
+                                logger.debug("BFS: deposit first DAG with num_incremental_DAGs_generated:"
+                                    + str(num_incremental_DAGs_generated)
+                                    + " current_partition_number: " + str(current_partition_number))
+
                                 DAG_infobuffer_monitor.deposit(DAG_info)
 
                                 # We just processed the first and only partition; so we can output the 
@@ -2731,8 +2757,17 @@ def bfs(visited, node): #function for BFS
 
                                 logger.debug("BFS: sleeping before calling DAG_infobuffer_monitor.deposit(DAG_info).")
                                 time.sleep(1)
-                                # Every jth partition, make a new incrementl DAG available.
-                                if True:
+                                #
+                                if current_partition_number > 2:
+                                    num_incremental_DAGs_generated += 1
+
+                                # current_partition_number is not 1
+                                if current_partition_number == 2 or (
+                                    DAG_info.get_DAG_info_is_complete() or (
+                                    num_incremental_DAGs_generated % incremental_interval == 0
+                                    )):
+                    
+                                #if True:
                                     if len(leaf_tasks_of_partitions_incremental) > 0:
                                         # New leaf task partitions have been generated. Since no task
                                         # will fanout/fanin these leaf tasks, we must ensure they 
@@ -2782,7 +2817,15 @@ def bfs(visited, node): #function for BFS
                                     # DAG, i.e., their first request for a new 
                                     # incremental DAG is for any newer DAG than the 
                                     # first DAG (i.e., any version later than version 1.)
+
+                                    logger.debug("BFS: deposit next DAG with num_incremental_DAGs_generated:"
+                                        + str(num_incremental_DAGs_generated)
+                                        + " current_partition_number: " + str(current_partition_number))
+                                    # if not current_partition_number == 2:
+                                    #     logging.shutdown()
+                                    #     os._exit(0) 
                                     DAG_infobuffer_monitor.deposit(DAG_info)
+
 
                                 if (current_partition_number) == 2:
                                     # We just processed the second partition in a DAG that 

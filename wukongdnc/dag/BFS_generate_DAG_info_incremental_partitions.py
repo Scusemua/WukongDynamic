@@ -407,7 +407,9 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         # so no collpase is added to state_info_previous_state; however,
         # previous partition is complete so TBC is set to False.
         state_info_previous_state.ToBeContinued = False
-        logger.info("generate_DAG_info_incremental_partitions: for current partition, the previous_state_info after update TBC (no collapse): " 
+        logger.info("generate_DAG_info_incremental_partitions: for current partition"
+            + str(current_partition_number) + ", the previous_state_info for previous state " 
+            + str(previous_state) + " after update TBC (no collapse) is: " 
             + str(state_info_previous_state))
 
         Partition_DAG_map[current_state] = state_info(current_partition_name, fanouts, fanins, faninNBs, collapse, fanin_sizes, 
@@ -546,30 +548,30 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         DAG_info_dictionary['DAG_map'] = copy_of_DAG_info_dictionary_DAG_map
         """
         DAG_info_DAG_map = DAG_info.get_DAG_map()
-        state_info_of_previous_state = DAG_info_DAG_map[previous_state]
-        copy_of_state_info_of_previous_state = state_info.state_info_fromstate_info(state_info_of_previous_state)
+        state_info_of_current_state = DAG_info_DAG_map[current_state]
+        #copy_of_state_info_of_previous_state = state_info.state_info_fromstate_info(state_info_of_previous_state)
 #rhc: incremental: the only parts of the states that can be changed for partitions
 # are the colapse set and the TBC boolean. Yet we deepcopy the entire
 #state_info. Of course, everyting else is empty except for the pagerank function.
 # Still, we only need a refs for the coapse set and the TBC boolean,
 # which is less copying
-        copy_of_state_info_of_previous_state = copy.deepcopy(state_info_of_previous_state)
+        copy_of_state_info_of_current_state = copy.deepcopy(state_info_of_current_state)
         #copy_of_state_info_of_previous_state.fanins.append("foo")  
-        Partition_DAG_map[previous_state].fanins.append("goo")
-        DAG_info_DAG_map[previous_state] = copy_of_state_info_of_previous_state
+        DAG_info_DAG_map[current_state] = copy_of_state_info_of_current_state
+        Partition_DAG_map[current_state].fanins.append("goo")
         
         logger.info("address DAG_info_DAG_map: " + str(hex(id(DAG_info_DAG_map))))
         logger.info("generate_DAG_info_incremental_partitions: DAG_info_DAG_map after state_info copy:")
         for key, value in DAG_info_DAG_map.items():
-            logger.info(str(key) + ' : ' + str(value) + " addr " + str(hex(id(value))))
+            logger.info(str(key) + ' : ' + str(value) + " addr value: " + str(hex(id(value))))
 
         logger.info("address Partition_DAG_map: " + str(hex(id(Partition_DAG_map))))
         logger.info("generate_DAG_info_incremental_partitions: Partition_DAG_map:")
         for key, value in Partition_DAG_map.items():
-            logger.info(str(key) + ' : ' + str(value) + " addr " + str(hex(id(value))))
+            logger.info(str(key) + ' : ' + str(value) + " addr value: " + str(hex(id(value))))
 
         #copy_of_state_info_of_previous_state.fanins.clear()
-        Partition_DAG_map[previous_state].fanins.clear()
+        Partition_DAG_map[current_state].fanins.clear()
 
         logger.info("generate_DAG_info_incremental_partitions: DAG_info_DAG_map after clear:")
         for key, value in DAG_info_DAG_map.items():
@@ -579,8 +581,8 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         for key, value in Partition_DAG_map.items():
             logger.info(str(key) + ' : ' + str(value))
 
-        logging.shutdown()
-        os._exit(0)  
+        # logging.shutdown()
+        # os._exit(0)  
 
         return DAG_info
     

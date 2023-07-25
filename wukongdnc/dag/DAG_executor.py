@@ -1760,6 +1760,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 #rhc: ToDo: BUG: for first DAG_info, P1 is complete and P2 is incomplete.
 # we execute P1 then add P2 to cont queue. then will we have num executd = 2
 # but num_to execute 1, or do we avoid this check in that state? 
+#rhc: 
                         # Note: This worker has work to do, and this work is the last
                         # task to be executed. So this worker and any other workers
                         # can finish (if the DAG is not incremental or it is incremental
@@ -2857,6 +2858,7 @@ def DAG_executor(payload):
     DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_workers_counter, DAG_exec_state, DAG_info, 
 #rhc continue
         work_queue,DAG_infobuffer_monitor)
+    logger.debug("DAG_executor() method returned from work loop.")
 
 # Config: A5, A6
 # def DAG_executor_processes(payload,counter,process_work_queue,data_dict,log_queue, configurer)
@@ -3016,8 +3018,9 @@ def DAG_executor_task(payload):
     DAG_executor_state = payload['DAG_executor_state']
     if DAG_executor_state != None:
         # DAG_executor_state is None when using workers
-        logger.debug("DAG_executor_task: call DAG_executor, state is " + str(DAG_executor_state.state))
+        logger.debug("DAG_executor_task: call DAG_executor(), state is " + str(DAG_executor_state.state))
     DAG_executor(payload)
+    logger.debug("DAG_executor_task: returned from DAG_executor()")
     
 def main():
 
