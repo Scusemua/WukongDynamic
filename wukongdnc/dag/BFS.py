@@ -879,6 +879,15 @@ num_incremental_DAGs_generated = 0
 # incremental_interval == 0
 incremental_interval = 3
 
+#rhc incremental
+    # total number of graph nodes that have been added to the 
+    # partitions generated so far. When all nodes have been 
+    # added to a partition, the partitions are complete.
+    # Used for incremental DAG generation where we do not know
+    # the number of partitions so we cannot stop based on the 
+    # number of partitions we have seen.
+num_nodes_in_partitions = 0
+
 if compute_pagerank and use_incremental_DAG_generation: 
 #rhc continue
     # we are only using incremental_DAG_generation when we
@@ -2155,15 +2164,7 @@ def bfs(visited, node): #function for BFS
     global invoker_thread_for_DAG_executor_driver
     global num_incremental_DAGs_generated
     global incremental_interval
-
-#rhc incremental
-    # total number of graph nodes that have been added to the 
-    # partitions generated so far. When all nodes have been 
-    # added to a partition, the partitions are complete.
-    # Used for incremental DAG generation where we do not know
-    # the number of partitions so we cannot stop based on the 
-    # number of partitions we have seen.
-    num_nodes_in_partitions = 0
+    global num_nodes_in_partitions
 
 #rhc: q:
     # are not these lengths 0?
@@ -2783,20 +2784,24 @@ def bfs(visited, node): #function for BFS
                                         # these leaf tasks were added.)
                                         # We need the states of these leaf tasks so we can 
                                         # create the work that is added to the work_queue.
+
+                                        logger.debug("BFS: new leaf tasks: " + str(leaf_tasks_of_partitions_incremental))
                                         DAG_states_incremental = DAG_info.get_DAG_states()
+                                        logger.debug("BFS: DAG_states_incremental: " + str(DAG_states_incremental))
                                         #DAG_leaf_task_start_states_incremental = DAG_info.get_DAG_leaf_task_start_states()
                                         DAG_map_incremental = DAG_info.get_DAG_map()
                                         if using_workers:
                                             # leaf task states (a task is identified by its state) are put in work_queue
                                             for name in leaf_tasks_of_partitions_incremental:
                                                 state_incremental = DAG_states_incremental[name]
-                                                state_info = DAG_map_incremental[state_incremental]
-                                                task_inputs = state_info.task_input
+                                                state_info_incremental = DAG_map_incremental[state_incremental]
+                                                logger.debug("BFS: state_info_incremental: " + str(state_info_incremental))
+                                                task_inputs = state_info_incremental.task_inputs
                                                 # assert:
                                                 if len(task_inputs) != 0:
                                                     logger.debug("[Error]: Internal Error: task_input for leaf"
                                                         + " task/partition for incremental DAG generation is not empty.")
-                                                task_name = state_info.task_name
+                                                task_name = state_info_incremental.task_name
                                                 if not task_name == name:
                                                     logger.debug("[Error]: Internal Error: task name of leaf task is not"
                                                         + " name in leaf_tasks_of_partitions_incremental.")
@@ -2809,6 +2814,7 @@ def bfs(visited, node): #function for BFS
                                             # start a lambda with empty input payload (like DAG_executor_driver)
 
                                         leaf_tasks_of_partitions_incremental.clear()
+                                        logger.debug("BFS: leaf tasks after clear: " + str(leaf_tasks_of_partitions_incremental))
 
                                     # Deposit new incremental DAG. This may be the 
                                     # first DAG and since the workers and lambdas
@@ -3245,7 +3251,7 @@ def input_graph():
     networkX_lines = []
     #fname = "graph_3000"
     #fname = "graph_20"
-    fname = "graph_23"
+    fname = "graph_23_CC"
     #fname = "graph_27"
     #graph_file = open(fname, 'r')
     #graph_file = open(fname, 'r')
