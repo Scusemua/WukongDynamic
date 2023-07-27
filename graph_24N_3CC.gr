@@ -1,11 +1,11 @@
-c FILE                  :graph1.gr.gr
-c No. of vertices       :20
-c No. of edges          :23
+c FILE                  :graph_24_CC.gr.gr
+c No. of vertices       :24
+c No. of edges          :25
 c Max. weight           :1
 c Min. weight           :1
 c Min. edge             :1
 c Max. edge             :3
-p sp 20 23
+p sp 24 25
 a 1 12 1
 a 2 20 1
 a 2 10 1
@@ -29,3 +29,5 @@ a 17 1 1
 a 17 19 1
 a 19 20 1
 a 20 8 1
+a 21 22 1
+a 23 24 1

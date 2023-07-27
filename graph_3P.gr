@@ -1,0 +1,13 @@
+c FILE                  :graph_3P.gr.gr
+c No. of vertices       :6
+c No. of edges          :5
+c Max. weight           :1
+c Min. weight           :1
+c Min. edge             :1
+c Max. edge             :3
+p sp 6 5
+a 1 4
+a 2 1
+a 3 4
+a 4 6
+a 5 6

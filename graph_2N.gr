@@ -1,0 +1,9 @@
+c FILE                  :graph_2.gr.gr
+c No. of vertices       :2
+c No. of edges          :1
+c Max. weight           :1
+c Min. weight           :1
+c Min. edge             :1
+c Max. edge             :3
+p sp 2 1
+a 1 2 1

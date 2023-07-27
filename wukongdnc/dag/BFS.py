@@ -2702,10 +2702,14 @@ def bfs(visited, node): #function for BFS
                                 # and the threads simulating lambdas
                                 # or it will be read by the DAG_executor_driver and given
                                 # to the real (leaf) lambdas as part of their payload.
-                                file_name = "./DAG_info.pickle"
-                                with open(file_name, 'wb') as handle:
-                                    cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
                                 
+                                file_name = "./DAG_info.pickle"
+                                #with open(file_name, 'wb') as handle:
+                                #    cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+                                DAG_info_dictionary = DAG_info.get_DAG_info_dictionary()
+                                with open(file_name, 'wb') as handle:
+                                    cloudpickle.dump(DAG_info_dictionary, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+                    
                                 # Need to call run() but it has to be asynchronous as BFS needs to continue.
                                 thread_name = "DAG_executor_driver_Invoker"
                                 logger.debug("BFS: Starting DAG_executor_driver_Invoker_Thread for incrmental DAG generation.")
@@ -3250,9 +3254,14 @@ def input_graph():
     # algorithms on it, e.g., fnd_cycle, diameter.
     networkX_lines = []
     #fname = "graph_3000"
-    #fname = "graph_20"
-    fname = "graph_23_CC"
-    #fname = "graph_27"
+    fname = "graph_WB"
+    #fname = "graph_22N_2CC"
+    #fname = "graph_23N"
+    #fname = "graph_24N_3CC"
+    #fname = "graph_2N"
+    #fname = "graph_1N"
+    #fname = "graph_3P"
+    #fname = "graph_27_loops"
     #graph_file = open(fname, 'r')
     #graph_file = open(fname, 'r')
     graph_file = open(fname+".gr", 'r')
@@ -3462,7 +3471,10 @@ def input_graph():
         periphery(G, e=None, usebounds=False, weight=None)[source]
         Returns the periphery of the graph G. The periphery is the set of 
         nodes with eccentricity equal to the diameter.
-        """     
+        """ 
+
+    #logging.shutdown()
+    #os._exit(0)    
 
 def output_partitions():
     if use_page_rank_group_partitions:
