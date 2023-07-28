@@ -877,7 +877,7 @@ websocket = None
 num_incremental_DAGs_generated = 0
 # generate next DAg when num_incremental_DAGs_generated mod 
 # incremental_interval == 0
-incremental_interval = 3
+incremental_interval = 2
 
 #rhc incremental
     # total number of graph nodes that have been added to the 
@@ -2788,6 +2788,49 @@ def bfs(visited, node): #function for BFS
                                         # these leaf tasks were added.)
                                         # We need the states of these leaf tasks so we can 
                                         # create the work that is added to the work_queue.
+#rhc: put them in work_queue after deposit? 
+# so we know that whoever gets the lead tasks as work has a DAG that contains the tasks?
+# No? since some workers may get this leaf work and then will not need to call withdraw()
+# to get a DAG?
+# So if a worker gets a leaf task and it's state is not in its DAG or it is but leaf task
+# state is not complete then we got the leaf task before we got a new
+# DAG that has theleaf task in it. so the worker should put leaf task in its continue_queue 
+# and do leaf task after it gets a new DAG which will have leaf task(s) in it. So worker does not 
+# execute the leaf task so when it gets the -1 ... it will call withdraw,
+# as expected. Ugh.
+#
+# issue is: put -1 in work_queue but then get 4 from work_queue so do 4 and inc num_tasks_executed
+# so this condition becomes false
+#    if num_tasks_executed == num_tasks_to_execute: 
+# thus we do not call work_qeuue.get, instead we try to process -1 as a state.
+#
+# an this get out of sync? So we look at 4, it's in the DAG as complete.
+# so we can execute it. But then can we get a -1? -1 means 
+
+# another Issue: first worker to see num_tasks_executed == num_tasks_to_execute
+# will put -1 in work_queue. Some worker (maybe the same worker) will get
+# this -1 and call withdraw, maybe after putting a second -1 in the 
+# work_queue (if there are multiple workers). The first worker can call
+# withdraw and get a DAG and set the new num_tasks_to_execute so that 
+# the second worker will not see num_tasks_executed == num_tasks_to_execute 
+# and so will not get the -1 tha the first worker put there?
+#
+# Remember that workers are calling get work and if they get -1 they 
+# might add another -1 but then they will call withdraw. They
+# only check num_executed == num to excute after they get some work.
+# So if current DAG runs out of work they will call withdraw then
+# they try to get more work or process their continue queue to get
+# work and then they check num_executed == num. So if first worker
+# to put -1 in work queue also calls withdraw and gets a new DAG 
+# and sets num to execute higher then that is okay, since 
+# other workers must get a -1 and will call withdraw to get a new 
+# DAD and then call get work or process their continue queue?
+# That is, condition num_executed == num does not affect whether a worker
+# calls get work, only affects whether they add -1 to work_queue?
+#
+# So if they get the 4, they can, add it to their continue queue and
+# call get_work again?
+
 
                                         logger.debug("BFS: new leaf tasks: " + str(leaf_tasks_of_partitions_incremental))
                                         DAG_states_incremental = DAG_info.get_DAG_states()
@@ -3254,10 +3297,10 @@ def input_graph():
     # algorithms on it, e.g., fnd_cycle, diameter.
     networkX_lines = []
     #fname = "graph_3000"
-    fname = "graph_WB"
+    # fname = "graph_WB"
     #fname = "graph_22N_2CC"
     #fname = "graph_23N"
-    #fname = "graph_24N_3CC"
+    fname = "graph_24N_3CC"
     #fname = "graph_2N"
     #fname = "graph_1N"
     #fname = "graph_3P"
