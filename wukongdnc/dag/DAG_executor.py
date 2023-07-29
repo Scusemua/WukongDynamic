@@ -1475,10 +1475,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # partitions in the continue queue since there can be only 
                     # one partition that is to-be-continued.
                     if not use_page_rank_group_partitions:
+#hrc: Todo: No, not if we put leaf tasks in the continue queue.
                         logger.error("[Error]: work loop: process_continue_queue but"
                             + " not using partitions so this second to be continued"
                             + " partition should not be possible.")
-
 
                     DAG_executor_state.state = continue_queue.get()
                     continued_task = True
@@ -1514,39 +1514,95 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     #worker_needs_input = cluster_queue.qsize() == 0
 
                     if cluster_queue.qsize() == 0:
-                    #if worker_needs_input:
-                        logger.debug("DAG_executor_work_loop: cluster_queue.qsize() == 0 so"
-                            + " get work")
-                        if not using_threads_not_processes:
-                            # Config: A5, A6
-                            logger.debug("DAG_executor_work_loop: proc " + proc_name + " " + " thread " + thread_name + ": get work.")
-                            work_tuple = work_queue.get()
-                            DAG_executor_state.state = work_tuple[0]
-                            dict_of_results = work_tuple[1]
-                            logger.debug("work_loop: got work for thread " + thread_name)
-                            if dict_of_results != None:
-                                logger.debug("dict_of_results from work_tuple: ")
-                                for key, value in dict_of_results.items():
-                                    logger.debug(str(key) + " -> " + str(value))
-                                for key, value in dict_of_results.items():
-                                    data_dict[key] = value
-                        else:
-                            # Config: A4_local, A4_Remote
-                            logger.debug("work_loop: get work for thread " + thread_name)
-                            work_tuple = work_queue.get()
-                            DAG_executor_state.state = work_tuple[0]
-                            dict_of_results = work_tuple[1]
-                            logger.debug("work_loop: got work for thread " + thread_name)
-                            if dict_of_results != None:
-                                logger.debug("dict_of_results from work_tuple: ")
-                                for key, value in dict_of_results.items():
-                                    logger.debug(str(key) + " -> " + str(value))
-                                # Threads put task outputs in a data_dict that is global to the threads
-                                # so there is no need to do it again here, when getting work from the work_queue.
-                                #for key, value in dict_of_results.items():
-                                #    data_dict[key] = value                    
-                            
-                        logger.debug("**********************withdrawn state for thread: " + thread_name + " :" + str(DAG_executor_state.state))
+                        while (True):
+                            # get work; if it's not -1 and we'r doing
+                            # incremental ADG generation, check if it's
+                            # a leaf task. If so, make sure the leaf task
+                            # is in our latest incremental DAG version as 
+                            # a completed 
+                            logger.debug("DAG_executor_work_loop: cluster_queue.qsize() == 0 so"
+                                + " get work")
+                            if not using_threads_not_processes:
+                                # Config: A5, A6
+                                logger.debug("DAG_executor_work_loop: proc " + proc_name + " " + " thread " + thread_name + ": get work.")
+                                work_tuple = work_queue.get()
+                                DAG_executor_state.state = work_tuple[0]
+                                dict_of_results = work_tuple[1]
+                                logger.debug("DAG_executor_work_loop: got work for thread " + thread_name
+                                    + " state is " + str(DAG_executor_state.state))
+                                if not (compute_pagerank and use_incremental_DAG_generation):
+                                    if dict_of_results != None:
+                                        logger.debug("DAG_executor_work_loop: dict_of_results from work_tuple: ")
+                                        for key, value in dict_of_results.items():
+                                            logger.debug(str(key) + " -> " + str(value))
+                                        for key, value in dict_of_results.items():
+                                            data_dict[key] = value
+                                    break # while(True) loop
+                                else:
+                                    if not use_page_rank_group_partitions:
+                                        if not DAG_executor_state.state == -1:
+                                            state_info = DAG_map.get(DAG_executor_state.state)
+                                            is_leaf_task = (not state_info == None) and state_info.task_name in DAG_info.get_DAG_leaf_tasks()
+                                            if state_info == None or (is_leaf_task and state_info.ToBeContinued):
+                                                if using_workers:
+                                                    continue_queue.put(DAG_executor_state.state)
+                                                    logger.debug("DAG_executor_work_loop: work from work loop is a leaf task"
+                                                        + " put work in continue_queue:"
+                                                        + " state is " + str(DAG_executor_state.state))
+                                                else:
+                                                    pass # lambdas TBD: call Continue object w/output
+                                            else:
+                                                break # while(True) loop
+                                        else:
+                                            break # while(True) loop
+                                    else:
+                                        logger.debug("DAG_executor_work_loop: work from work queue is not a leaf task,:"
+                                                    + " state is " + str(DAG_executor_state.state))
+                                        pass # complete for groups
+                            else:
+                                # Config: A4_local, A4_Remote
+                                logger.debug("DAG_executor_work_loop:: get work for thread " + thread_name)
+                                work_tuple = work_queue.get()
+                                DAG_executor_state.state = work_tuple[0]
+                                dict_of_results = work_tuple[1]
+                                logger.debug("DAG_executor_work_loop: got work for thread " + thread_name
+                                    + " state from work tuple is " + str(DAG_executor_state.state))
+                                if dict_of_results != None:
+                                    logger.debug("DAG_executor_work_loop: dict_of_results from work_tuple: ")
+                                    for key, value in dict_of_results.items():
+                                        logger.debug(str(key) + " -> " + str(value))
+                                    # Threads put task outputs in a data_dict that is global to the threads
+                                    # so there is no need to do it again here, when getting work from the work_queue.
+                                    #for key, value in dict_of_results.items():
+                                    #    data_dict[key] = value 
+                                if not (compute_pagerank and use_incremental_DAG_generation):
+                                    break # while(True) loop
+                                else: # incremental DAG generation
+                                    if not use_page_rank_group_partitions: 
+                                        if not DAG_executor_state.state == -1:
+                                            state_info = DAG_map.get(DAG_executor_state.state)
+                                            is_leaf_task = (not state_info == None) and state_info.task_name in DAG_info.get_DAG_leaf_tasks()
+                                            if state_info == None or (is_leaf_task and state_info.ToBeContinued):
+                                                if using_workers:
+                                                    continue_queue.put(DAG_executor_state.state)
+                                                    # Note: put dict of results (input to task) in data_dict -
+                                                    # for processes: when we got work from work_queue.
+                                                    # for threads: when we generated the output (that became
+                                                    #   this input.)
+                                                    logger.debug("DAG_executor_work_loop: put TBC leaf task work in continue_queue:"
+                                                        + " state is " + str(DAG_executor_state.state))
+                                                else:
+                                                    pass # lambdas TBD: call Continue object w/output
+                                            else:
+                                                break # while(True) loop
+                                        else:
+                                            break # while(True) loop
+                                    else:
+                                        pass # complete for groups
+                        # end of while(True) get work from work_queue
+
+
+                        logger.debug("**********************DAG_executor_work_loop: withdrawn state for thread: " + thread_name + " :" + str(DAG_executor_state.state))
 
                         if DAG_executor_state.state == -1:
                             #logger.debug("DAG_executor: state is -1 so deposit another -1 and return.")
@@ -1566,26 +1622,26 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
     #rhc: counter:
                                 completed_workers = completed_workers_counter.increment_and_get()
                                 if completed_workers < num_workers:
-                                    logger.debug("DAG_executor: Work_Loop: workers_completed:  " + str(completed_workers)
+                                    logger.debug("DAG_executor_work_loop: workers_completed:  " + str(completed_workers)
                                         + " put -1 in work queue.")
                                     # Config: A5, A6
                                     work_tuple = (-1,None)
                                     work_queue.put(work_tuple)
                                 else:
-                                    logger.debug("DAG_executor: Work_Loop: completed_workers:  " + str(completed_workers)
+                                    logger.debug("DAG_executor_work_loop: completed_workers:  " + str(completed_workers)
                                         + " do not put -1 in work queue.")
                             else:
     #rhc: counter:
                                 completed_workers = completed_workers_counter.increment_and_get()
                                 if completed_workers < num_workers:
-                                    logger.debug("DAG_executor: Work_Loop: workers_completed:  " + str(completed_workers)
+                                    logger.debug("DAG_executor_work_loop: workers_completed:  " + str(completed_workers)
                                         + " put -1 in work queue.")
 
                                     # Config: A4_local, A4_Remote
                                     work_tuple = (-1,None)
                                     work_queue.put(work_tuple)
                                 else:
-                                    logger.debug("DAG_executor: Work_Loop: completed_workers:  " + str(completed_workers)
+                                    logger.debug("DAG_executor_work_loop: completed_workers:  " + str(completed_workers)
                                         + " do not put -1 in work queue.")
                             # worker is returning from work loop so worker will terminate
                             # and be joined by DAG_executor_driver
@@ -1608,7 +1664,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                     # value that can be returned and hence no wrapper is needed.
                                     new_DAG_info = DAG_infobuffer_monitor.withdraw(requested_current_version_number)
                                     completed_workers = completed_workers_counter.decrement_and_get()
-                                    logger.debug("DAG_executor: Work_Loop: after withdraw: workers_completed:  " + str(completed_workers))
+                                    logger.debug("DAG_executor_work_loop: after withdraw: workers_completed:  " + str(completed_workers))
                                     DAG_info = new_DAG_info
                                     DAG_map = DAG_info.get_DAG_map()
                                     DAG_tasks = DAG_info.get_DAG_tasks()
@@ -1620,7 +1676,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                         state_info = DAG_map[DAG_executor_state.state]
                                         # The continued task will be executed next
                                         # so we need its state_info
-                                        logger.debug("For new DAG_info, continued state: " + str(DAG_executor_state.state)
+                                        logger.debug("DAG_executor_work_loop: For new DAG_info, continued state: " + str(DAG_executor_state.state)
                                             +" state_info: " + str(state_info))
 #rhc continue
                                         continued_task = True
@@ -1630,17 +1686,17 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                         else:
                                             # process states in continue_queue, which
                                             # is done above
-                                            logger.debug("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXwork_loop: continue_queue.qsize()>0 set process_continue_queue = True.")
+                                            logger.debug("DAG_executor_work_loop: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXwork_loop: continue_queue.qsize()>0 set process_continue_queue = True.")
                                             process_continue_queue = True
 
                                     if not use_page_rank_group_partitions:
                                         # using partitions
                                         if not DAG_info.get_DAG_info_is_complete():
                                             num_tasks_to_execute = len(DAG_tasks) - 1
-                                            logger.debug("BFS: after withdraw: DAG_info not complete: new num_tasks_to_execute: " + str(num_tasks_to_execute))
+                                            logger.debug("DAG_executor_work_loop: after withdraw: DAG_info not complete: new num_tasks_to_execute: " + str(num_tasks_to_execute))
                                         else:
                                             num_tasks_to_execute = len(DAG_tasks)
-                                            logger.debug("BFS: after withdraw: DAG_info complete new num_tasks_to_execute: " + str(num_tasks_to_execute))
+                                            logger.debug("DAG_executor_work_loop: after withdraw: DAG_info complete new num_tasks_to_execute: " + str(num_tasks_to_execute))
                                     else:
                                         # using groups
                                         if not DAG_info.get_DAG_info_is_complete():
@@ -1689,7 +1745,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
     #rhc: Check this logic for return
 
                                 else:
-                                    logger.debug("DAG_executor: DAG_info is_complete so return.")
+                                    logger.debug("DAG_executor_work_loop: DAG_info is_complete so return.")
                                     return
                             else:
                                 return  
@@ -1711,7 +1767,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         #assert:
                         # cluster_queue was empty so we got work, which means th ecluster_queue should still be empty.
                         if not cluster_queue.qsize() == 0:
-                            logger.error("[Error]: Internal Error: cluster_queue.qsize() == 0 was true before"
+                            logger.error("[Error]: Internal Error: DAG_executor_work_loop: cluster_queue.qsize() == 0 was true before"
                                 + " we got work from worker queue but not after - queue size should not change.")
 
     #rhc: cluster:
@@ -1719,7 +1775,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         #worker_needs_input = False # default
 
                         #comment out for MM
-                        logger.debug("DAG_executor: Worker accessed work_queue, then maybe continue_queue: "
+                        logger.debug("DAG_executor_work_loop: Worker accessed work_queue, then maybe continue_queue: "
                             + "process state: " + str(DAG_executor_state.state))
                     else: # cluster_queue is not empty so worker does not need input
     #rhc: cluster:
@@ -1738,10 +1794,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
     #rhc: cluster:
                         #assert:
                         if not cluster_queue.qsize() == 0:
-                            logger.error("[Error]: DAG_executor: Internal Error: cluster_queue contained"
+                            logger.error("[Error]: DAG_executor_work_loop: Internal Error: cluster_queue contained"
                                 + " more than one item of work - queue size > 0 after cluster_queue.get")
 
-                        logger.debug(thread_name + " DAG_executor: Worker doesn't access work_queue")
+                        logger.debug(thread_name + " DAG_executor_work_loop: Worker doesn't access work_queue")
                         logger.debug("**********************" + thread_name + " process cluster_queue state: " + str(DAG_executor_state.state))
                     
                     #Note: This executed a memory barrier - so the pagerank writes to 
@@ -1753,7 +1809,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # else needs to provide the barrier.
     #rhc: counter
                     num_tasks_executed = completed_tasks_counter.increment_and_get()
-                    logger.debug("DAG_executor: " + thread_name + " before processing " + str(DAG_executor_state.state) 
+                    logger.debug("DAG_executor_work_loop: " + thread_name + " before processing " + str(DAG_executor_state.state) 
                         + " num_tasks_executed: " + str(num_tasks_executed) 
                         + " num_tasks_to_execute: " + str(num_tasks_to_execute))
                     if num_tasks_executed == num_tasks_to_execute:
