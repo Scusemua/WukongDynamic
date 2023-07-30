@@ -1744,10 +1744,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 
     #rhc: Check this logic for return
 
-                                else:
+                                else: #DAG_ifo  is complete
                                     logger.debug("DAG_executor_work_loop: DAG_info is_complete so return.")
                                     return
-                            else:
+                            else: # not doing incremental and no more tasks to execute
                                 return  
 
                         # Note: using_workers is checked above and must be True
@@ -1808,62 +1808,71 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # tasks. Use this counter or if we remove this counter, something 
                     # else needs to provide the barrier.
     #rhc: counter
-                    num_tasks_executed = completed_tasks_counter.increment_and_get()
-                    logger.debug("DAG_executor_work_loop: " + thread_name + " before processing " + str(DAG_executor_state.state) 
-                        + " num_tasks_executed: " + str(num_tasks_executed) 
-                        + " num_tasks_to_execute: " + str(num_tasks_to_execute))
-                    if num_tasks_executed == num_tasks_to_execute:
+    
+                # end not process_continue_queue
+                
+                # we have a task to execute - we got it from the work queue
+                # or the cluster queue or the continue queue.
+                # Increment num tasks executed and see if this is the last 
+                # task to execute. If so, start the terminattion process or
+                # if we are doing incremental DAG generation (so this is the 
+                # last task in the current version of the DAG)) workers need
+                # to get the next DAG (instead of terminating)
+                num_tasks_executed = completed_tasks_counter.increment_and_get()
+                logger.debug("DAG_executor_work_loop: " + thread_name + " before processing " + str(DAG_executor_state.state) 
+                    + " num_tasks_executed: " + str(num_tasks_executed) 
+                    + " num_tasks_to_execute: " + str(num_tasks_to_execute))
+                if num_tasks_executed == num_tasks_to_execute:
 #rhc: ToDo: BUG: for first DAG_info, P1 is complete and P2 is incomplete.
 # we execute P1 then add P2 to cont queue. then will we have num executd = 2
 # but num_to execute 1, or do we avoid this check in that state? 
 #rhc: 
-                        # Note: This worker has work to do, and this work is the last
-                        # task to be executed. So this worker and any other workers
-                        # can finish (if the DAG is not incremental or it is incremental
-                        # and complete) This worker starts the worker shutdown (or pause
-                        # for the new incremental DAG) by putting a -1 in the work queue.
-                        # Any worker that is waiting for work or that tries to get more 
-                        # work will get this -1. Note that this worker here that is adding
-                        # -1 may get this -1 when it tries to get work after executing
-                        # this last task. Workers who get -1 from the work queue put
-                        # a -1 back in the work queue if there are still workers who
-                        # have not completed (i.e., called get work). We have a counter
-                        # to track the number of completed (paused) workers.
-                        #
-                        # Note: No worker calls DAG_infobufer_Monitor.withdraw to get a 
-                        # new incrmental DAG untul all the tasks in the current version
-                        # of the incremental DAG have been executed. This is because,
-                        # the workers must first get a -1 from the work queue, at which 
-                        # point they may deposit anotgher -1 (if some workers have not
-                        # got their -1 yet) and then thwy will call DAG_infobufer_Monitor.withdraw
-                        # instead of returning. Note too that they only call 
-                        # DAG_infobufer_Monitor.withdraw if the current version of the 
-                        # incremental DAG is not complete, so the withdraw() will return 
-                        # a new version of the increnetal DAG. Eventuallly, the DAG will 
-                        # be complete and the workers will return (terminate) instead of 
-                        # calling DAG_infobufer_Monitor.withdraw.
-                        if not using_threads_not_processes:
-                            # Config: A5, A6
-                            logger.debug(thread_name + ": DAG_executor: num_tasks_executed == num_tasks_to_execute: depositing -1 in work queue.")
-                            work_tuple = (-1,None)
-                            work_queue.put(work_tuple)
-                        else:
-                            # Config: A4_local, A4_Remote
-                            logger.debug(thread_name + ": DAG_executor: num_tasks_executed == num_tasks_to_execute: depositing -1 in work queue.")
-                            work_tuple = (-1,None)
-                            work_queue.put(work_tuple)
-                        
-                        # No return here. The worker that executes the last task will
-                        # add a -1 to the work queue (-1,None) so that the next worker
-                        # to try to get work will get a -1. That worker will add a
-                        # -1 to the work queue and return from the work loop (so terminate)
-                        # The next worker will get this -1 etc. Note that the last worker
-                        # will not add a -1 to the work_queue.
-                        # (The last worker used to also add a -1 to the work queue, so 
-                        # the work_queue has a -1 at the end of DAG_execution.
-                        #return
+                    # Note: This worker has work to do, and this work is the last
+                    # task to be executed. So this worker and any other workers
+                    # can finish (if the DAG is not incremental or it is incremental
+                    # and complete) This worker starts the worker shutdown (or pause
+                    # for the new incremental DAG) by putting a -1 in the work queue.
+                    # Any worker that is waiting for work or that tries to get more 
+                    # work will get this -1. Note that this worker here that is adding
+                    # -1 may get this -1 when it tries to get work after executing
+                    # this last task. Workers who get -1 from the work queue put
+                    # a -1 back in the work queue if there are still workers who
+                    # have not completed (i.e., called get work). We have a counter
+                    # to track the number of completed (paused) workers.
+                    #
+                    # Note: No worker calls DAG_infobufer_Monitor.withdraw to get a 
+                    # new incrmental DAG untul all the tasks in the current version
+                    # of the incremental DAG have been executed. This is because,
+                    # the workers must first get a -1 from the work queue, at which 
+                    # point they may deposit anotgher -1 (if some workers have not
+                    # got their -1 yet) and then thwy will call DAG_infobufer_Monitor.withdraw
+                    # instead of returning. Note too that they only call 
+                    # DAG_infobufer_Monitor.withdraw if the current version of the 
+                    # incremental DAG is not complete, so the withdraw() will return 
+                    # a new version of the increnetal DAG. Eventuallly, the DAG will 
+                    # be complete and the workers will return (terminate) instead of 
+                    # calling DAG_infobufer_Monitor.withdraw.
+                    if not using_threads_not_processes:
+                        # Config: A5, A6
+                        logger.debug(thread_name + ": DAG_executor: num_tasks_executed == num_tasks_to_execute: depositing -1 in work queue.")
+                        work_tuple = (-1,None)
+                        work_queue.put(work_tuple)
+                    else:
+                        # Config: A4_local, A4_Remote
+                        logger.debug(thread_name + ": DAG_executor: num_tasks_executed == num_tasks_to_execute: depositing -1 in work queue.")
+                        work_tuple = (-1,None)
+                        work_queue.put(work_tuple)
+                    
+                    # No return here. The worker that executes the last task will
+                    # add a -1 to the work queue (-1,None) so that the next worker
+                    # to try to get work will get a -1. That worker will add a
+                    # -1 to the work queue and return from the work loop (so terminate)
+                    # The next worker will get this -1 etc. Note that the last worker
+                    # will not add a -1 to the work_queue.
+                    # (The last worker used to also add a -1 to the work queue, so 
+                    # the work_queue has a -1 at the end of DAG_execution.
+                    #return
 
-                # end not process_continue_queue
 
 #rhc: cluster:
             else: # not using workers: Config: A1. A2, A3
@@ -1884,8 +1893,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         logger.error("[Error]: DAG_executor: Internal Error: simulated or real lambda:"
                             + " cluster_queue contained more than one item of work - queue size > 0 after cluster_queue.get")
 
-        # while (True) from above continues next with work to do in the form
-        #              of DAG_executor_state.state of some task
+        # while (True) still executing from above - continues next with work to do in the form
+        # of DAG_executor_state.state of some task
 
             # DAG_executor_state.state contains the next state to execute
 
