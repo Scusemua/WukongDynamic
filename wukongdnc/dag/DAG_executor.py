@@ -1448,66 +1448,97 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 
             if using_workers:
                 # Config: A4_local, A4_Remote, A5, A6
-# So:
-# - no get work if cluster queue is not empty or continue queue is not empty.
-# - need to know have correct values for comparison of 
-# num_tasks_executed == num_tasks_to_execute. Can just keep num_tasks_executed
-# as it is, but num_tasks_to_execute changes? where
-#  num_tasks_to_execute = len(DAG_tasks)
-# So make sure len(DAG_tasks) does not include any "continued" tasks or adjust 
-# accordingly, as in:
-# if incremental_generation and not DAG_complete
-#   num_tasks_to_execute = len(DAG_tasks)-1
-# else:
-#   num_tasks_to_execute = len(DAG_tasks)
-# Not sure where we will cut off the incremental task - last tasks to 
-# excute or the incomplete tasks that are targets of the last tasks to execute
-
 #rhc continue 
+                # We will get work from the continue_queue (if incremental
+                # DAG generation) or else the clusger_queue or else the 
+                # work_queue, and that is the priority of the queues.
+                # The coninue_queue is tasks that were incomplete in the 
+                # last version of the incremental DAG and that can be executed
+                # in the new version. The cluster_queue contains clustered
+                # tasks, if any. The work_queue is where enabled fanout and 
+                # faninNB tasks are placed so they aer available to all workers,
+                # 
+                # Note: After getting a task from one of these queues,
+                # we will increment the count of excuted tasks and see
+                # if we've executed all the complete tasks in the DAG. If so,
+                # for incremental DAG generation, we try to get a new DAG if the 
+                # current DAG is incomplete; otherwise, thr workers can terminae.
+                # For non-incremental DAG generation, if we've executed all the tasks
+                # then the workers can complete.
+                #
+                # When worker received a new incremental DAG, it will 
+                # check whether there are tasks in its continue_queue.
+                # These are tasks that were not complete in the DAG and could
+                # not be executed until a new incremental DAG was obtained.
+                # The worker will get one of these tasks right after getting
+                # the DAG. If the continue_queue is not then empty, it will set
+                # process_continue_queue to True so the remaining continued tasks
+                # can be executed one-by-one. 
+                # Note: If there is work in the continue queue we get it,
+                # else if there is work in the cluster_queue we get it
+                # else we try to get work from the work queue.
+                # When using partitions, all the partitions in the DAG
+                # that are not the last partition are complete an can be 
+                # executed. The last partition may be incomplete - it is
+                # complete only if the DAG is complete (all the grah nodes
+                # aer in a paritition.)
                 if process_continue_queue:
                     # assert
                     if not (compute_pagerank and use_incremental_DAG_generation):
                         logger.error("[Error]: work loop: process_continue_queue but"
                             +  " not compute_pagerank or not use_incremental_DAG_generation.")
 
-                    # the first partition was obtained from the contine queue 
+                    # The first partition was obtained from the continue queue 
                     # when we got the new DAG_info and there should be no more
                     # partitions in the continue queue since there can be only 
                     # one partition that is to-be-continued.
                     if not use_page_rank_group_partitions:
-#hrc: Todo: No, not if we put leaf tasks in the continue queue.
                         logger.error("[Error]: work loop: process_continue_queue but"
-                            + " not using partitions so this second to be continued"
-                            + " partition should not be possible.")
+                            + " using partitions so this second to be continued"
+                            + " partition/task should not be possible.")
 
                     DAG_executor_state.state = continue_queue.get()
+
+                    # Indicate that we are executing a continued task. Used below
+                    # for debugging
                     continued_task = True
+                    # If we are done executing the continued tasks then turn
+                    # process_continue_queue off. Note: When we aer executing 
+                    # partitions, instead of groups, there is only ever one
+                    # task in the continue_queue
                     if continue_queue.qsize() == 0:
                         # Note: When using partitions this is True, i.e., 
                         # only one partition can be to-be-continued 
                         process_continue_queue = False
 
-#rhc: ToDo: Need to check if this continued task is the last task,
-# i.e., should we add -1 to work_queue. Can copy that check from 
-# below to here. Or: I think we can unindent that check so it is done
-# whether we get work from cluster_queue, or we get work from 
-# continue_queue here or below - after you get next work do this 
-# check.
-                else: # not process_continue_queue
-                    # Workers don't always get work from the work queue. they may get a state from the cluster
-                    # queue instead. If a worker has a collpase task, it puts the collapse state in 
-                    # the cluster queue and then gets it. For fanouts, the become fanout task/state is 
-                    # put in the cluster_queue, sme for fanin become tasks/states
-                    # For faninB there are no becomes - last caller puts faninNB task in the work queue.
-                    # If we are batching fannNBs (and fanouts), and the worker calling batch() needs
-                    # work (ie., cluster_queue is empty) then the worker may receve work back
-                    # from the tcp_server and the worker will put this work in its cluser_queue.
 
-                    # Note: If workers got a new incremental DAG from the
-                    # work queue then cluster_queue.qsize() == 0  will be true 
-                    # for each worker, since before they got the new DAG they had 
-                    # to try to get work. so this cluster_queue condition must have been 
-                    # true for them to try to get work.
+                else: # not process_continue_queue
+                    # Workers don't always get work from the work queue. They may get work from the 
+                    # cluster queue instead. If a worker has a collapse task, it puts the collapse state in 
+                    # the cluster queue and then gets it from the qeueue on the next iteration
+                    # of the work loop (which it does immediately). Note that collapsed tasks
+                    # are just fanout tasks when there is only one fanout - these tasks are always clustered.
+                    # The become fanout task/state is put in the cluster_queue, same for fanin become tasks/states.
+                    # After processing fanouts, and putting the become fanout in the 
+                    # cluster_queue, or processing a fanin and if we are the become fanin
+                    # task putting this task in the cluster_queue, we will immediatley 
+                    # iterate the work loop and get a task from the cluster_queue (one by one
+                    # until the cluster queue is empty.)
+                    # For faninB there are no becomes - after the last caller callls fanin 
+                    # the faninNB tasks is added to the work_queue.
+                    # If we are batching faninNBs (and fanouts), and the worker calling batch() needs
+                    # work (i.e., its cluster_queue is empty) then the worker may receive work back
+                    # from the tcp_server and the worker will put this work in its cluser_queue.
+                    # In this way, instead of adding all the batched fanout and faninNB
+                    # work to the work_queue, we just return one of the fanouts/faninNBs
+                    # back to the calling worker, so it does not need to access the 
+                    # (possibly remote) work_queue.
+                    # Note: When a worker tries to get a new incremental DAG then
+                    # its cluster queue is empty, since a worker can only get a new 
+                    # DAG after it tries to get work from the work_queue and for this 
+                    # to occur the workers cluster_queue must be empty. (So a
+                    # worker only tries to get work from the work_queue if the 
+                    # worker's cluster_queue is empty.)
 
 #rhc: cluster:
                     # Just take worker_needs_input out of it.
@@ -1515,14 +1546,41 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 
                     if cluster_queue.qsize() == 0:
                         while (True):
-                            # get work; if it's not -1 and we'r doing
-                            # incremental ADG generation, check if it's
-                            # a leaf task. If so, make sure the leaf task
-                            # is in our latest incremental DAG version as 
-                            # a completed 
+                            # Try to get work from th work_queue.
+                            # We may get work or we may get -1. 
+                            # - The -1 indicates that all complete tasks in the DAG (which 
+                            # may be incremental) have been executed, so either
+                            # (1) we are not doing incremental DAG generation 
+                            # and we are done; or (2) are are doing incremental 
+                            # DAG generation and (a) the current DAG is not complete
+                            # so we should get a new incremental DAG, or (b) the 
+                            # current incremental DAG is complete (we have executed
+                            # all the tasks) and we are done.
+                            # - If we do not get -1, then we get a task
+                            # that can be executed. If this task is not a 
+                            # leaf task, then we can execute it. If it is a leaf
+                            # task then we may have to delay its execution. That is,
+                            # the increental DAG generator may add a leaf task to the 
+                            # next DAG. That leaf task must be added to the work queue
+                            # so it can be executed. (Such a leaf task is the first 
+                            # partition/group in a new connected component that is 
+                            # explored by BFS(). That is, if there are n connected 
+                            # components in the graph then we will call BFS() n times.
+                            # The first partition/group generated by such a call to BFS() is
+                            # a leaf node.) But a worker can then get the leaf task from
+                            # the work_queue *before* it gets the new incremental DAG that 
+                            # contains the leaf task. That is the leaf task may not be in the
+                            # current DAG, or if it is it may not be marked as "completed." If 
+                            # so, we put the leaf task(s) in the worker's continue_queue
+                            # to be executed after the worker gets the next DAG. It would require a 
+                            # lot of synchronization to ensure that leaf tasks are added to the work
+                            # queue (and thus are made available to workers) only after *every* 
+                            # worker has obtained their next incremental DAG. 
+
                             logger.debug("DAG_executor_work_loop: cluster_queue.qsize() == 0 so"
                                 + " get work")
-                            if not using_threads_not_processes:
+                            
+                            if not using_threads_not_processes: # using worker processes
                                 # Config: A5, A6
                                 logger.debug("DAG_executor_work_loop: proc " + proc_name + " " + " thread " + thread_name + ": get work.")
                                 work_tuple = work_queue.get()
@@ -1531,27 +1589,62 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                 logger.debug("DAG_executor_work_loop: got work for thread " + thread_name
                                     + " state is " + str(DAG_executor_state.state))
                                 if not (compute_pagerank and use_incremental_DAG_generation):
+                                    # put the inputs for the work task to be executed, which are 
+                                    # in dict_of_results (i.e., the results executing one or more
+                                    # fanout/fanin tasks whose outputs are input to the work task)
+                                    # in the data_dict where they can be accessed for excuting the task.
                                     if dict_of_results != None:
+                                        # If the state is -1, there is no work task as all the tasks
+                                        # in the (non-incremental) DAG have been executed so we can quit.
                                         logger.debug("DAG_executor_work_loop: dict_of_results from work_tuple: ")
                                         for key, value in dict_of_results.items():
                                             logger.debug(str(key) + " -> " + str(value))
                                         for key, value in dict_of_results.items():
                                             data_dict[key] = value
+                                    # got work from the work queue so break the while(True)
+                                    # loop and execute the work task
                                     break # while(True) loop
-                                else:
+                                else: # using incremental DAG generation
                                     if not use_page_rank_group_partitions:
                                         if not DAG_executor_state.state == -1:
+                                            # try to get the stte_info for the work task (state)
                                             state_info = DAG_map.get(DAG_executor_state.state)
-                                            is_leaf_task = (not state_info == None) and state_info.task_name in DAG_info.get_DAG_leaf_tasks()
-                                            if state_info == None or (is_leaf_task and state_info.ToBeContinued):
+                                            # if there is no state_info for the work task it must be
+                                            # an unexecutable leaf task, i.e., the leaf task stat_info is 
+                                            # in the next incremental DAG but not this current incremental DAG.
+                                            # Non-leaf tasks state_info is alwaye in the current DAG.
+                                            # If there is state_info for this task then this is an 
+                                            # unexectuable leaf task if this task name is in the list of leaf
+                                            # task names and it is a to-be-continued task.
+                                            is_unexecutable_leaf_task = state_info == None or (
+                                                state_info.task_name in DAG_info.get_DAG_leaf_tasks() and state_info.ToBeContinued
+                                            )
+                                            if is_unexecutable_leaf_task:
                                                 if using_workers:
                                                     continue_queue.put(DAG_executor_state.state)
-                                                    logger.debug("DAG_executor_work_loop: work from work loop is a leaf task"
+                                                    logger.debug("DAG_executor_work_loop: work from work loop is unexecutable_leaf_task leaf task"
                                                         + " put work in continue_queue:"
                                                         + " state is " + str(DAG_executor_state.state))
                                                 else:
                                                     pass # lambdas TBD: call Continue object w/output
                                             else:
+                                                # This work task is a task we can execute now. (It may be a 
+                                                # leaf task and if it is it is not to-be-continued so we can 
+                                                # execute it.)
+                                                # Put the inputs for the work task, which are 
+                                                # in dict_of_results (i.e., the results executing one or more
+                                                # fanout/fanin tasks whose outputs are input to the work task)
+                                                # in the data_dict where they can be accessed for excuting the task.
+                                                if dict_of_results != None:
+                                                    # If the state is -1, there is no work task as all the tasks
+                                                    # in the (non-incremental) DAG have been executed so we can quit.
+                                                    logger.debug("DAG_executor_work_loop: dict_of_results from work_tuple: ")
+                                                    for key, value in dict_of_results.items():
+                                                        logger.debug(str(key) + " -> " + str(value))
+                                                    for key, value in dict_of_results.items():
+                                                        data_dict[key] = value
+                                                # we got work from the work queue so break the while(True)
+                                                # loop and execute the work task
                                                 break # while(True) loop
                                         else:
                                             break # while(True) loop
@@ -1580,9 +1673,20 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                 else: # incremental DAG generation
                                     if not use_page_rank_group_partitions: 
                                         if not DAG_executor_state.state == -1:
+                                            # try to get the stte_info for the work task (state)
                                             state_info = DAG_map.get(DAG_executor_state.state)
-                                            is_leaf_task = (not state_info == None) and state_info.task_name in DAG_info.get_DAG_leaf_tasks()
-                                            if state_info == None or (is_leaf_task and state_info.ToBeContinued):
+                         
+                                            # if there is no state_info for the work task it must be
+                                            # an unexecutable leaf task, i.e., the leaf task stat_info is 
+                                            # in the next incremental DAG but not this current incremental DAG.
+                                            # Non-leaf tasks state_info is alwaye in the current DAG.
+                                            # If there is state_info for this task then this is an 
+                                            # unexectuable leaf task if this task name is in the list of leaf
+                                            # task names and it is a to-be-continued task.
+                                            is_unexecutable_leaf_task = state_info == None or (
+                                                state_info.task_name in DAG_info.get_DAG_leaf_tasks() and state_info.ToBeContinued
+                                            )
+                                            if is_unexecutable_leaf_task:
                                                 if using_workers:
                                                     continue_queue.put(DAG_executor_state.state)
                                                     # Note: put dict of results (input to task) in data_dict -
