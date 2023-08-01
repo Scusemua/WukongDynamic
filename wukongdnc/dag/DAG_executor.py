@@ -1901,9 +1901,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         # Note: Currently, we do not cluster more than one fanout and
                         # we do not cluster faninNB/fanins, and there is only one
                         # collapse task, so the cluster_queue will have only one
-                        # piece of work in it.
+                        # work task in it.
                         DAG_executor_state.state = cluster_queue.get()
-                        # Question: Do not do this
+
+                        #old design
                         #worker_needs_input = cluster_queue.qsize() == 0
                         logger.debug("DAG_executor_work_loop: cluster_queue contains work:"
                             + " got state " + str(DAG_executor_state.state))
@@ -1917,13 +1918,6 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         logger.debug(thread_name + " DAG_executor_work_loop: Worker doesn't access work_queue")
                         logger.debug("**********************" + thread_name + " process cluster_queue state: " + str(DAG_executor_state.state))
                     
-                    #Note: This executed a memory barrier - so the pagerank writes to 
-                    # the shared memory (if used) just performed by this process P1 
-                    # will be flushed, which means the downstream pagerank tasks 
-                    # that read these values will get the values written by P1.
-                    # So we need a memory barrier between a task and its downstream
-                    # tasks. Use this counter or if we remove this counter, something 
-                    # else needs to provide the barrier.
     #rhc: counter
     
                 # end not process_continue_queue
@@ -1934,16 +1928,22 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # task to execute. If so, start the terminattion process or
                 # if we are doing incremental DAG generation (so this is the 
                 # last task in the current version of the DAG)) workers need
-                # to get the next DAG (instead of terminating)
+                # to get the next DAG (instead of terminating).
+
+                #Note: This increment_and_get executes a memory barrier - so the pagerank writes to 
+                # the shared memory (if used) just performed by this process P1 
+                # will be flushed, which means the downstream pagerank tasks 
+                # that read these values will get the values written by P1.
+                # So we need a memory barrier between a task and its downstream
+                # tasks. Use this counter or if we remove this counter, something 
+                # else needs to provide the barrier.
                 num_tasks_executed = completed_tasks_counter.increment_and_get()
                 logger.debug("DAG_executor_work_loop: " + thread_name + " before processing " + str(DAG_executor_state.state) 
                     + " num_tasks_executed: " + str(num_tasks_executed) 
                     + " num_tasks_to_execute: " + str(num_tasks_to_execute))
+                
                 if num_tasks_executed == num_tasks_to_execute:
-#rhc: ToDo: BUG: for first DAG_info, P1 is complete and P2 is incomplete.
-# we execute P1 then add P2 to cont queue. then will we have num executd = 2
-# but num_to execute 1, or do we avoid this check in that state? 
-#rhc: 
+#rhc: stop
                     # Note: This worker has work to do, and this work is the last
                     # task to be executed. So this worker and any other workers
                     # can finish (if the DAG is not incremental or it is incremental
@@ -1958,46 +1958,60 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # to track the number of completed (paused) workers.
                     #
                     # Note: No worker calls DAG_infobufer_Monitor.withdraw to get a 
-                    # new incrmental DAG untul all the tasks in the current version
+                    # new incrmental DAG until all the tasks in the current version
                     # of the incremental DAG have been executed. This is because,
                     # the workers must first get a -1 from the work queue, at which 
-                    # point they may deposit anotgher -1 (if some workers have not
-                    # got their -1 yet) and then thwy will call DAG_infobufer_Monitor.withdraw
+                    # point they may deposit another -1 (if some workers have not
+                    # got their -1 yet) and then they will call DAG_infobufer_Monitor.withdraw
                     # instead of returning. Note too that they only call 
                     # DAG_infobufer_Monitor.withdraw if the current version of the 
                     # incremental DAG is not complete, so the withdraw() will return 
                     # a new version of the increnetal DAG. Eventuallly, the DAG will 
-                    # be complete and the workers will return (terminate) instead of 
+                    # be complete and the workers will return (i.e., terminate) instead of 
                     # calling DAG_infobufer_Monitor.withdraw.
                     if not using_threads_not_processes:
                         # Config: A5, A6
                         logger.debug(thread_name + ": DAG_executor: num_tasks_executed == num_tasks_to_execute: depositing -1 in work queue.")
                         work_tuple = (-1,None)
+                        # for the next worker
                         work_queue.put(work_tuple)
                     else:
                         # Config: A4_local, A4_Remote
                         logger.debug(thread_name + ": DAG_executor: num_tasks_executed == num_tasks_to_execute: depositing -1 in work queue.")
+                        # for the nex worker
                         work_tuple = (-1,None)
                         work_queue.put(work_tuple)
                     
-                    # No return here. The worker that executes the last task will
+                    # No return here. A worker may return when it gets a -1
+                    # from the work_queue (not here when it puts a -1 in the work queue.)
+                    # 
+                    # The worker that executes the last task will
                     # add a -1 to the work queue (-1,None) so that the next worker
-                    # to try to get work will get a -1. That worker will add a
-                    # -1 to the work queue and return from the work loop (so terminate)
-                    # The next worker will get this -1 etc. Note that the last worker
+                    # to try to get work will get a -1. That next worker will add a
+                    # -1 to the work queue , etc. Note that the last worker
                     # will not add a -1 to the work_queue.
                     # (The last worker used to also add a -1 to the work queue, so 
-                    # the work_queue has a -1 at the end of DAG_execution.
+                    # the work_queue has a -1 at the end of DAG_execution. We now have 
+                    # a counter to count completed workers so that the last worker
+                    # does not add a -1 to the work_queue
                     #return
-
-
 #rhc: cluster:
             else: # not using workers: Config: A1. A2, A3
                 # if we are using simulated or real lambdas, then the lambda
                 # payload has a state to execute. Ths state is added to the 
                 # cluster_queue at the start of the work loop. Lambdas may also
                 # add collpased states to the cluster queue and fanout/fanin
-                # become states are also aded to the cluster queue.
+                # become states are also added to the cluster queue. Real and 
+                # simulated lambdas do not use a work_queue, and they do 
+                # not use a continue_queue for incremental DAG generation.
+                # So there is only a cluster queue. 
+                #
+                # The cluster_queue will have the lamvdas payload task added
+                # to it and so will not be empty the first time we check here
+                # on the cluster_queue size. When processing the tasks, we may
+                # or may not add become tasks for fanouts and fanins and 
+                # collapsed tasks to the custer_queue, so the cluster_queue
+                # may be empty on later checks.
                 if cluster_queue.qsize() > 0:
                     DAG_executor_state.state = cluster_queue.get()
                     # Question: Do not do this
