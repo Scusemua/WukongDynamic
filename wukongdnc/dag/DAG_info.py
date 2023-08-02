@@ -55,6 +55,7 @@ class DAG_Info(object):
         self.all_faninNB_task_names = DAG_info_dictionary["all_faninNB_task_names"]
         self.all_faninNB_sizes = DAG_info_dictionary["all_faninNB_sizes"]
         self.all_fanout_task_names = DAG_info_dictionary["all_fanout_task_names"]
+        self.all_collapse_task_names = DAG_info_dictionary["all_collapse_task_names"]
         self.DAG_leaf_tasks = DAG_info_dictionary["DAG_leaf_tasks"]
         self.DAG_leaf_task_start_states = DAG_info_dictionary["DAG_leaf_task_start_states"]
         self.DAG_leaf_task_inputs = DAG_info_dictionary["DAG_leaf_task_inputs"]
@@ -71,6 +72,7 @@ class DAG_Info(object):
         DAG_info_dictionary["all_faninNB_task_names"] = self.all_faninNB_task_names
         DAG_info_dictionary["all_faninNB_sizes"] = self.all_faninNB_sizes
         DAG_info_dictionary["all_fanout_task_names"] = self.all_fanout_task_names
+        DAG_info_dictionary["all_collapse_task_names"] = self.all_collapse_task_names
         DAG_info_dictionary["DAG_leaf_tasks"] = self.DAG_leaf_tasks
         DAG_info_dictionary["DAG_leaf_task_start_states"] = self.DAG_leaf_task_start_states
         DAG_info_dictionary["DAG_leaf_task_inputs"] = self.DAG_leaf_task_inputs
@@ -93,6 +95,8 @@ class DAG_Info(object):
         return self.all_faninNB_sizes
     def get_all_fanout_task_names(self):
         return self.all_fanout_task_names
+    def get_all_collapse_task_names(self):
+        return self.all_collapse_task_names
     def get_DAG_leaf_tasks(self):
         return self.DAG_leaf_tasks
     def get_DAG_leaf_task_start_states(self):

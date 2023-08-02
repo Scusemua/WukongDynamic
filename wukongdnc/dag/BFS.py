@@ -2718,6 +2718,7 @@ def bfs(visited, node): #function for BFS
                                 invoker_thread_for_DAG_executor_driver.start()
                             else:
                                 # there is more than one partition in the DAG so DAG is not complete
+                                # and we continue with incremental DAG generation.
                                 pass # empty
                         
                         else: # current_partition_number >=2:
@@ -2924,6 +2925,7 @@ def bfs(visited, node): #function for BFS
 # We would need to know the number of CCs (leaf nodes) to set # of workers.
                                     invoker_thread_for_DAG_executor_driver.start()
                                 else:
+                                    # For debugging:
                                     # This is not partition 1 and it is not partition 2 so we do not 
                                     # start the DAG_executor_driver.run(). However, we still need to 
                                     # check whether the current partition (which is not partition 2) 
@@ -2931,7 +2933,7 @@ def bfs(visited, node): #function for BFS
                                     # DAG_info to file. (If this is partition 2, we always
                                     # save the DAG_info since we will also start the DAG_executor_driver.)
                                     if DAG_info.get_DAG_info_is_complete():
-                                        file_name = "./DAG_info.pickle"
+                                        file_name = "./DAG_info_complete.pickle"
                                         with open(file_name, 'wb') as handle:
                                             cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
                             
