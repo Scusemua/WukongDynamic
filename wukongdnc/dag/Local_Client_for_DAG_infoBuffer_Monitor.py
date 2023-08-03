@@ -29,10 +29,11 @@ class Local_Client_for_DAG_infoBuffer_Monitor:
     def set_DAG_infoBuffer_Monitor(self,DAG_infobuffer_monitor):
         self.wrapped_DAG_infobuffer_monitor = DAG_infobuffer_monitor
 
-    def deposit(self,DAG_info):
+    def deposit(self,DAG_info, new_leaf_task_work_tuples):
         # bounded buffer is blocking; using same interface as Manager.Queue
         keyword_arguments = {}
         keyword_arguments['new_current_version_DAG_info'] = DAG_info
+        keyword_arguments['new_current_version_new_leaf_tasks'] = new_leaf_task_work_tuples
         # name of object is process_DAG_infoBuffer_Monitor, type specified on create
         # _restart return value begins with "_" so PyLint does not report it
         _return_value_ignored, _restart_value_ignored = self.wrapped_DAG_infobuffer_monitor.deposit(**keyword_arguments)
@@ -43,5 +44,5 @@ class Local_Client_for_DAG_infoBuffer_Monitor:
         # name of object is process_DAG_infoBuffer_Monitor, type specified on create
         # This call returns a new DAG_info object that is being 
         # constructed incrementally.
-        DAG_info, _restart_value_ignored = self.wrapped_DAG_infobuffer_monitor.withdraw(**keyword_arguments)
-        return DAG_info
+        DAG_info, new_leaf_task_states, _restart_value_ignored = self.wrapped_DAG_infobuffer_monitor.withdraw(**keyword_arguments)
+        return DAG_info, new_leaf_task_states

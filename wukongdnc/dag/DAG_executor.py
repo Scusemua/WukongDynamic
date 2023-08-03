@@ -1621,6 +1621,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                             # If there is state_info for this task then this is an 
                                             # unexectuable leaf task if this task name is in the list of leaf
                                             # task names and it is a to-be-continued task.
+                                            is_leaf_task = state_info == None or state_info.task_name in DAG_info.get_DAG_leaf_tasks()
+                                            logger.debug("DAG_executor_work_loop: work from work_queue is_leaf_task: " + str(is_leaf_task))
                                             is_unexecutable_leaf_task = state_info == None or (
                                                 state_info.task_name in DAG_info.get_DAG_leaf_tasks() and state_info.ToBeContinued
                                             )
@@ -1634,7 +1636,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                                 # partitions of the connected components can be executed in parallel
                                                 if using_workers:
                                                     continue_queue.put(DAG_executor_state.state)
-                                                    logger.debug("DAG_executor_work_loop: work from work loop is unexecutable_leaf_task leaf task"
+                                                    logger.debug("DAG_executor_work_loop: work from work loop is unexecutable_leaf_task,"
                                                         + " put work in continue_queue:"
                                                         + " state is " + str(DAG_executor_state.state))
                                                 else:
@@ -1642,7 +1644,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                             else:
                                                 # we got work (not -1) from the work queue (a non-leaf task),
                                                 # so break the while(True) loop.
-                                                logger.debug("DAG_executor_work_loop: work from work queue is not a leaf task:"
+                                                logger.debug("DAG_executor_work_loop: work from work queue is not an unexecutable_leaf_task,"
                                                     + " state is " + str(DAG_executor_state.state))
                                                 break # while(True) loop
                                         else:
@@ -1684,6 +1686,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                             # If there is state_info for this task then this is an 
                                             # unexectuable leaf task if this task name is in the list of leaf
                                             # task names and it is a to-be-continued task.
+                                            is_leaf_task = state_info == None or state_info.task_name in DAG_info.get_DAG_leaf_tasks()
+                                            logger.debug("DAG_executor_work_loop: work from work_queue is_leaf_task: " + str(is_leaf_task))
                                             is_unexecutable_leaf_task = state_info == None or (
                                                 state_info.task_name in DAG_info.get_DAG_leaf_tasks() and state_info.ToBeContinued
                                             )
@@ -1702,14 +1706,14 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                                     # for processes: when we got work from work_queue.
                                                     # for threads: when we generated the output (that became
                                                     #   this input.)
-                                                    logger.debug("DAG_executor_work_loop: put TBC leaf task work in continue_queue:"
+                                                    logger.debug("DAG_executor_work_loop: put unexecutable_leaf_task work in continue_queue:"
                                                         + " state is " + str(DAG_executor_state.state))
                                                 else:
                                                     pass # lambdas TBD: call Continue object w/output
                                             else:
                                                 # we got work (not -1) from the work queue (a non-leaf task) so break the while(True)
                                                 # loop and execute the work task
-                                                logger.debug("DAG_executor_work_loop: work from work queue is not a leaf task,:"
+                                                logger.debug("DAG_executor_work_loop: work from work queue is not an unexecutable_leaf_task,:"
                                                     + " state is " + str(DAG_executor_state.state))
                                                 break # while(True) loop
                                         else:
@@ -1781,7 +1785,16 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                     # also hides all the communication to the tcp_server.
                                     # Note: for work_queue, the Local queue is a queue.Queue so there is no restart
                                     # value that can be returned and hence no wrapper is used.
-                                    new_DAG_info = DAG_infobuffer_monitor.withdraw(requested_current_version_number)
+
+                                    new_DAG_info, new_leaf_task_states = DAG_infobuffer_monitor.withdraw(requested_current_version_number)
+                          
+#rhc leaf tasks
+                                    logger.debug("DAG_executor_work_loop: cumulative leaf task states withdrawn and added to work_queue: ")
+                                    for work_tuple in new_leaf_task_states:
+                                        leaf_task_state = work_tuple[0]
+                                        logger.debug(str(leaf_task_state))
+                                        work_queue.put(work_tuple)
+
                                     # worker got a new DAG_info and will keep going.
                                     completed_workers = completed_workers_counter.decrement_and_get()
                                     logger.debug("DAG_executor_work_loop: after withdraw: workers_completed:  " + str(completed_workers))

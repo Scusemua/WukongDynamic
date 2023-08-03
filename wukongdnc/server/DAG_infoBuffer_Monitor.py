@@ -2,6 +2,7 @@ from .monitor_su import MonitorSU
 #from monitor_su import MonitorSU
 import _thread
 import time
+import copy
 
 import logging 
 logger = logging.getLogger(__name__)
@@ -21,6 +22,8 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         # For testing, if we havn't called init() then version number will be 1
         self.current_version_DAG_info = None
         self.current_version_number_DAG_info = 1
+#rhc leaf tasks
+        self.current_version_new_leaf_tasks = []
         self._next_version=super().get_condition_variable(condition_name="_next_version")
 
     #def init(self, **kwargs):
@@ -28,6 +31,12 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         # initialize with a DAG_info object. This will be version 1 of the DAG
         self.current_version_DAG_info = kwargs['current_version_DAG_info']
         self.current_version_number_DAG_info = self.current_version_DAG_info.get_version_number()
+#rhc leaf tasks
+        # The initial DAG has the initial leaf task(s) in it. As later we find
+        # more leaf tasks (tht start new connected components), we supply them 
+        # with the DAG so the leaf tasks can be aded to the work_queue and
+        # and executed by workers (when we aer using workers).
+        self.current_version_new_leaf_tasks = []
         # if use kwargs, it looks like:
         # self._capacity = kwargs["n"]
         # logger.info(kwargs)
@@ -78,6 +87,7 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         print(DAG_info.get_DAG_version_number())
         print("DAG_infoBuffer_Monitor: DAG_info_is_complete:")
         print(DAG_info.get_DAG_info_is_complete())
+        print()
 
     def deposit(self,**kwargs):
         # deposit a new DAG_info object. It's version number will be one more
@@ -98,11 +108,25 @@ class DAG_infoBuffer_Monitor(MonitorSU):
             logger.debug(ex)
             return 0
 
-        logger.debug(" deposit() entered monitor, len(self._new_version) ="+str(len(self._next_version)))
+        logger.debug("DAG_infoBuffer_Monitor: deposit() entered monitor, len(self._new_version) ="+str(len(self._next_version)))
         self.current_version_DAG_info = kwargs['new_current_version_DAG_info']
         self.current_version_number_DAG_info = self.current_version_DAG_info.get_DAG_version_number()
-        logger.debug("DAG_info deposited: ")
+#rhc leaf tasks
+        new_leaf_tasks = kwargs['new_current_version_new_leaf_tasks']
+        self.current_version_new_leaf_tasks += new_leaf_tasks
+        logger.debug("DAG_infoBuffer_Monitor: DAG_info deposited: ")
         self.print_DAG_info(self.current_version_DAG_info)
+
+#rhc leaf tasks
+        logger.debug("DAG_infoBuffer_Monitor: new leaf task states deposited: ")
+        for work_tuple in new_leaf_tasks:
+            leaf_task_state = work_tuple[0]
+            logger.debug(str(leaf_task_state))
+        logger.debug("DAG_infoBuffer_Monitor: cumulative leaf task states deposited: ")
+        for work_tuple in self.current_version_new_leaf_tasks:
+            leaf_task_state = work_tuple[0]
+            logger.debug(str(leaf_task_state))
+
         restart = False
         self._next_version.signal_c_and_exit_monitor()
         return 0, restart
@@ -114,22 +138,35 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         # the next version of the DAG, which hasn't been generated yet.
         super().enter_monitor(method_name = "withdraw")
         requested_current_version_number = kwargs['requested_current_version_number']
-        logger.debug("withdraw() entered monitor, requested_current_version_number = "
+        logger.debug("DAG_infoBuffer_Monitor: withdraw() entered monitor, requested_current_version_number = "
             + str(requested_current_version_number) + " len(self._next_version) = " + str(len(self._next_version)))
         DAG_info = None
         restart = False
         if requested_current_version_number <= self.current_version_number_DAG_info:
             DAG_info = self.current_version_DAG_info
-            logger.debug("DAG_infoBuffer_Monitor: withdraw got DAG_info with version number " 
-                + str(DAG_info.get_version_number()))
-            logger.debug("DAG_info withdrawn: ")
+#rhc leaf tasks
+            new_leaf_task_states = copy.copy(self.current_version_new_leaf_tasks)
+            self.current_version_new_leaf_tasks.clear()
+
+            logger.debug("DAG_infoBuffer_Monitor: withdraw: got DAG_info with version number " 
+                + str(DAG_info.get_DAG_version_number()))
+            logger.debug("DAG_infoBuffer_Monitor: DAG_info withdrawn: ")
             self.print_DAG_info(self.current_version_DAG_info)
+#rhc leaf tasks
+            logger.debug("DAG_infoBuffer_Monitor: withdraw: new leaf task states returned: ")
+            for work_tuple in new_leaf_task_states:
+                leaf_task_state = work_tuple[0]
+                logger.debug(str(leaf_task_state))
             super().exit_monitor()
-            return DAG_info, restart
+#rhc leaf tasks
+            return DAG_info, new_leaf_task_states, restart
         else:
             logger.debug("DAG_infoBuffer_Monitor: withdraw waiting for version " + str(requested_current_version_number))
             self._next_version.wait_c()
             DAG_info = self.current_version_DAG_info
+#rhc leaf tasks
+            new_leaf_task_states = copy.copy(self.current_version_new_leaf_tasks)
+            self.current_version_new_leaf_tasks.clear()
             # cascaded wakeup, i.e., if there are more than one worker waiting,
             # the deposit() will wakeup the first worker with its
             # signal_c_and_exit_monitor(). The firsy waitng worker will wakeup
@@ -152,13 +189,19 @@ class DAG_infoBuffer_Monitor(MonitorSU):
             # might be allowed to enter the monitor before waiting workers, in 
             # which case the workers would get verson i+1, which is not bad.
 
-            logger.debug("DAG_infoBuffer_Monitor: withdraw got DAG_info with version number " 
+            logger.debug("DAG_infoBuffer_Monitor: withdraw: got DAG_info with version number " 
                 + str(DAG_info.get_DAG_version_number()))
-            logger.debug("DAG_info withdrawn: ")
+            logger.debug("DAG_infoBuffer_Monitor: DAG_info withdrawn: ")
             self.print_DAG_info(self.current_version_DAG_info)
+#rhc leaf tasks
+            logger.debug("DAG_infoBuffer_Monitor: withdraw: new leaf task states returned: ")
+            for work_tuple in new_leaf_task_states:
+                leaf_task_state = work_tuple[0]
+                logger.debug(str(leaf_task_state))
 
             self._next_version.signal_c_and_exit_monitor()
-            return DAG_info, restart
+#rhc leaf tasks
+            return DAG_info, new_leaf_task_states, restart
         
 
 

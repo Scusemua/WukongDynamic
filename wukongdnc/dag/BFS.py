@@ -903,6 +903,7 @@ if compute_pagerank and use_incremental_DAG_generation:
         work_queue = Work_Queue_Client(websocket,estimated_num_tasks_to_execute)
 
 def DAG_executor_driver_Invoker_Thread():
+    time.sleep(2)
     run()
 
 # visual is a list which stores all the set of edges that constitutes a graph
@@ -2685,8 +2686,9 @@ def bfs(visited, node): #function for BFS
                                 logger.debug("BFS: deposit first DAG with num_incremental_DAGs_generated:"
                                     + str(num_incremental_DAGs_generated)
                                     + " current_partition_number: " + str(current_partition_number))
-
-                                DAG_infobuffer_monitor.deposit(DAG_info)
+#rhc: leaf tasks
+                                new_leaf_tasks = []
+                                DAG_infobuffer_monitor.deposit(DAG_info,new_leaf_tasks)
 
                                 # We just processed the first and only partition; so we can output the 
                                 # initial DAG_info and start the DAG_executor_driver. DAG_info
@@ -2761,19 +2763,23 @@ def bfs(visited, node): #function for BFS
 #rhc: ToDo: deposit every jth partition. Make sure this condition is True for 
 # initial DAG.
 
-                                logger.debug("BFS: sleeping before calling DAG_infobuffer_monitor.deposit(DAG_info).")
-                                time.sleep(1)
+                                #logger.debug("BFS: sleeping before calling DAG_infobuffer_monitor.deposit(DAG_info).")
+                                #time.sleep(1)
                                 #
                                 if current_partition_number > 2:
                                     num_incremental_DAGs_generated += 1
 
+                                #if True:
                                 # current_partition_number is not 1
                                 if current_partition_number == 2 or (
                                     DAG_info.get_DAG_info_is_complete() or (
                                     num_incremental_DAGs_generated % incremental_interval == 0
                                     )):
-                    
-                                #if True:
+                               
+
+#rhc leaf tasks
+                                    new_leaf_task_work_tuples = []           
+                                
                                     if len(leaf_tasks_of_partitions_incremental) > 0:
                                         # New leaf task partitions have been generated. Since no task
                                         # will fanout/fanin these leaf tasks, we must ensure they 
@@ -2838,6 +2844,7 @@ def bfs(visited, node): #function for BFS
                                         logger.debug("BFS: DAG_states_incremental: " + str(DAG_states_incremental))
                                         #DAG_leaf_task_start_states_incremental = DAG_info.get_DAG_leaf_task_start_states()
                                         DAG_map_incremental = DAG_info.get_DAG_map()
+
                                         if using_workers:
                                             # leaf task states (a task is identified by its state) are put in work_queue
                                             for name in leaf_tasks_of_partitions_incremental:
@@ -2855,8 +2862,11 @@ def bfs(visited, node): #function for BFS
                                                         + " name in leaf_tasks_of_partitions_incremental.")
                                                 dict_of_results_incremental =  {}
                                                 dict_of_results_incremental[task_name] = task_inputs
+                                                logger.debug("BFS: deposit leaf task in work queue: " + task_name)
                                                 work_tuple = (state_incremental,dict_of_results_incremental)
-                                                work_queue.put(work_tuple)
+#rhc leaf tasks
+                                                #work_queue.put(work_tuple)
+                                                new_leaf_task_work_tuples.append(work_tuple)
                                         else:
                                             pass # complete for lambdas
                                             # start a lambda with empty input payload (like DAG_executor_driver)
@@ -2878,7 +2888,8 @@ def bfs(visited, node): #function for BFS
                                     # if not current_partition_number == 2:
                                     #     logging.shutdown()
                                     #     os._exit(0) 
-                                    DAG_infobuffer_monitor.deposit(DAG_info)
+#rhc leaf tasks
+                                    DAG_infobuffer_monitor.deposit(DAG_info,new_leaf_task_work_tuples)
 
 
                                 if (current_partition_number) == 2:

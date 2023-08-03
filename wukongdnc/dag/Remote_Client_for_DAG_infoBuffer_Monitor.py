@@ -14,7 +14,7 @@ logger.addHandler(ch)
 
 # local wrapper for a DAG_infoBuffer_Monitor. there is also a 
 # local wrapper: Local_Client_for_DAG_infoBuffer_Monitor
-# This wrapper deals with the keword argument parameters
+# This wrapper deals with the keyword argument parameters
 # that need to be sent to the DAG_infoBuffer_Monitor
 # and the restart value returned by the DAG_infoBuffer_Monitor,
 # which is not used. It calls server.api methods to make remote
@@ -31,7 +31,7 @@ class Remote_Client_for_DAG_infoBuffer_Monitor:
         create(self.websocket, "create", "DAG_infoBuffer_Monitor", "process_DAG_infoBuffer_Monitor", dummy_state)
 
 
-    def deposit(self,DAG_info):
+    def deposit(self,DAG_info,new_leaf_task_work_tuples):
         # bounded buffer is blocking; using same interface as Manager.Queue
         dummy_state = DAG_executor_State()
         dummy_state.keyword_arguments['new_current_version_DAG_info'] = DAG_info
