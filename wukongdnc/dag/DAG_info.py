@@ -60,8 +60,9 @@ class DAG_Info(object):
         self.DAG_leaf_task_start_states = DAG_info_dictionary["DAG_leaf_task_start_states"]
         self.DAG_leaf_task_inputs = DAG_info_dictionary["DAG_leaf_task_inputs"]
         self.DAG_tasks = DAG_info_dictionary["DAG_tasks"]
-        self.version_number = DAG_info_dictionary["version_number"]
+        self.DAG_version_number = DAG_info_dictionary["version_number"]
         self.DAG_info_is_complete = DAG_info_dictionary["DAG_info_is_complete"]
+        self.DAG_number_of_tasks = DAG_info_dictionary["number_of_tasks"]
 
     def get_DAG_info_dictionary(self):
         DAG_info_dictionary = {}
@@ -77,8 +78,10 @@ class DAG_Info(object):
         DAG_info_dictionary["DAG_leaf_task_start_states"] = self.DAG_leaf_task_start_states
         DAG_info_dictionary["DAG_leaf_task_inputs"] = self.DAG_leaf_task_inputs
         DAG_info_dictionary["DAG_tasks"] = self.DAG_tasks
-        DAG_info_dictionary["version_number"] = self.version_number
+        DAG_info_dictionary["version_number"] = self.DAG_version_number
         DAG_info_dictionary["DAG_info_is_complete"] = self.DAG_info_is_complete
+        DAG_info_dictionary["number_of_tasks"] = self.DAG_number_of_tasks
+
         return DAG_info_dictionary
 
     def get_DAG_map(self):
@@ -109,9 +112,12 @@ class DAG_Info(object):
 # Assuming we set version_number and DAG_info_is_complete when we 
 # generate DAG. Default is version_number=1. DAG_info_is_complete=True
     def get_DAG_version_number(self):
-        return self.version_number
+        return self.DAG_version_number
     def get_DAG_info_is_complete(self):
         return self.DAG_info_is_complete
+    def get_DAG_number_of_tasks(self):
+        return self.DAG_number_of_tasks
+    
     # After the driver gets the leaf task inputs it sets DAG_info["DAG_leaf_task_inputs"]
     # to None so that we are not passing all of these inputs to each Lambda executor.
     def set_DAG_leaf_task_inputs_to_None(self):

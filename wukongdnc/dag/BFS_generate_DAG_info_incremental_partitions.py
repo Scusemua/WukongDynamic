@@ -48,6 +48,8 @@ version_number = 0
 # save the actual name "PR2_1L" and retrive it when we process PR3_1
 previous_partition_name = "PR1_1"
 
+DAG_number_of_tasks = 0
+
 # Called by generate_DAG_info_incremental_partitions below to generate 
 # the DAG_info object.= when we are using partitions.
 def generate_DAG_for_partitions(to_be_continued):
@@ -72,6 +74,8 @@ def generate_DAG_for_partitions(to_be_continued):
     # the name of partition 2 might actually be PR2_1L, so we need to 
     # save the actual name "PR2_1L" and retrive it when we process PR3_1
     global previous_partition_name
+
+    global DAG_number_of_tasks
 
     show_generated_DAG_info = True
 
@@ -114,8 +118,10 @@ def generate_DAG_for_partitions(to_be_continued):
     version_number += 1
     DAG_info_version_number = version_number
     DAG_info_is_complete = not to_be_continued # to_be_continued is a parameter
+    DAG_number_of_tasks = len(Partition_DAG_tasks)
     DAG_info_dictionary["version_number"] = DAG_info_version_number
     DAG_info_dictionary["DAG_info_is_complete"] = DAG_info_is_complete
+    DAG_info_dictionary["DAG_number_of_tasks"] = DAG_number_of_tasks
 
 #rhc: Note: we are saving all the incemental DAG_info files for debugging but 
 # we probably want to turn this off otherwise.
@@ -188,6 +194,9 @@ def generate_DAG_for_partitions(to_be_continued):
         logger.info("DAG_info_is_complete:")
         logger.info(DAG_info_is_complete)
         logger.info("")
+        logger.info("DAG_number_of_tasks:")
+        logger.info(DAG_number_of_tasks)
+        logger.info("")
 
     # read file file_name_incremental just written and display contents 
     if False:
@@ -210,6 +219,8 @@ def generate_DAG_for_partitions(to_be_continued):
 
         DAG_info_is_complete = DAG_info_partition_read.get_DAG_info_is_complete()
         DAG_info_version_number = DAG_info_partition_read.get_DAG_version_number()
+
+        DAG_number_of_tasks = DAG_info_partition_read.get_DAG_number_of_tasks()
 
         logger.info("")
         logger.info("DAG_info partition after read:")
@@ -251,6 +262,9 @@ def generate_DAG_for_partitions(to_be_continued):
             logger.info("")
             logger.info("DAG_info_is_complete:")
             logger.info(DAG_info_is_complete)
+            logger.info("")
+            logger.info("DAG_number_of_tasks:")
+            logger.info(DAG_number_of_tasks)
             logger.info("")
 
     DAG_info = DAG_Info.DAG_info_fromdictionary(DAG_info_dictionary)
@@ -301,6 +315,8 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
     # the name of partition 2 might actually be PR2_1L, so we need to 
     # save the actual name "PR2_1L" and retrive it when we process PR3_1
     global previous_partition_name
+
+    global number_of_tasks
 
     logger.info("generate_DAG_info_incremental_partitions: to_be_continued: " + str(to_be_continued))
     logger.info("generate_DAG_info_incremental_partitions: current_partition_number: " + str(current_partition_number))

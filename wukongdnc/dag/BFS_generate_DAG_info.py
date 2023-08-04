@@ -417,8 +417,10 @@ def generate_DAG_info():
     # Defaults are 1 and True
     DAG_info_version_number = 1
     DAG_info_is_complete = True
+    DAG_info_number_of_tasks = len(Partition_DAG_tasks)
     DAG_info["version_number"] = DAG_info_version_number
     DAG_info["DAG_info_is_complete"] = DAG_info_is_complete
+    DAG_info['number_of_tasks'] = DAG_info_number_of_tasks
 
     file_name = "./DAG_info_Partition.pickle"
     with open(file_name, 'wb') as handle:
@@ -487,6 +489,9 @@ def generate_DAG_info():
     logger.info("DAG_info_is_complete:")
     logger.info(DAG_info_is_complete)
     logger.info("")
+    logger.info("DAG_info_number_of_tasks:")
+    logger.info(DAG_info_number_of_tasks)
+    logger.info("")
 
     DAG_info_partition_read = DAG_Info.DAG_info_fromfilename(file_name = "./DAG_info_Partition.pickle")
     
@@ -505,6 +510,7 @@ def generate_DAG_info():
 
     DAG_info_is_complete = DAG_info_partition_read.get_DAG_info_is_complete()
     DAG_info_version_number = DAG_info_partition_read.get_DAG_version_number()
+    DAG_info_number_of_tasks = DAG_info_partition_read.get_DAG_number_of_tasks()
 
     logger.info("")
     logger.info("DAG_info partition after read:")
@@ -543,6 +549,9 @@ def generate_DAG_info():
         logger.info("")
         logger.info("DAG_info_is_complete:")
         logger.info(DAG_info_is_complete)
+        logger.info("")
+        logger.info("DAG_info_number_of_tasks:")
+        logger.info(DAG_info_number_of_tasks)
         logger.info("")
 
     Group_all_fanout_task_names = []
@@ -761,8 +770,10 @@ def generate_DAG_info():
 
     DAG_info_version_number = 1
     DAG_info_is_complete = True
+    DAG_info_number_of_tasks = len(Group_DAG_tasks)
     DAG_info["version_number"] = DAG_info_version_number
     DAG_info["DAG_info_is_complete"] = DAG_info_is_complete
+    DAG_info["DAG_info_number_of_tasks"] = DAG_info_number_of_tasks
 
     file_name = "./DAG_info_Group.pickle"
     with open(file_name, 'wb') as handle:
@@ -835,6 +846,9 @@ def generate_DAG_info():
     logger.info("DAG_info_is_complete:")
     logger.info(DAG_info_is_complete)
     logger.info("")
+    logger.info("DAG_info_number_of_tasks:")
+    logger.info(DAG_info_number_of_tasks)
+    logger.info("")
 
     DAG_info_partition_read = DAG_Info.DAG_info_fromfilename(file_name = "./DAG_info_Group.pickle")
     
@@ -854,6 +868,7 @@ def generate_DAG_info():
 
     DAG_info_is_complete = DAG_info_partition_read.get_DAG_info_is_complete()
     DAG_info_version_number = DAG_info_partition_read.get_DAG_version_number()
+    DAG_info_number_of_tasks = DAG_info_partition_read.get_DAG_number_of_tasks()
 
     logger.info("")
     logger.info("DAG_info group after read:")
@@ -898,6 +913,9 @@ def generate_DAG_info():
         logger.info("")
         logger.info("DAG_info_is_complete:")
         logger.info(DAG_info_is_complete)
+        logger.info("")
+        logger.info("DAG_info_number_of_tasks:")
+        logger.info(DAG_info_number_of_tasks)
         logger.info("")
 
     """

@@ -875,9 +875,12 @@ websocket = None
 # adding partition 4. This will be the third DAG - one with P1,
 # one with P1 and P2, and one with P!, P2, P3, and P4.
 num_incremental_DAGs_generated = 0
-# generate next DAg when num_incremental_DAGs_generated mod 
-# incremental_interval == 0
-incremental_interval = 2
+# generate next DAG when num_incremental_DAGs_generated mod 
+# incremental_interval == 0. For example, if we set this
+# value to 2, after we generate the first DAG, with a complete 
+# partition 1 and an incomplete partition 2, we will generate 
+# a new DAG when we process partition 4 (2+2) then 6, 8, etc.
+incremental_DAG_generation_interval = 1
 
 #rhc incremental
     # total number of graph nodes that have been added to the 
@@ -903,7 +906,7 @@ if compute_pagerank and use_incremental_DAG_generation:
         work_queue = Work_Queue_Client(websocket,estimated_num_tasks_to_execute)
 
 def DAG_executor_driver_Invoker_Thread():
-    time.sleep(2)
+    #time.sleep(2)
     run()
 
 # visual is a list which stores all the set of edges that constitutes a graph
@@ -2164,7 +2167,7 @@ def bfs(visited, node): #function for BFS
 
     global invoker_thread_for_DAG_executor_driver
     global num_incremental_DAGs_generated
-    global incremental_interval
+    global incremental_DAG_generation_interval
     global num_nodes_in_partitions
 
 #rhc: q:
@@ -2763,8 +2766,8 @@ def bfs(visited, node): #function for BFS
 #rhc: ToDo: deposit every jth partition. Make sure this condition is True for 
 # initial DAG.
 
-                                #logger.debug("BFS: sleeping before calling DAG_infobuffer_monitor.deposit(DAG_info).")
-                                #time.sleep(1)
+                                logger.debug("BFS: sleeping before calling DAG_infobuffer_monitor.deposit(DAG_info).")
+                                time.sleep(1)
                                 #
                                 if current_partition_number > 2:
                                     num_incremental_DAGs_generated += 1
@@ -2773,7 +2776,7 @@ def bfs(visited, node): #function for BFS
                                 # current_partition_number is not 1
                                 if current_partition_number == 2 or (
                                     DAG_info.get_DAG_info_is_complete() or (
-                                    num_incremental_DAGs_generated % incremental_interval == 0
+                                    num_incremental_DAGs_generated % incremental_DAG_generation_interval == 0
                                     )):
                                
 
