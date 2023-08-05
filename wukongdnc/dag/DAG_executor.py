@@ -1321,23 +1321,28 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 
     DAG_map = DAG_info.get_DAG_map()
     DAG_tasks = DAG_info.get_DAG_tasks()
+    DAG_number_of_tasks = DAG_info.get_DAG_number_of_tasks()
 
 #rhc continue
     num_tasks_to_execute = -1
     if (not using_workers):
         # not using this value when using real or simulated lambdas.
         # this values tells workers when there are no morfe tasks to execute
-        num_tasks_to_execute = len(DAG_tasks)
+        #num_tasks_to_execute = len(DAG_tasks)
+        num_tasks_to_execute = DAG_number_of_tasks
     else:
         if not (compute_pagerank and use_incremental_DAG_generation):
-            num_tasks_to_execute = len(DAG_tasks)
+            #num_tasks_to_execute = len(DAG_tasks)
+            num_tasks_to_execute = DAG_number_of_tasks
         else: # using incremental DAG generation
             if not use_page_rank_group_partitions:
                 # using partitions
                 if not DAG_info.get_DAG_info_is_complete():
-                    num_tasks_to_execute = len(DAG_tasks) - 1
+                    #num_tasks_to_execute = len(DAG_tasks) - 1
+                    num_tasks_to_execute = DAG_number_of_tasks -1
                 else:
-                    num_tasks_to_execute = len(DAG_tasks)
+                    #num_tasks_to_execute = len(DAG_tasks)
+                    num_tasks_to_execute = DAG_number_of_tasks
             else:
                 # using groups
                 if not DAG_info.get_DAG_info_is_complete():
@@ -1345,9 +1350,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # get number of incomplete groups from DAG_info
                     pass
                 else:
-                    num_tasks_to_execute = len(DAG_tasks)
+                    #num_tasks_to_execute = len(DAG_tasks)
+                    num_tasks_to_execute = DAG_number_of_tasks
 
-    logger.debug("DAG_executor: length of DAG_tasks: " + str(len(DAG_tasks))
+    logger.debug("DAG_executor: length of DAG_tasks: " + str(DAG_number_of_tasks)
         + " number of tasks in DAG to execute: " + str(num_tasks_to_execute))
     #server = payload['server']
     proc_name = multiprocessing.current_process().name
@@ -1805,6 +1811,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                     # number of tasks in the incremental DAG. Not all tasks can 
                                     # be executed if the new DAG is still imcomplete.
                                     DAG_tasks = DAG_info.get_DAG_tasks()
+                                    DAG_number_of_tasks = DAG_info.get_DAG_number_of_tasks()
 
                                     # we have a new DAG_info which means we have a new
                                     # number of tasks to execute (more tasks were added 
@@ -1814,14 +1821,16 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                         # If the new DAG is still incomplete, then the last
                                         # partition is incomplete (cannot be executed)
                                         if not DAG_info.get_DAG_info_is_complete():
-                                            num_tasks_to_execute = len(DAG_tasks) - 1
+                                            #num_tasks_to_execute = len(DAG_tasks) - 1
+                                            num_tasks_to_execute = DAG_number_of_tasks - 1
                                             logger.debug("DAG_executor_work_loop: after withdraw: DAG_info not complete: new num_tasks_to_execute: " + str(num_tasks_to_execute))
                                         else:
                                             # the new DAG is complete (so is the last incremental DAG
                                             # we will get.) We can execute all the partitions in the 
                                             # DAG. (A DAG is complete if all the graph nodes are in
                                             # some partition.)
-                                            num_tasks_to_execute = len(DAG_tasks)
+                                            #num_tasks_to_execute = len(DAG_tasks)
+                                            num_tasks_to_execute = DAG_number_of_tasks
                                             logger.debug("DAG_executor_work_loop: after withdraw: DAG_info complete new num_tasks_to_execute: " + str(num_tasks_to_execute))
                                     else:
                                         # using groups
@@ -1830,7 +1839,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                             # get number of incomplete groups from DAG_info
                                             pass
                                         else:
-                                            num_tasks_to_execute = len(DAG_tasks)
+                                            #num_tasks_to_execute = len(DAG_tasks)
+                                            num_tasks_to_execute = DAG_number_of_tasks
 
                                     if continue_queue.qsize() > 0:
                                         # if this worker has incomplete tasks in its continue

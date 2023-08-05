@@ -173,6 +173,12 @@ class Node:
     all_collapse_task_names = []  # if task A is followed only by a fanout to task B: A --> B then we collapse B and A
     all_fanin_sizes = [] # all_fanin_sizes[i] is the size of all_fanin_task_names[i] 
     all_faninNB_sizes = []
+    # needed for incremental DAG generation
+    # for non-incremental DAG generation, version is 1 and complete is True
+    DAG_version_number = 1
+    DAG_is_complete = True
+    # set after the DAG has been constructed
+    DAG_number_of_tasks = 0
     
     # map of all the (above) DAG information, which is a map from String to list/map. The lists/maps in DAG_info
     # are essentially the class members above. This DAG_info will be input by the DAG_executor to execute the DAG.
@@ -182,6 +188,7 @@ class Node:
     def save_DAG_info(cls):
         with open('./DAG_info.pickle', 'wb') as handle:
             cloudpickle.dump(Node.DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+    
     def __init__(self,succ=None, pred=None, task_name = None, task = None, task_inputs = None):
         self.succ = succ # names of dependent (successr) tasks
         self.pred = pred # names of tasks that have this noed as a dependent (successor). They are our "enablers"
@@ -329,6 +336,9 @@ class Node:
                 Node.DAG_map[state] = state_info(n)
                 Node.DAG_states[n] = state	
 
+        # needed for increemental DAG generation
+        Node.DAG_number_of_tasks = len(Node.DAG_tasks)
+
 		#assert: Need size_of_DAG from Ben
 			# if (size_of_DAG != self.next_state-1) or (size_of_DAG  != len(DAG_map)) 
 			# 	or (size_of_DAG  != len(self.states) or (size_of_DAG != len(DAG_tasks)
@@ -377,7 +387,15 @@ class Node:
         print("DAG_leaf_task_inputs:")
         for inp in Node.DAG_leaf_task_inputs:
             print(inp)
-        print()      
+        print() 
+        print("DAG_version_number:")
+        print(Node.DAG_version_number)
+        print()
+        print("DAG_is_complete:")
+        print(Node.DAG_is_complete)
+        print()
+        print("DAG_number_of_tasks:")
+        print(Node.DAG_number_of_tasks)       
 		
         Node.DAG_info["DAG_map"] = Node.DAG_map
         Node.DAG_info["DAG_states"] = Node.DAG_states
@@ -391,6 +409,10 @@ class Node:
         Node.DAG_info["all_fanin_sizes"] = Node.all_fanin_sizes
         Node.DAG_info["all_faninNB_sizes"] = Node.all_faninNB_sizes
         Node.DAG_info["DAG_tasks"] = Node.DAG_tasks
+        # needed for increeental DAG generation
+        Node.DAG_info["DAG_version_number"]  = Node.DAG_version_number
+        Node.DAG_info["DAG_is_complete"]  = Node.DAG_is_complete
+        Node.DAG_info["DAG_number_of_tasks"]  = Node.DAG_number_of_tasks
 
         #with open('DAG_info.pickle', 'wb') as handle:
         #    pickle.dump(DAG_info, handle, protocol=pickle.HIGHEST_PROTOCOL)

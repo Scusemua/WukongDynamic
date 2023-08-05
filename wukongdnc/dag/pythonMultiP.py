@@ -1,7 +1,10 @@
+# Old program for testing hoe multiprocessing works
+
 #import queue
 from multiprocessing import Process, Manager, Queue, Value
 import cloudpickle
 
+# old: has been updated, but this is fine for this test
 class DAG_Info(object):
     def __init__(self):
         self.DAG_info = input_DAG_info()

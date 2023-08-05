@@ -906,6 +906,8 @@ def run():
     DAG_tasks = DAG_info.get_DAG_tasks()
     DAG_version = DAG_info.get_DAG_version_number()
     DAG_is_complete = DAG_info.get_DAG_info_is_complete()
+    DAG_number_of_tasks = DAG_info.get_DAG_number_of_tasks()
+
 
     # Note: if we are using_lambdas, we null out DAG_leaf_task_inputs after we get it here
     # (by calling DAG_info.set_DAG_leaf_task_inputs_to_None() below). So make a copy.
@@ -966,7 +968,8 @@ def run():
         print()
         print("DAG_is_complete: " + str(DAG_is_complete))
         print()
-
+        print("DAG_number_of_tasks: " + str(DAG_number_of_tasks))
+        print()
 
 #rhc cleanup
         #from . import BFS_Shared

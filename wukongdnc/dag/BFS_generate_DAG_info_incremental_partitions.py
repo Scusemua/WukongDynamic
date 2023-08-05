@@ -41,14 +41,13 @@ Partition_DAG_states = {}
 Partition_DAG_tasks = {}
 
 # version of DAG, incremented for each DAG generated
-version_number = 0
+Partition_DAG_version_number = 0
 # Saving current_partition_name as previous_partition_name at the 
 # end. We cannot just subtract one, e.g. PR3_1 becomes PR2_1 since
 # the name of partition 2 might actually be PR2_1L, so we need to 
 # save the actual name "PR2_1L" and retrive it when we process PR3_1
-previous_partition_name = "PR1_1"
-
-DAG_number_of_tasks = 0
+Partition_DAG_previous_partition_name = "PR1_1"
+Partition_DAG_number_of_tasks = 0
 
 # Called by generate_DAG_info_incremental_partitions below to generate 
 # the DAG_info object.= when we are using partitions.
@@ -68,14 +67,13 @@ def generate_DAG_for_partitions(to_be_continued):
     global Partition_DAG_tasks
 
     # version of DAG, incremented for each DAG generated
-    global version_number
+    global Partition_DAG_version_number
     # Saving current_partition_name as previous_partition_name at the 
     # end. We cannot just subtract one, e.g. PR3_1 becomes PR2_1 since
     # the name of partition 2 might actually be PR2_1L, so we need to 
     # save the actual name "PR2_1L" and retrive it when we process PR3_1
-    global previous_partition_name
-
-    global DAG_number_of_tasks
+    global Partition_DAG_previous_partition_name
+    global Partition_DAG_number_of_tasks
 
     show_generated_DAG_info = True
 
@@ -115,13 +113,12 @@ def generate_DAG_for_partitions(to_be_continued):
     # If there is only one partition in the DAG then it is complete and is version 1.
     # It is returned above. Otherwise, version 1 is the DAG_info with partitions
     # 1 and 2, where 1 is complete and 2 is complete or incomplete.
-    version_number += 1
-    DAG_info_version_number = version_number
-    DAG_info_is_complete = not to_be_continued # to_be_continued is a parameter
-    DAG_number_of_tasks = len(Partition_DAG_tasks)
-    DAG_info_dictionary["version_number"] = DAG_info_version_number
-    DAG_info_dictionary["DAG_info_is_complete"] = DAG_info_is_complete
-    DAG_info_dictionary["DAG_number_of_tasks"] = DAG_number_of_tasks
+    Partition_DAG_version_number += 1
+    DAG_is_complete = not to_be_continued # to_be_continued is a parameter
+    Partition_DAG_number_of_tasks = len(Partition_DAG_tasks)
+    DAG_info_dictionary["DAG_version_number"] = Partition_DAG_version_number
+    DAG_info_dictionary["DAG_is_complete"] = DAG_is_complete
+    DAG_info_dictionary["DAG_number_of_tasks"] = Partition_DAG_number_of_tasks
 
 #rhc: Note: we are saving all the incemental DAG_info files for debugging but 
 # we probably want to turn this off otherwise.
@@ -130,7 +127,7 @@ def generate_DAG_for_partitions(to_be_continued):
     # have output the DAG_info with partitions 1 and 2 as version 1 so 
     # the DAG_info for partition 3 will have partitions 1, 2, and 3 and will
     # be version 2 but named "DAG_info_incremental_Partition_3"
-    file_name_incremental = "./DAG_info_incremental_Partition_" + str(DAG_info_version_number) + ".pickle"
+    file_name_incremental = "./DAG_info_incremental_Partition_" + str(Partition_DAG_version_number) + ".pickle"
     with open(file_name_incremental, 'wb') as handle:
         cloudpickle.dump(DAG_info_dictionary, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
 
@@ -138,7 +135,6 @@ def generate_DAG_for_partitions(to_be_continued):
     num_fanouts = len(Partition_all_fanout_task_names)
     num_faninNBs = len(Partition_all_faninNB_task_names)
     num_collapse = len(Partition_all_collapse_task_names)
-
 
     if show_generated_DAG_info:
         logger.info("DAG_map:")
@@ -189,26 +185,27 @@ def generate_DAG_for_partitions(to_be_continued):
             logger.info(inp)
         logger.info("")
         logger.info("DAG_version_number:")
-        logger.info(DAG_info_version_number)
+        logger.info(Partition_DAG_version_number)
         logger.info("")
-        logger.info("DAG_info_is_complete:")
-        logger.info(DAG_info_is_complete)
+        logger.info("DAG_is_complete:")
+        logger.info(DAG_is_complete)
         logger.info("")
         logger.info("DAG_number_of_tasks:")
-        logger.info(DAG_number_of_tasks)
+        logger.info(Partition_DAG_number_of_tasks)
         logger.info("")
 
     # read file file_name_incremental just written and display contents 
-    if False:
+    if True:
         DAG_info_partition_read = DAG_Info.DAG_info_fromfilename(file_name_incremental)
         
         DAG_map = DAG_info_partition_read.get_DAG_map()
         # these are not displayed
         all_collapse_task_names = DAG_info_partition_read.get_all_collapse_task_names()
-        all_fanin_task_names = DAG_info_partition_read.get_all_fanin_task_names()
-        all_faninNB_task_names = DAG_info_partition_read.get_all_faninNB_task_names()
-        all_faninNB_sizes = DAG_info_partition_read.get_all_faninNB_sizes()
-        all_fanout_task_names = DAG_info_partition_read.get_all_fanout_task_names()
+        # Note: prefixing name with '_' turns off th warning about variabel not used
+        _all_fanin_task_names = DAG_info_partition_read.get_all_fanin_task_names()
+        _all_faninNB_task_names = DAG_info_partition_read.get_all_faninNB_task_names()
+        _all_faninNB_sizes = DAG_info_partition_read.get_all_faninNB_sizes()
+        _all_fanout_task_names = DAG_info_partition_read.get_all_fanout_task_names()
         # Note: all fanout_sizes is not needed since fanouts are fanins that have size 1
         DAG_states = DAG_info_partition_read.get_DAG_states()
         DAG_leaf_tasks = DAG_info_partition_read.get_DAG_leaf_tasks()
@@ -217,9 +214,8 @@ def generate_DAG_for_partitions(to_be_continued):
 
         DAG_leaf_task_inputs = DAG_info_partition_read.get_DAG_leaf_task_inputs()
 
-        DAG_info_is_complete = DAG_info_partition_read.get_DAG_info_is_complete()
-        DAG_info_version_number = DAG_info_partition_read.get_DAG_version_number()
-
+        DAG_is_complete = DAG_info_partition_read.get_DAG_info_is_complete()
+        DAG_version_number = DAG_info_partition_read.get_DAG_version_number()
         DAG_number_of_tasks = DAG_info_partition_read.get_DAG_number_of_tasks()
 
         logger.info("")
@@ -241,8 +237,8 @@ def generate_DAG_for_partitions(to_be_continued):
             for start_state in DAG_leaf_task_start_states:
                 logger.info(start_state)
             logger.info("")
-            logger.info("Partition_all_collapse_task_names:")
-            for name in Partition_all_collapse_task_names:
+            logger.info("all_collapse_task_names:")
+            for name in all_collapse_task_names:
                 logger.info(name)
             logger.info("")
             logger.info("DAG_tasks:")
@@ -258,10 +254,10 @@ def generate_DAG_for_partitions(to_be_continued):
                 logger.info(inp)
             logger.info("")
             logger.info("DAG_version_number:")
-            logger.info(DAG_info_version_number)
+            logger.info(DAG_version_number)
             logger.info("")
             logger.info("DAG_info_is_complete:")
-            logger.info(DAG_info_is_complete)
+            logger.info(DAG_is_complete)
             logger.info("")
             logger.info("DAG_number_of_tasks:")
             logger.info(DAG_number_of_tasks)
@@ -309,14 +305,13 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
     global Partition_DAG_tasks
 
     # version of DAG, incremented for each DAG generated
-    global version_number
+    global Partition_DAG_version_number
     # Saving current_partition_name as previous_partition_name at the 
     # end. We cannot just subtract one, e.g. PR3_1 becomes PR2_1 since
     # the name of partition 2 might actually be PR2_1L, so we need to 
     # save the actual name "PR2_1L" and retrive it when we process PR3_1
-    global previous_partition_name
-
-    global number_of_tasks
+    global Partition_DAG_previous_partition_name
+    global Partition_DAG_number_of_tasks
 
     logger.info("generate_DAG_info_incremental_partitions: to_be_continued: " + str(to_be_continued))
     logger.info("generate_DAG_info_incremental_partitions: current_partition_number: " + str(current_partition_number))
@@ -411,7 +406,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         logger.info("generate_DAG_info_incremental_partitions: Partition_DAG_map[current_state]: " + str(Partition_DAG_map[current_state] ))
 
         # Note: setting version number and to_be_continued in generate_DAG_for_partitions()
-
+        # Note: setting number of tasks in in generate_DAG_for_partitions()
         DAG_info = generate_DAG_for_partitions(to_be_continued)
 
         logger.info("generate_DAG_info_incremental_partitions: returning from generate_DAG_info_incremental_partitions for"
@@ -492,7 +487,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         # save current name as previous name. If this is partition PRi_1
         # we cannot just use PRi-1_1 since the name might have an L at the
         # end to mark it as a loop partition. So save the name so we have it.
-        previous_partition_name = current_partition_name
+        Partition_DAG_previous_partition_name = current_partition_name
         DAG_info = generate_DAG_for_partitions(to_be_continued)
 
         DAG_info_DAG_map = DAG_info.get_DAG_map()
@@ -585,7 +580,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
                 + " partition has more than one sending partition.")
             sender = next(iter(senders)) # sender is first and only element in set
             #assert: the sender should be equal to the previous_partition_name
-            if not sender == previous_partition_name:
+            if not sender == Partition_DAG_previous_partition_name:
                 logger.error("[Error]: Internal Error: generate_DAG_info_incremental_partitionsusing partitions and"
                     + " the sender for a partition is not previous_partition_name.")
 
@@ -597,7 +592,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         # different outputs to different tasks, So PR1_1 can have outputs
         # PR1_1-PR2_1, PR1_1-PR3_1, etc. For partitions, a task has a
         # single output to the next partition, if any.
-        qualified_name = str(previous_partition_name) + "-" + str(current_partition_name)
+        qualified_name = str(Partition_DAG_previous_partition_name) + "-" + str(current_partition_name)
         qualified_names = set()
         qualified_names.add(qualified_name)
         # set has a single name in it, e.g., for PR2_1, the task input
@@ -647,7 +642,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
 
         # save current_partition_name as previous_partition_name so we
         # can access previous_partition_name on the next call.
-        previous_partition_name = current_partition_name
+        Partition_DAG_previous_partition_name = current_partition_name
         DAG_info = generate_DAG_for_partitions(to_be_continued)
 
         DAG_info_DAG_map = DAG_info.get_DAG_map()

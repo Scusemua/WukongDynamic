@@ -79,6 +79,8 @@ def generate_DAG_info():
     Partition_DAG_states = {}
     Partition_DAG_tasks = {}
 
+    Partition_DAG_number_of_tasks = 0
+
     """ Add L to end of names
     print()
     print("Partition_loops:" + str(Partition_loops))
@@ -415,12 +417,12 @@ def generate_DAG_info():
     DAG_info["DAG_tasks"] = Partition_DAG_tasks
 
     # Defaults are 1 and True
-    DAG_info_version_number = 1
-    DAG_info_is_complete = True
-    DAG_info_number_of_tasks = len(Partition_DAG_tasks)
-    DAG_info["version_number"] = DAG_info_version_number
-    DAG_info["DAG_info_is_complete"] = DAG_info_is_complete
-    DAG_info['number_of_tasks'] = DAG_info_number_of_tasks
+    DAG_version_number = 1
+    DAG_is_complete = True
+    Partition_DAG_number_of_tasks = len(Partition_DAG_tasks)
+    DAG_info["DAG_version_number"] = DAG_version_number
+    DAG_info["DAG_is_complete"] = DAG_is_complete
+    DAG_info['DAG_number_of_tasks'] = Partition_DAG_number_of_tasks
 
     file_name = "./DAG_info_Partition.pickle"
     with open(file_name, 'wb') as handle:
@@ -484,75 +486,76 @@ def generate_DAG_info():
         logger.info(inp)
     logger.info("")
     logger.info("DAG_version_number:")
-    logger.info(DAG_info_version_number)
+    logger.info(DAG_version_number)
     logger.info("")
-    logger.info("DAG_info_is_complete:")
-    logger.info(DAG_info_is_complete)
+    logger.info("DAG_is_complete:")
+    logger.info(DAG_is_complete)
     logger.info("")
-    logger.info("DAG_info_number_of_tasks:")
-    logger.info(DAG_info_number_of_tasks)
+    logger.info("DAG_number_of_tasks:")
+    logger.info(Partition_DAG_number_of_tasks)
     logger.info("")
 
-    DAG_info_partition_read = DAG_Info.DAG_info_fromfilename(file_name = "./DAG_info_Partition.pickle")
-    
-    DAG_map = DAG_info_partition_read.get_DAG_map()
-    #all_fanin_task_names = DAG_info_partition_read.get_all_fanin_task_names()
-    #all_faninNB_task_names = DAG_info_partition_read.get_all_faninNB_task_names()
-    #all_faninNB_sizes = DAG_info_partition_read.get_all_faninNB_sizes()
-    #all_fanout_task_names = DAG_info_partition_read.get_all_fanout_task_names()
-    # Note: all fanout_sizes is not needed since fanouts are fanins that have size 1
-    DAG_states = DAG_info_partition_read.get_DAG_states()
-    DAG_leaf_tasks = DAG_info_partition_read.get_DAG_leaf_tasks()
-    DAG_leaf_task_start_states = DAG_info_partition_read.get_DAG_leaf_task_start_states()
-    DAG_tasks = DAG_info_partition_read.get_DAG_tasks()
+    if (False):
+        DAG_info_partition_read = DAG_Info.DAG_info_fromfilename(file_name = "./DAG_info_Partition.pickle")
+        
+        DAG_map = DAG_info_partition_read.get_DAG_map()
+        #all_fanin_task_names = DAG_info_partition_read.get_all_fanin_task_names()
+        #all_faninNB_task_names = DAG_info_partition_read.get_all_faninNB_task_names()
+        #all_faninNB_sizes = DAG_info_partition_read.get_all_faninNB_sizes()
+        #all_fanout_task_names = DAG_info_partition_read.get_all_fanout_task_names()
+        # Note: all fanout_sizes is not needed since fanouts are fanins that have size 1
+        DAG_states = DAG_info_partition_read.get_DAG_states()
+        DAG_leaf_tasks = DAG_info_partition_read.get_DAG_leaf_tasks()
+        DAG_leaf_task_start_states = DAG_info_partition_read.get_DAG_leaf_task_start_states()
+        DAG_tasks = DAG_info_partition_read.get_DAG_tasks()
 
-    DAG_leaf_task_inputs = DAG_info_partition_read.get_DAG_leaf_task_inputs()
+        DAG_leaf_task_inputs = DAG_info_partition_read.get_DAG_leaf_task_inputs()
 
-    DAG_info_is_complete = DAG_info_partition_read.get_DAG_info_is_complete()
-    DAG_info_version_number = DAG_info_partition_read.get_DAG_version_number()
-    DAG_info_number_of_tasks = DAG_info_partition_read.get_DAG_number_of_tasks()
+        DAG_is_complete = DAG_info_partition_read.get_DAG_info_is_complete()
+        DAG_version_number = DAG_info_partition_read.get_DAG_version_number()
+        DAG_number_of_tasks = DAG_info_partition_read.get_DAG_number_of_tasks()
 
-    logger.info("")
-    logger.info("DAG_info partition after read:")
-    output_DAG = True
-    # add-0bec4d19-bce6-4394-ad62-9b0eab3081a9
-    if output_DAG:
-        # FYI:
-        logger.info("DAG_map:")
-        for key, value in DAG_map.items():
-            logger.info(str(key) + ' : ' + str(value))
-            #logger.info(key)
-            #logger.info(value)
-        logger.info("  ")
-        logger.info("DAG states:")      
-        for key, value in DAG_states.items():
-            logger.info(str(key) + ' : ' + str(value))
-        logger.info("   ")
-        logger.info("DAG leaf task start states")
-        for start_state in DAG_leaf_task_start_states:
-            logger.info(start_state)
         logger.info("")
-        logger.info("DAG_tasks:")
-        for key, value in DAG_tasks.items():
-            logger.info(str(key) + ' : ' + str(value))
-        logger.info("")
-        logger.info("DAG_leaf_tasks:")
-        for task_name in DAG_leaf_tasks:
-            logger.info(task_name)
-        logger.info("") 
-        logger.info("DAG_leaf_task_inputs:")
-        for inp in DAG_leaf_task_inputs:
-            logger.info(inp)
-        logger.info("")
-        logger.info("DAG_version_number:")
-        logger.info(DAG_info_version_number)
-        logger.info("")
-        logger.info("DAG_info_is_complete:")
-        logger.info(DAG_info_is_complete)
-        logger.info("")
-        logger.info("DAG_info_number_of_tasks:")
-        logger.info(DAG_info_number_of_tasks)
-        logger.info("")
+        logger.info("DAG_info partition after read:")
+        output_DAG = True
+        # add-0bec4d19-bce6-4394-ad62-9b0eab3081a9
+        if output_DAG:
+            # FYI:
+            logger.info("DAG_map:")
+            for key, value in DAG_map.items():
+                logger.info(str(key) + ' : ' + str(value))
+                #logger.info(key)
+                #logger.info(value)
+            logger.info("  ")
+            logger.info("DAG states:")      
+            for key, value in DAG_states.items():
+                logger.info(str(key) + ' : ' + str(value))
+            logger.info("   ")
+            logger.info("DAG leaf task start states")
+            for start_state in DAG_leaf_task_start_states:
+                logger.info(start_state)
+            logger.info("")
+            logger.info("DAG_tasks:")
+            for key, value in DAG_tasks.items():
+                logger.info(str(key) + ' : ' + str(value))
+            logger.info("")
+            logger.info("DAG_leaf_tasks:")
+            for task_name in DAG_leaf_tasks:
+                logger.info(task_name)
+            logger.info("") 
+            logger.info("DAG_leaf_task_inputs:")
+            for inp in DAG_leaf_task_inputs:
+                logger.info(inp)
+            logger.info("")
+            logger.info("DAG_version_number:")
+            logger.info(DAG_version_number)
+            logger.info("")
+            logger.info("DAG_is_complete:")
+            logger.info(DAG_is_complete)
+            logger.info("")
+            logger.info("DAG_number_of_tasks:")
+            logger.info(DAG_number_of_tasks)
+            logger.info("")
 
     Group_all_fanout_task_names = []
     Group_all_fanin_task_names = []
@@ -568,6 +571,9 @@ def generate_DAG_info():
     Group_DAG_map = {}
     Group_DAG_states = {}
     Group_DAG_tasks = {}
+
+    Group_DAG_number_of_tasks = 0
+
 
 #rhc: ToDo: use the loop map to change the nambes in the 
 # Partition/roup senders and receivers.
@@ -768,12 +774,12 @@ def generate_DAG_info():
     DAG_info["all_faninNB_sizes"] = Group_all_faninNB_sizes
     DAG_info["DAG_tasks"] = Group_DAG_tasks
 
-    DAG_info_version_number = 1
-    DAG_info_is_complete = True
-    DAG_info_number_of_tasks = len(Group_DAG_tasks)
-    DAG_info["version_number"] = DAG_info_version_number
-    DAG_info["DAG_info_is_complete"] = DAG_info_is_complete
-    DAG_info["DAG_info_number_of_tasks"] = DAG_info_number_of_tasks
+    DAG_version_number = 1
+    DAG_is_complete = True
+    Group_DAG_number_of_tasks = len(Group_DAG_tasks)
+    DAG_info["DAG_version_number"] = DAG_version_number
+    DAG_info["DAG_is_complete"] = DAG_is_complete
+    DAG_info["DAG_number_of_tasks"] = Group_DAG_number_of_tasks
 
     file_name = "./DAG_info_Group.pickle"
     with open(file_name, 'wb') as handle:
@@ -841,82 +847,83 @@ def generate_DAG_info():
         logger.info(inp)
     logger.info("")
     logger.info("DAG_version_number:")
-    logger.info(DAG_info_version_number)
+    logger.info(DAG_version_number)
     logger.info("")
-    logger.info("DAG_info_is_complete:")
-    logger.info(DAG_info_is_complete)
+    logger.info("DAG_is_complete:")
+    logger.info(DAG_is_complete)
     logger.info("")
-    logger.info("DAG_info_number_of_tasks:")
-    logger.info(DAG_info_number_of_tasks)
+    logger.info("DAG_number_of_tasks:")
+    logger.info(Group_DAG_number_of_tasks)
     logger.info("")
 
-    DAG_info_partition_read = DAG_Info.DAG_info_fromfilename(file_name = "./DAG_info_Group.pickle")
-    
-    DAG_map = DAG_info_partition_read.get_DAG_map()
-    #all_fanin_task_names = DAG_info_partition_read.get_all_fanin_task_names()
-    #all_fanin_sizes = DAG_info_partition_read.get_all_fanin_sizes()
-    #all_faninNB_task_names = DAG_info_partition_read.get_all_faninNB_task_names()
-    #all_faninNB_sizes = DAG_info_partition_read.get_all_faninNB_sizes()
-    #all_fanout_task_names = DAG_info_partition_read.get_all_fanout_task_names()
-    # Note: all fanout_sizes is not needed since fanouts are fanins that have size 1
-    DAG_states = DAG_info_partition_read.get_DAG_states()
-    DAG_leaf_tasks = DAG_info_partition_read.get_DAG_leaf_tasks()
-    DAG_leaf_task_start_states = DAG_info_partition_read.get_DAG_leaf_task_start_states()
-    DAG_tasks = DAG_info_partition_read.get_DAG_tasks()
+    if (False):
+        DAG_info_partition_read = DAG_Info.DAG_info_fromfilename(file_name = "./DAG_info_Group.pickle")
+        
+        DAG_map = DAG_info_partition_read.get_DAG_map()
+        #all_fanin_task_names = DAG_info_partition_read.get_all_fanin_task_names()
+        #all_fanin_sizes = DAG_info_partition_read.get_all_fanin_sizes()
+        #all_faninNB_task_names = DAG_info_partition_read.get_all_faninNB_task_names()
+        #all_faninNB_sizes = DAG_info_partition_read.get_all_faninNB_sizes()
+        #all_fanout_task_names = DAG_info_partition_read.get_all_fanout_task_names()
+        # Note: all fanout_sizes is not needed since fanouts are fanins that have size 1
+        DAG_states = DAG_info_partition_read.get_DAG_states()
+        DAG_leaf_tasks = DAG_info_partition_read.get_DAG_leaf_tasks()
+        DAG_leaf_task_start_states = DAG_info_partition_read.get_DAG_leaf_task_start_states()
+        DAG_tasks = DAG_info_partition_read.get_DAG_tasks()
 
-    DAG_leaf_task_inputs = DAG_info_partition_read.get_DAG_leaf_task_inputs()
+        DAG_leaf_task_inputs = DAG_info_partition_read.get_DAG_leaf_task_inputs()
 
-    DAG_info_is_complete = DAG_info_partition_read.get_DAG_info_is_complete()
-    DAG_info_version_number = DAG_info_partition_read.get_DAG_version_number()
-    DAG_info_number_of_tasks = DAG_info_partition_read.get_DAG_number_of_tasks()
+        DAG_is_complete = DAG_info_partition_read.get_DAG_info_is_complete()
+        DAG_version_number = DAG_info_partition_read.get_DAG_version_number()
+        DAG_number_of_tasks = DAG_info_partition_read.get_DAG_number_of_tasks()
 
-    logger.info("")
-    logger.info("DAG_info group after read:")
-    output_DAG = True
-    # add-0bec4d19-bce6-4394-ad62-9b0eab3081a9
-    if output_DAG:
-        # FYI:
-        logger.info("DAG_map:")
-        for key, value in DAG_map.items():
-            print_str = ""
-            print_str = str(key) + " " + str(value)
-            logger.info(print_str)
-            #logger.info(key)
-            #logger.info(value)
-        logger.info("  ")
-        logger.info("DAG states:")         
-        for key, value in DAG_states.items():
-            print_str = ""
-            print_str = str(key) + " " + str(value)
-            logger.info(print_str)
-            #logger.info(key)
-            #logger.info(value)
-        logger.info("   ")
-        logger.info("DAG leaf task start states")
-        for start_state in DAG_leaf_task_start_states:
-            logger.info(start_state)
         logger.info("")
-        logger.info("DAG_tasks:")
-        for key, value in DAG_tasks.items():
-            logger.info(str(key) + ' : ' + str(value))
-        logger.info("")
-        logger.info("DAG_leaf_tasks:")
-        for task_name in DAG_leaf_tasks:
-            logger.info(task_name)
-        logger.info("") 
-        logger.info("DAG_leaf_task_inputs:")
-        for inp in DAG_leaf_task_inputs:
-            logger.info(inp)
-        logger.info("")
-        logger.info("DAG_version_number:")
-        logger.info(DAG_info_version_number)
-        logger.info("")
-        logger.info("DAG_info_is_complete:")
-        logger.info(DAG_info_is_complete)
-        logger.info("")
-        logger.info("DAG_info_number_of_tasks:")
-        logger.info(DAG_info_number_of_tasks)
-        logger.info("")
+        logger.info("DAG_info group after read:")
+        output_DAG = True
+        # add-0bec4d19-bce6-4394-ad62-9b0eab3081a9
+        if output_DAG:
+            # FYI:
+            logger.info("DAG_map:")
+            for key, value in DAG_map.items():
+                print_str = ""
+                print_str = str(key) + " " + str(value)
+                logger.info(print_str)
+                #logger.info(key)
+                #logger.info(value)
+            logger.info("  ")
+            logger.info("DAG states:")         
+            for key, value in DAG_states.items():
+                print_str = ""
+                print_str = str(key) + " " + str(value)
+                logger.info(print_str)
+                #logger.info(key)
+                #logger.info(value)
+            logger.info("   ")
+            logger.info("DAG leaf task start states")
+            for start_state in DAG_leaf_task_start_states:
+                logger.info(start_state)
+            logger.info("")
+            logger.info("DAG_tasks:")
+            for key, value in DAG_tasks.items():
+                logger.info(str(key) + ' : ' + str(value))
+            logger.info("")
+            logger.info("DAG_leaf_tasks:")
+            for task_name in DAG_leaf_tasks:
+                logger.info(task_name)
+            logger.info("") 
+            logger.info("DAG_leaf_task_inputs:")
+            for inp in DAG_leaf_task_inputs:
+                logger.info(inp)
+            logger.info("")
+            logger.info("DAG_version_number:")
+            logger.info(DAG_version_number)
+            logger.info("")
+            logger.info("DAG_info_is_complete:")
+            logger.info(DAG_is_complete)
+            logger.info("")
+            logger.info("DAG_info_number_of_tasks:")
+            logger.info(DAG_number_of_tasks)
+            logger.info("")
 
     """
     dsk = {
