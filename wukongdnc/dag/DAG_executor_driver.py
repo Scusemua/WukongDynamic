@@ -904,7 +904,7 @@ def run():
     DAG_leaf_tasks = DAG_info.get_DAG_leaf_tasks()
     DAG_leaf_task_start_states = DAG_info.get_DAG_leaf_task_start_states()
     DAG_tasks = DAG_info.get_DAG_tasks()
-    DAG_version = DAG_info.get_DAG_version_number()
+    DAG_version_number = DAG_info.get_DAG_version_number()
     DAG_is_complete = DAG_info.get_DAG_info_is_complete()
     DAG_number_of_tasks = DAG_info.get_DAG_number_of_tasks()
 
@@ -964,7 +964,7 @@ def run():
             print(inp)
         #print() 
         print()
-        print("DAG_version: " + str(DAG_version))
+        print("DAG_version: " + str(DAG_version_number))
         print()
         print("DAG_is_complete: " + str(DAG_is_complete))
         print()

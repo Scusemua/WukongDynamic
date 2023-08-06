@@ -195,7 +195,7 @@ def generate_DAG_for_partitions(to_be_continued):
         logger.info("")
 
     # read file file_name_incremental just written and display contents 
-    if True:
+    if False:
         DAG_info_partition_read = DAG_Info.DAG_info_fromfilename(file_name_incremental)
         
         DAG_map = DAG_info_partition_read.get_DAG_map()

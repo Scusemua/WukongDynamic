@@ -187,6 +187,13 @@ same_output_for_all_fanout_fanin = not compute_pagerank
 # True if DAG generation and DAG_execution are overlapped. 
 use_incremental_DAG_generation = compute_pagerank and True
 
+# generate next DAG when num_incremental_DAGs_generated mod 
+# incremental_interval == 0. For example, if we set this
+# value to 2, after we generate the first DAG, with a complete 
+# partition 1 and an incomplete partition 2, we will generate 
+# a new DAG when we process partition 4 (2+2) then 6, 8, etc.
+incremental_DAG_deposit_interval = 8
+
 #rhc: ToDo: what should this be? Used as capacity of boundedbuffer
 # Note: Pythin has no max Int
 # rhc: ToDo: Make a bounded_buffer with a dynamic buffer 
