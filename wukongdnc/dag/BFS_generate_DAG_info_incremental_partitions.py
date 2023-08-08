@@ -114,10 +114,10 @@ def generate_DAG_for_partitions(to_be_continued):
     # It is returned above. Otherwise, version 1 is the DAG_info with partitions
     # 1 and 2, where 1 is complete and 2 is complete or incomplete.
     Partition_DAG_version_number += 1
-    DAG_is_complete = not to_be_continued # to_be_continued is a parameter
+    Partition_DAG_is_complete = not to_be_continued # to_be_continued is a parameter
     Partition_DAG_number_of_tasks = len(Partition_DAG_tasks)
     DAG_info_dictionary["DAG_version_number"] = Partition_DAG_version_number
-    DAG_info_dictionary["DAG_is_complete"] = DAG_is_complete
+    DAG_info_dictionary["DAG_is_complete"] = Partition_DAG_is_complete
     DAG_info_dictionary["DAG_number_of_tasks"] = Partition_DAG_number_of_tasks
 
 #rhc: Note: we are saving all the incemental DAG_info files for debugging but 
@@ -188,7 +188,7 @@ def generate_DAG_for_partitions(to_be_continued):
         logger.info(Partition_DAG_version_number)
         logger.info("")
         logger.info("DAG_is_complete:")
-        logger.info(DAG_is_complete)
+        logger.info(Partition_DAG_is_complete)
         logger.info("")
         logger.info("DAG_number_of_tasks:")
         logger.info(Partition_DAG_number_of_tasks)
@@ -214,7 +214,7 @@ def generate_DAG_for_partitions(to_be_continued):
 
         DAG_leaf_task_inputs = DAG_info_partition_read.get_DAG_leaf_task_inputs()
 
-        DAG_is_complete = DAG_info_partition_read.get_DAG_info_is_complete()
+        Partition_DAG_is_complete = DAG_info_partition_read.get_DAG_info_is_complete()
         DAG_version_number = DAG_info_partition_read.get_DAG_version_number()
         DAG_number_of_tasks = DAG_info_partition_read.get_DAG_number_of_tasks()
 
@@ -257,7 +257,7 @@ def generate_DAG_for_partitions(to_be_continued):
             logger.info(DAG_version_number)
             logger.info("")
             logger.info("DAG_info_is_complete:")
-            logger.info(DAG_is_complete)
+            logger.info(Partition_DAG_is_complete)
             logger.info("")
             logger.info("DAG_number_of_tasks:")
             logger.info(DAG_number_of_tasks)

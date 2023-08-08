@@ -192,7 +192,7 @@ use_incremental_DAG_generation = compute_pagerank and True
 # value to 2, after we generate the first DAG, with a complete 
 # partition 1 and an incomplete partition 2, we will generate 
 # a new DAG when we process partition 4 (2+2) then 6, 8, etc.
-incremental_DAG_deposit_interval = 8
+incremental_DAG_deposit_interval = 2
 
 #rhc: ToDo: what should this be? Used as capacity of boundedbuffer
 # Note: Pythin has no max Int
