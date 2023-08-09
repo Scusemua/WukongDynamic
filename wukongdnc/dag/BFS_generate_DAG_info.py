@@ -694,6 +694,10 @@ def generate_DAG_info():
 
         state += 1
 
+    # This is for leaf tasks that are not senders. We processed
+    # senders and removed senders that were leaf tasks from the
+    # leaf_tasks_of_groups but there may be leaf tasks that are
+    # not senders so we still need to add them to DAG.
     if not len(leaf_tasks_of_groups) == 0:
         logger.debug("generate_DAG_info: len(leaf_tasks_of_groups)>0, add leaf tasks")
         fanouts = []

@@ -414,7 +414,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         
         return DAG_info
 
-    elif (senders == None) or (len(senders) == 0):
+    elif (senders == None):
         # (Note: Not sure whether we can have a length 0 senders, 
         # for current_partition_name. That is, we only create a 
         # senders when we get the first sender.
@@ -571,6 +571,11 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         return DAG_info
     
     else: # current_partition_number >= 2
+
+        # assert: no length 0 senders lists
+        if len(senders) == 0:
+            logger.error("[Error]: Internal Error: generate_DAG_info_incremental_groups:"
+                + " partition has a senders with length 0.")
         # This is not the first partition and it is not a leaf partition.
 
         # assert: For partitions, there can be only one sender, i.e., each 
