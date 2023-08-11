@@ -1615,7 +1615,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                 else: # using incremental DAG generation
                                     # work could be a -1, or a non-leaf task or leaf task. The leaf task
                                     # might be unexecutable until we get a new incremental DAG
-                                    if not use_page_rank_group_partitions:
+                                    if not use_page_rank_group_partitions or use_page_rank_group_partitions:
                                         if not DAG_executor_state.state == -1:
                                             # try to get the state_info for the work task (state).
                                             # this may return None

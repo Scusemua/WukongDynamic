@@ -30,6 +30,7 @@ leaf_tasks_of_partitions = set()
 # use a list so leaf tasks aer in order they are added (detected)
 leaf_tasks_of_partitions_incremental = []
 leaf_tasks_of_groups = set()
+leaf_tasks_of_groups_incremental = []
 
 # ToDo:
 # run and compare to non-incremental version

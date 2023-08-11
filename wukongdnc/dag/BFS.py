@@ -681,9 +681,13 @@ import copy
 from .BFS_Node import Node
 from .BFS_Partition_Node import Partition_Node
 from .BFS_generate_DAG_info_incremental_partitions import generate_DAG_info_incremental_partitions
+# Note: avoiding circular imports:
+# https://stackoverflow.com/questions/744373/what-happens-when-using-mutual-or-circular-cyclic-imports
+from . import BFS_generate_DAG_info_incremental_groups
 from .BFS_generate_DAG_info import generate_DAG_info
 from .BFS_generate_DAG_info import Partition_senders, Partition_receivers, Group_senders, Group_receivers
-from .BFS_generate_DAG_info import leaf_tasks_of_partitions, leaf_tasks_of_partitions_incremental, leaf_tasks_of_groups
+from .BFS_generate_DAG_info import leaf_tasks_of_partitions, leaf_tasks_of_partitions_incremental
+from .BFS_generate_DAG_info import leaf_tasks_of_groups, leaf_tasks_of_groups_incremental
 from .BFS_generate_shared_partitions_groups import generate_shared_partitions_groups
 from .DAG_infoBuffer_Monitor_for_threads import DAG_infobuffer_monitor
 
@@ -885,6 +889,10 @@ num_incremental_DAGs_generated = 0
     # number of partitions we have seen.
 num_nodes_in_partitions = 0
 
+#rhc: incremental groups
+groups_of_partitions = []
+groups_of_current_partition = []
+
 if compute_pagerank and use_incremental_DAG_generation: 
 #rhc continue
     # we are only using incremental_DAG_generation when we
@@ -900,7 +908,7 @@ if compute_pagerank and use_incremental_DAG_generation:
         work_queue = Work_Queue_Client(websocket,estimated_num_tasks_to_execute)
 
 def DAG_executor_driver_Invoker_Thread():
-    #time.sleep(2)
+    time.sleep(3)
     run()
 
 # visual is a list which stores all the set of edges that constitutes a graph
@@ -2163,6 +2171,10 @@ def bfs(visited, node): #function for BFS
     global incremental_DAG_deposit_interval
     global num_nodes_in_partitions
 
+#rhc: incremental groups
+    global groups_of_partitions
+    global groups_of_current_partition
+
 #rhc: q:
     # are not these lengths 0?
     # These are per dfs_parent() stats not per partition
@@ -2248,11 +2260,17 @@ def bfs(visited, node): #function for BFS
     # next partition.
     group_names.append(group_name)
 
+#rhc: incremental groups
+    groups_of_current_partition.append(group_name)
+    logger.debug("BFS: add " + group_name + "bfor fist partition to groups_of_current_partition: "
+        + str(groups_of_current_partition))
+
     # The first group collected by call to BFS() is a leaf node of the DAG.
     # There may be many calls to BFS(). Below, we will collect the first
     # partition. Set is_leaf_node to True so we know it is the first partition
     # collected on this call to BFS()
     leaf_tasks_of_groups.add(group_name)
+    leaf_tasks_of_groups_incremental.append(group_name)
     is_leaf_node = True
     
     if use_shared_partitions_groups:
@@ -2398,6 +2416,14 @@ def bfs(visited, node): #function for BFS
                     # DAG, we will append an 'L' to the name. Not using this anymore.
                     partition_name = partition_name + "L"
                     Partition_loops.add(partition_name)
+
+#rhc: incremental groups
+                groups_of_partitions.append(copy.copy(groups_of_current_partition))
+
+                logger.debug("BFS: for partition " + partition_name + " collect groups_of_current_partition: "
+                    + str(groups_of_current_partition)
+                    + ", groups_of_partitions: " + str(groups_of_partitions)) 
+
 
                 # The first partition collected by any call to BFS() is a leaf node of the DAG.
                 # There may be many calls to BFS(). We set is_leaf_node = True at thr
@@ -2644,20 +2670,46 @@ def bfs(visited, node): #function for BFS
 
                     if using_workers:
                         
-                        logger.debug("BFS: calling generate_DAG_info_incremental_partitions for"
-                            + " partition " + str(partition_name) + " using workers.")
-                        
-                        DAG_info = generate_DAG_info_incremental_partitions(partition_name,current_partition_number,to_be_continued)
+                        if not use_page_rank_group_partitions:
+                            logger.debug("BFS: calling generate_DAG_info_incremental_partitions for"
+                                + " partition " + str(partition_name) + " using workers.")
+                            DAG_info = generate_DAG_info_incremental_partitions(partition_name,current_partition_number,to_be_continued)
+                        else:
+#rhc increnetal groups
+                            # avoiding circular import - above: from . import FS_generate_DAG_info_incremental_groups
+                            # then use FS_generate_DAG_info_incremental_groups.generate_DAG_info_incremental_groups(...)
+                            logger.debug("BFS: calling generate_DAG_info_incremental_groups for"
+                                + " partition " + str(partition_name) + " groups_of_current_partition: "
+                                + str(groups_of_current_partition)
+                                + "groups_of_partitions: " + str(groups_of_partitions))
+                            DAG_info = BFS_generate_DAG_info_incremental_groups.generate_DAG_info_incremental_groups(partition_name,current_partition_number,
+                                groups_of_current_partition,groups_of_partitions,
+                                to_be_continued)
+                            groups_of_current_partition.clear()
+                            logger.debug("BFS: after calling generate_DAG_info_incremental_groups for"
+                                + " partition " + str(partition_name) + " groups_of_current_partition: "
+                                + str(groups_of_current_partition)
+                                + ", groups_of_partitions: " + str(groups_of_partitions))
                         
                         # A DAG with a single partition, and hence a single group is a special case.
                         if current_partition_number == 1:
 
-                            if not partition_name in leaf_tasks_of_partitions_incremental:
-                                logger.error("partition " + partition_name + " is the first partition"
-                                    + " but it is not in leaf_tasks_of_partitions_incemental.")
+#rhc incremental groups
+                            if not use_page_rank_group_partitions:
+                                if not partition_name in leaf_tasks_of_partitions_incremental:
+                                    logger.error("partition " + partition_name + " is the first partition"
+                                        + " but it is not in leaf_tasks_of_partitions_incemental.")
+                                else:
+                                    # we have generated a state for leaf task senderX. 
+                                    leaf_tasks_of_partitions_incremental.remove(partition_name)
                             else:
-                                # we have generated a state for leaf task senderX. 
-                                leaf_tasks_of_partitions_incremental.remove(partition_name)
+                                if not group_name in leaf_tasks_of_groups_incremental:
+                                    logger.error("group " + group_name + " is the first group/partition"
+                                        + " but it is not in leaf_tasks_of_groups_incemental.")
+                                else:
+                                    # we have generated a state for leaf task senderX. 
+                                    leaf_tasks_of_groups_incremental.remove(group_name)
+
 
                             if DAG_info.get_DAG_info_is_complete():
                                 # if there is only one partition in the DAG,
@@ -2724,7 +2776,7 @@ def bfs(visited, node): #function for BFS
                             #
                             # Note: For groups, we may still key off partitions, i.e., when 
                             # we complete a partition, we generate the groups in this partition.
-                            if not use_page_rank_group_partitions:
+                            if not use_page_rank_group_partitions or use_page_rank_group_partitions:
                                 #previous_partition_name = "PR"+str(current_partition_number-1)+"_1"
                             
                                 # Previous partition is complete so save partition to a file
@@ -2777,100 +2829,195 @@ def bfs(visited, node): #function for BFS
                             
 #rhc leaf tasks
                                     new_leaf_task_work_tuples = []           
-                                
-                                    if len(leaf_tasks_of_partitions_incremental) > 0:
-                                        # New leaf task partitions have been generated. Since no task
-                                        # will fanout/fanin these leaf tasks, we must ensure they 
-                                        # get started; if we are using workers, deposit these leaf tasks
-                                        # in the work queue. If we are using lambdas, start lambdas 
-                                        # to execute these leaf tasks/partitions. For non-incremental
-                                        # DAG generation, the DAG_executor_driver starts all leaf tasks
-                                        # at the beginning of DAG excution. 
-                                        # 
-                                        # The leaf tasks are in DAG_info just returned. (They were added
-                                        # on this last call to generate DAG_info or on a previous call. This
-                                        # is the first call to DAG_infobuffer_monitor.deposit(DAG_info) since
-                                        # these leaf tasks were added.)
-                                        # We need the states of these leaf tasks so we can 
-                                        # create the work that is added to the work_queue.
-#rhc: put them in work_queue after deposit? 
-# so we know that whoever gets the lead tasks as work has a DAG that contains the tasks?
-# No? since some workers may get this leaf work and then will not need to call withdraw()
-# to get a DAG?
-# So if a worker gets a leaf task and it's state is not in its DAG or it is but leaf task
-# state is not complete then we got the leaf task before we got a new
-# DAG that has theleaf task in it. so the worker should put leaf task in its continue_queue 
-# and do leaf task after it gets a new DAG which will have leaf task(s) in it. So worker does not 
-# execute the leaf task so when it gets the -1 ... it will call withdraw,
-# as expected. Ugh.
-#
-# issue is: put -1 in work_queue but then get 4 from work_queue so do 4 and inc num_tasks_executed
-# so this condition becomes false
-#    if num_tasks_executed == num_tasks_to_execute: 
-# thus we do not call work_qeuue.get, instead we try to process -1 as a state.
-#
-# an this get out of sync? So we look at 4, it's in the DAG as complete.
-# so we can execute it. But then can we get a -1? -1 means 
+#rhc incremental groups
+                                    if not use_page_rank_group_partitions:
+                                        if len(leaf_tasks_of_partitions_incremental) > 0:
+                                            # New leaf task partitions have been generated. Since no task
+                                            # will fanout/fanin these leaf tasks, we must ensure they 
+                                            # get started; if we are using workers, deposit these leaf tasks
+                                            # in the work queue. If we are using lambdas, start lambdas 
+                                            # to execute these leaf tasks/partitions. For non-incremental
+                                            # DAG generation, the DAG_executor_driver starts all leaf tasks
+                                            # at the beginning of DAG excution. 
+                                            # 
+                                            # The leaf tasks are in DAG_info just returned. (They were added
+                                            # on this last call to generate DAG_info or on a previous call. This
+                                            # is the first call to DAG_infobuffer_monitor.deposit(DAG_info) since
+                                            # these leaf tasks were added.)
+                                            # We need the states of these leaf tasks so we can 
+                                            # create the work that is added to the work_queue.
+    #rhc: put them in work_queue after deposit? 
+    # so we know that whoever gets the lead tasks as work has a DAG that contains the tasks?
+    # No? since some workers may get this leaf work and then will not need to call withdraw()
+    # to get a DAG?
+    # So if a worker gets a leaf task and it's state is not in its DAG or it is but leaf task
+    # state is not complete then we got the leaf task before we got a new
+    # DAG that has theleaf task in it. so the worker should put leaf task in its continue_queue 
+    # and do leaf task after it gets a new DAG which will have leaf task(s) in it. So worker does not 
+    # execute the leaf task so when it gets the -1 ... it will call withdraw,
+    # as expected. Ugh.
+    #
+    # issue is: put -1 in work_queue but then get 4 from work_queue so do 4 and inc num_tasks_executed
+    # so this condition becomes false
+    #    if num_tasks_executed == num_tasks_to_execute: 
+    # thus we do not call work_qeuue.get, instead we try to process -1 as a state.
+    #
+    # an this get out of sync? So we look at 4, it's in the DAG as complete.
+    # so we can execute it. But then can we get a -1? -1 means 
 
-# another Issue: first worker to see num_tasks_executed == num_tasks_to_execute
-# will put -1 in work_queue. Some worker (maybe the same worker) will get
-# this -1 and call withdraw, maybe after putting a second -1 in the 
-# work_queue (if there are multiple workers). The first worker can call
-# withdraw and get a DAG and set the new num_tasks_to_execute so that 
-# the second worker will not see num_tasks_executed == num_tasks_to_execute 
-# and so will not get the -1 tha the first worker put there?
-#
-# Remember that workers are calling get work and if they get -1 they 
-# might add another -1 but then they will call withdraw. They
-# only check num_executed == num to excute after they get some work.
-# So if current DAG runs out of work they will call withdraw then
-# they try to get more work or process their continue queue to get
-# work and then they check num_executed == num. So if first worker
-# to put -1 in work queue also calls withdraw and gets a new DAG 
-# and sets num to execute higher then that is okay, since 
-# other workers must get a -1 and will call withdraw to get a new 
-# DAD and then call get work or process their continue queue?
-# That is, condition num_executed == num does not affect whether a worker
-# calls get work, only affects whether they add -1 to work_queue?
-#
-# So if they get the 4, they can, add it to their continue queue and
-# call get_work again?
+    # another Issue: first worker to see num_tasks_executed == num_tasks_to_execute
+    # will put -1 in work_queue. Some worker (maybe the same worker) will get
+    # this -1 and call withdraw, maybe after putting a second -1 in the 
+    # work_queue (if there are multiple workers). The first worker can call
+    # withdraw and get a DAG and set the new num_tasks_to_execute so that 
+    # the second worker will not see num_tasks_executed == num_tasks_to_execute 
+    # and so will not get the -1 tha the first worker put there?
+    #
+    # Remember that workers are calling get work and if they get -1 they 
+    # might add another -1 but then they will call withdraw. They
+    # only check num_executed == num to excute after they get some work.
+    # So if current DAG runs out of work they will call withdraw then
+    # they try to get more work or process their continue queue to get
+    # work and then they check num_executed == num. So if first worker
+    # to put -1 in work queue also calls withdraw and gets a new DAG 
+    # and sets num to execute higher then that is okay, since 
+    # other workers must get a -1 and will call withdraw to get a new 
+    # DAD and then call get work or process their continue queue?
+    # That is, condition num_executed == num does not affect whether a worker
+    # calls get work, only affects whether they add -1 to work_queue?
+    #
+    # So if they get the 4, they can, add it to their continue queue and
+    # call get_work again?
 
 
-                                        logger.debug("BFS: new leaf tasks: " + str(leaf_tasks_of_partitions_incremental))
-                                        DAG_states_incremental = DAG_info.get_DAG_states()
-                                        logger.debug("BFS: DAG_states_incremental: " + str(DAG_states_incremental))
-                                        #DAG_leaf_task_start_states_incremental = DAG_info.get_DAG_leaf_task_start_states()
-                                        DAG_map_incremental = DAG_info.get_DAG_map()
+                                            logger.debug("BFS: new leaf tasks: " + str(leaf_tasks_of_partitions_incremental))
+                                            DAG_states_incremental = DAG_info.get_DAG_states()
+                                            logger.debug("BFS: DAG_states_incremental: " + str(DAG_states_incremental))
+                                            #DAG_leaf_task_start_states_incremental = DAG_info.get_DAG_leaf_task_start_states()
+                                            DAG_map_incremental = DAG_info.get_DAG_map()
 
-                                        if using_workers:
-                                            # leaf task states (a task is identified by its state) are put in work_queue
-                                            for name in leaf_tasks_of_partitions_incremental:
-                                                state_incremental = DAG_states_incremental[name]
-                                                state_info_incremental = DAG_map_incremental[state_incremental]
-                                                logger.debug("BFS: state_info_incremental: " + str(state_info_incremental))
-                                                task_inputs = state_info_incremental.task_inputs
-                                                # assert:
-                                                if len(task_inputs) != 0:
-                                                    logger.debug("[Error]: Internal Error: task_input for leaf"
-                                                        + " task/partition for incremental DAG generation is not empty.")
-                                                task_name = state_info_incremental.task_name
-                                                if not task_name == name:
-                                                    logger.debug("[Error]: Internal Error: task name of leaf task is not"
-                                                        + " name in leaf_tasks_of_partitions_incremental.")
-                                                dict_of_results_incremental =  {}
-                                                dict_of_results_incremental[task_name] = task_inputs
-                                                logger.debug("BFS: add leaf task to new_leaf_task_work_tuples: " + task_name)
-                                                work_tuple = (state_incremental,dict_of_results_incremental)
-#rhc leaf tasks
-                                                #work_queue.put(work_tuple)
-                                                new_leaf_task_work_tuples.append(work_tuple)
-                                        else:
-                                            pass # complete for lambdas
-                                            # start a lambda with empty input payload (like DAG_executor_driver)
+                                            if using_workers:
+                                                # leaf task states (a task is identified by its state) are put in work_queue
+                                                for name in leaf_tasks_of_partitions_incremental:
+                                                    state_incremental = DAG_states_incremental[name]
+                                                    state_info_incremental = DAG_map_incremental[state_incremental]
+                                                    logger.debug("BFS: state_info_incremental: " + str(state_info_incremental))
+                                                    task_inputs = state_info_incremental.task_inputs
+                                                    # assert:
+                                                    if len(task_inputs) != 0:
+                                                        logger.debug("[Error]: Internal Error: task_input for leaf"
+                                                            + " task/partition for incremental DAG generation is not empty.")
+                                                    task_name = state_info_incremental.task_name
+                                                    if not task_name == name:
+                                                        logger.debug("[Error]: Internal Error: task name of leaf task is not"
+                                                            + " name in leaf_tasks_of_partitions_incremental.")
+                                                    dict_of_results_incremental =  {}
+                                                    dict_of_results_incremental[task_name] = task_inputs
+                                                    logger.debug("BFS: add leaf task to new_leaf_task_work_tuples: " + task_name)
+                                                    work_tuple = (state_incremental,dict_of_results_incremental)
+    #rhc leaf tasks
+                                                    #work_queue.put(work_tuple)
+                                                    new_leaf_task_work_tuples.append(work_tuple)
+                                            else:
+                                                pass # complete for lambdas
+                                                # start a lambda with empty input payload (like DAG_executor_driver)
 
-                                        leaf_tasks_of_partitions_incremental.clear()
-                                        logger.debug("BFS: leaf tasks after clear: " + str(leaf_tasks_of_partitions_incremental))
+                                            leaf_tasks_of_partitions_incremental.clear()
+                                            logger.debug("BFS: leaf tasks after clear: " + str(leaf_tasks_of_partitions_incremental))
+                                    else:
+                                        if len(leaf_tasks_of_groups_incremental) > 0:
+                                            # New leaf task partitions have been generated. Since no task
+                                            # will fanout/fanin these leaf tasks, we must ensure they 
+                                            # get started; if we are using workers, deposit these leaf tasks
+                                            # in the work queue. If we are using lambdas, start lambdas 
+                                            # to execute these leaf tasks/partitions. For non-incremental
+                                            # DAG generation, the DAG_executor_driver starts all leaf tasks
+                                            # at the beginning of DAG excution. 
+                                            # 
+                                            # The leaf tasks are in DAG_info just returned. (They were added
+                                            # on this last call to generate DAG_info or on a previous call. This
+                                            # is the first call to DAG_infobuffer_monitor.deposit(DAG_info) since
+                                            # these leaf tasks were added.)
+                                            # We need the states of these leaf tasks so we can 
+                                            # create the work that is added to the work_queue.
+    #rhc: put them in work_queue after deposit? 
+    # so we know that whoever gets the lead tasks as work has a DAG that contains the tasks?
+    # No? since some workers may get this leaf work and then will not need to call withdraw()
+    # to get a DAG?
+    # So if a worker gets a leaf task and it's state is not in its DAG or it is but leaf task
+    # state is not complete then we got the leaf task before we got a new
+    # DAG that has theleaf task in it. so the worker should put leaf task in its continue_queue 
+    # and do leaf task after it gets a new DAG which will have leaf task(s) in it. So worker does not 
+    # execute the leaf task so when it gets the -1 ... it will call withdraw,
+    # as expected. Ugh.
+    #
+    # issue is: put -1 in work_queue but then get 4 from work_queue so do 4 and inc num_tasks_executed
+    # so this condition becomes false
+    #    if num_tasks_executed == num_tasks_to_execute: 
+    # thus we do not call work_qeuue.get, instead we try to process -1 as a state.
+    #
+    # an this get out of sync? So we look at 4, it's in the DAG as complete.
+    # so we can execute it. But then can we get a -1? -1 means 
+
+    # another Issue: first worker to see num_tasks_executed == num_tasks_to_execute
+    # will put -1 in work_queue. Some worker (maybe the same worker) will get
+    # this -1 and call withdraw, maybe after putting a second -1 in the 
+    # work_queue (if there are multiple workers). The first worker can call
+    # withdraw and get a DAG and set the new num_tasks_to_execute so that 
+    # the second worker will not see num_tasks_executed == num_tasks_to_execute 
+    # and so will not get the -1 tha the first worker put there?
+    #
+    # Remember that workers are calling get work and if they get -1 they 
+    # might add another -1 but then they will call withdraw. They
+    # only check num_executed == num to excute after they get some work.
+    # So if current DAG runs out of work they will call withdraw then
+    # they try to get more work or process their continue queue to get
+    # work and then they check num_executed == num. So if first worker
+    # to put -1 in work queue also calls withdraw and gets a new DAG 
+    # and sets num to execute higher then that is okay, since 
+    # other workers must get a -1 and will call withdraw to get a new 
+    # DAD and then call get work or process their continue queue?
+    # That is, condition num_executed == num does not affect whether a worker
+    # calls get work, only affects whether they add -1 to work_queue?
+    #
+    # So if they get the 4, they can, add it to their continue queue and
+    # call get_work again?
+
+
+                                            logger.debug("BFS: new leaf tasks: " + str(leaf_tasks_of_groups_incremental))
+                                            DAG_states_incremental = DAG_info.get_DAG_states()
+                                            logger.debug("BFS: DAG_states_incremental: " + str(DAG_states_incremental))
+                                            #DAG_leaf_task_start_states_incremental = DAG_info.get_DAG_leaf_task_start_states()
+                                            DAG_map_incremental = DAG_info.get_DAG_map()
+
+                                            if using_workers:
+                                                # leaf task states (a task is identified by its state) are put in work_queue
+                                                for name in leaf_tasks_of_groups_incremental:
+                                                    state_incremental = DAG_states_incremental[name]
+                                                    state_info_incremental = DAG_map_incremental[state_incremental]
+                                                    logger.debug("BFS: state_info_incremental: " + str(state_info_incremental))
+                                                    task_inputs = state_info_incremental.task_inputs
+                                                    # assert:
+                                                    if len(task_inputs) != 0:
+                                                        logger.debug("[Error]: Internal Error: task_input for leaf"
+                                                            + " task/partition for incremental DAG generation is not empty.")
+                                                    task_name = state_info_incremental.task_name
+                                                    if not task_name == name:
+                                                        logger.debug("[Error]: Internal Error: task name of leaf task is not"
+                                                            + " name in leaf_tasks_of_groups_incremental.")
+                                                    dict_of_results_incremental =  {}
+                                                    dict_of_results_incremental[task_name] = task_inputs
+                                                    logger.debug("BFS: add leaf task to new_leaf_task_work_tuples: " + task_name)
+                                                    work_tuple = (state_incremental,dict_of_results_incremental)
+    #rhc leaf tasks
+                                                    #work_queue.put(work_tuple)
+                                                    new_leaf_task_work_tuples.append(work_tuple)
+                                            else:
+                                                pass # complete for lambdas
+                                                # start a lambda with empty input payload (like DAG_executor_driver)
+
+                                            leaf_tasks_of_groups_incremental.clear()
+                                            logger.debug("BFS: leaf tasks after clear: " + str(leaf_tasks_of_groups_incremental))
 
                                     # Deposit new incremental DAG. This may be the 
                                     # first DAG and since the workers and lambdas
@@ -2888,7 +3035,6 @@ def bfs(visited, node): #function for BFS
                                     #     os._exit(0) 
 #rhc leaf tasks
                                     DAG_infobuffer_monitor.deposit(DAG_info,new_leaf_task_work_tuples)
-
 
                                 if (current_partition_number) == 2:
                                     # We just processed the second partition in a DAG that 
@@ -3032,6 +3178,12 @@ def bfs(visited, node): #function for BFS
                     # generate the DAG.
                     group_name = group_name + "L"
                     Group_loops.add(group_name)
+
+#rhc: incremental groups
+                groups_of_current_partition.append(group_name)
+                logger.debug("BFS: add " + group_name + "for partition number " 
+                    + str(current_partition_number) 
+                    + " to groups_of_current_partition: " + str(groups_of_current_partition))
 
 #rhc:
 # 1. clear instead of re-init?

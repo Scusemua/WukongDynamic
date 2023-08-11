@@ -11,7 +11,11 @@ from .DAG_executor_constants import use_shared_partitions_groups
 from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
 
 from .BFS_generate_DAG_info import Group_senders, Group_receivers
-from .BFS_generate_DAG_info import leaf_tasks_of_partitions_incremental
+from .BFS_generate_DAG_info import leaf_tasks_of_partitions_incremental, leaf_tasks_of_groups_incremental
+
+# Note: avoiding circular imports:
+# https://stackoverflow.com/questions/744373/what-happens-when-using-mutual-or-circular-cyclic-imports
+#from . import BFS
 
 
 logger = logging.getLogger(__name__)
@@ -293,7 +297,7 @@ DAG_info object is in its DAG_info_dictionary.
 """
 
 def generate_DAG_info_incremental_groups(current_partition_name,
-    current_partition_number,groups_of_current_partition,
+    current_partition_number, groups_of_current_partition,
     groups_of_partitions,
 #rhc: Q: can we just pass groups_of_previous_partition?
     to_be_continued):
@@ -342,8 +346,8 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         print("sender_name_set:" + str(sender_name_set))
     print()
     print()
-    print("generate_DAG_info_incremental_groups: Leaf nodes of partitions:")
-    for name in leaf_tasks_of_partitions_incremental:
+    print("generate_DAG_info_incremental_groups: Leaf nodes of groups:")
+    for name in leaf_tasks_of_groups_incremental:
         print(name + " ")
     print()
 
@@ -385,11 +389,12 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         #assert:
         if not len(groups_of_current_partition) == 1:
             logger.error("[Error]: Internal error: generate_DAG_info_incremental_groups"
-                + " number of groups in first partition is not 1.")
+                + " number of groups in first partition is not 1 it is "
+                + str(len(groups_of_current_partition)))
         #assert:
         # Noet: Group_next_state is inited to 1. as is current_partition_state
         if not current_partition_state == Group_next_state:
-            logger.debug("[Error]: Internal error:generate_DAG_info_incremental_groups"
+            logger.error("[Error]: Internal error:generate_DAG_info_incremental_groups"
                 + " current_partition_state for first partition is not equal to"
                 + " Group_next_state - both should be 1.")
           
@@ -541,14 +546,31 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 
                 previous_partition_state = current_partition_state - 1
                 groups_of_previous_partition = groups_of_partitions[previous_partition_state-1]
-                
+                logger.info("generate_DAG_info_incremental_groups: current_partition_state: " 
+                    + str(current_partition_state) + ", previous_partition_state: "
+                    + str(previous_partition_state))
+
                 # Do this one time
                 if first_group:
                     first_group = False
 
+                    logger.info("generate_DAG_info_incremental_groups: complete state_info for previous groups: "
+                        + str(groups_of_previous_partition))
                     for previous_group in groups_of_previous_partition:
-
-                        state_info_of_previous_group = Group_DAG_map[previous_group]
+                        logger.info("generate_DAG_info_incremental_groups: previous_group: " + previous_group)
+                        logger.info("DAG_map:")
+                        for key, value in Group_DAG_map.items():
+                            logger.info(str(key) + ' : ' + str(value))
+                        logger.info("")
+                                                # get the state (number) of previous group
+                        previous_group_state = Group_DAG_states[previous_group]
+                        state_info_of_previous_group = Group_DAG_map.get(previous_group_state)
+                        if state_info_of_previous_group == None:
+                            logger.info("Error: DAG_map:")
+                            for key, value in Group_DAG_map.items():
+                                logger.info(str(key) + ' : ' + str(value))
+                            logging.shutdown()
+                            os._exit(0)
 
                         # This is the first partition in a new connected 
                         # component. This means there is no other partition/group
@@ -712,7 +734,9 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 # Positions in groups_of_partitions statr at 0.
                 previous_partition_state = current_partition_state - 1
                 groups_of_previous_partition = groups_of_partitions[previous_partition_state-1]
-                
+                logger.info("generate_DAG_info_incremental_groups: current_partition_state: " 
+                    + str(current_partition_state) + ", previous_partition_state: "
+                    + str(previous_partition_state))
                 # Do this one time, i.e., there may be many groups in the current partition
                 # and we are iterating through these groups. But all of these groups have the 
                 # same previous paritition and we only need to process the group in the
@@ -720,7 +744,8 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 if first_group:
                     first_group = False
 
-                    logger.info("generate_DAG_info_incremental_groups: complete state_info for previous groups: ")
+                    logger.info("generate_DAG_info_incremental_groups: complete state_info for previous groups: "
+                        + str(groups_of_previous_partition))
                     # When we added these previous groups to the DAG we added them with empty
                     # fanouts/fanins/faninNBs/collapse sets. Now that we collected the 
                     # groups in the current partition, which is the next partition of groups 
@@ -759,6 +784,8 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         #  groups_of_previous_partition = groups_of_partitions[previous_partition_state-1]
         #  for name_of_group_in_previous_partition in groups_of_previous_partition:
         # where change "group_name" to name_of_group_in_previous_partition
+
+                        logger.info("generate_DAG_info_incremental_groups: previous_group: " + previous_group)
 
                         receiver_set_for_previous_group = Group_senders[previous_group]
                         # for each group that receives output from previous_group
@@ -907,30 +934,31 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                         # get the state (number) of previous group
                         previous_group_state = Group_DAG_states[previous_group]
                         # get the state_info of previous group
-                        state_info_previous_state = Group_DAG_map[previous_group_state]
+                        state_info_previous_group_state = Group_DAG_map[previous_group_state]
 
                         # The fanouts/fanins/faninNBs/collapses in state_info are 
                         # empty so just add the fanouts/fanins/faninNBs/collapses that
                         # we just calculated. Note: we are modifying the info in the
                         # DAG that is being constructed incrementally. 
-                        fanouts_of_previous_state = state_info_previous_state.fanouts
+                        fanouts_of_previous_state = state_info_previous_group_state.fanouts
                         fanouts_of_previous_state += fanouts
 
-                        fanins_of_previous_state = state_info_previous_state.fanins
+                        fanins_of_previous_state = state_info_previous_group_state.fanins
                         fanins_of_previous_state += fanins
             
-                        faninNBs_of_previous_state = state_info_previous_state.faninNBs
+                        faninNBs_of_previous_state = state_info_previous_group_state.faninNBs
                         faninNBs_of_previous_state += faninNBs
             
-                        collapse_of_previous_state = state_info_previous_state.collapse
+                        collapse_of_previous_state = state_info_previous_group_state.collapse
                         collapse_of_previous_state += collapse
 
-                        fanin_sizes_of_previous_state = state_info_previous_state.fanin_sizes
+                        fanin_sizes_of_previous_state = state_info_previous_group_state.fanin_sizes
                         fanin_sizes_of_previous_state += fanin_sizes
 
-                        faninNB_sizes_of_previous_state = state_info_previous_state.faninNB_sizes
+                        faninNB_sizes_of_previous_state = state_info_previous_group_state.faninNB_sizes
                         faninNB_sizes_of_previous_state += faninNB_sizes
 
+                        state_info_previous_group_state.ToBeContinued = False
                         # task_inputs of previous group does not change
 
                         """
@@ -1108,4 +1136,8 @@ def generate_DAG_info_incremental_groups(current_partition_name,
             Group_next_state += 1  
     logger.info("generate_DAG_info_incremental_groups: returning from generate_DAG_info_incremental_groups for"
         + " group " + str(group_name))
+    if DAG_info.get_DAG_info_is_complete():
+        logging.shutdown()
+        os._exit(0)
+
     return DAG_info
