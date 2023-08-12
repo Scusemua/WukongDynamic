@@ -63,6 +63,7 @@ class DAG_Info(object):
         self.DAG_version_number = DAG_info_dictionary["DAG_version_number"]
         self.DAG_is_complete = DAG_info_dictionary["DAG_is_complete"]
         self.DAG_number_of_tasks = DAG_info_dictionary["DAG_number_of_tasks"]
+        self.DAG_number_of_incomplete_tasks = DAG_info_dictionary["DAG_number_of_incomplete_tasks"]
 
     def get_DAG_info_dictionary(self):
         DAG_info_dictionary = {}
@@ -81,7 +82,7 @@ class DAG_Info(object):
         DAG_info_dictionary["DAG_version_number"] = self.DAG_version_number
         DAG_info_dictionary["DAG_is_complete"] = self.DAG_is_complete
         DAG_info_dictionary["DAG_number_of_tasks"] = self.DAG_number_of_tasks
-
+        DAG_info_dictionary["DAG_number_of_incomplete_tasks"] = self.DAG_number_of_incomplete_tasks
         return DAG_info_dictionary
 
     def get_DAG_map(self):
@@ -117,6 +118,9 @@ class DAG_Info(object):
         return self.DAG_is_complete
     def get_DAG_number_of_tasks(self):
         return self.DAG_number_of_tasks
+    def get_DAG_number_of_incomplete_tasks(self):
+        return self.DAG_number_of_incomplete_tasks
+    
     
     # After the driver gets the leaf task inputs it sets DAG_info["DAG_leaf_task_inputs"]
     # to None so that we are not passing all of these inputs to each Lambda executor.
@@ -133,34 +137,5 @@ class DAG_Info(object):
     def DAG_info_fromdictionary(cls, DAG_info_dict):
         DAG_info_dictionary = DAG_info_dict
         return cls(DAG_info_dictionary)
-    
-    """
-    def get_DAG_map(self):
-        return self.DAG_info_dictionary["DAG_map"]
-    def get_DAG_states(self):
-        return self.DAG_info_dictionary["DAG_states"]
-    def get_all_fanin_task_names(self):
-        return self.DAG_info_dictionary["all_fanin_task_names"]
-    def get_all_fanin_sizes(self):
-        return self.DAG_info_dictionary["all_fanin_sizes"]
-    def get_all_faninNB_task_names(self):
-        return self.DAG_info_dictionary["all_faninNB_task_names"]
-    def get_all_faninNB_sizes(self):
-        return self.DAG_info_dictionary["all_faninNB_sizes"]
-    def get_all_fanout_task_names(self):
-        return self.DAG_info_dictionary["all_fanout_task_names"]
-    def get_DAG_leaf_tasks(self):
-        return self.DAG_info_dictionary["DAG_leaf_tasks"]
-    def get_DAG_leaf_task_start_states(self):
-        return self.DAG_info_dictionary["DAG_leaf_task_start_states"]
-    def get_DAG_leaf_task_inputs(self):
-        return self.DAG_info_dictionary["DAG_leaf_task_inputs"]
-    def get_DAG_tasks(self):
-        return self.DAG_info_dictionary["DAG_tasks"]
-    # After the driver gets the leaf task inputs it sets DAG_info["DAG_leaf_task_inputs"]
-    # to None so that we are not passing all of these inputs to each Lambda executor.
-    def set_DAG_leaf_task_inputs_to_None(self):
-        self.DAG_info_dictionary["DAG_leaf_task_inputs"] = None
-    """
     
 

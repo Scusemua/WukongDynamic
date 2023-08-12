@@ -57,12 +57,13 @@ Group_DAG_version_number = 0
 #Group_DAG_previous_partition_name = "PR1_1"
 
 Group_DAG_number_of_tasks = 0
+Group_DAG_number_of_incomplete_tasks = 0
 
 Group_next_state = 1
 
 # Called by generate_DAG_info_incremental_partitions below to generate 
 # the DAG_info object.= when we are using partitions.
-def generate_DAG_for_groups(to_be_continued):
+def generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks):
     global Group_all_fanout_task_names
     global Group_all_fanin_task_names
     global Group_all_faninNB_task_names
@@ -85,6 +86,7 @@ def generate_DAG_for_groups(to_be_continued):
     # save the actual name "PR2_1L" and retrive it when we process PR3_1
     global Group_DAG_previous_partition_name
     global Group_DAG_number_of_tasks
+    global Group_DAG_number_of_incomplete_tasks
 
     show_generated_DAG_info = True
 
@@ -127,9 +129,11 @@ def generate_DAG_for_groups(to_be_continued):
     Group_DAG_version_number += 1
     Group_DAG_is_complete = not to_be_continued # to_be_continued is a parameter
     Group_DAG_number_of_tasks = len(Group_DAG_tasks)
+    Group_DAG_number_of_incomplete_tasks = number_of_incomplete_tasks
     DAG_info_dictionary["DAG_version_number"] = Group_DAG_version_number
     DAG_info_dictionary["DAG_is_complete"] = Group_DAG_is_complete
     DAG_info_dictionary["DAG_number_of_tasks"] = Group_DAG_number_of_tasks
+    DAG_info_dictionary["DAG_number_of_incomplete_tasks"] = Group_DAG_number_of_incomplete_tasks
 
 #rhc: Note: we are saving all the incemental DAG_info files for debugging but 
 # we probably want to turn this off otherwise.
@@ -203,6 +207,11 @@ def generate_DAG_for_groups(to_be_continued):
         logger.info("DAG_number_of_tasks:")
         logger.info(Group_DAG_number_of_tasks)
         logger.info("")
+        logger.info("DAG_number_of_incomplete_tasks:")
+        logger.info(Group_DAG_number_of_incomplete_tasks)
+        logger.info("")
+
+        
 
     # read file file_name_incremental just written and display contents 
     if False:
@@ -227,6 +236,7 @@ def generate_DAG_for_groups(to_be_continued):
         Group_DAG_is_complete = DAG_info_Group_read.get_DAG_info_is_complete()
         DAG_version_number = DAG_info_Group_read.get_DAG_version_number()
         DAG_number_of_tasks = DAG_info_Group_read.get_DAG_number_of_tasks()
+        DAG_number_of_incomplete_tasks = DAG_info_Group_read.get_DAG_number_of_incomplete_tasks()
 
         logger.info("")
         logger.info("DAG_info Group after read:")
@@ -271,6 +281,9 @@ def generate_DAG_for_groups(to_be_continued):
             logger.info("")
             logger.info("DAG_number_of_tasks:")
             logger.info(DAG_number_of_tasks)
+            logger.info("")
+            logger.info("DAG_number_of_incomplete_tasks:")
+            logger.info(DAG_number_of_incomplete_tasks)
             logger.info("")
 
     DAG_info = DAG_Info.DAG_info_fromdictionary(DAG_info_dictionary)
@@ -451,7 +464,12 @@ def generate_DAG_info_incremental_groups(current_partition_name,
 
         # Note: setting version number and to_be_continued in generate_DAG_for_groups()
         # Note: setting number of tasks in in generate_DAG_for_groups()
-        DAG_info = generate_DAG_for_groups(to_be_continued)
+
+        if to_be_continued:
+            number_of_incomplete_tasks = len(groups_of_current_partition)
+        else:
+            number_of_incomplete_tasks = 0
+        DAG_info = generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks)
 
         logger.info("generate_DAG_info_incremental_groups: returning from generate_DAG_info_incremental_groups for"
             + " group " + str(name_of_first_group_in_DAG))
@@ -594,84 +612,92 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                             + previous_group + " after update TBC is: " 
                             + str(state_info_of_previous_group))
 
-                DAG_info = generate_DAG_for_groups(to_be_continued)
-                DAG_info_DAG_map = DAG_info.get_DAG_map()
-
-                # The DAG_info object is shared between this DAG_info generator
-                # and the DAG_executor, i.e., we execute the DAG generated so far
-                # while we generate the next incremental DAGs. The current 
-                # state is part of the DAG given to the DAG_executor and we 
-                # will modify the current state when we generate the next DAG.
-                # (We modify the collapse list and the toBeContiued  of the state.)
-                # So we do not share the current state object, that is the 
-                # DAG_info given to the DAG_executor has a state_info reference
-                # this is different from the reference we maintain here in the
-                # DAG_map. 
-                # 
-                # Get the state_info for the DAG_map
-                state_info_of_current_group_state = DAG_info_DAG_map[Group_next_state]
-
-                # Note: the only parts of the states that can be changed 
-                # for partitions are the colapse list and the TBC boolean. Yet 
-                # we deepcopy the entire state_info object. But all other
-                # parts of the stare are empty for partitions (fanouts, fanins)
-                # except for the pagerank function.
-                # Note: Each state has a reference to the Python function that
-                # will excute the task. This is how Dask does it - each task
-                # has a reference to its function. For pagernk, we will use
-                # the same function for all the pagerank tasks. There can be 
-                # three different functions, but we could identify this 
-                # function whrn we excute the task, instead of doing it above
-                # and saving this same function in the DAG for each task,
-                # which wastes space
-
-                # make a deep copy of this state_info object which is the atate_info
-                # object tha the DAG generator will modify
-                copy_of_state_info_of_current_partition_state = copy.deepcopy(state_info_of_current_group_state)
-
-                # give the copy to the DAG_map given to the DAG_executor. Now
-                # the DAG_executor and the DG_generator will be using different 
-                # state_info objects 
-                DAG_info_DAG_map[Group_next_state] = copy_of_state_info_of_current_partition_state
-
-                # this used to test the deep copy - modify the state info
-                # of the generator and make sure this modification does 
-                # not show up in the state_info object given to the DAG_executor.
                 """
-                # modify generator's state_info 
-                Group_DAG_map[Group_next_state].fanins.append("goo")
+                if to_be_continued:
+                    number_of_incomplete_tasks = len(groups_of_current_partition)
+                else:
+                    number_of_incomplete_tasks = 0               
+                DAG_info = generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks)
 
-                # display DAG_executor's state_info objects
-                logger.info("address DAG_info_DAG_map: " + str(hex(id(DAG_info_DAG_map))))
-                logger.info("generate_DAG_info_incremental_groups: DAG_info_DAG_map after state_info copy:")
-                for key, value in DAG_info_DAG_map.items():
-                    logger.info(str(key) + ' : ' + str(value) + " addr value: " + str(hex(id(value))))
+                if to_be_continued:
+                    DAG_info_DAG_map = DAG_info.get_DAG_map()
 
-                # display generator's state_info objects
-                logger.info("address Group_DAG_map: " + str(hex(id(Group_DAG_map))))
-                logger.info("generate_DAG_info_incremental_groups: Group_DAG_map:")
-                for key, value in Group_DAG_map.items():
-                    logger.info(str(key) + ' : ' + str(value) + " addr value: " + str(hex(id(value))))
+                    # The DAG_info object is shared between this DAG_info generator
+                    # and the DAG_executor, i.e., we execute the DAG generated so far
+                    # while we generate the next incremental DAGs. The current 
+                    # state is part of the DAG given to the DAG_executor and we 
+                    # will modify the current state when we generate the next DAG.
+                    # (We modify the collapse list and the toBeContiued  of the state.)
+                    # So we do not share the current state object, that is the 
+                    # DAG_info given to the DAG_executor has a state_info reference
+                    # this is different from the reference we maintain here in the
+                    # DAG_map. 
+                    # 
+                    # Get the state_info for the DAG_map
+                    state_info_of_current_group_state = DAG_info_DAG_map[Group_next_state]
 
-                # undo the modification to the generator's state_info
-                Group_DAG_map[Group_next_state].fanins.clear()
+                    # Note: the only parts of the states that can be changed 
+                    # for partitions are the colapse list and the TBC boolean. Yet 
+                    # we deepcopy the entire state_info object. But all other
+                    # parts of the stare are empty for partitions (fanouts, fanins)
+                    # except for the pagerank function.
+                    # Note: Each state has a reference to the Python function that
+                    # will excute the task. This is how Dask does it - each task
+                    # has a reference to its function. For pagernk, we will use
+                    # the same function for all the pagerank tasks. There can be 
+                    # three different functions, but we could identify this 
+                    # function whrn we excute the task, instead of doing it above
+                    # and saving this same function in the DAG for each task,
+                    # which wastes space
 
-                # display generator's state_info objects
-                logger.info("generate_DAG_info_incremental_groups: DAG_info_DAG_map after clear:")
-                for key, value in DAG_info_DAG_map.items():
-                    logger.info(str(key) + ' : ' + str(value))
-            
-                # display DAG_executor's state_info ojects
-                logger.info("generate_DAG_info_incremental_groups: Group_next_state:")
-                for key, value in Group_next_state_DAG_map.items():
-                    logger.info(str(key) + ' : ' + str(value))
+                    # make a deep copy of this state_info object which is the atate_info
+                    # object tha the DAG generator will modify
+                    copy_of_state_info_of_current_partition_state = copy.deepcopy(state_info_of_current_group_state)
 
-                # logging.shutdown()
-                # os._exit(0)
-                """ 
-                # Note: There should be only one group in a partition that is the 
-                # start of a new connected component; this is asserted above.
-                # Thus we should next execute the return at the end.
+                    # give the copy to the DAG_map given to the DAG_executor. Now
+                    # the DAG_executor and the DG_generator will be using different 
+                    # state_info objects 
+                    DAG_info_DAG_map[Group_next_state] = copy_of_state_info_of_current_partition_state
+
+                    # this used to test the deep copy - modify the state info
+                    # of the generator and make sure this modification does 
+                    # not show up in the state_info object given to the DAG_executor.
+
+
+                    # modify generator's state_info 
+                    Group_DAG_map[Group_next_state].fanins.append("goo")
+
+                    # display DAG_executor's state_info objects
+                    logger.info("address DAG_info_DAG_map: " + str(hex(id(DAG_info_DAG_map))))
+                    logger.info("generate_DAG_info_incremental_groups: DAG_info_DAG_map after state_info copy:")
+                    for key, value in DAG_info_DAG_map.items():
+                        logger.info(str(key) + ' : ' + str(value) + " addr value: " + str(hex(id(value))))
+
+                    # display generator's state_info objects
+                    logger.info("address Group_DAG_map: " + str(hex(id(Group_DAG_map))))
+                    logger.info("generate_DAG_info_incremental_groups: Group_DAG_map:")
+                    for key, value in Group_DAG_map.items():
+                        logger.info(str(key) + ' : ' + str(value) + " addr value: " + str(hex(id(value))))
+
+                    # undo the modification to the generator's state_info
+                    Group_DAG_map[Group_next_state].fanins.clear()
+
+                    # display generator's state_info objects
+                    logger.info("generate_DAG_info_incremental_groups: DAG_info_DAG_map after clear:")
+                    for key, value in DAG_info_DAG_map.items():
+                        logger.info(str(key) + ' : ' + str(value))
+                
+                    # display DAG_executor's state_info ojects
+                    logger.info("generate_DAG_info_incremental_groups: Group_next_state:")
+                    for key, value in Group_next_state_DAG_map.items():
+                        logger.info(str(key) + ' : ' + str(value))
+
+                    # logging.shutdown()
+                    # os._exit(0)
+                    """ 
+                    # Note: There should be only one group in a partition that is the 
+                    # start of a new connected component; this is asserted above.
+                    # Thus we should next execute the return at the end.
     
             else: # current_partition_number >= 2
 
@@ -1056,7 +1082,12 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 ## can access previous_partition_name on the next call.
                 #Group_DAG_previous_partition_name = current_partition_name
 
-                DAG_info = generate_DAG_for_groups(to_be_continued)
+                """
+                if to_be_continued:
+                    number_of_incomplete_tasks = len(groups_of_current_partition)
+                else:
+                    number_of_incomplete_tasks = 0               
+                DAG_info = generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks)
 
                 DAG_info_DAG_map = DAG_info.get_DAG_map()
 
@@ -1101,6 +1132,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 # of the generator and make sure this modification does 
                 # not show up in the state_info object given to the DAG_executor.
                 """
+                """
                 # modify generator's state_info 
                 Group_DAG_map[Group_next_state].fanins.append("goo")
 
@@ -1134,6 +1166,99 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 """ 
 
             Group_next_state += 1  
+
+        if to_be_continued:
+            number_of_incomplete_tasks = len(groups_of_current_partition)
+        else:
+            number_of_incomplete_tasks = 0               
+        DAG_info = generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks)
+
+        if to_be_continued:
+            # Example: Next partition's first group is assigned Group_next_state of 2
+            # and len(groups_of_current_partition) is 3. Thrn we will process
+            # three groups and assign them states 2, 3, and 4. Note that
+            # after the last group is processed, Group_next_state is 5, not 4.
+            # so start_of_incomplete_states = 5 - 3 = 2. Then
+            # range(start_of_incomplete_states,Group_next_state) is (2,5)
+            # where 2 is inclusive and 5 is exclusive.
+            start_of_incomplete_states = Group_next_state - len(groups_of_current_partition)
+            for state in range(start_of_incomplete_states,Group_next_state):
+                DAG_info_DAG_map = DAG_info.get_DAG_map()
+
+                # The DAG_info object is shared between this DAG_info generator
+                # and the DAG_executor, i.e., we execute the DAG generated so far
+                # while we generate the next incremental DAGs. The current 
+                # state is part of the DAG given to the DAG_executor and we 
+                # will modify the current state when we generate the next DAG.
+                # (We modify the collapse list and the toBeContiued  of the state.)
+                # So we do not share the current state object, that is the 
+                # ADG_info given to the DAG_executor has a state_info reference
+                # this is different from the reference we maintain here in the
+                # DAG_map. 
+                # 
+                # Get the state_info for the DAG_map
+                state_info_of_current_group_state = DAG_info_DAG_map[state]
+
+                # Note: the only parts of the states that can be changed 
+                # for partitions are the colapse list and the TBC boolean. Yet 
+                # we deepcopy the entire state_info object. But all other
+                # parts of the stare are empty for partitions (fanouts, fanins)
+                # except for the pagerank function.
+                # Note: Each state has a reference to the Python function that
+                # will excute the task. This is how Dask does it - each task
+                # has a reference to its function. For pagernk, we will use
+                # the same function for all the pagerank tasks. There can be 
+                # three different functions, but we could identify this 
+                # function whrn we excute the task, instead of doing it above
+                # and saving this same function in the DAG for each task,
+                # which wastes space
+
+                # make a deep copy of this state_info object which is the atate_info
+                # object tha the DAG generator will modify
+                copy_of_state_info_of_current_group_state = copy.deepcopy(state_info_of_current_group_state)
+
+                # give the copy to the DAG_map given to the DAG_executor. Now
+                # the DAG_executor and the DG_generator will be using different 
+                # state_info objects 
+                DAG_info_DAG_map[state] = copy_of_state_info_of_current_group_state
+
+                # this used to test the deep copy - modify the state info
+                # of the generator and make sure this modification does 
+                # not show up in the state_info object given to the DAG_executor.
+
+                """
+                # modify generator's state_info 
+                Group_DAG_map[Group_next_state].fanins.append("goo")
+
+                # display DAG_executor's state_info objects
+                logger.info("address DAG_info_DAG_map: " + str(hex(id(DAG_info_DAG_map))))
+                logger.info("generate_DAG_info_incremental_groups: DAG_info_DAG_map after state_info copy:")
+                for key, value in DAG_info_DAG_map.items():
+                    logger.info(str(key) + ' : ' + str(value) + " addr value: " + str(hex(id(value))))
+
+                # display generator's state_info objects
+                logger.info("address Group_DAG_map: " + str(hex(id(Group_DAG_map))))
+                logger.info("generate_DAG_info_incremental_groups: Group_DAG_map:")
+                for key, value in Group_DAG_map.items():
+                    logger.info(str(key) + ' : ' + str(value) + " addr value: " + str(hex(id(value))))
+
+                # undo the modification to the generator's state_info
+                Group_DAG_map[Group_next_state].fanins.clear()
+
+                # display generator's state_info objects
+                logger.info("generate_DAG_info_incremental_groups: DAG_info_DAG_map after clear:")
+                for key, value in DAG_info_DAG_map.items():
+                    logger.info(str(key) + ' : ' + str(value))
+
+                # display DAG_executor's state_info ojects
+                logger.info("generate_DAG_info_incremental_groups: Group_next_state:")
+                for key, value in Group_next_state_DAG_map.items():
+                    logger.info(str(key) + ' : ' + str(value))
+
+                # logging.shutdown()
+                # os._exit(0)
+            """ 
+                
     logger.info("generate_DAG_info_incremental_groups: returning from generate_DAG_info_incremental_groups for"
         + " group " + str(group_name))
     if DAG_info.get_DAG_info_is_complete():

@@ -1339,19 +1339,30 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # using partitions
                 if not DAG_info.get_DAG_info_is_complete():
                     #num_tasks_to_execute = len(DAG_tasks) - 1
+                    number_of_incomplete_tasks = DAG_info.get_DAG_number_of_incomplete_tasks()
+                    if not number_of_incomplete_tasks == 1:
+                        logger.error("[Error]: Internal Error: DAG_executor_work_loop at start:"
+                            + " Using incremental DAG generation with partitions and"
+                            + " DAG is incomplete but number_of_incomplete_tasks is not 1: "
+                            + str(number_of_incomplete_tasks))
                     num_tasks_to_execute = DAG_number_of_tasks -1
+                    logger.debug("DAG_executor_work_loop: at start: DAG_info complete num_tasks_to_execute: " + str(num_tasks_to_execute))
                 else:
                     #num_tasks_to_execute = len(DAG_tasks)
                     num_tasks_to_execute = DAG_number_of_tasks
+                    logger.debug("DAG_executor_work_loop: at start: DAG_info complete num_tasks_to_execute: " + str(num_tasks_to_execute))
             else:
                 # using groups
                 if not DAG_info.get_DAG_info_is_complete():
-#rhc continue: TBD
-                    # get number of incomplete groups from DAG_info
-                    pass
+                    number_of_incomplete_tasks = DAG_info.get_DAG_number_of_incomplete_tasks()
+                    num_tasks_to_execute = DAG_number_of_tasks - number_of_incomplete_tasks
+                    logger.debug("DAG_executor_work_loop: at start: DAG_info not complete: new num_tasks_to_execute: " 
+                        + str(num_tasks_to_execute) + " with number_of_incomplete_tasks "
+                        + str(number_of_incomplete_tasks))                
                 else:
                     #num_tasks_to_execute = len(DAG_tasks)
                     num_tasks_to_execute = DAG_number_of_tasks
+                    logger.debug("DAG_executor_work_loop: at start: DAG_info complete num_tasks_to_execute: " + str(num_tasks_to_execute))
 
     logger.debug("DAG_executor: length of DAG_tasks: " + str(DAG_number_of_tasks)
         + " number of tasks in DAG to execute: " + str(num_tasks_to_execute))
@@ -1822,6 +1833,12 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                         # partition is incomplete (cannot be executed)
                                         if not DAG_info.get_DAG_info_is_complete():
                                             #num_tasks_to_execute = len(DAG_tasks) - 1
+                                            number_of_incomplete_tasks = DAG_info.get_DAG_number_of_incomplete_tasks()
+                                            if not number_of_incomplete_tasks == 1:
+                                                logger.error("[Error]: Internal Error: DAG_executor_work_loop:"
+                                                    + " Using incremental DAG generation with partitions and"
+                                                    + " DAG is incomplete but number_of_incomplete_tasks is not 1: "
+                                                    + str(number_of_incomplete_tasks))
                                             num_tasks_to_execute = DAG_number_of_tasks - 1
                                             logger.debug("DAG_executor_work_loop: after withdraw: DAG_info not complete: new num_tasks_to_execute: " + str(num_tasks_to_execute))
                                         else:
@@ -1835,12 +1852,15 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                     else:
                                         # using groups
                                         if not DAG_info.get_DAG_info_is_complete():
-                            #rhc continue: TBD
-                                            # get number of incomplete groups from DAG_info
-                                            pass
+                                            number_of_incomplete_tasks = DAG_info.get_DAG_number_of_incomplete_tasks()
+                                            num_tasks_to_execute = DAG_number_of_tasks - number_of_incomplete_tasks
+                                            logger.debug("DAG_executor_work_loop: after withdraw: DAG_info not complete: new num_tasks_to_execute: " 
+                                                + str(num_tasks_to_execute) + " with number_of_incomplete_tasks "
+                                                + str(number_of_incomplete_tasks))
                                         else:
                                             #num_tasks_to_execute = len(DAG_tasks)
                                             num_tasks_to_execute = DAG_number_of_tasks
+                                            logger.debug("DAG_executor_work_loop: after withdraw: DAG_info complete new num_tasks_to_execute: " + str(num_tasks_to_execute))
 
                                     if continue_queue.qsize() > 0:
                                         # if this worker has incomplete tasks in its continue
