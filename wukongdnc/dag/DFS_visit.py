@@ -31,7 +31,8 @@ class state_info:
     def __init__(self, task_name, fanouts = None, fanins = None, faninNBs = None, collapse = None,
         fanin_sizes = None, faninNB_sizes = None, task_inputs = None,
 #rhc continue
-        ToBeContinued = False):
+        ToBeContinued = False,
+        fanout_fanin_faninNB_collapse_groups=False):
 
         self.task_name = task_name
         self.fanouts = fanouts      # see comment below for examples
@@ -47,14 +48,17 @@ class state_info:
         # to convert DASK Dags to our DAGs. For pagerank, we have a seperate
         # DAG generator.
         self.ToBeContinued = ToBeContinued
+        # True if any of the fanout_fanin_faninNB_collapse_groups are incomplete
+        self.fanout_fanin_faninNB_collapse_groups = fanout_fanin_faninNB_collapse_groups
 
     @classmethod
     def state_info_fromstate_info(cls, state_info_object):
         state_info_cls = state_info_object
         return cls(state_info_cls.task_name, state_info_cls.fanouts, state_info_cls.fanins, state_info_cls.faninNBs, state_info_cls.collapse,
-        state_info_cls.fanin_sizes, state_info_cls.faninNB_sizes, state_info_cls.task_inputs,
+            state_info_cls.fanin_sizes, state_info_cls.faninNB_sizes, state_info_cls.task_inputs,
 #rhc continue
-        state_info_cls.ToBeContinued)
+            state_info_cls.ToBeContinued,
+            state_info_cls.fanout_fanin_faninNB_collapse_groups)
 
     def __str__(self):
         if self.fanouts != None:
@@ -87,12 +91,14 @@ class state_info:
             task_inputs_string = "None"
 
         ToBeContinued_string = str(self.ToBeContinued)
+        fanout_fanin_faninNB_collapse_groups_string = str(self.fanout_fanin_faninNB_collapse_groups)
 
         return (" task: " + self.task_name + ", fanouts:" + fanouts_string + ", fanins:" + fanins_string + ", faninsNB:" + faninNBs_string
             + ", collapse:" + collapse_string + ", fanin_sizes:" + fanin_sizes_string
-            + ", faninNB_sizes:" + faninNB_sizes_string + ", task_inputs: " + task_inputs_string
+            + ", faninNB_sizes:" + faninNB_sizes_string + ", task_inputs:" + task_inputs_string
 #rhc continue
-            + ", ToBeContinued_string:" + ToBeContinued_string)
+            + ", ToBeContinued_string:" + ToBeContinued_string
+            + ", fanout_fanin_faninNB_collapse_groups_string:" + fanout_fanin_faninNB_collapse_groups_string)
 
     def __deepcopy__(self, memodict={}):
         new_instance = state_info(self.task_name,
@@ -108,6 +114,7 @@ class state_info:
         new_instance.faninNB_sizes = copy.deepcopy(self.faninNB_sizes, memodict)
         new_instance.task_inputs = copy.deepcopy(self.task_inputs, memodict)
         new_instance.ToBeContinued = copy.deepcopy(self.ToBeContinued, memodict)
+        new_instance.fanout_fanin_faninNB_collapse_groups = copy.deepcopy(self.fanout_fanin_faninNB_collapse_groups, memodict)
         
         return new_instance
 

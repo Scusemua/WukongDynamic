@@ -396,6 +396,12 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         # generate the state for this partition/DAG task
         Partition_DAG_map[current_state] = state_info(current_partition_name, fanouts, fanins, faninNBs, collapse, fanin_sizes, 
             faninNB_sizes, task_inputs,
+            to_be_continued,
+            # We do not know whether this first partition will have fanout_fanin_faninNB_collapse_groups
+            # that are incomplete until we process the 2nd partition, except if to_be_continued
+            # is False in which case there are no more partitions and no fanout_fanin_faninNB_collapse_groups
+            # that are incomplete. If to_be_continued is True then we set fanout_fanin_faninNB_collapse_groups
+            # to True but we may change this value when we process partition 2.
             to_be_continued)
         Partition_DAG_states[current_partition_name] = current_state
 
@@ -471,21 +477,35 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         Partition_DAG_leaf_task_inputs.append(task_inputs)
 
         previous_state = current_state - 1
-        state_info_previous_state = Partition_DAG_map[previous_state]
+        state_info_of_previous_partition = Partition_DAG_map[previous_state]
 
         # Previous partition does not have a collapse to this partition
         # so no collapse is added to state_info_previous_state; however,
         # previous partition is now complete so TBC is set to False.
         # Note: This current partition cannot be partition 1.
-        state_info_previous_state.ToBeContinued = False
+        state_info_of_previous_partition.ToBeContinued = False
+        # The last partition of a connected component does not do any fanouts/fanins/etc.
+        state_info_of_previous_partition.fanout_fanin_faninNB_collapse_groups = False
+
+        if current_partition_number > 2:
+            previous_previous_state = previous_state - 1
+            state_info_of_previous_previous_partition = Partition_DAG_map[previous_previous_state]
+            state_info_of_previous_previous_partition.fanout_fanin_faninNB_collapse_groups = False
+
         logger.info("generate_DAG_info_incremental_partitions: new connected component for current partition "
             + str(current_partition_number) + ", the previous_state_info for previous state " 
             + str(previous_state) + " after update TBC (no collapse) is: " 
-            + str(state_info_previous_state))
+            + str(state_info_of_previous_partition))
 
         # generate state in DAG
         Partition_DAG_map[current_state] = state_info(current_partition_name, fanouts, fanins, faninNBs, collapse, fanin_sizes, 
             faninNB_sizes, task_inputs,
+            to_be_continued,
+            # We do not know whether this first group will have fanout_fanin_faninNB_collapse_groups
+            # that are incomplete until we process the 2nd partition, except if to_be_continued
+            # is False in which case there are no more partitions and no fanout_fanin_faninNB_collapse_groups
+            # that are incomplete. If to_be_continued is True then we set fanout_fanin_faninNB_collapse_groups
+            # to True but we may change this value when we process partition 2.
             to_be_continued)
         Partition_DAG_states[current_partition_name] = current_state
 
@@ -638,26 +658,49 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         # definitely has a previous partition.
         previous_state = current_state - 1
         # state for previous partition
-        state_info_previous_state = Partition_DAG_map[previous_state]
+        state_info_of_previous_partition = Partition_DAG_map[previous_state]
 
         # keeping list of all collpased task names. Add new collpase.
         Partition_all_collapse_task_names.append(current_partition_name)
 
         # add a collapse to this current partition
-        collapse_of_previous_state = state_info_previous_state.collapse
-        collapse_of_previous_state.append(current_partition_name)
+        collapse_of_previous_partition = state_info_of_previous_partition.collapse
+        collapse_of_previous_partition.append(current_partition_name)
 
         # previous partition is now complete - it is not complete
         # until we know who its collapse partition is, which we don't
         # now until we process that partition as the current partition.
-        state_info_previous_state.ToBeContinued = False
+        state_info_of_previous_partition.ToBeContinued = False
+        # if the current partition is to_be_continued then it has incomplete
+        # groups so we set fanout_fanin_faninNB_collapse_groups of the previous
+        # groups to True; otherwise, we set fanout_fanin_faninNB_collapse_groups to False.
+        # Note: state_info_of_previous_group.ToBeContinued = False inicates that the
+        # previous groups are not to be continued, while
+        # state_info_of_previous_group.fanout_fanin_faninNB_collapse_groups indicates
+        # whether the previous groups have fanout_fanin_faninNB_collapse_groups 
+        # that are to be continued, i.e., the fanout_fanin_faninNB_collapse are 
+        # to groups in this current partition and whether these groups in the current
+        # partiton are to be contnued is indicated by to_be_continued.
+        state_info_of_previous_partition.fanout_fanin_faninNB_collapse_groups = to_be_continued
+        
+        if current_partition_number > 2:
+            previous_previous_state = previous_state - 1
+            state_info_of_previous_previous_partition = Partition_DAG_map[previous_previous_state]
+            state_info_of_previous_previous_partition.fanout_fanin_faninNB_collapse_groups = False
+
         logger.info("generate_DAG_info_incremental_partitions: for current partition, the previous_state_info after update collpase and TBC: " 
-            + str(state_info_previous_state))
+            + str(state_info_of_previous_partition))
 
         # generate DAG information
         Partition_DAG_map[current_state] = state_info(current_partition_name, fanouts, fanins, faninNBs, collapse, fanin_sizes, 
             faninNB_sizes, task_inputs,
             # to_be_continued parameter can be true or false
+            to_be_continued,
+            # We do not know whether this first group will have fanout_fanin_faninNB_collapse_groups
+            # that are incomplete until we process the 2nd partition, except if to_be_continued
+            # is False in which case there are no more partitions and no fanout_fanin_faninNB_collapse_groups
+            # that are incomplete. If to_be_continued is True then we set fanout_fanin_faninNB_collapse_groups
+            # to True but we may change this value when we process partition 2.
             to_be_continued)
         Partition_DAG_states[current_partition_name] = current_state
 

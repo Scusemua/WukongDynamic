@@ -234,7 +234,7 @@ if compute_pagerank and (use_shared_partitions_groups and not run_all_tasks_loca
 # For PageRank:
 # Execute page rank partitions or execute page rank groups
 # If True use groups else use partitions
-use_page_rank_group_partitions = compute_pagerank and True
+use_page_rank_group_partitions = compute_pagerank and False
 
 # For pagerank
 # Use a struct of arrays to improve cache performance

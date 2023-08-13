@@ -2538,8 +2538,20 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         logger.debug("DAG_executor_work_loop: put collapsed work in cluster_queue:"
                             + " state is " + str(DAG_executor_state.state))
 
-
-
+                    # assert:
+                    # For partitions, we currently grab the collapse of the current
+                    # partition, which is the only thing to do since there are no 
+                    # fanouts/fanins/faninNBs for partitions, and check the 
+                    # collapse's TBC. If that TBC is True, then we put the
+                    # collapse task in the contine queue. The TBC of the collapse, 
+                    # which is effectively the TBC of the next partition, should equal
+                    # the fanout_fanin_faninNB_collapse_groups of the current partition.
+                    if not state_info.fanout_fanin_faninNB_collapse_groups == state_info_of_collapse_task.ToBeContinued:
+                        logger.error("[Error]: Internal error: DAG_executor_work_loop:"
+                            + " fanout_fanin_faninNB_collapse_groups of current partition is not"
+                            + " equal to ToBeContinued of collapse task (next partition).")
+                        logging.shutdown()
+                        os._exit(0)
 #    Note: for multithreaded worked, no difference between adding work to the 
 #    work queue and adding it to the cluster_queue, i.e., doesn't eliminate 
 #    any overhead. The difference is when using multiprocessing or lambdas
