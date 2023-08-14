@@ -11,7 +11,7 @@ import queue
 import logging
 import logging.handlers
 import multiprocessing
-#import os
+import os
 
 from .DFS_visit import Node
 #from DAG_executor_FanInNB import DAG_executor_FanInNB

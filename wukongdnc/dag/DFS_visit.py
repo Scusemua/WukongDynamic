@@ -49,7 +49,7 @@ class state_info:
         # DAG generator.
         self.ToBeContinued = ToBeContinued
         # True if any of the fanout_fanin_faninNB_collapse_groups are incomplete
-        self.fanout_fanin_faninNB_collapse_groups = fanout_fanin_faninNB_collapse_groups
+        self.fanout_fanin_faninNB_collapse_groups_are_ToBeContinued = fanout_fanin_faninNB_collapse_groups
 
     @classmethod
     def state_info_fromstate_info(cls, state_info_object):
@@ -91,14 +91,14 @@ class state_info:
             task_inputs_string = "None"
 
         ToBeContinued_string = str(self.ToBeContinued)
-        fanout_fanin_faninNB_collapse_groups_string = str(self.fanout_fanin_faninNB_collapse_groups)
+        fanout_fanin_faninNB_collapse_groups_string = str(self.fanout_fanin_faninNB_collapse_groups_are_ToBeContinued)
 
         return (" task: " + self.task_name + ", fanouts:" + fanouts_string + ", fanins:" + fanins_string + ", faninsNB:" + faninNBs_string
             + ", collapse:" + collapse_string + ", fanin_sizes:" + fanin_sizes_string
             + ", faninNB_sizes:" + faninNB_sizes_string + ", task_inputs:" + task_inputs_string
 #rhc continue
-            + ", ToBeContinued_string:" + ToBeContinued_string
-            + ", fanout_fanin_faninNB_collapse_groups_string:" + fanout_fanin_faninNB_collapse_groups_string)
+            + ", ToBeContinued:" + ToBeContinued_string
+            + ", fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:" + fanout_fanin_faninNB_collapse_groups_string)
 
     def __deepcopy__(self, memodict={}):
         new_instance = state_info(self.task_name,
@@ -114,7 +114,7 @@ class state_info:
         new_instance.faninNB_sizes = copy.deepcopy(self.faninNB_sizes, memodict)
         new_instance.task_inputs = copy.deepcopy(self.task_inputs, memodict)
         new_instance.ToBeContinued = copy.deepcopy(self.ToBeContinued, memodict)
-        new_instance.fanout_fanin_faninNB_collapse_groups = copy.deepcopy(self.fanout_fanin_faninNB_collapse_groups, memodict)
+        new_instance.fanout_fanin_faninNB_collapse_groups_are_ToBeContinued = copy.deepcopy(self.fanout_fanin_faninNB_collapse_groups_are_ToBeContinued, memodict)
         
         return new_instance
 

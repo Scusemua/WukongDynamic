@@ -163,7 +163,7 @@ def generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks):
         logger.info("num_fanins:" + str(num_fanins) + " num_fanouts:" + str(num_fanouts) + " num_faninNBs:"
         + str(num_faninNBs) + " num_collapse:" + str(num_collapse))
         logger.info("")  
-        logger.info("Group_all_fanout_task_names:")
+        logger.info("all_fanout_task_names:")
         for name in Group_all_fanout_task_names:
             logger.info(name)
         logger.info("all_fanin_task_names:")
@@ -178,7 +178,7 @@ def generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks):
         logger.info("all_faninNB_sizes:")
         for s in Group_all_faninNB_sizes:
             logger.info(s)
-        logger.info("Group_all_collapse_task_names:")
+        logger.info("all_collapse_task_names:")
         for name in Group_all_collapse_task_names:
             logger.info(name)
         logger.info("")
@@ -443,10 +443,10 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         Group_DAG_map[Group_next_state] = state_info(name_of_first_group_in_DAG, fanouts, fanins, faninNBs, collapse, fanin_sizes, 
             faninNB_sizes, task_inputs,
             to_be_continued,
-            # We do not know whether this first group will have fanout_fanin_faninNB_collapse_groups
+            # We do not know whether this first group will have fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued
             # that are incomplete until we process the 2nd partition, except if to_be_continued
-            # is False in which case there are no more partitions and no fanout_fanin_faninNB_collapse_groups
-            # that are incomplete. If to_be_continued is True then we set fanout_fanin_faninNB_collapse_groups
+            # is False in which case there are no more partitions and no fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued
+            # that are incomplete. If to_be_continued is True then we set fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued
             # to True but we may change this value when we process partition 2.
             to_be_continued)
         Group_DAG_states[name_of_first_group_in_DAG] = Group_next_state
@@ -540,10 +540,10 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 Group_DAG_map[Group_next_state] = state_info(group_name, fanouts, fanins, faninNBs, collapse, fanin_sizes, 
                     faninNB_sizes, task_inputs,
                     to_be_continued,
-                    # We do not know whether this frist group will have fanout_fanin_faninNB_collapse_groups
+                    # We do not know whether this frist group will have fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued
                     # that are incomplete until we process the 2nd partition, except if to_be_continued
-                    # is False in which case there are no more partitions and no fanout_fanin_faninNB_collapse_groups
-                    # that are incomplete. If to_be_continued is True then we set fanout_fanin_faninNB_collapse_groups
+                    # is False in which case there are no more partitions and no fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued
+                    # that are incomplete. If to_be_continued is True then we set fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued
                     # to True but we may change this value when we process partition 2.
                     to_be_continued)
                 Group_DAG_states[group_name] = Group_next_state
@@ -557,7 +557,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                     else:
                         Group_DAG_tasks[group_name] = PageRank_Function_Driver_Shared_Fast  
 
-                logger.info("generate_DAG_info_incremental_groups: Group_DAG_map[Group_next_state]: " + str(Group_DAG_map[Group_next_state] ))
+                logger.info("generate_DAG_info_incremental_groups: state_info for current " + group_name)
 
                 ## save current name as previous name. If this is partition PRi_1
                 ## we cannot just use PRi-1_1 since the name might have an L at the
@@ -586,20 +586,23 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 if first_previous_group:
                     first_previous_group = False
 
-                    logger.info("generate_DAG_info_incremental_groups: complete state_info for previous groups: "
+                    logger.info("generate_DAG_info_incremental_groups: update the state_info for previous groups: "
                         + str(groups_of_previous_partition))
                     first_previous_previous_group = True
                     for previous_group in groups_of_previous_partition:
                         logger.info("generate_DAG_info_incremental_groups: previous_group: " + previous_group)
-                        logger.info("DAG_map:")
-                        for key, value in Group_DAG_map.items():
-                            logger.info(str(key) + ' : ' + str(value))
-                        logger.info("")
-                                                # get the state (number) of previous group
+                        #for key, value in Group_DAG_map.items():
+                        #    logger.info(str(key) + ' : ' + str(value))
+                        #logger.info("")
+                        # get the state (number) of previous group
                         previous_group_state = Group_DAG_states[previous_group]
                         state_info_of_previous_group = Group_DAG_map.get(previous_group_state)
+                        logger.info("before update to TBC and fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued"
+                            + " for previous_group " + previous_group + " state_info_of_previous_group: " + str(state_info_of_previous_group))
                         if state_info_of_previous_group == None:
-                            logger.info("Error: DAG_map:")
+                            logger.error("[Error] Internal Error: generate_DAG_info_incremental_groups: state_info_of_previous_group: "
+                                + "state_info_of_previous_group is None.")
+                            logger.error("DAG_map:")
                             for key, value in Group_DAG_map.items():
                                 logger.info(str(key) + ' : ' + str(value))
                             logging.shutdown()
@@ -623,7 +626,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                         # Note: The current partition cannot be partition 1.
                         state_info_of_previous_group.ToBeContinued = False
                         # The last group of a connected component does not do any fanouts/fanins/etc
-                        state_info_of_previous_group.fanout_fanin_faninNB_collapse_groups = False
+                        state_info_of_previous_group.fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued = False
 
                         if first_previous_previous_group:
                             first_previous_previous_group = False
@@ -633,14 +636,14 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                                 for previous_previous_group in groups_of_previous_previous_partition:
                                     state_of_previous_previous_group = Group_DAG_states[previous_previous_group]
                                     state_info_of_previous_previous_group = Group_DAG_map[state_of_previous_previous_group]
-                                    state_info_of_previous_previous_group.fanout_fanin_faninNB_collapse_groups = False
+                                    state_info_of_previous_previous_group.fanout_fanin_faninNB_collapse_groups_are_ToBeContinued = False
                                     
-                                logger.info("The state_info_of_previous_previous_group for group " 
-                                    + previous_previous_group + " after update fanout_fanin_faninNB_collapse_groups is: " 
-                                    + str(state_info_of_previous_previous_group))
+                                    logger.info("The state_info_of_previous_previous_group " 
+                                        + previous_previous_group + " after update fanout_fanin_faninNB_collapse_groups_are_ToBeContinued is: " 
+                                        + str(state_info_of_previous_previous_group))
 
-                        logger.info("The state_info_of_previous_group for group " 
-                            + previous_group + " after update TBC is: " 
+                        logger.info("after update to TBC and fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued"
+                            + " for previous_group " + previous_group + " state_info_of_previous_group: " 
                             + str(state_info_of_previous_group))
 
                 """
@@ -775,10 +778,10 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                     faninNB_sizes, task_inputs,
                     # to_be_continued parameter can be true or false
                     to_be_continued,
-                    # We do not know whether this frist group will have fanout_fanin_faninNB_collapse_groups
+                    # We do not know whether this frist group will have fanout_fanin_faninNB_collapse_groups_are_ToBeContinued
                     # that are incomplete until we process the 2nd partition, except if to_be_continued
-                    # is False in which case there are no more partitions and no fanout_fanin_faninNB_collapse_groups
-                    # that are incomplete. If to_be_continued is True then we set fanout_fanin_faninNB_collapse_groups
+                    # is False in which case there are no more partitions and no fanout_fanin_faninNB_collapse_groups_are_ToBeContinued
+                    # that are incomplete. If to_be_continued is True then we set fanout_fanin_faninNB_collapse_groups_are_ToBeContinued
                     # to True but we may change this value when we process partition 2.
                     to_be_continued)
                 Group_DAG_states[group_name] = Group_next_state
@@ -792,6 +795,8 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                     else:
                         Group_DAG_tasks[group_name] = PageRank_Function_Driver_Shared_Fast  
 
+                logger.info("generate_DAG_info_incremental_groups: Group_DAG_map[Group_next_state]: " + str(Group_DAG_map[Group_next_state] ))
+                
                 # This is not the first partition and it is not a leaf partition.
                 # So current_partition_state is 2 or more (states start at 1)
                 # Positions in groups_of_partitions statr at 0.
@@ -807,7 +812,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 if first_previous_group:
                     first_previous_group = False
 
-                    logger.info("generate_DAG_info_incremental_groups: complete state_info for previous groups: "
+                    logger.info("generate_DAG_info_incremental_groups: complete the state_info for previous groups: "
                         + str(groups_of_previous_partition))
                     # When we added these previous groups to the DAG we added them with empty
                     # fanouts/fanins/faninNBs/collapse sets. Now that we collected the 
@@ -998,42 +1003,42 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                         # get the state (number) of previous group
                         previous_group_state = Group_DAG_states[previous_group]
                         # get the state_info of previous group
-                        state_info_previous_group_state = Group_DAG_map[previous_group_state]
+                        state_info_of_previous_group = Group_DAG_map[previous_group_state]
 
                         # The fanouts/fanins/faninNBs/collapses in state_info are 
                         # empty so just add the fanouts/fanins/faninNBs/collapses that
                         # we just calculated. Note: we are modifying the info in the
                         # DAG that is being constructed incrementally. 
-                        fanouts_of_previous_state = state_info_previous_group_state.fanouts
+                        fanouts_of_previous_state = state_info_of_previous_group.fanouts
                         fanouts_of_previous_state += fanouts
 
-                        fanins_of_previous_state = state_info_previous_group_state.fanins
+                        fanins_of_previous_state = state_info_of_previous_group.fanins
                         fanins_of_previous_state += fanins
             
-                        faninNBs_of_previous_state = state_info_previous_group_state.faninNBs
+                        faninNBs_of_previous_state = state_info_of_previous_group.faninNBs
                         faninNBs_of_previous_state += faninNBs
             
-                        collapse_of_previous_state = state_info_previous_group_state.collapse
+                        collapse_of_previous_state = state_info_of_previous_group.collapse
                         collapse_of_previous_state += collapse
 
-                        fanin_sizes_of_previous_state = state_info_previous_group_state.fanin_sizes
+                        fanin_sizes_of_previous_state = state_info_of_previous_group.fanin_sizes
                         fanin_sizes_of_previous_state += fanin_sizes
 
-                        faninNB_sizes_of_previous_state = state_info_previous_group_state.faninNB_sizes
+                        faninNB_sizes_of_previous_state = state_info_of_previous_group.faninNB_sizes
                         faninNB_sizes_of_previous_state += faninNB_sizes
 
-                        state_info_previous_group_state.ToBeContinued = False
+                        state_info_of_previous_group.ToBeContinued = False
                         # if the current partition is to_be_continued then it has iicomplete
-                        # groups so we set fanout_fanin_faninNB_collapse_groups of the previous
-                        # groups to True; otherwise, we set fanout_fanin_faninNB_collapse_groups to False.
+                        # groups so we set fanout_fanin_faninNB_collapse_groups_are_ToBeContinued of the previous
+                        # groups to True; otherwise, we set fanout_fanin_faninNB_collapse_groups_are_ToBeContinued to False.
                         # Note: state_info_of_previous_group.ToBeContinued = False inicates that the
                         # previous groups are not to be continued, while
-                        # state_info_of_previous_group.fanout_fanin_faninNB_collapse_groups indicates
-                        # whether the previous groups have fanout_fanin_faninNB_collapse_groups 
+                        # state_info_of_previous_group.fanout_fanin_faninNB_collapse_groups_are_ToBeContinued indicates
+                        # whether the previous groups have fanout_fanin_faninNB_collapse_groups_are_ToBeContinued 
                         # that are to be continued, i.e., the fanout_fanin_faninNB_collapse are 
                         # to groups in this current partition and whether these groups in the current
                         # partiton are to be contnued is indicated by to_be_continued.
-                        state_info_of_previous_group.fanout_fanin_faninNB_collapse_groups = to_be_continued
+                        state_info_of_previous_group.fanout_fanin_faninNB_collapse_groups_are_ToBeContinued = to_be_continued
 
                         if first_previous_previous_group:
                             first_previous_previous_group = False
@@ -1043,10 +1048,10 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                                 for previous_previous_group in groups_of_previous_previous_partition:
                                     state_of_previous_previous_group = Group_DAG_states[previous_previous_group]
                                     state_info_of_previous_previous_group = Group_DAG_map[state_of_previous_previous_group]
-                                    state_info_of_previous_previous_group.fanout_fanin_faninNB_collapse_groups = False
+                                    state_info_of_previous_previous_group.fanout_fanin_faninNB_collapse_groups_are_ToBeContinued = False
                                     
                                 logger.info("The state_info_of_previous_previous_group for group " 
-                                    + previous_previous_group + " after update fanout_fanin_faninNB_collapse_groups is: " 
+                                    + previous_previous_group + " after update fanout_fanin_faninNB_collapse_groups_are_ToBeContinued is: " 
                                     + str(state_info_of_previous_previous_group))
 
                         """
@@ -1135,11 +1140,6 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                             + str(state_info_previous_state))
 
                         """
-
-                logger.info("generate_DAG_info_incremental_groups: generate_DAG_info_incremental_groups for"
-                    + " group " + str(group_name))
-                logger.info("generate_DAG_info_incremental_groups: Group_DAG_map[Group_next_state]: " + str(Group_DAG_map[Group_next_state] ))
-
                 ## save current_partition_name as previous_partition_name so we
                 ## can access previous_partition_name on the next call.
                 #Group_DAG_previous_partition_name = current_partition_name
@@ -1228,6 +1228,9 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 """ 
 
             Group_next_state += 1  
+
+        logger.info("generate_DAG_info_incremental_groups: generate_DAG_info_incremental_groups for"
+            + " group " + str(group_name))
 
         if to_be_continued:
             number_of_incomplete_tasks = len(groups_of_current_partition)
