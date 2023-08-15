@@ -1870,11 +1870,11 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                         DAG_executor_state.state = continue_queue.get()
                                         # This is stateinfo of continued task
                                         
-                                        state_info = DAG_map[DAG_executor_state.state]
-                                        # The continued task will be executed next
-                                        # so we need its state_info
+                                        #state_info = DAG_map[DAG_executor_state.state]
+                                        # The continued task will be executed next.
+                                        # We get its state info below.
                                         logger.debug("DAG_executor_work_loop: For new DAG_info, continued state: " + str(DAG_executor_state.state)
-                                            +" state_info: " + str(state_info))
+                                            +" state_info: " + str(DAG_map[DAG_executor_state.state]))
 #rhc continue                           # continued_task used for debugging
                                         continued_task = True
                                         # if there are more continued tasks, we set flag 
@@ -2092,7 +2092,29 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             # For debugging
             if continued_task:
                 continued_task = False
-                logger.debug(state_info.task_name + " is a continued task.")
+                if not use_page_rank_group_partitions:
+                    # We got a state from the continue_queue and assigned it 
+                    # to DAG_executor_state.state. This is the state that has 
+                    # the TBC collapsed task. Above we got the state_info for 
+                    # this state with the TBC collaased task: 
+                    #    state_info = DAG_map[DAG_executor_state.state]
+                    # Now we need to get the state of the collpased task and the 
+                    # state_info of the collapsd task. We will execute
+                    # the TBC collapased task next.
+                    DAG_executor_state.state = DAG_info.get_DAG_states()[state_info.collapse[0]]
+                    state_info = DAG_map[DAG_executor_state.state]
+                    logger.debug(state_info.task_name + " is a continued task.")
+                else:
+                    pass
+                    # We got a state from the continue_queue and assigned it 
+                    # to DAG_executor_state.state. This is the state that has 
+                    # TBC fanout/fanin/faninNB/collapse tasks. Above we got the state_info for 
+                    # this state with the TBC fanout/fanin/faninNB/collapse tasks.
+                    #    state_info = DAG_map[DAG_executor_state.state]
+                    # We have already executed this task and put its outputs in 
+                    # the data_dict. We only need todo the TBC fanout/fanin/faninNB/collapses
+                    # so we will skip past the task execution.
+
 
             # Example:
             # 
@@ -2452,6 +2474,27 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     pass # lambdas TBD
             """
 
+            if (compute_pagerank and use_incremental_DAG_generation and (
+                    use_page_rank_group_partitions and state_info.fanout_fanin_faninNB_collapse_groups_are_ToBeContinued)
+                ):
+                # group has fanouts/fanins/faninNBs/collapses that are TBC
+                # so put this state in the continue_queue. When we get a new DAG
+                # we will get this state from the continue queue. We have already
+                # executed this state, so we will skip task execution and do 
+                # the continued fanouts/fanins/faninNBs/collapses. Noet that when
+                # we get a new DAG that this group that had continued 
+                # fanouts/fanins/faninNBs/collapses now is complete, i.e., it has
+                # no continud fanouts/fanins/faninNBs/collapses.
+                if using_workers:
+                    #continue_queue.put(DAG_executor_state.state)
+                    #logger.debug("DAG_executor_work_loop: put TBC collapsed work in continue_queue:"
+                    #    + " state is " + str(DAG_executor_state.state))
+                    continue_queue.put(DAG_executor_state.state)
+                    logger.debug("DAG_executor_work_loop: put TBC collapsed work in continue_queue:"
+                        + " state is " + str(DAG_executor_state.state))
+                else:
+                    pass # lambdas TBD: call Continue object w/output
+
 #rhc: cluster queue:
 # Note: if this just executed task T has a collapse task then T has no
 # fanouts/fanins/faninNBs, so next it will execute the clustered task
@@ -2478,7 +2521,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 # task to the cluster queue it may be behind one or more clustered tasks
 # but when we eventually execute, we will have its inputs in our data dict.
 
-            if len(state_info.collapse) > 0:
+            elif len(state_info.collapse) > 0:
 
                 if len(state_info.fanins) + len(state_info.fanouts) + len(state_info.faninNBs) > 0:
                     # a state with a collapse has no other fanins/fanuts.
@@ -2500,12 +2543,23 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 
                 # execute collapsed task next - transition to new state and iterate loop
                 # collapse is a list [] so get task name of the collapsed task which is collapse[0],
-                # the only name in this list
-                DAG_executor_state.state = DAG_info.get_DAG_states()[state_info.collapse[0]]
+                # the only name in this list. Note: DAG_states() is amap from 
+                # task name to an int that is the task state.
+                
+                #task_name_of_just_executed_task = state_info.task_name
+                #task_state_of_just_executed_task = DAG_info.get_DAG_states()[task_name_of_just_executed_task]
+                #DAG_executor_state.state = DAG_info.get_DAG_states()[state_info.collapse[0]]
 
+                # DAG_executor_state.state is the state that has the 
+                # collapsed partition. state_info is the state info
+                # of the tate with the collapsed partition.
 #rhc continue 
-                if not(compute_pagerank and use_incremental_DAG_generation):
+                if not(compute_pagerank and use_incremental_DAG_generation) or (compute_pagerank and use_incremental_DAG_generation and use_page_rank_group_partitions):
 #rhc: cluster:
+                    # get the state of the collapsed partition (task)
+                    # and put the collapsed tsk i nthe cluster_queue for 
+                    # execution.
+                    DAG_executor_state.state = DAG_info.get_DAG_states()[state_info.collapse[0]]
                     cluster_queue.put(DAG_executor_state.state)
                     logger.debug("DAG_executor_work_loop: put collapsed work in cluster_queue:"
                             + " state is " + str(DAG_executor_state.state))
@@ -2516,24 +2570,33 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     #    # Config: A4_local, A4_Remote, A5, A6
                     #    worker_needs_input = False
                     ## else: # Config: A1. A2, A3
-                else: # we are doing incremental DAG generation
-                    # This is stateinfo of collapsed task, not the 
-                    # (possibly continued) task just executed.
-                    state_info_of_collapse_task = DAG_map[DAG_executor_state.state]
+                else: 
+                    # we are doing incremental DAG generation
+                    # with partitions.
+                    state_of_collapsed_task = DAG_info.get_DAG_states()[state_info.collapse[0]]
+                    state_info_of_collapse_task = DAG_map[state_of_collapsed_task]
                     logger.debug("DAG_executor_work_loop: check TBC of collapsed task state info: "
                         + str(state_info_of_collapse_task))
                     if state_info_of_collapse_task.ToBeContinued:
                         # put TBC states in the continue_queue
 #rhc: continue - finish for Lambdas
                         if using_workers:
+                            #continue_queue.put(DAG_executor_state.state)
+                            #logger.debug("DAG_executor_work_loop: put TBC collapsed work in continue_queue:"
+                            #    + " state is " + str(DAG_executor_state.state))
+                            # put the state with the collapsed task in the continue_queue,
+                            # not the state of the collapsed task. We will get the state 
+                            # out of the continue queue and then get the collapsed task
+                            # of this state and excute it.
                             continue_queue.put(DAG_executor_state.state)
-                            logger.debug("DAG_executor_work_loop: put TBC collapsed work in continue_queue:"
+                            logger.debug("DAG_executor_work_loop: put state with TBC collapse in continue_queue:"
                                 + " state is " + str(DAG_executor_state.state))
                         else:
                             pass # lambdas TBD: call Continue object w/output
                     else:
 #hc: cluster:
                         # put non-TBC states in the cluster_queue
+                        DAG_executor_state.state = DAG_info.get_DAG_states()[state_info.collapse[0]]
                         cluster_queue.put(DAG_executor_state.state)
                         logger.debug("DAG_executor_work_loop: put collapsed work in cluster_queue:"
                             + " state is " + str(DAG_executor_state.state))
@@ -2546,7 +2609,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # collapse task in the contine queue. The TBC of the collapse, 
                     # which is effectively the TBC of the next partition, should equal
                     # the fanout_fanin_faninNB_collapse_groups of the current partition.
-                    if not state_info.fanout_fanin_faninNB_collapse_groups == state_info_of_collapse_task.ToBeContinued:
+                    if not state_info.fanout_fanin_faninNB_collapse_groups_are_ToBeContinued == state_info_of_collapse_task.ToBeContinued:
                         logger.error("[Error]: Internal error: DAG_executor_work_loop:"
                             + " fanout_fanin_faninNB_collapse_groups of current partition is not"
                             + " equal to ToBeContinued of collapse task (next partition).")
