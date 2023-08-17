@@ -908,7 +908,7 @@ if compute_pagerank and use_incremental_DAG_generation:
         work_queue = Work_Queue_Client(websocket,estimated_num_tasks_to_execute)
 
 def DAG_executor_driver_Invoker_Thread():
-    #time.sleep(3)
+    time.sleep(3)
     run()
 
 # visual is a list which stores all the set of edges that constitutes a graph
