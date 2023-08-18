@@ -2809,6 +2809,36 @@ def bfs(visited, node): #function for BFS
                                             cloudpickle.dump(partitions[current_partition_number-1], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
                                 else:
                                     pass # finish for groups
+                                    #previous_partition_number = current_partition_number - 1
+                                    #frontier_groups_sum is the total number of groups, so last group was
+                                    #   frontier_groups_sum
+                                    #groups_of_previous_partition = groups_of_partitions[previous_partition_number-1]
+                                    #for previous_group in groups_of_previous_partition:
+                                    #   index_of_last_group_in_current_partition = frontier_groups_sum
+                                    #   index_of_first_group_of_current_partition = frontier_groups_sum - (len of groups in current partition-1)
+                                    #   index_of_first_group_of_previous_partition = first_group_of_current_partition - len of groups in previous partition
+                                    #   index_in_groups_list: subtract 1
+# always output the previous partition of nodes
+                                    with open('./'+partition_names[current_partition_number-2] + '.pickle', 'wb') as handle:
+                                        # partition indices in partitions[] start with 0, so current partition i
+                                        # is in partitions[i-1] and previous partition is partitions[i-2]
+                                        cloudpickle.dump(partitions[current_partition_number-2], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+
+                                    #groups_of_current_partition = groups_of_partitions[current_partition_number-1]
+                                    #for current_group in groups_of_previous_partition:
+                                    #   index_of_last_group_in_current_partition = frontier_groups_sum
+                                    #   index_of_first_group_of_current_partition = frontier_groups_sum - (len of groups in current partition-1)
+                                    #   index_in_groups_list: subtract 1
+                                    # 
+#rhc: ToDo: Other places we need to output group partition?
+                                    # the current partition might be the last partition in the DAG, if so
+                                    # save the partition to a file. Below we will save the DAG_info.
+                                    if DAG_info.get_DAG_info_is_complete():
+                                        with open('./'+partition_name + '.pickle', 'wb') as handle:
+                                            # partition indices in partitions[] start with 0, so current partition i
+                                            # is in partitions[i-1] and previous partition is partitions[i-2]
+                                            cloudpickle.dump(partitions[current_partition_number-1], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+
 
                                 # Try to make sure workers are waiting for the DAG that is deposted below.
                                 #logger.debug("BFS: sleeping before calling DAG_infobuffer_monitor.deposit(DAG_info).")
