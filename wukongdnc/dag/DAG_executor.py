@@ -1690,7 +1690,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                 else: # incremental DAG generation
                                     # Work could be a -1, or a non-leaf task or leaf task. The leaf task
                                     # might be unexecutable until we get a new incremental DAG.
-                                    if not use_page_rank_group_partitions: 
+                                    if (not use_page_rank_group_partitions) or use_page_rank_group_partitions: 
                                         if not DAG_executor_state.state == -1:
                                             # try to get the state_info for the work task (state)
                                             # this may return None
@@ -1737,7 +1737,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                             # we got -1 so break the while(True) loop and process the -1 next
                                             break # while(True) loop
                                     else:
-                                          pass # finish for groups
+                                        pass # finish for groups
                         # end of while(True) get work from work_queue
 
                         logger.debug("**********************DAG_executor_work_loop: withdrawn state for thread: " + thread_name + " :" + str(DAG_executor_state.state))
@@ -2159,35 +2159,59 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             # next incremental DAG). It then becomes a continued task and it has
             # not been executed before so we need to execute it as oppsed to 
             # executing its collapse task.
-# rhc: Problem: What if it is a leaf task like 4 or 6? If we get it from the work_queue
-# and it is not executable then we put it in the continue queue. Note that
-# it is a continued task but it has not been executed befer, so we need to 
-# execute it.
-            if compute_pagerank and use_incremental_DAG_generation and use_page_rank_group_partitions and continued_task and (
-                DAG_executor_state.state == 1 or (not state_info.task_name in DAG_info.get_DAG_leaf_tasks())
+            incremental_dag_generation_with_groups = compute_pagerank and use_incremental_DAG_generation and use_page_rank_group_partitions
+            if incremental_dag_generation_with_groups and continued_task and (
+                (DAG_executor_state.state == 1 or (not state_info.task_name in DAG_info.get_DAG_leaf_tasks()))
             ):
                 continued_task = False
-                pass # do not execute task       
+                pass 
+                # do not execute this group/task since it has been excuted before.
             else:
-                # execute task.
+                # Execute task (but which task?)
                 # But first see if we are doing incremental DAG generation and
-                # we aer using partitions. If so, we may need to get eh collapse
-                # task of the continus state and excute the collapse task.
-                if compute_pagerank and use_incremental_DAG_generation and not use_page_rank_group_partitions and continued_task:
+                # we are using partitions. If so, we may need to get the collapse
+                # task of the continued state and excute the collapse task.
+                # Note: We can also get here if we are doing incremental DAG generation
+                # with groups and the task is a leaf task (that is not the first group in the 
+                # DAG) that starts a new connected component (which is the first 
+                # group generated on any call to BFS()). We will execute the 
+                # group task. We will also execute the 
+                incremental_dag_generation_with_partitions = compute_pagerank and use_incremental_DAG_generation and not use_page_rank_group_partitions
+                if incremental_dag_generation_with_partitions and continued_task:
                     continued_task = False
                     # if continued state is the first partition (which is a leaf task) or is not a leaf task
-                    # then get the collapse task of the continued state for excution; otherwise, execute the 
-                    # continued state.
+                    # then get the collapse task of the continued state; otherwise, execute the 
+                    # continued state, which is a leaf task that starts a new conncted
+                    # component. Note: For groups, we do not get the collapsed task.
+                    # We do for partitions because partitions only have collapsed tasks,
+                    # i.e., no fanouts or fanins and if task T has a collapsed task C then 
+                    # the same worker W that executed T executes C. So we add C to W's
+                    # contnue queue and W will execute C. For groups, we execute the task and 
+                    # if it is to be continued, we put the state in the continue
+                    # queue and when we get it from the continue queue we do its 
+                    # fanins/fanouts/collapses. Noet that if W executed T and T has 
+                    # mny fanouts then we do not want to put all of these fanouts in 
+                    # W's continue queue since that would mean W woudl execute all
+                    # the fanout tasks of T. Instead, when W gets the state for T 
+                    # from the continue queue Q can (skip th execution of T since that
+                    # already happened) do T's fanouts as ususal, i.e., W will 
+                    # become/cluster one of T's fanouts and put the rest on the shared
+                    # worker queue to distribute the fanout tasks amoung the workers.
                     if DAG_executor_state.state == 1 or (not state_info.task_name in DAG_info.get_DAG_leaf_tasks()):
                         DAG_executor_state.state = DAG_info.get_DAG_states()[state_info.collapse[0]]
                         state_info = DAG_map[DAG_executor_state.state]
                         logger.debug("DAG_executor_work_loop: got state and state_info of continued, collapsed partition for collapsed task " + state_info.task_name)
                     else:
+                        # execute task - partition task is a leaf task that is not the first
+                        # partition in the DAG. (Leaf tasks statr a new connected component.)
                         logger.debug("DAG_executor_work_loop: continued partition  " 
                             + state_info.task_name + " is a leaf task so do not get its collapse task"
                             + " instead, execute the leaf task.")
                 else:
-                    pass # excute task
+                    pass 
+                    # execute task - task is a group task that is a 
+                    # leaf task (but not the fitst group in the DAG)
+                    # or it is a patition task that is not a continued task.
                     
                 #execute task
 

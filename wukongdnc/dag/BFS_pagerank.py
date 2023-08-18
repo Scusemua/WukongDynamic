@@ -16,7 +16,7 @@ ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
-debug_pagerank = False
+debug_pagerank = True
 
 """
 

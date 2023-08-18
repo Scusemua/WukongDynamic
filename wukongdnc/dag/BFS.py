@@ -2793,19 +2793,22 @@ def bfs(visited, node): #function for BFS
                                 # e.g., name for the partition 2 that is previous to current partition
                                 # 3 is position 1, which is 3-2.
 
-                                # always output the previous partition of nodes
-                                with open('./'+partition_names[current_partition_number-2] + '.pickle', 'wb') as handle:
-                                    # partition indices in partitions[] start with 0, so current partition i
-                                    # is in partitions[i-1] and previous partition is partitions[i-2]
-                                    cloudpickle.dump(partitions[current_partition_number-2], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
-
-                                # the current partition might be the last partition in the DAG, if so
-                                # save the partition to a file. Below we will save the DAG_info.
-                                if DAG_info.get_DAG_info_is_complete():
-                                    with open('./'+partition_name + '.pickle', 'wb') as handle:
+                                if not use_page_rank_group_partitions:
+                                    # always output the previous partition of nodes
+                                    with open('./'+partition_names[current_partition_number-2] + '.pickle', 'wb') as handle:
                                         # partition indices in partitions[] start with 0, so current partition i
                                         # is in partitions[i-1] and previous partition is partitions[i-2]
-                                        cloudpickle.dump(partitions[current_partition_number-1], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+                                        cloudpickle.dump(partitions[current_partition_number-2], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+
+                                    # the current partition might be the last partition in the DAG, if so
+                                    # save the partition to a file. Below we will save the DAG_info.
+                                    if DAG_info.get_DAG_info_is_complete():
+                                        with open('./'+partition_name + '.pickle', 'wb') as handle:
+                                            # partition indices in partitions[] start with 0, so current partition i
+                                            # is in partitions[i-1] and previous partition is partitions[i-2]
+                                            cloudpickle.dump(partitions[current_partition_number-1], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+                                else:
+                                    pass # finish for groups
 
                                 # Try to make sure workers are waiting for the DAG that is deposted below.
                                 #logger.debug("BFS: sleeping before calling DAG_infobuffer_monitor.deposit(DAG_info).")
@@ -3844,10 +3847,13 @@ https://stackoverflow.com/questions/18204782/runtimeerror-on-windows-trying-pyth
 #Q: Should we guard the BFS.py imports in the above way?
 
 if __name__ == '__main__':
-
-    logger.debug("Following is the Breadth-First Search")
+    if use_page_rank_group_partitions:
+        logger.debug("BFS: using groups")
+    else:
+        logger.debug("BFS: using partitions.")
+    logger.debug("BFS: Following is the Breadth-First Search")
     input_graph()
-    logger.debug("num_nodes after input graph: " + str(num_nodes))
+    logger.debug("BFS: num_nodes after input graph: " + str(num_nodes))
     #visualize()
     #input('Press <ENTER> to continue')
 
@@ -3861,7 +3867,7 @@ if __name__ == '__main__':
     # i start = 1 as nodes[0] not used, i end is (num_nodes+1) - 1  = 100
     for i in range(1,num_nodes+1):
         if i not in visited:
-            logger.debug("*************Driver call BFS for node[" + str(i) + "]")
+            logger.debug("*************BFS Driver call BFS for node[" + str(i) + "]")
             #bfs(visited, graph, nodes[i])    # function calling
             bfs(visited, nodes[i])    # function calling
 
@@ -3952,7 +3958,7 @@ if __name__ == '__main__':
     #os._exit(0)
 
     def print_BFS_stats():
-        logger.info("print_BFS_stats: ")
+        logger.info("BFS: print_BFS_stats: ")
         #partitions.append(current_partition.copy())
         #frontiers.append(frontier.copy())
         #frontier_cost = "END" + ":" + str(len(frontier))
@@ -3962,7 +3968,7 @@ if __name__ == '__main__':
         logger.info("")
         logger.info("visited length: " + str(len(visited)))
         if len(visited) != num_nodes:
-            logger.error("[Error]: visited length is " + str(len(visited))
+            logger.error("[Error]: BFS: visited length is " + str(len(visited))
                 + " but num_nodes is " + str(num_nodes))
         print_val = ""
         for x in visited:
