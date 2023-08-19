@@ -2834,6 +2834,10 @@ def bfs(visited, node): #function for BFS
                                     logger.debug("BFS: frontier_groups_sum: " + str(frontier_groups_sum))
                                     groups_of_previous_partition = groups_of_partitions[previous_partition_number-1]
                                     logger.debug("BFS: groups_of_previous_partition: " + str(groups_of_previous_partition))
+
+                                    # Using groups_of_current_partitionX instead of the global
+                                    # variable groups_of_current_partition; The global was cleared
+                                    # above so let's just keep this local.
                                     groups_of_current_partitionX = groups_of_partitions[current_partition_number-1]
                                     logger.debug("BFS: groups_of_current_partitionX: " + str(groups_of_current_partitionX))
                                     i = 0
@@ -2861,17 +2865,17 @@ def bfs(visited, node): #function for BFS
                                     if DAG_info.get_DAG_info_is_complete():
                                         i = 0
                                         for current_group in groups_of_current_partitionX:
-                                            index_in_groups_list_of_last_group_in_current_group = frontier_groups_sum
-                                            logger.debug("BFS: index_in_groups_list_of_last_group_in_current_group: " + str(index_in_groups_list_of_last_group_in_current_group))
-                                            index_in_groups_list_of_first_group_of_current_group = frontier_groups_sum - (len(groups_of_current_partitionX)-1)
-                                            logger.debug("BFS: index_in_groups_list_of_first_group_of_current_group: " + str(index_in_groups_list_of_first_group_of_current_group))
-                                            index_in_groups_list_of_current_group = index_in_groups_list_of_first_group_of_current_group + i - 1
+                                            index_in_groups_list_of_last_group_in_current_partition = frontier_groups_sum
+                                            logger.debug("BFS: index_in_groups_list_of_last_group_in_current_partition: " + str(index_in_groups_list_of_last_group_in_current_partition))
+                                            index_in_groups_list_of_first_group_of_current_partition = frontier_groups_sum - (len(groups_of_current_partitionX)-1)
+                                            logger.debug("BFS: index_in_groups_list_of_first_group_of_current_partition: " + str(index_in_groups_list_of_first_group_of_current_partition))
+                                            index_in_groups_list_of_current_group = index_in_groups_list_of_first_group_of_current_partition + i - 1
                                             logger.debug("BFS: for " + current_group + " index_in_groups_list_of_current_group: " + str(index_in_groups_list_of_current_group))
 
                                             with open('./'+current_group + '.pickle', 'wb') as handle:
                                                 # partition indices in partitions[] start with 0, so current partition i
                                                 # is in partitions[i-1] and previous partition is partitions[i-2]
-                                                cloudpickle.dump(groups[index_in_groups_list_of_current_group-1], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+                                                cloudpickle.dump(groups[index_in_groups_list_of_current_group], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
                                             
                                             i += 1
                                     
