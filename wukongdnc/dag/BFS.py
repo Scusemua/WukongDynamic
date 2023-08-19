@@ -2719,21 +2719,40 @@ def bfs(visited, node): #function for BFS
                                 # since when we get partition 2 partition 1
                                 # is complete and can be executed.
                         
-                                # output partition 1, which is complete
-                                with open('./'+partition_name + '.pickle', 'wb') as handle:
-                                    # partition indices in partitions[] start with 0, so current partition i
-                                    # is in partitions[i-1] and previous partition is partitions[i-2]
-                                    cloudpickle.dump(partitions[0], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+                                if not use_page_rank_group_partitions:
+                                    # output partition 1, which is complete
+                                    with open('./'+partition_name + '.pickle', 'wb') as handle:
+                                        # partition indices in partitions[] start with 0, so current partition i
+                                        # is in partitions[i-1] and previous partition is partitions[i-2]
+                                        cloudpickle.dump(partitions[0], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
 
-                                # Deposit complete DAG_info for workers. Noet that we have 
-                                # not started the DAG_executor_driver yet, so this deposited
-                                # DAG_info will not ever be withdrawn as the lambda leaf task
-                                # for partition 1 will be started by the DAG_executor_driver with 
-                                # the DAG_info it reads from a file (output previously).
-                                logger.debug("BFS: deposit first DAG with num_incremental_DAGs_generated:"
-                                    + str(num_incremental_DAGs_generated)
-                                    + " current_partition_number: " + str(current_partition_number))
-#rhc: leaf tasks
+                                    # Deposit complete DAG_info for workers. Noet that we have 
+                                    # not started the DAG_executor_driver yet, so this deposited
+                                    # DAG_info will not ever be withdrawn as the lambda leaf task
+                                    # for partition 1 will be started by the DAG_executor_driver with 
+                                    # the DAG_info it reads from a file (output previously).
+                                    logger.debug("BFS: deposit first DAG, which is complete, with num_incremental_DAGs_generated:"
+                                        + str(num_incremental_DAGs_generated)
+                                        + " current_partition_number: " + str(current_partition_number))
+                                        # current partition number is 1
+                                else:
+                                    # output group 1, which is complete
+                                    with open('./'+group_name + '.pickle', 'wb') as handle:
+                                        # partition indices in partitions[] start with 0, so current partition i
+                                        # is in partitions[i-1] and previous partition is partitions[i-2]
+                                        cloudpickle.dump(groups[0], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+
+                                    # Deposit complete DAG_info for workers. Noet that we have 
+                                    # not started the DAG_executor_driver yet, so this deposited
+                                    # DAG_info will not ever be withdrawn as the lambda leaf task
+                                    # for partition 1 will be started by the DAG_executor_driver with 
+                                    # the DAG_info it reads from a file (output previously).
+                                    logger.debug("BFS: deposit first DAG, which is complete, with num_incremental_DAGs_generated:"
+                                        + str(num_incremental_DAGs_generated)
+                                        + " current_group_number: " + str(1))
+                                        # The only group in a complete DAG with one group is group 1
+
+    #rhc: leaf tasks
                                 new_leaf_tasks = []
                                 DAG_infobuffer_monitor.deposit(DAG_info,new_leaf_tasks)
 
@@ -2808,37 +2827,56 @@ def bfs(visited, node): #function for BFS
                                             # is in partitions[i-1] and previous partition is partitions[i-2]
                                             cloudpickle.dump(partitions[current_partition_number-1], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
                                 else:
-                                    pass # finish for groups
-                                    #previous_partition_number = current_partition_number - 1
+                                    previous_partition_number = current_partition_number - 1
+                                    logger.debug("BFS: previous_partition_number: " + str(previous_partition_number))
                                     #frontier_groups_sum is the total number of groups, so last group was
                                     #   frontier_groups_sum
-                                    #groups_of_previous_partition = groups_of_partitions[previous_partition_number-1]
-                                    #for previous_group in groups_of_previous_partition:
-                                    #   index_of_last_group_in_current_partition = frontier_groups_sum
-                                    #   index_of_first_group_of_current_partition = frontier_groups_sum - (len of groups in current partition-1)
-                                    #   index_of_first_group_of_previous_partition = first_group_of_current_partition - len of groups in previous partition
-                                    #   index_in_groups_list: subtract 1
-# always output the previous partition of nodes
-                                    with open('./'+partition_names[current_partition_number-2] + '.pickle', 'wb') as handle:
-                                        # partition indices in partitions[] start with 0, so current partition i
-                                        # is in partitions[i-1] and previous partition is partitions[i-2]
-                                        cloudpickle.dump(partitions[current_partition_number-2], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+                                    logger.debug("BFS: frontier_groups_sum: " + str(frontier_groups_sum))
+                                    groups_of_previous_partition = groups_of_partitions[previous_partition_number-1]
+                                    logger.debug("BFS: groups_of_previous_partition: " + str(groups_of_previous_partition))
+                                    groups_of_current_partitionX = groups_of_partitions[current_partition_number-1]
+                                    logger.debug("BFS: groups_of_current_partitionX: " + str(groups_of_current_partitionX))
+                                    i = 0
+                                    for previous_group in groups_of_previous_partition:
+                                        index_in_groups_list_of_last_group_in_current_partition = frontier_groups_sum
+                                        logger.debug("BFS: index_in_groups_list_of_last_group_in_current_partition: " + str(index_in_groups_list_of_last_group_in_current_partition))
+                                        index_in_groups_list_of_first_group_of_current_partition = frontier_groups_sum - (len(groups_of_current_partitionX)-1)
+                                        logger.debug("BFS: index_in_groups_list_of_first_group_of_current_partition: " + str(index_in_groups_list_of_first_group_of_current_partition))
+                                        index_in_groups_list_of_first_group_of_previous_partition = index_in_groups_list_of_first_group_of_current_partition - len(groups_of_previous_partition)
+                                        logger.debug("BFS: index_in_groups_list_of_first_group_of_previous_partition: " + str(index_in_groups_list_of_first_group_of_previous_partition))
+                                        index_in_groups_list_of_previous_group = index_in_groups_list_of_first_group_of_previous_partition + i - 1
+                                        logger.debug("BFS: for " + previous_group + " index_in_groups_list_of_previous_group: " + str(index_in_groups_list_of_previous_group))
 
-                                    #groups_of_current_partition = groups_of_partitions[current_partition_number-1]
-                                    #for current_group in groups_of_previous_partition:
-                                    #   index_of_last_group_in_current_partition = frontier_groups_sum
-                                    #   index_of_first_group_of_current_partition = frontier_groups_sum - (len of groups in current partition-1)
-                                    #   index_in_groups_list: subtract 1
-                                    # 
-#rhc: ToDo: Other places we need to output group partition?
-                                    # the current partition might be the last partition in the DAG, if so
-                                    # save the partition to a file. Below we will save the DAG_info.
-                                    if DAG_info.get_DAG_info_is_complete():
-                                        with open('./'+partition_name + '.pickle', 'wb') as handle:
+
+# always output the previous partition of nodes
+                                        with open('./'+previous_group + '.pickle', 'wb') as handle:
                                             # partition indices in partitions[] start with 0, so current partition i
                                             # is in partitions[i-1] and previous partition is partitions[i-2]
-                                            cloudpickle.dump(partitions[current_partition_number-1], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+                                            cloudpickle.dump(groups[index_in_groups_list_of_previous_group], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+                                        i += 1
 
+                                    # The current partition might be the last partition in the DAG, if so
+                                    # save the partition's groups to a file. Below we will save the DAG_info
+                                    # which is input by workers/lambdas for DAG execution.
+                                    if DAG_info.get_DAG_info_is_complete():
+                                        i = 0
+                                        for current_group in groups_of_current_partitionX:
+                                            index_in_groups_list_of_last_group_in_current_group = frontier_groups_sum
+                                            logger.debug("BFS: index_in_groups_list_of_last_group_in_current_group: " + str(index_in_groups_list_of_last_group_in_current_group))
+                                            index_in_groups_list_of_first_group_of_current_group = frontier_groups_sum - (len(groups_of_current_partitionX)-1)
+                                            logger.debug("BFS: index_in_groups_list_of_first_group_of_current_group: " + str(index_in_groups_list_of_first_group_of_current_group))
+                                            index_in_groups_list_of_current_group = index_in_groups_list_of_first_group_of_current_group + i - 1
+                                            logger.debug("BFS: for " + current_group + " index_in_groups_list_of_current_group: " + str(index_in_groups_list_of_current_group))
+
+                                            with open('./'+current_group + '.pickle', 'wb') as handle:
+                                                # partition indices in partitions[] start with 0, so current partition i
+                                                # is in partitions[i-1] and previous partition is partitions[i-2]
+                                                cloudpickle.dump(groups[index_in_groups_list_of_current_group-1], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+                                            
+                                            i += 1
+                                    
+                                    #logging.shutdown()
+                                    #os._exit(0) 
 
                                 # Try to make sure workers are waiting for the DAG that is deposted below.
                                 #logger.debug("BFS: sleeping before calling DAG_infobuffer_monitor.deposit(DAG_info).")
@@ -3237,12 +3275,12 @@ def bfs(visited, node): #function for BFS
                     #   (parent_partition_number,parent_partition_parent_index,(current_partition_number,1,child_index_in_current_partition,current_partition_name))
                     for frontier_parent_group_patch_tuple in frontier_parent_group_patch_tuple_list:
                         # These values were used to create the tuples in dfs_parent()
-                        index_in_groups_list = frontier_parent_group_patch_tuple[0]
+                        index_in_groups_list_of_previous_group = frontier_parent_group_patch_tuple[0]
                         parent_group_parent_index = frontier_parent_group_patch_tuple[1]
                         position_in_frontier_parents_group_list = frontier_parent_group_patch_tuple[2]
 
                         # get the tuple that has the wrong name
-                        parent_group = groups[index_in_groups_list]
+                        parent_group = groups[index_in_groups_list_of_previous_group]
                         frontier_parents = parent_group[parent_group_parent_index].frontier_parents
                         frontier_parent_group_tuple_to_patch = frontier_parents[position_in_frontier_parents_group_list]
                         logger.debug("XXXXXXX BFS: patching group frontier_tuple name "
@@ -3300,10 +3338,10 @@ def bfs(visited, node): #function for BFS
                     for sender_receiver_group_patch_tuple in sender_receiver_group_patch_tuple_list:
                         # sender_receiver_partition_patch_tuple crated as:
                         #   sender_receiver_partition_patch_tuple = (parent_partition_number,receiving_partition)
-                        index_in_groups_list = sender_receiver_group_patch_tuple[0]
+                        index_in_groups_list_of_previous_group = sender_receiver_group_patch_tuple[0]
                         receiving_group = sender_receiver_group_patch_tuple[1]
 
-                        sending_group = partition_names[index_in_groups_list]
+                        sending_group = partition_names[index_in_groups_list_of_previous_group]
                         sender_name_set = Group_senders[sending_group]
                         logger.debug("XXXXXXX BFS: patching group sender_set receiving_group "
                             + receiving_group + " to " + group_name)
