@@ -366,16 +366,6 @@ def generate_DAG_info_incremental_groups(current_partition_name,
 
     logger.info("generate_DAG_info_incremental_groups: Partition DAG incrementally:")
 
-    # These lists aer part of the state_info gnerated for the current 
-    # partition. For partitions, only collpase will be non-empty. That is,
-    # after ach task, we only have a collapsed task, no fanouts/fanins.
-    # A collapse task is a fanout where there are no other fanouts/fanins.
-    fanouts = []
-    faninNBs = []
-    fanins = []
-    collapse = []
-    fanin_sizes = []
-    faninNB_sizes = []
 
     # in the DAG_map, partition/group i is state i. The first group is also 
     # the first partition, and they both have the number 1.
@@ -438,6 +428,13 @@ def generate_DAG_info_incremental_groups(current_partition_name,
 
         # we will check that current_group_name is in leaf_tasks_of_groups
         # upon return to BFS()
+
+        fanouts = []
+        faninNBs = []
+        fanins = []
+        collapse = []
+        fanin_sizes = []
+        faninNB_sizes = []
 
         # generate the state for this partition/DAG task
         Group_DAG_map[Group_next_state] = state_info(name_of_first_group_in_DAG, fanouts, fanins, faninNBs, collapse, fanin_sizes, 
@@ -536,6 +533,13 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 task_inputs = ()
                 Group_DAG_leaf_task_inputs.append(task_inputs)
 
+                fanouts = []
+                faninNBs = []
+                fanins = []
+                collapse = []
+                fanin_sizes = []
+                faninNB_sizes = []
+
                 # generate state_info for group group_name
                 Group_DAG_map[Group_next_state] = state_info(group_name, fanouts, fanins, faninNBs, collapse, fanin_sizes, 
                     faninNB_sizes, task_inputs,
@@ -595,237 +599,30 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                         #    logger.info(str(key) + ' : ' + str(value))
                         #logger.info("")
                         # get the state (number) of previous group
-                        previous_group_state = Group_DAG_states[previous_group]
-                        state_info_of_previous_group = Group_DAG_map.get(previous_group_state)
-                        logger.info("before update to TBC and fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued"
-                            + " for previous_group " + previous_group + " state_info_of_previous_group: " + str(state_info_of_previous_group))
-                        if state_info_of_previous_group == None:
-                            logger.error("[Error] Internal Error: generate_DAG_info_incremental_groups: state_info_of_previous_group: "
-                                + "state_info_of_previous_group is None.")
-                            logger.error("DAG_map:")
-                            for key, value in Group_DAG_map.items():
-                                logger.info(str(key) + ' : ' + str(value))
-                            logging.shutdown()
-                            os._exit(0)
+
 
                         # This is the first partition in a new connected 
                         # component. This means there is no other partition/group
                         # that has a fanout/fanin/fainNB/collpase to this first 
                         # partition. This then means that the previous partition 
                         # processed, and the groups therein, has no fanouts/fanins/
-                        # fannNBs/collapses. That partition is the last partition 
+                        # fannNBs/collapses to the groups in this partition; however, 
+                        # the groups in the previous partition might have fanouts/fanins/
+                        # faninNBs/collpases to the groups in their same partition.
+                        # For example, in the white board example ,PR2_1 has a faninNB
+                        # to PR2_2L, and PR3_1 has a fanout to PR#_2.
+                        # That previous partition is the last partition 
                         # processed in the previous connected component - there are
                         # no partitions (with groups in it) after that partition.
                         # (If there were, we would not have called BFS() again to 
                         # visit the unvicited part of the state space,)
                         #
                         # Groups in previous partition do not have a fanout/fanin/faninNB/collapse
-                        # to a group in current partition so none are added to state_info_previous_group; however,
-                        # groups in previous partition are now complete so TBC is set to False.
-                        #
-                        # Note: The current partition cannot be partition 1.
-                        state_info_of_previous_group.ToBeContinued = False
-                        # The last group of a connected component does not do any fanouts/fanins/etc
-                        state_info_of_previous_group.fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued = False
-
-                        if first_previous_previous_group:
-                            first_previous_previous_group = False
-                            if current_partition_number > 2:
-                                previous_previous_partition_state = previous_partition_state - 1
-                                groups_of_previous_previous_partition = groups_of_partitions[previous_previous_partition_state-1]
-                                for previous_previous_group in groups_of_previous_previous_partition:
-                                    state_of_previous_previous_group = Group_DAG_states[previous_previous_group]
-                                    state_info_of_previous_previous_group = Group_DAG_map[state_of_previous_previous_group]
-                                    state_info_of_previous_previous_group.fanout_fanin_faninNB_collapse_groups_are_ToBeContinued = False
-                                    
-                                    logger.info("The state_info_of_previous_previous_group " 
-                                        + previous_previous_group + " after update fanout_fanin_faninNB_collapse_groups_are_ToBeContinued is: " 
-                                        + str(state_info_of_previous_previous_group))
-
-                        logger.info("after update to TBC and fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued"
-                            + " for previous_group " + previous_group + " state_info_of_previous_group: " 
-                            + str(state_info_of_previous_group))
-
-                """
-                if to_be_continued:
-                    number_of_incomplete_tasks = len(groups_of_current_partition)
-                else:
-                    number_of_incomplete_tasks = 0               
-                DAG_info = generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks)
-
-                if to_be_continued:
-                    DAG_info_DAG_map = DAG_info.get_DAG_map()
-
-                    # The DAG_info object is shared between this DAG_info generator
-                    # and the DAG_executor, i.e., we execute the DAG generated so far
-                    # while we generate the next incremental DAGs. The current 
-                    # state is part of the DAG given to the DAG_executor and we 
-                    # will modify the current state when we generate the next DAG.
-                    # (We modify the collapse list and the toBeContiued  of the state.)
-                    # So we do not share the current state object, that is the 
-                    # DAG_info given to the DAG_executor has a state_info reference
-                    # this is different from the reference we maintain here in the
-                    # DAG_map. 
-                    # 
-                    # Get the state_info for the DAG_map
-                    state_info_of_current_group_state = DAG_info_DAG_map[Group_next_state]
-
-                    # Note: the only parts of the states that can be changed 
-                    # for partitions are the colapse list and the TBC boolean. Yet 
-                    # we deepcopy the entire state_info object. But all other
-                    # parts of the stare are empty for partitions (fanouts, fanins)
-                    # except for the pagerank function.
-                    # Note: Each state has a reference to the Python function that
-                    # will excute the task. This is how Dask does it - each task
-                    # has a reference to its function. For pagernk, we will use
-                    # the same function for all the pagerank tasks. There can be 
-                    # three different functions, but we could identify this 
-                    # function whrn we excute the task, instead of doing it above
-                    # and saving this same function in the DAG for each task,
-                    # which wastes space
-
-                    # make a deep copy of this state_info object which is the atate_info
-                    # object tha the DAG generator will modify
-                    copy_of_state_info_of_current_partition_state = copy.deepcopy(state_info_of_current_group_state)
-
-                    # give the copy to the DAG_map given to the DAG_executor. Now
-                    # the DAG_executor and the DG_generator will be using different 
-                    # state_info objects 
-                    DAG_info_DAG_map[Group_next_state] = copy_of_state_info_of_current_partition_state
-
-                    # this used to test the deep copy - modify the state info
-                    # of the generator and make sure this modification does 
-                    # not show up in the state_info object given to the DAG_executor.
-
-
-                    # modify generator's state_info 
-                    Group_DAG_map[Group_next_state].fanins.append("goo")
-
-                    # display DAG_executor's state_info objects
-                    logger.info("address DAG_info_DAG_map: " + str(hex(id(DAG_info_DAG_map))))
-                    logger.info("generate_DAG_info_incremental_groups: DAG_info_DAG_map after state_info copy:")
-                    for key, value in DAG_info_DAG_map.items():
-                        logger.info(str(key) + ' : ' + str(value) + " addr value: " + str(hex(id(value))))
-
-                    # display generator's state_info objects
-                    logger.info("address Group_DAG_map: " + str(hex(id(Group_DAG_map))))
-                    logger.info("generate_DAG_info_incremental_groups: Group_DAG_map:")
-                    for key, value in Group_DAG_map.items():
-                        logger.info(str(key) + ' : ' + str(value) + " addr value: " + str(hex(id(value))))
-
-                    # undo the modification to the generator's state_info
-                    Group_DAG_map[Group_next_state].fanins.clear()
-
-                    # display generator's state_info objects
-                    logger.info("generate_DAG_info_incremental_groups: DAG_info_DAG_map after clear:")
-                    for key, value in DAG_info_DAG_map.items():
-                        logger.info(str(key) + ' : ' + str(value))
-                
-                    # display DAG_executor's state_info ojects
-                    logger.info("generate_DAG_info_incremental_groups: Group_next_state:")
-                    for key, value in Group_next_state_DAG_map.items():
-                        logger.info(str(key) + ' : ' + str(value))
-
-                    # logging.shutdown()
-                    # os._exit(0)
-                    """ 
-                    # Note: There should be only one group in a partition that is the 
-                    # start of a new connected component; this is asserted above.
-                    # Thus we should next execute the return at the end.
-    
-            else: # current_partition_number >= 2
-
-                # (Note: Not sure whether we can have a length 0 senders, 
-                # for current_partition_name. That is, we only create a 
-                # senders when we get the first sender.)
-
-                # assert: no length 0 senders lists
-                if len(senders) == 0:
-                    logger.error("[Error]: Internal Error: generate_DAG_info_incremental_groups:"
-                        + " group has a senders list with length 0.")
-
-                # This is not the first partition and it is not a leaf partition.
-
-                # Create a new set from set sender_set_for_group_name. For 
-                # each name in sender_set_for_group_name, qualify the name by
-                # prexing it with "name-". Example: name in sender_set_for_group_name 
-                # is "PR1_1" and group_name is "PR2_3" so the qualified name is 
-                # "PR1_1-PR2_3".
-                # We use qualified names since the fanouts/faninNBs for a 
-                # task in a pagerank DAG may all have diffent values. This
-                # is unlike Dask DAGs in which all fanouts/faninNBs of a task
-                # have the same value. We denote the different outputs
-                # of a task A having, e.g., fanouts B and C as "A-B" and "A-C"
-                sender_set_for_group_name = Group_receivers.get(group_name)
-                sender_set_for_group_name_with_qualified_names = set()
-                # For each sender task "name" that sends output to group_name, the 
-                # qualified name of the output is: name+"-"+group_name
-                for name in sender_set_for_group_name:
-                    qualified_name = str(name) + "-" + str(group_name)
-                    sender_set_for_group_name_with_qualified_names.add(qualified_name)
-                # sender_set_for_senderX provides input for group_name
-                task_inputs = tuple(sender_set_for_group_name_with_qualified_names)
-
-                # generate empty state_info for group group_name. This will be filled in 
-                # when we process the groups in the next partition collected. See below.
-                fanouts = []
-                faninNBs = []
-                fanins = []
-                collapse = []
-                fanin_sizes = []
-                faninNB_sizes = []
-                Group_DAG_map[Group_next_state] = state_info(group_name, fanouts, fanins, faninNBs, collapse, fanin_sizes, 
-                    faninNB_sizes, task_inputs,
-                    # to_be_continued parameter can be true or false
-                    to_be_continued,
-                    # We do not know whether this frist group will have fanout_fanin_faninNB_collapse_groups_are_ToBeContinued
-                    # that are incomplete until we process the 2nd partition, except if to_be_continued
-                    # is False in which case there are no more partitions and no fanout_fanin_faninNB_collapse_groups_are_ToBeContinued
-                    # that are incomplete. If to_be_continued is True then we set fanout_fanin_faninNB_collapse_groups_are_ToBeContinued
-                    # to True but we may change this value when we process partition 2.
-                    to_be_continued)
-                Group_DAG_states[group_name] = Group_next_state
-
-                # identify function used to execute this pagerank task (see comments above)
-                if not use_shared_partitions_groups:
-                    Group_DAG_tasks[group_name] = PageRank_Function_Driver
-                else:
-                    if not use_struct_of_arrays_for_pagerank:
-                        Group_DAG_tasks[group_name] = PageRank_Function_Driver_Shared 
-                    else:
-                        Group_DAG_tasks[group_name] = PageRank_Function_Driver_Shared_Fast  
-
-                logger.info("generate_DAG_info_incremental_groups: Group_DAG_map[Group_next_state]: " + str(Group_DAG_map[Group_next_state] ))
-                
-                # This is not the first partition and it is not a leaf partition.
-                # So current_partition_state is 2 or more (states start at 1)
-                # Positions in groups_of_partitions statr at 0.
-                previous_partition_state = current_partition_state - 1
-                groups_of_previous_partition = groups_of_partitions[previous_partition_state-1]
-                logger.info("generate_DAG_info_incremental_groups: current_partition_state: " 
-                    + str(current_partition_state) + ", previous_partition_state: "
-                    + str(previous_partition_state))
-                # Do this one time, i.e., there may be many groups in the current partition
-                # and we are iterating through these groups. But all of these groups have the 
-                # same previous paritition and we only need to process the group in the
-                # previous partition once, which we do here.
-                if first_previous_group:
-                    first_previous_group = False
-
-                    logger.info("generate_DAG_info_incremental_groups: complete the state_info for previous groups: "
-                        + str(groups_of_previous_partition))
-                    # When we added these previous groups to the DAG we added them with empty
-                    # fanouts/fanins/faninNBs/collapse sets. Now that we collected the 
-                    # groups in the current partition, which is the next partition of groups 
-                    # collected, we can compute these sets for the groups in the previous
-                    # partition. Note: a group can only have a fanout/fanin/faninNB/collapse to 
-                    # a group in its same partition or to a group in the next partition. So 
-                    # when we collect the groups in (current) partition i, we know the behavior 
-                    # of the groups in (previous) partition i-1
-                    first_previous_previous_group = True
-                    for previous_group in groups_of_previous_partition:
-                        # sink nodes, i.e., nodes that do not send any outputs to other nodes
-#rhc: need this?
+                        # to a group in current partition but they may have fanout/fanin/faninNB/collapse
+                        # to the groups in that same previous partiton. 
+                    
+# START
+# rhc: Note: Can assert group to group is within previous grooup since current is new CC
                         Group_sink_set = set()
                         #for senderX in Group_senders:
 
@@ -1005,6 +802,15 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                         # get the state_info of previous group
                         state_info_of_previous_group = Group_DAG_map[previous_group_state]
 
+                        if state_info_of_previous_group == None:
+                            logger.error("[Error] Internal Error: generate_DAG_info_incremental_groups: state_info_of_previous_group: "
+                                + "state_info_of_previous_group is None.")
+                            logger.error("DAG_map:")
+                            for key, value in Group_DAG_map.items():
+                                logger.info(str(key) + ' : ' + str(value))
+                            logging.shutdown()
+                            os._exit(0)
+
                         # The fanouts/fanins/faninNBs/collapses in state_info are 
                         # empty so just add the fanouts/fanins/faninNBs/collapses that
                         # we just calculated. Note: we are modifying the info in the
@@ -1026,6 +832,433 @@ def generate_DAG_info_incremental_groups(current_partition_name,
 
                         faninNB_sizes_of_previous_state = state_info_of_previous_group.faninNB_sizes
                         faninNB_sizes_of_previous_state += faninNB_sizes
+# END
+
+                        logger.info("before update to TBC and fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued"
+                            + " for previous_group " + previous_group + " state_info_of_previous_group: " + str(state_info_of_previous_group))
+
+                        # Groups in previous partition are now complete so TBC is set to False.
+                        # Note: The current partition cannot be partition 1.
+                        state_info_of_previous_group.ToBeContinued = False
+                        # The last group of a connected component does not do any fanouts/fanins/etc
+                        state_info_of_previous_group.fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued = False
+
+                        if first_previous_previous_group:
+                            first_previous_previous_group = False
+                            if current_partition_number > 2:
+                                previous_previous_partition_state = previous_partition_state - 1
+                                groups_of_previous_previous_partition = groups_of_partitions[previous_previous_partition_state-1]
+                                for previous_previous_group in groups_of_previous_previous_partition:
+                                    state_of_previous_previous_group = Group_DAG_states[previous_previous_group]
+                                    state_info_of_previous_previous_group = Group_DAG_map[state_of_previous_previous_group]
+                                    state_info_of_previous_previous_group.fanout_fanin_faninNB_collapse_groups_are_ToBeContinued = False
+                                    
+                                    logger.info("The state_info_of_previous_previous_group " 
+                                        + previous_previous_group + " after update fanout_fanin_faninNB_collapse_groups_are_ToBeContinued is: " 
+                                        + str(state_info_of_previous_previous_group))
+
+                        logger.info("after update to TBC and fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued"
+                            + " for previous_group " + previous_group + " state_info_of_previous_group: " 
+                            + str(state_info_of_previous_group))
+
+                """
+                if to_be_continued:
+                    number_of_incomplete_tasks = len(groups_of_current_partition)
+                else:
+                    number_of_incomplete_tasks = 0               
+                DAG_info = generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks)
+
+                if to_be_continued:
+                    DAG_info_DAG_map = DAG_info.get_DAG_map()
+
+                    # The DAG_info object is shared between this DAG_info generator
+                    # and the DAG_executor, i.e., we execute the DAG generated so far
+                    # while we generate the next incremental DAGs. The current 
+                    # state is part of the DAG given to the DAG_executor and we 
+                    # will modify the current state when we generate the next DAG.
+                    # (We modify the collapse list and the toBeContiued  of the state.)
+                    # So we do not share the current state object, that is the 
+                    # DAG_info given to the DAG_executor has a state_info reference
+                    # this is different from the reference we maintain here in the
+                    # DAG_map. 
+                    # 
+                    # Get the state_info for the DAG_map
+                    state_info_of_current_group_state = DAG_info_DAG_map[Group_next_state]
+
+                    # Note: the only parts of the states that can be changed 
+                    # for partitions are the colapse list and the TBC boolean. Yet 
+                    # we deepcopy the entire state_info object. But all other
+                    # parts of the stare are empty for partitions (fanouts, fanins)
+                    # except for the pagerank function.
+                    # Note: Each state has a reference to the Python function that
+                    # will excute the task. This is how Dask does it - each task
+                    # has a reference to its function. For pagernk, we will use
+                    # the same function for all the pagerank tasks. There can be 
+                    # three different functions, but we could identify this 
+                    # function whrn we excute the task, instead of doing it above
+                    # and saving this same function in the DAG for each task,
+                    # which wastes space
+
+                    # make a deep copy of this state_info object which is the atate_info
+                    # object tha the DAG generator will modify
+                    copy_of_state_info_of_current_partition_state = copy.deepcopy(state_info_of_current_group_state)
+
+                    # give the copy to the DAG_map given to the DAG_executor. Now
+                    # the DAG_executor and the DG_generator will be using different 
+                    # state_info objects 
+                    DAG_info_DAG_map[Group_next_state] = copy_of_state_info_of_current_partition_state
+
+                    # this used to test the deep copy - modify the state info
+                    # of the generator and make sure this modification does 
+                    # not show up in the state_info object given to the DAG_executor.
+
+
+                    # modify generator's state_info 
+                    Group_DAG_map[Group_next_state].fanins.append("goo")
+
+                    # display DAG_executor's state_info objects
+                    logger.info("address DAG_info_DAG_map: " + str(hex(id(DAG_info_DAG_map))))
+                    logger.info("generate_DAG_info_incremental_groups: DAG_info_DAG_map after state_info copy:")
+                    for key, value in DAG_info_DAG_map.items():
+                        logger.info(str(key) + ' : ' + str(value) + " addr value: " + str(hex(id(value))))
+
+                    # display generator's state_info objects
+                    logger.info("address Group_DAG_map: " + str(hex(id(Group_DAG_map))))
+                    logger.info("generate_DAG_info_incremental_groups: Group_DAG_map:")
+                    for key, value in Group_DAG_map.items():
+                        logger.info(str(key) + ' : ' + str(value) + " addr value: " + str(hex(id(value))))
+
+                    # undo the modification to the generator's state_info
+                    Group_DAG_map[Group_next_state].fanins.clear()
+
+                    # display generator's state_info objects
+                    logger.info("generate_DAG_info_incremental_groups: DAG_info_DAG_map after clear:")
+                    for key, value in DAG_info_DAG_map.items():
+                        logger.info(str(key) + ' : ' + str(value))
+                
+                    # display DAG_executor's state_info ojects
+                    logger.info("generate_DAG_info_incremental_groups: Group_next_state:")
+                    for key, value in Group_next_state_DAG_map.items():
+                        logger.info(str(key) + ' : ' + str(value))
+
+                    # logging.shutdown()
+                    # os._exit(0)
+                    """ 
+                    # Note: There should be only one group in a partition that is the 
+                    # start of a new connected component; this is asserted above.
+                    # Thus we should next execute the return at the end.
+    
+            else: # current_partition_number >= 2
+
+                # (Note: Not sure whether we can have a length 0 senders, 
+                # for current_partition_name. That is, we only create a 
+                # senders when we get the first sender.)
+
+                # assert: no length 0 senders lists
+                if len(senders) == 0:
+                    logger.error("[Error]: Internal Error: generate_DAG_info_incremental_groups:"
+                        + " group has a senders list with length 0.")
+
+                # This is not the first partition and it is not a leaf partition.
+
+                # Create a new set from set sender_set_for_group_name. For 
+                # each name in sender_set_for_group_name, qualify the name by
+                # prexing it with "name-". Example: name in sender_set_for_group_name 
+                # is "PR1_1" and group_name is "PR2_3" so the qualified name is 
+                # "PR1_1-PR2_3".
+                # We use qualified names since the fanouts/faninNBs for a 
+                # task in a pagerank DAG may all have diffent values. This
+                # is unlike Dask DAGs in which all fanouts/faninNBs of a task
+                # have the same value. We denote the different outputs
+                # of a task A having, e.g., fanouts B and C as "A-B" and "A-C"
+
+                sender_set_for_group_name = Group_receivers.get(group_name)
+                logger.info("sender_set_for_group_name, i.e., Receivers " + group_name + ":" + str(sender_set_for_group_name))
+
+                sender_set_for_group_name_with_qualified_names = set()
+                # For each sender task "name" that sends output to group_name, the 
+                # qualified name of the output is: name+"-"+group_name
+                for name in sender_set_for_group_name:
+                    qualified_name = str(name) + "-" + str(group_name)
+                    sender_set_for_group_name_with_qualified_names.add(qualified_name)
+                # sender_set_for_senderX provides input for group_name
+                task_inputs = tuple(sender_set_for_group_name_with_qualified_names)
+
+                # generate empty state_info for group group_name. This will be filled in 
+                # when we process the groups in the next partition collected. See below.
+                fanouts = []
+                faninNBs = []
+                fanins = []
+                collapse = []
+                fanin_sizes = []
+                faninNB_sizes = []
+                Group_DAG_map[Group_next_state] = state_info(group_name, fanouts, fanins, faninNBs, collapse, fanin_sizes, 
+                    faninNB_sizes, task_inputs,
+                    # to_be_continued parameter can be true or false
+                    to_be_continued,
+                    # We do not know whether this frist group will have fanout_fanin_faninNB_collapse_groups_are_ToBeContinued
+                    # that are incomplete until we process the 2nd partition, except if to_be_continued
+                    # is False in which case there are no more partitions and no fanout_fanin_faninNB_collapse_groups_are_ToBeContinued
+                    # that are incomplete. If to_be_continued is True then we set fanout_fanin_faninNB_collapse_groups_are_ToBeContinued
+                    # to True but we may change this value when we process partition 2.
+                    to_be_continued)
+                Group_DAG_states[group_name] = Group_next_state
+
+                # identify function used to execute this pagerank task (see comments above)
+                if not use_shared_partitions_groups:
+                    Group_DAG_tasks[group_name] = PageRank_Function_Driver
+                else:
+                    if not use_struct_of_arrays_for_pagerank:
+                        Group_DAG_tasks[group_name] = PageRank_Function_Driver_Shared 
+                    else:
+                        Group_DAG_tasks[group_name] = PageRank_Function_Driver_Shared_Fast  
+
+                logger.info("generate_DAG_info_incremental_groups: Group_DAG_map[Group_next_state]: " + str(Group_DAG_map[Group_next_state] ))
+                
+                # This is not the first partition and it is not a leaf partition.
+                # So current_partition_state is 2 or more (states start at 1)
+                # Positions in groups_of_partitions statr at 0.
+                previous_partition_state = current_partition_state - 1
+                groups_of_previous_partition = groups_of_partitions[previous_partition_state-1]
+                logger.info("generate_DAG_info_incremental_groups: current_partition_state: " 
+                    + str(current_partition_state) + ", previous_partition_state: "
+                    + str(previous_partition_state))
+                
+                # Do this one time, i.e., there may be many groups in the current partition
+                # and we are iterating through these groups. But all of these groups have the 
+                # same previous paritition and we only need to process the group in the
+                # previous partition once, which we do here.
+                if first_previous_group:
+                    first_previous_group = False
+
+                    logger.info("generate_DAG_info_incremental_groups: complete the state_info for previous groups: "
+                        + str(groups_of_previous_partition))
+                    # When we added these previous groups to the DAG we added them with empty
+                    # fanouts/fanins/faninNBs/collapse sets. Now that we collected the 
+                    # groups in the current partition, which is the next partition of groups 
+                    # collected, we can compute these sets for the groups in the previous
+                    # partition. Note: a group can only have a fanout/fanin/faninNB/collapse to 
+                    # a group in its same partition or to a group in the next partition. So 
+                    # when we collect the groups in (current) partition i, we know the behavior 
+                    # of the groups in (previous) partition i-1.
+                    first_previous_previous_group = True
+                    for previous_group in groups_of_previous_partition:
+                        # sink nodes, i.e., nodes that do not send any outputs to other nodes
+#rhc: need this?
+
+# START
+                        Group_sink_set = set()
+                        #for senderX in Group_senders:
+
+                        fanouts = []
+                        fanins = []
+                        faninNBs = []
+                        collapse = []
+                        fanin_sizes = []
+                        faninNB_sizes = []
+
+                        # Get groups that previous_group sends outputs to. Recall that 
+                        # previous_group is a group in the previous partition. Group
+                        # previous_group may send outputs to a group in the previous 
+                        # partition, i.e., the same partition as group previous_group,
+                        # or a group in the current partition, or it may send no outputs at all.
+
+        #rhc: ToDo: Q: Issue: But we are computing the state info for the 
+        # groups in the previous partition, not the groups in the current
+        # partition, of which group_name is one? So here we iterate through groups
+        # of previous partition (which should be in Group_receivers.get(group_name))
+        # and compuet their state_info which is complete now. Note: state info 
+        # of group_name in current partition is not complete.
+        # So like:
+        #  previous_partition_state = current_partition_state - 1
+        #  groups_of_previous_partition = groups_of_partitions[previous_partition_state-1]
+        #  for name_of_group_in_previous_partition in groups_of_previous_partition:
+        # where change "group_name" to name_of_group_in_previous_partition
+
+                        logger.info("generate_DAG_info_incremental_groups: previous_group: " + previous_group)
+
+                        receiver_set_for_previous_group = Group_senders[previous_group]
+                        # for each group that receives output from previous_group
+                        for receiverY in receiver_set_for_previous_group:
+                            # Get the groups that receive output from receiverY
+                            receiver_set_for_receiverY = Group_senders.get(receiverY)
+                            if receiver_set_for_receiverY == None:
+                                # receiverY does not send any outputs so it is a sink.
+                                # 
+                                # For non-incremental, this receiverY will not show
+                                # up in Group_senders so we will not process receiverY
+                                # as part of the major loop for generating a DAG during
+                                # non-incremental DAG generation, That means, after the
+                                # major loop terminates, we look at the groups we added
+                                # Group_sink_set. For these groups, they have no 
+                                # fanouts/fanins/faninNBs/collapses (since they 
+                                # were never a sender and thus are not a key in 
+                                # Group_senders) but they may have inputs. Thus
+                                # we will generate inputs for these groups (like
+                                # receiverY).
+                                # Note: Such a receiver will have o inputs if it is
+                                # the first group of a connected component and the
+                                # only group of the connected component (so it sends
+                                # to no other groups)
+                                # 
+                                # For incremental DAG generation, ...
+
+        #rhc: ToDo: Q: do this? or ?? Note we are iterating through 
+        # groups in current partition and we generate inputs for them
+        # which would include any sink? that is, we do not iterate though
+        # senders, which may not include sinks (since  sink is not a sender)
+        # but we iterate through each group in every partition so we will
+        # catch senders in this main group_name loop?
+
+                                Group_sink_set.add(receiverY)
+                            # get groups that send outputs to receiverY, this could be one 
+                            # or more groups (since we know that previous_group sends to receiverY)
+                            sender_set_for_receiverY = Group_receivers[receiverY]
+                            # number of groups that send outputs to receiverY
+                            length_of_sender_set_for_receiverY = len(sender_set_for_receiverY)
+                            # number of groups that receive outputs from group_name
+                            length_of_receiver_set_for_previous_group = len(receiver_set_for_previous_group)
+
+                            if length_of_sender_set_for_receiverY == 1:
+                                # receiverY receives input from only one group; so it must be from a
+                                # collapse or fanout (as fanins and faninNB tasks receive two or more inputs.)
+                                if length_of_receiver_set_for_previous_group == 1:
+                                    # only one group, previous_group, sends outputs to receiverY and this sending 
+                                    # group previous_group only sends to one group, so collapse receiverY, i.e.,
+                                    # previous_group becomes receiverY via a collapse.
+                                    logger.info("sender " + previous_group + " --> " + receiverY + " : Collapse")
+                                    if not receiverY in Group_all_collapse_task_names:
+                                        Group_all_collapse_task_names.append(receiverY)
+                                    else:
+                                        logger.error("[Error]: Internal Error: generate_DAG_info_incremental_groups:"
+                                            + "group " + receiverY + " is in the collapse set of two groups.")
+                                    collapse.append(receiverY)
+                                else:
+                                    # only one task, group_name, sends output to receiverY and this sending 
+                                    # group sends to other roups too, so group_name does a fanout 
+                                    # to group receiverY.  
+                                    logger.info("sender " + previous_group + " --> " + receiverY + " : Fanout")
+                                    if not receiverY in Group_all_fanout_task_names:
+                                        Group_all_fanout_task_names.append(receiverY)
+                                    fanouts.append(receiverY)
+                            else:
+                                # previous_group has fanin or fannNB to group receiverY since 
+                                # receiverY receives inputs from multiple groups.
+                                isFaninNB = False
+                                # Recall sender_set_for_receiverY is the groups that send outputs
+                                # to receiverY, this could be one or more groups (since we know previous_group 
+                                # sends output to receiverY)
+                                #
+                                # senderZ sends an output to receiverY
+                                for senderZ in sender_set_for_receiverY:
+                                    # groups to which senderz sends an output
+                                    receiver_set_for_senderZ = Group_senders[senderZ]
+                                    if len(receiver_set_for_senderZ) > 1:
+                                        # if any group G sends output to reciverY and any other group(s)
+                                        # then receiverY must be a faninNB task since G cannot 
+                                        # become receiverY. (Even if some other group could become receiverY
+                                        # G cannot, so we must use a faninNB for receiverY here instead of a fanin.)
+                                        isFaninNB = True
+                                        break
+                                if isFaninNB:
+                                    logger.info("group " + previous_group + " --> " + receiverY + " : FaninNB")
+                                    if not receiverY in Group_all_faninNB_task_names:
+                                        Group_all_faninNB_task_names.append(receiverY)
+                                        Group_all_faninNB_sizes.append(length_of_sender_set_for_receiverY)
+                                    logger.info ("after Group_all_faninNBs_sizes append: " + str(Group_all_faninNB_sizes))
+                                    logger.info ("faninNBs append: " + receiverY)
+                                    faninNBs.append(receiverY)
+                                    faninNB_sizes.append(length_of_sender_set_for_receiverY)
+                                else:
+                                    # senderX sends its output only to receiverY, same for any other
+                                    # tasks that sends outputs to receiverY so receiverY is a fanin task.
+                                    logger.info("group " + previous_group + " --> " + receiverY + " : Fanin")
+                                    if not receiverY in Group_all_fanin_task_names:
+                                        Group_all_fanin_task_names.append(receiverY)
+                                        Group_all_fanin_sizes.append(length_of_sender_set_for_receiverY)
+                                    fanins.append(receiverY)
+                                    fanin_sizes.append(length_of_sender_set_for_receiverY)
+
+                        # get the tasks that send to senderX, i.e., provide inputs for senderX
+                        """
+                        WE DID THIS ALREADY: leaf tasks and set  task_inputs
+
+                        sender_set_for_senderX = Group_receivers.get(senderX)
+                        if sender_set_for_senderX == None:
+                            # senderX is a leaf task since it is not a receiver
+                            Group_DAG_leaf_tasks.append(senderX)
+                            Group_DAG_leaf_task_start_states.append(state)
+                            task_inputs = ()
+                            Group_DAG_leaf_task_inputs.append(task_inputs)
+
+                            if not senderX in leaf_tasks_of_groups:
+                                logger.error("partition " + senderX + " receives no inputs"
+                                    + " but it is not in leaf_tasks_of_groups.")
+                            else:
+                                # we have generated a state for leaf task senderX. 
+                                leaf_tasks_of_groups.remove(senderX)
+                        else:
+                            # create a new set from sender_set_for_senderX. For 
+                            # each name in sender_set_for_senderX, qualify name by
+                            # prexing it with "senderX-". Example: senderX is "PR1_1"
+                            # and name is "PR2_3" so the qualified name is "PR1_1-PR2_3".
+                            # We use qualified names since the fanouts/faninNBs for a 
+                            # task in a pagerank DAG may al have diffent values. This
+                            # is unlike Dask DAGs in which all fanouts/faninNBs of a task
+                            # receive the same value. We denote the different outputs
+                            # of a task A having, e.g., fanouts B and C as "A-B" and "A-C"
+                            sender_set_for_senderX_with_qualified_names = set()
+                            # for each task name that sends input to senderX, the 
+                            # qualified name of the sender is name+"-"+senderX
+                            for name in sender_set_for_senderX:
+                                qualified_name = str(name) + "-" + str(senderX)
+                                sender_set_for_senderX_with_qualified_names.add(qualified_name)
+                            # sender_set_for_senderX provides input for senderX
+                            task_inputs = tuple(sender_set_for_senderX_with_qualified_names)
+                        """
+
+                        # We just calculated the fanouts/fanins/faninNBs/collapses sets of 
+                        # previous_group, so get the state info of this previous
+                        # group and chnage the state info by adding these sets.
+                        #
+                        # get the state (number) of previous group
+                        previous_group_state = Group_DAG_states[previous_group]
+                        # get the state_info of previous group
+                        state_info_of_previous_group = Group_DAG_map[previous_group_state]
+
+                        logger.info("before update to TBC and fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued"
+                            + " for previous_group " + previous_group + " state_info_of_previous_group: " + str(state_info_of_previous_group))
+                        if state_info_of_previous_group == None:
+                            logger.error("[Error] Internal Error: generate_DAG_info_incremental_groups: state_info_of_previous_group: "
+                                + "state_info_of_previous_group is None.")
+                            logger.error("DAG_map:")
+                            for key, value in Group_DAG_map.items():
+                                logger.info(str(key) + ' : ' + str(value))
+                            logging.shutdown()
+                            os._exit(0)
+
+                        # The fanouts/fanins/faninNBs/collapses in state_info are 
+                        # empty so just add the fanouts/fanins/faninNBs/collapses that
+                        # we just calculated. Note: we are modifying the info in the
+                        # DAG that is being constructed incrementally. 
+                        fanouts_of_previous_state = state_info_of_previous_group.fanouts
+                        fanouts_of_previous_state += fanouts
+
+                        fanins_of_previous_state = state_info_of_previous_group.fanins
+                        fanins_of_previous_state += fanins
+            
+                        faninNBs_of_previous_state = state_info_of_previous_group.faninNBs
+                        faninNBs_of_previous_state += faninNBs
+            
+                        collapse_of_previous_state = state_info_of_previous_group.collapse
+                        collapse_of_previous_state += collapse
+
+                        fanin_sizes_of_previous_state = state_info_of_previous_group.fanin_sizes
+                        fanin_sizes_of_previous_state += fanin_sizes
+
+                        faninNB_sizes_of_previous_state = state_info_of_previous_group.faninNB_sizes
+                        faninNB_sizes_of_previous_state += faninNB_sizes
+# END
 
                         state_info_of_previous_group.ToBeContinued = False
                         # if the current partition is to_be_continued then it has iicomplete
@@ -1050,10 +1283,14 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                                     state_info_of_previous_previous_group = Group_DAG_map[state_of_previous_previous_group]
                                     state_info_of_previous_previous_group.fanout_fanin_faninNB_collapse_groups_are_ToBeContinued = False
                                     
-                                logger.info("The state_info_of_previous_previous_group for group " 
-                                    + previous_previous_group + " after update fanout_fanin_faninNB_collapse_groups_are_ToBeContinued is: " 
-                                    + str(state_info_of_previous_previous_group))
+                                    logger.info("The state_info_of_previous_previous_group for group " 
+                                        + previous_previous_group + " after update fanout_fanin_faninNB_collapse_groups_are_ToBeContinued is: " 
+                                        + str(state_info_of_previous_previous_group))
 
+
+                        logger.info("after update to TBC and fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued"
+                            + " for previous_group " + previous_group + " state_info_of_previous_group: " 
+                            + str(state_info_of_previous_group))
                         """
                         Need to modify the prvious groups state_info to keep 
                         the references separate

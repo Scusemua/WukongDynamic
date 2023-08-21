@@ -3167,8 +3167,8 @@ def bfs(visited, node): #function for BFS
                                         with open(file_name, 'wb') as handle:
                                             cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
                             
-                                #logging.shutdown()
-                                #os._exit(0)  
+                                    #logging.shutdown()
+                                    #os._exit(0)  
                             else:
                                 pass # complete this code for groups
                         # end else #current_partition_number >=2
