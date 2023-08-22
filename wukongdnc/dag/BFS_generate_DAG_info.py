@@ -720,7 +720,7 @@ def generate_DAG_info():
             state += 1
 
     # Finish by doing the receivers that are not senders (opposite of leaf tasks);
-    # these are reeivers tht send no nputs to other tasks. They have no fanins/
+    # these are reeivers that send no inputs to other tasks. They have no fanins/
     # faninBs, fanouts or collapses, but they do have task inputs.
     for receiverY in Group_sink_set: # Partition_receivers:
         #if not receiverY in Partition_DAG_states:

@@ -653,7 +653,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
 
                         logger.info("generate_DAG_info_incremental_groups: previous_group: " + previous_group)
 
-                        receiver_set_for_previous_group = Group_senders[previous_group]
+                        receiver_set_for_previous_group = Group_senders.get(previous_group,set())
                         # for each group that receives output from previous_group
                         for receiverY in receiver_set_for_previous_group:
                             # Get the groups that receive output from receiverY

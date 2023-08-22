@@ -1973,18 +1973,43 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # last task in the current version of the DAG)) workers need
                 # to get the next DAG (instead of terminating).
 
-                #Note: This increment_and_get executes a memory barrier - so the pagerank writes to 
-                # the shared memory (if used) just performed by this process P1 
-                # will be flushed, which means the downstream pagerank tasks 
-                # that read these values will get the values written by P1.
-                # So we need a memory barrier between a task and its downstream
-                # tasks. Use this counter or if we remove this counter, something 
-                # else needs to provide the barrier.
-                num_tasks_executed = completed_tasks_counter.increment_and_get()
-                logger.debug("DAG_executor_work_loop: " + thread_name + " before processing " + str(DAG_executor_state.state) 
-                    + " num_tasks_executed: " + str(num_tasks_executed) 
-                    + " num_tasks_to_execute: " + str(num_tasks_to_execute))
-                
+
+                incremental_dag_generation_with_groups = compute_pagerank and use_incremental_DAG_generation and use_page_rank_group_partitions
+                #logger.debug(thread_name + " DAG_executor_work_loop: incremental_dag_generation_with_groups: "
+                #    + str(incremental_dag_generation_with_groups) + " continued_task: "
+                #    + str(continued_task) + " DAG_executor_state.state == 1: " + str(DAG_executor_state.state == 1)
+                #    + " (not state_info.task_name in DAG_info.get_DAG_leaf_tasks(): "
+                #    + str((not state_info.task_name in DAG_info.get_DAG_leaf_tasks())))
+                if not (incremental_dag_generation_with_groups and continued_task and (
+                    (DAG_executor_state.state == 1 or (not state_info.task_name in DAG_info.get_DAG_leaf_tasks()))
+                )):
+                    # If this is a continued task, we may have already executed it.
+                    # If the task is the first task in a new connected
+                    # component and it is not the first task in the DAG then we have not
+                    # executed the task yet. We will execute this task and so we increment
+                    # the number of tasks that have been excuted. Otherwise we have
+                    # already executed the continues task. This means we wil not 
+                    # execute it here and we should not increment th number of tasks
+                    # that have been executed.
+                    #Note: This increment_and_get executes a memory barrier - so the pagerank writes to 
+                    # the shared memory (if used) just performed by this process P1 
+                    # will be flushed, which means the downstream pagerank tasks 
+                    # that read these values will get the values written by P1.
+                    # So we need a memory barrier between a task and its downstream
+                    # tasks. Use this counter or if we remove this counter, something 
+                    # else needs to provide the barrier.
+                    num_tasks_executed = completed_tasks_counter.increment_and_get()
+                    logger.debug("DAG_executor_work_loop: " + thread_name + " before processing " + str(DAG_executor_state.state) 
+                        + " num_tasks_executed: " + str(num_tasks_executed) 
+                        + " num_tasks_to_execute: " + str(num_tasks_to_execute))
+                else:
+                    logger.debug("DAG_executor_work_loop: " + thread_name + " before processing " + str(DAG_executor_state.state) 
+                        + " do not increment num tasks executed for continued task " 
+                        + " so num_tasks_executed: " + str(num_tasks_executed) 
+                        + " num_tasks_to_execute: " + str(num_tasks_to_execute)
+                        + " stays the same.")
+            
+                 
                 if num_tasks_executed == num_tasks_to_execute:
 #rhc: stop
                     # Note: This worker has work to do, and this work is the last
@@ -2081,7 +2106,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 
             #commented out for MM
             #logger.debug("state_info: " + str(state_info))
-            logger.debug(thread_name + ": DAG_executor_work_loop: execute task: " + state_info.task_name)
+            logger.debug(thread_name + ": DAG_executor_work_loop: task to execute: " + state_info.task_name 
+                + " (though this task may be a continued task that was already executed.)")
 
             # This task may or may not be a continued task In either
             # case, the inputs needed by this task are needed: For worker threads
@@ -2160,6 +2186,22 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             # not been executed before so we need to execute it as oppsed to 
             # executing its collapse task.
             incremental_dag_generation_with_groups = compute_pagerank and use_incremental_DAG_generation and use_page_rank_group_partitions
+            #logger.debug(thread_name + " DAG_executor_work_loop: incremental_dag_generation_with_groups: "
+            #    + str(incremental_dag_generation_with_groups) + " continued_task: "
+            #    + str(continued_task) + " DAG_executor_state.state == 1: " + str(DAG_executor_state.state == 1)
+            #    + " (not state_info.task_name in DAG_info.get_DAG_leaf_tasks(): "
+            #    + str((not state_info.task_name in DAG_info.get_DAG_leaf_tasks())))
+#rhc: Problem: If using partitions then state_info.task_name is not the name of the 
+# leaf task, we have to get the collapse task name. Also, we always execute first
+# task in DAG so DAG_executor_state.state == 1 is suspect. The first task PR1_1
+# is never a continued task since the first DAG_info always has a PR1_1 that is 
+# not TBC. So if continud_task is True then this is not PR1_1. Note that PR1_1 will 
+# be in the list of leaf task names.
+# Note: First task of new CC is never continued? Not clear.
+# Can compute name_of_task_to_be_executed based on whether the continued task
+# is a partition that is the collapse task of DAG_executor_state.state and use
+# this instead of state_info.task_name.
+# So same for above before num_tasks_executed computation.
             if incremental_dag_generation_with_groups and continued_task and (
                 (DAG_executor_state.state == 1 or (not state_info.task_name in DAG_info.get_DAG_leaf_tasks()))
             ):
