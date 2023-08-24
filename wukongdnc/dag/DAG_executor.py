@@ -1976,14 +1976,14 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 
                 incremental_dag_generation_with_groups = compute_pagerank and use_incremental_DAG_generation and use_page_rank_group_partitions
                 continued_task_state_info = DAG_map[DAG_executor_state.state]
-                logger.debug(thread_name + " DAG_executor_work_loop: incremental_dag_generation_with_groups: "
+                logger.debug(thread_name + " DAG_executor_work_loop: incremental_dag_generation_with_groups: checking whether to inc num tasks executed"
                     + str(incremental_dag_generation_with_groups)
                     + " continued_task: " + str(continued_task)
-                    + " state_info.task_name == PR1_1: " + str(state_info.task_name == "PR1_1")
-                    + " (not state_info.task_name in DAG_info.get_DAG_leaf_tasks(): "
+                    + " continued_task_state_info.task_name == PR1_1: " + str(continued_task_state_info.task_name == "PR1_1")
+                    + " (not continued_task_state_info.task_name in DAG_info.get_DAG_leaf_tasks(): "
                     + str((not continued_task_state_info.task_name in DAG_info.get_DAG_leaf_tasks())))
                 if not (incremental_dag_generation_with_groups and continued_task and (
-                    (state_info.task_name == "PR1_1" or not state_info.task_name in DAG_info.get_DAG_leaf_tasks())
+                    (continued_task_state_info.task_name == "PR1_1" or not continued_task_state_info.task_name in DAG_info.get_DAG_leaf_tasks())
                 )):
                     # If this is a continued task, we may have already executed it.
                     # If the task is the first task in a new connected
@@ -2001,7 +2001,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # tasks. Use this counter or if we remove this counter, something 
                     # else needs to provide the barrier.
                     num_tasks_executed = completed_tasks_counter.increment_and_get()
-                    logger.debug("DAG_executor_work_loop: " + thread_name + " before processing " + str(DAG_executor_state.state) 
+                    logger.debug("DAG_executor_work_loop: " + thread_name + " before check num tasks executed:  " + str(DAG_executor_state.state) 
                         + " num_tasks_executed: " + str(num_tasks_executed) 
                         + " num_tasks_to_execute: " + str(num_tasks_to_execute))
         
@@ -2217,6 +2217,13 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             #if incremental_dag_generation_with_groups and continued_task and (
             #    (DAG_executor_state.state == 1 or (not state_info.task_name in DAG_info.get_DAG_leaf_tasks()))
             #):
+            logger.debug(thread_name + " DAG_executor_work_loop: incremental_dag_generation_with_groups: checking whether to execute task"
+                + str(incremental_dag_generation_with_groups)
+                + " continued_task: " + str(continued_task)
+                + " state_info.task_name == PR1_1: " + str(state_info.task_name == "PR1_1")
+                + " (not state_info.task_name in DAG_info.get_DAG_leaf_tasks(): "
+                + str((not state_info.task_name in DAG_info.get_DAG_leaf_tasks())))
+
             if incremental_dag_generation_with_groups and continued_task and (
             (state_info.task_name == "PR1_1" or not state_info.task_name in DAG_info.get_DAG_leaf_tasks())
             ):
@@ -2225,6 +2232,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # do not execute this group/task since it has been excuted before.
             else:
                 # Execute task (but which task?)
+                #
                 # But first see if we are doing incremental DAG generation and
                 # we are using partitions. If so, we may need to get the collapse
                 # task of the continued state and excute the collapse task.
@@ -2232,7 +2240,12 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # with groups and the task is a leaf task (that is not the first group in the 
                 # DAG) that starts a new connected component (which is the first 
                 # group generated on any call to BFS()). We will execute the 
-                # group task. We will also execute the 
+                # group task. 
+                #
+                # Note: The if-condition will be False if we are executing a leaf
+                # task/group that is a new connected component (not "PR1_1"), 
+                # in which case continued_task may have been true and it's
+                # still True. We need to set it to False.
                 incremental_dag_generation_with_partitions = compute_pagerank and use_incremental_DAG_generation and not use_page_rank_group_partitions
                 if incremental_dag_generation_with_partitions and continued_task:
                     continued_task = False
@@ -2265,7 +2278,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             + state_info.task_name + " is a leaf task so do not get its collapse task"
                             + " instead, execute the leaf task.")
                 else:
-                    pass 
+                    # if continued tasks is TRUE this will set it to False
+                    continued_task = False
                     # execute task - task is a group task that is a 
                     # leaf task (but not the fitst group in the DAG)
                     # or it is a patition task that is not a continued task.
