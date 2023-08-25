@@ -709,6 +709,9 @@ from .DAG_executor_driver import run
 from .DAG_boundedbuffer_work_queue import Work_Queue_Client
 from .Remote_Client_for_DAG_infoBuffer_Monitor import Remote_Client_for_DAG_infoBuffer_Monitor
 
+from .DAG_executor_output_checker import pagerank_outputs
+from .DAG_executor_constants import check_pagerank_output
+
 #from .DAG_executor_constants import run_all_tasks_locally, using_threads_not_processes
 
 logger = logging.getLogger(__name__)
@@ -4491,6 +4494,16 @@ if __name__ == '__main__':
         logger.debug("\nBFS:join after join, print BFS stats")
     
         print_BFS_stats()
+
+        if check_pagerank_output:
+            logger.debug("")
+            logger.debug("")
+            logger.debug("DAG_executor_outputs:")
+            output_keys = list(pagerank_outputs.keys())
+            output_keys.sort()
+            sorted_pagerank_outputs = {i: pagerank_outputs[i] for i in output_keys}
+            for (k,v) in sorted_pagerank_outputs.items():
+                logger.debug(str(k) + ":"+str(v))
 
 
 """

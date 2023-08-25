@@ -150,8 +150,19 @@ class DAG_infoBuffer_Monitor(MonitorSU):
 
             logger.debug("DAG_infoBuffer_Monitor: withdraw: got DAG_info with version number " 
                 + str(DAG_info.get_DAG_version_number()))
-            logger.debug("DAG_infoBuffer_Monitor: DAG_info withdrawn: ")
-            self.print_DAG_info(self.current_version_DAG_info)
+             
+            # Note: This is disabled so that we do not try to iterate
+            # over the dictionaries in current_version_DAG_info while
+            # the ADG generator is changing these dictionaries after
+            # having deposited current_version_DAG_info. If we iterate
+            # while the dictiionary is being changed we can get a 
+            # RUNTIME error saying the sixe of the dictionary changed
+            # during iteration. We do print the version number of 
+            # current_version_DAG_info so we can match the 
+            # current_version_DAG_info with the versions printed by
+            # deposit.
+            #logger.debug("DAG_infoBuffer_Monitor: DAG_info withdrawn: ")
+            #self.print_DAG_info(self.current_version_DAG_info)
 #rhc leaf tasks
             logger.debug("DAG_infoBuffer_Monitor: withdraw: new leaf task states returned: ")
             for work_tuple in new_leaf_task_states:

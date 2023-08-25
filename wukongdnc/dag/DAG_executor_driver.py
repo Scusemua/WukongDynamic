@@ -354,6 +354,7 @@ from .DAG_boundedbuffer_work_queue import Work_Queue_Client
 from .DAG_executor_create_multithreaded_multiprocessing_processes import create_multithreaded_multiprocessing_processes #, create_and_run_threads_for_multiT_multiP
 import copy
 from . import BFS_Shared
+
 #from .BFS_Shared import pagerank_sent_to_processes, previous_sent_to_processes, number_of_children_sent_to_processes
 #from .BFS_Shared import number_of_parents_sent_to_processes, starting_indices_of_parents_sent_to_processes
 #from .BFS_Shared import parents_sent_to_processes, IDs_sent_to_processes
@@ -1555,6 +1556,7 @@ def run():
     logger.debug("DAG_executor_driver: Sleeping 3.0 seconds...")
     time.sleep(10.0)
     #print(BFS_Shared.pagerank_sent_to_processes)
+                
     print("DAG_executor_driver: DAG_Execution finished in %f seconds." % duration)
     #ToDo:  close_all(websocket)
 

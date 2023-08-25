@@ -170,6 +170,10 @@ using_single_lambda_function = False
 # options are active and pagerank asserts should hold
 compute_pagerank = True # True
 
+# pagerank values will be saved so we can check them after execution
+# in DAG_executor_check_pagerank.py
+check_pagerank_output = compute_pagerank and False
+
 # For PageRank:
 # a task that has multiple fanouts/faninNBs sends the same output
 # to all of them; otherwise, the task sends a possibly different 

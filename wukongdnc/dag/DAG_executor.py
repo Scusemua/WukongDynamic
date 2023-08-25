@@ -54,6 +54,8 @@ from .DAG_infoBuffer_Monitor_for_threads import DAG_infobuffer_monitor
 #from .BFS import shared_partition_map, shared_groups_map
 #from .Shared import shared_partition, shared_groups, shared_partition_map,  shared_groups_map
 from . import BFS_Shared
+from .DAG_executor_output_checker import pagerank_outputs
+from .DAG_executor_constants import check_pagerank_output
 
 logger = None
 logger = logging.getLogger(__name__)
@@ -2001,11 +2003,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # tasks. Use this counter or if we remove this counter, something 
                     # else needs to provide the barrier.
                     num_tasks_executed = completed_tasks_counter.increment_and_get()
-                    logger.debug("DAG_executor_work_loop: " + thread_name + " before check num tasks executed:  " + str(DAG_executor_state.state) 
+                    logger.debug("DAG_executor_work_loop: " + thread_name + " increment num_tasks_executed, now check if executed all tasks: "
                         + " num_tasks_executed: " + str(num_tasks_executed) 
                         + " num_tasks_to_execute: " + str(num_tasks_to_execute))
-        
-                 
+    
                     if num_tasks_executed == num_tasks_to_execute:
     #rhc: stop
                         # Note: This worker has work to do, and this work is the last
@@ -2047,11 +2048,11 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             work_queue.put(work_tuple)
                 else:
                     logger.debug("DAG_executor_work_loop: " + thread_name + " before processing " + str(DAG_executor_state.state) 
-                        + " do not increment num tasks executed for continued task " 
+                        + " did not increment num_tasks_executed for continued task " 
                         + " so num_tasks_executed: " + str(num_tasks_executed) 
                         + " num_tasks_to_execute: " + str(num_tasks_to_execute)
                         + " stays the same.")
-                    
+            
                     # No return here. A worker may return when it gets a -1
                     # from the work_queue (not here when it puts a -1 in the work queue.)
                     # 
@@ -2506,6 +2507,15 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             output = execute_task_with_result_dictionary_shared(task,state_info.task_name,20,result_dictionary,BFS_Shared.shared_groups_map,BFS_Shared.shared_groups)
                         else: # use the partition partitions
                             output = execute_task_with_result_dictionary_shared(task,state_info.task_name,20,result_dictionary,BFS_Shared.shared_partition_map,BFS_Shared.shared_partition)
+
+                    # save outputs so we can check them after execution.
+                    # These aer values sent to other partitions/groups,
+                    # not the pagerank values for each node. The outputs
+                    # can be empty since a partition/group can have no 
+                    # fanouts/fanins/faninNBs/collapses.
+                    if check_pagerank_output:
+                        pagerank_outputs[DAG_executor_state.state] = output
+      
                 """ where:
                     def execute_task(task,args):
                         logger.debug("input of execute_task is: " + str(args))
@@ -2575,6 +2585,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 
                 # data_dict may be local (A1) to process/lambda or global (A2) to threads
                 logger.debug(thread_name + " executed task " + state_info.task_name + "'s output: " + str(output))
+
+                
                 if same_output_for_all_fanout_fanin:
                     data_dict[state_info.task_name] = output
                 else:
