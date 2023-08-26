@@ -54,10 +54,9 @@ from .DAG_infoBuffer_Monitor_for_threads import DAG_infobuffer_monitor
 #from .BFS import shared_partition_map, shared_groups_map
 #from .Shared import shared_partition, shared_groups, shared_partition_map,  shared_groups_map
 from . import BFS_Shared
-from .DAG_executor_output_checker import pagerank_outputs
+from .DAG_executor_output_checker import set_pagerank_output
 from .DAG_executor_constants import check_pagerank_output
 
-logger = None
 logger = logging.getLogger(__name__)
 
 logger.setLevel(logging.DEBUG)
@@ -2514,7 +2513,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # can be empty since a partition/group can have no 
                     # fanouts/fanins/faninNBs/collapses.
                     if check_pagerank_output:
-                        pagerank_outputs[DAG_executor_state.state] = output
+                        set_pagerank_output(DAG_executor_state.state,output)
       
                 """ where:
                     def execute_task(task,args):

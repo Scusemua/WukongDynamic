@@ -172,7 +172,7 @@ compute_pagerank = True # True
 
 # pagerank values will be saved so we can check them after execution
 # in DAG_executor_check_pagerank.py
-check_pagerank_output = compute_pagerank and False
+check_pagerank_output = compute_pagerank and True
 
 # For PageRank:
 # a task that has multiple fanouts/faninNBs sends the same output
