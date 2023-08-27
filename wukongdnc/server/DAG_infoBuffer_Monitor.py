@@ -23,22 +23,26 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         self.current_version_DAG_info = None
         self.current_version_number_DAG_info = 1
 #rhc leaf tasks
+        # The initial DAG has the initial leaf task(s) in it. As later we find
+        # more leaf tasks (tht start new connected components), we supply them 
+        # with the DAG so the leaf tasks can be aded to the work_queue and
+        # and executed by workers (when we are using workers).
         self.current_version_new_leaf_tasks = []
         self._next_version=super().get_condition_variable(condition_name="_next_version")
 
     #def init(self, **kwargs):
     def init(self,**kwargs):
+        pass
         # initialize with a DAG_info object. This will be version 1 of the DAG
-        self.current_version_DAG_info = kwargs['current_version_DAG_info']
-        self.current_version_number_DAG_info = self.current_version_DAG_info.get_version_number()
+        #self.current_version_DAG_info = kwargs['current_version_DAG_info']
+        #self.current_version_number_DAG_info = self.current_version_DAG_info.get_version_number()
 #rhc leaf tasks
         # The initial DAG has the initial leaf task(s) in it. As later we find
         # more leaf tasks (tht start new connected components), we supply them 
         # with the DAG so the leaf tasks can be aded to the work_queue and
         # and executed by workers (when we aer using workers).
-        self.current_version_new_leaf_tasks = []
-        # if use kwargs, it looks like:
-        # self._capacity = kwargs["n"]
+        #self.current_version_new_leaf_tasks = []
+
         # logger.info(kwargs)
 
     def print_DAG_info(self,DAG_info):

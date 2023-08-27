@@ -39,7 +39,8 @@ class Synchronizer(object):
     synchronizers = {"barrier", "Barrier", "semaphore", "Semaphore", "bounded_buffer", "BoundedBuffer", 
         "fanin", "FanIn", "CountingSemaphore_Monitor", "CountingSemaphore_Monitor_Select", 
         "BoundedBuffer_Select", "DAG_executor_FanIn", "DAG_executor_FanInNB",
-        "DAG_executor_FanIn_Select", "DAG_executor_FanInNB_Select"}
+        "DAG_executor_FanIn_Select", "DAG_executor_FanInNB_Select",
+        "DAG_infoBuffer_Monitor"}
 
     # Mapping from class to the file in which it is defined.
     file_map = {
@@ -51,8 +52,9 @@ class Synchronizer(object):
         "CountingSemaphore_Monitor_Select": "CountingSemaphore_Monitor_Select",
         "DAG_executor_FanIn": "DAG_executor_FanIn",
         "DAG_executor_FanInNB": "DAG_executor_FanInNB",
-        "DAG_executor_FanIn_Select": "DAG_executor_FanIn_select" ,
-        "DAG_executor_FanInNB_Select": "DAG_executor_FanInNB_select"
+        "DAG_executor_FanIn_Select": "DAG_executor_FanIn_select",
+        "DAG_executor_FanInNB_Select": "DAG_executor_FanInNB_select",
+        "DAG_infoBuffer_Monitor": "DAG_infoBuffer_Monitor"
     }
     
     def __init__(self):
@@ -426,7 +428,7 @@ class Synchronizer(object):
         # execute might be in superclass MonitorSelect of BoundedBufferSelect  
         
         #returnValueIgnored = execute(self._synchronizer, method_name, self._synchronizer, synchronizer_method, result_buffer, **kwargs)
-        return_value_ignored = execute(self._synchronizer, method_name, self._synchronizer, synchronizer_method, result_buffer, None, wait_for_result, **kwargs)
+        _return_value_ignored = execute(self._synchronizer, method_name, self._synchronizer, synchronizer_method, result_buffer, None, wait_for_result, **kwargs)
         
         # unlock the synchronizer before bocking on withdaw(). Method withdraw() may not unblock until after a call to
         # a synchronize_synch or synchronize_asynch but these methods try to lock the synchronizer so we need to 
@@ -678,7 +680,7 @@ class Synchronizer(object):
         # Easiest is to pass args, also x = num(1) print (type(x).__name__) Also def func(self): print(__class__) but
         # execute might be in superclass MonitorSelect of BoundedBufferSelect  
         
-        return_value_ignored = execute(synchronizer, entry_name, synchronizer, synchronizer_method, result_buffer, **kwargs)
+        _return_value_ignored = execute(synchronizer, entry_name, synchronizer, synchronizer_method, result_buffer, **kwargs)
      
         # unlock the synchrnizer before bocking on withdaw(). Method withdraw() may not unblock until after a call to
         # a synchronize_synch or synchronize_asynch but these methods try to lock the synchronizer so we need to 

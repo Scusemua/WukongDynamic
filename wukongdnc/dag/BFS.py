@@ -713,7 +713,7 @@ from .DAG_executor_constants import check_pagerank_output
 from .DAG_executor_output_checker import get_pagerank_outputs
 from .DAG_executor_output_checker import verify_pagerank_outputs
 
-#from .DAG_executor_constants import run_all_tasks_locally, using_threads_not_processes
+from wukongdnc.constants import TCP_SERVER_IP
 
 logger = logging.getLogger(__name__)
 
@@ -906,9 +906,11 @@ if compute_pagerank and use_incremental_DAG_generation:
     if (run_all_tasks_locally and using_workers and not using_threads_not_processes): 
         # Config: A5, A6
         # sent the create() for work_queue to the tcp server in the DAG_executor_driver
-        websocket = (socket.AF_INET, socket.SOCK_STREAM)
+        websocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        websocket.connect(TCP_SERVER_IP)
         estimated_num_tasks_to_execute = work_queue_size_for_incremental_DAG_generation_with_worker_processes
         DAG_infobuffer_monitor = Remote_Client_for_DAG_infoBuffer_Monitor(websocket)
+        DAG_infobuffer_monitor.create()
         work_queue = Work_Queue_Client(websocket,estimated_num_tasks_to_execute)
 
 def DAG_executor_driver_Invoker_Thread():

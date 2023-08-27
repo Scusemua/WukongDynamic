@@ -1627,7 +1627,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                 else: # using incremental DAG generation
                                     # work could be a -1, or a non-leaf task or leaf task. The leaf task
                                     # might be unexecutable until we get a new incremental DAG
-                                    if not use_page_rank_group_partitions or use_page_rank_group_partitions:
+                                    if (not use_page_rank_group_partitions) or use_page_rank_group_partitions:
                                         if not DAG_executor_state.state == -1:
                                             # try to get the state_info for the work task (state).
                                             # this may return None
@@ -1692,6 +1692,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                     # Work could be a -1, or a non-leaf task or leaf task. The leaf task
                                     # might be unexecutable until we get a new incremental DAG.
                                     if (not use_page_rank_group_partitions) or use_page_rank_group_partitions: 
+                                        # work could be a -1, or a non-leaf task or leaf task. The leaf task
+                                        # might be unexecutable until we get a new incremental DAG
                                         if not DAG_executor_state.state == -1:
                                             # try to get the state_info for the work task (state)
                                             # this may return None
@@ -2512,7 +2514,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # not the pagerank values for each node. The outputs
                     # can be empty since a partition/group can have no 
                     # fanouts/fanins/faninNBs/collapses.
-                    if check_pagerank_output:
+                    if check_pagerank_output and using_threads_not_processes:
                         set_pagerank_output(DAG_executor_state.state,output)
       
                 """ where:

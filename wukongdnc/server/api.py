@@ -294,7 +294,7 @@ def create(websocket, op, type, name, state):
     logger.debug("create: Sent 'create' message to server")
 
     # Receive data. This should just be an ACK, as the TCP server will 'ACK' our create() calls.
-    ack_ignored = recv_object(websocket)
+    _ack_ignored = recv_object(websocket)
 
 """
 # Not used: No need yet to create only a wwork queue without also creating fanins and faninNBs.
@@ -502,7 +502,7 @@ def synchronize_trigger_leaf_tasks(websocket, op, type, name, state):
     logger.debug("synchronize_trigger_leaf_tasks: Sent 'create' message to server")
 
     # Receive data. This should just be an ACK, as the TCP server will 'ACK' our create() calls.
-    ack_ignored = recv_object(websocket)
+    _ack_ignored = recv_object(websocket)
 
 def close_all(websocket):
     """
@@ -516,4 +516,4 @@ def close_all(websocket):
     msg = json.dumps(message).encode('utf-8')
     send_object(msg, websocket)
     logger.debug("close_all: Sent 'close_all' message to server")    
-    ack_ignored = recv_object(websocket)
+    _ack_ignored = recv_object(websocket)
