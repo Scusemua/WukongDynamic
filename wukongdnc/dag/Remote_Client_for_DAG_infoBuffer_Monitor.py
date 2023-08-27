@@ -35,6 +35,7 @@ class Remote_Client_for_DAG_infoBuffer_Monitor:
         # bounded buffer is blocking; using same interface as Manager.Queue
         dummy_state = DAG_executor_State()
         dummy_state.keyword_arguments['new_current_version_DAG_info'] = DAG_info
+        dummy_state.keyword_arguments['new_current_version_new_leaf_tasks'] = new_leaf_task_work_tuples
         # name of object is process_DAG_infoBuffer_Monitor, type specified on create
         synchronize_async(self.websocket,"synchronize_async", "process_DAG_infoBuffer_Monitor", "deposit", dummy_state)
  

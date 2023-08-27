@@ -911,6 +911,9 @@ if compute_pagerank and use_incremental_DAG_generation:
         estimated_num_tasks_to_execute = work_queue_size_for_incremental_DAG_generation_with_worker_processes
         DAG_infobuffer_monitor = Remote_Client_for_DAG_infoBuffer_Monitor(websocket)
         DAG_infobuffer_monitor.create()
+        logger.debug("BFS: created Remote DAG_infobuffer_monitor.")
+        #logging.shutdown()
+        #os._exit(0) 
         work_queue = Work_Queue_Client(websocket,estimated_num_tasks_to_execute)
 
 def DAG_executor_driver_Invoker_Thread():
