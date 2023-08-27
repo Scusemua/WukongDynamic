@@ -897,6 +897,7 @@ num_nodes_in_partitions = 0
 groups_of_partitions = []
 groups_of_current_partition = []
 
+"""
 if compute_pagerank and use_incremental_DAG_generation: 
 #rhc continue
     # we are only using incremental_DAG_generation when we
@@ -915,6 +916,7 @@ if compute_pagerank and use_incremental_DAG_generation:
         #logging.shutdown()
         #os._exit(0) 
         work_queue = Work_Queue_Client(websocket,estimated_num_tasks_to_execute)
+"""
 
 def DAG_executor_driver_Invoker_Thread():
     #time.sleep(3)
@@ -3932,6 +3934,26 @@ if __name__ == '__main__':
         logger.debug("BFS: using groups")
     else:
         logger.debug("BFS: using partitions.")
+
+    if compute_pagerank and use_incremental_DAG_generation: 
+#rhc continue
+    # we are only using incremental_DAG_generation when we
+    # are computing pagerank, so far. Pagerank DAGS are the
+    # only DAGS we generate ourselves, so far.
+
+        if (run_all_tasks_locally and using_workers and not using_threads_not_processes): 
+            # Config: A5, A6
+            # sent the create() for work_queue to the tcp server in the DAG_executor_driver
+            websocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            websocket.connect(TCP_SERVER_IP)
+            estimated_num_tasks_to_execute = work_queue_size_for_incremental_DAG_generation_with_worker_processes
+            DAG_infobuffer_monitor = Remote_Client_for_DAG_infoBuffer_Monitor(websocket)
+            DAG_infobuffer_monitor.create()
+            logger.debug("BFS: created Remote DAG_infobuffer_monitor.")
+            #logging.shutdown()
+            #os._exit(0) 
+            work_queue = Work_Queue_Client(websocket,estimated_num_tasks_to_execute)
+
     logger.debug("BFS: Following is the Breadth-First Search")
     input_graph()
     logger.debug("BFS: num_nodes after input graph: " + str(num_nodes))

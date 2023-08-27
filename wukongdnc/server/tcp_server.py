@@ -453,7 +453,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             
             #synchronizer = tcp_server.synchronizers[synchronizer_name]
             if not create_all_fanins_faninNBs_on_start:
-                # This is one ock for all creates; we could have one lock 
+                # This is one lock for all creates; we could have one lock 
                 # per object: get object names from DAG_nfo and create
                 # a map of object name to lock at the start of tcp_server,
                 # similar to wht InfniD does when it creates mapped functions
@@ -466,7 +466,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                         #global DAG_info
                         DAG_states = DAG_info.get_DAG_states()
                         dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = DAG_states[name]
-                        dummy_state_for_create_message.keyword_arguments['store_fanins_faninNB1s_locally'] = store_fanins_faninNBs_locally
+                        dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
                         if not run_all_tasks_locally:
                             dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info
                         else:
@@ -506,7 +506,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                         }
                         # not created yet so create object
                         logger.debug("tcp_server: synchronize_process_faninNBs_batch: "
-                            + "create sync object " + name + "on the fly.")
+                            + "create sync object " + name + " on the fly.")
                         self.create_obj_but_no_ack_to_client(creation_message)
                     else:
                         logger.debug("tcp_server: synchronize_process_faninNBs_batch: object " + name + " already created.")

@@ -174,7 +174,9 @@ class DAG_infoBuffer_Monitor(MonitorSU):
                 logger.debug(str(leaf_task_state))
             super().exit_monitor()
 #rhc leaf tasks
-            return DAG_info, new_leaf_task_states, restart
+            DAG_info_and_new_leaf_task_states_tuple = (DAG_info,new_leaf_task_states)
+            #return DAG_info, new_leaf_task_states, restart
+            return DAG_info_and_new_leaf_task_states_tuple, restart
         else:
             logger.debug("DAG_infoBuffer_Monitor: withdraw waiting for version " + str(requested_current_version_number))
             self._next_version.wait_c()
@@ -216,7 +218,9 @@ class DAG_infoBuffer_Monitor(MonitorSU):
 
             self._next_version.signal_c_and_exit_monitor()
 #rhc leaf tasks
-            return DAG_info, new_leaf_task_states, restart
+            DAG_info_and_new_leaf_task_states_tuple = (DAG_info,new_leaf_task_states)
+            #return DAG_info, new_leaf_task_states, restart
+            return DAG_info_and_new_leaf_task_states_tuple, restart
         
 
 

@@ -193,7 +193,7 @@ def faninNB_remotely(websocket,**keyword_arguments):
 
 def create_and_faninNB_remotely_batch(websocket,**keyword_arguments):
     DAG_exec_state = faninNB_remotely_batch(websocket,**keyword_arguments)
-    return DAG_exec_state()
+    return DAG_exec_state
 
 #def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_states, DAG_exec_state, output, DAG_info, server):
 def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_states, 
@@ -1806,8 +1806,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                     # Note: for work_queue, the Local queue is a queue.Queue so there is no restart
                                     # value that can be returned and hence no wrapper is used.
 
-                                    new_DAG_info, new_leaf_task_states = DAG_infobuffer_monitor.withdraw(requested_current_version_number)
-                          
+                                    #new_DAG_info, new_leaf_task_states = DAG_infobuffer_monitor.withdraw(requested_current_version_number)
+                                    DAG_info_and_new_leaf_task_states_tuple = DAG_infobuffer_monitor.withdraw(requested_current_version_number)
+                                    new_DAG_info = DAG_info_and_new_leaf_task_states_tuple[0]
+                                    new_leaf_task_states = DAG_info_and_new_leaf_task_states_tuple[1]
 #rhc leaf tasks
                                     logger.debug("DAG_executor_work_loop: cumulative leaf task states withdrawn and added to work_queue: ")
                                     for work_tuple in new_leaf_task_states:
