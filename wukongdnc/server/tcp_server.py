@@ -17,6 +17,7 @@ from ..dag.DAG_executor_constants import same_output_for_all_fanout_fanin
 from ..dag.DAG_executor_constants import using_workers, using_threads_not_processes
 from ..dag.DAG_info import DAG_Info
 from ..dag.DAG_executor_State import DAG_executor_State
+from ..dag.DAG_executor_constants import compute_pagerank, use_incremental_DAG_generation
 
 # Set up logging.
 import logging 
@@ -325,6 +326,48 @@ class TCPHandler(socketserver.StreamRequestHandler):
         got_work = False
         list_of_work = []
 
+        if compute_pagerank and use_incremental_DAG_generation:
+            DAG_infoBuffer_monitor_method_keyword_arguments = {}
+            # call DAG_infoBuffer_monitor (bounded buffer) get_current_version_number_DAG_info()
+            logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": get DAG_info version number.")
+            DAG_infoBuffer_monitor_method = "get_current_version_number_DAG_info"
+            base_name, isTryMethod = isTry_and_getMethodName(DAG_infoBuffer_monitor_method)
+            DAG_infoBuffer_monitor_type = "DAG_infoBuffer_Monitor"
+            is_select = isSelect(DAG_infoBuffer_monitor_type)
+            logger.debug("tcp_server: synchronize_process_faninNBs_batch: method_name: " + DAG_infoBuffer_monitor_method + ", base_name: " + base_name + ", isTryMethod: " + str(isTryMethod))
+            logger.debug("tcp_server: synchronize_process_faninNBs_batch: synchronizer_class_name: : " + DAG_infoBuffer_monitor_type + ", is_select: " + str(is_select))
+            DAG_infoBuffer_monitor_name = "process_DAG_infoBuffer_Monitor"
+            synchronizer_name = self._get_synchronizer_name(type_name = None, name = DAG_infoBuffer_monitor_name)
+            synchronizer = tcp_server.synchronizers[synchronizer_name]
+
+            if (synchronizer is None):
+                logger.error("[Error]: Internal Error: tcp_server: synchronize_process_faninNBs_batch:"
+                    + " could not find existing Synchronizer with name '%s'" % synchronizer_name)
+                raise ValueError("synchronize_process_faninNBs_batch: Could not find existing Synchronizer with name '%s'" % synchronizer_name)
+
+    #rhc select then replace
+                #return_value = synchronizer.synchronize(base_name, DAG_exec_state, **work_queue_method_keyword_arguments)
+    #rhc select with
+            if is_select:
+                #self.lock_synchronizer()
+                synchronizer.lock_synchronizer()
+            
+            if is_select:
+                wait_for_return = True
+                # rhc: DES
+                #return_value = self.synchronizeSelect(base_name, DAG_exec_state, wait_for_return, **DAG_exec_state.keyword_arguments)
+                # This is return value of deposit_all which is 0 and is not used
+                most_recently_generated_DAG_info = synchronizer.synchronizeSelect(base_name, DAG_exec_state, wait_for_return, **DAG_infoBuffer_monitor_method_keyword_arguments)
+            else:
+                most_recently_generated_DAG_info = synchronizer.synchronize(base_name, DAG_exec_state, **DAG_infoBuffer_monitor_method_keyword_arguments)
+
+            global DAG_info
+            logger.debug("tcp_server: synchronize_process_faninNBs_batch:"
+                + " most recently deposited DAG_info version number: " + str(most_recently_generated_DAG_info.get_DAG_version_number())
+                + " version number of current DAG_info: " + str(DAG_info.get_DAG_version_number()))
+
+            DAG_info = most_recently_generated_DAG_info
+
         if not create_all_fanins_faninNBs_on_start:
             # create the work_queue used by workers (when using worker pools
             # to execute the DAG instad of lambdas. When the workers are processes
@@ -337,7 +380,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     msg_id = str(uuid.uuid4())	# for debugging
                     creation_message = {
                         "op": "create",
-                        "type": process_work_queue_Type,
+                        "type": process_work_queue_Type,   # probably a bounded_buffer
                         "name": "process_work_queue",
                         "state": make_json_serializable(dummy_state),	
                         "id": msg_id
@@ -371,9 +414,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             # If we are using lambdas, then we can use the parallel invoker to invoke the fanout lambdas
             if run_all_tasks_locally:
                 # work_queue.deposit_all(list_of_work_queue_or_payload_fanout_values)
-#rhc: ToDo: if not create on start then create this somewhere on fly
-# perhaps at top - we may or may not use work_queue so may create it 
-# but don't use it. 
+
                 synchronizer = tcp_server.synchronizers[work_queue_name]
                 
                 #synchClass = synchronizer._synchClass

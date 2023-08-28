@@ -93,6 +93,22 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         print(DAG_info.get_DAG_info_is_complete())
         print()
 
+    def get_current_version_number_DAG_info(self):
+        try:
+            super(DAG_infoBuffer_Monitor, self).enter_monitor(method_name="get_current_version_number_DAG_info")
+        except Exception as ex:
+            logger.error("[ERROR] Failed super(DAG_infoBuffer, self)")
+            logger.error("[ERROR] self: " + str(self.__class__.__name__))
+            logger.debug(ex)
+            return 0
+        
+        logger.debug("DAG_infoBuffer_Monitor: get_current_version_number_DAG_info() entered monitor, len(self._new_version) ="+str(len(self._next_version)))
+
+        restart = False
+        current_DAG_info = self.current_version_DAG_info
+        super().exit_monitor()
+        return current_DAG_info, restart
+
     def deposit(self,**kwargs):
         # deposit a new DAG_info object. It's version number will be one more
         # than the current DAG_info object.
