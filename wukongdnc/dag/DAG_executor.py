@@ -484,6 +484,9 @@ def faninNB_remotely_batch(websocket, **keyword_arguments):
     DAG_exec_state.keyword_arguments['work_queue_method'] = keyword_arguments['work_queue_method']
     DAG_exec_state.keyword_arguments['work_queue_op'] = keyword_arguments['work_queue_op']
     DAG_exec_state.keyword_arguments['DAG_states_of_faninNBs_fanouts'] = keyword_arguments['DAG_states_of_faninNBs_fanouts']
+#rhc: batch
+    DAG_exec_state.keyword_arguments['all_faninNB_sizes_of_faninNBs'] = keyword_arguments['all_faninNB_sizes_of_faninNBs']
+    DAG_exec_state.keyword_arguments['all_fanin_sizes_of_fanins'] = keyword_arguments['all_fanin_sizes_of_fanins']
 
     # we now read DAG_info on the tcp_server when not creating objects ata the start
     # or not run_all_tasks_locally (i.e., lambdas excute tasks and need the DAG_info.)
@@ -531,7 +534,9 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
     list_of_work_queue_or_payload_fanout_values,
     async_call, fanouts,
 #rhc: cluster:
-    cluster_queue):
+    cluster_queue,
+#rhc: batch
+    all_faninNB_task_names,all_faninNB_sizes):
 
     thread_name = threading.current_thread().name
     logger.debug(thread_name + ": process_faninNBs_batch: " + calling_task_name)
@@ -589,11 +594,23 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
     # their tasks to run in the same lambda as object. This occurs when we are storing objects 
     # in lambdas and running tcp_server_lamba.py
     DAG_states_of_faninNBs_fanouts = {}
+#rhc: batch
+    all_faninNB_sizes_of_faninNBs = []
+    # We only batch process faninNBs, not fanins, so this is empty
+    all_fanin_sizes_of_fanins = []
     for name in faninNBs:
         DAG_states_of_faninNBs_fanouts[name] = DAG_states[name]
+#rhc: batch
+        faninNB_index = all_faninNB_task_names.index(name)
+        all_faninNB_sizes_of_faninNBs.append(all_faninNB_sizes[faninNB_index])
+
     for name in fanouts:
         DAG_states_of_faninNBs_fanouts[name] = DAG_states[name]
+
     keyword_arguments['DAG_states_of_faninNBs_fanouts'] = DAG_states_of_faninNBs_fanouts
+    keyword_arguments['all_faninNB_sizes_of_faninNBs'] = all_faninNB_sizes_of_faninNBs
+    keyword_arguments['all_fanin_sizes_of_fanins'] = all_fanin_sizes_of_fanins
+    
     # if not creating objects at start then when we create the work queue
     # on the server we use number_of_tasks to determine the queue size.
     keyword_arguments['number_of_tasks'] = len(DAG_info.get_DAG_tasks())
@@ -2986,7 +3003,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 
                             async_call, state_info.fanouts,
 #rhc: cluster:
-                            cluster_queue)
+                            cluster_queue,
+#rhc: batch
+                            DAG_info.get_all_faninNB_task_names(),
+                            DAG_info.get_all_faninNB_sizes())
 
                         # assert:
                         if worker_needs_input and not using_workers:

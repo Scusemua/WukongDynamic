@@ -289,7 +289,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         """        
         logger.debug("[HANDLER] TCPHandler lambda: server.create() called.")
 
-        return_value_ignored = self.invoke_lambda_synchronously(message)    # makes synchronous Lambda call - return value is not meaningful
+        _return_value_ignored = self.invoke_lambda_synchronously(message)    # makes synchronous Lambda call - return value is not meaningful
 
         resp = {
             "op": "ack",
@@ -386,7 +386,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             #self.create_one_of_all_objs(msg)
             logger.debug("tcp_server_lambda: create_all_sync_objects: invoke lambda.")
 
-            return_value_ignored = self.invoke_lambda_synchronously(msg)
+            _return_value_ignored = self.invoke_lambda_synchronously(msg)
 
             logger.debug("tcp_server_lambda: create_all_sync_objects: invoked lambda.")
 
@@ -397,7 +397,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             #self.create_one_of_all_objs(msg)
             logger.debug("tcp_server_lambda: call create_all_sync_objects().")
 
-            return_value_ignored = self.invoke_lambda_synchronously(msg)
+            _return_value_ignored = self.invoke_lambda_synchronously(msg)
 
             logger.debug("tcp_server_lambda: create_all_sync_objects: invoked lambda.")
 
@@ -411,7 +411,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 #self.create_one_of_all_objs(msg)
                 logger.debug("ttcp_server_lambda: create_all_sync_objects: invoke lambda..")
 
-                return_value_ignored = self.invoke_lambda_synchronously(msg)
+                _return_value_ignored = self.invoke_lambda_synchronously(msg)
 
                 logger.debug("tcp_server_lambda: create_all_sync_objects: invoked lambda..")
 
@@ -682,7 +682,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": calling infiniD.enqueue(message)."
                         + " for fanout task: " + str(task_name))
                     # calls: returned_state = tcp_server.infiniD.enqueue(json_message)
-                    returned_state_ignored = self.enqueue_and_invoke_lambda_synchronously(message)
+                    _returned_state_ignored = self.enqueue_and_invoke_lambda_synchronously(message)
                     logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": called infiniD.enqueue(message) "
                         + " for fanout task: " + str(task_name)) # + ", returned_state_ignored: " + str(returned_state_ignored))
                 else:
@@ -693,13 +693,13 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
                     if create_all_fanins_faninNBs_on_start:
                         # call synchronize_sync on the alrfeady created object
-                        returned_state_ignored = self.invoke_lambda_synchronously(message)
+                        _returned_state_ignored = self.invoke_lambda_synchronously(message)
                     else:
                         # call createif_and_synchronize_sync to create object
                         # and call synchronize_sync on it. the control_message
                         # has the creation_message and the message for snchronize_sync
                         # in a messages tuple value under its 'name' key.
-                        returned_state_ignored = self.invoke_lambda_synchronously(control_message)
+                        _returned_state_ignored = self.invoke_lambda_synchronously(control_message)
 
                     logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": called invoke_lambda_synchronously "
                         + " for fanout task: " + str(task_name)) # + ", returned_state_ignored: "  + str(returned_state_ignored))
@@ -853,13 +853,13 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 #returned_state = self.invoke_lambda_synchronously(message)
                 if create_all_fanins_faninNBs_on_start:
                     # call synchronize_sync on the alrfeady created object
-                    returned_state_ignored = self.invoke_lambda_synchronously(message)
+                    _returned_state_ignored = self.invoke_lambda_synchronously(message)
                 else:
                     # call createif_and_synchronize_sync to create object
                     # and call synchronize_sync on it. the control_message
                     # has the creation_message and the message for snchronize_sync
                     # in a messages tuple value under its 'name' key.
-                    returned_state_ignored = self.invoke_lambda_synchronously(control_message)
+                    _returned_state_ignored = self.invoke_lambda_synchronously(control_message)
                 logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": called invoke_lambda_synchronously ")
                     # + "returned_state: " + str(returned_state))
 
@@ -1265,7 +1265,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
        
         logger.debug("tcp_server_lambda: create_work_queue() called.")
 
-        return_value_ignored = self.invoke_lambda_synchronously(message)
+        _return_value_ignored = self.invoke_lambda_synchronously(message)
 
         resp = {
             "op": "ack",
