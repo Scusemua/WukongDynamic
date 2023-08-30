@@ -894,17 +894,17 @@ class TCPHandler(socketserver.StreamRequestHandler):
             with create_synchronization_object_lock:
                 synchronizer = tcp_server.synchronizers.get(synchronizer_name,None)
                 if (synchronizer is None):
-    #rhc: ToDo: 
-    #  This part here is only for DAGs, not, e.g., Semaphores
-    #  For other typs of objects, we'l need their type so we'll need
-    #  to deal with it in DAG_executor? which will call createif (as it does now)
-    #  passing a create message with the message?
-    #  But only user nows the crete ino, as typically user would create semaphors, etc.
-    #  User could "register" objects so we have their information. And register
-    #  could do creates() or register objects on tcp_server for create_if?
-    #  Then user cannot do ops on the fly, which is normally the case in 
-    #  any program, considering scope this would be odd, but our objects have
-    #  "server scope"? which is global, so ...
+                    
+                    #  On-the-fly: This part here is only for DAGs, not, e.g., Semaphores
+                    #  For other typs of objects, we'l need their type so we'll need
+                    #  to deal with it in DAG_executor? which will call createif (as it does now)
+                    #  passing a create message with the message?
+                    #  But only user nows the crete ino, as typically user would create semaphors, etc.
+                    #  User could "register" objects so we have their information. And register
+                    #  could do creates() or register objects on tcp_server for create_if?
+                    #  Then user cannot do ops on the fly, which is normally the case in 
+                    #  any program, considering scope this would be odd, but our objects have
+                    #  "server scope"? which is global, so ...
                     if method_name == "fan_in":
 #rhc batch
                         if not (compute_pagerank and use_incremental_DAG_generation):
@@ -958,7 +958,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                         else:
                             # Compute pagerank for incremental DAG generation.
                             # - Rewrote this code so that it no longer needs DAG_info
-                            # for faninNB creation. The iss ue with DAG_info is that 
+                            # for faninNB creation. The issue with DAG_info is that 
                             # tcp_server reads it once at the beginning. But since 
                             # DAG_info is incrementally updated, we must retrive a 
                             # new DAG_info each time a new one is generated so that 
@@ -974,13 +974,17 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             # start states of the faninNB tasks, and the sizes of the 
                             # faninNBs to the batch processing method insted of having
                             # this method retrive this info from DAG_info.
-                            # - Rewrote this code to get rid of the fanin stuff. We only
-                            # batch process faninNBs, not fanins, so the fanin part
-                            # is not needed. This code was originally copied from 
-                            # suchronize_sync, which can process faninNBs and fanins,
-                            # but we don't need the fanin code, and therefor don't want
-                            # to pass the fanin information to the batch process method
-                            # so we removed the fanin code.
+                            # - Note: When we use worker threads with fanins/faninNBS stored 
+                            # here on tcp_server, the DG_infoBuffer_monitor, as well as 
+                            # the work_queue are local, i.e., they are not stored here
+                            # on the tcp_server so ths sycnronize_sync method cannot
+                            # access DAG_infoBuffer_monitor thus we cannot access it
+                            # to withdraw an updated DAG_info.
+#rhc: ToDo: 
+                            # - Rewrote this code to use the state parameters start sate of 
+                            # dag tas, n, and the newly added fanin type instead of getting
+                            # this nfo from the DAG_info. Thus we do not need to update the 
+                            # DAG_ifo during incremental DAG generation.
 
                             #global DAG_info
                             #DAG_states = DAG_info.get_DAG_states()
@@ -1171,6 +1175,10 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
         return return_value
 
+    # Note: We do not use asynch calls to fanin/faninNB objects. Also,
+    # we do not crate objects on the fly (yet) for non-fanin/faninNB
+    # objects so we do not have any code in here for create objects
+    # on the fly. See the "On-the-fly" comment in synchronize_sync.
     def synchronize_async(self, message = None):
         """
         Asynchronous synchronization.
