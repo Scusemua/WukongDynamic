@@ -44,5 +44,7 @@ class Local_Client_for_DAG_infoBuffer_Monitor:
         # name of object is process_DAG_infoBuffer_Monitor, type specified on create
         # This call returns a new DAG_info object that is being 
         # constructed incrementally.
-        DAG_info, new_leaf_task_states, _restart_value_ignored = self.wrapped_DAG_infobuffer_monitor.withdraw(**keyword_arguments)
-        return DAG_info, new_leaf_task_states
+        #DAG_info, new_leaf_task_states, _restart_value_ignored = self.wrapped_DAG_infobuffer_monitor.withdraw(**keyword_arguments)
+        DAG_info_and_new_leaf_task_states_tuple, _restart_value_ignored = self.wrapped_DAG_infobuffer_monitor.withdraw(**keyword_arguments)
+        #return DAG_info, new_leaf_task_states
+        return DAG_info_and_new_leaf_task_states_tuple

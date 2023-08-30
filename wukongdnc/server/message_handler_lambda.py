@@ -483,7 +483,7 @@ class MessageHandler(object):
 
         # check if already created
         logger.debug("message_handler_lambda: createif_and_synchronize_async: Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
-        synchronizer = MessageHandler.synchronizers[synchronizer_name]
+        #synchronizer = MessageHandler.synchronizers[synchronizer_name]
         synchronizer = MessageHandler.synchronizers.get(synchronizer_name,None)
 
         if (synchronizer is None):

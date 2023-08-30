@@ -36,7 +36,7 @@ create_all_fanins_faninNBs_on_start = False
 using_workers = True
 # True when we ae not using Lambas and tasks are executed by threads instead of processes. 
 # False when we are not using lambdas and are using multiprocesssing 
-using_threads_not_processes = False
+using_threads_not_processes = True
 # When using_workers, this is how many threads or processes in the pool.
 num_workers = 1
 # Use one or more worker processes (num_workers) with one or more threads
