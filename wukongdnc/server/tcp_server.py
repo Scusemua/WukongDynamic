@@ -908,7 +908,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     if method_name == "fan_in":
 #rhc batch
                         if not (compute_pagerank and use_incremental_DAG_generation):
-                            dummy_state_for_create_message = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()))
+                            dummy_state_for_create_message = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
                             # passing to the created faninNB object:
                             #global DAG_info
                             DAG_states = DAG_info.get_DAG_states()
@@ -918,6 +918,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
                                 dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info
                             else:
                                 dummy_state_for_create_message.keyword_arguments['DAG_info'] = None
+                            
+                            """
                             #dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info
                             all_fanin_task_names = DAG_info.get_all_fanin_task_names()
                             all_fanin_sizes = DAG_info.get_all_fanin_sizes()
@@ -942,7 +944,15 @@ class TCPHandler(socketserver.StreamRequestHandler):
                                 fanin_type = FanInNB_Type
                                 faninNB_index = all_faninNB_task_names.index(synchronizer_name)
                                 dummy_state_for_create_message.keyword_arguments['n'] = all_faninNB_sizes[faninNB_index]
+                            """
+#rhc batch
+                            if state.keyword_arguments['fanin_type'] == "faninNB":
+                                fanin_type = FanInNB_Type
+                            else: # fanin_type is "fanin"
+                                fanin_type = FanIn_Type
 
+                            dummy_state_for_create_message.keyword_arguments['n'] = state.keyword_arguments['n']
+                            logger.debug("FOOOOOO")
                             msg_id = str(uuid.uuid4())	# for debugging
                             creation_message = {
                                 "op": "create",
@@ -997,8 +1007,9 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             # Given in DAG_executor.faninNB_remotely:
                             #DAG_exec_state.keyword_arguments['n'] = keyword_arguments['n']
                             #DAG_exec_state.keyword_arguments['start_state_fanin_task'] = keyword_arguments['start_state_fanin_task']
-
-                            dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = state['start_state_fanin_task']
+#rhc batch
+                            dummy_state_for_create_message = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
+                            dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = state.keyword_arguments['start_state_fanin_task']
                             dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
                             if not run_all_tasks_locally:
                                 dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info
@@ -1041,10 +1052,18 @@ class TCPHandler(socketserver.StreamRequestHandler):
 # accessgn DAG_info. Note: Can change the exisiting code above so that ot just 
 # grabs this value instead of searching for name?
 
-                            fanin_type = FanInNB_Type
+#rhc batch
+                            if state.keyword_arguments['fanin_type'] == "faninNB":
+                                fanin_type = FanInNB_Type
+                            else: # fanin_type is "fanin"
+                                fanin_type = FanIn_Type
+                            # where in DAG_executor_constants:
+                            #FanIn_Type = "DAG_executor_FanIn"
+                            #FanInNB_Type = "DAG_executor_FanInNB"
+                            
                             #faninNB_index = all_faninNB_task_names.index(name)
                             #dummy_state_for_create_message.keyword_arguments['n'] = all_faninNB_sizes[faninNB_index]
-                            dummy_state_for_create_message.keyword_arguments['n'] = state['n']
+                            dummy_state_for_create_message.keyword_arguments['n'] = state.keyword_arguments['n']
                             
                             #assert:
                             #if not faninNB_size == all_faninNB_sizes[faninNB_index]:

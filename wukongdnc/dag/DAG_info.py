@@ -63,7 +63,10 @@ class DAG_Info(object):
         self.DAG_version_number = DAG_info_dictionary["DAG_version_number"]
         self.DAG_is_complete = DAG_info_dictionary["DAG_is_complete"]
         self.DAG_number_of_tasks = DAG_info_dictionary["DAG_number_of_tasks"]
-        self.DAG_number_of_incomplete_tasks = DAG_info_dictionary["DAG_number_of_incomplete_tasks"]
+        if not use_incremental_DAG_generation:
+            self.DAG_number_of_incomplete_tasks = 0
+        else:
+            self.DAG_number_of_incomplete_tasks = DAG_info_dictionary["DAG_number_of_incomplete_tasks"]
 
     def get_DAG_info_dictionary(self):
         DAG_info_dictionary = {}

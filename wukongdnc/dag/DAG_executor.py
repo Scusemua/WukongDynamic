@@ -176,7 +176,8 @@ def faninNB_remotely(websocket,**keyword_arguments):
     #keyword_arguments['DAG_executor_State'] = new_DAG_exec_state # given to the thread/lambda that executes the fanin task.
     #DAG_exec_state.keyword_arguments['server'] = keyword_arguments['server']
     DAG_exec_state.keyword_arguments['store_fanins_faninNBs_locally'] = keyword_arguments['store_fanins_faninNBs_locally']
-    
+#rhc batch
+    DAG_exec_state.keyword_arguments['fanin_type'] = keyword_arguments['fanin_type']
     if not run_all_tasks_locally:
         # Note: When faninNB start a Lambda, DAG_info is in the payload. 
         # (Threads and processes read it from disk.)
@@ -234,6 +235,8 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
         keyword_arguments['fanin_task_name'] = name
         keyword_arguments['n'] = n
         keyword_arguments['start_state_fanin_task'] = start_state_fanin_task
+#rhc batch
+        keyword_arguments['fanin_type'] = "faninNB"
         # We will use local datadict for each multiprocess; process will receve
         # the faninNB results and put them in the data_dict.
         # Note: For DAG generation, for each state we execute a task and 
@@ -318,6 +321,8 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
             # as a placeholder in case we decide to do smething differet - 
             # as in create_and_faninNB_remotely could create and pass a new message to 
             # the server, i.e., move the create logic down from the server.
+            # Note: keyword_arguments are used to create DAG_executor_state/keyword_arguments
+            # in faninNB_remotely.
             if not create_all_fanins_faninNBs_on_start:
                 dummy_DAG_exec_state = create_and_faninNB_remotely(websocket,**keyword_arguments)
             else:
@@ -1179,6 +1184,8 @@ def process_fanins(websocket,fanins, faninNB_sizes, calling_task_name, DAG_state
     # using return_value[calling_task_name] = output[calling_task_name], which is add our results from output
     # to those returned by the fanin.
 
+    # These keyword_arguments are passed to the fan_in operation when we 
+    # use local fanin objects
     keyword_arguments = {}
     logger.debug(thread_name + ": process_fanins: fanins" + str(fanins))
     # there is only one fanin name
@@ -1209,6 +1216,8 @@ def process_fanins(websocket,fanins, faninNB_sizes, calling_task_name, DAG_state
     keyword_arguments['server'] = server
 
     if not store_fanins_faninNBs_locally:
+        # These DAG_exec_state keyword_arguments are passed to the fan_in 
+        # operation when we use remote fanin objects
         DAG_exec_state.keyword_arguments = {}
         DAG_exec_state.keyword_arguments['fanin_task_name'] = fanins[0]
         DAG_exec_state.keyword_arguments['n'] = faninNB_sizes[0]
@@ -1233,10 +1242,18 @@ def process_fanins(websocket,fanins, faninNB_sizes, calling_task_name, DAG_state
             DAG_exec_state.keyword_arguments['calling_task_name'] = qualified_name
         #DAG_exec_state.keyword_arguments['DAG_executor_State'] = DAG_exec_state
         DAG_exec_state.keyword_arguments['server'] = server
+#rhc batch
+        # Note: using this remotley on tcp_server in synhronize_sync
+        # but not using it locally. When create fanin/faninNB locally
+        # we call a create fanin/faninNB method which knows to create
+        # a fanin/faninNB
+        DAG_exec_state.keyword_arguments['fanin_type'] = "fanin"
 
     if store_fanins_faninNBs_locally:
         #ToDo:
         #keyword_arguments['DAG_executor_State'] = DAG_exec_state
+        # The keyword arguments aer passed to the local fanin 
+        # no the DAG_executor_state
         if not create_all_fanins_faninNBs_on_start:
             DAG_exec_state = server.create_and_fanin_locally(DAG_exec_state,keyword_arguments)
         else:
