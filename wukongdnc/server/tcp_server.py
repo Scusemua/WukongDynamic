@@ -963,7 +963,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             }
                             # not created yet so create object
                             logger.debug("tcp_server: synchronize_sync: "
-                                + "create sync object " + synchronizer_name + "on the fly")
+                                + "create sync object " + synchronizer_name + " on the fly")
                             self.create_obj_but_no_ack_to_client(creation_message)
                         else:
                             # Compute pagerank for incremental DAG generation.
@@ -1009,7 +1009,6 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             #DAG_exec_state.keyword_arguments['start_state_fanin_task'] = keyword_arguments['start_state_fanin_task']
 #rhc batch
                             dummy_state_for_create_message = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
-                            dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = state.keyword_arguments['start_state_fanin_task']
                             dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
                             if not run_all_tasks_locally:
                                 dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info
@@ -1064,7 +1063,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             #faninNB_index = all_faninNB_task_names.index(name)
                             #dummy_state_for_create_message.keyword_arguments['n'] = all_faninNB_sizes[faninNB_index]
                             dummy_state_for_create_message.keyword_arguments['n'] = state.keyword_arguments['n']
-                            
+                            if not fanin_type == FanIn_Type:
+                                dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = state.keyword_arguments['start_state_fanin_task']
                             #assert:
                             #if not faninNB_size == all_faninNB_sizes[faninNB_index]:
                             #    logger.error("[Error]: Internal Error: tcp_server: synchronize_process_faninNBs_batch: "
@@ -1082,7 +1082,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             }
                             # not created yet so create object
                             logger.debug("tcp_server: synchronize_sync: "
-                                + "create sync object " + synchronizer_name + "on the fly")
+                                + "create sync object " + synchronizer_name + " on the fly")
                             self.create_obj_but_no_ack_to_client(creation_message)    
                     # else:
                         # pass
@@ -1172,7 +1172,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             if (synchronizer is None):
                 # not created yet so create object
                 logger.debug("tcp_server: createif_and_synchronize_sync: "
-                    + "create sync object " + obj_name + "on the fly")
+                    + "create sync object " + obj_name + " on the fly")
                 self.create_obj_but_no_ack_to_client(creation_message)
 
         logger.debug("message_handler_lambda: createif_and_synchronize_sync: do synchronous_sync ")

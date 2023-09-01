@@ -33,7 +33,7 @@ from .DAG_executor_constants import sync_objects_in_lambdas_trigger_their_tasks,
 from .DAG_executor_constants import tasks_use_result_dictionary_parameter, same_output_for_all_fanout_fanin
 from .DAG_executor_constants import compute_pagerank, use_shared_partitions_groups, use_page_rank_group_partitions
 from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
-from .DAG_executor_constants import use_incremental_DAG_generation
+from .DAG_executor_constants import use_incremental_DAG_generation, name_of_first_groupOrpartition_in_DAG
 #rhc: counter:
 from .DAG_executor_constants import num_workers
 #from .DAG_work_queue_for_threads import thread_work_queue
@@ -2018,11 +2018,11 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 logger.debug(thread_name + " DAG_executor_work_loop: incremental_dag_generation_with_groups: checking whether to inc num tasks executed"
                     + str(incremental_dag_generation_with_groups)
                     + " continued_task: " + str(continued_task)
-                    + " continued_task_state_info.task_name == PR1_1: " + str(continued_task_state_info.task_name == "PR1_1")
+                    + " continued_task_state_info.task_name == PR1_1: " + str(continued_task_state_info.task_name == name_of_first_groupOrpartition_in_DAG)
                     + " (not continued_task_state_info.task_name in DAG_info.get_DAG_leaf_tasks(): "
                     + str((not continued_task_state_info.task_name in DAG_info.get_DAG_leaf_tasks())))
                 if not (incremental_dag_generation_with_groups and continued_task and (
-                    (continued_task_state_info.task_name == "PR1_1" or not continued_task_state_info.task_name in DAG_info.get_DAG_leaf_tasks())
+                    (continued_task_state_info.task_name == name_of_first_groupOrpartition_in_DAG or not continued_task_state_info.task_name in DAG_info.get_DAG_leaf_tasks())
                 )):
                     # If this is a continued task, we may have already executed it.
                     # If the task is the first task in a new connected
@@ -2258,12 +2258,12 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             logger.debug(thread_name + " DAG_executor_work_loop: incremental_dag_generation_with_groups: checking whether to execute task"
                 + str(incremental_dag_generation_with_groups)
                 + " continued_task: " + str(continued_task)
-                + " state_info.task_name == PR1_1: " + str(state_info.task_name == "PR1_1")
+                + " state_info.task_name == PR1_1: " + str(state_info.task_name == name_of_first_groupOrpartition_in_DAG)
                 + " (not state_info.task_name in DAG_info.get_DAG_leaf_tasks(): "
                 + str((not state_info.task_name in DAG_info.get_DAG_leaf_tasks())))
 
             if incremental_dag_generation_with_groups and continued_task and (
-            (state_info.task_name == "PR1_1" or not state_info.task_name in DAG_info.get_DAG_leaf_tasks())
+            (state_info.task_name == name_of_first_groupOrpartition_in_DAG or not state_info.task_name in DAG_info.get_DAG_leaf_tasks())
             ):
                 continued_task = False
                 pass 
