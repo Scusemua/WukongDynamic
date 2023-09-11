@@ -115,7 +115,7 @@ class DAG_executor_FanIn_Select(Selector):
             #threading.current_thread()._restart = False
             #threading.current_thread()._returnValue = 0
             #restart = False
-            logger.debug("DAG_executor_FanIn_Select: fan_in: non-last Client " + calling_task_name + " exiting FanIn fan_in id = %s" % self.selector_name)
+            logger.debug(" FanIn_Select: !!!!! non-last Client " + calling_task_name + " exiting FanIn fan_in id = %s" % self.selector_name)
             # Note: Typcally we would return 1 when try_fan_in returns block is True, but the Fanin currently
             # used by wukong D&C is expecting a return value of 0 for this case.
             return 0
@@ -134,7 +134,7 @@ class DAG_executor_FanIn_Select(Selector):
             #threading.current_thread()._returnValue = self._results
             #threading.current_thread()._restart = False 
             #restart = False
-            logger.debug(" !!!!! last Client for DAG_executor_FanIn_Select: fan_in: " + calling_task_name + " exiting FanIn fan_in id=%s!!!!!" % self.selector_name)
+            logger.debug(" FanIn_Select: !!!!! last Client: " + calling_task_name + " exiting FanIn fan_in id=%s!!!!!" % self.selector_name)
             # No signal of non-last client; they did not block and they are done executing. 
             # does mutex.
             

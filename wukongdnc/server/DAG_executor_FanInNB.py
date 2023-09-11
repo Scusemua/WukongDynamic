@@ -119,7 +119,7 @@ class DAG_executor_FanInNB(MonitorSU):
             #threading.current_thread()._restart = False
             #threading.current_thread()._returnValue = 0
             restart = False
-            logger.debug(" FanInNB: !!!!! non-last Client " + calling_task_name 
+            logger.debug(" FanInNB: !!!!! non-last Client: " + calling_task_name 
                 + " exiting FanInNB fan_in id = %s!!!!!" % calling_task_name)
             super().exit_monitor()
             # Note: Typcally we would return 1 when try_fan_in returns block is True, but the Fanin currently
@@ -140,7 +140,7 @@ class DAG_executor_FanInNB(MonitorSU):
             #threading.current_thread()._returnValue = self._results
             #threading.current_thread()._restart = False 
             restart = False
-            logger.debug("FanInNB: !!!!! last Client " + calling_task_name 
+            logger.debug(" FanInNB: !!!!! last Client " + calling_task_name 
                 + " exiting FanIn fan_in id=%s!!!!!" % self.monitor_name)
             # for debugging
             fanin_task_name = kwargs['fanin_task_name']

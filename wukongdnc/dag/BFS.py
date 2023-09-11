@@ -4506,6 +4506,10 @@ if __name__ == '__main__':
         logger.debug("Output partitions/groups")
         output_partitions()
 
+#rhc: Issue: can;t start TCP server until output DAG_info
+# so this is for not using tcp server. If use tp_server then
+# need to just run bfs then start tcp_server then run 
+# dag_executor, where dag executor does this close shared mem?
         run()
 
         if use_shared_partitions_groups and use_struct_of_arrays_for_pagerank:

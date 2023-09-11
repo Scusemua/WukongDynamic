@@ -147,7 +147,7 @@ class DAG_executor_FanInNB_Select(Selector):
             #threading.current_thread()._restart = False
             #threading.current_thread()._returnValue = 0
 
-            logger.debug(" !!!!! non-last Client: DAG_executor_FanInNB_Select: fan_in: " + calling_task_name 
+            logger.debug(" FanInNB_Select: !!!!! non-last Client: " + calling_task_name 
                 + " exiting FanInNB fan_in")
             # Note: Typcally we would return 1 when try_fan_in returns block is True, but the Fanin currently
             # used by wukong D&C is expecting a return value of 0 for this case.
@@ -167,7 +167,7 @@ class DAG_executor_FanInNB_Select(Selector):
             #threading.current_thread()._returnValue = self._results
             #threading.current_thread()._restart = False 
 
-            logger.debug("!!!!! last Client: DAG_executor_FanInNB_Select: fan_in: faninNB " + self.selector_name
+            logger.debug(" FanInNB_Select: !!!!! last Client: faninNB " + self.selector_name
                 +  " calling task name: " + calling_task_name + "exiting fan_in")
             # for debugging
             fanin_task_name = kwargs['fanin_task_name']
