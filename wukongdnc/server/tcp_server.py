@@ -1386,6 +1386,12 @@ class TCPServer(object):
         self.tcp_server = socketserver.ThreadingTCPServer(self.server_address, TCPHandler)
 
         if not create_all_fanins_faninNBs_on_start or not run_all_tasks_locally:
+#rhc: this could be not run_all_tasks_locally and not incremental DAg generation
+# since if we are using lambas and incemental then we will get the updated
+# DAG_info some other way, i.e., we will wait for new DAG and then a new
+# lambda will be started with the new ADG_info and the results. Savung
+# results and (re)starting with results and continued state seems like
+# normal restart for no-wait.
             # Need DAG_info if we are creating objects on their first
             # use or objects will be invoking lambdas (as lambdas need)
             # the DAG_info.
