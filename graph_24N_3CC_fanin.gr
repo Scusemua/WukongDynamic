@@ -1,4 +1,4 @@
-c FILE                  :graph_24_3CC_fanin.gr.gr
+c FILE                  :graph_24_3CC_fanin.gr fanin at end for pr3_3 (3_2 -> 3_3, 2_3 -> 3_3)
 c No. of vertices       :24
 c No. of edges          :26
 c Max. weight           :1

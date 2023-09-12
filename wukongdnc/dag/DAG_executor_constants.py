@@ -20,7 +20,7 @@ run_all_tasks_locally = True         # vs run tasks remotely (in Lambdas)
 # machine on which the threads are executing.  If we are using multiprocessing
 # or Lambdas, this must be False. When False, the synch objects are stored
 # on the tcp_server or in InfiniX lambdas.
-store_fanins_faninNBs_locally = True    # vs remotely
+store_fanins_faninNBs_locally = False    # vs remotely
 # True when all FanIn and FanInNB objects are created locally or on the
 # tcp_server or IniniX all at once at the start of the DAG execution. If
 # False, synch objects are created on the fly, i.e, we execute create-and-fanin
@@ -191,7 +191,7 @@ name_of_first_groupOrpartition_in_DAG = "PR1_1"
 same_output_for_all_fanout_fanin = not compute_pagerank
 
 # True if DAG generation and DAG_execution are overlapped. 
-use_incremental_DAG_generation = compute_pagerank and False
+use_incremental_DAG_generation = compute_pagerank and True
 
 # generate next DAG when num_incremental_DAGs_generated mod 
 # incremental_interval == 0. For example, if we set this

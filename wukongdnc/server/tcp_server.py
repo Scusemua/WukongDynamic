@@ -31,6 +31,7 @@ logger.addHandler(ch)
 
 # these global objects are created in tcp_server init()
 DAG_info = None
+read_DAG_info = True
 create_work_queue_lock = None
 create_synchronization_object_lock = None
 
@@ -60,6 +61,21 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 logger.debug("[HANDLER] call receive_object")
                 data = self.recv_object()
                 logger.debug("[HANDLER] receive_object successful")
+
+                # We only read DAG_info one time, and only if we are 
+                # using real lambdas. When we invoke a real lambda
+                # we need to give it the DAG_info. 
+                # Note: We may only need to do this when we are
+                # not using incremenal DAG generation. When we 
+                # use incremental DAG generation, we may eed to 
+                # get the newest version of the DAG from the 
+                # DAG_infoBuffer_monitor before we invoke a lambda
+                if not run_all_tasks_locally and read_DAG_info:
+                    read_DAG_info = False
+                    global DAG_info
+                    DAG_info = DAG_Info.DAG_info_fromfilename()
+                #else:
+                #    logger.debug("TCP_Server: Don't read DAG_info.")
 
                 if data is None:
                     logger.warning("recv_object() returned None. Exiting handler now.")
@@ -524,59 +540,61 @@ class TCPHandler(socketserver.StreamRequestHandler):
 #rhc batch
                         if not (compute_pagerank and use_incremental_DAG_generation):
                             #global DAG_info
-                            DAG_states = DAG_info.get_DAG_states()
+                            #DAG_states = DAG_info.get_DAG_states()
 
-                            # assert:
-                            if not DAG_states[name] == start_state_fanin_task:
-                                logger.debug("[Error]: Internal Error: tcp_server: synchronize_process_faninNBs_batch:"
-                                    + "DAG_states[name] != start_state_fanin_task")
+                            ## assert:
+                            #if not DAG_states[name] == start_state_fanin_task:
+                            #    logger.debug("[Error]: Internal Error: tcp_server: synchronize_process_faninNBs_batch:"
+                            #       + "DAG_states[name] != start_state_fanin_task")
                                 
-                            dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = DAG_states[name]
+                            #dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = DAG_states[name]
+                            dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = start_state_fanin_task
                             dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
                             if not run_all_tasks_locally:
                                 dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info
                             else:
                                 dummy_state_for_create_message.keyword_arguments['DAG_info'] = None
                             #dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info
-                            all_fanin_task_names = DAG_info.get_all_fanin_task_names()
-                            all_fanin_sizes = DAG_info.get_all_fanin_sizes()
-                            all_faninNB_task_names = DAG_info.get_all_faninNB_task_names()
-                            all_faninNB_sizes = DAG_info.get_all_faninNB_sizes()
-                            is_fanin = name in all_fanin_task_names
+                            #all_fanin_task_names = DAG_info.get_all_fanin_task_names()
+                            #all_fanin_sizes = DAG_info.get_all_fanin_sizes()
+                            #all_faninNB_task_names = DAG_info.get_all_faninNB_task_names()
+                            #all_faninNB_sizes = DAG_info.get_all_faninNB_sizes()
+                            #is_fanin = name in all_fanin_task_names
 
-                            # assert: No fanins in batch procesing - this is the code
-                            # from synchronize_sync, which can be called for fan_in ops
-                            # on fanins and faninNBs, but we only batch process faninNBs
-                            # here so there should be no fanins. 
-                            if is_fanin:
-                                logger.error("[Error]: Internal Error: tcp_server: synchronize_process_faninNBs_batch:"
-                                    + " fanin " + name + " in batch.")
+                            ## assert: No fanins in batch procesing - this is the code
+                            ## from synchronize_sync, which can be called for fan_in ops
+                            ## on fanins and faninNBs, but we only batch process faninNBs
+                            ## here so there should be no fanins. 
+                            #if is_fanin:
+                            #    logger.error("[Error]: Internal Error: tcp_server: synchronize_process_faninNBs_batch:"
+                            #        + " fanin " + name + " in batch.")
 
-                            is_faninNB = name in all_faninNB_task_names
-                            if not is_fanin and not is_faninNB:
-                                logger.error("[Error]: Internal Error: tcp_server: synchronize_process_faninNBs_batch:"
-                                    + " sync object for synchronize_sync is neither a fanin nor a faninNB.")
+                            #is_faninNB = name in all_faninNB_task_names
+                            #if not is_fanin and not is_faninNB:
+                            #    logger.error("[Error]: Internal Error: tcp_server: synchronize_process_faninNBs_batch:"
+                            #        + " sync object for synchronize_sync is neither a fanin nor a faninNB.")
 
                             # compute size of fanin or faninNB 
                             # FanIn could be a non-select (monitor) or select FanIn type
-                            if is_fanin:
-                                fanin_type = FanIn_Type
-                                fanin_index = all_fanin_task_names.index(name)
-                                # The name of a fanin/faninNB is the name of its fanin task.
-                                # The index of taskname in the list of task_names is the same as the
-                                # index of the corresponding size of the fanin/fanout
-                                dummy_state_for_create_message.keyword_arguments['n'] = all_fanin_sizes[fanin_index]
-                            else:
-                                fanin_type = FanInNB_Type
-                                faninNB_index = all_faninNB_task_names.index(name)
-                                dummy_state_for_create_message.keyword_arguments['n'] = all_faninNB_sizes[faninNB_index]
-                                #assert:
-
-                                if not faninNB_size == all_faninNB_sizes[faninNB_index]:
-                                    logger.error("[Error]: Internal Error: tcp_server: synchronize_process_faninNBs_batch: "
-                                        + " not faninNB_size == all_faninNB_sizes[faninNB_index]")
-                                else:
-                                    logger.debug("EQUAL SIZES")
+                            #if is_fanin:
+                            #    fanin_type = FanIn_Type
+                            #    fanin_index = all_fanin_task_names.index(name)
+                            #    # The name of a fanin/faninNB is the name of its fanin task.
+                            #    # The index of taskname in the list of task_names is the same as the
+                            #    # index of the corresponding size of the fanin/fanout
+                            #    dummy_state_for_create_message.keyword_arguments['n'] = all_fanin_sizes[fanin_index]
+                            #else:
+                            fanin_type = FanInNB_Type
+                            #faninNB_index = all_faninNB_task_names.index(name)
+                            #dummy_state_for_create_message.keyword_arguments['n'] = all_faninNB_sizes[faninNB_index]
+                            dummy_state_for_create_message.keyword_arguments['n'] = faninNB_size
+                            
+                            ##assert:
+                            #    if not faninNB_size == all_faninNB_sizes[faninNB_index]:
+                            #        logger.error("[Error]: Internal Error: tcp_server: synchronize_process_faninNBs_batch: "
+                            #            + " not faninNB_size == all_faninNB_sizes[faninNB_index]")
+                            #    else:
+                            #        logger.debug("EQUAL SIZES")
                         else:
                             # Compute pagerank for incremental DAG generation.
                             # - Rewrote this code so that it no longer needs DAG_info
@@ -907,12 +925,13 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     #  "server scope"? which is global, so ...
                     if method_name == "fan_in":
 #rhc batch
-                        if not (compute_pagerank and use_incremental_DAG_generation):
+#rhc: Todo: These branches are the same so remove one
+                        if False and not (compute_pagerank and use_incremental_DAG_generation):
                             dummy_state_for_create_message = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
                             # passing to the created faninNB object:
                             #global DAG_info
-                            DAG_states = DAG_info.get_DAG_states()
-                            dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = DAG_states[synchronizer_name]
+                            #DAG_states = DAG_info.get_DAG_states()
+                            #dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = DAG_states[synchronizer_name]
                             dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
                             if not run_all_tasks_locally:
                                 dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info
@@ -952,19 +971,21 @@ class TCPHandler(socketserver.StreamRequestHandler):
                                 fanin_type = FanIn_Type
 
                             dummy_state_for_create_message.keyword_arguments['n'] = state.keyword_arguments['n']
-                            logger.debug("FOOOOOO")
-                            msg_id = str(uuid.uuid4())	# for debugging
-                            creation_message = {
-                                "op": "create",
-                                "type": fanin_type,
-                                "name": synchronizer_name,
-                                "state": make_json_serializable(dummy_state_for_create_message),	
-                                "id": msg_id
-                            }
-                            # not created yet so create object
-                            logger.debug("tcp_server: synchronize_sync: "
-                                + "create sync object " + synchronizer_name + " on the fly")
-                            self.create_obj_but_no_ack_to_client(creation_message)
+                            if not fanin_type == FanIn_Type:
+                                dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = state.keyword_arguments['start_state_fanin_task']
+
+                            #msg_id = str(uuid.uuid4())	# for debugging
+                            #creation_message = {
+                            #    "op": "create",
+                            #    "type": fanin_type,
+                            #    "name": synchronizer_name,
+                            #    "state": make_json_serializable(dummy_state_for_create_message),	
+                            #    "id": msg_id
+                            #}
+                            ## not created yet so create object
+                            #logger.debug("tcp_server: synchronize_sync: "
+                            #    + "create sync object " + synchronizer_name + " on the fly")
+                            #self.create_obj_but_no_ack_to_client(creation_message)
                         else:
                             # Compute pagerank for incremental DAG generation.
                             # - Rewrote this code so that it no longer needs DAG_info
@@ -1045,12 +1066,6 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             #    #dummy_state_for_create_message.keyword_arguments['n'] = all_fanin_sizes[fanin_index]
                             #   dummy_state_for_create_message.keyword_arguments['n'] = -1
                             #else:
-
-#rhc: ToDo: Need fanin_type - is it in state? No, but faninNB remote / fanin remote
-# can put it in there since it knows its type. Needed to create objects wihtout
-# accessgn DAG_info. Note: Can change the exisiting code above so that ot just 
-# grabs this value instead of searching for name?
-
 #rhc batch
                             if state.keyword_arguments['fanin_type'] == "faninNB":
                                 fanin_type = FanInNB_Type
@@ -1072,18 +1087,18 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             #else:
                             #    logger.debug("EQUAL SIZES")
 
-                            msg_id = str(uuid.uuid4())	# for debugging
-                            creation_message = {
-                                "op": "create",
-                                "type": fanin_type,
-                                "name": synchronizer_name,
-                                "state": make_json_serializable(dummy_state_for_create_message),	
-                                "id": msg_id
-                            }
-                            # not created yet so create object
-                            logger.debug("tcp_server: synchronize_sync: "
-                                + "create sync object " + synchronizer_name + " on the fly")
-                            self.create_obj_but_no_ack_to_client(creation_message)    
+                        msg_id = str(uuid.uuid4())	# for debugging
+                        creation_message = {
+                            "op": "create",
+                            "type": fanin_type,
+                            "name": synchronizer_name,
+                            "state": make_json_serializable(dummy_state_for_create_message),	
+                            "id": msg_id
+                        }
+                        # not created yet so create object
+                        logger.debug("tcp_server: synchronize_sync: "
+                            + "create sync object " + synchronizer_name + " on the fly")
+                        self.create_obj_but_no_ack_to_client(creation_message)    
                     # else:
                         # pass
                         # what to do for non-DAG objects, we need info about them. But these are objects
@@ -1395,9 +1410,26 @@ class TCPServer(object):
             # Need DAG_info if we are creating objects on their first
             # use or objects will be invoking lambdas (as lambdas need)
             # the DAG_info.
+
+            """
+            # We only read DAG_info one time, and only if we are 
+            # using real lambdas. When we invoke a real lambda
+            # we need to give it the DAG_info. This read was moved up to the 
+            # action handler. This is because the DAG_info object is not 
+            # saved to a file until after BFS runs and generates the 
+            # (complete) ADG (for non-incremental). So we don't let the 
+            # TCP server rad the DAG until it gets its first input over
+            # the socket. This input cannot be received until after 
+            # DAG_execution starts, and since execution starts after BFS
+            # finishes (the complete DAG_info) TCP server cannot try to 
+            # read the DAG_info file before it is written. See BFS where
+            # it generates the DAG and then calls run() of the 
+            # DAG_executor_driver.
             global DAG_info
             # reads from default file './DAG_info.pickle'
             DAG_info = DAG_Info.DAG_info_fromfilename()
+            """
+
             global create_work_queue_lock
             create_work_queue_lock = Lock()
             global create_synchronization_object_lock
