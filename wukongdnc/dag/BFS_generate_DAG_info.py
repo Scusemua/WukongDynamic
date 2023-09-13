@@ -498,7 +498,7 @@ def generate_DAG_info():
     logger.info("")
 
     if (False):
-        DAG_info_partition_read = DAG_Info.DAG_info_fromfilename(file_name = "./DAG_info_Partition.pickle")
+        DAG_info_partition_read = DAG_Info.DAG_info_fromfilename(file_name_parm = "./DAG_info_Partition.pickle")
         
         DAG_map = DAG_info_partition_read.get_DAG_map()
         #all_fanin_task_names = DAG_info_partition_read.get_all_fanin_task_names()
@@ -786,6 +786,7 @@ def generate_DAG_info():
     DAG_info["DAG_version_number"] = DAG_version_number
     DAG_info["DAG_is_complete"] = DAG_is_complete
     DAG_info["DAG_number_of_tasks"] = Group_DAG_number_of_tasks
+    DAG_info["DAG_number_of_incomplete_tasks"] = 0
 
     file_name = "./DAG_info_Group.pickle"
     with open(file_name, 'wb') as handle:
@@ -863,7 +864,7 @@ def generate_DAG_info():
     logger.info("")
 
     if (False):
-        DAG_info_partition_read = DAG_Info.DAG_info_fromfilename(file_name = "./DAG_info_Group.pickle")
+        DAG_info_partition_read = DAG_Info.DAG_info_fromfilename(file_name_parm = "./DAG_info_Group.pickle")
         
         DAG_map = DAG_info_partition_read.get_DAG_map()
         #all_fanin_task_names = DAG_info_partition_read.get_all_fanin_task_names()

@@ -323,7 +323,7 @@ from multiprocessing import Process #, Manager
 import time
 import cloudpickle
 import socket
-#import os
+import os
 
 #from .DFS_visit import Node
 #from .DFS_visit import state_info
@@ -354,6 +354,7 @@ from .DAG_boundedbuffer_work_queue import Work_Queue_Client
 from .DAG_executor_create_multithreaded_multiprocessing_processes import create_multithreaded_multiprocessing_processes #, create_and_run_threads_for_multiT_multiP
 import copy
 from . import BFS_Shared
+import dask
 
 #from .BFS_Shared import pagerank_sent_to_processes, previous_sent_to_processes, number_of_children_sent_to_processes
 #from .BFS_Shared import number_of_parents_sent_to_processes, starting_indices_of_parents_sent_to_processes
@@ -892,7 +893,14 @@ def run():
             logger.error("Error: DAG_executor_driver: if using_workers then run_fanout_tasks_locally must also be true.")
 
     # reads from default file './DAG_info.pickle'
-    DAG_info = DAG_Info.DAG_info_fromfilename()
+    #file_name_foo = "./DAG_info_Group" + ".pickle"
+    logger.debug("dask version: " + str(dask.__version__))
+    file_name_foo = "./DAG_info" + ".pickle"
+    DAG_info = DAG_Info.DAG_info_fromfilename(file_name_foo)
+    logger.debug("success")
+    logging.shutdown()
+    os._exit(0)
+    #DAG_info = input_DAG_info()
     
     DAG_map = DAG_info.get_DAG_map()
     all_fanin_task_names = DAG_info.get_all_fanin_task_names()
@@ -1249,6 +1257,10 @@ def run():
         if run_all_tasks_locally and not use_multithreaded_multiprocessing:
             num_threads_created = 0
 
+        # dfined befre used - but we only use these for multiprocessing
+        completed_tasks_counter = None
+        completed_workers_counter = None
+
         if run_all_tasks_locally and not using_threads_not_processes:
             if not using_workers:
                 logger.error("[Error]: DAG_executor_driver: not using_workers but using processes.")
@@ -1257,8 +1269,6 @@ def run():
             # putting -1 in the work_queue - when worker gets -1 it puts -1 for the next worker. So execution
             # ends with -1 in the work queue, which is put there by the last worker to stop.)
     #rhc: counter
-    # completed_tasks_counter = CounterMP()
-    # completed_workers_counter = CounterMP()
             completed_tasks_counter = CounterMP()
             completed_workers_counter = CounterMP()
             # used by a logger for multiprocessing

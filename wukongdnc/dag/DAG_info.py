@@ -3,8 +3,8 @@ import cloudpickle
 import copy
 from .DAG_executor_constants import use_incremental_DAG_generation
 
-# called below in the ADG_info __init__ method
-def input_DAG_info(file_name):
+# called below in the DAG_info __init__ method
+def input_DAG_info(file_name = './DAG_info.pickle'):
     with open(file_name, 'rb') as handle:
         DAG_info = cloudpickle.load(handle)
     return DAG_info
@@ -131,8 +131,8 @@ class DAG_Info(object):
         self.DAG_leaf_task_inputs = None
 
     @classmethod
-    def DAG_info_fromfilename(cls, file_name = './DAG_info.pickle'):
-        file_name = file_name
+    def DAG_info_fromfilename(cls, file_name_parm = './DAG_info.pickle'):
+        file_name = file_name_parm
         DAG_info_dictionary = input_DAG_info(file_name)
         return cls(DAG_info_dictionary,file_name)
 
