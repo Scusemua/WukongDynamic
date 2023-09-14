@@ -898,8 +898,8 @@ def run():
     file_name_foo = "./DAG_info" + ".pickle"
     DAG_info = DAG_Info.DAG_info_fromfilename(file_name_foo)
     logger.debug("success")
-    logging.shutdown()
-    os._exit(0)
+    #logging.shutdown()
+    #os._exit(0)
     #DAG_info = input_DAG_info()
     
     DAG_map = DAG_info.get_DAG_map()
@@ -1246,9 +1246,9 @@ def run():
         #for start_state in X_work_queue.queue:
         #   print(start_state)
 
-        if run_all_tasks_locally and using_workers and not use_multithreaded_multiprocessing:
-            # keep list of threads/processes in pool so we can join() them
-            thread_proc_list = []
+        #if run_all_tasks_locally and using_workers and not use_multithreaded_multiprocessing:
+        # keep list of threads/processes in pool so we can join() them
+        thread_proc_list = []
 
         # count of threads/processes created. We will create DAG_executor_constants.py num_workers
         # if we are using_workers. We will create some number of threads if we are simulating the 
@@ -1558,6 +1558,11 @@ def run():
                     logger.debug("DAG_executor_driver: joining log_queue listener process.")
                     log_queue.put_nowait(None)
                     listener.join()
+
+                # Note: If we are using simukated lambdas, we are not
+                # using workers and we are using threads, so neither
+                # of the preceding two conditions hold. We do not 
+                # join lambdas.
             else:   
                 # using multithreaded with procs as workers; we have already joined the threads in each worker process
                 logger.debug("DAG_executor_driver: joining multithreaded_multiprocessing processes.")
@@ -1570,7 +1575,7 @@ def run():
         else:
             # We can have the result deposited in a bonded buffer sync object and 
             # withdraw it, in order to wait until all lambda DAG executors are done.
-            logger.debug("DAG_executor_driver: running (simulated) Lambdas - no joins, sleep instead.")
+            logger.debug("DAG_executor_driver: running (real) Lambdas - no joins, sleep instead.")
 
         #Note: To verify Results, see the code below.
 
@@ -1581,7 +1586,17 @@ def run():
         time.sleep(10.0)
         #print(BFS_Shared.pagerank_sent_to_processes)
 
-        close_all(websocket)
+        # if using tcp_server (i.e., storing objects remotely)
+        # clear the list of synchroization objects so we can 
+        # excute a DAG again without having to stop and then
+        # restart tcp_Server. (If we create synchronization objects
+        # on the fly, then we must start execution with 0 objects
+        # on the tcp_server; otherwise, objects will not be created 
+        # since they already exist, which will not work as, e.g.,
+        # exisiting "old" fanin/fanout objects will have already
+        # been triggered.
+        if not store_fanins_faninNBs_locally:
+            close_all(websocket)
                 
     print("DAG_executor_driver: DAG_Execution finished in %f seconds." % duration)
 

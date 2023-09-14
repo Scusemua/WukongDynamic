@@ -219,7 +219,7 @@ class Synchronizer(object):
                     
                 logger.debug("synchronizer_lambda: synchronize_sync: Calling synchronizeLambda(): block = true")
                 wait_for_result = False
-                return_value_ignored = self.synchronizeLambda(base_name, state, wait_for_result, **state.keyword_arguments)
+                _return_value_ignored = self.synchronizeLambda(base_name, state, wait_for_result, **state.keyword_arguments)
                     
                 # release lock here and in the else so we can release the lock in the lse befor the tcp send to the client
                 ##if is_select:
@@ -512,7 +512,7 @@ class Synchronizer(object):
         # execute might be in superclass MonitorSelect of BoundedBufferSelect  
 
 #1: pass state, wait_for_result, but we do not save state in this non-lambda version so pass None for state
-        return_value_ignored = execute(self._synchronizer, method_name, self._synchronizer, synchronizer_method, 
+        _return_value_ignored = execute(self._synchronizer, method_name, self._synchronizer, synchronizer_method, 
         result_buffer, None, wait_for_result, **kwargs)
  
         # unlock the synchronizer before bocking on withdaw(). Method withdraw() may not unblock until after a call to

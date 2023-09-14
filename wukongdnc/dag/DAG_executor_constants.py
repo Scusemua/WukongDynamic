@@ -20,7 +20,7 @@ run_all_tasks_locally = True         # vs run tasks remotely (in Lambdas)
 # machine on which the threads are executing.  If we are using multiprocessing
 # or Lambdas, this must be False. When False, the synch objects are stored
 # on the tcp_server or in InfiniX lambdas.
-store_fanins_faninNBs_locally = True    # vs remotely
+store_fanins_faninNBs_locally = False    # vs remotely
 # True when all FanIn and FanInNB objects are created locally or on the
 # tcp_server or IniniX all at once at the start of the DAG execution. If
 # False, synch objects are created on the fly, i.e, we execute create-and-fanin
@@ -38,7 +38,7 @@ using_workers = True
 # False when we are not using lambdas and are using multiprocesssing 
 using_threads_not_processes = True
 # When using_workers, this is how many threads or processes in the pool.
-num_workers = 1
+num_workers = 2
 # Use one or more worker processes (num_workers) with one or more threads
 use_multithreaded_multiprocessing = False
 num_threads_for_multithreaded_multiprocessing = 1
@@ -168,7 +168,7 @@ using_single_lambda_function = False
 # For PageRank
 # Indicates that we are computing pagerank and thus that the pagerank
 # options are active and pagerank asserts should hold
-compute_pagerank = True # True
+compute_pagerank = False # True
 
 # pagerank values will be saved so we can check them after execution
 # in DAG_executor_check_pagerank.py
@@ -205,6 +205,7 @@ incremental_DAG_deposit_interval = 2
 # rhc: ToDo: Make a bounded_buffer with a dynamic buffer 
 work_queue_size_for_incremental_DAG_generation_with_worker_processes =  2**10-1
 
+#assert:
 if not same_output_for_all_fanout_fanin and not compute_pagerank:
     logger.error("[Error]: Configuration error: if same_output_for_all_fanout_fanin"
         + " then must be computing pagerank.")
@@ -230,6 +231,7 @@ tasks_use_result_dictionary_parameter = compute_pagerank and True
 # tasks.
 use_shared_partitions_groups = compute_pagerank and False
 
+#assert:
 #if compute_pagerank and (use_shared_partitions_groups and not run_all_tasks_locally)):#
 if compute_pagerank and (use_shared_partitions_groups and not run_all_tasks_locally):
     logger.error("[Error]: Configuration error: if using a single shared array of"
@@ -246,6 +248,7 @@ use_page_rank_group_partitions = compute_pagerank and True
 # Use a struct of arrays to improve cache performance
 use_struct_of_arrays_for_pagerank = compute_pagerank and False
 
+#assert:
 if compute_pagerank and (use_struct_of_arrays_for_pagerank and not use_shared_partitions_groups):
     logger.error("[Error]: Configuration error: if use_struct_of_arrays_for_pagerank"
         + " then must use_shared_partitions_groups.")
