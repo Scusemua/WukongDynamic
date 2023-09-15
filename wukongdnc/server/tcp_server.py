@@ -90,14 +90,12 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 self.action_handlers[action](message = json_message)
             except ConnectionResetError as ex:
                 logger.error(ex)
-                logger.debug("Error in tcp_handler")
-                logger.debug(ex)
+                logger.error("Error in tcp_handler")
                 logger.error(traceback.format_exc())
                 return 
             except Exception as ex:
                 logger.error(ex)
-                logger.debug("Error in tcp_handler")
-                logger.debug(ex)
+                logger.error("Error in tcp_handler")
                 logger.error(traceback.format_exc())
 
     def _get_synchronizer_name(self, type_name = None, name = None):
@@ -902,6 +900,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
         logger.debug("tcp_server: synchronize_sync: Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
 
+        logger.debug("tcp_server: synchronize_sync: create_all_fanins_faninNBs_on_start:" 
+            + str(create_all_fanins_faninNBs_on_start))
         #synchronizer = tcp_server.synchronizers[synchronizer_name]
         if not create_all_fanins_faninNBs_on_start:
             # This is one lock for all creates; we could have one lock 
@@ -910,9 +910,10 @@ class TCPHandler(socketserver.StreamRequestHandler):
             # similar to wht InfniD does when it creates mapped functions
             # and their locks.
             with create_synchronization_object_lock:
+                logger.debug("get synch")
                 synchronizer = tcp_server.synchronizers.get(synchronizer_name,None)
                 if (synchronizer is None):
-                    
+                    logger.debug("got None")
                     #  On-the-fly: This part here is only for DAGs, not, e.g., Semaphores
                     #  For other typs of objects, we'l need their type so we'll need
                     #  to deal with it in DAG_executor? which will call createif (as it does now)

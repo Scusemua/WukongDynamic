@@ -20,13 +20,13 @@ run_all_tasks_locally = True         # vs run tasks remotely (in Lambdas)
 # machine on which the threads are executing.  If we are using multiprocessing
 # or Lambdas, this must be False. When False, the synch objects are stored
 # on the tcp_server or in InfiniX lambdas.
-store_fanins_faninNBs_locally = False    # vs remotely
+store_fanins_faninNBs_locally = False
 # True when all FanIn and FanInNB objects are created locally or on the
 # tcp_server or IniniX all at once at the start of the DAG execution. If
 # False, synch objects are created on the fly, i.e, we execute create-and-fanin
 # operations that create a synch object if it has not been created yet and then
 # execute a Fan_in operaation on the created object.
-create_all_fanins_faninNBs_on_start = True
+create_all_fanins_faninNBs_on_start = False
 
 # True if the DAG is executed by a "pool" of threads/processes. False, if we are
 # using Lambdas or we are using threads to simulate the use of Lambdas. In the latter
@@ -85,6 +85,14 @@ map_objects_to_lambda_functions = False
 # ToDo: integrate using_single_lambda_function with this mapping stuff. that
 # is, map names to lambda functions, and sometimes there is only one function.
 use_anonymous_lambda_functions = False
+# So if create on start then must map objects and cannot use anonymous functions.
+# If want to use anonymous functions then no create objects on statr and no mapping.
+
+# use a single lambda function to store all of the synchroization objects
+# to make an easy test case. This cannot be used when using the function 
+# simulators or using the DAG_orchestrator
+using_single_lambda_function = False
+
 # For all: remote objects, using select objects:
 # 1. run_all_tasks_locally = True, create objects on start = True:
 # TTFFTF: no trigger and no DAG_orchestrator, but map objects 
@@ -157,26 +165,21 @@ if sync_objects_in_lambdas_trigger_their_tasks:
         logging.shutdown()
         os._exit(0)
 
-# So if create on start then must map objects and cannot use anonymous functions.
-# If want to use anonymous functions then no create objects on statr and no mapping.
+##########################################
+###### PageRank settings start here ######
+##########################################
 
-# use a single lambda function to store all of the synchroization objects
-# to make an easy test case. This cannot be used when using the function 
-# simulators or using the DAG_orchestrator
-using_single_lambda_function = False
-
-# For PageRank
 # Indicates that we are computing pagerank and thus that the pagerank
 # options are active and pagerank asserts should hold
 compute_pagerank = False # True
+
+
+name_of_first_groupOrpartition_in_DAG = "PR1_1"
 
 # pagerank values will be saved so we can check them after execution
 # in DAG_executor_check_pagerank.py
 check_pagerank_output = compute_pagerank and True
 
-name_of_first_groupOrpartition_in_DAG = "PR1_1"
-
-# For PageRank:
 # a task that has multiple fanouts/faninNBs sends the same output
 # to all of them; otherwise, the task sends a possibly different 
 # output to each. This same_output_per_fanout_fanin flag is False
