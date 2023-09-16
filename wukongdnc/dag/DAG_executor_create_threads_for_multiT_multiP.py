@@ -17,7 +17,7 @@ logger.addHandler(ch)
 
 
 #def create_and_run_threads_for_multiT_multiP(process_name,payload,counter,log_queue,worker_configurer):
-def create_and_run_threads_for_multiT_multiP(process_name,payload,counter,log_queue,worker_configurer,
+def create_and_run_threads_for_multiT_multiP(process_name,payload,completed_tasks_counter,completed_workers_counter,log_queue,worker_configurer,
     shared_nodes,shared_map,shared_frontier_map,
     pagerank_sent_to_processes,previous_sent_to_processes,number_of_children_sent_to_processes,number_of_parents_sent_to_processes,starting_indices_of_parents_sent_to_processes,parents_sent_to_processes,IDs_sent_to_processes,):
     # create, start, and join the threads in the thread pool for a multi process
@@ -73,7 +73,7 @@ def create_and_run_threads_for_multiT_multiP(process_name,payload,counter,log_qu
             thread_name = process_name+"_thread"+str(num_threads_created_for_multiP+1)
             #thread = threading.Thread(target=DAG_executor.DAG_executor_processes, name=(thread_name), args=(payload,counter,log_queue,worker_configurer,))
             #thread = threading.Thread(target=DAG_executor.DAG_executor_processes, name=(thread_name), args=(payload,counter,logger,worker_configurer,))
-            thread = threading.Thread(target=DAG_executor.DAG_executor_processes, name=(thread_name), args=(payload,counter,logger,worker_configurer,
+            thread = threading.Thread(target=DAG_executor.DAG_executor_processes, name=(thread_name), args=(payload,completed_tasks_counter,completed_workers_counter,logger,worker_configurer,
                 shared_nodes,shared_map,shared_frontier_map,
                 pagerank_sent_to_processes,previous_sent_to_processes,number_of_children_sent_to_processes,number_of_parents_sent_to_processes,starting_indices_of_parents_sent_to_processes,parents_sent_to_processes,IDs_sent_to_processes,))
 

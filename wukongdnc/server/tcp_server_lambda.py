@@ -102,6 +102,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 logger.debug("[HANDLER] TCPHandler: Received message (size=%d bytes) from client %s with ID=%s" % (len(data), self.client_address[0], message_id))
                 action = json_message.get("op", None)
                 #tcp_server calls local method
+                logger.debug("[HANDLER] TCPHandler: for client with ID=" + message_id + " action is: " + action)
                 self.action_handlers[action](message = json_message)
 
             except ConnectionResetError as ex:

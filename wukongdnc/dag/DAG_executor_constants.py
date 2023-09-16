@@ -26,7 +26,7 @@ store_fanins_faninNBs_locally = False
 # False, synch objects are created on the fly, i.e, we execute create-and-fanin
 # operations that create a synch object if it has not been created yet and then
 # execute a Fan_in operaation on the created object.
-create_all_fanins_faninNBs_on_start = False
+create_all_fanins_faninNBs_on_start = True
 
 # True if the DAG is executed by a "pool" of threads/processes. False, if we are
 # using Lambdas or we are using threads to simulate the use of Lambdas. In the latter
@@ -41,28 +41,28 @@ using_threads_not_processes = True
 num_workers = 2
 # Use one or more worker processes (num_workers) with one or more threads
 use_multithreaded_multiprocessing = False
-num_threads_for_multithreaded_multiprocessing = 1
+num_threads_for_multithreaded_multiprocessing = 2
 
 # if using lambdas to store synch objects, run tcp_server_lambda.
 # if store in regular python functions instead of real Lambdas
 # set using_Lambda_Function_Simulator = True
-FanIn_Type = "DAG_executor_FanIn"
-FanInNB_Type = "DAG_executor_FanInNB"
-process_work_queue_Type = "BoundedBuffer"
-#FanIn_Type = "DAG_executor_FanIn_Select"
-#FanInNB_Type = "DAG_executor_FanInNB_Select"
-#process_work_queue_Type = "BoundedBuffer_Select"
+#FanIn_Type = "DAG_executor_FanIn"
+#FanInNB_Type = "DAG_executor_FanInNB"
+#process_work_queue_Type = "BoundedBuffer"
+FanIn_Type = "DAG_executor_FanIn_Select"
+FanInNB_Type = "DAG_executor_FanInNB_Select"
+process_work_queue_Type = "BoundedBuffer_Select"
 
 # if running real lambdas or storing synch objects in real lambdas:
 #   Set SERVERLESS_SYNC to True or False in wukongdnc constants !!!!!!!!!!!!!!
 #
 
 # Currently, this is for storing synch objects in simulated lambdas;
-store_sync_objects_in_lambdas = False
-using_Lambda_Function_Simulators_to_Store_Objects = False
+store_sync_objects_in_lambdas = True
+using_Lambda_Function_Simulators_to_Store_Objects = True
 sync_objects_in_lambdas_trigger_their_tasks = False
 # use orchestrator to invoke functions (e.g., when all fanin/fanout results are available)
-using_DAG_orchestrator = False
+using_DAG_orchestrator = True
 # map ech synch object by name to the function it resided in. if we create
 # all objects on start we msut map the objects to function so we can get the
 # function an onject is in. If we do not create objects on start then
@@ -70,7 +70,7 @@ using_DAG_orchestrator = False
 # we will just have to create the object in the funtion on the first function
 # invocation. If we do not map objects, then we will/can only invoke tge
 # function that contains the possibly pre-created object once. 
-map_objects_to_lambda_functions = False
+map_objects_to_lambda_functions = True
 # We can use an anonymous simulated function or a single named lambda deployment.
 # In this case, we can invoke the function only once snce we cannot
 # refer to a function instance by name, i.e., by index for simuated functions and 
@@ -98,9 +98,9 @@ using_single_lambda_function = False
 # TTFFTF: no trigger and no DAG_orchestrator, but map objects 
 # (anon is false) and create objects on start
 # variations:
-# - change D_O to T, 
-# - change map to F, and anon to T: Note: no function lock since anon caled only once
-# - change D_O to F, map F, anon T: Note: no function lock since anon caled only once
+# a. change D_O to T, 
+# b. change map to F, and anon to T: Note: no function lock since anon caled only once
+# c. change D_O to F, map F, anon T: Note: no function lock since anon caled only once
 #
 # 2. run_all_tasks_locally = False, create objects on start = True:
 # Note: not running real lambdas yet, so need TTT, i.e., not using threads
@@ -112,9 +112,9 @@ using_single_lambda_function = False
 #       and objects stored in lambdas or on server.
 # TTTTTF: trigger and DAG_orchestrator, map objects (anon is false) and create objects on start
 # variations:
-# - change map to F, and anon to T and create on start to F: Note: no function lock since anon called only once
-# - change DAG_orchestrator to F - so not going through enqueue so will
-#   create on fly in other places besides equeue.
+# a. change map to F, and anon to T and create on start to F: Note: no function lock since anon called only once
+# b. change DAG_orchestrator to F - so not going through enqueue so will
+#    create on fly in other places besides equeue.
 
 # Q: if map is F does anon have to be True? In theory no, use any named
 #    function to store any sync ojject. e.g., use DAG_executor_i for ith
@@ -173,11 +173,12 @@ if sync_objects_in_lambdas_trigger_their_tasks:
 # options are active and pagerank asserts should hold
 compute_pagerank = False # True
 
-
 name_of_first_groupOrpartition_in_DAG = "PR1_1"
 
 # pagerank values will be saved so we can check them after execution
 # in DAG_executor_check_pagerank.py
+
+#rhc: ToDo: requires a global pagerank result so need worker threads?
 check_pagerank_output = compute_pagerank and True
 
 # a task that has multiple fanouts/faninNBs sends the same output

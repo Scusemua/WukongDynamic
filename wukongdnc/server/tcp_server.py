@@ -10,11 +10,14 @@ from .synchronizer import Synchronizer
 from .util import decode_and_deserialize
 #from ..dag.DAG_executor_State import DAG_executor_State
 from .util import decode_and_deserialize, isTry_and_getMethodName, isSelect, make_json_serializable
-from ..dag.DAG_executor_constants import run_all_tasks_locally, process_work_queue_Type
-from ..dag.DAG_executor_constants import create_all_fanins_faninNBs_on_start
-from ..dag.DAG_executor_constants import FanInNB_Type, FanIn_Type, store_fanins_faninNBs_locally
-from ..dag.DAG_executor_constants import same_output_for_all_fanout_fanin
-from ..dag.DAG_executor_constants import using_workers, using_threads_not_processes
+import wukongdnc.dag.DAG_executor_constants
+
+#from ..dag.DAG_executor_constants import run_all_tasks_locally, process_work_queue_Type
+#from ..dag.DAG_executor_constants import create_all_fanins_faninNBs_on_start
+#from ..dag.DAG_executor_constants import FanInNB_Type, FanIn_Type, store_fanins_faninNBs_locally
+#from ..dag.DAG_executor_constants import same_output_for_all_fanout_fanin
+#from ..dag.DAG_executor_constants import using_workers, using_threads_not_processes
+
 from ..dag.DAG_info import DAG_Info
 from ..dag.DAG_executor_State import DAG_executor_State
 from ..dag.DAG_executor_constants import compute_pagerank, use_incremental_DAG_generation
@@ -70,7 +73,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 # use incremental DAG generation, we may eed to 
                 # get the newest version of the DAG from the 
                 # DAG_infoBuffer_monitor before we invoke a lambda
-                if not run_all_tasks_locally and read_DAG_info:
+                if not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally and read_DAG_info:
                     read_DAG_info = False
                     global DAG_info
                     DAG_info = DAG_Info.DAG_info_fromfilename()
@@ -311,7 +314,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
         # assert:
         if worker_needs_input:
-            if not run_all_tasks_locally:
+            if not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally:
                 logger.error("[Error: Internal Error: synchronize_process_faninNBs_batch: worker needs input but using lambdas.")
 
         #assert: if worker needs work then we should be using synch call so we can check the results for work
@@ -333,7 +336,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             # This matches the if statement in the work_loop.
             # Note: using_workers and not using_threads_not_processes means we 
             # will be calling process_faninNBs_batch (i.e., this method)
-            if not (not run_all_tasks_locally or (run_all_tasks_locally and using_workers and not using_threads_not_processes and not worker_needs_input)):
+            if not (not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally or (wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally and wukongdnc.dag.DAG_executor_constants.using_workers and not wukongdnc.dag.DAG_executor_constants.using_threads_not_processes and not worker_needs_input)):
                 logger.error("[Error: Internal Error: synchronize_process_faninNBs_batch: async_call but not (not run_all_tasks_locally).")
 
         # Note: If we are using lambdas, then we are not using workers (for now) so worker_needs_input
@@ -396,7 +399,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
             DAG_info = most_recently_generated_DAG_info
 
-        if not create_all_fanins_faninNBs_on_start:
+        if not wukongdnc.dag.DAG_executor_constants.create_all_fanins_faninNBs_on_start:
             # create the work_queue used by workers (when using worker pools
             # to execute the DAG instad of lambdas. When the workers are processes
             # the work queue is on the server so all the worker processes can access it.)
@@ -408,7 +411,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     msg_id = str(uuid.uuid4())	# for debugging
                     creation_message = {
                         "op": "create",
-                        "type": process_work_queue_Type,   # probably a bounded_buffer
+                        "type": wukongdnc.dag.DAG_executor_constants.process_work_queue_Type,   # probably a bounded_buffer
                         "name": "process_work_queue",
                         "state": make_json_serializable(dummy_state),	
                         "id": msg_id
@@ -418,7 +421,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                         + "create sync object process_work_queue on the fly.")
                     self.create_obj_but_no_ack_to_client(creation_message)
                 else:
-                    logger.debug("tcp_server: synchronize_process_faninNBs_batch: object " + 
+                    logger.debug("tcp_server: synchronize_process_faninNBs_batch: sync object " + 
                         "process_work_queue already created.")
 
             logger.debug("tcp_server: synchronize_process_faninNBs_batch: do synchronous_sync after create. ")
@@ -440,7 +443,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             # work queue. If we are using workers, we already used one fanout as a become task
             # so these fanouts can be put in the work queue.
             # If we are using lambdas, then we can use the parallel invoker to invoke the fanout lambdas
-            if run_all_tasks_locally:
+            if wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally:
                 # work_queue.deposit_all(list_of_work_queue_or_payload_fanout_values)
 
                 synchronizer = tcp_server.synchronizers[work_queue_name]
@@ -509,7 +512,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # as the task_inputs, instad of just using "S", which is the Dask way.
         output = None
         calling_task_name = ""
-        if not same_output_for_all_fanout_fanin:
+        if not wukongdnc.dag.DAG_executor_constants.same_output_for_all_fanout_fanin:
             output = DAG_exec_state.keyword_arguments['result']
             calling_task_name = DAG_exec_state.keyword_arguments['calling_task_name']
 
@@ -524,7 +527,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 + ": Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
             
             #synchronizer = tcp_server.synchronizers[synchronizer_name]
-            if not create_all_fanins_faninNBs_on_start:
+            if not wukongdnc.dag.DAG_executor_constants.create_all_fanins_faninNBs_on_start:
                 # This is one lock for all creates; we could have one lock 
                 # per object: get object names from DAG_nfo and create
                 # a map of object name to lock at the start of tcp_server,
@@ -547,8 +550,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
                                 
                             #dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = DAG_states[name]
                             dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = start_state_fanin_task
-                            dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
-                            if not run_all_tasks_locally:
+                            dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = wukongdnc.dag.DAG_executor_constants.store_fanins_faninNBs_locally
+                            if not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally:
                                 dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info
                             else:
                                 dummy_state_for_create_message.keyword_arguments['DAG_info'] = None
@@ -582,7 +585,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             #    # index of the corresponding size of the fanin/fanout
                             #    dummy_state_for_create_message.keyword_arguments['n'] = all_fanin_sizes[fanin_index]
                             #else:
-                            fanin_type = FanInNB_Type
+                            fanin_type = wukongdnc.dag.DAG_executor_constants.FanInNB_Type
                             #faninNB_index = all_faninNB_task_names.index(name)
                             #dummy_state_for_create_message.keyword_arguments['n'] = all_faninNB_sizes[faninNB_index]
                             dummy_state_for_create_message.keyword_arguments['n'] = faninNB_size
@@ -629,8 +632,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
                              #       + "DAG_states[name] != start_state_fanin_task")
                                 
                             dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = start_state_fanin_task
-                            dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
-                            if not run_all_tasks_locally:
+                            dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = wukongdnc.dag.DAG_executor_constants.store_fanins_faninNBs_locally
+                            if not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally:
                                 dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info
                             else:
                                 dummy_state_for_create_message.keyword_arguments['DAG_info'] = None
@@ -666,7 +669,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             #   dummy_state_for_create_message.keyword_arguments['n'] = -1
                             #else:
 
-                            fanin_type = FanInNB_Type
+                            fanin_type = wukongdnc.dag.DAG_executor_constants.FanInNB_Type
                             #faninNB_index = all_faninNB_task_names.index(name)
                             #dummy_state_for_create_message.keyword_arguments['n'] = all_faninNB_sizes[faninNB_index]
                             dummy_state_for_create_message.keyword_arguments['n'] = faninNB_size
@@ -709,7 +712,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             DAG_exec_state.keyword_arguments['fanin_task_name'] = name
             DAG_exec_state.keyword_arguments['start_state_fanin_task'] = start_state_fanin_task
    
-            if same_output_for_all_fanout_fanin:
+            if wukongdnc.dag.DAG_executor_constants.same_output_for_all_fanout_fanin:
                 # the result output and the callng task name have alrady 
                 # been set accordingly - same output to all faninNBS.
                 # Note: For DAG generation, for each state we execute a task and 
@@ -901,9 +904,9 @@ class TCPHandler(socketserver.StreamRequestHandler):
         logger.debug("tcp_server: synchronize_sync: Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
 
         logger.debug("tcp_server: synchronize_sync: create_all_fanins_faninNBs_on_start:" 
-            + str(create_all_fanins_faninNBs_on_start))
+            + str(wukongdnc.dag.DAG_executor_constants.create_all_fanins_faninNBs_on_start))
         #synchronizer = tcp_server.synchronizers[synchronizer_name]
-        if not create_all_fanins_faninNBs_on_start:
+        if not wukongdnc.dag.DAG_executor_constants.create_all_fanins_faninNBs_on_start:
             # This is one lock for all creates; we could have one lock 
             # per object: get object names from DAG_nfo and create
             # a map of object name to lock at the start of tcp_server,
@@ -1031,8 +1034,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             #DAG_exec_state.keyword_arguments['start_state_fanin_task'] = keyword_arguments['start_state_fanin_task']
 #rhc batch
                             dummy_state_for_create_message = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
-                            dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
-                            if not run_all_tasks_locally:
+                            dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = wukongdnc.dag.DAG_executor_constants.store_fanins_faninNBs_locally
+                            if not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally:
                                 dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info
                             else:
                                 dummy_state_for_create_message.keyword_arguments['DAG_info'] = None
@@ -1069,9 +1072,9 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             #else:
 #rhc batch
                             if state.keyword_arguments['fanin_type'] == "faninNB":
-                                fanin_type = FanInNB_Type
+                                fanin_type = wukongdnc.dag.DAG_executor_constants.FanInNB_Type
                             else: # fanin_type is "fanin"
-                                fanin_type = FanIn_Type
+                                fanin_type = wukongdnc.dag.DAG_executor_constants.FanIn_Type
                             # where in DAG_executor_constants:
                             #FanIn_Type = "DAG_executor_FanIn"
                             #FanInNB_Type = "DAG_executor_FanInNB"
@@ -1079,7 +1082,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             #faninNB_index = all_faninNB_task_names.index(name)
                             #dummy_state_for_create_message.keyword_arguments['n'] = all_faninNB_sizes[faninNB_index]
                             dummy_state_for_create_message.keyword_arguments['n'] = state.keyword_arguments['n']
-                            if not fanin_type == FanIn_Type:
+                            if not fanin_type == wukongdnc.dag.DAG_executor_constants.FanIn_Type:
                                 dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = state.keyword_arguments['start_state_fanin_task']
                             #assert:
                             #if not faninNB_size == all_faninNB_sizes[faninNB_index]:
@@ -1159,7 +1162,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         """
         logger.debug("[TCPSERVER] createif_and_synchronize_sync() called.")
 
-        if create_all_fanins_faninNBs_on_start:
+        if wukongdnc.dag.DAG_executor_constants.create_all_fanins_faninNBs_on_start:
             logger.error("[Error]: Internal Error: tcp_server: createif_and_synchronize_sync: "
                 + "called createif_and_synchronize_sync but create_all_fanins_faninNBs_on_start")
 
@@ -1401,7 +1404,7 @@ class TCPServer(object):
         self.server_address = ("0.0.0.0",25565)
         self.tcp_server = socketserver.ThreadingTCPServer(self.server_address, TCPHandler)
 
-        if not create_all_fanins_faninNBs_on_start or not run_all_tasks_locally:
+        if not wukongdnc.dag.DAG_executor_constants.create_all_fanins_faninNBs_on_start or not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally:
 #rhc: this could be not run_all_tasks_locally and not incremental DAg generation
 # since if we are using lambas and incemental then we will get the updated
 # DAG_info some other way, i.e., we will wait for new DAG and then a new
