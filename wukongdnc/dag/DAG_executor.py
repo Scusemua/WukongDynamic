@@ -2015,7 +2015,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 
                 incremental_dag_generation_with_groups = compute_pagerank and use_incremental_DAG_generation and use_page_rank_group_partitions
                 continued_task_state_info = DAG_map[DAG_executor_state.state]
-                logger.debug(thread_name + " DAG_executor_work_loop: incremental_dag_generation_with_groups: checking whether to inc num tasks executed"
+                logger.debug(thread_name + " DAG_executor_work_loop: checking whether to inc num tasks executed: incremental_dag_generation_with_groups: "
                     + str(incremental_dag_generation_with_groups)
                     + " continued_task: " + str(continued_task)
                     + " continued_task_state_info.task_name == PR1_1: " + str(continued_task_state_info.task_name == name_of_first_groupOrpartition_in_DAG)
@@ -2550,7 +2550,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # not the pagerank values for each node. The outputs
                     # can be empty since a partition/group can have no 
                     # fanouts/fanins/faninNBs/collapses.
-                    if check_pagerank_output and using_threads_not_processes:
+                    if check_pagerank_output:
                         set_pagerank_output(DAG_executor_state.state,output)
       
                 """ where:

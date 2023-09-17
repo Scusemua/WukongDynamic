@@ -4528,25 +4528,25 @@ if __name__ == '__main__':
     
         print_BFS_stats()
 
-        if check_pagerank_output:
-            if use_page_rank_group_partitions:
-                number_of_groups_or_partitions = len(groups)
-            else:
-                number_of_groups_or_partitions = len(partitions) 
-            verified = verify_pagerank_outputs(number_of_groups_or_partitions)
-            
-            #if not verified:
-            # might do somethig with this
+    if check_pagerank_output:
+        if use_page_rank_group_partitions:
+            number_of_groups_or_partitions = len(groups)
+        else:
+            number_of_groups_or_partitions = len(partitions) 
+        verified = verify_pagerank_outputs(number_of_groups_or_partitions)
+        
+        #if not verified:
+        # might do somethig with this
 
-            logger.debug("")
-            logger.debug("")
-            logger.debug("DAG_executor_outputs:")
-            pr_outputs = get_pagerank_outputs()
-            output_keys = list(pr_outputs.keys())
-            output_keys.sort()
-            sorted_pagerank_outputs = {i: pr_outputs[i] for i in output_keys}
-            for (k,v) in sorted_pagerank_outputs.items():
-                logger.debug(str(k) + ":"+str(v))
+        logger.debug("")
+        logger.debug("")
+        logger.debug("DAG_executor_outputs:")
+        pr_outputs = get_pagerank_outputs()
+        output_keys = list(pr_outputs.keys())
+        output_keys.sort()
+        sorted_pagerank_outputs = {i: pr_outputs[i] for i in output_keys}
+        for (k,v) in sorted_pagerank_outputs.items():
+            logger.debug(str(k) + ":"+str(v))
 
 
 """

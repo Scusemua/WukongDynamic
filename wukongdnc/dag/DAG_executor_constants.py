@@ -20,7 +20,7 @@ run_all_tasks_locally = True         # vs run tasks remotely (in Lambdas)
 # machine on which the threads are executing.  If we are using multiprocessing
 # or Lambdas, this must be False. When False, the synch objects are stored
 # on the tcp_server or in InfiniX lambdas.
-store_fanins_faninNBs_locally = False
+store_fanins_faninNBs_locally = True
 # True when all FanIn and FanInNB objects are created locally or on the
 # tcp_server or IniniX all at once at the start of the DAG execution. If
 # False, synch objects are created on the fly, i.e, we execute create-and-fanin
@@ -38,7 +38,7 @@ using_workers = True
 # False when we are not using lambdas and are using multiprocesssing 
 using_threads_not_processes = True
 # When using_workers, this is how many threads or processes in the pool.
-num_workers = 2
+num_workers = 1
 # Use one or more worker processes (num_workers) with one or more threads
 use_multithreaded_multiprocessing = False
 num_threads_for_multithreaded_multiprocessing = 2
@@ -46,23 +46,23 @@ num_threads_for_multithreaded_multiprocessing = 2
 # if using lambdas to store synch objects, run tcp_server_lambda.
 # if store in regular python functions instead of real Lambdas
 # set using_Lambda_Function_Simulator = True
-#FanIn_Type = "DAG_executor_FanIn"
-#FanInNB_Type = "DAG_executor_FanInNB"
-#process_work_queue_Type = "BoundedBuffer"
-FanIn_Type = "DAG_executor_FanIn_Select"
-FanInNB_Type = "DAG_executor_FanInNB_Select"
-process_work_queue_Type = "BoundedBuffer_Select"
+FanIn_Type = "DAG_executor_FanIn"
+FanInNB_Type = "DAG_executor_FanInNB"
+process_work_queue_Type = "BoundedBuffer"
+#FanIn_Type = "DAG_executor_FanIn_Select"
+#FanInNB_Type = "DAG_executor_FanInNB_Select"
+#process_work_queue_Type = "BoundedBuffer_Select"
 
 # if running real lambdas or storing synch objects in real lambdas:
 #   Set SERVERLESS_SYNC to True or False in wukongdnc constants !!!!!!!!!!!!!!
 #
 
 # Currently, this is for storing synch objects in simulated lambdas;
-store_sync_objects_in_lambdas = True
-using_Lambda_Function_Simulators_to_Store_Objects = True
+store_sync_objects_in_lambdas = False
+using_Lambda_Function_Simulators_to_Store_Objects = False
 sync_objects_in_lambdas_trigger_their_tasks = False
 # use orchestrator to invoke functions (e.g., when all fanin/fanout results are available)
-using_DAG_orchestrator = True
+using_DAG_orchestrator = False
 # map ech synch object by name to the function it resided in. if we create
 # all objects on start we msut map the objects to function so we can get the
 # function an onject is in. If we do not create objects on start then
@@ -70,7 +70,7 @@ using_DAG_orchestrator = True
 # we will just have to create the object in the funtion on the first function
 # invocation. If we do not map objects, then we will/can only invoke tge
 # function that contains the possibly pre-created object once. 
-map_objects_to_lambda_functions = True
+map_objects_to_lambda_functions = False
 # We can use an anonymous simulated function or a single named lambda deployment.
 # In this case, we can invoke the function only once snce we cannot
 # refer to a function instance by name, i.e., by index for simuated functions and 
@@ -102,7 +102,7 @@ using_single_lambda_function = False
 # b. change map to F, and anon to T: Note: no function lock since anon caled only once
 # c. change D_O to F, map F, anon T: Note: no function lock since anon caled only once
 #
-# 2. run_all_tasks_locally = False, create objects on start = True:
+# 2. run_all_tasks_locally = False (s0 using_workers = False), create objects on start = True:
 # Note: not running real lambdas yet, so need TTT, i.e., not using threads
 #       to simulate lambdas and not running real lambdas yet, so need to
 #       trigger lambdas, which means store objects in lambdas and they call
@@ -171,7 +171,7 @@ if sync_objects_in_lambdas_trigger_their_tasks:
 
 # Indicates that we are computing pagerank and thus that the pagerank
 # options are active and pagerank asserts should hold
-compute_pagerank = False # True
+compute_pagerank = True # True
 
 name_of_first_groupOrpartition_in_DAG = "PR1_1"
 
@@ -179,7 +179,7 @@ name_of_first_groupOrpartition_in_DAG = "PR1_1"
 # in DAG_executor_check_pagerank.py
 
 #rhc: ToDo: requires a global pagerank result so need worker threads?
-check_pagerank_output = compute_pagerank and True
+check_pagerank_output = compute_pagerank and run_all_tasks_locally and using_workers and using_threads_not_processes and True
 
 # a task that has multiple fanouts/faninNBs sends the same output
 # to all of them; otherwise, the task sends a possibly different 
@@ -246,7 +246,7 @@ if compute_pagerank and (use_shared_partitions_groups and not run_all_tasks_loca
 # For PageRank:
 # Execute page rank partitions or execute page rank groups
 # If True use groups else use partitions
-use_page_rank_group_partitions = compute_pagerank and True
+use_page_rank_group_partitions = compute_pagerank and False
 
 # For pagerank
 # Use a struct of arrays to improve cache performance
