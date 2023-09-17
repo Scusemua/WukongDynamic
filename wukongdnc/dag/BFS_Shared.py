@@ -15,6 +15,23 @@ ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
+#rhc: shm moved globals up
+shm_pagerank = None
+shm_previous = None
+shm_number_of_children = None
+shm_number_of_parents = None
+shm_starting_indices_of_parents = None
+shm_parents = None
+shm_IDs = None
+
+nonshared_pagerank = None
+nonshared_previous = None
+nonshared_number_of_children = None
+nonshared_number_of_parents = None
+nonshared_starting_indices_of_parents = None
+nonshared_parents = None
+nonshared_IDs = None
+
 pagerank_sent_to_processes = None
 previous_sent_to_processes = None
 number_of_children_sent_to_processes = None
@@ -83,7 +100,6 @@ def initialize_struct_of_arrays(num_nodes, np_arrays_size_for_shared_partition,
     # for j in (parent_index,num_parents) parent = parents[j]
     parents = np.full(np_arrays_size_for_shared_partition_parents, -3, dtype=np.intc)
 
-
 def initialize_struct_of_arrays_shared_memory(num_nodes, np_arrays_size_for_shared_partition,
         np_arrays_size_for_shared_partition_parents):
 
@@ -133,7 +149,6 @@ def generate_struct_of_arrays_shared_memory():
     global parents
     global IDs
 
-    
     global pagerank_sent_to_processes
     global previous_sent_to_processes
     global number_of_children_sent_to_processes
@@ -142,7 +157,6 @@ def generate_struct_of_arrays_shared_memory():
     global parents_sent_to_processes
     global IDs_sent_to_processes
     
-
     shm_pagerank = shared_memory.SharedMemory(create=True, size=nonshared_pagerank.nbytes)
     shm_previous = shared_memory.SharedMemory(create=True, size=nonshared_previous.nbytes)
     shm_number_of_children = shared_memory.SharedMemory(create=True, size=nonshared_number_of_children.nbytes)
@@ -169,7 +183,6 @@ def generate_struct_of_arrays_shared_memory():
 
     print(pagerank_sent_to_processes[:10])
 
-
     pagerank = None
     previous = None
     number_of_children = None
@@ -181,6 +194,13 @@ def generate_struct_of_arrays_shared_memory():
     #_process = Process(target=Foo, args=(shm_pagerank.name,shm_previous.name, ...etc))
 
 def close_shared_memory():
+    global shm_pagerank
+    global shm_previous
+    global shm_number_of_children
+    global shm_number_of_parents
+    global shm_starting_indices_of_parents
+    global shm_parents
+    global shm_IDs
 # Closes access to the shared memory from this instance. In order to ensure 
 # proper cleanup of resources, all instances should call close() once the 
 # instance is no longer needed. Note that calling close() 
@@ -195,6 +215,13 @@ def close_shared_memory():
     shm_IDs.close()
 
 def unlink_shared_memory():
+    global shm_pagerank
+    global shm_previous
+    global shm_number_of_children
+    global shm_number_of_parents
+    global shm_starting_indices_of_parents
+    global shm_parents
+    global shm_IDs
 # Requests that the underlying shared memory block be destroyed. In order to 
 # ensure proper cleanup of resources, unlink() should be called once (and 
 # only once) across all processes which have need for the shared memory block. 

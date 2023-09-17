@@ -535,6 +535,7 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
                 for element in BFS_Shared.nonshared_parents:
                     logger.debug(str(element)+",")
                 logger.debug("")
+                logger.debug("BFS_Shared.generate_struct_of_arrays_shared_memory()")
                 BFS_Shared.generate_struct_of_arrays_shared_memory()
         else:
             # See the comment above about these values

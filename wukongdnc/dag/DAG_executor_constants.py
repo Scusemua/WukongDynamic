@@ -20,7 +20,7 @@ run_all_tasks_locally = True         # vs run tasks remotely (in Lambdas)
 # machine on which the threads are executing.  If we are using multiprocessing
 # or Lambdas, this must be False. When False, the synch objects are stored
 # on the tcp_server or in InfiniX lambdas.
-store_fanins_faninNBs_locally = True
+store_fanins_faninNBs_locally = False
 # True when all FanIn and FanInNB objects are created locally or on the
 # tcp_server or IniniX all at once at the start of the DAG execution. If
 # False, synch objects are created on the fly, i.e, we execute create-and-fanin
@@ -36,9 +36,9 @@ create_all_fanins_faninNBs_on_start = True
 using_workers = True
 # True when we ae not using Lambas and tasks are executed by threads instead of processes. 
 # False when we are not using lambdas and are using multiprocesssing 
-using_threads_not_processes = True
+using_threads_not_processes = False
 # When using_workers, this is how many threads or processes in the pool.
-num_workers = 1
+num_workers = 2
 # Use one or more worker processes (num_workers) with one or more threads
 use_multithreaded_multiprocessing = False
 num_threads_for_multithreaded_multiprocessing = 2
@@ -233,7 +233,7 @@ tasks_use_result_dictionary_parameter = compute_pagerank and True
 # when the task suns, we have one global shared array with all the 
 # partitions/groups and the threads access that array when they do their
 # tasks.
-use_shared_partitions_groups = compute_pagerank and False
+use_shared_partitions_groups = compute_pagerank and True
 
 #assert:
 #if compute_pagerank and (use_shared_partitions_groups and not run_all_tasks_locally)):#
@@ -246,11 +246,11 @@ if compute_pagerank and (use_shared_partitions_groups and not run_all_tasks_loca
 # For PageRank:
 # Execute page rank partitions or execute page rank groups
 # If True use groups else use partitions
-use_page_rank_group_partitions = compute_pagerank and False
+use_page_rank_group_partitions = compute_pagerank and True
 
 # For pagerank
 # Use a struct of arrays to improve cache performance
-use_struct_of_arrays_for_pagerank = compute_pagerank and False
+use_struct_of_arrays_for_pagerank = compute_pagerank and True
 
 #assert:
 if compute_pagerank and (use_struct_of_arrays_for_pagerank and not use_shared_partitions_groups):

@@ -4512,7 +4512,7 @@ if __name__ == '__main__':
 # dag_executor, where dag executor does this close shared mem?
         run()
 
-        if use_shared_partitions_groups and use_struct_of_arrays_for_pagerank:
+        if use_struct_of_arrays_for_pagerank and use_shared_partitions_groups and not using_threads_not_processes:
             logger.debug("\nBFS:Close and unlink shared memory.")
             try:
                 BFS_Shared.close_shared_memory()
