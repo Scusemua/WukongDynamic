@@ -3,10 +3,10 @@ import cloudpickle
 #import numpy as np
 from .BFS_Partition_Node import Partition_Node
 from . import BFS_Shared
-from .DAG_executor_constants import use_page_rank_group_partitions
+from .DAG_executor_constants import use_page_rank_group_partitions, using_threads_not_processes
 
 logger = logging.getLogger(__name__)
-
+"""
 logger.setLevel(logging.DEBUG)
 #logger.setLevel(logging.INFO)
 formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
@@ -15,6 +15,7 @@ ch.setLevel(logging.DEBUG)
 #ch.setLevel(logging.INFO)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
+"""
 
 debug_pagerank = True
 
@@ -404,17 +405,25 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
                     PageRank_output[partition_or_group_name] = output_list
         #if (debug_pagerank):
         print("XXPageRank output tuples for " + task_file_name + ":")
+        #if not using_threads_not_processes:
+        #    logger.debug("XXPageRank output tuples for " + task_file_name + ":")
         print_val = ""
         for k, v in PageRank_output.items():
             #print_val += "(%s, %s) " % (k, v)
             print((k, v),end=" ")
-        #print(print_val)
+        #if not using_threads_not_processes:
+        #    logger.debug(print_val)
+
         print()
         print()
 
         print("XXPageRank result for " + task_file_name + ":", end=" ")
+        #if not using_threads_not_processes:
+        #    logger.debug("XXPageRank result for " + task_file_name + ":", end=" ")
+
         for i in range(num_nodes_for_pagerank_computation):
             if not partition_or_group[i].isShadowNode:
+                #print_val += "%s : %s " % (k, v)
                 print(str(partition_or_group[i].ID) + ":" + str(partition_or_group[i].pagerank),end=" ")
         print()
         print()
@@ -485,6 +494,10 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
         num_shadow_nodes = position_size_tuple[2]
 
         debug_pagerank = True
+
+        if (debug_pagerank):
+            logger.debug("PageRank_Function_Shared: task_file_name: " 
+                + task_file_name)
 
         if (debug_pagerank):
             logger.debug("PageRank_Function output partition_or_group (node:parents):")
@@ -1100,7 +1113,7 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
 # New version of set output above for fast pagerank
 
         #if (debug_pagerank):
-        print("PageRank output tuples for " + task_file_name + ":")
+        print("XXPageRank output tuples for " + task_file_name + ":")
         print_val = ""
         for k, v in PageRank_output.items():
             #print_val += "(%s, %s) " % (k, v)

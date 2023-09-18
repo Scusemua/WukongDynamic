@@ -1078,6 +1078,8 @@ def run():
                             dict_of_results[task_name] = task_inputs
                             work_tuple = (state,dict_of_results)
                             list_of_work_queue_values.append(work_tuple)
+                            logger.debug("DAG_executor_driver: list_of_work_queue_values:"
+                                + str(list_of_work_queue_values))
                             #process_work_queue.put(work_tuple)
                             #process_work_queue.put(state)
                         # batch put work in remote work_queue

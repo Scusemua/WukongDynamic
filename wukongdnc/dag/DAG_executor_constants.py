@@ -250,7 +250,7 @@ use_page_rank_group_partitions = compute_pagerank and True
 
 # For pagerank
 # Use a struct of arrays to improve cache performance
-use_struct_of_arrays_for_pagerank = compute_pagerank and True
+use_struct_of_arrays_for_pagerank = compute_pagerank and False
 
 #assert:
 if compute_pagerank and (use_struct_of_arrays_for_pagerank and not use_shared_partitions_groups):

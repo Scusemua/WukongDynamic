@@ -58,13 +58,14 @@ from .DAG_executor_output_checker import set_pagerank_output
 from .DAG_executor_constants import check_pagerank_output
 
 logger = logging.getLogger(__name__)
-
+"""
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
+"""
 
 """
 #rhc shared
@@ -2255,7 +2256,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             #if incremental_dag_generation_with_groups and continued_task and (
             #    (DAG_executor_state.state == 1 or (not state_info.task_name in DAG_info.get_DAG_leaf_tasks()))
             #):
-            logger.debug(thread_name + " DAG_executor_work_loop: incremental_dag_generation_with_groups: checking whether to execute task"
+            logger.debug(thread_name + " DAG_executor_work_loop: checking whether to execute task:"
+                + " incremental_dag_generation_with_groups: "
                 + str(incremental_dag_generation_with_groups)
                 + " continued_task: " + str(continued_task)
                 + " state_info.task_name == PR1_1: " + str(state_info.task_name == name_of_first_groupOrpartition_in_DAG)

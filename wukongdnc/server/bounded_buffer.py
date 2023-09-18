@@ -6,13 +6,14 @@ import time
 
 import logging 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
-
+"""
+logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
 ch = logging.StreamHandler()
-ch.setLevel(logging.ERROR)
+ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
+"""
 
 
 # Bounded Buffer
@@ -136,11 +137,12 @@ class BoundedBuffer(MonitorSU):
         super().enter_monitor(method_name = "withdraw")
         logger.debug("withdraw() entered monitor, len(self._notFull) ="+str(len(self._notFull))+", self._capacity="+str(self._capacity))
         logger.debug("withdraw() entered monitor, len(self._notEmpty) ="+str(len(self._notEmpty))+", self._capacity="+str(self._capacity))
+        logger.debug("self._fullSlots="+str(self._fullSlots))
         value = 0
         if self._fullSlots==0:
             self._notEmpty.wait_c()
         value=self._buffer[self._out]
-        #logger.debug(" withdraw got " + value + " self._out: " + str(self._out))
+        logger.debug(" withdraw got " + str(value) + ", self._out: " + str(self._out))
         self._out=(self._out+1) % int(self._capacity)
         self._fullSlots-=1
         restart = False
