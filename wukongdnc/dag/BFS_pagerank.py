@@ -405,30 +405,38 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
                     PageRank_output[partition_or_group_name] = output_list
         #if (debug_pagerank):
         print("XXPageRank output tuples for " + task_file_name + ":")
-        #if not using_threads_not_processes:
-        #    logger.debug("XXPageRank output tuples for " + task_file_name + ":")
+        if not using_threads_not_processes:
+            logger.debug("XXPageRank output tuples for " + task_file_name + ": ")
         print_val = ""
         for k, v in PageRank_output.items():
-            #print_val += "(%s, %s) " % (k, v)
+            if not using_threads_not_processes:
+                print_val += "(%s, %s) " % (k, v)
             print((k, v),end=" ")
-        #if not using_threads_not_processes:
-        #    logger.debug(print_val)
+        if not using_threads_not_processes:
+            logger.debug(print_val)
+            logger.debug("")
+            logger.debug("")
 
         print()
         print()
 
         print("XXPageRank result for " + task_file_name + ":", end=" ")
-        #if not using_threads_not_processes:
-        #    logger.debug("XXPageRank result for " + task_file_name + ":", end=" ")
-
+        if not using_threads_not_processes:
+            logger.debug("XXPageRank result for " + task_file_name + ": ")
+        print_val = ""
         for i in range(num_nodes_for_pagerank_computation):
             if not partition_or_group[i].isShadowNode:
-                #print_val += "%s : %s " % (k, v)
+                if not using_threads_not_processes:
+                    print_val += "%s:%s " % (partition_or_group[i].ID, partition_or_group[i].pagerank)
                 print(str(partition_or_group[i].ID) + ":" + str(partition_or_group[i].pagerank),end=" ")
+        if not using_threads_not_processes:
+            logger.debug(print_val)
+            logger.debug("")
+            logger.debug("")
         print()
         print()
         """
-        logger.debug("PageRank result for " + task_file_name + ":")
+        logger.debug("XXPageRank result for " + task_file_name + ":")
         for i in range(num_nodes_for_pagerank_computation):
             if not partition_or_group[i].isShadowNode:
                 print(str(partition_or_group[i].ID) + ":" + str(partition_or_group[i].pagerank))
@@ -1114,16 +1122,28 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
 
         #if (debug_pagerank):
         print("XXPageRank output tuples for " + task_file_name + ":")
+        if not using_threads_not_processes:
+            logger.debug("XXPageRank output tuples for " + task_file_name + ": ")
+
         print_val = ""
         for k, v in PageRank_output.items():
-            #print_val += "(%s, %s) " % (k, v)
+            if not using_threads_not_processes:
+                print_val += "(%s, %s) " % (k, v)
             print((k, v),end=" ")
-        #print(print_val)
+        if not using_threads_not_processes:
+            logger.debug(print_val)
+            logger.debug("")
+            logger.debug("")        
+            
         print()
         print()
 
         print("XXPageRank result for " + task_file_name + ":", end=" ")
+        if not using_threads_not_processes:
+            logger.debug("XXPageRank result for " + task_file_name + ": ")
+
         #rhc shared
+        print_val = ""
         for node_index in range (starting_position_in_partition_group,starting_position_in_partition_group+num_nodes_for_pagerank_computation):
         #for i in range(num_nodes_for_pagerank_computation):
             #rhc shared
@@ -1132,10 +1152,18 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
                 #rhc shared
                 #print(str(partition_or_group[i].ID) + ":" + str(partition_or_group[i].pagerank),end=" ")
                 print(str(shared_nodes[node_index].ID) + ":" + str(shared_nodes[node_index].pagerank),end=" ")
+                if not using_threads_not_processes:
+                    print_val += "%s:%s " % (shared_nodes[node_index].ID, shared_nodes[node_index].pagerank)
+
+        if not using_threads_not_processes:
+            logger.debug(print_val)
+            logger.debug("")
+            logger.debug("")
+
         print()
         print()
         """
-        logger.debug("PageRank result for " + task_file_name + ":")
+        logger.debug("XXPageRank result for " + task_file_name + ":")
         for i in range(num_nodes_for_pagerank_computation):
             if not partition_or_group[i].isShadowNode:
                 print(str(partition_or_group[i].ID) + ":" + str(partition_or_group[i].pagerank))

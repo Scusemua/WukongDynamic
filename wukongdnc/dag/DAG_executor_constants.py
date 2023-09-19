@@ -36,7 +36,7 @@ create_all_fanins_faninNBs_on_start = True
 using_workers = True
 # True when we ae not using Lambas and tasks are executed by threads instead of processes. 
 # False when we are not using lambdas and are using multiprocesssing 
-using_threads_not_processes = False
+using_threads_not_processes = True
 # When using_workers, this is how many threads or processes in the pool.
 num_workers = 2
 # Use one or more worker processes (num_workers) with one or more threads
@@ -246,11 +246,11 @@ if compute_pagerank and (use_shared_partitions_groups and not run_all_tasks_loca
 # For PageRank:
 # Execute page rank partitions or execute page rank groups
 # If True use groups else use partitions
-use_page_rank_group_partitions = compute_pagerank and True
+use_page_rank_group_partitions = compute_pagerank and False
 
 # For pagerank
 # Use a struct of arrays to improve cache performance
-use_struct_of_arrays_for_pagerank = compute_pagerank and False
+use_struct_of_arrays_for_pagerank = compute_pagerank and True
 
 #assert:
 if compute_pagerank and (use_struct_of_arrays_for_pagerank and not use_shared_partitions_groups):
