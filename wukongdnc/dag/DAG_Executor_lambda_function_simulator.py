@@ -376,6 +376,8 @@ class DAG_orchestrator:
 			# or the collected fan_in results (for the caller that becomes the excutor of the fanin task)
 			# For faninNB, no results are returned so the return value is 0.
 
+			return_value = None
+			
 			if map_objects_to_lambda_functions:
 				# Do not allow parallel invocations. We may invoke the function
 				# more than once, e.g., two or more sync ojects mapped to the

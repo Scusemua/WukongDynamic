@@ -6,6 +6,7 @@ from multiprocessing import shared_memory
 from .DAG_executor_constants import use_page_rank_group_partitions, using_threads_not_processes
 
 logger = logging.getLogger(__name__)
+"""
 logger.setLevel(logging.DEBUG)
 #logger.setLevel(logging.INFO)
 formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
@@ -14,6 +15,7 @@ ch.setLevel(logging.DEBUG)
 #ch.setLevel(logging.INFO)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
+"""
 
 #rhc: shm moved globals up
 shm_pagerank = None

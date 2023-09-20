@@ -36,7 +36,7 @@ create_all_fanins_faninNBs_on_start = True
 using_workers = True
 # True when we ae not using Lambas and tasks are executed by threads instead of processes. 
 # False when we are not using lambdas and are using multiprocesssing 
-using_threads_not_processes = True
+using_threads_not_processes = False
 # When using_workers, this is how many threads or processes in the pool.
 num_workers = 2
 # Use one or more worker processes (num_workers) with one or more threads
@@ -90,7 +90,8 @@ use_anonymous_lambda_functions = False
 
 # use a single lambda function to store all of the synchroization objects
 # to make an easy test case. This cannot be used when using the function 
-# simulators or using the DAG_orchestrator
+# simulators or using the DAG_orchestrator.
+# Using this is ToDo - search for it and see comments
 using_single_lambda_function = False
 
 # For all: remote objects, using select objects:

@@ -155,6 +155,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         thread_name = threading.current_thread().name
         # pass thru client message to Lambda
         payload = {"json_message": json_message}
+        return_value = None
         # return_value = invoke_lambda_synchronously(payload = payload, function_name = function_name)
         if using_Lambda_Function_Simulators_to_Store_Objects:
 # ToDo: when out each fanin/faninNb/fanout in simulated lambda, need to use the name from json_message
@@ -506,6 +507,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # then we will process the fanouts here.
         # Todo: we may use the parallel invoker to do the fanouts when using Wukong stylr
         # fanouts.
+        fanouts = None
         if sync_objects_in_lambdas_trigger_their_tasks:
             fanouts = DAG_exec_state.keyword_arguments['fanouts']
 
@@ -621,6 +623,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     "id": msg_id
                 }
 
+                control_message = None
 #rhc: ToDo: not create on start
                 if not create_all_fanins_faninNBs_on_start:
                     dummy_state_for_create_message = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()))
@@ -840,6 +843,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             # The calls to process_faninNB_batch when we are using real lambda can be asynchronous since
             # the caller does not need to wait for the return value, which will be 0 indicating there is 
             # nothing to do.)
+            returned_state = None
             if using_Lambda_Function_Simulators_to_Store_Objects and using_DAG_orchestrator:
                 logger.info("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": calling infiniD.enqueue(message)."
                     + " start_state_fanin_task: " + str(start_state_fanin_task))
@@ -1149,6 +1153,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 # if not creatin objects at start, create the create_message
                 # to be given to create() and the control message to b given
                 # to createif_and_synchronize_sync
+                control_message = None
                 if not create_all_fanins_faninNBs_on_start:
                     dummy_state_for_create_message = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()))
                     # passing to the created faninNB object:
@@ -1309,7 +1314,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         the message from name and do the op as usual.
 
         """
-
+        control_message = None
         if not create_all_fanins_faninNBs_on_start:
             dummy_state_for_create_message = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()))
             # passing to the created fanin or faninNB object:
@@ -1456,6 +1461,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         calling_task_name = DAG_exec_state.keyword_arguments['calling_task_name'] 
         task_name = message["name"]
 
+        control_message = None
         if not create_all_fanins_faninNBs_on_start:
             dummy_state_for_create_message = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()))
             # passing to the created faninNB object:

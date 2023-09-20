@@ -39,7 +39,7 @@ To generate the necessary pickle file, execute the following command:
 Next, to run the local experiment itself, execute the following commands (in order):
 'python -m wukongdnc.server.tcp_server'
 `python -m wukongdnc.dag.DAG_executor_driver`
-`python -m wukongdnc.dag.BFS`
+`python -m wukongdnc.dag.BFS`    # for running pagerank
 
 Note: To capture all output in windows DOS box: command > logfile 2>&1
 (STDIN is file descriptor #0. STDOUT is file descriptor #1. STDERR is file descriptor #2. Just as "command > file" redirects STDOUT to a file, you may also redirect arbitrary file descriptors to each other. The ">&" operator redirects between file descriptors. So, "2 >& 1" redirects all STDERR output to STDOUT.)
