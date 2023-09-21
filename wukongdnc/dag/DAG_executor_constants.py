@@ -20,13 +20,13 @@ run_all_tasks_locally = True         # vs run tasks remotely (in Lambdas)
 # machine on which the threads are executing.  If we are using multiprocessing
 # or Lambdas, this must be False. When False, the synch objects are stored
 # on the tcp_server or in InfiniX lambdas.
-store_fanins_faninNBs_locally = False
+store_fanins_faninNBs_locally = True
 # True when all FanIn and FanInNB objects are created locally or on the
 # tcp_server or IniniX all at once at the start of the DAG execution. If
 # False, synch objects are created on the fly, i.e, we execute create-and-fanin
 # operations that create a synch object if it has not been created yet and then
 # execute a Fan_in operaation on the created object.
-create_all_fanins_faninNBs_on_start = True
+create_all_fanins_faninNBs_on_start = False
 
 # True if the DAG is executed by a "pool" of threads/processes. False, if we are
 # using Lambdas or we are using threads to simulate the use of Lambdas. In the latter
@@ -36,7 +36,7 @@ create_all_fanins_faninNBs_on_start = True
 using_workers = True
 # True when we ae not using Lambas and tasks are executed by threads instead of processes. 
 # False when we are not using lambdas and are using multiprocesssing 
-using_threads_not_processes = False
+using_threads_not_processes = True
 # When using_workers, this is how many threads or processes in the pool.
 num_workers = 2
 # Use one or more worker processes (num_workers) with one or more threads
@@ -196,14 +196,42 @@ check_pagerank_output = compute_pagerank and run_all_tasks_locally and using_wor
 same_output_for_all_fanout_fanin = not compute_pagerank
 
 # True if DAG generation and DAG_execution are overlapped. 
-use_incremental_DAG_generation = compute_pagerank and False
+use_incremental_DAG_generation = compute_pagerank and True
 
 # generate next DAG when num_incremental_DAGs_generated mod 
 # incremental_interval == 0. For example, if we set this
 # value to 2, after we generate the first DAG, with a complete 
 # partition 1 and an incomplete partition 2, we will generate 
 # a new DAG when we process partition 4 (2+2) then 6, 8, etc.
+# Note: We publish the first DAG, which is a complete DAG with 
+# one partition or a DAG with a complete first partition and 
+# and incomplete second partition, then we generate the 
+# next DAG with complete paritions 1 and 2 and incomplete
+# partition 3 and we increment num_DAGs_generated to 1. we will 
+# publish the next generated DAG again when num_DAGs_generated mod
+# incremental_DAG_deposit_interval is 0. So if incremental_DAG_deposit_interval
+# is 2, we will not publish the DAg with complete partitions 1 and 2
+# and incomplete partition 3 (since 1 mod 2 is not 0), but we will
+# publish the next DAG generated which has complete parititions 1, 2, and 3
+# and incomplete partition 4; so every other generated DAG is published,
+# Note: when the generated DAG is complete, we publish it regardless
+# of whether or not we have completed the interval. This means that 
+# if are using an interval that is >= than the number of partitions 
+# in the DAG (minus 2), then we are effectively doing non-incremental DAG
+# generation since the DAG will be completely generated before the 
+# interval is completed. (Of couse, the first DAG published is the 
+# incomplete DAG with complete partitin 1 and incomplete partition 
+# 2, but the next DAG publshed will be the complete DAG, which is 
+# the last DAG generated.)
 incremental_DAG_deposit_interval = 2
+
+#assert:
+if incremental_DAG_deposit_interval < 1:
+    logger.error("[Error]: Configuration error: incremental_DAG_deposit_interval"
+         + " must be >= 1. We mod by incremental_DAG_deposit_interval so it"
+         + " cannot be 0 and using a negative number makes no sense.")
+    logging.shutdown()
+    os._exit(0)
 
 #rhc: ToDo: what should this be? Used as capacity of boundedbuffer
 # Note: Pythin has no max Int
@@ -234,7 +262,7 @@ tasks_use_result_dictionary_parameter = compute_pagerank and True
 # when the task suns, we have one global shared array with all the 
 # partitions/groups and the threads access that array when they do their
 # tasks.
-use_shared_partitions_groups = compute_pagerank and True
+use_shared_partitions_groups = compute_pagerank and False
 
 #assert:
 #if compute_pagerank and (use_shared_partitions_groups and not run_all_tasks_locally)):#
@@ -247,11 +275,11 @@ if compute_pagerank and (use_shared_partitions_groups and not run_all_tasks_loca
 # For PageRank:
 # Execute page rank partitions or execute page rank groups
 # If True use groups else use partitions
-use_page_rank_group_partitions = compute_pagerank and False
+use_page_rank_group_partitions = compute_pagerank and True
 
 # For pagerank
 # Use a struct of arrays to improve cache performance
-use_struct_of_arrays_for_pagerank = compute_pagerank and True
+use_struct_of_arrays_for_pagerank = compute_pagerank and False
 
 #assert:
 if compute_pagerank and (use_struct_of_arrays_for_pagerank and not use_shared_partitions_groups):
