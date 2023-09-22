@@ -40,8 +40,12 @@ Group_DAG_leaf_tasks = []
 Group_DAG_leaf_task_start_states = []
 # no inputs for leaf tasks
 Group_DAG_leaf_task_inputs = []
-Group_DAG_map = {}
+# maps task name to an integer ID for that task
 Group_DAG_states = {}
+# maps integer ID of a task to the state for that task; the state 
+# contains the fanin/fanout information for the task.
+Group_DAG_map = {}
+# references to the code for the tasks
 Group_DAG_tasks = {}
 
 # version of DAG, incremented for each DAG generated
@@ -56,9 +60,14 @@ Group_DAG_version_number = 0
 ## save the actual name "PR2_1L" and retrive it when we process PR3_1
 #Group_DAG_previous_partition_name = "PR1_1"
 
+# number of tasks in the DAG
 Group_DAG_number_of_tasks = 0
+# the tasks in the last partition of a generated DAG may be incomplete,
+# which means we cannot execute these tasks until the next DAG is 
+# incrementally published.
 Group_DAG_number_of_incomplete_tasks = 0
 
+# used to generate IDs
 Group_next_state = 1
 
 # Called by generate_DAG_info_incremental_partitions below to generate 
@@ -88,6 +97,7 @@ def generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks):
     global Group_DAG_number_of_tasks
     global Group_DAG_number_of_incomplete_tasks
 
+    # used for debugging
     show_generated_DAG_info = True
 
     """
@@ -108,6 +118,7 @@ def generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks):
 
     """
     
+    # we construct a dictionary of DAG information 
     logger.info("")
     DAG_info_dictionary = {}
     DAG_info_dictionary["DAG_map"] = Group_DAG_map
@@ -123,12 +134,28 @@ def generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks):
     DAG_info_dictionary["all_faninNB_sizes"] = Group_all_faninNB_sizes
     DAG_info_dictionary["DAG_tasks"] = Group_DAG_tasks
 
+    # These key/value pairs were added for incremental DAG generation.
+
     # If there is only one partition in the DAG then it is complete and is version 1.
     # It is returned above. Otherwise, version 1 is the DAG_info with partitions
     # 1 and 2, where 1 is complete and 2 is complete or incomplete.
     Group_DAG_version_number += 1
+        # if the last partition has incomplete information, then the DAG is 
+    # incomplete. When partition i is added to the DAG, it is incomplete
+    # unless it is the last partition in the DAG). It becomes complete
+    # when we add partition i+1 to the DAG. (So partition i needs information
+    # that is generated when we create partition i+1. The  
+    # nodes of partition i can ony have children that are in partition 
+    # i or partition i+1. We need to know partition i's children
+    # in order for partition i to be complete. Partition i's childen
+    # are discovered while generating partition i+1) 
     Group_DAG_is_complete = not to_be_continued # to_be_continued is a parameter
+        # number of tasks in the current incremental DAG, including the
+    # incomplete last partition, if any.
     Group_DAG_number_of_tasks = len(Group_DAG_tasks)
+    # For partitions, this is at most 1. When we are generating a DAG
+    # of groups, there may be many groups in the incomplete last
+    # partition and they will all be considered to be incomplete.
     Group_DAG_number_of_incomplete_tasks = number_of_incomplete_tasks
     DAG_info_dictionary["DAG_version_number"] = Group_DAG_version_number
     DAG_info_dictionary["DAG_is_complete"] = Group_DAG_is_complete
@@ -151,6 +178,7 @@ def generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks):
     num_faninNBs = len(Group_all_faninNB_task_names)
     num_collapse = len(Group_all_collapse_task_names)
 
+    # for debugging
     if show_generated_DAG_info:
         logger.info("DAG_map:")
         for key, value in Group_DAG_map.items():
@@ -211,8 +239,7 @@ def generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks):
         logger.info(Group_DAG_number_of_incomplete_tasks)
         logger.info("")
 
-        
-
+    # for debugging
     # read file file_name_incremental just written and display contents 
     if False:
         DAG_info_Group_read = DAG_Info.DAG_info_fromfilename(file_name_incremental)
@@ -309,6 +336,7 @@ DAG_info object is in its DAG_info_dictionary.
         return cls(DAG_info_dictionary)
 """
 
+# called by bfs()
 def generate_DAG_info_incremental_groups(current_partition_name,
     current_partition_number, groups_of_current_partition,
     groups_of_partitions,
@@ -340,7 +368,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
     global Group_DAG_previous_partition_name
     global Group_DAG_number_of_tasks
 
-    # state for next group added to DAG
+    # used to generate IDs; state for next group added to DAG
     global Group_next_state 
 
     logger.info("generate_DAG_info_incremental_groups: to_be_continued: " + str(to_be_continued))
@@ -395,14 +423,14 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 + " number of groups in first partition is not 1 it is "
                 + str(len(groups_of_current_partition)))
         #assert:
-        # Noet: Group_next_state is inited to 1. as is current_partition_state
+        # Note: Group_next_state is inited to 1. as is current_partition_state
         if not current_partition_state == Group_next_state:
             logger.error("[Error]: Internal error:generate_DAG_info_incremental_groups"
                 + " current_partition_state for first partition is not equal to"
                 + " Group_next_state - both should be 1.")
           
         name_of_first_group_in_DAG = groups_of_current_partition[0]
-        # a list of groups that have a fanot/fanin/collapse to this
+        # a list of groups that have a fanout/fanin/collapse to this
         # group. (They "send" to this group which "receives".)
         senders = Group_receivers.get(name_of_first_group_in_DAG)
         # Note: the groups in a partition that starts a new connected component (which is 
@@ -427,7 +455,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         Group_DAG_leaf_task_inputs.append(task_inputs)
 
         # we will check that current_group_name is in leaf_tasks_of_groups
-        # upon return to BFS()
+        # upon return to BFS() (when we see tht leaf tasks have been added to the DAG)
 
         fanouts = []
         faninNBs = []
@@ -450,17 +478,25 @@ def generate_DAG_info_incremental_groups(current_partition_name,
 
         # identify the function that will be used to execute this task
         if not use_shared_partitions_groups:
-            # partition read from a file by the task
+            # the partition of graph nodes for this task will be read 
+            # from a file when the task is executed. 
             Group_DAG_tasks[name_of_first_group_in_DAG] = PageRank_Function_Driver
         else:
-            # partition is part of a shared array
+            # the partition is part of a shared array, so all of the nodes will 
+            # for the pagerank computation will be stored in a shared array
+            # that is accessed by worker threads or processes (not lambdas).
+            # For worker processes, the shared array uses Python Shared Memory
+            # from the mutiprocessing lib.
+            # The shared array is essentially an array of structs
             if not use_struct_of_arrays_for_pagerank:
                 # using struct of arrays for fast cache access, one array
                 # for each Node member, e.g., array of IDs, array of pagerank values
-                # array of previous values
+                # array of previous values. 
+                # Function to compute pagerank values when using struct of arrays
                 Group_DAG_tasks[name_of_first_group_in_DAG] = PageRank_Function_Driver_Shared 
             else:
                 # using a single array of Nodes
+                # Function to compute pagerank values when using array of structs
                 Group_DAG_tasks[name_of_first_group_in_DAG] = PageRank_Function_Driver_Shared_Fast  
 
         logger.info("generate_DAG_info_incremental_groups: Group_DAG_map[current_partition_state]: " + str(Group_DAG_map[Group_next_state] ))
@@ -468,6 +504,9 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         # Note: setting version number and to_be_continued in generate_DAG_for_groups()
         # Note: setting number of tasks in in generate_DAG_for_groups()
 
+        # For partitions, if the DAG is not yet complete, to_be_continued
+        # parameter will be TRUE, and there is one incomplete partition 
+        # in the just generated version of the DAG, which is the last parition.
         if to_be_continued:
             # len(groups_of_current_partition) must be 1 fo the first group 
             # as asserted above.
@@ -485,10 +524,11 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         return DAG_info
 
     else:
-        # Flag to indicate whether we are processing the first group_name
+        # Flag to indicate whether we are processing the first group_name of groups in the 
+        # previous partition. 
         first_previous_group = True
         for group_name in groups_of_current_partition:
-            # Get groups that output to group group_name. These aer groups in 
+            # Get groups that output to group group_name. These are groups in 
             # previous partition or in this current partition.
             senders = Group_receivers.get(group_name) 
             if (senders == None):
@@ -586,12 +626,13 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                     + str(current_partition_state) + ", previous_partition_state: "
                     + str(previous_partition_state))
 
-                # Do this one time
+                # Do this one time, .e., for first group, not for all the groups
                 if first_previous_group:
                     first_previous_group = False
 
                     logger.info("generate_DAG_info_incremental_groups: update the state_info for previous groups: "
                         + str(groups_of_previous_partition))
+                    # flag so we only do this for the first group of groups in previous previous partition
                     first_previous_previous_group = True
                     for previous_group in groups_of_previous_partition:
                         logger.info("generate_DAG_info_incremental_groups: previous_group: " + previous_group)
