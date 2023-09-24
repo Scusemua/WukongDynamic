@@ -39,16 +39,26 @@ class DAG_Info(object):
         # DAG_info_dictionary DAG_map can be modified by
         # the DAG generator while we are executing the DAG.
         # The writes are to the DAG_map, so here we make a copy
-        # of the DAG map so there are two DAG_map. After consructing
+        # of the DAG map so there are two DAG_maps. After consructing
         # this DAG_info object, the generator will create a new reference
         # to  one of the states in the DAG_map so there will be separate references
-        # for this state in the two DAG_maps. This is the sate that can be 
+        # for this state in the two DAG_maps. This is the state that can be 
         # modified while the DAG is executing.
 
         if not use_incremental_DAG_generation:
             self.DAG_map = DAG_info_dictionary["DAG_map"]
         else:
             self.DAG_map = copy.copy(DAG_info_dictionary["DAG_map"])
+        #where:
+        """
+        old_Dict = {'name': 'Bob', 'age': 25}
+        new_Dict = old_Dict.copy()
+        new_Dict['name'] = 'xx'
+        print(old_Dict)
+        # Prints {'age': 25, 'name': 'Bob'}
+        print(new_Dict)
+        # Prints {'age': 25, 'name': 'xx'}
+        """
         self.DAG_states = DAG_info_dictionary["DAG_states"]
         self.all_fanin_task_names = DAG_info_dictionary["all_fanin_task_names"]
         self.all_fanin_sizes = DAG_info_dictionary["all_fanin_sizes"]
