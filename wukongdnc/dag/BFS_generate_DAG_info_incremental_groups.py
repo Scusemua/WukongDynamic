@@ -1524,6 +1524,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 if not use_incremental_DAG_generation:
                     self.DAG_map = DAG_info_dictionary["DAG_map"]
                 else:
+                    # Q: this is the same as DAG_info_dictionary["DAG_map"].copy()?
                     self.DAG_map = copy.copy(DAG_info_dictionary["DAG_map"])
                 #where:
                 old_Dict = {'name': 'Bob', 'age': 25}
@@ -1562,7 +1563,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 # of the generator and make sure this modification does 
                 # not show up in the state_info object given to the DAG_executor.
                 """
-                # modify generator's state_info 
+                # modify the fanin state info maintained by the generator.
                 Group_DAG_map[Group_next_state].fanins.append("goo")
 
                 # display DAG_executor's state_info objects
@@ -1577,6 +1578,9 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 for key, value in Group_DAG_map.items():
                     logger.info(str(key) + ' : ' + str(value) + " addr value: " + str(hex(id(value))))
 
+                # fanin values should be different for current_state
+                # one with "goo" and the other empty
+
                 # undo the modification to the generator's state_info
                 Group_DAG_map[Group_next_state].fanins.clear()
 
@@ -1589,6 +1593,8 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 logger.info("generate_DAG_info_incremental_groups: Group_next_state:")
                 for key, value in Group_next_state_DAG_map.items():
                     logger.info(str(key) + ' : ' + str(value))
+
+                # fanin values should be the same for current_state (empty)
 
                 # logging.shutdown()
                 # os._exit(0)

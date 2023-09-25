@@ -48,6 +48,7 @@ class DAG_Info(object):
         if not use_incremental_DAG_generation:
             self.DAG_map = DAG_info_dictionary["DAG_map"]
         else:
+            # Q: this is the same as DAG_info_dictionary["DAG_map"].copy()?
             self.DAG_map = copy.copy(DAG_info_dictionary["DAG_map"])
         #where:
         """
