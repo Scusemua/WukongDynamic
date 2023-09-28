@@ -224,10 +224,10 @@ class DAG_infoBuffer_Monitor(MonitorSU):
 
             logger.debug("DAG_infoBuffer_Monitor: withdraw: got DAG_info with version number " 
                 + str(DAG_info.get_DAG_version_number()))
-            logger.debug("DAG_infoBuffer_Monitor: DAG_info withdrawn: ")
-            self.print_DAG_info(self.current_version_DAG_info)
+            #logger.debug("DAG_infoBuffer_Monitor: DAG_info withdrawn: ")
+            #self.print_DAG_info(self.current_version_DAG_info)
 #rhc leaf tasks
-            logger.debug("DAG_infoBuffer_Monitor: withdraw: new leaf task states returned: ")
+            logger.debug("DAG_infoBuffer_Monitor: withdraw: new leaf task states to return: ")
             for work_tuple in new_leaf_task_states:
                 leaf_task_state = work_tuple[0]
                 logger.debug(str(leaf_task_state))
@@ -236,6 +236,7 @@ class DAG_infoBuffer_Monitor(MonitorSU):
 #rhc leaf tasks
             DAG_info_and_new_leaf_task_states_tuple = (DAG_info,new_leaf_task_states)
             #return DAG_info, new_leaf_task_states, restart
+            logger.debug("DAG_infoBuffer_Monitor: return.")
             return DAG_info_and_new_leaf_task_states_tuple, restart
         
 

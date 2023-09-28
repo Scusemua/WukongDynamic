@@ -58,14 +58,14 @@ from .DAG_executor_output_checker import set_pagerank_output
 from .DAG_executor_constants import check_pagerank_output
 
 logger = logging.getLogger(__name__)
-"""
+
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
-"""
+
 
 """
 #rhc shared
@@ -2124,6 +2124,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                     # value that can be returned and hence no wrapper is used.
 
                                     #new_DAG_info, new_leaf_task_states = DAG_infobuffer_monitor.withdraw(requested_current_version_number)
+                                    logger.debug("calling withdraw:")
                                     DAG_info_and_new_leaf_task_states_tuple = DAG_infobuffer_monitor.withdraw(requested_current_version_number)
                                     new_DAG_info = DAG_info_and_new_leaf_task_states_tuple[0]
                                     new_leaf_task_states = DAG_info_and_new_leaf_task_states_tuple[1]
