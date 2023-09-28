@@ -1499,6 +1499,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             
         # An outline of this main loop;
         """
+        while (True): # main work loop: iterate until worker/lambda is finished
+
             if using workers:
                 if process_continue_queue:
                     we are getting states from the continue queue
@@ -1645,6 +1647,111 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         # work task in it.
                         DAG_executor_state.state = cluster_queue.get()
 
+                # end not process_continue_queue
+                
+                # We have a task to execute - we got it from the work queue
+                # or the cluster queue or the continue queue.
+
+                # If this is a continued task, we will have already executed it if
+                # we are using groups instead of partitions. Also, if the task is 
+                # the first task in a new connected component and it is not 
+                # the first task in the DAG then we have not executed the task yet. 
+                # We will execute this task so here we increment
+                # the number of tasks that have been excuted. Otherwise we have
+                # already executed the continued task. This means we will not 
+                # execute it below and here we should not increment the number of tasks
+                # that have been executed.
+
+                # check if we are using groups
+                incremental_dag_generation_with_groups = compute_pagerank and use_incremental_DAG_generation and use_page_rank_group_partitions
+                # get the state info for this task/state
+                continued_task_state_info = DAG_map[DAG_executor_state.state]
+                # execute the task if this is False:
+                # (1) we are using groups  # if we are using partitions we execute the task
+                # and (2) this is a continued task # if this is not a continued task we execute the task
+                # and (3) this is leaf task PR1_1 or this is not any other leaf task
+                if not (incremental_dag_generation_with_groups and continued_task and (
+                    (continued_task_state_info.task_name == name_of_first_groupOrpartition_in_DAG or not continued_task_state_info.task_name in DAG_info.get_DAG_leaf_tasks())
+                )):
+
+                    # Note: This increment_and_get executes a memory barrier - so the pagerank writes to 
+                    # shared memory (if used) just performed by this process P1 
+                    # will be flushed, which means the downstream pagerank tasks 
+                    # that read these values will get the values written by P1.
+                    # So we need a memory barrier between a task and its downstream
+                    # tasks. Use this counter or if we remove this counter, something 
+                    # else needs to provide the barrier.
+
+                    # We will execute the task below. Here we 
+                    # increment num tasks executed and see if this is the last 
+                    # task to execute. If so, start the termination process or
+                    # if we are doing incremental DAG generation (so this is the 
+                    # last task in the current version of the DAG)) workers
+                    # get the next DAG (instead of terminating).
+                    num_tasks_executed = completed_tasks_counter.increment_and_get()
+                    if num_tasks_executed == num_tasks_to_execute:
+                        # Note: This worker has work to do, and this work is the last
+                        # task to be executed. So this worker and any other workers
+                        # can finish (if the DAG is not incremental or it is incremental
+                        # and complete) This worker starts the worker shutdown (or pause
+                        # for the new incremental DAG) by putting a -1 in the work queue.
+                        # Any worker that is waiting for work or that tries to get more 
+                        # work will get this -1. Note that this worker here that is adding
+                        # -1 may get this -1 when it tries to get work after executing
+                        # this last task. Workers who get -1 from the work queue put
+                        # a -1 back in the work queue if there are still workers who
+                        # have not completed (i.e., called get work). We have a counter
+                        # to track the number of completed (paused) workers.
+                        #
+                        # Note: No worker calls DAG_infobufer_Monitor.withdraw to get a 
+                        # new incremental DAG until all the tasks in the current version
+                        # of the incremental DAG have been executed. This is because,
+                        # each worker must first get a -1 from the work queue, at which 
+                        # point it may deposit another -1 (if some other workers have not
+                        # withdrawn their -1 yet) and then they will call DAG_infobufer_Monitor.withdraw
+                        # to get the net DAG, instead of returning and thus ending DAG execution. 
+                        #
+                        # Process: the worker tht executes the last excutable task in the 
+                        # current DAD will deposit a -1 in th work queue. If one or more
+                        # workers are waiting for work, one will wakepup and withdraw this
+                        # -1. Otherwse, the first worher to call withdraw to get more work
+                        # will withdraw this -1. The worker that gets this -1 will check to 
+                        # see whether it was the only worker that had not withdrawn a -1.
+                        # if so, it will deposit another -1 so that another worker can get
+                        # its -1, etc. This proces stops when each worker has withdrawn its -1.
+                        # 
+                        # Note too that workers only call 
+                        # DAG_infobufer_Monitor.withdraw (below) if the current version of the 
+                        # incremental DAG is not complete, so the withdraw() will return 
+                        # a new version of the increnetal DAG. Eventually, the DAG will 
+                        # be complete and the workers will return (i.e., terminate) instead of 
+                        # calling DAG_infobufer_Monitor.withdraw.
+                        if not using_threads_not_processes:
+                            # Config: A5, A6
+                            logger.debug(thread_name + ": DAG_executor: num_tasks_executed == num_tasks_to_execute: depositing -1 in work queue.")
+                            work_tuple = (-1,None)
+                            # for the next worker
+                            work_queue.put(work_tuple)
+                        else:
+                            # Config: A4_local, A4_Remote
+                            logger.debug(thread_name + ": DAG_executor: num_tasks_executed == num_tasks_to_execute: depositing -1 in work queue.")
+                            # for the nex worker
+                            work_tuple = (-1,None)
+                            work_queue.put(work_tuple)
+                else:
+                    pass 
+                    # didn't increment num_tasks_executed since we are not
+                    # excuting this task (as it was already executed)
+            
+                    # No return here. A worker may return when it gets a -1
+                    # from the work_queue (not here when it puts a -1 in the work queue.)
+                    # 
+                    # The worker that executes the last task will
+                    # add a -1 to the work queue (-1,None) so that the next worker
+                    # to try to get work will get a -1. That next worker will add a
+                    # -1 to the work queue , etc. Note that the last worker
+                    # will not add a -1 to the work_queue.
+                    #return
 
             else: # not using workers: Config: A1. A2, A3
                 # if we are using simulated or real lambdas, then the lambda
@@ -1665,7 +1772,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 if cluster_queue.qsize() > 0:
                     DAG_executor_state.state = cluster_queue.get()
 
-                
+
+
+
+                                   
             
             """
 
@@ -2179,11 +2289,6 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 
                 # we have a task to execute - we got it from the work queue
                 # or the cluster queue or the continue queue.
-                # Increment num tasks executed and see if this is the last 
-                # task to execute. If so, start the terminattion process or
-                # if we are doing incremental DAG generation (so this is the 
-                # last task in the current version of the DAG)) workers need
-                # to get the next DAG (instead of terminating).
 
 
                 incremental_dag_generation_with_groups = compute_pagerank and use_incremental_DAG_generation and use_page_rank_group_partitions
@@ -2205,6 +2310,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # already executed the continues task. This means we wil not 
                     # execute it here and we should not increment th number of tasks
                     # that have been executed.
+
                     #Note: This increment_and_get executes a memory barrier - so the pagerank writes to 
                     # the shared memory (if used) just performed by this process P1 
                     # will be flushed, which means the downstream pagerank tasks 
@@ -2212,6 +2318,13 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # So we need a memory barrier between a task and its downstream
                     # tasks. Use this counter or if we remove this counter, something 
                     # else needs to provide the barrier.
+
+                    # Increment num tasks executed and see if this is the last 
+                    # task to execute. If so, start the terminattion process or
+                    # if we are doing incremental DAG generation (so this is the 
+                    # last task in the current version of the DAG)) workers need
+                    # to get the next DAG (instead of terminating).
+
                     num_tasks_executed = completed_tasks_counter.increment_and_get()
                     logger.debug("DAG_executor_work_loop: " + thread_name + " increment num_tasks_executed, now check if executed all tasks: "
                         + " num_tasks_executed: " + str(num_tasks_executed) 
@@ -2305,8 +2418,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         logger.error("[Error]: DAG_executor_work_loop: Internal Error: simulated or real lambda:"
                             + " cluster_queue contained more than one item of work - queue size > 0 after cluster_queue.get")
 
-        # while (True) still executing from above - continues next with work to do in the form
-        # of DAG_executor_state.state of some task
+            # while (True) still executing from above - continues next with work to do in the form
+            # of DAG_executor_state.state of some task
 
             # DAG_executor_state.state contains the next state to execute
 
@@ -2356,7 +2469,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 # TBC collapse, so we shoudl not grab the collape of 4. Instead, we 
 # should execute state 4, i.e., PR4_1. We know this since PR4_1
 # is a leaf task and a leaf task are only added to the continue
-# queue when we wan to execute the leaf task.
+# queue when we want to execute the leaf task.
                     # Note: assuming state 1 is a leaf partition, which currently
                     # is named "PR1_1". This is true for partitions. There is 
                     # only one leaf partition.
@@ -2424,7 +2537,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             # But PR1_1 is in DAG_info.get_DAG_leaf_tasks() and if partition 2 or its
             # groups are to-be-continued then we wil put statwe 1 of PR1_1 in the 
             # continue queue and we may have that state here so we use 
-            # state_info.task_name == "PR1_1" to make sure we do not execute PR1_! again.
+            # state_info.task_name == "PR1_1" to make sure we do not execute PR1_1 again.
             #if incremental_dag_generation_with_groups and continued_task and (
             #    (DAG_executor_state.state == 1 or (not state_info.task_name in DAG_info.get_DAG_leaf_tasks()))
             #):
