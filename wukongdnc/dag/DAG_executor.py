@@ -1772,6 +1772,130 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 if cluster_queue.qsize() > 0:
                     DAG_executor_state.state = cluster_queue.get()
 
+            # For incremental DAG generation using groups (instead of partitions)
+            # we never execute the continued task unless it is a leaf task
+            # that is not the first group ("PR1_1") in the DAG. These leaf tasks are
+            # groups that start a new connected component. They are added to the 
+            # work queue by the DAG generator. When we get such a leaf task from the 
+            # work_queue it may not yet be executable, in which case it is added
+            # to the continue queue. (It will become executable when we get our
+            # next incremental DAG). It then becomes a continued task and it has
+            # not been executed before so we need to execute it, as opposed to 
+            # executing its collapse task.
+            incremental_dag_generation_with_groups = compute_pagerank and use_incremental_DAG_generation and use_page_rank_group_partitions
+
+#rhc: Problem: If using partitions then state_info.task_name is not the name of the 
+# leaf task, we have to get the collapse task name. Also, we always execute first
+# task in DAG so DAG_executor_state.state == 1 is suspect. The first task PR1_1
+# is never a continued task since the first DAG_info always has a PR1_1 that is 
+# not TBC. So if continud_task is True then this is not PR1_1. Note that PR1_1 will 
+# be in the list of leaf task names.
+# Note: First task of new CC is never continued? Not clear.
+# Can compute name_of_task_to_be_executed based on whether the continued task
+# is a partition that is the collapse task of DAG_executor_state.state and use
+# this instead of state_info.task_name.
+# So same for above before num_tasks_executed computation.
+#
+            # Note: The first task/group/partition in the DAG is a leaf task
+            # PR1_1 and it is never a continued task. Assume that the DAG has 
+            # more than one partition. Then the first version of the 
+            # incremental DAG always has partitions 1 and 2, or if using groups,
+            # group PR1_1 and the groups in partition 2, and partition 2 (and the 
+            # groups therein) is to-be-continued but partition 1 is not to-be-continued.
+            # PR1_1 is in DAG_info.get_DAG_leaf_tasks() and if partition 2 or its
+            # groups are to-be-continued then we will put state 1 of PR1_1 in the 
+            # continue queue and we may have that state here so we use 
+            # state_info.task_name == "PR1_1" to make sure we do not execute PR1_1 again.
+            # Note: The if-condition will be False if we are executing a leaf
+            # task/group that is a new connected component (not "PR1_1"), as 
+            # we want to execute these new leaf tasks. 
+            # Note: "PR1_1" is a leaf task of the DAG and it is always the first
+            # group/partition/task executed. New leaf tasks can be discovered
+            # during incremental DAG generation (but not during non-incremental 
+            # DAG generation.)
+            #
+            # Note: if we are using groups, and the continued task C is not a new 
+            # leaf task (i.e., is not "PR1_1") then we have already executed the 
+            # continued task C. After executing C, we saw that C had to-be-continued
+            # fanins/fanouts/faninNBs/collapses which means they could not be 
+            # processed. Thus we put executed task C in the continue queue. Now we are
+            # processing that already executed continue task C. Since we got a new
+            # DAG, C's to-be-continued anins/fanouts/faninNBs/collapses are no 
+            # longer to-be-continued so we will skip execution of C and process 
+            # C's fanins/fanouts/faninNBs/collapses.
+            #
+            # If we are using partitions, then the continued task C has already been 
+            # executed. When we executed C, its collapse task P was to-be-continued so 
+            # we could not execute P. So we put C not P in the continue queue. Here
+            # we got C from the continue queue. We do not execute C, which has already
+            # been excuted, instead we execute C's collpase task P.
+            state_info = DAG_map[DAG_executor_state.state]
+
+            if incremental_dag_generation_with_groups and continued_task and (
+            (state_info.task_name == name_of_first_groupOrpartition_in_DAG or not state_info.task_name in DAG_info.get_DAG_leaf_tasks())
+            ):
+                continued_task = False # reset flag
+                pass 
+                # do not execute this group/task since it has been excuted before.
+            else:
+                # Execute task (but which task?)
+                #
+                # But first see if we are doing incremental DAG generation and
+                # we are using partitions. If so, we may need to get the collapse
+                # task of the continued state and excute the collapse task.
+                # Note: We can also get here if we are doing incremental DAG generation
+                # with groups and the task is a leaf task (that is not the first group in the 
+                # DAG) that starts a new connected component (which is the first 
+                # group generated on any call to BFS()). We will execute this
+                # group leaf task. 
+                #
+                # Note: The if-condition will be False if we are executing a leaf
+                # task/group that is a new connected component (not "PR1_1"), 
+                # in which case continued_task may have been true and it's
+                # still True. We need to reset it to False so it is False
+                # at the start of the next iteration.
+                #
+                incremental_dag_generation_with_partitions = compute_pagerank and use_incremental_DAG_generation and not use_page_rank_group_partitions
+                if incremental_dag_generation_with_partitions and continued_task:
+                    continued_task = False
+                    # if continued state is the first partition (which is a leaf task) or is not a leaf task
+                    # then get the collapse task of the continued state; otherwise, execute the 
+                    # continued state, which is a leaf task that starts a new conncted
+                    # component. Note: For groups, we do not get the collapsed task.
+                    # We do for partitions because partitions only have collapsed tasks,
+                    # i.e., no fanouts or fanins, and if task T has a collapsed task C then 
+                    # the same worker W that executed T will execute C.  
+                    # For groups, we execute the task T and 
+                    # if T is to be continued, we put the state of T in the continue
+                    # queue and when we get this state from the continue queue we do its 
+                    # fanins/fanouts/collapses. Note that if W executed T and T has 
+                    # many fanouts then we do not want to put all of these fanouts in 
+                    # W's continue queue since that would mean W would execute all
+                    # the fanout tasks of T. Instead, when W gets the state for T 
+                    # from the continue queue W can (skip the execution of T since that
+                    # already happened) do T's fanouts as ususal, i.e., W will 
+                    # become/cluster one of T's fanouts and put the rest on the shared
+                    # worker queue to distribute the fanout tasks amoung the workers.
+                    #
+                    if state_info.task_name == name_of_first_groupOrpartition_in_DAG or (not state_info.task_name in DAG_info.get_DAG_leaf_tasks()):
+                        # get the collapse task
+                        DAG_executor_state.state = DAG_info.get_DAG_states()[state_info.collapse[0]]
+                        state_info = DAG_map[DAG_executor_state.state]
+                        logger.debug("DAG_executor_work_loop: got state and state_info of continued, collapsed partition for collapsed task " + state_info.task_name)
+                    else:
+                        # execute task - partition task is a leaf task that is not the first
+                        # partition ("PR1_1") in the DAG. (Leaf tasks statr a new connected component.)
+                        logger.debug("DAG_executor_work_loop: continued partition  " 
+                            + state_info.task_name + " is a leaf task so do not get its collapse task"
+                            + " instead, execute the leaf task.")
+                else:
+                    # if continued task is TRUE this will set it to False
+                    continued_task = False
+                    # execute task - task is a group task that is a 
+                    # leaf task (but not the first group in the DAG)
+                    # or it is a partition task that is not a continued task.
+                    
+                #execute task
 
 
 
@@ -2585,7 +2709,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # contnue queue and W will execute C. For groups, we execute the task and 
                     # if it is to be continued, we put the state in the continue
                     # queue and when we get it from the continue queue we do its 
-                    # fanins/fanouts/collapses. Noet that if W executed T and T has 
+                    # fanins/fanouts/collapses. Note that if W executed T and T has 
                     # mny fanouts then we do not want to put all of these fanouts in 
                     # W's continue queue since that would mean W woudl execute all
                     # the fanout tasks of T. Instead, when W gets the state for T 
@@ -2593,7 +2717,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # already happened) do T's fanouts as ususal, i.e., W will 
                     # become/cluster one of T's fanouts and put the rest on the shared
                     # worker queue to distribute the fanout tasks amoung the workers.
-                    if DAG_executor_state.state == 1 or (not state_info.task_name in DAG_info.get_DAG_leaf_tasks()):
+                    if state_info.task_name == name_of_first_groupOrpartition_in_DAG or (not state_info.task_name in DAG_info.get_DAG_leaf_tasks()):
                         DAG_executor_state.state = DAG_info.get_DAG_states()[state_info.collapse[0]]
                         state_info = DAG_map[DAG_executor_state.state]
                         logger.debug("DAG_executor_work_loop: got state and state_info of continued, collapsed partition for collapsed task " + state_info.task_name)
@@ -2834,7 +2958,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             output = execute_task_with_result_dictionary_shared(task,state_info.task_name,20,result_dictionary,BFS_Shared.shared_partition_map,BFS_Shared.shared_partition)
 
                     # save outputs so we can check them after execution.
-                    # These aer values sent to other partitions/groups,
+                    # These are values sent to other partitions/groups,
                     # not the pagerank values for each node. The outputs
                     # can be empty since a partition/group can have no 
                     # fanouts/fanins/faninNBs/collapses.
@@ -2988,7 +3112,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # so put this state in the continue_queue. When we get a new DAG
                 # we will get this state from the continue queue. We have already
                 # executed this state, so we will skip task execution and do 
-                # the continued fanouts/fanins/faninNBs/collapses. Noet that when
+                # the continued fanouts/fanins/faninNBs/collapses. Note that when
                 # we get a new DAG that this group that had continued 
                 # fanouts/fanins/faninNBs/collapses now is complete, i.e., it has
                 # no continud fanouts/fanins/faninNBs/collapses.
