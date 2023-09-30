@@ -2386,8 +2386,6 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         #worker_needs_input = cluster_queue.qsize() == 0
                         logger.debug("DAG_executor_work_loop: cluster_queue contains work:"
                             + " got state " + str(DAG_executor_state.state))
-                        print("DAG_executor_work_loop: cluster_queue contains work:"
-                            + " got state " + str(DAG_executor_state.state))
 
     #rhc: cluster:
                         #assert:
