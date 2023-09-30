@@ -20,11 +20,12 @@ from .BFS_generate_DAG_info import leaf_tasks_of_groups_incremental
 
 logger = logging.getLogger(__name__)
 
-logger.setLevel(logging.INFO)
+
+logger.setLevel(logging.ERROR)
 #logger.setLevel(logging.INFO)
 formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
 ch = logging.StreamHandler()
-ch.setLevel(logging.INFO)
+ch.setLevel(logging.ERROR)
 #ch.setLevel(logging.INFO)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
@@ -374,23 +375,23 @@ def generate_DAG_info_incremental_groups(current_partition_name,
     logger.info("generate_DAG_info_incremental_groups: to_be_continued: " + str(to_be_continued))
     logger.info("generate_DAG_info_incremental_groups: current_partition_number: " + str(current_partition_number))
 
-    print()
-    print("generate_DAG_info_incremental_groups: Group_senders:")
+    logger.info("")
+    logger.info("generate_DAG_info_incremental_groups: Group_senders:")
     for sender_name,receiver_name_set in Group_senders.items():
-        print("sender:" + sender_name)
-        print("receiver_name_set:" + str(receiver_name_set))
-    print()
-    print()
-    print("generate_DAG_info_incremental_groups: Group_receivers:")
+        logger.info("sender:" + sender_name)
+        logger.info("receiver_name_set:" + str(receiver_name_set))
+    logger.info("")
+    logger.info("")
+    logger.info("generate_DAG_info_incremental_groups: Group_receivers:")
     for receiver_name,sender_name_set in Group_receivers.items():
-        print("receiver:" + receiver_name)
-        print("sender_name_set:" + str(sender_name_set))
-    print()
-    print()
-    print("generate_DAG_info_incremental_groups: Leaf nodes of groups:")
+        logger.info("receiver:" + receiver_name)
+        logger.info("sender_name_set:" + str(sender_name_set))
+    logger.info("")
+    logger.info("")
+    logger.info("generate_DAG_info_incremental_groups: Leaf nodes of groups:")
     for name in leaf_tasks_of_groups_incremental:
-        print(name + " ")
-    print()
+        logger.info(name + " ")
+    logger.info("")
 
     logger.info("generate_DAG_info_incremental_groups: Partition DAG incrementally:")
 

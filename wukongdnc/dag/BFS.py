@@ -717,14 +717,16 @@ from wukongdnc.constants import TCP_SERVER_IP
 
 logger = logging.getLogger(__name__)
 
-logger.setLevel(logging.DEBUG)
+
+logger.setLevel(logging.ERROR)
 #logger.setLevel(logging.INFO)
 formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
 ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
+ch.setLevel(logging.ERROR)
 #ch.setLevel(logging.INFO)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
+
 
 USING_BFS = False
 

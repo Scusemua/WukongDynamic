@@ -17,10 +17,11 @@ import wukongdnc.dag.DAG_executor_constants
 #from ..dag.DAG_executor_constants import FanInNB_Type, FanIn_Type, store_fanins_faninNBs_locally
 #from ..dag.DAG_executor_constants import same_output_for_all_fanout_fanin
 #from ..dag.DAG_executor_constants import using_workers, using_threads_not_processes
+#from ..dag.DAG_executor_constants import compute_pagerank, use_incremental_DAG_generation
 
 from ..dag.DAG_info import DAG_Info
 from ..dag.DAG_executor_State import DAG_executor_State
-from ..dag.DAG_executor_constants import compute_pagerank, use_incremental_DAG_generation
+
 
 # Set up logging.
 import logging 
@@ -357,7 +358,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # processing method.
         # We are leaving this code here in case we need it here or 
         # somewhere else later.
-        if False and compute_pagerank and use_incremental_DAG_generation:
+        if False and wukongdnc.dag.DAG_executor_constants.compute_pagerank and wukongdnc.dag.DAG_executor_constants.use_incremental_DAG_generation:
             DAG_infoBuffer_monitor_method_keyword_arguments = {}
             # call DAG_infoBuffer_monitor (bounded buffer) get_current_version_number_DAG_info()
             logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": get DAG_info version number.")
@@ -539,7 +540,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                         dummy_state_for_create_message = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()))
                         # passing to the created faninNB object:
 #rhc batch
-                        if not (compute_pagerank and use_incremental_DAG_generation):
+                        if not (wukongdnc.dag.DAG_executor_constants.compute_pagerank and wukongdnc.dag.DAG_executor_constants.use_incremental_DAG_generation):
                             #global DAG_info
                             #DAG_states = DAG_info.get_DAG_states()
 
@@ -930,14 +931,14 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     if method_name == "fan_in":
 #rhc batch
 #rhc: Todo: These branches are the same so remove one
-                        if False and not (compute_pagerank and use_incremental_DAG_generation):
+                        if False and not (wukongdnc.dag.DAG_executor_constants.compute_pagerank and wukongdnc.dag.DAG_executor_constants.use_incremental_DAG_generation):
                             dummy_state_for_create_message = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
                             # passing to the created faninNB object:
                             #global DAG_info
                             #DAG_states = DAG_info.get_DAG_states()
                             #dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = DAG_states[synchronizer_name]
-                            dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
-                            if not run_all_tasks_locally:
+                            dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = wukongdnc.dag.DAG_executor_constants.store_fanins_faninNBs_locally
+                            if not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally:
                                 dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info
                             else:
                                 dummy_state_for_create_message.keyword_arguments['DAG_info'] = None
@@ -970,12 +971,12 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             """
 #rhc batch
                             if state.keyword_arguments['fanin_type'] == "faninNB":
-                                fanin_type = FanInNB_Type
+                                fanin_type = wukongdnc.dag.DAG_executor_constants.FanInNB_Type
                             else: # fanin_type is "fanin"
-                                fanin_type = FanIn_Type
+                                fanin_type = wukongdnc.dag.DAG_executor_constants.FanIn_Type
 
                             dummy_state_for_create_message.keyword_arguments['n'] = state.keyword_arguments['n']
-                            if not fanin_type == FanIn_Type:
+                            if not fanin_type == wukongdnc.dag.DAG_executor_constants.FanIn_Type:
                                 dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = state.keyword_arguments['start_state_fanin_task']
 
                             #msg_id = str(uuid.uuid4())	# for debugging

@@ -310,12 +310,14 @@
 import logging 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+
+logger.setLevel(logging.ERROR)
 formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
 ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
+ch.setLevel(logging.ERROR)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
+
 
 import threading
 import multiprocessing
@@ -941,7 +943,7 @@ def run():
             state_info.task_inputs = None
 
 #rhc cleanup
-    output_DAG = True
+    output_DAG = False
     # add-0bec4d19-bce6-4394-ad62-9b0eab3081a9
     if output_DAG:
         print("DAG_executor_driver at start: Output DAG:")
@@ -1585,6 +1587,7 @@ def run():
         duration = stop_time - start_time
 
         logger.debug("DAG_executor_driver: Sleeping 3.0 seconds...")
+        print("DAG_executor_driver: Sleeping 3.0 seconds...")
         time.sleep(10.0)
         #print(BFS_Shared.pagerank_sent_to_processes)
 

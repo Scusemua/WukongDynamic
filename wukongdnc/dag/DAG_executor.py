@@ -59,10 +59,11 @@ from .DAG_executor_constants import check_pagerank_output
 
 logger = logging.getLogger(__name__)
 
-logger.setLevel(logging.DEBUG)
+
+logger.setLevel(logging.ERROR)
 formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
 ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
+ch.setLevel(logging.ERROR)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
@@ -1662,13 +1663,18 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # execute it below and here we should not increment the number of tasks
                 # that have been executed.
 
+                # Note: The first task PR1_1 in the DAG is never a continued 
+                # task since the first DAG always has a PR1_1 that is not 
+                # to-be-continued. So if continud_task is True then this is not PR1_1. 
+                # Note that PR1_1 will be in the ist of leaf task names.
+
                 # check if we are using groups
                 incremental_dag_generation_with_groups = compute_pagerank and use_incremental_DAG_generation and use_page_rank_group_partitions
                 # get the state info for this task/state
                 continued_task_state_info = DAG_map[DAG_executor_state.state]
                 # execute the task if this is False:
-                # (1) we are using groups  # if we are using partitions we execute the task
-                # and (2) this is a continued task # if this is not a continued task we execute the task
+                # (1) we are using groups       # if we are using partitions we execute the task
+                # and (2) this is a continued task     # if this is not a continued task we execute the task
                 # and (3) this is leaf task PR1_1 or this is not any other leaf task
                 if not (incremental_dag_generation_with_groups and continued_task and (
                     (continued_task_state_info.task_name == name_of_first_groupOrpartition_in_DAG or not continued_task_state_info.task_name in DAG_info.get_DAG_leaf_tasks())
@@ -1784,18 +1790,6 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             # executing its collapse task.
             incremental_dag_generation_with_groups = compute_pagerank and use_incremental_DAG_generation and use_page_rank_group_partitions
 
-#rhc: Problem: If using partitions then state_info.task_name is not the name of the 
-# leaf task, we have to get the collapse task name. Also, we always execute first
-# task in DAG so DAG_executor_state.state == 1 is suspect. The first task PR1_1
-# is never a continued task since the first DAG_info always has a PR1_1 that is 
-# not TBC. So if continud_task is True then this is not PR1_1. Note that PR1_1 will 
-# be in the list of leaf task names.
-# Note: First task of new CC is never continued? Not clear.
-# Can compute name_of_task_to_be_executed based on whether the continued task
-# is a partition that is the collapse task of DAG_executor_state.state and use
-# this instead of state_info.task_name.
-# So same for above before num_tasks_executed computation.
-#
             # Note: The first task/group/partition in the DAG is a leaf task
             # PR1_1 and it is never a continued task. Assume that the DAG has 
             # more than one partition. Then the first version of the 
@@ -1895,16 +1889,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # leaf task (but not the first group in the DAG)
                     # or it is a partition task that is not a continued task.
                     
-                #execute task
-
-
-
-                                   
-            
+                #execute task ...
             """
 
         while (True): # main work loop: iterate until worker/lambda is finished
-
             if using_workers:
                 # Config: A4_local, A4_Remote, A5, A6
 #rhc continue 
@@ -2398,6 +2386,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         #worker_needs_input = cluster_queue.qsize() == 0
                         logger.debug("DAG_executor_work_loop: cluster_queue contains work:"
                             + " got state " + str(DAG_executor_state.state))
+                        print("DAG_executor_work_loop: cluster_queue contains work:"
+                            + " got state " + str(DAG_executor_state.state))
 
     #rhc: cluster:
                         #assert:
@@ -2565,67 +2555,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             # and processes when using partitions, the needed inputs were added to the 
             # data_dict after the previous partition was executed, so they are
             # still available, as usual.
-
-
-            """
-            # For debugging
-            if compute_pagerank and use_incremental_DAG_generation and continued_task:
-                continued_task = False
-                if not use_page_rank_group_partitions:
-                    # We got a state from the continue_queue and assigned it 
-                    # to DAG_executor_state.state. This is the state that has 
-                    # the TBC collapsed task. Above we got the state_info for 
-                    # this state with the TBC collaased task: 
-                    #    state_info = DAG_map[DAG_executor_state.state]
-                    # Now we need to get the state of the collpased task and the 
-                    # state_info of the collapsd task. We will execute
-                    # the TBC collapased task next.
-#Problem: leaf tasks that are unexecutable are put in the continue queue
-# so we can't assume that just becuase continued_task is True we need to 
-# grab the collapse_task of the state - if it's a leaf task we do not.
-# Example: In the white board DAG, we execute PR1_1, PR2_1L, and PR3_!
-# and assume we added a new connectec component PR4_1 that has a collapse
-# to PR5_1. When we deposit the DAG with PR4_1, since it is a leaf task, we add
-# PR4_1 to the work_queue. When we get PR4_1 from thr work_queue, assume
-# it is unexecutable (not in the DAG, or in there but TBC) thrn we put
-# PR4_1 in the continue_queue. When we get a new DAG it will have a 
-# completed PR4_1 so we get PR4_1 from the continue_queue; however,
-# we did not put state 4 in the continue_queue as a state with a 
-# TBC collapse, so we shoudl not grab the collape of 4. Instead, we 
-# should execute state 4, i.e., PR4_1. We know this since PR4_1
-# is a leaf task and a leaf task are only added to the continue
-# queue when we want to execute the leaf task.
-                    # Note: assuming state 1 is a leaf partition, which currently
-                    # is named "PR1_1". This is true for partitions. There is 
-                    # only one leaf partition.
-                    if DAG_executor_state.state == 1 or (not state_info.task_name in DAG_info.get_DAG_leaf_tasks()):
-                        DAG_executor_state.state = DAG_info.get_DAG_states()[state_info.collapse[0]]
-                        state_info = DAG_map[DAG_executor_state.state]
-                        logger.debug("DAG_executor_work_loop: got state and state_info of continued, collapsed partition for collapsed task " + state_info.task_name)
-                    else:
-                        logger.debug("DAG_executor_work_loop: continued task  " + state_info.task_name + " is a leaf task so execute it.")
-                        pass
-                        # this is a leaf task that was added to the work queue by
-                        # withdraw then when we got this leaf task from the 
-                        # work queue it was determined to be unexectable and thus
-                        # added to the continue queue. So we do not need to grab the 
-                        # collapse of this leaf task, we just execute it.
-                else:
-                    pass
-                    # We got a state from the continue_queue and assigned it 
-                    # to DAG_executor_state.state. This is the state that has 
-                    # TBC fanout/fanin/faninNB/collapse tasks. Above we got the state_info for 
-                    # this state with the TBC fanout/fanin/faninNB/collapse tasks.
-                    #    state_info = DAG_map[DAG_executor_state.state]
-                    # We have already executed this task and put its outputs in 
-                    # the data_dict. We only need todo the TBC fanout/fanin/faninNB/collapses
-                    # so we will skip past the task execution.
-            else:
-                pass
-                # if not doing incremenal DAG generation, 
-                # we will execute the task.
-            """
-
+            #
             # For incremental DAG generation using groups (instead of partitions)
             # we never execute the continued task unless it is a leaf task
             # that is not the first group in the DAG. These leaf tasks are
@@ -2642,18 +2572,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             #    + str(continued_task) + " DAG_executor_state.state == 1: " + str(DAG_executor_state.state == 1)
             #    + " (not state_info.task_name in DAG_info.get_DAG_leaf_tasks(): "
             #    + str((not state_info.task_name in DAG_info.get_DAG_leaf_tasks())))
-#rhc: Problem: If using partitions then state_info.task_name is not the name of the 
-# leaf task, we have to get the collapse task name. Also, we always execute first
-# task in DAG so DAG_executor_state.state == 1 is suspect. The first task PR1_1
-# is never a continued task since the first DAG_info always has a PR1_1 that is 
-# not TBC. So if continud_task is True then this is not PR1_1. Note that PR1_1 will 
-# be in the list of leaf task names.
-# Note: First task of new CC is never continued? Not clear.
-# Can compute name_of_task_to_be_executed based on whether the continued task
-# is a partition that is the collapse task of DAG_executor_state.state and use
-# this instead of state_info.task_name.
-# So same for above before num_tasks_executed computation.
-#
+
             # Note: The first task/group/partition in the DAG is a leaf task
             # PR1_1 and it is never a continued task. The first version of the 
             # incremental DAG always has partitions 1 and 2, or if using groups,
@@ -2717,13 +2636,31 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # already happened) do T's fanouts as ususal, i.e., W will 
                     # become/cluster one of T's fanouts and put the rest on the shared
                     # worker queue to distribute the fanout tasks amoung the workers.
+                    #
+                    # Example: In the white board DAG, we execute PR1_1, PR2_1L, and PR3_1
+                    # and assume we added to the DAG a new connected component PR4_1 that has a collapse
+                    # to PR5_1. When we deposit the new DAG with PR4_1, since it is a leaf task, we also add
+                    # PR4_1 to the work_queue. No task in the current conencte component 
+                    # will have a fanout/fanin to PR4_1 since PR4_1 starts a new connected
+                    # component; thus, we have to put PR4_1 in the work queue when we detect
+                    # it is the start of a new component so Pr4_1 will be executed.
+                    # When we get PR4_1 from the work_queue, assume
+                    # it is unexecutable (not in the current DAG as we did not yet get the new
+                    # DAG that has PR4_1 in it, or in new DAG but to-be-contnued) then we put
+                    # PR4_1 in the continue_queue. When we get a new DAG it will have a 
+                    # completed PR4_1 so we get PR4_1 from the continue_queue; however,
+                    # we did not put state 4 in the continue_queue as a state/partition with a 
+                    # TBC collapse, so we should not grab the collape of 4. Instead, we 
+                    # should execute state/partition 4, known as "PR4_1". We know this since PR4_1
+                    # is a leaf task and a leaf task is only added to the continue
+                    # queue when we want to execute the leaf task.
                     if state_info.task_name == name_of_first_groupOrpartition_in_DAG or (not state_info.task_name in DAG_info.get_DAG_leaf_tasks()):
                         DAG_executor_state.state = DAG_info.get_DAG_states()[state_info.collapse[0]]
                         state_info = DAG_map[DAG_executor_state.state]
                         logger.debug("DAG_executor_work_loop: got state and state_info of continued, collapsed partition for collapsed task " + state_info.task_name)
                     else:
                         # execute task - partition task is a leaf task that is not the first
-                        # partition in the DAG. (Leaf tasks statr a new connected component.)
+                        # partition in the DAG. (Leaf tasks start a new connected component.)
                         logger.debug("DAG_executor_work_loop: continued partition  " 
                             + state_info.task_name + " is a leaf task so do not get its collapse task"
                             + " instead, execute the leaf task.")
@@ -3580,6 +3517,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # one fanout and one or more faninNBs, as the number of 
                 # fanouts will become 0 when we remove the become task 
                 #if (not using_workers) and len(state_info.fannouts) == 0:
+
                 if (not using_workers) and starting_number_of_fanouts == 0:
                     # Config: A1, A2, A3
                     # we are a thread simulating a lambda or a real lamda and there
@@ -3626,6 +3564,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # thread simulating a lambda or a real lambda) and there was at least one fanout task 
                     # so we will become a fanout task (not starting_number_of_fanouts == 0); 
                     # thus, we should not terminate.
+                    
                     logger.debug(thread_name + ": Not returning after process fanouts/faninNBs.")
                 #else: # Config: A4_local, A4_Remote, A5, A6
 
