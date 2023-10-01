@@ -59,13 +59,13 @@ from .DAG_executor_constants import check_pagerank_output
 
 logger = logging.getLogger(__name__)
 
-
-logger.setLevel(logging.ERROR)
-formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
-ch = logging.StreamHandler()
-ch.setLevel(logging.ERROR)
-ch.setFormatter(formatter)
-logger.addHandler(ch)
+if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
+    logger.setLevel(logging.ERROR)
+    formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.ERROR)
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
 
 
 """

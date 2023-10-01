@@ -6,17 +6,18 @@ from .BFS_pagerank import PageRank_Function_Driver, PageRank_Function_Driver_Sha
 from .BFS_Shared import PageRank_Function_Driver_Shared_Fast
 from .DAG_executor_constants import use_shared_partitions_groups, use_page_rank_group_partitions
 from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
+from .DAG_executor_constants import using_threads_not_processes, use_multithreaded_multiprocessing
 
 logger = logging.getLogger(__name__)
 
-logger.setLevel(logging.INFO)
-#logger.setLevel(logging.INFO)
-formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
-ch = logging.StreamHandler()
-ch.setLevel(logging.INFO)
-#ch.setLevel(logging.INFO)
-ch.setFormatter(formatter)
-logger.addHandler(ch)
+if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
+    logger.setLevel(logging.INFO)
+    formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.INFO)
+    #ch.setLevel(logging.INFO)
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
 
 
 #For DAG generation, map sending task to list of Reveiving tasks, and 

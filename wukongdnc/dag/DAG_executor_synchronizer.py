@@ -1,5 +1,7 @@
 from threading import RLock
 from .DAG_executor_constants import store_fanins_faninNBs_locally, FanIn_Type, FanInNB_Type
+from .DAG_executor_constants import using_threads_not_processes, use_multithreaded_multiprocessing
+
 from ..server import DAG_executor_FanInNB, DAG_executor_FanInNB_select
 from ..server import DAG_executor_FanIn, DAG_executor_FanIn_select
 from .DAG_executor_State import DAG_executor_State
@@ -8,13 +10,13 @@ import uuid
 
 import logging 
 logger = logging.getLogger(__name__)
-
-logger.setLevel(logging.ERROR)
-formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
-ch = logging.StreamHandler()
-ch.setLevel(logging.ERROR)
-ch.setFormatter(formatter)
-logger.addHandler(ch)
+if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
+    logger.setLevel(logging.ERROR)
+    formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.ERROR)
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
 
 
 # used to time local fanins

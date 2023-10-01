@@ -712,20 +712,19 @@ from .Remote_Client_for_DAG_infoBuffer_Monitor import Remote_Client_for_DAG_info
 from .DAG_executor_constants import check_pagerank_output
 from .DAG_executor_output_checker import get_pagerank_outputs
 from .DAG_executor_output_checker import verify_pagerank_outputs
+from .DAG_executor_constants import using_threads_not_processes, use_multithreaded_multiprocessing
 
 from wukongdnc.constants import TCP_SERVER_IP
 
 logger = logging.getLogger(__name__)
-
-
-logger.setLevel(logging.ERROR)
-#logger.setLevel(logging.INFO)
-formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
-ch = logging.StreamHandler()
-ch.setLevel(logging.ERROR)
-#ch.setLevel(logging.INFO)
-ch.setFormatter(formatter)
-logger.addHandler(ch)
+if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
+    logger.setLevel(logging.ERROR)
+    formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.ERROR)
+    #ch.setLevel(logging.INFO)
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
 
 
 USING_BFS = False

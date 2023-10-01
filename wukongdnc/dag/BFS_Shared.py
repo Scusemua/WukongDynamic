@@ -4,17 +4,18 @@ import numpy as np
 from multiprocessing import shared_memory
 
 from .DAG_executor_constants import use_page_rank_group_partitions, using_threads_not_processes
+from .DAG_executor_constants import use_multithreaded_multiprocessing
 
 logger = logging.getLogger(__name__)
 """
-logger.setLevel(logging.DEBUG)
-#logger.setLevel(logging.INFO)
-formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
-#ch.setLevel(logging.INFO)
-ch.setFormatter(formatter)
-logger.addHandler(ch)
+if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
+    logger.setLevel(logging.DEBUG)O)
+    formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    #ch.setLevel(logging.INFO)
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
 """
 
 #rhc: shm moved globals up

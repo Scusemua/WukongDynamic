@@ -57,6 +57,22 @@ process_work_queue_Type = "BoundedBuffer"
 #   Set SERVERLESS_SYNC to True or False in wukongdnc constants !!!!!!!!!!!!!!
 #
 
+# these are the files that use log messages:
+debug_DAG_executor = False
+debug_BFS = False
+debug_DAG_executor_driver = False
+debug_BFS_generate_DAG_info_incremental_groups = False
+debug_BFS_generate_DAG_info_incremental_partitions = False
+debug_BFS_generate_DAG_info = False
+debug_BFS_generate_shared_partitions_groups = False
+debug_BFS_pagerank = False
+debug_BFS_Shared = False
+debug_DAG_boundedbuffer_work_queue = False
+debug_DAG_executor_create_multithreaded_multiprocessing_processes = False
+debug_DAG_executor_create_threads_for_multiT_multiP = False
+debug_DAG_executor_synchronizer = False
+
+
 # Currently, this is for storing synch objects in simulated lambdas;
 store_sync_objects_in_lambdas = False
 using_Lambda_Function_Simulators_to_Store_Objects = False

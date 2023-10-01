@@ -14,12 +14,12 @@
 #import pickle
 import cloudpickle
 import copy
-
 import logging 
+
 logger = logging.getLogger(__name__)
+
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
-
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)

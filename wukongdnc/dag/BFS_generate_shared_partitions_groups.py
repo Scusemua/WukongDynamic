@@ -2,7 +2,8 @@
 from . import BFS_Shared
 from .DAG_executor_constants import use_shared_partitions_groups, use_page_rank_group_partitions
 from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
-from .DAG_executor_constants import using_threads_not_processes
+from .DAG_executor_constants import using_threads_not_processes, use_multithreaded_multiprocessing
+
 from .BFS_Partition_Node import Partition_Node
 import queue
 import numpy as np
@@ -12,7 +13,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 logger.setLevel(logging.DEBUG)
-#logger.setLevel(logging.INFO)
 formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
