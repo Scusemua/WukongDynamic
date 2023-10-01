@@ -307,18 +307,6 @@
 # P1 needs work and withdraws -1 and deposits -1 in work queue and returns from work loop
 # (Note: work queue ends with -1 in it)
 
-import logging 
-
-logger = logging.getLogger(__name__)
-
-logger.setLevel(logging.ERROR)
-formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
-ch = logging.StreamHandler()
-ch.setLevel(logging.ERROR)
-ch.setFormatter(formatter)
-logger.addHandler(ch)
-
-
 import threading
 import multiprocessing
 from multiprocessing import Process #, Manager
@@ -344,6 +332,7 @@ from .DAG_executor_constants import FanIn_Type, FanInNB_Type, process_work_queue
 from .DAG_executor_constants import store_sync_objects_in_lambdas, sync_objects_in_lambdas_trigger_their_tasks
 from .DAG_executor_constants import compute_pagerank, use_shared_partitions_groups,use_page_rank_group_partitions
 from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
+from .DAG_executor_constants import using_threads_not_processes, use_multithreaded_multiprocessing
 #from .DAG_work_queue_for_threads import thread_work_queue
 from .DAG_executor_work_queue_for_threads import work_queue
 from .DAG_executor_synchronizer import server
@@ -357,6 +346,17 @@ from .DAG_executor_create_multithreaded_multiprocessing_processes import create_
 import copy
 from . import BFS_Shared
 import dask
+
+import logging 
+
+logger = logging.getLogger(__name__)
+if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
+    logger.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
 
 #from .BFS_Shared import pagerank_sent_to_processes, previous_sent_to_processes, number_of_children_sent_to_processes
 #from .BFS_Shared import number_of_parents_sent_to_processes, starting_indices_of_parents_sent_to_processes

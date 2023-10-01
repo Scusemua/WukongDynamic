@@ -8,16 +8,14 @@ from .DAG_executor_constants import use_multithreaded_multiprocessing
 
 logger = logging.getLogger(__name__)
 
-"""
 if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.ERROR)
     formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
     ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
+    ch.setLevel(logging.ERROR)
     #ch.setLevel(logging.INFO)
     ch.setFormatter(formatter)
     logger.addHandler(ch)
-"""
 
 debug_pagerank = True
 
