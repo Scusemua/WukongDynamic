@@ -4,18 +4,16 @@ if SERVERLESS_SYNC:
     from .selector_lambda import Selector
 else:
     from .selector import Selector
-
 from .selectableEntry import selectableEntry
 
 import logging 
+
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.ERROR)
 formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
-
 ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
+ch.setLevel(logging.ERROR)
 ch.setFormatter(formatter)
-
 logger.addHandler(ch)
 
 class BoundedBuffer_Select(Selector):

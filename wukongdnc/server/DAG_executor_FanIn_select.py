@@ -1,4 +1,5 @@
 from ..constants import SERVERLESS_SYNC
+from wukongdnc.dag.DAG_executor_constants import using_threads_not_processes, use_multithreaded_multiprocessing
 
 if SERVERLESS_SYNC:
     from .selector_lambda import Selector
@@ -8,14 +9,16 @@ else:
 from .selectableEntry import selectableEntry
 
 import logging 
+
 logger = logging.getLogger(__name__)
 
-logger.setLevel(logging.ERROR)
-formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
-ch = logging.StreamHandler()
-ch.setLevel(logging.ERROR)
-ch.setFormatter(formatter)
-logger.addHandler(ch)
+if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
+    logger.setLevel(logging.ERROR)
+    formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.ERROR)
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
 
 
 class DAG_executor_FanIn_Select(Selector):

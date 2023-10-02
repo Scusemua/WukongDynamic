@@ -5,15 +5,14 @@ import time
 import copy
 
 import logging 
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-
 formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
-
 
 # Controls workers when using incremental DAG generation
 class DAG_infoBuffer_Monitor(MonitorSU):

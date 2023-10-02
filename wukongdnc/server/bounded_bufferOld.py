@@ -1,15 +1,16 @@
 #from re import L
 from .monitor_su import MonitorSU #, ConditionVariable
+
 import threading
 import _thread
 import time
-
 import logging 
+
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.ERROR)
 formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
 ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
+ch.setLevel(logging.ERROR)
 ch.setFormatter(formatter)
 
 logger.addHandler(ch)
@@ -101,7 +102,7 @@ def taskD(b : BoundedBuffer):
 
 def taskW(b : BoundedBuffer):
     logger.debug("Calling withdraw")
-    return_value_ignored = b.withdraw()
+    _return_value_ignored = b.withdraw()
     logger.debug("Successfully called withdraw")
 
 

@@ -1,20 +1,17 @@
 #from re import L
 from .monitor_su import MonitorSU
-#from monitor_su import MonitorSU
 import _thread
 import time
 
 import logging 
+
 logger = logging.getLogger(__name__)
-"""
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
-"""
-
 
 # Bounded Buffer
 class BoundedBuffer(MonitorSU):
