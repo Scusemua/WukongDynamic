@@ -2510,9 +2510,9 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # become states are also added to the cluster queue. Real and 
                 # simulated lambdas do not use a work_queue, and they do 
                 # not use a continue_queue for incremental DAG generation.
-                # So there is only a cluster queue. 
+                # So they only use a cluster queue. 
                 #
-                # The cluster_queue will have the lamvdas payload task added
+                # The cluster_queue will have the lambdas payload task added
                 # to it and so will not be empty the first time we check here
                 # on the cluster_queue size. When processing the tasks, we may
                 # or may not add become tasks for fanouts and fanins and 
@@ -2533,7 +2533,28 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             # while (True) still executing from above - continues next with work to do in the form
             # of DAG_executor_state.state of some task
 
-            # DAG_executor_state.state contains the next state to execute
+            # DAG_executor_state.state contains the next state to execute.
+
+            # Note: if we are using lambdas instead of workers, we do not use the
+            # continue queue so continued == False. When a lambda excutes a task
+            # and finds that it has a fanin/fanout/faninNB/collapse task that is 
+            # to-be-continued, the lambda does not enqueue the continued task in the 
+            # continue queue. Likewise, lambdas do not use a work_queue - after a lambda
+            # excutes its payload task and any become tasks it gets after that, the 
+            # lambda will terminate. (The lambda may start new lambdas for fanouts.)
+            # The lambda does not wait for a new incremental DAG either, as we do not
+            # want lambdas waiting for anything (no-wait). Instead, the lambda will
+            # send the to-be-continued task and the task's input/output, whichever
+            # is needed for the continued task to a synch object that will start a new
+            # lambda to excute the continued tsk when a new incrmental ADG becomes
+            # available. 
+            #
+            # We need to make sure that lambdas do not execute the incremental DAG
+            # generation code that is used by workers. We can use the flag 
+            # using_workers to indicate that this is worker code. Since continued_task
+            # is never True when using lambdas, the continued_task flag will often prevent
+            # lambdas from excuting this worker code too.
+
 
             # If we got a become task when we processed fanouts, we set
             # DAG_executor_state.state to the become task state so we
@@ -2590,6 +2611,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 + " (not state_info.task_name in DAG_info.get_DAG_leaf_tasks(): "
                 + str((not state_info.task_name in DAG_info.get_DAG_leaf_tasks())))
 
+#rhc: lambda inc: if using_workers and
             if incremental_dag_generation_with_groups and continued_task and (
             (state_info.task_name == name_of_first_groupOrpartition_in_DAG or not state_info.task_name in DAG_info.get_DAG_leaf_tasks())
             ):
@@ -2613,6 +2635,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # in which case continued_task may have been true and it's
                 # still True. We need to set it to False.
                 incremental_dag_generation_with_partitions = compute_pagerank and use_incremental_DAG_generation and not use_page_rank_group_partitions
+
+#rhc: lambda inc: if using_workers and
                 if incremental_dag_generation_with_partitions and continued_task:
                     continued_task = False
                     # if continued state is the first partition (which is a leaf task) or is not a leaf task
@@ -3115,15 +3139,26 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # collapsed partition. state_info is the state info
                 # of the tate with the collapsed partition.
 #rhc continue 
+#rhc: lambda inc: above if means that this group has no to-be-continued? as in we 
+# put that if at front as special case of inc with groups where task just executed
+# has no TBC. So if we get past that, the group has no TBC or we aer using partitions
+# or not doing inc?
+# Q: what if using lambdas and groups (i.e., second conjunct is true)?
+
                 if not(compute_pagerank and use_incremental_DAG_generation) or (compute_pagerank and use_incremental_DAG_generation and use_page_rank_group_partitions):
+#rhc: lambda inc: # implied that this state has no TBC otherwise preceding if would have been true?
+# So we handle group TBC collapse above and partition TBC collapse below? Here is no inc
+# a group with no TBC. otherwise we handle partition which may or may not have TBC collapse.
+# if it does then need to finish lambda code, which is same as group code above - 
+# send info to synch object.
 #rhc: cluster:
                     # get the state of the collapsed partition (task)
-                    # and put the collapsed tsk i nthe cluster_queue for 
+                    # and put the collapsed task in the cluster_queue for 
                     # execution.
                     DAG_executor_state.state = DAG_info.get_DAG_states()[state_info.collapse[0]]
                     cluster_queue.put(DAG_executor_state.state)
                     logger.debug("DAG_executor_work_loop: put collapsed work in cluster_queue:"
-                            + " state is " + str(DAG_executor_state.state))
+                        + " state is " + str(DAG_executor_state.state))
 #rhc: cluster:
                     # Do NOT do this
                     ## Don't add to thread_work_queue just do it
@@ -3132,8 +3167,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     #    worker_needs_input = False
                     ## else: # Config: A1. A2, A3
                 else: 
-                    # we are doing incremental DAG generation
-                    # with partitions.
+#rhc: lambda inc: note that to get here we are doing inc w/ pagerank and not using groups
+                    # we are doing incremental DAG generation with partitions.
                     state_of_collapsed_task = DAG_info.get_DAG_states()[state_info.collapse[0]]
                     state_info_of_collapse_task = DAG_map[state_of_collapsed_task]
                     logger.debug("DAG_executor_work_loop: check TBC of collapsed task state info: "
