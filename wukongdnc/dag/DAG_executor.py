@@ -1021,8 +1021,8 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                         #"state": fanout_task_start_state,
                         # If not using workers but running tasks locally then we are using threads
                         # to simulate Lambdas but threads currently use a global data_dict so they
-                        # just put task outputs in the data_dict. We could pass "inp" in this case j
-                        # ust to check the logic used by the Lambdas.
+                        # just put task outputs in the data_dict. We could pass "inp" in this case
+                        # just to check the logic used by the Lambdas.
                         # The driver just passes the dag executor state. We do not use
                         # server, we input DAG_info from file. 
 
@@ -1497,7 +1497,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             logger.debug("DAG_executor_work_loop: start of simulated or real lambda:"
                 + " put state " + str(DAG_executor_state.state) + " in cluster_queue.")
             
-        # An outline of this main loop;
+        # An outline of this main loop, which processes tasks and their fanins/fanouts/collapses
         """
         while (True): # main work loop: iterate until worker/lambda is finished
 
@@ -2309,7 +2309,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                         # We get its state info below.
                                         logger.debug("DAG_executor_work_loop: For new DAG_info, continued state: " + str(DAG_executor_state.state)
                                             +" state_info: " + str(DAG_map[DAG_executor_state.state]))
-#rhc continue                           # continued_task used for debugging
+#rhc continue
                                         continued_task = True
                                         # if there are more continued tasks, we set flag 
                                         # process_continue_queue so that above we will 
@@ -2637,6 +2637,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 incremental_dag_generation_with_partitions = compute_pagerank and use_incremental_DAG_generation and not use_page_rank_group_partitions
 
 #rhc: lambda inc: if using_workers and
+# but may kep using continue_task so we can excute a group with TBC fanins/fanouts, like usual
                 if incremental_dag_generation_with_partitions and continued_task:
                     continued_task = False
                     # if continued state is the first partition (which is a leaf task) or is not a leaf task
@@ -2718,7 +2719,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # and not using the lambdas, leaf nodes get their task inputs from state_info.task_inputs.
                 # These inputs for non-lambda versions are part of the DAG_info, which is read from a file
                 # at the start of each thread/process. For lambdas, we grab the task inputs for leaf
-                # nodes in the GAD_executor_driver and then null out the list of leaf task inputs in DAG_info
+                # nodes in the DAG_executor_driver and then null out the list of leaf task inputs in DAG_info
                 # and the leaf task inputs in state_info.task_inputs for each leaf task (which is also in 
                 # DAG_info) We do this since for lambdas we pass DAG_info in the payload and we don't want to 
                 # pass all those leaf task inputs in DAG_info in each payload.
@@ -2728,9 +2729,6 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # non-leaf task add: task_inputs: 
                 #   ('increment-1cce17d3-5948-48d6-9141-01a9eaa1ca40', 'increment-ed04c96b-fcf6-4fab-9d13-d0560be0ef21')
                 task_inputs = state_info.task_inputs    
-#rhc: ToDo: BUG: , we input a DAG_info object but we get from gen inc DAG_info
-# a dictionary. Should we return a DAG_info object.
-# Likewise in monitor we eposit a dictionary not an oject 
                 is_leaf_task = state_info.task_name in DAG_info.get_DAG_leaf_tasks()
                 logger.debug("is_leaf_task: " + str(is_leaf_task))
                 logger.debug("task_inputs: " + str(task_inputs))
@@ -3903,11 +3901,18 @@ def DAG_executor_lambda(payload):
         for key, value in dict_of_results.items():
             data_dict[key] = value
     else:
-        # Passing leaf task input as state_info.task_inputs in DAG_info; we don't
-        # want to add a leaf task input parameter to DAG_executor_work_loop(); this 
-        # parameter would only be used by the Lambdas and we ha ve a place already
-        # in state_info.task_inputs. 
-        # Note: We null out state_info.task_inputs for leaf tasks after we use the input.
+        # Passing leaf task input as state_info.task_inputs in DAG_info; 
+        # We don't want to add a leaf task input parameter to DAG_executor_work_loop(); 
+        # i.e., we could get the inputs from the payload and pass then to the
+        # work loop as a parameter, but this parameter would only be used by the Lambdas 
+        # and we have a place already in state_info.task_inputs for these inputs.
+        # Thus we read the payload inputs here n the work loop and put the
+        # nputs in state_info.task_inputs from which we read the inputs for 
+        # leaf and non-leaf tasks when we execuet the tasks. 
+        # Note: We null out state_info.task_inputs for leaf tasks in the DAG_executor_driver
+        # after we start the leaf lambdas, in order to save space, i.e., there is no need to 
+        # pass this leaf task input as part of the DAG_info to all the 
+        # non-leaf tasks.
         if not (store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks):
             inp = cloudpickle.loads(base64.b64decode(payload['input']))
         else:

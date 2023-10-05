@@ -1325,8 +1325,8 @@ def run():
                                 payload = {
                                     # What's not in the payload: DAG_info: since threads/processes read this pickled 
                                     # file at the start of their execution. server: since this is a global variable
-                                    # for the threads and processes. for processes it is Non since processes send
-                                    # messages to the tcp_server, and tgus do not use the server object, which is 
+                                    # for the threads and processes. for processes it is None since processes send
+                                    # messages to the tcp_server, and thus do not use the server object, which is 
                                     # used to simulate the tcp_server when running locally. Input: threads and processes
                                     # get their input from the data_dict. Note the lambdas will be invoked with their 
                                     # input in the payload and will put this input in their local data_dict.

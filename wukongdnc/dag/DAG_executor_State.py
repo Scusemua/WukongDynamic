@@ -3,7 +3,7 @@
 # function by invoking the function and passing the function its saved state.
 #
 # The DAG_executor has only one application specific member, which is "state."
-# This is the state of the DAG task to be excuted.
+# This identifies the DAG task to be excuted and its fanins/fanouts/collapses.
 
 class DAG_executor_State(object):
     def __init__(
@@ -15,6 +15,7 @@ class DAG_executor_State(object):
         keyword_arguments : dict = None, 
         return_value = None, 
         blocking : bool = False,
+        # identifies the task to be executed and its fanouts/fanins
         state : int = int(0)
     ):
         # All state objects have these members, which are used by the framework, not the application.

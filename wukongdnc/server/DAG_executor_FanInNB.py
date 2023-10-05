@@ -207,7 +207,7 @@ class DAG_executor_FanInNB(MonitorSU):
                         "input": self._results,
                         "DAG_executor_state": DAG_executor_state,
                         # Using threads to simulate lambdas and th threads
-                        # just read ADG_info locally, we do not need to pass it 
+                        # just read DAG_info locally, we do not need to pass it 
                         # to each Lambda.
                         #"DAG_info": self.DAG_info,
                         "server": server
