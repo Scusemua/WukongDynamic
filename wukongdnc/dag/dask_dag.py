@@ -439,7 +439,7 @@ if __name__ == "__main__":
     print("generate_ops for: " + n.get_task_name())
     n.generate_ops()
       
-  Node.save_DAG_info() 
+  Node.save_DAG_info_as_dictionary() 
 
 
 """

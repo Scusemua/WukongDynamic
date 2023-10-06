@@ -188,6 +188,7 @@ class DAG_executor_FanInNB(MonitorSU):
                     return self._results, restart  # all threads have called so return results
                     #return 1, restart  # all threads have called so return results
             elif self.store_fanins_faninNBs_locally and run_all_tasks_locally:
+                # Note this FaNInNBs is stored locally; we start a new thread to execute fanin task
                 if not using_threads_not_processes:
                     logger.error("[Error]: FaninB: storing fanins locally but not using threads.")
   
@@ -204,12 +205,24 @@ class DAG_executor_FanInNB(MonitorSU):
                     #logger.debug("DAG_executor_state.function_name: " + DAG_executor_state.function_name)
                     payload = {
                         #"state": int(start_state_fanin_task),
+                        # We aer using threads to simulate lambdas. The data_dict in 
+                        # this case is a global object visible to all threads. Each thread
+                        # will put its results in the data_dict befoer sending the results
+                        # to the FanInNB, so the fanin results collected by the FanInNB 
+                        # are already available in the global data_dict. Thus, we do not 
+                        # really need to put the results in the payload for the started
+                        # thread (simulating a real lambda) but we do to be conistent 
+                        # with real lambdas.
                         "input": self._results,
                         "DAG_executor_state": DAG_executor_state,
                         # Using threads to simulate lambdas and th threads
                         # just read DAG_info locally, we do not need to pass it 
                         # to each Lambda.
-                        #"DAG_info": self.DAG_info,
+                        # passing DAG_info to be consistent with real lambdas
+                        "DAG_info": self.DAG_info,
+                        # server takes the place of tcp_server which the real lambdas
+                        # use. server is accessibl to the lambda simulator threads as 
+                        # a global variable
                         "server": server
                     }
                     thread_name_prefix = "Thread_leaf_"
@@ -229,6 +242,7 @@ class DAG_executor_FanInNB(MonitorSU):
                 #return 1, restart  # all threads have called so return results
                     
             elif not self.store_fanins_faninNBs_locally and not run_all_tasks_locally:
+                # using real lambdas to execure DAGs Wukong style
 #rhc: run task
                 # Note: we are store_sync_objects_in_lambdas so usually we would not 
                 # use a non-select faninNB in this case as we use select faninNBs when 
@@ -271,7 +285,7 @@ class DAG_executor_FanInNB(MonitorSU):
                             "input": self._results,
                             "DAG_executor_state": DAG_executor_state,
                             "DAG_info": self.DAG_info
-                            #"server": server   # used to mock server during testing
+                            #"server": server   # used to mock server during testing; we use tcp_server with ral lambdas
                         }
                         ###### DAG_executor_State.function_name has not changed
                         

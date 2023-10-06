@@ -193,7 +193,7 @@ class Node:
     DAG_info = {} 
     
     @classmethod
-    def save_DAG_info(cls):
+    def save_DAG_info_as_dictionary(cls):
         with open('./DAG_info.pickle', 'wb') as handle:
             cloudpickle.dump(Node.DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
     
@@ -618,7 +618,7 @@ def main():
         print("Error 6")
     
         
-    Node.save_DAG_info()
+    Node.save_DAG_info_as_dictionary()
 	
     #n1.generate_ops()
     #n4.generate_ops()

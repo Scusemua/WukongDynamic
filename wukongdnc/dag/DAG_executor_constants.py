@@ -26,14 +26,14 @@ store_fanins_faninNBs_locally = True
 # False, synch objects are created on the fly, i.e, we execute create-and-fanin
 # operations that create a synch object if it has not been created yet and then
 # execute a Fan_in operaation on the created object.
-create_all_fanins_faninNBs_on_start = False
+create_all_fanins_faninNBs_on_start = True
 
 # True if the DAG is executed by a "pool" of threads/processes. False, if we are
 # using Lambdas or we are using threads to simulate the use of Lambdas. In the latter
 # case, instead of, e.g., starting a Lambda at fan_out operations, we start a thread.
 # This results in the creation of many threads and is only use to test the logic 
 # of the Lambda code.
-using_workers = True
+using_workers = False
 # True when we ae not using Lambas and tasks are executed by threads instead of processes. 
 # False when we are not using lambdas and are using multiprocesssing 
 using_threads_not_processes = True
@@ -188,7 +188,7 @@ if sync_objects_in_lambdas_trigger_their_tasks:
 
 # Indicates that we are computing pagerank and thus that the pagerank
 # options are active and pagerank asserts should hold
-compute_pagerank = True # True
+compute_pagerank = False # True
 
 name_of_first_groupOrpartition_in_DAG = "PR1_1"
 
@@ -212,7 +212,7 @@ check_pagerank_output = compute_pagerank and run_all_tasks_locally and using_wor
 same_output_for_all_fanout_fanin = not compute_pagerank
 
 # True if DAG generation and DAG_execution are overlapped. 
-use_incremental_DAG_generation = compute_pagerank and True
+use_incremental_DAG_generation = compute_pagerank and False
 
 # generate next DAG when num_incremental_DAGs_generated mod 
 # incremental_interval == 0. For example, if we set this

@@ -989,7 +989,7 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                     # output from output and pass it in payload. See the 
                     # code for this above where we are using workers.
                     # as in:
-                    """
+
                     dict_of_results =  {}
                     if same_output_for_all_fanout_fanin:
                         # each fanout of a task gets the same output, i.e., 
@@ -1006,38 +1006,35 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                         #    dict_of_results[qualfied_name] = output[name[:-1]]
                             
                         #else:
-                            qualfied_name = str(calling_task_name) + "-" + str(name)
-                            dict_of_results[qualfied_name] = output[name]
+                        qualfied_name = str(calling_task_name) + "-" + str(name)
+                        dict_of_results[qualfied_name] = output[name]
+
                         #dict_of_results[qualfied_name] = output[name]
                     logger.debug(thread_name + ": process_fanouts: dict_of_results for fanout " + name)
                     logger.debug(str(dict_of_results))
                     # Below we would use: "input": dict_of_results,
-                    """
 
                     #output_tuple = (calling_task_name,)
                     #output_dict[calling_task_name] = output
                     logger.debug (thread_name + ": process_fanouts: fanout payload for " + name + " is " + str(fanout_task_start_state) + "," + str(output))
                     payload = {
-                        #"state": fanout_task_start_state,
                         # If not using workers but running tasks locally then we are using threads
                         # to simulate Lambdas but threads currently use a global data_dict so they
-                        # just put task outputs in the data_dict. We could pass "inp" in this case
-                        # just to check the logic used by the Lambdas.
-                        # The driver just passes the dag executor state. We do not use
-                        # server, we input DAG_info from file. 
-
-                        # We do not currently use the input, 
-                        # but may use it to be consistent with lambdas: ==> pass state and input
-                        # to the threads that simulate Lambdas. (We could also pass DAG_info to be
-                        # consistent with Lambda version.)
+                        # just put task outputs in the global data_dict. Thus, we have no need to 
+                        # pass the outputs in the payload. However, We pass them here jut to check
+                        # the logic used by the real Lambdas.
+                        # The driver just passes the dag executor state. We do not need to pass 
+                        # server, since it is available globally to all the threads. We input DAG_info 
+                        # from a file but we pass it here like the real lambas do. 
                         #
                         # See the note above about dict_of_results.
                         #
-                        #"input": output,
+                        "input": dict_of_results,
                         "DAG_executor_state": task_DAG_executor_State,
-                        #"DAG_info": DAG_info,
-                        #"server": server
+                        "DAG_info": DAG_info
+                        #"server": server # used to mock server during testing
                     }
+
                     _thread.start_new_thread(DAG_executor_task, (payload,))
                 except Exception as ex:
                     logger.error("[ERROR] " + thread_name + ": process_fanouts: Failed to start DAG_executor thread for " + name)
@@ -3730,7 +3727,7 @@ def DAG_executor(payload):
     ##DAG_executor_state.state = payload['state']
     if not using_workers:
         # Config: A2
-        logger.debug("payload state:" + str(DAG_exec_state.state))
+        logger.debug("DAG_executor(): payload state:" + str(DAG_exec_state.state))
     # For leaf task, we get  ['input': inp]; this is passed to the executed task using:
     #    def execute_task(task_name,input): output = DAG_info.DAG_tasks[task_name](input)
     # So the executed task gets ['input': inp], just like a non-leaf task gets ['output': X]. For leaf tasks, we use "input"
@@ -3745,19 +3742,25 @@ def DAG_executor(payload):
 #ToDo: Lambda: modify this local storage no workers version to put a threads payload input in the data_dict?
 # Add comment that we are using global but we add here too to check logic. Here we can make sure data
 # is already in data_dict as assert. if not key in data_dict:
-    """
+    
     DAG_map = DAG_info.get_DAG_map()
     state_info = DAG_map[DAG_exec_state.state]
     is_leaf_task = state_info.task_name in DAG_info.get_DAG_leaf_tasks()
     if not is_leaf_task:
+        logger.debug("DAG_executor(): verify inputs are in data_dict: ")
         # lambdas invoked with inputs. We do not add leaf task inputs to the data
         # dictionary, we use them directly when we execute the leaf task.
         # Also, leaf task inputs are not in a dictionary.
         dict_of_results = payload['input']
-        for key, value in dict_of_results.items():
-            data_dict[key] = value
-    """
-
+        for key, _value in dict_of_results.items():
+            #data_dict[key] = _value
+            value_in_dict = data_dict.get(key,None)
+            if value_in_dict == None:
+                logger.error("[Error]: Internal Error: starting DAG_executor for simulated lambda"
+                    + " data_dict missing value for input key " + str(key))
+            else:
+                logger.debug("DAG_executor:verified: " + str(key))
+    
     # work_queue is the global shared work queue, which is none when we are using threads
     # to simulate lambdas and is a Queue when we are using worker threads. See imported file
     # DAG_executor_work_queue_for_threads.py for Queue creation.

@@ -19,7 +19,7 @@ class DAG_Info(object):
     # The worker threads and processes read DAG_info objects at the 
     # start of their executions.
     # Having now added incremental DAG_generation, we need to generate
-    # a DAG_info object and give it to th workers/lambdas without
+    # a DAG_info object and give it to the workers/lambdas without
     # writing a dictionary to file.  For this we 
     # can use DAG_info_fromdictionary.
 
