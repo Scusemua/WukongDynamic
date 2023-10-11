@@ -16,7 +16,10 @@ class DAG_executor_State(object):
         return_value = None, 
         blocking : bool = False,
         # identifies the task to be executed and its fanouts/fanins
-        state : int = int(0)
+        state : int = int(0),
+        # added for incremental DAG generation, True if we are (restarting)
+        # a task that was incomplete in the previously generated DAG
+        continued_task : bool = False
     ):
         # All state objects have these members, which are used by the framework, not the application.
         self.function_name = function_name                  # This is the variable used for the serverless function name.
@@ -28,6 +31,7 @@ class DAG_executor_State(object):
         self.blocking = blocking                            # Indicates whether the Lambda executor is making a blocking or non-blocking call to the TCP server.
         #These members are unique for the application
         self.state = state
+        self.continued_task = continued_task
 
     def __repr__(self):
         return self.__str__()

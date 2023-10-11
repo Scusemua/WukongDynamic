@@ -1358,11 +1358,15 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 
 #rhc continue
     num_tasks_to_execute = -1
+#rhc: lambda inc:
+    continued_task = False
     if (not using_workers):
-        # not using this value when using real or simulated lambdas.
-        # this values tells workers when there are no morfe tasks to execute
+        # not actually using this value when using real or simulated lambdas.
+        # this values tells workers when there are no more tasks to execute
         #num_tasks_to_execute = len(DAG_tasks)
         num_tasks_to_execute = DAG_number_of_tasks
+#rhc: lambda inc:
+        continued_task = DAG_executor_state.continued_task
     else:
         if not (compute_pagerank and use_incremental_DAG_generation):
             #num_tasks_to_execute = len(DAG_tasks)
@@ -1474,6 +1478,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
         continue_queue = None
         if using_workers and compute_pagerank and use_incremental_DAG_generation:
             continue_queue = queue.Queue()
+#hrc lambda inc:
+        # True if we are executing the first iteration of the work loop
+        # and this is a lambda. We use this value in an assertion.
+        first_iteration_of_work_loop_for_lambda = False
 
 #hc: cluster:
         # The work loop checks cluster_queue > 0 to see if there are any 
@@ -1490,9 +1498,17 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
         if (run_all_tasks_locally and not using_workers) or not run_all_tasks_locally:
             # simulated or real lmabdas are started with a payload that has a state,
             # put this state in the cluster_queue.
-            cluster_queue.put(DAG_executor_state.state)
-            logger.debug("DAG_executor_work_loop: start of simulated or real lambda:"
-                + " put state " + str(DAG_executor_state.state) + " in cluster_queue.")
+#rhc: lambda inc:
+            first_iteration_of_work_loop_for_lambda == True
+            if continued_task:
+                continue_queue.put(DAG_executor_state.state)
+                logger.debug("DAG_executor_work_loop: start of simulated or real lambda:"
+                    + " put state " + str(DAG_executor_state.state) + " in continue_queue.")
+
+            else:
+                cluster_queue.put(DAG_executor_state.state)
+                logger.debug("DAG_executor_work_loop: start of simulated or real lambda:"
+                    + " put state " + str(DAG_executor_state.state) + " in cluster_queue.")
             
         # An outline of this main loop, which processes tasks and their fanins/fanouts/collapses
         """
@@ -2502,20 +2518,55 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             else: # not using workers: Config: A1. A2, A3
                 # if we are using simulated or real lambdas, then the lambda
                 # payload has a state to execute. Ths state is added to the 
-                # cluster_queue at the start of the work loop. Lambdas may also
-                # add collpased states to the cluster queue and fanout/fanin
+                # cluster_queue or continue_queue at the start of the work loop. Lambdas
+                # may also add collpased states to the cluster queue and fanout/fanin
                 # become states are also added to the cluster queue. Real and 
                 # simulated lambdas do not use a work_queue, and they do 
                 # not use a continue_queue for incremental DAG generation.
                 # So they only use a cluster queue. 
                 #
-                # The cluster_queue will have the lambdas payload task added
-                # to it and so will not be empty the first time we check here
-                # on the cluster_queue size. When processing the tasks, we may
+                # The cluster_queue may have the lambdas payload task added
+                # to it and so may not be empty the first time we check here
+                # on the cluster_queue size. We will add this state to the 
+                # continue_queue instead of the cluster_queue when this is a
+                # lambda that has been (re)started during incremental DAG
+                # generation. (That is, a task that was incomplete in the 
+                # previous DAG is now complete in the current DAG and can now
+                # be executed.) 
+                # When processing the tasks, we may
                 # or may not add become tasks for fanouts and fanins and 
                 # collapsed tasks to the custer_queue, so the cluster_queue
                 # may be empty on later checks.
-                if cluster_queue.qsize() > 0:
+#rhc: lambda inc:
+                # assert: 
+                if first_iteration_of_work_loop_for_lambda and not continued_task:
+                    if cluster_queue.qsize() == 0:
+                        logger.debug("[Error]: Internal Error: DAG_executor_work_loop:"
+                            + " first_iteration_of_work_loop_for_lambda and not continued_task"
+                            + " but cluster_queue.qsize() is 0; the state of a lambda that has"
+                            + " not been restarted for incremental DAG generation shoudl be added"
+                            + " to the cluster_queue at the start of the work loop.")
+#rhc: lambda inc:
+                if continue_queue.qsize() > 0:
+                    # assert: For lambdas, we never put anything in the continue_queue
+                    # except the state of a restarted lambda, whcih we add at the start 
+                    # of the work loop
+                    if not first_iteration_of_work_loop_for_lambda:
+                        logger.debug("[Error]: Internal Error: DAG_executor_work_loop:"
+                            + " continue_queue.qsize() is > 0 for lambda but not"
+                            + " first_iteration_of_work_loop_for_lambda.")
+                    # assert: if we add a state of a (re)started lambda to the continue
+                    # queue then continued_task must be true.
+                    if not continued_task:
+                        logger.debug("[Error]: Internal Error: DAG_executor_work_loop:"
+                            + " continue_queue.qsize() is > 0 for lambda and"
+                            + " first_iteration_of_work_loop_for_lambda but"
+                            + " continued_task is False.")
+                    # if we fail the assertion above we will terminate
+                    # the program.
+                    first_iteration_of_work_loop_for_lambda == False
+                    DAG_executor_state.state = cluster_queue.get()
+                elif cluster_queue.qsize() > 0:
                     DAG_executor_state.state = cluster_queue.get()
                     # Question: Do not do this
                     #worker_needs_input = cluster_queue.qsize() == 0
@@ -2526,6 +2577,12 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     if not cluster_queue.qsize() == 0:
                         logger.error("[Error]: DAG_executor_work_loop: Internal Error: simulated or real lambda:"
                             + " cluster_queue contained more than one item of work - queue size > 0 after cluster_queue.get")
+#rhc: lambda inc:
+                else:
+                    logger.debug("[Error]: Internal Error: DAG_executor_work_loop:"
+                        + " cluster_queue and continue_queue are both empty"
+                        + " for a lambda but this lambda nowe has nothing to do"
+                        + " and should have terminatd instead of trying to do more.")
 
             # while (True) still executing from above - continues next with work to do in the form
             # of DAG_executor_state.state of some task
@@ -2608,11 +2665,17 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 + " (not state_info.task_name in DAG_info.get_DAG_leaf_tasks(): "
                 + str((not state_info.task_name in DAG_info.get_DAG_leaf_tasks())))
 
-#rhc: lambda inc: if using_workers and
             if incremental_dag_generation_with_groups and continued_task and (
-            (state_info.task_name == name_of_first_groupOrpartition_in_DAG or not state_info.task_name in DAG_info.get_DAG_leaf_tasks())
+             (state_info.task_name == name_of_first_groupOrpartition_in_DAG or not state_info.task_name in DAG_info.get_DAG_leaf_tasks())
             ):
                 continued_task = False
+#rhc: lambda inc:
+                # We restarted the continued task with the output that it
+                # generated befoer it terminated. This output was labeled
+                # "input" in the payload. Here we assign input to output
+                # which we will use when we process the restarted task's
+                # fanins/fanouts/collpases (next).
+                output = input
                 pass 
                 # do not execute this group/task since it has been excuted before.
             else:
@@ -2633,8 +2696,6 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # still True. We need to set it to False.
                 incremental_dag_generation_with_partitions = compute_pagerank and use_incremental_DAG_generation and not use_page_rank_group_partitions
 
-#rhc: lambda inc: if using_workers and
-# but may kep using continue_task so we can excute a group with TBC fanins/fanouts, like usual
                 if incremental_dag_generation_with_partitions and continued_task:
                     continued_task = False
                     # if continued state is the first partition (which is a leaf task) or is not a leaf task
@@ -3739,10 +3800,22 @@ def DAG_executor(payload):
     # reads from default file './DAG_info.pickle'
     DAG_info = DAG_Info.DAG_info_fromfilename()
 
-#ToDo: Lambda: modify this local storage no workers version to put a threads payload input in the data_dict?
-# Add comment that we are using global but we add here too to check logic. Here we can make sure data
-# is already in data_dict as assert. if not key in data_dict:
-    
+#rhc: lambda: Need to get the continued_task flag from the payload.
+
+# The data_dict is global to the threads, so all of the inputs to this task were previously
+# outputs of some task T that T put in the data_dict. Here we just assert
+# that the key is already in the data_dict.
+# Note: The input can be for a regular task or for a contunued task that 
+# is continued during incremental DAG generation. Note however, that for
+# incremental DAG generation, when we are using groups, the payload input 
+# for this task T is value that this task output when it was excuted and then
+# determined to have fanins/fanouts that were to-be-continued. At that point,
+# the lambda L that was executing T tried to withdraw a new incremental DAG
+# but no DAG was available yet, so L terminated and its output P was saved
+# for when a new lambda could executed with P (i.e., afte the next incremental
+# DAG is generated.) The new Lambda will not execute the task T again since
+# it was already executed; instead, the new lmabda will perform T's fanins/fanouts.
+    #assert:    
     DAG_map = DAG_info.get_DAG_map()
     state_info = DAG_map[DAG_exec_state.state]
     is_leaf_task = state_info.task_name in DAG_info.get_DAG_leaf_tasks()
@@ -3760,11 +3833,14 @@ def DAG_executor(payload):
                     + " data_dict missing value for input key " + str(key))
             else:
                 logger.debug("DAG_executor:verified: " + str(key))
-    
+    else:
+        pass
+        # leaf tasks have no inputs; the inputs for leaf tasks are
+        # stored in the DAG (as Dask does)
+
     # work_queue is the global shared work queue, which is none when we are using threads
     # to simulate lambdas and is a Queue when we are using worker threads. See imported file
     # DAG_executor_work_queue_for_threads.py for Queue creation.
-
     global work_queue
 #rhc continue
     global DAG_infobuffer_monitor
@@ -3890,6 +3966,8 @@ def DAG_executor_lambda(payload):
     #logger.debug("payload DAG_exec_state.state:" + str(DAG_exec_state.state))
 
     DAG_map = DAG_info.get_DAG_map()
+
+    #rhc: lambda: Need to get the continued_task flag from the payload.
     
     state_info = DAG_map[DAG_exec_state.state]
     is_leaf_task = state_info.task_name in DAG_info.get_DAG_leaf_tasks()
