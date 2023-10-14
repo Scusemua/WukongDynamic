@@ -39,6 +39,9 @@ read_DAG_info = True
 create_work_queue_lock = None
 create_synchronization_object_lock = None
 
+# created in main 
+tcp_server = None
+
 class TCPHandler(socketserver.StreamRequestHandler):
     def handle(self):
 
@@ -1449,5 +1452,6 @@ class TCPServer(object):
 
 if __name__ == "__main__":
     # Create a Server Instance
+#rhc: added tcp_server global variable at top or 
     tcp_server = TCPServer()
     tcp_server.start()

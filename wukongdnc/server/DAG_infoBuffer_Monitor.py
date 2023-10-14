@@ -96,7 +96,7 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         try:
             super(DAG_infoBuffer_Monitor, self).enter_monitor(method_name="get_current_version_number_DAG_info")
         except Exception as ex:
-            logger.error("[ERROR] Failed super(DAG_infoBuffer, self)")
+            logger.error("[ERROR]: DAG_infoBuffer_Monitor:  Failed super(DAG_infoBuffer_Monitor, self)")
             logger.error("[ERROR] self: " + str(self.__class__.__name__))
             logger.debug(ex)
             return 0
@@ -122,7 +122,7 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         try:
             super(DAG_infoBuffer_Monitor, self).enter_monitor(method_name="deposit")
         except Exception as ex:
-            logger.error("[ERROR] Failed super(DAG_infoBuffer, self)")
+            logger.error("[ERROR]: DAG_infoBuffer_Monitor: Failed super(DAG_infoBuffer_Monitor, self)")
             logger.error("[ERROR] self: " + str(self.__class__.__name__))
             logger.debug(ex)
             return 0

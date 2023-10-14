@@ -32,6 +32,7 @@ class BoundedBuffer(MonitorSU):
         self._in=0
         self._out=0
         #rhc: exp
+        # used by withdraw half
         self.first = True
 		
 	# synchronous try version of deposit, restart when block
