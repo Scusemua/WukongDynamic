@@ -7,6 +7,7 @@ from ..dag.DAG_executor_constants import run_all_tasks_locally
 from ..dag.DAG_executor_State import DAG_executor_State
 #from ..dag.DAG_executor import DAG_executor
 from wukongdnc.dag import DAG_executor
+from wukongdnc.wukong.invoker import invoke_lambda_DAG_executor
 
 import logging 
 
@@ -191,7 +192,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     DAG_exec_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
                     DAG_exec_state.return_value = None
                     DAG_exec_state.blocking = False
-                    logger.debug("DAG_infoBuffer_Monitor_for_Lambdas: DAG_executor_state.state: " + str(DAG_exec_state.state)
+                    logger.debug("DAG_infoBuffer_Monitor_for_Lambdas: starting lambda with DAG_executor_state.state: " + str(DAG_exec_state.state)
                         + " continued task: " + str(DAG_exec_state.continued_task))
                     #logger.debug("DAG_executor_state.function_name: " + DAG_executor_state.function_name)
                     payload = {
@@ -216,7 +217,6 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                         # a global variable
                         #"server": server
                     }
-                    logger.debug("DAG_executor_driver: Starting DAG_executor thread for state " + start_state)
                     # Note:
                     # get the current thread instance
                     #    thread = current_thread()
@@ -248,7 +248,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     DAG_exec_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
                     DAG_exec_state.return_value = None
                     DAG_exec_state.blocking = False
-                    logger.debug("DAG_infoBuffer_Monitor_for_Lambdas: DAG_executor_state.state:" + str(DAG_exec_state.state)
+                    logger.debug("DAG_infoBuffer_Monitor_for_Lambdas: starting lambda with DAG_executor_state.state:" + str(DAG_exec_state.state)
                         + " continued task: " + str(DAG_exec_state.continued_task))
                     #logger.debug("DAG_executor_state.function_name: " + DAG_executor_state.function_name)
                     payload = {
@@ -273,7 +273,6 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                         # a global variable
                         #"server": server
                     }
-                    logger.debug("DAG_executor_driver: Starting DAG_executor thread for leaf task state " + start_state)
                     # Note:
                     # get the current thread instance
                     #    thread = current_thread()
@@ -287,7 +286,108 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                 logger.debug("[ERROR] DAG_executor_driver: Failed to start DAG_executor thread for state " + str(start_state))
                 logger.debug(ex)
         else:
-            pass # complete for real lambdas
+            # using real lambdas
+            try:
+                for start_tuple in self._buffer:
+                    # pass the state/task the thread is to execute at the start of its DFS path
+                    start_state = start_tuple[0]
+                    # Note: for incremental DAG generation, when we restart a lambda
+                    # for a continued task, if the task is a group, we give it the output
+                    # it generated previously (before terminating) sand use the output
+                    # to do the group's/task's fanins/fanout. If the task is a partition,
+                    # we give the partition the input for its execution. 
+                    #(Tricky: after executing a group with TBC fanins/fanout/collpases,
+                    # if it has TBC fanouts/faninNBs/fanins, we cannot do any of them so we
+                    # have to wait until we get a new DAG and restart the group/task
+                    # so we can complete the fanouts/faninNBs/fanins. After excuting 
+                    # a partition the partition can only have a collapse, i.e., we know
+                    # we must execute the colapse task. So when we restart the partition/task,
+                    # we supply the input for the collpase task and execute the collapse task.)
+                    input_or_output = start_tuple[1]
+                    DAG_exec_state = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()), state = start_state, continued_task = True)
+                    DAG_exec_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
+                    DAG_exec_state.return_value = None
+                    DAG_exec_state.blocking = False
+                    logger.debug("DAG_infoBuffer_Monitor_for_Lambdas: starting lambda with DAG_executor_state.state: " + str(DAG_exec_state.state)
+                        + " continued task: " + str(DAG_exec_state.continued_task))
+                    #logger.debug("DAG_executor_state.function_name: " + DAG_executor_state.function_name)
+
+                    payload = {
+                        #"state": int(start_state_fanin_task),
+                        # We are using threads to simulate lambdas. The data_dict in 
+                        # this case is a global object visible to all threads. Each thread
+                        # will put its results in the data_dict befoer sending the results
+                        # to the FanInNB, so the fanin results collected by the FanInNB 
+                        # are already available in the global data_dict. Thus, we do not 
+                        # really need to put the results in the payload for the started
+                        # thread (simulating a real lambda) but we do to be conistent 
+                        # with real lambdas.
+                        "input": input_or_output,
+                        "DAG_executor_state": DAG_exec_state,
+                        # Using threads to simulate lambdas and th threads
+                        # just read DAG_info locally, we do not need to pass it 
+                        # to each Lambda.
+                        # passing DAG_info to be consistent with real lambdas
+                        "DAG_info": self.current_version_DAG_info,
+                        # server takes the place of tcp_server which the real lambdas
+                        # use. server is accessibl to the lambda simulator threads as 
+                        # a global variable
+                        #"server": server
+                    }
+                    invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_Executor_Lambda")
+                self._buffer.clear()
+
+                for work_tuple in self.current_version_new_leaf_tasks:
+                    # pass the state/task the thread is to execute at the start of its DFS path
+                    start_state = work_tuple[0]
+                    # leaf tasks have no inputs. 
+                    # Note: for incremental DAG generation, when we restart a lambda
+                    # for a continued task, if the task is a group, we give it the output
+                    # it generated previously (before terminating) sand use the output
+                    # to do the group's/task's fanins/fanout. If the task is a partition,
+                    # we give the partition the input for its execution. 
+                    #(Tricky: after executing a group with TBC fanins/fanout/collpases,
+                    # if it has TBC fanouts/faninNBs/fanins, we cannot do any of them so we
+                    # have to wait until we get a new DAG and restart the group/task
+                    # so we can complete the fanouts/faninNBs/fanins. After excuting 
+                    # a partition the partition can only have a collapse, i.e., we know
+                    # we must execute the colapse task. So when we restart the partition/task,
+                    # we supply the input for the collpase task and execute the collapse task.)
+                    input_or_output = [] 
+                    DAG_exec_state = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()), state = start_state, continued_task = True)
+                    DAG_exec_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
+                    DAG_exec_state.return_value = None
+                    DAG_exec_state.blocking = False
+                    logger.debug("DAG_infoBuffer_Monitor_for_Lambdas: starting lambda with DAG_executor_state.state:" + str(DAG_exec_state.state)
+                        + " continued task: " + str(DAG_exec_state.continued_task))
+                    #logger.debug("DAG_executor_state.function_name: " + DAG_executor_state.function_name)
+                    payload = {
+                        #"state": int(start_state_fanin_task),
+                        # We aer using threads to simulate lambdas. The data_dict in 
+                        # this case is a global object visible to all threads. Each thread
+                        # will put its results in the data_dict befoer sending the results
+                        # to the FanInNB, so the fanin results collected by the FanInNB 
+                        # are already available in the global data_dict. Thus, we do not 
+                        # really need to put the results in the payload for the started
+                        # thread (simulating a real lambda) but we do to be conistent 
+                        # with real lambdas.
+                        "input": input_or_output, # will be [] for leaf task
+                        "DAG_executor_state": DAG_exec_state,
+                        # Using threads to simulate lambdas and th threads
+                        # just read DAG_info locally, we do not need to pass it 
+                        # to each Lambda.
+                        # passing DAG_info to be consistent with real lambdas
+                        "DAG_info": self.current_version_DAG_info,
+                        # server takes the place of tcp_server which the real lambdas
+                        # use. server is accessibl to the lambda simulator threads as 
+                        # a global variable
+                        #"server": server
+                    }
+                    invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_Executor_Lambda")
+                self.current_version_new_leaf_tasks.clear()
+            except Exception as ex:
+                logger.debug("[ERROR] DAG_executor_driver: Failed to start DAG_executor thread for state " + str(start_state))
+                logger.debug(ex)
         return 0, restart
     
     """

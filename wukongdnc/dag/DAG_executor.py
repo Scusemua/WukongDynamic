@@ -48,7 +48,7 @@ from .util import pack_data
 from .Remote_Client_for_DAG_infoBuffer_Monitor import Remote_Client_for_DAG_infoBuffer_Monitor
 from .Remote_Client_for_DAG_infoBuffer_Monitor_for_Lambdas import Remote_Client_for_DAG_infoBuffer_Monitor_for_Lambdas
 from .DAG_infoBuffer_Monitor_for_threads import DAG_infobuffer_monitor
-from .DAG_infoBuffer_Monitor_for_Lambdas_for_threads import DAG_infoBuffer_Monitor_for_Lambdas 
+from .DAG_infoBuffer_Monitor_for_lambdas_for_threads import DAG_infobuffer_monitor
 # Note: avoiding circular imports:
 # https://stackoverflow.com/questions/744373/what-happens-when-using-mutual-or-circular-cyclic-imports
 #rhc cleanup
@@ -1441,7 +1441,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             # are computing pagerank, so far. Pagerank DAGS are the
             # only DAGS we generate ourselves, so far.
             if compute_pagerank and use_incremental_DAG_generation:
-                DAG_infobuffer_monitor = Remote_Client_for_DAG_infoBuffer_Monitor(websocket)
+                if using_workers:
+                    DAG_infobuffer_monitor = Remote_Client_for_DAG_infoBuffer_Monitor(websocket)
+                else:
+                    DAG_infobuffer_monitor = Remote_Client_for_DAG_infoBuffer_Monitor_for_Lambdas(websocket)  
 
 #rhc continue
 # ToDo: need to create the remote DAG_infobuffer_monitor. The remote

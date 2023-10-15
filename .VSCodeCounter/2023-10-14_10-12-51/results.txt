@@ -1,0 +1,175 @@
+Date : 2023-10-14 10:12:51
+Directory : c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic
+Total : 132 files,  21513 codes, 23786 comments, 5368 blanks, all 50667 lines
+
+Languages
++----------+------------+------------+------------+------------+------------+
+| language | files      | code       | comment    | blank      | total      |
++----------+------------+------------+------------+------------+------------+
+| Python   |        121 |     17,880 |     21,738 |      4,837 |     44,455 |
+| Java     |          7 |      2,041 |      2,037 |        515 |      4,593 |
+| JSON     |          2 |      1,558 |          0 |          2 |      1,560 |
+| Markdown |          1 |         34 |          5 |         14 |         53 |
+| YAML     |          1 |          0 |          6 |          0 |          6 |
++----------+------------+------------+------------+------------+------------+
+
+Directories
++--------------------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                                                                           | files      | code       | comment    | blank      | total      |
++--------------------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                                                                              |        132 |     21,513 |     23,786 |      5,368 |     50,667 |
+| . (Files)                                                                                                                      |         12 |      1,672 |        986 |        439 |      3,097 |
+| Java                                                                                                                           |          7 |      2,041 |      2,037 |        515 |      4,593 |
+| wukongdnc                                                                                                                      |        113 |     17,800 |     20,763 |      4,414 |     42,977 |
+| wukongdnc (Files)                                                                                                              |          5 |        197 |         29 |         22 |        248 |
+| wukongdnc\coordinator                                                                                                          |          1 |          0 |          0 |          1 |          1 |
+| wukongdnc\dag                                                                                                                  |         45 |      9,101 |     14,787 |      2,201 |     26,089 |
+| wukongdnc\data                                                                                                                 |          2 |      1,558 |          0 |          2 |      1,560 |
+| wukongdnc\data (Files)                                                                                                         |          1 |      1,210 |          0 |          1 |      1,211 |
+| wukongdnc\data\mergesort                                                                                                       |          1 |        348 |          0 |          1 |        349 |
+| wukongdnc\programs                                                                                                             |          4 |        529 |        298 |        168 |        995 |
+| wukongdnc\server                                                                                                               |         39 |      5,131 |      4,744 |      1,556 |     11,431 |
+| wukongdnc\wukong                                                                                                               |         17 |      1,284 |        905 |        464 |      2,653 |
+| wukongdnc\wukong (Files)                                                                                                       |          9 |        764 |        683 |        279 |      1,726 |
+| wukongdnc\wukong\memoization                                                                                                   |          3 |        302 |        100 |         93 |        495 |
+| wukongdnc\wukong\synchronization                                                                                               |          5 |        218 |        122 |         92 |        432 |
++--------------------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++--------------------------------------------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| filename                                                                                                                       | language | code       | comment    | blank      | total      |
++--------------------------------------------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\Java\DivideandConquerExecutor.java                                           | Java     |        907 |        463 |        207 |      1,577 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\Java\DivideandConquerFibonacci.java                                          | Java     |        180 |        478 |         66 |        724 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\Java\DivideandConquerMergeSort.java                                          | Java     |        292 |        327 |         81 |        700 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\Java\DivideandConquerQuickSort.java                                          | Java     |         43 |        595 |         13 |        651 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\Java\countingSemaphoreNew.java                                               | Java     |         85 |         48 |         24 |        157 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\Java\countingSemaphore_original.java                                         | Java     |        469 |        125 |        105 |        699 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\Java\monitorSUNew.java                                                       | Java     |         65 |          1 |         19 |         85 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\README.md                                                                    | Markdown |         34 |          5 |         14 |         53 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\composer_driver.py                                                           | Python   |        120 |          1 |         26 |        147 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\fibonnaci_driver.py                                                          | Python   |        153 |          9 |         40 |        202 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\fibonnaci_program.py                                                         | Python   |        183 |        530 |         64 |        777 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\handler.py                                                                   | Python   |        167 |         41 |         26 |        234 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\handlerDAG.py                                                                | Python   |         32 |          8 |         10 |         50 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\handlerNew.py                                                                | Python   |        227 |         64 |         24 |        315 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\mergesort_driver.py                                                          | Python   |        173 |         40 |         41 |        254 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\mergesort_program.py                                                         | Python   |        214 |        122 |         73 |        409 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\serverless_sync_handler.py                                                   | Python   |         35 |         24 |         16 |         75 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\treereduction_driver.py                                                      | Python   |        143 |         12 |         38 |        193 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\treereduction_program.py                                                     | Python   |        191 |        130 |         67 |        388 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\__init__.py                                                        | Python   |          0 |          0 |          1 |          1 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\constants.py                                                       | Python   |          4 |          3 |          1 |          8 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\coordinator\coordinator.py                                         | Python   |          0 |          0 |          1 |          1 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\BFS.py                                                         | Python   |      1,691 |      2,530 |        376 |      4,597 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\BFS_Custom_Dask_DAG.py                                         | Python   |        154 |        172 |         37 |        363 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\BFS_Node.py                                                    | Python   |         44 |         38 |          9 |         91 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\BFS_Partition_Node.py                                          | Python   |        123 |         85 |         36 |        244 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\BFS_Shared.py                                                  | Python   |        366 |        766 |        106 |      1,238 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\BFS_dfs_parent_pre_post.py                                     | Python   |          2 |        460 |          3 |        465 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\BFS_generate_DAG_info.py                                       | Python   |        664 |        591 |         85 |      1,340 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\BFS_generate_DAG_info_incremental_groups.py                    | Python   |        587 |        875 |        155 |      1,617 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\BFS_generate_DAG_info_incremental_partitions.py                | Python   |        384 |        494 |         93 |        971 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\BFS_generate_shared_partitions_groups.py                       | Python   |        441 |        323 |         20 |        784 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\BFS_pagerank.py                                                | Python   |        506 |        767 |        117 |      1,390 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\BFS_scc.py                                                     | Python   |        107 |        112 |         42 |        261 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\BFS_stuff.py                                                   | Python   |          8 |        585 |         12 |        605 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\Ben_Wukong_Task_Code.py                                        | Python   |         47 |        132 |         23 |        202 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\DAG_Executor_lambda_function_simulator.py                      | Python   |        221 |        719 |         65 |      1,005 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\DAG_boundedbuffer_work_queue.py                                | Python   |         40 |          5 |         13 |         58 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\DAG_data_dict_for_threads.py                                   | Python   |          4 |          2 |          1 |          7 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\DAG_executor.py                                                | Python   |      1,262 |      2,728 |        341 |      4,331 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\DAG_executor_State.py                                          | Python   |         26 |         11 |          3 |         40 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\DAG_executor_constants.py                                      | Python   |        175 |        303 |         55 |        533 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\DAG_executor_counter.py                                        | Python   |         20 |          7 |          8 |         35 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\DAG_executor_countermp.py                                      | Python   |         15 |          3 |          6 |         24 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\DAG_executor_create_multithreaded_multiprocessing_processes.py | Python   |         63 |          8 |         15 |         86 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\DAG_executor_create_threads_for_multiT_multiP.py               | Python   |         54 |         38 |         19 |        111 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\DAG_executor_driver.py                                         | Python   |        577 |      1,530 |        133 |      2,240 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\DAG_executor_output_checker.py                                 | Python   |         24 |          1 |          9 |         34 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\DAG_executor_synchronizer.py                                   | Python   |        211 |        236 |         61 |        508 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\DAG_executor_work_queue_for_threads.py                         | Python   |          5 |          3 |          1 |          9 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\DAG_info.py                                                    | Python   |         94 |         46 |         16 |        156 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\DAG_infoBuffer_Monitor_for_threads.py                          | Python   |          8 |         10 |          1 |         19 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\DFS.py                                                         | Python   |         45 |         49 |         13 |        107 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\DFS_visit.py                                                   | Python   |        419 |        444 |         66 |        929 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\Local_Client_for_DAG_infoBuffer_Monitor.py                     | Python   |         17 |         29 |          4 |         50 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\QueuevsBB.py                                                   | Python   |         32 |         31 |          9 |         72 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\Remote_Client_for_DAG_infoBuffer_Monitor.py                    | Python   |         20 |         23 |          6 |         49 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\SCC.py                                                         | Python   |        108 |         60 |         38 |        206 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\__init__.py                                                    | Python   |          0 |          0 |          1 |          1 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\counter_mp.py                                                  | Python   |         11 |          3 |          5 |         19 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\dask_dag.py                                                    | Python   |        220 |        343 |         92 |        655 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\generate_playlist.py                                           | Python   |         23 |          6 |          4 |         33 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\multiprocessing_logging.py                                     | Python   |         65 |         63 |         19 |        147 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\pagerank.py                                                    | Python   |        102 |         23 |         42 |        167 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\pythonMultiP.py                                                | Python   |         67 |         99 |         25 |        191 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\shared_memory_test.py                                          | Python   |         36 |          1 |         11 |         48 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\dag\util.py                                                        | Python   |         13 |         33 |          5 |         51 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\data\analysis.ipynb                                                | JSON     |      1,210 |          0 |          1 |      1,211 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\data\mergesort\plots.ipynb                                         | JSON     |        348 |          0 |          1 |        349 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\old_invoker.py                                                     | Python   |         27 |         11 |          9 |         47 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\programs\DivideAndConquerTreeReduction.py                          | Python   |        252 |        149 |         80 |        481 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\programs\DivideandConquerMergeSort.py                              | Python   |        252 |        149 |         80 |        481 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\programs\DivideandConquerQuickSort.py                              | Python   |          0 |          0 |          1 |          1 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\programs\test.py                                                   | Python   |         25 |          0 |          7 |         32 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\server\CountingSemaphore_Monitor.py                                | Python   |        117 |         44 |         22 |        183 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\server\CountingSemaphore_MonitorOld.py                             | Python   |         85 |         10 |         24 |        119 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\server\CountingSemaphore_Monitor_Select.py                         | Python   |         85 |          6 |         23 |        114 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\server\DAG_executor_FanIn.py                                       | Python   |         98 |         96 |         31 |        225 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\server\DAG_executor_FanInNB.py                                     | Python   |        194 |        183 |         45 |        422 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\server\DAG_executor_FanInNB_select.py                              | Python   |        166 |        181 |         48 |        395 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\server\DAG_executor_FanIn_select.py                                | Python   |         67 |         50 |         31 |        148 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\server\DAG_infoBuffer_Monitor.py                                   | Python   |        200 |         87 |         33 |        320 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\server\DAG_infoBuffer_Monitor_for_Lambdas.py                       | Python   |        230 |        228 |         46 |        504 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\server\__init__.py                                                 | Python   |          0 |          0 |          1 |          1 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\server\api.py                                                      | Python   |        157 |        317 |         46 |        520 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\server\arrival.py                                                  | Python   |          9 |          0 |          1 |         10 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\server\barrier.py                                                  | Python   |         61 |         51 |         20 |        132 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\server\barrierOld.py                                               | Python   |         51 |         31 |         22 |        104 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\server\bounded_buffer.py                                           | Python   |        194 |         53 |         20 |        267 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\server\bounded_bufferOld.py                                        | Python   |        101 |         19 |         19 |        139 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\server\bounded_buffer_select.py                                    | Python   |         70 |         46 |         36 |        152 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\server\counting_semaphore.py                                       | Python   |        107 |         70 |         49 |        226 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\server\fanin.py                                                    | Python   |         98 |         69 |         29 |        196 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\server\faninOld.py                                                 | Python   |        102 |         59 |         43 |        204 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\server\lambda_driver.py                                            | Python   |          4 |          5 |          5 |         14 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\server\lambda_function.py                                          | Python   |        132 |         90 |         30 |        252 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\server\local_driver.py                                             | Python   |         78 |         66 |         20 |        164 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\server\message_handler_lambda.py                                   | Python   |        227 |        233 |         80 |        540 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\server\monitor_su.py                                               | Python   |         86 |         25 |         21 |        132 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\server\result_buffer.py                                            | Python   |         74 |         10 |         14 |         98 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\server\selectableEntry.py                                          | Python   |         69 |          9 |         25 |        103 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\server\selectivewait.py                                            | Python   |         99 |         28 |         33 |        160 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\server\selector.py                                                 | Python   |        150 |        124 |         49 |        323 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\server\selector_lambda.py                                          | Python   |        134 |        124 |         53 |        311 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\server\state.py                                                    | Python   |         33 |          5 |          3 |         41 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\server\synchronizer.py                                             | Python   |        232 |        353 |        120 |        705 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\server\synchronizerThreadSelect.py                                 | Python   |         32 |         21 |         13 |         66 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\server\synchronizer_lambda.py                                      | Python   |        221 |        286 |        120 |        627 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\server\synchronizer_thread.py                                      | Python   |         27 |          9 |         11 |         47 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\server\tcp_server.py                                               | Python   |        562 |        727 |        169 |      1,458 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\server\tcp_server_lambda.py                                        | Python   |        649 |        995 |        173 |      1,817 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\server\tcp_server_old.py                                           | Python   |        109 |          7 |         22 |        138 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\server\util.py                                                     | Python   |         21 |         27 |          6 |         54 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\wukong-divide-and-conquer.yaml                                     | YAML     |          0 |          6 |          0 |          6 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\wukong2_test.py                                                    | Python   |        166 |          9 |         11 |        186 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\wukong\__init__.py                                                 | Python   |          0 |          0 |          1 |          1 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\wukong\channel.py                                                  | Python   |         31 |         54 |         12 |         97 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\wukong\client_server.py                                            | Python   |         25 |          8 |         10 |         43 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\wukong\dc_executor.py                                              | Python   |        258 |        254 |        101 |        613 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\wukong\fanin_synchronizer.py                                       | Python   |         50 |         12 |         22 |         84 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\wukong\invoker.py                                                  | Python   |        102 |        114 |         34 |        250 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\wukong\memoization\__init__.py                                     | Python   |          0 |          0 |          1 |          1 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\wukong\memoization\memoization_controller.py                       | Python   |        234 |        100 |         83 |        417 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\wukong\memoization\util.py                                         | Python   |         68 |          0 |          9 |         77 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\wukong\networking.py                                               | Python   |          9 |          0 |          2 |         11 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\wukong\old_invoker.py                                              | Python   |         65 |         25 |         13 |        103 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\wukong\synchronization\__init__.py                                 | Python   |          0 |          0 |          1 |          1 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\wukong\synchronization\barrier.py                                  | Python   |         35 |          1 |         10 |         46 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\wukong\synchronization\counting_semaphore.py                       | Python   |        109 |         66 |         47 |        222 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\wukong\synchronization\main.py                                     | Python   |         26 |         54 |         23 |        103 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\wukong\synchronization\monitor_su.py                               | Python   |         48 |          1 |         11 |         60 |
+| c:\Users\benrc\Desktop\Executor\DAG\WukongDynamic\wukongdnc\wukong\wukong_problem.py                                           | Python   |        224 |        216 |         84 |        524 |
+| Total                                                                                                                          |          |     21,513 |     23,786 |      5,368 |     50,667 |
++--------------------------------------------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+
