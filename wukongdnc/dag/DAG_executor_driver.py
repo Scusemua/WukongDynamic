@@ -1322,6 +1322,13 @@ def run():
                                     # workers withdraw their work, i.e., starting state, from the work_queue
                                     DAG_exec_state = None
                                 logger.debug("DAG_executor_driver: Starting DAG_executor thread for leaf task " + task_name)
+#rhc: lambda inc: will be reading ADG_info from payload as we need to do that for
+# incremental DAG generation since pass DAG_info in payload on restarting continued tasks.
+# SO ssimulated lambdas use DAG_info parm instead of reading DAG_info from file.
+# The latter works when non incremental DAG generation since can read the complete DAG
+# at the start. Also using input parm to pass input/output to restarted lambda
+# for increnmental DAG generation. So pass it here to be consisent though we won't
+# be using arg value since leaf task inputs are in state_info of the task (like Dask)
                                 payload = {
                                     # What's not in the payload: DAG_info: since threads/processes read this pickled 
                                     # file at the start of their execution. server: since this is a global variable
@@ -1329,9 +1336,22 @@ def run():
                                     # messages to the tcp_server, and thus do not use the server object, which is 
                                     # used to simulate the tcp_server when running locally. Input: threads and processes
                                     # get their input from the data_dict. Note the lambdas will be invoked with their 
-                                    # input in the payload and will put this input in their local data_dict.
-                                    "DAG_executor_state": DAG_exec_state
+                                    # input in the payload and will put this
+                                    # input in their local data_dict.
+                                    "input": None, # get from state_info for the leaf task
+                                    "DAG_executor_state": DAG_exec_state,
+                                    "DAG_info": DAG_info
                                 }
+
+                                """
+                                # This is the payload for real lambdas:
+                                payload = {
+                                    "input": inp,  get from DAG_leaf_task_inputs
+                                    "DAG_executor_state": lambda_DAG_exec_state,
+                                    "DAG_info": DAG_info
+                                }
+                                """
+
                                 # Note:
                                 # get the current thread instance
                                 # thread = current_thread()
@@ -1434,7 +1454,7 @@ def run():
                                 # can be optimized if necessary, e.g., separate files for leaf tasks and non-leaf tasks.
 
                                 payload = {
-                                    "input": inp,
+                                    "input": inp, # get from DAG_leaf_task_inputs
                                     "DAG_executor_state": lambda_DAG_exec_state,
                                     "DAG_info": DAG_info
                                 }

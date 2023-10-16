@@ -3895,7 +3895,13 @@ def DAG_executor(payload):
     #logger.debug("DAG_executor starting payload input:" +str(task_payload_inputs) + " payload state: " + str(DAG_executor_state.state) )
   
     # reads from default file './DAG_info.pickle'
-    DAG_info = DAG_Info.DAG_info_fromfilename()
+#rhc: lambda inc: need to get input from payload when incremental DAG generation
+# instead of always getting it at start from file, as passing DAG_infos on
+# restart as part of payload (i.e., no reread DAG_info from file).
+    if using_workers:
+        DAG_info = DAG_Info.DAG_info_fromfilename()
+    else:
+        DAG_info = payload['DAG_info']
 
 #rhc: lambda: Need to get the continued_task flag from the payload.
 
@@ -3932,7 +3938,7 @@ def DAG_executor(payload):
                 logger.debug("DAG_executor:verified: " + str(key))
     else:
         pass
-        # leaf tasks have no inputs; the inputs for leaf tasks are
+        # leaf tasks have no input arguments; the inputs for leaf tasks are
         # stored in the DAG (as Dask does)
 
     # work_queue is the global shared work queue, which is none when we are using threads
