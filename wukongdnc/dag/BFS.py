@@ -674,9 +674,19 @@ import logging
 import cloudpickle
 import threading
 #import os
-#import time
+import time
 #from statistics import mean
 import copy
+
+from .DAG_executor_constants import use_shared_partitions_groups, use_page_rank_group_partitions
+from .DAG_executor_constants import use_struct_of_arrays_for_pagerank, compute_pagerank
+from .DAG_executor_constants import use_incremental_DAG_generation, using_workers
+from .DAG_executor_constants import run_all_tasks_locally, using_threads_not_processes
+from .DAG_executor_constants import work_queue_size_for_incremental_DAG_generation_with_worker_processes
+from .DAG_executor_constants import incremental_DAG_deposit_interval
+from .DAG_executor_constants import check_pagerank_output
+from .DAG_executor_constants import using_threads_not_processes, use_multithreaded_multiprocessing
+
 
 from .BFS_Node import Node
 from .BFS_Partition_Node import Partition_Node
@@ -689,7 +699,12 @@ from .BFS_generate_DAG_info import Partition_senders, Partition_receivers, Group
 from .BFS_generate_DAG_info import leaf_tasks_of_partitions, leaf_tasks_of_partitions_incremental
 from .BFS_generate_DAG_info import leaf_tasks_of_groups, leaf_tasks_of_groups_incremental
 from .BFS_generate_shared_partitions_groups import generate_shared_partitions_groups
-from .DAG_infoBuffer_Monitor_for_threads import DAG_infobuffer_monitor
+#from .DAG_infoBuffer_Monitor_for_threads import DAG_infobuffer_monitor
+if not using_workers:
+    from .DAG_infoBuffer_Monitor_for_lambdas_for_threads import DAG_infobuffer_monitor
+else:
+    from .DAG_infoBuffer_Monitor_for_threads import DAG_infobuffer_monitor
+
 
 
 #rhc shared
@@ -698,21 +713,15 @@ from .DAG_infoBuffer_Monitor_for_threads import DAG_infobuffer_monitor
 #from .Shared import shared_partition, shared_groups, shared_partition_map,  shared_groups_map
 from . import BFS_Shared
 
-from .DAG_executor_constants import use_shared_partitions_groups, use_page_rank_group_partitions
-from .DAG_executor_constants import use_struct_of_arrays_for_pagerank, compute_pagerank
-from .DAG_executor_constants import use_incremental_DAG_generation, using_workers
-from .DAG_executor_constants import run_all_tasks_locally, using_threads_not_processes
-from .DAG_executor_constants import work_queue_size_for_incremental_DAG_generation_with_worker_processes
-from .DAG_executor_constants import incremental_DAG_deposit_interval
+
 from .DAG_executor_driver import run
 
 from .DAG_boundedbuffer_work_queue import Work_Queue_Client
 from .Remote_Client_for_DAG_infoBuffer_Monitor import Remote_Client_for_DAG_infoBuffer_Monitor
 
-from .DAG_executor_constants import check_pagerank_output
+
 from .DAG_executor_output_checker import get_pagerank_outputs
 from .DAG_executor_output_checker import verify_pagerank_outputs
-from .DAG_executor_constants import using_threads_not_processes, use_multithreaded_multiprocessing
 
 from wukongdnc.constants import TCP_SERVER_IP
 
@@ -920,7 +929,7 @@ if compute_pagerank and use_incremental_DAG_generation:
 """
 
 def DAG_executor_driver_Invoker_Thread():
-    #time.sleep(3)
+    time.sleep(3)
     run()
 
 # visual is a list which stores all the set of edges that constitutes a graph
@@ -2680,7 +2689,7 @@ def bfs(visited, node): #function for BFS
                         + " num_nodes: " + str(num_nodes) + " to_be_continued: "
                         + str(to_be_continued))
 
-                    if using_workers:
+                    if using_workers or not using_workers:
                         
                         if not use_page_rank_group_partitions:
                             logger.debug("BFS: calling generate_DAG_info_incremental_partitions for"

@@ -32,7 +32,7 @@ from .DAG_executor_constants import process_work_queue_Type, FanInNB_Type, using
 from .DAG_executor_constants import sync_objects_in_lambdas_trigger_their_tasks, store_sync_objects_in_lambdas
 from .DAG_executor_constants import tasks_use_result_dictionary_parameter, same_output_for_all_fanout_fanin
 from .DAG_executor_constants import compute_pagerank, use_shared_partitions_groups, use_page_rank_group_partitions
-from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
+from .DAG_executor_constants import use_struct_of_arrays_for_pagerank, using_workers
 from .DAG_executor_constants import use_incremental_DAG_generation, name_of_first_groupOrpartition_in_DAG
 #rhc: counter:
 from .DAG_executor_constants import num_workers
@@ -47,8 +47,11 @@ from .util import pack_data
 #rhc continue
 from .Remote_Client_for_DAG_infoBuffer_Monitor import Remote_Client_for_DAG_infoBuffer_Monitor
 from .Remote_Client_for_DAG_infoBuffer_Monitor_for_Lambdas import Remote_Client_for_DAG_infoBuffer_Monitor_for_Lambdas
-from .DAG_infoBuffer_Monitor_for_threads import DAG_infobuffer_monitor
-from .DAG_infoBuffer_Monitor_for_lambdas_for_threads import DAG_infobuffer_monitor
+if not using_workers:
+    from .DAG_infoBuffer_Monitor_for_lambdas_for_threads import DAG_infobuffer_monitor
+#else:
+#    from .DAG_infoBuffer_Monitor_for_threads import DAG_infobuffer_monitor
+
 # Note: avoiding circular imports:
 # https://stackoverflow.com/questions/744373/what-happens-when-using-mutual-or-circular-cyclic-imports
 #rhc cleanup
@@ -1482,7 +1485,11 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
         continued_task = False
         process_continue_queue = False
         continue_queue = None
-        if using_workers and compute_pagerank and use_incremental_DAG_generation:
+        # workers and simulated labdas use the continue_queue during incremental
+        # DAG generation. Real lambdas use the continue queue when they are executing 
+        # a restarted task for incremental DAG generation but only on the very frist
+        # iteration of the work loop.
+        if compute_pagerank and use_incremental_DAG_generation:
             continue_queue = queue.Queue()
 #hrc lambda inc:
         # True if we are executing the first iteration of the work loop
@@ -1502,11 +1509,11 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
         # will get work from the work_queue; the driver will put leaf task inputs
         # in the work_queue before it starts the worker(s).)
         if (run_all_tasks_locally and not using_workers) or not run_all_tasks_locally:
-            # simulated or real lmabdas are started with a payload that has a state,
-            # put this state in the cluster_queue.
+            # simulated or real lambdas are started with a payload that has a state,
+            # put this state in the cluster_queue or the continue_queue
 #rhc: lambda inc:
             first_iteration_of_work_loop_for_lambda == True
-            if continued_task:
+            if compute_pagerank and use_incremental_DAG_generation and continued_task:
                 continue_queue.put(DAG_executor_state.state)
                 logger.debug("DAG_executor_work_loop: start of simulated or real lambda:"
                     + " put state " + str(DAG_executor_state.state) + " in continue_queue.")
@@ -2552,7 +2559,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # may be empty on later checks.
 #rhc: lambda inc:
                 # assert: 
-                if first_iteration_of_work_loop_for_lambda and not continued_task:
+                if first_iteration_of_work_loop_for_lambda and not (compute_pagerank and use_incremental_DAG_generation and continued_task):
                     if cluster_queue.qsize() == 0:
                         logger.debug("[Error]: Internal Error: DAG_executor_work_loop:"
                             + " first_iteration_of_work_loop_for_lambda and not continued_task"
@@ -2560,7 +2567,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             + " not been restarted for incremental DAG generation shoudl be added"
                             + " to the cluster_queue at the start of the work loop.")
 #rhc: lambda inc:
-                if continue_queue.qsize() > 0:
+                if compute_pagerank and use_incremental_DAG_generation and continued_task and continue_queue.qsize() > 0:
                     # assert: For lambdas, we never put anything in the continue_queue
                     # except the state of a restarted lambda, whcih we add at the start 
                     # of the work loop
@@ -3136,6 +3143,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             if not using_workers and compute_pagerank and use_incremental_DAG_generation and (
                 use_page_rank_group_partitions and state_info.fanout_fanin_faninNB_collapse_groups_are_ToBeContinued
             ):
+                logger.debug("DAG_executor: try to get new incremental DAG for lambda.")
+
                 # Note: if this group was a continued task from the continue_queue then 
                 # we did not execute it and we set continued_task to False. 
                 # This if is checking whether the group/task should be continued. If we just
@@ -3159,6 +3168,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # created before iterating the work loop.
                 new_DAG_info = DAG_infobuffer_monitor.withdraw(DAG_executor_state.state,output)
                 if not new_DAG_info == None:
+                    logger.debug("DAG_executor: got new incremental DAG for lambda returned by withdraw().")
                     DAG_info = new_DAG_info
                     # upate DAG_ma and DAG_tasks with their new versions in DAG_info
                     DAG_map = DAG_info.get_DAG_map()
@@ -3168,6 +3178,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     DAG_tasks = DAG_info.get_DAG_tasks()
                     DAG_number_of_tasks = DAG_info.get_DAG_number_of_tasks()
                 else:
+                    logger.debug("DAG_executor: no new incremental DAG for lambda returned by withdraw().")
                     # Note: we are going to excute the next if-statement. Its condition
                     # will be True (It is he same as this if statement and nothing has
                     # changed) and since using_workers is False, we will return. So we
@@ -3181,6 +3192,9 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # This means we will return/terminate as we have nothing
                     # we can do (i.e., we cannot execute this groups fanins/fanouts
                     # so we can stop.)
+
+            logging.shutdown()
+            os._exit(0)
             
             if (compute_pagerank and use_incremental_DAG_generation and (
                     use_page_rank_group_partitions and state_info.fanout_fanin_faninNB_collapse_groups_are_ToBeContinued)
@@ -3939,7 +3953,7 @@ def DAG_executor(payload):
     else:
         pass
         # leaf tasks have no input arguments; the inputs for leaf tasks are
-        # stored in the DAG (as Dask does)
+        # stored in the DAG (as Dask does)']
 
     # work_queue is the global shared work queue, which is none when we are using threads
     # to simulate lambdas and is a Queue when we are using worker threads. See imported file
@@ -3947,6 +3961,11 @@ def DAG_executor(payload):
     global work_queue
 #rhc continue
     global DAG_infobuffer_monitor
+
+    if DAG_infobuffer_monitor == None:
+        logger.debug("NONE")
+        logging.shutdown()
+        os._exit(0)
 
     #DAG_info = payload['DAG_info']
     #DAG_executor_work_loop(logger, server, counter, thread_work_queue, DAG_executor_state, DAG_info, data_dict)

@@ -188,7 +188,7 @@ if sync_objects_in_lambdas_trigger_their_tasks:
 
 # Indicates that we are computing pagerank and thus that the pagerank
 # options are active and pagerank asserts should hold
-compute_pagerank = False # True
+compute_pagerank = True # True
 
 name_of_first_groupOrpartition_in_DAG = "PR1_1"
 
@@ -212,7 +212,7 @@ check_pagerank_output = compute_pagerank and run_all_tasks_locally and using_wor
 same_output_for_all_fanout_fanin = not compute_pagerank
 
 # True if DAG generation and DAG_execution are overlapped. 
-use_incremental_DAG_generation = compute_pagerank and False
+use_incremental_DAG_generation = compute_pagerank and True
 
 # generate next DAG when num_incremental_DAGs_generated mod 
 # incremental_interval == 0. For example, if we set this

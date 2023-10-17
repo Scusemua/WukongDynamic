@@ -1322,7 +1322,7 @@ def run():
                                     # workers withdraw their work, i.e., starting state, from the work_queue
                                     DAG_exec_state = None
                                 logger.debug("DAG_executor_driver: Starting DAG_executor thread for leaf task " + task_name)
-#rhc: lambda inc: will be reading ADG_info from payload as we need to do that for
+#rhc: lambda inc: will be reading DAG_info from payload as we need to do that for
 # incremental DAG generation since pass DAG_info in payload on restarting continued tasks.
 # SO ssimulated lambdas use DAG_info parm instead of reading DAG_info from file.
 # The latter works when non incremental DAG generation since can read the complete DAG
