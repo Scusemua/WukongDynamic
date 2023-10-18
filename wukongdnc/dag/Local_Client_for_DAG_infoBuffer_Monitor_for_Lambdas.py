@@ -38,9 +38,10 @@ class Local_Client_for_DAG_infoBuffer_Monitor_for_Lambdas:
         # _restart return value begins with "_" so PyLint does not report it
         _return_value_ignored, _restart_value_ignored = self.wrapped_DAG_infobuffer_monitor_for_Lambdas.deposit(**keyword_arguments)
  
-    def withdraw(self,requested_current_version_number):
+    def withdraw(self,requested_current_version_number,state,input_or_output):
         keyword_arguments = {}
         keyword_arguments['requested_current_version_number'] = requested_current_version_number
+        keyword_arguments['value'] = (state,input_or_output)
         # name of object is process_DAG_infoBuffer_Monitor, type specified on create
         # This call returns a new DAG_info object that is being 
         # constructed incrementally.

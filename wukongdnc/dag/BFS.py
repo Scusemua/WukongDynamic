@@ -699,13 +699,16 @@ from .BFS_generate_DAG_info import Partition_senders, Partition_receivers, Group
 from .BFS_generate_DAG_info import leaf_tasks_of_partitions, leaf_tasks_of_partitions_incremental
 from .BFS_generate_DAG_info import leaf_tasks_of_groups, leaf_tasks_of_groups_incremental
 from .BFS_generate_shared_partitions_groups import generate_shared_partitions_groups
-#from .DAG_infoBuffer_Monitor_for_threads import DAG_infobuffer_monitor
-if not using_workers:
-    from .DAG_infoBuffer_Monitor_for_lambdas_for_threads import DAG_infobuffer_monitor
-else:
-    from .DAG_infoBuffer_Monitor_for_threads import DAG_infobuffer_monitor
 
+# This will either be a DAG_infoBuffer_Monitor or a DAG_infoBuffer_Monitor_for_Lambdas
+from .DAG_infoBuffer_Monitor_for_threads import DAG_infobuffer_monitor
 
+#if not using_workers:
+#    import wukongdnc.dag.DAG_infoBuffer_Monitor_for_lambdas_for_threads 
+#    DAG_infobuffer_monitor = wukongdnc.dag.DAG_infoBuffer_Monitor_for_lambdas_for_threads .DAG_infobuffer_monitor
+#else:
+#    import wukongdnc.dag.DAG_infoBuffer_Monitor_for_threads 
+#    DAG_infobuffer_monitor = wukongdnc.dag.DAG_infoBuffer_Monitor_for_threads .DAG_infobuffer_monitor
 
 #rhc shared
 #from .DAG_executor import shared_partition, shared_groups
@@ -727,10 +730,10 @@ from wukongdnc.constants import TCP_SERVER_IP
 
 logger = logging.getLogger(__name__)
 if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
-    logger.setLevel(logging.ERROR)
+    logger.setLevel(logging.DEBUG)
     formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
     ch = logging.StreamHandler()
-    ch.setLevel(logging.ERROR)
+    ch.setLevel(logging.DEBUG)
     #ch.setLevel(logging.INFO)
     ch.setFormatter(formatter)
     logger.addHandler(ch)
@@ -929,7 +932,7 @@ if compute_pagerank and use_incremental_DAG_generation:
 """
 
 def DAG_executor_driver_Invoker_Thread():
-    time.sleep(3)
+    time.sleep(6)
     run()
 
 # visual is a list which stores all the set of edges that constitutes a graph
@@ -3016,7 +3019,7 @@ def bfs(visited, node): #function for BFS
                                             #DAG_leaf_task_start_states_incremental = DAG_info.get_DAG_leaf_task_start_states()
                                             DAG_map_incremental = DAG_info.get_DAG_map()
 
-                                            if using_workers:
+                                            if using_workers or not using_workers:
                                                 # leaf task states (a task is identified by its state) are put in work_queue
                                                 for name in leaf_tasks_of_partitions_incremental:
                                                     state_incremental = DAG_states_incremental[name]
@@ -3110,7 +3113,7 @@ def bfs(visited, node): #function for BFS
                                             #DAG_leaf_task_start_states_incremental = DAG_info.get_DAG_leaf_task_start_states()
                                             DAG_map_incremental = DAG_info.get_DAG_map()
 
-                                            if using_workers:
+                                            if using_workers or not using_workers:
                                                 # leaf task states (a task is identified by its state) are put in work_queue
                                                 for name in leaf_tasks_of_groups_incremental:
                                                     state_incremental = DAG_states_incremental[name]

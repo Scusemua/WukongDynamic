@@ -6,7 +6,12 @@ import uuid
 from ..dag.DAG_executor_constants import run_all_tasks_locally
 from ..dag.DAG_executor_State import DAG_executor_State
 #from ..dag.DAG_executor import DAG_executor
-from wukongdnc.dag import DAG_executor
+#from wukongdnc.dag import DAG_executor
+# needs to invoke method DAG_executor()
+import wukongdnc.dag.DAG_executor
+# Note: avoiding circular imports:
+# https://stackoverflow.com/questions/744373/what-happens-when-using-mutual-or-circular-cyclic-imports
+
 from wukongdnc.wukong.invoker import invoke_lambda_DAG_executor
 
 import logging 
@@ -34,6 +39,14 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         self.current_version_new_leaf_tasks = []
 #rhc: lambda inc:
         #self._next_version=super().get_condition_variable(condition_name="_next_version")
+#rhc: lambda inc
+        #self._capacity = kwargs["n"]
+        # Need there to be an element at buffer[i]. Cannot use insert() since it will shift elements down.
+        # If we set buffer[0] we need an element to be at position 0 or we get an out of range error.
+        self._buffer=[]
+        #self._buffer= [None] * self._capacity
+        #self._in=0
+        #logger.info(kwargs)
 
     #def init(self, **kwargs):
     def init(self,**kwargs):
@@ -48,14 +61,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         # and executed by workers (when we aer using workers).
         #self.current_version_new_leaf_tasks = []
         # logger.info(kwargs)
-#rhc: lambda inc
-        self._capacity = kwargs["n"]
-        # Need there to be an element at buffer[i]. Cannot use insert() since it will shift elements down.
-        # If we set buffer[0] we need an element to be at position 0 or we get an out of range error.
-        self._buffer=[]
-        #self._buffer= [None] * self._capacity
-        #self._in=0
-        #logger.info(kwargs)
+
 
     def print_DAG_info(self,DAG_info):
         DAG_map = DAG_info.get_DAG_map()
@@ -223,7 +229,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     # report the name of the thread
                     #    print(thread.name)
                     thread_name_prefix = "Thread_leaf_"
-                    thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=(thread_name_prefix+"ss"+str(start_state)), args=(payload,))
+                    thread = threading.Thread(target=wukongdnc.dag.DAG_executor.DAG_executor_task, name=(thread_name_prefix+"ss"+str(start_state)), args=(payload,))
                     thread.start()
                 self._buffer.clear()
 
@@ -279,7 +285,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     # report the name of the thread
                     #    print(thread.name)
                     thread_name_prefix = "Thread_leaf_"
-                    thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=(thread_name_prefix+"ss"+str(start_state)), args=(payload,))
+                    thread = threading.Thread(target=wukongdnc.dag.DAG_executor.DAG_executor_task, name=(thread_name_prefix+"ss"+str(start_state)), args=(payload,))
                     thread.start()
                 self.current_version_new_leaf_tasks.clear()
             except Exception as ex:
@@ -388,6 +394,14 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             except Exception as ex:
                 logger.debug("[ERROR] DAG_executor_driver: Failed to start DAG_executor thread for state " + str(start_state))
                 logger.debug(ex)
+        try:
+            super(DAG_infoBuffer_Monitor_for_Lambdas, self).exit_monitor()
+        except Exception as ex:
+            logger.error("[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas: Failed super(DAG_infoBuffer_Monitor_for_Lambdas, self)")
+            logger.error("[ERROR] self: " + str(self.__class__.__name__))
+            logger.debug(ex)
+            return 0
+        
         return 0, restart
     
     """
@@ -521,6 +535,14 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
 #rhc: lambda inc
             #return DAG_info_and_new_leaf_task_states_tuple, restart
             return None, restart
+        
+        try:
+            super(DAG_infoBuffer_Monitor_for_Lambdas, self).exit_monitor()
+        except Exception as ex:
+            logger.error("[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas: Failed super(DAG_infoBuffer_Monitor_for_Lambdas, self)")
+            logger.error("[ERROR] self: " + str(self.__class__.__name__))
+            logger.debug(ex)
+            return 0
         
 
 

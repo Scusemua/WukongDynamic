@@ -26,7 +26,9 @@ store_fanins_faninNBs_locally = True
 # False, synch objects are created on the fly, i.e, we execute create-and-fanin
 # operations that create a synch object if it has not been created yet and then
 # execute a Fan_in operaation on the created object.
-create_all_fanins_faninNBs_on_start = True
+# 
+# This mus be false if we aer doing incremental_DAG_generation; this is asserted below.
+create_all_fanins_faninNBs_on_start = False
 
 # True if the DAG is executed by a "pool" of threads/processes. False, if we are
 # using Lambdas or we are using threads to simulate the use of Lambdas. In the latter
@@ -213,6 +215,15 @@ same_output_for_all_fanout_fanin = not compute_pagerank
 
 # True if DAG generation and DAG_execution are overlapped. 
 use_incremental_DAG_generation = compute_pagerank and True
+
+# assert 
+if compute_pagerank and use_incremental_DAG_generation and create_all_fanins_faninNBs_on_start:
+    logger.error("[Error]: Configuration error: incremental_DAG_generation"
+        + " requires not create_all_fanins_faninNBs_on_start"
+        + " i.e., create synch objects on the fly since we don't know all of the synch objects "
+        + " at the start (the DAG is not complete)")
+    logging.shutdown()
+    os._exit(0)  
 
 # generate next DAG when num_incremental_DAGs_generated mod 
 # incremental_interval == 0. For example, if we set this

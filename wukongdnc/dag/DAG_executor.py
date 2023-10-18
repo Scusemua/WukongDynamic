@@ -47,10 +47,19 @@ from .util import pack_data
 #rhc continue
 from .Remote_Client_for_DAG_infoBuffer_Monitor import Remote_Client_for_DAG_infoBuffer_Monitor
 from .Remote_Client_for_DAG_infoBuffer_Monitor_for_Lambdas import Remote_Client_for_DAG_infoBuffer_Monitor_for_Lambdas
-if not using_workers:
-    from .DAG_infoBuffer_Monitor_for_lambdas_for_threads import DAG_infobuffer_monitor
+
+#if not using_workers:
+#    import wukongdnc.dag.DAG_infoBuffer_Monitor_for_lambdas_for_threads 
+ 
 #else:
-#    from .DAG_infoBuffer_Monitor_for_threads import DAG_infobuffer_monitor
+#    import wukongdnc.dag.DAG_infoBuffer_Monitor_for_threads 
+    
+#from .DAG_infoBuffer_Monitor_for_threads import DAG_infobuffer_monitor
+
+# This will either be a DAG_infoBuffer_Monitor or a DAG_infoBuffer_Monitor_for_Lambdas
+import  wukongdnc.dag.DAG_infoBuffer_Monitor_for_threads
+
+#DAG_infobuffer_monitor = None
 
 # Note: avoiding circular imports:
 # https://stackoverflow.com/questions/744373/what-happens-when-using-mutual-or-circular-cyclic-imports
@@ -3166,7 +3175,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # several classes, all of which have deposit and withdraw
                 # methods for incremental DAG generation. this object is
                 # created before iterating the work loop.
-                new_DAG_info = DAG_infobuffer_monitor.withdraw(DAG_executor_state.state,output)
+                requested_current_version_number = DAG_info.get_DAG_version_number() + 1
+                logger.debug("DAG_executor: call withdraw")
+                logger.debug("type is " + str(type(DAG_infobuffer_monitor)))
+                new_DAG_info = DAG_infobuffer_monitor.withdraw(requested_current_version_number,DAG_executor_state.state,output)
                 if not new_DAG_info == None:
                     logger.debug("DAG_executor: got new incremental DAG for lambda returned by withdraw().")
                     DAG_info = new_DAG_info
@@ -3193,8 +3205,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # we can do (i.e., we cannot execute this groups fanins/fanouts
                     # so we can stop.)
 
-            logging.shutdown()
-            os._exit(0)
+            #logging.shutdown()
+            #os._exit(0)
             
             if (compute_pagerank and use_incremental_DAG_generation and (
                     use_page_rank_group_partitions and state_info.fanout_fanin_faninNB_collapse_groups_are_ToBeContinued)
@@ -3960,10 +3972,16 @@ def DAG_executor(payload):
     # DAG_executor_work_queue_for_threads.py for Queue creation.
     global work_queue
 #rhc continue
-    global DAG_infobuffer_monitor
+    
+    #global DAG_infobuffer_monitor
+    #if not using_workers:
+    #    DAG_infobuffer_monitor = wukongdnc.dag.DAG_infoBuffer_Monitor_for_lambdas_for_threads.DAG_infobuffer_monitor
+    #else:
+    #    DAG_infobuffer_monitor = wukongdnc.dag.DAG_infoBuffer_Monitor_for_threads.DAG_infobuffer_monitor
 
-    if DAG_infobuffer_monitor == None:
-        logger.debug("NONE")
+    # assert: 
+    if wukongdnc.dag.DAG_infoBuffer_Monitor_for_threads.DAG_infobuffer_monitor == None:
+        logger.error("[Error]: Internal Error: method DAG_executor: DAG_infobuffer_monitor is None.")
         logging.shutdown()
         os._exit(0)
 
@@ -3973,7 +3991,7 @@ def DAG_executor(payload):
 # tasks_completed_counter, workers_completed_counter
     DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_workers_counter, DAG_exec_state, DAG_info, 
 #rhc continue
-        work_queue,DAG_infobuffer_monitor)
+        work_queue,wukongdnc.dag.DAG_infoBuffer_Monitor_for_threads.DAG_infobuffer_monitor)
     logger.debug("DAG_executor() method returned from work loop.")
 
 # Config: A5, A6
