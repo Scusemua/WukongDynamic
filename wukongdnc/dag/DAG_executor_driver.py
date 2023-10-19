@@ -1317,6 +1317,7 @@ def run():
                             try:
                                 if not using_workers:
                                     # pass the state/task the thread is to execute at the start of its DFS path
+                                    # Note: continued_task defaults to False for DAG_exec_state
                                     DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state)
                                 else:
                                     # workers withdraw their work, i.e., starting state, from the work_queue

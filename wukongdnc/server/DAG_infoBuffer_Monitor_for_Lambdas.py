@@ -198,7 +198,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     DAG_exec_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
                     DAG_exec_state.return_value = None
                     DAG_exec_state.blocking = False
-                    logger.debug("DAG_infoBuffer_Monitor_for_Lambdas: starting lambda with DAG_executor_state.state: " + str(DAG_exec_state.state)
+                    logger.debug("DAG_infoBuffer_Monitor_for_Lambdas: (re)starting lambda with DAG_executor_state.state: " + str(DAG_exec_state.state)
                         + " continued task: " + str(DAG_exec_state.continued_task))
                     #logger.debug("DAG_executor_state.function_name: " + DAG_executor_state.function_name)
                     payload = {
@@ -250,12 +250,12 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     # we must execute the colapse task. So when we restart the partition/task,
                     # we supply the input for the collpase task and execute the collapse task.)
                     input_or_output = [] 
-                    DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state, continued_task = True)
+                    DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state, continued_task = False)
                     DAG_exec_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
                     DAG_exec_state.return_value = None
                     DAG_exec_state.blocking = False
                     logger.debug("DAG_infoBuffer_Monitor_for_Lambdas: starting lambda with DAG_executor_state.state:" + str(DAG_exec_state.state)
-                        + " continued task: " + str(DAG_exec_state.continued_task))
+                        + " leaf task: " + str(DAG_exec_state.continued_task))
                     #logger.debug("DAG_executor_state.function_name: " + DAG_executor_state.function_name)
                     payload = {
                         #"state": int(start_state_fanin_task),
@@ -309,12 +309,12 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     # a partition the partition can only have a collapse, i.e., we know
                     # we must execute the colapse task. So when we restart the partition/task,
                     # we supply the input for the collpase task and execute the collapse task.)
-                    input_or_output = start_tuple[1]
+                    input_or_output = start_tuple[1]              
                     DAG_exec_state = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()), state = start_state, continued_task = True)
                     DAG_exec_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
                     DAG_exec_state.return_value = None
                     DAG_exec_state.blocking = False
-                    logger.debug("DAG_infoBuffer_Monitor_for_Lambdas: starting lambda with DAG_executor_state.state: " + str(DAG_exec_state.state)
+                    logger.debug("DAG_infoBuffer_Monitor_for_Lambdas: (re)starting lambda with DAG_executor_state.state: " + str(DAG_exec_state.state)
                         + " continued task: " + str(DAG_exec_state.continued_task))
                     #logger.debug("DAG_executor_state.function_name: " + DAG_executor_state.function_name)
 
@@ -360,12 +360,12 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     # we must execute the colapse task. So when we restart the partition/task,
                     # we supply the input for the collpase task and execute the collapse task.)
                     input_or_output = [] 
-                    DAG_exec_state = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()), state = start_state, continued_task = True)
+                    DAG_exec_state = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()), state = start_state, continued_task = False)
                     DAG_exec_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
                     DAG_exec_state.return_value = None
                     DAG_exec_state.blocking = False
                     logger.debug("DAG_infoBuffer_Monitor_for_Lambdas: starting lambda with DAG_executor_state.state:" + str(DAG_exec_state.state)
-                        + " continued task: " + str(DAG_exec_state.continued_task))
+                        + " leaf task: " + str(DAG_exec_state.continued_task))
                     #logger.debug("DAG_executor_state.function_name: " + DAG_executor_state.function_name)
                     payload = {
                         #"state": int(start_state_fanin_task),
@@ -397,7 +397,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         try:
             super(DAG_infoBuffer_Monitor_for_Lambdas, self).exit_monitor()
         except Exception as ex:
-            logger.error("[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas: Failed super(DAG_infoBuffer_Monitor_for_Lambdas, self)")
+            logger.error("[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas: deposit: exit_monitor: Failed super(DAG_infoBuffer_Monitor_for_Lambdas, self)")
             logger.error("[ERROR] self: " + str(self.__class__.__name__))
             logger.debug(ex)
             return 0
@@ -463,7 +463,6 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             #    leaf_task_state = work_tuple[0]
             #    logger.debug(str(leaf_task_state))
 
-            super().exit_monitor()
 #rhc leaf tasks
 
 #rhc: lambda inc: not returning leaf task states, deposit is starting them
@@ -471,6 +470,13 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             ##return DAG_info, new_leaf_task_states, restart
 #rhc: lambda inc: 
             #return DAG_info_and_new_leaf_task_states_tuple, restart
+            try:
+                super(DAG_infoBuffer_Monitor_for_Lambdas, self).exit_monitor()
+            except Exception as ex:
+                logger.error("[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas: withdraw: exit_monitor: Failed super(DAG_infoBuffer_Monitor_for_Lambdas, self)")
+                logger.error("[ERROR] self: " + str(self.__class__.__name__))
+                logger.debug(ex)
+
             return DAG_info, restart
         else:
 
@@ -534,15 +540,17 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             logger.debug("DAG_infoBuffer_Monitor_for_Lambdas: return None")
 #rhc: lambda inc
             #return DAG_info_and_new_leaf_task_states_tuple, restart
+
+            try:
+                super(DAG_infoBuffer_Monitor_for_Lambdas, self).exit_monitor()
+            except Exception as ex:
+                logger.error("[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas: withdraw: exit_monitor: Failed super(DAG_infoBuffer_Monitor_for_Lambdas, self)")
+                logger.error("[ERROR] self: " + str(self.__class__.__name__))
+                logger.debug(ex)
+
             return None, restart
         
-        try:
-            super(DAG_infoBuffer_Monitor_for_Lambdas, self).exit_monitor()
-        except Exception as ex:
-            logger.error("[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas: Failed super(DAG_infoBuffer_Monitor_for_Lambdas, self)")
-            logger.error("[ERROR] self: " + str(self.__class__.__name__))
-            logger.debug(ex)
-            return 0
+        return 0
         
 
 
