@@ -1524,6 +1524,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 #rhc: lambda inc:
             first_iteration_of_work_loop_for_lambda == True
             if compute_pagerank and use_incremental_DAG_generation and continued_task:
+#rhc: lambda inc: cq.put
+                # On first iteration of lambda a continued_task is truly a continued_task.
+                # For leaf tasks, continued_task is False.
+                continue_tuple = (DAG_executor_state.state,True)
                 continue_queue.put(DAG_executor_state.state)
                 logger.debug("DAG_executor_work_loop: start of simulated or real lambda:"
                     + " put state " + str(DAG_executor_state.state) + " in continue_queue"
@@ -1542,8 +1546,14 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             if using workers:
                 if process_continue_queue:
                     we are getting states from the continue queue
-                    until the continue queue is empty. 
+                    until the continue queue is empty.    
+#rhc: lambda inc: cq.get
                     DAG_executor_state.state = continue_queue.get()
+                    #continue_tuple = continue_queue.get()
+                    #DAG_executor_state.state = continue_tuple[0]
+                    #continued_due_to_TBC = continue_tuple[1]
+                    #continued_task = continued_due_to_TBC
+
                     Each state was identified as a to-be-continued state in the 
                     previous partition. After getting a new DAG, we 
                     start by processing all the continued states
@@ -1598,6 +1608,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                             # Cannot execute this leaf task until we get a new DAG and 
                                             # continue executing the leaf task
                                             if using_workers:
+#rhc: lambda inc: cq.put
+                                                # An unexecutable leaf task should be executed so 
+                                                # it is not truly a continued task (i.e., with TBC fanins/fanouts/collpases)
+                                                continue_tuple = (DAG_executor_state.state,False)
                                                 continue_queue.put(DAG_executor_state.state)
                                                 # Note: we do not break the while(Tru) loop since we 
                                                 # did not get excutable work or a -1. Do another
@@ -1642,7 +1656,12 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                     # queue (like a leaf task from above, or the last partition
                                     # in an incremental DAG, which is always incomplete) then 
                                     # start by executing those tasks.
+#rhc: lambda inc: cq.get
                                     DAG_executor_state.state = continue_queue.get()
+                                    #continue_tuple = continue_queue.get()
+                                    #DAG_executor_state.state = continue_tuple[0]
+                                    #continued_due_to_TBC = continue_tuple[1]
+                                    #continued_task = continued_due_to_TBC
                                     if continue_queue.qsize() == 0:
                                         # only one task/state was in continue_queue
                                         process_continue_queue = False
@@ -1814,8 +1833,14 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # the first iteration of the work loop. the continue queue
                 # is not used by lambas after that.
                 elif continuer_queue.qsize() > 0:
+#rhc: lambda inc: cq.get
                     DAG_executor_state.state = continue_queue.get()
+                    #continue_tuple = continue_queue.get()
+                    #DAG_executor_state.state = continue_tuple[0]
+                    #continued_due_to_TBC = continue_tuple[1]
+                    #continued_task = continued_due_to_TBC
                 elif cluster_queue.qsize() > 0:
+#rhc: lambda inc: cq.get
                     DAG_executor_state.state = cluster_queue.get()
                 else:
                     # Error - if the continue and clster queues are 
@@ -1987,8 +2012,12 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         logger.error("[Error]: work loop: process_continue_queue but"
                             + " using partitions so this second to be continued"
                             + " partition/task should not be possible.")
-
+#rhc: lambda inc: cq.get
                     DAG_executor_state.state = continue_queue.get()
+                    #continue_tuple = continue_queue.get()
+                    #DAG_executor_state.state = continue_tuple[0]
+                    #continued_due_to_TBC = continue_tuple[1]
+                    #continued_task = continued_due_to_TBC
 
                     # Indicate that we are executing a continued task. Used below
                     # for debugging
@@ -2126,6 +2155,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                                 # in the graph (you cannot reach one CC from another CC.) and the 
                                                 # partitions of the connected components can be executed in parallel
                                                 if using_workers:
+#rhc: lambda inc: cq.put
+                                                    # An unexecutable leaf task should be executed so 
+                                                    # it is not truly a continued task (i.e., with TBC fanins/fanouts/collpases)
+                                                    continue_tuple = (DAG_executor_state.state,False)
                                                     continue_queue.put(DAG_executor_state.state)
                                                     logger.debug("DAG_executor_work_loop: work from work loop is unexecutable_leaf_task,"
                                                         + " put work in continue_queue:"
@@ -2192,8 +2225,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                                 # DAG. Note: each leaf task is the start of a new connected component
                                                 # in the graph (you cannot reach one CC from another CC.) and the 
                                                 # partitions of the connected components can be executed in parallel
-
                                                 if using_workers:
+#rhc: lambda inc: cq.put                            # An unexecutable leaf task should be executed so 
+                                                    # it is not truly a continued task (i.e., with TBC fanins/fanouts/collpases)
+                                                    continue_tuple = (DAG_executor_state.state,False)
                                                     continue_queue.put(DAG_executor_state.state)
                                                     # Note: put dict of results (input to task) in data_dict -
                                                     # for processes: when we got work from work_queue.
@@ -2346,8 +2381,14 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                         # queue (like a leaf task from above, or the last partition
                                         # in an incremental DAG, which is always incomplete) then 
                                         # start by executing those tasks.
+#rhc: lambda inc: cq.get
                                         DAG_executor_state.state = continue_queue.get()
                                         # This is stateinfo of continued task
+
+                                        #continue_tuple = continue_queue.get()
+                                        #DAG_executor_state.state = continue_tuple[0]
+                                        #continued_due_to_TBC = continue_tuple[1]
+                                        #continued_task = continued_due_to_TBC
                                         
                                         #state_info = DAG_map[DAG_executor_state.state]
                                         # The continued task will be executed next.
@@ -2447,7 +2488,6 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # we have a task to execute - we got it from the work queue
                 # or the cluster queue or the continue queue.
 
-
                 incremental_dag_generation_with_groups = compute_pagerank and use_incremental_DAG_generation and use_page_rank_group_partitions
                 continued_task_state_info = DAG_map[DAG_executor_state.state]
                 logger.debug(thread_name + " DAG_executor_work_loop: checking whether to inc num tasks executed: incremental_dag_generation_with_groups: "
@@ -2459,14 +2499,12 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 if not (incremental_dag_generation_with_groups and continued_task and (
                     (continued_task_state_info.task_name == name_of_first_groupOrpartition_in_DAG or not continued_task_state_info.task_name in DAG_info.get_DAG_leaf_tasks())
                 )):
-                    # If this is a continued task, we may have already executed it.
-                    # If the task is the first task in a new connected
-                    # component and it is not the first task in the DAG then we have not
-                    # executed the task yet. We will execute this task and so we increment
+#rhc lambda inc
+                #if not (incremental_dag_generation_with_groups and continued_task):
+                    # If this is not a continued group task, we will execute this task and so we increment
                     # the number of tasks that have been excuted. Otherwise we have
-                    # already executed the continues task. This means we wil not 
-                    # execute it here and we should not increment th number of tasks
-                    # that have been executed.
+                    # already executed the task. This means we will not execute it here
+                    # and we should not increment the number of tasks that have been executed.
 
                     #Note: This increment_and_get executes a memory barrier - so the pagerank writes to 
                     # the shared memory (if used) just performed by this process P1 
@@ -2527,6 +2565,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             work_tuple = (-1,None)
                             work_queue.put(work_tuple)
                 else:
+                    # We will not excute the task so do not inc num_tasks_executed
                     logger.debug("DAG_executor_work_loop: " + thread_name + " before processing " + str(DAG_executor_state.state) 
                         + " did not increment num_tasks_executed for continued task " 
                         + " so num_tasks_executed: " + str(num_tasks_executed) 
@@ -2572,6 +2611,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 #rhc: lambda inc:   
                 logger.debug("work_loop: first_iteration_of_work_loop_for_lambda: "
                     + str(first_iteration_of_work_loop_for_lambda))
+                # Note: not using_workers is True
                 # assert: 
                 if first_iteration_of_work_loop_for_lambda and not (compute_pagerank and use_incremental_DAG_generation and continued_task):
                     if cluster_queue.qsize() == 0:
@@ -2589,19 +2629,22 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         logger.debug("[Error]: XXInternal Error: DAG_executor_work_loop:"
                             + " continue_queue.qsize() is > 0 for lambda but not"
                             + " first_iteration_of_work_loop_for_lambda.")
-                    # assert: if we add a state of a (re)started lambda to the continue
-                    # queue then continued_task must be true.
-                    if not continued_task:
-                        logger.debug("[Error]: Internal Error: DAG_executor_work_loop:"
-                            + " continue_queue.qsize() is > 0 for lambda and"
-                            + " first_iteration_of_work_loop_for_lambda but"
-                            + " continued_task is False.")
+
                     # if we fail the assertion above we will terminate
                     # the program.
                     first_iteration_of_work_loop_for_lambda == False
+#rhc: lambda inc: cq.get
                     DAG_executor_state.state = continue_queue.get()
+                    #continue_tuple = continue_queue.get()
+                    #DAG_executor_state.state = continue_tuple[0]
+                    #continued_due_to_TBC = continue_tuple[1]
+                    # assert: continued_due_to_TBC must be True since
+                    # continued_task is True for lambda 
+                    #continued_task = continued_due_to_TBC
+
                 elif cluster_queue.qsize() > 0:
                     first_iteration_of_work_loop_for_lambda == False
+#rhc: lambda inc: cq.get
                     DAG_executor_state.state = cluster_queue.get()
                     # Question: Do not do this
                     #worker_needs_input = cluster_queue.qsize() == 0
@@ -2716,9 +2759,12 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 # to False in that case since it is not really a continued task. For lambdas, leaf
 # tasks are started by driver or when a new incrmental DAG is deposited and they are never
 # considered to be a continued_task.
+
+#rhc: lambda inc
             if incremental_dag_generation_with_groups and continued_task and (
              (state_info.task_name == name_of_first_groupOrpartition_in_DAG or not state_info.task_name in DAG_info.get_DAG_leaf_tasks())
             ):
+            #if incremental_dag_generation_with_groups and continued_task:
                 continued_task = False  # reset flag
 #rhc: lambda inc:
                 # We restarted the continued task with the output that it
@@ -3157,13 +3203,16 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         +  " DAG_info the state is still To Be Continued (in the new DAG_info.")
 
                 # if the DAG_info is not complete, we execute a continued
-                # task and put its output in the data_dict but w do not 
+                # task and put its output in the data_dict but we do not 
                 # process its fanout/fanins/faninNBs until we get the next
                 # DAG_info. Put the task's state in the continue_queue to
                 # be continued when we get the new DAG_info
 
             #rhc: continue - finish for Lambdas
                 if using_workers:
+#rhc: lambda inc: cq.put
+                    # Truly a continued task (i.e., with TBC fanins/fanouts/collpases)
+                    continue_tuple = (DAG_executor_state.state,True)
                     continue_queue.put(DAG_executor_state.state)
                 else:
                     pass # lambdas TBD
@@ -3244,6 +3293,9 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     #continue_queue.put(DAG_executor_state.state)
                     #logger.debug("DAG_executor_work_loop: put TBC collapsed work in continue_queue:"
                     #    + " state is " + str(DAG_executor_state.state))
+#rhc: lambda inc: cq.put                    
+                    # Truly a continued task (i.e., with TBC fanins/fanouts/collpases)
+                    continue_tuple = (DAG_executor_state.state,True)
                     continue_queue.put(DAG_executor_state.state)
                     logger.debug("DAG_executor_work_loop: put TBC collapsed work in continue_queue:"
                         + " state is " + str(DAG_executor_state.state))
@@ -3359,6 +3411,9 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             # not the state of the collapsed task. We will get the state 
                             # out of the continue queue and then get the collapsed task
                             # of this state and excute it.
+#rhc: lambda inc: cq.put        
+                            # Truly a continued task (i.e., with TBC fanins/fanouts/collpases)
+                            continue_tuple = (DAG_executor_state.state,True)
                             continue_queue.put(DAG_executor_state.state)
                             logger.debug("DAG_executor_work_loop: put state with TBC collapse in continue_queue:"
                                 + " state is " + str(DAG_executor_state.state))
