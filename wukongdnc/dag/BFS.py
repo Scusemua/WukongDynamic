@@ -4566,6 +4566,8 @@ if __name__ == '__main__':
         print_BFS_stats()
 
     if check_pagerank_output:
+        # True when: comuting pagerank and using thread workers/lambdas
+        # compute_pagerank and run_all_tasks_locally and (using_workers or not using_workers) and using_threads_not_processes
         if use_page_rank_group_partitions:
             number_of_groups_or_partitions = len(groups)
         else:

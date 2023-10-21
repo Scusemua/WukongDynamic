@@ -198,7 +198,7 @@ name_of_first_groupOrpartition_in_DAG = "PR1_1"
 # in DAG_executor_check_pagerank.py
 
 #rhc: ToDo: requires a global pagerank result so need worker threads?
-check_pagerank_output = compute_pagerank and run_all_tasks_locally and using_workers and using_threads_not_processes and True
+check_pagerank_output = compute_pagerank and run_all_tasks_locally and (using_workers or not using_workers) and using_threads_not_processes and True
 
 # a task that has multiple fanouts/faninNBs sends the same output
 # to all of them; otherwise, the task sends a possibly different 

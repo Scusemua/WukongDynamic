@@ -29,5 +29,8 @@ def verify_pagerank_outputs(number_of_groups_or_partitions):
             + " missing pagerank output, number of outputs is " + str(len(pagerank_outputs))) 
         return False
     else:
+        logger.debug("")
+        logger.debug("")
+        logger.debug("BFS: verify_pagerank_outputs: outputs verified")
         return True
  
