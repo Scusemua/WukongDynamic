@@ -1,9 +1,10 @@
-import multiprocessing
+#import multiprocessing
 
 # When using multiprocessing, the DAG_executor_driver
 # creates a CounterMP object that is shared by the processes and is used to 
-# count the number of tasks tha have been excuted.
+# count the number of tasks that have been excuted.
 
+""" Not using, using CounterMP in DAG_executor_countermp.py
 class CounterMP(object):
     def __init__(self):
         self.val = multiprocessing.Value('i', 0)
@@ -16,3 +17,4 @@ class CounterMP(object):
     @property
     def value(self):
         return self.val.value
+"""

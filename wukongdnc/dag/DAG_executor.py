@@ -2571,6 +2571,20 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             work_tuple = (-1,None)
                             work_queue.put(work_tuple)
                 else:
+                    # Note: We did not execute the 
+                    #   num_tasks_executed = completed_tasks_counter.increment_and_get()
+                    # above, which acts like a barrier when we are using shared
+                    # memory. In this case we are not executing the current
+                    # continued task, i.e., we have already executed it, so 
+                    # it is not writing to shard memory values that will be 
+                    # ready by downstream tasks. When we executed it earlier,
+                    # i.e., it was a group task that was executed and it had
+                    # TBC fanins/fanouts/collapes so it became a continued task
+                    # that is being continued here (i.e., we are executing its
+                    # fanins/fanouts/collapses) we did execute the above statement 
+                    # which acted like a barrier to the downstream tasks of this 
+                    # continud task.
+                    
                     # We will not excute the task so do not inc num_tasks_executed
                     logger.debug("DAG_executor_work_loop: " + thread_name + " before processing " + str(DAG_executor_state.state) 
                         + " did not increment num_tasks_executed for continued task " 
