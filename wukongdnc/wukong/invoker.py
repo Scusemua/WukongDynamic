@@ -219,6 +219,8 @@ def invoke_lambda_DAG_executor(
     DAG_exec_state = payload['DAG_executor_state']
     inp = payload['input']
     #Note: payload also includes DAG_info
+    #DAG_info = payload['DAG_info']
+
     logger.debug ("invoke_lambda_DAG_executor: lambda payload is DAG_info + state: " + str(DAG_exec_state.state) + ", input: " + str(inp))
 												
     s = time.time()
