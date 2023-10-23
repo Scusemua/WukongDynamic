@@ -195,7 +195,7 @@ def invoke_lambda(
     logger.info("Invoked AWS Lambd1a function '%s' in %f ms. Status: %s." % (function_name, (time.time() - s) * 1000.0, str(status_code)))
 
 def invoke_lambda_DAG_executor(
-    function_name: str = "DAG_Executor_Lambda",
+    function_name: str = "DAG_executor_lambda",
     payload: dict = None
 ):
     """
@@ -215,12 +215,12 @@ def invoke_lambda_DAG_executor(
     DAG_exec_state = payload['DAG_executor_state']
     inp = payload['input']
     #Note: payload also includes DAG_info
-    logger.debug ("invoke_lambda_DAG_executor: lambda payload is DAG_info + " + str(DAG_exec_state.state) + "," + str(inp))
+    logger.debug ("invoke_lambda_DAG_executor: lambda payload is DAG_info + state: " + str(DAG_exec_state.state) + ", input: " + str(inp))
 												
     s = time.time()
 
 	# The `_payload` variable is the one I actually pass to AWS Lambda.
-	# The `payload` variable is passed by the driver or pogram to `invoke_lambda`.
+	# The `payload` variable is passed by the driver or program to `invoke_lambda_DAG_executor`.
 	# For each key-value pair in `payload`, we create a corresponding 
 	# entry in `_payload`. The key is the same. But we first pickle]
 	# the value via cloudpickle.dumps(). This returns a `bytes` object.

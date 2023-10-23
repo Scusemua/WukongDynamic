@@ -996,7 +996,7 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                     logger.debug(thread_name + ": process_fanouts: Starting fanout DAG_executor thread for " + name)
                     fanout_task_start_state = DAG_states[name]
                     # rhc: DES
-                    task_DAG_executor_State = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = fanout_task_start_state)
+                    task_DAG_executor_State = DAG_executor_State(function_name = "DAG_executor:"+name, function_instance_ID = str(uuid.uuid4()), state = fanout_task_start_state)
 
                     # Note: if not same_output_for_all_fanout_fanin then
                     # we would need to extract the fanout's particular
@@ -1059,7 +1059,7 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                     logger.debug(thread_name + ": process_fanouts: Starting fanout DAG_executor Lambda for " + name)
                     fanout_task_start_state = DAG_states[name]
                     # create a new DAG_executor_State object so no DAG_executor_State object is shared by fanout/faninNB threads in a local test.
-                    lambda_DAG_executor_state = DAG_executor_State(function_name = "DAG_Executor_Lambda", function_instance_ID = str(uuid.uuid4()), state = fanout_task_start_state)
+                    lambda_DAG_executor_state = DAG_executor_State(function_name = "DAG_executor_lambda:"+name, function_instance_ID = str(uuid.uuid4()), state = fanout_task_start_state)
                     logger.debug (thread_name + ": process_fanouts: payload is DAG_info + " + str(fanout_task_start_state) + ", " + str(output))
                     lambda_DAG_executor_state.restart = False      # starting new DAG_executor in state start_state_fanin_task
                     lambda_DAG_executor_state.return_value = None
@@ -1111,7 +1111,7 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                         #"server": server   # used to mock server during testing
                     }
                     ###### DAG_executor_State.function_name has not changed
-                    invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_Executor_Lambda")
+                    invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor_lambda:"+name)
                 except Exception as ex:
                     logger.error(":ERROR] " + thread_name + " process_fanouts: Failed to start DAG_executor Lambda.")
                     logger.error(ex)
@@ -2584,7 +2584,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # fanins/fanouts/collapses) we did execute the above statement 
                     # which acted like a barrier to the downstream tasks of this 
                     # continud task.
-                    
+
                     # We will not excute the task so do not inc num_tasks_executed
                     logger.debug("DAG_executor_work_loop: " + thread_name + " before processing " + str(DAG_executor_state.state) 
                         + " did not increment num_tasks_executed for continued task " 

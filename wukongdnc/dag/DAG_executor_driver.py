@@ -358,6 +358,50 @@ if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
     ch.setFormatter(formatter)
     logger.addHandler(ch)
 
+# A note about loggers:
+"""
+I'm not sure whether this is the cause of your problem, but by default, 
+Python's loggers propagate their messages up to logging hierarchy. 
+As you probably know, Python loggers are organized in a tree, with the 
+root logger at the top and other loggers below it. In logger names, 
+a dot (.) introduces a new hierarchy level. So if you do
+
+logger = logging.getLogger('some_module.some_function`)
+then you actually have 3 loggers:
+
+The root logger (`logging.getLogger()`)
+    A logger at module level (`logging.getLogger('some_module'))
+        A logger at function level (`logging.getLogger('some_module.some_function'))
+If you emit a log message on a logger and it is not discarded based on the 
+loggers minimum level, then the message is passed on to the logger's handlers 
+and to its parent logger. See this flowchart for more information
+(https://docs.python.org/2/howto/logging.html#logging-flow)
+
+If that parent logger (or any logger higher up in the hierarchy) also has 
+handlers, then they are called, too.
+
+A note about AWS loggers:
+AWS Lambda uses the standard logging infrastructure; see denialof.services/lambda. 
+The formatter they configure has '%Y-%m-%dT%H:%M:%S' set as the datefmt 
+parameter, and the converter is set to time.gmtime (rather than time.localtime).
+
+39
+
+AWS Lambda also sets up a handler, on the root logger, and anything written to 
+stdout is captured and logged as level INFO. Your log message is thus 
+captured twice:
+
+- By the AWS Lambda handler on the root logger (as log messages propagate from 
+nested child loggers to the root), and this logger has its own format configured.
+- By the AWS Lambda stdout-to-INFO logger.
+
+This is why the messages all start with (asctime) [(levelname)]-(module):(lineno), 
+information; the root logger is configured to output messages with that format 
+and the information written to stdout is just another %(message) part in that 
+output.
+
+"""
+
 #from .BFS_Shared import pagerank_sent_to_processes, previous_sent_to_processes, number_of_children_sent_to_processes
 #from .BFS_Shared import number_of_parents_sent_to_processes, starting_indices_of_parents_sent_to_processes
 #from .BFS_Shared import parents_sent_to_processes, IDs_sent_to_processes
@@ -1318,7 +1362,7 @@ def run():
                                 if not using_workers:
                                     # pass the state/task the thread is to execute at the start of its DFS path
                                     # Note: continued_task defaults to False for DAG_exec_state
-                                    DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state)
+                                    DAG_exec_state = DAG_executor_State(function_name = "DAG_executor:"+task_name, function_instance_ID = str(uuid.uuid4()), state = start_state)
                                 else:
                                     # workers withdraw their work, i.e., starting state, from the work_queue
                                     DAG_exec_state = None
@@ -1439,7 +1483,7 @@ def run():
                             # Config: A1
                             try:
                                 logger.debug("DAG_executor_driver: Starting DAG_Executor_Lambda for leaf task " + task_name)
-                                lambda_DAG_exec_state = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()), state = start_state)
+                                lambda_DAG_exec_state = DAG_executor_State(function_name = "DAG_executor_lambda:"+task_name, function_instance_ID = str(uuid.uuid4()), state = start_state)
                                 logger.debug ("DAG_executor_driver: lambda payload is DAG_info + " + str(start_state) + "," + str(inp))
                                 lambda_DAG_exec_state.restart = False      # starting new DAG_executor in state start_state_fanin_task
                                 lambda_DAG_exec_state.return_value = None
@@ -1460,7 +1504,7 @@ def run():
                                     "DAG_info": DAG_info
                                 }
 
-                                invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_Executor_Lambda")
+                                invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor_lambda:" + task_name)
                             except Exception as ex:
                                 logger.error("[ERROR] DAG_executor_driver: Failed to start DAG_executor Lambda.")
                                 logger.error(ex)

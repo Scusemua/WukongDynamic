@@ -273,7 +273,7 @@ class DAG_executor_FanInNB_Select(Selector):
                     #  trigger fanni task to run in this lambda
                     try:
                         logger.debug("DAG_executor_FanInNB_Select: triggering DAG_Executor_Lambda() for task " + fanin_task_name)
-                        lambda_DAG_exec_state = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()), state = start_state_fanin_task)
+                        lambda_DAG_exec_state = DAG_executor_State(function_name = "DAG_executor_lambda:"+fanin_task_name, function_instance_ID = str(uuid.uuid4()), state = start_state_fanin_task)
                         logger.debug ("DAG_executor_FanInNB_Select: lambda payload is DAG_info + " + str(start_state_fanin_task) + "," + str(self._results))
                         lambda_DAG_exec_state.restart = False      # starting new DAG_executor in state start_state_fanin_task
                         lambda_DAG_exec_state.return_value = None
@@ -299,7 +299,7 @@ class DAG_executor_FanInNB_Select(Selector):
                 else:
                     # invoke a new lambda to run fanin task
                     try:
-                        DAG_executor_state = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()), state = start_state_fanin_task)
+                        DAG_executor_state = DAG_executor_State(function_name = "DAG_executor_lambda:"+fanin_task_name, function_instance_ID = str(uuid.uuid4()), state = start_state_fanin_task)
                         DAG_executor_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
                         DAG_executor_state.return_value = self._results
                         DAG_executor_state.blocking = False            
@@ -314,7 +314,7 @@ class DAG_executor_FanInNB_Select(Selector):
                         }
                         ###### DAG_executor_State.function_name has not changed
                         
-                        invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_Executor_Lambda")
+                        invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor_lambda:"+fanin_task_name)
                     except Exception as ex:
                         logger.debug("[ERROR]: DAG_executor_FanInNB_Select: fan_in: Failed to start DAG_executor Lambda.")
                         logger.debug(ex)

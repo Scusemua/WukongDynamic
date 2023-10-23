@@ -41,10 +41,10 @@ def lambda_handler(event, context):
     start_time = time.time()
     rc = redis.Redis(host = REDIS_IP_PRIVATE, port = 6379)
 
-    logger.debug("Invocation received. Starting DAG_executor_lambda: event/payload is: " + str(event))
+    logger.debug("lambda_handler: Invocation received. Starting DAG_executor_lambda: event/payload is: " + str(event))
     DAG_executor_lambda(event)
 				 
     end_time = time.time()
     duration = end_time - start_time
-    logger.debug("DAG_executor_lambda finished. Time elapsed: %f seconds." % duration)
+    logger.debug("lambda_handler: DAG_executor_lambda finished. Time elapsed: %f seconds." % duration)
     rc.lpush("durations", duration)    
