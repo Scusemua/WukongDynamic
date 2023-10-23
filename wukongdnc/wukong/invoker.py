@@ -16,6 +16,8 @@ from ..constants import TCP_SERVER_IP
 from ..server.state import State
 from ..server.api import create
 
+#from .handlerDAG import lambda_handler
+
 #from ..server.util import isSelect 
 
 import logging 
@@ -88,7 +90,9 @@ def invoke_lambda_synchronously(function_name: str = None, payload: dict = None)
     """        
     
     #Perhaps something like the following. I don't now how to access the retruned value.   
-    return_value_payload = lambda_client.invoke(FunctionName=function_name, InvocationType='RequestResponse', Payload=payload_json)
+    #return_value_payload = lambda_client.invoke(FunctionName=function_name, InvocationType='RequestResponse', Payload=payload_json)
+    return_value_payload = lambda_client.lambda_handler(FunctionName=function_name, InvocationType='RequestResponse', Payload=payload_json)
+    #lambda_handler(payload_json,None)
     return_value = return_value_payload['Payload'].read()
     
     # Added substituted "return_value" for "status_code" here
@@ -241,9 +245,43 @@ def invoke_lambda_DAG_executor(
     logger.info("Invoking AWS Lambda function '" + function_name + "' with payload containing " + str(len(payload)) + " key(s).")
     s = time.time()
     
+    #TEST
     # This is the call to the AWS API that actually invokes the Lambda.
-    status_code = lambda_client.invoke(
-        FunctionName = function_name, 
-        InvocationType = 'Event',
-        Payload = payload_json) 											
+    #status_code = lambda_client.invoke(
+    #    FunctionName = function_name, 
+    #    InvocationType = 'Event',
+    #    Payload = payload_json) 
+    # 	
+    status_code = -1
+    lambda_handler(payload_json,None)
+    # 										
     logger.info("Invoked AWS Lambda function '%s' in %f ms. Status: %s." % (function_name, (time.time() - s) * 1000.0, str(status_code)))
+
+# TEST
+import redis 
+from wukongdnc.constants import REDIS_IP_PRIVATE  #, TCP_SERVER_IP
+#from wukongdnc.dag.DAG_executor import DAG_executor_lambda
+import wukongdnc.dag.DAG_executor
+
+warm_resources = {
+	'cold_start_time': time.time(),
+	'invocation_count': 0,
+}
+
+def lambda_handler(event, context):
+    invocation_time = time.time()
+    warm_resources['invocation_count'] = warm_resources['invocation_count'] + 1
+    logger.debug(f'Invocation count: {warm_resources["invocation_count"]}, Seconds since cold start: {round(invocation_time - warm_resources["cold_start_time"], 1)}')
+
+    start_time = time.time()
+    rc = redis.Redis(host = REDIS_IP_PRIVATE, port = 6379)
+
+    logger.debug("lambda_handler: Invocation received. Starting DAG_executor_lambda: event/payload is: " + str(event))
+    #TEST
+    #DAG_executor_lambda(event)
+    wukongdnc.dag.DAG_executor.DAG_executor_lambda(WHAT_GOES_HERE)
+				 
+    end_time = time.time()
+    duration = end_time - start_time
+    logger.debug("lambda_handler: DAG_executor_lambda finished. Time elapsed: %f seconds." % duration)
+    rc.lpush("durations", duration)    

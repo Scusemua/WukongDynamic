@@ -15,7 +15,7 @@ logger.addHandler(ch)
 #
 # True if we are not using Lambdas, i.e., executing tasks with threads or processes
 # local, i.e., on one machine.
-run_all_tasks_locally = True         # vs run tasks remotely (in Lambdas)
+run_all_tasks_locally = False         # vs run tasks remotely (in Lambdas)
 # True if synch objects are stored locally, i.e., in the memory of the single
 # machine on which the threads are executing.  If we are using multiprocessing
 # or Lambdas, this must be False. When False, the synch objects are stored
@@ -28,7 +28,7 @@ store_fanins_faninNBs_locally = True
 # execute a Fan_in operaation on the created object.
 # 
 # This mus be false if we aer doing incremental_DAG_generation; this is asserted below.
-create_all_fanins_faninNBs_on_start = False
+create_all_fanins_faninNBs_on_start = True
 
 # True if the DAG is executed by a "pool" of threads/processes. False, if we are
 # using Lambdas or we are using threads to simulate the use of Lambdas. In the latter
@@ -154,7 +154,7 @@ if using_workers and not using_threads_not_processes:
         os._exit(0)
 
 #assert:
-if create_all_fanins_faninNBs_on_start and not run_all_tasks_locally:
+if create_all_fanins_faninNBs_on_start and not run_all_tasks_locally and store_sync_objects_in_lambdas:
     if not map_objects_to_lambda_functions:
         # if create sync objects on start and executing tasks in lambdas "
         # then we must map them to function so that we can determine the 
@@ -190,7 +190,7 @@ if sync_objects_in_lambdas_trigger_their_tasks:
 
 # Indicates that we are computing pagerank and thus that the pagerank
 # options are active and pagerank asserts should hold
-compute_pagerank = True # True
+compute_pagerank = False # True
 
 name_of_first_groupOrpartition_in_DAG = "PR1_1"
 
@@ -214,7 +214,7 @@ check_pagerank_output = compute_pagerank and run_all_tasks_locally and (using_wo
 same_output_for_all_fanout_fanin = not compute_pagerank
 
 # True if DAG generation and DAG_execution are overlapped. 
-use_incremental_DAG_generation = compute_pagerank and True
+use_incremental_DAG_generation = compute_pagerank and False
 
 # assert 
 if compute_pagerank and use_incremental_DAG_generation and create_all_fanins_faninNBs_on_start:

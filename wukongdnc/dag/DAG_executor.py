@@ -4127,10 +4127,11 @@ def DAG_executor(payload):
     #    DAG_infobuffer_monitor = wukongdnc.dag.DAG_infoBuffer_Monitor_for_threads.DAG_infobuffer_monitor
 
     # assert: 
-    if wukongdnc.dag.DAG_infoBuffer_Monitor_for_threads.DAG_infobuffer_monitor == None:
-        logger.error("[Error]: Internal Error: method DAG_executor: DAG_infobuffer_monitor is None.")
-        logging.shutdown()
-        os._exit(0)
+    if run_all_tasks_locally and (using_workers or not using_workers) and compute_pagerank and use_incremental_DAG_generation and using_threads_not_processes:
+        if wukongdnc.dag.DAG_infoBuffer_Monitor_for_threads.DAG_infobuffer_monitor == None:
+            logger.error("[Error]: Internal Error: method DAG_executor: DAG_infobuffer_monitor is None.")
+            logging.shutdown()
+            os._exit(0)
 
     #DAG_info = payload['DAG_info']
     #DAG_executor_work_loop(logger, server, counter, thread_work_queue, DAG_executor_state, DAG_info, data_dict)

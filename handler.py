@@ -9,7 +9,7 @@ import uuid
 import cloudpickle
 from wukongdnc.wukong.invoker import invoke_lambda
 from wukongdnc.server.state import State 
-from wukongdnc.server.api import synchronize_sync, synchronize_sync, synchronize_async_terminate
+from wukongdnc.server.api import synchronize_sync #synchronize_async_terminate
 from wukongdnc.constants import REDIS_IP_PRIVATE, TCP_SERVER_IP
 
 logger = logging.getLogger(__name__)
