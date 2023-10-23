@@ -281,7 +281,9 @@ def lambda_handler(event, context):
     logger.debug("lambda_handler: Invocation received. Starting DAG_executor_lambda: event/payload is: " + str(event))
     #TEST
     #DAG_executor_lambda(event)
-    wukongdnc.dag.DAG_executor.DAG_executor_lambda(WHAT_GOES_HERE)
+    # lambda does the json_loads(event) so we have to do it here.
+    payload = json.loads(event)
+    wukongdnc.dag.DAG_executor.DAG_executor_lambda(payload)
 				 
     end_time = time.time()
     duration = end_time - start_time
