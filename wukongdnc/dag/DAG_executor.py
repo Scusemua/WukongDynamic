@@ -1124,6 +1124,7 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
     #if using_workers and not using_threads_not_processes:
     #   work_queue.put_all(list_of_work_queue_or_payload_fanout_values)
 
+    logger.debug(thread_name + ": process_fanouts: return become_start_state: " + str(become_start_state))
     return become_start_state
 
 def create_and_fanin_remotely(websocket,DAG_exec_state,**keyword_arguments):
@@ -3257,15 +3258,17 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 # ------------------------------------------------------------------
 # ------------------------------------------------------------------
 
-#rhc: lambda inc:
-            logger.debug("DAG_executor: work loop: after task execution, lambda"
-                + " checks for new DAG if TBC and if TBC and no new DAG then stops."
-                + " if TBC workers with groups will add groups to continue_queue"
-                + " else all will process collapse/fanout/faninNB/fanins.")
 
             if not using_workers and compute_pagerank and use_incremental_DAG_generation and (
                 use_page_rank_group_partitions and state_info.fanout_fanin_faninNB_collapse_groups_are_ToBeContinued
             ):
+                
+#rhc: lambda inc:
+                logger.debug("DAG_executor: work loop: after task execution, lambda"
+                    + " checks for new DAG if TBC and if TBC and no new DAG then stops."
+                    + " if TBC workers with groups will add groups to continue_queue"
+                    + " else all will process collapse/fanout/faninNB/fanins.")
+
                 logger.debug("DAG_executor: Work_loop: lambda try to get new incremental DAG for lambda.")
 
                 # Note: if this group was a continued task from the continue_queue then 

@@ -16,26 +16,37 @@ from ..constants import TCP_SERVER_IP
 from ..server.state import State
 from ..server.api import create
 
-#from .handlerDAG import lambda_handler
-
-#from ..server.util import isSelect 
-
 import logging 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
-
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
-
 logger.addHandler(ch)
-
+# Hmmm
 logger.propagate = False
 
 lambda_client = boto3.client('lambda', region_name = "us-east-1")
 
-# Here is my sketch of invoke_lambda_synchronous for invoker.py:
+# TRUE if we are testing the real lambd code by short-circuiting the 
+# call to start a real lambda on AWS Lambda. i.e., the 
+# invoke_lambda_DAG_executor called by the DAG app does not call
+#status_code = lambda_client.invoke(
+#   FunctionName = function_name, 
+#   InvocationType = 'Event',
+#   Payload = payload_json) 
+#
+# which will invoke a real AWS Lambda and call lambda_handler();
+# instead, it makes a direct call to lambda_handler
+#   status_code = -1
+#   lambda_handler(payload_json,None)
+# So the actal code for real Lambdas will be executed but if A 
+# invokes lambda L, then A will be running L's code. 
+# Note: That L will terminate by doing a return, which will return
+# to A allowing A to continue (!!) It is important that L, and Lambdas
+# in general do not block/wait so L will terminte and return to A.
+TEST = True
 
 # Used to invoke a Lambda "storage function" to store and execute synchronization objects.
 # Lambda function names are "LambdaBoundedBuffer" and "LambdaSemapore"
@@ -101,6 +112,7 @@ def invoke_lambda_synchronously(function_name: str = None, payload: dict = None)
     return return_value
 
 # TODO: Make this `invoke_lambda_async`
+# Used for Composer program
 def invoke_lambda(
     function_name: str = "ComposerServerlessSync", # Can change to ComposerServerlessSync_Select to create different types of synchronization 
     payload: dict = None,
@@ -198,6 +210,8 @@ def invoke_lambda(
         Payload = payload_json) 
     logger.info("Invoked AWS Lambd1a function '%s' in %f ms. Status: %s." % (function_name, (time.time() - s) * 1000.0, str(status_code)))
 
+# used by DAG_excutor and the fanins/fanout synch objects for executing DAGs
+# Wukong style.
 def invoke_lambda_DAG_executor(
     function_name: str = "DAG_executor_lambda",
     payload: dict = None
@@ -247,39 +261,44 @@ def invoke_lambda_DAG_executor(
     logger.info("Invoking AWS Lambda function '" + function_name + "' with payload containing " + str(len(payload)) + " key(s).")
     s = time.time()
     
-    #TEST
+    # TEST is a global varial. Set to TRUE to test the real lambda
+    # logic without invoking real AWS Lambdas.
+    if not TEST:
     # This is the call to the AWS API that actually invokes the Lambda.
-    #status_code = lambda_client.invoke(
-    #    FunctionName = function_name, 
-    #    InvocationType = 'Event',
-    #    Payload = payload_json) 
-    # 	
-    status_code = -1
-    lambda_handler(payload_json,None)
-    # 										
+        status_code = lambda_client.invoke(
+            FunctionName = function_name, 
+            InvocationType = 'Event',
+            Payload = payload_json) 
+    else:	
+        status_code = -1
+        lambda_handler(payload_json,None)
+    										
     logger.info("Invoked AWS Lambda function '%s' in %f ms. Status: %s." % (function_name, (time.time() - s) * 1000.0, str(status_code)))
 
-# TEST
-import redis 
-from wukongdnc.constants import REDIS_IP_PRIVATE  #, TCP_SERVER_IP
-#from wukongdnc.dag.DAG_executor import DAG_executor_lambda
-import wukongdnc.dag.DAG_executor
 
+#############################################################
+
+# This is NOT the real lambda_handler. The real handler is in handlerDAG.py.
+# we copied it here so we can call it for TEST.
+# If we update handlerDAG.py make the changes here too before running TEST.
 warm_resources = {
 	'cold_start_time': time.time(),
 	'invocation_count': 0,
 }
 
 def lambda_handler(event, context):
+    # TEST must be True since we were called.
+    import wukongdnc.dag.DAG_executor
     invocation_time = time.time()
     warm_resources['invocation_count'] = warm_resources['invocation_count'] + 1
-    logger.debug(f'Invocation count: {warm_resources["invocation_count"]}, Seconds since cold start: {round(invocation_time - warm_resources["cold_start_time"], 1)}')
 
     start_time = time.time()
-    rc = redis.Redis(host = REDIS_IP_PRIVATE, port = 6379)
+    # Do not do redi calls for TEST
+    #rc = redis.Redis(host = REDIS_IP_PRIVATE, port = 6379)
 
     logger.debug("lambda_handler: Invocation received. Starting DAG_executor_lambda: event/payload is: " + str(event))
-    #TEST
+    logger.debug(f'Invocation count: {warm_resources["invocation_count"]}, Seconds since cold start: {round(invocation_time - warm_resources["cold_start_time"], 1)}')
+    #TEST is True since we called lambda_handler. 
     #DAG_executor_lambda(event)
     # lambda does the json_loads(event) so we have to do it here.
     payload = json.loads(event)
@@ -288,4 +307,5 @@ def lambda_handler(event, context):
     end_time = time.time()
     duration = end_time - start_time
     logger.debug("lambda_handler: DAG_executor_lambda finished. Time elapsed: %f seconds." % duration)
-    rc.lpush("durations", duration)    
+    # do not do redis calls for TEST
+    #rc.lpush("durations", duration)

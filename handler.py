@@ -1,6 +1,5 @@
 import logging 
 import base64
-import re 
 import socket
 import time 
 import redis 

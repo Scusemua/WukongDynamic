@@ -77,10 +77,12 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 # use incremental DAG generation, we may eed to 
                 # get the newest version of the DAG from the 
                 # DAG_infoBuffer_monitor before we invoke a lambda
-                if not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally and read_DAG_info:
+                global read_DAG_info
+                if (not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally) and read_DAG_info:
                     read_DAG_info = False
                     global DAG_info
                     DAG_info = DAG_Info.DAG_info_fromfilename()
+                    logger.debug("tcp_server: read DAG_info for real lambdas.")
                 #else:
                 #    logger.debug("TCP_Server: Don't read DAG_info.")
 
