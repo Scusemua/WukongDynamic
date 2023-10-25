@@ -4304,7 +4304,7 @@ def DAG_executor_lambda(payload):
     DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_workers_counter, DAG_exec_state, DAG_info, 
 #rhc continue
         work_queue,DAG_infobuffer_monitor )
-    logger.debug("DAG_executor_processes: returning after work_loop.")
+    logger.debug("DAG_executor_lambda: returning after work_loop.")
     return
                         
 # Config: A4_local, A4_Remote

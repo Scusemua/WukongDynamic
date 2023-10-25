@@ -5,6 +5,7 @@ from .monitor_su import MonitorSU
 import threading
 import time 
 from threading import Thread
+import traceback 
 
 #from DAG_executor import DAG_executor
 #from wukongdnc.dag 
@@ -24,10 +25,10 @@ from wukongdnc.dag import DAG_executor
 import logging 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
+logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
 ch = logging.StreamHandler()
-ch.setLevel(logging.ERROR)
+ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
@@ -75,6 +76,11 @@ class DAG_executor_FanInNB(MonitorSU):
         self.start_state_fanin_task = kwargs['start_state_fanin_task']
         self.store_fanins_faninNBs_locally = kwargs['store_fanins_faninNBs_locally']
         self.DAG_info = kwargs['DAG_info'] 
+        if self.DAG_info == None:
+            logger.error("FanInNB: fanin_task_name: DAG_info is None for init().")
+        else:
+            logger.error("FanInNB: fanin_task_name: DAG_info is None for init().")
+
 
     def try_fan_in(self, **kwargs):
         # Does mutex.P as usual
@@ -278,7 +284,11 @@ class DAG_executor_FanInNB(MonitorSU):
                         DAG_executor_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
                         DAG_executor_state.return_value = self._results
                         DAG_executor_state.blocking = False            
-                        logger.debug("FanInNB: starting Starting Lambda function for task " + fanin_task_name + " with start state " + str(DAG_executor_state.state))
+                        logger.debug("FanInNB: starting Lambda function for task " + fanin_task_name + " with start state " + str(DAG_executor_state.state))
+                        if self.DAG_info == None:
+                            logger.error("FanInNB: fanin_task_name:" + fanin_task_name + " DAG_info is None for Lambda start.")
+                        else:
+                            logger.error("FanInNB: fanin_task_name:" + fanin_task_name + " DAG_info is NOT None for Lambda start.")
                         #logger.debug("DAG_executor_state: " + str(DAG_executor_state))
                         payload = {
                             #"state": int(start_state_fanin_task),
@@ -293,6 +303,7 @@ class DAG_executor_FanInNB(MonitorSU):
                     except Exception as ex:
                         logger.debug("FanInNB:[ERROR] Failed to start DAG_executor Lambda.")
                         logger.debug(ex)
+                        traceback.print_exc() 
 
                     # No signal of non-last client; they did not block and they are done executing. 
                     # does mutex.V

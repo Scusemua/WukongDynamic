@@ -28,7 +28,7 @@ store_fanins_faninNBs_locally = False
 # execute a Fan_in operaation on the created object.
 # 
 # This mus be false if we aer doing incremental_DAG_generation; this is asserted below.
-create_all_fanins_faninNBs_on_start = True
+create_all_fanins_faninNBs_on_start = False
 
 # True if the DAG is executed by a "pool" of threads/processes. False, if we are
 # using Lambdas or we are using threads to simulate the use of Lambdas. In the latter
@@ -190,7 +190,7 @@ if sync_objects_in_lambdas_trigger_their_tasks:
 
 # Indicates that we are computing pagerank and thus that the pagerank
 # options are active and pagerank asserts should hold
-compute_pagerank = False # True
+compute_pagerank = True
 
 name_of_first_groupOrpartition_in_DAG = "PR1_1"
 

@@ -987,7 +987,7 @@ def run():
             state_info.task_inputs = None
 
 #rhc cleanup
-    output_DAG = False
+    output_DAG = True
     # add-0bec4d19-bce6-4394-ad62-9b0eab3081a9
     if output_DAG:
         print("DAG_executor_driver at start: Output DAG:")

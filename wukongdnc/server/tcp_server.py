@@ -77,12 +77,20 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 # use incremental DAG generation, we may eed to 
                 # get the newest version of the DAG from the 
                 # DAG_infoBuffer_monitor before we invoke a lambda
+                """
                 global read_DAG_info
                 if (not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally) and read_DAG_info:
                     read_DAG_info = False
                     global DAG_info
                     DAG_info = DAG_Info.DAG_info_fromfilename()
                     logger.debug("tcp_server: read DAG_info for real lambdas.")
+#rhc: DAG_info
+                    print("tcp_server: DAG_map:")
+                    DAG_map = DAG_info.get_DAG_map()
+                    for key, value in DAG_map.items():
+                        print(key)
+                        print(value)
+                """
                 #else:
                 #    logger.debug("TCP_Server: Don't read DAG_info.")
 
@@ -398,10 +406,10 @@ class TCPHandler(socketserver.StreamRequestHandler):
             else:
                 most_recently_generated_DAG_info = synchronizer.synchronize(base_name, DAG_exec_state, **DAG_infoBuffer_monitor_method_keyword_arguments)
 
-            global DAG_info
-            logger.debug("tcp_server: synchronize_process_faninNBs_batch:"
-                + " most recently deposited DAG_info version number: " + str(most_recently_generated_DAG_info.get_DAG_version_number())
-                + " version number of current DAG_info: " + str(DAG_info.get_DAG_version_number()))
+            #global DAG_info
+            #logger.debug("tcp_server: synchronize_process_faninNBs_batch:"
+            #    + " most recently deposited DAG_info version number: " + str(most_recently_generated_DAG_info.get_DAG_version_number())
+            #    + " version number of current DAG_info: " + str(DAG_info.get_DAG_version_number()))
 
             DAG_info = most_recently_generated_DAG_info
 
@@ -557,11 +565,27 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             #dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = DAG_states[name]
                             dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = start_state_fanin_task
                             dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = wukongdnc.dag.DAG_executor_constants.store_fanins_faninNBs_locally
+
+                            global read_DAG_info
+                            if (not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally) and read_DAG_info:
+                                read_DAG_info = False
+#rhc: DAG_info: race? no since locked?
+                                global DAG_info
+                                DAG_info = DAG_Info.DAG_info_fromfilename()
+                                logger.debug("tcp_server: read DAG_info for real lambdas.")
+#rhc: DAG_info
+                                #print("tcp_server: DAG_map:")
+                                #DAG_map = DAG_info.get_DAG_map()
+                                #for key, value in DAG_map.items():
+                                #    print(key)
+                                #    print(value) 
+
                             if not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally:
                                 dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info
                             else:
                                 dummy_state_for_create_message.keyword_arguments['DAG_info'] = None
-                            #dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info
+
+                           #dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info
                             #all_fanin_task_names = DAG_info.get_all_fanin_task_names()
                             #all_fanin_sizes = DAG_info.get_all_fanin_sizes()
                             #all_faninNB_task_names = DAG_info.get_all_faninNB_task_names()
@@ -641,6 +665,12 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = wukongdnc.dag.DAG_executor_constants.store_fanins_faninNBs_locally
                             if not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally:
                                 dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info
+#rhc: DAG_info
+                                if DAG_info == None:
+                                    logger.error(": DAG_info is None for synchronize_process_faninNBs_batch create on fly: " + synchronizer_name)
+                                else:
+                                    logger.error("FanInNB: fanin_task_name: DAG_info is None for synchronize_process_faninNBs_batch create on fly :"  + synchronizer_name )
+
                             else:
                                 dummy_state_for_create_message.keyword_arguments['DAG_info'] = None
                             #dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info
@@ -943,8 +973,24 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             #DAG_states = DAG_info.get_DAG_states()
                             #dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = DAG_states[synchronizer_name]
                             dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = wukongdnc.dag.DAG_executor_constants.store_fanins_faninNBs_locally
-                            if not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally:
-                                dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info
+                            if not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally:  
+                                """ If use this code then need this code to read DAG_info
+                                global read_DAG_info
+                                if (not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally) and read_DAG_info:
+                                    read_DAG_info = False
+                                    global DAG_info
+                                    DAG_info = DAG_Info.DAG_info_fromfilename()
+                                    logger.debug("tcp_server: read DAG_info for real lambdas.")
+                #rhc: DAG_info
+                                    print("tcp_server: DAG_map:")
+                                    DAG_map = DAG_info.get_DAG_map()
+                                    for key, value in DAG_map.items():
+                                        print(key)
+                                        print(value)
+                                Also, fix this nect line by making the rhs DAG_info       
+                                Perhaps the if False above is messing up the linter.
+                                """
+                                dummy_state_for_create_message.keyword_arguments['DAG_info'] = None # Should be: DAG_info
                             else:
                                 dummy_state_for_create_message.keyword_arguments['DAG_info'] = None
                             
@@ -1042,6 +1088,19 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             dummy_state_for_create_message = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
                             dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = wukongdnc.dag.DAG_executor_constants.store_fanins_faninNBs_locally
                             if not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally:
+                                global read_DAG_info
+                                if (not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally) and read_DAG_info:
+                                    read_DAG_info = False
+                                    global DAG_info
+#rhc: DAG_info: race?
+                                    DAG_info = DAG_Info.DAG_info_fromfilename()
+                                    logger.debug("tcp_server: read DAG_info for real lambdas.")
+#rhc: DAG_info
+                                    print("tcp_server: DAG_map:")
+                                    DAG_map = DAG_info.get_DAG_map()
+                                    for key, value in DAG_map.items():
+                                        print(key)
+                                        print(value)
                                 dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info
                             else:
                                 dummy_state_for_create_message.keyword_arguments['DAG_info'] = None
