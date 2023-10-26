@@ -33,8 +33,10 @@ ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
-# these global objects are created in tcp_server init()
+# DAG_info is read on by TCP_server from a file when using real lambdas.
+# This DAG_info is passd to real lambdas that are invoked by faninNBs
 DAG_info = None
+# read DAG_info once - set to False when read
 read_DAG_info = True
 create_work_queue_lock = None
 create_synchronization_object_lock = None
@@ -81,7 +83,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 global read_DAG_info
                 if (not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally) and read_DAG_info:
                     read_DAG_info = False
-                    global DAG_info
+                    global DAG_info # initialized to None
                     DAG_info = DAG_Info.DAG_info_fromfilename()
                     logger.debug("tcp_server: read DAG_info for real lambdas.")
 #rhc: DAG_info
@@ -288,6 +290,9 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 The payload from the AWS Lambda function.
         """
 
+        global DAG_info
+        global read_DAG_info
+
         logger.info("[HANDLER] server.synchronize_process_faninNBs_batch() called.")
 
         # name of the type is "DAG_executor_FanInNB" or "DAG_executor_FanInNB_Select"
@@ -406,7 +411,6 @@ class TCPHandler(socketserver.StreamRequestHandler):
             else:
                 most_recently_generated_DAG_info = synchronizer.synchronize(base_name, DAG_exec_state, **DAG_infoBuffer_monitor_method_keyword_arguments)
 
-            #global DAG_info
             #logger.debug("tcp_server: synchronize_process_faninNBs_batch:"
             #    + " most recently deposited DAG_info version number: " + str(most_recently_generated_DAG_info.get_DAG_version_number())
             #    + " version number of current DAG_info: " + str(DAG_info.get_DAG_version_number()))
@@ -554,7 +558,6 @@ class TCPHandler(socketserver.StreamRequestHandler):
                         # passing to the created faninNB object:
 #rhc batch
                         if not (wukongdnc.dag.DAG_executor_constants.compute_pagerank and wukongdnc.dag.DAG_executor_constants.use_incremental_DAG_generation):
-                            #global DAG_info
                             #DAG_states = DAG_info.get_DAG_states()
 
                             ## assert:
@@ -565,23 +568,21 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             #dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = DAG_states[name]
                             dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = start_state_fanin_task
                             dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = wukongdnc.dag.DAG_executor_constants.store_fanins_faninNBs_locally
-
-                            global read_DAG_info
-                            if (not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally) and read_DAG_info:
-                                read_DAG_info = False
-#rhc: DAG_info: race? no since locked?
-                                global DAG_info
-                                DAG_info = DAG_Info.DAG_info_fromfilename()
-                                logger.debug("tcp_server: read DAG_info for real lambdas.")
-#rhc: DAG_info
-                                #print("tcp_server: DAG_map:")
-                                #DAG_map = DAG_info.get_DAG_map()
-                                #for key, value in DAG_map.items():
-                                #    print(key)
-                                #    print(value) 
-
-                            if not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally:
-                                dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info
+                            if not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally: 
+                                if (not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally) and read_DAG_info:
+                                    read_DAG_info = False
+    #rhc: DAG_info: race? no since locked
+                                    DAG_info = DAG_Info.DAG_info_fromfilename()
+                                    logger.debug("tcp_server: read DAG_info for real lambdas.")
+    #rhc: DAG_info
+                                    print("tcp_server: DAG_map:")
+                                    DAG_map = DAG_info.get_DAG_map() # pylint: disable=E0601, E0118
+                                    for key, value in DAG_map.items():
+                                        print(key)
+                                        print(value) 
+                                # do not understand why pyline flags this use of DAG_info as used-before-assignment (E0601)
+                                # and used-prior-global-declaration (E0118) 
+                                dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info # pylint: disable=E0601, E0118
                             else:
                                 dummy_state_for_create_message.keyword_arguments['DAG_info'] = None
 
@@ -653,7 +654,6 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             # to pass the fanin information to the batch process method
                             # so we removed the fanin code.
 
-                            #global DAG_info
                             #DAG_states = DAG_info.get_DAG_states()
 
                             # assert:
@@ -664,12 +664,12 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = start_state_fanin_task
                             dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = wukongdnc.dag.DAG_executor_constants.store_fanins_faninNBs_locally
                             if not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally:
-                                dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info
-#rhc: DAG_info
-                                if DAG_info == None:
+                                dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info # pylint: disable=E0601, E0118
+#rhc: DAG_info          
+                                if DAG_info == None: # pylint: disable=E0601
                                     logger.error(": DAG_info is None for synchronize_process_faninNBs_batch create on fly: " + synchronizer_name)
                                 else:
-                                    logger.error("FanInNB: fanin_task_name: DAG_info is None for synchronize_process_faninNBs_batch create on fly :"  + synchronizer_name )
+                                    logger.error("FanInNB: fanin_task_name: DAG_info is NOT None for synchronize_process_faninNBs_batch create on fly :"  + synchronizer_name )
 
                             else:
                                 dummy_state_for_create_message.keyword_arguments['DAG_info'] = None
@@ -929,6 +929,9 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 The payload from the AWS Lambda function.
         """
 
+        global DAG_info
+        global read_DAG_info
+
         logger.debug("[HANDLER] server.synchronize_sync() called.")
         obj_name = message['name']
         method_name = message['method_name']
@@ -969,31 +972,29 @@ class TCPHandler(socketserver.StreamRequestHandler):
                         if False and not (wukongdnc.dag.DAG_executor_constants.compute_pagerank and wukongdnc.dag.DAG_executor_constants.use_incremental_DAG_generation):
                             dummy_state_for_create_message = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
                             # passing to the created faninNB object:
-                            #global DAG_info
+    
                             #DAG_states = DAG_info.get_DAG_states()
                             #dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = DAG_states[synchronizer_name]
                             dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = wukongdnc.dag.DAG_executor_constants.store_fanins_faninNBs_locally
                             if not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally:  
-                                """ If use this code then need this code to read DAG_info
-                                global read_DAG_info
-                                if (not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally) and read_DAG_info:
+                                if (not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally) and read_DAG_info:  # pylint: disable=E0118
                                     read_DAG_info = False
-                                    global DAG_info
+    #rhc: DAG_info: race? no since locked?
+                                
                                     DAG_info = DAG_Info.DAG_info_fromfilename()
                                     logger.debug("tcp_server: read DAG_info for real lambdas.")
-                #rhc: DAG_info
+    #rhc: DAG_info
                                     print("tcp_server: DAG_map:")
-                                    DAG_map = DAG_info.get_DAG_map()
+                                    # do not understand why pyline flags this use of DAG_info as used-before-assignment (E0601)
+                                    # and used-prior-global-declaration (E0118)
+                                    DAG_map = DAG_info.get_DAG_map() # pylint: disable=E0601, E0118
                                     for key, value in DAG_map.items():
                                         print(key)
-                                        print(value)
-                                Also, fix this nect line by making the rhs DAG_info       
-                                Perhaps the if False above is messing up the linter.
-                                """
-                                dummy_state_for_create_message.keyword_arguments['DAG_info'] = None # Should be: DAG_info
+                                        print(value) 
+                                dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info # pylint: disable=E0601, E0118
                             else:
                                 dummy_state_for_create_message.keyword_arguments['DAG_info'] = None
-                            
+
                             """
                             #dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info
                             all_fanin_task_names = DAG_info.get_all_fanin_task_names()
@@ -1073,7 +1074,6 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             # this nfo from the DAG_info. Thus we do not need to update the 
                             # DAG_ifo during incremental DAG generation.
 
-                            #global DAG_info
                             #DAG_states = DAG_info.get_DAG_states()
 
                             # assert:
@@ -1088,10 +1088,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             dummy_state_for_create_message = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
                             dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = wukongdnc.dag.DAG_executor_constants.store_fanins_faninNBs_locally
                             if not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally:
-                                global read_DAG_info
                                 if (not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally) and read_DAG_info:
-                                    read_DAG_info = False
-                                    global DAG_info
+                                    read_DAG_info = False           
 #rhc: DAG_info: race?
                                     DAG_info = DAG_Info.DAG_info_fromfilename()
                                     logger.debug("tcp_server: read DAG_info for real lambdas.")

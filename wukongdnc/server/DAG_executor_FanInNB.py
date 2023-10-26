@@ -77,7 +77,7 @@ class DAG_executor_FanInNB(MonitorSU):
         self.store_fanins_faninNBs_locally = kwargs['store_fanins_faninNBs_locally']
         self.DAG_info = kwargs['DAG_info'] 
         if self.DAG_info == None:
-            logger.error("FanInNB: fanin_task_name: DAG_info is None for init().")
+            logger.error("Error: FanInNB: fanin_task_name: DAG_info is None for init().")
         else:
             logger.error("FanInNB: fanin_task_name: DAG_info is None for init().")
 

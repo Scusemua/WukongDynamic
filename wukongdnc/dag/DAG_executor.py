@@ -508,8 +508,18 @@ def faninNB_remotely_batch(websocket, **keyword_arguments):
     DAG_exec_state.keyword_arguments['all_faninNB_sizes_of_faninNBs'] = keyword_arguments['all_faninNB_sizes_of_faninNBs']
     DAG_exec_state.keyword_arguments['all_fanin_sizes_of_fanins'] = keyword_arguments['all_fanin_sizes_of_fanins']
 
-    # we now read DAG_info on the tcp_server when not creating objects ata the start
+    # we now read DAG_info on the tcp_server when not creating objects at the start
     # or not run_all_tasks_locally (i.e., lambdas excute tasks and need the DAG_info.)
+    # but only when not doing incremental DAG generation. When doing incremental
+    # DAG generation we do not read DAG_info at the start since we would have
+    # to keep reading the updated incrmental DAGs whenever one was generated.
+    # We do not want to do this. Instead, when usng incrmental DAG generation.
+    # we will pass the DAG_info as part of the batch porcessing of faninNBs/fanouts.
+    # Note: We only need to pass verion n of a DAG one time to the batch
+    # process method. The batch process method can save the new versions of
+    # the DAG info as it gets them. (Need to lock the version number read/write in
+    # batch method since there cn be concurrent calls to the batch process method.)
+    #
     #if not run_all_tasks_locally:
         # Note: When faninNB start a Lambda, DAG_info is in the payload so pass DAG_info to faninNBs.
         # (Threads and processes read it from disk.)
@@ -606,6 +616,14 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
     keyword_arguments['work_queue_type'] = process_work_queue_Type 
     keyword_arguments['work_queue_method'] = "deposit_all"
     keyword_arguments['work_queue_op'] = "synchronize_async"
+    # faninNB_remotely_batch not necessarily sending this to the tcp_server batch processing method.
+    # DAG_info is not sent when we are not using incremental DAG generation
+    # since the complete DAG_info is read from file by the tcp_server 
+    # in the bath processing method)
+    # before creating a faninNB (it is read only once). For incremental
+    # DAG generation, the DAG_info is not complete so we do not read
+    # it from file; instead, we pass the DAG_info to the batch processing
+    # method. (Although, we only need to pass a given version once.)
     keyword_arguments['DAG_info'] = DAG_info
     # get a slice of DAG_states that is the DAG states of just the faninNB and fanout tasks.
     # Instead of sending all the DAG_states, i.e., all the states in the DAG, to the server.
@@ -3748,7 +3766,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                     + " size is 0.")
                     else: 
                         # Config: A2, A4_local, A4_Remote
-                        # not using workers, or using worker threads not processes, or using threads to simualate running lambdas,
+                        # using worker threads not processes, or using threads to simualate running lambdas,
                         # but not using lambdas to store synch objects - storing them locally instead.
                         # Note: if we are using thread workers we can still store the FanInNBs remotely, but the work queue 
                         # will be local. Batch FanInNb processing will put work (fanin tasks) in the work_queue as the 
