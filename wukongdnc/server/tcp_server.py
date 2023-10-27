@@ -324,11 +324,22 @@ class TCPHandler(socketserver.StreamRequestHandler):
 #rhc: async batch
         async_call = DAG_exec_state.keyword_arguments['async_call']
 
+#rhc: lambda inc
+        DAG_info_passed_from_DAG_exector = DAG_exec_state.keyword_arguments['DAG_info']
+        # assert: if we are doing incremental DAG generation with real Lambdas
+        # then the process_faninNBs_batch method shoudl pass DAG_info since
+        # tcp_server does not read DAG_info in this case.
+        if (wukongdnc.dag.DAG_executor_constants.compute_pagerank and wukongdnc.dag.DAG_executor_constants.use_incremental_DAG_generation and (
+            not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally)
+        ):
+            if DAG_info_passed_from_DAG_exector == None:
+                logger.error("[Error]: Internal Error: synchronize_process_faninNBs_batch: using incremental DAG generation"
+                    + " with real Lambdas but received None from DAG_executor process_faninNBs_batch.")
 
         logger.debug("tcp_server: synchronize_process_faninNBs_batch: calling_task_name: " + calling_task_name + ": worker_needs_input: " + str(worker_needs_input)
             + " faninNBs size: " +  str(len(faninNBs)))
 #rhc: async batch
-        logger.debug("BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB")
+        logger.debug("BBBBBBBBB synchronize_process_faninNBs_batch BBBBBBBBBBBBBBBBBBBBBBB")
         logger.debug("tcp_server: synchronize_process_faninNBs_batch: calling_task_name: " + calling_task_name + ": async_call: " + str(async_call))
 
         # assert:
@@ -627,7 +638,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             #            + " not faninNB_size == all_faninNB_sizes[faninNB_index]")
                             #    else:
                             #        logger.debug("EQUAL SIZES")
-                        else:
+                        else: # incremental DAG generation
                             # Compute pagerank for incremental DAG generation.
                             # - Rewrote this code so that it no longer needs DAG_info
                             # for faninNB creation. The iss ue with DAG_info is that 
@@ -664,9 +675,16 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = start_state_fanin_task
                             dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = wukongdnc.dag.DAG_executor_constants.store_fanins_faninNBs_locally
                             if not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally:
-                                dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info # pylint: disable=E0601, E0118
+                                # using real lambdas
+                                # Note: When faninNB start a Lambda, DAG_info will be in the payload so pass DAG_info to faninNBs.
+                                # (Worker Threads and processes read DAG_info from disk. Real Lambdas can read DAG_info from
+                                # disk on the tcp_server but not when incremental DAG generation is used.
+                                # In that case, the DAG is not complete so tcp_server cannot read it as
+                                # the start. Instead, we pass DAG_info to tcp_server.
+
+                                dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info_passed_from_DAG_exector # pylint: disable=E0601, E0118
 #rhc: DAG_info          
-                                if DAG_info == None: # pylint: disable=E0601
+                                if DAG_info_passed_from_DAG_exector == None: # pylint: disable=E0601
                                     logger.error(": DAG_info is None for synchronize_process_faninNBs_batch create on fly: " + synchronizer_name)
                                 else:
                                     logger.error("FanInNB: fanin_task_name: DAG_info is NOT None for synchronize_process_faninNBs_batch create on fly :"  + synchronizer_name )
