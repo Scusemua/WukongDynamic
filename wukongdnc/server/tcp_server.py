@@ -310,7 +310,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         DAG_states_of_faninNBs_fanouts = DAG_exec_state.keyword_arguments['DAG_states_of_faninNBs_fanouts'] 
 #rhc batch:
         all_faninNB_sizes_of_faninNBs = DAG_exec_state.keyword_arguments['all_faninNB_sizes_of_faninNBs'] 
-        # This is included here for ompletenss but we are not batch procesing
+        # This is included here for ompleteness but we are not batch procesing
         # fanins
         _all_fanin_sizes_of_fanins = DAG_exec_state.keyword_arguments['all_fanin_sizes_of_fanins'] 
         # Note: if using lambdas, then we are not usingn workers (for now) so worker_needs_input must be false
@@ -380,8 +380,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
         # We currently do not need to upate the DAG-info during incremental
         # DAG generation since we pass the info we need to this method
-        # instead of getting it from DAG_info. Noet that a worker that
-        # calls barch processing on some fanouts and faninNBs definitely
+        # instead of getting it from DAG_info. Note that a worker that
+        # calls batch processing on some fanouts and faninNBs definitely
         # has these fanouts and faninNBs in its DAG_info and can thus 
         # pass info about these fanouts and faninNBs to this batch
         # processing method.
@@ -580,24 +580,34 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = start_state_fanin_task
                             dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = wukongdnc.dag.DAG_executor_constants.store_fanins_faninNBs_locally
                             if not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally: 
-                                if (not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally) and read_DAG_info:
+                                if read_DAG_info:
                                     read_DAG_info = False
     #rhc: DAG_info: race? no since locked
                                     DAG_info = DAG_Info.DAG_info_fromfilename()
                                     logger.debug("tcp_server: read DAG_info for real lambdas.")
     #rhc: DAG_info
                                     print("tcp_server: DAG_map:")
-                                    DAG_map = DAG_info.get_DAG_map() # pylint: disable=E0601, E0118
+                                    # this required: # pylint: disable=E0601, E0118
+                                    DAG_map = DAG_info.get_DAG_map() 
                                     for key, value in DAG_map.items():
                                         print(key)
                                         print(value) 
                                 # do not understand why pyline flags this use of DAG_info as used-before-assignment (E0601)
                                 # and used-prior-global-declaration (E0118) 
-                                dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info # pylint: disable=E0601, E0118
+                                # this requried: pylint: disable=E0601, E0118
+                                dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info 
                             else:
+                                # we are running locally with the fanins/faninNBs on the tcp_server.
+                                # The faninNBs will not try to create any new worker thread/processes
+                                # or simulate lambda threads. The worker threads do not run on the 
+                                # tcp_server so the tcp_server cannot create them. For worker processes,
+                                # the FaninB task is added to the work_queue, which is on the tcp_server.
+                                # For simulated lambda threads, the threads do not run on the tcp_server.
+                                # The faninNB results are returned to the calling simulated lamba thread
+                                # and that caller statrs a new simulated lambda thread to excute the FaninNB task.
                                 dummy_state_for_create_message.keyword_arguments['DAG_info'] = None
 
-                           #dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info
+                            #dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info
                             #all_fanin_task_names = DAG_info.get_all_fanin_task_names()
                             #all_fanin_sizes = DAG_info.get_all_fanin_sizes()
                             #all_faninNB_task_names = DAG_info.get_all_faninNB_task_names()
@@ -641,13 +651,32 @@ class TCPHandler(socketserver.StreamRequestHandler):
                         else: # incremental DAG generation
                             # Compute pagerank for incremental DAG generation.
                             # - Rewrote this code so that it no longer needs DAG_info
-                            # for faninNB creation. The iss ue with DAG_info is that 
-                            # tcp_server reads it once at the beginning. But since 
+                            # for faninNB creation. The issue with DAG_info is that 
+                            # tcp_server used to read it once at the beginning. But when 
                             # DAG_info is incrementally updated, we must retrive a 
                             # new DAG_info each time a new one is generated so that 
                             # we can get DAG_states via DAG_info.get_DAG_states(), 
                             # i.e., unless we update DAG_info, the state we need
-                            # DAG_states[name] may not be in the DAG. Note that 
+                            # DAG_states[name] may not be in the DAG. Another issue
+                            # with readig DAG_info once at the beginning of tcp_Server is 
+                            # that when we are running pagerank, the bfs() code generates
+                            # the DAG and then calls DAG_executor_driver to execute
+                            # the DAG. But we can't start tcp_server unti after bfs()
+                            # generates the DAG since otherwise there is no DAG for 
+                            # tcp_server to read. We would need to sycnronize the tcp_server
+                            # and bfs() so that tcp_server only does the read after bfs()
+                            # writes DAG_info. We could do this with a tcp message sent
+                            # by bfs() or most likely DAG_executor_driver telling tcp_server
+                            # to do the reaf. An alernative is to have bfs() start tcp_server
+                            # after it has written the DAG, which we will look at. But we want the 
+                            # tcp_server to start in its own DOS console and keep the console 
+                            # open so we can see the tcp_server debug messages. And tcp_server
+                            # needs to be able to accept connections before ADG_executor_driver
+                            # tries to make a connection with tcp_server.
+                            # 
+                            # We no longer
+                            # have tcp_server read DAG_info at the beginning.
+                            # Note that 
                             # at the beginning of this batch processing method there
                             # is code to withdraw the latest version of DAG_info. 
                             # we no longer need this code; instead, we pass the 
@@ -682,14 +711,22 @@ class TCPHandler(socketserver.StreamRequestHandler):
                                 # In that case, the DAG is not complete so tcp_server cannot read it as
                                 # the start. Instead, we pass DAG_info to tcp_server.
 
-                                dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info_passed_from_DAG_exector # pylint: disable=E0601, E0118
+                                dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info_passed_from_DAG_exector
 #rhc: DAG_info          
-                                if DAG_info_passed_from_DAG_exector == None: # pylint: disable=E0601
+                                if DAG_info_passed_from_DAG_exector == None: 
                                     logger.error(": DAG_info is None for synchronize_process_faninNBs_batch create on fly: " + synchronizer_name)
                                 else:
                                     logger.error("FanInNB: fanin_task_name: DAG_info is NOT None for synchronize_process_faninNBs_batch create on fly :"  + synchronizer_name )
 
                             else:
+                                # we are running locally with the fanins/faninNBs on the tcp_server.
+                                # The faninNBs will not try to create any new worker thread/processes
+                                # or simulate lambda threads. The worker threads do not run on the 
+                                # tcp_server so the tcp_server cannot create them. For worker processes,
+                                # the FaninB task is added to the work_queue, which is on the tcp_server.
+                                # For simulated lambda threads, the threads do not run on the tcp_server.
+                                # The faninNB results are returned to the calling simulated lamba thread
+                                # and that caller statrs a new simulated lambda thread to excute the FaninNB task.
                                 dummy_state_for_create_message.keyword_arguments['DAG_info'] = None
                             #dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info
                             #all_fanin_task_names = DAG_info.get_all_fanin_task_names()
@@ -975,10 +1012,10 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 if (synchronizer is None):
                     logger.debug("got None")
                     #  On-the-fly: This part here is only for DAGs, not, e.g., Semaphores
-                    #  For other typs of objects, we'l need their type so we'll need
+                    #  For other typs of objects, we'll need their type so we'll need
                     #  to deal with it in DAG_executor? which will call createif (as it does now)
                     #  passing a create message with the message?
-                    #  But only user nows the crete ino, as typically user would create semaphors, etc.
+                    #  But only user nows the create info, as typically user would create semaphors, etc.
                     #  User could "register" objects so we have their information. And register
                     #  could do creates() or register objects on tcp_server for create_if?
                     #  Then user cannot do ops on the fly, which is normally the case in 
@@ -986,7 +1023,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     #  "server scope"? which is global, so ...
                     if method_name == "fan_in":
 #rhc batch
-#rhc: Todo: These branches are the same so remove one
+#rhc: Todo: These then and else branches are the same so remove one - using if alse to remove one, for now
+#  BUT: need both branches now - only do read if inc?
                         if False and not (wukongdnc.dag.DAG_executor_constants.compute_pagerank and wukongdnc.dag.DAG_executor_constants.use_incremental_DAG_generation):
                             dummy_state_for_create_message = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
                             # passing to the created faninNB object:
@@ -995,22 +1033,31 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             #dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = DAG_states[synchronizer_name]
                             dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = wukongdnc.dag.DAG_executor_constants.store_fanins_faninNBs_locally
                             if not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally:  
-                                if (not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally) and read_DAG_info:  # pylint: disable=E0118
+                                if read_DAG_info: 
                                     read_DAG_info = False
-    #rhc: DAG_info: race? no since locked?
                                 
                                     DAG_info = DAG_Info.DAG_info_fromfilename()
                                     logger.debug("tcp_server: read DAG_info for real lambdas.")
     #rhc: DAG_info
-                                    print("tcp_server: DAG_map:")
+                                    logger.debug("tcp_server: DAG_map:")
                                     # do not understand why pyline flags this use of DAG_info as used-before-assignment (E0601)
                                     # and used-prior-global-declaration (E0118)
-                                    DAG_map = DAG_info.get_DAG_map() # pylint: disable=E0601, E0118
+                                    # this requried: pylint: disable=E0601, E0118
+                                    DAG_map = DAG_info.get_DAG_map() 
                                     for key, value in DAG_map.items():
-                                        print(key)
-                                        print(value) 
-                                dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info # pylint: disable=E0601, E0118
+                                        logger.debug(key)
+                                        logger.debug(value) 
+                                # this required: # pylint: disable=E0601, E0118
+                                dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info 
                             else:
+                                # we are running locally with the fanins/faninNBs on the tcp_server.
+                                # The faninNBs will not try to create any new worker thread/processes
+                                # or simulate lambda threads. The worker threads do not run on the 
+                                # tcp_server so the tcp_server cannot create them. For worker processes,
+                                # the FaninB task is added to the work_queue, which is on the tcp_server.
+                                # For simulated lambda threads, the threads do not run on the tcp_server.
+                                # The faninNB results are returned to the calling simulated lamba thread
+                                # and that caller statrs a new simulated lambda thread to excute the FaninNB task.
                                 dummy_state_for_create_message.keyword_arguments['DAG_info'] = None
 
                             """
@@ -1106,19 +1153,26 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             dummy_state_for_create_message = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
                             dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = wukongdnc.dag.DAG_executor_constants.store_fanins_faninNBs_locally
                             if not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally:
-                                if (not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally) and read_DAG_info:
-                                    read_DAG_info = False           
-#rhc: DAG_info: race?
+                                if read_DAG_info:
+                                    read_DAG_info = False 
                                     DAG_info = DAG_Info.DAG_info_fromfilename()
                                     logger.debug("tcp_server: read DAG_info for real lambdas.")
 #rhc: DAG_info
-                                    print("tcp_server: DAG_map:")
+                                    logger.debug("tcp_server: DAG_map:")
                                     DAG_map = DAG_info.get_DAG_map()
                                     for key, value in DAG_map.items():
-                                        print(key)
-                                        print(value)
+                                        logger.debug(key)
+                                        logger.debug(value)
                                 dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info
                             else:
+                                # we are running locally with the fanins/faninNBs on the tcp_server.
+                                # The faninNBs will not try to create any new worker thread/processes
+                                # or simulate lambda threads. The worker threads do not run on the 
+                                # tcp_server so the tcp_server cannot create them. For worker processes,
+                                # the FaninB task is added to the work_queue, which is on the tcp_server.
+                                # For simulated lambda threads, the threads do not run on the tcp_server.
+                                # The faninNB results are returned to the calling simulated lamba thread
+                                # and that caller statrs a new simulated lambda thread to excute the FaninNB task.
                                 dummy_state_for_create_message.keyword_arguments['DAG_info'] = None
                             #dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info
                             #all_fanin_task_names = DAG_info.get_all_fanin_task_names()
@@ -1486,23 +1540,23 @@ class TCPServer(object):
         self.tcp_server = socketserver.ThreadingTCPServer(self.server_address, TCPHandler)
 
         if not wukongdnc.dag.DAG_executor_constants.create_all_fanins_faninNBs_on_start or not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally:
-#rhc: this could be not run_all_tasks_locally and not incremental DAg generation
+#rhc: this could be not run_all_tasks_locally and not incremental DAG generation
 # since if we are using lambas and incemental then we will get the updated
 # DAG_info some other way, i.e., we will wait for new DAG and then a new
-# lambda will be started with the new ADG_info and the results. Savung
+# lambda will be started with the new DAG_info and the results. Saving
 # results and (re)starting with results and continued state seems like
 # normal restart for no-wait.
             # Need DAG_info if we are creating objects on their first
             # use or objects will be invoking lambdas (as lambdas need)
             # the DAG_info.
 
-            """
+            
             # We only read DAG_info one time, and only if we are 
             # using real lambdas. When we invoke a real lambda
             # we need to give it the DAG_info. This read was moved up to the 
             # action handler. This is because the DAG_info object is not 
             # saved to a file until after BFS runs and generates the 
-            # (complete) ADG (for non-incremental). So we don't let the 
+            # (complete) DAG (for non-incremental). So we don't let the 
             # TCP server rad the DAG until it gets its first input over
             # the socket. This input cannot be received until after 
             # DAG_execution starts, and since execution starts after BFS
@@ -1510,11 +1564,10 @@ class TCPServer(object):
             # read the DAG_info file before it is written. See BFS where
             # it generates the DAG and then calls run() of the 
             # DAG_executor_driver.
-            global DAG_info
+            #global DAG_info
             # reads from default file './DAG_info.pickle'
-            DAG_info = DAG_Info.DAG_info_fromfilename()
-            """
-
+            #DAG_info = DAG_Info.DAG_info_fromfilename()
+            
             global create_work_queue_lock
             create_work_queue_lock = Lock()
             global create_synchronization_object_lock

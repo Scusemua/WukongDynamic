@@ -448,8 +448,9 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
                         payload = {
                             #"state": int(start_state_fanin_task),
                             #"input": DAG_executor_state.return_value,
+                            "input": dummy_DAG_exec_state.return_value,
                             "DAG_executor_state": new_DAG_executor_state,
-                            #"DAG_info": DAG_info,
+                            "DAG_info": DAG_info,
                             #"server": server
                         }
                         thread_name_prefix = "Thread_faninNB_"
