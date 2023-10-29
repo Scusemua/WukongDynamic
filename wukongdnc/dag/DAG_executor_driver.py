@@ -280,11 +280,11 @@
 # they may be executed at different times though they are logically concurrent.
 #
 #
-# PageRank: Executing the whiteboard DAG: We used 2 processes to execute the 
-# 7 task DAG. Only P! executed any tasks since the DAG is small and P1 could execute
+# PageRank: Note: Executing the whiteboard DAG: We used 2 processes to execute the 
+# 7 task DAG. Only P1 executed any tasks since the DAG is small and P1 could execute
 # several tasks before P2 starts:
 # P1 executes PR1_1, which is a leaf task
-# P! fanout PR2_3, PR2_1 and faninNB PR2_2L, 
+# P1 fanout PR2_3, PR2_1 and faninNB PR2_2L, 
 # so P1 becomes PR2_3, fansout PR2_1 putting PR2_1 work in the work queue and
 #    does fanin on faninNB PR2_2L (where fanouts and faninNB are batched. Note
 #    that P1 becomes PR2_3 so it did not need any work from batch, i.e., PR2_1
@@ -1030,15 +1030,15 @@ though D is incomplete, the new lambda can excute F's fanin task since info
 about F is in the partial DAG_info. After executing F's fanin task, the 
 new Lambda may need to get a new incremental DAG via calling withdraw on 
 buffer of DAG_infos. SO:
-A1: real lambdas pass DAG_info to tcp_server on fanin() operations and the 
+- A1: real lambdas pass DAG_info to tcp_server on fanin() operations and the 
 tcp_server passes this partial Lambda to create() so that the created FaninNB
 objects have a partital DAG_info that allows then to start a new Lambda
 to excute the fanin task with the partial DAG_info in the payload.
-A2, A3: The simulated lambdas withdraw partial DAG_infos from the buffer
-and pass them locally to create) or pass them remotely to the tcp_server
+- A2, A3: The simulated lambdas withdraw partial DAG_infos from the buffer
+and pass them locally to create() or pass them remotely to the tcp_server
 which passes the partial DAG_infos to create() as described above.
-
-
+- A4, A5, 
+- A6: Same scheme
 
 Note:
 Informs the logging system to perform an orderly shutdown by flushing 
