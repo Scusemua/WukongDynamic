@@ -645,9 +645,11 @@ stroring sync_objects in lambdas for this case s this case (thread workers) is n
 important case - using multiple thread workers will not achieve any speedup in Python
 so we don't support all the various scenarios (storing objects in lambdas, using 
 DAG_orchestrator, etc) for this thread workers case.
-- A4_L: the workers are threads and the work queue is a shared local work queue. 
-process_faninNBs_batch is not called (since process_faninNB_batch for tcp_server also
-enques work in the work queue that is on the server). async_call is not relevant.
+- A4_L: the workers are threads, the work queue is a shared local work queue. 
+and the fanin/faninNB objects are created and stored locally as part of the 
+local python program. process_faninNBs_batch is not called (since process_faninNB_batch 
+for tcp_server also enques work in the remote work queue that is on the server). 
+async_call is not relevant.
 - A4_R: workers are threads and the work queue and sync objects are on the server. 
 async_call is False since the caller needs to wait for the returned work, if any.
 - A5 workers are processes and sync objects and work queue are on the server.
@@ -836,7 +838,7 @@ trigger the fanout tasks, which will run in the same lambda as the object.
 In this case the lambas may be real or simulated and only lambdas can be
 used to execute tasks, i.e., no threads that simulate lambdas.
 
-Wwe call process_faninNB_batch when 
+We call process_faninNB_batch when 
     running tcp_server - not using lambdas 
     running tcp_server_lambda - storing synch objects in lambdas
         sync object may or may not trigger their tasks. 
@@ -900,6 +902,142 @@ We tested using workers and storing objects in real lambdas
 
 We did not test Wukong case with real lambdas executing tasks and 
 accessing objects stored on server or in lambdas.
+
+Scheme for DAG_info: 
+- For non-incremental, non-pagerank DAG generation, we are using DAGs that are generated 
+from Dask DAGS using dask_dag.py. These are stored in DAG_info.pickle.
+For pagerank, non-incremental DAGs, we generate then using BFS.py and save them in  '
+DAG_info.pickle. BFS generates DAG_info.pickle and starts a thread that 
+calls DAG_excutor.run().
+- For incremental pagerank, the generation and execution of the DAG is overlapped.
+BFS generates part of the DAG and deposits it in a buffer where it is 
+withdrawn by the executors. So reading file DAG_info.pickle is not the primary
+way of distributing DAG_info. 
+- The FaninNB objects need DAG_info since when they start a Lambda to execute
+the fanin task the lambda needs DAG_info. (Fanin objects do not start lambdas
+to excute the fanin yasl, some exisiting lambda will "become" the lambda
+to execute the fanin task.) Thus, DAG_info is passed in the
+lmabda's payload. Note that when real lambdas are used, all synch objects are
+stored "remotely" on the tcp_server. Synch objects can also be stored 
+locally on the machine running the workers/simulated lambdas. Note also that 
+synch objects can all be created at start of DAG_execution or they can be 
+created on-the-fly as fanin operations aer called on them. When using incremetal
+ADG generation, all objects must be created on-the-fly
+- When the fanin/faninnb synch objects are all created at the start of DAG
+execution, the DAG_executor_driver creates them all either locally or remotely
+(by sending a message to tcp_server) and since the DAG_excutor_driver can read
+DAG_info.pickle the DAG_executor_driver can pass ADG_info to all of the FaninNB
+objects that are created. Again, for incremental DAG_generation, the synch 
+objects cannot be created at the start of DAG_execution (since we do not
+know the fanin objects that will be generated) Whe nthe fanin/faninNB objects
+are created on-the-fly, we must ensure that DAG_info is availabe when 
+create() is called to create a faninNB object. If the objects ar all created
+locally, (which means we are not using real lambas) then DAG_info.pickle
+is read by the worker threads/processe and by the threads tht simulate real
+lambdas, and ADG_info is passed along to the call to create() a FaninNB.
+If the fanin/faninNB objects are created remotely on the server, then 
+DAG_info needs to be accessible on the tcp_server. As we will describe below,
+either we pass DAG_info to tcp_server when we do fanin operations, or the 
+tcp_server erads DAG_info.pickle from a file. (For incremental DAG generation
+we do not read DAG_info from a file, the incremental DAGS are retrieved by the 
+DAG_excutors and passed to tcp_server on remote/tcp calls to tcp_server.)
+
+For the schemes above, when incremental DAG generation is NOT used:
+- A1. We assign each leaf node state to Lambda Executor. At fanouts, a Lambda executor starts another
+Executor that begins execution at the fanout's associated state. When all Lamdas have performed
+a faninNB operation for a given faninNB F, F starts a new Lambda executor that begins its
+execution by excuting the fanin task in the task's associated state. Fanins are processed as usual
+using "becomes". This is essentially Wukong with DAGs represented as state machines. Note that
+fanin/faninNBs are always stored on the tcp_server or in Lambdas.
+==> FaninNb synch objects are always stored on the tcp_server and these objects
+need DAG_info since when a FaninNB invokes a real lambda to excute the 
+fanin task, the real Lambda needs DAG_info to be part of its payload, If
+all the fanins/faninNBs are created at the start, the DAG_executor_driver
+sends a create() message that includes DAG_info to the tcp_server, which
+creates the faninNBs and passes DAG_info on the creates. When fanin/faninNBs
+are created on the fly, the tcp_server will be creating fanin/faninNB objects
+on the first call to fanin for each object. Note that on-the-fly creation is
+always used for incremental DAG generation. When incremental DAG generation 
+is not being used, the tcp_server reads DAG_info.pickle from a file and passes
+DAG_info to create(). This read is done only on the first call to fanin() for
+any fanin/faninNB object. That is, there is one read for the entire execution,
+not one read per fanin. The DAG_info only need to be executed onc.
+
+- A2. This is the same as scheme (A1) using threads instead of Lambdas. This is simply a way to
+test the logic of (A1) by running threads locally instead of using Lambdas. In this scheme, the 
+fanin/faninNbs are stored locally. The faninNBs will create threads to run the fanin tasks 
+(to simulate creating Lambdas to run the fanin tasks) and these threads run locally. The 
+thread that is processing the faninNB creates a new thread that actually makes the call to 
+fan_in, to simulate an "async" call to the fan_in of a faninNB. (There is no reason to wait for
+a FaninNB.fan_in to return since there are no fanin results - the faninNB starts a new local thread 
+to execute the fanin task and passes the results as a parameter. (tcp_server is not used.)
+==> The threads that simulate lambdas read DAG_info.pickle at the start. If
+the fnin/faninNB objects are created on-the-fly the workers pass DAG_info on their fanin operations.
+- A3. This is the same as scheme (1) using threads instead of Lambdas except that fanins/faninNbs
+are stored remotely.  Now the faninNBs cannot create threads since such threads would run on the 
+tcp_server; instead, the calling threada creates a new thread that runs locally (on the client machine). 
+So this is the  same as (A2) except that the thread created to execute a fanin task is created 
+by the thread that calls fanin (and is the last to call fanin) and receives the results
+of the fanin, instead of a thread being created by the faninNB (after 
+the last call to fanin.) Note that tcp_server does not actually start any
+threads that are used to simulate lambdas, so tcp_server does not need
+to access DAG_info. The local threads that simuate lambdas read DAG_info
+at the start of their execution and thus can pass it to create() if 
+synch objects are created on the fly.
+- A4_L: the workers are threads, the work queue is a shared local work queue. 
+and the fanin/faninNB objects are created and stored locally as part of the 
+local python program. process_faninNBs_batch is not called (since process_faninNB_batch 
+for tcp_server also enques work in the remote work queue that is on the server). 
+async_call is not relevant.
+==> the worker threads read DAG_info.pickle when they start. Note that FaninNB
+objects do not create workers to excute their fanin tasks; instead, they deposit
+the fanin tasks into the work_queue to be withdrawn by the existing workers.
+- A4_R: workers are threads and the work queue and sync objects are on the tcp_server. 
+async_call is False since the caller needs to wait for the returned work, if any.
+==> the worker threads read DAG_info.pickle when they start. If objects are creatd
+on the fly, the workers pass DAG_info on their fanin operations.
+- A5: This is the same as (A4) only we use (multi) processes as workers instead of threads. This 
+scheme is expected to be faster than (A4_R) for large enough DAGS since there is real parallelism.
+When we use processes, the work queue is on the server and so must be the 
+fanins/faninNBs (as we need to use some sort of IPC for the worker processes
+to access the shared fanin/faninNB objects. We use tcp/ip between worker
+processes and tcp_server where the objects are stored.)
+==> the worker processes read DAG_info.pickle when they start. If objects are creatd
+on the fly, the workers pass DAG_info on their fanin operations. ()
+- A6. This scheme is like (A5) since the workers are processes, but each worker process can have multiple
+threads. The threads are essentially a pool of threads (like (A4)), each of which is executing in a 
+process that is part of a pool of processes. This may make a Worker process perform better since while 
+one thread is blocked, say on a socket call to the tcp_server, the other threads(s) can run.
+=> DAG_info is handled like A5.
+
+For the schemes above, when incremental DAG generation IS used: the 
+DAG_executors will be widrawing new incremental DAGs from a buffer after
+BFS deposits them. So the DAG_executors have the most recent version of the 
+DAG that they have withdrawn.  Also, fannin/faninNB objects are always created
+on-the-fly during incremental DAG generation. Not that if the tcp_server
+is being used to store fanins/faninNBs ermotely, the tcp_server cannot read
+the DAG_info from a file since the DAG_info may not be complete. (It is 
+incomplete until the last part of the DAG is generated.) So the tcp_server
+must receive th incremental DAGS from the DAG_executors when the DAG_executors
+call fanin() operations on FaninNB objects. (Fanin objects never need DAG_info
+as they do not start fanin tasks; instead one excutor becoms the executor to 
+execute the fanin task.) The key ideas is: If an executor has an incomplete
+DAG_info D and it does a fanin() operation on FaninB F, then F is complete
+in D and F can be executed based on the information in D. So when we create
+F on the fly, we can give D to F and F can use D to handle F's fanin task,
+e.g., it can invoke a new Lambda and pass D in the payload to the lambda. Even
+though D is incomplete, the new lambda can excute F's fanin task since info
+about F is in the partial DAG_info. After executing F's fanin task, the 
+new Lambda may need to get a new incremental DAG via calling withdraw on 
+buffer of DAG_infos. SO:
+A1: real lambdas pass DAG_info to tcp_server on fanin() operations and the 
+tcp_server passes this partial Lambda to create() so that the created FaninNB
+objects have a partital DAG_info that allows then to start a new Lambda
+to excute the fanin task with the partial DAG_info in the payload.
+A2, A3: The simulated lambdas withdraw partial DAG_infos from the buffer
+and pass them locally to create) or pass them remotely to the tcp_server
+which passes the partial DAG_infos to create() as described above.
+
 
 
 Note:
