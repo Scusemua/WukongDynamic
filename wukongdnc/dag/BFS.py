@@ -670,13 +670,24 @@ def dfs_parent(visited, node)
 import networkx as nx
 import matplotlib.pyplot as plt
 import socket
-import logging 
 import cloudpickle
 import threading
 #import os
 import time
 #from statistics import mean
 import copy
+
+# Note: When we run BFS, BFS will generate a DAG for pagerank and call
+# DAG_excutor_driver.run(). We addLoggingLevel TRACE here before we
+# import the run from DAG_executor_driver so that the TRACE level is 
+# already defined when we process DAG_executor_driver. In DAG_executor_driver
+# we do not addLoggingLevel if we are computing pagerank. 
+# If we are not computing pagerank, we will run DAG_excutor_driver, and since
+# we are not computing pagernk, DAG_executor_driver will addLoggingLevel TRACE.
+
+import logging
+from .addLoggingLevel import addLoggingLevel
+addLoggingLevel('TRACE', logging.DEBUG - 5)
 
 from .DAG_executor_constants import use_shared_partitions_groups, use_page_rank_group_partitions
 from .DAG_executor_constants import use_struct_of_arrays_for_pagerank, compute_pagerank
@@ -728,13 +739,25 @@ from .DAG_executor_output_checker import verify_pagerank_outputs
 
 from wukongdnc.constants import TCP_SERVER_IP
 
+
+"""
+    >>> addLoggingLevel('TRACE', logging.DEBUG - 5)
+    >>> logging.getLogger(__name__).setLevel("TRACE")
+    >>> logging.getLogger(__name__).trace('that worked')
+    >>> logging.trace('so did this')
+    >>> logging.TRACE
+"""
+
 logger = logging.getLogger(__name__)
+
 if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
-    logger.setLevel(logging.DEBUG)
+    #logger.setLevel(logging.DEBUG)
+    logger.setLevel("TRACE")
     formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
     ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
+    #ch.setLevel(logging.DEBUG)
     #ch.setLevel(logging.INFO)
+    ch.setLevel("TRACE")
     ch.setFormatter(formatter)
     logger.addHandler(ch)
 
@@ -4543,7 +4566,7 @@ if __name__ == '__main__':
         logger.debug("Output partitions/groups")
         output_partitions()
 
-#rhc: Issue: can;t start TCP server until output DAG_info
+#rhc: Issue: can't start TCP server until output DAG_info
 # so this is for not using tcp server. If use tp_server then
 # need to just run bfs then start tcp_server then run 
 # dag_executor, where dag executor does this close shared mem?

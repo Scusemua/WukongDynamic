@@ -315,6 +315,27 @@ import cloudpickle
 import socket
 #import os
 
+import logging 
+from .addLoggingLevel import addLoggingLevel
+""" How to use: https://stackoverflow.com/questions/2183233/how-to-add-a-custom-loglevel-to-pythons-logging-facility/35804945#35804945
+    >>> addLoggingLevel('TRACE', logging.DEBUG - 5)
+    >>> logging.getLogger(__name__).setLevel("TRACE")
+    >>> logging.getLogger(__name__).trace('that worked')
+    >>> logging.trace('so did this')
+    >>> logging.TRACE
+"""
+logger = logging.getLogger(__name__)
+# If we are computing pageranks then we will run BFS first which will 
+# addLoggingLevel(trace) and import DAG_executor_driver,
+# so we do not want to addLoggingLevel(trace) here. If we are not
+# computing pageranks we will addLoggingLevel(trace) here.
+# Note that we start DAG execution either by running BFS or
+# DAG_excutor_driver, so one of them will addLoggingLevel(trace).
+# No other module executes addLoggingLevel.
+from .DAG_executor_constants import compute_pagerank
+if not (compute_pagerank):
+    addLoggingLevel('TRACE', logging.DEBUG - 5)
+
 #from .DFS_visit import Node
 #from .DFS_visit import state_info
 #from DAG_executor_FanInNB import DAG_executor_FanInNB
@@ -330,7 +351,7 @@ from .DAG_executor_constants import create_all_fanins_faninNBs_on_start, using_w
 from .DAG_executor_constants import num_workers,using_threads_not_processes
 from .DAG_executor_constants import FanIn_Type, FanInNB_Type, process_work_queue_Type
 from .DAG_executor_constants import store_sync_objects_in_lambdas, sync_objects_in_lambdas_trigger_their_tasks
-from .DAG_executor_constants import compute_pagerank, use_shared_partitions_groups,use_page_rank_group_partitions
+from .DAG_executor_constants import use_shared_partitions_groups,use_page_rank_group_partitions
 from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
 from .DAG_executor_constants import using_threads_not_processes, use_multithreaded_multiprocessing
 #from .DAG_work_queue_for_threads import thread_work_queue
@@ -347,16 +368,16 @@ import copy
 from . import BFS_Shared
 import dask
 
-import logging 
-
-logger = logging.getLogger(__name__)
 if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
-    logger.setLevel(logging.DEBUG)
+    #logger.setLevel(logging.DEBUG)
+    logger.setLevel("TRACE")
     formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
     ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
+    #ch.setLevel(logging.DEBUG)
+    ch.setLevel("TRACE")
     ch.setFormatter(formatter)
     logger.addHandler(ch)
+
 
 # A note about loggers:
 """
@@ -1055,6 +1076,8 @@ def input_DAG_info():
     return DAG_info
 
 def run():
+
+    logger.trace("testing 1 2 3")
 
     # high-level:
     # 1 create the fanins and faninNBs locally or on the server
