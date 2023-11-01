@@ -60,6 +60,6 @@ class SynchronizerThreadSelect(Thread):
         #self._returnValue = self._synchronizer_method(self._synchronizer,**self._kwargs)
         # where wait_b in Barrier is wait_b(self, **kwargs):
 
-        logger.debug("SynchronizerThreadSelect: return value is " + str(self._returnValue))
+        logger.trace("SynchronizerThreadSelect: return value is " + str(self._returnValue))
         
         # Note: results and restart returned through result buffer so return value should be ignored

@@ -42,11 +42,11 @@ def send_object(obj, websocket):
         websocket (socket.socket):
             Socket connected to a remote client.
     """
-    #logger.debug("send_object: Will be sending a message of size %d bytes." % len(obj))
+    #logger.trace("send_object: Will be sending a message of size %d bytes." % len(obj))
     
     #thread_name = threading.current_thread().name  
     # First, we send the number of bytes that we're going to send.
-    #logger.debug(thread_name + ": send_object: len obj: " + str(len(obj))  + ", size bytes: " + str(len(obj).to_bytes(4, byteorder='big')) + ", object bytes: " + str(obj))
+    #logger.trace(thread_name + ": send_object: len obj: " + str(len(obj))  + ", size bytes: " + str(len(obj).to_bytes(4, byteorder='big')) + ", object bytes: " + str(obj))
     # send_object: len obj: 278522 needs 3 bytes
     #time.sleep(0.6)
     websocket.sendall(len(obj).to_bytes(4, byteorder='big'))
@@ -84,7 +84,7 @@ def recv_object(websocket):
             logger.warn("Stopped reading incoming message size from socket early. Have read " + str(len(data)) + " bytes of a total expected 4 bytes.")
             break 
 
-        #logger.debug("recv_object: starting read %d bytes from TCP server." % len(new_data))
+        #logger.trace("recv_object: starting read %d bytes from TCP server." % len(new_data))
         data.extend(new_data)
     
     # Convert the bytes representing the size of the incoming serialized object to an integer.
@@ -102,11 +102,11 @@ def recv_object(websocket):
         if not new_data:
             break 
 
-        #logger.debug("recv_object: starting read %d bytes from TCP server." % len(new_data))
+        #logger.trace("recv_object: starting read %d bytes from TCP server." % len(new_data))
         data.extend(new_data)
-        #logger.debug("recv_object: end-of read %d/%d bytes from TCP server." % (len(data), incoming_size))
+        #logger.trace("recv_object: end-of read %d/%d bytes from TCP server." % (len(data), incoming_size))
 
-        #logger.debug(thread_name + ": returning from recv_object rcv. bytes received: " + str(data)) 
+        #logger.trace(thread_name + ": returning from recv_object rcv. bytes received: " + str(data)) 
 
     return data 
 
@@ -144,21 +144,21 @@ def synchronize_sync(websocket, op, name, method_name, state):
         "id": msg_id
     }
     thread_name = threading.current_thread().name
-    logger.debug(thread_name + ": synchronize_sync: Fan-in ID %s calling send_object %s. Message ID=%s" % (name, op, msg_id))
+    logger.trace(thread_name + ": synchronize_sync: Fan-in ID %s calling send_object %s. Message ID=%s" % (name, op, msg_id))
     msg = json.dumps(message).encode('utf-8')
-    logger.debug(thread_name + ": synchronize_sync: msg to send: " + str(msg))
+    logger.trace(thread_name + ": synchronize_sync: msg to send: " + str(msg))
     send_object(msg, websocket)
-    logger.debug(thread_name + ": synchronize_sync: sent object successful, calling receive object.")
+    logger.trace(thread_name + ": synchronize_sync: sent object successful, calling receive object.")
     data = recv_object(websocket)               # Should just be a serialized state object.
-    logger.debug(thread_name + ": synchronize_sync: receive object succesful.")
-    #logger.debug("Received %d byte return value from server: %s" % (len(data), str(data)))
+    logger.trace(thread_name + ": synchronize_sync: receive object succesful.")
+    #logger.trace("Received %d byte return value from server: %s" % (len(data), str(data)))
 
-    logger.debug(thread_name + ": synchronize_sync: data is " + str(data))
-    logger.debug(thread_name+ ":synchronize_sync: cloudpickle.loads(data)")
+    logger.trace(thread_name + ": synchronize_sync: data is " + str(data))
+    logger.trace(thread_name+ ":synchronize_sync: cloudpickle.loads(data)")
 
     state_from_server = cloudpickle.loads(data) # `state_from_server` is of type State
-    logger.debug(thread_name+ ": synchronize_sync: successful")
-    #logger.debug("Fan-in ID %s received return value from server in synchronize_sync: %s" % (name, str(state_from_server.return_value)))
+    logger.trace(thread_name+ ": synchronize_sync: successful")
+    #logger.trace("Fan-in ID %s received return value from server in synchronize_sync: %s" % (name, str(state_from_server.return_value)))
 
     return state_from_server
 
@@ -197,11 +197,11 @@ def synchronize_async(websocket, op, name, method_name, state):
     }
     thread_name = threading.current_thread().name
  
-    #logger.debug("synchronize_async: Calling %s. Message ID=%s" % (op, msg_id))
+    #logger.trace("synchronize_async: Calling %s. Message ID=%s" % (op, msg_id))
     msg = json.dumps(message).encode('utf-8')
-    logger.debug(thread_name + ": synchronize_async: send_object: length msg:" + str(len(msg)))
+    logger.trace(thread_name + ": synchronize_async: send_object: length msg:" + str(len(msg)))
     send_object(msg, websocket)
-    logger.debug("synchronize_async: thread " + thread_name + " send_object successful")
+    logger.trace("synchronize_async: thread " + thread_name + " send_object successful")
 
 def synchronize_async_terminate(websocket: socket.socket, op: str, name: str, method_name: str, state: State):
     """
@@ -241,7 +241,7 @@ def synchronize_async_terminate(websocket: socket.socket, op: str, name: str, me
         "state": make_json_serializable(state),
         "id": msg_id
     }
-    logger.debug("synchronize_async_terminate: Calling %s. Message ID=%s" % (op, msg_id))
+    logger.trace("synchronize_async_terminate: Calling %s. Message ID=%s" % (op, msg_id))
     msg = json.dumps(message).encode('utf-8')
     send_object(msg, websocket)
 
@@ -272,13 +272,13 @@ def create(websocket, op, type, name, state):
             Our current state.
     """
     # with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
-    #    logger.debug("Connecting to " + str(TCP_SERVER_IP))
+    #    logger.trace("Connecting to " + str(TCP_SERVER_IP))
     #    websocket.connect(TCP_SERVER_IP)
-    #    logger.debug("Successfully connected!")
+    #    logger.trace("Successfully connected!")
 
     # msg_id for debugging
     msg_id = str(uuid.uuid4())
-    logger.debug("create: Sending 'create' message to server. Op='%s', type='%s', name='%s', id='%s', state=%s" % (op, type, name, msg_id, state))
+    logger.trace("create: Sending 'create' message to server. Op='%s', type='%s', name='%s', id='%s', state=%s" % (op, type, name, msg_id, state))
 
     # we set state.keyword_arguments before call to create()
     message = {
@@ -291,7 +291,7 @@ def create(websocket, op, type, name, state):
 
     msg = json.dumps(message).encode('utf-8')
     send_object(msg, websocket)
-    logger.debug("create: Sent 'create' message to server")
+    logger.trace("create: Sent 'create' message to server")
 
     # Receive data. This should just be an ACK, as the TCP server will 'ACK' our create() calls.
     _ack_ignored = recv_object(websocket)
@@ -314,11 +314,11 @@ def create_work_queue_on_server(websocket, work_queue_message):
     #    work_queue_message: tcp_server command
 
     msg_id = str(uuid.uuid4())
-    logger.debug("api: create_work_queue_on_server: Sending 'create_work_queue' message to server. Op='%s', type='%s', name='%s', id='%s', state=%s" % (work_queue_message['op'], work_queue_message['type'], work_queue_message['name'], work_queue_message['state'], work_queue_message['msg_id']))
+    logger.trace("api: create_work_queue_on_server: Sending 'create_work_queue' message to server. Op='%s', type='%s', name='%s', id='%s', state=%s" % (work_queue_message['op'], work_queue_message['type'], work_queue_message['name'], work_queue_message['state'], work_queue_message['msg_id']))
 
     msg = json.dumps(work_queue_message).encode('utf-8')
     send_object(msg, websocket)
-    logger.debug("create_work_queue: Sent 'create_work_queue' message to server")
+    logger.trace("create_work_queue: Sent 'create_work_queue' message to server")
 
     # Receive data. This should just be an ACK, as the TCP server will 'ACK' our create() calls.
     ack = recv_object(websocket)
@@ -368,7 +368,7 @@ def create_all_sync_objects(websocket, op, type, name, state):
     message0 = name[0] 
     message1 = name[1]
     m00 = message0[0]
-    logger.debug("api: m01.op:" + m01.op
+    logger.trace("api: m01.op:" + m01.op
     m01 = message0[1]
     m02 = message0[2]
     m03 = message0[3]
@@ -419,7 +419,7 @@ def synchronize_process_faninNBs_batch(websocket, op, type, name, DAG_exec_state
     async_call = DAG_exec_state.keyword_arguments['async_call']
  
     msg_id = str(uuid.uuid4())
-    logger.debug(thread_name + ": synchronize_process_faninNBs_batch: Sending synchronize_process_faninNBs_batch message to server. Op='%s', type='%s', id='%s', state=%s" % (op, type, msg_id, DAG_exec_state))
+    logger.trace(thread_name + ": synchronize_process_faninNBs_batch: Sending synchronize_process_faninNBs_batch message to server. Op='%s', type='%s', id='%s', state=%s" % (op, type, msg_id, DAG_exec_state))
 
     # we set state.keyword_arguments before call to create()
     message = {
@@ -433,19 +433,19 @@ def synchronize_process_faninNBs_batch(websocket, op, type, name, DAG_exec_state
     msg = json.dumps(message).encode('utf-8')
     send_object(msg, websocket)
 
-    logger.debug(thread_name + ": synchronize_process_faninNBs_batch: Sent 'synchronize_process_faninNBs_batch' message to server")
+    logger.trace(thread_name + ": synchronize_process_faninNBs_batch: Sent 'synchronize_process_faninNBs_batch' message to server")
 
     if not async_call:
         # synch call so get return value from tcp server
-        logger.debug(thread_name + ": synchronize_process_faninNBs_batch: synchronous call so get return value.")
+        logger.trace(thread_name + ": synchronize_process_faninNBs_batch: synchronous call so get return value.")
         data = recv_object(websocket)
-        logger.debug(thread_name + ": synchronize_process_faninNBs_batch: data is " + str(data))
+        logger.trace(thread_name + ": synchronize_process_faninNBs_batch: data is " + str(data))
         state = cloudpickle.loads(data) # `state_from_server` is of type State
-        logger.debug(thread_name + ": synchronize_process_faninNBs_batch: successfully unpickled")
+        logger.trace(thread_name + ": synchronize_process_faninNBs_batch: successfully unpickled")
     else: 
         # don't wait for return value from tcp server since we did not request to receive work.
         # set return_value = 0 to indicate no work is coming back
-        logger.debug(thread_name + ": synchronize_process_faninNBs_batch: asynchronous call so return state with return_value 0.")
+        logger.trace(thread_name + ": synchronize_process_faninNBs_batch: asynchronous call so return state with return_value 0.")
         state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
         state.return_value = 0
         state.blocking = False
@@ -480,13 +480,13 @@ def synchronize_trigger_leaf_tasks(websocket, op, type, name, state):
             Our current state.
     """
     # with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
-    #    logger.debug("Connecting to " + str(TCP_SERVER_IP))
+    #    logger.trace("Connecting to " + str(TCP_SERVER_IP))
     #    websocket.connect(TCP_SERVER_IP)
-    #    logger.debug("Successfully connected!")
+    #    logger.trace("Successfully connected!")
 
     # msg_id for debugging
     msg_id = str(uuid.uuid4())
-    logger.debug("synchronize_trigger_leaf_tasks: Sending 'trigger_leaf_tasks' message to server. Op='%s', type='%s', name='%s', id='%s', state=%s" % (op, type, name, msg_id, state))
+    logger.trace("synchronize_trigger_leaf_tasks: Sending 'trigger_leaf_tasks' message to server. Op='%s', type='%s', name='%s', id='%s', state=%s" % (op, type, name, msg_id, state))
 
     # we set state.keyword_arguments before call to create()
     message = {
@@ -499,7 +499,7 @@ def synchronize_trigger_leaf_tasks(websocket, op, type, name, state):
 
     msg = json.dumps(message).encode('utf-8')
     send_object(msg, websocket)
-    logger.debug("synchronize_trigger_leaf_tasks: Sent 'create' message to server")
+    logger.trace("synchronize_trigger_leaf_tasks: Sent 'create' message to server")
 
     # Receive data. This should just be an ACK, as the TCP server will 'ACK' our create() calls.
     _ack_ignored = recv_object(websocket)
@@ -515,5 +515,5 @@ def close_all(websocket):
     }
     msg = json.dumps(message).encode('utf-8')
     send_object(msg, websocket)
-    logger.debug("close_all: Sent 'close_all' message to server")    
+    logger.trace("close_all: Sent 'close_all' message to server")    
     _ack_ignored = recv_object(websocket)

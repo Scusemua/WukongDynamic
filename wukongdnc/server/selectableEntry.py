@@ -96,7 +96,7 @@ class selectableEntry:
         return self._restart_on_unblock
             
     def set_restart_on_noblock(self,T_or_F):
-        logger.debug("Setting value of '_restart_on_noblock' to " + str(T_or_F))
+        logger.trace("Setting value of '_restart_on_noblock' to " + str(T_or_F))
         self._restart_on_noblock = T_or_F
    
     def get_restart_on_noblock(self):

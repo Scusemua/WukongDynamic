@@ -16,14 +16,22 @@ import cloudpickle
 import copy
 import logging 
 
+#from .addLoggingLevel import addLoggingLevel
+""" How to use: https://stackoverflow.com/questions/2183233/how-to-add-a-custom-loglevel-to-pythons-logging-facility/35804945#35804945
+    >>> addLoggingLevel('TRACE', logging.DEBUG - 5)
+    >>> logging.getLogger(__name__).setLevel("TRACE")
+    >>> logging.getLogger(__name__).trace('that worked')
+    >>> logging.trace('so did this')
+    >>> logging.TRACE
+"""
 logger = logging.getLogger(__name__)
+#addLoggingLevel('TRACE', logging.DEBUG - 5)
 
-logger.setLevel(logging.DEBUG)
+logger.setLevel("INFO")
 formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
 ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
+ch.setLevel("INFO")
 ch.setFormatter(formatter)
-
 logger.addHandler(ch)
 
 
@@ -453,56 +461,56 @@ class Node:
 
 # Used as tasks in the test case
 def add(inp):
-    logger.debug("add: " + "input: " + str(input))
+    logger.info("add: " + "input: " + str(input))
     num1 = inp['inc0']
     num2 = inp['inc1']
     sum = num1 + num2
     output = {'add': sum}
-    logger.debug("add output: " + str(sum))
+    logger.info("add output: " + str(sum))
     return output
 def multiply(inp):
-    logger.debug("multiply")
+    logger.info("multiply")
     num1 = inp['add']
     num2 = inp['square']
     num3 = inp['triple']
     product = num1 * num2 * num3
     output = {'multiply': product}
-    logger.debug("multiply output: " + str(product))
+    logger.info("multiply output: " + str(product))
     return output
 def divide(inp):
-    logger.debug("divide")
+    logger.info("divide")
     num1 = inp['multiply']
     quotient = num1 / 72
     output = {'quotient': quotient}
-    logger.debug("quotient output: " + str(quotient))
+    logger.info("quotient output: " + str(quotient))
     return output
 def triple(inp):
-    logger.debug("triple")
+    logger.info("triple")
     value = inp['inc1']
     value *= 3
     output = {'triple': value}
-    logger.debug("triple output: " + str(output))
+    logger.info("triple output: " + str(output))
     return output
 def square(inp):
-    logger.debug("square")
+    logger.info("square")
     value = inp['inc1']
     value *= value
     output = {'square': value}
-    logger.debug("square output: " + str(output))
+    logger.info("square output: " + str(output))
     return output
 def inc0(inp):
-    logger.debug("inc0")
+    logger.info("inc0")
     value = inp['input']
     value += 1
     output = {'inc0': value}
-    logger.debug("inc0 output: " + str(output))
+    logger.info("inc0 output: " + str(output))
     return output
 def inc1(inp):
-    logger.debug("inc1")
+    logger.info("inc1")
     value = inp['input']
     value += 1
     output = {'inc1': value}
-    logger.debug("inc1 output: " + str(output))
+    logger.info("inc1 output: " + str(output))
     return output
 
 def main():

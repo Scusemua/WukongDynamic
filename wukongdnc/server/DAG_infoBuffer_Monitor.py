@@ -42,7 +42,7 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         # and executed by workers (when we aer using workers).
         #self.current_version_new_leaf_tasks = []
 
-        # logger.info(kwargs)
+        # logger.trace(kwargs)
 
     def print_DAG_info(self,DAG_info):
         DAG_map = DAG_info.get_DAG_map()
@@ -98,10 +98,10 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         except Exception as ex:
             logger.error("[ERROR]: DAG_infoBuffer_Monitor:  Failed super(DAG_infoBuffer_Monitor, self)")
             logger.error("[ERROR] self: " + str(self.__class__.__name__))
-            logger.debug(ex)
+            logger.trace(ex)
             return 0
         
-        logger.debug("DAG_infoBuffer_Monitor: get_current_version_number_DAG_info() entered monitor, len(self._new_version) ="+str(len(self._next_version)))
+        logger.trace("DAG_infoBuffer_Monitor: get_current_version_number_DAG_info() entered monitor, len(self._new_version) ="+str(len(self._next_version)))
 
         restart = False
         current_DAG_info = self.current_version_DAG_info
@@ -124,27 +124,27 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         except Exception as ex:
             logger.error("[ERROR]: DAG_infoBuffer_Monitor: Failed super(DAG_infoBuffer_Monitor, self)")
             logger.error("[ERROR] self: " + str(self.__class__.__name__))
-            logger.debug(ex)
+            logger.trace(ex)
             return 0
 
-        logger.debug("DAG_infoBuffer_Monitor: deposit() entered monitor, len(self._new_version) ="+str(len(self._next_version)))
+        logger.trace("DAG_infoBuffer_Monitor: deposit() entered monitor, len(self._new_version) ="+str(len(self._next_version)))
         self.current_version_DAG_info = kwargs['new_current_version_DAG_info']
         self.current_version_number_DAG_info = self.current_version_DAG_info.get_DAG_version_number()
 #rhc leaf tasks
         new_leaf_tasks = kwargs['new_current_version_new_leaf_tasks']
         self.current_version_new_leaf_tasks += new_leaf_tasks
-        logger.debug("DAG_infoBuffer_Monitor: DAG_info deposited: ")
+        logger.trace("DAG_infoBuffer_Monitor: DAG_info deposited: ")
         self.print_DAG_info(self.current_version_DAG_info)
 
 #rhc leaf tasks
-        logger.debug("DAG_infoBuffer_Monitor: new leaf task states deposited: ")
+        logger.trace("DAG_infoBuffer_Monitor: new leaf task states deposited: ")
         for work_tuple in new_leaf_tasks:
             leaf_task_state = work_tuple[0]
-            logger.debug(str(leaf_task_state))
-        logger.debug("DAG_infoBuffer_Monitor: cumulative leaf task states deposited: ")
+            logger.trace(str(leaf_task_state))
+        logger.trace("DAG_infoBuffer_Monitor: cumulative leaf task states deposited: ")
         for work_tuple in self.current_version_new_leaf_tasks:
             leaf_task_state = work_tuple[0]
-            logger.debug(str(leaf_task_state))
+            logger.trace(str(leaf_task_state))
 
         restart = False
         self._next_version.signal_c_and_exit_monitor()
@@ -157,7 +157,7 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         # the next version of the DAG, which hasn't been generated yet.
         super().enter_monitor(method_name = "withdraw")
         requested_current_version_number = kwargs['requested_current_version_number']
-        logger.debug("DAG_infoBuffer_Monitor: withdraw() entered monitor, requested_current_version_number = "
+        logger.trace("DAG_infoBuffer_Monitor: withdraw() entered monitor, requested_current_version_number = "
             + str(requested_current_version_number) + " len(self._next_version) = " + str(len(self._next_version)))
         DAG_info = None
         restart = False
@@ -167,7 +167,7 @@ class DAG_infoBuffer_Monitor(MonitorSU):
             new_leaf_task_states = copy.copy(self.current_version_new_leaf_tasks)
             self.current_version_new_leaf_tasks.clear()
 
-            logger.debug("DAG_infoBuffer_Monitor: withdraw: got DAG_info with version number " 
+            logger.trace("DAG_infoBuffer_Monitor: withdraw: got DAG_info with version number " 
                 + str(DAG_info.get_DAG_version_number()))
              
             # Note: This is disabled so that we do not try to iterate
@@ -180,20 +180,20 @@ class DAG_infoBuffer_Monitor(MonitorSU):
             # current_version_DAG_info so we can match the 
             # current_version_DAG_info with the versions printed by
             # deposit.
-            #logger.debug("DAG_infoBuffer_Monitor: DAG_info withdrawn: ")
+            #logger.trace("DAG_infoBuffer_Monitor: DAG_info withdrawn: ")
             #self.print_DAG_info(self.current_version_DAG_info)
 #rhc leaf tasks
-            logger.debug("DAG_infoBuffer_Monitor: withdraw: new leaf task states returned: ")
+            logger.trace("DAG_infoBuffer_Monitor: withdraw: new leaf task states returned: ")
             for work_tuple in new_leaf_task_states:
                 leaf_task_state = work_tuple[0]
-                logger.debug(str(leaf_task_state))
+                logger.trace(str(leaf_task_state))
             super().exit_monitor()
 #rhc leaf tasks
             DAG_info_and_new_leaf_task_states_tuple = (DAG_info,new_leaf_task_states)
             #return DAG_info, new_leaf_task_states, restart
             return DAG_info_and_new_leaf_task_states_tuple, restart
         else:
-            logger.debug("DAG_infoBuffer_Monitor: withdraw waiting for version " + str(requested_current_version_number))
+            logger.trace("DAG_infoBuffer_Monitor: withdraw waiting for version " + str(requested_current_version_number))
             self._next_version.wait_c()
             DAG_info = self.current_version_DAG_info
 #rhc leaf tasks
@@ -221,21 +221,21 @@ class DAG_infoBuffer_Monitor(MonitorSU):
             # might be allowed to enter the monitor before waiting workers, in 
             # which case the workers would get verson i+1, which is not bad.
 
-            logger.debug("DAG_infoBuffer_Monitor: withdraw: got DAG_info with version number " 
+            logger.trace("DAG_infoBuffer_Monitor: withdraw: got DAG_info with version number " 
                 + str(DAG_info.get_DAG_version_number()))
-            #logger.debug("DAG_infoBuffer_Monitor: DAG_info withdrawn: ")
+            #logger.trace("DAG_infoBuffer_Monitor: DAG_info withdrawn: ")
             #self.print_DAG_info(self.current_version_DAG_info)
 #rhc leaf tasks
-            logger.debug("DAG_infoBuffer_Monitor: withdraw: new leaf task states to return: ")
+            logger.trace("DAG_infoBuffer_Monitor: withdraw: new leaf task states to return: ")
             for work_tuple in new_leaf_task_states:
                 leaf_task_state = work_tuple[0]
-                logger.debug(str(leaf_task_state))
+                logger.trace(str(leaf_task_state))
 
             self._next_version.signal_c_and_exit_monitor()
 #rhc leaf tasks
             DAG_info_and_new_leaf_task_states_tuple = (DAG_info,new_leaf_task_states)
             #return DAG_info, new_leaf_task_states, restart
-            logger.debug("DAG_infoBuffer_Monitor: return.")
+            logger.trace("DAG_infoBuffer_Monitor: return.")
             return DAG_info_and_new_leaf_task_states_tuple, restart
         
 
@@ -256,25 +256,25 @@ def taskD(b : DAG_infoBuffer_Monitor):
     DAG_info = Dummy_DAG_info("DAG_info2",2)
     keyword_arguments = {}
     keyword_arguments['new_current_version_DAG_info'] = DAG_info
-    logger.debug("taskD Calling withdraw")
+    logger.trace("taskD Calling withdraw")
     b.deposit(**keyword_arguments)
-    logger.debug("Successfully called deposit version 2")
+    logger.trace("Successfully called deposit version 2")
 
 def taskW1(b : DAG_infoBuffer_Monitor):
-    logger.debug("taskW1 Calling withdraw")
+    logger.trace("taskW1 Calling withdraw")
     keyword_arguments = {}
     keyword_arguments['requested_current_version_number'] = 1
     DAG_info, restart = b.withdraw(**keyword_arguments)
-    logger.debug("Successfully called withdraw, ret is " 
+    logger.trace("Successfully called withdraw, ret is " 
         + str(DAG_info.get_value()) + "," + str(DAG_info.get_version_number())
         + " restart " + str(restart))
 
 def taskW2(b : DAG_infoBuffer_Monitor):
-    logger.debug("taskW2 Calling withdraw")
+    logger.trace("taskW2 Calling withdraw")
     keyword_arguments = {}
     keyword_arguments['requested_current_version_number'] = 2
     DAG_info, restart = b.withdraw(**keyword_arguments)
-    logger.debug("Successfully called withdraw, ret is " 
+    logger.trace("Successfully called withdraw, ret is " 
         + str(DAG_info.get_value()) + "," + str(DAG_info.get_version_number())
         + " restart " + str(restart))
 
@@ -285,35 +285,35 @@ def main():
     keyword_arguments['current_version_DAG_info'] = DAG_info
     b.init(**keyword_arguments)
     try:
-        logger.debug("Starting D thread")
+        logger.trace("Starting D thread")
         _thread.start_new_thread(taskD, (b,))
     except Exception as ex:
-        logger.debug("[ERROR] Failed to start first thread.")
-        logger.debug(ex)
+        logger.trace("[ERROR] Failed to start first thread.")
+        logger.trace(ex)
 
     try:
-        logger.debug("Starting taskW1 thread")
+        logger.trace("Starting taskW1 thread")
         _thread.start_new_thread(taskW1, (b,))
     except Exception as ex:
-        logger.debug("[ERROR] Failed to start taskW1 thread.")
-        logger.debug(ex)
+        logger.trace("[ERROR] Failed to start taskW1 thread.")
+        logger.trace(ex)
 
     try:
-        logger.debug("Starting first taskW2 thread")
+        logger.trace("Starting first taskW2 thread")
         _thread.start_new_thread(taskW2, (b,))
     except Exception as ex:
-        logger.debug("[ERROR] Failed to start first taskW2 thread.")
-        logger.debug(ex)
+        logger.trace("[ERROR] Failed to start first taskW2 thread.")
+        logger.trace(ex)
 
     try:
-        logger.debug("Starting second taskW2 thread")
+        logger.trace("Starting second taskW2 thread")
         _thread.start_new_thread(taskW2, (b,))
     except Exception as ex:
-        logger.debug("[ERROR] Failed to start second taskW2 thread.")
-        logger.debug(ex)
+        logger.trace("[ERROR] Failed to start second taskW2 thread.")
+        logger.trace(ex)
 
     time.sleep(4)
-    logger.debug("Done sleeping")
+    logger.trace("Done sleeping")
 
 if __name__=="__main__":
      main()

@@ -86,12 +86,12 @@ class Selector():
         # Debugging:
         for i in range(0, (num_entries-1)):
             entry = self.get_entry(i)
-            logger.debug("execute: choosing among entries: entry " + str(i) + " is " + entry.get_entry_name() + ", number of arrivals: " + str(entry.get_num_arrivals()))
+            logger.trace("execute: choosing among entries: entry " + str(i) + " is " + entry.get_entry_name() + ", number of arrivals: " + str(entry.get_num_arrivals()))
 
         #entry0 = self.get_entry(0)
-        #logger.debug("after add: entry " + entry0.get_entry_name() + ": " + str(entry0.get_num_arrivals()))
+        #logger.trace("after add: entry " + entry0.get_entry_name() + ": " + str(entry0.get_num_arrivals()))
         #entry1 = self.get_entry(1)
-        #logger.debug("after add: entry " + entry1.get_entry_name() + ": " + str(entry1.get_num_arrivals()))
+        #logger.trace("after add: entry " + entry1.get_entry_name() + ": " + str(entry1.get_num_arrivals()))
 
         self.set_guards()
             
@@ -102,9 +102,9 @@ class Selector():
             if send_result:
                 # Note asynch calls always have send_result = False, whether they block or not.
                 # try-op calls have send_result True if they are not blocking
-                logger.debug("execute: Internal ERROR: send_result is True but entry will not be accepted.") 
+                logger.trace("execute: Internal ERROR: send_result is True but entry will not be accepted.") 
             if (called_entry.get_num_arrivals() > 1) and called_entry.testGuard():
-                logger.debug("execute: Internal ERROR: called_entry.testGuard() is True but this is not the first arrival."
+                logger.trace("execute: Internal ERROR: called_entry.testGuard() is True but this is not the first arrival."
                     + " A previous arrival thus had a True guard and should have been selected earlier.")
                 
             # This is not the first wating arrival; guard cannot be true or the 
@@ -128,7 +128,7 @@ class Selector():
             # silently since we don't need it anymore.
             
             # return what? Part of delay alternative processing?
-            logger.debug("execute returning: called_entry.get_num_arrivals(): " + str(called_entry.get_num_arrivals())
+            logger.trace("execute returning: called_entry.get_num_arrivals(): " + str(called_entry.get_num_arrivals())
                 + " called_entry.testGuard() == False: " + str(called_entry.testGuard() == False))
                              
 ##111: blocking call: blocking try-op: return nothing 0 which is ignored; asynch: must be client terminate: return nothing (0) 
@@ -180,37 +180,37 @@ class Selector():
                     # Note asynch calls always have send_result = False, whether they block or not.
                     # Also, only async calls can be restarted above, i.e., can have get_restart_on_noblock() is True.
                     # So if restart is true then send_result must be False
-                    logger.debug("execute: Internal ERROR: send_result is True and restart is True, but restart can only "
+                    logger.trace("execute: Internal ERROR: send_result is True and restart is True, but restart can only "
                         + "be True for aynch calls while send_result is always False for aynch calls.")             
                 restart = False
                 return_tuple = (return_value, restart)
                 # will use these values in synchronize_sync to make changes to state
                 result_buffer.deposit(return_tuple)
                 #called_entry.remove_first_arrival()
-                logger.debug("execute called " + entry_name + ". returning " + str(return_value))
+                logger.trace("execute called " + entry_name + ". returning " + str(return_value))
         
             # Note: not removing first arrival above in then-part when the call is not accepted; remove that arrival when call is accepted
             called_entry.remove_first_arrival()
                              
-        logger.debug("execute: choosing")
+        logger.trace("execute: choosing")
         
         num_entries = self.get_num_entries()
         # Debugging:
         for i in range(0, (num_entries-1)):
             entry = self.get_entry(i)
-            logger.debug("execute: choosing among entries: entry " + str(i) + " is " + entry.get_entry_name() + ", number of arrivals: " + str(entry.get_num_arrivals()))
+            logger.trace("execute: choosing among entries: entry " + str(i) + " is " + entry.get_entry_name() + ", number of arrivals: " + str(entry.get_num_arrivals()))
 
         #entry0 = self.get_entry(0)
-        #logger.debug("choosing: entry " + entry0.get_entry_name() + ": " + str(entry0.get_num_arrivals()))
+        #logger.trace("choosing: entry " + entry0.get_entry_name() + ": " + str(entry0.get_num_arrivals()))
         #entry1 = self.get_entry(1)
-        #logger.debug("choosing: entry " + entry1.get_entry_name() + ": " + str(entry1.get_num_arrivals()))      
+        #logger.trace("choosing: entry " + entry1.get_entry_name() + ": " + str(entry1.get_num_arrivals()))      
         
         while(True):
            # just added an Arrival for an entry so update guards (which may consider the number of arrivals or an entry)
            self.set_guards()
            choice = self._select.choose()
            if choice >= 1 and choice <= self._select.get_number_entries():
-                logger.debug("Execute: choice is " + str(choice) + " so use list entry in position" + str(choice-1))
+                logger.trace("Execute: choice is " + str(choice) + " so use list entry in position" + str(choice-1))
                 called_entry = self.get_entry(choice-1)
                 arrival = called_entry.getOldestArrival()
                 synchronizer = arrival._synchronizer
@@ -219,7 +219,7 @@ class Selector():
                 kwargs = arrival._kwargs
                 result_buffer = arrival._result_buffer
                 return_value = self.domethodcall(entry_name, synchronizer, synchronizer_method, **kwargs)
-                logger.debug("Execute: called chosen method " + arrival._entry_name)
+                logger.trace("Execute: called chosen method " + arrival._entry_name)
                              
                 state.restart = False
                 restart = called_entry.get_restart_on_unblock()
@@ -237,7 +237,7 @@ class Selector():
                     self.doRestart(state,restart,return_value)
 #9:
                 else: #Error lambda clients must be restarted for this version in which sync objects are stored in client
-                    logger.debug("execute: Internal ERROR: Blocking Lambdas must be restarted.")
+                    logger.trace("execute: Internal ERROR: Blocking Lambdas must be restarted.")
 #10: ToConsider: We could allow clients to wait - Lambda will send return value (via TCP) to tcp_server when the call
 #    completes. Need to match return values to callers/operations.
                              
@@ -257,7 +257,7 @@ class Selector():
                 break  # while-loop
            elif choice > self._select.get_number_entries()+1:
                 # error
-                logger.debug("Illegal choice in selective wait: " + choice + " number of entries" + self._select.get_number_entries())
+                logger.trace("Illegal choice in selective wait: " + choice + " number of entries" + self._select.get_number_entries())
                 break # while-loop
            elif choice == -1: # else or delay
             # ToDo: on timeout we are just calling "delay" method so no choice of delay/else
@@ -274,7 +274,7 @@ class Selector():
                 break # while-loop
                 
         #super().exit_monitor()
-        logger.debug("execute: return 0")
+        logger.trace("execute: return 0")
         return 0
         
     # For example, call withdraw and return the value withdrawn.
@@ -287,7 +287,7 @@ class Selector():
         return return_value
     
     def doRestart(self,state, restart, return_value):           
-        logger.info("synchronizer_lambda: synchronizeLamba: Restarting Lambda function %s." % state.function_name)
+        logger.trace("synchronizer_lambda: synchronizeLamba: Restarting Lambda function %s." % state.function_name)
         payload = {"state": state}
 #9: cannot hardcode name; use state.function_name, in general
         invoke_lambda(payload = payload, is_first_invocation = False, function_name = "ComposerServerlessSync")

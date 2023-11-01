@@ -51,23 +51,23 @@ class Lambda_Function_Simulator:
 		global warm_resources
 		invocation_time = time.time()
 		warm_resources['invocation_count'] = warm_resources['invocation_count'] + 1
-		#logger.debug("Invocation received. event: " + str(event))
+		#logger.trace("Invocation received. event: " + str(event))
 
-		logger.debug(f'Lambda_Function_Simulator: lambda_handler: Invocation count: {warm_resources["invocation_count"]}, Seconds since cold start: {round(invocation_time - warm_resources["cold_start_time"], 1)}')
+		logger.trace(f'Lambda_Function_Simulator: lambda_handler: Invocation count: {warm_resources["invocation_count"]}, Seconds since cold start: {round(invocation_time - warm_resources["cold_start_time"], 1)}')
 
 		# Extract all of the data from the payload.
 		#json_message = cloudpickle.loads(base64.b64decode(event["json_message"]))
 		json_message = payload['json_message']
-		#logger.debug("Lambda_Function_Simulator: lambda_handler: JSON message: " + str(json_message))
+		#logger.trace("Lambda_Function_Simulator: lambda_handler: JSON message: " + str(json_message))
 
 		if not warm_resources['message_handler']:
 			# Issue: Can we get and print the name of the Lambda function - "LambdaBoundedBuffer" or "LambdaSemaphore"
-			logger.debug("Lambda_Function_Simulator: lambda_handler: **************** Lambda function cold start ******************")
+			logger.trace("Lambda_Function_Simulator: lambda_handler: **************** Lambda function cold start ******************")
 			# Note the import above: from wukongdnc.server.message_handler_lambda import MessageHandler
 			warm_resources['message_handler'] = MessageHandler()
 			#Issue: what if we lost a Lambda? If we have backup we can recover but how do we determine whether we failed?
 		else:
-			logger.debug("Lambda_Function_Simulator: lambda_handler: *************** warm start ******************")
+			logger.trace("Lambda_Function_Simulator: lambda_handler: *************** warm start ******************")
 
 		# handle the message
 		return_value = warm_resources['message_handler'].handle(json_message)
@@ -101,18 +101,18 @@ class DAG_orchestrator:
 	def create_fanin_and_faninNB_messages(self,DAG_map,DAG_states,DAG_info,all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes):
 	
 		"""
-		logger.debug("SQS: create_fanin_and_faninNB_messages: size of all_fanin_task_names: " + str(len(all_fanin_task_names))
+		logger.trace("SQS: create_fanin_and_faninNB_messages: size of all_fanin_task_names: " + str(len(all_fanin_task_names))
 			+ " size of all_faninNB_task_names: " + str(len(all_faninNB_task_names)))
-		logger.debug("SQS: create_fanin_and_faninNB_messages: size of all_fanin_sizes: " + str(len(all_fanin_sizes))
+		logger.trace("SQS: create_fanin_and_faninNB_messages: size of all_fanin_sizes: " + str(len(all_fanin_sizes))
 			+ " size of all_faninNB_sizes: " + str(len(all_faninNB_sizes)))
-		logger.debug("SQS: create_fanin_and_faninNB_messages: all_faninNB_task_names: " + str(all_faninNB_task_names))
+		logger.trace("SQS: create_fanin_and_faninNB_messages: all_faninNB_task_names: " + str(all_faninNB_task_names))
 		"""
 
 		fanin_messages = []
 
 		# create a list of "create" messages, one for each fanin
 		for fanin_name, size in zip(all_fanin_task_names,all_fanin_sizes):
-			#logger.debug("iterate fanin: fanin_name: " + fanin_name + " size: " + str(size))
+			#logger.trace("iterate fanin: fanin_name: " + fanin_name + " size: " + str(size))
 			# rhc: DES
 			dummy_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
 			# we will create the fanin object and call fanin.init(**keyword_arguments)
@@ -132,7 +132,7 @@ class DAG_orchestrator:
 
 		# create a list of "create" messages, one for each faninNB
 		for fanin_nameNB, size in zip(all_faninNB_task_names,all_faninNB_sizes):
-			#logger.debug("iterate faninNB: fanin_nameNB: " + fanin_nameNB + " size: " + str(size))
+			#logger.trace("iterate faninNB: fanin_nameNB: " + fanin_nameNB + " size: " + str(size))
 			# rhc: DES
 			dummy_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
 			# passing to the fninNB object:
@@ -158,7 +158,7 @@ class DAG_orchestrator:
 			}
 			faninNB_messages.append(message)
 
-		logger.debug("SQS:create_fanin_and_faninNB_messages: number of fanin messages: " + str(len(fanin_messages))
+		logger.trace("SQS:create_fanin_and_faninNB_messages: number of fanin messages: " + str(len(fanin_messages))
 			+ " number of faninNB messages: " + str(len(faninNB_messages)))
 
 		return fanin_messages, faninNB_messages
@@ -198,11 +198,11 @@ class DAG_orchestrator:
 			# Here is the code in DAG_executor_driver that is used to start real Lambdas; the payload is shown.
 			"""
 				lambda_DAG_exec_state = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()), state = start_state)
-				logger.debug ("DAG_executor_driver: lambda payload is DAG_info + " + str(start_state) + "," + str(inp))
+				logger.trace ("DAG_executor_driver: lambda payload is DAG_info + " + str(start_state) + "," + str(inp))
 				lambda_DAG_exec_state.restart = False      # starting new DAG_executor in state start_state_fanin_task
 				lambda_DAG_exec_state.return_value = None
 				lambda_DAG_exec_state.blocking = False            
-				logger.info("DAG_executor_driver: Starting Lambda function %s." % lambda_DAG_exec_state.function_name)
+				logger.trace("DAG_executor_driver: Starting Lambda function %s." % lambda_DAG_exec_state.function_name)
 
 				# We use "inp" for th leaf task input otherwise all leaf task lambda Executors will 
 				# receive all DAG_info leaf task inputs in the DAG_info.leaf_task_inputs and in the 
@@ -278,8 +278,8 @@ class DAG_orchestrator:
 
 			msg_id = str(uuid.uuid4())
 			dummy_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
-			logger.debug("DAG_Orchestrator: Triggered: Sending 'process_enqueued_fan_ins' message to lambda function for " + sync_object_name)
-			logger.debug("SDAG_Orchestrator: length of enqueue's list: " + str(len(list_of_fan_in_ops)))
+			logger.trace("DAG_Orchestrator: Triggered: Sending 'process_enqueued_fan_ins' message to lambda function for " + sync_object_name)
+			logger.trace("SDAG_Orchestrator: length of enqueue's list: " + str(len(list_of_fan_in_ops)))
 			
 			if not create_all_fanins_faninNBs_on_start:
 				# we will invoke a lambda that stores the fanin object but this object will be created
@@ -386,7 +386,7 @@ class DAG_orchestrator:
 				# the next call.
 				with simulated_lambda_function_lock:
 					try:
-						logger.debug("DAG_Orchestrator enqueue: calling simulated_lambda_function.lambda_handler(payload)")
+						logger.trace("DAG_Orchestrator enqueue: calling simulated_lambda_function.lambda_handler(payload)")
 						"""
 						So: The lamba_function_simulator lamba_handler does warm_resources['message_handler'].handle(json_message)
 						where the message_handler is message_handler_lambda.py not message_handler.py. The message handler will call 
@@ -399,7 +399,7 @@ class DAG_orchestrator:
 						by calling DAG_executor_lambda(payload).
 						"""
 						return_value = simulated_lambda_function.lambda_handler(payload)
-						logger.debug("DAG_Orchestrator: called simulated_lambda_function.lambda_handler(payload)")
+						logger.trace("DAG_Orchestrator: called simulated_lambda_function.lambda_handler(payload)")
 					except Exception as ex:
 						logger.error("[ERROR]: " + thread_name + ": invoke_lambda_synchronously: Failed to run lambda handler for synch object: " + sync_object_name)
 						logger.error(ex)
@@ -415,13 +415,13 @@ class DAG_orchestrator:
 				# concurrently, e.g., the fanins for Divide and Conquer Wukong can easily be 
 				# partitioned into such groups.
 				try:
-					logger.debug("DAG_Orchestrator enqueue: calling simulated_lambda_function.lambda_handler(payload)")
+					logger.trace("DAG_Orchestrator enqueue: calling simulated_lambda_function.lambda_handler(payload)")
 					# See the above "So:" comment in the then-part
 					# This is essentially a synchronous call to a regular Python function
 # ToDo: Do we want to allow both sync and async calls? The latter done by creating a thread that does
 # the call. Faster when we are invoking a real lambda, which we will do with invoke_lambda_asynch
 					return_value = simulated_lambda_function.lambda_handler(payload)
-					logger.debug("DAG_Orchestrator: called simulated_lambda_function.lambda_handler(payload)")
+					logger.trace("DAG_Orchestrator: called simulated_lambda_function.lambda_handler(payload)")
 				except Exception as ex:
 					logger.error("[ERROR]: " + thread_name + ": invoke_lambda_synchronously: Failed to run lambda handler for synch object: " + sync_object_name)
 					logger.error(ex)					
@@ -429,7 +429,7 @@ class DAG_orchestrator:
 			return return_value
 
 		else:
-			logger.debug("DAG_Orchestator enqueue: function call not Triggered")
+			logger.trace("DAG_Orchestator enqueue: function call not Triggered")
 
 			dummy_DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
 			dummy_DAG_exec_state.return_value = 0
@@ -623,9 +623,9 @@ class InfiniD:
 		# anonymous functions and if we are using anonymous functins it will not
 		# attempt to lock the lock.
 		simulated_lambda_function_lock = self.get_function_lock(sync_object_name)
-		logger.debug("XXXXXXXXXXXXXXXXXXXX InfiniD enqueue: calling self.dag_orchestrator.enqueue for sync_object " + sync_object_name)
+		logger.trace("XXXXXXXXXXXXXXXXXXXX InfiniD enqueue: calling self.dag_orchestrator.enqueue for sync_object " + sync_object_name)
 		return_value = self.dag_orchestrator.enqueue(json_message, simulated_lambda_function, simulated_lambda_function_lock)
-		logger.debug("XXXXXXXXXXXXXXXXXXXX InfiniD enqueue: called self.dag_orchestrator.enqueue for sync_object " + sync_object_name)
+		logger.trace("XXXXXXXXXXXXXXXXXXXX InfiniD enqueue: called self.dag_orchestrator.enqueue for sync_object " + sync_object_name)
 
 		return return_value
 
@@ -670,13 +670,13 @@ Scheme: The Lambda_Function_Simulator(), which stores a sych object does:
 	Note: FanIns (as oppsed to FanInNBs) do not do anything after last fan_in op  other 
 	than return results. fan_in ops for faninNB triggers the fanin task with:
 		try:
-			logger.debug("DAG_executor_FanInNB_Select: triggering DAG_Executor_Lambda() for task " + fanin_task_name)
+			logger.trace("DAG_executor_FanInNB_Select: triggering DAG_Executor_Lambda() for task " + fanin_task_name)
 			lambda_DAG_exec_state = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()), state = start_state_fanin_task)
-			logger.debug ("DAG_executor_FanInNB_Select: lambda payload is DAG_info + " + str(start_state_fanin_task) + "," + str(self._results))
+			logger.trace ("DAG_executor_FanInNB_Select: lambda payload is DAG_info + " + str(start_state_fanin_task) + "," + str(self._results))
 			lambda_DAG_exec_state.restart = False      # starting new DAG_executor in state start_state_fanin_task
 			lambda_DAG_exec_state.return_value = None
 			lambda_DAG_exec_state.blocking = False            
-			logger.info("DAG_executor_FanInNB_Select: Starting Lambda function %s." % lambda_DAG_exec_state.function_name) 
+			logger.trace("DAG_executor_FanInNB_Select: Starting Lambda function %s." % lambda_DAG_exec_state.function_name) 
 			payload = {
 				"input": self._results,
 				"DAG_executor_state": lambda_DAG_exec_state,
@@ -795,26 +795,26 @@ handler as usual. The current DAG_handler.py is:
 	def lambda_handler(event, context):
 		invocation_time = time.time()
 		warm_resources['invocation_count'] = warm_resources['invocation_count'] + 1
-		logger.debug(f'Invocation count: {warm_resources["invocation_count"]}, Seconds since cold start: {round(invocation_time - warm_resources["cold_start_time"], 1)}')
+		logger.trace(f'Invocation count: {warm_resources["invocation_count"]}, Seconds since cold start: {round(invocation_time - warm_resources["cold_start_time"], 1)}')
 
 		start_time = time.time()
 		rc = redis.Redis(host = REDIS_IP_PRIVATE, port = 6379)
 
-		logger.debug("Invocation received. Starting DAG_executor_lambda: event/payload is: " + str(event))
+		logger.trace("Invocation received. Starting DAG_executor_lambda: event/payload is: " + str(event))
 		DAG_executor_lambda(event)
 					
 		end_time = time.time()
 		duration = end_time - start_time
-		logger.debug("DAG_executor_lambda finished. Time elapsed: %f seconds." % duration)
+		logger.trace("DAG_executor_lambda finished. Time elapsed: %f seconds." % duration)
 		rc.lpush("durations", duration) 
 
 where:
 
 def DAG_executor_lambda(payload):
-    logger.debug("Lambda: started.")
+    logger.trace("Lambda: started.")
     DAG_exec_state = cloudpickle.loads(base64.b64decode(payload['DAG_executor_state']))
 
-    logger.debug("payload DAG_exec_state.state:" + str(DAG_exec_state.state))
+    logger.trace("payload DAG_exec_state.state:" + str(DAG_exec_state.state))
     DAG_info = cloudpickle.loads(base64.b64decode(payload['DAG_info']))
     DAG_map = DAG_info.get_DAG_map()
     state_info = DAG_map[DAG_exec_state.state]
@@ -841,7 +841,7 @@ def DAG_executor_lambda(payload):
     # server and counter are None
     # logger is local lambda logger
     DAG_executor_work_loop(logger, server, counter, DAG_exec_state, DAG_info, work_queue )
-    logger.debug("DAG_executor_processes: returning after work_loop.")
+    logger.trace("DAG_executor_processes: returning after work_loop.")
     return
 
 When the fan_in op instead execute the fanin task in the same lambda, it does not 
@@ -883,8 +883,8 @@ into a message.
 
 	msg_id = str(uuid.uuid4())
 	dummy_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
-	logger.debug("DAG_Orchestrator: Triggered: Sending 'process_enqueued_fan_ins' message to lambda function for " + sync_object_name)
-	logger.debug("SDAG_Orchestrator: length of enqueue's list: " + str(len(list_of_fan_in_ops)))
+	logger.trace("DAG_Orchestrator: Triggered: Sending 'process_enqueued_fan_ins' message to lambda function for " + sync_object_name)
+	logger.trace("SDAG_Orchestrator: length of enqueue's list: " + str(len(list_of_fan_in_ops)))
 	
 	if not create_all_fanins_faninNBs_on_start:
 		# we will invoke a lambda that stores the fanin object but this object will be created
@@ -973,7 +973,7 @@ def process_enqueued_fan_ins(self,message=None):
 			"id": msg_id
 		}
 
-		#logger.debug("message_handler_lambda: process_enqueued_fan_ins: "
+		#logger.trace("message_handler_lambda: process_enqueued_fan_ins: "
 		#   + "create sync object " + fanin_name + "on the fly")
 
 		#self.create_obj(creation_message)

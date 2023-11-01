@@ -44,4 +44,4 @@ class synchronizerThread(Thread):
         #self._returnValue = result[0]
         #self._restart = result[1]
 
-        logger.debug("return value is " + str(self._returnValue))
+        logger.trace("return value is " + str(self._returnValue))

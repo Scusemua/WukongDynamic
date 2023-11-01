@@ -33,12 +33,12 @@ class FanIn(MonitorSU):
 
     @n.setter
     def n(self, value):
-        logger.debug("Setting value of FanIn n to " + str(value))
+        logger.trace("Setting value of FanIn n to " + str(value))
         self._n = value
 
 
     def init(self, fanin_id = None, **kwargs):
-        logger.debug(kwargs)
+        logger.trace(kwargs)
         if kwargs is None or len(kwargs) == 0:
             raise ValueError("FanIn requires a length. No length provided.")
         elif len(kwargs) > 1:
@@ -64,17 +64,17 @@ class FanIn(MonitorSU):
 
     def fan_in(self, **kwargs):
 
-        logger.debug("fan_in " + str(self.fanin_id) + " current thread ID is " + str(threading.current_thread().ident))
-        logger.debug("fan_in %s calling enter_monitor" % self.fanin_id)
+        logger.trace("fan_in " + str(self.fanin_id) + " current thread ID is " + str(threading.current_thread().ident))
+        logger.trace("fan_in %s calling enter_monitor" % self.fanin_id)
         
         # if we called executes_wait first, we still have the mutex so this enter_monitor does not do mutex.P
         super().enter_monitor(method_name = "fan_in")
         
-        logger.debug("Fan-in %s entered monitor in fan_in()" % self.fanin_id)
-        logger.debug("fan_in() " + str(self.fanin_id) + " entered monitor. self._num_calling = " + str(self._num_calling) + ", self._n=" + str(self._n))
+        logger.trace("Fan-in %s entered monitor in fan_in()" % self.fanin_id)
+        logger.trace("fan_in() " + str(self.fanin_id) + " entered monitor. self._num_calling = " + str(self._num_calling) + ", self._n=" + str(self._n))
 
         if self._num_calling < (self._n - 1):
-            logger.debug("Fan-in %s calling _go.wait_c() from FanIn" % self.fanin_id)
+            logger.trace("Fan-in %s calling _go.wait_c() from FanIn" % self.fanin_id)
 
             self._num_calling += 1
 
@@ -82,13 +82,13 @@ class FanIn(MonitorSU):
             # self._go.wait_c()
 
             result = kwargs['result']
-            logger.debug("Result (saved by the non-last executor) for fan-in %s: %s" % (self.fanin_id, str(result)))
+            logger.trace("Result (saved by the non-last executor) for fan-in %s: %s" % (self.fanin_id, str(result)))
             self.results.append(result)
             
             threading.current_thread()._restart = False
             threading.current_thread()._returnValue = 0
             
-            logger.debug(" !!!!! non-last Client exiting FanIn fan_in id = %s!!!!!" % self.fanin_id)
+            logger.trace(" !!!!! non-last Client exiting FanIn fan_in id = %s!!!!!" % self.fanin_id)
             super().exit_monitor()
             return 0
         else:
@@ -99,14 +99,14 @@ class FanIn(MonitorSU):
             #its result locally to the returned list
 
             if (self.results is not None):
-                logger.debug("Returning (to last executor) for fan-in %s: %s" % (self.fanin_id, str(self.results)))
+                logger.trace("Returning (to last executor) for fan-in %s: %s" % (self.fanin_id, str(self.results)))
             else:
                 logger.error("Result to be returned to last executor is None for fan-in %s!" % self.fanin_id)
 
             threading.current_thread()._returnValue = self.results
             
-            logger.debug("Last thread in FanIn %s so not calling self._go.wait_c" % self.fanin_id)
-            logger.debug(" !!!!! last Client exiting FanIn fan_in id=%s!!!!!" % self.fanin_id)
+            logger.trace("Last thread in FanIn %s so not calling self._go.wait_c" % self.fanin_id)
+            logger.trace(" !!!!! last Client exiting FanIn fan_in id=%s!!!!!" % self.fanin_id)
             # does mutex.V
             # non-last threads do not block on go as we are done with them (they will not be restarted)
             # and thus are not signaled - just exit
@@ -115,23 +115,23 @@ class FanIn(MonitorSU):
             return self.results  # all threads have called so return results
 
         #No logger.debugs here. main Client can exit while other threads are
-        #doing this logger.debug so main thread/interpreter can't get stdout lock?
+        #doing this logger.trace so main thread/interpreter can't get stdout lock?
 
 # Local tests  
 #def task1(b : FanIn):
     #time.sleep(1)
-    #logger.debug("task 1 Calling fan_in")
+    #logger.trace("task 1 Calling fan_in")
     #result = b.fan_in(ID = "task 1", result = "task1 result")
-    #logger.debug("task 1 Successfully called fan_in")
+    #logger.trace("task 1 Successfully called fan_in")
     #if result == 0:
     #    print("result is o")
     #else:
         #result is a list, print it
 
 #def task2(b : FanIn):
-    #logger.debug("task 2 Calling fan_in")
+    #logger.trace("task 2 Calling fan_in")
     #result = b.fan_in(ID = "task 2", result = "task2 result")
-    #logger.debug("task 2  Successfully called fan_in")
+    #logger.trace("task 2  Successfully called fan_in")
     #if result == 0:
     #    print("result is o")
     #else:
@@ -150,46 +150,46 @@ class testThread(Thread):
     # Override the run() function of Thread class
     def run(self):
         time.sleep(1)
-        logger.debug("task " + self._ID + " Calling fan_in")
+        logger.trace("task " + self._ID + " Calling fan_in")
         self._return = self.b.fan_in(ID = self._ID, result = "task1 result")
-        logger.debug("task " + self._ID + ", Successfully called fan_in")
+        logger.trace("task " + self._ID + ", Successfully called fan_in")
 
 def main():
     b = FanIn(monitor_name="FanIn")
     b.init(**{"n": 2})
 
     #try:
-    #    logger.debug("Starting thread 1")
+    #    logger.trace("Starting thread 1")
     #   _thread.start_new_thread(task1, (b,))
     #except Exception as ex:
-    #    logger.debug("[ERROR] Failed to start first thread.")
-    #    logger.debug(ex)
+    #    logger.trace("[ERROR] Failed to start first thread.")
+    #    logger.trace(ex)
     
     try:
         callerThread1 = testThread("T1", b)
         callerThread1.start()
     except Exception as ex:
-        logger.debug("[ERROR] Failed to start first thread.")
-        logger.debug(ex)      
+        logger.trace("[ERROR] Failed to start first thread.")
+        logger.trace(ex)      
 
     #try:
-    #    logger.debug("Starting first thread")
+    #    logger.trace("Starting first thread")
     #    _thread.start_new_thread(task2, (b,))
     #except Exception as ex:
-    #   logger.debug("[ERROR] Failed to start first thread.")
-    #    logger.debug(ex)
+    #   logger.trace("[ERROR] Failed to start first thread.")
+    #    logger.trace(ex)
     
     try:
         callerThread2 = testThread("T2", b)
         callerThread2.start()
     except Exception as ex:
-        logger.debug("[ERROR] Failed to start second thread.")
-        logger.debug(ex)
+        logger.trace("[ERROR] Failed to start second thread.")
+        logger.trace(ex)
         
     callerThread1.join()
     callerThread2.join()
     
-    logger.debug("joined threads")
+    logger.trace("joined threads")
     print("callerThread1 restart " + str(callerThread1._restart))
     print("callerThread2._returnValue=" + str(callerThread1._return))
 

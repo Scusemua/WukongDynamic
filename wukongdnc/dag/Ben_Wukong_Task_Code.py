@@ -39,8 +39,8 @@ task_inputs = state_info.task_inputs
 # task_inputs = tuple(list_of_qualified_names)
 
 is_leaf_task = state_info.task_name in DAG_info.get_DAG_leaf_tasks()
-logger.debug("is_leaf_task: " + str(is_leaf_task))
-logger.debug("task_inputs: " + str(task_inputs))
+logger.info("is_leaf_task: " + str(is_leaf_task))
+logger.info("task_inputs: " + str(task_inputs))
 
 # Note: For DAG generation, for each state we execute a task and 
 # for each task T we have to say what T;' task_inputs are - these are the 
@@ -51,21 +51,21 @@ logger.debug("task_inputs: " + str(task_inputs))
 # as the task_inputs, instead of just using "S", which is the Dask way.
 result_dictionary =  {}
 if not is_leaf_task:
-    logger.debug("Packing data. Task inputs: %s. Data dict (keys only): %s" % (str(task_inputs), str(data_dict.keys())))
+    logger.info("Packing data. Task inputs: %s. Data dict (keys only): %s" % (str(task_inputs), str(data_dict.keys())))
     # task_inputs is a tuple of task_names
     args = pack_data(task_inputs, data_dict)
-    logger.debug(thread_name + " argsX: " + str(args))
+    logger.info(thread_name + " argsX: " + str(args))
     if tasks_use_result_dictionary_parameter:
-        logger.debug("Foo1a")
+        logger.info("Foo1a")
         # task_inputs = ('task1','task2'), args = (1,2) results in a result_dictionary
         # where result_dictionary['task1'] = 1 and result_dictionary['task2'] = 2.
         # We pass a result_dictionary of inputs instead of the *args tuple (1,2).
 
         # Should be true
         if len(task_inputs) == len(args):
-            logger.debug("Foo1b")
+            logger.info("Foo1b")
             result_dictionary = {task_inputs[i] : args[i] for i, _ in enumerate(args)}
-            logger.debug(thread_name + " result_dictionaryX: " + str(result_dictionary))
+            logger.info(thread_name + " result_dictionaryX: " + str(result_dictionary))
         #else:
             # Internal Error
 
@@ -81,8 +81,8 @@ else:
         # that the input_tuples provided to the PageRank_Function will be an empty list.
         result_dictionary['DAG_executor_driver_0'] = ()
 
-logger.debug("argsZ: " + str(args))
-logger.debug(thread_name + " result_dictionaryZ: " + str(result_dictionary))
+logger.info("argsZ: " + str(args))
+logger.info(thread_name + " result_dictionaryZ: " + str(result_dictionary))
 
 # using the map DAG_tasks to map from from task_name to task
 task = DAG_tasks[state_info.task_name]
@@ -93,7 +93,7 @@ else:
     output = execute_task_with_result_dictionary(task,state_info.task_name,20,result_dictionary)
 """ where:
     def execute_task(task,args):
-        logger.debug("input of execute_task is: " + str(args))
+        logger.info("input of execute_task is: " + str(args))
         output = task(*args)
         return output
         
@@ -127,7 +127,7 @@ The dict_of_results will map "PR1-1-PR2_1" to the value in dictionary
 output whose key is "PR2_1".
 `  """
 
-logger.debug(thread_name + " executed task " + state_info.task_name + "'s output: " + str(output))
+logger.info(thread_name + " executed task " + state_info.task_name + "'s output: " + str(output))
 if same_output_for_all_fanout_fanin:
     # do not split the output - each fanout/fanin gets all of the output
     data_dict[state_info.task_name] = output
@@ -143,7 +143,7 @@ else:
         data_dict_value = v
         data_dict[data_dict_key] = data_dict_value
 
-logger.debug("data_dict: " + str(data_dict))  
+logger.info("data_dict: " + str(data_dict))  
 
 
 """

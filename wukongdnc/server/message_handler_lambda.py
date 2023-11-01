@@ -31,7 +31,7 @@ class MessageHandler(object):
         
         while True:
             # Q: Should we pass self.client_address[0] to LambdaBB aand LambdaSem? This is just the client's IP: 127.0.0.1?
-            # logger.info("[MessageHandler] Recieved one request from {}".format(self.client_address[0]))
+            # logger.trace("[MessageHandler] Recieved one request from {}".format(self.client_address[0]))
 
             self.action_handlers = {
                 "create": self.create_obj,
@@ -47,12 +47,12 @@ class MessageHandler(object):
                 "process_enqueued_fan_ins": self.process_enqueued_fan_ins,
                 "createif_and_synchronize_sync": self.createif_and_synchronize_sync
             }
-            #logger.info("Thread Name:{}".format(threading.current_thread().name))
+            #logger.trace("Thread Name:{}".format(threading.current_thread().name))
 
             try:    
                 message_id = json_message["id"]
                 action = json_message.get("op", None)
-                logger.debug("[MessageHandler] Handling message from client with ID=%s, operation=%s" % (message_id, action))
+                logger.trace("[MessageHandler] Handling message from client with ID=%s, operation=%s" % (message_id, action))
                 
                 return_value = self.action_handlers[action](message = json_message)
             except ConnectionResetError as ex:
@@ -91,7 +91,7 @@ class MessageHandler(object):
             message (dict):
                 The payload from the AWS Lambda function.
         """        
-        logger.debug("[MESSAGEHANDLER] create() called.")
+        logger.trace("[MESSAGEHANDLER] create() called.")
         type_arg = message["type"]
         obj_name = message["name"]
         state = decode_and_deserialize(message["state"])
@@ -99,7 +99,7 @@ class MessageHandler(object):
         synchronizer = Synchronizer()
         synchronizer.create(type_arg, obj_name, **state.keyword_arguments)
         synchronizer_name = self._get_synchronizer_name(type_name = type_arg, name = obj_name)
-        logger.debug("MessageHandler create caching new Synchronizer of type '%s' with name '%s'" % (type_arg, synchronizer_name))
+        logger.trace("MessageHandler create caching new Synchronizer of type '%s' with name '%s'" % (type_arg, synchronizer_name))
         MessageHandler.synchronizers[synchronizer_name] = synchronizer # Store Synchronizer object.
 
         # return to handle()
@@ -118,7 +118,7 @@ class MessageHandler(object):
             message (dict):
                 The payload from the AWS Lambda function.
         """        
-        logger.debug("[MESSAGEHANDLER] server.create_one_of_all_objs() called.")
+        logger.trace("[MESSAGEHANDLER] server.create_one_of_all_objs() called.")
         type_arg = message["type"]
         name = message["name"]
         state = decode_and_deserialize(message["state"])
@@ -126,7 +126,7 @@ class MessageHandler(object):
         synchronizer = Synchronizer()
         synchronizer.create(type_arg, name, **state.keyword_arguments)
         synchronizer_name = self._get_synchronizer_name(type_name = type_arg, name = name)
-        logger.debug("Caching new Synchronizer of type '%s' with name '%s'" % (type_arg, synchronizer_name))
+        logger.trace("Caching new Synchronizer of type '%s' with name '%s'" % (type_arg, synchronizer_name))
         MessageHandler.synchronizers[synchronizer_name] = synchronizer # Store Synchronizer object.
 
         # Do not send ack to client - this is just one of possibly many of the creates from create_all_fanins_and_faninNBs
@@ -150,29 +150,29 @@ class MessageHandler(object):
                 "id": msg_id
             }
         """  
-        logger.debug("[MESSAGEHANDLERLAMBDA] create_all_fanins_and_faninNBs_and_possibly_work_queue() called.")
+        logger.trace("[MESSAGEHANDLERLAMBDA] create_all_fanins_and_faninNBs_and_possibly_work_queue() called.")
         messages = message['name']
         fanin_messages = messages[0]
         faninNB_messages = messages[1]
-        logger.info(str(fanin_messages))
-        logger.info(str(faninNB_messages))
+        logger.trace(str(fanin_messages))
+        logger.trace(str(faninNB_messages))
 
         for msg in fanin_messages:
             self.create_one_of_all_objs(msg)
         if len(fanin_messages) > 0:
-            logger.info("created fanins")
+            logger.trace("created fanins")
 
         for msg in faninNB_messages:
             self.create_one_of_all_objs(msg)
         if len(faninNB_messages) > 0:
-            logger.info("created faninNBs")
+            logger.trace("created faninNBs")
 
         # we always create the fanin and faninNBs. We possibly create the work queue. If we send
         # a message for create work queue, in addition to the lst of messages for create
         # fanins and create faninNBs, we create a work queue too.
         create_the_work_queue = (len(messages)>2)
         if create_the_work_queue:
-            logger.info("create_the_work_queue: " + str(create_the_work_queue) + " len: " + str(len(messages)))
+            logger.trace("create_the_work_queue: " + str(create_the_work_queue) + " len: " + str(len(messages)))
             msg = messages[2]
             self.create_one_of_all_objs(msg)
 
@@ -242,7 +242,7 @@ class MessageHandler(object):
                 "id": msg_id
             }
 
-            #logger.debug("message_handler_lambda: process_enqueued_fan_ins: "
+            #logger.trace("message_handler_lambda: process_enqueued_fan_ins: "
             #   + "create sync object " + fanin_name + "on the fly")
 #rhc: Note: Not so big difference is craete in createif instead of here.
             #self.create_obj(creation_message)
@@ -256,7 +256,7 @@ class MessageHandler(object):
                 "id": msg_id
             }
 
-        logger.debug("message_handler_lambda: process_enqueued_fan_ins: process list of messages.")
+        logger.trace("message_handler_lambda: process_enqueued_fan_ins: process list of messages.")
 
         for msg in list_of_messages:
             # We are doing all the fan_in ops one-by-one in the order they were called by clients
@@ -299,7 +299,7 @@ class MessageHandler(object):
                 The payload from the AWS Lambda function.
         """
 
-        logger.debug("[MESSAGEHANDLERLAMBDA] synchronize_sync() called.")
+        logger.trace("[MESSAGEHANDLERLAMBDA] synchronize_sync() called.")
 
         obj_name = message['name']
         method_name = message['method_name']
@@ -310,7 +310,7 @@ class MessageHandler(object):
         # synchronizer_name = self._get_synchronizer_name(type_name = type_arg, name = obj_name)
         synchronizer_name = self._get_synchronizer_name(type_name = None, name = obj_name)
         
-        logger.debug("MessageHandler: synchronize_sync: Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
+        logger.trace("MessageHandler: synchronize_sync: Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
         synchronizer = MessageHandler.synchronizers[synchronizer_name]
         
         if (synchronizer is None):
@@ -322,11 +322,11 @@ class MessageHandler(object):
         # to tcp_server - Lambda returns values synchronously.
         #return_value = synchronizer.synchronize_sync(obj_name, method_name, state, synchronizer_name, self)
 
-        logger.debug("message_handler_lambda: synchronize_sync: do synchronizer.synchronous_sync ")
+        logger.trace("message_handler_lambda: synchronize_sync: do synchronizer.synchronous_sync ")
 
         return_value = synchronizer.synchronize_sync(obj_name, method_name, state, synchronizer_name)
         
-        logger.debug("MessageHandler called synchronizer.synchronize_sync")
+        logger.trace("MessageHandler called synchronizer.synchronize_sync")
 
         return return_value
 
@@ -355,7 +355,7 @@ class MessageHandler(object):
                 "id": msg_id
             }
         """
-        logger.debug("[MESSAGEHANDLERLAMBDA] createif_and_synchronize_sync() called.")
+        logger.trace("[MESSAGEHANDLERLAMBDA] createif_and_synchronize_sync() called.")
 
         if create_all_fanins_faninNBs_on_start:
             logger.error("[Error]: Internal Error: message_handler_lambda: createif_and_synchronize_sync: "
@@ -374,7 +374,7 @@ class MessageHandler(object):
         synchronizer_name = self._get_synchronizer_name(type_name = None, name = obj_name)
 
         # check if already created
-        logger.debug("message_handler_lambda: createif_and_synchronize_sync: Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
+        logger.trace("message_handler_lambda: createif_and_synchronize_sync: Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
         #synchronizer = MessageHandler.synchronizers[synchronizer_name]
 #rhc: ToDo: This needs to be locked? When can create calls be concurrent
 # For example, never if using D_O? Is this cal implcitly already
@@ -383,11 +383,11 @@ class MessageHandler(object):
         synchronizer = MessageHandler.synchronizers.get(synchronizer_name,None)
         if (synchronizer is None):
             # not created yet so create object
-            logger.debug("message_handler_lambda: createif_and_synchronize_sync: "
+            logger.trace("message_handler_lambda: createif_and_synchronize_sync: "
                 + "create sync object " + obj_name + "on the fly")
             self.create_obj(creation_message)
 
-        logger.debug("message_handler_lambda: createif_and_synchronize_sync: do synchronous_sync ")
+        logger.trace("message_handler_lambda: createif_and_synchronize_sync: do synchronous_sync ")
        
         synchronizer = MessageHandler.synchronizers[synchronizer_name]
         
@@ -402,7 +402,7 @@ class MessageHandler(object):
 
         return_value = synchronizer.synchronize_sync(obj_name, method_name, state, synchronizer_name)
         
-        logger.debug("message_handler_lambda called synchronizer.synchronize_sync")
+        logger.trace("message_handler_lambda called synchronizer.synchronize_sync")
 
         return return_value
 
@@ -415,7 +415,7 @@ class MessageHandler(object):
             message (dict):
                 The payload from the AWS Lambda function.
         """ 
-        logger.debug("[MESSAGEHANDLERLAMBDA] synchronize_async() called.")
+        logger.trace("[MESSAGEHANDLERLAMBDA] synchronize_async() called.")
 
         obj_name = message['name']
         method_name = message['method_name']       
@@ -425,15 +425,15 @@ class MessageHandler(object):
         # type_arg = message["type"]
         # synchronizer_name = self._get_synchronizer_name(type_name = type_arg, name = obj_name)    
         synchronizer_name = self._get_synchronizer_name(type_name = None, name = obj_name)
-        logger.debug("MessageHandler: synchronize_async: Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
+        logger.trace("MessageHandler: synchronize_async: Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
         synchronizer = MessageHandler.synchronizers[synchronizer_name]
         if (synchronizer is None):
             raise ValueError("MessageHandler: synchronize_async: Could not find existing Synchronizer with name '%s'" % synchronizer_name)
         
-        logger.debug("MessageHandler: synchronize_async: Successfully found synchronizer")
+        logger.trace("MessageHandler: synchronize_async: Successfully found synchronizer")
 
         return_value = synchronizer.synchronize_async(obj_name, method_name, state, synchronizer_name)
-        logger.debug("MessageHandler called synchronizer.synchronize_async")
+        logger.trace("MessageHandler called synchronizer.synchronize_async")
         return return_value    
 
     def createif_and_synchronize_async(self, message = None):
@@ -462,7 +462,7 @@ class MessageHandler(object):
             }
         """
 
-        logger.debug("[MESSAGEHANDLERLAMBDA] synchronize_async() called.")
+        logger.trace("[MESSAGEHANDLERLAMBDA] synchronize_async() called.")
 
         if create_all_fanins_faninNBs_on_start:
             logger.error("[Error]: Internal Error: message_handler_lambda: createif_and_synchronize_async: "
@@ -482,32 +482,32 @@ class MessageHandler(object):
         synchronizer_name = self._get_synchronizer_name(type_name = None, name = obj_name)
 
         # check if already created
-        logger.debug("message_handler_lambda: createif_and_synchronize_async: Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
+        logger.trace("message_handler_lambda: createif_and_synchronize_async: Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
         #synchronizer = MessageHandler.synchronizers[synchronizer_name]
         synchronizer = MessageHandler.synchronizers.get(synchronizer_name,None)
 
         if (synchronizer is None):
             # not created yet so create object
-            logger.debug("message_handler_lambda: createif_and_synchronize_async: "
+            logger.trace("message_handler_lambda: createif_and_synchronize_async: "
             + "create sync object " + obj_name + "on the fly")
             self.create_obj(creation_message)
 
-        logger.debug("message_handler_lambda: createif_and_synchronize_async: do synchronous_async ")
+        logger.trace("message_handler_lambda: createif_and_synchronize_async: do synchronous_async ")
        
-        logger.debug("message_handler_lambda: synchronize_async: Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
+        logger.trace("message_handler_lambda: synchronize_async: Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
         synchronizer = MessageHandler.synchronizers[synchronizer_name]
         if (synchronizer is None):
             raise ValueError("message_handler_lambda: synchronize_async: Could not find existing Synchronizer with name '%s'" % synchronizer_name)
          
         return_value = synchronizer.synchronize_async(obj_name, method_name, state, synchronizer_name)
-        logger.debug("MessageHandler called synchronizer.synchronize_async")
+        logger.trace("MessageHandler called synchronizer.synchronize_async")
         return return_value  
 
     def close_all(self, message = None):
         """
         Clear all known synchronizers.
         """
-        logger.debug("MessageHandler: close_all: Received close_all request.")
+        logger.trace("MessageHandler: close_all: Received close_all request.")
 
         MessageHandler.synchronizers = {}
 
@@ -529,12 +529,12 @@ class MessageHandler(object):
         name = message["name"]
         #state = decode_and_deserialize(message["state"])
 
-        logger.debug("Received close_obj request for object with name '%s' and type %s" % (name, type_arg))
+        logger.trace("Received close_obj request for object with name '%s' and type %s" % (name, type_arg))
 
         # return to handle()
         # tcp_server.close_obj will ignore this return value and send a response to client indicating create is complete.
         return 0
         
     def setup_server(self, message = None):
-        logger.debug("server.setup() called.")
+        logger.trace("server.setup() called.")
         pass 

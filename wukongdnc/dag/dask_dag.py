@@ -7,6 +7,16 @@ from .DFS_visit import Node
 from dask import delayed
 import time
 
+import logging
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+ch.setFormatter(formatter)
+logger.addHandler(ch)
+
 # def execute_task(task_obj: tuple, existing_results: dict = {}, task_id: str = None):
 #   """
 #   Execute the given task.
@@ -90,16 +100,20 @@ if __name__ == "__main__":
 
   def divide(x):
     quotient = x / 72
-    print("xxxxxxxxxxxxx")
-    print("quotient: " + str(quotient))
-    print("xxxxxxxxxxxxx")
+    logger.info("")
+    logger.info("xxxxxxxxxxxxx")
+    logger.info("quotient: " + str(quotient))
+    logger.info("xxxxxxxxxxxxx")
+    logger.info("")
     return quotient
 
   def divide_by_18(x):
     quotient = x / 18
-    print("xxxxxxxxxxxxx")
-    print("quotient: " + str(quotient))
-    print("xxxxxxxxxxxxx")
+    logger.info("")
+    logger.info("xxxxxxxxxxxxx")
+    logger.info("quotient: " + str(quotient))
+    logger.info("xxxxxxxxxxxxx")
+    logger.info("")
     return quotient
 
   def increment(x):

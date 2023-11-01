@@ -17,7 +17,7 @@ def dfs_parent_pre_parent_traversal(node,visited,list_of_unvisited_children):
     check_list_of_unvisited_chldren_after_visiting_parents = False
     # set child node to visited if possible before dfs_parent so that when the parent 
     # checks if this child is visited it will be visited. 
-    logger.debug("dfs_parent_pre: at start: list_of_unvisited_children:" + str(list_of_unvisited_children))
+    logger.trace("dfs_parent_pre: at start: list_of_unvisited_children:" + str(list_of_unvisited_children))
     if len(node.children) == 0:
         # Can a child be in visited? If child was visited then parent must have been
         # already visited? No. 
@@ -31,7 +31,7 @@ def dfs_parent_pre_parent_traversal(node,visited,list_of_unvisited_children):
         # is 4, 12, 11, 3 so node 11 is parent of child C 12.
         check_list_of_unvisited_chldren_after_visiting_parents = False
         visited.append(node.ID)
-        logger.debug ("dfs_parent_pre: add " + str(node.ID) + " to visited since no children")              
+        logger.trace ("dfs_parent_pre: add " + str(node.ID) + " to visited since no children")              
     else:
         # node has more than one child or it has one child that has one or more
         # children (it is not a sink) or more than one parent (so if
@@ -41,17 +41,17 @@ def dfs_parent_pre_parent_traversal(node,visited,list_of_unvisited_children):
         for neighbor_index in node.children:
             child_node = nodes[neighbor_index]
             if child_node.ID not in visited:
-                logger.debug ("dfs_parent_pre: child " + str(child_node.ID) + " not in visited")
+                logger.trace ("dfs_parent_pre: child " + str(child_node.ID) + " not in visited")
                 has_unvisited_children = True
                 list_of_unvisited_children.append(child_node.ID)
                 #break
         if not has_unvisited_children:
-            logger.debug ("dfs_parent_pre mark " + str(node.ID) + " as visited since it has no unvisited children "
+            logger.trace ("dfs_parent_pre mark " + str(node.ID) + " as visited since it has no unvisited children "
             + "but do not add it to bfs queue since no children need to be visited")
             check_list_of_unvisited_chldren_after_visiting_parents = False
             visited.append(node.ID)
         else:
-            logger.debug ("dfs_parent_pre " + str(node.ID) + " has unvisted children so mark " 
+            logger.trace ("dfs_parent_pre " + str(node.ID) + " has unvisted children so mark " 
                 + str(node.ID) + " as visited and check children again after parent traversal")
             # this node can be marked as visited, but we will only add it to the queue
             # if these unvisited children are still unvisited when we return from 
@@ -61,8 +61,8 @@ def dfs_parent_pre_parent_traversal(node,visited,list_of_unvisited_children):
             # we need not add node to the queue. 
             visited.append(node.ID)
             check_list_of_unvisited_chldren_after_visiting_parents = True
-            logger.debug("dfs_parent_pre: set check_list_of_unvisited_chldren True")
-            logger.debug("dfs_parent_pre: list_of_unvisited_children:" + str(list_of_unvisited_children))
+            logger.trace("dfs_parent_pre: set check_list_of_unvisited_chldren True")
+            logger.trace("dfs_parent_pre: list_of_unvisited_children:" + str(list_of_unvisited_children))
 #rhc: un
             node.unvisited_children = list_of_unvisited_children
 
@@ -72,18 +72,18 @@ def dfs_parent_pre_parent_traversal(node,visited,list_of_unvisited_children):
         if parent_node.ID in visited:
             parent_node.unvisited_children.remove(node.ID)
             if len(parent_node.unvisited_children) == 0:
-                logger.debug("*******dfs_parent_pre_parent_traversal: " + str(parent_node.ID) + " after removing child " 
+                logger.trace("*******dfs_parent_pre_parent_traversal: " + str(parent_node.ID) + " after removing child " 
                     + str(node.ID) + " has no unvisited children, so remove "
                     + str(parent_node.ID) + " from queue and frontier.")
                 try:
                     queue.remove(parent_node.ID)
                 except ValueError:
-                    logger.debug("*******dfs_parent_pre_parent_traversal: " + str(parent_node.ID)
+                    logger.trace("*******dfs_parent_pre_parent_traversal: " + str(parent_node.ID)
                     + " not in queue.")
                 try:
                     frontier.remove(parent_node.ID)
                 except ValueError:
-                    logger.debug("*******dfs_parent_pre_parent_traversal: " + str(parent_node.ID)
+                    logger.trace("*******dfs_parent_pre_parent_traversal: " + str(parent_node.ID)
                     + " not in frontier.")
     
     return check_list_of_unvisited_chldren_after_visiting_parents
@@ -95,15 +95,15 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
     unvisited_children_after_parent_loop = []
     if check_list_of_unvisited_chldren_after_visiting_parents:
         for child_index in list_of_unvisited_children:
-            logger.debug("check unvisited child " + str(child_index))
+            logger.trace("check unvisited child " + str(child_index))
             child_node = nodes[child_index]
             if child_node.ID not in visited:
-                logger.debug("unvisited child " + str(child_node.ID) + " not visited during parent traversal")
+                logger.trace("unvisited child " + str(child_node.ID) + " not visited during parent traversal")
                 # Did not visit this unvsited child when visiting parents
                 unvisited_children_after_parent_loop.append(child_node.ID)
 #rhc: un
         node.unvisited_children = unvisited_children_after_parent_loop
-    logger.debug(str(len(unvisited_children_after_parent_loop)) + " children remain unvisited")
+    logger.trace(str(len(unvisited_children_after_parent_loop)) + " children remain unvisited")
 
     # All or none of children in list_of_unvisited_children could remain 
     # unvisited. If they are all unvisited then no loop is detected but
@@ -129,7 +129,7 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
     # in list_of_unvisited_children tht are not in unvisited_children_after_parent_loop.
     if TRACK_PARTITION_LOOPS:
         for unvisited_child in list_of_unvisited_children:
-            logger.debug("check whether node " + str(node.ID) + " unvisited child " + str(unvisited_child) + " is still unvisited"
+            logger.trace("check whether node " + str(node.ID) + " unvisited child " + str(unvisited_child) + " is still unvisited"
                 + " after parent traversal")
             if unvisited_child not in unvisited_children_after_parent_loop:
                 # Unvisited_child is no longer unvisited after call to dfs_parent.
@@ -138,7 +138,7 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
                 # This child is also a parent or ancestor.
                 # output loop (L) indicators in partition, children are in no 
                 # particular order.
-                logger.debug("unvisited child " + str(unvisited_child) + " not still unvisited")
+                logger.trace("unvisited child " + str(unvisited_child) + " not still unvisited")
                 if first:
                     first = False
                     loop_indicator = str(nodes[unvisited_child].ID)
@@ -146,7 +146,7 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
                     loop_indicator += "/" + str(nodes[unvisited_child].ID)
                 logger.debug_loop_indicator = True
             else:
-                logger.debug("unvisited child " + str(unvisited_child) + " was not visited during parent traversal")
+                logger.trace("unvisited child " + str(unvisited_child) + " was not visited during parent traversal")
         if logger.info_loop_indicator:
             # a loop involving child 'c' as in (L'c')
             # Example: 1 5 6 7 3(Lp) 12(Lp) 11 11(Lc) 12 4 3 2 10 9 8
@@ -168,7 +168,7 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
             current_partition.append(loop_indicator)
             global loop_nodes_added
             loop_nodes_added += 1
-            logger.debug("[Info]: possible loop detected, loop indicator: " + loop_indicator)
+            logger.trace("[Info]: possible loop detected, loop indicator: " + loop_indicator)
 
     if len(unvisited_children_after_parent_loop) > 0:
         # There remains some unvisited children
@@ -176,10 +176,10 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
         if IDENTIFY_SINGLETONS and (
         len(unvisited_children_after_parent_loop)) == 1:
             # in fact, there is only one unvisited child
-            logger.debug("1 unvisited child after parent loop.")
+            logger.trace("1 unvisited child after parent loop.")
             #only_child_index = node.children[0]
             unvisited_child_index = unvisited_children_after_parent_loop[0]
-            logger.debug("unvisited_child_index: " + str(unvisited_child_index))
+            logger.trace("unvisited_child_index: " + str(unvisited_child_index))
             unvisited_child = nodes[unvisited_child_index]
 #rhc: ToDo: node may have more than 1 child, but if there is only one 
 #  unvisited child only_child and it has no children and node is only_child's
@@ -207,12 +207,12 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
                 # whether to add node to queue, and whether node has a 
                 # singleton child that can be marked visited and added to the 
                 # partition along with node
-                logger.debug("the 1 unvisited child after parent loop is a singleton"
+                logger.trace("the 1 unvisited child after parent loop is a singleton"
                     + " mark it visited and add parent (first) and child to partition.")
                 visited.append(unvisited_child.ID)
                 # add node to partition before child 
                 if node.partition_number == -1:
-                    logger.debug ("dfs_parent add " + str(node.ID) + " to partition")
+                    logger.trace ("dfs_parent add " + str(node.ID) + " to partition")
                     node.partition_number = current_partition_number
 
                     partition_node = Partition_Node(node.ID)
@@ -256,11 +256,11 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
                     nodeIndex_to_partition_partitionIndex_group_groupIndex_map[partition_node.ID] = pg_tuple
 
                 else:
-                    logger.debug ("dfs_parent do not add " + str(node.ID) + " to partition "
+                    logger.trace ("dfs_parent do not add " + str(node.ID) + " to partition "
                         + current_partition_number + " since it is already in partition " 
                         + node.partition_number)
                 if unvisited_child.partition_number == -1:
-                    logger.debug ("dfs_parent add " + str(unvisited_child.ID) + " to partition")
+                    logger.trace ("dfs_parent add " + str(unvisited_child.ID) + " to partition")
                     unvisited_child.partition_number = current_partition_number
 
                     partition_node = Partition_Node(unvisited_child.ID)
@@ -293,7 +293,7 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
 
                 else:
                     # assert: this is an Error
-                    logger.debug ("dfs_parent do not add " + str(unvisited_child.ID) + " to partition "
+                    logger.trace ("dfs_parent do not add " + str(unvisited_child.ID) + " to partition "
                         + current_partition_number + " since it is already in partition " 
                         + unvisited_child.partition_number)
 
@@ -301,27 +301,27 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
                 #queue.append(node)
                 queue.append(node.ID)
                 if DEBUG_ON:
-                    # logger.debug(, end=" ")
+                    # logger.trace(, end=" ")
                     print_val = "queue after add " + str(node.ID) + ": "
                     for x in queue:
-                        #logger.debug(x.ID, end=" ")
+                        #logger.trace(x.ID, end=" ")
                         print_val = print_val + str(x) + " "
-                    logger.debug(print_val)
-                    logger.debug("")
+                    logger.trace(print_val)
+                    logger.trace("")
                 #frontier.append(node)
                 frontier.append(node.ID)
                 if DEBUG_ON:
                     print_val = "frontier after add " + str(node.ID) + ": "
                     for x in frontier:
-                        #logger.debug(x.ID, end=" ")
+                        #logger.trace(x.ID, end=" ")
                         print_val = print_val + str(x) + " "
-                    logger.debug(print_val)
-                    logger.debug("")
+                    logger.trace(print_val)
+                    logger.trace("")
                 # make sure parent in partition before any if its children. We visit parents of nodein dfs_parents 
                 # and they are added to partition in dfs_parents after their parents are added 
                 # in dfs_parents then here we add node to partition.  
                 if node.partition_number == -1:
-                    logger.debug ("dfs_parent add " + str(node.ID) + " to partition")
+                    logger.trace ("dfs_parent add " + str(node.ID) + " to partition")
                     node.partition_number = current_partition_number
 
                     partition_node = Partition_Node(node.ID)
@@ -355,7 +355,7 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
                     nodeIndex_to_partition_partitionIndex_group_groupIndex_map[partition_node.ID] = pg_tuple
 
                 else:
-                    logger.debug ("dfs_parent do not add " + str(node.ID) + " to partition "
+                    logger.trace ("dfs_parent do not add " + str(node.ID) + " to partition "
                         + current_partition_number + " since it is already in partition " 
                         + node.partition_number)
         else:
@@ -364,26 +364,26 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
                 if DEBUG_ON:
                     print_val = "queue after add " + str(node.ID) + ":"
                     for x in queue:
-                        #logger.debug(x.ID, end=" ")
-                        #logger.debug(x, end=" ")
+                        #logger.trace(x.ID, end=" ")
+                        #logger.trace(x, end=" ")
                         print_val = print_val + str(x) + " "
-                    logger.debug(print_val)
-                    logger.debug("")
+                    logger.trace(print_val)
+                    logger.trace("")
                 #frontier.append(node)
                 frontier.append(node.ID)
                 if DEBUG_ON:
                     print_val = "frontier after add " + str(node.ID) + ":"
                     for x in frontier:
-                        #logger.debug(x.ID, end=" ")
-                        #logger.debug(x, end=" ")
+                        #logger.trace(x.ID, end=" ")
+                        #logger.trace(x, end=" ")
                         print_val = print_val + str(x) + " "
-                    logger.debug(print_val)
-                    logger.debug("")
+                    logger.trace(print_val)
+                    logger.trace("")
                 # make sure parent in partition before any if its children. We visit parents of nodein dfs_parents 
                 # and they are added to partition in dfs_parents after their parents are added 
                 # in dfs_parents then here we add node to partition.  
                 if node.partition_number == -1:
-                    logger.debug ("dfs_parent add " + str(node.ID) + " to partition")
+                    logger.trace ("dfs_parent add " + str(node.ID) + " to partition")
                     node.partition_number = current_partition_number
 
                     partition_node = Partition_Node(node.ID)
@@ -416,14 +416,14 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
                     nodeIndex_to_partition_partitionIndex_group_groupIndex_map[partition_node.ID] = pg_tuple
 
                 else:
-                    logger.debug ("dfs_parent do not add " + str(node.ID) + " to partition "
+                    logger.trace ("dfs_parent do not add " + str(node.ID) + " to partition "
                         + current_partition_number + " since it is already in partition " 
                         + node.partition_number)
     else:
-        logger.debug("node " + str(node.ID) + " has no unvisited children after parent traversal,"
+        logger.trace("node " + str(node.ID) + " has no unvisited children after parent traversal,"
             + " add it to partition but not queue")
         if node.partition_number == -1:
-            logger.debug("dfs_parent add " + str(node.ID) + " to partition")
+            logger.trace("dfs_parent add " + str(node.ID) + " to partition")
             node.partition_number = current_partition_number
 
 
@@ -455,11 +455,11 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
             index_in_groups_list = frontier_groups_sum-1
             pg_tuple = (partition_number,partition_index,group_number,group_index,index_in_groups_list)
             nodeIndex_to_partition_partitionIndex_group_groupIndex_map[partition_node.ID] = pg_tuple
-            logger.debug("HHHHHHHHHHHHHHHH dfs_parent: pg_tuple generate for " + str(partition_node.ID)
+            logger.trace("HHHHHHHHHHHHHHHH dfs_parent: pg_tuple generate for " + str(partition_node.ID)
                 + str(pg_tuple))
 
         else:
-            logger.debug("dfs_parent do not add " + str(node.ID) + " to partition "
+            logger.trace("dfs_parent do not add " + str(node.ID) + " to partition "
                 + current_partition_number + " since it is already in partition " 
                 + node.partition_number)
 """

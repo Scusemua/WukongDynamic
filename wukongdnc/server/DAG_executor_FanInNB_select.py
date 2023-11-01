@@ -58,7 +58,7 @@ class DAG_executor_FanInNB_Select(Selector):
 
     @n.setter
     def n(self, value):
-        logger.debug("Setting value of FanIn n to " + str(value))
+        logger.trace("Setting value of FanIn n to " + str(value))
         self._n = value
 
     # inherit from parent
@@ -69,7 +69,7 @@ class DAG_executor_FanInNB_Select(Selector):
         pass
 
     def init(self, **kwargs):
-        #logger.debug(kwargs)
+        #logger.trace(kwargs)
         #   These are the 6 keyword_arguments passed:
         #   keyword_arguments['fanin_task_name'] = fanins[0]    # used for debugging
         #   keyword_arguments['n'] = faninNB_sizes[0]
@@ -130,7 +130,7 @@ class DAG_executor_FanInNB_Select(Selector):
     # no meaningful return value expected by client
     def fan_in(self, **kwargs):
         # if we called try_fan_in first, we still have the mutex so this enter_monitor does not do mutex.P
-        logger.debug("DAG_executor_FanInNB_Select: fan_in: entered fan_in()")
+        logger.trace("DAG_executor_FanInNB_Select: fan_in: entered fan_in()")
         
         if self._num_calling < (self._n - 1):
             self._num_calling += 1
@@ -138,16 +138,16 @@ class DAG_executor_FanInNB_Select(Selector):
             # No need to block non-last thread since we are done with them - they will terminate and not restart.
             # self._go.wait_c()
             result = kwargs['result']
-            logger.debug("DAG_executor_FanInNB_Select: fan_in:  result is " + str(result))
+            logger.trace("DAG_executor_FanInNB_Select: fan_in:  result is " + str(result))
             calling_task_name = kwargs['calling_task_name']
             #self._results[calling_task_name] = result[calling_task_name]
             self._results[calling_task_name] = result
-            logger.debug("DAG_executor_FanInNB_Select: fan_in: result (saved by the non-last executor) for fan-in %s: %s" % (calling_task_name, str(result)))
+            logger.trace("DAG_executor_FanInNB_Select: fan_in: result (saved by the non-last executor) for fan-in %s: %s" % (calling_task_name, str(result)))
             
             #threading.current_thread()._restart = False
             #threading.current_thread()._returnValue = 0
 
-            logger.debug(" FanInNB_Select: !!!!! non-last Client: " + calling_task_name 
+            logger.trace(" FanInNB_Select: !!!!! non-last Client: " + calling_task_name 
                 + " exiting FanInNB fan_in")
             # Note: Typcally we would return 1 when try_fan_in returns block is True, but the Fanin currently
             # used by wukong D&C is expecting a return value of 0 for this case.
@@ -155,19 +155,19 @@ class DAG_executor_FanInNB_Select(Selector):
         else:  
             # Last thread does synchronize_synch and will not wait for result since this is fanin NB.
             # Last thread does append results (unlike FanIn)
-            logger.debug("DAG_executor_FanInNB_Select: fan_in: Last thread in FanIn %s so not calling self._go.wait_c" % self.selector_name)
+            logger.trace("DAG_executor_FanInNB_Select: fan_in: Last thread in FanIn %s so not calling self._go.wait_c" % self.selector_name)
             result = kwargs['result']
             calling_task_name = kwargs['calling_task_name']
             self._results[calling_task_name] = result
             start_state_fanin_task = kwargs['start_state_fanin_task']
             
             if (self._results is not None):
-                logger.debug("DAG_executor_FanInNB_Select: fan_in: faninNB %s: collected results of fan_in: %s" % (self.selector_name, str(self._results)))
+                logger.trace("DAG_executor_FanInNB_Select: fan_in: faninNB %s: collected results of fan_in: %s" % (self.selector_name, str(self._results)))
  
             #threading.current_thread()._returnValue = self._results
             #threading.current_thread()._restart = False 
 
-            logger.debug(" FanInNB_Select: !!!!! last Client: faninNB " + self.selector_name
+            logger.trace(" FanInNB_Select: !!!!! last Client: faninNB " + self.selector_name
                 +  " calling task name: " + calling_task_name + "exiting fan_in")
             # for debugging
             fanin_task_name = kwargs['fanin_task_name']
@@ -189,7 +189,7 @@ class DAG_executor_FanInNB_Select(Selector):
                         # a new thread/process or add a sate to the processes work_queue.
                         # If we are batching calls to fan_in, we are storing FanInNBs remotely so we cannot
                         # start a thread (on the tcp_server)
-                        logger.debug("DAG_executor_FanInNB_Select: fan_in: using_workers and threads so add start state of fanin task to thread_work_queue.")
+                        logger.trace("DAG_executor_FanInNB_Select: fan_in: using_workers and threads so add start state of fanin task to thread_work_queue.")
                         #thread_work_queue.put(start_state_fanin_task)
                         work_tuple = (start_state_fanin_task,self._results)
                         work_queue.put(work_tuple)
@@ -225,7 +225,7 @@ class DAG_executor_FanInNB_Select(Selector):
                     logger.error("[Error]: DAG_executor_FanInNB_Select: fan_in:  storing fanins locally but not using threads.")
   
                 try:
-                    logger.debug("DAG_executor_FanInNB_Select: fan_in:  starting DAG_executor thread for task " + fanin_task_name + " with start state " + str(start_state_fanin_task))
+                    logger.trace("DAG_executor_FanInNB_Select: fan_in:  starting DAG_executor thread for task " + fanin_task_name + " with start state " + str(start_state_fanin_task))
                     server = kwargs['server']
                     #DAG_executor_state =  kwargs['DAG_executor_State']
                     #DAG_executor_state.state = int(start_state_fanin_task)
@@ -233,8 +233,8 @@ class DAG_executor_FanInNB_Select(Selector):
                     DAG_executor_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
                     DAG_executor_state.return_value = None
                     DAG_executor_state.blocking = False
-                    logger.debug("DAG_executor_FanInNB_Select: fan_in: calling_task_name:" + calling_task_name + " DAG_executor_state.state: " + str(DAG_executor_state.state))
-                    #logger.debug("DAG_executor_state.function_name: " + DAG_executor_state.function_name)
+                    logger.trace("DAG_executor_FanInNB_Select: fan_in: calling_task_name:" + calling_task_name + " DAG_executor_state.state: " + str(DAG_executor_state.state))
+                    #logger.trace("DAG_executor_state.function_name: " + DAG_executor_state.function_name)
                     payload = {
                         #"state": int(start_state_fanin_task),
                         "input": self._results,
@@ -250,8 +250,8 @@ class DAG_executor_FanInNB_Select(Selector):
                     thread.start()
                     #_thread.start_new_thread(DAG_executor.DAG_executor_task, (payload,))
                 except Exception as ex:
-                    logger.debug("[ERROR]: DAG_executor_FanInNB_Select: fan_in: Failed to start DAG_executor thread.")
-                    logger.debug(ex)
+                    logger.trace("[ERROR]: DAG_executor_FanInNB_Select: fan_in: Failed to start DAG_executor thread.")
+                    logger.trace(ex)
 
                 # No signal of non-last client; they did not block and they are done executing. 
                 # does mutex.V
@@ -272,13 +272,13 @@ class DAG_executor_FanInNB_Select(Selector):
                 if store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks:
                     #  trigger fanni task to run in this lambda
                     try:
-                        logger.debug("DAG_executor_FanInNB_Select: triggering DAG_Executor_Lambda() for task " + fanin_task_name)
+                        logger.trace("DAG_executor_FanInNB_Select: triggering DAG_Executor_Lambda() for task " + fanin_task_name)
                         lambda_DAG_exec_state = DAG_executor_State(function_name = "DAG_executor_lambda:"+fanin_task_name, function_instance_ID = str(uuid.uuid4()), state = start_state_fanin_task)
-                        logger.debug ("DAG_executor_FanInNB_Select: lambda payload is DAG_info + " + str(start_state_fanin_task) + "," + str(self._results))
+                        logger.trace ("DAG_executor_FanInNB_Select: lambda payload is DAG_info + " + str(start_state_fanin_task) + "," + str(self._results))
                         lambda_DAG_exec_state.restart = False      # starting new DAG_executor in state start_state_fanin_task
                         lambda_DAG_exec_state.return_value = None
                         lambda_DAG_exec_state.blocking = False            
-                        logger.info("DAG_executor_FanInNB_Select: Starting Lambda function %s." % lambda_DAG_exec_state.function_name) 
+                        logger.trace("DAG_executor_FanInNB_Select: Starting Lambda function %s." % lambda_DAG_exec_state.function_name) 
                         payload = {
                             "input": self._results,
                             "DAG_executor_state": lambda_DAG_exec_state,
@@ -303,8 +303,8 @@ class DAG_executor_FanInNB_Select(Selector):
                         DAG_executor_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
                         DAG_executor_state.return_value = self._results
                         DAG_executor_state.blocking = False            
-                        logger.debug("DAG_executor_FanInNB_Select: fan_in: starting Starting Lambda function for task " + fanin_task_name + " with start state " + str(DAG_executor_state.state))
-                        #logger.debug("DAG_executor_state: " + str(DAG_executor_state))
+                        logger.trace("DAG_executor_FanInNB_Select: fan_in: starting Starting Lambda function for task " + fanin_task_name + " with start state " + str(DAG_executor_state.state))
+                        #logger.trace("DAG_executor_state: " + str(DAG_executor_state))
                         payload = {
                             #"state": int(start_state_fanin_task),
                             "input": self._results,
@@ -316,8 +316,8 @@ class DAG_executor_FanInNB_Select(Selector):
                         
                         invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor_lambda:"+fanin_task_name)
                     except Exception as ex:
-                        logger.debug("[ERROR]: DAG_executor_FanInNB_Select: fan_in: Failed to start DAG_executor Lambda.")
-                        logger.debug(ex)
+                        logger.trace("[ERROR]: DAG_executor_FanInNB_Select: fan_in: Failed to start DAG_executor Lambda.")
+                        logger.trace(ex)
 
                 # No signal of non-last client; they did not block and they are done executing. 
                 # does mutex.V. No one should be calling fan_in again since this is last caller
@@ -378,7 +378,7 @@ class DAG_executor_FanInNB_Select(Selector):
                 # we are simulating lambdas with threads, which is just to test the 
                 # logic witout worrying about performance.
                 #return 0, restart
-                logger.debug("DAG_executor_FanInNB_Select: fan_in: return self._results for "
+                logger.trace("DAG_executor_FanInNB_Select: fan_in: return self._results for "
                     + " case where simuated lambdas with threads and storing objects remotely, "
                     + " possibly in lambas (simulated or real) and not triggering tasks.")
                 return self._results

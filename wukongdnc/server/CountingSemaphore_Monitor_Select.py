@@ -27,7 +27,7 @@ class CountingSemaphore_Monitor_Select(Selector):
         self._permits = 1
         
     def init(self, **kwargs):
-        logger.debug(kwargs)
+        logger.trace(kwargs)
         if kwargs is None or len(kwargs) == 0:
             raise ValueError("CountingSemaphore_Monitor_Select requires a length > 0. No kwargs provided.")
         elif len(kwargs) > 2:
@@ -60,7 +60,7 @@ class CountingSemaphore_Monitor_Select(Selector):
 
 	# synchronous try version of P, restart if block; no meaningful return value expected by client
     def P(self, **kwargs):
-        logger.debug("CountingSemaphore_Monitor_Select P() entered monitor, permits = " + str(self._permits))
+        logger.trace("CountingSemaphore_Monitor_Select P() entered monitor, permits = " + str(self._permits))
         self._permits -= 1
         return 0
 
@@ -73,15 +73,15 @@ class CountingSemaphore_Monitor_Select(Selector):
         
 #local tests
 def taskP(b : CountingSemaphore_Monitor_Select):
-    logger.debug("Calling P")
+    logger.trace("Calling P")
     b.P()
-    logger.debug("Successfully called P")
+    logger.trace("Successfully called P")
 
 def taskV(b : CountingSemaphore_Monitor_Select):
     time.sleep(1)
-    logger.debug("Calling V")
+    logger.trace("Calling V")
     b.V()
-    logger.debug("Successfully called V")
+    logger.trace("Successfully called V")
 
 
 def main():
@@ -92,22 +92,22 @@ def main():
     b.V()
 
     try:
-        logger.debug("Starting D thread")
+        logger.trace("Starting D thread")
         _thread.start_new_thread(taskP, (b,))
     except Exception as ex:
-        logger.debug("[ERROR] Failed to start P thread.")
-        logger.debug(ex)
+        logger.trace("[ERROR] Failed to start P thread.")
+        logger.trace(ex)
 
     try:
-        logger.debug("Starting first thread")
+        logger.trace("Starting first thread")
         _thread.start_new_thread(taskV, (b,))
     except Exception as ex:
-        logger.debug("[ERROR] Failed to start V thread.")
-        logger.debug(ex)
+        logger.trace("[ERROR] Failed to start V thread.")
+        logger.trace(ex)
 
-    logger.debug("Sleeping")
+    logger.trace("Sleeping")
     time.sleep(2)
-    logger.debug("Done sleeping")
+    logger.trace("Done sleeping")
 
 if __name__=="__main__":
     main()

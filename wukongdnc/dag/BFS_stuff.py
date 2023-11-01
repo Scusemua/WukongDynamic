@@ -1,6 +1,6 @@
 # Manually execute whietboard DAG:
 """
-logger.debug("Input partitions/groups")
+logger.trace("Input partitions/groups")
 input_partitions()
 
 task_name = "PR1_1"
@@ -48,9 +48,9 @@ payload = {}
 PR3_3_input = PR3_3_input_from_PR_2_3
 payload['input'] = PR3_3_input
 PageRank_output_from_PR_3_3 = PageRank_Task(task_name,total_num_nodes,payload,results)
-logger.info("Results:")
+logger.trace("Results:")
 for i in range(len(results)):
-    logger.info ("ID:"+str(i) + " pagerank:" + str(results[i]))
+    logger.trace ("ID:"+str(i) + " pagerank:" + str(results[i]))
 """
 
 
@@ -178,7 +178,7 @@ def bfs(visited, graph, node): #function for BFS
 
   while queue:          # Creating loop to visit each node
     m = queue.pop(0) 
-    logger.info (m, end = " ") 
+    logger.trace (m, end = " ") 
 
     for neighbor in graph[m]:
       if neighbor not in visited:
@@ -273,7 +273,7 @@ def bfs(visited, graph, node): #function for BFS
         # at this child and child has no other parents so all of the child's
         # parents (which is just this node) are in the current partition.  
         # So just add child and node to current partition. 
-        logger.info ("dfs_parent add node " + str(node.ID) + " and child " +
+        logger.trace ("dfs_parent add node " + str(node.ID) + " and child " +
             node.children[0].ID + " to visited since this is the only child"
             + " and child has no children and only one parent which is node")
         visited.append(node.children[0].ID)
@@ -295,7 +295,7 @@ def bfs(visited, graph, node): #function for BFS
 def dfs_p_new(visited, graph, node):  #function for dfs 
     # e.g. dfs(3) where bfs is visiting 3 as a child of enqueued node
     # so 3 is not visited yet
-    logger.info ("dfs_p_new from node " + str(node.ID))
+    logger.trace ("dfs_p_new from node " + str(node.ID))
 
     #dfs_p_start_partition_size = len(current_partition)
     #global loop_nodes_added
@@ -304,28 +304,28 @@ def dfs_p_new(visited, graph, node):  #function for dfs
     list_of_unvisited_children = []
     check_list_of_unvisited_chldren_after_visiting_parents = False
 
-    logger.info("in dfs_p_new start: list_of_unvisited_children:" + str(list_of_unvisited_children))
+    logger.trace("in dfs_p_new start: list_of_unvisited_children:" + str(list_of_unvisited_children))
 
     # process children before parent traversal
     #list_of_unvisited_children, 
     check_list_of_unvisited_chldren_after_visiting_parents = dfs_parent_pre_parent_traversal(node,
         visited,list_of_unvisited_children)
 
-    logger.info("in dfs_p_new after pre: list_of_unvisited_children:" + str(list_of_unvisited_children))
+    logger.trace("in dfs_p_new after pre: list_of_unvisited_children:" + str(list_of_unvisited_children))
 
     if not len(node.parents):
-        logger.info ("dfs_p node " + str(node.ID) + " has no parents")
+        logger.trace ("dfs_p node " + str(node.ID) + " has no parents")
     else:
-        logger.info ("dfs_p node " + str(node.ID) + " visit parents")
+        logger.trace ("dfs_p node " + str(node.ID) + " visit parents")
 
     # visit parents
     for neighbor_index in node.parents:
         neighbor = nodes[neighbor_index]
         if neighbor.ID not in visited:
-            logger.info ("dfs_p visit node " + str(neighbor.ID))
+            logger.trace ("dfs_p visit node " + str(neighbor.ID))
             dfs_parent(visited, graph, neighbor)
         else:
-            logger.info ("dfs_p neighbor.ID " + str(neighbor.ID) + " already visited")
+            logger.trace ("dfs_p neighbor.ID " + str(neighbor.ID) + " already visited")
             if neighbor.partition_number == -1:
                 # Example: 1 5 6 7 3(Lp) 12(Lp) 11 11(Lc) 12 4 3 2 10 9 8
                 # Here, 3 is a parent of 11 that 11 finds visited so when visiting
@@ -339,7 +339,7 @@ def dfs_p_new(visited, graph, node):  #function for dfs
                 # indicates the loop detected when 11 saw it's parent 12 was visited.
                 loop_indicator = str(neighbor.ID)+"(Lprnt_of_" + str(node.ID) + ")"
                 current_partition.append(loop_indicator)
-                logger.info("[Info]: Possible parent loop detected, start and end with " + str(neighbor.ID)
+                logger.trace("[Info]: Possible parent loop detected, start and end with " + str(neighbor.ID)
                     + ", loop indicator: " + loop_indicator)
                 loop_nodes_added += 1
 
@@ -351,27 +351,27 @@ def dfs_p_new(visited, graph, node):  #function for dfs
     #loop_nodes_added_end = loop_nodes_added
     #dfs_p_change_in_partitiob_size = (dfs_p_end_partition_size - dfs_p_start_partition_size) - (
     #    loop_nodes_added_end - loop_nodes_added_start)
-    #logger.info("dfs_p_change_in_partition_size: " + str(dfs_p_change_in_partitiob_size))
+    #logger.trace("dfs_p_change_in_partition_size: " + str(dfs_p_change_in_partitiob_size))
     #dfs_p_changes_in_partiton_size.append(dfs_p_change_in_partitiob_size)
 
 def dfs_p(visited, graph, node):
-    logger.info ("dfs_p from node " + str(node.ID))
+    logger.trace ("dfs_p from node " + str(node.ID))
     dfs_p_start_partition_size = len(current_partition)
     loop_nodes_added_start = loop_nodes_added
 
     # target child node c of dfs_p(c) in bfs was to to visited in bfs before call to dfs_p(c)
     if not len(node.parents):
-        logger.info ("dfs_p node " + str(node.ID) + " has no parents")
+        logger.trace ("dfs_p node " + str(node.ID) + " has no parents")
     else:
-        logger.info ("dfs_p node " + str(node.ID) + " visit parents")
+        logger.trace ("dfs_p node " + str(node.ID) + " visit parents")
 
     for neighbor_index in node.parents:
         neighbor = nodes[neighbor_index]
         if neighbor.ID not in visited:
-            logger.info ("dfs_p visit node " + str(neighbor.ID))
+            logger.trace ("dfs_p visit node " + str(neighbor.ID))
             dfs_parent(visited, graph, neighbor)
         else:
-            logger.info ("dfs_p neighbor.ID " + str(neighbor.ID) + " already visited")
+            logger.trace ("dfs_p neighbor.ID " + str(neighbor.ID) + " already visited")
 
 
     # make sure parent in partition before any if its children. We visit parents of node 
@@ -379,11 +379,11 @@ def dfs_p(visited, graph, node):
     # are added in dfs_parents then here we add node to partition. node is the target 
     # of dfs_p(node)  
     if node.partition_number == -1:
-        logger.info ("dfs_p add " + str(node.ID) + " to partition")
+        logger.trace ("dfs_p add " + str(node.ID) + " to partition")
         node.partition_number = current_partition_number
         current_partition.append(node.ID)
     else:
-        logger.info ("dfs_p do not add " + str(node.ID) + " to partition "
+        logger.trace ("dfs_p do not add " + str(node.ID) + " to partition "
             + str(current_partition_number) + " since it is already in partition " 
             + str(node.partition_number))
 
@@ -391,7 +391,7 @@ def dfs_p(visited, graph, node):
     loop_nodes_added_end = loop_nodes_added
     dfs_p_change_in_partitiob_size = (dfs_p_end_partition_size - dfs_p_start_partition_size) - (
         loop_nodes_added_end - loop_nodes_added_start)
-    logger.info("dfs_p_change_in_partition_size: " + str(dfs_p_change_in_partitiob_size))
+    logger.trace("dfs_p_change_in_partition_size: " + str(dfs_p_change_in_partitiob_size))
     dfs_p_changes_in_partiton_size.append(dfs_p_change_in_partitiob_size)
 """
 
@@ -555,49 +555,49 @@ def dfs_p(visited, graph, node):
     num_faninNBs = len(all_faninNB_task_names)
     num_collapse = len(all_collapse_task_names)
 
-    logger.info("DAG_map:")
+    logger.trace("DAG_map:")
     for key, value in DAG_map.items():
-        logger.info(str(key) + ' : ' + str(value))
-    logger.info("")
-    logger.info("states:")         
+        logger.trace(str(key) + ' : ' + str(value))
+    logger.trace("")
+    logger.trace("states:")         
     for key, value in DAG_states.items():
-        logger.info(str(key) + ' : ' + str(value))
-    logger.info("")
-    logger.info("num_fanins:" + str(num_fanins) + " num_fanouts:" + str(num_fanouts) + " num_faninNBs:" 
+        logger.trace(str(key) + ' : ' + str(value))
+    logger.trace("")
+    logger.trace("num_fanins:" + str(num_fanins) + " num_fanouts:" + str(num_fanouts) + " num_faninNBs:" 
             + str(num_faninNBs) + " num_collapse:" + str(num_collapse))
-    logger.info("")  
-    logger.info("all_fanout_task_names")
+    logger.trace("")  
+    logger.trace("all_fanout_task_names")
     for name in all_fanout_task_names:
-        logger.info(name)
-    logger.info("")
-    logger.info("all_fanin_task_names")
+        logger.trace(name)
+    logger.trace("")
+    logger.trace("all_fanin_task_names")
     for name in all_fanin_task_names :
-        logger.info(name)
-    logger.info("")
-    logger.info("all_faninNB_task_names")
+        logger.trace(name)
+    logger.trace("")
+    logger.trace("all_faninNB_task_names")
     for name in all_faninNB_task_names:
-        logger.info(name)
-    logger.info("")
-    logger.info("all_collapse_task_names")
+        logger.trace(name)
+    logger.trace("")
+    logger.trace("all_collapse_task_names")
     for name in all_collapse_task_names:
-        logger.info(name)
-    logger.info("")
-    logger.info("leaf task start states")
+        logger.trace(name)
+    logger.trace("")
+    logger.trace("leaf task start states")
     for start_state in DAG_leaf_task_start_states:
-        logger.info(start_state)
-    logger.info("")
-    logger.info("DAG_tasks:")
+        logger.trace(start_state)
+    logger.trace("")
+    logger.trace("DAG_tasks:")
     for key, value in DAG_tasks.items():
-        logger.info(str(key) + ' : ' + str(value))
-    logger.info("")
-    logger.info("DAG_leaf_tasks:")
+        logger.trace(str(key) + ' : ' + str(value))
+    logger.trace("")
+    logger.trace("DAG_leaf_tasks:")
     for task_name in DAG_leaf_tasks:
-        logger.info(task_name)
-    logger.info("") 
-    logger.info("DAG_leaf_task_inputs:")
+        logger.trace(task_name)
+    logger.trace("") 
+    logger.trace("DAG_leaf_task_inputs:")
     for inp in DAG_leaf_task_inputs:
-        logger.info(inp)
-    logger.info("")  
+        logger.trace(inp)
+    logger.trace("")  
 """
 
 """

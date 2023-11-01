@@ -21,7 +21,7 @@ class BoundedBuffer_Select(Selector):
         super(BoundedBuffer_Select, self).__init__(selector_name=selector_name)
         
     def init(self, **kwargs):
-        logger.debug(kwargs)
+        logger.trace(kwargs)
         
         self._capacity = kwargs["n"]
         # Need there to be an element at buffer[i]. Cannot use insert() since it will shift elements down.

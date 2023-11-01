@@ -28,7 +28,7 @@ class DAG_executor_FanIn(MonitorSU):
     def __init__(self, monitor_name = "DAG_executor_FanIn"):
         super(DAG_executor_FanIn, self).__init__(monitor_name = monitor_name)
         self.monitor_name = monitor_name    # this is fanin_task_name
-        #logger.debug("DAG_executor_FanIn: __init__: monitor_name: " + str(monitor_name))
+        #logger.trace("DAG_executor_FanIn: __init__: monitor_name: " + str(monitor_name))
         #self._n = initial_n
         self._num_calling = 0
         # For faninNB, results are collected in a nmap of task_name to result
@@ -41,11 +41,11 @@ class DAG_executor_FanIn(MonitorSU):
 
     @n.setter
     def n(self, value):
-        logger.debug("Setting value of FanIn n to " + str(value))
+        logger.trace("Setting value of FanIn n to " + str(value))
         self._n = value
 
     def init(self, **kwargs):
-        #logger.debug(kwargs)
+        #logger.trace(kwargs)
         #   These are the 6 keyword_arguments passed:
         #   keyword_arguments['fanin_task_name'] = fanins[0]    # used for debugging
         #   keyword_arguments['n'] = faninNB_sizes[0]
@@ -88,14 +88,14 @@ class DAG_executor_FanIn(MonitorSU):
     def fan_in(self, **kwargs):
         #logger.error("fanin: " + str(DAG_executor_FanIn.num_fanins))
         #DAG_executor_FanIn.num_fanins += 1
-        logger.debug("fan_in %s calling enter_monitor" % self.monitor_name)
+        logger.trace("fan_in %s calling enter_monitor" % self.monitor_name)
         # if we called try_fan_in first, we still have the mutex so this enter_monitor does not do mutex.P
         super().enter_monitor(method_name = "fan_in")
-        logger.debug("Fan-in %s entered monitor in fan_in()" % self.monitor_name)
-        logger.debug("fan_in() " + str(self.monitor_name) + " entered monitor. self._num_calling = " + str(self._num_calling) + ", self._n=" + str(self._n))
+        logger.trace("Fan-in %s entered monitor in fan_in()" % self.monitor_name)
+        logger.trace("fan_in() " + str(self.monitor_name) + " entered monitor. self._num_calling = " + str(self._num_calling) + ", self._n=" + str(self._n))
         
         if self._num_calling < (self._n - 1):
-            logger.debug("Fan-in %s calling _go.wait_c() from FanIn" % self.monitor_name)
+            logger.trace("Fan-in %s calling _go.wait_c() from FanIn" % self.monitor_name)
             self._num_calling += 1
 
             # No need to block non-last thread since we are done with them - they will terminate and not restart.
@@ -103,12 +103,12 @@ class DAG_executor_FanIn(MonitorSU):
             result = kwargs['result']
             calling_task_name = kwargs['calling_task_name']
             self._results[calling_task_name] = result
-            logger.debug("FanIn: Result (saved by the non-last executor) " + calling_task_name + " for fan-in %s: %s" % (self.monitor_name, str(result)))
+            logger.trace("FanIn: Result (saved by the non-last executor) " + calling_task_name + " for fan-in %s: %s" % (self.monitor_name, str(result)))
             #time.sleep(0.1)
             #threading.current_thread()._restart = False
             #threading.current_thread()._returnValue = 0
             restart = False
-            logger.debug(" FanIn: !!!!! non-last Client: " + calling_task_name + " exiting FanIn fan_in id = %s!!!!!" % self.monitor_name)
+            logger.trace(" FanIn: !!!!! non-last Client: " + calling_task_name + " exiting FanIn fan_in id = %s!!!!!" % self.monitor_name)
             super().exit_monitor()
             # Note: Typcally we would return 1 when try_fan_in returns block is True, but the Fanin currently
             # used by wukong D&C is expecting a return value of 0 for this case.
@@ -117,18 +117,18 @@ class DAG_executor_FanIn(MonitorSU):
             # Last thread does synchronize_synch and will wait for result since False returned by try_fan_in().
             # Last thread does not append results. It will recieve list of results of other threads and append 
             # its result locally to the returned list.
-            logger.debug("Last thread in FanIn %s so not calling self._go.wait_c" % self.monitor_name)
+            logger.trace("Last thread in FanIn %s so not calling self._go.wait_c" % self.monitor_name)
 
             result = kwargs['result']
             calling_task_name = kwargs['calling_task_name']
             
             if (self._results is not None):
-                logger.debug("fanin collected results from " + calling_task_name + " for fan-in %s: %s" % (self.monitor_name, str(self._results)))
+                logger.trace("fanin collected results from " + calling_task_name + " for fan-in %s: %s" % (self.monitor_name, str(self._results)))
  
             #threading.current_thread()._returnValue = self._results
             #threading.current_thread()._restart = False 
             restart = False
-            logger.debug(" FanIn: !!!!! last Client: " + calling_task_name + " exiting FanIn fan_in id=%s!!!!!" % self.monitor_name)
+            logger.trace(" FanIn: !!!!! last Client: " + calling_task_name + " exiting FanIn fan_in id=%s!!!!!" % self.monitor_name)
             # No signal of non-last client; they did not block and they are done executing. 
             # does mutex.V
             super().exit_monitor()
@@ -136,27 +136,27 @@ class DAG_executor_FanIn(MonitorSU):
             return self._results, restart  # all threads have called so return results
 
         #No logger.debugs here. main Client can exit while other threads are
-        #doing this logger.debug so main thread/interpreter can't get stdout lock?
+        #doing this logger.trace so main thread/interpreter can't get stdout lock?
 
 # Local tests  
 #def task1(b : FanIn):
     #time.sleep(1)
-    #logger.debug("task 1 Calling fan_in")
+    #logger.trace("task 1 Calling fan_in")
     #result = b.fan_in(ID = "task 1", result = "task1 result")
-    #logger.debug("task 1 Successfully called fan_in")
+    #logger.trace("task 1 Successfully called fan_in")
     #if result == 0:
-    #    logger.debug("result is o")
+    #    logger.trace("result is o")
     #else:
-        #result is a list, logger.debug it
+        #result is a list, logger.trace it
 
 #def task2(b : FanIn):
-    #logger.debug("task 2 Calling fan_in")
+    #logger.trace("task 2 Calling fan_in")
     #result = b.fan_in(ID = "task 2", result = "task2 result")
-    #logger.debug("task 2  Successfully called fan_in")
+    #logger.trace("task 2  Successfully called fan_in")
     #if result == 0:
-    #    logger.debug("result is o")
+    #    logger.trace("result is o")
     #else:
-        #result is a list, logger.debug it
+        #result is a list, logger.trace it
 
 class testThread(Thread):
     def __init__(self, ID, b):
@@ -171,55 +171,55 @@ class testThread(Thread):
     # Override the run() function of Thread class
     def run(self):
         time.sleep(1)
-        logger.debug("task " + self._ID + " Calling fan_in")
+        logger.trace("task " + self._ID + " Calling fan_in")
         r = self.b.fan_in(ID = self._ID, result = "task1 result")
-        logger.debug("task " + self._ID + ", Successfully called fan_in, returned r: " + r)
+        logger.trace("task " + self._ID + ", Successfully called fan_in, returned r: " + r)
 
 def main():
     b = DAG_executor_FanIn(monitor_name="DAG_executor_FanIn")
     b.init(**{"n": 2})
 
     #try:
-    #    logger.debug("Starting thread 1")
+    #    logger.trace("Starting thread 1")
     #   _thread.start_new_thread(task1, (b,))
     #except Exception as ex:
-    #    logger.debug("[ERROR] Failed to start first thread.")
-    #    logger.debug(ex)
+    #    logger.trace("[ERROR] Failed to start first thread.")
+    #    logger.trace(ex)
     
     try:
         callerThread1 = testThread("T1", b)
         callerThread1.start()
     except Exception as ex:
-        logger.debug("[ERROR] Failed to start first thread.")
-        logger.debug(ex)      
+        logger.trace("[ERROR] Failed to start first thread.")
+        logger.trace(ex)      
 
     #try:
-    #    logger.debug("Starting first thread")
+    #    logger.trace("Starting first thread")
     #    _thread.start_new_thread(task2, (b,))
     #except Exception as ex:
-    #   logger.debug("[ERROR] Failed to start first thread.")
-    #    logger.debug(ex)
+    #   logger.trace("[ERROR] Failed to start first thread.")
+    #    logger.trace(ex)
     
     try:
         callerThread2 = testThread("T2", b)
         callerThread2.start()
     except Exception as ex:
-        logger.debug("[ERROR] Failed to start second thread.")
-        logger.debug(ex)
+        logger.trace("[ERROR] Failed to start second thread.")
+        logger.trace(ex)
         
     callerThread1.join()
     callerThread2.join()
     
-    logger.debug("joined threads")
-    logger.debug("callerThread1 restart " + str(callerThread1._restart))
-    logger.debug("callerThread2._returnValue=" + str(callerThread1._return))
+    logger.trace("joined threads")
+    logger.trace("callerThread1 restart " + str(callerThread1._restart))
+    logger.trace("callerThread2._returnValue=" + str(callerThread1._return))
 
-    logger.debug("callerThread2 restart " + str(callerThread2._restart))
-    logger.debug("callerThread2._returnValue=" + str(callerThread2._return))
+    logger.trace("callerThread2 restart " + str(callerThread2._restart))
+    logger.trace("callerThread2._returnValue=" + str(callerThread2._return))
     # if callerThread2._result == 0:
-    #     logger.debug("callerThread2 result is 0")
+    #     logger.trace("callerThread2 result is 0")
     # else:
-    #     #result is a list, logger.debug it
+    #     #result is a list, logger.trace it
         
 if __name__=="__main__":
     main()

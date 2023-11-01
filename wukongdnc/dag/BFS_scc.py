@@ -49,12 +49,12 @@ class Graph:
             return self.scc_GraphID_to_NodeID_map[ID]
 
     def print_ID_map(self):
-        logger.debug("scc_NodeID_to_GraphID_map:")
+        logger.trace("scc_NodeID_to_GraphID_map:")
         for i in self.scc_NodeID_to_GraphID_map:
-            logger.info (i, self.scc_NodeID_to_GraphID_map[i])
-        logger.debug("scc_NodeID_to_GraphID_map:")
+            logger.trace (i, self.scc_NodeID_to_GraphID_map[i])
+        logger.trace("scc_NodeID_to_GraphID_map:")
         for i in self.scc_GraphID_to_NodeID_map:
-            logger.info (i, self.scc_GraphID_to_NodeID_map[i])
+            logger.trace (i, self.scc_GraphID_to_NodeID_map[i])
 
     # added to code
     def setV(self,V):
@@ -66,19 +66,19 @@ class Graph:
         self.num_edges += 1
 
     def printEdges(self):
-        logger.info("graph scc_graph GraphIDs: num_vertices: " + str(self.V) 
+        logger.trace("graph scc_graph GraphIDs: num_vertices: " + str(self.V) 
             + ", num_edges: " + str(self.num_edges) + ": ")
         for k, v in self.graph.items():
             for item in v:
-                logger.info(str(k) + "," + str(item))
-        logger.info("graph scc_graph node IDs: num_vertices: " + str(self.V) 
+                logger.trace(str(k) + "," + str(item))
+        logger.trace("graph scc_graph node IDs: num_vertices: " + str(self.V) 
             + ", num_edges: " + str(self.num_edges) + ": ")
         for k, v in self.graph.items():
             for item in v:
-                logger.info(str(self.get_nodeID_from_GraphID(k)) + "," + str(self.get_nodeID_from_GraphID(item)))
+                logger.trace(str(self.get_nodeID_from_GraphID(k)) + "," + str(self.get_nodeID_from_GraphID(item)))
 
     def clear(self):
-        logger.info("clear scc_graph")
+        logger.trace("clear scc_graph")
         self.graph = defaultdict(list)
         self.V = 0
         self.num_edges = 0
@@ -120,7 +120,7 @@ def SCCUtil(self, u, low, disc, stackMember, st, list_of_sccs):
     # Go through all vertices adjacent to this
     for v in self.graph[u]:
         # added for debug
-        #logger.info("v: " + str(v))
+        #logger.trace("v: " + str(v))
         # If v is not visited yet, then recur for it
         if disc[v] == -1:
 
@@ -138,7 +138,7 @@ def SCCUtil(self, u, low, disc, stackMember, st, list_of_sccs):
             Case 2 (per above discussion on Disc and Low value) '''
             low[u] = min(low[u], disc[v])
 
-    # head node found, pop the stack and logger.info an SCC
+    # head node found, pop the stack and logger.trace an SCC
 
     w = -1 # To store stack extracted vertices
     if low[u] == disc[u]:
@@ -157,7 +157,7 @@ def SCCUtil(self, u, low, disc, stackMember, st, list_of_sccs):
             stackMember[w] = False
             
 
-        logger.info("")
+        logger.trace("")
         if USING_BFS:
             list_of_sccs.append(one_scc)
 
@@ -170,7 +170,7 @@ def SCC(self):
     # and Initialize parent and visited,
     # and ap(articulation point) arrays
     # added for debug
-    #logger.info("SCC: V:" + str(self.V))
+    #logger.trace("SCC: V:" + str(self.V))
     disc = [-1] * (self.V)
     low = [-1] * (self.V)
     stackMember = [False] * (self.V)
@@ -196,9 +196,9 @@ def SCC(self):
                 #parent_GraphID = scc_graph.map_nodeID_to_GraphID(parent_index)
                 # add edge from parent to node
                 #scc_graph.addEdge(parent_GraphID, node_GraphID)
-                #logger.debug ("dfs_parent add (unmapped) edge: " + str(parent_index) + "," + str(node.ID))
-                #logger.debug ("dfs_parent add (mapped) edge: " + str(parent_GraphID) + "," + str(node_GraphID))
-                #logger.debug("dfs_parent: Graph after add edge:")
+                #logger.trace ("dfs_parent add (unmapped) edge: " + str(parent_index) + "," + str(node.ID))
+                #logger.trace ("dfs_parent add (mapped) edge: " + str(parent_GraphID) + "," + str(node_GraphID))
+                #logger.trace("dfs_parent: Graph after add edge:")
                 #scc_graph.logger.infoEdges()
                 #global scc_num_vertices
                 #scc_num_vertices += 1
@@ -208,7 +208,7 @@ def SCC(self):
     #scc_num_vertices += 1
 
 # SCC 4
-    #logger.debug("BFS set V to " + str(scc_num_vertices))
+    #logger.trace("BFS set V to " + str(scc_num_vertices))
     #scc_graph.setV(scc_num_vertices)
     #scc_graph.logger.infoEdges()
     #scc_graph.clear()
@@ -222,9 +222,9 @@ def SCC(self):
 global scc_graph
 scc_graph.logger.infoEdges()
 scc_graph.logger.info_ID_map()
-logger.debug("SCCs (node IDs):")
+logger.trace("SCCs (node IDs):")
 list_of_sccs = scc_graph.SCC()
-logger.debug("len of list_of_sccs: " + str(len(list_of_sccs)))
+logger.trace("len of list_of_sccs: " + str(len(list_of_sccs)))
 
 list_of_lambdas = []
 no_loop = []
@@ -238,16 +238,16 @@ for list in list_of_sccs:
 if len(no_loop) > 0:
     list_of_lambdas.append(no_loop) 
 i = 0
-logger.debug("Serverless Function Inputs:")
+logger.trace("Serverless Function Inputs:")
 for serverless_function in list_of_lambdas:
     if has_a_no_loop_function and i == (len(list_of_lambdas)-1):
         f_string = "   F" + str(current_partition_number) + "_" + str(i) + " (no-loop-function): "
     else:
         f_string = "   F" + str(current_partition_number) + "_" + str(i) + ": "
-    logger.info("DEBUG: " + f_string,end="")
+    logger.trace("DEBUG: " + f_string,end="")
     for node_index in serverless_function:
-        logger.info(str(node_index),end=" ") 
-    logger.info("")
+        logger.trace(str(node_index),end=" ") 
+    logger.trace("")
     i = i+1
 #scc_graph.clear()
 """
@@ -256,6 +256,6 @@ for serverless_function in list_of_lambdas:
                 #scc_graph = Graph(0)
 
 # SCC 8
-# if USING_BFS is true then when we logger.info SCC components we will 
+# if USING_BFS is true then when we logger.trace SCC components we will 
 # map the scc IDs back to Node IDs. Kluge for now.
 USING_BFS = True

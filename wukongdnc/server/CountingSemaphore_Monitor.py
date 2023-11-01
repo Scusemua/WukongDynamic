@@ -21,7 +21,7 @@ class CountingSemaphore_Monitor(MonitorSU):
         #self._permits = initial_permits
 
     def init(self, **kwargs):     # delete initial_permits parameter
-        logger.debug(kwargs)
+        logger.trace(kwargs)
         if kwargs is None or len(kwargs) == 0:
             raise ValueError("CountingSemaphore_Monitor requires a length > 0. No kwargs provided.")
 
@@ -40,7 +40,7 @@ class CountingSemaphore_Monitor(MonitorSU):
 	# synchronous try version of P, restart if block; no meaningful return value expected by client
     def P(self, **kwargs):
         super().enter_monitor(method_name = "P")
-        logger.debug("CountingSemaphore_Monitor P() entered monitor, len(self._notEmpty) = " + str(len(self._permitAvailable)) + ", permits = " + str(self._permits))
+        logger.trace("CountingSemaphore_Monitor P() entered monitor, len(self._notEmpty) = " + str(len(self._permitAvailable)) + ", permits = " + str(self._permits))
         self._permits -= 1
         if self._permits < 0:
             self._permitAvailable.wait_c()
@@ -96,7 +96,7 @@ class CountingSemaphore_Monitor(MonitorSU):
 	# terminations and restarts.
     def V(self, **kwargs):
         super().enter_monitor(method_name="V")
-        logger.debug(" CountingSemaphore_Monitor V() entered monitor, len(self._notEmpty) ="+str(len(self._permitAvailable)) + " permits = " + str(self._permits))
+        logger.trace(" CountingSemaphore_Monitor V() entered monitor, len(self._notEmpty) ="+str(len(self._permitAvailable)) + " permits = " + str(self._permits))
         self._permits += 1
         #threading.current_thread()._returnValue = 1
         #threading.current_thread()._restart = False
@@ -108,7 +108,7 @@ class CountingSemaphore_Monitor(MonitorSU):
     # no meaningful return value expected by client
     def asynch_V_no_terminate(self, **kwargs):
         super().enter_monitor(method_name="V")
-        logger.debug(" CountingSemaphore_Monitor asynch_V_no_terminate() entered monitor, len(self._notEmpty) ="+str(len(self._permitAvailable)) + " permits = " + str(self._permits))
+        logger.trace(" CountingSemaphore_Monitor asynch_V_no_terminate() entered monitor, len(self._notEmpty) ="+str(len(self._permitAvailable)) + " permits = " + str(self._permits))
         self._permits += 1
         #threading.current_thread()._returnValue = 1
         #threading.current_thread()._restart = False
@@ -120,7 +120,7 @@ class CountingSemaphore_Monitor(MonitorSU):
     # no meaningful return value expected by client
     def asynch_V_terminate(self, **kwargs):
         super().enter_monitor(method_name="V")
-        logger.debug(" CountingSemaphore_Monitor asynch_V_terminate() entered monitor, len(self._notEmpty) ="+str(len(self._permitAvailable)) + " permits = " + str(self._permits))
+        logger.trace(" CountingSemaphore_Monitor asynch_V_terminate() entered monitor, len(self._notEmpty) ="+str(len(self._permitAvailable)) + " permits = " + str(self._permits))
         self._permits += 1
         #threading.current_thread()._returnValue = 1
         #threading.current_thread()._restart = False
@@ -140,15 +140,15 @@ class CountingSemaphore_Monitor(MonitorSU):
 
 #local tests
 def taskP(b : CountingSemaphore_Monitor):
-    logger.debug("Calling P")
+    logger.trace("Calling P")
     b.P()
-    logger.debug("Successfully called P")
+    logger.trace("Successfully called P")
 
 def taskV(b : CountingSemaphore_Monitor):
     time.sleep(1)
-    logger.debug("Calling V")
+    logger.trace("Calling V")
     b.V()
-    logger.debug("Successfully called V")
+    logger.trace("Successfully called V")
 
 
 def main():
@@ -161,22 +161,22 @@ def main():
     b.P()
 
     try:
-        logger.debug("Starting D thread")
+        logger.trace("Starting D thread")
         _thread.start_new_thread(taskP, (b,))
     except Exception as ex:
-        logger.debug("[ERROR] Failed to start P thread.")
-        logger.debug(ex)
+        logger.trace("[ERROR] Failed to start P thread.")
+        logger.trace(ex)
 
     try:
-        logger.debug("Starting first thread")
+        logger.trace("Starting first thread")
         _thread.start_new_thread(taskV, (b,))
     except Exception as ex:
-        logger.debug("[ERROR] Failed to start V thread.")
-        logger.debug(ex)
+        logger.trace("[ERROR] Failed to start V thread.")
+        logger.trace(ex)
 
-    logger.debug("Sleeping")
+    logger.trace("Sleeping")
     time.sleep(2)
-    logger.debug("Done sleeping")
+    logger.trace("Done sleeping")
 
 if __name__=="__main__":
     main()

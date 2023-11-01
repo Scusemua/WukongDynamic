@@ -53,13 +53,13 @@ def create_and_run_threads_for_multiT_multiP(process_name,payload,completed_task
     logger = logging.getLogger("multiP")
     #logger.setLevel(logging.DEBUG)
 
-    logger.debug(process_name + ": multiT_multiP")
+    logger.trace(process_name + ": multiT_multiP")
 
     thread_list = []
     num_threads_created_for_multiP = 0
     if not run_all_tasks_locally:
         logger.error("[Error]: DAG_executor_driver: create_and_run_threads_for_multiT_multiP: multithreaded multiprocessing loop but not run_all_tasks_locally")
-    logger.debug(process_name + ": DAG_executor_driver: create_and_run_threads_for_multiT_multiP: Starting threads for multhreaded multipocessing.")
+    logger.trace(process_name + ": DAG_executor_driver: create_and_run_threads_for_multiT_multiP: Starting threads for multhreaded multipocessing.")
     iteration = 1
     #while True:
     
@@ -67,7 +67,7 @@ def create_and_run_threads_for_multiT_multiP(process_name,payload,completed_task
 
     # num_threads_for_multithreaded_multiprocessing defined in DAG_executor_constants
     while num_threads_created_for_multiP < num_threads_for_multithreaded_multiprocessing:
-        logger.debug(process_name + ": iterate: " + str(iteration))
+        logger.trace(process_name + ": iterate: " + str(iteration))
         try:
             DAG_exec_state = None
             payload = {
@@ -83,26 +83,26 @@ def create_and_run_threads_for_multiT_multiP(process_name,payload,completed_task
             thread_list.append(thread)
             #thread.start()
             num_threads_created_for_multiP += 1 
-            logger.debug(process_name + ": iteration: " + str(iteration) + ": num_threads_created_for_multiP: " + str(num_threads_created_for_multiP)
+            logger.trace(process_name + ": iteration: " + str(iteration) + ": num_threads_created_for_multiP: " + str(num_threads_created_for_multiP)
                 + " num_threads_for_multithreaded_multiprocessing: " + str(num_threads_for_multithreaded_multiprocessing))
             #if num_threads_created_for_multiP == num_threads_for_multithreaded_multiprocessing:
-            #    logger.debug(process_name + " breaking")
+            #    logger.trace(process_name + " breaking")
             #    break     
             iteration += 1
         except Exception as ex:
-            logger.debug("[ERROR] DAG_executor_driver: create_and_run_threads_for_multiT_multiP: Failed to start tread for multithreaded multiprocessing " + "thread_multitheaded_multiproc_" + str(num_threads_created_for_multiP + 1))
-            logger.debug(ex)
+            logger.trace("[ERROR] DAG_executor_driver: create_and_run_threads_for_multiT_multiP: Failed to start tread for multithreaded multiprocessing " + "thread_multitheaded_multiproc_" + str(num_threads_created_for_multiP + 1))
+            logger.trace(ex)
 
-    logger.debug(process_name + ": DAG_executor_driver: create_and_run_threads_for_multiT_multiP: "
+    logger.trace(process_name + ": DAG_executor_driver: create_and_run_threads_for_multiT_multiP: "
         + process_name + " created " + str(len(thread_list)) + " threads")
 
     for thread in thread_list:
         thread.start()
 
-    logger.debug(process_name + ": DAG_executor_driver: create_and_run_threads_for_multiT_multiP: "
+    logger.trace(process_name + ": DAG_executor_driver: create_and_run_threads_for_multiT_multiP: "
         + process_name + " started " + str(len(thread_list)) + " threads")
 
-    logger.debug(process_name + ": DAG_executor_driver: create_and_run_threads_for_multiT_multiP: "
+    logger.trace(process_name + ": DAG_executor_driver: create_and_run_threads_for_multiT_multiP: "
         + process_name + " joining threads.")
 
     for thread in thread_list:

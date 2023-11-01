@@ -20,7 +20,7 @@ BFS() builds the DAG for pagerank. It begins by inputting the graph input_graph(
 and then it starts a BFS traversal:
     for i in range(1,num_nodes+1):
         if i not in visited:
-            logger.debug("*************Driver call BFS for node[" + str(i) + "]")
+            logger.trace("*************Driver call BFS for node[" + str(i) + "]")
             bfs(visited, nodes[i])    # function calling
 where visited is a set of visited nodes and nodes[] are the nodes input by input_graph().
 
@@ -385,9 +385,9 @@ BFS(node):
 # The main method performs a standard BFS (with calls to DFS wihin)
 if __name__ == '__main__':
 
-    logger.debug("Following is the Breadth-First Search")
+    logger.trace("Following is the Breadth-First Search")
     input_graph()
-    logger.debug("num_nodes after input graph: " + str(num_nodes))
+    logger.trace("num_nodes after input graph: " + str(num_nodes))
 
     for i in range(1,num_nodes+1):
         if i not in visited:
@@ -395,7 +395,7 @@ if __name__ == '__main__':
 
     # hande the last partition/group that was generated, same as above
     if len(current_partition) > 0:
-        logger.debug("BFS: create final sub-partition")
+        logger.trace("BFS: create final sub-partition")
 
         partitions.append(current_partition.copy())
         current_partition = []
@@ -454,13 +454,13 @@ def dfs_parent(visited, node)
         for parent_index in node.parents:
             # nodes is an aray of integer IDs, so get the actual parent node
             parent_node = nodes[parent_index]
-            logger.debug("parent_node: " + str(parent_node))
+            logger.trace("parent_node: " + str(parent_node))
 
             #pg_tuple is a map that accumlates information about each node.
             pg_tuple = None
 
             if parent_node.ID not in visited:
-                logger.debug ("dfs_parent visit parent node " + str(parent_node.ID))
+                logger.trace ("dfs_parent visit parent node " + str(parent_node.ID))
                 # recursively visit parent
                 dfs_parent(visited, parent_node)
 
@@ -490,7 +490,7 @@ def dfs_parent(visited, node)
                 # or are in different partitiions/groups and thus we need to add an edge
                 # to the DAG.
 
-                logger.debug ("dfs_parent parent " + str(parent_node.ID) + " of " + str(node.ID) + " already visited"
+                logger.trace ("dfs_parent parent " + str(parent_node.ID) + " of " + str(node.ID) + " already visited"
                     + " append parent " + str(parent_node.ID) + " to already_visited_parents.")
 
                 # save the parent and its position in a list of already_visited_parents
@@ -544,7 +544,7 @@ def dfs_parent(visited, node)
                 # also in a loop.)
 
                 if parent_partition_parent_index == -1:
-                    logger.debug("XXXXXXXXXXXXXXXXX dfs_parent: Loop Detected: "
+                    logger.trace("XXXXXXXXXXXXXXXXX dfs_parent: Loop Detected: "
                         + "PR" + str(current_partition_number) + "_" + str(num_frontier_groups))
     # rhc : ******* Partition
                     global current_partition_isLoop
@@ -554,7 +554,7 @@ def dfs_parent(visited, node)
                     global current_group_isLoop
                     current_group_isLoop = True
                 else:
-                    logger.debug("YYYYYYYYYYYYY dfs_parent: No Loop Detected (yet): "
+                    logger.trace("YYYYYYYYYYYYY dfs_parent: No Loop Detected (yet): "
                         + "PR" + str(current_partition_number) + "_" + str(num_frontier_groups))
 
             # next parent will be in next position in parent list
@@ -633,7 +633,7 @@ def dfs_parent(visited, node)
                 # The parent is in a different group if: it has a different group
                 # number.
 
-                logger.debug ("dfs_parent: parent in same partition: parent_partition_number: " 
+                logger.trace ("dfs_parent: parent in same partition: parent_partition_number: " 
                     + str(parent_partition_number) 
                     + ", current_partition_number:" + str(current_partition_number)
                     + ", parent ID: " + str(parent_index))
@@ -688,6 +688,13 @@ import copy
 import logging
 from .addLoggingLevel import addLoggingLevel
 addLoggingLevel('TRACE', logging.DEBUG - 5)
+""" How to use: https://stackoverflow.com/questions/2183233/how-to-add-a-custom-loglevel-to-pythons-logging-facility/35804945#35804945
+    >>> addLoggingLevel('TRACE', logging.DEBUG - 5)
+    >>> logging.getLogger(__name__).setLevel("TRACE")
+    >>> logging.getLogger(__name__).trace('that worked')
+    >>> logging.trace('so did this')
+    >>> logging.TRACE
+"""
 
 from .DAG_executor_constants import use_shared_partitions_groups, use_page_rank_group_partitions
 from .DAG_executor_constants import use_struct_of_arrays_for_pagerank, compute_pagerank
@@ -739,17 +746,7 @@ from .DAG_executor_output_checker import verify_pagerank_outputs
 
 from wukongdnc.constants import TCP_SERVER_IP
 
-
-"""
-    >>> addLoggingLevel('TRACE', logging.DEBUG - 5)
-    >>> logging.getLogger(__name__).setLevel("TRACE")
-    >>> logging.getLogger(__name__).trace('that worked')
-    >>> logging.trace('so did this')
-    >>> logging.TRACE
-"""
-
 logger = logging.getLogger(__name__)
-
 if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
     #logger.setLevel(logging.DEBUG)
     logger.setLevel("TRACE")
@@ -948,7 +945,7 @@ if compute_pagerank and use_incremental_DAG_generation:
         estimated_num_tasks_to_execute = work_queue_size_for_incremental_DAG_generation_with_worker_processes
         DAG_infobuffer_monitor = Remote_Client_for_DAG_infoBuffer_Monitor(websocket)
         DAG_infobuffer_monitor.create()
-        logger.debug("BFS: created Remote DAG_infobuffer_monitor.")
+        logger.trace("BFS: created Remote DAG_infobuffer_monitor.")
         #logging.shutdown()
         #os._exit(0) 
         work_queue = Work_Queue_Client(websocket,estimated_num_tasks_to_execute)
@@ -983,7 +980,7 @@ def dfs_parent_pre_parent_traversal(node,visited,list_of_unvisited_children):
 def dfs_parent(visited, node):  #function for dfs 
     # e.g. dfs(3) where bfs is visiting 3 as a child of enqueued node
     # so 3 is not visited yet
-    logger.debug ("dfs_parent from node " + str(node.ID))
+    logger.trace ("dfs_parent from node " + str(node.ID))
 
     list_of_unvisited_children = []
     check_list_of_unvisited_chldren_after_visiting_parents = False
@@ -1022,7 +1019,7 @@ def dfs_parent(visited, node):  #function for dfs
     # added to the curret partition.
     if CHECK_UNVISITED_CHILDREN:
         check_list_of_unvisited_chldren_after_visiting_parents = dfs_parent_pre_parent_traversal(node,visited,list_of_unvisited_children)
-        logger.debug("after pre: list_of_unvisited_children: " + str(list_of_unvisited_children))
+        logger.trace("after pre: list_of_unvisited_children: " + str(list_of_unvisited_children))
     else:
 #rhc: If not doing child stuff do we mark node visited here or when we enqueue 
 # node in dfs_parent path?
@@ -1048,21 +1045,21 @@ def dfs_parent(visited, node):  #function for dfs
 
     """
     # for debugging
-    logger.info("nodeIndex_to_partition_partitionIndex_group_groupIndex_map, len: " + str(len(nodeIndex_to_partition_partitionIndex_group_groupIndex_map)) + ":")
-    logger.info("shadow nodes not mapped and not shown")
+    logger.trace("nodeIndex_to_partition_partitionIndex_group_groupIndex_map, len: " + str(len(nodeIndex_to_partition_partitionIndex_group_groupIndex_map)) + ":")
+    logger.trace("shadow nodes not mapped and not shown")
     if PRINT_DETAILED_STATS:
         for k, v in nodeIndex_to_partition_partitionIndex_group_groupIndex_map.items():
-            logger.info((k, v))
-        logger.info("")
+            logger.trace((k, v))
+        logger.trace("")
     else:
-        logger.info("-- (" + str(len(nodeIndex_to_partition_partitionIndex_group_groupIndex_map)) + ")")
-    logger.info("")
+        logger.trace("-- (" + str(len(nodeIndex_to_partition_partitionIndex_group_groupIndex_map)) + ")")
+    logger.trace("")
     """
 
     if not len(node.parents):
-        logger.debug ("dfs_parent node " + str(node.ID) + " has no parents")
+        logger.trace ("dfs_parent node " + str(node.ID) + " has no parents")
     else:
-        logger.debug ("dfs_parent node " + str(node.ID) + " visit parents")
+        logger.trace ("dfs_parent node " + str(node.ID) + " visit parents")
 
     # SCC 1
 
@@ -1081,7 +1078,7 @@ def dfs_parent(visited, node):  #function for dfs
     for parent_index in node.parents:
  
         parent_node = nodes[parent_index]
-        logger.debug("parent_node: " + str(parent_node))
+        logger.trace("parent_node: " + str(parent_node))
 
         """
         Note: This entire check of different partition/group was moved down to after 
@@ -1099,7 +1096,7 @@ def dfs_parent(visited, node):  #function for dfs
         pg_tuple = None
 
         if parent_node.ID not in visited:
-            logger.debug ("dfs_parent visit parent node " + str(parent_node.ID))
+            logger.trace ("dfs_parent visit parent node " + str(parent_node.ID))
             #dfs_parent(visited, graph, parent_node)
             dfs_parent(visited, parent_node)
 
@@ -1124,7 +1121,7 @@ def dfs_parent(visited, node):  #function for dfs
             parent_group_parent_index = pg_tuple[3]
             if (parent_partition_parent_index == -1) or (parent_group_parent_index == -1):
                 # assert group_index is also -1
-                logger.debug("[Error]: Internal Error: dfs_parent call to unvisited"
+                logger.trace("[Error]: Internal Error: dfs_parent call to unvisited"
                     + " parent resulted in parent/group partition index of -1, which means"
                     + " a loop was detected at an unvisited parent.")
 # rhc : ******* Partition
@@ -1134,7 +1131,7 @@ def dfs_parent(visited, node):  #function for dfs
 
         else:
 
-            logger.debug ("dfs_parent parent " + str(parent_node.ID) + " of " + str(node.ID) + " already visited"
+            logger.trace ("dfs_parent parent " + str(parent_node.ID) + " of " + str(node.ID) + " already visited"
                 + " append parent " + str(parent_node.ID) + " to already_visited_parents.")
 
             parent_node_visited_tuple = (parent_node,index_of_parent)
@@ -1177,7 +1174,7 @@ def dfs_parent(visited, node):  #function for dfs
                     # indicates the loop detected when 11 saw it's parent 12 was visited.
                     loop_indicator = str(parent_node.ID)+"(Lprnt_of_" + str(node.ID) + ")"
                     current_partition.append(loop_indicator)
-                    logger.debug("[Info]: Possible parent loop detected, start and end with " + str(parent_node.ID)
+                    logger.trace("[Info]: Possible parent loop detected, start and end with " + str(parent_node.ID)
                         + ", loop indicator: " + loop_indicator)
                     global loop_nodes_added
                     loop_nodes_added += 1
@@ -1189,7 +1186,7 @@ def dfs_parent(visited, node):  #function for dfs
             # and add names to the Senders and Receivers structures used for DAG creation.
 
             if parent_partition_parent_index == -1:
-                logger.debug("XXXXXXXXXXXXXXXXX dfs_parent: Loop Detected: "
+                logger.trace("XXXXXXXXXXXXXXXXX dfs_parent: Loop Detected: "
                     + "PR" + str(current_partition_number) + "_" + str(num_frontier_groups))
 # rhc : ******* Partition
                 global current_partition_isLoop
@@ -1204,7 +1201,7 @@ def dfs_parent(visited, node):  #function for dfs
                 global current_group_isLoop
                 current_group_isLoop = True
             else:
-                logger.debug("YYYYYYYYYYYYY dfs_parent: No Loop Detected: "
+                logger.trace("YYYYYYYYYYYYY dfs_parent: No Loop Detected: "
                     + "PR" + str(current_partition_number) + "_" + str(num_frontier_groups))
 
         index_of_parent += 1
@@ -1230,7 +1227,7 @@ def dfs_parent(visited, node):  #function for dfs
         current_group_name += "L"
 
     if len(already_visited_parents) > 0:
-        logger.debug("process already_visited_parents of " + str(node.ID))
+        logger.trace("process already_visited_parents of " + str(node.ID))
     # can't add shadow nodes and associated node until all parents added via dfs_parent
     # Q: Can we do this as part of else and then finish the appends here?
     # I think that is what we are doing since all this is the appends of shadow nodes
@@ -1277,7 +1274,7 @@ def dfs_parent(visited, node):  #function for dfs
                 # The parent is in a different group if: it has a different group
                 # number.
 
-                logger.debug ("dfs_parent: parent in same partition: parent_partition_number: " 
+                logger.trace ("dfs_parent: parent in same partition: parent_partition_number: " 
                     + str(parent_partition_number) 
                     + ", current_partition_number:" + str(current_partition_number)
                     + ", parent ID: " + str(parent_index))
@@ -1342,7 +1339,7 @@ def dfs_parent(visited, node):  #function for dfs
                     # when the parent/group has finished and all parents have been mapped.
                     # This tuple tell us which position in the parents list needs to be patched.
                     patch_tuple = (parent_index,partition_node.parents,group_node.parents,index_of_parent,node.ID)
-                    logger.debug("patch_tuple: " +str(patch_tuple))
+                    logger.trace("patch_tuple: " +str(patch_tuple))
 # rhc : ******* Partition
                     # save all the patch tuples for later porcessing when the 
                     # actual paent positions are known.
@@ -1392,7 +1389,7 @@ def dfs_parent(visited, node):  #function for dfs
                     # of -1.
                     parent_group_number = partition_group_tuple[2]
                     if parent_group_number == -1 or parent_group_number == current_group_number:
-                        logger.debug ("dfs_parent: parent in same group: parent_group_number: " 
+                        logger.trace ("dfs_parent: parent in same group: parent_group_number: " 
                             + str(parent_group_number)
                             + ", current_group_number: " + str(current_group_number)
                             + ", parent ID: " + str(parent_index)) 
@@ -1430,7 +1427,7 @@ def dfs_parent(visited, node):  #function for dfs
                         """
 
                     else:
-                        logger.debug ("dfs_parent: parent in different group: parent_group_number: " 
+                        logger.trace ("dfs_parent: parent in different group: parent_group_number: " 
                             + str(parent_group_number) 
                             + ", current_group_number: " + str(current_group_number)
                             + ", parent ID: " + str(parent_index))
@@ -1445,7 +1442,7 @@ def dfs_parent(visited, node):  #function for dfs
                         #parents_in_previous_group = True
                         list_of_parents_in_previous_group.append(visited_parent_node.ID) 
 
-                        #logger.debug ("dfs_parent: found parent in previous group: " + str(parent_node.ID))
+                        #logger.trace ("dfs_parent: found parent in previous group: " + str(parent_node.ID))
                         # index of child just added (we just visited it because it ws an 
                         # unvisited child) to partition
                         child_index_in_current_group = len(current_group)
@@ -1460,7 +1457,7 @@ def dfs_parent(visited, node):  #function for dfs
                         shadow_node.parents.append(-1)
                         # insert shadow_node before child (so only shift one)
                         #current_partition.insert(child_index,shadow_node)
-                        logger.debug("dfs_parent: add shadow node to group: " + str(visited_parent_node.ID) + "-s")
+                        logger.trace("dfs_parent: add shadow node to group: " + str(visited_parent_node.ID) + "-s")
 
     #rhc: ToDo:
                         # only do part/group if using part/group or option to do both
@@ -1499,24 +1496,24 @@ def dfs_parent(visited, node):  #function for dfs
                         # this task receives it, i.e., put this received value in the 
                         # shadow node which is at position child_index_in_current_group, which is
                         # the position of the just appended node.
-                        logger.debug ("frontier_groups: " + str(num_frontier_groups) + ", child_index: " + str(child_index_in_current_group))
+                        logger.trace ("frontier_groups: " + str(num_frontier_groups) + ", child_index: " + str(child_index_in_current_group))
 
                         
                         #d1 = child_index-dfs_parent_start_partition_size
-                        #logger.debug("ZZZZZZZZZZZZZZZZZZZZZZZZZ child_index: " + str(child_index) + " d1: " + str(d1))
+                        #logger.trace("ZZZZZZZZZZZZZZZZZZZZZZZZZ child_index: " + str(child_index) + " d1: " + str(d1))
                         #if child_index != d1:
-                        #    logger.debug("ZZZZZZZZZZZZZZZZZZZZZZZZZ Difference: " 
+                        #    logger.trace("ZZZZZZZZZZZZZZZZZZZZZZZZZ Difference: " 
                         #       + " child_index: " + str(child_index) + " d1: " + str(d1))
                         #else:
-                        #   logger.debug("ZZZZZZZZZZZZZZZZZZZZZZZZZ No Difference: ") 
+                        #   logger.trace("ZZZZZZZZZZZZZZZZZZZZZZZZZ No Difference: ") 
                         
-                        #logger.debug("ZZZZZZZZZZZ")
+                        #logger.trace("ZZZZZZZZZZZ")
 
                         # Note: Added a partition/group name field to the tuple since we need an 'L'
                         # in the name of the current partition/group if it is a loop. We probably won't
                         # need the current_partition_number/num_frontier_groups but it's available for now for debugging.
                         frontier_parent_tuple = (current_partition_number,num_frontier_groups,child_index_in_current_group,current_group_name)
-                        logger.debug ("bfs frontier_parent_tuple: " + str(frontier_parent_tuple))
+                        logger.trace ("bfs frontier_parent_tuple: " + str(frontier_parent_tuple))
 
                         # mark this node as one that PageRank needs to send in its output to the 
                         # next partition (via fanout/faninNB).That is, the fact that list
@@ -1560,19 +1557,19 @@ def dfs_parent(visited, node):  #function for dfs
 
                         parent_group = groups[index_in_groups_list]
 
-                        logger.debug("groupOOOOOOOOOOOOOOO add tuple to parent group: ")
+                        logger.trace("groupOOOOOOOOOOOOOOO add tuple to parent group: ")
                         for n in parent_group:
-                            logger.debug(str(n))
-                        logger.debug("len(groups): " + str(len(groups)) + ", parent_group_number: " + str(parent_group_number)
+                            logger.trace(str(n))
+                        logger.trace("len(groups): " + str(len(groups)) + ", parent_group_number: " + str(parent_group_number)
                             + ", num_frontier_groups: " + str(num_frontier_groups) 
                             + ", index_in_groups_list: " + str(index_in_groups_list)
                             + ", parent_group_parent_index: " + str(parent_group_parent_index)
                             + ", frontier_parent_tuple: " + str(frontier_parent_tuple))
                         parent_group[parent_group_parent_index].frontier_parents.append(frontier_parent_tuple)
-                        logger.debug("parent_group[parent_group_parent_index].ID: " + str(parent_group[parent_group_parent_index].ID))
-                        logger.debug("frontier tuples:")
+                        logger.trace("parent_group[parent_group_parent_index].ID: " + str(parent_group[parent_group_parent_index].ID))
+                        logger.trace("frontier tuples:")
                         for t in  parent_group[parent_group_parent_index].frontier_parents:
-                            logger.debug(str(t))
+                            logger.trace(str(t))
                         # The current partition/group name in [3] may not have an "L" but if we later 
                         # find a loop we'll need to append an "L" to this name in the frontier tuple
                         # so we need to patch this name (of this task, which is receiving task) but
@@ -1608,18 +1605,18 @@ def dfs_parent(visited, node):  #function for dfs
                             list_of_parent_frontier_tuples = BFS_Shared.shared_groups_frontier_parents_map.get(task_name_of_parent_group)
                             if list_of_parent_frontier_tuples == None:
                                 list_of_parent_frontier_tuples = []
-                            logger.debug("groupOGOGOGOGOGOGOGOG add shared tuple to parent group: ")
+                            logger.trace("groupOGOGOGOGOGOGOGOG add shared tuple to parent group: ")
                             for n in parent_group:
-                                logger.debug(str(n))
-                            logger.debug("task_name_of_parent: " + task_name_of_parent_group
+                                logger.trace(str(n))
+                            logger.trace("task_name_of_parent: " + task_name_of_parent_group
                                 + ", frontier_parent_tuple: " + str(frontier_parent_tuple))
-                            logger.debug("list_of_parent_frontier_tuples before appending tuple: " 
+                            logger.trace("list_of_parent_frontier_tuples before appending tuple: " 
                                 + str(list_of_parent_frontier_tuples))
                             list_of_parent_frontier_tuples.append(shared_frontier_parent_tuple)
                             BFS_Shared.shared_groups_frontier_parents_map[task_name_of_parent_group] = list_of_parent_frontier_tuples
-                            logger.debug("New BFS_Shared.shared_groups_frontier_parents_map:")
+                            logger.trace("New BFS_Shared.shared_groups_frontier_parents_map:")
                             for (k,v) in BFS_Shared.shared_groups_frontier_parents_map.items():
-                                logger.debug(str(k) + ": " + str(v))                            
+                                logger.trace(str(k) + ": " + str(v))                            
 
                             """
                             where:  in bfs_pagerank, we grab the shared_frontier_parent_tuple
@@ -1691,7 +1688,7 @@ def dfs_parent(visited, node):  #function for dfs
                     # Note that this check is before the call to dfs_parent(parent_index).
                     # If it were after, then the partition_group_tuple could not be None
                     # since we add parent to the global map at the start of dfs_parent()
-                    logger.debug ("dfs_parent: parent in same group: parent_group_number: " 
+                    logger.trace ("dfs_parent: parent in same group: parent_group_number: " 
                         + str(parent_group_number)
                         + ", parent ID: " + str(parent_index))
                 # we haven't seen parent parent_node yet so it is not in a previous group.
@@ -1707,7 +1704,7 @@ def dfs_parent(visited, node):  #function for dfs
 
             else:
                 #parent is in different/previous partition, (must be current_partition - 1)
-                logger.debug ("dfs_parent: parent in different partition/group: parent_partition_number: " 
+                logger.trace ("dfs_parent: parent in different partition/group: parent_partition_number: " 
                     + str(parent_partition_number) 
                     + ", current_partition_number:" + str(current_partition_number)
                     + ", parent ID: " + str(visited_parent_node.ID))
@@ -1764,7 +1761,7 @@ def dfs_parent(visited, node):  #function for dfs
 # rhc : ******* Group
                 child_index_in_current_group = len(current_group)
                 current_group.append(copy.deepcopy(shadow_node))
-                logger.debug("dfs_parent: add shadow node to group: " + str(visited_parent_node.ID) + "-s")
+                logger.trace("dfs_parent: add shadow node to group: " + str(visited_parent_node.ID) + "-s")
 # rhc: case: visited parent before and it is is same partition so set the parent
 # at index index_of_parent to parent_partition_parent_index = partition_group_tuple[0]
                 """
@@ -1804,9 +1801,9 @@ def dfs_parent(visited, node):  #function for dfs
 # rhc : ******* Partition
                 # remember where the frontier_parent node should be placed when the 
                 # partition the PageRank task sends it to receives it. 
-                logger.debug ("num partitions: " + str(current_partition_number) + ", child_index_in_current_partition: " + str(child_index_in_current_partition))
+                logger.trace ("num partitions: " + str(current_partition_number) + ", child_index_in_current_partition: " + str(child_index_in_current_partition))
 # rhc : ******* Group
-                logger.debug ("num_frontier_groups: " + str(num_frontier_groups) + ", child_index_in_current_group: " + str(child_index_in_current_group))
+                logger.trace ("num_frontier_groups: " + str(num_frontier_groups) + ", child_index_in_current_group: " + str(child_index_in_current_group))
 # rhc: ToDo: if we are using partition then we just need partition number and index
 # but we won't use group number? That is, the names aer PR1, PR2, etc, so we ignore'
 # the group number when we form partition name for target funtion with shadow nodes?
@@ -1821,10 +1818,10 @@ def dfs_parent(visited, node):  #function for dfs
                 # need the current_partition_number/num_frontier_groups but it's available for now for debugging.
 # rhc : ******* Partition
                 frontier_parent_partition_tuple = (current_partition_number,1,child_index_in_current_partition,current_partition_name)
-                logger.debug ("bfs frontier_parent_partition_tuple (pnum,1,childindx,pname): " + str(frontier_parent_partition_tuple))
+                logger.trace ("bfs frontier_parent_partition_tuple (pnum,1,childindx,pname): " + str(frontier_parent_partition_tuple))
 # rhc : ******* Group
                 frontier_parent_group_tuple = (current_partition_number,num_frontier_groups,child_index_in_current_group,current_group_name)
-                logger.debug ("bfs frontier_parent_group_tuple: (pnum,gnum,chldinx,gname) " + str(frontier_parent_group_tuple))
+                logger.trace ("bfs frontier_parent_group_tuple: (pnum,gnum,chldinx,gname) " + str(frontier_parent_group_tuple))
  
                 # mark this node as one that PageRank needs to send in its output to the 
                 # next partition (via fanout/faninNB).That is, the fact that list
@@ -1838,7 +1835,7 @@ def dfs_parent(visited, node):  #function for dfs
                 # nodes[parent_node.ID].frontier_parents.append(frontier_parent_tuple)
 
                 partition_group_tuple = nodeIndex_to_partition_partitionIndex_group_groupIndex_map[visited_parent_node.ID]
-                logger.debug ("visited_parent_node.ID " + str(visited_parent_node.ID)
+                logger.trace ("visited_parent_node.ID " + str(visited_parent_node.ID)
                     + "partition_group_tuple:" + str(partition_group_tuple))
                 parent_partition_number = partition_group_tuple[0]
                 parent_partition_parent_index = partition_group_tuple[1]
@@ -1850,13 +1847,13 @@ def dfs_parent(visited, node):  #function for dfs
                 index_in_groups_list = partition_group_tuple[4]
 
 # rhc : ******* Partition
-                logger.debug ("partition_group_tuple of parent " + str(visited_parent_node.ID) + " (pnum,pindx,gnum,gindx,posingroupslist): " + str(partition_group_tuple))
+                logger.trace ("partition_group_tuple of parent " + str(visited_parent_node.ID) + " (pnum,pindx,gnum,gindx,posingroupslist): " + str(partition_group_tuple))
                 # partition numbers start at 1 not 0
-                logger.debug ("add frontier tuple to parent partition")
+                logger.trace ("add frontier tuple to parent partition")
                 parent_partition = partitions[parent_partition_number-1]
                 parent_partition[parent_partition_parent_index].frontier_parents.append(frontier_parent_partition_tuple)
 # rhc : ******* Group
-                logger.debug ("add frontier tuple to parent group")
+                logger.trace ("add frontier tuple to parent group")
                 #parent_group = groups[parent_group_number-1]
                 parent_group = groups[index_in_groups_list]
                 parent_group[parent_group_parent_index].frontier_parents.append(frontier_parent_group_tuple)
@@ -1908,18 +1905,18 @@ def dfs_parent(visited, node):  #function for dfs
                     list_of_parent_frontier_tuples = BFS_Shared.shared_partition_frontier_parents_map.get(task_name_of_parent_partition)
                     if list_of_parent_frontier_tuples == None:
                         list_of_parent_frontier_tuples = []
-                    logger.debug("groupOPOPOPOPOPOP add shared tuple to parent group: ")
+                    logger.trace("groupOPOPOPOPOPOP add shared tuple to parent group: ")
                     for n in parent_group:
-                        logger.debug(str(n))
-                    logger.debug("task_name_of_parent: " + task_name_of_parent_partition
+                        logger.trace(str(n))
+                    logger.trace("task_name_of_parent: " + task_name_of_parent_partition
                         + ", shared_frontier_parent_tuple: " + str(shared_frontier_parent_tuple))
-                    logger.debug("list_of_parent_frontier_tuples before appending tuple: " 
+                    logger.trace("list_of_parent_frontier_tuples before appending tuple: " 
                         + str(list_of_parent_frontier_tuples))
                     list_of_parent_frontier_tuples.append(shared_frontier_parent_tuple)
                     BFS_Shared.shared_partition_frontier_parents_map[task_name_of_parent_partition] = list_of_parent_frontier_tuples
-                    logger.debug("New BFS_Shared.shared_partition_frontier_parents_map:")
+                    logger.trace("New BFS_Shared.shared_partition_frontier_parents_map:")
                     for (k,v) in BFS_Shared.shared_partition_frontier_parents_map.items():
-                        logger.debug(str(k) + ": " + str(v))
+                        logger.trace(str(k) + ": " + str(v))
 
                     """
                     where:  in bfs_pagerank, we grab the shared_frontier_parent_tuple
@@ -1958,18 +1955,18 @@ def dfs_parent(visited, node):  #function for dfs
                     list_of_parent_frontier_tuples = BFS_Shared.shared_groups_frontier_parents_map.get(task_name_of_parent_group)
                     if list_of_parent_frontier_tuples == None:
                         list_of_parent_frontier_tuples = []
-                    logger.debug("groupOGPOGPOGPOGPOGPOGPOGP add shared tuple to parent group: ")
+                    logger.trace("groupOGPOGPOGPOGPOGPOGPOGP add shared tuple to parent group: ")
                     for n in parent_group:
-                        logger.debug(str(n))
-                    logger.debug("task_name_of_parent_group: " + task_name_of_parent_group
+                        logger.trace(str(n))
+                    logger.trace("task_name_of_parent_group: " + task_name_of_parent_group
                         + ", shared_frontier_parent_tuple: " + str(shared_frontier_parent_tuple))
-                    logger.debug("list_of_parent_frontier_tuples before appending tuple: " 
+                    logger.trace("list_of_parent_frontier_tuples before appending tuple: " 
                         + str(list_of_parent_frontier_tuples))
                     list_of_parent_frontier_tuples.append(shared_frontier_parent_tuple)
                     BFS_Shared.shared_groups_frontier_parents_map[task_name_of_parent_group] = list_of_parent_frontier_tuples
-                    logger.debug("New BFS_Shared.shared_groups_frontier_parents_map:")
+                    logger.trace("New BFS_Shared.shared_groups_frontier_parents_map:")
                     for (k,v) in BFS_Shared.shared_groups_frontier_parents_map.items():
-                        logger.debug(str(k) + ": " + str(v))
+                        logger.trace(str(k) + ": " + str(v))
 
                     # The current partition/group name in [3] may not have an "L" but if we later 
                     # find a loop we'll need to append an "L" to this name in the frontier tuple
@@ -2044,7 +2041,7 @@ def dfs_parent(visited, node):  #function for dfs
             # Note that this check is before the call to dfs_parent(parent_index).
             # If it were after, then the partition_group_tuple could not be None
             # since we add parent to the global map at the start of dfs_parent()
-            logger.debug ("dfs_parent: parent in same partition/group: parent_partition_number:" 
+            logger.trace ("dfs_parent: parent in same partition/group: parent_partition_number:" 
                 + " parent_partition_number: " + str(parent_partition_number)
                 + " parent_group_number: " + str(parent_group_number)
                 + ", parent ID: " + str(parent_index))
@@ -2059,20 +2056,20 @@ def dfs_parent(visited, node):  #function for dfs
         if DEBUG_ON:
             print_val = "queue after add " + str(node.ID) + ": "
             for x in BFS_queue:
-                #logger.debug(x.ID, end=" ")
+                #logger.trace(x.ID, end=" ")
                 print_val = print_val + str(x) + " "
-            logger.debug(print_val)
-            logger.debug("")
+            logger.trace(print_val)
+            logger.trace("")
         #frontier.append(node)
         frontier.append(node.ID)
         if DEBUG_ON:
             print_val = "frontier after add " + str(node.ID) + ":"
             for x in frontier:
-                #logger.debug(x.ID, end=" ")
-                #logger.info(x, end=" ")
+                #logger.trace(x.ID, end=" ")
+                #logger.trace(x, end=" ")
                 print_val = print_val + str(x) + " "
-            logger.debug(print_val)
-            logger.debug("")
+            logger.trace(print_val)
+            logger.trace("")
         # make sure parent in partition before any if its children. We visit parents of nodein dfs_parents 
         # and they are added to partition in dfs_parents after their parents are added 
         # in dfs_parents then here we add node to partition.  
@@ -2081,9 +2078,9 @@ def dfs_parent(visited, node):  #function for dfs
 # and that already has been put in a partition?
 
         if node.partition_number == -1:
-            logger.debug ("dfs_parent add " + str(node.ID) + " to partition")
+            logger.trace ("dfs_parent add " + str(node.ID) + " to partition")
             node.partition_number = current_partition_number
-            logger.debug("set " + str(node.ID) + " partition number to " + str(node.partition_number))
+            logger.trace("set " + str(node.ID) + " partition number to " + str(node.partition_number))
             #current_partition.append(node.ID)
             #rhc: append node 
 
@@ -2179,10 +2176,10 @@ def dfs_parent(visited, node):  #function for dfs
             index_in_groups_list = frontier_groups_sum-1
             pg_tuple = (partition_number,partition_index,group_number,group_index,index_in_groups_list)
             nodeIndex_to_partition_partitionIndex_group_groupIndex_map[partition_node.ID] = pg_tuple
-            logger.debug("HHHHHHHHHHHHHHHH dfs_parent: pg_tuple(pnum,pindx,gnum,gindx,posingroupslist) generate for " + str(partition_node.ID)
+            logger.trace("HHHHHHHHHHHHHHHH dfs_parent: pg_tuple(pnum,pindx,gnum,gindx,posingroupslist) generate for " + str(partition_node.ID)
                 + str(pg_tuple))
         else:
-            logger.debug ("dfs_parent do not add " + str(node.ID) + " to partition "
+            logger.trace ("dfs_parent do not add " + str(node.ID) + " to partition "
                 + current_partition_number + " since it is already in partition " 
                 + node.partition_number)
 
@@ -2193,7 +2190,7 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
 
 #def bfs(visited, graph, node): #function for BFS
 def bfs(visited, node): #function for BFS
-    logger.debug ("bfs mark " + str(node.ID) + " as visited and add to queue")
+    logger.trace ("bfs mark " + str(node.ID) + " as visited and add to queue")
     #rhc: add to visited is done in dfs_parent
     #visited.append(node.ID)
     # dfs_parent will add node to partition (and its unvisited parent nodes)
@@ -2309,7 +2306,7 @@ def bfs(visited, node): #function for BFS
 
 #rhc: incremental groups
     groups_of_current_partition.append(group_name)
-    logger.debug("BFS: add " + group_name + "bfor fist partition to groups_of_current_partition: "
+    logger.trace("BFS: add " + group_name + "bfor fist partition to groups_of_current_partition: "
         + str(groups_of_current_partition))
 
     # The first group collected by call to BFS() is a leaf node of the DAG.
@@ -2339,7 +2336,7 @@ def bfs(visited, node): #function for BFS
     dfs_parent_change_in_partition_size = (dfs_parent_end_partition_size - dfs_parent_start_partition_size) - (
         dfs_parent_loop_nodes_added_end - dfs_parent_loop_nodes_added_start)
     dfs_parent_changes_in_partiton_size.append(dfs_parent_change_in_partition_size)
-    logger.debug("dfs_parent(root)_change_in_partition_size: " + str(dfs_parent_change_in_partition_size))
+    logger.trace("dfs_parent(root)_change_in_partition_size: " + str(dfs_parent_change_in_partition_size))
 # rhc : ******* end Partition
 
     # These are tracked per dfs_parent() call, so we compute them here and 
@@ -2348,7 +2345,7 @@ def bfs(visited, node): #function for BFS
     dfs_parent_change_in_frontier_size = (dfs_parent_end_frontier_size - dfs_parent_start_frontier_size) - (
         dfs_parent_loop_nodes_added_end - dfs_parent_loop_nodes_added_start)
     dfs_parent_changes_in_frontier_size.append(dfs_parent_change_in_frontier_size)
-    logger.debug("dfs_parent(root)_change_in_frontier_size: " + str(dfs_parent_change_in_frontier_size))
+    logger.trace("dfs_parent(root)_change_in_frontier_size: " + str(dfs_parent_change_in_frontier_size))
 
     # queue.append(node) and frontier.append(node) done optionally in dfs_parent
 #rhc
@@ -2356,7 +2353,7 @@ def bfs(visited, node): #function for BFS
     while BFS_queue:          # Creating loop to visit each node
         #node = queue.pop(0) 
         ID = BFS_queue.pop(0) 
-        logger.debug("bfs pop node " + str(ID) + " from queue") 
+        logger.trace("bfs pop node " + str(ID) + " from queue") 
 #rhc
         # issue: if we add queue.append(-1) in dfs_parent, we get smaller partitions
         # but the frontiers overlap. this is becuase in dfs_parent we get
@@ -2404,7 +2401,7 @@ def bfs(visited, node): #function for BFS
 
             if BFS_queue:
                 ID = BFS_queue.pop(0)
-                logger.debug("bfs after pop -1; pop node " + str(ID) + " from queue") 
+                logger.trace("bfs after pop -1; pop node " + str(ID) + " from queue") 
                 BFS_queue.append(-1)
 
                 # SCC 5
@@ -2441,13 +2438,13 @@ def bfs(visited, node): #function for BFS
 # process the tuple.
 
         if end_of_current_frontier:
-            logger.debug("BFS: end_of_current_frontier")
+            logger.trace("BFS: end_of_current_frontier")
             end_of_current_frontier = False
 
 # rhc : ******* Partition
             if len(current_partition) > 0:
             #if len(current_partition) >= num_nodes/5:
-                logger.debug("BFS: create sub-partition at end of current frontier")
+                logger.trace("BFS: create sub-partition at end of current frontier")
                 # does not require a deepcopy
                 partitions.append(current_partition.copy())
 #rhc incremental:   
@@ -2467,7 +2464,7 @@ def bfs(visited, node): #function for BFS
 #rhc: incremental groups
                 groups_of_partitions.append(copy.copy(groups_of_current_partition))
 
-                logger.debug("BFS: for partition " + partition_name + " collect groups_of_current_partition: "
+                logger.trace("BFS: for partition " + partition_name + " collect groups_of_current_partition: "
                     + str(groups_of_current_partition)
                     + ", groups_of_partitions: " + str(groups_of_partitions)) 
 
@@ -2488,7 +2485,7 @@ def bfs(visited, node): #function for BFS
                     # change the partition name in the tuple so that it ends with 'L'. If no loop
                     # is detectd, then current_partition_isLoop will be false and no changes
                     # need to be made.
-                    logger.debug("XXXXXXXXXXX BFS: patch partition frontier_parent tuples: ")
+                    logger.trace("XXXXXXXXXXX BFS: patch partition frontier_parent tuples: ")
                     # frontier_parent_partition_patch_tuple was created as:
                     #   frontier_parent_partition_patch_tuple = 
                     #       (parent_partition_number,parent_partition_parent_index,position_in_frontier_parents_partition_list)
@@ -2502,7 +2499,7 @@ def bfs(visited, node): #function for BFS
                         parent_partition = partitions[parent_partition_number-1]
                         frontier_parents = parent_partition[parent_partition_parent_index].frontier_parents
                         frontier_parent_partition_tuple_to_patch = frontier_parents[position_in_frontier_parents_partition_list]
-                        logger.debug("XXXXXXX BFS: patching partition frontier_tuple name "
+                        logger.trace("XXXXXXX BFS: patching partition frontier_tuple name "
                             + frontier_parent_partition_tuple_to_patch[3] + " to " + partition_name)
                         # create a new tuple that reuses the first 3 fields and chnages the name in the last field
                         first_field = frontier_parent_partition_tuple_to_patch[0]
@@ -2513,7 +2510,7 @@ def bfs(visited, node): #function for BFS
                         del frontier_parents[position_in_frontier_parents_partition_list]
                         # append the new tuple, order of tuples may change but order is not important
                         frontier_parents.append(new_frontier_parent_partition_tuple)
-                        logger.debug("XXXXXXX BFS:  new frontier_parents: " + str(frontier_parents))
+                        logger.trace("XXXXXXX BFS:  new frontier_parents: " + str(frontier_parents))
 
                 frontier_parent_partition_patch_tuple_list.clear()
 
@@ -2522,7 +2519,7 @@ def bfs(visited, node): #function for BFS
                     # Given:
                     # shared_frontier_parent_partition_patch_tuple = (task_name_of_parent,position_in_list_of_parent_frontier_tuples)
                     if current_partition_isLoop:
-                        logger.debug("X-X-X-X-X-X-X BFS: patch shared partition frontier_parent tuples: ")
+                        logger.trace("X-X-X-X-X-X-X BFS: patch shared partition frontier_parent tuples: ")
                         for shared_frontier_parent_partition_patch_tuple in shared_frontier_parent_partition_patch_tuple_list:
                             # These values were used to create the tuples in dfs_parent()
                             task_name_of_parent = shared_frontier_parent_partition_patch_tuple[0]
@@ -2530,7 +2527,7 @@ def bfs(visited, node): #function for BFS
 
                             list_of_parent_frontier_tuples = BFS_Shared.shared_partition_frontier_parents_map.get(task_name_of_parent)
                             frontier_parent_partition_tuple_to_patch = list_of_parent_frontier_tuples[position_of_tuple_in_list_of_parent_frontier_tuples]
-                            logger.debug("X-X-X-X-X-X-X BFS: patching shared partition frontier_tuple name "
+                            logger.trace("X-X-X-X-X-X-X BFS: patching shared partition frontier_tuple name "
                             + frontier_parent_partition_tuple_to_patch[3] + " to " + partition_name)
  
                             # Given:
@@ -2545,7 +2542,7 @@ def bfs(visited, node): #function for BFS
                             del list_of_parent_frontier_tuples[position_of_tuple_in_list_of_parent_frontier_tuples]
                             # append the new tuple, order of tuples may change but order is not important
                             list_of_parent_frontier_tuples.append(new_frontier_parent_partition_tuple)
-                            logger.debug("X-X-X-X-X-X-X BFS:  new shared partition frontier_parent tuples for " + task_name_of_parent + " is " +  str(list_of_parent_frontier_tuples))
+                            logger.trace("X-X-X-X-X-X-X BFS:  new shared partition frontier_parent tuples for " + task_name_of_parent + " is " +  str(list_of_parent_frontier_tuples))
 
                     shared_frontier_parent_partition_patch_tuple_list.clear()
 
@@ -2557,7 +2554,7 @@ def bfs(visited, node): #function for BFS
                     # change the receiver name so that it ends with 'L'. If no loop
                     # is detectd, then current_partition_isLoop will be false and no changes
                     # need to be made.
-                    logger.debug("XXXXXXXXXXX BFS: patch partition sender/receiver names: ")
+                    logger.trace("XXXXXXXXXXX BFS: patch partition sender/receiver names: ")
                     for sender_receiver_partition_patch_tuple in sender_receiver_partition_patch_tuple_list:
                         # sender_receiver_partition_patch_tuple crated as:
                         #   sender_receiver_partition_patch_tuple = (parent_partition_number,receiving_partition)
@@ -2566,17 +2563,17 @@ def bfs(visited, node): #function for BFS
 
                         sending_partition = partition_names[parent_partition_number-1]
                         sender_name_set = Partition_senders[sending_partition]
-                        logger.debug("XXXXXXX BFS: patching partition sender_set receiver name "
+                        logger.trace("XXXXXXX BFS: patching partition sender_set receiver name "
                             + receiving_partition + " to " + partition_name)
                         sender_name_set.remove(receiving_partition)
                         sender_name_set.add(partition_name)
-                        logger.debug("XXXXXXX BFS:  new partition sender_Set: " + str(sender_name_set))
+                        logger.trace("XXXXXXX BFS:  new partition sender_Set: " + str(sender_name_set))
 
-                        logger.debug("XXXXXXX BFS: patching Partition_receivers receiver name "
+                        logger.trace("XXXXXXX BFS: patching Partition_receivers receiver name "
                             + receiving_partition + " to " + partition_name)
                         Partition_receivers[partition_name] = Partition_receivers[receiving_partition]
                         del Partition_receivers[receiving_partition]
-                        logger.debug("XXXXXXX BFS:  new Partition_receivers[partition_name]: " + str(Partition_receivers[partition_name]))
+                        logger.trace("XXXXXXX BFS:  new Partition_receivers[partition_name]: " + str(Partition_receivers[partition_name]))
                 
                 sender_receiver_partition_patch_tuple_list.clear()
 
@@ -2591,9 +2588,9 @@ def bfs(visited, node): #function for BFS
                     start_num_shadow_nodes_for_partitions = num_shadow_nodes_added_to_partitions
 
                 global patch_parent_mapping_for_partitions
-                logger.debug("BFS: partition_nodes to patch: ")
+                logger.trace("BFS: partition_nodes to patch: ")
                 for parent_tuple in patch_parent_mapping_for_partitions:
-                    logger.debug("BFS: parent_tuple: " + str(parent_tuple) + "," )
+                    logger.trace("BFS: parent_tuple: " + str(parent_tuple) + "," )
                     # where: patch_tuple = (parent_index,partition_node.parents,
                     # group_node.parents,i,node.ID)
                     #
@@ -2629,7 +2626,7 @@ def bfs(visited, node): #function for BFS
                         # assert group_index is also -1
                         list_of_parents_of_partition_node[i] = partition_index_of_parent
                         #list_of_parents_of_group_node[i] = group_index_of_parent
-                        logger.debug("BFS: end of frontier: remapping parent " + str(parent_index)
+                        logger.trace("BFS: end of frontier: remapping parent " + str(parent_index)
                             + " of " + str(node_ID) +  " to " + str(partition_index_of_parent) 
                             + " for partition node.")
                             #+ group_index_of_parent + " for group node")
@@ -2708,7 +2705,7 @@ def bfs(visited, node): #function for BFS
                     # put in some partition
                     num_graph_nodes_in_partitions = num_nodes_in_partitions - num_shadow_nodes_added_to_partitions
                     to_be_continued = (num_graph_nodes_in_partitions < num_nodes)
-                    logger.debug("BFS: calling gen DAG incremental"
+                    logger.trace("BFS: calling gen DAG incremental"
                         + " num_nodes_in_partitions: " + str(num_nodes_in_partitions)
                         + " num_shadow_nodes_added_to_partitions: " + str(num_shadow_nodes_added_to_partitions)
                         + " num_graph_nodes_in_partitions: " + str(num_graph_nodes_in_partitions)
@@ -2718,14 +2715,14 @@ def bfs(visited, node): #function for BFS
                     if using_workers or not using_workers:
                         
                         if not use_page_rank_group_partitions:
-                            logger.debug("BFS: calling generate_DAG_info_incremental_partitions for"
+                            logger.trace("BFS: calling generate_DAG_info_incremental_partitions for"
                                 + " partition " + str(partition_name) + " using workers.")
                             DAG_info = generate_DAG_info_incremental_partitions(partition_name,current_partition_number,to_be_continued)
                         else:
 #rhc increnetal groups
                             # avoiding circular import - above: from . import FS_generate_DAG_info_incremental_groups
                             # then use FS_generate_DAG_info_incremental_groups.generate_DAG_info_incremental_groups(...)
-                            logger.debug("BFS: calling generate_DAG_info_incremental_groups for"
+                            logger.trace("BFS: calling generate_DAG_info_incremental_groups for"
                                 + " partition " + str(partition_name) + " groups_of_current_partition: "
                                 + str(groups_of_current_partition)
                                 + "groups_of_partitions: " + str(groups_of_partitions))
@@ -2733,7 +2730,7 @@ def bfs(visited, node): #function for BFS
                                 groups_of_current_partition,groups_of_partitions,
                                 to_be_continued)
                             groups_of_current_partition.clear()
-                            logger.debug("BFS: after calling generate_DAG_info_incremental_groups for"
+                            logger.trace("BFS: after calling generate_DAG_info_incremental_groups for"
                                 + " partition " + str(partition_name) + " groups_of_current_partition: "
                                 + str(groups_of_current_partition)
                                 + ", groups_of_partitions: " + str(groups_of_partitions))
@@ -2778,7 +2775,7 @@ def bfs(visited, node): #function for BFS
                                     # DAG_info will not ever be withdrawn as the lambda leaf task
                                     # for partition 1 will be started by the DAG_executor_driver with 
                                     # the DAG_info it reads from a file (output previously).
-                                    logger.debug("BFS: deposit first DAG, which is complete, with num_incremental_DAGs_generated:"
+                                    logger.trace("BFS: deposit first DAG, which is complete, with num_incremental_DAGs_generated:"
                                         + str(num_incremental_DAGs_generated)
                                         + " current_partition_number: " + str(current_partition_number))
                                         # current partition number is 1
@@ -2794,7 +2791,7 @@ def bfs(visited, node): #function for BFS
                                     # DAG_info will not ever be withdrawn as the lambda leaf task
                                     # for partition 1 will be started by the DAG_executor_driver with 
                                     # the DAG_info it reads from a file (output previously).
-                                    logger.debug("BFS: deposit first DAG, which is complete, with num_incremental_DAGs_generated:"
+                                    logger.trace("BFS: deposit first DAG, which is complete, with num_incremental_DAGs_generated:"
                                         + str(num_incremental_DAGs_generated)
                                         + " current_group_number: " + str(1))
                                         # The only group in a complete DAG with one group is group 1
@@ -2827,7 +2824,7 @@ def bfs(visited, node): #function for BFS
                     
                                 # Need to call run() but it has to be asynchronous as BFS needs to continue.
                                 thread_name = "DAG_executor_driver_Invoker"
-                                logger.debug("BFS: Starting DAG_executor_driver_Invoker_Thread for incrmental DAG generation.")
+                                logger.trace("BFS: Starting DAG_executor_driver_Invoker_Thread for incrmental DAG generation.")
 
                                 invoker_thread_for_DAG_executor_driver = threading.Thread(target=DAG_executor_driver_Invoker_Thread, name=(thread_name), args=())
                                 invoker_thread_for_DAG_executor_driver.start()
@@ -2875,28 +2872,28 @@ def bfs(visited, node): #function for BFS
                                             cloudpickle.dump(partitions[current_partition_number-1], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
                                 else:
                                     previous_partition_number = current_partition_number - 1
-                                    logger.debug("BFS: previous_partition_number: " + str(previous_partition_number))
+                                    logger.trace("BFS: previous_partition_number: " + str(previous_partition_number))
                                     #frontier_groups_sum is the total number of groups, so last group was
                                     #   frontier_groups_sum
-                                    logger.debug("BFS: frontier_groups_sum: " + str(frontier_groups_sum))
+                                    logger.trace("BFS: frontier_groups_sum: " + str(frontier_groups_sum))
                                     groups_of_previous_partition = groups_of_partitions[previous_partition_number-1]
-                                    logger.debug("BFS: groups_of_previous_partition: " + str(groups_of_previous_partition))
+                                    logger.trace("BFS: groups_of_previous_partition: " + str(groups_of_previous_partition))
 
                                     # Using groups_of_current_partitionX instead of the global
                                     # variable groups_of_current_partition; The global was cleared
                                     # above so let's just keep this local.
                                     groups_of_current_partitionX = groups_of_partitions[current_partition_number-1]
-                                    logger.debug("BFS: groups_of_current_partitionX: " + str(groups_of_current_partitionX))
+                                    logger.trace("BFS: groups_of_current_partitionX: " + str(groups_of_current_partitionX))
                                     i = 0
                                     for previous_group in groups_of_previous_partition:
                                         index_in_groups_list_of_last_group_in_current_partition = frontier_groups_sum
-                                        logger.debug("BFS: index_in_groups_list_of_last_group_in_current_partition: " + str(index_in_groups_list_of_last_group_in_current_partition))
+                                        logger.trace("BFS: index_in_groups_list_of_last_group_in_current_partition: " + str(index_in_groups_list_of_last_group_in_current_partition))
                                         index_in_groups_list_of_first_group_of_current_partition = frontier_groups_sum - (len(groups_of_current_partitionX)-1)
-                                        logger.debug("BFS: index_in_groups_list_of_first_group_of_current_partition: " + str(index_in_groups_list_of_first_group_of_current_partition))
+                                        logger.trace("BFS: index_in_groups_list_of_first_group_of_current_partition: " + str(index_in_groups_list_of_first_group_of_current_partition))
                                         index_in_groups_list_of_first_group_of_previous_partition = index_in_groups_list_of_first_group_of_current_partition - len(groups_of_previous_partition)
-                                        logger.debug("BFS: index_in_groups_list_of_first_group_of_previous_partition: " + str(index_in_groups_list_of_first_group_of_previous_partition))
+                                        logger.trace("BFS: index_in_groups_list_of_first_group_of_previous_partition: " + str(index_in_groups_list_of_first_group_of_previous_partition))
                                         index_in_groups_list_of_previous_group = index_in_groups_list_of_first_group_of_previous_partition + i - 1
-                                        logger.debug("BFS: for " + previous_group + " index_in_groups_list_of_previous_group: " + str(index_in_groups_list_of_previous_group))
+                                        logger.trace("BFS: for " + previous_group + " index_in_groups_list_of_previous_group: " + str(index_in_groups_list_of_previous_group))
 
 
 # always output the previous partition of nodes
@@ -2913,11 +2910,11 @@ def bfs(visited, node): #function for BFS
                                         i = 0
                                         for current_group in groups_of_current_partitionX:
                                             index_in_groups_list_of_last_group_in_current_partition = frontier_groups_sum
-                                            logger.debug("BFS: index_in_groups_list_of_last_group_in_current_partition: " + str(index_in_groups_list_of_last_group_in_current_partition))
+                                            logger.trace("BFS: index_in_groups_list_of_last_group_in_current_partition: " + str(index_in_groups_list_of_last_group_in_current_partition))
                                             index_in_groups_list_of_first_group_of_current_partition = frontier_groups_sum - (len(groups_of_current_partitionX)-1)
-                                            logger.debug("BFS: index_in_groups_list_of_first_group_of_current_partition: " + str(index_in_groups_list_of_first_group_of_current_partition))
+                                            logger.trace("BFS: index_in_groups_list_of_first_group_of_current_partition: " + str(index_in_groups_list_of_first_group_of_current_partition))
                                             index_in_groups_list_of_current_group = index_in_groups_list_of_first_group_of_current_partition + i - 1
-                                            logger.debug("BFS: for " + current_group + " index_in_groups_list_of_current_group: " + str(index_in_groups_list_of_current_group))
+                                            logger.trace("BFS: for " + current_group + " index_in_groups_list_of_current_group: " + str(index_in_groups_list_of_current_group))
 
                                             with open('./'+current_group + '.pickle', 'wb') as handle:
                                                 # partition indices in partitions[] start with 0, so current partition i
@@ -2930,7 +2927,7 @@ def bfs(visited, node): #function for BFS
                                     #os._exit(0) 
 
                                 # Try to make sure workers are waiting for the DAG that is deposted below.
-                                #logger.debug("BFS: sleeping before calling DAG_infobuffer_monitor.deposit(DAG_info).")
+                                #logger.trace("BFS: sleeping before calling DAG_infobuffer_monitor.deposit(DAG_info).")
                                 #time.sleep(1)
 
                                 if current_partition_number > 2:
@@ -3036,9 +3033,9 @@ def bfs(visited, node): #function for BFS
     # call get_work again?
 
 
-                                            logger.debug("BFS: new leaf tasks: " + str(leaf_tasks_of_partitions_incremental))
+                                            logger.trace("BFS: new leaf tasks: " + str(leaf_tasks_of_partitions_incremental))
                                             DAG_states_incremental = DAG_info.get_DAG_states()
-                                            logger.debug("BFS: DAG_states_incremental: " + str(DAG_states_incremental))
+                                            logger.trace("BFS: DAG_states_incremental: " + str(DAG_states_incremental))
                                             #DAG_leaf_task_start_states_incremental = DAG_info.get_DAG_leaf_task_start_states()
                                             DAG_map_incremental = DAG_info.get_DAG_map()
 
@@ -3047,19 +3044,19 @@ def bfs(visited, node): #function for BFS
                                                 for name in leaf_tasks_of_partitions_incremental:
                                                     state_incremental = DAG_states_incremental[name]
                                                     state_info_incremental = DAG_map_incremental[state_incremental]
-                                                    logger.debug("BFS: state_info_incremental: " + str(state_info_incremental))
+                                                    logger.trace("BFS: state_info_incremental: " + str(state_info_incremental))
                                                     task_inputs = state_info_incremental.task_inputs
                                                     # assert:
                                                     if len(task_inputs) != 0:
-                                                        logger.debug("[Error]: Internal Error: task_input for leaf"
+                                                        logger.trace("[Error]: Internal Error: task_input for leaf"
                                                             + " task/partition for incremental DAG generation is not empty.")
                                                     task_name = state_info_incremental.task_name
                                                     if not task_name == name:
-                                                        logger.debug("[Error]: Internal Error: task name of leaf task is not"
+                                                        logger.trace("[Error]: Internal Error: task name of leaf task is not"
                                                             + " name in leaf_tasks_of_partitions_incremental.")
                                                     dict_of_results_incremental =  {}
                                                     dict_of_results_incremental[task_name] = task_inputs
-                                                    logger.debug("BFS: add leaf task to new_leaf_task_work_tuples: " + task_name)
+                                                    logger.trace("BFS: add leaf task to new_leaf_task_work_tuples: " + task_name)
                                                     work_tuple = (state_incremental,dict_of_results_incremental)
     #rhc leaf tasks
                                                     #work_queue.put(work_tuple)
@@ -3069,7 +3066,7 @@ def bfs(visited, node): #function for BFS
                                                 # start a lambda with empty input payload (like DAG_executor_driver)
 
                                             leaf_tasks_of_partitions_incremental.clear()
-                                            logger.debug("BFS: leaf tasks after clear: " + str(leaf_tasks_of_partitions_incremental))
+                                            logger.trace("BFS: leaf tasks after clear: " + str(leaf_tasks_of_partitions_incremental))
                                     else:
                                         if len(leaf_tasks_of_groups_incremental) > 0:
                                             # New leaf task partitions have been generated. Since no task
@@ -3130,9 +3127,9 @@ def bfs(visited, node): #function for BFS
     # call get_work again?
 
 
-                                            logger.debug("BFS: new leaf tasks: " + str(leaf_tasks_of_groups_incremental))
+                                            logger.trace("BFS: new leaf tasks: " + str(leaf_tasks_of_groups_incremental))
                                             DAG_states_incremental = DAG_info.get_DAG_states()
-                                            logger.debug("BFS: DAG_states_incremental: " + str(DAG_states_incremental))
+                                            logger.trace("BFS: DAG_states_incremental: " + str(DAG_states_incremental))
                                             #DAG_leaf_task_start_states_incremental = DAG_info.get_DAG_leaf_task_start_states()
                                             DAG_map_incremental = DAG_info.get_DAG_map()
 
@@ -3141,19 +3138,19 @@ def bfs(visited, node): #function for BFS
                                                 for name in leaf_tasks_of_groups_incremental:
                                                     state_incremental = DAG_states_incremental[name]
                                                     state_info_incremental = DAG_map_incremental[state_incremental]
-                                                    logger.debug("BFS: state_info_incremental: " + str(state_info_incremental))
+                                                    logger.trace("BFS: state_info_incremental: " + str(state_info_incremental))
                                                     task_inputs = state_info_incremental.task_inputs
                                                     # assert:
                                                     if len(task_inputs) != 0:
-                                                        logger.debug("[Error]: Internal Error: task_input for leaf"
+                                                        logger.trace("[Error]: Internal Error: task_input for leaf"
                                                             + " task/partition for incremental DAG generation is not empty.")
                                                     task_name = state_info_incremental.task_name
                                                     if not task_name == name:
-                                                        logger.debug("[Error]: Internal Error: task name of leaf task is not"
+                                                        logger.trace("[Error]: Internal Error: task name of leaf task is not"
                                                             + " name in leaf_tasks_of_groups_incremental.")
                                                     dict_of_results_incremental =  {}
                                                     dict_of_results_incremental[task_name] = task_inputs
-                                                    logger.debug("BFS: add leaf task to new_leaf_task_work_tuples: " + task_name)
+                                                    logger.trace("BFS: add leaf task to new_leaf_task_work_tuples: " + task_name)
                                                     work_tuple = (state_incremental,dict_of_results_incremental)
     #rhc leaf tasks
                                                     #work_queue.put(work_tuple)
@@ -3163,7 +3160,7 @@ def bfs(visited, node): #function for BFS
                                                 # start a lambda with empty input payload (like DAG_executor_driver)
 
                                             leaf_tasks_of_groups_incremental.clear()
-                                            logger.debug("BFS: leaf tasks after clear: " + str(leaf_tasks_of_groups_incremental))
+                                            logger.trace("BFS: leaf tasks after clear: " + str(leaf_tasks_of_groups_incremental))
 
                                     # Deposit new incremental DAG. This may be the 
                                     # first DAG and since the workers and lambdas
@@ -3173,7 +3170,7 @@ def bfs(visited, node): #function for BFS
                                     # incremental DAG is for any newer DAG than the 
                                     # first DAG (i.e., any version later than version 1.)
 
-                                    logger.debug("BFS: deposit next DAG with num_incremental_DAGs_generated:"
+                                    logger.trace("BFS: deposit next DAG with num_incremental_DAGs_generated:"
                                         + str(num_incremental_DAGs_generated)
                                         + " current_partition_number: " + str(current_partition_number))
                                     # if not current_partition_number == 2:
@@ -3214,7 +3211,7 @@ def bfs(visited, node): #function for BFS
                                     
                                     # Need to call DAG_executor_driver.run() but it has to be invoked asynch
                                     thread_name = "DAG_executor_driver_Invoker"
-                                    logger.debug("BFS: Starting DAG_executor_driver_Invoker_Thread for incrmental DAG generation.")
+                                    logger.trace("BFS: Starting DAG_executor_driver_Invoker_Thread for incrmental DAG generation.")
 #rhc: incremental
                                     #Question: This thread completes normally?
                                     # Perhaps BFS can join this thread instad of calling run() when inc dag gen?
@@ -3249,7 +3246,7 @@ def bfs(visited, node): #function for BFS
 
                 #global frontier_groups_sum
                 #global num_frontier_groups
-                logger.info("BFS: frontier groups: " + str(num_frontier_groups))
+                logger.trace("BFS: frontier groups: " + str(num_frontier_groups))
 
                 # use this if to filter the very small numbers of groups
                 #if frontier_groups > 10:
@@ -3257,23 +3254,23 @@ def bfs(visited, node): #function for BFS
                 current_partition_number += 1
                 current_group_number = 1
                 # frontier_groups_sum += num_frontier_groups
-                logger.info("BFS: frontier_groups_sum: " + str(frontier_groups_sum))
+                logger.trace("BFS: frontier_groups_sum: " + str(frontier_groups_sum))
                 # this was incrementd in dfs_parent for each unvsited child of a 
                 # parent, i.e., when a new group was generated.
                 num_frontier_groups = 0
   
         if not len(node.children):
-            logger.debug ("bfs node " + str(node.ID) + " has no children")
+            logger.trace ("bfs node " + str(node.ID) + " has no children")
         else:
-            logger.debug ("bfs node " + str(node.ID) + " visit children")
+            logger.trace ("bfs node " + str(node.ID) + " visit children")
         for neighbor_index in node.children:
             neighbor = nodes[neighbor_index]
             if neighbor.ID not in visited:
-                logger.debug ("bfs visit child " + str(neighbor.ID) + " mark it visited and "
+                logger.trace ("bfs visit child " + str(neighbor.ID) + " mark it visited and "
                     + "dfs_parent(" + str(neighbor.ID) + ")")
 
                 #visited.append(neighbor.ID)
-                logger.debug ("bfs dfs_parent("+ str(neighbor.ID) + ")")
+                logger.trace ("bfs dfs_parent("+ str(neighbor.ID) + ")")
 
                 dfs_parent_start_partition_size = len(current_partition)
                 dfs_parent_loop_nodes_added_start = loop_nodes_added
@@ -3300,7 +3297,7 @@ def bfs(visited, node): #function for BFS
                 # remember where the frontier_parent node should be placed when the 
                 # partition the PageRank task sends it to receives it. 
                 frontier_parent_tuple = (current_partition_number,frontier_groups,child_index-dfs_parent_start_partition_size)
-                logger.debug ("bfs frontier_parent_tuple: " + str(frontier_parent_tuple))
+                logger.trace ("bfs frontier_parent_tuple: " + str(frontier_parent_tuple))
                 # mark this node as one that PageRank needs to send in its output to the 
                 # next partition (via fanout/faninNB).That is, the fact that list
                 # frontier_parent is not empty indicates it needs to be sent in the 
@@ -3327,7 +3324,7 @@ def bfs(visited, node): #function for BFS
 
 #rhc: incremental groups
                 groups_of_current_partition.append(group_name)
-                logger.debug("BFS: add " + group_name + "for partition number " 
+                logger.trace("BFS: add " + group_name + "for partition number " 
                     + str(current_partition_number) 
                     + " to groups_of_current_partition: " + str(groups_of_current_partition))
 
@@ -3345,7 +3342,7 @@ def bfs(visited, node): #function for BFS
                     # change the partition name in the tuple so that it ends with 'L'. If no loop
                     # is detectd, then current_partition_isLoop will be false and no changes
                     # need to be made.
-                    logger.debug("XXXXXXXXXXX BFS: patch group frontier_parent tuples: ")
+                    logger.trace("XXXXXXXXXXX BFS: patch group frontier_parent tuples: ")
                     # frontier_parent_partition_patch_tuple was created as:
                     #   (parent_partition_number,parent_partition_parent_index,(current_partition_number,1,child_index_in_current_partition,current_partition_name))
                     for frontier_parent_group_patch_tuple in frontier_parent_group_patch_tuple_list:
@@ -3358,7 +3355,7 @@ def bfs(visited, node): #function for BFS
                         parent_group = groups[index_in_groups_list_of_previous_group]
                         frontier_parents = parent_group[parent_group_parent_index].frontier_parents
                         frontier_parent_group_tuple_to_patch = frontier_parents[position_in_frontier_parents_group_list]
-                        logger.debug("XXXXXXX BFS: patching group frontier_tuple name "
+                        logger.trace("XXXXXXX BFS: patching group frontier_tuple name "
                             + frontier_parent_group_tuple_to_patch[3] + " to " + group_name)
                         # create a new tuple that reuses the first 3 fields and chnages the name in the last field
                         first_field = frontier_parent_group_tuple_to_patch[0]
@@ -3369,7 +3366,7 @@ def bfs(visited, node): #function for BFS
                         del frontier_parents[position_in_frontier_parents_group_list]
                         # append the new tuple, order of tuples may change but order is not important
                         frontier_parents.append(new_frontier_parent_group_tuple)
-                        logger.debug("XXXXXXX BFS:  new frontier_parents: " + str(frontier_parents))
+                        logger.trace("XXXXXXX BFS:  new frontier_parents: " + str(frontier_parents))
 
                 frontier_parent_group_patch_tuple_list.clear()
 
@@ -3377,14 +3374,14 @@ def bfs(visited, node): #function for BFS
                     # Given:
                     # shared_frontier_parent_partition_patch_tuple = (task_name_of_parent,position_in_list_of_parent_frontier_tuples)
                     if current_group_isLoop:
-                        logger.debug("X-X-X-X-X-X-X BFS: patch shared groups frontier_parent tuples: ")
+                        logger.trace("X-X-X-X-X-X-X BFS: patch shared groups frontier_parent tuples: ")
                         for shared_frontier_parent_groups_patch_tuple in shared_frontier_parent_groups_patch_tuple_list:
                             # These values were used to create the tuples in dfs_parent()
                             task_name_of_parent = shared_frontier_parent_groups_patch_tuple[0]
                             position_of_tuple_in_list_of_parent_frontier_tuples = shared_frontier_parent_groups_patch_tuple[1]
 
                             list_of_parent_frontier_tuples = BFS_Shared.shared_partition_frontier_group_map.get(task_name_of_parent)
-                            logger.debug("X-X-X-X-X-X-X BFS:  old shared groups frontier_parents for " + task_name_of_parent + " is " +  str(list_of_parent_frontier_tuples))
+                            logger.trace("X-X-X-X-X-X-X BFS:  old shared groups frontier_parents for " + task_name_of_parent + " is " +  str(list_of_parent_frontier_tuples))
                             frontier_parent_group_tuple_to_patch = list_of_parent_frontier_tuples[position_of_tuple_in_list_of_parent_frontier_tuples]
                             # Given:
                             #shared_frontier_parent_tuple = (current_partition_number,num_frontier_groups,child_index_in_current_partition,current_partition_name,parent_partition_parent_index)
@@ -3398,7 +3395,7 @@ def bfs(visited, node): #function for BFS
                             del list_of_parent_frontier_tuples[position_of_tuple_in_list_of_parent_frontier_tuples]
                             # append the new tuple, order of tuples may change but order is not important
                             list_of_parent_frontier_tuples.append(new_frontier_parent_partition_tuple)
-                            logger.debug("X-X-X-X-X-X-X BFS:  new shared groups frontier_parents for " + task_name_of_parent + " is " +  str(list_of_parent_frontier_tuples))
+                            logger.trace("X-X-X-X-X-X-X BFS:  new shared groups frontier_parents for " + task_name_of_parent + " is " +  str(list_of_parent_frontier_tuples))
 
                     shared_frontier_parent_groups_patch_tuple_list.clear()
 
@@ -3409,7 +3406,7 @@ def bfs(visited, node): #function for BFS
                     # change the receiver name so that it ends with 'L'. If no loop
                     # is detectd, then current_partition_isLoop will be false and no changes
                     # need to be made.
-                    logger.debug("XXXXXXXXXXX BFS: patch group sender/receiver names: ")
+                    logger.trace("XXXXXXXXXXX BFS: patch group sender/receiver names: ")
                     for sender_receiver_group_patch_tuple in sender_receiver_group_patch_tuple_list:
                         # sender_receiver_partition_patch_tuple crated as:
                         #   sender_receiver_partition_patch_tuple = (parent_partition_number,receiving_partition)
@@ -3418,17 +3415,17 @@ def bfs(visited, node): #function for BFS
 
                         sending_group = partition_names[index_in_groups_list_of_previous_group]
                         sender_name_set = Group_senders[sending_group]
-                        logger.debug("XXXXXXX BFS: patching group sender_set receiving_group "
+                        logger.trace("XXXXXXX BFS: patching group sender_set receiving_group "
                             + receiving_group + " to " + group_name)
                         sender_name_set.remove(receiving_group)
                         sender_name_set.add(group_name)
-                        logger.debug("XXXXXXX BFS:  new group sender_Set: " + str(sender_name_set))
+                        logger.trace("XXXXXXX BFS:  new group sender_Set: " + str(sender_name_set))
 
-                        logger.debug("XXXXXXX BFS: patching Group_receivers receiver name "
+                        logger.trace("XXXXXXX BFS: patching Group_receivers receiver name "
                             + receiving_group + " to " + group_name)
                         Group_receivers[group_name] = Group_receivers[receiving_group]
                         del Group_receivers[receiving_group]
-                        logger.debug("XXXXXXX BFS:  new Group_receivers[group_name]: " + str(Group_receivers[group_name]))
+                        logger.trace("XXXXXXX BFS:  new Group_receivers[group_name]: " + str(Group_receivers[group_name]))
                 
                 sender_receiver_group_patch_tuple_list.clear()
 
@@ -3449,9 +3446,9 @@ def bfs(visited, node): #function for BFS
 
                 #global patch_parent_mapping_for_partitions
                 global patch_parent_mapping_for_groups
-                logger.debug("partition_nodes to patch: ")
+                logger.trace("partition_nodes to patch: ")
                 for parent_tuple in patch_parent_mapping_for_groups:
-                    logger.debug("parent_tuple: " + str(parent_tuple) + "," )
+                    logger.trace("parent_tuple: " + str(parent_tuple) + "," )
                     # where: patch_tuple = (parent_index,partition_node.parents,
                     # group_node.parents,i,node.ID)
                     #
@@ -3487,7 +3484,7 @@ def bfs(visited, node): #function for BFS
                         # assert group_index is also -1
                         #list_of_parents_of_partition_node[i] = partition_index_of_parent
                         list_of_parents_of_group_node[i] = group_index_of_parent
-                        logger.debug("end of frontier: remapping parent " + str(parent_ID)
+                        logger.trace("end of frontier: remapping parent " + str(parent_ID)
                             + " of " + str(node_ID) 
                             #+  " to " + partition_index_of_parent 
                             #+ " for partition node and "
@@ -3502,25 +3499,25 @@ def bfs(visited, node): #function for BFS
                 nodeIndex_to_groupIndex_map = {}
 
                 """
-                logger.info("")
+                logger.trace("")
                 if PRINT_DETAILED_STATS:
-                    logger.info("KKKKKKKKKKKKKKKKKKKKK group nodes' frontier_parent_tuples:")
+                    logger.trace("KKKKKKKKKKKKKKKKKKKKK group nodes' frontier_parent_tuples:")
                     for x in groups:
                         if PRINT_DETAILED_STATS:
                             print_val = "-- (" + str(len(x)) + "): "
                             for node in x:
                                 print_val += str(node.ID) + ": "
-                                # logger.info(node.ID,end=": ")
+                                # logger.trace(node.ID,end=": ")
                                 for parent_tuple in node.frontier_parents:
                                     print_val += str(parent_tuple) + " "
                                     # print(str(parent_tuple), end=" ")
-                            logger.info(print_val)
-                            logger.info("")
+                            logger.trace(print_val)
+                            logger.trace("")
                         else:
-                            logger.info("-- (" + str(len(x)) + ")")
+                            logger.trace("-- (" + str(len(x)) + ")")
                 else:
-                    logger.info("-- (" + str(len(x)) + ")")
-                logger.info("")
+                    logger.trace("-- (" + str(len(x)) + ")")
+                logger.trace("")
                 """
 
 # rhc : ******* end Group
@@ -3537,13 +3534,13 @@ def bfs(visited, node): #function for BFS
                 dfs_parent_end_partition_size = len(current_partition)
                 dfs_parent_change_in_partition_size = (dfs_parent_end_partition_size - dfs_parent_start_partition_size) - (
                     dfs_parent_loop_nodes_added_end - dfs_parent_loop_nodes_added_start)
-                logger.debug("dfs_parent("+str(node.ID) + ")_change_in_partition_size: " + str(dfs_parent_change_in_partition_size))
+                logger.trace("dfs_parent("+str(node.ID) + ")_change_in_partition_size: " + str(dfs_parent_change_in_partition_size))
                 dfs_parent_changes_in_partiton_size.append(dfs_parent_change_in_partition_size)
               
                 dfs_parent_end_frontier_size = len(frontier)
                 dfs_parent_change_in_frontier_size = (dfs_parent_end_frontier_size - dfs_parent_start_frontier_size) - (
                     dfs_parent_loop_nodes_added_end - dfs_parent_loop_nodes_added_start)
-                logger.debug("dfs_parent("+str(node.ID) + ")_change_in_frontier_size: " + str(dfs_parent_change_in_frontier_size))
+                logger.trace("dfs_parent("+str(node.ID) + ")_change_in_frontier_size: " + str(dfs_parent_change_in_frontier_size))
                 dfs_parent_changes_in_frontier_size.append(dfs_parent_change_in_frontier_size)
 
                 """
@@ -3556,31 +3553,31 @@ def bfs(visited, node): #function for BFS
                     queue.append(neighbor)
                     frontier.append(neighbor)
                 else:
-                    logger.debug("child " + str(neighbor.ID) + " of node " + str(node.ID)
+                    logger.trace("child " + str(neighbor.ID) + " of node " + str(node.ID)
                         + " has no children, already marked it visited and added"
                         + " it to partition but do not queue it or add it to frontier.")
                 """
             else:
-                logger.debug ("bfs node " + str(neighbor.ID) + " already visited")
+                logger.trace ("bfs node " + str(neighbor.ID) + " already visited")
         #frontier.remove(node)
         #frontier.remove(node.ID)
         try:
             frontier.remove(node.ID)
         except ValueError:
-            logger.debug("*******bfs: " + str(node.ID)
+            logger.trace("*******bfs: " + str(node.ID)
                 + " not in frontier.")
 
         if DEBUG_ON:
             print_val = "frontier after remove " + str(node.ID) + ": "
             for x in frontier:
-                #logger.debug(x.ID, end=" ")
+                #logger.trace(x.ID, end=" ")
                 print_val = print_val + str(x) + " "
-            logger.debug(print_val)
-            logger.debug("")
+            logger.trace(print_val)
+            logger.trace("")
     
     """
     if len(current_partition) >= 0:
-        logger.debug("BFS: create final sub-partition")
+        logger.trace("BFS: create final sub-partition")
         partitions.append(current_partition.copy())
         current_partition = []
         #global total_loop_nodes_added
@@ -3622,42 +3619,42 @@ def input_graph():
     count = 0
     file_name_line = graph_file.readline()
     count += 1
-    logger.debug("file_name_line{}: {}".format(count, file_name_line.strip()))
+    logger.trace("file_name_line{}: {}".format(count, file_name_line.strip()))
     vertices_line = graph_file.readline()
     count += 1
-    logger.debug("vertices_line{}: {}".format(count, vertices_line.strip()))
+    logger.trace("vertices_line{}: {}".format(count, vertices_line.strip()))
     edges_line = graph_file.readline()
     count += 1
-    logger.debug("edges_line{}: {}".format(count, edges_line.strip()))
+    logger.trace("edges_line{}: {}".format(count, edges_line.strip()))
     
 
     _max_weight_line_ignored = graph_file.readline()
     count += 1
-    #logger.debug("max_weight_line{}: {}".format(count, max_weight_line_ignored.strip()))
+    #logger.trace("max_weight_line{}: {}".format(count, max_weight_line_ignored.strip()))
     _min_weight_line_ignored = graph_file.readline()
     count += 1
-    #logger.debug("min_weight_line{}: {}".format(count,  min_weight_line_ignored.strip()))
+    #logger.trace("min_weight_line{}: {}".format(count,  min_weight_line_ignored.strip()))
 
     # need this for generated graphs; 100.gr is old format?
     
     _min_edge_line_ignored = graph_file.readline()
     count += 1
-    #logger.debug("min_edge_line{}: {}".format(count, min_edge_line_ignored.strip()))
+    #logger.trace("min_edge_line{}: {}".format(count, min_edge_line_ignored.strip()))
     _max_edge_line_ignored = graph_file.readline()
     count += 1
-    #logger.debug("max_edge_line{}: {}".format(count, max_edge_line_ignored.strip()))
+    #logger.trace("max_edge_line{}: {}".format(count, max_edge_line_ignored.strip()))
     
     vertices_edges_line = graph_file.readline()
     count += 1
-    logger.debug("vertices_edges_line {}: {}".format(count, vertices_edges_line.strip()))
+    logger.trace("vertices_edges_line {}: {}".format(count, vertices_edges_line.strip()))
 
     words = vertices_edges_line.split(' ')
-    logger.debug("nodes:" + words[2] + " edges:" + words[3])
+    logger.trace("nodes:" + words[2] + " edges:" + words[3])
     global num_nodes
     num_nodes = int(words[2])
     global num_edges
     num_edges = int(words[3])
-    logger.info("input_file: read: num_nodes:" + str(num_nodes) + " num_edges:" + str(num_edges))
+    logger.trace("input_file: read: num_nodes:" + str(num_nodes) + " num_edges:" + str(num_edges))
 
     # if num_nodes is 100, this fills nodes[0] ... nodes[100], length of nodes is 101
     # Note: nodes[0] is not used, 
@@ -3682,12 +3679,12 @@ def input_graph():
         source = int(words[1])
         target = int(words[2])
         if source == target:
-            logger.debug("[Warning]: self loop: " + str(source) + " -->" + str(target))
+            logger.trace("[Warning]: self loop: " + str(source) + " -->" + str(target))
             num_self_loops += 1
             continue
-        #logger.debug("target:" + str(target))
+        #logger.trace("target:" + str(target))
         #if target == 101:
-        #    logger.debug("target is 101")
+        #    logger.trace("target is 101")
         #rhc: 101 is a sink, i.e., it has no children so it will not appear as a source
         # in the file. Need to append a new node if target is out of range, actually 
         # append target - num_nodes. Is this just a coincidence that sink is node 100+1
@@ -3696,7 +3693,7 @@ def input_graph():
         # Example: num_nodes is 100 and target is 101, so 101 > 100.
         # But nodes is filled from nodes[0] ... nodes[100] so len(nodes) is 101
         #if (target == 101):
-        #    logger.debug ("target is 101, num_nodes is " + str(num_nodes) + " len nodes is "
+        #    logger.trace ("target is 101, num_nodes is " + str(num_nodes) + " len nodes is "
         #       + str(len(nodes)))
         if target > num_nodes:
             # If len(nodes) is 101 and num_nodes is 100 and we have a tatget of
@@ -3706,15 +3703,15 @@ def input_graph():
             # the number_of_nodes_to_append to be 1, as needed.
             if len(nodes) < target+1:
                 number_of_nodes_to_append = target - num_nodes
-                logger.debug("number_of_nodes_to_append:" + str(number_of_nodes_to_append))
+                logger.trace("number_of_nodes_to_append:" + str(number_of_nodes_to_append))
                 # in our example, number_of_nodes_to_append = 1 so i starts
                 # with 0 (default) and ends with number_of_nodes_to_append-1 = 0
                 for i in range(number_of_nodes_to_append):
-                    logger.debug("Node(" + str(num_nodes+i+1) + ")")
+                    logger.trace("Node(" + str(num_nodes+i+1) + ")")
                     # new node ID for our example is 101 = num_nodes+i+1 = 100 + 0 + 1 = 101
                     nodes.append(Node((num_nodes+i+1)))
                 num_nodes += number_of_nodes_to_append
-        #logger.debug ("source:" + str(source) + " target:" + str(target))
+        #logger.trace ("source:" + str(source) + " target:" + str(target))
         source_node = nodes[source]
         source_node.children.append(target)
         num_children_appends += 1
@@ -3730,24 +3727,24 @@ def input_graph():
         #temp = [source,target]
         #visual.append(temp)
     
-        #logger.debug("Line {}: {}".format(count, line.strip()))
+        #logger.trace("Line {}: {}".format(count, line.strip()))
 
     """
     source_node = nodes[1]
-    logger.debug("Node1 children:")
+    logger.trace("Node1 children:")
     for child in source_node.children:
-        logger.debug(child)
-    logger.debug("Node1 parents:")
+        logger.trace(child)
+    logger.trace("Node1 parents:")
     for parent in source_node.parents:
-        logger.debug(parent)
+        logger.trace(parent)
 
     source_node = nodes[7]
-    logger.debug("Node7 children:")
+    logger.trace("Node7 children:")
     for child in source_node.children:
-        logger.debug(child)
-    logger.debug("Node7 parents:")
+        logger.trace(child)
+    logger.trace("Node7 parents:")
     for parent in source_node.parents:
-        logger.debug(parent)
+        logger.trace(parent)
     """
 
     count_child_edges = 0
@@ -3761,10 +3758,10 @@ def input_graph():
         node.num_children = len(node.children)
 
 
-        #logger.debug (str(i) + ": get children: " + str(len(node.children)))
+        #logger.trace (str(i) + ": get children: " + str(len(node.children)))
         count_child_edges += len(node.children)
         i += 1
-    logger.debug("num edges in graph: " + str(num_edges) + " = num child edges: " 
+    logger.trace("num edges in graph: " + str(num_edges) + " = num child edges: " 
         + str(count_child_edges) + " + num_self_loops: " + str(num_self_loops))
     if not ((num_edges - num_self_loops) == count_child_edges):
         logger.error("[Error]: num child edges in graph is " + str(count_child_edges) + " but edges in file is "
@@ -3774,25 +3771,25 @@ def input_graph():
     i = 1
     while i <= num_nodes:
         node = nodes[i]
-        #logger.debug (str(i) + ": get parents: " + str(len(node.parents)))
+        #logger.trace (str(i) + ": get parents: " + str(len(node.parents)))
         count_parent_edges += len(node.parents)
         i += 1
 
-    logger.debug("num_edges in graph: " + str(num_edges) + " = num parent edges: " 
+    logger.trace("num_edges in graph: " + str(num_edges) + " = num parent edges: " 
         + str(count_parent_edges) + " + num_self_loops: " + str(num_self_loops))
     if not ((num_edges - num_self_loops) == count_parent_edges):
         logger.error("[Error]: num parent edges in graph is " + str(count_parent_edges) + " but edges in file is "
         + str(num_edges))
 
-    logger.debug("num_parent_appends:" + str(num_parent_appends))
-    logger.debug("num_children_appends:" + str(num_children_appends))
-    logger.debug("num_self_loops: " + str(num_self_loops))
+    logger.trace("num_parent_appends:" + str(num_parent_appends))
+    logger.trace("num_children_appends:" + str(num_children_appends))
+    logger.trace("num_self_loops: " + str(num_self_loops))
     if num_self_loops > 0:
         save_num_edges = num_edges
         num_edges -= + num_self_loops
-        logger.debug("old num_edges: " + str(save_num_edges) + " num_edges: " + str(num_edges))
+        logger.trace("old num_edges: " + str(save_num_edges) + " num_edges: " + str(num_edges))
     else:
-        logger.debug("num_edges: " + str(num_edges))
+        logger.trace("num_edges: " + str(num_edges))
 
     graph_file.close()
 
@@ -3845,55 +3842,55 @@ def input_partitions():
         for name in group_names:
             with open('./'+name+'.pickle', 'rb') as handle:
                 group_inputs.append(cloudpickle.load(handle))
-        logger.info("Group Nodes w/parents:")
+        logger.trace("Group Nodes w/parents:")
         for group in groups:
             for node in group:
-                #logger.info(node,end=":")
+                #logger.trace(node,end=":")
                 print_val = str(node) + ":"
                 for parent in node.parents:
                     print_val += str(parent) + " "
-                    #logger.info(parent,end=" ")
-                logger.info(print_val)
-                logger.info("")
-            logger.info("")
-        logger.info("Group Nodes w/Frontier parent tuples:")
+                    #logger.trace(parent,end=" ")
+                logger.trace(print_val)
+                logger.trace("")
+            logger.trace("")
+        logger.trace("Group Nodes w/Frontier parent tuples:")
         for group in groups:
             for node in group:
-                #logger.info(node,end=":")
+                #logger.trace(node,end=":")
                 print_val = str(node) + ":"
                 for tup in node.frontier_parents:
                     print_val += str(tup) + " "
-                    # logger.info(tup,end=" ")
-                logger.info(print_val)
-                logger.info("")
-            logger.info("")
+                    # logger.trace(tup,end=" ")
+                logger.trace(print_val)
+                logger.trace("")
+            logger.trace("")
     else:
         partition_inputs = []
         for name in partition_names:
             with open('./'+name+'.pickle', 'rb') as handle:
                 partition_inputs.append(cloudpickle.load(handle))
-        logger.info("Partition Nodes w/parents:")
+        logger.trace("Partition Nodes w/parents:")
         for partition in partitions:
             for node in partition:
-                #logger.info(node,end=":")
+                #logger.trace(node,end=":")
                 print_val = str(node) + ":"
                 for parent in node.parents:
                     print_val += str(parent) + " "
-                    #logger.info(parent,end=" ")
-                logger.info(print_val)
-                logger.info("")
-            logger.info("")
-        logger.info("Partition Nodes w/Frontier parent tuples:")
+                    #logger.trace(parent,end=" ")
+                logger.trace(print_val)
+                logger.trace("")
+            logger.trace("")
+        logger.trace("Partition Nodes w/Frontier parent tuples:")
         for partition in partitions:
             for node in partition:
-                #logger.info(node,end=":")
+                #logger.trace(node,end=":")
                 print_val = str(node) + ":"
                 for tup in node.frontier_parents:
                     print_val += str(tup) + " "
-                    # logger.info(tup,end=" ")
-                logger.info(print_val)
-                logger.info("")
-            logger.info("")
+                    # logger.trace(tup,end=" ")
+                logger.trace(print_val)
+                logger.trace("")
+            logger.trace("")
   
 # Driver Code
 
@@ -3902,33 +3899,33 @@ def input_partitions():
 """
 G = nx.DiGraph()
 G.add_edges_from(visual)
-logger.debug(nx.is_connected(G))
+logger.trace(nx.is_connected(G))
 """
 def PageRank_Function_Main(nodes,total_num_nodes):
     if (debug_pagerank):
-        logger.debug("PageRank_Function output partition_or_group (node:parents):")
+        logger.trace("PageRank_Function output partition_or_group (node:parents):")
         for node in nodes:
-            #logger.debug(node,end=":")
+            #logger.trace(node,end=":")
             print_val = str(node) + ":"
             for parent in node.parents:
                 print_val += str(parent) + " "
-                #logger.debug(parent,end=" ")
+                #logger.trace(parent,end=" ")
             if len(node.parents) == 0:
-                #logger.debug(",",end=" ")
+                #logger.trace(",",end=" ")
                 print_val += ", "
             else:
-                #logger.debug(",",end=" ")
+                #logger.trace(",",end=" ")
                 print_val += ", "
-            logger.debug(print_val)
-        logger.debug("")
-        logger.debug("PageRank_Function output partition_or_group (node:num_children):")
+            logger.trace(print_val)
+        logger.trace("")
+        logger.trace("PageRank_Function output partition_or_group (node:num_children):")
         print_val = ""
         for node in nodes:
             print_val += str(node)+":"+str(node.num_children) + ", "
-            # logger.debug(str(node)+":"+str(node.num_children),end=", ")
-        logger.debug(print_val)
-        logger.debug("")
-        logger.debug("")
+            # logger.trace(str(node)+":"+str(node.num_children),end=", ")
+        logger.trace(print_val)
+        logger.trace("")
+        logger.trace("")
         # node's children set when the partition/grup node created
 
     damping_factor=0.15
@@ -3944,8 +3941,8 @@ def PageRank_Function_Main(nodes,total_num_nodes):
 
     for i in range(1,iteration+1): # if 10 iterations then i ranges from 1 to 10
         if (debug_pagerank):
-            logger.debug("***** PageRank: iteration " + str(i))
-            logger.debug("")
+            logger.trace("***** PageRank: iteration " + str(i))
+            logger.trace("")
 
         for index in range(1,num_nodes_for_pagerank_computation):
             nodes[index].update_PageRank_of_PageRank_Function_loop(nodes, 
@@ -3992,9 +3989,9 @@ https://stackoverflow.com/questions/18204782/runtimeerror-on-windows-trying-pyth
 
 if __name__ == '__main__':
     if use_page_rank_group_partitions:
-        logger.debug("BFS: using groups")
+        logger.trace("BFS: using groups")
     else:
-        logger.debug("BFS: using partitions.")
+        logger.trace("BFS: using partitions.")
 
     if compute_pagerank and use_incremental_DAG_generation: 
 #rhc continue
@@ -4010,14 +4007,14 @@ if __name__ == '__main__':
             estimated_num_tasks_to_execute = work_queue_size_for_incremental_DAG_generation_with_worker_processes
             DAG_infobuffer_monitor = Remote_Client_for_DAG_infoBuffer_Monitor(websocket)
             DAG_infobuffer_monitor.create()
-            logger.debug("BFS: created Remote DAG_infobuffer_monitor.")
+            logger.trace("BFS: created Remote DAG_infobuffer_monitor.")
             #logging.shutdown()
             #os._exit(0) 
             work_queue = Work_Queue_Client(websocket,estimated_num_tasks_to_execute)
 
-    logger.debug("BFS: Following is the Breadth-First Search")
+    logger.trace("BFS: Following is the Breadth-First Search")
     input_graph()
-    logger.debug("BFS: num_nodes after input graph: " + str(num_nodes))
+    logger.trace("BFS: num_nodes after input graph: " + str(num_nodes))
     #visualize()
     #input('Press <ENTER> to continue')
 
@@ -4031,7 +4028,7 @@ if __name__ == '__main__':
     # i start = 1 as nodes[0] not used, i end is (num_nodes+1) - 1  = 100
     for i in range(1,num_nodes+1):
         if i not in visited:
-            logger.debug("*************BFS Driver call BFS for node[" + str(i) + "]")
+            logger.trace("*************BFS Driver call BFS for node[" + str(i) + "]")
             #bfs(visited, graph, nodes[i])    # function calling
             bfs(visited, nodes[i])    # function calling
 
@@ -4039,7 +4036,7 @@ if __name__ == '__main__':
 
     # Do last partition/group if there is one
     if len(current_partition) > 0:
-        logger.debug("BFS: create final sub-partition")
+        logger.trace("BFS: create final sub-partition")
         # does not require a deepcop
         partitions.append(current_partition.copy())
         current_partition = []
@@ -4122,15 +4119,15 @@ if __name__ == '__main__':
     #os._exit(0)
 
     def print_BFS_stats():
-        logger.info("BFS: print_BFS_stats: ")
+        logger.trace("BFS: print_BFS_stats: ")
         #partitions.append(current_partition.copy())
         #frontiers.append(frontier.copy())
         #frontier_cost = "END" + ":" + str(len(frontier))
         #frontier_costs.append(frontier_cost)
-        logger.info("")
-        logger.info("input_file: generated: num_nodes: " + str(num_nodes) + " num_edges: " + str(num_edges))
-        logger.info("")
-        logger.info("visited length: " + str(len(visited)))
+        logger.trace("")
+        logger.trace("input_file: generated: num_nodes: " + str(num_nodes) + " num_edges: " + str(num_edges))
+        logger.trace("")
+        logger.trace("visited length: " + str(len(visited)))
         if len(visited) != num_nodes:
             logger.error("[Error]: BFS: visited length is " + str(len(visited))
                 + " but num_nodes is " + str(num_nodes))
@@ -4138,20 +4135,20 @@ if __name__ == '__main__':
         for x in visited:
             print_val += str(x) + " "
             #print(x, end=" ")
-        logger.info(print_val)
-        logger.info("")
-        logger.info("")
-        logger.info("final current_partition length: " + str(len(current_partition)-loop_nodes_added))
+        logger.trace(print_val)
+        logger.trace("")
+        logger.trace("")
+        logger.trace("final current_partition length: " + str(len(current_partition)-loop_nodes_added))
         sum_of_partition_lengths = 0
         i = 1
         for x in partitions:
             sum_of_partition_lengths += len(x)
-            logger.debug(str(i) + ":length of partition: " + str(len(x)))
+            logger.trace(str(i) + ":length of partition: " + str(len(x)))
             i += 1
-        logger.debug("shadow_nodes_added: " + str(num_shadow_nodes_added_to_partitions))
+        logger.trace("shadow_nodes_added: " + str(num_shadow_nodes_added_to_partitions))
         if not use_shared_partitions_groups:
             sum_of_partition_lengths -= (total_loop_nodes_added + num_shadow_nodes_added_to_partitions)
-            logger.info("sum_of_partition_lengths (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
+            logger.trace("sum_of_partition_lengths (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
                 + str(sum_of_partition_lengths))
             if sum_of_partition_lengths != num_nodes:
                 logger.error("[Error]: sum_of_partition_lengths is " + str(sum_of_partition_lengths)
@@ -4162,7 +4159,7 @@ if __name__ == '__main__':
                     shared_partition_length = len(BFS_Shared.shared_partition)
                     # added shadow nodes and their parents
                     shared_partition_length -= (total_loop_nodes_added + (2*num_shadow_nodes_added_to_partitions))
-                    logger.info("shared_partition_length (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
+                    logger.trace("shared_partition_length (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
                         + str(shared_partition_length))
                     if shared_partition_length != num_nodes:
                         logger.error("[Error]: shared_partition_length is " + str(shared_partition_length)
@@ -4173,18 +4170,18 @@ if __name__ == '__main__':
                     # in the struct_of_arrays. These arrays length were calculated
                     # and we are not checking that calculation here.
 
-        logger.info("")
+        logger.trace("")
         sum_of_groups_lengths = 0
         i = 1
         for x in groups:
             sum_of_groups_lengths += len(x)
-            logger.debug(str(i) + ": length of group: " + str(len(x)))
+            logger.trace(str(i) + ": length of group: " + str(len(x)))
             i+=1
-        logger.debug("num_shadow_nodes_added_to_groups: " + str(num_shadow_nodes_added_to_groups))
+        logger.trace("num_shadow_nodes_added_to_groups: " + str(num_shadow_nodes_added_to_groups))
         if not use_shared_partitions_groups:
-            logger.info("total_loop_nodes_added : " + str(total_loop_nodes_added))
+            logger.trace("total_loop_nodes_added : " + str(total_loop_nodes_added))
             sum_of_groups_lengths -= (total_loop_nodes_added + num_shadow_nodes_added_to_groups)
-            logger.info("sum_of_groups_lengths (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
+            logger.trace("sum_of_groups_lengths (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
                 + str(sum_of_groups_lengths))
             if sum_of_groups_lengths != num_nodes:
                 logger.error("[Error]: sum_of_groups_lengths is " + str(sum_of_groups_lengths)
@@ -4193,12 +4190,12 @@ if __name__ == '__main__':
             if use_page_rank_group_partitions:
                 if not use_struct_of_arrays_for_pagerank:
                     shared_groups_length = len(BFS_Shared.shared_groups)
-                    logger.info("shared_groups_length first value: " + str(shared_groups_length))
+                    logger.trace("shared_groups_length first value: " + str(shared_groups_length))
                     # added shadow nodes and their parents
-                    logger.info("total_loop_nodes_added : " + str(total_loop_nodes_added))
-                    logger.info("(2*num_shadow_nodes_added_to_groups):" + str(2*num_shadow_nodes_added_to_groups))
+                    logger.trace("total_loop_nodes_added : " + str(total_loop_nodes_added))
+                    logger.trace("(2*num_shadow_nodes_added_to_groups):" + str(2*num_shadow_nodes_added_to_groups))
                     shared_groups_length -= (total_loop_nodes_added + (2*num_shadow_nodes_added_to_groups))
-                    logger.info("shared_groups_length (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
+                    logger.trace("shared_groups_length (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
                         + str(shared_groups_length))
                     if shared_groups_length != num_nodes:
                         logger.error("[Error]: shared_groups_length is " + str(shared_groups_length)
@@ -4214,16 +4211,16 @@ if __name__ == '__main__':
         print_val = ""
         for x in current_partition:
             print_val += str(x) + " "
-            # logger.info(x, end=" ")
-            logger.info(print_val)
-            logger.info("")
+            # logger.trace(x, end=" ")
+            logger.trace(print_val)
+            logger.trace("")
 
         # adjusting for loop_nodes_added in dfs_p
         sum_of_changes = sum(dfs_parent_changes_in_partiton_size)-num_shadow_nodes_added_to_partitions
         avg_change = sum_of_changes / len(dfs_parent_changes_in_partiton_size)
         print_val = "dfs_parent_changes_in_partiton_size length, len: " + str(len(dfs_parent_changes_in_partiton_size)) + ", sum_of_changes: " + str(sum_of_changes)
         print_val += ", average dfs_parent change: %.1f" % avg_change
-        logger.info(print_val)
+        logger.trace(print_val)
         if PRINT_DETAILED_STATS:
             if sum_of_changes != num_nodes:
                 logger.error("[Error]: sum_of_changes is " + str(sum_of_changes)
@@ -4232,14 +4229,14 @@ if __name__ == '__main__':
             for x in dfs_parent_changes_in_partiton_size:
                 print_val += str(x) + " "
                 # print(x, end=" ")
-            logger.info(print_val)
+            logger.trace(print_val)
 
-        logger.info("")
-        logger.info("")
+        logger.trace("")
+        logger.trace("")
         if PRINT_DETAILED_STATS:
             # adjusting for loop_nodes_added in dfs_p
             sum_of_changes = sum(dfs_parent_changes_in_frontier_size)
-            logger.info("dfs_parent_changes_in_frontier_size length, len: " + str(len(dfs_parent_changes_in_frontier_size))
+            logger.trace("dfs_parent_changes_in_frontier_size length, len: " + str(len(dfs_parent_changes_in_frontier_size))
                 + ", sum_of_changes: " + str(sum_of_changes))
             if sum_of_changes != num_nodes:
                 logger.error("[Error]: sum_of_changes is " + str(sum_of_changes)
@@ -4247,39 +4244,39 @@ if __name__ == '__main__':
             for x in dfs_parent_changes_in_frontier_size:
                 print_val = str(x) + " "
                 #print(x, end=" ")
-            logger.info(print_val)
-            logger.info("")
-            logger.info("")
-        #logger.info("frontier length: " + str(len(frontier)))
+            logger.trace(print_val)
+            logger.trace("")
+            logger.trace("")
+        #logger.trace("frontier length: " + str(len(frontier)))
         #if len(frontier) != 0:
         #    logger.error("[Error]: frontier length is " + str(len(frontier))
         #       + " but num_nodes is " + str(num_nodes))
         #for x in frontier:
-        #    logger.info(str(x.ID), end=" ")
-        #logger.info("")
-        #logger.info("frontier cost: " + str(len(frontier_cost)))
+        #    logger.trace(str(x.ID), end=" ")
+        #logger.trace("")
+        #logger.trace("frontier cost: " + str(len(frontier_cost)))
         #for x in frontier_cost:
-        #    logger.info(str(x), end=" ")
-        #logger.info("")
+        #    logger.trace(str(x), end=" ")
+        #logger.trace("")
         # final frontier shoudl always be empty
         # assert: 
-        logger.info("frontiers: (final fronter should be empty), number of frontiers: " + str(len(frontiers))+ " (length):")
+        logger.trace("frontiers: (final fronter should be empty), number of frontiers: " + str(len(frontiers))+ " (length):")
         for frontier_list in frontiers:
             if PRINT_DETAILED_STATS:
                 print_val = "-- (" + str(len(frontier_list)) + "): "
                 for x in frontier_list:
-                    #logger.info(str(x.ID),end=" ")
+                    #logger.trace(str(x.ID),end=" ")
                     print_val += str(x) + " "
                     #print(str(x),end=" ")
-                logger.info(print_val)
-                logger.info("")
+                logger.trace(print_val)
+                logger.trace("")
             else:
-                logger.info("-- (" + str(len(frontier_list)) + ")") 
+                logger.trace("-- (" + str(len(frontier_list)) + ")") 
         frontiers_length = len(frontiers)
         if len(frontiers[frontiers_length-1]) != 0:
-            logger.info ("Error]: final frontier is not empty.")
-        logger.info("")
-        logger.info("partitions, number of partitions: " + str(len(partitions))+" (length):")
+            logger.trace ("Error]: final frontier is not empty.")
+        logger.trace("")
+        logger.trace("partitions, number of partitions: " + str(len(partitions))+" (length):")
 
         for x in partitions:
             if PRINT_DETAILED_STATS:
@@ -4290,25 +4287,25 @@ if __name__ == '__main__':
                     print_val += str(node) + " "
                     #print(node,end=" ")
                     #if not node.isShadowNode:
-                    #    logger.info(str(index),end=" ")
+                    #    logger.trace(str(index),end=" ")
                     #else:
-                    #   logger.info(str(index)+"-s",end=" ")
-                logger.info(print_val)
-                logger.info("")
+                    #   logger.trace(str(index)+"-s",end=" ")
+                logger.trace(print_val)
+                logger.trace("")
             else:
-                logger.info("-- (" + str(len(x)) + ")")
-        logger.info("")
+                logger.trace("-- (" + str(len(x)) + ")")
+        logger.trace("")
         if use_shared_partitions_groups:
-            logger.debug("Number of shadow nodes (when use_shared_partitions_groups):")
+            logger.trace("Number of shadow nodes (when use_shared_partitions_groups):")
             for num in partitions_num_shadow_nodes_list:
-                logger.debug(num)
-            logger.info("")
-        logger.info("partition names, len: " + str(len(partition_names))+":")
+                logger.trace(num)
+            logger.trace("")
+        logger.trace("partition names, len: " + str(len(partition_names))+":")
         for name in partition_names:
             if PRINT_DETAILED_STATS:
-                logger.info("-- " + name)
-        logger.info("")
-        logger.info("groups, len: " + str(len(groups))+":")
+                logger.trace("-- " + name)
+        logger.trace("")
+        logger.trace("groups, len: " + str(len(groups))+":")
         for g in groups:
             if PRINT_DETAILED_STATS:
                 print_val = ""
@@ -4316,22 +4313,22 @@ if __name__ == '__main__':
                 for node in g:
                     print_val += str(node) + " "
                     #print(node,end=" ")
-                logger.info(print_val)
-                logger.info("")
+                logger.trace(print_val)
+                logger.trace("")
             else:
-                logger.info("-- (" + str(len(g)) + ")")
-        logger.info("")
+                logger.trace("-- (" + str(len(g)) + ")")
+        logger.trace("")
         if use_shared_partitions_groups:
-            logger.debug("Number of shadow nodes (when use_shared_partitions_groups):")
+            logger.trace("Number of shadow nodes (when use_shared_partitions_groups):")
             for num in groups_num_shadow_nodes_list:
-                logger.debug(num)
-            logger.info("")
-        logger.info("group names, len: " + str(len(group_names))+":")
+                logger.trace(num)
+            logger.trace("")
+        logger.trace("group names, len: " + str(len(group_names))+":")
         for name in group_names:
             if PRINT_DETAILED_STATS:
-                logger.info("-- " + name)
-        logger.info("")
-        logger.info("nodes_to_partition_maps (incl. shadow nodes but only last index), len: " + str(len(nodeIndex_to_partitionIndex_maps))+":")
+                logger.trace("-- " + name)
+        logger.trace("")
+        logger.trace("nodes_to_partition_maps (incl. shadow nodes but only last index), len: " + str(len(nodeIndex_to_partitionIndex_maps))+":")
         for m in nodeIndex_to_partitionIndex_maps:
             if PRINT_DETAILED_STATS:
                 print_val = ""
@@ -4339,12 +4336,12 @@ if __name__ == '__main__':
                 for k, v in m.items():
                     print_val += str((k, v)) + " "
                     #print((k, v),end=" ")
-                logger.info(print_val)
-                logger.info("")
+                logger.trace(print_val)
+                logger.trace("")
             else:
-                logger.info("-- (" + str(len(m)) + ")")
-        logger.info("")
-        logger.info("nodes_to_group_maps, ( but only last index), len: " + str(len(nodeIndex_to_groupIndex_maps))+":")
+                logger.trace("-- (" + str(len(m)) + ")")
+        logger.trace("")
+        logger.trace("nodes_to_group_maps, ( but only last index), len: " + str(len(nodeIndex_to_groupIndex_maps))+":")
         for m in nodeIndex_to_groupIndex_maps:
             if PRINT_DETAILED_STATS:
                 #print("-- (" + str(len(m)) + "):", end=" ")
@@ -4353,26 +4350,26 @@ if __name__ == '__main__':
                 for k, v in m.items():
                     print_val += str((k, v)) + " "
                     #print((k, v),end=" ")
-                logger.info(print_val)
-                logger.info("")
+                logger.trace(print_val)
+                logger.trace("")
             else:
-                logger.info("-- (" + str(len(m)) + ")")
-        logger.info("")
+                logger.trace("-- (" + str(len(m)) + ")")
+        logger.trace("")
         if PRINT_DETAILED_STATS:
-            logger.info("frontier costs (cost=length of frontier), len: " + str(len(frontier_costs))+":")
+            logger.trace("frontier costs (cost=length of frontier), len: " + str(len(frontier_costs))+":")
             print_val = ""
             for x in frontier_costs:
                 print_val += "-- " + str(x)
-                #logger.info("-- ",end="")
-                #logger.info(str(x))
-            logger.info(print_val)
-            logger.info("")
+                #logger.trace("-- ",end="")
+                #logger.trace(str(x))
+            logger.trace(print_val)
+            logger.trace("")
         sum_of_partition_costs = 0
         for x in all_frontier_costs:
             words = x.split(':')
             cost = int(words[1])
             sum_of_partition_costs += cost
-        logger.info("all frontier costs, len: " + str(len(all_frontier_costs)) + ", sum: " 
+        logger.trace("all frontier costs, len: " + str(len(all_frontier_costs)) + ", sum: " 
             + str(sum_of_partition_costs))
         if PRINT_DETAILED_STATS:
             i = 0
@@ -4383,91 +4380,91 @@ if __name__ == '__main__':
                     print_val = str(x) + " "
                     #print(str(x),end=" ")
                 else:
-                    logger.info(str(x))
+                    logger.trace(str(x))
                     i = 0
                 i += 1
-            logger.info(print_val)
-        logger.info("")
+            logger.trace(print_val)
+        logger.trace("")
         """
         # Doing this for each node in each partition now (next)
-        logger.info("")
+        logger.trace("")
         if PRINT_DETAILED_STATS:
-            logger.info("Node frontier_parent_tuples:")
+            logger.trace("Node frontier_parent_tuples:")
             for node in nodes:
-                logger.info(str(node.ID) + ": frontier_parent_tuples: ", end = " ")
+                logger.trace(str(node.ID) + ": frontier_parent_tuples: ", end = " ")
                 for parent_tuple in node.frontier_parents:
-                    logger.info(str(parent_tuple), end=" ")
-                logger.info("")
+                    logger.trace(str(parent_tuple), end=" ")
+                logger.trace("")
         else:
-            logger.info("-- (" + str(len(x)) + ")")
+            logger.trace("-- (" + str(len(x)) + ")")
         """
-        logger.info("")
+        logger.trace("")
         if PRINT_DETAILED_STATS:
-            logger.info("partition nodes' frontier_parent_tuples:")
+            logger.trace("partition nodes' frontier_parent_tuples:")
             for x in partitions:
                 if PRINT_DETAILED_STATS:
                     print_val = "-- (" + str(len(x)) + "):" + " "
                     print_val = ""
                     for node in x:
                         print_val += str(node.ID) + ": " 
-                        # logger.info(node.ID,end=": ")
+                        # logger.trace(node.ID,end=": ")
                         for parent_tuple in node.frontier_parents:
                             print_val += str(parent_tuple) + " "
                             # print(str(parent_tuple), end=" ")
-                    logger.info(print_val)
-                    logger.info("")
+                    logger.trace(print_val)
+                    logger.trace("")
                 else:
-                    logger.info("-- (" + str(len(x)) + ")")
+                    logger.trace("-- (" + str(len(x)) + ")")
         else:
-            logger.info("-- (" + str(len(x)) + ")")
-        logger.info("")
+            logger.trace("-- (" + str(len(x)) + ")")
+        logger.trace("")
         if PRINT_DETAILED_STATS:
-            logger.info("group nodes' frontier_parent_tuples:")
+            logger.trace("group nodes' frontier_parent_tuples:")
             for x in groups:
                 if PRINT_DETAILED_STATS:
                     print_val = "-- (" + str(len(x)) + "): "
                     for node in x:
                         print_val += str(node.ID) + ": "
-                        # logger.info(node.ID,end=": ")
+                        # logger.trace(node.ID,end=": ")
                         for parent_tuple in node.frontier_parents:
                             print_val += str(parent_tuple) + " "
                             # print(str(parent_tuple), end=" ")
-                    logger.info(print_val)
-                    logger.info("")
+                    logger.trace(print_val)
+                    logger.trace("")
                 else:
-                    logger.info("-- (" + str(len(x)) + ")")
+                    logger.trace("-- (" + str(len(x)) + ")")
         else:
-            logger.info("-- (" + str(len(x)) + ")")
-        logger.info("")
-        logger.info("frontier_groups_sum: " + str(frontier_groups_sum) + ", len(frontiers)-1: " 
+            logger.trace("-- (" + str(len(x)) + ")")
+        logger.trace("")
+        logger.trace("frontier_groups_sum: " + str(frontier_groups_sum) + ", len(frontiers)-1: " 
             +  str(len(frontiers)-1))
-        logger.info("Average number of frontier groups: " + (str(frontier_groups_sum / (len(frontiers)-1))))
-        logger.info("")
+        logger.trace("Average number of frontier groups: " + (str(frontier_groups_sum / (len(frontiers)-1))))
+        logger.trace("")
         i#f True: # 
         if use_shared_partitions_groups: 
-            logger.info("Shared partition map frontier_parent_tuples:")                 
+            logger.trace("Shared partition map frontier_parent_tuples:")                 
             for (k,v) in BFS_Shared.shared_partition_frontier_parents_map.items():
-                logger.debug(str(k) + ": " + str(v))
-            logger.info("")
+                logger.trace(str(k) + ": " + str(v))
+            logger.trace("")
         #if True: # 
         if use_shared_partitions_groups:  
-            logger.info("Shared groups map frontier_parent_tuples:")                  
+            logger.trace("Shared groups map frontier_parent_tuples:")                  
             for (k,v) in BFS_Shared.shared_groups_frontier_parents_map.items():
-                logger.debug(str(k) + ": " + str(v))
-            logger.info("")
-        logger.info("nodeIndex_to_partition_partitionIndex_group_groupIndex_map, len: " + str(len(nodeIndex_to_partition_partitionIndex_group_groupIndex_map)) + ":")
-        logger.info("shadow nodes not mapped and not shown")
+                logger.trace(str(k) + ": " + str(v))
+            logger.trace("")
+        logger.trace("nodeIndex_to_partition_partitionIndex_group_groupIndex_map, len: " + str(len(nodeIndex_to_partition_partitionIndex_group_groupIndex_map)) + ":")
+        logger.trace("shadow nodes not mapped and not shown")
         if PRINT_DETAILED_STATS:
             for k, v in nodeIndex_to_partition_partitionIndex_group_groupIndex_map.items():
-                logger.info((k, v))
-            logger.info("")
+                logger.trace((k, v))
+            logger.trace("")
         else:
-            logger.info("-- (" + str(len(nodeIndex_to_partition_partitionIndex_group_groupIndex_map)) + ")")
-        logger.info("")
-        logger.info("Partition Node parents (shad. node is a parent), len: " + str(len(partitions))+":")
+            logger.trace("-- (" + str(len(nodeIndex_to_partition_partitionIndex_group_groupIndex_map)) + ")")
+        logger.trace("")
+        logger.trace("Partition Node parents (shad. node is a parent), len: " + str(len(partitions))+":")
         for x in partitions:
             if PRINT_DETAILED_STATS:
-                #logger.info("-- (" + str(len(x)) + "):", end=" ")
+                #logger.trace("-- (" + str(len(x)) + "):", end=" ")
                 for node in x:
                     print_val = ""
                     print_val += str(node) + ": "
@@ -4475,20 +4472,20 @@ if __name__ == '__main__':
                     for parent in node.parents:
                         print_val += str(parent) + " "
                         #print(parent,end=" ")
-                    logger.info(print_val)
-                    logger.info("")
+                    logger.trace(print_val)
+                    logger.trace("")
                     #if not node.isShadowNode:
-                    #    logger.info(str(index),end=" ")
+                    #    logger.trace(str(index),end=" ")
                     #else:
-                    #   logger.info(str(index)+"-s",end=" ")
-                logger.info("")
+                    #   logger.trace(str(index)+"-s",end=" ")
+                logger.trace("")
             else:
-                logger.info("-- (" + str(len(x)) + ")")
-        logger.info("")
-        logger.info("Group Node parents (shad. node is a parent), len: " + str(len(partitions))+":")
+                logger.trace("-- (" + str(len(x)) + ")")
+        logger.trace("")
+        logger.trace("Group Node parents (shad. node is a parent), len: " + str(len(partitions))+":")
         for x in groups:
             if PRINT_DETAILED_STATS:
-                #logger.info("-- (" + str(len(x)) + "):", end=" ")
+                #logger.trace("-- (" + str(len(x)) + "):", end=" ")
                 for node in x:
                     print_val = ""
                     print_val += str(node) + ": "
@@ -4496,61 +4493,61 @@ if __name__ == '__main__':
                     for parent in node.parents:
                         print_val += str(parent) + " "
                         #print(parent,end=" ")
-                    logger.info(print_val)
-                    logger.info("")
+                    logger.trace(print_val)
+                    logger.trace("")
                     #if not node.isShadowNode:
-                    #    logger.info(str(index),end=" ")
+                    #    logger.trace(str(index),end=" ")
                     #else:
-                    #   logger.info(str(index)+"-s",end=" ")
-                logger.info("")
+                    #   logger.trace(str(index)+"-s",end=" ")
+                logger.trace("")
             else:
-                logger.info("-- (" + str(len(x)) + ")")
-        logger.info("")
-        logger.info("Group Node num_children, len: " + str(len(groups))+":")
+                logger.trace("-- (" + str(len(x)) + ")")
+        logger.trace("")
+        logger.trace("Group Node num_children, len: " + str(len(groups))+":")
         for x in groups:
             if PRINT_DETAILED_STATS:
-                #logger.info("-- (" + str(len(x)) + "):", end=" ")
+                #logger.trace("-- (" + str(len(x)) + "):", end=" ")
                 print_val = ""
                 for node in x:
                     print_val += str(node) + ":" + str(node.num_children) + ", "
                     #print(str(node) + ":" + str(node.num_children),end=", ")
-                logger.info(print_val)
-                logger.info("")
+                logger.trace(print_val)
+                logger.trace("")
             else:
-                logger.info("-- (" + str(len(x)) + ")")
-        logger.info("")
-        logger.info("Partition_senders, len: " + str(len(Partition_senders)) + ":")
+                logger.trace("-- (" + str(len(x)) + ")")
+        logger.trace("")
+        logger.trace("Partition_senders, len: " + str(len(Partition_senders)) + ":")
         if PRINT_DETAILED_STATS:
             for k, v in Partition_senders.items():
-                logger.info((k, v))
-            logger.info("")
+                logger.trace((k, v))
+            logger.trace("")
         else:
-            logger.info("-- (" + str(len(Partition_senders)) + ")")
-            logger.info("")
-        logger.info("Partition_receivers, len: " + str(len(Partition_receivers)) + ":")
+            logger.trace("-- (" + str(len(Partition_senders)) + ")")
+            logger.trace("")
+        logger.trace("Partition_receivers, len: " + str(len(Partition_receivers)) + ":")
         if PRINT_DETAILED_STATS:
             for k, v in Partition_receivers.items():
-                logger.info((k, v))
-            logger.info("")
+                logger.trace((k, v))
+            logger.trace("")
         else:
-            logger.info("-- (" + str(len(Partition_receivers)) + ")")
-            logger.info("")
-        logger.info("Group_senders, len: " + str(len(Group_senders)) + ":")
+            logger.trace("-- (" + str(len(Partition_receivers)) + ")")
+            logger.trace("")
+        logger.trace("Group_senders, len: " + str(len(Group_senders)) + ":")
         if PRINT_DETAILED_STATS:
             for k, v in Group_senders.items():
-                logger.info((k, v))
-            logger.info("")
+                logger.trace((k, v))
+            logger.trace("")
         else:
-            logger.info("-- (" + str(len(Group_senders)) + ")")
-            logger.info("")
+            logger.trace("-- (" + str(len(Group_senders)) + ")")
+            logger.trace("")
 
-        logger.info("Group_receivers, len: " + str(len(Group_receivers)) + ":")
+        logger.trace("Group_receivers, len: " + str(len(Group_receivers)) + ":")
         if PRINT_DETAILED_STATS:
             for k, v in Group_receivers.items():
-                logger.info((k, v))
+                logger.trace((k, v))
         else:
-            logger.info("-- (" + str(len(Group_receivers)) + ")")
-            logger.info("")
+            logger.trace("-- (" + str(len(Group_receivers)) + ")")
+            logger.trace("")
 
 
 
@@ -4563,7 +4560,7 @@ if __name__ == '__main__':
         #visualize()
         #input('Press <ENTER> to continue')
 
-        logger.debug("Output partitions/groups")
+        logger.trace("Output partitions/groups")
         output_partitions()
 
 #rhc: Issue: can't start TCP server until output DAG_info
@@ -4573,18 +4570,18 @@ if __name__ == '__main__':
         run()
 
         if use_struct_of_arrays_for_pagerank and use_shared_partitions_groups and not using_threads_not_processes:
-            logger.debug("\nBFS:Close and unlink shared memory.")
+            logger.trace("\nBFS:Close and unlink shared memory.")
             try:
                 BFS_Shared.close_shared_memory()
                 BFS_Shared.unlink_shared_memory()
             except Exception as ex:
-                logger.debug("[ERROR] BFS: Failed to close or unlink shared memory.")
-                logger.debug(ex)
+                logger.trace("[ERROR] BFS: Failed to close or unlink shared memory.")
+                logger.trace(ex)
     else:
-        logger.debug("\nBFS:join invoker_thread_for_DAG_executor_driver.")
+        logger.trace("\nBFS:join invoker_thread_for_DAG_executor_driver.")
         invoker_thread_for_DAG_executor_driver.join()
         # 1. perhaps invoker_thread.join() here when inc dag gen
-        logger.debug("\nBFS:join after join, print BFS stats")
+        logger.trace("\nBFS:join after join, print BFS stats")
     
         print_BFS_stats()
 
@@ -4600,19 +4597,19 @@ if __name__ == '__main__':
         #if not verified:
         # might do somethig with this
 
-        logger.debug("")
-        logger.debug("")
-        logger.debug("DAG_executor_outputs:")
+        logger.trace("")
+        logger.trace("")
+        logger.trace("DAG_executor_outputs:")
         pr_outputs = get_pagerank_outputs()
         output_keys = list(pr_outputs.keys())
         output_keys.sort()
         sorted_pagerank_outputs = {i: pr_outputs[i] for i in output_keys}
         for (k,v) in sorted_pagerank_outputs.items():
-            logger.debug(str(k) + ":"+str(v))
+            logger.trace(str(k) + ":"+str(v))
 
 
 """
-logger.debug("Sorted simple cycles:")
+logger.trace("Sorted simple cycles:")
 G = nx.read_edgelist("graph_3000_networkX.txt", create_using=nx.DiGraph)
 sorted(nx.simple_cycles(G))
 # diameter will fail if the directed graph is not strongly connected.
@@ -4626,9 +4623,9 @@ sorted(nx.simple_cycles(G))
 #The method above will find the largest diameter amongst all components within 
 #G, but is not the diameter of G itself.
 diameter = max([max(j.values()) for (i,j) in nx.shortest_path_length(G)])
-logger.debug("Diameter:" + str(diameter))
+logger.trace("Diameter:" + str(diameter))
 aspl = mean([max(j.values()) for (i,j) in nx.shortest_path_length(G)])
-logger.debug("avg shortest path lengh:" + str(aspl))
+logger.trace("avg shortest path lengh:" + str(aspl))
 
 # (node for node, in_degree in G.in_degree() if in_degree == 0)
 """

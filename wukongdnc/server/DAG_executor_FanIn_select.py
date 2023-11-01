@@ -35,7 +35,7 @@ class DAG_executor_FanIn_Select(Selector):
 
     @n.setter
     def n(self, value):
-        logger.debug("Setting value of FanIn n to " + str(value))
+        logger.trace("Setting value of FanIn n to " + str(value))
         self._n = value
 
     # inherit from parent
@@ -46,7 +46,7 @@ class DAG_executor_FanIn_Select(Selector):
         pass
 
     def init(self, **kwargs):
-        #logger.debug(kwargs)
+        #logger.trace(kwargs)
         #   These are the 6 keyword_arguments passed:
         #   keyword_arguments['fanin_task_name'] = fanins[0]    # used for debugging
         #   keyword_arguments['n'] = faninNB_sizes[0]
@@ -104,7 +104,7 @@ class DAG_executor_FanIn_Select(Selector):
     # no meaningful return value expected by client
     def fan_in(self, **kwargs):
         # if we called try_fan_in first, we still have the mutex so this enter_monitor does not do mutex.P
-        logger.debug("DAG_executor_FanIn_Select: fan_in: entered fan_in()")  
+        logger.trace("DAG_executor_FanIn_Select: fan_in: entered fan_in()")  
         if self._num_calling < (self._n - 1):
             self._num_calling += 1
 
@@ -113,12 +113,12 @@ class DAG_executor_FanIn_Select(Selector):
             result = kwargs['result']
             calling_task_name = kwargs['calling_task_name']
             self._results[calling_task_name] = result
-            logger.debug("DAG_executor_FanIn_Select: fan_in: Result (saved by the non-last executor) " + calling_task_name + " for fan-in %s: %s" % (self.selector_name, str(result)))
+            logger.trace("DAG_executor_FanIn_Select: fan_in: Result (saved by the non-last executor) " + calling_task_name + " for fan-in %s: %s" % (self.selector_name, str(result)))
             #time.sleep(0.1)
             #threading.current_thread()._restart = False
             #threading.current_thread()._returnValue = 0
             #restart = False
-            logger.debug(" FanIn_Select: !!!!! non-last Client " + calling_task_name + " exiting FanIn fan_in id = %s" % self.selector_name)
+            logger.trace(" FanIn_Select: !!!!! non-last Client " + calling_task_name + " exiting FanIn fan_in id = %s" % self.selector_name)
             # Note: Typcally we would return 1 when try_fan_in returns block is True, but the Fanin currently
             # used by wukong D&C is expecting a return value of 0 for this case.
             return 0
@@ -126,22 +126,22 @@ class DAG_executor_FanIn_Select(Selector):
             # Last thread does synchronize_synch and will wait for result since False returned by try_fan_in().
             # Last thread does not append results. It will recieve list of results of other threads and append 
             # its result locally to the returned list.
-            logger.debug("DAG_executor_FanIn_Select: fan_in: last thread in FanIn %s" % self.selector_name)
+            logger.trace("DAG_executor_FanIn_Select: fan_in: last thread in FanIn %s" % self.selector_name)
 
             result = kwargs['result']
             calling_task_name = kwargs['calling_task_name']
             
             if (self._results is not None):
-                logger.debug("DAG_executor_FanIn_Select: fan_in: fanin collected results from " + calling_task_name + " for fan-in %s: %s" % (self.selector_name, str(self._results)))
+                logger.trace("DAG_executor_FanIn_Select: fan_in: fanin collected results from " + calling_task_name + " for fan-in %s: %s" % (self.selector_name, str(self._results)))
  
             #threading.current_thread()._returnValue = self._results
             #threading.current_thread()._restart = False 
             #restart = False
-            logger.debug(" FanIn_Select: !!!!! last Client: " + calling_task_name + " exiting FanIn fan_in id=%s!!!!!" % self.selector_name)
+            logger.trace(" FanIn_Select: !!!!! last Client: " + calling_task_name + " exiting FanIn fan_in id=%s!!!!!" % self.selector_name)
             # No signal of non-last client; they did not block and they are done executing. 
             # does mutex.
             
             return self._results # all threads have called so return results
 
         #No logger.debugs here. main Client can exit while other threads are
-        #doing this logger.debug so main thread/interpreter can't get stdout lock?
+        #doing this logger.trace so main thread/interpreter can't get stdout lock?

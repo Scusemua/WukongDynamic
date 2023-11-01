@@ -33,7 +33,7 @@ class ServerThread(threading.Thread):
             "setup": self.setup,
             "synchronize": self.synchronize
         }        
-        logger.info("Starting new thread for " + str(ip) + ":" + str(port))
+        logger.trace("Starting new thread for " + str(ip) + ":" + str(port))
 
     def _get_synchronizer_name(self, obj_type = None, name = None):
         """
@@ -45,7 +45,7 @@ class ServerThread(threading.Thread):
         return str(name) 
 
     def create(self, message = None):
-        logger.debug("server.create() called.")
+        logger.trace("server.create() called.")
         type_arg = message["type"]
         name = message["name"]
 
@@ -63,11 +63,11 @@ class ServerThread(threading.Thread):
         self.synchronizers[synchronizer_name] = synchronizer # Store Synchronizer object.
 
     def setup(self, message = None):
-        logger.debug("server.setup() called.")
+        logger.trace("server.setup() called.")
         pass 
     
     def synchronize(self, message = None):
-        logger.debug("server.synchronize() called.")
+        logger.trace("server.synchronize() called.")
         obj_name = message['name']
         method_name = message['method_name']
         state = cloudpickle.loads(base64.b64decode(message['state'])) 
@@ -85,7 +85,7 @@ class ServerThread(threading.Thread):
         while True:
             try:
                 data = self.client_socket.recv(2048) 
-                logger.info("Received %d bytes from client: %s" % (len(data), str(data)))
+                logger.trace("Received %d bytes from client: %s" % (len(data), str(data)))
                 json_message = json.loads(data)
                 action = json_message.get("op", None)
                 self.action_handlers[action](message = json_message)
@@ -127,9 +127,9 @@ class TcpServer(socket.socket):
         self.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.bind(('0.0.0.0', 25565))
         self.listen(5)        
-        logger.info("==========================")
-        logger.info("Started Python Coordinator")
-        logger.info("==========================")
+        logger.trace("==========================")
+        logger.trace("Started Python Coordinator")
+        logger.trace("==========================")
         self.run()
 
 if __name__ == "__main__":

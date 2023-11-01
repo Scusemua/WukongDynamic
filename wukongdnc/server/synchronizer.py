@@ -109,11 +109,11 @@ class Synchronizer(object):
         #e.g. “Barrier_b”
         self._synchronizer_name = (str(synchronizer_class_name) + '_' + str(synchronizer_object_name))
         
-        logger.debug("create: Attempting to locate class '%s'" % synchronizer_class_name)
+        logger.trace("create: Attempting to locate class '%s'" % synchronizer_class_name)
         
         src_file = Synchronizer.file_map[synchronizer_class_name]
-        #logger.debug("Creating synchronizer with name '%s' by calling locate('%s.%s')"  % (self._synchronizer_name, src_file, synchronizer_class_name))
-        logger.debug("create: Creating synchronizer with name '%s'" % self._synchronizer_name)
+        #logger.trace("Creating synchronizer with name '%s' by calling locate('%s.%s')"  % (self._synchronizer_name, src_file, synchronizer_class_name))
+        logger.trace("create: Creating synchronizer with name '%s'" % self._synchronizer_name)
 
         # Get the class object for a synchronizer object, e.g.. Barrier
         module = importlib.import_module("wukongdnc.server." + src_file)
@@ -124,7 +124,7 @@ class Synchronizer(object):
             raise ValueError("Failed to locate and create synchronizer of type %s" % synchronizer_class_name)
 
         # Create the synchronization object
-        #logger.debug("got MyClass")
+        #logger.trace("got MyClass")
         self._synchronizer = self._synchClass(self._synchronizer_name)
         if self._synchronizer == None:
             logger.error("create: Failed to locate and create synchronizer of type %s" % synchronizer_class_name)
@@ -132,32 +132,32 @@ class Synchronizer(object):
         
         #e.g. "b"
         self._synchronizer_object_name = synchronizer_object_name
-        logger.debug("create: self._sycnhronizer_object_name: " + self._synchronizer_object_name)
+        logger.trace("create: self._sycnhronizer_object_name: " + self._synchronizer_object_name)
 
         # init the synchronzation object
-        logger.debug("create: Calling _synchronizer init")
+        logger.trace("create: Calling _synchronizer init")
         self._synchronizer.init(**kwargs)  #2
         # where Barrier init is: init(**kwargs): if len(kwargs) not == 1
-	    # logger.debug(“Error: Barrier init has too many argos”) self._n = kwargs[‘n’]
+	    # logger.trace(“Error: Barrier init has too many argos”) self._n = kwargs[‘n’]
 
-        logger.debug ("create: Called _synchronizer init")
+        logger.trace ("create: Called _synchronizer init")
         return 0
 
     # def synchronize_sync(self, tcp_server, obj_name, method_name, type_arg, state, synchronizer_name):        
     def synchronize_sync(self, tcp_server, obj_name, method_name, state, synchronizer_name, tcp_handler):
     
-        logger.debug("synchronizer: synchronize_sync: called")
-        logger.debug("State: " + str(state))
-        #logger.debug("State: keyword_arguments: fanin_task_name:" + str(state.keyword_arguments['fanin_task_name']))
+        logger.trace("synchronizer: synchronize_sync: called")
+        logger.trace("State: " + str(state))
+        #logger.trace("State: keyword_arguments: fanin_task_name:" + str(state.keyword_arguments['fanin_task_name']))
 
         base_name, isTryMethod = isTry_and_getMethodName(method_name)
         is_select = isSelect(self._synchronizer_class_name) # is_select = isSelect(type_arg)
     
-        logger.debug("synchronizer: synchronize_sync: method_name: " + method_name + ", base_name: " + base_name + ", isTryMethod: " + str(isTryMethod))
-        logger.debug(" self._synchronizer_class_name: : " + self._synchronizer_class_name + ", is_select: " + str(is_select))
-        # logger.debug("synchronizer: synchronize_sync: type_arg: " + type_arg + ", is_select: " + str(is_select))
-        #logger.debug("base_name: " + base_name)
-        #logger.debug("isTryMethod: " + str(isTryMethod))
+        logger.trace("synchronizer: synchronize_sync: method_name: " + method_name + ", base_name: " + base_name + ", isTryMethod: " + str(isTryMethod))
+        logger.trace(" self._synchronizer_class_name: : " + self._synchronizer_class_name + ", is_select: " + str(is_select))
+        # logger.trace("synchronizer: synchronize_sync: type_arg: " + type_arg + ", is_select: " + str(is_select))
+        #logger.trace("base_name: " + base_name)
+        #logger.trace("isTryMethod: " + str(isTryMethod))
         
         # COMMENTED OUT:
         # The TCP server does not have a '_synchClass' variable, so that causes an error to be thrown.
@@ -167,7 +167,7 @@ class Synchronizer(object):
         # try:
         #     _synchronizer_method = getattr(self._synchClass, method_name)
         # except Exception as x:
-        #     logger.debug("Caught Error >>> %s" % x)
+        #     logger.trace("Caught Error >>> %s" % x)
 
         if isTryMethod: 
         
@@ -181,7 +181,7 @@ class Synchronizer(object):
             else:
                 try_return_value = self.trySynchronize(method_name, state, **state.keyword_arguments)
 
-            logger.debug("synchronizer: synchronize_sync: Value of try_return_value (Block) for fan-in ID %s: %s" % (obj_name, str(try_return_value)))
+            logger.trace("synchronizer: synchronize_sync: Value of try_return_value (Block) for fan-in ID %s: %s" % (obj_name, str(try_return_value)))
             
             if try_return_value == True:   # synchronize op will execute wait so tell client to terminate
                 state.blocking = True 
@@ -207,18 +207,18 @@ class Synchronizer(object):
                 # if is_select:
                 #     self.unlock_synchronizer()
 
-                logger.debug("synchronizer: synchronize_sync: Value of return_value (not to be sent) for fan-in ID %s and method %s: %s" % (obj_name, method_name, str(return_value)))
+                logger.trace("synchronizer: synchronize_sync: Value of return_value (not to be sent) for fan-in ID %s and method %s: %s" % (obj_name, method_name, str(return_value)))
             else:
                 # execute synchronize op and send result to client
                 if is_select:
-                    logger.debug("Calling synchronizeSelect()")
+                    logger.trace("Calling synchronizeSelect()")
                     # create result_buffer, create execute() reference, call execute(), result_buffer.withdraw(), 
                     # return execute's result, with no restart (by definition of synchronous try-op that did not Block)
                     # and send result to client below.
                     wait_for_return = not try_return_value
                     return_value = self.synchronizeSelect(base_name, state, wait_for_return, **state.keyword_arguments)
                 else:
-                    logger.debug("synchronizer: synchronize_sync: Calling synchronize()")
+                    logger.trace("synchronizer: synchronize_sync: Calling synchronize()")
                     return_value = self.synchronize(base_name, state, **state.keyword_arguments)
                 state.return_value = return_value
                 state.blocking = False 
@@ -227,8 +227,8 @@ class Synchronizer(object):
                 # if is_select:
                 #    self.unlock_synchronizer()
                     
-                logger.debug("synchronizerXXX: synchronize_sync: %s sending return_value %s back for method %s." % (synchronizer_name, str(return_value), method_name))
-                logger.debug("synchronizerYYY: synchronize_sync: %s sending state %s back for method %s." % (synchronizer_name, str(state), method_name))
+                logger.trace("synchronizerXXX: synchronize_sync: %s sending return_value %s back for method %s." % (synchronizer_name, str(return_value), method_name))
+                logger.trace("synchronizerYYY: synchronize_sync: %s sending state %s back for method %s." % (synchronizer_name, str(state), method_name))
 
                 # send tuple to be consistent, and False to be consistent, i.e., get result if False.
                 # This is after releasng the lock
@@ -256,8 +256,8 @@ class Synchronizer(object):
             # if is_select:
             #    self.unlock_synchronizer()  
 
-            logger.debug("synchronizerXXX: synchronize_sync: %s sending return_value %s back for method %s." % (synchronizer_name, str(return_value), method_name))
-            logger.debug("synchronizerYYY: synchronize_sync: %s sending state %s back for method %s." % (synchronizer_name, str(state), method_name))
+            logger.trace("synchronizerXXX: synchronize_sync: %s sending return_value %s back for method %s." % (synchronizer_name, str(return_value), method_name))
+            logger.trace("synchronizerYYY: synchronize_sync: %s sending state %s back for method %s." % (synchronizer_name, str(state), method_name))
            
             tcp_handler.send_serialized_object(cloudpickle.dumps(state))
             
@@ -267,12 +267,12 @@ class Synchronizer(object):
         """
         Asynchronous synchronization.
         """
-        logger.debug("synchronizer: synchronize_async called. method_name = '" + method_name + "'")
-        logger.debug("State: " + str(state))
+        logger.trace("synchronizer: synchronize_async called. method_name = '" + method_name + "'")
+        logger.trace("State: " + str(state))
 
         # is_select = isSelect(type_arg)
         is_select = isSelect(self._synchronizer_class_name)
-        logger.debug("self._synchronizer_class_name: " + self._synchronizer_class_name + ", is_select: " + str(is_select))
+        logger.trace("self._synchronizer_class_name: " + self._synchronizer_class_name + ", is_select: " + str(is_select))
         
         if is_select:
             self.lock_synchronizer()
@@ -286,14 +286,14 @@ class Synchronizer(object):
         # if is_select:
         #    self.unlock_synchronizer()           
         
-        logger.debug("synchronizer: synchronize_async: Synchronize/synchronizeSelect returned: %s" % str(sync_ret_val))
+        logger.trace("synchronizer: synchronize_async: Synchronize/synchronizeSelect returned: %s" % str(sync_ret_val))
         
         return 0
 
     # For try-ops this method calls the try-op method defined by the user (for non-select synchronizers). 
     # Called by synchronize_synch in tcp_server
     def trySynchronize(self, method_name, state, **kwargs):
-        logger.debug("trySynchronize: starting trySynchronize, method_name: " + method_name + ", ID is: " + state.function_instance_ID)
+        logger.trace("trySynchronize: starting trySynchronize, method_name: " + method_name + ", ID is: " + state.function_instance_ID)
         
         try:
             synchronizer_method = getattr(self._synchClass,method_name)
@@ -312,8 +312,8 @@ class Synchronizer(object):
         # synchronizer thread which always expected two return values - return_value and restart
         returnValue = synchronizer_method(self._synchronizer, **kwargs) 
         
-        #logger.debug("trySynchronize (ignoring)" + " restart " + str(restart))
-        logger.debug("trySynchronize: " + " returnValue " + str(returnValue))
+        #logger.trace("trySynchronize (ignoring)" + " restart " + str(restart))
+        logger.trace("trySynchronize: " + " returnValue " + str(returnValue))
         
         return returnValue
         
@@ -321,7 +321,7 @@ class Synchronizer(object):
     # Same as trySynchronize() but we are keeping the non-sect and select code separate.
     # Called by synchronize_synch in tcp_server
     def trySynchronizeSelect(self, method_name, state, **kwargs):
-        logger.debug("trySynchronizeSelect: method_name: " + method_name + ", ID is: " + str(state.function_instance_ID))
+        logger.trace("trySynchronizeSelect: method_name: " + method_name + ", ID is: " + str(state.function_instance_ID))
         
         try:
             synchronizer_method = getattr(self._synchClass, method_name)
@@ -337,8 +337,8 @@ class Synchronizer(object):
         """ with this call """
         returnValue = synchronizer_method(self._synchronizer, **kwargs)
                
-        #logger.debug("trySynchronizeSelect (ignoring)" + " restart " + str(restart))
-        logger.debug("trySynchronizeSelect: " + " returnValue " + str(returnValue))
+        #logger.trace("trySynchronizeSelect (ignoring)" + " restart " + str(restart))
+        logger.trace("trySynchronizeSelect: " + " returnValue " + str(returnValue))
         
         return returnValue
         
@@ -346,7 +346,7 @@ class Synchronizer(object):
     # returns it restarts the serverless function, if necessary.
     # Called by synchronize_synch in tcp_server
     def synchronize(self, method_name, state, **kwargs):
-        logger.debug("synchronize: method_name: " + str(method_name) + ", ID is: " + str(state.function_instance_ID))
+        logger.trace("synchronize: method_name: " + str(method_name) + ", ID is: " + str(state.function_instance_ID))
         
         try:
             synchronizer_method = getattr(self._synchClass, method_name)
@@ -374,17 +374,17 @@ class Synchronizer(object):
         """ with this unrolled """
         returnValue, restart = synchronizer_method(self._synchronizer, **kwargs) 
          
-        logger.debug("synchronize: method_name: " + str(method_name) + ", restart " + str(restart))
-        logger.debug("synchronize: method_name: " + str(method_name) + ", returnValue " + str(returnValue))
-        logger.debug("synchronize: method_name: " + str(method_name) + ", successfully called synchronize method. ")
+        logger.trace("synchronize: method_name: " + str(method_name) + ", restart " + str(restart))
+        logger.trace("synchronize: method_name: " + str(method_name) + ", returnValue " + str(returnValue))
+        logger.trace("synchronize: method_name: " + str(method_name) + ", successfully called synchronize method. ")
 
         # if the method returns restart True, restart the serverless function and pass it its saved state.
         if restart:
             state.restart = True 
             state.return_value = returnValue
             state.blocking = False            
-            logger.info("synchronize: Restarting Lambda function %s." % state.function_name)
-            logger.debug("State: " + str(state))
+            logger.trace("synchronize: Restarting Lambda function %s." % state.function_name)
+            logger.trace("State: " + str(state))
             payload = {"state": state}
             invoke_lambda(payload = payload, is_first_invocation = False, function_name = "ComposerServerlessSync")
         
@@ -394,9 +394,9 @@ class Synchronizer(object):
     # Note, we still pass the synchronizer and method which are needed inside execute().
     # Called by synchronize_synch in tcp_server
     def synchronizeSelect(self, method_name: str, state: State, wait_for_result: bool, **kwargs):
-        logger.debug("State: " + str(state))
-        logger.debug("synchronizeSelect: method_name: " + str(method_name))
-        logger.debug("synchronizeSelect: ID is: " + str(state.function_instance_ID))
+        logger.trace("State: " + str(state))
+        logger.trace("synchronizeSelect: method_name: " + str(method_name))
+        logger.trace("synchronizeSelect: ID is: " + str(state.function_instance_ID))
 
         
         try:
@@ -442,16 +442,16 @@ class Synchronizer(object):
         returnValue = result[0]
         restart = result[1] 
         
-        logger.debug("synchronizeSelect: restart " + str(restart))
-        logger.debug("synchronizeSelect: returnValue " + str(returnValue))
+        logger.trace("synchronizeSelect: restart " + str(restart))
+        logger.trace("synchronizeSelect: returnValue " + str(returnValue))
 
         # if the method returns restart True, restart the serverless function and pass it its saved state.
         if restart:
             state.restart = True 
             state.return_value = returnValue
             state.blocking = False            
-            logger.info("Restarting Lambda function %s." % state.function_name)
-            logger.debug("State: " + str(state))
+            logger.trace("Restarting Lambda function %s." % state.function_name)
+            logger.trace("State: " + str(state))
             payload = {"state": state}
             ###### state.function_name has not changed (will be "FuncA", "FuncB" or "ComposerServerlessSync" )
             invoke_lambda(payload = payload, is_first_invocation = False, function_name = "ComposerServerlessSync")
@@ -506,7 +506,7 @@ class Synchronizer(object):
         
         
         """ removing this synchronizerThread 
-        logger.debug ("starting caller thread to make the call")
+        logger.trace ("starting caller thread to make the call")
         callerThread = synchronizerThread(PythonThreadID, myName,  synchronizer, synchronizer_method, **kwargs)
         callerThread.start()
         callerThread.join()
@@ -515,12 +515,12 @@ class Synchronizer(object):
         """ replaces these five lines too      
         returnValue = callerThread.getReturnValue()
         restart = callerThread.getRestart()
-        #logger.debug("calling acquire exited. returning ...")  
+        #logger.trace("calling acquire exited. returning ...")  
         #synchronizer._exited.acquire()
-        #logger.debug("called acquire exited. returning ...")      
+        #logger.trace("called acquire exited. returning ...")      
         """
         
-        logger.debug("doMethodCall: returnValue: " + str(returnValue))
+        logger.trace("doMethodCall: returnValue: " + str(returnValue))
 
         return returnValue, restart
 
@@ -566,7 +566,7 @@ class Synchronizer(object):
         returnValue, restart = synchronizer_method(synchronizer, **kwargs)
         
         """ removing this sycnhronizer_thread
-        logger.debug ("starting caller thread to make the call")
+        logger.trace ("starting caller thread to make the call")
         callerThread = synchronizerThread(PythonThreadID, myName,  synchronizer, synchronizer_method, **kwargs)
         callerThread.start()
         callerThread.join()
@@ -576,12 +576,12 @@ class Synchronizer(object):
         returnValue = callerThread.getReturnValue()
         restart = callerThread.getRestart()
         
-        #logger.debug("doMethodCallSelectTry: calling acquire exited.")
+        #logger.trace("doMethodCallSelectTry: calling acquire exited.")
         #synchronizer._exited.acquire()
-        #logger.debug("doMethodCallSelectTry: called acquire exited. returning ...")
+        #logger.trace("doMethodCallSelectTry: called acquire exited. returning ...")
         """
         
-        logger.debug("doMethodCallSelectTry: returnValue: " + str(returnValue) + ", restart: " + str(restart))     
+        logger.trace("doMethodCallSelectTry: returnValue: " + str(returnValue) + ", restart: " + str(restart))     
         
         return returnValue, restart
 
@@ -649,11 +649,11 @@ class Synchronizer(object):
 		self._result_buffer, self._**kwargs)
         #self._returnValue = self._synchronizer_method(self._synchronizer,**self._kwargs)
 
-        logger.debug("SynchronizerThreadSelect: return value is " + str(self._returnValue))
+        logger.trace("SynchronizerThreadSelect: return value is " + str(self._returnValue))
         """
  
         """ removing this SynchronizerThreadSelect
-        logger.debug ("doMethodCallSelectExecute starting caller thread to make the call")
+        logger.trace ("doMethodCallSelectExecute starting caller thread to make the call")
         #callerThread = synchronizerThread(PythonThreadID, myName,  synchronizer, synchronizer_method, **kwargs)
         callerThread = SynchronizerThreadSelect(PythonThreadID, myPythonThreadName,  entry_name, synchronizer, synchronizer_method, synchClass, result_buffer, **kwargs)
         callerThread.start()   
@@ -695,11 +695,11 @@ class Synchronizer(object):
         restart = result[1]
 
         """ remove these three lines too
-        #logger.debug("doMethodCallSelectExecute calling acquire exited.")
+        #logger.trace("doMethodCallSelectExecute calling acquire exited.")
         #synchronizer._exited.acquire()
-        #logger.debug("doMethodCallSelectExecute called acquire exited. returning ...")
+        #logger.trace("doMethodCallSelectExecute called acquire exited. returning ...")
         """
         
-        logger.debug("doMethodCallSelectExecute: returnValue: " + str(returnValue) + ", restart: " + str(restart))  
+        logger.trace("doMethodCallSelectExecute: returnValue: " + str(returnValue) + ", restart: " + str(restart))  
         
         return restart, returnValue

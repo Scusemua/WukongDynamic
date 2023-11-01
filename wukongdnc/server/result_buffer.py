@@ -28,11 +28,11 @@ class ResultBuffer(MonitorSU):
 
     def deposit(self, value):
         super().enter_monitor(method_name="deposit")
-        logger.debug(" result buffer deposit() entered monitor, len(self._notFull) ="+str(len(self._notFull))+",self._capacity="+str(self._capacity))
-        logger.debug(" result buffer deposit() entered monitor, len(self._notEmpty) ="+str(len(self._notEmpty))+",self._capacity="+str(self._capacity))
-        logger.debug(" result buffer: Value to deposit: " + str(value))
+        logger.trace(" result buffer deposit() entered monitor, len(self._notFull) ="+str(len(self._notFull))+",self._capacity="+str(self._capacity))
+        logger.trace(" result buffer deposit() entered monitor, len(self._notEmpty) ="+str(len(self._notEmpty))+",self._capacity="+str(self._capacity))
+        logger.trace(" result buffer: Value to deposit: " + str(value))
         if self._fullSlots==self._capacity:
-            logger.debug(" result buffer: Full slots (%d) is equal to capacity (%d). Calling wait_c()." % (self._fullSlots, self._capacity))
+            logger.trace(" result buffer: Full slots (%d) is equal to capacity (%d). Calling wait_c()." % (self._fullSlots, self._capacity))
             self._notFull.wait_c()
         self._buffer.insert(self._in,value)
         self._in=(self._in+1) % int(self._capacity)
@@ -41,11 +41,11 @@ class ResultBuffer(MonitorSU):
         return 0
 
     def withdraw(self):
-        logger.debug(" result buffer  withdraw() entered monitor, len(self._notEmpty) ="+str(len(self._notEmpty))
+        logger.trace(" result buffer  withdraw() entered monitor, len(self._notEmpty) ="+str(len(self._notEmpty))
 		+", self._capacity="+str(self._capacity))
         value = 0
         if self._fullSlots==0:
-            logger.debug(" result buffer: Full slots (%d) is equal to 0. Calling wait_c()." % (self._fullSlots))
+            logger.trace(" result buffer: Full slots (%d) is equal to 0. Calling wait_c()." % (self._fullSlots))
             self._notEmpty.wait_c()
         value=self._buffer[self._out]
         self._out=(self._out+1) % int(self._capacity)
@@ -56,14 +56,14 @@ class ResultBuffer(MonitorSU):
 #Local tests
 def taskD(b : ResultBuffer):
     time.sleep(1)
-    logger.debug("Calling deposit")
+    logger.trace("Calling deposit")
     b.deposit(value = "A")
-    logger.debug("Successfully called deposit")
+    logger.trace("Successfully called deposit")
 
 def taskW(b : ResultBuffer):
-    logger.debug("Calling withdraw")
+    logger.trace("Calling withdraw")
     value = b.withdraw()
-    logger.debug("Successfully called withdraw, got: " + str(value))
+    logger.trace("Successfully called withdraw, got: " + str(value))
 
 
 def main():
@@ -71,28 +71,28 @@ def main():
     #b.init()
     #b.deposit(value = "A")
     #value = b.withdraw()
-    #logger.debug(value)
+    #logger.trace(value)
     #b.deposit(value = "B")
     #value = b.withdraw()
-    #logger.debug(value)
+    #logger.trace(value)
 
     try:
-        logger.debug("Starting D thread")
+        logger.trace("Starting D thread")
         _thread.start_new_thread(taskD, (b,))
     except Exception as ex:
-        logger.debug("[ERROR] Failed to start first thread.")
-        logger.debug(ex)
+        logger.trace("[ERROR] Failed to start first thread.")
+        logger.trace(ex)
 
     try:
-        logger.debug("Starting first thread")
+        logger.trace("Starting first thread")
         _thread.start_new_thread(taskW, (b,))
     except Exception as ex:
-        logger.debug("[ERROR] Failed to start first thread.")
-        logger.debug(ex)
+        logger.trace("[ERROR] Failed to start first thread.")
+        logger.trace(ex)
 
-    logger.debug("Sleeping")
+    logger.trace("Sleeping")
     time.sleep(2)
-    logger.debug("Done sleeping")
+    logger.trace("Done sleeping")
 
 if __name__=="__main__":
     main()

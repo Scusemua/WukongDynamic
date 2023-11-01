@@ -24,16 +24,16 @@ if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
 #def create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,counter,log_queue,worker_configurer):
 def create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,completed_tasks_counter,completed_workers_counter,log_queue,worker_configurer):
 
-    logger.debug("DAG_executor_driver: Starting multi processors for multhreaded multipocessing.")
+    logger.trace("DAG_executor_driver: Starting multi processors for multhreaded multipocessing.")
     iteration = 1
     while True:
-        logger.debug("create processes iteration: " + str(iteration))
+        logger.trace("create processes iteration: " + str(iteration))
         iteration += 1
          # asserts:
         if not run_all_tasks_locally:
             logger.error("[Error]: multithreaded multiprocessing loop but not run_all_tasks_locally")
         if not using_workers:
-            logger.debug("[ERROR] DAG_executor_driver: Starting multi processes for multithreaded multiprocessing but using_workers is false.")
+            logger.trace("[ERROR] DAG_executor_driver: Starting multi processes for multithreaded multiprocessing but using_workers is false.")
 
         try:
             payload = {
@@ -73,14 +73,14 @@ def create_multithreaded_multiprocessing_processes(num_processes_created_for_mul
             multithreaded_multiprocessing_process_list.append(proc)
             num_processes_created_for_multithreaded_multiprocessing += 1                      
 
-            logger.debug("num_processes_created_for_multithreaded_multiprocessing: " + str(num_processes_created_for_multithreaded_multiprocessing)
+            logger.trace("num_processes_created_for_multithreaded_multiprocessing: " + str(num_processes_created_for_multithreaded_multiprocessing)
                 + " num_workers: " + str(num_workers))
             if num_processes_created_for_multithreaded_multiprocessing == num_workers:
-                logger.debug("process creation loop breaking")
+                logger.trace("process creation loop breaking")
                 break 
 
         except Exception as ex:
-            logger.debug("[ERROR] DAG_executor_driver: Failed to start worker process for multithreaded multiprocessing " + "Worker_process_multithreaded_multiproc_" + str(num_processes_created_for_multithreaded_multiprocessing + 1))
-            logger.debug(ex)
+            logger.trace("[ERROR] DAG_executor_driver: Failed to start worker process for multithreaded multiprocessing " + "Worker_process_multithreaded_multiproc_" + str(num_processes_created_for_multithreaded_multiprocessing + 1))
+            logger.trace(ex)
 
     return num_processes_created_for_multithreaded_multiprocessing

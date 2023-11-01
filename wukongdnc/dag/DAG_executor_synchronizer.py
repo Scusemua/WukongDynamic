@@ -55,7 +55,7 @@ class DAG_executor_Synchronizer(object):
         self.mutex.acquire()
 
         inmap = fanin_task_name in self.synchronizers
-        logger.debug ("calling_task_name: " + calling_task_name + " fanin_task_name: " + fanin_task_name
+        logger.trace ("calling_task_name: " + calling_task_name + " fanin_task_name: " + fanin_task_name
 			+ " inmap: " + str(inmap))
         #if not fanin_task_name in DAG_executor_Synchronizer.synchronizers:
         if not inmap: 	# fanin_task_name in self.synchronizers:
@@ -67,9 +67,9 @@ class DAG_executor_Synchronizer(object):
             else:
                 FanIn = DAG_executor_FanIn_select.DAG_executor_FanIn_Select(fanin_task_name) # initial_n = 0, monitor_name = None
             FanIn.init(**keyword_arguments)
-            logger.debug("calling_task_name: " + calling_task_name + " fanin_task_name: " + fanin_task_name
+            logger.trace("calling_task_name: " + calling_task_name + " fanin_task_name: " + fanin_task_name
 				+ " DAG_executor_Synchronizer: create_and_fanin: create caching new fanin with name '%s'" % (fanin_task_name))
-            logger.debug(" DAG_executor_Synchronize: create_and_fanin: create caching new fanin with name '%s'" % (fanin_task_name))
+            logger.trace(" DAG_executor_Synchronize: create_and_fanin: create caching new fanin with name '%s'" % (fanin_task_name))
             self.synchronizers[fanin_task_name] = FanIn # Store Synchronizer object.
 
         # check and possibly create the object is atomic; the call to fan_in the follows does not need
@@ -78,7 +78,7 @@ class DAG_executor_Synchronizer(object):
         self.mutex.release()
 
         inmap = fanin_task_name in self.synchronizers  
-        logger.debug ("calling_task_name: " + calling_task_name + " fanin_task_name: " + fanin_task_name + " inmap after possible create: " + str(inmap))
+        logger.trace ("calling_task_name: " + calling_task_name + " fanin_task_name: " + fanin_task_name + " inmap after possible create: " + str(inmap))
         FanIn = self.synchronizers[fanin_task_name]  
 
         is_select = (FanIn_Type == "DAG_executor_FanIn_Select")
@@ -102,8 +102,8 @@ class DAG_executor_Synchronizer(object):
             # Since we use the monitor-version of fanon and not the select version,
             # the monitor provides the locking; hence, no fanin lock.
             try_return_value = FanIn.try_fan_in(**keyword_arguments)
-        #logger.debug("calling_task_name: " + calling_task_name + " FanIn: try_return_value: " + str(try_return_value))
-        logger.debug("fanin_task_name: " + keyword_arguments['fanin_task_name'] + " try_return_value: " + str(try_return_value))
+        #logger.trace("calling_task_name: " + calling_task_name + " FanIn: try_return_value: " + str(try_return_value))
+        logger.trace("fanin_task_name: " + keyword_arguments['fanin_task_name'] + " try_return_value: " + str(try_return_value))
 
         if try_return_value:   # synchronize op will execute wait so tell client to terminate
             # For fanin, try_return_value always retuns False, so we will always 
@@ -136,13 +136,13 @@ class DAG_executor_Synchronizer(object):
             # get a return_value of 0; otherwise, we get the other fan_in results,
             # which do not include ours.
             if return_value == 0:
-                logger.debug("calling_task_name:" + keyword_arguments['calling_task_name'] 
+                logger.trace("calling_task_name:" + keyword_arguments['calling_task_name'] 
                     + " return value of fan_in is 0.")
                 DAG_exec_state.return_value = 0
                 DAG_exec_state.blocking = False 
             else:
                 # Add our result to the results (instead of sending our result to the fanin on the server and server sending it back
-                logger.debug("fanin become task output, which was our result (to add to results dict.):" + str(keyword_arguments['result']))
+                logger.trace("fanin become task output, which was our result (to add to results dict.):" + str(keyword_arguments['result']))
                 return_value[keyword_arguments['calling_task_name']] = keyword_arguments['result']
                 DAG_exec_state.return_value = return_value
                 DAG_exec_state.blocking = False 
@@ -181,7 +181,7 @@ class DAG_executor_Synchronizer(object):
 
         #st = time.time()
 
-        logger.debug ("calling_task_name: " + keyword_arguments['calling_task_name'] + " calling fanin for " + " fanin_task_name: " + keyword_arguments['fanin_task_name'])
+        logger.trace ("calling_task_name: " + keyword_arguments['calling_task_name'] + " calling fanin for " + " fanin_task_name: " + keyword_arguments['fanin_task_name'])
         FanIn = self.synchronizers[keyword_arguments['fanin_task_name']]  
 
         # Note: fan_in does not block - if the caller is not the last to fan_in, it does not block, 0 is
@@ -205,8 +205,8 @@ class DAG_executor_Synchronizer(object):
             #FanIn.unlock()
         else:
             try_return_value = FanIn.try_fan_in(**keyword_arguments)
-        #logger.debug("calling_task_name: " + calling_task_name + " FanIn: try_return_value: " + str(try_return_value))
-        logger.debug("fanin_task_name: " + keyword_arguments['fanin_task_name'] + " try_return_value: " + str(try_return_value))
+        #logger.trace("calling_task_name: " + calling_task_name + " FanIn: try_return_value: " + str(try_return_value))
+        logger.trace("fanin_task_name: " + keyword_arguments['fanin_task_name'] + " try_return_value: " + str(try_return_value))
 
         if try_return_value:   # synchronize op will execute wait so tell client to terminate
             DAG_exec_state.blocking = True 
@@ -232,18 +232,18 @@ class DAG_executor_Synchronizer(object):
             else:
                 return_value, _restart_value_ignored = FanIn.fan_in(**keyword_arguments)
 
-            logger.debug("calling_task_name:" + keyword_arguments['calling_task_name'])
+            logger.trace("calling_task_name:" + keyword_arguments['calling_task_name'])
             # try_fan_in never returns true. If we are not the last fan_in then we
             # get a return_value of 0; otherwise, we get the other fan_in results,
             # which do not include ours.
             if return_value == 0:
-                logger.debug("calling_task_name:" + keyword_arguments['calling_task_name'] 
+                logger.trace("calling_task_name:" + keyword_arguments['calling_task_name'] 
                     + " return value of fan_in is 0.")
                 DAG_exec_state.return_value = 0
                 DAG_exec_state.blocking = False 
             else:
                 # Add our result to the results (instead of sending our result to the fanin on the server and server sending it back
-                logger.debug("fanin become task output, which was our result (to add to results dict.):" + str(keyword_arguments['result']))
+                logger.trace("fanin become task output, which was our result (to add to results dict.):" + str(keyword_arguments['result']))
                 return_value[keyword_arguments['calling_task_name']] = keyword_arguments['result']
                 DAG_exec_state.return_value = return_value
                 DAG_exec_state.blocking = False 
@@ -300,7 +300,7 @@ class DAG_executor_Synchronizer(object):
         # create and fan_in must be atomic
         self.mutex.acquire()
         inmap = fanin_task_name in self.synchronizers
-        logger.debug ("calling_task_name: " + calling_task_name + " fanin_task_name: " + fanin_task_name + " inmap: " + str(inmap))
+        logger.trace ("calling_task_name: " + calling_task_name + " fanin_task_name: " + fanin_task_name + " inmap: " + str(inmap))
         is_select = (FanIn_Type == "DAG_executor_FanIn_Select")
         if not inmap: 	# fanin_task_name in self.synchronizers:
             if not is_select:
@@ -309,14 +309,14 @@ class DAG_executor_Synchronizer(object):
                 FanInNB = DAG_executor_FanInNB_select.DAG_executor_FanInNB_Select(fanin_task_name) # initial_n = 0, monitor_name = None
 
             FanInNB.init(**keyword_arguments)
-            logger.debug("calling_task_name: " + calling_task_name + " fanin_task_name: " + fanin_task_name
+            logger.trace("calling_task_name: " + calling_task_name + " fanin_task_name: " + fanin_task_name
                 + " DAG_executor_Synchronizer: create_and_faninNB: create caching new fanin with name '%s'" % (fanin_task_name))
-            logger.debug(" DAG_executor_Synchronizer: create_and_faninNB: create caching new fanin with name '%s'" % (fanin_task_name))
+            logger.trace(" DAG_executor_Synchronizer: create_and_faninNB: create caching new fanin with name '%s'" % (fanin_task_name))
 
             self.synchronizers[fanin_task_name] = FanInNB # Store Synchronizer object.
  
         inmap = fanin_task_name in self.synchronizers  
-        logger.debug ("calling_task_name: " + calling_task_name + " fanin_task_name: " + fanin_task_name + " inmap: " + str(inmap))
+        logger.trace ("calling_task_name: " + calling_task_name + " fanin_task_name: " + fanin_task_name + " inmap: " + str(inmap))
         FanInNB = self.synchronizers[fanin_task_name]
         
 		# Note: in real code, we would return here so caller can quit, letting server do the op.
@@ -377,7 +377,7 @@ class DAG_executor_Synchronizer(object):
         #store_fanins_faninNBs_locally = keyword_arguments['store_fanins_faninNBs_locally']  # option set in DAG_executor
         #DAG_info = keyword_arguments['DAG_info']
         
-        logger.debug ("calling_task_name: " + keyword_arguments['calling_task_name'] + "calling faninNB with fanin_task_name: " + keyword_arguments['fanin_task_name'])
+        logger.trace ("calling_task_name: " + keyword_arguments['calling_task_name'] + "calling faninNB with fanin_task_name: " + keyword_arguments['fanin_task_name'])
 
         FanInNB = self.synchronizers[keyword_arguments['fanin_task_name']]
         
@@ -456,15 +456,15 @@ class DAG_executor_Synchronizer(object):
         # create_and_fan_in op must be atomic (as will bee on server, with many client callers)
         #self.mutex.acquire()
 
-        logger.debug(str(fanin_messages))
-        logger.debug(str(faninNB_messages))
+        logger.trace(str(fanin_messages))
+        logger.trace(str(faninNB_messages))
         for msg in fanin_messages:
-            #logger.debug("calling_task_name: " + calling_task_name + " fanin_task_name: " + fanin_task_name)
+            #logger.trace("calling_task_name: " + calling_task_name + " fanin_task_name: " + fanin_task_name)
             fanin_task_name = msg["name"]
             #DAG_exec_state = msg['state']
             #n = DAG_exec_state.keyword_arguments['n']
             inmap = fanin_task_name in self.synchronizers
-            logger.debug (" inmap before: " + str(inmap))
+            logger.trace (" inmap before: " + str(inmap))
             #if not fanin_task_name in DAG_executor_Synchronizer.synchronizers:
             if not inmap: 	# fanin_task_name in self.synchronizers:
                 is_select = (FanIn_Type == "DAG_executor_FanIn_Select")
@@ -473,10 +473,10 @@ class DAG_executor_Synchronizer(object):
                 else:
                     FanIn = DAG_executor_FanIn_select.DAG_executor_FanIn_Select(fanin_task_name) # initial_n = 0, monitor_name = None
                 FanIn.init(**(msg['state'].keyword_arguments))
-                logger.debug(" create_and_fanin: create caching new fanin with name '%s'" % (fanin_task_name))
+                logger.trace(" create_and_fanin: create caching new fanin with name '%s'" % (fanin_task_name))
                 self.synchronizers[fanin_task_name] = FanIn # Store Synchronizer object.
             inmap = fanin_task_name in self.synchronizers  
-            logger.debug (" inmap after: " + str(inmap))
+            logger.trace (" inmap after: " + str(inmap))
             FanIn = self.synchronizers[fanin_task_name] 
             
         for msg in faninNB_messages:
@@ -485,7 +485,7 @@ class DAG_executor_Synchronizer(object):
             #n = DAG_exec_state.keyword_arguments['n']
             #start_state_fanin_task = DAG_exec_state.keyword_arguments['start_state_fanin_task']
             inmap = faninNB_task_name in self.synchronizers
-            logger.debug (" inmap before: " + str(inmap))
+            logger.trace (" inmap before: " + str(inmap))
             #if not fanin_task_name in DAG_executor_Synchronizer.synchronizers:
             if not inmap: 	# faninNB_task_name in self.synchronizers:
                 is_select = (FanIn_Type == "DAG_executor_FanIn_Select")
@@ -494,10 +494,10 @@ class DAG_executor_Synchronizer(object):
                 else:
                     FanInNB = DAG_executor_FanInNB_select.DAG_executor_FanInNB_Select(faninNB_task_name) # initial_n = 0, monitor_name = None
                 FanInNB.init(**(msg['state'].keyword_arguments))
-                logger.debug(" create_and_fanin: create caching new fanin with name '%s'" % (faninNB_task_name))
+                logger.trace(" create_and_fanin: create caching new fanin with name '%s'" % (faninNB_task_name))
                 self.synchronizers[faninNB_task_name] = FanInNB # Store Synchronizer object.
             inmap = faninNB_task_name in self.synchronizers  
-            logger.debug (" inmap after: " + str(inmap))
+            logger.trace (" inmap after: " + str(inmap))
             FanInNB = self.synchronizers[faninNB_task_name]  
 
 		# ToDo: may return DAG_executor_State to be consistent - it can be ignored.

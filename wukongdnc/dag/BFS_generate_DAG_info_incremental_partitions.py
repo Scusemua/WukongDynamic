@@ -112,7 +112,7 @@ def generate_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks):
     """
     
     # construct a dictionary of DAG information 
-    logger.info("")
+    logger.trace("")
     DAG_info_dictionary = {}
     DAG_info_dictionary["DAG_map"] = Partition_DAG_map
     DAG_info_dictionary["DAG_states"] = Partition_DAG_states
@@ -173,65 +173,65 @@ def generate_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks):
 
     # for debugging
     if show_generated_DAG_info:
-        logger.info("DAG_map:")
+        logger.trace("DAG_map:")
         for key, value in Partition_DAG_map.items():
-            logger.info(str(key) + ' : ' + str(value))
-        logger.info("")
-        logger.info("states:")        
+            logger.trace(str(key) + ' : ' + str(value))
+        logger.trace("")
+        logger.trace("states:")        
         for key, value in Partition_DAG_states.items():
-            logger.info(str(key) + ' : ' + str(value))
-        logger.info("")
-        logger.info("num_fanins:" + str(num_fanins) + " num_fanouts:" + str(num_fanouts) + " num_faninNBs:"
+            logger.trace(str(key) + ' : ' + str(value))
+        logger.trace("")
+        logger.trace("num_fanins:" + str(num_fanins) + " num_fanouts:" + str(num_fanouts) + " num_faninNBs:"
         + str(num_faninNBs) + " num_collapse:" + str(num_collapse))
-        logger.info("")  
-        logger.info("Note: partitions only have collapse sets.")
-        logger.info("Partition_all_fanout_task_names:")
+        logger.trace("")  
+        logger.trace("Note: partitions only have collapse sets.")
+        logger.trace("Partition_all_fanout_task_names:")
         for name in Partition_all_fanout_task_names:
-            logger.info(name)
-        logger.info("all_fanin_task_names:")
+            logger.trace(name)
+        logger.trace("all_fanin_task_names:")
         for name in Partition_all_fanin_task_names :
-            logger.info(name)
-        logger.info("all_fanin_sizes:")
+            logger.trace(name)
+        logger.trace("all_fanin_sizes:")
         for s in Partition_all_fanin_sizes :
-            logger.info(s)
-        logger.info("all_faninNB_task_names:")
+            logger.trace(s)
+        logger.trace("all_faninNB_task_names:")
         for name in Partition_all_faninNB_task_names:
-            logger.info(name)
-        logger.info("all_faninNB_sizes:")
+            logger.trace(name)
+        logger.trace("all_faninNB_sizes:")
         for s in Partition_all_faninNB_sizes:
-            logger.info(s)
-        logger.info("Partition_all_collapse_task_names:")
+            logger.trace(s)
+        logger.trace("Partition_all_collapse_task_names:")
         for name in Partition_all_collapse_task_names:
-            logger.info(name)
-        logger.info("")
-        logger.info("leaf task start states:")
+            logger.trace(name)
+        logger.trace("")
+        logger.trace("leaf task start states:")
         for start_state in Partition_DAG_leaf_task_start_states:
-            logger.info(start_state)
-        logger.info("")
-        logger.info("DAG_tasks:")
+            logger.trace(start_state)
+        logger.trace("")
+        logger.trace("DAG_tasks:")
         for key, value in Partition_DAG_tasks.items():
-            logger.info(str(key) + ' : ' + str(value))
-        logger.info("")
-        logger.info("DAG_leaf_tasks:")
+            logger.trace(str(key) + ' : ' + str(value))
+        logger.trace("")
+        logger.trace("DAG_leaf_tasks:")
         for task_name in Partition_DAG_leaf_tasks:
-            logger.info(task_name)
-        logger.info("")
-        logger.info("DAG_leaf_task_inputs:")
+            logger.trace(task_name)
+        logger.trace("")
+        logger.trace("DAG_leaf_task_inputs:")
         for inp in Partition_DAG_leaf_task_inputs:
-            logger.info(inp)
-        logger.info("")
-        logger.info("DAG_version_number:")
-        logger.info(Partition_DAG_version_number)
-        logger.info("")
-        logger.info("DAG_is_complete:")
-        logger.info(Partition_DAG_is_complete)
-        logger.info("")
-        logger.info("DAG_number_of_tasks:")
-        logger.info(Partition_DAG_number_of_tasks)
-        logger.info("")
-        logger.info("DAG_number_of_incomplete_tasks:")
-        logger.info(Partition_DAG_number_of_incomplete_tasks)
-        logger.info("")
+            logger.trace(inp)
+        logger.trace("")
+        logger.trace("DAG_version_number:")
+        logger.trace(Partition_DAG_version_number)
+        logger.trace("")
+        logger.trace("DAG_is_complete:")
+        logger.trace(Partition_DAG_is_complete)
+        logger.trace("")
+        logger.trace("DAG_number_of_tasks:")
+        logger.trace(Partition_DAG_number_of_tasks)
+        logger.trace("")
+        logger.trace("DAG_number_of_incomplete_tasks:")
+        logger.trace(Partition_DAG_number_of_incomplete_tasks)
+        logger.trace("")
 
     # for debugging
     # read file file_name_incremental just written and display contents 
@@ -259,53 +259,53 @@ def generate_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks):
         DAG_number_of_tasks = DAG_info_partition_read.get_DAG_number_of_tasks()
         DAG_number_of_incomplete_tasks = DAG_info_partition_read.get_DAG_number_of_incomplete_tasks()
 
-        logger.info("")
-        logger.info("DAG_info partition after read:")
+        logger.trace("")
+        logger.trace("DAG_info partition after read:")
         output_DAG = True
         if output_DAG:
             # FYI:
-            logger.info("DAG_map:")
+            logger.trace("DAG_map:")
             for key, value in DAG_map.items():
-                logger.info(str(key) + ' : ' + str(value))
-                #logger.info(key)
-                #logger.info(value)
-            logger.info("  ")
-            logger.info("DAG states:")      
+                logger.trace(str(key) + ' : ' + str(value))
+                #logger.trace(key)
+                #logger.trace(value)
+            logger.trace("  ")
+            logger.trace("DAG states:")      
             for key, value in DAG_states.items():
-                logger.info(str(key) + ' : ' + str(value))
-            logger.info("   ")
-            logger.info("DAG leaf task start states")
+                logger.trace(str(key) + ' : ' + str(value))
+            logger.trace("   ")
+            logger.trace("DAG leaf task start states")
             for start_state in DAG_leaf_task_start_states:
-                logger.info(start_state)
-            logger.info("")
-            logger.info("all_collapse_task_names:")
+                logger.trace(start_state)
+            logger.trace("")
+            logger.trace("all_collapse_task_names:")
             for name in all_collapse_task_names:
-                logger.info(name)
-            logger.info("")
-            logger.info("DAG_tasks:")
+                logger.trace(name)
+            logger.trace("")
+            logger.trace("DAG_tasks:")
             for key, value in DAG_tasks.items():
-                logger.info(str(key) + ' : ' + str(value))
-            logger.info("")
-            logger.info("DAG_leaf_tasks:")
+                logger.trace(str(key) + ' : ' + str(value))
+            logger.trace("")
+            logger.trace("DAG_leaf_tasks:")
             for task_name in DAG_leaf_tasks:
-                logger.info(task_name)
-            logger.info("") 
-            logger.info("DAG_leaf_task_inputs:")
+                logger.trace(task_name)
+            logger.trace("") 
+            logger.trace("DAG_leaf_task_inputs:")
             for inp in DAG_leaf_task_inputs:
-                logger.info(inp)
-            logger.info("")
-            logger.info("DAG_version_number:")
-            logger.info(DAG_version_number)
-            logger.info("")
-            logger.info("DAG_info_is_complete:")
-            logger.info(Partition_DAG_is_complete)
-            logger.info("")
-            logger.info("DAG_number_of_tasks:")
-            logger.info(DAG_number_of_tasks)
-            logger.info("")
-            logger.info("DAG_number_of_incomplete_tasks:")
-            logger.info(DAG_number_of_incomplete_tasks)
-            logger.info("")
+                logger.trace(inp)
+            logger.trace("")
+            logger.trace("DAG_version_number:")
+            logger.trace(DAG_version_number)
+            logger.trace("")
+            logger.trace("DAG_info_is_complete:")
+            logger.trace(Partition_DAG_is_complete)
+            logger.trace("")
+            logger.trace("DAG_number_of_tasks:")
+            logger.trace(DAG_number_of_tasks)
+            logger.trace("")
+            logger.trace("DAG_number_of_incomplete_tasks:")
+            logger.trace(DAG_number_of_incomplete_tasks)
+            logger.trace("")
 
     # create the DAG_info object from the dictionary
     # Note: The DAG_map in this DAG_info is a shallow copy of the
@@ -367,8 +367,8 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
     global Partition_DAG_previous_partition_name
     global Partition_DAG_number_of_tasks
 
-    logger.info("generate_DAG_info_incremental_partitions: to_be_continued: " + str(to_be_continued))
-    logger.info("generate_DAG_info_incremental_partitions: current_partition_number: " + str(current_partition_number))
+    logger.trace("generate_DAG_info_incremental_partitions: to_be_continued: " + str(to_be_continued))
+    logger.trace("generate_DAG_info_incremental_partitions: current_partition_number: " + str(current_partition_number))
 
     # for debugging
     # we track the edges between tasks. If task A has a fanin/fanout
@@ -393,7 +393,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         print(name + " ")
     print()
 
-    logger.info("generate_DAG_info_incremental_partitions: Partition DAG incrementally:")
+    logger.trace("generate_DAG_info_incremental_partitions: Partition DAG incrementally:")
 
     # These lists are part of the state_info gnerated for the current 
     # partition. For partitions, only collpase will be non-empty. That is,
@@ -484,7 +484,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
                 # Function to compute pagerank values when using array of structs
                 Partition_DAG_tasks[current_partition_name] = PageRank_Function_Driver_Shared_Fast  
 
-        logger.info("generate_DAG_info_incremental_partitions: Partition_DAG_map[current_state]: " + str(Partition_DAG_map[current_state] ))
+        logger.trace("generate_DAG_info_incremental_partitions: Partition_DAG_map[current_state]: " + str(Partition_DAG_map[current_state] ))
 
         # Note: setting version number and to_be_continued of DAG_info in generate_DAG_for_partitions()
         # Note: setting number of tasks of DAG_info in generate_DAG_for_partitions()
@@ -500,7 +500,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         # uses dictionry to create the DAG_info object
         DAG_info = generate_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
 
-        logger.info("generate_DAG_info_incremental_partitions: returning from generate_DAG_info_incremental_partitions for"
+        logger.trace("generate_DAG_info_incremental_partitions: returning from generate_DAG_info_incremental_partitions for"
             + " partition " + str(current_partition_name))
         
         return DAG_info
@@ -566,7 +566,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
             state_info_of_previous_previous_partition = Partition_DAG_map[previous_previous_state]
             state_info_of_previous_previous_partition.fanout_fanin_faninNB_collapse_groups_are_ToBeContinued = False
 
-        logger.info("generate_DAG_info_incremental_partitions: new connected component for current partition "
+        logger.trace("generate_DAG_info_incremental_partitions: new connected component for current partition "
             + str(current_partition_number) + ", the previous_state_info for previous state " 
             + str(previous_state) + " after update TBC (no collapse) is: " 
             + str(state_info_of_previous_partition))
@@ -592,7 +592,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
             else:
                 Partition_DAG_tasks[current_partition_name] = PageRank_Function_Driver_Shared_Fast  
 
-        logger.info("generate_DAG_info_incremental_partitions: Partition_DAG_map[current_state]: " + str(Partition_DAG_map[current_state] ))
+        logger.trace("generate_DAG_info_incremental_partitions: Partition_DAG_map[current_state]: " + str(Partition_DAG_map[current_state] ))
 
         # save current name as previous name. If this is partition PRi_1
         # we cannot just use PRi-1_1 since the name might have an L at the
@@ -673,35 +673,35 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
             Partition_DAG_map[current_state].fanins.append("goo")
 
             # display DAG_executor's state_info objects
-            logger.info("address DAG_info_DAG_map: " + str(hex(id(DAG_info_DAG_map))))
-            logger.info("generate_DAG_info_incremental_partitions: DAG_info_DAG_map after state_info copy:")
+            logger.trace("address DAG_info_DAG_map: " + str(hex(id(DAG_info_DAG_map))))
+            logger.trace("generate_DAG_info_incremental_partitions: DAG_info_DAG_map after state_info copy:")
             for key, value in DAG_info_DAG_map.items():
-                logger.info(str(key) + ' : ' + str(value) + " addr value: " + str(hex(id(value))))
+                logger.trace(str(key) + ' : ' + str(value) + " addr value: " + str(hex(id(value))))
 
             # display generator's state_info objects
-            logger.info("address Partition_DAG_map: " + str(hex(id(Partition_DAG_map))))
-            logger.info("generate_DAG_info_incremental_partitions: Partition_DAG_map:")
+            logger.trace("address Partition_DAG_map: " + str(hex(id(Partition_DAG_map))))
+            logger.trace("generate_DAG_info_incremental_partitions: Partition_DAG_map:")
             for key, value in Partition_DAG_map.items():
-                logger.info(str(key) + ' : ' + str(value) + " addr value: " + str(hex(id(value))))
+                logger.trace(str(key) + ' : ' + str(value) + " addr value: " + str(hex(id(value))))
 
             # undo the modification to the generator's state_info
             Partition_DAG_map[current_state].fanins.clear()
 
             # display generator's state_info objects
-            logger.info("generate_DAG_info_incremental_partitions: DAG_info_DAG_map after clear:")
+            logger.trace("generate_DAG_info_incremental_partitions: DAG_info_DAG_map after clear:")
             for key, value in DAG_info_DAG_map.items():
-                logger.info(str(key) + ' : ' + str(value))
+                logger.trace(str(key) + ' : ' + str(value))
         
             # display DAG_executor's state_info ojects
-            logger.info("generate_DAG_info_incremental_partitions: Partition_DAG_map:")
+            logger.trace("generate_DAG_info_incremental_partitions: Partition_DAG_map:")
             for key, value in Partition_DAG_map.items():
-                logger.info(str(key) + ' : ' + str(value))
+                logger.trace(str(key) + ' : ' + str(value))
 
             # logging.shutdown()
             # os._exit(0)
             """ 
 
-        logger.info("generate_DAG_info_incremental_partitions: returning from generate_DAG_info_incremental_partitions for"
+        logger.trace("generate_DAG_info_incremental_partitions: returning from generate_DAG_info_incremental_partitions for"
             + " partition " + str(current_partition_name))
         
         return DAG_info
@@ -780,7 +780,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
             state_info_of_previous_previous_partition = Partition_DAG_map[previous_previous_state]
             state_info_of_previous_previous_partition.fanout_fanin_faninNB_collapse_groups_are_ToBeContinued = False
 
-        logger.info("generate_DAG_info_incremental_partitions: for current partition, the previous_state_info after update collpase and TBC: " 
+        logger.trace("generate_DAG_info_incremental_partitions: for current partition, the previous_state_info after update collpase and TBC: " 
             + str(state_info_of_previous_partition))
 
         # generate DAG information
@@ -805,9 +805,9 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
             else:
                 Partition_DAG_tasks[current_partition_name] = PageRank_Function_Driver_Shared_Fast  
 
-        logger.info("generate_DAG_info_incremental_partitions: generate_DAG_info_incremental_partitions for"
+        logger.trace("generate_DAG_info_incremental_partitions: generate_DAG_info_incremental_partitions for"
             + " partition " + str(current_partition_name))
-        logger.info("generate_DAG_info_incremental_partitions: Partition_DAG_map[current_state]: " + str(Partition_DAG_map[current_state] ))
+        logger.trace("generate_DAG_info_incremental_partitions: Partition_DAG_map[current_state]: " + str(Partition_DAG_map[current_state] ))
 
         # save current_partition_name as previous_partition_name so we
         # can access previous_partition_name on the next call.
@@ -931,16 +931,16 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
             Partition_DAG_map[current_state].fanins.append("goo")
             
             # display DAG_executor's state_info objects
-            logger.info("address DAG_info_DAG_map: " + str(hex(id(DAG_info_DAG_map))))
-            logger.info("generate_DAG_info_incremental_partitions: DAG_info_DAG_map after state_info copy:")
+            logger.trace("address DAG_info_DAG_map: " + str(hex(id(DAG_info_DAG_map))))
+            logger.trace("generate_DAG_info_incremental_partitions: DAG_info_DAG_map after state_info copy:")
             for key, value in DAG_info_DAG_map.items():
-                logger.info(str(key) + ' : ' + str(value) + " addr value: " + str(hex(id(value))))
+                logger.trace(str(key) + ' : ' + str(value) + " addr value: " + str(hex(id(value))))
 
             # display generator's state_info objects
-            logger.info("address Partition_DAG_map: " + str(hex(id(Partition_DAG_map))))
-            logger.info("generate_DAG_info_incremental_partitions: Partition_DAG_map:")
+            logger.trace("address Partition_DAG_map: " + str(hex(id(Partition_DAG_map))))
+            logger.trace("generate_DAG_info_incremental_partitions: Partition_DAG_map:")
             for key, value in Partition_DAG_map.items():
-                logger.info(str(key) + ' : ' + str(value) + " addr value: " + str(hex(id(value))))
+                logger.trace(str(key) + ' : ' + str(value) + " addr value: " + str(hex(id(value))))
 
             # fanin values should be different for current_state
             # one with "goo" and the other empty
@@ -949,14 +949,14 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
             Partition_DAG_map[current_state].fanins.clear()
 
             # display DAG_executor's state_info objects
-            logger.info("generate_DAG_info_incremental_partitions: DAG_info_DAG_map after clear:")
+            logger.trace("generate_DAG_info_incremental_partitions: DAG_info_DAG_map after clear:")
             for key, value in DAG_info_DAG_map.items():
-                logger.info(str(key) + ' : ' + str(value))
+                logger.trace(str(key) + ' : ' + str(value))
         
             # display generator's state_info ojects
-            logger.info("generate_DAG_info_incremental_partitions: Partition_DAG_map:")
+            logger.trace("generate_DAG_info_incremental_partitions: Partition_DAG_map:")
             for key, value in Partition_DAG_map.items():
-                logger.info(str(key) + ' : ' + str(value))
+                logger.trace(str(key) + ' : ' + str(value))
 
             # fanin values should be the same for current_state (empty)
 
@@ -964,7 +964,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
             # os._exit(0)
             """
 
-        logger.info("generate_DAG_info_incremental_partitions: returning from generate_DAG_info_incremental_partitions for"
+        logger.trace("generate_DAG_info_incremental_partitions: returning from generate_DAG_info_incremental_partitions for"
             + " partition " + str(current_partition_name))
 
         return DAG_info

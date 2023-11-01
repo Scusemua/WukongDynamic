@@ -22,9 +22,18 @@ import wukongdnc.dag.DAG_executor_constants
 from ..dag.DAG_info import DAG_Info
 from ..dag.DAG_executor_State import DAG_executor_State
 
-
-# Set up logging.
 import logging 
+from ..dag.addLoggingLevel import addLoggingLevel
+""" How to use: https://stackoverflow.com/questions/2183233/how-to-add-a-custom-loglevel-to-pythons-logging-facility/35804945#35804945
+    >>> addLoggingLevel('TRACE', logging.DEBUG - 5)
+    >>> logging.getLogger(__name__).setLevel("TRACE")
+    >>> logging.getLogger(__name__).trace('that worked')
+    >>> logging.trace('so did this')
+    >>> logging.TRACE
+"""
+# Set up logging.
+addLoggingLevel('TRACE', logging.DEBUG - 5)
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
@@ -50,8 +59,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
         #TCP handler for incoming requests from AWS Lambda functions.
         
         while True:
-            logger.info("[HANDLER] Recieved one request from {}".format(self.client_address[0]))
-            logger.info("[HANDLER] Recieved one request from {}".format(self.client_address[1]))
+            logger.trace("[HANDLER] Recieved one request from {}".format(self.client_address[0]))
+            logger.trace("[HANDLER] Recieved one request from {}".format(self.client_address[1]))
 
             self.action_handlers = {
                 "create": self.create_obj,
@@ -64,12 +73,12 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 "synchronize_process_faninNBs_batch": self.synchronize_process_faninNBs_batch,
                 "create_work_queue": self.create_work_queue
             }
-            #logger.info("Thread Name:{}".format(threading.current_thread().name))
+            #logger.trace("Thread Name:{}".format(threading.current_thread().name))
 
             try:
-                logger.debug("[HANDLER] call receive_object")
+                logger.trace("[HANDLER] call receive_object")
                 data = self.recv_object()
-                logger.debug("[HANDLER] receive_object successful")
+                logger.trace("[HANDLER] receive_object successful")
 
                 # We only read DAG_info one time, and only if we are 
                 # using real lambdas. When we invoke a real lambda
@@ -85,7 +94,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     read_DAG_info = False
                     global DAG_info # initialized to None
                     DAG_info = DAG_Info.DAG_info_fromfilename()
-                    logger.debug("tcp_server: read DAG_info for real lambdas.")
+                    logger.trace("tcp_server: read DAG_info for real lambdas.")
 #rhc: DAG_info
                     print("tcp_server: DAG_map:")
                     DAG_map = DAG_info.get_DAG_map()
@@ -94,17 +103,19 @@ class TCPHandler(socketserver.StreamRequestHandler):
                         print(value)
                 """
                 #else:
-                #    logger.debug("TCP_Server: Don't read DAG_info.")
+                #    logger.trace("TCP_Server: Don't read DAG_info.")
 
                 if data is None:
-                    logger.warning("recv_object() returned None. Exiting handler now.")
+                    # Commented out to suppress warnings
+                    #logger.warning("recv_object() returned None. Exiting handler now.")
+                    logger.trace("recv_object() returned None. Exiting handler now.")
                     return 
-                logger.debug("tcp_server: synchronize_sync: data is " + str(data))
+                logger.trace("tcp_server: synchronize_sync: data is " + str(data))
                 json_message = json.loads(data)
                 message_id = json_message["id"]
-                logger.debug("[HANDLER] Received message (size=%d bytes) from client %s with ID=%s" % (len(data), self.client_address[0], message_id))
+                logger.trace("[HANDLER] Received message (size=%d bytes) from client %s with ID=%s" % (len(data), self.client_address[0], message_id))
                 action = json_message.get("op", None)
-                logger.debug("[HANDLER] for client with ID=" + message_id + " action is: " + action)
+                logger.trace("[HANDLER] for client with ID=" + message_id + " action is: " + action)
  
                 self.action_handlers[action](message = json_message)
             except ConnectionResetError as ex:
@@ -136,7 +147,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             message (dict):
                 The payload from the AWS Lambda function.
         """        
-        logger.debug("[HANDLER] server.create() called.")
+        logger.trace("[HANDLER] server.create() called.")
         type_arg = message["type"]
         name = message["name"]
         state = decode_and_deserialize(message["state"])
@@ -146,7 +157,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         synchronizer.create(type_arg, name, **state.keyword_arguments)
         
         synchronizer_name = self._get_synchronizer_name(type_name = type_arg, name = name)
-        logger.debug("Caching new Synchronizer of type '%s' with name '%s'" % (type_arg, synchronizer_name))
+        logger.trace("Caching new Synchronizer of type '%s' with name '%s'" % (type_arg, synchronizer_name))
         tcp_server.synchronizers[synchronizer_name] = synchronizer # Store Synchronizer object.
 
         resp = {
@@ -156,10 +167,10 @@ class TCPHandler(socketserver.StreamRequestHandler):
         #############################
         # Write ACK back to client. #
         #############################
-        logger.info("Sending ACK to client %s for CREATE operation." % self.client_address[0])
+        logger.trace("Sending ACK to client %s for CREATE operation." % self.client_address[0])
         resp_encoded = json.dumps(resp).encode('utf-8')
         self.send_serialized_object(resp_encoded)
-        logger.info("Sent ACK of size %d bytes to client %s for CREATE operation." % (len(resp_encoded), self.client_address[0]))  
+        logger.trace("Sent ACK of size %d bytes to client %s for CREATE operation." % (len(resp_encoded), self.client_address[0]))  
 
     # Not used and not tested. Currently create work queue in 
     # create_all_fanins_and_faninNBs_and_possibly_work_queue. 
@@ -175,10 +186,10 @@ class TCPHandler(socketserver.StreamRequestHandler):
         #############################
         # Write ACK back to client. #
         #############################
-        logger.info("Sending ACK to client %s for create_work_queue operation." % self.client_address[0])
+        logger.trace("Sending ACK to client %s for create_work_queue operation." % self.client_address[0])
         resp_encoded = json.dumps(resp).encode('utf-8')
         self.send_serialized_object(resp_encoded)
-        logger.info("Sent ACK of size %d bytes to client %s for create_awork_queue operation." % (len(resp_encoded), self.client_address[0]))
+        logger.trace("Sent ACK of size %d bytes to client %s for create_awork_queue operation." % (len(resp_encoded), self.client_address[0]))
 
     def create_all_sync_objects(self, message = None):
         """
@@ -199,22 +210,22 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 "id": msg_id
             }
         """  
-        logger.debug("[HANDLER] server.create_all_sync_objects called.")
+        logger.trace("[HANDLER] server.create_all_sync_objects called.")
         messages = message['name']
         fanin_messages = messages[0]
         faninNB_messages = messages[1]
-        logger.info("create_all_sync_objects: fanin messages: " + str(fanin_messages))
-        logger.info("create_all_sync_objects: faninNB messages: " + str(faninNB_messages))
+        logger.trace("create_all_sync_objects: fanin messages: " + str(fanin_messages))
+        logger.trace("create_all_sync_objects: faninNB messages: " + str(faninNB_messages))
 
         for msg in fanin_messages:
             self.create_obj_but_no_ack_to_client(msg)
         if len(fanin_messages) > 0:
-            logger.info("create_all_sync_objects: created fanins")
+            logger.trace("create_all_sync_objects: created fanins")
 
         for msg in faninNB_messages:
             self.create_obj_but_no_ack_to_client(msg)
         if len(faninNB_messages) > 0:
-            logger.info("create_all_sync_objects: created faninNBs")
+            logger.trace("create_all_sync_objects: created faninNBs")
 
         # we always create the fanin and faninNBs. We possibly create the work queue. If we send
         # a message for create work queue, in addition to the list of messages for create
@@ -228,17 +239,17 @@ class TCPHandler(socketserver.StreamRequestHandler):
         if create_the_work_queue_or_fanouts:
             type = message['type']
             if type == "DAG_executor_fanin_or_faninNB_or_work_queue":
-                logger.info("create_all_sync_objects: create_the_work_queue:" + " len: " + str(len(messages)))
+                logger.trace("create_all_sync_objects: create_the_work_queue:" + " len: " + str(len(messages)))
                 msg = messages[2]
                 self.create_obj_but_no_ack_to_client(msg)
             else:
-                logger.info("create_all_sync_objects: " + " create the fanouts.")
+                logger.trace("create_all_sync_objects: " + " create the fanouts.")
                 fanout_messages = messages[2]
-                logger.info("create_all_sync_objects: faninout messages: " + str(fanout_messages))
+                logger.trace("create_all_sync_objects: faninout messages: " + str(fanout_messages))
                 for msg in fanout_messages:
                     self.create_obj_but_no_ack_to_client(msg)
                 if len(fanout_messages) > 0:
-                    logger.info("create_all_sync_objects: created fanouts.")
+                    logger.trace("create_all_sync_objects: created fanouts.")
 
         resp = {
             "op": "ack",
@@ -247,10 +258,10 @@ class TCPHandler(socketserver.StreamRequestHandler):
         #############################
         # Write ACK back to client. #
         #############################
-        logger.info("create_all_sync_objects: Sending ACK to client %s for create_all_fanins_and_faninNBs operation." % self.client_address[0])
+        logger.trace("create_all_sync_objects: Sending ACK to client %s for create_all_fanins_and_faninNBs operation." % self.client_address[0])
         resp_encoded = json.dumps(resp).encode('utf-8')
         self.send_serialized_object(resp_encoded)
-        logger.info("create_all_sync_objects: Sent ACK of size %d bytes to client %s for create_all_fanins_and_faninNBs operation." % (len(resp_encoded), self.client_address[0]))
+        logger.trace("create_all_sync_objects: Sent ACK of size %d bytes to client %s for create_all_fanins_and_faninNBs operation." % (len(resp_encoded), self.client_address[0]))
 
     # Called locally - sso no ack sent to client. For example, this is 
     # just one of possibly many of the creates from create_all_fanins_and_faninNBs
@@ -267,7 +278,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             message (dict):
                 The payload from the AWS Lambda function.
         """        
-        logger.debug("[HANDLER] server.create() called.")
+        logger.trace("[HANDLER] server.create() called.")
         type_arg = message["type"]
         name = message["name"]
         state = decode_and_deserialize(message["state"])
@@ -277,7 +288,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         synchronizer.create(type_arg, name, **state.keyword_arguments)
 
         synchronizer_name = self._get_synchronizer_name(type_name = type_arg, name = name)
-        logger.debug("Caching new Synchronizer of type '%s' with name '%s'" % (type_arg, synchronizer_name))
+        logger.trace("Caching new Synchronizer of type '%s' with name '%s'" % (type_arg, synchronizer_name))
         tcp_server.synchronizers[synchronizer_name] = synchronizer # Store Synchronizer object.
  
     def synchronize_process_faninNBs_batch(self, message = None):
@@ -293,7 +304,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         global DAG_info
         global read_DAG_info
 
-        logger.info("[HANDLER] server.synchronize_process_faninNBs_batch() called.")
+        logger.trace("[HANDLER] server.synchronize_process_faninNBs_batch() called.")
 
         # name of the type is "DAG_executor_FanInNB" or "DAG_executor_FanInNB_Select"
         type_arg = message["type"]
@@ -336,11 +347,11 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 logger.error("[Error]: Internal Error: synchronize_process_faninNBs_batch: using incremental DAG generation"
                     + " with real Lambdas but received None from DAG_executor process_faninNBs_batch.")
 
-        logger.debug("tcp_server: synchronize_process_faninNBs_batch: calling_task_name: " + calling_task_name + ": worker_needs_input: " + str(worker_needs_input)
+        logger.trace("tcp_server: synchronize_process_faninNBs_batch: calling_task_name: " + calling_task_name + ": worker_needs_input: " + str(worker_needs_input)
             + " faninNBs size: " +  str(len(faninNBs)))
 #rhc: async batch
-        logger.debug("BBBBBBBBB synchronize_process_faninNBs_batch BBBBBBBBBBBBBBBBBBBBBBB")
-        logger.debug("tcp_server: synchronize_process_faninNBs_batch: calling_task_name: " + calling_task_name + ": async_call: " + str(async_call))
+        logger.trace("BBBBBBBBB synchronize_process_faninNBs_batch BBBBBBBBBBBBBBBBBBBBBBB")
+        logger.trace("tcp_server: synchronize_process_faninNBs_batch: calling_task_name: " + calling_task_name + ": async_call: " + str(async_call))
 
         # assert:
         if worker_needs_input:
@@ -350,7 +361,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         #assert: if worker needs work then we should be using synch call so we can check the results for work
         if worker_needs_input:
             if async_call:
-                logger.debug("[Error]: Internal Error: synchronize_process_faninNBs_batch: worker_needs_input but using async_call")
+                logger.trace("[Error]: Internal Error: synchronize_process_faninNBs_batch: worker_needs_input but using async_call")
 
         # assert:
         if async_call:
@@ -390,13 +401,13 @@ class TCPHandler(socketserver.StreamRequestHandler):
         if False and wukongdnc.dag.DAG_executor_constants.compute_pagerank and wukongdnc.dag.DAG_executor_constants.use_incremental_DAG_generation:
             DAG_infoBuffer_monitor_method_keyword_arguments = {}
             # call DAG_infoBuffer_monitor (bounded buffer) get_current_version_number_DAG_info()
-            logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": get DAG_info version number.")
+            logger.trace("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": get DAG_info version number.")
             DAG_infoBuffer_monitor_method = "get_current_version_number_DAG_info"
             base_name, isTryMethod = isTry_and_getMethodName(DAG_infoBuffer_monitor_method)
             DAG_infoBuffer_monitor_type = "DAG_infoBuffer_Monitor"
             is_select = isSelect(DAG_infoBuffer_monitor_type)
-            logger.debug("tcp_server: synchronize_process_faninNBs_batch: method_name: " + DAG_infoBuffer_monitor_method + ", base_name: " + base_name + ", isTryMethod: " + str(isTryMethod))
-            logger.debug("tcp_server: synchronize_process_faninNBs_batch: synchronizer_class_name: : " + DAG_infoBuffer_monitor_type + ", is_select: " + str(is_select))
+            logger.trace("tcp_server: synchronize_process_faninNBs_batch: method_name: " + DAG_infoBuffer_monitor_method + ", base_name: " + base_name + ", isTryMethod: " + str(isTryMethod))
+            logger.trace("tcp_server: synchronize_process_faninNBs_batch: synchronizer_class_name: : " + DAG_infoBuffer_monitor_type + ", is_select: " + str(is_select))
             DAG_infoBuffer_monitor_name = "process_DAG_infoBuffer_Monitor"
             synchronizer_name = self._get_synchronizer_name(type_name = None, name = DAG_infoBuffer_monitor_name)
             synchronizer = tcp_server.synchronizers[synchronizer_name]
@@ -422,7 +433,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             else:
                 most_recently_generated_DAG_info = synchronizer.synchronize(base_name, DAG_exec_state, **DAG_infoBuffer_monitor_method_keyword_arguments)
 
-            #logger.debug("tcp_server: synchronize_process_faninNBs_batch:"
+            #logger.trace("tcp_server: synchronize_process_faninNBs_batch:"
             #    + " most recently deposited DAG_info version number: " + str(most_recently_generated_DAG_info.get_DAG_version_number())
             #    + " version number of current DAG_info: " + str(DAG_info.get_DAG_version_number()))
 
@@ -446,14 +457,14 @@ class TCPHandler(socketserver.StreamRequestHandler):
                         "id": msg_id
                     } 
                     # not created yet so create object
-                    logger.debug("tcp_server: synchronize_process_faninNBs_batch: "
+                    logger.trace("tcp_server: synchronize_process_faninNBs_batch: "
                         + "create sync object process_work_queue on the fly.")
                     self.create_obj_but_no_ack_to_client(creation_message)
                 else:
-                    logger.debug("tcp_server: synchronize_process_faninNBs_batch: sync object " + 
+                    logger.trace("tcp_server: synchronize_process_faninNBs_batch: sync object " + 
                         "process_work_queue already created.")
 
-            logger.debug("tcp_server: synchronize_process_faninNBs_batch: do synchronous_sync after create. ")
+            logger.trace("tcp_server: synchronize_process_faninNBs_batch: do synchronous_sync after create. ")
 
         # List list_of_work_queue_or_payload_fanout_values may be empty: if a state has no fanouts this list is empty. 
         # If a state has 1 fanout it will be a become task and there will be no more fanouts so this list is empty.
@@ -495,14 +506,14 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 work_queue_method_keyword_arguments = {}
                 work_queue_method_keyword_arguments['list_of_values'] = list_of_fanout_values
                 # call work_queue (bounded buffer) deposit_all(list_of_work_queue_or_payload_fanout_values)
-                logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": deposit all fanout work.")
+                logger.trace("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": deposit all fanout work.")
     #rhc select first, replace
                 #returnValue, restart = synchronizer_method(synchronizer._synchronizer, **work_queue_method_keyword_arguments) 
     #rhc select with
                 base_name, isTryMethod = isTry_and_getMethodName(work_queue_method)
                 is_select = isSelect(work_queue_type)
-                logger.debug("tcp_server: synchronize_process_faninNBs_batch: method_name: " + work_queue_method + ", base_name: " + base_name + ", isTryMethod: " + str(isTryMethod))
-                logger.debug("tcp_server: synchronize_process_faninNBs_batch: synchronizer_class_name: : " + work_queue_type + ", is_select: " + str(is_select))
+                logger.trace("tcp_server: synchronize_process_faninNBs_batch: method_name: " + work_queue_method + ", base_name: " + base_name + ", isTryMethod: " + str(isTryMethod))
+                logger.trace("tcp_server: synchronize_process_faninNBs_batch: synchronizer_class_name: : " + work_queue_type + ", is_select: " + str(is_select))
 
     #rhc select then replace
                 #return_value = synchronizer.synchronize(base_name, DAG_exec_state, **work_queue_method_keyword_arguments)
@@ -522,7 +533,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
                 # deposit_all return value is 0 and restart is False
         else:
-            logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": no fanout work to deposit")
+            logger.trace("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": no fanout work to deposit")
 
         # if not same_output_for_all_fanout_fanin then we are nto sending 
         # the same output to each faninNB. Instead, we extract a faninNBs
@@ -552,7 +563,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             # the size for fannNB[i] is all_faninNB_sizes_of_faninNBs[i]
             faninNB_size = all_faninNB_sizes_of_faninNBs[name_index]
             synchronizer_name = self._get_synchronizer_name(type_name = None, name = name)
-            logger.debug("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name 
+            logger.trace("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name 
                 + ": Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
             
             #synchronizer = tcp_server.synchronizers[synchronizer_name]
@@ -573,7 +584,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
                             ## assert:
                             #if not DAG_states[name] == start_state_fanin_task:
-                            #    logger.debug("[Error]: Internal Error: tcp_server: synchronize_process_faninNBs_batch:"
+                            #    logger.trace("[Error]: Internal Error: tcp_server: synchronize_process_faninNBs_batch:"
                             #       + "DAG_states[name] != start_state_fanin_task")
                                 
                             #dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = DAG_states[name]
@@ -584,7 +595,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                                     read_DAG_info = False
     #rhc: DAG_info: race? no since locked
                                     DAG_info = DAG_Info.DAG_info_fromfilename()
-                                    logger.debug("tcp_server: read DAG_info for real lambdas.")
+                                    logger.trace("tcp_server: read DAG_info for real lambdas.")
     #rhc: DAG_info
                                     print("tcp_server: DAG_map:")
                                     # this required: # pylint: disable=E0601, E0118
@@ -647,7 +658,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             #        logger.error("[Error]: Internal Error: tcp_server: synchronize_process_faninNBs_batch: "
                             #            + " not faninNB_size == all_faninNB_sizes[faninNB_index]")
                             #    else:
-                            #        logger.debug("EQUAL SIZES")
+                            #        logger.trace("EQUAL SIZES")
                         else: # incremental DAG generation
                             # Compute pagerank for incremental DAG generation.
                             # - Rewrote this code so that it no longer needs DAG_info
@@ -698,7 +709,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
                             # assert:
                             #if not DAG_states[name] == start_state_fanin_task:
-                            #    logger.debug("[Error]: Internal Error: tcp_server: synchronize_process_faninNBs_batch:"
+                            #    logger.trace("[Error]: Internal Error: tcp_server: synchronize_process_faninNBs_batch:"
                              #       + "DAG_states[name] != start_state_fanin_task")
                                 
                             dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = start_state_fanin_task
@@ -770,7 +781,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             #    logger.error("[Error]: Internal Error: tcp_server: synchronize_process_faninNBs_batch: "
                             #        + " not faninNB_size == all_faninNB_sizes[faninNB_index]")
                             #else:
-                            #    logger.debug("EQUAL SIZES")
+                            #    logger.trace("EQUAL SIZES")
 
                         msg_id = str(uuid.uuid4())	# for debugging
                         creation_message = {
@@ -781,13 +792,13 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             "id": msg_id
                         }
                         # not created yet so create object
-                        logger.debug("tcp_server: synchronize_process_faninNBs_batch: "
+                        logger.trace("tcp_server: synchronize_process_faninNBs_batch: "
                             + "create sync object " + name + " on the fly.")
                         self.create_obj_but_no_ack_to_client(creation_message)
                     else:
-                        logger.debug("tcp_server: synchronize_process_faninNBs_batch: object " + name + " already created.")
+                        logger.trace("tcp_server: synchronize_process_faninNBs_batch: object " + name + " already created.")
 
-                logger.debug("tcp_server: synchronize_process_faninNBs_batch: do synchronous_sync after create. ")
+                logger.trace("tcp_server: synchronize_process_faninNBs_batch: do synchronous_sync after create. ")
             
             synchronizer = tcp_server.synchronizers[synchronizer_name]
 
@@ -796,8 +807,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
             base_name, isTryMethod = isTry_and_getMethodName(method_name)
             is_select = isSelect(type_arg)
-            logger.debug("tcp_server: synchronize_process_faninNBs_batch: method_name: " + method_name + ", base_name: " + base_name + ", isTryMethod: " + str(isTryMethod))
-            logger.debug("tcp_server: synchronize_process_faninNBs_batch: synchronizer_class_name: : " + type_arg + ", is_select: " + str(is_select))
+            logger.trace("tcp_server: synchronize_process_faninNBs_batch: method_name: " + method_name + ", base_name: " + base_name + ", isTryMethod: " + str(isTryMethod))
+            logger.trace("tcp_server: synchronize_process_faninNBs_batch: synchronizer_class_name: : " + type_arg + ", is_select: " + str(is_select))
 
             # These are per FaninNB
             DAG_exec_state.keyword_arguments['fanin_task_name'] = name
@@ -821,7 +832,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 DAG_exec_state.keyword_arguments['calling_task_name'] = qualified_name
 
 
-            logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": calling synchronizer.synchronize.")
+            logger.trace("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": calling synchronizer.synchronize.")
 #rhc: select replace this
             #return_value = synchronizer.synchronize(base_name, DAG_exec_state, **DAG_exec_state.keyword_arguments)
 #rhc: select with this
@@ -868,8 +879,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     got_work = True
                     DAG_exec_state.return_value = work_tuple
                     DAG_exec_state.blocking = False 
-                    logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": send work: %s sending name %s and return_value %s back for method %s." % (synchronizer_name, name, str(return_value), method_name))
-                    logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": send work: %s sending state %s back for method %s." % (synchronizer_name, str(DAG_exec_state), method_name))
+                    logger.trace("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": send work: %s sending name %s and return_value %s back for method %s." % (synchronizer_name, name, str(return_value), method_name))
+                    logger.trace("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": send work: %s sending state %s back for method %s." % (synchronizer_name, str(DAG_exec_state), method_name))
                     # Note: We send work back now, as soon as we get it, to free up the waitign client
                     # instead of waiting until the end. This delays the processing of FaninNBs and depositing
                     # any work in the work_queue. Possibly: create a thread to do this.                 
@@ -878,8 +889,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     # Client doesn't need work or we already got some work for the client, so add this work
                     # to the work_queue)
                     list_of_work.append(work_tuple)
-                    logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": not sending work: %s sending name %s and return_value %s back for method %s." % (synchronizer_name, name, str(return_value), method_name))
-                    logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": not sending work: %s sending state %s back for method %s." % (synchronizer_name, str(DAG_exec_state), method_name))
+                    logger.trace("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": not sending work: %s sending name %s and return_value %s back for method %s." % (synchronizer_name, name, str(return_value), method_name))
+                    logger.trace("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": not sending work: %s sending state %s back for method %s." % (synchronizer_name, str(DAG_exec_state), method_name))
             # else we were not the last caller of fanin, so we deposited our result, which will be given to
             # the last caller.
 
@@ -908,14 +919,14 @@ class TCPHandler(socketserver.StreamRequestHandler):
             work_queue_method_keyword_arguments = {}
             work_queue_method_keyword_arguments['list_of_values'] = list_of_work
             # call work_queue (bounded buffer) deposit_all(list_of_work)
-            logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": deposit_all FanInNB work, list_of_work size: " + str(len(list_of_work)))
+            logger.trace("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": deposit_all FanInNB work, list_of_work size: " + str(len(list_of_work)))
 #rhc select first, replace
             #returnValue, restart = synchronizer_method(synchronizer._synchronizer, **work_queue_method_keyword_arguments) 
 #rhc select with
             base_name, isTryMethod = isTry_and_getMethodName(work_queue_method)
             is_select = isSelect(work_queue_type)
-            logger.debug("tcp_server: synchronize_process_faninNBs_batch: method_name: " + work_queue_method + ", base_name: " + base_name + ", isTryMethod: " + str(isTryMethod))
-            logger.debug("tcp_server: synchronize_process_faninNBs_batch: synchronizer_class_name: : " + work_queue_type + ", is_select: " + str(is_select))
+            logger.trace("tcp_server: synchronize_process_faninNBs_batch: method_name: " + work_queue_method + ", base_name: " + base_name + ", isTryMethod: " + str(isTryMethod))
+            logger.trace("tcp_server: synchronize_process_faninNBs_batch: synchronizer_class_name: : " + work_queue_type + ", is_select: " + str(is_select))
 
 #rhc select then replace
             #return_value = synchronizer.synchronize(base_name, DAG_exec_state, **work_queue_method_keyword_arguments)
@@ -937,9 +948,9 @@ class TCPHandler(socketserver.StreamRequestHandler):
     
             # deposit_all return value is 0 and restart is False
 
-            logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": work_queue_method: " + str(work_queue_method))
-            logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": " + str(work_queue_method) + ", return_Value " + str(return_value_ignored))
-            logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": " + str(work_queue_method) + ", successfully called work_queue method. ")
+            logger.trace("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": work_queue_method: " + str(work_queue_method))
+            logger.trace("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": " + str(work_queue_method) + ", return_Value " + str(return_value_ignored))
+            logger.trace("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": " + str(work_queue_method) + ", successfully called work_queue method. ")
 
 #rhc: async batch
         if not got_work and not async_call:
@@ -952,7 +963,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             # waiting for a (sync) result.
             # if worker_needs_input is sent from client as False, then got_work is initially False 
             # and never set to True.
-            logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": no work to return, returning DAG_exec_state.return_value = 0.")           
+            logger.trace("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": no work to return, returning DAG_exec_state.return_value = 0.")           
             DAG_exec_state.return_value = 0
             DAG_exec_state.blocking = False
             # Note: if we decide not to send work back immediately to the waitign clent (see above),
@@ -963,15 +974,15 @@ class TCPHandler(socketserver.StreamRequestHandler):
         #else:
             # we got work above so we already returned the DAG_exec_state.return_value set to work_tuple 
             # via self.send_serialized_object(work)
-            #logger.debug("tcp_server: synchronize_process_faninNBs_batch: returning work in DAG_exec_state.") 
+            #logger.trace("tcp_server: synchronize_process_faninNBs_batch: returning work in DAG_exec_state.") 
 
 #rhc: async batch
         #debugging
         if async_call:
-            logger.debug("CCCCCCCCCCCCCCCCCCCCCCCC")
-            logger.debug("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": async_call so not returning a value.")           
+            logger.trace("CCCCCCCCCCCCCCCCCCCCCCCC")
+            logger.trace("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": async_call so not returning a value.")           
 
-        #logger.debug("tcp_server: synchronize_process_faninNBs_batch: returning DAG_state %s." % (str(DAG_exec_state)))           
+        #logger.trace("tcp_server: synchronize_process_faninNBs_batch: returning DAG_state %s." % (str(DAG_exec_state)))           
         #self.send_serialized_object(cloudpickle.dumps(DAG_exec_state))
 
     def synchronize_sync(self, message = None):
@@ -987,7 +998,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         global DAG_info
         global read_DAG_info
 
-        logger.debug("[HANDLER] server.synchronize_sync() called.")
+        logger.trace("[HANDLER] server.synchronize_sync() called.")
         obj_name = message['name']
         method_name = message['method_name']
         # type_arg = message["type"]
@@ -995,9 +1006,9 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # synchronizer_name = self._get_synchronizer_name(type_name = type_arg, name = obj_name)
         synchronizer_name = self._get_synchronizer_name(type_name = None, name = obj_name)
 
-        logger.debug("tcp_server: synchronize_sync: Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
+        logger.trace("tcp_server: synchronize_sync: Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
 
-        logger.debug("tcp_server: synchronize_sync: create_all_fanins_faninNBs_on_start:" 
+        logger.trace("tcp_server: synchronize_sync: create_all_fanins_faninNBs_on_start:" 
             + str(wukongdnc.dag.DAG_executor_constants.create_all_fanins_faninNBs_on_start))
         #synchronizer = tcp_server.synchronizers[synchronizer_name]
         if not wukongdnc.dag.DAG_executor_constants.create_all_fanins_faninNBs_on_start:
@@ -1007,10 +1018,10 @@ class TCPHandler(socketserver.StreamRequestHandler):
             # similar to wht InfniD does when it creates mapped functions
             # and their locks.
             with create_synchronization_object_lock:
-                logger.debug("get synch")
+                logger.trace("get synch")
                 synchronizer = tcp_server.synchronizers.get(synchronizer_name,None)
                 if (synchronizer is None):
-                    logger.debug("got None")
+                    logger.trace("got None")
                     #  On-the-fly: This part here is only for DAGs, not, e.g., Semaphores
                     #  For other typs of objects, we'll need their type so we'll need
                     #  to deal with it in DAG_executor? which will call createif (as it does now)
@@ -1037,16 +1048,16 @@ class TCPHandler(socketserver.StreamRequestHandler):
                                     read_DAG_info = False
                                 
                                     DAG_info = DAG_Info.DAG_info_fromfilename()
-                                    logger.debug("tcp_server: read DAG_info for real lambdas.")
+                                    logger.trace("tcp_server: read DAG_info for real lambdas.")
     #rhc: DAG_info
-                                    logger.debug("tcp_server: DAG_map:")
+                                    logger.trace("tcp_server: DAG_map:")
                                     # do not understand why pyline flags this use of DAG_info as used-before-assignment (E0601)
                                     # and used-prior-global-declaration (E0118)
                                     # this requried: pylint: disable=E0601, E0118
                                     DAG_map = DAG_info.get_DAG_map() 
                                     for key, value in DAG_map.items():
-                                        logger.debug(key)
-                                        logger.debug(value) 
+                                        logger.trace(key)
+                                        logger.trace(value) 
                                 # this required: # pylint: disable=E0601, E0118
                                 dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info 
                             else:
@@ -1105,7 +1116,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             #    "id": msg_id
                             #}
                             ## not created yet so create object
-                            #logger.debug("tcp_server: synchronize_sync: "
+                            #logger.trace("tcp_server: synchronize_sync: "
                             #    + "create sync object " + synchronizer_name + " on the fly")
                             #self.create_obj_but_no_ack_to_client(creation_message)
                         else:
@@ -1143,7 +1154,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
                             # assert:
                             #if not DAG_states[name] == start_state_fanin_task:
-                            #    logger.debug("[Error]: Internal Error: tcp_server: synchronize_process_faninNBs_batch:"
+                            #    logger.trace("[Error]: Internal Error: tcp_server: synchronize_process_faninNBs_batch:"
                                 #       + "DAG_states[name] != start_state_fanin_task")
                             
                             # Given in DAG_executor.faninNB_remotely:
@@ -1156,13 +1167,13 @@ class TCPHandler(socketserver.StreamRequestHandler):
                                 if read_DAG_info:
                                     read_DAG_info = False 
                                     DAG_info = DAG_Info.DAG_info_fromfilename()
-                                    logger.debug("tcp_server: read DAG_info for real lambdas.")
+                                    logger.trace("tcp_server: read DAG_info for real lambdas.")
 #rhc: DAG_info
-                                    logger.debug("tcp_server: DAG_map:")
+                                    logger.trace("tcp_server: DAG_map:")
                                     DAG_map = DAG_info.get_DAG_map()
                                     for key, value in DAG_map.items():
-                                        logger.debug(key)
-                                        logger.debug(value)
+                                        logger.trace(key)
+                                        logger.trace(value)
                                 dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info
                             else:
                                 # we are running locally with the fanins/faninNBs on the tcp_server.
@@ -1224,7 +1235,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             #    logger.error("[Error]: Internal Error: tcp_server: synchronize_process_faninNBs_batch: "
                             #        + " not faninNB_size == all_faninNB_sizes[faninNB_index]")
                             #else:
-                            #    logger.debug("EQUAL SIZES")
+                            #    logger.trace("EQUAL SIZES")
 
                         msg_id = str(uuid.uuid4())	# for debugging
                         creation_message = {
@@ -1235,7 +1246,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             "id": msg_id
                         }
                         # not created yet so create object
-                        logger.debug("tcp_server: synchronize_sync: "
+                        logger.trace("tcp_server: synchronize_sync: "
                             + "create sync object " + synchronizer_name + " on the fly")
                         self.create_obj_but_no_ack_to_client(creation_message)    
                     # else:
@@ -1245,10 +1256,10 @@ class TCPHandler(socketserver.StreamRequestHandler):
                         # create on fly then we need enough info in synchronize_sync call to create
                         # object - so user would have to pass this create info on called ops.
                 else:
-                    logger.debug("tcp_server: synchronize_sync: object "  + synchronizer_name + " already created.")
+                    logger.trace("tcp_server: synchronize_sync: object "  + synchronizer_name + " already created.")
             # end with
 
-            logger.debug("tcp_server: synchronize_sync: do synchronous_sync after create. ")
+            logger.trace("tcp_server: synchronize_sync: do synchronous_sync after create. ")
         
         synchronizer = tcp_server.synchronizers[synchronizer_name]
 
@@ -1264,7 +1275,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # return_value = synchronizer.synchronize_sync(tcp_server, obj_name, method_name, state, synchronizer_name, self)
         return_value = synchronizer.synchronize_sync(tcp_server, synchronizer_name, method_name, state, synchronizer_name, self)
 
-        logger.debug("tcp_server called synchronizer.synchronize_sync")
+        logger.trace("tcp_server called synchronizer.synchronize_sync")
 
         # sysnchronizer synchronize_sync pickled the return value so sending 
         # pickled value back to client.
@@ -1295,7 +1306,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 "id": msg_id
             }
         """
-        logger.debug("[TCPSERVER] createif_and_synchronize_sync() called.")
+        logger.trace("[TCPSERVER] createif_and_synchronize_sync() called.")
 
         if wukongdnc.dag.DAG_executor_constants.create_all_fanins_faninNBs_on_start:
             logger.error("[Error]: Internal Error: tcp_server: createif_and_synchronize_sync: "
@@ -1314,7 +1325,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         synchronizer_name = self._get_synchronizer_name(type_name = None, name = obj_name)
 
         # check if already created
-        logger.debug("tcp_server: createif_and_synchronize_sync: Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
+        logger.trace("tcp_server: createif_and_synchronize_sync: Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
         #synchronizer = MessageHandler.synchronizers[synchronizer_name]
         # This is one ock for all creates; we could have one lock 
         # per object: get object names from DAG_nfo and create
@@ -1325,11 +1336,11 @@ class TCPHandler(socketserver.StreamRequestHandler):
             synchronizer = tcp_server.synchronizers.get(synchronizer_name,None)
             if (synchronizer is None):
                 # not created yet so create object
-                logger.debug("tcp_server: createif_and_synchronize_sync: "
+                logger.trace("tcp_server: createif_and_synchronize_sync: "
                     + "create sync object " + obj_name + " on the fly")
                 self.create_obj_but_no_ack_to_client(creation_message)
 
-        logger.debug("message_handler_lambda: createif_and_synchronize_sync: do synchronous_sync ")
+        logger.trace("message_handler_lambda: createif_and_synchronize_sync: do synchronous_sync ")
        
         synchronizer = tcp_server.synchronizers[synchronizer_name]
         
@@ -1344,7 +1355,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
         return_value = synchronizer.synchronize_sync(obj_name, method_name, state, synchronizer_name)
         
-        logger.debug("tcp_server: synchronize_sync called synchronizer.synchronize_sync")
+        logger.trace("tcp_server: synchronize_sync called synchronizer.synchronize_sync")
 
         return return_value
 
@@ -1361,25 +1372,25 @@ class TCPHandler(socketserver.StreamRequestHandler):
             message (dict):
                 The payload from the AWS Lambda function.
         """        
-        logger.debug("[HANDLER] server.synchronize_async() called.")
+        logger.trace("[HANDLER] server.synchronize_async() called.")
         obj_name = message['name']
         method_name = message['method_name']
         # type_arg = message["type"]        
         state = decode_and_deserialize(message["state"])
 
         synchronizer_name = self._get_synchronizer_name(type_name = None, name = obj_name)
-        logger.debug("tcp_server: synchronize_async: Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
+        logger.trace("tcp_server: synchronize_async: Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
         synchronizer = tcp_server.synchronizers[synchronizer_name]
 
         if (synchronizer is None):
             raise ValueError("synchronize_async: Could not find existing Synchronizer with name '%s'" % synchronizer_name)
 
-        logger.debug("tcp_server: synchronize_async: Successfully found synchronizer")
+        logger.trace("tcp_server: synchronize_async: Successfully found synchronizer")
 
         # return_value = synchronizer.synchronize_async(obj_name, method_name, type_arg, state, synchronizer_name)
         #return_value = synchronizer.synchronize_async(obj_name, method_name, state, synchronizer_name)
         return_value = synchronizer.synchronize_async(synchronizer_name, method_name, state, synchronizer_name)
-        logger.debug("tcp_server called synchronizer.synchronize_async")
+        logger.trace("tcp_server called synchronizer.synchronize_async")
 
         return return_value    
 
@@ -1394,7 +1405,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         """
 
         data = bytearray()
-        logger.debug("receive_object: Do self.rfile.read(4)")
+        logger.trace("receive_object: Do self.rfile.read(4)")
         try:
             while (len(data)) < 4:
                 # Read the size of the incoming serialized object.
@@ -1405,45 +1416,48 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     # If we see this print a lot, then we may want to remove/comment-out the break and simply sleep for 1-10ms, then try reading again?
                     # Maybe if we fail to read any new data after ~3 tries, then we give up? But maybe we're giving up too early (i.e., trying to read data,
                     # finding no data to read, and giving up on the entire read immediately, rather than waiting and trying to read again).
-                    logger.warning("Stopped reading incoming message size from socket early. Have read " + str(len(data)) + " bytes of a total expected 4 bytes.")
+                    
+                    # Commented out to suppress the messages
+                    #logger.warning("Stopped reading incoming message size from socket early. Have read " + str(len(data)) + " bytes of a total expected 4 bytes.")
+                    logger.trace("Stopped reading incoming message size from socket early. Have read " + str(len(data)) + " bytes of a total expected 4 bytes.")
                     break 
 
                 data.extend(new_data)
 
-                logger.debug("recv_object: self.rfile.read an additional %d bytes from remote client: %s" % (len(new_data), str(new_data)))
+                logger.trace("recv_object: self.rfile.read an additional %d bytes from remote client: %s" % (len(new_data), str(new_data)))
         except ConnectionAbortedError as ex:
-            logger.debug("Error in recv_object self.rfile.read(4) -- while reading the incoming message size.")
-            logger.debug(repr(ex))
+            logger.trace("Error in recv_object self.rfile.read(4) -- while reading the incoming message size.")
+            logger.trace(repr(ex))
             logger.error("Established connection aborted while reading incoming size.")
             logger.error(repr(ex))
             return None 
 
-        logger.debug("receive_object self.rfile.read(4) successful, len(data): %d. Bytes received: %s" % (len(data), str(data)))
+        logger.trace("receive_object self.rfile.read(4) successful, len(data): %d. Bytes received: %s" % (len(data), str(data)))
 
         # Convert bytes of size to integer.
         incoming_size = int.from_bytes(data, 'big')
 
-        logger.debug("recv_object int.from_bytes successful. Incoming message will have size: %d bytes" % incoming_size)
+        logger.trace("recv_object int.from_bytes successful. Incoming message will have size: %d bytes" % incoming_size)
 
         if incoming_size == 0:
-            logger.debug("Incoming size is 0. Client is expected to have disconnected.")
+            logger.trace("Incoming size is 0. Client is expected to have disconnected.")
             return None 
         
         if incoming_size < 0:
             logger.error("Incoming size < 0: " + incoming_size + ". An error might have occurred...")
             return None 
 
-        logger.debug("recv_object: Will receive another message of size %d bytes" % incoming_size)
+        logger.trace("recv_object: Will receive another message of size %d bytes" % incoming_size)
 
         data = bytearray()
-        logger.debug("recv_object: created second data object, incoming_size: " + str(incoming_size))
+        logger.trace("recv_object: created second data object, incoming_size: " + str(incoming_size))
         try:
             while len(data) < incoming_size:
                 # Read serialized object (now that we know how big it'll be).
-                logger.debug("execute new_data ")
+                logger.trace("execute new_data ")
                 #new_data = self.rfile.read(incoming_size - len(data)).strip() # Do we need to call .strip() here? What if we removed something we're not supposed to?
                 new_data = self.rfile.read(incoming_size - len(data)) # Do we need to call .strip() here? What if we removed something we're not supposed to?
-                logger.debug("executed new_data ")
+                logger.trace("executed new_data ")
                 # Strip removes the leading and trailing bytes ASCII whitespace. I think it's probably fine, but I'm not sure.
 
                 if not new_data:
@@ -1454,13 +1468,13 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     break 
 
                 data.extend(new_data)
-                logger.debug("recv_object: have read %d/%d bytes from remote client." % (len(data), incoming_size))
+                logger.trace("recv_object: have read %d/%d bytes from remote client." % (len(data), incoming_size))
         except ConnectionAbortedError as ex:
             logger.error("Established connection aborted while reading data.")
             logger.error(repr(ex))
             return None 
         
-        logger.debug("recv_object: received all %d bytes from remote client. bytes received: %s" % (len(data), str(data)))
+        logger.trace("recv_object: received all %d bytes from remote client. bytes received: %s" % (len(data), str(data)))
         return data 
 
     def send_serialized_object(self, obj):
@@ -1475,16 +1489,16 @@ class TCPHandler(socketserver.StreamRequestHandler):
             obj (bytes):
                 The already-serialized object that we are sending to a remote entity (presumably an AWS Lambda executor).
         """
-        logger.debug("Sending payload of size %d bytes to remote client now. Bytes to be sent: %s (size) followed by %s" % (len(obj), str(len(obj).to_bytes(4, byteorder='big')), str(obj)))
+        logger.trace("Sending payload of size %d bytes to remote client now. Bytes to be sent: %s (size) followed by %s" % (len(obj), str(len(obj).to_bytes(4, byteorder='big')), str(obj)))
         self.wfile.write(len(obj).to_bytes(4, byteorder='big'))     # Tell the client how many bytes we're sending.
         self.wfile.write(obj)                                       # Then send the object.
-        logger.debug("Sent %d bytes to remote client." % len(obj))
+        logger.trace("Sent %d bytes to remote client." % len(obj))
 
     def close_all(self, message = None):
         """
         Clear all known synchronizers.
         """
-        logger.debug("Received close_all request.")
+        logger.trace("Received close_all request.")
 
         tcp_server.synchronizers = {}
 
@@ -1495,10 +1509,10 @@ class TCPHandler(socketserver.StreamRequestHandler):
             "op": "ack",
             "op_performed": "close_all"
         }        
-        logger.info("Sending ACK to client %s for 'close_all' operation." % self.client_address[0])
+        logger.trace("Sending ACK to client %s for 'close_all' operation." % self.client_address[0])
         resp_encoded = json.dumps(resp).encode('utf-8')
         self.send_serialized_object(resp_encoded)
-        logger.info("Sent ACK of size %d bytes to client %s for 'close_all' operation." % (len(resp_encoded), self.client_address[0]))          
+        logger.trace("Sent ACK of size %d bytes to client %s for 'close_all' operation." % (len(resp_encoded), self.client_address[0]))          
 
     def close_obj(self, message = None):
         """
@@ -1513,7 +1527,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         name = message["name"]
         #state = decode_and_deserialize(message["state"])
 
-        logger.debug("Received close_obj request for object with name '%s' and type %s" % (name, type_arg))
+        logger.trace("Received close_obj request for object with name '%s' and type %s" % (name, type_arg))
 
         #############################
         # Write ACK back to client. #
@@ -1522,13 +1536,13 @@ class TCPHandler(socketserver.StreamRequestHandler):
             "op": "ack",
             "op_performed": "close_obj"
         }        
-        logger.info("Sending ACK to client %s for CLOSE_OBJ operation." % self.client_address[0])
+        logger.trace("Sending ACK to client %s for CLOSE_OBJ operation." % self.client_address[0])
         resp_encoded = json.dumps(resp).encode('utf-8')
         self.send_serialized_object(resp_encoded)
-        logger.info("Sent ACK of size %d bytes to client %s for CLOSE_OBJ operation." % (len(resp_encoded), self.client_address[0]))        
+        logger.trace("Sent ACK of size %d bytes to client %s for CLOSE_OBJ operation." % (len(resp_encoded), self.client_address[0]))        
 
     def setup_server(self, message = None):
-        logger.debug("server.setup() called.")
+        logger.trace("server.setup() called.")
         pass 
         
 class TCPServer(object):
@@ -1574,7 +1588,7 @@ class TCPServer(object):
             create_synchronization_object_lock = Lock()
     
     def start(self):
-        logger.info("Starting TCP server.")
+        logger.trace("Starting TCP server.")
         try:
             self.tcp_server.serve_forever()
         except Exception as ex:

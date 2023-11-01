@@ -4,6 +4,18 @@
 from multiprocessing import Process, Manager, Queue, Value
 import cloudpickle
 
+import logging 
+from .addLoggingLevel import addLoggingLevel
+""" How to use: https://stackoverflow.com/questions/2183233/how-to-add-a-custom-loglevel-to-pythons-logging-facility/35804945#35804945
+    >>> addLoggingLevel('TRACE', logging.DEBUG - 5)
+    >>> logging.getLogger(__name__).setLevel("TRACE")
+    >>> logging.getLogger(__name__).trace('that worked')
+    >>> logging.trace('so did this')
+    >>> logging.TRACE
+"""
+logger = logging.getLogger(__name__)
+addLoggingLevel('TRACE', logging.DEBUG - 5)
+
 # old: has been updated, but this is fine for this test
 class DAG_Info(object):
     def __init__(self):
@@ -117,14 +129,14 @@ def run():
 	def multi_DAG_executor(q,DAG_info,ID,data_dict):
 
 		while (True):
-			logger.debug ("access DAG_map with state " + str(DAG_executor_State.state))
+			logger.trace ("access DAG_map with state " + str(DAG_executor_State.state))
 			#state_info = DAG_info.DAG_map[DAG_executor_State.state]
 			DAG_map = DAG_info.get_DAG_map()
 			state_info = DAG_map[DAG_executor_State.state]
-			##logger.debug ("access DAG_map with state " + str(state))
+			##logger.trace ("access DAG_map with state " + str(state))
 			##state_info = DAG_info.DAG_map[state]
 
-			logger.debug("state_info: " + str(state_info) + " execute task: " + state_info.task_name)
+			logger.trace("state_info: " + str(state_info) + " execute task: " + state_info.task_name)
 
 			# Example:
 			# 
@@ -160,12 +172,12 @@ def run():
 			output = execute_task(task,args)
 			#where:
 			#	def execute_task(task,args):
-			#		logger.debug("input of execute_task is: " + str(args))
+			#		logger.trace("input of execute_task is: " + str(args))
 			#		#output = task(input)
 			#		output = task(*args)
 			#		return output
 			
-			logger.debug("execute_task output: " + str(output))
+			logger.trace("execute_task output: " + str(output))
 			data_dict[state_info.task_name] = output
 
 			if
@@ -175,9 +187,9 @@ def run():
 			elif
 
         	else:
-            	logger.debug("state " + str(DAG_executor_State.state) + " after executing task " +  state_info.task_name 
+            	logger.trace("state " + str(DAG_executor_State.state) + " after executing task " +  state_info.task_name 
 					+ " has no fanouts, fanins, or faninNBs; return")
-            	##logger.debug("state " + str(state) + " after executing task " +  state_info.task_name 
+            	##logger.trace("state " + str(state) + " after executing task " +  state_info.task_name 
 					+ " has no fanouts, fanins, or faninNBs; return")
 					
 			# ToDo: q.put(-1)

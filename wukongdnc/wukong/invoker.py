@@ -24,8 +24,7 @@ ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
-# Hmmm
-logger.propagate = False
+
 
 lambda_client = boto3.client('lambda', region_name = "us-east-1")
 
@@ -64,8 +63,8 @@ def invoke_lambda_synchronously(function_name: str = None, payload: dict = None)
             This is typically expected to be a message from a Client.
         
     """
-    logger.debug("Creating AWS Lambda invocation payload for function '%s'" % function_name)
-    logger.debug("Provided payload: " + str(payload))
+    logger.trace("Creating AWS Lambda invocation payload for function '%s'" % function_name)
+    logger.trace("Provided payload: " + str(payload))
     s = time.time()
 
     # The `_payload` variable is the one I actually pass to AWS Lambda.
@@ -87,9 +86,9 @@ def invoke_lambda_synchronously(function_name: str = None, payload: dict = None)
     # We must convert `_payload` to JSON before passing it to the lambda_client.invoke() function.
     payload_json = json.dumps(_payload)
     
-    logger.debug("Finished creating AWS Lambda invocation payload in %f ms." % ((time.time() - s) * 1000.0))
+    logger.trace("Finished creating AWS Lambda invocation payload in %f ms." % ((time.time() - s) * 1000.0))
     
-    logger.info("Invoking AWS Lambda function synchronously'" + function_name + "' with payload containing " + str(len(payload)) + " key(s).")
+    logger.trace("Invoking AWS Lambda function synchronously'" + function_name + "' with payload containing " + str(len(payload)) + " key(s).")
     s = time.time()
     
     """ Current asynch invocation in invoker.py:
@@ -107,7 +106,7 @@ def invoke_lambda_synchronously(function_name: str = None, payload: dict = None)
     return_value = return_value_payload['Payload'].read()
     
     # Added substituted "return_value" for "status_code" here
-    logger.info("Invoked AWS Lambda function '%s' in %f ms. return_value: %s." % (function_name, (time.time() - s) * 1000.0, str(return_value)))
+    logger.trace("Invoked AWS Lambda function '%s' in %f ms. return_value: %s." % (function_name, (time.time() - s) * 1000.0, str(return_value)))
 
     return return_value
 
@@ -143,8 +142,8 @@ def invoke_lambda(
             The 'n' keyword argument to include in the State object we create.
             This is only used when `is_first_invocation` is set to True.
     """
-    logger.debug("Creating AWS Lambda invocation payload for function '%s'" % function_name)
-    logger.debug("Provided payload: " + str(payload))
+    logger.trace("Creating AWS Lambda invocation payload for function '%s'" % function_name)
+    logger.trace("Provided payload: " + str(payload))
     s = time.time()
 
     # The `_payload` variable is the one I actually pass to AWS Lambda.
@@ -165,7 +164,7 @@ def invoke_lambda(
     
     # If this is the first invocation, we create a new State object.
     if is_first_invocation:
-        logger.debug("is_first_invocation is TRUE in `invoke_lambda()`")
+        logger.trace("is_first_invocation is TRUE in `invoke_lambda()`")
         state = State(
             function_name = "Composer",  # this is name of Lambda function
             function_instance_ID = str(uuid.uuid4()),
@@ -183,9 +182,9 @@ def invoke_lambda(
         _payload["state"] = base64.b64encode(cloudpickle.dumps(state)).decode('utf-8')
 
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
-            logger.debug("Connecting to TCP Server at %s." % str(TCP_SERVER_IP))
+            logger.trace("Connecting to TCP Server at %s." % str(TCP_SERVER_IP))
             websocket.connect(TCP_SERVER_IP)
-            logger.debug("Successfully connected to TCP Server at %s. Calling executor.create() now...")
+            logger.trace("Successfully connected to TCP Server at %s. Calling executor.create() now...")
             # if False: # not isSelect(function_name):
             #     create(websocket, "create", "BoundedBuffer", "result", state)
             #     create(websocket, "create", "CountingSemaphore_Monitor", "finish", state)
@@ -198,9 +197,9 @@ def invoke_lambda(
     # We must convert `_payload` to JSON before passing it to the lambda_client.invoke() function.
     payload_json = json.dumps(_payload)
     
-    logger.debug("Finished creating AWS Lambda invocation payload in %f ms." % ((time.time() - s) * 1000.0))
+    logger.trace("Finished creating AWS Lambda invocation payload in %f ms." % ((time.time() - s) * 1000.0))
     
-    logger.info("Invoking AWS Lambda function '" + function_name + "' with payload containing " + str(len(payload)) + " key(s).")
+    logger.trace("Invoking AWS Lambda function '" + function_name + "' with payload containing " + str(len(payload)) + " key(s).")
     s = time.time()
     
     # This is the call to the AWS API that actually invokes the Lambda.
@@ -208,10 +207,23 @@ def invoke_lambda(
         FunctionName = function_name, 
         InvocationType = 'Event',
         Payload = payload_json) 
-    logger.info("Invoked AWS Lambd1a function '%s' in %f ms. Status: %s." % (function_name, (time.time() - s) * 1000.0, str(status_code)))
+    logger.trace("Invoked AWS Lambd1a function '%s' in %f ms. Status: %s." % (function_name, (time.time() - s) * 1000.0, str(status_code)))
 
 # used by DAG_excutor and the fanins/fanout synch objects for executing DAGs
 # Wukong style.
+# This will call lambda_client.invoke() in ASW Lambda which call 
+# lambda_handler() in WukongDynamic.
+# Note: If we set TEST to True then we do not call lambda_client.invoke();
+# instead we calk the lambda_handler() defined locally below. This
+# lambda_handler() runs DAG_executor_lambda() whchi performs the work loop,
+# executng tasks and their fanins/fanouts.
+# This allows us to run the code (work loop) locally that real Lambdas wil run. 
+# Note that instead of invoking a new (seperate) real Lambda, the invoker will directly call
+# the local lambda_handler() which will call DAG_excutor_lambda() running on
+# the invoker's thread. When the DAG_executor_lambda()
+# code returns (after possibly calling and retuning from more calls to 
+# DAG_executor_lambda) it returns to the lambda_handler() which returns
+# back to the invoker's invoke_lambda_DAG_executor.
 def invoke_lambda_DAG_executor(
     function_name: str = "DAG_executor_lambda",
     payload: dict = None
@@ -228,14 +240,14 @@ def invoke_lambda_DAG_executor(
             Dictionary to be serialized and sent via the AWS Lambda invocation payload.
             This is typically expected to contain a "state" entry with a state object.
     """
-    logger.debug("Creating AWS Lambda invocation payload for function '%s'" % function_name)
-    #logger.debug("Provided payload: " + str(payload))
+    logger.trace("Creating AWS Lambda invocation payload for function '%s'" % function_name)
+    #logger.trace("Provided payload: " + str(payload))
     DAG_exec_state = payload['DAG_executor_state']
     inp = payload['input']
     #Note: payload also includes DAG_info
     #DAG_info = payload['DAG_info']
 
-    logger.debug ("invoke_lambda_DAG_executor: lambda payload is DAG_info + state: " + str(DAG_exec_state.state) + ", input: " + str(inp))
+    logger.trace ("invoke_lambda_DAG_executor: lambda payload is DAG_info + state: " + str(DAG_exec_state.state) + ", input: " + str(inp))
 												
     s = time.time()
 
@@ -256,9 +268,9 @@ def invoke_lambda_DAG_executor(
         _payload[k] = base64.b64encode(cloudpickle.dumps(v)).decode('utf-8')
 											
     payload_json = json.dumps(_payload)
-    logger.debug("Finished creating AWS Lambda invocation payload in %f ms." % ((time.time() - s) * 1000.0))
+    logger.trace("Finished creating AWS Lambda invocation payload in %f ms." % ((time.time() - s) * 1000.0))
 
-    logger.info("Invoking AWS Lambda function '" + function_name + "' with payload containing " + str(len(payload)) + " key(s).")
+    logger.trace("Invoking AWS Lambda function '" + function_name + "' with payload containing " + str(len(payload)) + " key(s).")
     s = time.time()
     
     # TEST is a global varial. Set to TRUE to test the real lambda
@@ -269,11 +281,12 @@ def invoke_lambda_DAG_executor(
             FunctionName = function_name, 
             InvocationType = 'Event',
             Payload = payload_json) 
-    else:	
+    else:
+        # bridge around the call to lambda_client.invoke()
         status_code = -1
         lambda_handler(payload_json,None)
     										
-    logger.info("Invoked AWS Lambda function '%s' in %f ms. Status: %s." % (function_name, (time.time() - s) * 1000.0, str(status_code)))
+    logger.trace("Invoked AWS Lambda function '%s' in %f ms. Status: %s." % (function_name, (time.time() - s) * 1000.0, str(status_code)))
 
 
 #############################################################
@@ -296,8 +309,8 @@ def lambda_handler(event, context):
     # Do not do redi calls for TEST
     #rc = redis.Redis(host = REDIS_IP_PRIVATE, port = 6379)
 
-    logger.debug("lambda_handler: Invocation received. Starting DAG_executor_lambda: event/payload is: " + str(event))
-    logger.debug(f'Invocation count: {warm_resources["invocation_count"]}, Seconds since cold start: {round(invocation_time - warm_resources["cold_start_time"], 1)}')
+    logger.trace("lambda_handler: Invocation received. Starting DAG_executor_lambda: event/payload is: " + str(event))
+    logger.trace(f'Invocation count: {warm_resources["invocation_count"]}, Seconds since cold start: {round(invocation_time - warm_resources["cold_start_time"], 1)}')
     #TEST is True since we called lambda_handler. 
     #DAG_executor_lambda(event)
     # lambda does the json_loads(event) so we have to do it here.
@@ -306,6 +319,6 @@ def lambda_handler(event, context):
 				 
     end_time = time.time()
     duration = end_time - start_time
-    logger.debug("lambda_handler: DAG_executor_lambda finished. Time elapsed: %f seconds." % duration)
+    logger.trace("lambda_handler: DAG_executor_lambda finished. Time elapsed: %f seconds." % duration)
     # do not do redis calls for TEST
     #rc.lpush("durations", duration)

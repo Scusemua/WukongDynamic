@@ -53,7 +53,7 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
     
     # assert
     if not use_shared_partitions_groups:
-        logger.debug("[Error]: Internal Error: Called generate_shared_partitions_groups"
+        logger.trace("[Error]: Internal Error: Called generate_shared_partitions_groups"
             + " but use_shared_partitions_groups is False.")
 
     # Either the values needed for pagerank are stored in individual 
@@ -103,15 +103,15 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
                     partition_size += 1
                 partition_triple = (partition_position,partition_size,num_shadow_nodes)
                 BFS_Shared.shared_partition_map[name] = partition_triple
-            logger.debug("Number of shadow nodes for partitions:")
+            logger.trace("Number of shadow nodes for partitions:")
             for num in partitions_num_shadow_nodes_list:
-                logger.debug(num)
-            logger.debug("shared_partition_map:")
+                logger.trace(num)
+            logger.trace("shared_partition_map:")
             for (k,v) in BFS_Shared.shared_partition_map.items():
-                logger.debug(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + "," + str(v[2]) + ")")
-            logger.debug("shared_partition (w/ : parents : num_children)")
+                logger.trace(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + "," + str(v[2]) + ")")
+            logger.trace("shared_partition (w/ : parents : num_children)")
             for p_node in BFS_Shared.shared_partition:
-                #logger.debug(p_node)
+                #logger.trace(p_node)
                 print_val = ""
                 print_val += str(p_node) + ": "
                 if len(p_node.parents) == 0:
@@ -120,8 +120,8 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
                     for parent in p_node.parents:
                         print_val += str(parent) + " "
                 print_val += ": " + str(p_node.num_children)
-                logger.debug(print_val)
-            logger.debug("")
+                logger.trace(print_val)
+            logger.trace("")
         else:
             next = 0
             for name, group, num_shadow_nodes in zip(group_names, groups, groups_num_shadow_nodes_list):
@@ -163,15 +163,15 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
                     group_size += 1
                 group_triple = (group_position,group_size,num_shadow_nodes)
                 BFS_Shared.shared_groups_map[name] = group_triple
-            logger.debug("Number of shadow nodes for groups:")
+            logger.trace("Number of shadow nodes for groups:")
             for num in groups_num_shadow_nodes_list:
-                logger.debug(num)
-            logger.debug("shared_groups_map:")
+                logger.trace(num)
+            logger.trace("shared_groups_map:")
             for (k,v) in BFS_Shared.shared_groups_map.items():
-                logger.debug(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + "," + str(v[2]) + ")")
-            logger.debug("shared_groups (w/ : parents : num_children)")
+                logger.trace(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + "," + str(v[2]) + ")")
+            logger.trace("shared_groups (w/ : parents : num_children)")
             for p_node in BFS_Shared.shared_groups:
-                #logger.debug(p_node)
+                #logger.trace(p_node)
                 print_val = ""
                 print_val += str(p_node) + ": "
                 if len(p_node.parents) == 0:
@@ -180,8 +180,8 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
                     for parent in p_node.parents:
                         print_val += str(parent) + " "     
                 print_val += ": " + str(p_node.num_children)
-                logger.debug(print_val)
-            logger.debug("")
+                logger.trace(print_val)
+            logger.trace("")
     else: 
         """ In BFS_Shared.py:
         global pagerank
@@ -204,7 +204,7 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
         # are implicitly padding and are never assigned a value -- their values
         # will be random.
         int_padding = np.array([-4,-4,-4,-4, -4,-4,-4,-4, -4,-4,-4,-4, -4,-4,-4,-4])
-        logger.debug("int padding: " + str(int_padding))
+        logger.trace("int padding: " + str(int_padding))
         if not use_page_rank_group_partitions:
             # size of pagerank and previos is n floats, where n is the number of 
             # nodes in the input graph + the number of shadow nodes and their 
@@ -215,10 +215,10 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
             np_arrays_size_for_shared_partition = num_nodes + (
                 (2*num_shadow_nodes_added_to_partitions) + ((len(partitions)-1)*16)
             )
-            logger.debug("num_nodes: " + str(num_nodes) 
+            logger.trace("num_nodes: " + str(num_nodes) 
                 + " (2*num_shadow_nodes_added_to_partitions):" + str((2*num_shadow_nodes_added_to_partitions))
                 + " ((len(partitions)-1)*16): " + str(((len(partitions)-1)*16)))
-            logger.debug("np_arrays_size_for_shared_partition: " 
+            logger.trace("np_arrays_size_for_shared_partition: " 
                 + str(np_arrays_size_for_shared_partition))
             # the size of the parent array is the total number of parents for all the 
             # nodes, which is trackd as num_parent_appends in the input_graph() method
@@ -226,10 +226,10 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
             # between partitions/groups which is 16 ints that are added between 
             # the partitions/groups so we pad len(partitions/groups)-1 times.
             np_arrays_size_for_shared_partition_parents = num_parent_appends + num_shadow_nodes_added_to_partitions + ((len(partitions)-1)*16)
-            logger.debug("num_parent_appends: " + str(num_parent_appends) 
+            logger.trace("num_parent_appends: " + str(num_parent_appends) 
                 + " num_shadow_nodes_added_to_partitions:" + str(num_shadow_nodes_added_to_partitions)
                 + " ((len(partitions)-1)*16): " + str(((len(partitions)-1)*16)))
-            logger.debug("np_arrays_size_for_shared_partition_parents: "
+            logger.trace("np_arrays_size_for_shared_partition_parents: "
                 + str(np_arrays_size_for_shared_partition_parents))
             # 1/num_nodes is used for the initial value of pagerank
             if using_threads_not_processes:
@@ -266,7 +266,7 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
             if using_threads_not_processes:
                 num_partitions_processed = 0
                 for name, partition, num_shadow_nodes in zip(partition_names, partitions, partitions_num_shadow_nodes_list):
-                    logger.debug("name: " + name)
+                    logger.trace("name: " + name)
                     partition_position = next
                     partition_size = len(partition)
                     # Note: in dfs_parent:
@@ -312,9 +312,9 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
                             p_node.parents[0] = partition_size + num_shadow_nodes_seen_so_far
                             queue_of_shadow_node_IDs.put(p_node.ID)
                             num_shadow_nodes_seen_so_far += 1
-                        logger.debug("len(p_node.parents: " + str(len(p_node.parents)))
+                        logger.trace("len(p_node.parents: " + str(len(p_node.parents)))
                         for parent in p_node.parents:
-                            logger.debug("parent loop: next_parent_index:" + str(next_parent_index))
+                            logger.trace("parent loop: next_parent_index:" + str(next_parent_index))
 
                             # Note: Shadow nodes have one parent, which is a parent node,
                             # and this parent index was just set to (partition_size + num_shadow_nodes)
@@ -358,7 +358,7 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
 
                     if num_partitions_processed < len(partitions)-1:
                         for j in range(len(int_padding)):
-                            logger.debug("padding loop j: " + str(j) + " next: " + str(next)
+                            logger.trace("padding loop j: " + str(j) + " next: " + str(next)
                                 + " next_parent_index:" + str(next_parent_index))
                             BFS_Shared.number_of_children[next] = int_padding[j]
                             BFS_Shared.number_of_parents[next] = int_padding[j]
@@ -381,32 +381,32 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
                     partition_triple = (partition_position,partition_size,num_shadow_nodes)
                     BFS_Shared.shared_partition_map[name] = partition_triple
                     num_partitions_processed += 1
-                logger.debug("Number of shadow nodes for partitions:")
+                logger.trace("Number of shadow nodes for partitions:")
                 for num in partitions_num_shadow_nodes_list:
-                    logger.debug(num)
-                logger.debug("shared_partition_map:")
+                    logger.trace(num)
+                logger.trace("shared_partition_map:")
                 for (k,v) in BFS_Shared.shared_partition_map.items():
-                    logger.debug(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + "," + str(v[2]) + ")")
-                logger.debug("Shared_Arrays")
-                logger.debug("BFS_Shared.pagerank:")
+                    logger.trace(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + "," + str(v[2]) + ")")
+                logger.trace("Shared_Arrays")
+                logger.trace("BFS_Shared.pagerank:")
                 for element in BFS_Shared.pagerank:
-                    logger.debug(str(element)+",")
-                logger.debug("BFS_Shared.previous:")
+                    logger.trace(str(element)+",")
+                logger.trace("BFS_Shared.previous:")
                 for element in BFS_Shared.previous:
-                    logger.debug(str(element)+",")
-                logger.debug("BFS_Shared.number_of_children:")
+                    logger.trace(str(element)+",")
+                logger.trace("BFS_Shared.number_of_children:")
                 for element in BFS_Shared.number_of_children:
-                    logger.debug(str(element)+",")
-                logger.debug("BFS_Shared.number_of_parents: ")
+                    logger.trace(str(element)+",")
+                logger.trace("BFS_Shared.number_of_parents: ")
                 for element in BFS_Shared.number_of_parents:
-                    logger.debug(str(element)+",")
-                logger.debug("BFS_Shared.starting_indices_of_parents:")
+                    logger.trace(str(element)+",")
+                logger.trace("BFS_Shared.starting_indices_of_parents:")
                 for element in BFS_Shared.starting_indices_of_parents:
-                    logger.debug(str(element)+",")
-                logger.debug("BFS_Shared.parents:")
+                    logger.trace(str(element)+",")
+                logger.trace("BFS_Shared.parents:")
                 for element in BFS_Shared.parents:
-                    logger.debug(str(element)+",")
-                logger.debug("")
+                    logger.trace(str(element)+",")
+                logger.trace("")
             else:
                 num_partitions_processed = 0
                 for name, partition, num_shadow_nodes in zip(partition_names, partitions, partitions_num_shadow_nodes_list):
@@ -510,33 +510,33 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
                     partition_triple = (partition_position,partition_size,num_shadow_nodes)
                     BFS_Shared.shared_partition_map[name] = partition_triple
                     num_partitions_processed += 1
-                logger.debug("Number of shadow nodes for partitions:")
+                logger.trace("Number of shadow nodes for partitions:")
                 for num in partitions_num_shadow_nodes_list:
-                    logger.debug(num)
-                logger.debug("shared_partition_map:")
+                    logger.trace(num)
+                logger.trace("shared_partition_map:")
                 for (k,v) in BFS_Shared.shared_partition_map.items():
-                    logger.debug(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + "," + str(v[2]) + ")")
-                logger.debug("Shared_Arrays")
-                logger.debug("BFS_Shared.nonshared_pagerank:")
+                    logger.trace(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + "," + str(v[2]) + ")")
+                logger.trace("Shared_Arrays")
+                logger.trace("BFS_Shared.nonshared_pagerank:")
                 for element in BFS_Shared.nonshared_pagerank:
-                    logger.debug(str(element)+",")
-                logger.debug("BFS_Shared.nonshared_previous:")
+                    logger.trace(str(element)+",")
+                logger.trace("BFS_Shared.nonshared_previous:")
                 for element in BFS_Shared.nonshared_previous:
-                    logger.debug(str(element)+",")
-                logger.debug("BFS_Shared.nonshared_number_of_children:")
+                    logger.trace(str(element)+",")
+                logger.trace("BFS_Shared.nonshared_number_of_children:")
                 for element in BFS_Shared.nonshared_number_of_children:
-                    logger.debug(str(element)+",")
-                logger.debug("BFS_Shared.nonshared_number_of_parents: ")
+                    logger.trace(str(element)+",")
+                logger.trace("BFS_Shared.nonshared_number_of_parents: ")
                 for element in BFS_Shared.nonshared_number_of_parents:
-                    logger.debug(str(element)+",")
-                logger.debug("BFS_Shared.nonshared_starting_indices_of_parents:")
+                    logger.trace(str(element)+",")
+                logger.trace("BFS_Shared.nonshared_starting_indices_of_parents:")
                 for element in BFS_Shared.nonshared_starting_indices_of_parents:
-                    logger.debug(str(element)+",")
-                logger.debug("BFS_Shared.nonshared_parents:")
+                    logger.trace(str(element)+",")
+                logger.trace("BFS_Shared.nonshared_parents:")
                 for element in BFS_Shared.nonshared_parents:
-                    logger.debug(str(element)+",")
-                logger.debug("")
-                logger.debug("BFS_Shared.generate_struct_of_arrays_shared_memory()")
+                    logger.trace(str(element)+",")
+                logger.trace("")
+                logger.trace("BFS_Shared.generate_struct_of_arrays_shared_memory()")
                 BFS_Shared.generate_struct_of_arrays_shared_memory()
         else:
             # See the comment above about these values
@@ -544,7 +544,7 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
                 (2*num_shadow_nodes_added_to_groups) + ((len(groups)-1)*16)
             )
             np_arrays_size_for_shared_groups_parents = num_parent_appends + num_shadow_nodes_added_to_groups + ((len(groups)-1)*16)
-            logger.debug("num_parent_appends: " + str(num_parent_appends)
+            logger.trace("num_parent_appends: " + str(num_parent_appends)
                 + " ((len(groups)-1)*16): " + str(((len(groups)-1)*16)))
 
             if using_threads_not_processes:
@@ -617,7 +617,7 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
                             num_shadow_nodes_seen_so_far += 1
                         for parent in p_node.parents:
                             BFS_Shared.parents[next_parent_index] = parent
-                            logger.debug("for node: " + str(p_node) + " parent is: " 
+                            logger.trace("for node: " + str(p_node) + " parent is: " 
                                 + str(parent) + " at position: " + str(next_parent_index))
                             next_parent_index += 1
                         next += 1
@@ -632,7 +632,7 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
                         group_size += 1
                     if num_groups_processed < (len(groups)-1):
                         for j in range(len(int_padding)):
-                            logger.debug("padding loop j: " + str(j) + " next: " + str(next)
+                            logger.trace("padding loop j: " + str(j) + " next: " + str(next)
                                 + " next_parent_index:" + str(next_parent_index))
                             BFS_Shared.number_of_children[next] = int_padding[j]
                             BFS_Shared.number_of_parents[next] = int_padding[j]
@@ -651,39 +651,39 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
                             next += 1
                             next_parent_index += 1
                         #group_size += 16
-                        logger.debug("after padding: next_parent_index: " + str(next_parent_index))
+                        logger.trace("after padding: next_parent_index: " + str(next_parent_index))
                     group_triple = (group_position,group_size,num_shadow_nodes)
                     BFS_Shared.shared_groups_map[name] = group_triple
                     num_groups_processed += 1
-                logger.debug("Number of shadow nodes for groups:")
+                logger.trace("Number of shadow nodes for groups:")
                 for num in groups_num_shadow_nodes_list:
-                    logger.debug(num)
-                logger.debug("shared_groups_map:")
+                    logger.trace(num)
+                logger.trace("shared_groups_map:")
                 for (k,v) in BFS_Shared.shared_groups_map.items():
-                    logger.debug(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + "," + str(v[2]) + ")")
-                logger.debug("Shared_Arrays")
-                logger.debug("BFS_Shared.pagerank:")
+                    logger.trace(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + "," + str(v[2]) + ")")
+                logger.trace("Shared_Arrays")
+                logger.trace("BFS_Shared.pagerank:")
                 for element in BFS_Shared.pagerank:
-                    logger.debug(str(element)+",")
-                logger.debug("BFS_Shared.previous:")
+                    logger.trace(str(element)+",")
+                logger.trace("BFS_Shared.previous:")
                 for element in BFS_Shared.previous:
-                    logger.debug(str(element)+",")
-                logger.debug("BFS_Shared.number_of_children:")
+                    logger.trace(str(element)+",")
+                logger.trace("BFS_Shared.number_of_children:")
                 for element in BFS_Shared.number_of_children:
-                    logger.debug(str(element)+",")
-                logger.debug("BFS_Shared.number_of_parents: ")
+                    logger.trace(str(element)+",")
+                logger.trace("BFS_Shared.number_of_parents: ")
                 for element in BFS_Shared.number_of_parents:
-                    logger.debug(str(element)+",")
-                logger.debug("BFS_Shared.starting_indices_of_parents:")
+                    logger.trace(str(element)+",")
+                logger.trace("BFS_Shared.starting_indices_of_parents:")
                 for element in BFS_Shared.starting_indices_of_parents:
-                    logger.debug(str(element)+",")
-                logger.debug("BFS_Shared.IDs:")
+                    logger.trace(str(element)+",")
+                logger.trace("BFS_Shared.IDs:")
                 for element in BFS_Shared.IDs:
-                    logger.debug(str(element)+",")
-                logger.debug("BFS_Shared.parents:")
+                    logger.trace(str(element)+",")
+                logger.trace("BFS_Shared.parents:")
                 for element in BFS_Shared.parents:
-                    logger.debug(str(element)+",")
-                logger.debug("")
+                    logger.trace(str(element)+",")
+                logger.trace("")
             else:
                 next = 0
                 next_parent_index = 0
@@ -722,7 +722,7 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
                             num_shadow_nodes_seen_so_far += 1
                         for parent in p_node.parents:
                             BFS_Shared.nonshared_parents[next_parent_index] = parent
-                            logger.debug("for node: " + str(p_node) + " parent is: " 
+                            logger.trace("for node: " + str(p_node) + " parent is: " 
                                 + str(parent) + " at position: " + str(next_parent_index))
                             next_parent_index += 1
                         next += 1
@@ -745,39 +745,39 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
                             next += 1
                             next_parent_index += 1
                         #group_size += 16
-                        logger.debug("after padding: next_parent_index: " + str(next_parent_index))
+                        logger.trace("after padding: next_parent_index: " + str(next_parent_index))
                     group_triple = (group_position,group_size,num_shadow_nodes)
                     BFS_Shared.shared_groups_map[name] = group_triple
                     num_groups_processed += 1
-                logger.debug("Number of shadow nodes for groups:")
+                logger.trace("Number of shadow nodes for groups:")
                 for num in groups_num_shadow_nodes_list:
-                    logger.debug(num)
-                logger.debug("shared_groups_map:")
+                    logger.trace(num)
+                logger.trace("shared_groups_map:")
                 for (k,v) in BFS_Shared.shared_groups_map.items():
-                    logger.debug(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + "," + str(v[2]) + ")")
-                logger.debug("Shared_Arrays")
-                logger.debug("BFS_Shared.nonshared_pagerank:")
+                    logger.trace(str(k) + ", (" + str(v[0]) + "," + str(v[1]) + "," + str(v[2]) + ")")
+                logger.trace("Shared_Arrays")
+                logger.trace("BFS_Shared.nonshared_pagerank:")
                 for element in BFS_Shared.nonshared_pagerank:
-                    logger.debug(str(element)+",")
-                logger.debug("BFS_Shared.nonshared_previous:")
+                    logger.trace(str(element)+",")
+                logger.trace("BFS_Shared.nonshared_previous:")
                 for element in BFS_Shared.nonshared_previous:
-                    logger.debug(str(element)+",")
-                logger.debug("BFS_Shared.nonshared_number_of_children:")
+                    logger.trace(str(element)+",")
+                logger.trace("BFS_Shared.nonshared_number_of_children:")
                 for element in BFS_Shared.nonshared_number_of_children:
-                    logger.debug(str(element)+",")
-                logger.debug("BFS_Shared.nonshared_number_of_parents: ")
+                    logger.trace(str(element)+",")
+                logger.trace("BFS_Shared.nonshared_number_of_parents: ")
                 for element in BFS_Shared.nonshared_number_of_parents:
-                    logger.debug(str(element)+",")
-                logger.debug("BFS_Shared.nonshared_starting_indices_of_parents:")
+                    logger.trace(str(element)+",")
+                logger.trace("BFS_Shared.nonshared_starting_indices_of_parents:")
                 for element in BFS_Shared.nonshared_starting_indices_of_parents:
-                    logger.debug(str(element)+",")
-                logger.debug("BFS_Shared.nonshared_IDs:")
+                    logger.trace(str(element)+",")
+                logger.trace("BFS_Shared.nonshared_IDs:")
                 for element in BFS_Shared.nonshared_IDs:
-                    logger.debug(str(element)+",")
-                logger.debug("BFS_Shared.nonshared_parents:")
+                    logger.trace(str(element)+",")
+                logger.trace("BFS_Shared.nonshared_parents:")
                 for element in BFS_Shared.nonshared_parents:
-                    logger.debug(str(element)+",")
-                logger.debug("")
+                    logger.trace(str(element)+",")
+                logger.trace("")
 
-                logger.debug("BFS_Shared.generate_struct_of_arrays_shared_memory()")
+                logger.trace("BFS_Shared.generate_struct_of_arrays_shared_memory()")
                 BFS_Shared.generate_struct_of_arrays_shared_memory()

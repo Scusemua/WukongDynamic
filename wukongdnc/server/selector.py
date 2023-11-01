@@ -75,17 +75,17 @@ class Selector():
         
         #Debug
         num_entries = self.get_num_entries()
-        logger.debug("num_entries: "+ str(num_entries))
+        logger.trace("num_entries: "+ str(num_entries))
         i = 0
         while i < num_entries:
             entry = self.get_entry(i)
-            logger.debug("execute: call to: entry " + str(i) + " is " + str(entry.get_entry_name()) + ", number of arrivals: " + str(entry.get_num_arrivals()))
+            logger.trace("execute: call to: entry " + str(i) + " is " + str(entry.get_entry_name()) + ", number of arrivals: " + str(entry.get_num_arrivals()))
             i += i+1
 
         #entry0 = self.get_entry(0)
-        #logger.debug("after add: entry " + entry0.get_entry_name() + ": " + str(entry0.get_num_arrivals()))
+        #logger.trace("after add: entry " + entry0.get_entry_name() + ": " + str(entry0.get_num_arrivals()))
         #entry1 = self.get_entry(1)
-        #logger.debug("after add: entry " + entry1.get_entry_name() + ": " + str(entry1.get_num_arrivals()))
+        #logger.trace("after add: entry " + entry1.get_entry_name() + ": " + str(entry1.get_num_arrivals()))
 
         # this is a method of the synchronizer objct, e.g., BoundedBufferSelect
         self.set_guards()
@@ -98,18 +98,18 @@ class Selector():
         if called_entry.get_num_arrivals() > 1 or called_entry.testGuard() == False:
             # assert: 
             if (called_entry.get_num_arrivals() > 1) and called_entry.testGuard():
-                logger.debug("execute: Internal ERROR: called_entry.testGuard() is True but this is not the first arrival."
+                logger.trace("execute: Internal ERROR: called_entry.testGuard() is True but this is not the first arrival."
                 + " A previous arrival thus had a True guard and should have been selected earlier.")
             
             # Q return what? return 0 for now. Eventually the value may be part of delay alternative processing, which is TBD.
-            logger.debug("execute returning: called_entry.get_num_arrivals(): " + str(called_entry.get_num_arrivals())
+            logger.trace("execute returning: called_entry.get_num_arrivals(): " + str(called_entry.get_num_arrivals())
                 + " called_entry.testGuard() == False: " + str(called_entry.testGuard() == False))
             return 0 
         else:
             return_value = self.domethodcall(entry_name, synchronizer, synchronizer_method, **kwargs)
             # restart is only true if this is an asynch call after which the caller always terminates, blocking call or not.
             restart = called_entry.get_restart_on_noblock() # restart = self._restart_on_noblock
-            logger.debug("Value of 'called_entry.get_restart_on_noblock()' in execute() [line 106]: " + str(restart))
+            logger.trace("Value of 'called_entry.get_restart_on_noblock()' in execute() [line 106]: " + str(restart))
             return_tuple = (return_value, restart)
             # return value is deposited into a bounded buffer for withdraw by the tcp_server thread that
             # is handling the client lambda's call. This value will be ignored for all asynch calls and for
@@ -118,20 +118,20 @@ class Selector():
             # we do result = result_buffer.withdraw() followed by if restart: ... state.return_value = returnValue ...
             result_buffer.deposit(return_tuple)
             called_entry.remove_first_arrival()
-            logger.debug("execute called " + entry_name)
+            logger.trace("execute called " + entry_name)
         
-        logger.debug("execute: choosing")
+        logger.trace("execute: choosing")
         
         # Debug
         num_entries = self.get_num_entries()
         for i in range(0, (num_entries-1)):
             entry = self.get_entry(i)
-            logger.debug("execute: choosing: entry " + str(i) + " is " + entry.get_entry_name() + ", number of arrivals: " + str(entry.get_num_arrivals()))
+            logger.trace("execute: choosing: entry " + str(i) + " is " + entry.get_entry_name() + ", number of arrivals: " + str(entry.get_num_arrivals()))
 
         #entry0 = self.get_entry(0)
-        #logger.debug("choosing: entry " + entry0.get_entry_name() + ": " + str(entry0.get_num_arrivals()))
+        #logger.trace("choosing: entry " + entry0.get_entry_name() + ": " + str(entry0.get_num_arrivals()))
         #entry1 = self.get_entry(1)
-        #logger.debug("choosing: entry " + entry1.get_entry_name() + ": " + str(entry1.get_num_arrivals()))      
+        #logger.trace("choosing: entry " + entry1.get_entry_name() + ": " + str(entry1.get_num_arrivals()))      
        
         while(True):
             # just added an Arrival for an entry so update guards (which may consider the number of arrivals for an entry)
@@ -139,7 +139,7 @@ class Selector():
             choice = self._select.choose()
             # entries start at number 0; the value 0 indicates something else (see below)
             if choice >= 1 and choice <= self._select.get_number_entries():
-                logger.debug("Execute: choice is " + str(choice) + " so use list entry " + str(choice-1))
+                logger.trace("Execute: choice is " + str(choice) + " so use list entry " + str(choice-1))
                 called_entry = self.get_entry(choice-1)
                 # entry information was stored in the Arrival for the selected entry
                 arrival = called_entry.getOldestArrival()
@@ -149,7 +149,7 @@ class Selector():
                 kwargs = arrival._kwargs
                 result_buffer = arrival._result_buffer
                 return_value = self.domethodcall(entry_name, synchronizer, synchronizer_method, **kwargs)
-                logger.debug("Execute: called chosen method " + arrival._entry_name)
+                logger.trace("Execute: called chosen method " + arrival._entry_name)
                 # if restart is True, the a restart of client Lambda will be done when execute() returns to synchronizeSelect
                 restart = called_entry.get_restart_on_unblock() # restart = self.get_restart_on_unblock()
                 # return value is deposited into a bounded buffer for withdraw by the tcp_server thread that
@@ -175,7 +175,7 @@ class Selector():
             elif choice == 0:    # currently we assume at least one True guard
                 #something like throw select_exception(...)
                 break # while-loop
-        logger.debug("execute: completed normally: return 0")
+        logger.trace("execute: completed normally: return 0")
         return 0
 
     def execute_old(self, entry_name, synchronizer, synchronizer_method, result_buffer, **kwargs):
@@ -203,9 +203,9 @@ class Selector():
         called_entry.add_arrival(entry_name, synchronizer, synchronizer_method, result_buffer, **kwargs)
             
         entry0 = self.get_entry(0)
-        logger.debug("after add: entry " + entry0.get_entry_name() + ": " + str(entry0.get_num_arrivals()))
+        logger.trace("after add: entry " + entry0.get_entry_name() + ": " + str(entry0.get_num_arrivals()))
         entry1 = self.get_entry(1)
-        logger.debug("after add: entry " + entry1.get_entry_name() + ": " + str(entry1.get_num_arrivals()))
+        logger.trace("after add: entry " + entry1.get_entry_name() + ": " + str(entry1.get_num_arrivals()))
 
         self.set_guards()
             
@@ -232,7 +232,7 @@ class Selector():
             # silently since we don't need it anymore.
             
             # return what? Part of delay alternative processing?
-            logger.debug("execute returning: called_entry.get_num_arrivals(): " + str(called_entry.get_num_arrivals())
+            logger.trace("execute returning: called_entry.get_num_arrivals(): " + str(called_entry.get_num_arrivals())
                 + " called_entry.testGuard() == False: " + str(called_entry.testGuard() == False))
             return 0
             
@@ -240,23 +240,23 @@ class Selector():
             return_value = self.domethodcall(entry_name, synchronizer, synchronizer_method, **kwargs)
             # ToDo: remove the arrival or whatever choice() does 
             restart = called_entry.get_restart_on_noblock() # self._restart_on_noblock
-            logger.debug("Value of 'called_entry.get_restart_on_noblock()' in execute() [line 235]: " + str(restart))
+            logger.trace("Value of 'called_entry.get_restart_on_noblock()' in execute() [line 235]: " + str(restart))
             return_tuple = (return_value, restart)
             result_buffer.deposit(return_tuple)
             called_entry.remove_first_arrival()
-            logger.debug("execute called " + entry_name + ". returning")
+            logger.trace("execute called " + entry_name + ". returning")
         
-        logger.debug("execute: choosing")
+        logger.trace("execute: choosing")
         entry0 = self.get_entry(0)
-        logger.debug("choosing: entry " + entry0.get_entry_name() + ": " + str(entry0.get_num_arrivals()))
+        logger.trace("choosing: entry " + entry0.get_entry_name() + ": " + str(entry0.get_num_arrivals()))
         entry1 = self.get_entry(1)
-        logger.debug("choosing: entry " + entry1.get_entry_name() + ": " + str(entry1.get_num_arrivals()))        
+        logger.trace("choosing: entry " + entry1.get_entry_name() + ": " + str(entry1.get_num_arrivals()))        
         while(True):
            # just did entry_name so update guards
            self.set_guards()
            choice = self._select.choose()
            if choice >= 1 and choice <= self._select.get_number_entries():
-                logger.debug("Execute: choice is " + str(choice) + " so use list entry " + str(choice-1))
+                logger.trace("Execute: choice is " + str(choice) + " so use list entry " + str(choice-1))
                 called_entry = self.get_entry(choice-1)
                 arrival = called_entry.getOldestArrival()
                 synchronizer = arrival._synchronizer
@@ -264,7 +264,7 @@ class Selector():
                 kwargs = arrival._kwargs
                 result_buffer = arrival._result_buffer
                 return_value = self.domethodcall(entry_name, synchronizer, synchronizer_method, **kwargs)
-                logger.debug("Execute: called chosen method " + arrival._entry_name)
+                logger.trace("Execute: called chosen method " + arrival._entry_name)
                 restart = called_entry.get_restart_on_unblock() #self._restart_on_unblock
                 return_tuple = (return_value, restart)
                 result_buffer.deposit(return_tuple)
@@ -290,7 +290,7 @@ class Selector():
                 break # while-loop
                 
         #super().exit_monitor()
-        logger.debug("execute: return 0")
+        logger.trace("execute: return 0")
         return 0
         
     # For example, call withdraw and return the value withdrawn.
@@ -315,7 +315,7 @@ class Selector():
     #     return self._restart_on_unblock
             
     # def set_restart_on_noblock(self,T_or_F):
-    #     logger.debug("Setting value of '_restart_on_noblock' to " + str(T_or_F))
+    #     logger.trace("Setting value of '_restart_on_noblock' to " + str(T_or_F))
     #     self._restart_on_noblock = T_or_F
    
     # def get_restart_on_noblock(self):

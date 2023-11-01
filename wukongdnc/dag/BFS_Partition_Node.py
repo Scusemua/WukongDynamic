@@ -47,17 +47,17 @@ class Partition_Node:
     """
     def update_PageRank_main(self, damping_factor,total_num_nodes):
         parent_nodes = self.parents
-        logger.info("update_pagerankM: node " + str(self.ID))
-        logger.info("update_pagerankM: parent_nodes: " + str(parent_nodes))
-        logger.info("update_pagerankM: num_children: " + str(self.num_children))
+        logger.trace("update_pagerankM: node " + str(self.ID))
+        logger.trace("update_pagerankM: parent_nodes: " + str(parent_nodes))
+        logger.trace("update_pagerankM: num_children: " + str(self.num_children))
         #Note: a paent has at least one child so len(children) is not 0
         pagerank_sum = sum((nodes[node_index].pagerank / len(nodes[node_index].children)) for node_index in parent_nodes)
-        logger.info("update_pagerankM: pagerank_sum: " + str(pagerank_sum))
+        logger.trace("update_pagerankM: pagerank_sum: " + str(pagerank_sum))
         random_jumping = damping_factor / total_num_nodes
-        logger.info("update_pagerankM: damping_factor:" + str(damping_factor) + " num_nodes: " + str(total_num_nodes) + " random_jumping: " + str(random_jumping))
+        logger.trace("update_pagerankM: damping_factor:" + str(damping_factor) + " num_nodes: " + str(total_num_nodes) + " random_jumping: " + str(random_jumping))
         self.pagerank = random_jumping + (1-damping_factor) * pagerank_sum
-        logger.info ("update_pagerankM: update_pagerank: pagerank of node: " + str(self.ID) + ": " + str(self.pagerank))
-        logger.info("")
+        logger.trace ("update_pagerankM: update_pagerank: pagerank of node: " + str(self.ID) + ": " + str(self.pagerank))
+        logger.trace("")
     """
 
 #rhc shared
@@ -77,32 +77,32 @@ class Partition_Node:
             my_ID = str(self.ID) + "-s"
 
         global debug_pagerank
-        #logger.debug("debug_pagerank: "  + str(debug_pagerank))
+        #logger.trace("debug_pagerank: "  + str(debug_pagerank))
         if (debug_pagerank):
-            logger.debug("update_pagerank: node " + my_ID)
-            logger.debug("update_pagerank: parent_nodes: " + str(parent_nodes))
-            logger.debug("update_pagerank: num_children: " + str(self.num_children))
+            logger.trace("update_pagerank: node " + my_ID)
+            logger.trace("update_pagerank: parent_nodes: " + str(parent_nodes))
+            logger.trace("update_pagerank: num_children: " + str(self.num_children))
         
         
         #if self.ID == 16:
         #    parent1 = partition_or_group[1]
         #    parent2 = partition_or_group[2]
         #    if (debug_pagerank):
-        #        logger.info("16 parent : " + str(parent1.ID) + " num_children: " + str(parent1.num_children))
-        #       logger.info("16 parent : " + str(parent2.ID) + " num_children: " + str(parent2.num_children))
+        #        logger.trace("16 parent : " + str(parent1.ID) + " num_children: " + str(parent1.num_children))
+        #       logger.trace("16 parent : " + str(parent2.ID) + " num_children: " + str(parent2.num_children))
         
         #Note: a parent has at least one child so num_children is not 0
         pagerank_sum = sum((partition_or_group[node_index].pagerank / partition_or_group[node_index].num_children) for node_index in parent_nodes)
         if (debug_pagerank):
-            logger.debug("update_pagerank: pagerank_sum: " + str(pagerank_sum))
+            logger.trace("update_pagerank: pagerank_sum: " + str(pagerank_sum))
         #random_jumping = damping_factor / total_num_nodes
         if (debug_pagerank):
-            logger.debug("damping_factor:" + str(damping_factor) + " 1-damping_factor:" + str(1-damping_factor) + " num_nodes: " + str(total_num_nodes) + " random_jumping: " + str(random_jumping))
+            logger.trace("damping_factor:" + str(damping_factor) + " 1-damping_factor:" + str(1-damping_factor) + " num_nodes: " + str(total_num_nodes) + " random_jumping: " + str(random_jumping))
         #self.pagerank = random_jumping + ((1-damping_factor) * pagerank_sum)
         self.pagerank = random_jumping + (one_minus_dumping_factor * pagerank_sum)
         if (debug_pagerank):
-            logger.debug ("update_pagerank: pagerank of node: " + str(self.ID) + ": " + str(self.pagerank))
-            logger.debug("")
+            logger.trace ("update_pagerank: pagerank of node: " + str(self.ID) + ": " + str(self.pagerank))
+            logger.trace("")
 
     def update_PageRank_of_PageRank_Function_loop(self, partition_or_group,damping_factor,
         one_minus_dumping_factor,random_jumping,total_num_nodes):
@@ -113,36 +113,36 @@ class Partition_Node:
             my_ID = str(self.ID) + "-s"
 
         global debug_pagerank
-        #logger.debug("debug_pagerank: "  + str(debug_pagerank))
+        #logger.trace("debug_pagerank: "  + str(debug_pagerank))
         if (debug_pagerank):
-            logger.debug("update_pagerank: of node " + my_ID)
-            logger.debug("update_pagerank: parent_nodes of " + my_ID + ": " + str(parent_nodes))
-            logger.debug("update_pagerank of node " + my_ID + ": num_children: " + str(self.num_children))
+            logger.trace("update_pagerank: of node " + my_ID)
+            logger.trace("update_pagerank: parent_nodes of " + my_ID + ": " + str(parent_nodes))
+            logger.trace("update_pagerank of node " + my_ID + ": num_children: " + str(self.num_children))
 
             for node_indexD in parent_nodes:
-                logger.debug("node_indexD: " + str(node_indexD))
-                logger.debug("partition_or_group[node_indexD].prev: " + str(partition_or_group[node_indexD].prev))
-                logger.debug("partition_or_group[node_indexD].num_children: " + str(partition_or_group[node_indexD].num_children))
+                logger.trace("node_indexD: " + str(node_indexD))
+                logger.trace("partition_or_group[node_indexD].prev: " + str(partition_or_group[node_indexD].prev))
+                logger.trace("partition_or_group[node_indexD].num_children: " + str(partition_or_group[node_indexD].num_children))
         
         #if self.ID == 16:
         #    parent1 = partition_or_group[1]
         #    parent2 = partition_or_group[2]
         #    if (debug_pagerank):
-        #        logger.info("16 parent : " + str(parent1.ID) + " num_children: " + str(parent1.num_children))
-        #       logger.info("16 parent : " + str(parent2.ID) + " num_children: " + str(parent2.num_children))
+        #        logger.trace("16 parent : " + str(parent1.ID) + " num_children: " + str(parent1.num_children))
+        #       logger.trace("16 parent : " + str(parent2.ID) + " num_children: " + str(parent2.num_children))
         
         #Note: a paent has at least one child so num_children is not 0
         pagerank_sum = sum((partition_or_group[node_index].prev / partition_or_group[node_index].num_children) for node_index in parent_nodes)
         if (debug_pagerank):
-            logger.debug("update_pagerank: pagerank_sum: " + str(pagerank_sum))
+            logger.trace("update_pagerank: pagerank_sum: " + str(pagerank_sum))
         #random_jumping = damping_factor / total_num_nodes
         if (debug_pagerank):
-            logger.debug("damping_factor:" + str(damping_factor) + " 1-damping_factor:" + str(1-damping_factor) + " num_nodes: " + str(total_num_nodes) + " random_jumping: " + str(random_jumping))
+            logger.trace("damping_factor:" + str(damping_factor) + " 1-damping_factor:" + str(1-damping_factor) + " num_nodes: " + str(total_num_nodes) + " random_jumping: " + str(random_jumping))
         #self.pagerank = random_jumping + ((1-damping_factor) * pagerank_sum)
         self.pagerank = random_jumping + (one_minus_dumping_factor * pagerank_sum)
         if (debug_pagerank):
-            logger.debug ("update_pagerank: pagerank of node: " + str(self.ID) + ": " + str(self.pagerank))
-            logger.debug("")
+            logger.trace ("update_pagerank: pagerank of node: " + str(self.ID) + ": " + str(self.pagerank))
+            logger.trace("")
 
     
 #rhc shared
@@ -167,30 +167,30 @@ class Partition_Node:
             my_ID = str(self.ID) + "-s"
 
         global debug_pagerank
-        #logger.debug("debug_pagerank: "  + str(debug_pagerank))
+        #logger.trace("debug_pagerank: "  + str(debug_pagerank))
         if (debug_pagerank):
-            logger.debug("update_pagerank: node " + my_ID)
-            logger.debug("update_pagerank: parent_nodes: " + str(parent_nodes))
-            logger.debug("update_pagerank: num_children: " + str(self.num_children))
+            logger.trace("update_pagerank: node " + my_ID)
+            logger.trace("update_pagerank: parent_nodes: " + str(parent_nodes))
+            logger.trace("update_pagerank: num_children: " + str(self.num_children))
         
         #Note: a parent has at least one child so num_children is not 0
         pagerank_sum = sum((shared_nodes[node_index+starting_position_in_partition_group].pagerank / shared_nodes[node_index+starting_position_in_partition_group].num_children) for node_index in parent_nodes)
         if (debug_pagerank):
-            logger.debug("update_pagerank: pagerank_sum: " + str(pagerank_sum))
+            logger.trace("update_pagerank: pagerank_sum: " + str(pagerank_sum))
         #random_jumping = damping_factor / total_num_nodes
         if (debug_pagerank):
-            logger.debug("damping_factor:" + str(damping_factor) + " 1-damping_factor:" + str(1-damping_factor) + " num_nodes: " + str(total_num_nodes) + " random_jumping: " + str(random_jumping))
+            logger.trace("damping_factor:" + str(damping_factor) + " 1-damping_factor:" + str(1-damping_factor) + " num_nodes: " + str(total_num_nodes) + " random_jumping: " + str(random_jumping))
         #self.pagerank = random_jumping + ((1-damping_factor) * pagerank_sum)
         self.pagerank = random_jumping + (one_minus_dumping_factor * pagerank_sum)
         if (debug_pagerank):
-            logger.debug ("update_pagerank: pagerank of node: " + str(self.ID) + ": " + str(self.pagerank))
-            logger.debug("")
+            logger.trace ("update_pagerank: pagerank of node: " + str(self.ID) + ": " + str(self.pagerank))
+            logger.trace("")
 
     def update_PageRank_of_PageRank_Function_loop_Shared(self, shared_nodes, position_size_tuple ,damping_factor,
         one_minus_dumping_factor,random_jumping,total_num_nodes):
 
         starting_position_in_partition_group = position_size_tuple[0]
-        logger.debug("starting_position_in_partition_group: " + str(starting_position_in_partition_group))
+        logger.trace("starting_position_in_partition_group: " + str(starting_position_in_partition_group))
         # FYI:
         #size_of_partition_group = position_size_tuple[1]
 
@@ -201,30 +201,30 @@ class Partition_Node:
             my_ID = str(self.ID) + "-s"
 
         global debug_pagerank
-        #logger.debug("debug_pagerank: "  + str(debug_pagerank))
+        #logger.trace("debug_pagerank: "  + str(debug_pagerank))
         if (debug_pagerank):
-            logger.debug("update_pagerank: node " + my_ID)
-            logger.debug("update_pagerank: " + str(my_ID) + " parent_nodes: " + str(parent_nodes))
-            logger.debug("update_pagerank: " + str(my_ID) + " num_children: " + str(self.num_children))
+            logger.trace("update_pagerank: node " + my_ID)
+            logger.trace("update_pagerank: " + str(my_ID) + " parent_nodes: " + str(parent_nodes))
+            logger.trace("update_pagerank: " + str(my_ID) + " num_children: " + str(self.num_children))
 
             for parent_indexD in parent_nodes:
-                logger.debug("parent_indexD: " + str(parent_indexD))
-                logger.debug("shared_nodes[parent_indexD+starting_position_in_partition_group].prev : " + str(shared_nodes[parent_indexD+starting_position_in_partition_group].prev))
-                logger.debug("shared_nodes[parent_indexD+starting_position_in_partition_group].num_children: " + str(shared_nodes[parent_indexD+starting_position_in_partition_group].num_children))
+                logger.trace("parent_indexD: " + str(parent_indexD))
+                logger.trace("shared_nodes[parent_indexD+starting_position_in_partition_group].prev : " + str(shared_nodes[parent_indexD+starting_position_in_partition_group].prev))
+                logger.trace("shared_nodes[parent_indexD+starting_position_in_partition_group].num_children: " + str(shared_nodes[parent_indexD+starting_position_in_partition_group].num_children))
 
 
         #Note: a parent has at least one child so num_children is not 0
         pagerank_sum = sum((shared_nodes[parent_index+starting_position_in_partition_group].prev / shared_nodes[parent_index+starting_position_in_partition_group].num_children) for parent_index in parent_nodes)
         if (debug_pagerank):
-            logger.debug("update_pagerank: pagerank_sum: " + str(pagerank_sum))
+            logger.trace("update_pagerank: pagerank_sum: " + str(pagerank_sum))
         #random_jumping = damping_factor / total_num_nodes
         if (debug_pagerank):
-            logger.debug("damping_factor:" + str(damping_factor) + " 1-damping_factor:" + str(1-damping_factor) + " num_nodes: " + str(total_num_nodes) + " random_jumping: " + str(random_jumping))
+            logger.trace("damping_factor:" + str(damping_factor) + " 1-damping_factor:" + str(1-damping_factor) + " num_nodes: " + str(total_num_nodes) + " random_jumping: " + str(random_jumping))
         #self.pagerank = random_jumping + ((1-damping_factor) * pagerank_sum)
         self.pagerank = random_jumping + (one_minus_dumping_factor * pagerank_sum)
         if (debug_pagerank):
-            logger.debug ("update_pagerank: pagerank of node: " + str(self.ID) + ": " + str(self.pagerank))
-            logger.debug("")
+            logger.trace ("update_pagerank: pagerank of node: " + str(self.ID) + ": " + str(self.pagerank))
+            logger.trace("")
 
     def __eq__(self,other):
         return self.ID == other.ID

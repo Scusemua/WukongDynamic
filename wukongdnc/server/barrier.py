@@ -25,11 +25,11 @@ class Barrier(MonitorSU):
 
     @n.setter
     def n(self, value):
-        logger.debug("Setting value of n to " + str(value))
+        logger.trace("Setting value of n to " + str(value))
         self._n = value
 
     def init(self, **kwargs):
-        logger.debug(kwargs)
+        logger.trace(kwargs)
         if kwargs is None or len(kwargs) == 0:
             raise ValueError("Barrier requires a length. No length provided.")
         elif len(kwargs) > 1:
@@ -61,10 +61,10 @@ class Barrier(MonitorSU):
     def wait_b(self, **kwargs):
         # if we called executes_wait first, we still have the mutex so this enter_monitor does not do mutex.P
         super().enter_monitor(method_name = "wait_b")
-        logger.debug("Entered monitor in wait_b()")
-        logger.debug("wait_b() entered monitor. len(self._go) = " + str(len(self._go)) + ", self._n=" + str(self._n))
+        logger.trace("Entered monitor in wait_b()")
+        logger.trace("wait_b() entered monitor. len(self._go) = " + str(len(self._go)) + ", self._n=" + str(self._n))
         if len(self._go) < (self._n - 1):
-            logger.debug("Calling _go.wait_c() from Barrier")
+            logger.trace("Calling _go.wait_c() from Barrier")
             self._go.wait_c()
             restart = True
         else:
@@ -82,25 +82,25 @@ class Barrier(MonitorSU):
             #   as return object(s) of 2-way cal to wait_b.
             #threading.current_thread()._restart = False
             restart = False
-            logger.debug("Last thread in Barrier so not calling self._go.wait_c")
+            logger.trace("Last thread in Barrier so not calling self._go.wait_c")
 
-        logger.debug("Client exiting Barrier wait_b")
+        logger.trace("Client exiting Barrier wait_b")
         # does mutex.V
         self._go.signal_c_and_exit_monitor()
         #threading.current_thread()._returnValue = 1
         return 0, restart
         
         #No logger.debugs here. main Client can exit while other threads are
-        #doing this logger.debug so main thread/interpreter can't get stdout lock?
+        #doing this logger.trace so main thread/interpreter can't get stdout lock?
         
 	# synchronous no-try version of withdraw, restart when block
     def wait_b_for_no_try(self, **kwargs):
         # if we called executes_wait first, we still have the mutex so this enter_monitor does not do mutex.P
         super().enter_monitor(method_name = "wait_b")
-        logger.debug("Entered monitor in wait_b()")
-        logger.debug("wait_b() entered monitor. len(self._go) = " + str(len(self._go)) + ", self._n=" + str(self._n))
+        logger.trace("Entered monitor in wait_b()")
+        logger.trace("wait_b() entered monitor. len(self._go) = " + str(len(self._go)) + ", self._n=" + str(self._n))
         if len(self._go) < (self._n - 1):
-            logger.debug("Calling _go.wait_c() from Barrier")
+            logger.trace("Calling _go.wait_c() from Barrier")
             self._go.wait_c()
         else:
             # Tell Synchronizer that this serverless function should not be restarted.
@@ -116,16 +116,16 @@ class Barrier(MonitorSU):
             # - The last/become thread can receive the outputs of the other serverless functions
             #   as return object(s) of 2-way cal to wait_b.
             #threading.current_thread()._restart = False
-            logger.debug("Last thread in Barrier so not calling self._go.wait_c")
+            logger.trace("Last thread in Barrier so not calling self._go.wait_c")
         restart = False
-        logger.debug("Exiting Barrier wait_b")
+        logger.trace("Exiting Barrier wait_b")
         # does mutex.V
         self._go.signal_c_and_exit_monitor()
         #threading.current_thread()._returnValue = 1
         return 0, restart
         
         #No logger.debugs here. main Client can exit while other threads are
-        #doing this logger.debug so main thread/interpreter can't get stdout lock?
+        #doing this logger.trace so main thread/interpreter can't get stdout lock?
         
         
         

@@ -120,7 +120,7 @@ def generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks):
     """
     
     # we construct a dictionary of DAG information 
-    logger.info("")
+    logger.trace("")
     DAG_info_dictionary = {}
     DAG_info_dictionary["DAG_map"] = Group_DAG_map
     DAG_info_dictionary["DAG_states"] = Group_DAG_states
@@ -181,64 +181,64 @@ def generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks):
 
     # for debugging
     if show_generated_DAG_info:
-        logger.info("DAG_map:")
+        logger.trace("DAG_map:")
         for key, value in Group_DAG_map.items():
-            logger.info(str(key) + ' : ' + str(value))
-        logger.info("")
-        logger.info("states:")        
+            logger.trace(str(key) + ' : ' + str(value))
+        logger.trace("")
+        logger.trace("states:")        
         for key, value in Group_DAG_states.items():
-            logger.info(str(key) + ' : ' + str(value))
-        logger.info("")
-        logger.info("num_fanins:" + str(num_fanins) + " num_fanouts:" + str(num_fanouts) + " num_faninNBs:"
+            logger.trace(str(key) + ' : ' + str(value))
+        logger.trace("")
+        logger.trace("num_fanins:" + str(num_fanins) + " num_fanouts:" + str(num_fanouts) + " num_faninNBs:"
         + str(num_faninNBs) + " num_collapse:" + str(num_collapse))
-        logger.info("")  
-        logger.info("all_fanout_task_names:")
+        logger.trace("")  
+        logger.trace("all_fanout_task_names:")
         for name in Group_all_fanout_task_names:
-            logger.info(name)
-        logger.info("all_fanin_task_names:")
+            logger.trace(name)
+        logger.trace("all_fanin_task_names:")
         for name in Group_all_fanin_task_names :
-            logger.info(name)
-        logger.info("all_fanin_sizes:")
+            logger.trace(name)
+        logger.trace("all_fanin_sizes:")
         for s in Group_all_fanin_sizes :
-            logger.info(s)
-        logger.info("all_faninNB_task_names:")
+            logger.trace(s)
+        logger.trace("all_faninNB_task_names:")
         for name in Group_all_faninNB_task_names:
-            logger.info(name)
-        logger.info("all_faninNB_sizes:")
+            logger.trace(name)
+        logger.trace("all_faninNB_sizes:")
         for s in Group_all_faninNB_sizes:
-            logger.info(s)
-        logger.info("all_collapse_task_names:")
+            logger.trace(s)
+        logger.trace("all_collapse_task_names:")
         for name in Group_all_collapse_task_names:
-            logger.info(name)
-        logger.info("")
-        logger.info("leaf task start states:")
+            logger.trace(name)
+        logger.trace("")
+        logger.trace("leaf task start states:")
         for start_state in Group_DAG_leaf_task_start_states:
-            logger.info(start_state)
-        logger.info("")
-        logger.info("DAG_tasks:")
+            logger.trace(start_state)
+        logger.trace("")
+        logger.trace("DAG_tasks:")
         for key, value in Group_DAG_tasks.items():
-            logger.info(str(key) + ' : ' + str(value))
-        logger.info("")
-        logger.info("DAG_leaf_tasks:")
+            logger.trace(str(key) + ' : ' + str(value))
+        logger.trace("")
+        logger.trace("DAG_leaf_tasks:")
         for task_name in Group_DAG_leaf_tasks:
-            logger.info(task_name)
-        logger.info("")
-        logger.info("DAG_leaf_task_inputs:")
+            logger.trace(task_name)
+        logger.trace("")
+        logger.trace("DAG_leaf_task_inputs:")
         for inp in Group_DAG_leaf_task_inputs:
-            logger.info(inp)
-        logger.info("")
-        logger.info("DAG_version_number:")
-        logger.info(Group_DAG_version_number)
-        logger.info("")
-        logger.info("DAG_is_complete:")
-        logger.info(Group_DAG_is_complete)
-        logger.info("")
-        logger.info("DAG_number_of_tasks:")
-        logger.info(Group_DAG_number_of_tasks)
-        logger.info("")
-        logger.info("DAG_number_of_incomplete_tasks:")
-        logger.info(Group_DAG_number_of_incomplete_tasks)
-        logger.info("")
+            logger.trace(inp)
+        logger.trace("")
+        logger.trace("DAG_version_number:")
+        logger.trace(Group_DAG_version_number)
+        logger.trace("")
+        logger.trace("DAG_is_complete:")
+        logger.trace(Group_DAG_is_complete)
+        logger.trace("")
+        logger.trace("DAG_number_of_tasks:")
+        logger.trace(Group_DAG_number_of_tasks)
+        logger.trace("")
+        logger.trace("DAG_number_of_incomplete_tasks:")
+        logger.trace(Group_DAG_number_of_incomplete_tasks)
+        logger.trace("")
 
     # for debugging
     # read file file_name_incremental just written and display contents 
@@ -266,53 +266,53 @@ def generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks):
         DAG_number_of_tasks = DAG_info_Group_read.get_DAG_number_of_tasks()
         DAG_number_of_incomplete_tasks = DAG_info_Group_read.get_DAG_number_of_incomplete_tasks()
 
-        logger.info("")
-        logger.info("DAG_info Group after read:")
+        logger.trace("")
+        logger.trace("DAG_info Group after read:")
         output_DAG = True
         if output_DAG:
             # FYI:
-            logger.info("DAG_map:")
+            logger.trace("DAG_map:")
             for key, value in DAG_map.items():
-                logger.info(str(key) + ' : ' + str(value))
-                #logger.info(key)
-                #logger.info(value)
-            logger.info("  ")
-            logger.info("DAG states:")      
+                logger.trace(str(key) + ' : ' + str(value))
+                #logger.trace(key)
+                #logger.trace(value)
+            logger.trace("  ")
+            logger.trace("DAG states:")      
             for key, value in DAG_states.items():
-                logger.info(str(key) + ' : ' + str(value))
-            logger.info("   ")
-            logger.info("DAG leaf task start states")
+                logger.trace(str(key) + ' : ' + str(value))
+            logger.trace("   ")
+            logger.trace("DAG leaf task start states")
             for start_state in DAG_leaf_task_start_states:
-                logger.info(start_state)
-            logger.info("")
-            logger.info("all_collapse_task_names:")
+                logger.trace(start_state)
+            logger.trace("")
+            logger.trace("all_collapse_task_names:")
             for name in all_collapse_task_names:
-                logger.info(name)
-            logger.info("")
-            logger.info("DAG_tasks:")
+                logger.trace(name)
+            logger.trace("")
+            logger.trace("DAG_tasks:")
             for key, value in DAG_tasks.items():
-                logger.info(str(key) + ' : ' + str(value))
-            logger.info("")
-            logger.info("DAG_leaf_tasks:")
+                logger.trace(str(key) + ' : ' + str(value))
+            logger.trace("")
+            logger.trace("DAG_leaf_tasks:")
             for task_name in DAG_leaf_tasks:
-                logger.info(task_name)
-            logger.info("") 
-            logger.info("DAG_leaf_task_inputs:")
+                logger.trace(task_name)
+            logger.trace("") 
+            logger.trace("DAG_leaf_task_inputs:")
             for inp in DAG_leaf_task_inputs:
-                logger.info(inp)
-            logger.info("")
-            logger.info("DAG_version_number:")
-            logger.info(DAG_version_number)
-            logger.info("")
-            logger.info("DAG_info_is_complete:")
-            logger.info(Group_DAG_is_complete)
-            logger.info("")
-            logger.info("DAG_number_of_tasks:")
-            logger.info(DAG_number_of_tasks)
-            logger.info("")
-            logger.info("DAG_number_of_incomplete_tasks:")
-            logger.info(DAG_number_of_incomplete_tasks)
-            logger.info("")
+                logger.trace(inp)
+            logger.trace("")
+            logger.trace("DAG_version_number:")
+            logger.trace(DAG_version_number)
+            logger.trace("")
+            logger.trace("DAG_info_is_complete:")
+            logger.trace(Group_DAG_is_complete)
+            logger.trace("")
+            logger.trace("DAG_number_of_tasks:")
+            logger.trace(DAG_number_of_tasks)
+            logger.trace("")
+            logger.trace("DAG_number_of_incomplete_tasks:")
+            logger.trace(DAG_number_of_incomplete_tasks)
+            logger.trace("")
 
     DAG_info = DAG_Info.DAG_info_fromdictionary(DAG_info_dictionary)
     return  DAG_info
@@ -372,28 +372,28 @@ def generate_DAG_info_incremental_groups(current_partition_name,
     # used to generate IDs; state for next group added to DAG
     global Group_next_state 
 
-    logger.info("generate_DAG_info_incremental_groups: to_be_continued: " + str(to_be_continued))
-    logger.info("generate_DAG_info_incremental_groups: current_partition_number: " + str(current_partition_number))
+    logger.trace("generate_DAG_info_incremental_groups: to_be_continued: " + str(to_be_continued))
+    logger.trace("generate_DAG_info_incremental_groups: current_partition_number: " + str(current_partition_number))
 
-    logger.info("")
-    logger.info("generate_DAG_info_incremental_groups: Group_senders:")
+    logger.trace("")
+    logger.trace("generate_DAG_info_incremental_groups: Group_senders:")
     for sender_name,receiver_name_set in Group_senders.items():
-        logger.info("sender:" + sender_name)
-        logger.info("receiver_name_set:" + str(receiver_name_set))
-    logger.info("")
-    logger.info("")
-    logger.info("generate_DAG_info_incremental_groups: Group_receivers:")
+        logger.trace("sender:" + sender_name)
+        logger.trace("receiver_name_set:" + str(receiver_name_set))
+    logger.trace("")
+    logger.trace("")
+    logger.trace("generate_DAG_info_incremental_groups: Group_receivers:")
     for receiver_name,sender_name_set in Group_receivers.items():
-        logger.info("receiver:" + receiver_name)
-        logger.info("sender_name_set:" + str(sender_name_set))
-    logger.info("")
-    logger.info("")
-    logger.info("generate_DAG_info_incremental_groups: Leaf nodes of groups:")
+        logger.trace("receiver:" + receiver_name)
+        logger.trace("sender_name_set:" + str(sender_name_set))
+    logger.trace("")
+    logger.trace("")
+    logger.trace("generate_DAG_info_incremental_groups: Leaf nodes of groups:")
     for name in leaf_tasks_of_groups_incremental:
-        logger.info(name + " ")
-    logger.info("")
+        logger.trace(name + " ")
+    logger.trace("")
 
-    logger.info("generate_DAG_info_incremental_groups: Partition DAG incrementally:")
+    logger.trace("generate_DAG_info_incremental_groups: Partition DAG incrementally:")
 
 
     # in the DAG_map, partition/group i is state i. The first group is also 
@@ -500,7 +500,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 # Function to compute pagerank values when using array of structs
                 Group_DAG_tasks[name_of_first_group_in_DAG] = PageRank_Function_Driver_Shared_Fast  
 
-        logger.info("generate_DAG_info_incremental_groups: Group_DAG_map[current_partition_state]: " + str(Group_DAG_map[Group_next_state] ))
+        logger.trace("generate_DAG_info_incremental_groups: Group_DAG_map[current_partition_state]: " + str(Group_DAG_map[Group_next_state] ))
 
         # Note: setting version number and to_be_continued in generate_DAG_for_groups()
         # Note: setting number of tasks in in generate_DAG_for_groups()
@@ -516,7 +516,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
             number_of_incomplete_tasks = 0
         DAG_info = generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks)
 
-        logger.info("generate_DAG_info_incremental_groups: returning from generate_DAG_info_incremental_groups for"
+        logger.trace("generate_DAG_info_incremental_groups: returning from generate_DAG_info_incremental_groups for"
             + " group " + str(name_of_first_group_in_DAG))
         
         # This will be set to 2
@@ -565,7 +565,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 # DAG. The first partition is always a leaf task and it is handled by the 
                 # DAG_executor_driver.
 
-                logger.info("generate_DAG_info_incremental_groups: start of new connected component is group "
+                logger.trace("generate_DAG_info_incremental_groups: start of new connected component is group "
                     + group_name)
 
                 # task input is same as for leaf task group 1 above - empty
@@ -602,7 +602,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                     else:
                         Group_DAG_tasks[group_name] = PageRank_Function_Driver_Shared_Fast  
 
-                logger.info("generate_DAG_info_incremental_groups: state_info for current " + group_name)
+                logger.trace("generate_DAG_info_incremental_groups: state_info for current " + group_name)
 
                 ## save current name as previous name. If this is partition PRi_1
                 ## we cannot just use PRi-1_1 since the name might have an L at the
@@ -623,7 +623,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 
                 previous_partition_state = current_partition_state - 1
                 groups_of_previous_partition = groups_of_partitions[previous_partition_state-1]
-                logger.info("generate_DAG_info_incremental_groups: current_partition_state: " 
+                logger.trace("generate_DAG_info_incremental_groups: current_partition_state: " 
                     + str(current_partition_state) + ", previous_partition_state: "
                     + str(previous_partition_state))
 
@@ -631,15 +631,15 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 if first_previous_group:
                     first_previous_group = False
 
-                    logger.info("generate_DAG_info_incremental_groups: update the state_info for previous groups: "
+                    logger.trace("generate_DAG_info_incremental_groups: update the state_info for previous groups: "
                         + str(groups_of_previous_partition))
                     # flag so we only do this for the first group of groups in previous previous partition
                     first_previous_previous_group = True
                     for previous_group in groups_of_previous_partition:
-                        logger.info("generate_DAG_info_incremental_groups: previous_group: " + previous_group)
+                        logger.trace("generate_DAG_info_incremental_groups: previous_group: " + previous_group)
                         #for key, value in Group_DAG_map.items():
-                        #    logger.info(str(key) + ' : ' + str(value))
-                        #logger.info("")
+                        #    logger.trace(str(key) + ' : ' + str(value))
+                        #logger.trace("")
                         # get the state (number) of previous group
 
 
@@ -693,7 +693,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         #  for name_of_group_in_previous_partition in groups_of_previous_partition:
         # where change "group_name" to name_of_group_in_previous_partition
 
-                        logger.info("generate_DAG_info_incremental_groups: previous_group: " + previous_group)
+                        logger.trace("generate_DAG_info_incremental_groups: previous_group: " + previous_group)
 
                         receiver_set_for_previous_group = Group_senders.get(previous_group,set())
                         # for each group that receives output from previous_group
@@ -744,7 +744,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                                     # only one group, previous_group, sends outputs to receiverY and this sending 
                                     # group previous_group only sends to one group, so collapse receiverY, i.e.,
                                     # previous_group becomes receiverY via a collapse.
-                                    logger.info("sender " + previous_group + " --> " + receiverY + " : Collapse")
+                                    logger.trace("sender " + previous_group + " --> " + receiverY + " : Collapse")
                                     if not receiverY in Group_all_collapse_task_names:
                                         Group_all_collapse_task_names.append(receiverY)
                                     else:
@@ -755,7 +755,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                                     # only one task, group_name, sends output to receiverY and this sending 
                                     # group sends to other roups too, so group_name does a fanout 
                                     # to group receiverY.  
-                                    logger.info("sender " + previous_group + " --> " + receiverY + " : Fanout")
+                                    logger.trace("sender " + previous_group + " --> " + receiverY + " : Fanout")
                                     if not receiverY in Group_all_fanout_task_names:
                                         Group_all_fanout_task_names.append(receiverY)
                                     fanouts.append(receiverY)
@@ -779,18 +779,18 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                                         isFaninNB = True
                                         break
                                 if isFaninNB:
-                                    logger.info("group " + previous_group + " --> " + receiverY + " : FaninNB")
+                                    logger.trace("group " + previous_group + " --> " + receiverY + " : FaninNB")
                                     if not receiverY in Group_all_faninNB_task_names:
                                         Group_all_faninNB_task_names.append(receiverY)
                                         Group_all_faninNB_sizes.append(length_of_sender_set_for_receiverY)
-                                    logger.info ("after Group_all_faninNBs_sizes append: " + str(Group_all_faninNB_sizes))
-                                    logger.info ("faninNBs append: " + receiverY)
+                                    logger.trace ("after Group_all_faninNBs_sizes append: " + str(Group_all_faninNB_sizes))
+                                    logger.trace ("faninNBs append: " + receiverY)
                                     faninNBs.append(receiverY)
                                     faninNB_sizes.append(length_of_sender_set_for_receiverY)
                                 else:
                                     # senderX sends its output only to receiverY, same for any other
                                     # tasks that sends outputs to receiverY so receiverY is a fanin task.
-                                    logger.info("group " + previous_group + " --> " + receiverY + " : Fanin")
+                                    logger.trace("group " + previous_group + " --> " + receiverY + " : Fanin")
                                     if not receiverY in Group_all_fanin_task_names:
                                         Group_all_fanin_task_names.append(receiverY)
                                         Group_all_fanin_sizes.append(length_of_sender_set_for_receiverY)
@@ -849,7 +849,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                                 + "state_info_of_previous_group is None.")
                             logger.error("DAG_map:")
                             for key, value in Group_DAG_map.items():
-                                logger.info(str(key) + ' : ' + str(value))
+                                logger.trace(str(key) + ' : ' + str(value))
                             logging.shutdown()
                             os._exit(0)
 
@@ -876,7 +876,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                         faninNB_sizes_of_previous_state += faninNB_sizes
 # END
 
-                        logger.info("before update to TBC and fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued"
+                        logger.trace("before update to TBC and fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued"
                             + " for previous_group " + previous_group + " state_info_of_previous_group: " + str(state_info_of_previous_group))
 
                         # Groups in previous partition are now complete so TBC is set to False.
@@ -895,11 +895,11 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                                     state_info_of_previous_previous_group = Group_DAG_map[state_of_previous_previous_group]
                                     state_info_of_previous_previous_group.fanout_fanin_faninNB_collapse_groups_are_ToBeContinued = False
                                     
-                                    logger.info("The state_info_of_previous_previous_group " 
+                                    logger.trace("The state_info_of_previous_previous_group " 
                                         + previous_previous_group + " after update fanout_fanin_faninNB_collapse_groups_are_ToBeContinued is: " 
                                         + str(state_info_of_previous_previous_group))
 
-                        logger.info("after update to TBC and fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued"
+                        logger.trace("after update to TBC and fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued"
                             + " for previous_group " + previous_group + " state_info_of_previous_group: " 
                             + str(state_info_of_previous_group))
 
@@ -959,29 +959,29 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                     Group_DAG_map[Group_next_state].fanins.append("goo")
 
                     # display DAG_executor's state_info objects
-                    logger.info("address DAG_info_DAG_map: " + str(hex(id(DAG_info_DAG_map))))
-                    logger.info("generate_DAG_info_incremental_groups: DAG_info_DAG_map after state_info copy:")
+                    logger.trace("address DAG_info_DAG_map: " + str(hex(id(DAG_info_DAG_map))))
+                    logger.trace("generate_DAG_info_incremental_groups: DAG_info_DAG_map after state_info copy:")
                     for key, value in DAG_info_DAG_map.items():
-                        logger.info(str(key) + ' : ' + str(value) + " addr value: " + str(hex(id(value))))
+                        logger.trace(str(key) + ' : ' + str(value) + " addr value: " + str(hex(id(value))))
 
                     # display generator's state_info objects
-                    logger.info("address Group_DAG_map: " + str(hex(id(Group_DAG_map))))
-                    logger.info("generate_DAG_info_incremental_groups: Group_DAG_map:")
+                    logger.trace("address Group_DAG_map: " + str(hex(id(Group_DAG_map))))
+                    logger.trace("generate_DAG_info_incremental_groups: Group_DAG_map:")
                     for key, value in Group_DAG_map.items():
-                        logger.info(str(key) + ' : ' + str(value) + " addr value: " + str(hex(id(value))))
+                        logger.trace(str(key) + ' : ' + str(value) + " addr value: " + str(hex(id(value))))
 
                     # undo the modification to the generator's state_info
                     Group_DAG_map[Group_next_state].fanins.clear()
 
                     # display generator's state_info objects
-                    logger.info("generate_DAG_info_incremental_groups: DAG_info_DAG_map after clear:")
+                    logger.trace("generate_DAG_info_incremental_groups: DAG_info_DAG_map after clear:")
                     for key, value in DAG_info_DAG_map.items():
-                        logger.info(str(key) + ' : ' + str(value))
+                        logger.trace(str(key) + ' : ' + str(value))
                 
                     # display DAG_executor's state_info ojects
-                    logger.info("generate_DAG_info_incremental_groups: Group_next_state:")
+                    logger.trace("generate_DAG_info_incremental_groups: Group_next_state:")
                     for key, value in Group_next_state_DAG_map.items():
-                        logger.info(str(key) + ' : ' + str(value))
+                        logger.trace(str(key) + ' : ' + str(value))
 
                     # logging.shutdown()
                     # os._exit(0)
@@ -1018,7 +1018,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 # set is Group_receivers.get(group_name).
 
                 sender_set_for_group_name = Group_receivers.get(group_name)
-                logger.info("sender_set_for_group_name, i.e., Receivers " + group_name + ":" + str(sender_set_for_group_name))
+                logger.trace("sender_set_for_group_name, i.e., Receivers " + group_name + ":" + str(sender_set_for_group_name))
 
                 sender_set_for_group_name_with_qualified_names = set()
                 # For each sender task "name" that sends output to group_name, the 
@@ -1062,14 +1062,14 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                     else:
                         Group_DAG_tasks[group_name] = PageRank_Function_Driver_Shared_Fast  
 
-                logger.info("generate_DAG_info_incremental_groups: Group_DAG_map[Group_next_state]: " + str(Group_DAG_map[Group_next_state] ))
+                logger.trace("generate_DAG_info_incremental_groups: Group_DAG_map[Group_next_state]: " + str(Group_DAG_map[Group_next_state] ))
                 
                 # This is not the first partition and it is not a leaf partition.
                 # So current_partition_state is 2 or more (states start at 1)
                 # Positions in groups_of_partitions statr at 0.
                 previous_partition_state = current_partition_state - 1
                 groups_of_previous_partition = groups_of_partitions[previous_partition_state-1]
-                logger.info("generate_DAG_info_incremental_groups: current_partition_state: " 
+                logger.trace("generate_DAG_info_incremental_groups: current_partition_state: " 
                     + str(current_partition_state) + ", previous_partition_state: "
                     + str(previous_partition_state))
                 
@@ -1084,7 +1084,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 if first_previous_group:
                     first_previous_group = False
 
-                    logger.info("generate_DAG_info_incremental_groups: complete the state_info for previous groups: "
+                    logger.trace("generate_DAG_info_incremental_groups: complete the state_info for previous groups: "
                         + str(groups_of_previous_partition))
                     # When we added these previous groups to the DAG we added them with empty
                     # fanouts/fanins/faninNBs/collapse sets. Now that we collected the 
@@ -1128,7 +1128,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         #  for name_of_group_in_previous_partition in groups_of_previous_partition:
         # where change "group_name" to name_of_group_in_previous_partition
 
-                        logger.info("generate_DAG_info_incremental_groups: previous_group: " + previous_group)
+                        logger.trace("generate_DAG_info_incremental_groups: previous_group: " + previous_group)
 
                         # get groups that previous group sends inputs to. These
                         # groups "reveive" inputs from the sender
@@ -1201,7 +1201,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                                     # only one group, previous_group, sends outputs to receiverY and this sending 
                                     # group previous_group only sends inputs to one group (receiverY), so collapse 
                                     # receiverY, i.e., previous_group becomes receiverY via a collapse.
-                                    logger.info("sender " + previous_group + " --> " + receiverY + " : Collapse")
+                                    logger.trace("sender " + previous_group + " --> " + receiverY + " : Collapse")
                                     if not receiverY in Group_all_collapse_task_names:
                                         Group_all_collapse_task_names.append(receiverY)
                                     else:
@@ -1214,7 +1214,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                                     # only one task, group_name, sends output to receiverY and this sending 
                                     # group sends to other roups too, so group_name does a fanout 
                                     # to group receiverY.  
-                                    logger.info("sender " + previous_group + " --> " + receiverY + " : Fanout")
+                                    logger.trace("sender " + previous_group + " --> " + receiverY + " : Fanout")
                                     if not receiverY in Group_all_fanout_task_names:
                                         Group_all_fanout_task_names.append(receiverY)
                                     # we are generating the sets of collapse/fanin/fanout/faninNB
@@ -1241,18 +1241,18 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                                         break
     
                                 if isFaninNB:
-                                    logger.info("group " + previous_group + " --> " + receiverY + " : FaninNB")
+                                    logger.trace("group " + previous_group + " --> " + receiverY + " : FaninNB")
                                     if not receiverY in Group_all_faninNB_task_names:
                                         Group_all_faninNB_task_names.append(receiverY)
                                         Group_all_faninNB_sizes.append(length_of_sender_set_for_receiverY)
-                                    logger.info ("after Group_all_faninNBs_sizes append: " + str(Group_all_faninNB_sizes))
-                                    logger.info ("faninNBs append: " + receiverY)
+                                    logger.trace ("after Group_all_faninNBs_sizes append: " + str(Group_all_faninNB_sizes))
+                                    logger.trace ("faninNBs append: " + receiverY)
                                     faninNBs.append(receiverY)
                                     faninNB_sizes.append(length_of_sender_set_for_receiverY)
                                 else:
                                     # all tasks that send inputs to receiverY don't send inputs to any other
                                     # task/grup, so receiverY is a fanin task.
-                                    logger.info("group " + previous_group + " --> " + receiverY + " : Fanin")
+                                    logger.trace("group " + previous_group + " --> " + receiverY + " : Fanin")
                                     if not receiverY in Group_all_fanin_task_names:
                                         Group_all_fanin_task_names.append(receiverY)
                                         Group_all_fanin_sizes.append(length_of_sender_set_for_receiverY)
@@ -1306,14 +1306,14 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                         # get the state_info of previous group
                         state_info_of_previous_group = Group_DAG_map[previous_group_state]
 
-                        logger.info("before update to TBC and fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued"
+                        logger.trace("before update to TBC and fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued"
                             + " for previous_group " + previous_group + " state_info_of_previous_group: " + str(state_info_of_previous_group))
                         if state_info_of_previous_group == None:
                             logger.error("[Error] Internal Error: generate_DAG_info_incremental_groups: state_info_of_previous_group: "
                                 + "state_info_of_previous_group is None.")
                             logger.error("DAG_map:")
                             for key, value in Group_DAG_map.items():
-                                logger.info(str(key) + ' : ' + str(value))
+                                logger.trace(str(key) + ' : ' + str(value))
                             logging.shutdown()
                             os._exit(0)
 
@@ -1393,12 +1393,12 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                                     state_info_of_previous_previous_group = Group_DAG_map[state_of_previous_previous_group]
                                     state_info_of_previous_previous_group.fanout_fanin_faninNB_collapse_groups_are_ToBeContinued = False
                                     
-                                    logger.info("The state_info_of_previous_previous_group for group " 
+                                    logger.trace("The state_info_of_previous_previous_group for group " 
                                         + previous_previous_group + " after update fanout_fanin_faninNB_collapse_groups_are_ToBeContinued is: " 
                                         + str(state_info_of_previous_previous_group))
 
 
-                        logger.info("after update to TBC and fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued"
+                        logger.trace("after update to TBC and fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued"
                             + " for previous_group " + previous_group + " state_info_of_previous_group: " 
                             + str(state_info_of_previous_group))
 
@@ -1444,7 +1444,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
 
                         # previous group is now complete
                         state_info_previous_state.ToBeContinued = False
-                        logger.info("generate_DAG_info_incremental_groups: for current partition, the previous_state_info after update collpase and TBC: " 
+                        logger.trace("generate_DAG_info_incremental_groups: for current partition, the previous_state_info after update collpase and TBC: " 
                             + str(state_info_previous_state))
 
                         """
@@ -1459,7 +1459,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
 
             Group_next_state += 1  
 
-        logger.info("generate_DAG_info_incremental_groups: generate_DAG_info_incremental_groups for"
+        logger.trace("generate_DAG_info_incremental_groups: generate_DAG_info_incremental_groups for"
             + " group " + str(group_name))
 
         if to_be_continued:
@@ -1568,16 +1568,16 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 Group_DAG_map[Group_next_state].fanins.append("goo")
 
                 # display DAG_executor's state_info objects
-                logger.info("address DAG_info_DAG_map: " + str(hex(id(DAG_info_DAG_map))))
-                logger.info("generate_DAG_info_incremental_groups: DAG_info_DAG_map after state_info copy:")
+                logger.trace("address DAG_info_DAG_map: " + str(hex(id(DAG_info_DAG_map))))
+                logger.trace("generate_DAG_info_incremental_groups: DAG_info_DAG_map after state_info copy:")
                 for key, value in DAG_info_DAG_map.items():
-                    logger.info(str(key) + ' : ' + str(value) + " addr value: " + str(hex(id(value))))
+                    logger.trace(str(key) + ' : ' + str(value) + " addr value: " + str(hex(id(value))))
 
                 # display generator's state_info objects
-                logger.info("address Group_DAG_map: " + str(hex(id(Group_DAG_map))))
-                logger.info("generate_DAG_info_incremental_groups: Group_DAG_map:")
+                logger.trace("address Group_DAG_map: " + str(hex(id(Group_DAG_map))))
+                logger.trace("generate_DAG_info_incremental_groups: Group_DAG_map:")
                 for key, value in Group_DAG_map.items():
-                    logger.info(str(key) + ' : ' + str(value) + " addr value: " + str(hex(id(value))))
+                    logger.trace(str(key) + ' : ' + str(value) + " addr value: " + str(hex(id(value))))
 
                 # fanin values should be different for current_state
                 # one with "goo" and the other empty
@@ -1586,14 +1586,14 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 Group_DAG_map[Group_next_state].fanins.clear()
 
                 # display generator's state_info objects
-                logger.info("generate_DAG_info_incremental_groups: DAG_info_DAG_map after clear:")
+                logger.trace("generate_DAG_info_incremental_groups: DAG_info_DAG_map after clear:")
                 for key, value in DAG_info_DAG_map.items():
-                    logger.info(str(key) + ' : ' + str(value))
+                    logger.trace(str(key) + ' : ' + str(value))
 
                 # display DAG_executor's state_info ojects
-                logger.info("generate_DAG_info_incremental_groups: Group_next_state:")
+                logger.trace("generate_DAG_info_incremental_groups: Group_next_state:")
                 for key, value in Group_next_state_DAG_map.items():
-                    logger.info(str(key) + ' : ' + str(value))
+                    logger.trace(str(key) + ' : ' + str(value))
 
                 # fanin values should be the same for current_state (empty)
 
@@ -1601,7 +1601,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 # os._exit(0)
             """ 
                 
-    logger.info("generate_DAG_info_incremental_groups: returning from generate_DAG_info_incremental_groups for"
+    logger.trace("generate_DAG_info_incremental_groups: returning from generate_DAG_info_incremental_groups for"
         + " group " + str(group_name))
     
     # To stop after DAG is completely generated, whcih is combined with 
