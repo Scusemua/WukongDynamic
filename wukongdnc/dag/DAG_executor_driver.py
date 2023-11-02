@@ -314,15 +314,26 @@ import time
 import cloudpickle
 import socket
 #import os
-
 import logging 
+
+from .DAG_executor_constants import run_all_tasks_locally, store_fanins_faninNBs_locally, use_multithreaded_multiprocessing #, num_threads_for_multithreaded_multiprocessing
+from .DAG_executor_constants import create_all_fanins_faninNBs_on_start, using_workers
+from .DAG_executor_constants import num_workers,using_threads_not_processes
+from .DAG_executor_constants import FanIn_Type, FanInNB_Type, process_work_queue_Type
+from .DAG_executor_constants import store_sync_objects_in_lambdas, sync_objects_in_lambdas_trigger_their_tasks
+from .DAG_executor_constants import use_shared_partitions_groups,use_page_rank_group_partitions
+from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
+from .DAG_executor_constants import using_threads_not_processes, use_multithreaded_multiprocessing
+from .DAG_executor_constants import compute_pagerank
+
 from .addLoggingLevel import addLoggingLevel
-""" How to use: https://stackoverflow.com/questions/2183233/how-to-add-a-custom-loglevel-to-pythons-logging-facility/35804945#35804945
-    >>> addLoggingLevel('TRACE', logging.DEBUG - 5)
-    >>> logging.getLogger(__name__).setLevel("TRACE")
-    >>> logging.getLogger(__name__).trace('that worked')
-    >>> logging.trace('so did this')
-    >>> logging.TRACE
+"""
+How to use: https://stackoverflow.com/questions/2183233/how-to-add-a-custom-loglevel-to-pythons-logging-facility/35804945#35804945
+>>> addLoggingLevel('TRACE', logging.DEBUG - 5)
+>>> logging.getLogger(__name__).setLevel("TRACE")
+>>> logging.getLogger(__name__).trace('that worked')
+>>> logging.trace('so did this')
+>>> logging.TRACE
 """
 # If we are computing pageranks then we will run BFS first which will 
 # addLoggingLevel(trace) and import DAG_executor_driver,
@@ -331,9 +342,61 @@ from .addLoggingLevel import addLoggingLevel
 # Note that we start DAG execution either by running BFS or
 # DAG_excutor_driver, so one of them will addLoggingLevel(trace).
 # No other module executes addLoggingLevel.
-from .DAG_executor_constants import compute_pagerank
 if not (compute_pagerank):
     addLoggingLevel('TRACE', logging.DEBUG - 5)
+
+##Function to initialize the logger, notice that it takes 2 arguments
+#logger_name and logfile
+#def setup_logger(logger_name,logfile):
+#    mylogger = logging.getLogger(logger_name)
+#    mylogger.setLevel(logging.INFO)
+    #logger.setLevel("TRACE")
+    # create file handler which logs even debug messages
+    #fh = logging.FileHandler(logfile)
+    #fh.setLevel(logging.INFO)
+    # create console handler with a higher log level
+#    ch = logging.StreamHandler()
+#    ch.setLevel(logging.INFO)
+    #ch.setLevel("TRACE")
+    # create formatter and add it to the handlers
+#    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    #fh.setFormatter(formatter)
+#    ch.setFormatter(formatter)
+    # add the handlers to the logger
+    #logger.addHandler(fh)
+#    mylogger.addHandler(ch)
+#    return mylogger
+
+#from .addLoggingLevel import addLoggingLevel
+""" 
+    How to use: https://stackoverflow.com/questions/2183233/how-to-add-a-custom-loglevel-to-pythons-logging-facility/35804945#35804945
+    >>> addLoggingLevel('TRACE', logging.DEBUG - 5)
+    >>> logging.getLogger(__name__).setLevel("TRACE")
+    >>> logging.getLogger(__name__).trace('that worked')
+    >>> logging.trace('so did this')
+    >>> logging.TRACE
+"""
+## If we are computing pageranks then we will run BFS first which will 
+## addLoggingLevel(trace) and import DAG_executor_driver,
+## so we do not want to addLoggingLevel(trace) here. If we are not
+## computing pageranks we will addLoggingLevel(trace) here.
+## Note that we start DAG execution either by running BFS or
+## DAG_excutor_driver, so one of them will addLoggingLevel(trace).
+## No other module executes addLoggingLevel.
+#from .addLoggingLevel import addLoggingLevel
+#from .DAG_executor_constants import compute_pagerank
+#logger = None
+#if not (compute_pagerank):
+#    addLoggingLevel('TRACE', logging.DEBUG - 5)
+
+    #setup the logger as below with mylogger being the name of the #logger and myloggerfile.log being the name of the logfile
+
+    #mylogger=setup_logger('mylogger','myloggerfile.log')
+    #mylogger.info("My Logger has been initialized")
+    #logger=setup_logger('DAG_executor_driver_logger','DAG_executor.log')
+    #logger.info("My Logger has been initialized")
+#else:
+#    logger = logging.getLogger('DAG_executor_driver_logger')
 
 #from .DFS_visit import Node
 #from .DFS_visit import state_info
@@ -344,15 +407,7 @@ from . import DAG_executor
 from .DAG_executor_State import DAG_executor_State
 from .DAG_info import DAG_Info
 from wukongdnc.server.util import make_json_serializable
-from wukongdnc.constants import TCP_SERVER_IP
-from .DAG_executor_constants import run_all_tasks_locally, store_fanins_faninNBs_locally, use_multithreaded_multiprocessing #, num_threads_for_multithreaded_multiprocessing
-from .DAG_executor_constants import create_all_fanins_faninNBs_on_start, using_workers
-from .DAG_executor_constants import num_workers,using_threads_not_processes
-from .DAG_executor_constants import FanIn_Type, FanInNB_Type, process_work_queue_Type
-from .DAG_executor_constants import store_sync_objects_in_lambdas, sync_objects_in_lambdas_trigger_their_tasks
-from .DAG_executor_constants import use_shared_partitions_groups,use_page_rank_group_partitions
-from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
-from .DAG_executor_constants import using_threads_not_processes, use_multithreaded_multiprocessing
+
 #from .DAG_work_queue_for_threads import thread_work_queue
 from .DAG_executor_work_queue_for_threads import work_queue
 from .DAG_executor_synchronizer import server
@@ -367,16 +422,24 @@ import copy
 from . import BFS_Shared
 import dask
 
+from wukongdnc.constants import TCP_SERVER_IP
+from wukongdnc.dag.DAG_executor_constants import log_level
+
+
 logger = logging.getLogger(__name__)
 if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
-    logger.setLevel(logging.INFO)
+    #logger.setLevel(logging.INFO)
     #logger.setLevel("TRACE")
+    logger.setLevel(log_level)
     formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
     ch = logging.StreamHandler()
-    ch.setLevel(logging.INFO)
+    #ch.setLevel(logging.INFO)
     #ch.setLevel("TRACE")
+    ch.setLevel(log_level)
     ch.setFormatter(formatter)
     logger.addHandler(ch)
+
+#logger = None
 
 
 # A note about loggers:
@@ -2174,7 +2237,6 @@ def process_leaf_tasks_batch(websocket):
 
 if __name__ == "__main__":
     run()
-
 
 # xtra:
 """

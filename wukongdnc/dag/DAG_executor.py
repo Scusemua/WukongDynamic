@@ -56,7 +56,7 @@ from .Remote_Client_for_DAG_infoBuffer_Monitor_for_Lambdas import Remote_Client_
     
 #from .DAG_infoBuffer_Monitor_for_threads import DAG_infobuffer_monitor
 
-# This will either be a DAG_infoBuffer_Monitor or a DAG_infoBuffer_Monitor_for_Lambdas
+# Polymorphic import!: This will either be a DAG_infoBuffer_Monitor or a DAG_infoBuffer_Monitor_for_Lambdas
 import  wukongdnc.dag.DAG_infoBuffer_Monitor_for_threads
 
 #DAG_infobuffer_monitor = None
@@ -70,17 +70,24 @@ import  wukongdnc.dag.DAG_infoBuffer_Monitor_for_threads
 from . import BFS_Shared
 from .DAG_executor_output_checker import set_pagerank_output
 from .DAG_executor_constants import check_pagerank_output
+from .DAG_executor_constants import log_level
 
 logger = logging.getLogger(__name__)
 if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
     #logger.setLevel("TRACE")
-    logger.setLevel(logging.INFO)
+    #logger.setLevel(logging.INFO)
+    logger.setLevel(log_level)
     formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
     ch = logging.StreamHandler()
     #ch.setLevel("TRACE")
-    ch.setLevel(logging.INFO)
+    #ch.setLevel(logging.INFO)
+    ch.setLevel(log_level)
     ch.setFormatter(formatter)
     logger.addHandler(ch)
+
+
+#logger = logging.getLogger('DAG_executor_logger')
+#logger.setLevel(logging.INFO)
 
 """
 #rhc shared

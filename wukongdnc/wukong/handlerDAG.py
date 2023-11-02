@@ -12,9 +12,13 @@ import redis
 #from wukongdnc.server.api import synchronize_sync
 from wukongdnc.constants import REDIS_IP_PRIVATE  #, TCP_SERVER_IP
 from wukongdnc.dag.DAG_executor import DAG_executor_lambda
+from wukongdnc.dag.DAG_executor_constants import log_level
+from wukongdnc.dag.addLoggingLevel import addLoggingLevel
+addLoggingLevel('TRACE', logging.DEBUG - 5)
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+#logger.setLevel(logging.INFO)
+logger.setLevel(log_level)
 formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
 
 SLEEP_INTERVAL = 0.120

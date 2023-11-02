@@ -2,7 +2,7 @@ import sys
 
 import threading 
 import logging
-from logging import handlers
+#from logging import handlers
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')

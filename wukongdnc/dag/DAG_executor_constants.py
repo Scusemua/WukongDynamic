@@ -6,6 +6,8 @@ configurations and how to set the flags below.
 import logging
 import os
 
+log_level = logging.INFO
+
 logger = None
 logger = logging.getLogger(__name__)
 
