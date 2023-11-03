@@ -4,10 +4,11 @@ import cloudpickle
 from .BFS_Partition_Node import Partition_Node
 from . import BFS_Shared
 from .DAG_executor_constants import use_page_rank_group_partitions, using_threads_not_processes
-from .DAG_executor_constants import use_multithreaded_multiprocessing
+#from .DAG_executor_constants import use_multithreaded_multiprocessing
 
 logger = logging.getLogger(__name__)
 
+"""
 if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
     logger.setLevel(logging.ERROR)
     formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
@@ -16,6 +17,7 @@ if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
     #ch.setLevel(logging.INFO)
     ch.setFormatter(formatter)
     logger.addHandler(ch)
+"""
 
 debug_pagerank = True
 

@@ -2,13 +2,14 @@ import threading
 #import os
 
 from .DAG_executor_constants import run_all_tasks_locally, num_threads_for_multithreaded_multiprocessing
-from .DAG_executor_constants import using_threads_not_processes, use_multithreaded_multiprocessing
+#from .DAG_executor_constants import using_threads_not_processes, use_multithreaded_multiprocessing
 
 from . import DAG_executor
 
 import logging 
 logger = logging.getLogger(__name__)
 
+"""
 if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
     logger.setLevel(logging.ERROR)
     formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
@@ -16,7 +17,7 @@ if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
     ch.setLevel(logging.DEBUG)
     ch.setFormatter(formatter)
     logger.addHandler(ch)
-
+"""
 
 
 #def create_and_run_threads_for_multiT_multiP(process_name,payload,counter,log_queue,worker_configurer):

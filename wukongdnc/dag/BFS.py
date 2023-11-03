@@ -686,8 +686,16 @@ import copy
 # we are not computing pagernk, DAG_executor_driver will addLoggingLevel TRACE.
 
 import logging
+from wukongdnc.dag.DAG_executor_constants import log_level
 from .addLoggingLevel import addLoggingLevel
 addLoggingLevel('TRACE', logging.DEBUG - 5)
+logging.basicConfig(encoding='utf-8',level=log_level, format='[%(asctime)s][%(module)s][%(processName)s][%(threadName)s]: %(message)s')
+# Added this to suppress the logging message:
+#   credentials - MainProcess - MainThread: Found credentials in shared credentials file: ~/.aws/credentials
+# But it appears that we could see other things liek this:
+# https://stackoverflow.com/questions/1661275/disable-boto-logging-without-modifying-the-boto-files
+logging.getLogger('botocore').setLevel(logging.CRITICAL)
+
 """ How to use: https://stackoverflow.com/questions/2183233/how-to-add-a-custom-loglevel-to-pythons-logging-facility/35804945#35804945
     >>> addLoggingLevel('TRACE', logging.DEBUG - 5)
     >>> logging.getLogger(__name__).setLevel("TRACE")
@@ -703,7 +711,7 @@ from .DAG_executor_constants import run_all_tasks_locally, using_threads_not_pro
 from .DAG_executor_constants import work_queue_size_for_incremental_DAG_generation_with_worker_processes
 from .DAG_executor_constants import incremental_DAG_deposit_interval
 from .DAG_executor_constants import check_pagerank_output
-from .DAG_executor_constants import using_threads_not_processes, use_multithreaded_multiprocessing
+from .DAG_executor_constants import using_threads_not_processes
 
 
 from .BFS_Node import Node
@@ -747,16 +755,19 @@ from .DAG_executor_output_checker import verify_pagerank_outputs
 from wukongdnc.constants import TCP_SERVER_IP
 
 logger = logging.getLogger(__name__)
-if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
+#if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
     #logger.setLevel(logging.DEBUG)
-    logger.setLevel("TRACE")
-    formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
-    ch = logging.StreamHandler()
+    #logger.setLevel("TRACE")
+    #logger.setLevel(log_level)
+
+    #formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
+    #ch = logging.StreamHandler()
+
     #ch.setLevel(logging.DEBUG)
     #ch.setLevel(logging.INFO)
-    ch.setLevel("TRACE")
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
+    #ch.setLevel("TRACE")
+    #ch.setFormatter(formatter)
+    #logger.addHandler(ch)
 
 
 USING_BFS = False

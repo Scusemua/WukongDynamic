@@ -70,20 +70,23 @@ import  wukongdnc.dag.DAG_infoBuffer_Monitor_for_threads
 from . import BFS_Shared
 from .DAG_executor_output_checker import set_pagerank_output
 from .DAG_executor_constants import check_pagerank_output
-from .DAG_executor_constants import log_level
 
+#from .DAG_executor_constants import log_level
 logger = logging.getLogger(__name__)
-if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
+#if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
     #logger.setLevel("TRACE")
     #logger.setLevel(logging.INFO)
-    logger.setLevel(log_level)
-    formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
-    ch = logging.StreamHandler()
+
+    #logger.setLevel(log_level)
+    #formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
+    #ch = logging.StreamHandler()
+
     #ch.setLevel("TRACE")
     #ch.setLevel(logging.INFO)
-    ch.setLevel(log_level)
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
+
+    #ch.setLevel(log_level)
+    #ch.setFormatter(formatter)
+    #logger.addHandler(ch)
 
 
 #logger = logging.getLogger('DAG_executor_logger')

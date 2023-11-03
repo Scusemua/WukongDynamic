@@ -325,7 +325,7 @@ from .DAG_executor_constants import use_shared_partitions_groups,use_page_rank_g
 from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
 from .DAG_executor_constants import using_threads_not_processes, use_multithreaded_multiprocessing
 from .DAG_executor_constants import compute_pagerank
-
+from wukongdnc.dag.DAG_executor_constants import log_level
 from .addLoggingLevel import addLoggingLevel
 """
 How to use: https://stackoverflow.com/questions/2183233/how-to-add-a-custom-loglevel-to-pythons-logging-facility/35804945#35804945
@@ -344,6 +344,13 @@ How to use: https://stackoverflow.com/questions/2183233/how-to-add-a-custom-logl
 # No other module executes addLoggingLevel.
 if not (compute_pagerank):
     addLoggingLevel('TRACE', logging.DEBUG - 5)
+    logging.basicConfig(encoding='utf-8',level=log_level, format='[%(asctime)s][%(module)s][%(processName)s][%(threadName)s]: %(message)s')
+    # Added this to suppress the logging message:
+    #   credentials - MainProcess - MainThread: Found credentials in shared credentials file: ~/.aws/credentials
+    # But it appears that we could see other things liek this:
+    # https://stackoverflow.com/questions/1661275/disable-boto-logging-without-modifying-the-boto-files
+    logging.getLogger('botocore').setLevel(logging.CRITICAL)
+    
 
 ##Function to initialize the logger, notice that it takes 2 arguments
 #logger_name and logfile
@@ -423,21 +430,22 @@ from . import BFS_Shared
 import dask
 
 from wukongdnc.constants import TCP_SERVER_IP
-from wukongdnc.dag.DAG_executor_constants import log_level
-
 
 logger = logging.getLogger(__name__)
-if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
+#if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
     #logger.setLevel(logging.INFO)
     #logger.setLevel("TRACE")
-    logger.setLevel(log_level)
-    formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
-    ch = logging.StreamHandler()
+
+    #logger.setLevel(log_level)
+    #formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
+    #ch = logging.StreamHandler()
+
     #ch.setLevel(logging.INFO)
     #ch.setLevel("TRACE")
-    ch.setLevel(log_level)
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
+
+    #ch.setLevel(log_level)
+    #ch.setFormatter(formatter)
+    #logger.addHandler(ch)
 
 #logger = None
 

@@ -7,16 +7,15 @@ import logging
 import os
 
 log_level = logging.INFO
-
-logger = None
 logger = logging.getLogger(__name__)
 
-logger.setLevel(logging.DEBUG)
+logger.setLevel(log_level)
 formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
 ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
+ch.setLevel(log_level)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
+
 
 # Configuraion:
 #

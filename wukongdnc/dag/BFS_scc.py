@@ -2,6 +2,7 @@ import logging
 from collections import defaultdict
 
 logger = logging.getLogger(__name__)
+"""
 logger.setLevel(logging.DEBUG)
 #logger.setLevel(logging.INFO)
 formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
@@ -10,7 +11,7 @@ ch.setLevel(logging.DEBUG)
 #ch.setLevel(logging.INFO)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
-
+"""
 
 class Graph:
 

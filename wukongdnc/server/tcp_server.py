@@ -23,6 +23,7 @@ from ..dag.DAG_info import DAG_Info
 from ..dag.DAG_executor_State import DAG_executor_State
 
 import logging 
+from wukongdnc.dag.DAG_executor_constants import log_level
 from ..dag.addLoggingLevel import addLoggingLevel
 """ How to use: https://stackoverflow.com/questions/2183233/how-to-add-a-custom-loglevel-to-pythons-logging-facility/35804945#35804945
     >>> addLoggingLevel('TRACE', logging.DEBUG - 5)
@@ -34,13 +35,20 @@ from ..dag.addLoggingLevel import addLoggingLevel
 # Set up logging.
 addLoggingLevel('TRACE', logging.DEBUG - 5)
 
+logging.basicConfig(encoding='utf-8',level=log_level, format='[%(asctime)s][%(module)s][%(processName)s][%(threadName)s]: %(message)s')
+# Added this to suppress the logging message:
+#   credentials - MainProcess - MainThread: Found credentials in shared credentials file: ~/.aws/credentials
+# But it appears that we could see other things liek this:
+# https://stackoverflow.com/questions/1661275/disable-boto-logging-without-modifying-the-boto-files
+logging.getLogger('botocore').setLevel(logging.CRITICAL)
+
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
-ch.setFormatter(formatter)
-logger.addHandler(ch)
+#logger.setLevel(logging.DEBUG)
+#formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
+#ch = logging.StreamHandler()
+#ch.setLevel(logging.DEBUG)
+#ch.setFormatter(formatter)
+#logger.addHandler(ch)
 
 # DAG_info is read on by TCP_server from a file when using real lambdas.
 # This DAG_info is passd to real lambdas that are invoked by faninNBs
@@ -115,7 +123,19 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 message_id = json_message["id"]
                 logger.trace("[HANDLER] Received message (size=%d bytes) from client %s with ID=%s" % (len(data), self.client_address[0], message_id))
                 action = json_message.get("op", None)
-                logger.trace("[HANDLER] for client with ID=" + message_id + " action is: " + action)
+                if action == "synchronize_sync":
+                    synch_op = json_message['method_name']
+                    obj_name = json_message['name']
+                    name_op = ": " + obj_name+"."+synch_op
+                elif action == "synchronize_process_faninNBs_batch":
+                    name_op = ""
+                else:
+                    synch_op = ""
+                    obj_name = ""
+                    name_op = ""
+                #logger.info("[HANDLER] for client with ID " + message_id + " action is: " + action
+                #    + str(name_op))
+                logger.info("[HANDLER] action is: " + action + str(name_op))
  
                 self.action_handlers[action](message = json_message)
             except ConnectionResetError as ex:

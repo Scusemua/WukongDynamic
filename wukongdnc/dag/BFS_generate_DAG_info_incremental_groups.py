@@ -9,7 +9,7 @@ from .BFS_pagerank import PageRank_Function_Driver, PageRank_Function_Driver_Sha
 from .BFS_Shared import PageRank_Function_Driver_Shared_Fast
 from .DAG_executor_constants import use_shared_partitions_groups
 from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
-from .DAG_executor_constants import using_threads_not_processes, use_multithreaded_multiprocessing
+#from .DAG_executor_constants import using_threads_not_processes, use_multithreaded_multiprocessing
 
 from .BFS_generate_DAG_info import Group_senders, Group_receivers
 from .BFS_generate_DAG_info import leaf_tasks_of_groups_incremental
@@ -21,6 +21,7 @@ from .BFS_generate_DAG_info import leaf_tasks_of_groups_incremental
 
 logger = logging.getLogger(__name__)
 
+"""
 if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
     logger.setLevel(logging.ERROR)
     formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
@@ -29,6 +30,7 @@ if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
     #ch.setLevel(logging.INFO)
     ch.setFormatter(formatter)
     logger.addHandler(ch)
+"""
 
 
 Group_all_fanout_task_names = []

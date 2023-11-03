@@ -3,7 +3,7 @@ from multiprocessing import Process #, Manager
 from .DAG_executor_constants import run_all_tasks_locally,  using_workers, num_workers 
 from .DAG_executor_constants import compute_pagerank, use_shared_partitions_groups,use_page_rank_group_partitions
 from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
-from .DAG_executor_constants import using_threads_not_processes, use_multithreaded_multiprocessing
+#from .DAG_executor_constants import using_threads_not_processes, use_multithreaded_multiprocessing
 
 from . import BFS_Shared
 from .DAG_executor_create_threads_for_multiT_multiP import create_and_run_threads_for_multiT_multiP
@@ -11,6 +11,7 @@ from .DAG_executor_create_threads_for_multiT_multiP import create_and_run_thread
 import logging 
 logger = logging.getLogger(__name__)
 
+"""
 if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
     logger.setLevel(logging.ERROR)
     formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
@@ -18,7 +19,7 @@ if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
     ch.setLevel(logging.ERROR)
     ch.setFormatter(formatter)
     logger.addHandler(ch)
-
+"""
 
 #def create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,counter,process_work_queue,data_dict,log_queue,worker_configurer):
 #def create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,counter,log_queue,worker_configurer):

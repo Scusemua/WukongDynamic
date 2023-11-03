@@ -1,11 +1,13 @@
 from .DAG_executor_State import DAG_executor_State
 from ..server.api import create, synchronize_async, synchronize_sync 
 from .DAG_executor_constants import process_work_queue_Type
-from .DAG_executor_constants import using_threads_not_processes, use_multithreaded_multiprocessing
+
+#from .DAG_executor_constants import using_threads_not_processes, use_multithreaded_multiprocessing
 
 import logging 
 logger = logging.getLogger(__name__)
 
+"""
 if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
     logger.setLevel(logging.ERROR)
     formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
@@ -13,7 +15,7 @@ if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
     ch.setLevel(logging.ERROR)
     ch.setFormatter(formatter)
     logger.addHandler(ch)
-
+"""
 
 #rhc: ToDo: Should we close this at end?
 class Work_Queue_Client:

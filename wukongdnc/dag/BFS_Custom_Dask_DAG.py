@@ -5,12 +5,14 @@ import cloudpickle
 from .BFS_Partition_Node import Partition_Node
 
 logger = logging.getLogger(__name__)
+"""
 logger.setLevel(logging.INFO)
 formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
 ch = logging.StreamHandler()
 ch.setLevel(logging.INFO)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
+"""
 
 # Note: The pagerank function needs to know the total number of nodes
 # in the graph. This value could be assigned here when we generate 
