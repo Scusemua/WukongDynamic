@@ -21,7 +21,7 @@ logger.addHandler(ch)
 #
 # True if we are not using Lambdas, i.e., executing tasks with threads or processes
 # local, i.e., on one machine.
-run_all_tasks_locally = True         # vs run tasks remotely (in Lambdas)
+run_all_tasks_locally = False         # vs run tasks remotely (in Lambdas)
 # True if synch objects are stored locally, i.e., in the memory of the single
 # machine on which the threads are executing.  If we are using multiprocessing
 # or Lambdas, this must be False. When False, the synch objects are stored

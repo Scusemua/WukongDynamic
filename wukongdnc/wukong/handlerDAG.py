@@ -15,14 +15,23 @@ from wukongdnc.dag.DAG_executor import DAG_executor_lambda
 from wukongdnc.dag.DAG_executor_constants import log_level
 from wukongdnc.dag.addLoggingLevel import addLoggingLevel
 addLoggingLevel('TRACE', logging.DEBUG - 5)
-
+logging.basicConfig(encoding='utf-8',level=log_level, format='[%(levelname)-.1s] [%(asctime)s][%(module)s][%(processName)s][%(threadName)s]: %(message)s')
 logger = logging.getLogger(__name__)
+
+# Added this to suppress the logging message:
+#   credentials - MainProcess - MainThread: Found credentials in shared credentials file: ~/.aws/credentials
+# But it appears that we could see other things liek this:
+# https://stackoverflow.com/questions/1661275/disable-boto-logging-without-modifying-the-boto-files
+logging.getLogger('botocore').setLevel(logging.CRITICAL)
+
 #logger.setLevel(logging.INFO)
-logger.setLevel(log_level)
-formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
+#logger.setLevel(log_level)
+#formatter = logging.Formatter('[%(levelname)-.1s] [%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
 
 SLEEP_INTERVAL = 0.120
 
+# Might need this:
+"""
 if logger.handlers:
     for handler in logger.handlers:
         handler.setFormatter(formatter)
@@ -31,6 +40,7 @@ root = logging.getLogger()
 if root.handlers:
     for handler in root.handlers:
         handler.setFormatter(formatter)
+"""
 
 warm_resources = {
 	'cold_start_time': time.time(),

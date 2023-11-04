@@ -18,13 +18,6 @@ from ..server.api import create
 
 import logging 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
-ch.setFormatter(formatter)
-logger.addHandler(ch)
-
 
 lambda_client = boto3.client('lambda', region_name = "us-east-1")
 
@@ -46,6 +39,14 @@ lambda_client = boto3.client('lambda', region_name = "us-east-1")
 # to A allowing A to continue (!!) It is important that L, and Lambdas
 # in general do not block/wait so L will terminte and return to A.
 TEST = True
+
+if False:
+    logger.setLevel(logging.INFO)
+    formatter = logging.Formatter('[%(levelname)-.1s] [%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
 
 # Used to invoke a Lambda "storage function" to store and execute synchronization objects.
 # Lambda function names are "LambdaBoundedBuffer" and "LambdaSemapore"
@@ -309,7 +310,7 @@ def lambda_handler(event, context):
     # Do not do redi calls for TEST
     #rc = redis.Redis(host = REDIS_IP_PRIVATE, port = 6379)
 
-    logger.trace("lambda_handler: Invocation received. Starting DAG_executor_lambda: event/payload is: " + str(event))
+    logger.info("lambda_handler: Invocation received. Starting DAG_executor_lambda.")
     logger.trace(f'Invocation count: {warm_resources["invocation_count"]}, Seconds since cold start: {round(invocation_time - warm_resources["cold_start_time"], 1)}')
     #TEST is True since we called lambda_handler. 
     #DAG_executor_lambda(event)
@@ -319,6 +320,6 @@ def lambda_handler(event, context):
 				 
     end_time = time.time()
     duration = end_time - start_time
-    logger.trace("lambda_handler: DAG_executor_lambda finished. Time elapsed: %f seconds." % duration)
+    logger.info("lambda_handler: DAG_executor_lambda finished. Time elapsed: %f seconds." % duration)
     # do not do redis calls for TEST
     #rc.lpush("durations", duration)
