@@ -5,7 +5,11 @@ import os
 # Might be useful:
 # https://unbiased-coder.com/detect-aws-env-python-nodejs/
 def is_aws_env():
-    return os.environ.get('AWS_LAMBDA_FUNCTION_NAME') or os.environ.get('AWS_EXECUTION_ENV')
+    # there are other environ vars we can use
+    lambda_function_name = os.environ.get('AWS_LAMBDA_FUNCTION_NAME')
+    aws_execution_env = os.environ.get('AWS_EXECUTION_ENV')
+    #return os.environ.get('AWS_LAMBDA_FUNCTION_NAME') or os.environ.get('AWS_EXECUTION_ENV')
+    return not (lambda_function_name == None) or not (aws_execution_env == None)
 
 from wukongdnc.constants import REDIS_IP_PRIVATE
 from wukongdnc.dag.DAG_executor import DAG_executor_lambda
@@ -135,7 +139,7 @@ def lambda_handler(event, context):
     rc = redis.Redis(host = REDIS_IP_PRIVATE, port = 6379)
 
     logger.info("lambda_handler: is_aws_env(): " + str(is_aws_env()))
-    logger.info("lambda_handler: Invocation received. Calling method DAG_executor_lambda(): event/payload is: " + str(event))
+    logger.info("lambda_handler: Lambda invocation received. Calling method DAG_executor_lambda(): event/payload is: " + str(event))
     logger.info(f'Invocation count: {warm_resources["invocation_count"]}, Seconds since cold start: {round(invocation_time - warm_resources["cold_start_time"], 1)}')
     DAG_executor_lambda(event)
 				 

@@ -11,6 +11,7 @@ import base64
 import uuid
 import time 
 import socket 
+import os
 
 from ..constants import TCP_SERVER_IP
 from ..server.state import State
@@ -18,18 +19,19 @@ from ..server.api import create
 
 import logging 
 logger = logging.getLogger(__name__)
-
 lambda_client = boto3.client('lambda', region_name = "us-east-1")
 
-# TRUE if we are testing the real lambd code by short-circuiting the 
+from ..dag.DAG_executor_constants import bypass_call_lambda_client_invoke
+# Note: DAG_executor_constants.bypass_call_lambda_client_invoke is TRUE 
+# if we are testing the real lambd code by bypassing the 
 # call to start a real lambda on AWS Lambda. i.e., the 
 # invoke_lambda_DAG_executor called by the DAG app does not call
-#status_code = lambda_client.invoke(
-#   FunctionName = function_name, 
-#   InvocationType = 'Event',
-#   Payload = payload_json) 
+#  status_code = lambda_client.invoke(
+#     FunctionName = function_name, 
+#     InvocationType = 'Event',
+#     Payload = payload_json) 
 #
-# which will invoke a real AWS Lambda and call lambda_handler();
+# which invokes a real AWS Lambda and calls lambda_handler();
 # instead, it makes a direct call to lambda_handler
 #   status_code = -1
 #   lambda_handler(payload_json,None)
@@ -38,15 +40,7 @@ lambda_client = boto3.client('lambda', region_name = "us-east-1")
 # Note: That L will terminate by doing a return, which will return
 # to A allowing A to continue (!!) It is important that L, and Lambdas
 # in general do not block/wait so L will terminte and return to A.
-TEST = True
-
-if False:
-    logger.setLevel(logging.INFO)
-    formatter = logging.Formatter('[%(levelname)-.1s] [%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
+# We use no-wait synchronization for fan-ins so Lambdas do not block/wait.
 
 # Used to invoke a Lambda "storage function" to store and execute synchronization objects.
 # Lambda function names are "LambdaBoundedBuffer" and "LambdaSemapore"
@@ -274,16 +268,16 @@ def invoke_lambda_DAG_executor(
     logger.trace("Invoking AWS Lambda function '" + function_name + "' with payload containing " + str(len(payload)) + " key(s).")
     s = time.time()
     
-    # TEST is a global varial. Set to TRUE to test the real lambda
-    # logic without invoking real AWS Lambdas.
-    if not TEST:
+    # bypass_call_lambda_client_invoke is a global constant. 
+    if not bypass_call_lambda_client_invoke:
     # This is the call to the AWS API that actually invokes the Lambda.
         status_code = lambda_client.invoke(
             FunctionName = function_name, 
             InvocationType = 'Event',
             Payload = payload_json) 
     else:
-        # bridge around the call to lambda_client.invoke()
+        # bridge around the call to lambda_client.invoke() to test th real LAmbda
+        # logic without creating real Lambdas.
         status_code = -1
         lambda_handler(payload_json,None)
     										
@@ -301,6 +295,13 @@ warm_resources = {
 }
 
 def lambda_handler(event, context):
+
+    def is_aws_env():
+        function_name = os.environ.get('AWS_LAMBDA_FUNCTION_NAME')
+        execution_env = os.environ.get('AWS_EXECUTION_ENV')
+        #return os.environ.get('AWS_LAMBDA_FUNCTION_NAME') or os.environ.get('AWS_EXECUTION_ENV')
+        return not (function_name == None) or not (execution_env == None)
+
     # TEST must be True since we were called.
     import wukongdnc.dag.DAG_executor
     invocation_time = time.time()
@@ -309,8 +310,8 @@ def lambda_handler(event, context):
     start_time = time.time()
     # Do not do redi calls for TEST
     #rc = redis.Redis(host = REDIS_IP_PRIVATE, port = 6379)
-
-    logger.info("lambda_handler: Invocation received. Starting DAG_executor_lambda.")
+    logger.info("lambda_handler: is_aws_env(): " + str(is_aws_env()))
+    logger.info("lambda_handler: Lambda invocation received. Calling DAG_executor_lambda.")
     logger.trace(f'Invocation count: {warm_resources["invocation_count"]}, Seconds since cold start: {round(invocation_time - warm_resources["cold_start_time"], 1)}')
     #TEST is True since we called lambda_handler. 
     #DAG_executor_lambda(event)
@@ -323,3 +324,4 @@ def lambda_handler(event, context):
     logger.info("lambda_handler: DAG_executor_lambda finished. Time elapsed: %f seconds." % duration)
     # do not do redis calls for TEST
     #rc.lpush("durations", duration)
+    

@@ -22,6 +22,15 @@ logger.addHandler(ch)
 # True if we are not using Lambdas, i.e., executing tasks with threads or processes
 # local, i.e., on one machine.
 run_all_tasks_locally = False         # vs run tasks remotely (in Lambdas)
+# True if we want to bypass the call to lambda_client.invoke() so that we
+# do not actually create a real Lambda; instead, invoke_lambda_DAG_executor()
+# in invoker.y will call lambda_handler(payload_json,None) directly, where
+# lambda_handler() is defned locally in invoker.py, i.e., is not the actual
+# handler, which is defined in handlerDAG.py. This lets us test the code
+# for real lambdas without actually creating real Lambdas.
+# Note: if this is True then run_all_tasks_locally must be False. 
+# This is asserted below.
+bypass_call_lambda_client_invoke = True
 # True if synch objects are stored locally, i.e., in the memory of the single
 # machine on which the threads are executing.  If we are using multiprocessing
 # or Lambdas, this must be False. When False, the synch objects are stored
@@ -149,6 +158,13 @@ using_single_lambda_function = False
 #    function (chosen at run time) that they are stored in. So either
 #    way you need to map sync object names to functions if you want to 
 #    invoke the function to do an op on the object more than once.
+
+#assert:
+if bypass_call_lambda_client_invoke and run_all_tasks_locally:
+    logger.error("[Error]: Configuration error: if bypass_call_lambda_client_invoke then must be running real Lambdas"
+        + " i.e., not run_all_tasks_locally.")
+    logging.shutdown()
+    os._exit(0)  
 
 #assert:
 if using_workers and not using_threads_not_processes:

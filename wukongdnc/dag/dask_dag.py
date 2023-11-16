@@ -81,29 +81,67 @@ if __name__ == "__main__":
   s = lc.scheduler
 
   def add(x, y):
-    return x + y
+    sum = x + y
+    logger.info("")
+    logger.info("xxxxxxxxx")
+    logger.info("add:"+str(x)+"+"+str(y)+"=" + str(sum))
+    logger.info("xxxxxxxxx")
+    logger.info("")
+    return sum
 
   def twox_add(x, y):
-    return 2*(x + y)
+    twox_add = 2 * (x+y)
+    logger.info("")
+    logger.info("xxxxxxxxxxxxx")
+    logger.info("twox_add:2*("+str(x)+"+"+str(y)+")=" + str(twox_add))
+    logger.info("xxxxxxxxxxxxx")
+    logger.info("")
+    return twox_add
 
   def triple(x):
-    return 3 * x
+    triple = x*3
+    logger.info("")
+    logger.info("xxxxxxxxxxxx")
+    logger.info("triple:"+str(x)+"*3=" + str(triple))
+    logger.info("xxxxxxxxxxxx")
+    logger.info("")
+    return triple
 
   def square(x):
-    return x ** 2
+    square = x ** 2
+    logger.info("")
+    logger.info("xxxxxxxxxxxx")
+    logger.info("square:"+str(x)+"*"+str(x)+"=" + str(square))
+    logger.info("xxxxxxxxxxxx")
+    logger.info("")
+    return square
 
   def multiply(x, y, z):
-    return x * y * z
+    product = x * y * z
+    logger.info("")
+    logger.info("xxxxxxxxxxxxxxxxx")
+    logger.info("multiply:"+str(x)+"*"+str(y)+"*"+str(z)+"=" + str(product))
+    logger.info("xxxxxxxxxxxxxxxxx")
+    logger.info("")
+    return product
 
   def multiply_pair(x, y):
-    return x * y
+    product = x * y
+    logger.info("")
+    logger.info("xxxxxxxxxxxxx")
+    logger.info("multiply_pair:"+str(x)+"*"+str(y)+"=" + str(product))
+    logger.info("xxxxxxxxxxxxx")
+    logger.info("")
+    return product
 
   def divide(x):
     quotient = x / 72
     logger.info("")
-    logger.info("xxxxxxxxxxxxx")
-    logger.info("quotient: " + str(quotient))
-    logger.info("xxxxxxxxxxxxx")
+    logger.info("")
+    logger.info("xxxxxxxxxxxxxxxxxx")
+    logger.info("quotient:"+str(x)+"/72=" + str(quotient))
+    logger.info("xxxxxxxxxxxxxxxxxx")
+    logger.info("")
     logger.info("")
     return quotient
 
@@ -111,20 +149,38 @@ if __name__ == "__main__":
     quotient = x / 18
     logger.info("")
     logger.info("xxxxxxxxxxxxx")
-    logger.info("quotient: " + str(quotient))
+    logger.info("quotient:" + str(x)+"/18=" + str(quotient))
     logger.info("xxxxxxxxxxxxx")
     logger.info("")
     return quotient
 
   def increment(x):
-    return x + 1
+    sum = x + 1
+    logger.info("")
+    logger.info("xxxxxxxxxxxxxxx")
+    logger.info("increment:" + str(x)+"+1=" + str(sum))
+    logger.info("xxxxxxxxxxxxxxx")
+    logger.info("")
+    return sum
 
   def half_of_product(x,y):
+    half_product = (x * y) / 2
+    logger.info("")
+    logger.info("xxxxxxxxxxxxx")
+    logger.info("half_of_product:(" + str(x)+"*" + str(y) + "/2=" + str(half_product))
+    logger.info("xxxxxxxxxxxxx")
+    logger.info("")
     # intend for x to be result of increment(1) = 2, so result is 2 / 2 = 1.0
-    return (x * y) / 2
+    return half_product
 
   def product(x,y):
-    return x * y
+    product = x * y
+    logger.info("")
+    logger.info("xxxxxxxxxxxxx")
+    logger.info("product:(" + str(x)+"*" + str(y) + "=" + str(product))
+    logger.info("xxxxxxxxxxxxx")
+    logger.info("")
+    return product
 
   def manual_dag():
     print("==== GENERATING MANUALLY-CREATED DAG")

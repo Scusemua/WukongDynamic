@@ -1,8 +1,17 @@
-#ToDo: close_all at the end
+# pylint: disable=pointless-string-statement
+# pylint: disable=logging-not-lazy
+# pylint: disable=trailing-whitespace
+# pylint: disable=line-too-long
+# pylint: disable=invalid-name
+# pylint: disable=broad-exception-caught
+# pylint: disable=missing-module-docstring
+# pylint: disable=missing-class-docstring
+# pylint: disable=missing-function-docstring
+
 # break stuck Python is FN + R
 # try matrixMult
 
-# Where are we: 
+# Where are we:
 # check code
 # Note in ADG orchestrator, line 392 we tabbed this stuff
 #  right so it's part of no-trigger else. this is becuase
@@ -115,56 +124,55 @@
 #   The code for tp_server and tcp_server_lambda is very similar, the 
 #   big difference is where the message_handler runs (in a lambda or on
 #   the server.)
-"""
-    def synchronize_sync(self, message = None):
 
-        if not create_all_fanins_faninNBs_on_start:
-            ...
-            creation_message = {
-                "op": "create",
-                "type": fanin_type,
-                "name": task_name,
-                "state": make_json_serializable(dummy_state_for_create_message),	
-                "id": msg_id
-            }
-            ...
-            # message is the original synchronize_sync message
-            messages = (creation_message, message)
-            ...
-            control_message = {
-                "op": "createif_and_synchronize_sync",
-                "type": "DAG_executor_fanin_or_fanout",
-                "name": messages,   
-                "state": make_json_serializable(dummy_state_for_control_message),	
-                "id": msg_id
-            }
-
-        if using_Lambda_Function_Simulators_to_Store_Objects and using_DAG_orchestrator:
-            # The enqueue_and_invoke_lambda_synchronously will generte the creae message
-            logger.trace("*********************tcp_server_lambda: synchronize_sync: " + calling_task_name + ": calling infiniD.enqueue(message).")
-            returned_state = self.enqueue_and_invoke_lambda_synchronously(message)
-            logger.trace("*********************tcp_server_lambda: synchronize_sync: " + calling_task_name + ": called infiniD.enqueue(message) "
-                + "returned_state: " + str(returned_state))
-        else:
-            logger.trace("*********************tcp_server_lambda: synchronize_sync: " + calling_task_name + ": calling invoke_lambda_synchronously.")
-            if create_all_fanins_faninNBs_on_start:
-                # call synchronize_sync on the already created object
-                returned_state = self.invoke_lambda_synchronously(message)
-            else:
-                # call createif_and_synchronize_sync to create object
-                # and call synchronize_sync on it. the control_message
-                # has the creation_message and the message for snchronize_sync
-                # in a messages tuple value under its 'name' key.
-                returned_state = self.invoke_lambda_synchronously(control_message)
-
-            logger.trace("*********************tcp_server_lambda: synchronize_sync: " + calling_task_name + ": called invoke_lambda_synchronously "
-                + "returned_state: " + str(returned_state))
-
-"""
+#    def synchronize_sync(self, message = None):
 #
-# ToDo: parallel invoke of leaf tasks?
+#        if not create_all_fanins_faninNBs_on_start:
+#            ...
+#            creation_message = {
+#                "op": "create",
+#                "type": fanin_type,
+#                "name": task_name,
+#                "state": make_json_serializable(dummy_state_for_create_message),	
+#                "id": msg_id
+#            }
+#            ...
+#            # message is the original synchronize_sync message
+#            messages = (creation_message, message)
+#            ...
+#            control_message = {
+#                "op": "createif_and_synchronize_sync",
+#                "type": "DAG_executor_fanin_or_fanout",
+#                "name": messages,   
+#                "state": make_json_serializable(dummy_state_for_control_message),	
+#                "id": msg_id
+#            }
 #
-# ToDo: Does tcpServer fannNBs_batch really need to call execute()
+#        if using_Lambda_Function_Simulators_to_Store_Objects and using_DAG_orchestrator:
+#            # The enqueue_and_invoke_lambda_synchronously will generte the creae message
+#            logger.trace("*********************tcp_server_lambda: synchronize_sync: " + calling_task_name + ": calling infiniD.enqueue(message).")
+#            returned_state = self.enqueue_and_invoke_lambda_synchronously(message)
+#            logger.trace("*********************tcp_server_lambda: synchronize_sync: " + calling_task_name + ": called infiniD.enqueue(message) "
+#               + "returned_state: " + str(returned_state))
+#        else:
+#            logger.trace("*********************tcp_server_lambda: synchronize_sync: " + calling_task_name + ": calling invoke_lambda_synchronously.")
+#            if create_all_fanins_faninNBs_on_start:
+#                # call synchronize_sync on the already created object
+#                returned_state = self.invoke_lambda_synchronously(message)
+#            else:
+#               # call createif_and_synchronize_sync to create object
+#                # and call synchronize_sync on it. the control_message
+#                # has the creation_message and the message for snchronize_sync
+#                # in a messages tuple value under its 'name' key.
+#                returned_state = self.invoke_lambda_synchronously(control_message)
+#
+#            logger.trace("*********************tcp_server_lambda: synchronize_sync: " + calling_task_name + ": called invoke_lambda_synchronously "
+#               + "returned_state: " + str(returned_state))
+
+#
+# To Do: parallel invoke of leaf tasks?
+#
+# To Do: Does tcpServer fannNBs_batch really need to call execute()
 # instead of calling dirextly, like we do for local objects?
 #
 # Short-circuit call to fan_in op in lambda? Use local Fanins?
@@ -202,7 +210,7 @@
 #               "DAG_info": DAG_info
 #            }
 #      but sync ops for selects will alread have DAG_info since they got them on create?
-# ToDO:Yes, messages created by driver have DAG_info for all faninNBs and fanouts but
+# To DO:Yes, messages created by driver have DAG_info for all faninNBs and fanouts but
 #      fanouts and faninNBs don't use DAG_info unless they are starting a lambda?
 #      So could have tcp_server/tp_server_lambda, which read DAG_info, add DAG_info
 #      to message only if it is needed, so drver doesn;t have to send DAG_info in 
@@ -311,10 +319,12 @@ import threading
 import multiprocessing
 from multiprocessing import Process #, Manager
 import time
-import cloudpickle
 import socket
 #import os
 import logging 
+import cloudpickle
+
+from wukongdnc.dag.DAG_executor_constants import log_level
 
 from .DAG_executor_constants import run_all_tasks_locally, store_fanins_faninNBs_locally, use_multithreaded_multiprocessing #, num_threads_for_multithreaded_multiprocessing
 from .DAG_executor_constants import create_all_fanins_faninNBs_on_start, using_workers
@@ -323,18 +333,17 @@ from .DAG_executor_constants import FanIn_Type, FanInNB_Type, process_work_queue
 from .DAG_executor_constants import store_sync_objects_in_lambdas, sync_objects_in_lambdas_trigger_their_tasks
 from .DAG_executor_constants import use_shared_partitions_groups,use_page_rank_group_partitions
 from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
-from .DAG_executor_constants import using_threads_not_processes, use_multithreaded_multiprocessing
 from .DAG_executor_constants import compute_pagerank
-from wukongdnc.dag.DAG_executor_constants import log_level
+
 from .addLoggingLevel import addLoggingLevel
-"""
-How to use: https://stackoverflow.com/questions/2183233/how-to-add-a-custom-loglevel-to-pythons-logging-facility/35804945#35804945
->>> addLoggingLevel('TRACE', logging.DEBUG - 5)
->>> logging.getLogger(__name__).setLevel("TRACE")
->>> logging.getLogger(__name__).trace('that worked')
->>> logging.trace('so did this')
->>> logging.TRACE
-"""
+
+#   How to use: https://stackoverflow.com/questions/2183233/how-to-add-a-custom-loglevel-to-pythons-logging-facility/35804945#35804945
+#    >>> addLoggingLevel('TRACE', logging.DEBUG - 5)
+#    >>> logging.getLogger(__name__).setLevel("TRACE")
+#    >>> logging.getLogger(__name__).trace('that worked')
+#    >>> logging.trace('so did this')
+ #   >>> logging.TRACE
+
 # If we are computing pageranks then we will run BFS first which will 
 # addLoggingLevel(trace) and import DAG_executor_driver,
 # so we do not want to addLoggingLevel(trace) here. If we are not
@@ -342,12 +351,12 @@ How to use: https://stackoverflow.com/questions/2183233/how-to-add-a-custom-logl
 # Note that we start DAG execution either by running BFS or
 # DAG_excutor_driver, so one of them will addLoggingLevel(trace).
 # No other module executes addLoggingLevel.
-if not (compute_pagerank):
+if not compute_pagerank:
     addLoggingLevel('TRACE', logging.DEBUG - 5)
     logging.basicConfig(encoding='utf-8',level=log_level, format='[%(asctime)s][%(module)s][%(processName)s][%(threadName)s]: %(message)s')
     # Added this to suppress the logging message:
     #   credentials - MainProcess - MainThread: Found credentials in shared credentials file: ~/.aws/credentials
-    # But it appears that we could see other things liek this:
+    # But it appears that we could see other things like this:
     # https://stackoverflow.com/questions/1661275/disable-boto-logging-without-modifying-the-boto-files
     logging.getLogger('botocore').setLevel(logging.CRITICAL)
     
@@ -375,14 +384,14 @@ if not (compute_pagerank):
 #    return mylogger
 
 #from .addLoggingLevel import addLoggingLevel
-""" 
-    How to use: https://stackoverflow.com/questions/2183233/how-to-add-a-custom-loglevel-to-pythons-logging-facility/35804945#35804945
-    >>> addLoggingLevel('TRACE', logging.DEBUG - 5)
-    >>> logging.getLogger(__name__).setLevel("TRACE")
-    >>> logging.getLogger(__name__).trace('that worked')
-    >>> logging.trace('so did this')
-    >>> logging.TRACE
-"""
+
+#   How to use: https://stackoverflow.com/questions/2183233/how-to-add-a-custom-loglevel-to-pythons-logging-facility/35804945#35804945
+#    >>> addLoggingLevel('TRACE', logging.DEBUG - 5)
+#    >>> logging.getLogger(__name__).setLevel("TRACE")
+#    >>> logging.getLogger(__name__).trace('that worked')
+#    >>> logging.trace('so did this')
+#    >>> logging.TRACE
+
 ## If we are computing pageranks then we will run BFS first which will 
 ## addLoggingLevel(trace) and import DAG_executor_driver,
 ## so we do not want to addLoggingLevel(trace) here. If we are not
@@ -499,7 +508,7 @@ output.
 #from .BFS_Shared import parents_sent_to_processes, IDs_sent_to_processes
 
 
-"""
+""" 
 The DAG_executor executes a DAG using multiple threads/processes/Lambdas, each excuting a DFS path through
 the DAG. The DAG is encoded as a state machine; a DFS path corresponds to a sequence of state transitions.
 Fanins and faninNBs are implented using synchronization objects.
@@ -997,42 +1006,60 @@ accessing objects stored on server or in lambdas.
 
 Scheme for DAG_info: 
 - For non-incremental, non-pagerank DAG generation, we are using DAGs that are generated 
-from Dask DAGS using dask_dag.py. These are stored in DAG_info.pickle.
-For pagerank, non-incremental DAGs, we generate then using BFS.py and save them in  '
+from Dask DAGS using dask_dag.py. These are created and stored in DAG_info.pickle.
+- For non-incremental, pagerank DAG generation, we generate DAGs using BFS.py and save them in 
 DAG_info.pickle. BFS generates DAG_info.pickle and starts a thread that 
-calls DAG_excutor.run().
+calls DAG_executor_driver.run() to execute the DAG.
 - For incremental pagerank, the generation and execution of the DAG is overlapped.
 BFS generates part of the DAG and deposits it in a buffer where it is 
 withdrawn by the executors. So reading file DAG_info.pickle is not the primary
 way of distributing DAG_info. 
 - The FaninNB objects need DAG_info since when they start a Lambda to execute
 the fanin task the lambda needs DAG_info. (Fanin objects do not start lambdas
-to excute the fanin yasl, some exisiting lambda will "become" the lambda
+to execute the fanin task, some exisiting lambda will "become" the lambda
 to execute the fanin task.) Thus, DAG_info is passed in the
 lmabda's payload. Note that when real lambdas are used, all synch objects are
 stored "remotely" on the tcp_server. Synch objects can also be stored 
-locally on the machine running the workers/simulated lambdas. Note also that 
+locally on the machine running workers/simulated lambdas. Note also that 
 synch objects can all be created at start of DAG_execution or they can be 
-created on-the-fly as fanin operations aer called on them. When using incremetal
-ADG generation, all objects must be created on-the-fly
-- When the fanin/faninnb synch objects are all created at the start of DAG
+created on-the-fly as fanin operations are called on them. When using incremental
+DAG generation, all objects must be created on-the-fly since we do not have the 
+complete ADG and thus all the synch objects at the start of DAG execution.
+- When the fanin/faninNb synch objects are all created at the start of DAG
 execution, the DAG_executor_driver creates them all either locally or remotely
-(by sending a message to tcp_server) and since the DAG_excutor_driver can read
-DAG_info.pickle the DAG_executor_driver can pass ADG_info to all of the FaninNB
-objects that are created. Again, for incremental DAG_generation, the synch 
+(by sending a message with the synch objects to tcp_server) and since the DAG_excutor_driver 
+can read DAG_info.pickle the DAG_executor_driver can pass DAG_info to tcp_server and then 
+to all of the FaninNB objects that are created. Again, for incremental DAG_generation, the synch 
 objects cannot be created at the start of DAG_execution (since we do not
-know the fanin objects that will be generated) Whe nthe fanin/faninNB objects
+know the fanin objects that will be generated) When the fanin/faninNB objects
 are created on-the-fly, we must ensure that DAG_info is availabe when 
-create() is called to create a faninNB object. If the objects ar all created
-locally, (which means we are not using real lambas) then DAG_info.pickle
-is read by the worker threads/processe and by the threads tht simulate real
-lambdas, and ADG_info is passed along to the call to create() a FaninNB.
-If the fanin/faninNB objects are created remotely on the server, then 
+create() is called to create a faninNB object. 
+  - If the objects are all created locally, (which means we are not using 
+real lambas) then DAG_info.pickle is read by the worker threads/processe 
+and by the threads that simulate real lambdas, and DAG_info is passed 
+along to the call to create() a FaninNB.
+  - If the fanin/faninNB objects are created remotely on the server, then 
 DAG_info needs to be accessible on the tcp_server. As we will describe below,
 either we pass DAG_info to tcp_server when we do fanin operations, or the 
-tcp_server erads DAG_info.pickle from a file. (For incremental DAG generation
+tcp_server reads DAG_info.pickle from a file. (For incremental DAG generation
 we do not read DAG_info from a file, the incremental DAGS are retrieved by the 
-DAG_excutors and passed to tcp_server on remote/tcp calls to tcp_server.)
+DAG_executors and passed to tcp_server on remote/tcp calls to tcp_server.)
+
+ISSUE: if synch objects on server, we can still be running simulated lambdas
+and worker threads/proceses locally. In this case, faninNBs will not create
+local simulated lambdas/workers and do not need DAG_info. Workers access
+work queue so no new workers are created to execure fanin tasks. For simulated
+lambdas, new simulated lambda (threads) are created locally by simulated lambda
+that called fan-in, and that simulated lambda has its DAG_info that it read 
+from a file (non-incremental) or got in the usual way for incremental DAG
+generation. For real lambdas, we always call batch for faninNBs, not synch op,
+and batch takes casr of DAG_info. We call synch op for Fanin objects and 
+I think sumulated lambdas with eemote objects call synch op for FaninNB objects
+but these FaninNB objects do not need DAG_info. Also, Fanin objects never need
+DAG_info. ==> synch op for FaninNb or Fanin never needs to read DAG_info and 
+never needs to have DAG_info passed to it since we don't use it for FaninNB/Fanin objects.
+TEST: remote objects, w/ simulated lambdas, real lambdas, worker threads, worker processes,
+w/ incremental pagerank, non-inc pagerank, non-inc non-pagerank.
 
 For the schemes above, when incremental DAG generation is NOT used:
 - A1. We assign each leaf node state to Lambda Executor. At fanouts, a Lambda executor starts another
@@ -1106,11 +1133,11 @@ For the schemes above, when incremental DAG generation IS used: the
 DAG_executors will be widrawing new incremental DAGs from a buffer after
 BFS deposits them. So the DAG_executors have the most recent version of the 
 DAG that they have withdrawn.  Also, fannin/faninNB objects are always created
-on-the-fly during incremental DAG generation. Not that if the tcp_server
-is being used to store fanins/faninNBs ermotely, the tcp_server cannot read
+on-the-fly during incremental DAG generation. Note that if the tcp_server
+is being used to store fanins/faninNBs remotely, the tcp_server cannot read
 the DAG_info from a file since the DAG_info may not be complete. (It is 
 incomplete until the last part of the DAG is generated.) So the tcp_server
-must receive th incremental DAGS from the DAG_executors when the DAG_executors
+must receive the incremental DAGS from the DAG_executors when the DAG_executors
 call fanin() operations on FaninNB objects. (Fanin objects never need DAG_info
 as they do not start fanin tasks; instead one excutor becoms the executor to 
 execute the fanin task.) The key ideas is: If an executor has an incomplete
@@ -1132,7 +1159,8 @@ which passes the partial DAG_infos to create() as described above.
 - A4, A5, 
 - A6: Same scheme
 
-Note:
+Note: The call to 
+  logging.shutdown()
 Informs the logging system to perform an orderly shutdown by flushing 
 and closing all handlers. This should be called at application exit and no 
 further use of the logging system should be made after this call.

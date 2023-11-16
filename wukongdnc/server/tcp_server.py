@@ -81,37 +81,11 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 "synchronize_process_faninNBs_batch": self.synchronize_process_faninNBs_batch,
                 "create_work_queue": self.create_work_queue
             }
-            #logger.trace("Thread Name:{}".format(threading.current_thread().name))
 
             try:
                 logger.trace("[HANDLER] call receive_object")
                 data = self.recv_object()
                 logger.trace("[HANDLER] receive_object successful")
-
-                # We only read DAG_info one time, and only if we are 
-                # using real lambdas. When we invoke a real lambda
-                # we need to give it the DAG_info. 
-                # Note: We may only need to do this when we are
-                # not using incremenal DAG generation. When we 
-                # use incremental DAG generation, we may eed to 
-                # get the newest version of the DAG from the 
-                # DAG_infoBuffer_monitor before we invoke a lambda
-                """
-                global read_DAG_info
-                if (not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally) and read_DAG_info:
-                    read_DAG_info = False
-                    global DAG_info # initialized to None
-                    DAG_info = DAG_Info.DAG_info_fromfilename()
-                    logger.trace("tcp_server: read DAG_info for real lambdas.")
-#rhc: DAG_info
-                    print("tcp_server: DAG_map:")
-                    DAG_map = DAG_info.get_DAG_map()
-                    for key, value in DAG_map.items():
-                        print(key)
-                        print(value)
-                """
-                #else:
-                #    logger.trace("TCP_Server: Don't read DAG_info.")
 
                 if data is None:
                     # Commented out to suppress warnings
@@ -1054,8 +1028,35 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     #  "server scope"? which is global, so ...
                     if method_name == "fan_in":
 #rhc batch
-#rhc: Todo: These then and else branches are the same so remove one - using if alse to remove one, for now
-#  BUT: need both branches now - only do read if inc?
+                        # Note: we used to have 
+                        #   if not (wukongdnc.dag.DAG_executor_constants.compute_pagerank and wukongdnc.dag.DAG_executor_constants.use_incremental_DAG_generation):
+                        # but it endup up that both branches weer the same, i.e., we did the same thing whether we were using 
+                        # incremental DAG generation for compute pagerank, or not. So we disabled one of the branches with 
+                        #   if False and not ....
+                        # then we delete the if False branch altogether. 
+                        # The idea for handling DAG info is explained in the comments at the top of DAG_executor_driver.
+                        # We need DAG_info when we create faninNBs since faninNBs start a real lambda to execuet the fanin
+                        # task and we need to pass DAG_info in the payload for the started lambda. For incremental DAG generation
+                        # the DAG_info is not complete at the start so we cannot read DAG_info when tcp_server starts sincw
+                        # DAG_info is not complete. If we are not using incremental DAG_generation then tcp_server still cannot
+                        # read DAG_info when it starts since currenty we have: BFS creates pagerank DAG and writes it to a file
+                        # and then calls DAG_excutor_driver.run() to execute the DAG. If we start tcp_server before we run
+                        # BFS then DAG_info file will not have been written by BFS. So tcp_server will read DAG_info below
+                        # if it has not been read yet and then turn the read flag off so it won't be read again.
+                        # Note: We could: run BFS, start tcp_server, then run DAG_excutor_driver; then DAG_info would be 
+                        # written by BFS before we start tcp_server (when we are not doing incremental DAG generation.)
+
+#rhc: issue: Why read DAG_info if we are doing incremental? it is not complete. 
+# - If incremental and not running locally then objects remote:  
+# - if incremental and running locally and objects remote:
+# - if incremental and running locally and objects local:
+# Note that if non-local we use batch for faninNBs. We call synch for Fanins but we do not need 
+# DAG_info for fanins so even if we read DAG_info we won't use it.
+# For local simulated lambda with remote, we do not call batch we call synch but the faninNB does
+# not start local to do danin task so does not use FaninNB. Maybe we have no error since even
+# though we read partial DAG_info we do mot use it in these cases? Do we pass DAG_info to synch?
+# perhaps no since we don't use it as faninNB doesn't need it in synch cases?
+
                         if False and not (wukongdnc.dag.DAG_executor_constants.compute_pagerank and wukongdnc.dag.DAG_executor_constants.use_incremental_DAG_generation):
                             dummy_state_for_create_message = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
                             # passing to the created faninNB object:
@@ -1143,41 +1144,37 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             # Compute pagerank for incremental DAG generation.
                             # - Rewrote this code so that it no longer needs DAG_info
                             # for faninNB creation. The issue with DAG_info is that 
-                            # tcp_server reads it once at the beginning. But since 
-                            # DAG_info is incrementally updated, we must retrive a 
+                            # DAG_info is incrementally updated, so we must retrive a 
                             # new DAG_info each time a new one is generated so that 
                             # we can get DAG_states via DAG_info.get_DAG_states(), 
                             # i.e., unless we update DAG_info, the state we need
-                            # DAG_states[name] may not be in the DAG. Note that 
-                            # at the beginning of this batch processing method there
-                            # is code to withdraw the latest version of DAG_info. 
-                            # we no longer need this code; instead, we pass the 
-                            # information that we need about the DAG to the batch
-                            # processing method - this information is the sizes
-                            # of the fninNBs being processed. So we pass the 
-                            # start states of the faninNB tasks, and the sizes of the 
-                            # faninNBs to the batch processing method insted of having
-                            # this method retrive this info from DAG_info.
+                            # DAG_states[name] may not be in the DAG. 
+                            # Note that we now pass the information that we need 
+                            # about the DAG - this information is the size
+                            # of the faninNB. So we pass the 
+                            # start state of the faninNB tasks, and the size of the 
+                            # faninNB to this method insted of having
+                            # this method retrieve this info from DAG_info.
                             # - Note: When we use worker threads with fanins/faninNBS stored 
-                            # here on tcp_server, the DG_infoBuffer_monitor, as well as 
+                            # here on tcp_server, the DAG_infoBuffer_monitor, as well as 
                             # the work_queue are local, i.e., they are not stored here
-                            # on the tcp_server so ths sycnronize_sync method cannot
+                            # on the tcp_server so this sycnronize_sync method cannot
                             # access DAG_infoBuffer_monitor thus we cannot access it
                             # to withdraw an updated DAG_info.
-#rhc: ToDo: 
-                            # - Rewrote this code to use the state parameters start sate of 
-                            # dag tas, n, and the newly added fanin type instead of getting
-                            # this nfo from the DAG_info. Thus we do not need to update the 
-                            # DAG_ifo during incremental DAG generation.
+
+                            # - Rewrote this code to use the state parameters start state of 
+                            # fanin task, n, and the newly added fanin type instead of getting
+                            # this info from the DAG_info. Thus we do not need to update the 
+                            # DAG_info during incremental DAG generation.
 
                             #DAG_states = DAG_info.get_DAG_states()
-
                             # assert:
                             #if not DAG_states[name] == start_state_fanin_task:
                             #    logger.trace("[Error]: Internal Error: tcp_server: synchronize_process_faninNBs_batch:"
-                                #       + "DAG_states[name] != start_state_fanin_task")
+                            #       + "DAG_states[name] != start_state_fanin_task")
                             
-                            # Given in DAG_executor.faninNB_remotely:
+                            # We modified DAG_executor.faninNB_remotely to add the DAG_info 
+                            # that is passed here:
                             #DAG_exec_state.keyword_arguments['n'] = keyword_arguments['n']
                             #DAG_exec_state.keyword_arguments['start_state_fanin_task'] = keyword_arguments['start_state_fanin_task']
 #rhc batch
@@ -1211,19 +1208,6 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             #all_faninNB_task_names = DAG_info.get_all_faninNB_task_names()
                             #all_faninNB_sizes = DAG_info.get_all_faninNB_sizes()
                             #is_fanin = name in all_fanin_task_names
-
-                            # assert: No fanins in batch procesing - this is the code
-                            # from synchronize_sync, which can be called for fan_in ops
-                            # on fanins and faninNBs, but we only batch process faninNBs
-                            # here so there should be no fanins. 
-                            #if is_fanin:
-                            #    logger.error("[Error]: Internal Error: tcp_server: synchronize_process_faninNBs_batch:"
-                            #        + " fanin " + name + " in batch.")
-
-                            #is_faninNB = True # name in all_faninNB_task_names
-                            #if not is_fanin and not is_faninNB:
-                            #    logger.error("[Error]: Internal Error: tcp_server: synchronize_process_faninNBs_batch:"
-                            #        + " sync object for synchronize_sync is neither a fanin nor a faninNB.")
 
                             # compute size of fanin or faninNB 
                             # FanIn could be a non-select (monitor) or select FanIn type
@@ -1574,30 +1558,16 @@ class TCPServer(object):
         self.tcp_server = socketserver.ThreadingTCPServer(self.server_address, TCPHandler)
 
         if not wukongdnc.dag.DAG_executor_constants.create_all_fanins_faninNBs_on_start or not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally:
-#rhc: this could be not run_all_tasks_locally and not incremental DAG generation
-# since if we are using lambas and incemental then we will get the updated
-# DAG_info some other way, i.e., we will wait for new DAG and then a new
-# lambda will be started with the new DAG_info and the results. Saving
-# results and (re)starting with results and continued state seems like
-# normal restart for no-wait.
-            # Need DAG_info if we are creating objects on their first
-            # use or objects will be invoking lambdas (as lambdas need)
-            # the DAG_info.
+            # We need DAG_info on tcp_server if we are creating objects on their first
+            # use or synch objects will be invoking lambdas (as lambdas need
+            # the DAG_info).
+            # However: For non-incremental, the DAG_info object is not saved to a file 
+            # until after BFS runs and generates the (complete) DAG. See BFS where
+            # it generates the DAG and then calls run() of the DAG_executor_driver.
+            # So we can't let the TCP server read the DAG here at its start since 
+            # if we start the tcp_server before BFS has written the DAG, the DAG_info 
+            # file may not have been written yet or an old DAG_info file  may be there. 
 
-            
-            # We only read DAG_info one time, and only if we are 
-            # using real lambdas. When we invoke a real lambda
-            # we need to give it the DAG_info. This read was moved up to the 
-            # action handler. This is because the DAG_info object is not 
-            # saved to a file until after BFS runs and generates the 
-            # (complete) DAG (for non-incremental). So we don't let the 
-            # TCP server rad the DAG until it gets its first input over
-            # the socket. This input cannot be received until after 
-            # DAG_execution starts, and since execution starts after BFS
-            # finishes (the complete DAG_info) TCP server cannot try to 
-            # read the DAG_info file before it is written. See BFS where
-            # it generates the DAG and then calls run() of the 
-            # DAG_executor_driver.
             #global DAG_info
             # reads from default file './DAG_info.pickle'
             #DAG_info = DAG_Info.DAG_info_fromfilename()

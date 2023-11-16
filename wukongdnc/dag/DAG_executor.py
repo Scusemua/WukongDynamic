@@ -4317,7 +4317,7 @@ def DAG_executor_lambda(payload):
     #rhc: lambda: Need to get the continued_task flag from the payload.
     
     state_info = DAG_map[DAG_exec_state.state]
-    logger.info("DAG_executor_lambda(): starting for " + state_info.task_name)
+    logger.info("DAG_executor_lambda() starting for " + state_info.task_name)
 
     is_leaf_task = state_info.task_name in DAG_info.get_DAG_leaf_tasks()
     if not is_leaf_task:
