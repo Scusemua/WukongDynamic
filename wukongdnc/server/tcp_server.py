@@ -586,10 +586,10 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = wukongdnc.dag.DAG_executor_constants.store_fanins_faninNBs_locally
                             if not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally: 
                                 if read_DAG_info:
+                                    # we are locked by create_synchronization_object_lock
                                     read_DAG_info = False
-    #rhc: DAG_info: race? no since locked
                                     DAG_info = DAG_Info.DAG_info_fromfilename()
-                                    logger.trace("tcp_server: read DAG_info for real lambdas.")
+                                    logger.info("tcp_server: read DAG_info for real lambdas.")
     #rhc: DAG_info
                                     print("tcp_server: DAG_map:")
                                     # this required: # pylint: disable=E0601, E0118
@@ -1053,8 +1053,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
 # Note that if non-local we use batch for faninNBs. We call synch for Fanins but we do not need 
 # DAG_info for fanins so even if we read DAG_info we won't use it.
 # For local simulated lambda with remote, we do not call batch we call synch but the faninNB does
-# not start local to do danin task so does not use FaninNB. Maybe we have no error since even
-# though we read partial DAG_info we do mot use it in these cases? Do we pass DAG_info to synch?
+# not start local to do fanin task so does not use FaninNB. Maybe we have no error since even
+# though we read partial DAG_info we do not use it in these cases? Do we pass DAG_info to synch?
 # perhaps no since we don't use it as faninNB doesn't need it in synch cases?
 
                         if False and not (wukongdnc.dag.DAG_executor_constants.compute_pagerank and wukongdnc.dag.DAG_executor_constants.use_incremental_DAG_generation):
@@ -1064,7 +1064,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             #DAG_states = DAG_info.get_DAG_states()
                             #dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = DAG_states[synchronizer_name]
                             dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = wukongdnc.dag.DAG_executor_constants.store_fanins_faninNBs_locally
-                            if not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally:  
+                            if False: # not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally:  
                                 if read_DAG_info: 
                                     read_DAG_info = False
                                 
@@ -1180,11 +1180,11 @@ class TCPHandler(socketserver.StreamRequestHandler):
 #rhc batch
                             dummy_state_for_create_message = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
                             dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = wukongdnc.dag.DAG_executor_constants.store_fanins_faninNBs_locally
-                            if not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally:
+                            if False: # not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally:
                                 if read_DAG_info:
                                     read_DAG_info = False 
                                     DAG_info = DAG_Info.DAG_info_fromfilename()
-                                    logger.trace("tcp_server: read DAG_info for real lambdas.")
+                                    logger.info("tcp_server: read DAG_info for real lambdas.")
 #rhc: DAG_info
                                     logger.trace("tcp_server: DAG_map:")
                                     DAG_map = DAG_info.get_DAG_map()

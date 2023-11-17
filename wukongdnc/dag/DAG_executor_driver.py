@@ -1053,13 +1053,69 @@ lambdas, new simulated lambda (threads) are created locally by simulated lambda
 that called fan-in, and that simulated lambda has its DAG_info that it read 
 from a file (non-incremental) or got in the usual way for incremental DAG
 generation. For real lambdas, we always call batch for faninNBs, not synch op,
-and batch takes casr of DAG_info. We call synch op for Fanin objects and 
-I think sumulated lambdas with eemote objects call synch op for FaninNB objects
+and batch takes care of DAG_info. We call synch op for Fanin objects and 
+I think sumulated lambdas with remote objects call synch op for FaninNB objects
 but these FaninNB objects do not need DAG_info. Also, Fanin objects never need
 DAG_info. ==> synch op for FaninNb or Fanin never needs to read DAG_info and 
 never needs to have DAG_info passed to it since we don't use it for FaninNB/Fanin objects.
 TEST: remote objects, w/ simulated lambdas, real lambdas, worker threads, worker processes,
 w/ incremental pagerank, non-inc pagerank, non-inc non-pagerank.
+
+(Note: no store objects in lambdas and trigger lambdas)
+non-incremental, not run_all_tasks_locally (real lambdas), not store_objects_locally:
+- FaninNB: using process_faninNBs_batch and faninNB_remotely_batch for FaninNB, calling FaninNB batch
+  passing DAG_info keyword parm as None
+- FanIn: using process_fanins and fanin_remotely, calling synch op on tcp_server
+  not passing DAG_info keyword parm
+non-incremental, run_all_tasks_locally, using worker processes, not store_objects_locally:
+# same as above for real lambdas
+- FaninNB: using process_faninNBs_batch and faninNB_remotely_batch for FaninNB, calling FaninNB batch
+  passing DAG_info keyword parm as None
+- FanIn: using process_fanins and fanin_remotely, calling synch op on tcp_server
+  not passing DAG_info keyword parm
+non-incremental, run_all_tasks_locally, using worker threads, not store_objects_locally:
+- FaninNB: using process_faninNBs and faninNB_remotely for FaninNB, calling synch op on tcp_server
+  not passing DAG_info keyword parm
+- FanIn: using process_fanins and fanin_remotely, calling synch op on tcp_server 
+  not passing DAG_info keyword parm
+non-incremental, run_all_tasks_locally, not using workers, not store_objects_locally:
+- FaninNB: using process_faninNBs and faninNB_remotely for FaninNB, calling synch op on tcp_server
+  not passing DAG_info keyword parm
+- FanIn: using process_fanins and fanin_remotely, calling synch op on tcp_server
+  not passing DAG_info keyword parm
+
+incremental, not run_all_tasks_locally, not: store_objects_locally:
+- FaninNB: using process_faninNBs_batch and faninNB_remotely_batch for FaninNB, calling FaninNB batch
+  passing DAG_info keyword parm as DAG_info
+- FanIn: using process_fanins and fanin_remotely, calling synch op on tcp_server
+  not passing DAG_info keyword parm
+incremental, run_all_tasks_locally, using worker processes, not store_objects_locally:
+- FaninNB: using process_faninNBs_batch and faninNB_remotely_batch for FaninNB, calling FaninNB batch
+  passing DAG_info keyword parm as DAG_info
+- FanIn: using process_fanins and fanin_remotely, calling synch op on tcp_server 
+  not passing DAG_info keyword parm
+incremental, run_all_tasks_locally, using worker threads, not store_objects_locally:
+- FaninNB: using process_faninNBs and faninNB_remotely for FaninNB, calling synch op on tcp_server
+  not passing DAG_info keyword parm
+- FanIn: using process_fanins and fanin_remotely, calling synch op on tcp_server
+  not passing DAG_info keyword parm
+incremental, run_all_tasks_locally, not using workers, not store_objects_locally:
+- FaninNB: using process_faninNBs and faninNB_remotely for FaninNB, calling synch op on tcp_server
+  not passing DAG_info keyword parm
+- FanIn: using process_fanins and fanin_remotely, calling synch op on tcp_server
+  not passing DAG_info keyword parm
+
+==> synch op on tcp_server does not read DAG_info. For any fan-in operation
+called on a Fanin object, the FanIn object does not need DAG_info since
+it doesn't start its fanin task. For FanInNB objects, we only call
+synch op on tcp_server for fan-in operation when we are not 
+run_all_tasks_locally (real lambdas) and we are not using worker
+processes. So we are using simulated lambdas or we are using worker
+threads and for these the FaninNB object does not start a (simulated)
+lambda to execute the fanin task. The call to process_faninNBs
+processes the fainNBs one by one. If a faninNB returns work it 
+is queued if we are using workers and it is passed in the payload
+of a simulated lambda otherwise.
 
 For the schemes above, when incremental DAG generation is NOT used:
 - A1. We assign each leaf node state to Lambda Executor. At fanouts, a Lambda executor starts another

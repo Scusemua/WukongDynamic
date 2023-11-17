@@ -293,6 +293,10 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
         #keyword_arguments['DAG_executor_State'] = new_DAG_exec_state # given to the thread/lambda that executes the fanin task.
         keyword_arguments['server'] = server
         keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
+        # Note: We assign DAG_info here but in faninNB_remotely we only 
+        # use this DAG_info value if not run_all_tasks_locally. So
+        # there will be no keyword args parm for 'DAG_info' if
+        # we run_all_tasks_locally.
         keyword_arguments['DAG_info'] = DAG_info
 
 		#Q: kwargs put in DAG_executor_State keywords and on server it gets keywords from state and passes to create and fanin
@@ -551,7 +555,7 @@ def faninNB_remotely_batch(websocket, **keyword_arguments):
             # the start. Instead, we pass DAG_info to tcp_server.
             DAG_exec_state.keyword_arguments['DAG_info'] = keyword_arguments['DAG_info']
         else:
-            pass # value will be the default None
+            pass # value will be the default value None above
             
     DAG_exec_state.keyword_arguments['number_of_tasks'] = keyword_arguments['number_of_tasks']
 
@@ -3679,9 +3683,9 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         # We do batch processing when we use lambdas to execute tasks, real or simulated.
                         # So this condition, which specifies the "sync objects trigger their tasks" case
                         # is not needed.
-                        #not run_all_tasks_locall1y and not using_workers and not store_fanins_faninNBs_locally and store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks):
+                        #not run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks):
 
-                        # Config: A1, A3, A5, A6
+                        # Config: A1,  A5, A6
                         # Note: We call process_faninNBs_batch when we are simulating lambdas with threads
                         # and we are storing synch objects in lambdas, regardless of whether the objects are stored
                         # in real lambdas or simulated by python functions, and regardless of 
@@ -3794,7 +3798,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                     + " worker_needs_input to False when using workers but cluster_queue"
                                     + " size is 0.")
                     else: 
-                        # Config: A2, A4_local, A4_Remote
+                        # Config: A2, A3, A4_local, A4_Remote
                         # using worker threads not processes, or using threads to simualate running lambdas,
                         # but not using lambdas to store synch objects - storing them locally instead.
                         # Note: if we are using thread workers we can still store the FanInNBs remotely, but the work queue 
@@ -4143,31 +4147,30 @@ def DAG_executor(payload):
 # it was already executed; instead, the new lmabda will perform T's fanins/fanouts.
     #assert:    
     DAG_map = DAG_info.get_DAG_map()
-    state_info = DAG_map[DAG_exec_state.state]
+    
     if not using_workers:
+        state_info = DAG_map[DAG_exec_state.state]
         logger.info("DAG_executor(): simulated lambda (thread) starting for " + state_info.task_name)
-    else:
-        logger.info("DAG_executor(): worker (thread) starting for " + state_info.task_name)
 
-    is_leaf_task = state_info.task_name in DAG_info.get_DAG_leaf_tasks()
-    if not is_leaf_task:
-        logger.trace("DAG_executor(): verify inputs are in data_dict: ")
-        # lambdas invoked with inputs. We do not add leaf task inputs to the data
-        # dictionary, we use them directly when we execute the leaf task.
-        # Also, leaf task inputs are not in a dictionary.
-        dict_of_results = payload['input']
-        for key, _value in dict_of_results.items():
-            #data_dict[key] = _value
-            value_in_dict = data_dict.get(key,None)
-            if value_in_dict == None:
-                logger.error("[Error]: Internal Error: starting DAG_executor for simulated lambda"
-                    + " data_dict missing value for input key " + str(key))
-            else:
-                logger.trace("DAG_executor:verified: " + str(key))
-    else:
-        pass
-        # leaf tasks have no input arguments; the inputs for leaf tasks are
-        # stored in the DAG (as Dask does)']
+        is_leaf_task = state_info.task_name in DAG_info.get_DAG_leaf_tasks()
+        if not is_leaf_task:
+            logger.trace("DAG_executor(): verify inputs are in data_dict: ")
+            # lambdas invoked with inputs. We do not add leaf task inputs to the data
+            # dictionary, we use them directly when we execute the leaf task.
+            # Also, leaf task inputs are not in a dictionary.
+            dict_of_results = payload['input']
+            for key, _value in dict_of_results.items():
+                #data_dict[key] = _value
+                value_in_dict = data_dict.get(key,None)
+                if value_in_dict == None:
+                    logger.error("[Error]: Internal Error: starting DAG_executor for simulated lambda"
+                        + " data_dict missing value for input key " + str(key))
+                else:
+                    logger.trace("DAG_executor:verified: " + str(key))
+        else:
+            pass
+            # leaf tasks have no input arguments; the inputs for leaf tasks are
+            # stored in the DAG (as Dask does)']
 
     # work_queue is the global shared work queue, which is none when we are using threads
     # to simulate lambdas and is a Queue when we are using worker threads. See imported file
@@ -4245,7 +4248,7 @@ def DAG_executor_processes(payload,completed_tasks_counter,completed_workers_cou
         
     proc_name = multiprocessing.current_process().name
     thread_name = threading.current_thread().name
-    logger.trace("proc " + proc_name + " " + " thread " + thread_name + ": started.")
+    logger.trace("proc " + proc_name + " " + " thread " + thread_name + ": worker process started.")
 
     if not using_workers:
         logger.error("Error: DAG_executor_processes: executing multiprocesses but using_workers is false.")
@@ -4277,9 +4280,9 @@ def DAG_executor_processes(payload,completed_tasks_counter,completed_workers_cou
   
     # reads from default file './DAG_info.pickle'
     DAG_info = DAG_Info.DAG_info_fromfilename()
-    DAG_map = DAG_info.get_DAG_map()
-    state_info = DAG_map[DAG_exec_state.state]
-    logger.info("DAG_executor_processes(): worker (process) starting for " + state_info.task_name)
+    #DAG_map = DAG_info.get_DAG_map()
+    #state_info = DAG_map[DAG_exec_state.state]
+    #logger.info("DAG_executor_processes(): worker (process) starting for " + state_info.task_name)
 
 
     # The work loop will create a BoundedBuffer_Work_Queue. Each process excuting the work loop
