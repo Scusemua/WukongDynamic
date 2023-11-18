@@ -1360,7 +1360,7 @@ def run():
         # synch_objects are stored in local memory or on the tcp_Server or in InfinX Executors
         if store_fanins_faninNBs_locally:
             # store fanin and faninNBs locally so not using websocket to tcp_server
-            if not using_threads_not_processes: # using processes
+            if using_workers and not using_threads_not_processes: # using processes
                 logger.error("[Error]: Configuration Error: DAG_executor_driver: store objects locally but using worker processes,"
                     + " which must use remote objects (on server).")
             # cannot be multiprocessing, may or may not be pooling, running all tasks locally (no Lambdas)

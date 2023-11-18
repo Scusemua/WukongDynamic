@@ -173,6 +173,7 @@ def generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks):
     # the DAG_info for partition 3 will have partitions 1, 2, and 3 and will
     # be version 2 but named "DAG_info_incremental_Partition_3"
     file_name_incremental = "./DAG_info_incremental_Group_" + str(Group_DAG_version_number) + ".pickle"
+    #Note: closes the file when the with statement ends, even if an exception occurs
     with open(file_name_incremental, 'wb') as handle:
         cloudpickle.dump(DAG_info_dictionary, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
 

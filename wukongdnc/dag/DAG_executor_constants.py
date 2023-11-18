@@ -7,12 +7,15 @@ import logging
 import os
 
 log_level = logging.INFO
+#log_level = "TRACE"
 logger = logging.getLogger(__name__)
 
-logger.setLevel(log_level)
+# using INFO level for this constants file - no logger.trace() calls
+# and we add the TRACE level in DAG_executor_driver or BFS, not here
+logger.setLevel(logging.INFO)
 formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
 ch = logging.StreamHandler()
-ch.setLevel(log_level)
+ch.setLevel(logging.INFO)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
@@ -35,7 +38,7 @@ bypass_call_lambda_client_invoke = False
 # machine on which the threads are executing.  If we are using multiprocessing
 # or Lambdas, this must be False. When False, the synch objects are stored
 # on the tcp_server or in InfiniX lambdas.
-store_fanins_faninNBs_locally = False
+store_fanins_faninNBs_locally = True
 # True when all FanIn and FanInNB objects are created locally or on the
 # tcp_server or IniniX all at once at the start of the DAG execution. If
 # False, synch objects are created on the fly, i.e, we execute create-and-fanin
@@ -50,10 +53,10 @@ create_all_fanins_faninNBs_on_start = False
 # case, instead of, e.g., starting a Lambda at fan_out operations, we start a thread.
 # This results in the creation of many threads and is only use to test the logic 
 # of the Lambda code.
-using_workers = True
+using_workers = False
 # True when we are not using Lambas and tasks are executed by threads instead of processes. 
 # False when we are not using lambdas and are using multiprocesssing 
-using_threads_not_processes = False
+using_threads_not_processes = True
 # When using_workers, this is how many threads or processes in the pool.
 num_workers = 2
 # Use one or more worker processes (num_workers) with one or more threads
@@ -206,13 +209,23 @@ if sync_objects_in_lambdas_trigger_their_tasks:
         logging.shutdown()
         os._exit(0)
 
+#assert:
+if run_all_tasks_locally and using_workers and store_fanins_faninNBs_locally:
+    if using_threads_not_processes:
+        # if create sync objects on start then we must map them to function so
+        # that we can determine the function an object is in.
+        logger.error("[Error]: Configuration Error: store sync objects locally but using worker processes,"
+            + " which must use remote objects (on server).")
+        logging.shutdown()
+        os._exit(0)
+
 ##########################################
 ###### PageRank settings start here ######
 ##########################################
 
 # Indicates that we are computing pagerank and thus that the pagerank
 # options are active and pagerank asserts should hold
-compute_pagerank = False
+compute_pagerank = True
 
 name_of_first_groupOrpartition_in_DAG = "PR1_1"
 
@@ -236,7 +249,7 @@ check_pagerank_output = compute_pagerank and run_all_tasks_locally and (using_wo
 same_output_for_all_fanout_fanin = not compute_pagerank
 
 # True if DAG generation and DAG_execution are overlapped. 
-use_incremental_DAG_generation = compute_pagerank and False
+use_incremental_DAG_generation = compute_pagerank and True
 
 # assert 
 if compute_pagerank and use_incremental_DAG_generation and create_all_fanins_faninNBs_on_start:

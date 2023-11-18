@@ -1,5 +1,6 @@
 import logging
 import cloudpickle
+import os
 #import numpy as np
 from .BFS_Partition_Node import Partition_Node
 from . import BFS_Shared
@@ -152,8 +153,20 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
         # so we make this check esy by having 'L' at the end (endswith)
         # instead of having to parse ("PR1_1.pickle")
         complete_task_file_name = './'+task_file_name+'.pickle'
-        with open(complete_task_file_name, 'rb') as handle:
-            partition_or_group = (cloudpickle.load(handle))
+        #logger.info("XXXXXXXPageRank_Function: complete_task_file_name:" 
+        #    + str(complete_task_file_name))
+        try:
+            with open(complete_task_file_name, 'rb') as handle:
+                partition_or_group = (cloudpickle.load(handle))
+        except EOFError:
+            logger.info("[Error]: Internal Error: PageRank_Function: EOFError:"
+                + " complete_task_file_name:" + str(complete_task_file_name))
+            import sys, traceback
+            #print('Problem:', file=sys.stderr)
+            traceback.print_exc(file=sys.stderr)
+            logging.shutdown()
+            os._exit(0)
+        
         if (debug_pagerank):
             logger.trace("PageRank_Function output partition_or_group (node:parents):")
             for node in partition_or_group:

@@ -17,12 +17,14 @@ from wukongdnc.wukong.invoker import invoke_lambda_DAG_executor
 import logging 
 
 logger = logging.getLogger(__name__)
+"""
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
+"""
 
 # Controls workers when using incremental DAG generation
 class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
@@ -78,36 +80,36 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         DAG_tasks = DAG_info.get_DAG_tasks()
         DAG_leaf_task_inputs = DAG_info.get_DAG_leaf_task_inputs()
 
-        print("DAG_infoBuffer_Monitor_for_Lambdas: DAG_map:")
+        print("DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_map:")
         for key, value in DAG_map.items():
             print(key)
             print(value)
         print("  ")
-        print("DAG_infoBuffer_Monitor_for_Lambdas: DAG states:")         
+        print("DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG states:")         
         for key, value in DAG_states.items():
             print(key)
             print(value)
         print("   ")
-        print("DAG_infoBuffer_Monitor_for_Lambdas: DAG leaf task start states")
+        print("DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG leaf task start states")
         for start_state in DAG_leaf_task_start_states:
             print(start_state)
         print()
-        print("DAG_infoBuffer_Monitor_for_Lambdas: DAG_tasks:")
+        print("DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_tasks:")
         for key, value in DAG_tasks.items():
             print(key, ' : ', value)
         print()
-        print("DAG_infoBuffer_Monitor_for_Lambdas: DAG_leaf_tasks:")
+        print("DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_leaf_tasks:")
         for task_name in DAG_leaf_tasks:
             print(task_name)
         print() 
-        print("DAG_infoBuffer_Monitor_for_Lambdas: DAG_leaf_task_inputs:")
+        print("DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_leaf_task_inputs:")
         for inp in DAG_leaf_task_inputs:
             print(inp)
         #print() 
         print()
-        print("DAG_infoBuffer_Monitor_for_Lambdas: DAG_version_number:")
+        print("DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_version_number:")
         print(DAG_info.get_DAG_version_number())
-        print("DAG_infoBuffer_Monitor_for_Lambdas: DAG_info_is_complete:")
+        print("DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_info_is_complete:")
         print(DAG_info.get_DAG_info_is_complete())
         print()
 
@@ -254,7 +256,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     DAG_exec_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
                     DAG_exec_state.return_value = None
                     DAG_exec_state.blocking = False
-                    logger.trace("DAG_infoBuffer_Monitor_for_Lambdas: starting lambda with DAG_executor_state.state:" + str(DAG_exec_state.state)
+                    logger.info("DAG_infoBuffer_Monitor_for_Lambdas: starting lambda with DAG_executor_state.state:" + str(DAG_exec_state.state)
                         + " leaf task: " + str(DAG_exec_state.continued_task))
                     #logger.trace("DAG_executor_state.function_name: " + DAG_executor_state.function_name)
                     payload = {

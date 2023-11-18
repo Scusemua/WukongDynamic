@@ -38,15 +38,22 @@ from ..dag.addLoggingLevel import addLoggingLevel
 # Set up logging.
 addLoggingLevel('TRACE', logging.DEBUG - 5)
 
+logging.basicConfig(encoding='utf-8',level=log_level, format='[%(asctime)s][%(module)s][%(processName)s][%(threadName)s]: %(message)s')
+# Added this to suppress the logging message:
+#   credentials - MainProcess - MainThread: Found credentials in shared credentials file: ~/.aws/credentials
+# But it appears that we could see other things liek this:
+# https://stackoverflow.com/questions/1661275/disable-boto-logging-without-modifying-the-boto-files
+logging.getLogger('botocore').setLevel(logging.CRITICAL)
+
 logger = logging.getLogger(__name__)
+"""
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
-
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
-
 logger.addHandler(ch)
+"""
 
 # This tcp_server labda handler is used when we ar using lambdas to 
 # store objcts or to excute tasks. 
