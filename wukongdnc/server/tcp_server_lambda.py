@@ -37,7 +37,7 @@ from ..dag.addLoggingLevel import addLoggingLevel
 """
 # Set up logging.
 addLoggingLevel('TRACE', logging.DEBUG - 5)
-
+from wukongdnc.dag.DAG_executor_constants import log_level
 logging.basicConfig(encoding='utf-8',level=log_level, format='[%(asctime)s][%(module)s][%(processName)s][%(threadName)s]: %(message)s')
 # Added this to suppress the logging message:
 #   credentials - MainProcess - MainThread: Found credentials in shared credentials file: ~/.aws/credentials

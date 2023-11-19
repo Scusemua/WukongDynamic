@@ -568,7 +568,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 # DAG. The first partition is always a leaf task and it is handled by the 
                 # DAG_executor_driver.
 
-                logger.trace("generate_DAG_info_incremental_groups: start of new connected component is group "
+                logger.info("generate_DAG_info_incremental_groups: start of new connected component is group "
                     + group_name)
 
                 # task input is same as for leaf task group 1 above - empty

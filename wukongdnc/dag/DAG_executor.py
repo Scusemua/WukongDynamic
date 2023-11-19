@@ -204,10 +204,22 @@ def faninNB_remotely(websocket,**keyword_arguments):
     DAG_exec_state.keyword_arguments['store_fanins_faninNBs_locally'] = keyword_arguments['store_fanins_faninNBs_locally']
 #rhc batch
     DAG_exec_state.keyword_arguments['fanin_type'] = keyword_arguments['fanin_type']
-    if not run_all_tasks_locally:
+    # Note: This faninNB_remotely method is only called when we are 
+    # running locally, i.e., we are not using real lambdas. For real lambdas
+    # for faninNBs we always call process_faninNBs_batch and faninNB_remotely_batch.
+    # Here, we do not need to pass DAG_info since neither the faninNBs nor
+    # the fanins need DAG_info in this case. fanins never need DAG_info since
+    # they do not start and lambda etc to do their fanin task; instead the
+    # last caller becomes the executor of the fanin task. For faninNBs, when
+    # running locally it must be simulated lambdas or worker threads/processes
+    # that are running and the faninNB does not create a simulted lambda to
+    # run the fanin task since that simulated lambda (thread) would run on 
+    # the server and that is not local (if the server is remote.)
+    # Deleted:
+    #if not run_all_tasks_locally:
         # Note: When faninNB start a Lambda, DAG_info is in the payload. 
         # (Threads and processes read it from disk.)
-        DAG_exec_state.keyword_arguments['DAG_info'] = keyword_arguments['DAG_info']
+    #    DAG_exec_state.keyword_arguments['DAG_info'] = keyword_arguments['DAG_info']
     DAG_exec_state.return_value = None
     DAG_exec_state.blocking = False
 
@@ -293,20 +305,48 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
         #keyword_arguments['DAG_executor_State'] = new_DAG_exec_state # given to the thread/lambda that executes the fanin task.
         keyword_arguments['server'] = server
         keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
-        # Note: We assign DAG_info here but in faninNB_remotely we only 
-        # use this DAG_info value if not run_all_tasks_locally. So
-        # there will be no keyword args parm for 'DAG_info' if
-        # we run_all_tasks_locally.
-        keyword_arguments['DAG_info'] = DAG_info
+        # Note: This process_faninNBs method is only called when we are 
+        # running locally, i.e., we are not using real lambdas. 
+        #
+        # When storing objects remotely:
+        # For real lambdas, for faninNBs we always call process_faninNBs_batch and faninNB_remotely_batch.
+        # Here, we do not need to pass DAG_info since neither the faninNBs nor
+        # the fanins need DAG_info in this case. fanins never need DAG_info since
+        # they do not start and lambda etc to do their fanin task; instead the
+        # last caller becomes the executor of the fanin task. For faninNBs, when
+        # running locally it must be simulated lambdas or worker threads/processes
+        # that are running and the faninNB does not create a simulted lambda to
+        # run the fanin task since that simulated lambda (thread) would run on 
+        # the server and that is not local (if the server is remote.)
+        # Note: We will pass DAG_info of None to the FaninNB as a keywork argument,
+        # so when the FaninNB acesses keyword argument 'DAG_info' it will be there
+        # as None and this DAG_info will never be used so None is okay.
+        # Deleted:
+        # Note: We have the same if-condition  in faninNB_remotely.
+        #if not run_all_tasks_locally:
+        #    #   Note: When faninNB start a Lambda, DAG_info is in the payload. 
+        #    # (Threads and processes read it from disk.)
+        #   keyword_arguments['DAG_info'] = DAG_info
+        #
+        # When storing objects locally we are running locally and whwn we are
+        # using simulated lambdas, the FaninNB will be stored locally and it
+        # will create a new simulated Lambda to run the fanin task. Since
+        # we pass the DAG_info in the payload to the created simulated Lambda,
+        # we need to give DAG_info to the FaninNB so we pass it here.
+        if store_fanins_faninNBs_locally and run_all_tasks_locally and not using_workers:
+            keyword_arguments['DAG_info'] = DAG_info
+        # We start a thread that makes the local call to server.create_and_faninNB_locally
+        # or server.faninNB_locally. server.create_and_faninNB_locally will
+        # crrate the local FaninB and call its init() method passing this DAG_info.
 
 		#Q: kwargs put in DAG_executor_State keywords and on server it gets keywords from state and passes to create and fanin
 
         if store_fanins_faninNBs_locally:
             if not using_workers:
-                # Note: We start a thread to make the fanin call and we don't wait for it to finish.
+                # Note: We start a thread to make the fan-in call and we don't wait for it to finish.
                 # So this is like an asynch call to tcp_server. The faninNB will start a new 
                 # thread to execute the fanin task so the callers do not need to do anything.
-                # Agan, "NB" is "No Become" so no caller will become the executor of the fanin task.
+                # Again, "NB" is "No Become" so no caller will become the executor of the fanin task.
                 # keyword_arguments['DAG_executor_State'] = new_DAG_exec_state 
                 # given to the thread/lambda that executes the fanin task.
                 if not create_all_fanins_faninNBs_on_start:
@@ -656,9 +696,26 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
     # before creating a faninNB (it is read only once). For incremental
     # DAG generation, the DAG_info is not complete so we do not read
     # it from file; instead, we pass the DAG_info to the batch processing
-    # method. (Although, we only need to pass a given version once.)
-    keyword_arguments['DAG_info'] = DAG_info
-    # get a slice of DAG_states that is the DAG states of just the faninNB and fanout tasks.
+    # method. (Although, we only need to pass *a given version* once.)
+    #Note: we only pass ADG_info when we are doing incremental DAG
+    # generation with real lambdas, i.e, not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally.
+    # When we running locally with simulated lambdas (threads) and worker
+    # threads or processes, the simulated lambdas and worker threads and
+    # processes read DAG_info locally from a file so they have DAG_info
+    # when they need it. (Simulated lambdas pass DAG_info in the payload
+    # of a started simulated lambda to simulate real lambdas and the 
+    # DAG_executor_driver also reads DAG_info from a file and passes
+    # it to the simulated lambdas it creates in their payload.)
+    # Note: When we are stroing objects in lambdas, etc, then we use 
+    # tcp_server_lambda and currently we always use simulated lambdas.
+    # These simulated lambdas will call the batch method in this case 
+    # so if we support incremental DAG generation for this case, we 
+    # may need to change this condition so that DAG_info will be passed.
+    if (wukongdnc.dag.DAG_executor_constants.compute_pagerank and wukongdnc.dag.DAG_executor_constants.use_incremental_DAG_generation and (
+        not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally)
+    ):
+        keyword_arguments['DAG_info'] = DAG_info
+    # Get a slice of DAG_states that is the DAG states of just the faninNB and fanout tasks.
     # Instead of sending all the DAG_states, i.e., all the states in the DAG, to the server.
     # Need this to put any faninNB work that is not returned in the work_queue - work is added as
     # a tuple (start state of task, inputs to task). Fanouts are used when sync objects trigger 

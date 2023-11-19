@@ -5,6 +5,7 @@ import threading
 import logging 
 
 logger = logging.getLogger(__name__)
+"""
 logger.setLevel(logging.ERROR)
 formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
 ch = logging.StreamHandler()
@@ -12,6 +13,7 @@ ch.setLevel(logging.ERROR)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 logger.propagate = False
+"""
 
 # Reusable Barrier. Clients call wait_b
 class Barrier(MonitorSU):

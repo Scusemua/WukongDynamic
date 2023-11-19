@@ -6,15 +6,14 @@ from ..wukong.invoker import invoke_lambda
 
 import logging 
 logger = logging.getLogger(__name__)
+"""
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
-
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
-
 logger.addHandler(ch)
-
+"""
 class Selector():
     def __init__(self, selector_name = None):
         #super(Selector, self).__init__(monitor_name=monitor_name)

@@ -1,17 +1,15 @@
 from threading import Thread
-
+#from .synchronizer_thread import synchronizerThread
 import logging 
 logger = logging.getLogger(__name__)
+"""
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
-
-from .synchronizer_thread import synchronizerThread
-
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
-
 logger.addHandler(ch)
+"""
 
 # A Synchronizer object wraps a user-defined object. The Synchronizer issues the actual method calls
 # on the object it wraps. The Synchronizer creates a synchronizer thread that makes the actuak method call.

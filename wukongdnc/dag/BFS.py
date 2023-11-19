@@ -2737,6 +2737,9 @@ def bfs(visited, node): #function for BFS
                                 + " partition " + str(partition_name) + " groups_of_current_partition: "
                                 + str(groups_of_current_partition)
                                 + "groups_of_partitions: " + str(groups_of_partitions))
+                            #logger.info("BFS: BFS_queue empty: " + str(len(BFS_queue)))
+                            #if len(BFS_queue)==1:
+                            #    logger.info("BFS: BFS_queue[0]: " + str(BFS_queue[0]))
                             DAG_info = BFS_generate_DAG_info_incremental_groups.generate_DAG_info_incremental_groups(partition_name,current_partition_number,
                                 groups_of_current_partition,groups_of_partitions,
                                 to_be_continued)

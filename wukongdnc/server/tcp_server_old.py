@@ -13,15 +13,14 @@ from synchronizer import Synchronizer
 # Set up logging.
 import logging 
 logger = logging.getLogger(__name__)
+"""
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
-
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
-
 logger.addHandler(ch)
-
+"""
 class ServerThread(threading.Thread):
     def __init__(self, ip, port, client_socket):
         threading.Thread.__init__(self)

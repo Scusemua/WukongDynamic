@@ -6,7 +6,6 @@ import logging
 logger = logging.getLogger(__name__)
 """
 logger.setLevel(logging.ERROR)
-
 formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
