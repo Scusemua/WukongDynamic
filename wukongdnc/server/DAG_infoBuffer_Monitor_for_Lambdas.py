@@ -157,7 +157,9 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         self.current_version_number_DAG_info = self.current_version_DAG_info.get_DAG_version_number()
 #rhc leaf tasks
         new_leaf_tasks = kwargs['new_current_version_new_leaf_tasks']
+        # Note: This gets cleared after we start the new leaf tasks
         self.current_version_new_leaf_tasks += new_leaf_tasks
+        
         logger.trace("DAG_infoBuffer_Monitor_for_Lambdas: DAG_info deposited: ")
         self.print_DAG_info(self.current_version_DAG_info)
 
@@ -235,6 +237,20 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     thread.start()
                 self._buffer.clear()
 
+#rhc: Problem: Can't start a leaf task when we get it in list of leaf tasks
+# as it may have to be continued fanin/faninout/collapse. So:
+# if graph not complete we put it in continue queue and start it when 
+# we get next deposit, for the leaf tasks will be complete in the next deposit.
+# (Note: when we generate dag incrementally, when we get a new leaf task, we will
+# make the previous group/partitition complete and output the group's pickle file for 
+# the previous group/paritition, but we do  not output the group's picklr file for 
+# for the leaf, which is the current partition/group.)
+# if graph is complete then we can start it now as leaf is starft of new 
+# component and it is complete.
+# So this is:
+# for work_tuple in continue_queue:
+#  do start
+# add self.current_version_new_leaf_taskstasks to continue queue.
                 for work_tuple in self.current_version_new_leaf_tasks:
                     # pass the state/task the thread is to execute at the start of its DFS path
                     start_state = work_tuple[0]

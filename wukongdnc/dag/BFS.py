@@ -2733,13 +2733,17 @@ def bfs(visited, node): #function for BFS
 #rhc increnetal groups
                             # avoiding circular import - above: from . import FS_generate_DAG_info_incremental_groups
                             # then use FS_generate_DAG_info_incremental_groups.generate_DAG_info_incremental_groups(...)
-                            logger.trace("BFS: calling generate_DAG_info_incremental_groups for"
+                            logger.info("BFS: calling generate_DAG_info_incremental_groups for"
                                 + " partition " + str(partition_name) + " groups_of_current_partition: "
                                 + str(groups_of_current_partition)
-                                + "groups_of_partitions: " + str(groups_of_partitions))
+                                + " groups_of_partitions: " + str(groups_of_partitions))
                             #logger.info("BFS: BFS_queue empty: " + str(len(BFS_queue)))
                             #if len(BFS_queue)==1:
                             #    logger.info("BFS: BFS_queue[0]: " + str(BFS_queue[0]))
+                            # Note: len of queue is 1 w/ contents -1 for both 4 and 5, and for 6 and 7
+                            # Need to now number of children to know if it's end of component?
+                            # We track node.num_children; we would need to check num_children==0
+                            # for all of the nodes in all of the groups?
                             DAG_info = BFS_generate_DAG_info_incremental_groups.generate_DAG_info_incremental_groups(partition_name,current_partition_number,
                                 groups_of_current_partition,groups_of_partitions,
                                 to_be_continued)
