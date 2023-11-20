@@ -33,7 +33,7 @@ run_all_tasks_locally = True         # vs run tasks remotely (in Lambdas)
 # for real lambdas without actually creating real Lambdas.
 # Note: if this is True then run_all_tasks_locally must be False. 
 # This is asserted below.
-bypass_call_lambda_client_invoke = False
+bypass_call_lambda_client_invoke = not run_all_tasks_locally and False
 # True if synch objects are stored locally, i.e., in the memory of the single
 # machine on which the threads are executing.  If we are using multiprocessing
 # or Lambdas, this must be False. When False, the synch objects are stored

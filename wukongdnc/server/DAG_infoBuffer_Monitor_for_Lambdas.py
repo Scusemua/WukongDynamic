@@ -3,6 +3,7 @@ import _thread
 import threading
 import time
 import uuid
+import os
 from ..dag.DAG_executor_constants import run_all_tasks_locally
 from ..dag.DAG_executor_State import DAG_executor_State
 #from ..dag.DAG_executor import DAG_executor
@@ -35,10 +36,12 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         self.current_version_number_DAG_info = 1
 #rhc leaf tasks
         # The initial DAG has the initial leaf task(s) in it. As later we find
-        # more leaf tasks (tht start new connected components), we supply them 
-        # with the DAG so the leaf tasks can be aded to the work_queue and
-        # and executed by workers (when we are using workers).
-        self.current_version_new_leaf_tasks = []
+        # more leaf tasks (that start new connected components), we supply them 
+        # with the DAG so the leaf tasks can be added to the continue_queue,
+        # since they are incomplete, and started on the next deposit.
+        # self.current_version_new_leaf_tasks = []
+        self.continue_queue = []
+        self.cummulative_leaf_tasks = []
 #rhc: lambda inc:
         #self._next_version=super().get_condition_variable(condition_name="_next_version")
 #rhc: lambda inc
@@ -120,7 +123,8 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             logger.error("[ERROR]: DAG_infoBuffer_Monitor_for_Lambdas:  Failed super(DAG_infoBuffer, self)")
             logger.error("[ERROR] self: " + str(self.__class__.__name__))
             logger.trace(ex)
-            return 0
+            logging.shutdown()
+            os._exit(0) 
         
 #rhc: lambda inc
         #logger.trace("DAG_infoBuffer_Monitor_for_Lambdas: get_current_version_number_DAG_info() entered monitor, len(self._new_version) ="+str(len(self._next_version)))
@@ -147,8 +151,9 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         except Exception as ex:
             logger.error("[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas: Failed super(DAG_infoBuffer_Monitor_for_Lambdas, self)")
             logger.error("[ERROR] self: " + str(self.__class__.__name__))
-            logger.trace(ex)
-            return 0
+            logger.error(ex)
+            logging.shutdown()
+            os._exit(0) 
 
 #rhc: lambda inc
         #logger.trace("DAG_infoBuffer_Monitor_for_Lambdas: deposit() entered monitor, len(self._new_version) ="+str(len(self._next_version)))
@@ -158,26 +163,35 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
 #rhc leaf tasks
         new_leaf_tasks = kwargs['new_current_version_new_leaf_tasks']
         # Note: This gets cleared after we start the new leaf tasks
-        self.current_version_new_leaf_tasks += new_leaf_tasks
-        
+        # for debugging - all leaf tasks started so far
+        #self.current_version_new_leaf_tasks += new_leaf_tasks
+        self.cummulative_leaf_tasks += new_leaf_tasks
+        # assert:
+        if len(new_leaf_tasks)>1:
+            logger.error("[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas:"
+                + " deposit received more than 1 leaf task.")
+            logger.error(ex)
+            logging.shutdown()
+            os._exit(0) 
+
         logger.trace("DAG_infoBuffer_Monitor_for_Lambdas: DAG_info deposited: ")
         self.print_DAG_info(self.current_version_DAG_info)
 
 #rhc leaf tasks
-        logger.trace("DAG_infoBuffer_Monitor_for_Lambdas: new leaf task states deposited: ")
-        for work_tuple in new_leaf_tasks:
-            leaf_task_state = work_tuple[0]
-            logger.trace(str(leaf_task_state))
-        logger.trace("DAG_infoBuffer_Monitor_for_Lambdas: cumulative leaf task states deposited: ")
-        for work_tuple in self.current_version_new_leaf_tasks:
-            leaf_task_state = work_tuple[0]
-            logger.trace(str(leaf_task_state))
+        if len(new_leaf_tasks) > 0:
+            logger.info("DAG_infoBuffer_Monitor_for_Lambdas: new leaf task states deposited: ")
+            for work_tuple in new_leaf_tasks:
+                leaf_task_state = work_tuple[0]
+                logger.info(str(leaf_task_state))
+            logger.info("DAG_infoBuffer_Monitor_for_Lambdas: new cumulative leaf task states: ")
+            for work_tuple in self.cummulative_leaf_tasks:
+                leaf_task_state = work_tuple[0]
+                logger.info(str(leaf_task_state))
 
         restart = False
 
 #rhc: lanbda inc: start lambdas for all continued states in buffer and leaf tasks
         #self._next_version.signal_c_and_exit_monitor()
-
 
         if run_all_tasks_locally:
             # not using real lambdas
@@ -190,7 +204,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     # it generated previously (before terminating) sand use the output
                     # to do the group's/task's fanins/fanout. If the task is a partition,
                     # we give the partition the input for its execution. 
-                    #(Tricky: after executing a group with TBC fanins/fanout/collpases,
+                    # (Tricky: after executing a group with TBC fanins/fanout/collpases,
                     # if it has TBC fanouts/faninNBs/fanins, we cannot do any of them so we
                     # have to wait until we get a new DAG and restart the group/task
                     # so we can complete the fanouts/faninNBs/fanins. After excuting 
@@ -202,7 +216,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     DAG_exec_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
                     DAG_exec_state.return_value = None
                     DAG_exec_state.blocking = False
-                    logger.trace("DAG_infoBuffer_Monitor_for_Lambdas: (re)starting lambda with DAG_executor_state.state: " + str(DAG_exec_state.state)
+                    logger.info("DAG_infoBuffer_Monitor_for_Lambdas: (re)starting lambda with DAG_executor_state.state: " + str(DAG_exec_state.state)
                         + " continued task: " + str(DAG_exec_state.continued_task))
                     #logger.trace("DAG_executor_state.function_name: " + DAG_executor_state.function_name)
                     payload = {
@@ -251,7 +265,8 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
 # for work_tuple in continue_queue:
 #  do start
 # add self.current_version_new_leaf_taskstasks to continue queue.
-                for work_tuple in self.current_version_new_leaf_tasks:
+                #for work_tuple in self.current_version_new_leaf_tasks:
+                for work_tuple in self.continue_queue:
                     # pass the state/task the thread is to execute at the start of its DFS path
                     start_state = work_tuple[0]
                     # leaf tasks have no inputs. 
@@ -260,7 +275,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     # it generated previously (before terminating) sand use the output
                     # to do the group's/task's fanins/fanout. If the task is a partition,
                     # we give the partition the input for its execution. 
-                    #(Tricky: after executing a group with TBC fanins/fanout/collpases,
+                    # (Tricky: after executing a group with TBC fanins/fanout/collpases,
                     # if it has TBC fanouts/faninNBs/fanins, we cannot do any of them so we
                     # have to wait until we get a new DAG and restart the group/task
                     # so we can complete the fanouts/faninNBs/fanins. After excuting 
@@ -272,7 +287,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     DAG_exec_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
                     DAG_exec_state.return_value = None
                     DAG_exec_state.blocking = False
-                    logger.info("DAG_infoBuffer_Monitor_for_Lambdas: starting lambda with DAG_executor_state.state:" + str(DAG_exec_state.state)
+                    logger.info("DAG_infoBuffer_Monitor_for_Lambdas: starting lambda for leaf task with DAG_executor_state.state:" + str(DAG_exec_state.state)
                         + " leaf task: " + str(DAG_exec_state.continued_task))
                     #logger.trace("DAG_executor_state.function_name: " + DAG_executor_state.function_name)
                     payload = {
@@ -305,10 +320,15 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     thread_name_prefix = "Thread_leaf_"
                     thread = threading.Thread(target=wukongdnc.dag.DAG_executor.DAG_executor_task, name=(thread_name_prefix+"ss"+str(start_state)), args=(payload,))
                     thread.start()
-                self.current_version_new_leaf_tasks.clear()
+                #self.current_version_new_leaf_tasks.clear()
+                self.continue_queue.clear()
+                self.continue_queue += new_leaf_tasks
+
             except Exception as ex:
                 logger.trace("[ERROR] DAG_executor_driver: Failed to start DAG_executor thread for state " + str(start_state))
                 logger.trace(ex)
+                logging.shutdown()
+                os._exit(0) 
         else:
             # using real lambdas
             try:
@@ -332,7 +352,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     DAG_exec_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
                     DAG_exec_state.return_value = None
                     DAG_exec_state.blocking = False
-                    logger.trace("DAG_infoBuffer_Monitor_for_Lambdas: (re)starting lambda with DAG_executor_state.state: " + str(DAG_exec_state.state)
+                    logger.info("DAG_infoBuffer_Monitor_for_Lambdas: (re)starting lambda with DAG_executor_state.state: " + str(DAG_exec_state.state)
                         + " continued task: " + str(DAG_exec_state.continued_task))
                     #logger.trace("DAG_executor_state.function_name: " + DAG_executor_state.function_name)
 
@@ -364,7 +384,8 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor_lambda:"+task_name)
                 self._buffer.clear()
 
-                for work_tuple in self.current_version_new_leaf_tasks:
+                #for work_tuple in self.current_version_new_leaf_tasks:
+                for work_tuple in self.continue_queue:
                     # pass the state/task the thread is to execute at the start of its DFS path
                     start_state = work_tuple[0]
                     # leaf tasks have no inputs. 
@@ -385,7 +406,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     DAG_exec_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
                     DAG_exec_state.return_value = None
                     DAG_exec_state.blocking = False
-                    logger.trace("DAG_infoBuffer_Monitor_for_Lambdas: starting lambda with DAG_executor_state.state:" + str(DAG_exec_state.state)
+                    logger.info("DAG_infoBuffer_Monitor_for_Lambdas: starting lambda for leaf task with DAG_executor_state.state:" + str(DAG_exec_state.state)
                         + " leaf task: " + str(DAG_exec_state.continued_task))
                     #logger.trace("DAG_executor_state.function_name: " + DAG_executor_state.function_name)
                     payload = {
@@ -413,17 +434,22 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     DAG_states = self.current_version_DAG_info.get_DAG_states()
                     task_name = DAG_states[start_state].task_name
                     invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor_lambda"+task_name)
-                self.current_version_new_leaf_tasks.clear()
+                #self.current_version_new_leaf_tasks.clear()
+                self.continue_queue.clear()
+                self.continue_queue += new_leaf_tasks
             except Exception as ex:
                 logger.trace("[ERROR] DAG_executor_driver: Failed to start DAG_executor thread for state " + str(start_state))
                 logger.trace(ex)
+                logging.shutdown()
+                os._exit(0) 
         try:
             super(DAG_infoBuffer_Monitor_for_Lambdas, self).exit_monitor()
         except Exception as ex:
             logger.error("[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas: deposit: exit_monitor: Failed super(DAG_infoBuffer_Monitor_for_Lambdas, self)")
             logger.error("[ERROR] self: " + str(self.__class__.__name__))
             logger.trace(ex)
-            return 0
+            logging.shutdown()
+            os._exit(0) 
         
         return 0, restart
     
@@ -499,6 +525,8 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                 logger.error("[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas: withdraw: exit_monitor: Failed super(DAG_infoBuffer_Monitor_for_Lambdas, self)")
                 logger.error("[ERROR] self: " + str(self.__class__.__name__))
                 logger.trace(ex)
+                logging.shutdown()
+                os._exit(0) 
 
             return DAG_info, restart
         else:
@@ -570,14 +598,14 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                 logger.error("[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas: withdraw: exit_monitor: Failed super(DAG_infoBuffer_Monitor_for_Lambdas, self)")
                 logger.error("[ERROR] self: " + str(self.__class__.__name__))
                 logger.trace(ex)
+                logging.shutdown()
+                os._exit(0) 
 
             return None, restart
         
         return 0
         
-
 # For testing:
-
 class Dummy_DAG_info:
     def __init__(self,value,version_number):
         self.value = value
