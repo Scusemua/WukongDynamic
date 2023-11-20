@@ -174,6 +174,21 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             logging.shutdown()
             os._exit(0) 
 
+#rhc: ToDo: leaf task is start of a new connected component. If the
+# graph is complete then we can start the leaf task as it is also complete.
+# - leaf task state would show it is complete since this is ckecked
+#   when we generate group incrementally, i.e., if the graph is complete
+#   we mark the group as complete with no TBC fanins/fanouts/collapses.
+# - we can instead pass a complete flag like we do elsewhere
+# - we may total th children of the nodes in a group and thus be able to
+#   mark leaf tasks complete (when they have no children) even if the graph
+#   is not complete.
+# - in general the info for a leaf task could say whether it is complete
+#   or not, especally if we total num_children.
+# Terminolgy: leaf task is unexecutable or not
+# ==>
+#  if complete then add to continue_queue here and do not add to cont. queu at end.
+
         logger.trace("DAG_infoBuffer_Monitor_for_Lambdas: DAG_info deposited: ")
         self.print_DAG_info(self.current_version_DAG_info)
 
