@@ -2804,7 +2804,7 @@ def bfs(visited, node): #function for BFS
                                         # is in partitions[i-1] and previous partition is partitions[i-2]
                                         cloudpickle.dump(groups[0], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
 
-                                    # Deposit complete DAG_info for workers. Noet that we have 
+                                    # Deposit complete DAG_info for workers. Note that we have 
                                     # not started the DAG_executor_driver yet, so this deposited
                                     # DAG_info will not ever be withdrawn as the lambda leaf task
                                     # for partition 1 will be started by the DAG_executor_driver with 
@@ -2816,7 +2816,8 @@ def bfs(visited, node): #function for BFS
 
     #rhc: leaf tasks
                                 new_leaf_tasks = []
-                                DAG_infobuffer_monitor.deposit(DAG_info,new_leaf_tasks)
+                                DAG_info_is_complete = True # based on above if-condition being True
+                                DAG_infobuffer_monitor.deposit(DAG_info,new_leaf_tasks,DAG_info_is_complete)
 
                                 # We just processed the first and only partition; so we can output the 
                                 # initial DAG_info and start the DAG_executor_driver. DAG_info
@@ -3195,7 +3196,17 @@ def bfs(visited, node): #function for BFS
                                     #     logging.shutdown()
                                     #     os._exit(0) 
 #rhc leaf tasks
-                                    DAG_infobuffer_monitor.deposit(DAG_info,new_leaf_task_work_tuples)
+                                    DAG_info_is_complete = DAG_info.get_DAG_info_is_complete()
+#rhc: Problem: current_partition_number is 2 and this partition/group 2 may be the 
+# start of a new component, i.e., a leaf task. But if so then the DAG_executor_driver will start
+# this leaf task so we should not treat it like a leaf task that wil lneed to 
+# be excuted by a worker or started like a lambda.
+# Q: should be always pass an empty list of leaf tasks on this call to deposit?
+# then just don't build it above for this case.
+# Test: workers too
+# See: comment in deposit() about this.
+                                    new_leaf_task_work_tuples = []
+                                    DAG_infobuffer_monitor.deposit(DAG_info,new_leaf_task_work_tuples,DAG_info_is_complete)
 
                                 if (current_partition_number) == 2:
                                     # We just processed the second partition in a DAG that 
@@ -3203,9 +3214,10 @@ def bfs(visited, node): #function for BFS
                                     # initial DAG_info and start the DAG_executor_driver. This DAG_info
                                     # will have a complete state for partition 1 and an incomplete
                                     # state for 2. Thus, we can start DAG_execution and compute
-                                    # pagerank for P1. At that point, since P2 is incomplete, we will
+                                    # pagerank for P1. At that point, if P2 is incomplete, we will
                                     # add the state for P2 to the continue queue and P2 will not be
-                                    # executed until new DAG_info is generated.
+                                    # executed until new DAG_info is generated. (DAG_info may be 
+                                    # complete in whixh case P2 is complete.)
                                     #
                                     # We can't generate the initial DAG for execuion until we have partitions 
                                     # 1 and 2, since we don't know partition 1's outputs until we have processed 
@@ -3625,7 +3637,10 @@ def input_graph():
     #fname = "graph_22N_2CC"
     #fname = "graph_23N"
     #fname = "graph_24N_3CC"
-    fname = "graph_24N_3CC_fanin"
+
+    #fname = "graph_24N_3CC_fanin"   # fanin at end
+    fname = "graph_2N_2CC"  # 2 nodes (CCs) no edges
+
     #fname = "graph_2N"
     #fname = "graph_1N"
     #fname = "graph_3P"

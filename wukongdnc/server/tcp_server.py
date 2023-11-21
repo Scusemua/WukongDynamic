@@ -1200,7 +1200,13 @@ class TCPHandler(socketserver.StreamRequestHandler):
                                 # the FaninB task is added to the work_queue, which is on the tcp_server.
                                 # For simulated lambda threads, the threads do not run on the tcp_server.
                                 # The faninNB results are returned to the calling simulated lamba thread
-                                # and that caller statrs a new simulated lambda thread to excute the FaninNB task.
+                                # and that caller starts a new simulated lambda thread to excute the FaninNB task.
+                                # This means we do not need DAG_inf and thus we do not pass DAG_info to 
+                                # tcp_server.
+                                # Note: If we are running locally with simulatd lambdas and fanins/faninNBs
+                                # stored locally too, then we do pass DAG_info to the local "server",
+                                # i.e., it takes the place of tcp_Server, as we need DAG-info when a 
+                                # FaninNB starts a simulated lambda (thread) and passes ADG_info in the payload.
                                 dummy_state_for_create_message.keyword_arguments['DAG_info'] = None
                             #dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info
                             #all_fanin_task_names = DAG_info.get_all_fanin_task_names()

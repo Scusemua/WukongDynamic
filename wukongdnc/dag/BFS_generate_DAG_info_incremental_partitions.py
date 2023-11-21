@@ -502,7 +502,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         # uses dictionry to create the DAG_info object
         DAG_info = generate_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks)
 
-        logger.trace("generate_DAG_info_incremental_partitions: returning from generate_DAG_info_incremental_partitions for"
+        logger.info("generate_DAG_info_incremental_partitions: returning from generate_DAG_info_incremental_partitions for"
             + " partition " + str(current_partition_name))
         
         return DAG_info
@@ -568,7 +568,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
             state_info_of_previous_previous_partition = Partition_DAG_map[previous_previous_state]
             state_info_of_previous_previous_partition.fanout_fanin_faninNB_collapse_groups_are_ToBeContinued = False
 
-        logger.trace("generate_DAG_info_incremental_partitions: new connected component for current partition "
+        logger.info("generate_DAG_info_incremental_partitions: new connected component for current partition "
             + str(current_partition_number) + ", the previous_state_info for previous state " 
             + str(previous_state) + " after update TBC (no collapse) is: " 
             + str(state_info_of_previous_partition))

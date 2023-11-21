@@ -18,7 +18,7 @@ def set_pagerank_output(state,output):
     multiple_output = pagerank_outputs.get(state)
     if not multiple_output == None:
         logger.trace("[Error]: Internal Error: set_pagerank_output:"
-            + " more than one pagerank output for state " + state)
+            + " more than one pagerank output for state " + str(state))
     pagerank_outputs[state] = output
 
 def get_pagerank_outputs():
