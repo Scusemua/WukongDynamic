@@ -34,6 +34,7 @@ class Local_Client_for_DAG_infoBuffer_Monitor:
         keyword_arguments = {}
         keyword_arguments['new_current_version_DAG_info'] = DAG_info
         keyword_arguments['new_current_version_new_leaf_tasks'] = new_leaf_task_work_tuples
+        # not used; only used for lambdas in DAG_infoBuffer_Monitor_for_Lambdas.py
         keyword_arguments['DAG_info_is_complete'] = DAG_info_is_complete
         # name of object is process_DAG_infoBuffer_Monitor, type specified on create
         # _restart return value begins with "_" so PyLint does not report it

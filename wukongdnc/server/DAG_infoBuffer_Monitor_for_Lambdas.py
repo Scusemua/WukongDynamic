@@ -190,26 +190,6 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             logging.shutdown()
             os._exit(0) 
 
-#rhc: ToDo: leaf task is start of a new connected component. If the
-# DAG_info is complete then we can start the leaf task as it is also complete.
-# What's more, if the leaf task is the last group/parititon of a component
-# we can also start it now since it is complete (it has no fanouts/fanins
-# faninNBs/collapses based on definition of last group/partition in a component)
-# We start leaf tasks when the DAG_info is complete. We can also start a leaf
-# task if we know it is the last group/partition of a component.
-# - leaf task state would show it is complete since this is ckecked
-#   when we generate group incrementally, i.e., if the graph is complete
-#   we mark the group as complete with no TBC fanins/fanouts/collapses.
-# - we can instead pass a complete flag like we do elsewhere
-# - we may total the children of the nodes in a group and thus be able to
-#   mark leaf tasks complete (when they have no children) even if the graph
-#   is not complete.
-# - in general the info for a leaf task could say whether it is complete
-#   or not, especally if we total num_children.
-# Terminolgy: leaf task is unexecutable or not
-# ==>
-#  if complete then add to continue_queue here and do not add to cont. queu at end.
-
         logger.trace("DAG_infoBuffer_Monitor_for_Lambdas: DAG_info deposited: ")
         self.print_DAG_info(self.current_version_DAG_info)
 
@@ -289,22 +269,57 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     thread.start()
                 self._buffer.clear()
 
-#rhc: Problme: If this is the first DAG_info and the only DAG_info, i.e., 
-# it contains only partitions 1 and 2 (and the groups therein, i.e., the fist
-# partition is also a the single group, and the second parttion may or may
-# not be the start of a new component. If it is not, then the second partition 
-# can have a lot of groups, If it is the start of a new componet then the second
-# partition is also a single group.)
-# If there are 2 components then there is a leaf task for partition 2. The first 
-# partition/group of a new connected component is a single group that is 
-# both the first partition and first group. So this single group/parititon
-# is a leaf task. 
-# Note that the DAG_info will have both of these leaf tasks and the DAG_executor_driver
-# will start both leaf tasks so we cannot start the second leaf task(s)
-# here or it will be executed twice.
-# So: How to determine whether we should start the leaf task?
+                # If this is the first DAG_info and the only DAG_info, i.e., 
+                # it contains only partitions 1 and 2 (and the groups therein.)
+                # (The first partition is laways a single group that starts a component, and 
+                # the second partition may or may not be the start of a new component. 
+                # If it is not, then the second partition can have a lot of groups, like the 
+                # whiteboard example. If it is the start of a new component then the second
+                # partition is also a single group. A graph with two nodes and no edges has
+                # 2 components. The first node is component/group/partition 1 and the 
+                # second node is component/group/partition 2). Both of these groups/partitions
+                # are leaf tasks and both will be started by DAG_executor_driver since they are
+                # leaf tasks detected in the first 2 partitions. If there is a third node then 
+                # this node is group/partition 3 and it is a leaf task that will be started 
+                # by deposit(). Since group/partition 3 is the final group/partition in the 
+                # graph, deposit will start it immediately, instead of waiting for the 
+                # next deposit (as there will be no moer deposit since the graph is complete.)
+                #
+                # Note that the DAG_info read by DAG_executor_driver will have both of 
+                # these leaf tasks and the DAG_executor_driver will start both leaf tasks 
+                # so we cannot start the second leaf task(s) here or it will be executed twice.
+                # To prevent the second leaf task/group/partitio from being started twice
+                # in BFS the secon leaf node is not added to to the new_leaf_tasks so 
+                # new_leaf_tasks will be empty.
+                #
+                # If the DAG_info is complete, then the leaf task is complete and
+                # so does not need to be continued later, we can start a labda for the
+                # leaf task now (as oppsed to putting the leaf tsk in the continue queue
+                # and starting a lambda for it on the next deposit - since the DAG_info
+                # is complete incremental DAG generation is over and there will be no 
+                # more deposits.)
+                # Note: adding the leaf task to the continue queue menas a lambda
+                # will be started for it in this deposit since below we start a 
+                # lambda for all leaf tasks in the continue queue. (There may be 
+                # a leaf task currently in the continue queue that will also be 
+                # started in this deposit().
+
+#rhc: ToDo: If the DAG_info is complete then we can start the leaf task 
+# as it is also complete. We can also start a leaf task if we know it 
+# is the last group/partition of a component even if the DAG_nfo is 
+# not complete. For a partition (and the groups therein) we can track
+# whether any nodes in this partition (and grooups therein) have any
+# children. If not, then this partition (and the groups therein) is the 
+# last partition in the current connected component and we can start 
+# a lambda for the leaf task now.
+
+
                 if DAG_info_is_complete:
                     self.continue_queue += new_leaf_tasks
+                else:
+                    # leaf task is unexecutable now. Execute it on next deposit()
+                    pass
+                
                 # start a lambda to excute the leaf task found on the previous deposit()
                 for work_tuple in self.continue_queue:
                     # pass the state/task the thread is to execute at the start of its DFS path
@@ -320,7 +335,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     # have to wait until we get a new DAG and restart the group/task
                     # so we can complete the fanouts/faninNBs/fanins. After excuting 
                     # a partition the partition can only have a collapse, i.e., we know
-                    # we must execute the colapse task. So when we restart the partition/task,
+                    # we must execute the collapse task. So when we restart the partition/task,
                     # we supply the input for the collpase task and execute the collapse task.)
                     input_or_output = [] 
                     DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state, continued_task = False)
@@ -363,7 +378,8 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                 #self.current_version_new_leaf_tasks.clear()
                 # clear the started leaf tasks
                 self.continue_queue.clear()
-                # for debugging
+                # add the leaf task to the continue queue since it is not 
+                # complete and start a labda for it in next deposit()
                 if not DAG_info_is_complete:
                     self.continue_queue += new_leaf_tasks
 
@@ -428,8 +444,22 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor_lambda:"+task_name)
                 self._buffer.clear()
 
+                # If the DAG_info is complete, then the leaf task is complete and
+                # so dos not need to be continued later, we can start a labda for the
+                # leaf task now (as oppsed to putting the leaf tsk in the continue queue
+                # and starting a lambda for it on the next deposit - since the DAG_info
+                # is complete incremental DAG generation is over and there will be no 
+                # more deposits.)
+                # Note: adding the leaf task to the continue queue menas a lambda
+                # will be started for it in this deposit since below we start a 
+                # lambda for all leaf tasks in the continue queue. (There may be 
+                # a leaf task currently in the continue queue that will also be 
+                # started in this deposit().
                 if DAG_info_is_complete:
                     self.continue_queue += new_leaf_tasks
+                else:
+                    # leaf task is unexecutable now. Execute it on next deposit()
+                    pass
                 # start a lambda to excute the leaf task found on the previous deposit()
                 for work_tuple in self.continue_queue:
                     # pass the state/task the thread is to execute at the start of its DFS path
@@ -482,7 +512,8 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor_lambda"+task_name)
                 # clear the started leaf tasks
                 self.continue_queue.clear()
-                # for debugging
+                # add the leaf task to the continue queue since it is not 
+                # complete and start a labda for it in next deposit()
                 if not DAG_info_is_complete:
                     self.continue_queue += new_leaf_tasks
             except Exception as ex:

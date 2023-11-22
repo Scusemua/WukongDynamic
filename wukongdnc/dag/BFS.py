@@ -910,7 +910,7 @@ for x in range(num_nodes+1):
 # used by during incremental DAG generation to invoke the 
 # DAG_excutor_driver. A thread is created to call
 # DAG_executor_driver.run() while BF continues with 
-# incremental ADG generation. BFS joins theis thread
+# incremental ADG generation. BFS joins this thread
 # at the end of BFS.
 invoker_thread_for_DAG_executor_driver = None
 
@@ -2844,7 +2844,7 @@ def bfs(visited, node): #function for BFS
                                 # Need to call run() but it has to be asynchronous as BFS needs to continue.
                                 thread_name = "DAG_executor_driver_Invoker"
                                 logger.trace("BFS: Starting DAG_executor_driver_Invoker_Thread for incrmental DAG generation.")
-
+                                # BFS joins this threads. This ref is global.
                                 invoker_thread_for_DAG_executor_driver = threading.Thread(target=DAG_executor_driver_Invoker_Thread, name=(thread_name), args=())
                                 invoker_thread_for_DAG_executor_driver.start()
                             else:
@@ -3081,8 +3081,8 @@ def bfs(visited, node): #function for BFS
                                                     #work_queue.put(work_tuple)
                                                     new_leaf_task_work_tuples.append(work_tuple)
                                             else:
-                                                pass # complete for lambdas
-                                                # start a lambda with empty input payload (like DAG_executor_driver)
+                                                pass 
+                                                # documents that we are using the same code for lambdas and workers
 
                                             leaf_tasks_of_partitions_incremental.clear()
                                             logger.trace("BFS: leaf tasks after clear: " + str(leaf_tasks_of_partitions_incremental))
@@ -3197,17 +3197,19 @@ def bfs(visited, node): #function for BFS
                                     #     os._exit(0) 
 #rhc leaf tasks
                                     DAG_info_is_complete = DAG_info.get_DAG_info_is_complete()
-#rhc: Problem: current_partition_number is 2 and this partition/group 2 may be the 
-# start of a new component, i.e., a leaf task. But if so then the DAG_executor_driver will start
-# this leaf task so we should not treat it like a leaf task that wil lneed to 
-# be excuted by a worker or started like a lambda.
-# Q: should be always pass an empty list of leaf tasks on this call to deposit?
-# then just don't build it above for this case.
-# Test: workers too
-# See: comment in deposit() about this.
-                                    new_leaf_task_work_tuples = []
-                                    DAG_infobuffer_monitor.deposit(DAG_info,new_leaf_task_work_tuples,DAG_info_is_complete)
+                                    # If current_partition_number is 2 this partition/group 2 may be the 
+                                    # start of a new component, i.e., a leaf task. But if so then the 
+                                    # DAG_executor_driver will start a lambda to execute this leaf task so 
+                                    # deposit should not also start a lambda for this leaf task.
+                                    # Prevent deposit() from doing this by clearing the list of leaf taaks.
+                                    # (There should only be one leaf task in the list.)
 
+                                    if (current_partition_number) == 2:
+                                        new_leaf_task_work_tuples = []
+                                    DAG_infobuffer_monitor.deposit(DAG_info,new_leaf_task_work_tuples,DAG_info_is_complete)
+                                    # deposit starts a lambda with empty input payload (like DAG_executor_driver)
+                                    # when the leaf task becomes complete (the leaf task on this
+                                    # call to deposit has a lambda started for it on the next call to deposit.)
                                 if (current_partition_number) == 2:
                                     # We just processed the second partition in a DAG that 
                                     # has more than one partition, so we can output the 
@@ -3243,14 +3245,13 @@ def bfs(visited, node): #function for BFS
                                     thread_name = "DAG_executor_driver_Invoker"
                                     logger.trace("BFS: Starting DAG_executor_driver_Invoker_Thread for incrmental DAG generation.")
 #rhc: incremental
-                                    #Question: This thread completes normally?
-                                    # Perhaps BFS can join this thread instad of calling run() when inc dag gen?
-                                    #     Then invoker_thread is global?
+                                    # Note: BFS joins this thread. This is a global.
                                     invoker_thread_for_DAG_executor_driver = threading.Thread(target=DAG_executor_driver_Invoker_Thread, name=(thread_name), args=())
 #rhc: ToDo: If we are using partitions, the number of worker threads should be
 #  1 unless there are multiple connected components (#CC), in which case
 # we can use #CC workers since CC leaf tasks can be processed in parallel.
 # We would need to know the number of CCs (leaf nodes) to set # of workers.
+# Large graphs have many CCs?
                                     invoker_thread_for_DAG_executor_driver.start()
                                 else:
                                     # For debugging:
@@ -3268,7 +3269,9 @@ def bfs(visited, node): #function for BFS
                                     #logging.shutdown()
                                     #os._exit(0)  
                             else:
-                                pass # complete this code for groups
+                                pass 
+                                # this helps document that we are using same code for partitions
+                                # and groups so this else is never exwcuted (ee if-condition)
                         # end else #current_partition_number >=2
                     else:
                         pass # complete this code for lambdas
@@ -3639,8 +3642,8 @@ def input_graph():
     #fname = "graph_24N_3CC"
 
     #fname = "graph_24N_3CC_fanin"   # fanin at end
-    fname = "graph_2N_2CC"  # 2 nodes (CCs) no edges
-
+    #fname = "graph_2N_2CC"  # 2 nodes (CCs) no edges
+    fname = "graph_3N_3CC"  # 3 nodes (CCs) no edges
     #fname = "graph_2N"
     #fname = "graph_1N"
     #fname = "graph_3P"
@@ -4612,7 +4615,7 @@ if __name__ == '__main__':
                 logger.trace(ex)
     else:
         logger.trace("\nBFS:join invoker_thread_for_DAG_executor_driver.")
-        invoker_thread_for_DAG_executor_driver.join()
+        invoker_thread_for_DAG_executor_driver.join()   # global
         # 1. perhaps invoker_thread.join() here when inc dag gen
         logger.trace("\nBFS:join after join, print BFS stats")
     

@@ -1035,7 +1035,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 # generate empty state_info for group group_name. This will be filled in 
                 # when we process the groups in the next partition collected. See below.
                 # That is, this group (recall that we are iterating
-                # through the grous of the current partition) is 
+                # through the groups of the current partition) is 
                 # incomplete and we will complete it when we process
                 # the (groups in the) next partition.
                 fanouts = []
