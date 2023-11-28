@@ -32,6 +32,10 @@ if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
     logger.addHandler(ch)
 """
 
+# See the comments in BFS_generate_DAG_info_incremental_partitions.py. Processng
+# group is very similar to processing partitons. We generate a partition and 
+# process the groups within the partition. Partition processing should be understood
+# before attempting to understand group partitioning.
 
 Group_all_fanout_task_names = []
 Group_all_fanin_task_names = []
@@ -54,8 +58,8 @@ Group_DAG_tasks = {}
 # version of DAG, incremented for each DAG generated
 Group_DAG_version_number = 0
 
-#rhc: ToDo: Not using for groups, we have to get all the groups
-# of previous partition and iterate through them?
+#rhc: ToDo: Not using this for groups - we have to get *all* the groups
+# of previous partition and iterate through them.
 
 ## Saving current_partition_name as previous_partition_name at the 
 ## end. We cannot just subtract one, e.g. PR3_1 becomes PR2_1 since
@@ -67,14 +71,15 @@ Group_DAG_version_number = 0
 Group_DAG_number_of_tasks = 0
 # the tasks in the last partition of a generated DAG may be incomplete,
 # which means we cannot execute these tasks until the next DAG is 
-# incrementally published.
+# incrementally published. Maybe greater than 1, unlike for partitions
+# as there is only one partition but there may be many groups in this partition.
 Group_DAG_number_of_incomplete_tasks = 0
 
-# used to generate IDs
+# used to generate IDs; starting with 1, not 0
 Group_next_state = 1
 
 # Called by generate_DAG_info_incremental_partitions below to generate 
-# the DAG_info object.= when we are using partitions.
+# the DAG_info object when we are using partitions.
 def generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks):
     global Group_all_fanout_task_names
     global Group_all_fanin_task_names
@@ -95,8 +100,11 @@ def generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks):
     # Saving current_partition_name as previous_partition_name at the 
     # end. We cannot just subtract one, e.g. PR3_1 becomes PR2_1 since
     # the name of partition 2 might actually be PR2_1L, so we need to 
-    # save the actual name "PR2_1L" and retrive it when we process PR3_1
-    global Group_DAG_previous_partition_name
+    # save the actual name "PR2_1L" and retrive it when we process PR3_1.
+    # Not using previous_partition_name for groups, only partitions.
+    # Note: Used for partitons but this is not used for groups.
+    #global Group_DAG_previous_partition_name
+    
     global Group_DAG_number_of_tasks
     global Group_DAG_number_of_incomplete_tasks
 
@@ -104,21 +112,29 @@ def generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks):
     show_generated_DAG_info = True
 
     """
-    #rhc: ToDo: copy.copy vs copy.deepcopy(): Need a copy
-    # but the only read-write shared object is the state_info of
-    # the previous state, for which we either change only the TBC or we 
-    # change the TBC and the collapse.
-
-        # add a collapse for this current partitio to the previous state
-        previous_state = current_partition_state - 1
+    # Note: This method will change the state_info of the previous state,
+    # for which we either change only the TBC field or we change the TBC and 
+    # the collapse field:
+        # add a collapse for this current partition to the previous state
+        previous_state = current_state - 1
         state_info_previous_state = Partition_DAG_map[previous_state]
         Partition_all_collapse_task_names.append(current_partition_name)
         collapse_of_previous_state = state_info_previous_state.collapse
+        # adding a collapsed task to state info of previous task
         collapse_of_previous_state.append(current_partition_name)
 
-        # previous partition is now complete
+        # previous partition is now complete 
         state_info_previous_state.ToBeContinued = False
+    # Note: this is the partiton code. we will be looping through the groups
+    # in the previous partition and doing this for each group.
 
+    # Since this state info is read by the DAG executor, we make a copy
+    # of the state info and change the copy. This state info is the only 
+    # read-write object that is shared by the DAG executor and the DAG
+    # generator (here). By making  copy, the DAG executor can read the 
+    # state info in the previously generated DAG while the DAG generator
+    # writes a copy of this state info for the next ADG to be generated,
+    # i.e., there is no (concurrent) sharing.
     """
     
     # we construct a dictionary of DAG information 
@@ -143,30 +159,30 @@ def generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks):
     # It is returned above. Otherwise, version 1 is the DAG_info with partitions
     # 1 and 2, where 1 is complete and 2 is complete or incomplete.
     Group_DAG_version_number += 1
-        # if the last partition has incomplete information, then the DAG is 
-    # incomplete. When partition i is added to the DAG, it is incomplete
-    # unless it is the last partition in the DAG). It becomes complete
-    # when we add partition i+1 to the DAG. (So partition i needs information
-    # that is generated when we create partition i+1. The  
-    # nodes of partition i can ony have children that are in partition 
+    # if the last partition has incomplete information, then the DAG is 
+    # incomplete. When groups in partition i is added to the DAG, they are incomplete
+    # unless it is the last partition in the DAG). They becomes complete
+    # when we add partition i+1 to the DAG. (So grous in partition i needs information
+    # that is generated when we create grops in partition i+1. The  
+    # nodes in the groups of partition i can ony have children that are in partition 
     # i or partition i+1. We need to know partition i's children
-    # in order for partition i to be complete. Partition i's childen
-    # are discovered while generating partition i+1) 
+    # in order for partition i to be complete. Grops n partition i's childen
+    # are discovered while generating grops in partition i+1) 
     Group_DAG_is_complete = not to_be_continued # to_be_continued is a parameter
-        # number of tasks in the current incremental DAG, including the
+    # number of tasks in the current incremental DAG, including the
     # incomplete last partition, if any.
     Group_DAG_number_of_tasks = len(Group_DAG_tasks)
     # For partitions, this is at most 1. When we are generating a DAG
     # of groups, there may be many groups in the incomplete last
     # partition and they will all be considered to be incomplete.
-    Group_DAG_number_of_incomplete_tasks = number_of_incomplete_tasks
+    Group_DAG_number_of_incomplete_tasks = number_of_incomplete_tasks # parameter of method
     DAG_info_dictionary["DAG_version_number"] = Group_DAG_version_number
     DAG_info_dictionary["DAG_is_complete"] = Group_DAG_is_complete
     DAG_info_dictionary["DAG_number_of_tasks"] = Group_DAG_number_of_tasks
     DAG_info_dictionary["DAG_number_of_incomplete_tasks"] = Group_DAG_number_of_incomplete_tasks
 
-#rhc: Note: we are saving all the incemental DAG_info files for debugging but 
-# we probably want to turn this off otherwise.
+    # Note: we are saving all the incemental DAG_info files for debugging but 
+    # we probably want to turn this off otherwise.
 
     # filename is based on version number - Note: for partition, say 3, we
     # have output the DAG_info with partitions 1 and 2 as version 1 so 
@@ -322,11 +338,16 @@ def generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks):
 
 """
 Note: The code for DAG_info_fromdictionary is below. The info in a 
-DAG_info object is in its DAG_info_dictionary.
+DAG_info object is obtained from its DAG_info_dictionary.
 
     def __init__(self,DAG_info_dictionary,file_name = './DAG_info.pickle'):
         self.file_name = file_name
-        self.DAG_info_dictionary = DAG_info_dictionary
+        if not use_incremental_DAG_generation:
+            self.DAG_map = DAG_info_dictionary["DAG_map"]
+        else:
+            # Q: this is the same as DAG_info_dictionary["DAG_map"].copy()?
+            self.DAG_map = copy.copy(DAG_info_dictionary["DAG_map"]
+        ...
 
     @classmethod
     def DAG_info_fromfilename(cls, file_name = './DAG_info.pickle'):
@@ -344,10 +365,10 @@ DAG_info object is in its DAG_info_dictionary.
 def generate_DAG_info_incremental_groups(current_partition_name,
     current_partition_number, groups_of_current_partition,
     groups_of_partitions,
-#rhc: Q: can we just pass groups_of_previous_partition?
     to_be_continued):
-# to_be_continued is True if num_nodes_in_partitions < num_nodes, which means that incremeental DAG generation
-# is not complete (some gtaph nodes are not in any partition.)
+# to_be_continued is True if BFS (caller) finds num_nodes_in_partitions < num_nodes, 
+# which means that incremeental DAG generation is not complete 
+# (some gtaph nodes are not in any partition.)
 
     global Group_all_fanout_task_names
     global Group_all_fanin_task_names
