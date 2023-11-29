@@ -453,6 +453,45 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
     # node and thus has no senders. This is true about partition 1 and
     # this is asserted by the caller (BFS()) of this method.
 
+    """
+    Outline: 
+    Each call to generate_DAG_info_incremental_partitions adds one partition to the
+    DAG_info. The added partition is incomplete unless it is the last partition 
+    that will be added to the DAG. The previous partition is now marked as complete.
+    The previous partition's next partition is this current partition, which is 
+    either complete or incomplete. If the current partition is incomplete then 
+    the previous partition is marked as having an incomplete next partition. We also
+    comsider the previous partition of the previous partition. It was marked as complete
+    when we processed the previous partition, but it was considered to have an incomplete
+    next partition. Now that we marked the previous partition as complete, the prvious 
+    previous partition is marked as not having an incomplete next partition.
+    
+    There are 3 cases:
+    1. current_partition_number == 1: This is the first partition. This means 
+    there is no previous partition or previous previous partition. The current
+    partition is marked as complete if the entire DAG has only one partition; otherwise
+    it is marked as complete. Note: If the current partition (which is partition 1) is
+    the only partition in its connected component, i.e., its component has size 1,
+    then it can also be marked as complete since it has no children and thus we have
+    all the info we need about partition 1 We intend to implement this case.
+    2. (senders == None): This is a leaf node, which could be partition 2 or any 
+    partition after that. This measn that the current partition is the first partition
+    of a new connected component. We will add this leaf partition to a list of leaf
+    partitions so that when we return we can mke sure this leaf partition is 
+    executed. (No other partition has a fanin/fanout/collapse to this partition so no
+    other partition can cause this leaf node to be executed. We will start its execution
+    ourselves.) The previous and previous previous partitons are marked as described above.
+    Note the the previous partition can be marked complete as usual. Also, we now knowthat the 
+    previous partition, which was marked as having an incomplete next partition, can now
+    be marked as not having an incimplete next partition - this is because the previous
+    partition was the last partition of its connected component and thus has no 
+    fanins/fanouts/collapses at all - this allows us to mark it as not having an incomplete
+    next partition.
+    3. else: # current_partition_number >= 2: This is not a leaf partition and this partition 
+    is not the first partition. Process the previous and previous previous partitions as
+    described above.
+    """
+
     if current_partition_number == 1:
         # Partition 1 is a leaf; so there is no previous partition
         # i.e., sender
