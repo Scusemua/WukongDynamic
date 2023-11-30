@@ -444,30 +444,37 @@ def generate_DAG_info_incremental_groups(current_partition_name,
 
     """
     Outline: 
-    Each call to generate_DAG_info_incremental_partitions adds the groups in
-    one partition to the DAG_info. The added groups are incomplete unless it is the last partition 
-    that will be added to the DAG. The previous partition is now marked as complete.
+    Each call to generate_DAG_info_incremental_pgroups adds the groups in one partition 
+    (the current partition) to the DAG_info. The added groups are incomplete unless it is the last partition 
+    that will be added to the DAG (or it is the last partition in its connected component,
+    as this partition has no fanouts/fanins/etc.. ) The previous partition is now marked as complete.
     The previous partition's next partition is this current partition, which is 
     either complete or incomplete. If the current partition is incomplete then 
     the previous partition is marked as having an incomplete next partition. We also
     comsider the previous partition of the previous partition. It was marked as complete
     when we processed the previous partition, but it was considered to have an incomplete
-    next partition. Now that we marked the previous partition as complete, the prvious 
+    next partition, which is the partition previous to the current partition.
+    Now that we marked the previous partition as complete, the previous 
     previous partition is marked as not having an incomplete next partition.
     
     There are 3 cases:
     1. current_partition_number == 1: This is the first group/partition. This means 
-    there are no groups of the previous partition or previous previous partition. The current
+    there are no groups of the previous partition or the previous previous partition. The current
     group is marked as complete if the entire DAG has only one partition/group; otherwise
     it is marked as complete. Note: If the current partition/group (which is partition/group 1) is
     the only partition/group in its connected component, i.e., its component has size 1,
-    then it can also be marked as complete since it has no children and thus we have
-    all the info we need about partition/group 1 and it can be marked complete.
-    We intend to implement this case.
+    then it can also be marked as complete since it has no fanouts/fanins and thus we have
+    all the info we need about partition/group 1 (i.e., its fanouts/fanins) and it can be marked complete.
+    We intend to implement this connected component case. (Currently, when we get the first
+    group of a connected component we know the groups in the previous partition have no
+    fanins/fanouts to a group that is not in the same partition. But when we processed
+    thee groups we did not know they were in a partition that was the last partition in 
+    its connected component. So we assumed they were incomplete, when they were not. That 
+    is not an error but it delays marking them as complete.
     2. (senders == None): This is a leaf group, which could be group 2 or any 
     group after that. This means that the current group is the first group
     of a new connected component. We will add this leaf group to a list of leaf
-    groups so that when we return we can mke sure this leaf group is 
+    groups so that when we return we can make sure this leaf group is 
     executed. (No other group has a fanin/fanout/collapse to this group so no
     other group can cause this leaf group to be executed. We will start its execution
     ourselves.) The groups in the previous and previous previous partitions are marked as described above.
@@ -478,8 +485,14 @@ def generate_DAG_info_incremental_groups(current_partition_name,
     fanins/fanouts/collapses at all - this allows us to mark them as not having an incomplete
     next group.
     3. else: # current_partition_number >= 2: This is not a leaf partition and this partition 
-    is not the first partition. Process the previous and previous previous partitions as
-    described above.
+    is not the first partition. Process the groups in the previous and previous previous partitions as
+    described above. Note: assume the current partition has groups GC1, GC2, and GC3 and the 
+    previous partition has groups GP1, GP2, and GP3. We will loop through the groups 
+    in the current partition. We need to mark the groups in the previous partition as
+    complete, but we only want to do this once. So for the first group GC1, we will loop
+    through the previous groupa GP1, GP2, and GP3, but we will not loop through 
+    GP1, GP2, and GP3 when we process GC2, and GC3. We keep some "first group" flags
+    to turn looping off.
     """
 
     if current_partition_number == 1:
@@ -1170,7 +1183,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                                 # As commented above, we do not need this
                                 Group_sink_set.add(receiverY)
 
-                            # get groups that send inputs to receiverY, this could be one 
+                            # Get groups that send inputs to receiverY, this could be one 
                             # or more groups (since we know that previous_group sends to receiverY)
                             # Note: if other groups also send their inputs to receiverY,
                             # then receiverY is a task of a fanin or faninNB, not a fanout
@@ -1296,13 +1309,13 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                         faninNB_sizes_of_previous_state = state_info_of_previous_group.faninNB_sizes
                         faninNB_sizes_of_previous_state += faninNB_sizes
 # END
-                        # the previous group was consructed as tobe_continued. Now
+                        # the previous group was constructed as to_be_continued. Now
                         # that we have completed previous_group it is no longer
                         # to_be_continued. So in the next DAG that is generated,
-                        # previous_group is not to_be_contnued and so can be 
+                        # previous_group is not to_be_continued and so can be 
                         # executed.
                         state_info_of_previous_group.ToBeContinued = False
-                        # if the current partition is to_be_continued then it has incomplete
+                        # if the current partition is to_be_continued then previous_group has incomplete
                         # groups so we set fanout_fanin_faninNB_collapse_groups_are_ToBeContinued of the previous
                         # groups to True; otherwise, we set fanout_fanin_faninNB_collapse_groups_are_ToBeContinued to False.
                         # Note: state_info_of_previous_group.ToBeContinued = False inicates that the
@@ -1311,10 +1324,10 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                         # whether the previous groups have fanout_fanin_faninNB_collapse_groups_are_ToBeContinued 
                         # that are to be continued, i.e., the fanout_fanin_faninNB_collapse are 
                         # to groups in this current partition and whether these groups in the current
-                        # partiton are to be contnued is indicated by parameter to_be_continued.
+                        # partiton are to be continued is indicated by parameter to_be_continued.
                         # (When bfs() calls this method it may determine that some of the graph
                         # nodes have not yet been assigned to any partition so the DAG is
-                        # still incomplete and to_be_continued = True )
+                        # still incomplete and thus to_be_continued = True )
                         state_info_of_previous_group.fanout_fanin_faninNB_collapse_groups_are_ToBeContinued = to_be_continued
 
                         # Say that the current partition is C , which has a 
@@ -1323,22 +1336,25 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                         # B, we set A to complete (i.e., to_be_continued for A is False)
                         # and B is set to incomplete (i.e., to_be_continued of B is True.)
                         # We also set fanout_fanin_faninNB_collapse_groups_are_ToBeContinued
-                        # of A to True, to indicate that A has fannis/fanouts/faninNBs/collapses
-                        # to incomplete groups. When we process C, we can set B to complete
+                        # of A to True, to indicate that A has fanins/fanouts/faninNBs/collapses
+                        # to incomplete groups (of B). When we process C, we can set B to complete
                         # and C to incomplete but we can also reset fanout_fanin_faninNB_collapse_groups_are_ToBeContinued
                         # to False since B is complete so all of A's fanins/fanouts/faninNBs/collpases
                         # are to complete groups. That means if C is group_name, then B
-                        # is a previous_group, and C is a previous_pervious_group.
+                        # is a previous_group, and C is a previous_previous_group.
                         #
                         # For the previous_group (e.g., B), we need to reset a flag 
                         # for its previous groups, hence "previous_previous"
                         # but we only need to do this once. That is, the current
                         # group group_name (e.g., A) may have many previous_groups, and these
-                        # previous groups may have many previous_groups, but 
-                        # previous_groups, say, B1 and B2 have the same previous_groups,
-                        # so when we reset the previous groups of B1 we are resetting 
-                        # the previous groups of B2. So do this resetting only for one
-                        # previous group, e.g., B1.
+                        # previous groups may have many previous_groups. However two
+                        # previous_groups of A, say, B1 and B2 have the same previous_groups, 
+                        # which are the previous previous groups of A, so when we reset
+                        # the previous groups of B1 we are also resetting the previous
+                        # groups of B2. So do this resetting of the previous groups 
+                        # of B1 and B2 (which are the previous previous groups of A) for
+                        # only one of B1 or B2. In our case, we always choose the first group
+                        # in the list of groups.
                         if first_previous_previous_group:
                             first_previous_previous_group = False
                             if current_partition_number > 2:
@@ -1358,10 +1374,6 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                             + " for previous_group " + previous_group + " state_info_of_previous_group: " 
                             + str(state_info_of_previous_group))
                         
-                ## save current_partition_name as previous_partition_name so we
-                ## can access previous_partition_name on the next call.
-                #Group_DAG_previous_partition_name = current_partition_name
-
                 """
                 Note: We handle the shared state_info objects for all the groups
                 at the end of the group loop below.
@@ -1380,34 +1392,36 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         DAG_info = generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks)
 
         # We are adding state_info objects for the groups of the current
-        # partition to the DAG as incmplete (to_be_continued) They will 
+        # partition to the DAG as incmplete (to_be_continued). They will 
         # be accessed (read) by the DAG_executor and we cannot modify them 
-        # during execution. However, we we process
+        # during execution. However, when we process
         # the next partition, these incomplete groups that we are adding
         # to the DAG now, will need to be modified as we will generate their
-        # fanin/fanout/faninNB/collase sets. So here 
+        # fanin/fanout/faninNB/collase sets. So here we do not 
 
         #STOP
         #
 
-        # modify these previous state_info objects, instead we create
-        # a deep copy of these state_info objects and modify these 
-        # copies. These state_info copies are used in the new DAG
-        # that we are generating here. Thus, the DAG_executor and
+        # modify these previous state_info objects; instead, we create
+        # a deep copy of these state_info objects so that the DAG_executor
+        # and the DAG we are incrementally generating access different 
+        # (deep) copies. This means when we modify the copy in the ongoing
+        # incremental DAG, we are not modifying the copy given to the 
+        # ADG_executor.  Thus, the DAG_executor and
         # the DAG_generator do not share state_info objects so there
         # is no need to synchronize their access to state_info objects.
         # The other objects in DAG_info that are accessed by
         # DAG_executor and DAG_generator are immutable, so that when
         # the DAG_generator writes one of these objects it is generating
-        # a new reference that is different from the reference that the
-        # DAG_executor references, e.g., for all Booleans. That means
+        # a new reference that is different from the reference in the ADG_info
+        # that the DAG_executor references, e.g., for all Booleans. That means
         # these other ojects, which are only read by DAG_executor and are 
         # written be DAG_generator, are not really being shared. Funny.
         if to_be_continued:
             # Make deep copies of the state_info objects of the current groups
             #
             # Example: Next partition's first group is assigned Group_next_state of 2
-            # and len(groups_of_current_partition) is 3. Thrn we will process
+            # and len(groups_of_current_partition) is 3. Then we will process
             # three groups and assign them states 2, 3, and 4. Note that
             # after the last group is processed, Group_next_state is 5, not 4.
             # so start_of_incomplete_states = 5 - 3 = 2. Then
@@ -1423,22 +1437,22 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 # state is part of the DAG given to the DAG_executor and we 
                 # will modify the current state when we generate the next DAG.
                 # (We modify the collapse list and the toBeContiued  of the state.)
-                # So we do not share the current state object, that is the 
-                # DAG_info given to the DAG_executor has a state_info reference
-                # this is different from the reference we maintain here in the
-                # DAG_map. 
+                # So we do not share the current state object, that is the DAG_map in
+                # the DAG_info given to the DAG_executor has a state_info reference
+                # this is different from the reference in the DAG_info_DAG_map of 
+                # the ongoing incremental DAG.
                 # 
-                # Get the state_info for the DAG_map
+                # Get the state_info from the DAG_map
                 state_info_of_current_group_state = DAG_info_DAG_map[state]
 
-                # where in DAG_info __init__:
+                # Note: in DAG_info __init__:
                 """
                 if not use_incremental_DAG_generation:
                     self.DAG_map = DAG_info_dictionary["DAG_map"]
                 else:
                     # Q: this is the same as DAG_info_dictionary["DAG_map"].copy()?
                     self.DAG_map = copy.copy(DAG_info_dictionary["DAG_map"])
-                #where:
+                # where:
                 old_Dict = {'name': 'Bob', 'age': 25}
                 new_Dict = old_Dict.copy()
                 new_Dict['name'] = 'xx'
@@ -1448,30 +1462,41 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 # Prints {'age': 25, 'name': 'xx'}
                 """
 
-                # Note: the only parts of the states that can be changed 
-                # for partitions are the collapse list and the TBC boolean. Yet 
-                # we deepcopy the entire state_info object. But all other
-                # parts of the stare are empty for partitions (fanouts, fanins)
-                # except for the pagerank function.
+                # Note: the only parts of the states that are changed 
+                # for partitions are the collapse list in the state_info and the 
+                # TBC boolean. Yet we deepcopy the entire state_info object. 
+                # But all other parts of the state info are empty for partitions 
+                # (fanouts, fanins, aninNBs, etc) except for the pagerank function.
                 # Note: Each state has a reference to the Python function that
                 # will excute the task. This is how Dask does it - each task
                 # has a reference to its function. For pagernk, we will use
                 # the same function for all the pagerank tasks. There can be 
                 # three different functions, but we could identify this 
-                # function whrn we excute the task, instead of doing it above
+                # function when we excute the task, instead of doing it above
                 # and saving this same function in the DAG for each task,
-                # which wastes space
+                # which wastes space.
 
-                # make a deep copy of this state_info object which is the atate_info
-                # object that the DAG generator will modify
+                # make a deep copy of this state_info object, which is in the DAG_info 
+                # given to the DAG_executor.
                 copy_of_state_info_of_current_group_state = copy.deepcopy(state_info_of_current_group_state)
 
-                # give the copy to the DAG_map given to the DAG_executor. Now
-                # the DAG_executor and the DAG_generator will be using different 
-                # state_info objects 
+                # Give the deep copy to the DAG_map (in the DAG_info) given to the 
+                # DAG_executor. Now the DAG_executor and the DAG_generator will be 
+                # using different state_info objects. That is, we are maintaining
+                # Group_DAG_map = {} as part of the ongoing incremental DAG generation.
+                # This is used to make the DAG_info object that is gven to the 
+                # DAG_executor. We then get the DAG_info_DAG_map of this DAG_info
+                # object:
+                #   DAG_info_DAG_map = DAG_info.get_DAG_map()
+                # and get the state_info object:
+                #   state_info_of_current_group_state = DAG_info_DAG_map[state]
+                # and make a deep copy of this state_info object:
+                #   copy_of_state_info_of_current_group_state = copy.deepcopy(state_info_of_current_group_state)
+                # and put this deep copy in DAG_info_DAG_ma which is part of the DAG_info 
+                # object given to the DAG_executor.
                 DAG_info_DAG_map[state] = copy_of_state_info_of_current_group_state
 
-                # this code is used to test the deep copy - modify the state info
+                # This code was used to test the deep copy - modify the state info
                 # of the generator and make sure this modification does 
                 # not show up in the state_info object given to the DAG_executor.
                 """
@@ -1517,7 +1542,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
     
     # To stop after DAG is completely generated, whcih is combined with 
     # a sleep at the start of the DAG_executor_driver_Invoker_Thread 
-    # so that DAG excution does not start.
+    # so that DAG excution does not start before we get here and exit,
     #def DAG_executor_driver_Invoker_Thread():
     #time.sleep(3)
     #run()

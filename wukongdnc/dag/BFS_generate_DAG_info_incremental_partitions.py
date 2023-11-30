@@ -1036,6 +1036,18 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
             # writing, respectively, different state_info objects for 
             # current_state. (Note that current state is the integer ID of
             # the current partition being processed.)
+            # That is, we are maintaining
+            # Partition_DAG_map = {} as part of the ongoing incremental DAG generation.
+            # This is used to make the DAG_info object that is gven to the 
+            # DAG_executor. We then get the DAG_info_DAG_map of this DAG_info
+            # object:
+            #   DAG_info_DAG_map = DAG_info.get_DAG_map()
+            # and get the state_info object:
+            #   state_info_of_current_state = DAG_info_DAG_map[state]
+            # and make a deep copy of this state_info object:
+            #   copy_of_state_info_of_current_state = copy.deepcopy(state_info_of_current_state)
+            # and put this deep copy in DAG_info_DAG_map which is part of the DAG_info 
+            # object given to the DAG_executor.
             DAG_info_DAG_map[current_state] = copy_of_state_info_of_current_state
 
             # This code is used to test the deep copy - modify the state info

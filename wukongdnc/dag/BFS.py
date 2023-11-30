@@ -2715,6 +2715,7 @@ def bfs(visited, node): #function for BFS
                     # partitioning is over when all graph nodes have been
                     # put in some partition
                     num_graph_nodes_in_partitions = num_nodes_in_partitions - num_shadow_nodes_added_to_partitions
+                    # to_be_continued set to False when the DAG has been completely generated
                     to_be_continued = (num_graph_nodes_in_partitions < num_nodes)
                     logger.trace("BFS: calling gen DAG incremental"
                         + " num_nodes_in_partitions: " + str(num_nodes_in_partitions)
@@ -2724,7 +2725,6 @@ def bfs(visited, node): #function for BFS
                         + str(to_be_continued))
 
                     if using_workers or not using_workers:
-                        
                         if not use_page_rank_group_partitions:
                             logger.trace("BFS: calling generate_DAG_info_incremental_partitions for"
                                 + " partition " + str(partition_name) + " using workers.")
@@ -2747,6 +2747,8 @@ def bfs(visited, node): #function for BFS
                             DAG_info = BFS_generate_DAG_info_incremental_groups.generate_DAG_info_incremental_groups(partition_name,current_partition_number,
                                 groups_of_current_partition,groups_of_partitions,
                                 to_be_continued)
+                            # we are done with groups_of_current_partition so clear it so it is empty at start
+                            # of next partition.
                             groups_of_current_partition.clear()
                             logger.trace("BFS: after calling generate_DAG_info_incremental_groups for"
                                 + " partition " + str(partition_name) + " groups_of_current_partition: "
@@ -2755,31 +2757,33 @@ def bfs(visited, node): #function for BFS
                         
                         # A DAG with a single partition, and hence a single group is a special case.
                         if current_partition_number == 1:
-
 #rhc incremental groups
                             if not use_page_rank_group_partitions:
                                 if not partition_name in leaf_tasks_of_partitions_incremental:
                                     logger.error("partition " + partition_name + " is the first partition"
                                         + " but it is not in leaf_tasks_of_partitions_incemental.")
                                 else:
-                                    # we have generated a state for leaf task senderX. 
+                                    # we have generated a state for leaf task partition_name. 
                                     leaf_tasks_of_partitions_incremental.remove(partition_name)
                             else:
                                 if not group_name in leaf_tasks_of_groups_incremental:
                                     logger.error("group " + group_name + " is the first group/partition"
                                         + " but it is not in leaf_tasks_of_groups_incemental.")
                                 else:
-                                    # we have generated a state for leaf task senderX. 
+                                    # we have generated a state for leaf task group_name. 
                                     leaf_tasks_of_groups_incremental.remove(group_name)
 
 
                             if DAG_info.get_DAG_info_is_complete():
-                                # if there is only one partition in the DAG,
-                                # save the partition and the DAG_info and 
-                                # start the DAG_excutor_driver. Otherwise,
-                                # we do all of this when we get partition 2,
-                                # since when we get partition 2 partition 1
-                                # is complete and can be executed.
+                                # if there is only one partition in the DAG, save the partition and the DAG_info and 
+                                # start the DAG_excutor_driver. Otherwise, we do all of this when we get partition 2,
+                                # since when we get partition 2 partition 1 is complete and can be executed.
+                                # Note: This means for incremental DAG generation we always start execution 
+                                # after processing one partitio, if there is only 1 partition in the DAG,
+                                # or 2 partitions otherwise. We may not want to start execution unti we have
+                                # n partitions, since 2 partitions might be executed very quickly and the
+                                # the DAG_executor woudld just wait for another incremental DAG. Hard to say
+                                # what N should be.
                         
                                 if not use_page_rank_group_partitions:
                                     # output partition 1, which is complete
@@ -2788,11 +2792,6 @@ def bfs(visited, node): #function for BFS
                                         # is in partitions[i-1] and previous partition is partitions[i-2]
                                         cloudpickle.dump(partitions[0], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
 
-                                    # Deposit complete DAG_info for workers. Noet that we have 
-                                    # not started the DAG_executor_driver yet, so this deposited
-                                    # DAG_info will not ever be withdrawn as the lambda leaf task
-                                    # for partition 1 will be started by the DAG_executor_driver with 
-                                    # the DAG_info it reads from a file (output previously).
                                     logger.trace("BFS: deposit first DAG, which is complete, with num_incremental_DAGs_generated:"
                                         + str(num_incremental_DAGs_generated)
                                         + " current_partition_number: " + str(current_partition_number))
@@ -2804,30 +2803,38 @@ def bfs(visited, node): #function for BFS
                                         # is in partitions[i-1] and previous partition is partitions[i-2]
                                         cloudpickle.dump(groups[0], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
 
-                                    # Deposit complete DAG_info for workers. Note that we have 
-                                    # not started the DAG_executor_driver yet, so this deposited
-                                    # DAG_info will not ever be withdrawn as the lambda leaf task
-                                    # for partition 1 will be started by the DAG_executor_driver with 
-                                    # the DAG_info it reads from a file (output previously).
                                     logger.trace("BFS: deposit first DAG, which is complete, with num_incremental_DAGs_generated:"
                                         + str(num_incremental_DAGs_generated)
                                         + " current_group_number: " + str(1))
                                         # The only group in a complete DAG with one group is group 1
 
     #rhc: leaf tasks
+                                # Deposit complete DAG_info for workers. Note that we have 
+                                # not started the DAG_executor_driver yet, so this deposited
+                                # DAG_info will not ever be withdrawn - the leaf task
+                                # for partition/group 1 is covered by the DAG_executor_driver which either
+                                # starts the workers and deposits the leaf task in the worker queue
+                                # or starts a lambda to execute the leaf task, The DAG_executor_driver
+                                # gets the leaf task from the  DAG_info it reads from a file 
+                                # (which is output below).
+                                # First partition/group is a leaf task but we do not want deposit() to 
+                                # try to start it since the DAG_executor_driver always starts the 
+                                # partition/group leaf task.
+                                # Note: We probably do not need to do this deposit() at all. Test it.
                                 new_leaf_tasks = []
                                 DAG_info_is_complete = True # based on above if-condition being True
                                 DAG_infobuffer_monitor.deposit(DAG_info,new_leaf_tasks,DAG_info_is_complete)
 
                                 # We just processed the first and only partition; so we can output the 
                                 # initial DAG_info and start the DAG_executor_driver. DAG_info
-                                # will have a complete state for partition 1.
+                                # will have a complete state for partition 1. the DAG_executor_driver
+                                # will start workers or lambdas to execuet this leaf task.
                                 #
                                 # Before we start the DAG_executor_driver we need to have
-                                # saved to a file PR1_1's nodes and saved to file DAG_info;
-                                # we also do the DAG_infobuffer_monitor.deposit(DAG_info) though
-                                # it is not strictly required since the DAG_info file can be 
-                                # read by the workers/lambdas.
+                                # saved to a file PR1_1's nodes and saved the DAG_info object 
+                                # to file DAG_info; we also do the DAG_infobuffer_monitor.deposit(DAG_info) 
+                                # though it is not strictly required since the DAG_info will be 
+                                # read by the workers or appear in the payload of the lambda started to execuet it,
                                 #
                                 # DAG_info will be read by the worker (threads/proceses)
                                 # and the threads simulating lambdas
@@ -2841,12 +2848,22 @@ def bfs(visited, node): #function for BFS
                                 with open(file_name, 'wb') as handle:
                                     cloudpickle.dump(DAG_info_dictionary, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
                     
-                                # Need to call run() but it has to be asynchronous as BFS needs to continue.
+                                # Need to call run() but it has to be asynchronous as BFS needs to continue. So start a thread to do it.
                                 thread_name = "DAG_executor_driver_Invoker"
                                 logger.trace("BFS: Starting DAG_executor_driver_Invoker_Thread for incrmental DAG generation.")
-                                # BFS joins this threads. This ref is global.
+                                # BFS joins this thread at the end of its execution. This ref is global.
                                 invoker_thread_for_DAG_executor_driver = threading.Thread(target=DAG_executor_driver_Invoker_Thread, name=(thread_name), args=())
                                 invoker_thread_for_DAG_executor_driver.start()
+                                # Note: BFS calls DAG_executor_driver.run() to start DAG execution
+                                # after it write the DAG_info to a file.
+                                # If we are using tcp_server to store the fanin objects ermotely on the 
+                                # server, then tcp_server needs the DAG_info. However, tcp_server
+                                # cannot read the DAG_info from its file. This is because if we start 
+                                # tcp_server before we starr BFS then the file will not have been written
+                                # by BFS. Also, we want tcp_server o be running before DAG_executor 
+                                # is started. So ... tcp_server does not read DAG_info from a file
+                                # when we aer doing incremental DAG_generation. We pass the DAG_info
+                                # to tcp_server on calls to fan-in etc.
                             else:
                                 # there is more than one partition in the DAG so DAG is not complete
                                 # and we continue with incremental DAG generation.
