@@ -1669,6 +1669,12 @@ def run():
                     logger.trace("DAG_executor_driver: Starting DAG_executor for task " + task_name)
 
                     if run_all_tasks_locally:
+                        #Note: If we are using partitions, the number of worker threads should be
+                        #  1 unless there are multiple connected components (#CC), in which case
+                        # we can use up to #CC workers since CC leaf tasks can be processed in parallel.
+                        # We would need to know the number of CCs (leaf nodes) to set #num of workers.
+                        # Large graphs have many CCs?
+                        
                         # not using Lambdas
                         if using_threads_not_processes: # create threads
                             # Config: A4_local, A4_Remote

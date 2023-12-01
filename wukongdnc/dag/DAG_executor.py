@@ -2498,7 +2498,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                         continue_tuple = continue_queue.get()
                                         DAG_executor_state.state = continue_tuple[0]
                                         continued_due_to_TBC = continue_tuple[1]
-                                        # indicate whether we ae rexecuting a continued_task
+                                        # indicate whether we are rexecuting a continued_task
                                         continued_task = continued_due_to_TBC
                                         #continued_task = True
 
@@ -2512,7 +2512,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                         # if there are more continued tasks, we set flag 
                                         # process_continue_queue so that above we will 
                                         # get a task from the continue_queue instead of
-                                        # trying to get work fro the work_queue or our
+                                        # trying to get work from the work_queue or our
                                         # cluster_queue.
                                         if continue_queue.qsize() == 0:
                                             # only one task/state was in continue_queue
@@ -2637,7 +2637,22 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     logger.trace("DAG_executor_work_loop: " + thread_name + " increment num_tasks_executed, now check if executed all tasks: "
                         + " num_tasks_executed: " + str(num_tasks_executed) 
                         + " num_tasks_to_execute: " + str(num_tasks_to_execute))
-    
+
+                    # Remember that workers are calling get work and if they get -1 they 
+                    # might add another -1 but then they will call withdraw. They
+                    # only check num_tasks_executed == num_tasks_to_execute
+                    # after they get some work. So if current DAG runs out of work 
+                    # they will call withdraw then they try to get more work or process 
+                    # their continue queue to get work and then they check 
+                    # num_tasks_executed == num_tasks_to_execute. So if first worker
+                    # to put -1 in work queue also calls withdraw and gets a new DAG 
+                    # and sets num_tasks_to_execute to execute higher then that is okay, since 
+                    # other workers must get a -1 and will call withdraw to get a new 
+                    # DAG and then call get work or process their continue queue.
+                    # That is, condition num_tasks_executed == num_tasks_to_execute
+                    # does not affect whether a worker calls get work, it only affects 
+                    # whether workers add -1 to the work_queue.
+                    
                     if num_tasks_executed == num_tasks_to_execute:
     #rhc: stop
                         # Note: This worker has work to do, and this work is the last
@@ -2883,22 +2898,30 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 + " (not state_info.task_name in DAG_info.get_DAG_leaf_tasks(): "
                 + str((not state_info.task_name in DAG_info.get_DAG_leaf_tasks())))
 
-#rhc: Problem: PR6_1 is a leaf that is executed and then continued, so here it is continued 
-# but it is also a leaf so this condition is False and thus we will execute PR6_1 again.
-# Perhaps: This logic was for using_workers, where we put leaf tasks that were not executable
-# in the continue queue makng them "continued_tasks" but not really! i.e., they were leaf tasks
-# that got moved to continue queue until we got a new DAG and we could excute them. So
-# make this or (***using_workers and*** not state_info.task_name in DAG_info.get_DAG_leaf_tasks())
-# No? even for workers it is a problem. Sometimes leaf task T in continue_queue has not been 
-# executed (it was unexecutable leaf task) and sometimes it has. Can't tell by continued_task
-# and task name.
-# Perhaps: if we are using_workers and we pull a task from the continued_queue then it must
-# be a leaf task that has become executable so we should execute it. So maybe set continued_task
-# to False in that case since it is not really a continued task. For lambdas, leaf
-# tasks are started by driver or when a new incrmental DAG is deposited and they are never
-# considered to be a continued_task.
-
 #rhc: lambda inc
+            # Note that group tasks in the continue queue may or may not have 
+            # already been excuted. A leaf task that was retrived from the work 
+            # queue but was not yet executable is put into the continue queue.
+            # Also, a group task that has been executed but that has TBC fanins/fanouts
+            # to continued groups is put into the continue queue. We need
+            # to know whether a task taken out of the continue queue should 
+            # be executed or not. So, when we put a task i the continue queue
+            # we also mark the reason it was put in there, i.e., if it had
+            # TBC fanins/fanouts then it does not need to be executed. So
+            # above when we take it out of the continue queue, it it was already
+            # executed and then added to the continue_queue becuase of its TBC
+            # fanin/fanouts, we leave continued_queue as True, so here the task
+            # will not be executed again. If the task is a leaf task that has not
+            # been executed, then it is not marked as having TBC fanins/fanouts
+            # and we will set continue_queue to False, so here this condition 
+            # will be False (as it's not "really" a continued group task) and 
+            # the leaf task will be executed. This scenario occurs for leaf 
+            # task PR6_1 in the white board DAG, it is a leaf task that needs 
+            # to be executed thus it is placed in the work queue and then 
+            # the continue queue (since it is initially unexecutable) and then 
+            # it has TBC fanins/fanouts so it is again placed in the continue
+            # queue and should not be excuted again after we get it from the 
+            # continue queue.
             if incremental_dag_generation_with_groups and continued_task:
             #if incremental_dag_generation_with_groups and continued_task and (
             # (state_info.task_name == name_of_first_groupOrpartition_in_DAG or not state_info.task_name in DAG_info.get_DAG_leaf_tasks())
@@ -2906,7 +2929,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 
                 continued_task = False  # reset flag
 #rhc: lambda inc:
-                # We restarted the continued task with the output that it
+                # We restart the continued group task with the output that it
                 # generated before it terminated. This output was labeled
                 # "input" in the payload. Here we assign input to output
                 # which we will use when we process the restarted task's
