@@ -2710,7 +2710,70 @@ def bfs(visited, node): #function for BFS
                 frontier_costs.append(frontier_cost)
                 frontier.clear()
 
-#rhc incremental                
+#rhc incremental     
+                # outline: call generate_DAG_info_incremental_partitions  
+                # or BFS_generate_DAG_info_incremental_groups to add another
+                # partition or the groups in a partition to the incremental DAG,
+                # respectively. When the next incremental DAG_infi is generated
+                # we call method deposit() to deposit the DAG_info in a "buffer"
+                # on which the DAG_executor calls withdraw() to get the next
+                # incremental DAG. The DAG_executor and BFS are running concurrently
+                # and using the shared buffer to communicate the generated DAG_info objects.
+                # Note the partiton 1 and group 1 are the same since partition 1 only
+                # has 1 group in it - it is the first partition/group identified
+                # in the DAG. Each call to bfs() identifies the first partition/group
+                # in a connected component of the DAG. For example, for a graph with 
+                # 2 nodes N1 and N2 and no edges, the first call to bfs() identifies 
+                # N1 as the first partition/group in the connected component with the 
+                # single node N1, and the second call to bfs() identifies N2 as the 
+                # first partition/group in the connected component with the single 
+                # node N2. For incrmental DAG generation, the DAG_excution_driver
+                # will start workers/lambdas that will execute leaf node N1. For 
+                # leaf node N2, we will have to take the role of the DAG_executor_driver
+                # and esnure the leaf tasks get started. Leaf tasks are not the target
+                # of any fanin/fanout so no other task can fanout/fanin a leaf task.
+                # Cases:
+                # 1. current_partition_number == 1. Added partition/group 1 to the DAG.
+                # if there are more partitins to come, then partition 1 is incomplete
+                # and cannot be executed unti we get partition 2. In general, if we
+                # add partition i (or the groups of partition ) then partition 1 
+                # becomes complete and can be executed. Partition 1 is a leaf
+                # partition/group; the DG_executor_drivr will ensure it is executed.
+                # Other leaf task that are discovered later will not be started by the 
+                # DAG_executor_driver; we will start them below as we get them. If
+                # partition 1 is the only partition in the DAG then the ADG is now 
+                # complete. In this case, we save partiton 1 to a file and write
+                # DAG_info to a file. The DAG_executor_driver will read this DAG_info
+                # file and a worker or a lambda will execute partition/group 1.
+                # (The first partition is also the first group.) We call the run()
+                # method of the DAG_executor_drivr and BFS is essentially done.
+                # BFS will wait for the DAG_executr to finish. (We start a thread
+                # to call run() and BFS joins this thread.)
+                # 2. current_partition_number >=2: The previous partition or the 
+                # groups therein are now complete so output the previous partition/groups.
+                # If the DAG is complete, the the current partition is also compplete
+                # so output the current partition/groups. If the following codition 
+                # is true:
+                #    # The DAG has partitions 1 and 2 so we can excute partition 1
+                #    current_partition_number == 2   or
+                #    # The DAG has all the partitions so we are done with incremental 
+                #    # ADG execution and we can execute all the partitions that have not 
+                #    # been executed yet
+                #    DAG_info.get_DAG_info_is_complete() or 
+                #    # we do not give every incremental DAG to the DAG_excutor, we only
+                #    # give every th DAG. Check if this DAG should be made available
+                #    # for ececution.
+                #    num_incremental_DAGs_generated % incremental_DAG_deposit_interval == 0
+                # First we take care of any leaf tasks that we found, If we are using workers
+                # the leaf tasks will be added to the work queue. If we are using lambdas
+                # then a lambda will be started (in method deposit()) to execute the leaf tasks.
+                # We then call DAG_infobuffer_monitor.deposit() to make the new DAG_info object
+                # available to the DAG_executor. The DAG_executor may be waiting in withdraw()
+                # for it or it may still be executing the ccomplete tasks in the previous DAG_info.
+                # If current_partition_number == 2 we write the DAG_info object to a file and 
+                # statr the DAG_executor_driver (which will read the DAG_info object) and start
+                # the workers (which will eecute the partition/group 1 task) or statr a lambda to 
+                # execute partition/group 1.)
                 if compute_pagerank and use_incremental_DAG_generation:
                     # partitioning is over when all graph nodes have been
                     # put in some partition
