@@ -1480,6 +1480,12 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
     DAG_number_of_tasks = DAG_info.get_DAG_number_of_tasks()
 
 #rhc continue
+    # This is a local variabe; each worker has their own 
+    # num_tasks_to_execute, which could be different since 
+    # workers may be usng different versions of the incremental DAG.
+    # version i includes all the tasks of earlier version i-1, i-2, etc.
+    # A later version has 1 or more complete tasks that were incomplete
+    # in an earlier version. This is set next.
     num_tasks_to_execute = -1
 #rhc: lambda inc:
     continued_task = False
@@ -2463,6 +2469,12 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                                     + " Using incremental DAG generation with partitions and"
                                                     + " DAG is incomplete but number_of_incomplete_tasks is not 1: "
                                                     + str(number_of_incomplete_tasks))
+                                            # This is a local variabe; each worker has their own 
+                                            # num_tasks_to_execute, which could be different since 
+                                            # workers may be usng differetn versions of the incremental DAG.
+                                            # version i includes all the tasks of earlier version i-1, i-2, etc.
+                                            # A later version has 1 or more complete tasks that were incomplete
+                                            # in an earlier version.
                                             num_tasks_to_execute = DAG_number_of_tasks - 1
                                             logger.trace("DAG_executor_work_loop: after withdraw: DAG_info not complete: new num_tasks_to_execute: " + str(num_tasks_to_execute))
                                         else:
@@ -2471,18 +2483,36 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                             # DAG. (A DAG is complete if all the graph nodes are in
                                             # some partition.)
                                             #num_tasks_to_execute = len(DAG_tasks)
+                                            # This is a local variabe; each worker has their own 
+                                            # num_tasks_to_execute, which could be different since 
+                                            # workers may be usng differetn versions of the incremental DAG.
+                                            # version i includes all the tasks of earlier version i-1, i-2, etc.
+                                            # A later version has 1 or more complete tasks that were incomplete
+                                            # in an earlier version.
                                             num_tasks_to_execute = DAG_number_of_tasks
                                             logger.trace("DAG_executor_work_loop: after withdraw: DAG_info complete new num_tasks_to_execute: " + str(num_tasks_to_execute))
                                     else:
                                         # using groups
                                         if not DAG_info.get_DAG_info_is_complete():
                                             number_of_incomplete_tasks = DAG_info.get_DAG_number_of_incomplete_tasks()
+                                            # This is a local variabe; each worker has their own 
+                                            # num_tasks_to_execute, which could be different since 
+                                            # workers may be usng differetn versions of the incremental DAG.
+                                            # version i includes all the tasks of earlier version i-1, i-2, etc.
+                                            # A later version has 1 or more complete tasks that were incomplete
+                                            # in an earlier version.
                                             num_tasks_to_execute = DAG_number_of_tasks - number_of_incomplete_tasks
                                             logger.trace("DAG_executor_work_loop: after withdraw: DAG_info not complete: new num_tasks_to_execute: " 
                                                 + str(num_tasks_to_execute) + " with number_of_incomplete_tasks "
                                                 + str(number_of_incomplete_tasks))
                                         else:
                                             #num_tasks_to_execute = len(DAG_tasks)
+                                            # This is a local variabe; each worker has their own 
+                                            # num_tasks_to_execute, which could be different since 
+                                            # workers may be usng differetn versions of the incremental DAG.
+                                            # version i includes all the tasks of earlier version i-1, i-2, etc.
+                                            # A later version has 1 or more complete tasks that were incomplete
+                                            # in an earlier version.
                                             num_tasks_to_execute = DAG_number_of_tasks
                                             logger.trace("DAG_executor_work_loop: after withdraw: DAG_info complete new num_tasks_to_execute: " + str(num_tasks_to_execute))
 

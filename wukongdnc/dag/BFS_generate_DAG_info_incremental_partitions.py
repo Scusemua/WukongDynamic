@@ -473,7 +473,18 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
     it is marked as complete. Note: If the current partition (which is partition 1) is
     the only partition in its connected component, i.e., its component has size 1,
     then it can also be marked as complete since it has no children and thus we have
-    all the info we need about partition 1 We intend to implement this case.
+    all the info we need about partition 1. To identify the last partition
+    in a conncted component (besides the partitio that is the last partition
+    to be connected in the DAG) we would have to look at all the nodes in a 
+    partition and determibe whethr they had any child nodes that were not in
+    the same partition (i.e., these child nodes will be i the next partition).
+    This would have to be done for each partition and it's not clear whether
+    all that work would be worth it just to mark the last partition of a 
+    connected component completed a little earlier than it otherwise would.
+    Note this is only helpful if the incremental DAG generatd happens to 
+    end with a partition that is the last partition in its connected compoent.
+    If the interval n between incremental DAGs (i.e., add n partitions before
+    publishng the new DAG) then it may be rare to have such a partition.
     2. (senders == None): This is a leaf node, which could be partition 2 or any 
     partition after that. This measn that the current partition is the first partition
     of a new connected component. We will add this leaf partition to a list of leaf

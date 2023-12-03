@@ -465,12 +465,24 @@ def generate_DAG_info_incremental_groups(current_partition_name,
     the only partition/group in its connected component, i.e., its component has size 1,
     then it can also be marked as complete since it has no fanouts/fanins and thus we have
     all the info we need about partition/group 1 (i.e., its fanouts/fanins) and it can be marked complete.
-    We intend to implement this connected component case. (Currently, when we get the first
+    (Currently, when we get the first
     group of a connected component we know the groups in the previous partition have no
     fanins/fanouts to a group that is not in the same partition. But when we processed
     thee groups we did not know they were in a partition that was the last partition in 
     its connected component. So we assumed they were incomplete, when they were not. That 
-    is not an error but it delays marking them as complete.
+    is not an error but it delays marking them as complete. To identify the last partition
+    in a conncted component (besides the partitio that is the last partition
+    to be connected in the DAG) we would have to look at all the nodes in a 
+    partition and determibe whethr they had any child nodes that were not in
+    the same partition (i.e., these child nodes will be i the next partition).
+    This would have to be done for each partition and it's not clear whether
+    all that work would be worth it just to mark the last partition of a 
+    connected component completed a little earlier than it otherwise would.
+    Note ths is only helpful if the incremental DAG generatd happens to 
+    end with a partition that is the last partition in its connected compoent.
+    If the interval n between incremental DAGs (i.e., add n partitions before
+    publishng the new DAG) then it may be rare to have such a partition.
+
     2. (senders == None): This is a leaf group, which could be group 2 or any 
     group after that. This means that the current group is the first group
     of a new connected component. We will add this leaf group to a list of leaf

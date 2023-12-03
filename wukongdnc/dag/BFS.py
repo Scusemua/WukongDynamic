@@ -2199,14 +2199,25 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
     pass
 # this is in a seperate file
 
-#def bfs(visited, graph, node): #function for BFS
-def bfs(visited, node): #function for BFS
-    logger.trace ("bfs mark " + str(node.ID) + " as visited and add to queue")
+# Called in BFS.py, as in:
+    #for i in range(1,num_nodes+1):
+    #    if i not in visited:
+    #        logger.trace("*************BFS Driver call BFS for node[" + str(i) + "]")
+    #    bfs(visited, nodes[i])    # function calling
+# Builds a DAG using a combination of bfs, whcih is used to visit the children
+# of a Node and dfs, which is used to visit the parents of a Node. For a given
+# Node N in the graph, N's parents are eiher in te same partition as N or
+# are in the previous partition that we collected.
+def bfs(visited, node): 
+    logger.trace ("bfs mark " + str(node.ID) + " as visited and add to bfs queue")
     #rhc: add to visited is done in dfs_parent
     #visited.append(node.ID)
-    # dfs_parent will add node to partition (and its unvisited parent nodes)
+    # dfs_parent will add a node to the current partition and also add 
+    # its unvisited parent nodes. Some parent nodes may have been added to the 
+    # previous partition and marked visited then.
     global current_partition
-
+    
+    #various counters
     global dfs_parent_start_partition_size
     global dfs_parent_loop_nodes_added_start
     global dfs_parent_start_frontier_size
@@ -2221,65 +2232,143 @@ def bfs(visited, node): #function for BFS
     global num_shadow_nodes_added_to_partitions
     global num_shadow_nodes_added_to_groups
 
+    # this thread will be created during incemental DAG generation
+    # to call the run() method of DAG_executor_driver to start 
+    # DAG execution.
     global invoker_thread_for_DAG_executor_driver
     global num_incremental_DAGs_generated
+    # constant: If this value is 2 we publish every second incremental DAG generated
     global incremental_DAG_deposit_interval
+    # when this value equals the number of nodes in the graph, all nodes
+    # are in a partition and the incremental DAG is complete, meaning 
+    # incremental DAG generation stops
     global num_nodes_in_partitions
 
 #rhc: incremental groups
+    # for each partition, we create a list of the groups in the 
+    # current partition and add this list to the list groups_of_partitions
     global groups_of_partitions
     global groups_of_current_partition
 
-#rhc: q:
-    # are not these lengths 0?
-    # These are per dfs_parent() stats not per partition
+#rhc:
+    # These are per dfs_parent() stats not per partition.
+    # These lengths should be 0 at the start
     dfs_parent_start_partition_size = len(current_partition)
     dfs_parent_start_frontier_size = len(frontier)
+
+    # Using these when we TRACK_PARTITION_LOOPS, i.e., generate information
+    # about the loops we find. Only used this for debugging.
     global loop_nodes_added
     dfs_parent_loop_nodes_added_start = loop_nodes_added
-    #rhc shared
+
+#rhc shared
     if use_shared_partitions_groups:
+        # we keep a count of the total number of shadow nodes added to a group
+        # or partition. Then we track the start and end values of this counter
+        # at the start of dfs_parent() so we can ientify the number end-start
+        # of shadow nodes added by dfs_parent. There is one shadow node in 
+        # a group or partition for each node whose parent nodes is in a different
+        # group or partition. Shadow nodes get there paerank values from the 
+        # paent node that they represent, i.e., a shadow node "shadows" the
+        # parent node. After the computation of the parent node's pagerank
+        # value (by some executor or worker) the pagerank value will be "sent"
+        # and assigned to the shadow node. The shadow node value is used as a 
+        # proxy for the parent's value for the child of the parent that is 
+        # associated with the shadow node. If the child is in position i of the
+        # partition/group, then the shadow node is in position i-1.
+        #
+        # save start value before root call to dfs_parents(). At end 
+        # compute end - start.
         start_num_shadow_nodes_for_partitions = num_shadow_nodes_added_to_partitions
-        # start it here before root cal to dfs_parents()
         start_num_shadow_nodes_for_groups = num_shadow_nodes_added_to_groups
 
     #dfs_p(visited, graph, node)
     #dfs_p_new(visited, graph, node)
 
 #rhc: 
-    # start with -1 in the queue; after call to dfs_parent, which will 
-    # collect node and its ancestors, we will pop the -1 fron the 
-    # queue, which will end the current partition.
+    # start with -1 in the bfs queue; after call to dfs_parent, which will 
+    # collect a node and its unvisited ancestors (parents, parents of parents, etc),
+    # we will pop the -1 fron the queue, marking the end the current partition.
+    # So: we were passed node, a node in the graph that is the first node
+    # in a connected component (which could also be the first node in the graph
+    # to be processed). We put -1 in the bfs queue and collect the unvisited
+    # ancestors of node. (some ancestors of node may have been collected/visted
+    # on a previous call to dfs_paent() - all of these visited ancestors
+    # are n the same partition). These collected unvisited ancestos of node
+    # will be added to the bs queue, e.g., for the whiteboard DAG, the bfs
+    # queue will have 5, 17 and 1 added so that after dfs_parent the bfs
+    # queue contains -1 5 17 1. This means the current partition will 
+    # contain 5, 17, and 1. We then pop the -1, which means we have colleccted
+    # all of the nodes 5, 17, 1 in the current partition. We will then 
+    # add -1 to the (end of the) bfs quueue getting 5, 17, 1 -1. Next
+    # we call dfs_parent() on the chldren of these nodes to get the 
+    # second partition. That is, the second partition contains all of the
+    # child nodes of the first partition and all of the unvisited ancestor
+    # nodes of these child nodes. The only child of 5 is 16.The only
+    # child of 17 is 19. The only child of 1 is 12. So we will pop 5
+    # from the bfs_queue and call dfs_parent(5) to collect a group of
+    # nodes which is the child 16 of 5 and all the unvisited ancestor
+    # nodes of 16 (16's parents, the parents of these parents, etc)
+    # Likewise, we pop 17 and call dfs_parent(17) and pop 1 and call dfs_parent(1).
+    # dfs_parent(5) will collect 2, 10, 16, where 16 is the only
+    # child of 5. These nodes are group 1 of this second partition.
+    # Group 2 nodes are 20, 8, 11, 3, and 19, where 19 is the only child
+    # of 17. Thse nodes are in a loop (20 is parent of 8 is parent 
+    # of 11, etc) and 20 is a child of 19. which is indicated by the 
+    # name of this group "PR2_2L", as in partition 2 group 2 is a loop 'L'
+    #  Group 3 is 4, 6, 14, and 12, where 12 is the only child of 1.
+    # All of these nodes i partition will be added to the bfs_quueue,
+    # which will contain -1 2 10 16 .... 4 6 14 12. The -1 indicates
+    # the current_partition, which is partition 2, is complete. So
+    # partition 3 wil lbe generated by using dfs_parent to explore
+    # the children and their ancestors of the nodes in the bsf_queue.
+    # The partitions aer getting bigger and will have more groups.
+    #
+    # The main idea is that a node will have all of its parent nodes
+    # either in the same parttion (locally) are in a single different
+    # partition (perhaps remotely). Recall that pagerank for node 
+    # N requires the pagerank values for the parent nodes of N. This
+    # bfs-dfs scheme tries to reduce the communication of parent 
+    # values between compute nodes by keeping parents local to the
+    # child or minimizing the communication between the compute 
+    # nodes containing the parent values and the compute nodes 
+    # containing the child nodes of these parents. So we try to
+    # "cluster" a child with as many of its parents as possible.
     BFS_queue.append(-1)
 
     # SCC 3
 
-    #dfs_parent(visited, graph, node)
     global num_frontier_groups
+    # This is used as the index into groups for the current group.
     num_frontier_groups = 1
     global frontier_groups_sum
-    # This is used as the index into groups for the current group.
     # frontier_groups_sum inited to 0 so this makes it 1. Note that
-    # if we call bfs() again then this does not reset frontier_groups_sum
+    # if we call bfs() again then frontier_groups_sum is not reset
+    # so it keeps growing
     frontier_groups_sum += 1
     dfs_parent(visited, node)
 
     # Note: No shadow_nodes can be added during first call to dfs_parent
-    # as the generated group has no parents; it is the first group.
+    # as the generated group has no previously visited parents; it is the first group.
     # SCC 4
 
-    # Note: -1 is a the front of the queue so we will pop the -1 which 
-    # means this is the end of the current partition, which is node and its 
-    # ancestors.
+    # Note: -1 is at the front of the queue so we will pop the -1 indicating
+    # the end of the current partition. The current partition contains
+    # the chidren of the previous partition and the unvisited ancestors
+    # of these parents.
 
+    # current group being collectd
     global current_group
+    # list of collected groups
     global groups
+    
 # rhc : ******* Group
+    # in dfs_parent(), we add a node to either list partitions or list
+    # groups. Note that the nodes of partition 1 ere also the nodes of
+    # group 1. We collect the first group here. We collect the first
+    # partition (same nodes) below.
     groups.append(current_group)
     current_group = []
-    #global frontier_groups_sum
-    # root group
-    #frontier_groups_sum += 1
 
     # this first group ends here after first dfs_parent
     global nodeIndex_to_groupIndex_maps
@@ -2288,21 +2377,28 @@ def bfs(visited, node): #function for BFS
     nodeIndex_to_groupIndex_map = {}
 # rhc : ******* end Group
 
+    # these start with 1 not 0. 
     global current_partition_number
     global current_group_number
 
 # rhc : ******* Group
+    # First partition/group is "PR1_1".
+    # Next group is first group of partition 2: "PR2_1", etc.
     group_name = "PR" + str(current_partition_number) + "_" + str(current_group_number)
-    # group_number_in_fronter stays at 1 since this is the only group in the frontier_list
-    # partition and thus the first group in the next parttio is also group 1
 
+    # This is set in dfs_parent if (some or all of) the nodes in this 
+    # group form a loop.
     global current_group_isLoop
     if current_group_isLoop:
         # These are the names of the groups that have a loop. In the 
-        # DAG, we will append an 'L' to the name. Not used since we 
-        # use loop names (with 'L") as we generate Sender and Receivers.
-        # instead of modifying the names of senders/receievers before we 
-        # generate the DAG.
+        # DAG, we will append an 'L' to the name. Not used any more since we 
+        # use partition/group names that end with 'L" so we can tell by the
+        # name if the partition/group has a loop. Recal that pagernk for 
+        # nodes in a loop requires many iterations, but for node not in 
+        # a loop only one iteration.
+        # (Note: we used to change the names of the partitions/groups at the
+        # end to reflect tht we found a loop. We used Group_loops for this.
+        # This collection of partitions/groups with loops might come in handy again.
         group_name = group_name + "L"
         Group_loops.add(group_name)
 
@@ -2311,37 +2407,52 @@ def bfs(visited, node): #function for BFS
     # only group in this partition. We consider it to be group 1, 
     # which is the initial value of current_group_number. We do not increment
     # it since we are done with the groups in the first partition, so 
-    # current_group_number will be 1 wen we find the first group of the 
-    # next partition.
+    # current_group_number will be 1 when we find the first group of the 
+    # next partition and use current_group_number+1=2 as the group number.
     group_names.append(group_name)
 
 #rhc: incremental groups
+    # For incremental DAG generation, we track the groups in the current
+    # partition. We will need to iterate through these groups.
     groups_of_current_partition.append(group_name)
-    logger.trace("BFS: add " + group_name + "bfor fist partition to groups_of_current_partition: "
+    logger.trace("BFS: add " + group_name + "to groups_of_current_partition: "
         + str(groups_of_current_partition))
 
-    # The first group collected by call to BFS() is a leaf node of the DAG.
-    # There may be many calls to BFS(). Below, we will collect the first
+    # The first group collected by call to bfs() is a leaf node of the DAG.
+    # There may be many calls to bfs(). Below, we will collect the first
     # partition. Set is_leaf_node to True so we know it is the first partition
-    # collected on this call to BFS()
+    # collected on this call to bfs(). In general, a leaf group/partition
+    # is the first group/partition of a connected component.
     leaf_tasks_of_groups.add(group_name)
     leaf_tasks_of_groups_incremental.append(group_name)
     is_leaf_node = True
     
     if use_shared_partitions_groups:
-        #rhc shared
+        # we are using worker processes/threads and we are putting all the 
+        # groups in one shared array in an order that minimizes cache 
+        # misses during the pagerank computation.
+#rhc shared
         # assert: first partition/group has no shadow_nodes
+        # compute number o shadow nodes added to first group
         change_in_shadow_nodes_for_group = end_num_shadow_nodes_for_groups - start_num_shadow_nodes_for_groups
         groups_num_shadow_nodes_list.append(change_in_shadow_nodes_for_group)
         # start it here before next call to dfs_parent but note that we 
-        # may not call dfs_parent() since the node may not have any (unvisited)
-        # children in which case we will generate a final partition/group
+        # may not call dfs_parent() since a node popped from bfs queue
+        # may not have any (unvisited) children in which case we will generate a final partition/group
         # and we need to have called start here.
+        # Note that num_shadow_nodes_added_to_groups is a running total 
+        # that is not reset. We get start and end values o we can get the 
+        # number of shadow nodes in some interval.
         start_num_shadow_nodes_for_groups = num_shadow_nodes_added_to_groups
 # rhc : ******* end Group
 
+    # tracking the groups with loops that we found if TRACK_PARTITION_LOOPS
     dfs_parent_loop_nodes_added_end = loop_nodes_added
 
+    # These are tracked per dfs_parent() call, so we compute them here and 
+    # after the calls to dfs_parent() below.
+    #
+    # First group is also the first partition
 # rhc : ******* Partition
     dfs_parent_end_partition_size = len(current_partition)
     dfs_parent_change_in_partition_size = (dfs_parent_end_partition_size - dfs_parent_start_partition_size) - (
@@ -2350,8 +2461,6 @@ def bfs(visited, node): #function for BFS
     logger.trace("dfs_parent(root)_change_in_partition_size: " + str(dfs_parent_change_in_partition_size))
 # rhc : ******* end Partition
 
-    # These are tracked per dfs_parent() call, so we compute them here and 
-    # at after the calls to dfs_parent() below.
     dfs_parent_end_frontier_size = len(frontier)
     dfs_parent_change_in_frontier_size = (dfs_parent_end_frontier_size - dfs_parent_start_frontier_size) - (
         dfs_parent_loop_nodes_added_end - dfs_parent_loop_nodes_added_start)
@@ -2361,8 +2470,8 @@ def bfs(visited, node): #function for BFS
     # queue.append(node) and frontier.append(node) done optionally in dfs_parent
 #rhc
     end_of_current_frontier = False
-    while BFS_queue:          # Creating loop to visit each node
-        #node = queue.pop(0) 
+    while BFS_queue:          # Creating loop to visit each node in BFS_queue
+        # queue of int IDs not Node objects. Node for int ID is in Nodes[ID]
         ID = BFS_queue.pop(0) 
         logger.trace("bfs pop node " + str(ID) + " from queue") 
 #rhc
@@ -2408,16 +2517,26 @@ def bfs(visited, node): #function for BFS
         # with all its parent cild stuff?
 
         if ID == -1:
+            # end of partition is end of frontier
             end_of_current_frontier = True
-
+            # got a -1 so pop again to get an ID, if the bfs queue is not empty 
             if BFS_queue:
                 ID = BFS_queue.pop(0)
                 logger.trace("bfs after pop -1; pop node " + str(ID) + " from queue") 
+                # add -1 to the end of bfs_queue, which means that all the IDs in the 
+                # queue are the Node IDs of the nodes in the next partition (and its groups)
+                # Note: we add the -1 here and not in dfs_parent. So we add a -1
+                # after *all* of the nodes in the bfs_queue of a collected partition.
+                # We do not have dfs_parent ddd a -1, which could be used to indicate 
+                # the end of the nodes of a group, e.g,: firsy group is 5, 17, 1,
+                # we get the chid of 5 which is 16, and the ancestors of 16,
+                # which are 10 then 2, so bfs_queue would have 2 10 16 -1 to indicate
+                # a group. Instead, we use -1 to mark partitions and identify the 
+                # groups in a partition during dfs_parent.
                 BFS_queue.append(-1)
-
                 # SCC 5
-
             else:
+                # no more nodes to process, break main bfs loop.
                 break
 
         node = nodes[ID]
@@ -2426,7 +2545,7 @@ def bfs(visited, node): #function for BFS
         all_frontier_costs.append("pop-"+str(node.ID) + ":" + str(len(frontier)))
 
         # Note: There are no singletons in the frontier. if N has a singleton child
-        # C then the dfs_parent(N) will se that C is unvisited. IF singleton checking
+        # C then the dfs_parent(N) will see that C is unvisited. If singleton checking
         # is on then singleton C will be identified, C will be marked visited, and
         # neither N nor C will be enqueued but both N and C will be added to the 
         # partition but not the frontier. If singleton checking is off then N
