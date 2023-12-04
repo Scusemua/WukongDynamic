@@ -838,31 +838,41 @@ Partition_loops = set()
 # have to modify them when we get to building the DAG. Left it in for
 # debugging - so we can see which groups become loop groups.
 Group_loops = set()
+
 # map the index of a node in nodes to its index in its partition/group.
+# That is, nodes is the list of nodes in the graph. Each graph node will
+# be added to some partition/group. 
 # node i in nodes is in position i. When we place a node in a partition/group, 
-# this node is not assumed to be in postion i; nodes are added to the partition/group
-# one by one using append. We map node i, whch we know is at position i in nodes,
+# this node is not necessarily in postion i; nodes are added to the partition/group
+# one by one using append. We map node i, which we know is at position i in nodes,
 # to its position in its partition/group. Example node 25 in nodes at position 25 is mapped 
 # to position 4 in its partition/group.
 # Note: we map shadow nodes to their positions too. We do not map shadow nodes 
 # in the global map nodeIndex_to_partition_partitionIndex_group_groupIndex_map since
 # a shadow node ID and a non-shadow node for ID would have the same key. We could 
 # use string keys and use, e.g, "5" and "5s" for "shadow" so the keys would be unique.
-# Note: A shadow node can be addedmore than once, in which case the index of the 
-# shadow node will be its last index, e.g., if shadow node in positions 0 and 2 its
-# index will be 2. We do not use the shadow node's index'
+# Note: A shadow node can be added more than once, in which case the index of the 
+# shadow node will be its last index, e.g., if shadow node ID is in positions 0 and 2 its
+# index will be 2. We do not use the index of shadow node's so we don't care.
+#
+# Note: we are using these maps only for debugging. We can turn them off.
+# we ar now using nodeIndex_to_partition_partitionIndex_group_groupIndex_map
+# which has the same information.
 nodeIndex_to_partitionIndex_map = {}
 nodeIndex_to_groupIndex_map = {}
 # collection of all nodes_to_group_map maps, one for each group
 nodeIndex_to_partitionIndex_maps = []
 nodeIndex_to_groupIndex_maps = []
-# map a node to its partition number, partition index, group number ans group index.
-# A "global map"for nodes. May supercede nodeIndex_to_partitionIndex_map. We need
-# a nodes position in its partition if we map partitions to functions and we need
+
+# map a node to its partition number, partition index, group number and group index.
+# A "global map"for nodes. May supercede nodeIndex_to_partitionIndex_map. 
+# We need a nodes position in its partition if we map partitions to functions and we need
 # a nodes position in its group if we map groups to functions. This map supports
 # both partition mapping and group mapping.
+#
 # Note: We do not map shadow nodes in this map.
-# Q: We can remove the nodes in Pi from this map after we have finished 
+#
+# Consider: We can remove the nodes in Pi from this map after we have finished 
 # computing Pi+1 since we will no longer need to know this info for 
 # the nodes in Pi? We may want to remove these nodes to free the space.
 # Note: If a node is in Pi+1 all of its parents are in Pi+1 or Pi,
@@ -871,6 +881,7 @@ nodeIndex_to_groupIndex_maps = []
 # are not in Pi.
 nodeIndex_to_partition_partitionIndex_group_groupIndex_map = {}
 
+# reset dfs_parent counters
 dfs_parent_start_partition_size = 0
 dfs_parent_loop_nodes_added_start = 0
 dfs_parent_start_frontier_size = 0
@@ -886,6 +897,7 @@ PRINT_DETAILED_STATS = True
 debug_pagerank = False
 generate_networkx_file = False
 
+# list of nodes in the inut graph
 nodes = []
 
 num_nodes = 0
@@ -899,27 +911,27 @@ num_parent_appends = 0
 #Shared.shared_partition_map = {}
 #Shared.shared_group_map = {}
 
-
-
 """
+# old test code for building a graph. Now we input a graph.
 num_nodes = 12
 #put non-null elements in place
 for x in range(num_nodes+1):
     nodes.append(Node(x))
 """
-# used by during incremental DAG generation to invoke the 
+
+# global object used by during incremental DAG generation to invoke the 
 # DAG_excutor_driver. A thread is created to call
-# DAG_executor_driver.run() while BF continues with 
+# DAG_executor_driver.run() while BFS continues with 
 # incremental ADG generation. BFS joins this thread
-# at the end of BFS.
+# at the end of BFS; the join occurs when DAG execution is done.
 invoker_thread_for_DAG_executor_driver = None
 
-# used during incremental ADG generation by BFS to
+# used during incremental DAG generation by BFS to
 # access the work_queue on the tcp_server when we are
 # using worker processes.
 websocket = None
 
-# count of incremental ADGs generated. Note: we generate 
+# count of incremental DAG generated. Note: we generate 
 # a DAG with the first partition, then we generate a DAG
 # with the first two partitions and start the DAG_executor_driver.
 # Then we use this counter to determine when to generate another
@@ -938,35 +950,21 @@ num_incremental_DAGs_generated = 0
 num_nodes_in_partitions = 0
 
 #rhc: incremental groups
-groups_of_partitions = []
+# used for incremental DAG generation.
+# groups in current partition
 groups_of_current_partition = []
-
-"""
-if compute_pagerank and use_incremental_DAG_generation: 
-#rhc continue
-    # we are only using incremental_DAG_generation when we
-    # are computing pagerank, so far. Pagerank DAGS are the
-    # only DAGS we generate ourselves, so far.
-
-    if (run_all_tasks_locally and using_workers and not using_threads_not_processes): 
-        # Config: A5, A6
-        # sent the create() for work_queue to the tcp server in the DAG_executor_driver
-        websocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        websocket.connect(TCP_SERVER_IP)
-        estimated_num_tasks_to_execute = work_queue_size_for_incremental_DAG_generation_with_worker_processes
-        DAG_infobuffer_monitor = Remote_Client_for_DAG_infoBuffer_Monitor(websocket)
-        DAG_infobuffer_monitor.create()
-        logger.trace("BFS: created Remote DAG_infobuffer_monitor.")
-        #logging.shutdown()
-        #os._exit(0) 
-        work_queue = Work_Queue_Client(websocket,estimated_num_tasks_to_execute)
-"""
+# list of groups of current partitions. When we process the 
+# current partition we need to know the groups in it and in the 
+# previous partition and in the previous previous partition.
+groups_of_partitions = []
 
 def DAG_executor_driver_Invoker_Thread():
     time.sleep(6)
+    # call run() of the DAG_executor_driver, where: from .DAG_executor_driver import run
     run()
 
 # visual is a list which stores all the set of edges that constitutes a graph
+# we can visualize only small graphs
 visual = []
 def visualize():
     fig = plt.figure()
@@ -983,9 +981,9 @@ def visualize():
     fig.canvas.draw()
 
 # process children before parent traversal
+# Not used
 def dfs_parent_pre_parent_traversal(node,visited,list_of_unvisited_children):
     return False
-
 
 #def dfs_parent(visited, graph, node):  #function for dfs 
 def dfs_parent(visited, node):  #function for dfs 
@@ -2474,48 +2472,6 @@ def bfs(visited, node):
         # queue of int IDs not Node objects. Node for int ID is in Nodes[ID]
         ID = BFS_queue.pop(0) 
         logger.trace("bfs pop node " + str(ID) + " from queue") 
-#rhc
-        # issue: if we add queue.append(-1) in dfs_parent, we get smaller partitions
-        # but the frontiers overlap. this is becuase in dfs_parent we get
-        # a -1 b -1 c -1 then we rturn to bfs then it checks -1 at front, which is 
-        # true, so it crates partition a b c sincne a b and c are in the partition
-        # but haven't got thru aall the nodes on frontier, which is a b c so next 
-        # frontier is b c ... So if we put a b c in partition before we see our
-        # first -1 then we have to get through a b and c. Note there is a funny interaction
-        # with when we remove node from frontier, i.e., after we isit all of its
-        # children. So only can process -1's after processing all of a node's children.
-        # Hmmm. 
-        # We get 5, 17, 1 so we dfs_parent 5 and visit 5's parents then visit 5's children:
-        """
-        bfs node 5 visit children
-        bfs visit child 16 mark it visited and dfs_parent(16)
-        bfs dfs_parent(16)
-        dfs_parent from node 16
-        dfs_parent node 16 visit parents
-        dfs_parent neighbor 5 already visited
-        dfs_parent visit node 10
-        dfs_parent from node 10
-        dfs_parent node 10 visit parents
-        dfs_parent visit node 2
-        dfs_parent from node 2
-        dfs_parent node 2 has no parents
-        queue after add 2: 17 1 -1 2
-        frontier after add 2: 5 17 1 2
-        dfs_parent add 2 to partition
-        queue after add 10: 17 1 -1 2 10
-        frontier after add 10: 5 17 1 2 10 
-        dfs_parent add 10 to partition
-        queue after add 16: 17 1 -1 2 10 16
-        frontier after add 16: 5 17 1 2 10 16
-        dfs_parent add 16 to partition
-        dfs_parent_change_in_partition_size: 3
-        dfs_parent_change_in_frontier_size: 3
-        bfs node 17 already visited
-        frontier after remove 5: 17 1 2 10 16
-        """
-        # but no -1 after 5. So could put -1 after 5 if we replaced 5 on queue
-        # with all its parent cild stuff?
-
         if ID == -1:
             # end of partition is end of frontier
             end_of_current_frontier = True
@@ -2527,12 +2483,9 @@ def bfs(visited, node):
                 # queue are the Node IDs of the nodes in the next partition (and its groups)
                 # Note: we add the -1 here and not in dfs_parent. So we add a -1
                 # after *all* of the nodes in the bfs_queue of a collected partition.
-                # We do not have dfs_parent ddd a -1, which could be used to indicate 
-                # the end of the nodes of a group, e.g,: firsy group is 5, 17, 1,
-                # we get the chid of 5 which is 16, and the ancestors of 16,
-                # which are 10 then 2, so bfs_queue would have 2 10 16 -1 to indicate
-                # a group. Instead, we use -1 to mark partitions and identify the 
-                # groups in a partition during dfs_parent.
+                # For example, from the above comment, the first group/partition is
+                # 5, 17, 1 so we get -1 5, 17, 1 on the bfs_queue, pop the -1, and 
+                # push it again to get 5, 17, 1 -1.
                 BFS_queue.append(-1)
                 # SCC 5
             else:
@@ -2540,58 +2493,75 @@ def bfs(visited, node):
                 break
 
         node = nodes[ID]
-        # so we can see the frontier costs that do not correspnd to when 
+        # The frontier is nodes in current partition that can have children
+        # in the next partition. Currently, the current_partition and the
+        # current frontier are the same.
+        # So we can see the frontier costs that do not correspnd to when 
         # partitions were created, i.e., was there a better frontier for partition?
         all_frontier_costs.append("pop-"+str(node.ID) + ":" + str(len(frontier)))
 
-        # Note: There are no singletons in the frontier. if N has a singleton child
-        # C then the dfs_parent(N) will see that C is unvisited. If singleton checking
-        # is on then singleton C will be identified, C will be marked visited, and
-        # neither N nor C will be enqueued but both N and C will be added to the 
-        # partition but not the frontier. If singleton checking is off then N
-        # will be enqueued. When N is popped off the queue, dfs_parent(C) will be
-        # called and it will see that C has no children before or after C's parent 
-        # traversal (N is already visited) so C will be marked visited and C will 
-        # not be enqueued but will be added to the partition but not the frontier.
-        # Note: If the partiton becmes full with N in the frontier with singleton 
-        # chld C, we can reduce the frontier by pruning N - pop N from the queue,
-        # mark N as visited, remove N fro the frontier, mark its singleton child C 
-        # visited, and add C to the partition but not the queue.
-        # Note: handling singletons here is more efficent since we don;t waste time 
-        # checkng for singletons in dfs_parent when most nodes are not singletons.
-
-#rhc: problem: we don't find partition loop until we dfs_parent(17) so the 
-# frontier tuple for the 5 is in different partition than 16 is wring since
-# we will use PR2_1 for partition. So don't do partition tuples until after
-# finish partition, where we know whether partition has a loop or not?
-# save frontier tuples with empty name and then patch the name before you
-# process the tuple.
+        # Consider the case where the first group/partition is 5, 17, 1 and
+        # 5 has a single child 6, 6 has a single parent 5, and 6 has no
+        # children: 5--child-->6. Then we call 6 a "singleton". One option 
+        # when we visit 5 and add it to the first partition is to detect unvisited
+        # singleton's like 6 and put the singleton in the same partition as
+        # its parent 5. This eliminates the communication that would otherwise
+        # occur when the partition with 5 had to communicate its parent value
+        # to the partition with 6. Then 5 has a singleton child
+        # 6 then the dfs_parent(5) will see that 6 is unvisited. If singleton checking
+        # is on then singleton 6 will be identified, 6 will be marked visited, and
+        # neither 5 nor 6 will be enqueued in dfs_queue since they have no 
+        # unvisited children, and both 5 and 6 will be added to the partition but not 
+        # the frontier. If singleton checking is off then 5
+        # will be enqueued. When 5 is popped off the queue, dfs_parent(6) will be
+        # called and it will see that 6 has no children before or after 6's parent 
+        # traversal (5 is already visited) so 6 will be marked visited and 6 will 
+        # not be enqueued but will be added to the next partition (but not the 
+        # frontier.
+        # Note: handling singletons here, instead of in dfs_parent, is more efficen
+        # nodes are not singletons. So if the partiton has 5 in the frontier with singleton 
+        # child 6, we can reduce the frontier by pruning 5 - pop 5 from the queue,
+        # mark 5 as visited, remove 5 from the frontier, mark its singleton child 6 
+        # visited, and add 6 to the partition but not the queue (6 has no children)
 
         if end_of_current_frontier:
             logger.trace("BFS: end_of_current_frontier")
             end_of_current_frontier = False
 
 # rhc : ******* Partition
+            # end of partition
             if len(current_partition) > 0:
             #if len(current_partition) >= num_nodes/5:
-                logger.trace("BFS: create sub-partition at end of current frontier")
-                # does not require a deepcopy
+                logger.trace("BFS: end of current partition.")
+                # save the current partition in list of partitions.
+                # This does not require a deepcopy.
                 partitions.append(current_partition.copy())
 #rhc incremental:   
-                # this includes shadow nodes
+                # this includes regulat nodes and shadow nodes
                 num_nodes_in_partitions += len(current_partition)
+                # reset current_partition
                 current_partition = []
 
+                # For example: "PR2_1", "PR3_1" for partitions 2 and 3.
+                # The 1 is the group number. When we are collcting partitions
+                # instead of groups,the group number is always 1.
                 partition_name = "PR" + str(current_partition_number) + "_1"
 
                 global current_partition_isLoop
+                # if the partition is a loop then add an "L" to its name
                 if current_partition_isLoop:
                     # These are the names of the partitions that have a loop. In the 
-                    # DAG, we will append an 'L' to the name. Not using this anymore.
+                    # DAG, we will append an 'L' to the name. 
                     partition_name = partition_name + "L"
+                    # Not using this anymore, but could be usefuk later.
                     Partition_loops.add(partition_name)
 
 #rhc: incremental groups
+                # For incremental DAG generation, we need to know the 
+                # groups that each partition contains. That is, when we process
+                # the groups of the current_partion, which is being added to the 
+                # end of the incremental DAG, we need to know the groups of the 
+                # previous partition an the groups of the previous previous partition.
                 groups_of_partitions.append(copy.copy(groups_of_current_partition))
 
                 logger.trace("BFS: for partition " + partition_name + " collect groups_of_current_partition: "
@@ -2600,8 +2570,8 @@ def bfs(visited, node):
 
 
                 # The first partition collected by any call to BFS() is a leaf node of the DAG.
-                # There may be many calls to BFS(). We set is_leaf_node = True at thr
-                # start of BFS.
+                # There may be many calls to BFS(). We set is_leaf_node = True at the
+                # start of bfs() above.
                 if is_leaf_node:
                     leaf_tasks_of_partitions.add(partition_name)
                     leaf_tasks_of_partitions_incremental.append(partition_name)
@@ -2610,41 +2580,66 @@ def bfs(visited, node):
                 # Patch the partition name of the frontier_parent tuples. 
                 if current_partition_isLoop:
                     # When the tuples in frontier_parent_partition_patch_tuple_list were created,
-                    # no loop had been detectd in the partition so we used a partition name that 
-                    # did not end in 'L'. At some point a loop was detected so we need to
-                    # change the partition name in the tuple so that it ends with 'L'. If no loop
-                    # is detectd, then current_partition_isLoop will be false and no changes
+                    # it is possible that no loop had been detectd in the partition so we used a 
+                    # partition name that did not end in 'L'. Then at some point a loop was detected 
+                    # so we need to change the partition name in the tuple so that it ends with 'L'. 
+                    # If no loop is detectd, then current_partition_isLoop will be false and no changes
                     # need to be made.
+                    # For example, in the whiteboard example, 16's parent is 5
+                    # and when we discover that 16 is considered to be in partition "PR2_1"
+                    # but then we discver a loop when we see 17's child is 19 and we 
+                    # do dfs_parent 19. Now the partition name will actually be "PR2_1L"
+                    # but we've already used "PR2_1" for the partition of 16 when we 
+                    # used "PR2_1" for the tuple in 5's partition "PR1_1"; this tuple
+                    # tells the executor of "PR1_1" to send 5's pagerank value to 
+                    # the executor of "PR2_1" since 5's child 6 needs this parent value.
+                    # The target for this should actually be "PR2_1L"
                     logger.trace("XXXXXXXXXXX BFS: patch partition frontier_parent tuples: ")
-                    # frontier_parent_partition_patch_tuple was created as:
+                    # Note: frontier_parent_partition_patch_tuple was created as:
                     #   frontier_parent_partition_patch_tuple = 
-                    #       (parent_partition_number,parent_partition_parent_index,position_in_frontier_parents_partition_list)
+                    #       (parent_partition_number,parent_partition_parent_index,position_in_frontier_parents_partition_list,
+                    #           partition_name)
                     for frontier_parent_partition_patch_tuple in frontier_parent_partition_patch_tuple_list:
                         # These values were used to create the tuples in dfs_parent()
                         parent_partition_number = frontier_parent_partition_patch_tuple[0]
                         parent_partition_parent_index = frontier_parent_partition_patch_tuple[1]
                         position_in_frontier_parents_partition_list = frontier_parent_partition_patch_tuple[2]
+                        # This information allows us to get the tuple to patch. Each partition 
+                        # has a list of frontier parents, which are nodes tha have chidren
+                        # in a different partition (e.g., node 5 in partiton "PR1_1" has a child
+                        # node 6 in "PR2_1" so 5 is a frontier node, i.e., it is "on the 
+                        # frontier between partitions." We get the tuples for the frontier parents and 
+                        # then get the tuple that needs patched.
 
                         # get the tuple that has the wrong name
+                        # frontier parent are in previous partition
                         parent_partition = partitions[parent_partition_number-1]
+                        # get the tuples for a node, which is a parent node of one or more
+                        # children in a different partition. For example, parent 5 in "PR1_1"
+                        # has a child in "PR2_1L" but the name used in the tuple was "PR2_1"
+                        # so we patch this by changing "PR2_1" to "PR2_1L"
                         frontier_parents = parent_partition[parent_partition_parent_index].frontier_parents
                         frontier_parent_partition_tuple_to_patch = frontier_parents[position_in_frontier_parents_partition_list]
-                        logger.trace("XXXXXXX BFS: patching partition frontier_tuple name "
+                        logger.trace("BFS: patching partition frontier_tuple name "
                             + frontier_parent_partition_tuple_to_patch[3] + " to " + partition_name)
-                        # create a new tuple that reuses the first 3 fields and chnages the name in the last field
+                        # create a new tuple that reuses the first 3 fields and changes the name in the 
+                        # last field to the name of the current partition, e.g. "PR2_1" is patched to "PR2_1L"
                         first_field = frontier_parent_partition_tuple_to_patch[0]
                         second_field = frontier_parent_partition_tuple_to_patch[1]
                         third_field = frontier_parent_partition_tuple_to_patch[2]
                         new_frontier_parent_partition_tuple = (first_field,second_field,third_field,partition_name)
-                        # delete the old tuples
+                        # delete the old tuple
                         del frontier_parents[position_in_frontier_parents_partition_list]
-                        # append the new tuple, order of tuples may change but order is not important
+                        # append the new tuple, order of the tuples may change but order is not important
                         frontier_parents.append(new_frontier_parent_partition_tuple)
-                        logger.trace("XXXXXXX BFS:  new frontier_parents: " + str(frontier_parents))
+                        logger.trace("BFS:  new frontier_parents: " + str(frontier_parents))
 
                 frontier_parent_partition_patch_tuple_list.clear()
 
                 # Patch the partition name of the shared_frontier_parent_partition tuples. 
+                # When we use shared partitions/groups, all of the partitions/groups
+                # are put into one shared array.
+                # The logic for patching is the same as above.
                 if use_shared_partitions_groups:
                     # Given:
                     # shared_frontier_parent_partition_patch_tuple = (task_name_of_parent,position_in_list_of_parent_frontier_tuples)
@@ -2657,14 +2652,17 @@ def bfs(visited, node):
 
                             list_of_parent_frontier_tuples = BFS_Shared.shared_partition_frontier_parents_map.get(task_name_of_parent)
                             frontier_parent_partition_tuple_to_patch = list_of_parent_frontier_tuples[position_of_tuple_in_list_of_parent_frontier_tuples]
-                            logger.trace("X-X-X-X-X-X-X BFS: patching shared partition frontier_tuple name "
+                            logger.trace("BFS: patching shared partition frontier_tuple name "
                             + frontier_parent_partition_tuple_to_patch[3] + " to " + partition_name)
  
-                            # Given:
-                            #shared_frontier_parent_tuple = (current_partition_number,num_frontier_groups,child_index_in_current_partition,current_partition_name,parent_partition_parent_index)
+                            # Given the tuple was created using:
+                            # shared_frontier_parent_tuple = 
+                            #     (current_partition_number,num_frontier_groups,child_index_in_current_partition,current_partition_name,parent_partition_parent_index)
+                            # we aer patching the partition name in fourth field
                             first_field = frontier_parent_partition_tuple_to_patch[0]
                             second_field = frontier_parent_partition_tuple_to_patch[1]
                             third_field = frontier_parent_partition_tuple_to_patch[2]
+                            # fourth field will be the patched partition_name
                             # FYI: [3] is the partition name to be patched with the new name ending in "L"
                             # e.g., "PR2_1" --> "PR2_1L". Partition name was appended with "L" above
                             fifth_field = frontier_parent_partition_tuple_to_patch[4]
@@ -2672,11 +2670,16 @@ def bfs(visited, node):
                             del list_of_parent_frontier_tuples[position_of_tuple_in_list_of_parent_frontier_tuples]
                             # append the new tuple, order of tuples may change but order is not important
                             list_of_parent_frontier_tuples.append(new_frontier_parent_partition_tuple)
-                            logger.trace("X-X-X-X-X-X-X BFS:  new shared partition frontier_parent tuples for " + task_name_of_parent + " is " +  str(list_of_parent_frontier_tuples))
+                            logger.trace("BFS:  new shared partition frontier_parent tuples for " + task_name_of_parent + " is " +  str(list_of_parent_frontier_tuples))
 
                     shared_frontier_parent_partition_patch_tuple_list.clear()
 
-                # patch receiver name
+                # patch receiver name. When a partition S has a pagerank value for
+                # a parent node that will be sent to a partition R that has the child node,
+                # then S-->R is an edge in the DAG. We track These senderd and receievers
+                # while we generate partitions and we then use the senders and receivers
+                # to build the DAG - partitions/groups are DAG nodes and the edges
+                # aer determined by senders and receivers.
                 if current_partition_isLoop:
                     # When the tuples in sender_receiver_partition_patch_tuple_list were created,
                     # no loop had been detectd in the partition so we used a partitiom name 
@@ -2692,25 +2695,55 @@ def bfs(visited, node):
                         receiving_partition = sender_receiver_partition_patch_tuple[1]
 
                         sending_partition = partition_names[parent_partition_number-1]
+                        # Partition_senders[sending_partition] is a list of partitions
+                        # that sending_partition sends pagerank values to, i.e., these
+                        # are the partitions that receive from sending_partition.
+                        # When we added a partition name N to Partition_senders[sending_partition]
+                        # we were creating partition N and we found that the parent node of some
+                        # node C in N was in the previous partition P. Then P was
+                        # the sending partition and N is a partition that receives
+                        # from P. So Partition_senders[P] contains receiver N. We
+                        # need to patch the name N since later we found a loop in 
+                        # this partition so its name changed (we added an "L" to the 
+                        # name N). We do not patch name P here. If when we processed
+                        # P as the current partition and found a loop in P, we will 
+                        # then have to patch the name P, but that would have been done
+                        # after we complete partition P (as the current parttion)
+                        # previously and patched P.
+                        #
+                        # Patch the receiving_partition name
                         sender_name_set = Partition_senders[sending_partition]
-                        logger.trace("XXXXXXX BFS: patching partition sender_set receiver name "
+                        logger.trace("BFS: patching partition sender_set receiver name "
                             + receiving_partition + " to " + partition_name)
+                        # remove old receiving_partition name, without the "L"
                         sender_name_set.remove(receiving_partition)
+                        # add new name, which will have the "L"
                         sender_name_set.add(partition_name)
-                        logger.trace("XXXXXXX BFS:  new partition sender_Set: " + str(sender_name_set))
+                        logger.trace("BFS: new partition sender_Set: " + str(sender_name_set))
 
-                        logger.trace("XXXXXXX BFS: patching Partition_receivers receiver name "
+                        logger.trace("BFS: patching Partition_receivers receiver name "
                             + receiving_partition + " to " + partition_name)
+                        # Partition_receivers[N] is all the partitions that sent values 
+                        # to N. But we have changed the name N by adding an "L", so we 
+                        # need to use Partition_receivers[partition_name] instead of 
+                        # Partition_receivers[N]. 
                         Partition_receivers[partition_name] = Partition_receivers[receiving_partition]
                         del Partition_receivers[receiving_partition]
-                        logger.trace("XXXXXXX BFS:  new Partition_receivers[partition_name]: " + str(Partition_receivers[partition_name]))
+                        logger.trace("BFS: new Partition_receivers[partition_name]: " + str(Partition_receivers[partition_name]))
                 
                 sender_receiver_partition_patch_tuple_list.clear()
 
+                # reset for nect partition
                 current_partition_isLoop = False
+                # track all partition names
                 partition_names.append(partition_name)
 
                 if use_shared_partitions_groups:
+                    # tracking the number of shadow nodes added to current partition.
+                    # num_shadow_nodes_added_to_partitions is grand total of shadow
+                    # nodes added to the partitions. We got the start value of this 
+                    # and now we get the end value of this so that end - start is the 
+                    # number of shadow nodes added to the current partition.
                     #rhc shared
                     end_num_shadow_nodes_for_partitions = num_shadow_nodes_added_to_partitions
                     change_in_shadow_nodes_for_partitions = end_num_shadow_nodes_for_partitions - start_num_shadow_nodes_for_partitions
@@ -2740,7 +2773,7 @@ def bfs(visited, node):
                     # list of parents - for the partition node and group node
                     # that had a parent whose remapped index was not yet knows,
                     # we save the node's parent list in the tuple; there is 
-                    # one list for the ode in the partition and one list for 
+                    # one list for the node in the partition and one list for 
                     # the node in the group.
                     list_of_parents_of_partition_node = parent_tuple[1]
                     #list_of_parents_of_group_node = parent_tuple[2]
@@ -2825,6 +2858,7 @@ def bfs(visited, node):
 
                 # does not require a deepcopy
                 frontiers.append(frontier.copy())
+                # Generate stats.
                 frontier_cost = "pop-"+str(node.ID) + ":" + str(len(frontier))
                 frontier_costs.append(frontier_cost)
                 frontier.clear()
