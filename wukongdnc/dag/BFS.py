@@ -994,8 +994,8 @@ def dfs_parent(visited, node):  #function for dfs
     list_of_unvisited_children = []
     check_list_of_unvisited_chldren_after_visiting_parents = False
 
-    # Fill these in below, e.g., we have to remap the parents since 
-    # parent IS is not in position ID in the partition/group.
+    # Fill the parent info in later, e.g., we have to remap the parents since 
+    # parent ID is not in position ID in the partition/group.
 
 #rhc : ******* Partition
     partition_node = Partition_Node(node.ID)
@@ -1005,28 +1005,28 @@ def dfs_parent(visited, node):  #function for dfs
     group_node = Partition_Node(node.ID)
     group_node.ID = node.ID
 
-    # Get unvisited children, which affects whether ndoe is addded to the queue
-    # in the post traversal.
-    # For example, assume 4's parent is 6 and 6 has no parents and only
-    # one child 7 where 7 has no children and 7's only parent is 6.
-    # With singleton checking, 4 will call dfs_parent(6), which will mark
-    # 6 as visited and look at 6's children to see whether 6 should be queued.
-    # dfs_parent(6) will see that 6 has an unvisited child 7, which remains
-    # unvisited after dfs_parent(6) tries to traverse 6's parents (but
-    # it has none). If checking for singletons, dfs_parent(6) will see that
-    # 7 is a singleton and so mark 7 as visited, add 6 then 7 (parent first)
-    # to the current partition, and not add 6 or 7 to the queue. If singleton
-    # chcking is off, then 7 will not be marked visited (6 was already marked
-    # visited) and 6 will be added to the queue. In this case, 6 is added to 
-    # the frontier having a singleton child 7. When the current partition is
-    # full, we can examine the frontier, and for 6 we can move its singleton
-    # child 7 into the frontier, reducing the cost of the fronter by 1.
-    # When 6 is dequeued, we call dfs_parent(7), whcih sees that 7 has no chldren
-    # and marks 7 as visited. 7's parents (6) are already visited so after
-    # the parent traversal 7 still has no unvisited children. Thus 7 is not 
-    # added to the queue or the frontier (since it has no children) and 7 is
-    # added to the curret partition.
     if CHECK_UNVISITED_CHILDREN:
+        # Get unvisited children, which affects whether node is addded to the queue
+        # in the post traversal.
+        # For example, assume 4's parent is 6 and 6 has no parents and only
+        # one child 7 where 7 has no children and 7's only parent is 6.
+        # With singleton checking, 4 will call dfs_parent(6), which will mark
+        # 6 as visited and look at 6's children to see whether 6 should be queued.
+        # dfs_parent(6) will see that 6 has an unvisited child 7, which remains
+        # unvisited after dfs_parent(6) tries to traverse 6's parents (but
+        # it has none). If checking for singletons, dfs_parent(6) will see that
+        # 7 is a singleton and so mark 7 as visited, add 6 then 7 (parent first)
+        # to the current partition, and not add 6 or 7 to the queue. If singleton
+        # chcking is off, then 7 will not be marked visited (6 was already marked
+        # visited) and 6 will be added to the queue. In this case, 6 is added to 
+        # the frontier having a singleton child 7. When the current partition is
+        # full, we can examine the frontier, and for 6 we can move its singleton
+        # child 7 into the frontier, reducing the cost of the fronter by 1.
+        # When 6 is dequeued, we call dfs_parent(7), whcih sees that 7 has no chldren
+        # and marks 7 as visited. 7's parents (6) are already visited so after
+        # the parent traversal 7 still has no unvisited children. Thus 7 is not 
+        # added to the queue or the frontier (since it has no children) and 7 is
+        # added to the curret partition.
         check_list_of_unvisited_chldren_after_visiting_parents = dfs_parent_pre_parent_traversal(node,visited,list_of_unvisited_children)
         logger.trace("after pre: list_of_unvisited_children: " + str(list_of_unvisited_children))
     else:
@@ -1037,7 +1037,7 @@ def dfs_parent(visited, node):  #function for dfs
     #Note: dfs_parent_pre_parent_traversal will mark node as visitd
 
     
-    # Note: BFS will not call dfs_parent(child) if chld has been visited. So
+    # Note: BFS will not call dfs_parent(child) if child has been visited. So
     # if child has been visited and thus has been added to global map, we will 
     # not be resetting the pg_tuple here of such a child.
 
@@ -1082,7 +1082,17 @@ def dfs_parent(visited, node):  #function for dfs
     # visit parents
     list_of_parents_in_previous_group = []
 
+    # as we visit the parents (and their ancestors) we track the parents
+    # that have already been visited. We will process them them after
+    # the recursive calls to dfs_parent(visited, parent_node) unwind. 
     already_visited_parents = []
+    # if we find a visited parent in node.parents we save its index
+    # so we can process it later, where below:\
+    #   parent_node = nodes[parent_index]
+    #   ...
+    #   parent_node_visited_tuple = (parent_node,index_of_parent)
+    #   already_visited_parents.append(parent_node_visited_tuple)
+
     index_of_parent = 0
     for parent_index in node.parents:
  
@@ -1116,11 +1126,11 @@ def dfs_parent(visited, node):  #function for dfs
             pg_tuple = nodeIndex_to_partition_partitionIndex_group_groupIndex_map[parent_index]
             # parent has been mapped but, in general, the partition and group indices
             # might be -1. Here, they should not be -1 since the parent was unvisited
-            # and loops require a parent that has already been visited. (This already
-            # visited parent visits its parent ,which visits its parent etc until we try
-            # to revisit the already visited parent. Note: this applies also fro loops
+            # and a loop detected requires that the parent was already visited. (This already
+            # visited parent P visits its parent, which visits its parent etc until we try
+            # to revisit agai the already visited parent P. Note: this applies also for loops
             # within loops since in such a case we must still try to visit an already 
-            # visited parent, From above, for documentation, a nodes's global map
+            # visited parent. From above, for documentation, a nodes's global map
             # info is initialized at start of dfs_parent as:
             #partition_number = current_partition_number
             #partition_index = -1
@@ -1129,7 +1139,7 @@ def dfs_parent(visited, node):  #function for dfs
             parent_partition_parent_index = pg_tuple[1]
             parent_group_parent_index = pg_tuple[3]
             if (parent_partition_parent_index == -1) or (parent_group_parent_index == -1):
-                # assert group_index is also -1
+                # can also assert group_index is -1
                 logger.trace("[Error]: Internal Error: dfs_parent call to unvisited"
                     + " parent resulted in parent/group partition index of -1, which means"
                     + " a loop was detected at an unvisited parent.")
@@ -1191,7 +1201,7 @@ def dfs_parent(visited, node):  #function for dfs
 
             # Detect a loop here instead of below when we check each parent_node_visited_tuple
             # since this allows us to detect a loop now and hence use a partition or group
-            # name with an 'L' at the end, e.g., "PR2_2L" when we crate frontier tuples
+            # name with an 'L' at the end, e.g., "PR2_2L" when we create frontier tuples
             # and add names to the Senders and Receivers structures used for DAG creation.
 
             if parent_partition_parent_index == -1:
@@ -1205,7 +1215,7 @@ def dfs_parent(visited, node):  #function for dfs
                 if parent_group_parent_index != -1:
                     logger.error("[Error] Internal Error: parent_partition_parent_index is -1"
                         + " indicating that current partition is a loop but "
-                        + " parent_group_parent_index is not -1, when the group should also be a loop.") 
+                        + " parent_group_parent_index is not -1, when the group should also be in a loop.") 
 # rhc : ******* Group
                 global current_group_isLoop
                 current_group_isLoop = True
@@ -1215,7 +1225,7 @@ def dfs_parent(visited, node):  #function for dfs
 
         index_of_parent += 1
 
-    # Note: If a loops is detecte current_partition_isLoop and current_group_isLoop are
+    # Note: If a loops is detected current_partition_isLoop and current_group_isLoop are
     # both set to True. current_partition_isLoop remains True until the end 
     # of the partition is reached. current_group_isLoop is set to False when the 
     # end of the group is reached. So it is possible that current_partition_isLoop is
