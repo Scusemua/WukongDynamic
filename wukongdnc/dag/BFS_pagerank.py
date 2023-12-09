@@ -401,6 +401,12 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
         ID:17 frontier_parents: [(2, 2, 5)]
         ID:1 frontier_parents: [(2, 3, 3)]
         """
+        # Note: We are iterating through the nodes in the partition/group and seeing if
+        # their pagerank value is part of the output. We may want to add a field to 
+        # the "partition object" which is these frontier_parent tuples so we do not 
+        # have to do this iteration. But then the partition objects would be bigger.
+        # Currently a partition is just a list of partition_nodes; we would need a 
+        # partition object with a list of nodes and a list of frontier parent tuples.
         PageRank_output = {}
         for i in range(len(partition_or_group)):
             if len(partition_or_group[i].frontier_parents) > 0:
