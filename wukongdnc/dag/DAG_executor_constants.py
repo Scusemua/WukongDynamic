@@ -226,7 +226,8 @@ if run_all_tasks_locally and using_workers and store_fanins_faninNBs_locally:
 # Indicates that we are computing pagerank and thus that the pagerank
 # options are active and pagerank asserts should hold
 compute_pagerank = True
-
+# used in BFS_pagerank. For non-loops, we only need 1 iteration
+number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
 name_of_first_groupOrpartition_in_DAG = "PR1_1"
 
 # pagerank values will be saved so we can check them after execution

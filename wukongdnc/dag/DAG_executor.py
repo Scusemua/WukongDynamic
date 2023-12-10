@@ -3229,8 +3229,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         logger.trace(thread_name + " argsY: " + str(args))
 
                     if tasks_use_result_dictionary_parameter:
-                        # Passing am emoty inut tuple to the PageRank task,
-                        # This results in a rresult_dictionary
+                        # Passing an empty input tuple to the PageRank task,
+                        # This results in a result_dictionary
                         # of "DAG_executor_driver_0" --> (), where
                         # DAG_executor_driver_0 is used to mean that the DAG_excutor_driver
                         # provided an empty input tuple for the leaf task. In the 
