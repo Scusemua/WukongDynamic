@@ -1,11 +1,11 @@
 import logging
 import numpy as np
-#import os
+import os
 from multiprocessing import shared_memory
 
 from .DAG_executor_constants import use_page_rank_group_partitions, using_threads_not_processes
 #from .DAG_executor_constants import use_multithreaded_multiprocessing
-
+from .BFS import num_nodes
 logger = logging.getLogger(__name__)
 
 """
@@ -89,6 +89,7 @@ def initialize_struct_of_arrays(num_nodes, np_arrays_size_for_shared_partition,
     #pagerank = np.empty(np_arrays_size_for_shared_partition,dtype=np.double)
     pagerank = np.full(np_arrays_size_for_shared_partition,float(0.0)) # dtype=np.double)
     # prev[i] is previous pagerank value of i
+    # using parameter num_nodes not global variable
     previous = np.full(np_arrays_size_for_shared_partition,float((1/num_nodes)))
     # num_chldren[i] is number of child nodes of node i
     # rhc: Q: make these short or something shorter than int?
@@ -124,6 +125,7 @@ def initialize_struct_of_arrays_shared_memory(num_nodes, np_arrays_size_for_shar
 
     nonshared_pagerank = np.full(np_arrays_size_for_shared_partition,float(0.0)) # dtype=np.double)
     # prev[i] is previous pagerank value of i
+    # using parameter num_nodes not global variable
     nonshared_previous = np.full(np_arrays_size_for_shared_partition,float((1/num_nodes)))
     # num_chldren[i] is number of child nodes of node i
     # rhc: Q: make these short or something shorter than int?
@@ -390,16 +392,17 @@ def PageRank_Function_Shared_FastX(shared_nodes, position_size_tuple ,damping_fa
         logger.trace("")
 """
 
+# pagerank using a struct of arrays.
 def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,shared_map,shared_nodes):
 
-
         debug_pagerank = True
-        # rhc shared
+        # shared:
         # We do not need the input tuples that supply the shadow node values since
         # we set the shadow nodes and their parents for the output partitions
         # at the end.
        
-        #rhc shared
+        #shared: The partion or group is not inpout, it is in the shared array.
+        # We will get the start and end positions of the partition or group in the arrray.
         ## task_file_name is, e.g., "PR1_1" not "PR1_1.pickle"
         ## We check for task_file_name ending with "L" for loop below,
         ## so we make this check esy by having 'L' at the end (endswith)
@@ -407,12 +410,12 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
         #complete_task_file_name = './'+task_file_name+'.pickle'
         #with open(complete_task_file_name, 'rb') as handle:
         #    partition_or_group = (cloudpickle.load(handle))
-        #partition_or_group = shared_nodes
+
         position_size_triple = shared_map[task_file_name]
         starting_position_in_partition_group = position_size_triple[0]
         size_of_partition_group = position_size_triple[1]
 
-        #rhc shared
+        #shared: num_shadow_nodes is in the tuple for the task_file_name
         #num_shadow_nodes = len(input_tuples)
         num_shadow_nodes = position_size_triple[2]
         if debug_pagerank:
@@ -420,16 +423,35 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
                 +", size_of_partition_group: " + str(size_of_partition_group)
                 +", num_shadow_nodes: " + str(num_shadow_nodes))
 
+        # When using shared partition/groups, the partition/group has regular
+        # partition_nodes, shadow_nodes, and for each shadow node, its parent,
+        # where all parents are at the end. If there are n shadow_nodes there
+        # are n parents. If the size of the partition/group is size_of_partition_group,
+        # which is computed above, then we subtract the number of parent nodes, which 
+        # is the same as the number of shadow nodes. If this value is m, then m is also
+        # the starting position of the parent nodes.
+        num_nodes_for_pagerank_computation = size_of_partition_group - num_shadow_nodes
+        #starting_position_of_parents_of_shadow_nodes = num_nodes_for_pagerank_computation
+        total_num_nodes = num_nodes_for_pagerank_computation - num_shadow_nodes
+        # num_nodes is a global variable in BFS.py that is set to the number of
+        # nodes in the graph input by input_graph() in BFS.py.
+        if not total_num_nodes == num_nodes:
+            logger.error("[Error]: Internal Error: BFS_Shared: total_num_nodes"
+                + " is not equal to num_nodes in input graph.")
+            logging.shutdown()
+            os._exit(0)
 
-
-#rhc: ToDo: output the arrays
+        #For debugging, we might want to output the shared arrays here like 
+        # we did in the other pagerank functions. (We do this elsewhere also.)
+        # This is the code that ouputs the single shared array for the non-fast
+        # case, i.e., array of sructs.
         """
         if (debug_pagerank):
             logger.trace("PageRank_Function output partition_or_group (node:parents):")
 
             for node_index in range (starting_position_in_partition_group,starting_position_in_partition_group+size_of_partition_group):
             #for node in partition_or_group:
-                #rhc shared
+                #shared
                 node = shared_nodes[node_index]
                 #logger.trace(node,end=":")
                 # str(node) will print the node ID with an "-s" appended if 
@@ -447,11 +469,11 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
                     print_val += ", "
                 logger.trace(print_val)
             logger.trace("")
-            #rhc shared
+            #shared
             #logger.trace("PageRank_Function output partition_or_group (node:num_children):")
             logger.trace("PageRank_Function output shared nodes (node:num_children):")
             print_val = ""
-            #rhc shared
+            #shared
             for node_index in range (starting_position_in_partition_group,starting_position_in_partition_group+size_of_partition_group):
             #for node in partition_or_group:
                 node = shared_nodes[node_index]
@@ -468,78 +490,8 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
         random_jumping = damping_factor / total_num_nodes
         one_minus_dumping_factor = 1 - damping_factor
 
-#rhc: ToDo: Not used
-        """
-        iteration = -1
-        if not task_file_name.endswith('L'):
-            iteration = int(1)
-        else:
-            iteration = int(10)
-        """
-        
-        #rhc shared
-        # When using shared partition/groups, the partition/group has regular
-        # partition_nodes, shadow_nodes, and for each shadow node, its parent,
-        # where all parents are at the end. If there are n shadow_nodes there
-        # are n parents. If the size of the partition/group is size_of_partition_group,
-        # which is computed above, then we subtract the number of parent nodes, which 
-        # is the same as the nmber of shadow nodes. If this value is m, then m is also
-        # the starting position of the parent nodes.
-        #num_nodes_for_pagerank_computation = size_of_partition_group
-        #num_nodes_for_pagerank_computation = len(partition_or_group)
-#rhc: ToDo: Use these?
-        num_nodes_for_pagerank_computation = size_of_partition_group - num_shadow_nodes
-        #starting_position_of_parents_of_shadow_nodes = num_nodes_for_pagerank_computation
-
-#rhc: ToDo: There are no input tuples an this code dos not work for fast arrays
 
         """
-        #rhc shared
-        # used i as increment past the end of the partition/group for the next parent
-        # to be appended. Now the parent is already in the partition/group so we use
-        # j to track the next parent ndex in the partition/group.
-        #i = 0
-        j = starting_position_of_parents_of_shadow_nodes
-        for tup in input_tuples:
-            logger.trace("PageRank_Function: input tuple:" + str(tup))
-            shadow_node_index = tup[0]
-            pagerank_value = tup[1]
-            # assert
-            #rhc shared
-            position_of_shadow_node = starting_position_in_partition_group + shadow_node_index
-            #if not partition_or_group[shadow_node_index].isShadowNode:
-            if not shared_nodes[position_of_shadow_node].isShadowNode:
-                logger.error("[Error]: Internal Error: input tuple " + str(tup)
-                    + " position " + str(position_of_shadow_node) + " is not a shadow node.")
-            # If shadow_node x is a shadow_node for node y (where the one or more
-            # shadow nodes of y are immediatley preceeding y) then shadow_node x
-            # represents a parent node of y that was in a different partition P or 
-            # group G. P/G will send the pagerank value for parent to the partition
-            # or group for x and y. We ser the pagerank for the shadow_node equal to this
-            # received pagerank value. 
-            # We will use the shadow_node's pagerank as the pagerank value for one of 
-            # y's parents (there may be shadow_nodes for other parents of y and y may
-            # have parents in its grup/partition). We have two choices: (1) do not compuet
-            # the pagerank value of a shadow_node; this prevents the shadow_node's pagerank
-            # value from changing but we need an if-statement to check whether a node ia 
-            # a shadow_node. Choce (2) is to give the shadow_noe a parent node that is 
-            # out of the pagerank computation's range and set the pagerank of the
-            # shadow_node's parent such that when we compute the pagerank of the 
-            # shadow_node we always get the same value. For this case, we avoid the
-            # if-statement in the tight pagerank loop. So we avoid missed branch
-            # predctions by the hardware. Noet that there is a limit to the number of
-            # missed predictions allowed if out tight loop is to be considered by 
-            # the loop-stream detector as a loop whose micro ops can be buffered
-            # avoiding the re-decoding of the loop's machine instructions on ech 
-            # iteration of the loop. (The frontend of the instruction cycle can be 
-            # powered off also.)
-            #
-            # pagerank of shadow_node is the pagerank value (of a parent of the 
-            # shadow_node received from the parents partition/group executor.
-            
-            #rhc_shared 
-        
-        
         Changes:
         1. new PageRank Shared functions. These are used for executing tasks
             when using shared partitions/groups. This includes the update
@@ -576,129 +528,30 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
         cut in partions vs groups option
         partial DAG generation
         run with real lambdas
+        """
 
+        # shared: not using this. Iterations is set n the functions that 
+        # compute the pagerank values.
+        """
+        iteration = -1
+        if not task_file_name.endswith('L'):
+            iteration = int(1)
+        else:
+            iteration = int(10)
+        """
+        
 
-# rhc: ToDo: Try with empty input tuples and output. this loop will not run since
-# no input tuples. Need to turn off output loop so PageRank_output = {} is empty.
-            #rhc shared
-            if not shared_nodes[position_of_shadow_node].pagerank == pagerank_value:
-                logger.error("[Error]: Internal Error: " 
-                    + task_file_name + " Copied value is not equal to input value,"
-                    + " shared_nodes[position_of_shadow_node].pagerank: " 
-                    + str(shared_nodes[position_of_shadow_node].pagerank)
-                    + " pagerank_value: " + str(pagerank_value))
-            else:
-                logger.error(task_file_name + ": Fooooooooooooooooooooo")
-            #shared_nodes[position_of_shadow_node].pagerank = pagerank_value
-            if not task_file_name.endswith('L'):
-                shared_nodes[position_of_shadow_node].pagerank = pagerank_value
-            else:
-                shared_nodes[position_of_shadow_node].prev = pagerank_value
-            #partition_or_group[shadow_node_index].pagerank = pagerank_value
-            # IDs: -1, -2, -3, etc
-            #rhc shared
-            shadow_node_ID = shared_nodes[position_of_shadow_node].ID
-            #shadow_node_ID = partition_or_group[shadow_node_index].ID
-            # The shadow node ID is an integer, e.g. 1, which does not have
-            # a "-s" at the end. The "-s" is appwnsws by the __str__ of the partition
-            # node. The parent node ID of a shadow node with ID n is "n-s-p". This 
-            # is the actual node ID, unlike shadow nodes which have an int ID and when 
-            # the ID is printed by Partition_Node's __str__ function "-s" is appended.
-            # Note: Partition_Nodes do not have a member like isShadowNode thatindicates
-            # that the ndoe is the parent of a shadow node. So we just use "n-s-p" as the node ID.
-            parent_of_shadow_node_ID = str(shadow_node_ID) + "-s-p"
+        # shared: There are no input tuples passed in to this pagerank function. 
+        # We grab the tuples from a global map. The shadow node values have already 
+        # been set, i.e., the parent values that were computed by a previous 
+        # computation have been copied at the end of that computation to the 
+        # shadow node, and the shadow node's parent node's pagerank value was
+        # also computed and set then. Also, we do not add parents since
+        # they are already in the shared array and the parent position for each 
+        # shadow node has been set too.
 
-            #rhc shared
-            # The parent nodes are already in the partition/groups, we grab
-            # these parent nodes one-by-one using index j
-            parent_of_shadow_node = shared_nodes[j+starting_position_in_partition_group]
-            #rhc shared
-            parent_of_shadow_node.ID = parent_of_shadow_node_ID
-            #parent_of_shadow_node = Partition_Node(parent_of_shadow_node_ID)
-
-            pagerank_value_of_parent_node = ((shared_nodes[position_of_shadow_node].pagerank - random_jumping)  / one_minus_dumping_factor)
-            #rhc shared
-            if not parent_of_shadow_node.pagerank == pagerank_value_of_parent_node:
-                logger.error("[Error]: Internal Error: " 
-                    + task_file_name + " pagerank value to be set for parent of shadow node: "
-                    + str(pagerank_value_of_parent_node)
-                    + " is not the current pagerank value of the parent node: "
-                    + str(parent_of_shadow_node.pagerank))
-            else:
-                logger.error(task_file_name + ": Foxoxoxoxoxoxoxoxoxoxoxox")
-
-            # set the pagerank of the parent_of_shadow_node so that when we recompute
-            # the pagerank of the shadow_node we alwas get the same value.
-            #parent_of_shadow_node.pagerank = (
-            #    #rhc shared
-            #   (pagerank_value_of_parent_node)
-            #)
-            ##    #(partition_or_group[shadow_node_index].pagerank - random_jumping)  / one_minus_dumping_factor)
-            #if (debug_pagerank):
-            #    logger.trace(parent_of_shadow_node_ID + " pagerank set to: " + str(parent_of_shadow_node.pagerank))
-
-           if not task_file_name.endswith('L'):
-                parent_of_shadow_node.pagerank = (
-                    (pagerank_value_of_parent_node)
-                # if (debug_pagerank):
-                logger.trace("parent " + parent_of_shadow_node_ID + " pagerank set to: " + str(parent_of_shadow_node.pagerank))
-            else:
-                parent_of_shadow_node.prev = (
-                    (pagerank_value_of_parent_node)
-                # if (debug_pagerank):
-                logger.trace("parent " + parent_of_shadow_node_ID + " prev set to: " + str(parent_of_shadow_node.prev))
  
-            # num_children = 1 makes the computation easier; the computation assumed
-            # num_children was set to 1
-            parent_of_shadow_node.num_children = 1
-            #rhc shared
-            # parent node is already in partition/group so no need to append
-            # appending new nodes at the end
-            #partition_or_group.append(parent_of_shadow_node)
-
-            #rhc shared
-            # the parent node is in the partition/group at position j
-            #shared_nodes[position_of_shadow_node].parents[0] = num_nodes_for_pagerank_computation + i
-            shared_nodes[position_of_shadow_node].parents[0] = j
-            #partition_or_group[shadow_node_index].parents[0] = num_nodes_for_pagerank_computation + i
-            # rhc shared
-            #i += 1
-            j += 1
-        """
-
-#rhc: ToDo: Not using this
-        """
-        if (debug_pagerank):
-            logger.trace("")
-            logger.trace("PageRank_Function output partition_or_group after adding " + len(num_shadow_nodes) + " shadow node parents (node:parents):")
-            #rhc shared
-            for node_index in range (starting_position_in_partition_group,starting_position_in_partition_group+size_of_partition_group):
-            #for node in partition_or_group:
-                #rhc shared
-                node = shared_nodes[node_index]
-                # str(node) for shadow nodes will append "-s" to the int ID. For parents
-                # node of hadow nodes, __str__ will not append any value since the actual 
-                # node ID of a parent node is "n-s-p" so "n-s-p" will be printed by __str__.
-                # For shadow nodes, ID is an int, e.g., n and for parent modes, ID is "n-s-p",
-                # so for shadow nodes yo get "n-s: n" and for parent nodes "n-s-p: n-s-p".
-                print_val = str(node) + ": "
-                print_val += str(node.ID) + ", pr:" + str(node.pagerank) + ", prev:" + str(node.prev) + "par ["
-                # print(node,end=":")
-                for parent in node.parents:
-                    #print(parent,end=" ")
-                    print_val += str(parent) + " "
-                print_val += "] "
-                if len(node.parents) == 0:
-                    #print(" ,",end=" ")
-                    print_val += " ,"
-                else:
-                    #print(",",end=" ")
-                    print_val += ","
-                logger.trace(print_val)
-            logger.trace("")
-        """
-
-#rhc: ToDo: Already did this when initialized arrays
+        #shaed: we did this when initialized arrays
         """
         if task_file_name.endswith('L'):
             # init prev for loops
@@ -720,20 +573,15 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
                 position_size_triple, num_nodes_for_pagerank_computation,
                 damping_factor,one_minus_dumping_factor,random_jumping,total_num_nodes)
 
-#rhc: ToDo: Not using this
+        #shared: For debugging, we are not iterating through the partition/group and checking which 
+        # nodes are not shadow nodes and outputting the possibly empty list of frontier
+        # parent tuples.
         """
         if (debug_pagerank):
             logger.trace("")
             logger.trace("Frontier Parents:")
             #rhc shared
             for node_index in range (starting_position_in_partition_group,starting_position_in_partition_group+size_of_partition_group):
-            #for i in range(len(partition_or_group)):
-                #rhc shared
-                #if not partition_or_group[i].isShadowNode:
-                #    my_ID = str(partition_or_group[i].ID)
-                #else:
-                #   my_ID = str(partition_or_group[i].ID) + "-s"
-                #logger.trace("ID:" + my_ID + " frontier_parents: " + str(partition_or_group[i].frontier_parents))
                 if not shared_nodes[node_index].isShadowNode:
                     # for parent nodes, ID is e.g., "n-s-p", for non-parent "n" and
                     # for shadow nodes the else part gives "n-s"
@@ -743,13 +591,14 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
                 logger.trace("ID:" + my_ID + " frontier_parents: " + str(shared_nodes[node_index].frontier_parents))
             logger.trace("")
         """
+        # The frontier parent tuples looked like this:
         """
         ID:5 frontier_parents: [(2, 1, 2,"PR2_1")]
         ID:17 frontier_parents: [(2, 2, 5,"PR2_1")]
         ID:1 frontier_parents: [(2, 3, 3,"PR2_1")]
         """
         """
-        New: Instead of node with ID n having a frontier_parent tuple,
+        # shared : Instead of node with ID n having a frontier_parent tuple,
         the tuple is retrieved from the shared_frontier_map which has a list
         of tuples for this task. This tuple has the ID value as the last field. 
         So we will copy the pagerank value in position 5 of this task's 
@@ -760,26 +609,28 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
         frontier_parent: [(2, 2, 5, "PR2_2", 17)]
         frontier_parent: [(2, 3, 3, "PR2_3", 1)]
         """
-#rhc: Note: Instead of looping, we could give each partition/group 
-# output tuples that indited where the nodes with non-empty
-# frontoer parents are. These loops may be ong for large 
-# partitions/groups. For shared we can keep a global map like 
-# shared_map or just add a tuple to shared_map?
+
+        # Note: In the non-shared pagerank function and the non-fast shared 
+        # pagerank function we loop through the nodes ain the partition/group
+        # and for non shadow nodes ,we grab the (possibly empty) list of 
+        # frontier tuples for the node. Instead of looping through like this we 
+        # could map a task to its list of tuples, like we do here for the fast
+        # shared.
         PageRank_output = {}
 
-#rhc: ToDo: Not using this
+        #shared: we are not sending task output to the dependent tasks like we did
+        # for the non-fast shared function. We use the copy scheme decribed below,
         """
         #rhc shared
-        # Note: this shows frontiers of all the nodes including shadow nodes
-        # and parent nodes for debugging, where the frontier tuples of shadow
-        # nodes and parent nodes is always empty. There is a frontier tuples for
+        # For the non-fast shared version, each non shadow node has a possibly
+        # empty list of frontier tuples. There is a frontier tuple for
         # each output of the task. If the task has a pagerank value in position p that 
         # needs to be sent to anoher partition/group then the tuple will indicate the
-        # name of the destination partition/group and the position in this (sending) tasks'
-        # partition/group of the pagerank value to be sent.  Example: 
+        # name of the destination partition/group and the position of this (destination) tasks'
+        # shadow node to receive this value.  Example: 
         # ID:5 frontier_parents: [(2, 1, 2)] meaning send to partition number 2 group
         # 1 with name "PR2_1" a pagerank value that is assigned to position 2 of 
-        # the receiving task (where there is a shadow node).
+        # the receiving task (where there is a shadow node in this position).
         for node_index in range (starting_position_in_partition_group,starting_position_in_partition_group+size_of_partition_group):
         #for i in range(len(partition_or_group)):
             #rhc shared
@@ -805,7 +656,6 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
                     PageRank_output[partition_or_group_name] = output_list
         """
 
-        # NEW:
         if debug_pagerank:
             logger.trace("Copy frontier values:")
 
@@ -814,11 +664,11 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
         else:
             shared_frontier_map = shared_partition_frontier_parents_map
         
-        # Get the postition in this task and the position in the receiving task
-        # of the pagrank values to be copied from this task to the receiving task
-        # (to a shadow node in the receiving task.)
-        #list_of_frontier_tuples = shared_frontier_map[task_file_name]
-        # if task task_file_name has no frontier tuples then list_of_frontier_tuples
+        # shared: copy the parent pagerank values in the array to the corresponding 
+        # shadow node in the array.
+        # From the shared_frontier_map, get the parent postition and shadow node 
+        # positions in the pagerank array and do the copy.
+        # If task task_file_name has no frontier tuples then list_of_frontier_tuples
         # will be None.
         list_of_frontier_tuples = shared_frontier_map.get(task_file_name)
         if list_of_frontier_tuples == None:
@@ -839,14 +689,13 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
             #group_number = frontier_parent[1]
             position_or_group_index_of_output_task = frontier_parent_tuple[2]
             partition_or_group_name_of_output_task = frontier_parent_tuple[3]
-            # assert: partition_or_group_name_of_output_task == task_file_name
 
             # Note: We added this field to the frontier tuple so that when
-            # we ar using a shared_nodes array or multithreading we can
+            # we are using a shared_nodes array or multithreading we can
             # copy vlaues from shared_nodes[i] to shared_nodes[j] instead of 
             # having the tasks input/output these values , as they do when 
-            # each task has its won partition and the alues need to be sent
-            # and received instead of copied.
+            # each task has its own partition and the values need to be sent to
+            # and received by dependent tasks instead of copied.
             parent_or_group_index_of_this_task_to_be_output = frontier_parent_tuple[4]
             if debug_pagerank:
                 logger.trace("frontier_parent: " + str(frontier_parent_tuple))
@@ -881,7 +730,7 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
             else:
                 previous[toPosition] = pagerank[fromPosition] 
 
-            """ From above:
+            """ From above: the arrays of the stuct of arrays are:
             global pagerank
             global previous
             global number_of_children
@@ -891,6 +740,7 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
             global IDs
             """
 
+            # set the pagerank value of the parent for the shadow node we just copied to.
             if debug_pagerank:
                 logger.trace("number_of_parents[toPosition] should be one for shad node): " 
                     + str(number_of_parents[toPosition]))
@@ -925,14 +775,15 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
                 previous[starting_position_in_partition_group_of_output_task+node_index_of_parent_of_shadow_node] = (
                     (pagerank_of_shadow_node - random_jumping)  / one_minus_dumping_factor)
 
-            
+            # shared: FYI: This is what we did in the non-fast shared function to set the 
+            # parent value.
             #parent_of_shadow_node.pagerank = (
             #    #rhc shared
             #    (pagerank_of_shadow_node - random_jumping)  / one_minus_dumping_factor)
             #    #(partition_or_group[shadow_node_index].pagerank - random_jumping)  / one_minus_dumping_factor)
 
-
             #if debug_pagerank:
+            #    # read the just set value
             #    index = starting_position_in_partition_group_of_output_task+node_index_of_parent_of_shadow_node
             #    logger.trace(ID_of_parent_of_shadow_node + " pagerank set to: " 
             #        + str(pagerank[index]))
@@ -942,20 +793,31 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
             #    output_list = []
             #rhc shared
             #output_tuple = (parent_or_group_index,shared_nodes[node_index].pagerank)
-            #output_tuple = (parent_or_group_index,partition_or_group[i].pagerank)
+            ##output_tuple = (parent_or_group_index,partition_or_group[i].pagerank)
             #output_list.append(output_tuple)
 
-            # There is no output so output_list is an empty list, which means a list
+            # shared:
+            # There is no task outputs since a task copies it any parent values needed
+            # by dependent tasks to the shadow node positions o these dependent tasks.
+            # So output_list is an empty list, which means a list
             # having no output tuples, which means task inputs will be empty lists
-            # of input tuples which is effecively no inputs.
+            # of input tuples. Tasks have inputs but they are not "rceived" in the 
+            # usual manner, i.e. tasks send parent value to the child tasks that need
+            # them, instead the parent values ar copied to shadow nodes of the child nodes.
             output_list = []
             PageRank_output[partition_or_group_name_of_output_task] = output_list
 
 
-#rhc: ToDo: 
-# Not an issue for Python, but for others: memory barriers okay? any synch op will do? 
-# blank input/output tuples
-# New version of set output above for fast pagerank
+        # Note: note that one worker thread or process is writing values
+        # to the shared array that other worhers are read. This introduces a cache 
+        # coherence issue, u.e., make sure the reading workers reads the written
+        # values. this cna be handled by executing a memory barrier after the writes
+        # before the reads. We do that in this profram since a worker that writes
+        # values will fanout/fanin the dependent tasks and doing fanouts/fanins
+        # involves executing synchronization operations which include barriers.
+        # Consider this if this program is implemented in some other language.
+        #
+        # See the note at the end of the file.
 
         #if (debug_pagerank):
         print("PageRank output tuples for " + task_file_name + ":")
@@ -1009,19 +871,6 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
             logger.trace("")
             logger.trace("pagerank:")
             logger.trace("\n"+str(pagerank))
-
-#rhc: ToDo: Not using, code will not work
-        """
-        logger.trace("XXPageRank result for " + task_file_name + ":")
-        for i in range(num_nodes_for_pagerank_computation):
-            if not partition_or_group[i].isShadowNode:
-                print(str(partition_or_group[i].ID) + ":" + str(partition_or_group[i].pagerank))
-        logger.trace("")
-        logger.trace("")
-        """
-
-        #logging.shutdown()
-        #os._exit(0)
 
         return PageRank_output
 
@@ -1165,7 +1014,7 @@ import time
 
 lock = Lock()
 
-Note: he general rule is that if there is a write on thread A and read
+Note: The general rule is that if there is a write on thread A and read
  on thread B for the same location, A has to execute a release operation 
  as part of its write or as a subsequent memory barrier, and B has to 
  execute an acquire operation as part of its read or as a preceding 
@@ -1219,6 +1068,7 @@ if current_process().name == "MainProcess":
     shr.unlink()
 Note that because of the 64 bit ints this code can take about 1gb of ram to run, so make sure that you won't freeze your system using it. ^_^
 """
+
 """
 # In the first Python interactive shell
 import numpy as np

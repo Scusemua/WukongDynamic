@@ -4,6 +4,7 @@ import os
 #import numpy as np
 from .BFS_Partition_Node import Partition_Node
 from . import BFS_Shared
+from .BFS import num_nodes
 from .DAG_executor_constants import use_page_rank_group_partitions, using_threads_not_processes
 from .DAG_executor_constants import number_of_pagerank_iterations_for_partitions_groups_with_loops
 #from .DAG_executor_constants import use_multithreaded_multiprocessing
@@ -315,10 +316,24 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
         #actual_num_nodes = len(partition_or_group)-num_shadow_nodes
 
 
-# Problem: we should be using num_nodes_for_pagerank_computation instead
-# of total_num_nodes, so no total_num_nodes parameter?
+
+        # rhc: no total_num_nodes parameter?
+
+        # Note: num_nodes_for_pagerank_computation includes regular nodes plus
+        # shadow nodes, which together are the nodes in partition_or_group.
+        # There are no parent nodes in partition_or_group; we add parent nodes below.
+        # There is an input tuple for each shadow_node, so the number of shadow nodes
+        # is len(input_tuples).
 
         num_nodes_for_pagerank_computation = len(partition_or_group)
+        total_num_nodes = num_nodes_for_pagerank_computation - len(input_tuples)
+        # num_nodes is a global variable in BFS.py that is set to the number of
+        # nodes in the graph input by input_graph() in BFS.py.
+        if not total_num_nodes == num_nodes:
+            logger.error("[Error]: Internal Error: BFS_pagerank: total_num_nodes"
+                + " is not equal to num_nodes in input graph.")
+            logging.shutdown()
+            os._exit(0)
 
         damping_factor=0.15
         random_jumping = damping_factor / total_num_nodes
@@ -736,15 +751,29 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
         # where all parents are at the end. If there are n shadow_nodes there
         # are n parents. If the size of the partition/group is size_of_partition_group,
         # which is computed above, then we subtract the number of parent nodes, which 
-        # is the same as the nmber of shadow nodes. If this value is m, then m is also
-        # the starting position of the parent nodes.
-        #num_nodes_for_pagerank_computation = size_of_partition_group
-        #num_nodes_for_pagerank_computation = len(partition_or_group)
+        # is the same as the number of shadow nodes. The resulting value m is
+        # the starting position of the parent nodes. (The first position is 0 so the 
+        # first parent is in position m.)
+        # Note: In the non-shared pagerank function above, the partition_or_group does
+        # not contain parent nodes so we use
+        # num_nodes_for_pagerank_computation = len(partition_or_group).
+        # Here, the partition or group does include parent nodes so we need to substract
+        # the number of parent nodes, which equals the number of shadow_nodes, from the 
+        # size of the partition or group to get the number of nodes plus shadow nodes.
         num_nodes_for_pagerank_computation = size_of_partition_group - num_shadow_nodes
         starting_position_of_parents_of_shadow_nodes = num_nodes_for_pagerank_computation
+        # There is a shadow noed for each input tuple, so the number of shadow nodes
+        # is len(input_tuples).
+        total_num_nodes = num_nodes_for_pagerank_computation - len(input_tuples)
+        # num_nodes is a global variable in BFS.py that is set to the number of
+        # nodes in the graph input by input_graph() in BFS.py.
+        if not total_num_nodes == num_nodes:
+            logger.error("[Error]: Internal Error: BFS_pagerank: total_num_nodes"
+                + " is not equal to num_nodes in input graph.")
+            logging.shutdown()
+            os._exit(0)
 
-# Problem: use num_nodes_for_pagerank_computation instead of total_num_nodes. Note the 
-# latter is hard coded.
+# rhc: no total_num_nodes parameter?
 
         damping_factor=0.15
         random_jumping = damping_factor / total_num_nodes
@@ -1555,9 +1584,30 @@ order{‘C’, ‘F’}, optional, default: ‘C’
 Whether to store multi-dimensional data in row-major (C-style) or column-major (Fortran-style) order in memory.
 
 likearray_like, optional
-Reference object to allow the creation of arrays which are not NumPy arrays. If an array-like passed in as like supports the __array_function__ protocol, the result will be defined by it. In this case, it ensures the creation of an array object compatible with that passed in via this argument.
+Reference object to allow the creation of arrays which are not NumPy arrays. 
+If an array-like passed in as like supports the __array_function__ protocol, the result will be defined by it. 
+In this case, it ensures the creation of an array object compatible with 
+that passed in via this argument.
 
 import numpy as np
 arr = np.array([1, 2, 3, 4])
 print(arr[0])
+"""
+
+
+"""
+https://towardsdatascience.com/pagerank-3c568a7d2332
+There seems to be a bug in pagerank implementation. For iteration i, the values of page rank of 
+nodes must be taken from previous iteration. however, in your code, you are updating the 
+nodes's pagerank and using that new value for other linking nodes. Ideally, you should
+take the previous iteration value for the linking node.
+
+I have actually encountered this problem when I was writing the code. After some 
+research, I found that these are two kinds of implementaion. And they both 
+guarantee that the final result will converge to the correct value. If you t
+ake a look at the PageRank pseudocode on the internet, you could find both version!
+Interestingly, I have done some experiments to compare these two kinds of 
+implementation. The result turned out that updating the PageRank right away 
+actually helps the system to converge faster!
+
 """
