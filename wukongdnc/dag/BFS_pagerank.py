@@ -4,7 +4,7 @@ import os
 #import numpy as np
 from .BFS_Partition_Node import Partition_Node
 from . import BFS_Shared
-from .BFS import num_nodes
+#from .BFS import num_nodes
 from .DAG_executor_constants import use_page_rank_group_partitions, using_threads_not_processes
 from .DAG_executor_constants import number_of_pagerank_iterations_for_partitions_groups_with_loops
 #from .DAG_executor_constants import use_multithreaded_multiprocessing
@@ -327,6 +327,7 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
 
         num_nodes_for_pagerank_computation = len(partition_or_group)
         total_num_nodes = num_nodes_for_pagerank_computation - len(input_tuples)
+        """
         # num_nodes is a global variable in BFS.py that is set to the number of
         # nodes in the graph input by input_graph() in BFS.py.
         if not total_num_nodes == num_nodes:
@@ -334,6 +335,7 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
                 + " is not equal to num_nodes in input graph.")
             logging.shutdown()
             os._exit(0)
+        """
 
         damping_factor=0.15
         random_jumping = damping_factor / total_num_nodes
@@ -765,6 +767,7 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
         # There is a shadow noed for each input tuple, so the number of shadow nodes
         # is len(input_tuples).
         total_num_nodes = num_nodes_for_pagerank_computation - len(input_tuples)
+        """
         # num_nodes is a global variable in BFS.py that is set to the number of
         # nodes in the graph input by input_graph() in BFS.py.
         if not total_num_nodes == num_nodes:
@@ -772,6 +775,7 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
                 + " is not equal to num_nodes in input graph.")
             logging.shutdown()
             os._exit(0)
+        """
 
 # rhc: no total_num_nodes parameter?
 

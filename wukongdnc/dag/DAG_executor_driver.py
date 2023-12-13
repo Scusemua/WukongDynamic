@@ -1215,6 +1215,308 @@ which passes the partial DAG_infos to create() as described above.
 - A4, A5, 
 - A6: Same scheme
 
+We have an extended white board example in which we add two more connected
+componets and we add a fanin node at the end. One added component is
+nodes 21 and 22 and the second component is nodes 23 and 24. There is an 
+edge from 21 to 22 and from 23 to 24. We created a fanin by adding an 
+edge from 15 to 9. Using incremental DAG generation, with an interval of
+2 between publishing DAGs (i.e., we publish every other DAG) the 
+incremental DAGs are produced as follows. Note that we are generating
+groups of nodes, not partitions.
+
+First DAG: This DAG has 4 DAG states, one for each group. PR1_1 is the 
+first group (and also the first partition). The PR2_X groups are the 
+groups in partition 2. The first DAG always has either 2 partitions or
+the groups in the first two partitions. The first group is complete and 
+so can be executed. The groups in partition 2 are incomplete. Notice
+that we know the fanins/faninNBs/fanouts/collapses for group 1 but not 
+for the PR2_X groups. Hence, group 1 is complete and the PR2_X groups
+aer not. We give this first DAG_info to the DAG_executor_driver and it 
+will start workers/lambdas to excute the DAG. In this case, group 1
+is a leaf task so the DAG_executor_driver will ensure this leaf task
+is executed. Other leaf tasks will be detected incrementally and the 
+DAG_executor_driver does not start them (the DAG_executor_driver is 
+called only once at the start of execution). The workers/lambda started
+by the DAG_executor_driver can excute task/group PR1_1 but there are no 
+more complete tasks/groups so the workers will request a new DAG_info
+and the lambda will stop executing to later be "restarted" when a new
+incremental DAG is available. (For lambdas, this is essentially a
+type of "no-wait" synchronization - the lambda terminates and we (re)start 
+a new lambda to continue processing task/group 1 when a DAG becomes 
+available. (Note: the lambda started to complete group/task 1 will do so
+by performing the fanins/faninNBs/fanouts/collapses for group 1. This 
+means we saved the output of task 1 on the tcp_server and gave it to 
+the new lambda (in its payload) started to complete task/group 1)
+
+# for each state, the fanins/faninNBs/fanouts/collapses and flags
+to indicate if the state/group/task is complete and whether it
+has fanins/faninNBs/fanouts/collapses that are to-be-continued,
+i.e., that are not known until the next incremental DAG is generated.
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_map:
+1
+ task: PR1_1, fanouts:['PR2_1', 'PR2_3'], fanins:[], faninsNB:['PR2_2L'], collapse:[], fanin_sizes:[], faninNB_sizes:[2], task_inputs:(), ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:True
+2
+ task: PR2_1, fanouts:[], fanins:[], faninsNB:[], collapse:[], fanin_sizes:[], faninNB_sizes:[], task_inputs:('PR1_1-PR2_1',), ToBeContinued:True, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:True
+3
+ task: PR2_2L, fanouts:[], fanins:[], faninsNB:[], collapse:[], fanin_sizes:[], faninNB_sizes:[], task_inputs:('PR2_1-PR2_2L', 'PR1_1-PR2_2L'), ToBeContinued:True, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:True
+4
+ task: PR2_3, fanouts:[], fanins:[], faninsNB:[], collapse:[], fanin_sizes:[], faninNB_sizes:[], task_inputs:('PR1_1-PR2_3',), ToBeContinued:True, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:True
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG states:
+PR1_1
+1
+PR2_1
+2
+PR2_2L
+3
+PR2_3
+4
+
+# start state of any leaf tasks
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG leaf task start states
+1
+
+# python function to be executed for the pageran tasks in the DAG.
+# the tasks are the same. their group/partition and inputs are different.
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_tasks:
+PR1_1  :  <function PageRank_Function_Driver at 0x00000227638482C0>
+PR2_1  :  <function PageRank_Function_Driver at 0x00000227638482C0>
+PR2_2L  :  <function PageRank_Function_Driver at 0x00000227638482C0>
+PR2_3  :  <function PageRank_Function_Driver at 0x00000227638482C0>
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_leaf_tasks:
+PR1_1
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_leaf_task_inputs:
+()
+
+# version 2 of the DAG. The first version only had group PR1_1 in it
+# and we start execution with 2 partitions or the groups in 2 partitions.
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_version_number:
+2
+# the DAG has only partially been constucted, i.e., it is still incomplete
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_info_is_complete:
+False
+
+The second incremental DAG is shown below. We added the groups in the 
+next 2 partitions to the DAG. Partition 3 has the PR3_X groups and
+partition 4 has one group PR4_1. When we added the partition 3 groups,
+the partiton 2 groups became complete. When we added the partition
+4 group, pthe partition 3 groups became complete. Group PR4_1 is inomplete;
+it will become complete when we add the group PR5_1 in partition 5.
+Group PR4_1 is the first group in a new connected component.
+This group has state 8. Since PR4_1 is the start of a new connected
+component it is a leaf task. This also means that the groups in 
+partition 3 were the last groups in their connected component. Thus, 
+they have no fanins/faninNBs/fanouts/collapses to groups that are
+not in the same partition 3, which means there are no "missing"
+fanins/faninNBs/fanouts/collapses and thus that these PR3_X groups
+are complete.
+
+# Groups PR2_X ad PR3_X are complete. Group PR4_1 is not.
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_map:
+1
+ task: PR1_1, fanouts:['PR2_1', 'PR2_3'], fanins:[], faninsNB:['PR2_2L'], collapse:[], fanin_sizes:[], faninNB_sizes:[2], task_inputs:(), ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+2
+ task: PR2_1, fanouts:[], fanins:[], faninsNB:['PR2_2L'], collapse:[], fanin_sizes:[], faninNB_sizes:[2], task_inputs:('PR1_1-PR2_1',), ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+3
+ task: PR2_2L, fanouts:['PR3_1'], fanins:[], faninsNB:['PR3_2'], collapse:[], fanin_sizes:[], faninNB_sizes:[2], task_inputs:('PR2_1-PR2_2L', 'PR1_1-PR2_2L'), ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+4
+ task: PR2_3, fanouts:[], fanins:['PR3_3'], faninsNB:[], collapse:[], fanin_sizes:[2], faninNB_sizes:[], task_inputs:('PR1_1-PR2_3',), ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+5
+ task: PR3_1, fanouts:[], fanins:[], faninsNB:['PR3_2'], collapse:[], fanin_sizes:[], faninNB_sizes:[2], task_inputs:('PR2_2L-PR3_1',), ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+6
+ task: PR3_2, fanouts:[], fanins:['PR3_3'], faninsNB:[], collapse:[], fanin_sizes:[2], faninNB_sizes:[], task_inputs:('PR2_2L-PR3_2', 'PR3_1-PR3_2'), ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+7
+ task: PR3_3, fanouts:[], fanins:[], faninsNB:[], collapse:[], fanin_sizes:[], faninNB_sizes:[], task_inputs:('PR3_2-PR3_3', 'PR2_3-PR3_3'), ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+8
+ task: PR4_1, fanouts:[], fanins:[], faninsNB:[], collapse:[], fanin_sizes:[], faninNB_sizes:[], task_inputs:(), ToBeContinued:True, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:True
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG states:
+PR1_1
+1
+PR2_1
+2
+PR2_2L
+3
+PR2_3
+4
+PR3_1
+5
+PR3_2
+6
+PR3_3
+7
+PR4_1
+8
+
+# PR4_1 which has state 8 is a leaf task. It will be executed when this
+# DAG is generated by either starting a lambda to execute it or putting 
+# it in the workers work queue.
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG leaf task start states
+1
+8
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_tasks:
+...
+Same as above 
+...
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_leaf_tasks:
+PR1_1
+PR4_1
+
+# leaf taks have no input
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_leaf_task_inputs:
+()
+()
+
+# this is version 4, version 3 has groups for partition 1, 2, and 3.
+# we publish every other incremental DAG - we started by publishig 
+# the DAG for PR1_1 and PR2_X, we did not publish the next DAG, which 
+# added PR3_X, and we publised the DAG that added PR4_1.
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_version_number:
+4
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_info_is_complete:
+False
+
+The next DAG is shown below. It adds the groups in partition 5, which is 
+the single group PR5_1, and the groups in partition 6, which is PR6_1.
+PR5_1 is the last partition/group in the second component that started
+with PR4_1. So the second component contains PR4_1 followed by PR5_1.
+When PR5_1 was generated, PR4_1 became complete. And since PR5_1 ends 
+the component (it has no children nodes that are in a different 
+partition's groups) it is also complete. This means thar PR4_1 has
+no fanins/faninNBs/fanouts/collapses to any to-be-continued, i.e., 
+incomplete groups. PR6_1 is the first partition/group in a new (third)
+connected component. Thus it is a leaf task. It is incomplete and will
+become complete in the next DAG generated.
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_map:
+1
+ task: PR1_1, fanouts:['PR2_1', 'PR2_3'], fanins:[], faninsNB:['PR2_2L'], collapse:[], fanin_sizes:[], faninNB_sizes:[2], task_inputs:(), ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+2
+ task: PR2_1, fanouts:[], fanins:[], faninsNB:['PR2_2L'], collapse:[], fanin_sizes:[], faninNB_sizes:[2], task_inputs:('PR1_1-PR2_1',), ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+3
+ task: PR2_2L, fanouts:['PR3_1'], fanins:[], faninsNB:['PR3_2'], collapse:[], fanin_sizes:[], faninNB_sizes:[2], task_inputs:('PR2_1-PR2_2L', 'PR1_1-PR2_2L'), ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+4
+ task: PR2_3, fanouts:[], fanins:['PR3_3'], faninsNB:[], collapse:[], fanin_sizes:[2], faninNB_sizes:[], task_inputs:('PR1_1-PR2_3',), ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+5
+ task: PR3_1, fanouts:[], fanins:[], faninsNB:['PR3_2'], collapse:[], fanin_sizes:[], faninNB_sizes:[2], task_inputs:('PR2_2L-PR3_1',), ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+6
+ task: PR3_2, fanouts:[], fanins:['PR3_3'], faninsNB:[], collapse:[], fanin_sizes:[2], faninNB_sizes:[], task_inputs:('PR2_2L-PR3_2', 'PR3_1-PR3_2'), ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+7
+ task: PR3_3, fanouts:[], fanins:[], faninsNB:[], collapse:[], fanin_sizes:[], faninNB_sizes:[], task_inputs:('PR3_2-PR3_3', 'PR2_3-PR3_3'), ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+8
+ task: PR4_1, fanouts:[], fanins:[], faninsNB:[], collapse:['PR5_1'], fanin_sizes:[], faninNB_sizes:[], task_inputs:(), ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+9
+ task: PR5_1, fanouts:[], fanins:[], faninsNB:[], collapse:[], fanin_sizes:[], faninNB_sizes:[], task_inputs:('PR4_1-PR5_1',), ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+10
+ task: PR6_1, fanouts:[], fanins:[], faninsNB:[], collapse:[], fanin_sizes:[], faninNB_sizes:[], task_inputs:(), ToBeContinued:True, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:True
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG states:
+PR1_1
+1
+...
+PR5_1
+9
+PR6_1
+10
+
+# leaf tasks are PR1_1, PR4_1, and PR6_1 with states 1, 8, and 10
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG leaf task start states
+1
+8
+10
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_tasks:
+...
+SAME
+...
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_leaf_tasks:
+PR1_1
+PR4_1
+PR6_1
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_leaf_task_inputs:
+()
+()
+()
+
+# version 5 which added PR5_1 was not published
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_version_number:
+6
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_info_is_complete:
+False
+
+The last DAG generated is shown below. It adds the final partition/group
+PR7_1. PR6_1 is now complete and since PR7_1 is the last partition/group
+in the DAG, PR7_1 is complete and the DAG is complete.
+
+1
+ task: PR1_1, fanouts:['PR2_1', 'PR2_3'], fanins:[], faninsNB:['PR2_2L'], collapse:[], fanin_sizes:[], faninNB_sizes:[2], task_inputs:(), ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+2
+ task: PR2_1, fanouts:[], fanins:[], faninsNB:['PR2_2L'], collapse:[], fanin_sizes:[], faninNB_sizes:[2], task_inputs:('PR1_1-PR2_1',), ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+3
+ task: PR2_2L, fanouts:['PR3_1'], fanins:[], faninsNB:['PR3_2'], collapse:[], fanin_sizes:[], faninNB_sizes:[2], task_inputs:('PR2_1-PR2_2L', 'PR1_1-PR2_2L'), ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+4
+ task: PR2_3, fanouts:[], fanins:['PR3_3'], faninsNB:[], collapse:[], fanin_sizes:[2], faninNB_sizes:[], task_inputs:('PR1_1-PR2_3',), ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+5
+ task: PR3_1, fanouts:[], fanins:[], faninsNB:['PR3_2'], collapse:[], fanin_sizes:[], faninNB_sizes:[2], task_inputs:('PR2_2L-PR3_1',), ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+6
+ task: PR3_2, fanouts:[], fanins:['PR3_3'], faninsNB:[], collapse:[], fanin_sizes:[2], faninNB_sizes:[], task_inputs:('PR2_2L-PR3_2', 'PR3_1-PR3_2'), ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+7
+ task: PR3_3, fanouts:[], fanins:[], faninsNB:[], collapse:[], fanin_sizes:[], faninNB_sizes:[], task_inputs:('PR3_2-PR3_3', 'PR2_3-PR3_3'), ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+8
+ task: PR4_1, fanouts:[], fanins:[], faninsNB:[], collapse:['PR5_1'], fanin_sizes:[], faninNB_sizes:[], task_inputs:(), ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+9
+ task: PR5_1, fanouts:[], fanins:[], faninsNB:[], collapse:[], fanin_sizes:[], faninNB_sizes:[], task_inputs:('PR4_1-PR5_1',), ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+10
+ task: PR6_1, fanouts:[], fanins:[], faninsNB:[], collapse:['PR7_1'], fanin_sizes:[], faninNB_sizes:[], task_inputs:(), ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+11
+ task: PR7_1, fanouts:[], fanins:[], faninsNB:[], collapse:[], fanin_sizes:[], faninNB_sizes:[], task_inputs:('PR6_1-PR7_1',), ToBeContinued:False, fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:False
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG states:
+PR1_1
+1
+PR2_1
+...
+PR6_1
+10
+PR7_1
+11
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG leaf task start states
+1
+8
+10
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_tasks:
+...
+Same as the above DAGs
+...
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_leaf_tasks:
+PR1_1
+PR4_1
+PR6_1
+
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_leaf_task_inputs:
+()
+()
+()
+
+# We published version 6 and since this the ADG is complete we publish
+# version 7.
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_version_number:
+7
+# The ADG is now complete
+DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG_info_is_complete:
+True
+
+
+
 Note: The call to 
   logging.shutdown()
 Informs the logging system to perform an orderly shutdown by flushing 

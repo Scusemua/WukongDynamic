@@ -5,7 +5,7 @@ from multiprocessing import shared_memory
 
 from .DAG_executor_constants import use_page_rank_group_partitions, using_threads_not_processes
 #from .DAG_executor_constants import use_multithreaded_multiprocessing
-from .BFS import num_nodes
+#from .BFS import num_nodes
 logger = logging.getLogger(__name__)
 
 """
@@ -433,6 +433,7 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
         num_nodes_for_pagerank_computation = size_of_partition_group - num_shadow_nodes
         #starting_position_of_parents_of_shadow_nodes = num_nodes_for_pagerank_computation
         total_num_nodes = num_nodes_for_pagerank_computation - num_shadow_nodes
+        """
         # num_nodes is a global variable in BFS.py that is set to the number of
         # nodes in the graph input by input_graph() in BFS.py.
         if not total_num_nodes == num_nodes:
@@ -440,6 +441,7 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
                 + " is not equal to num_nodes in input graph.")
             logging.shutdown()
             os._exit(0)
+        """
 
         #For debugging, we might want to output the shared arrays here like 
         # we did in the other pagerank functions. (We do this elsewhere also.)

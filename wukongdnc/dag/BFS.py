@@ -4148,9 +4148,9 @@ def input_graph():
     #fname = "graph_23N"
     #fname = "graph_24N_3CC"
 
-    #fname = "graph_24N_3CC_fanin"   # fanin at end
+    fname = "graph_24N_3CC_fanin"   # fanin at end
     #fname = "graph_2N_2CC"  # 2 nodes (CCs) no edges
-    fname = "graph_3N_3CC"  # 3 nodes (CCs) no edges
+    #fname = "graph_3N_3CC"  # 3 nodes (CCs) no edges
     #fname = "graph_2N"
     #fname = "graph_1N"
     #fname = "graph_3P"
