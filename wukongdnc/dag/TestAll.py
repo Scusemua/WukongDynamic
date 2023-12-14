@@ -1,6 +1,6 @@
 import logging
 #import os
-import wukongdnc.dag.DAG_executor_constants
+#import wukongdnc.dag.DAG_executor_constants
 
 logger = logging.getLogger(__name__)
 
@@ -10,6 +10,9 @@ logger = logging.getLogger(__name__)
 #   Set SERVERLESS_SYNC to True or False in wukongdnc constants !!!!!!!!!!!!!!
 #
 
+#test_number = 1
+
+"""
 wukongdnc.dag.DAG_executor_constants.store_sync_objects_in_lambdas = False
 wukongdnc.dag.DAG_executor_constants.using_Lambda_Function_Simulators_to_Store_Objects = False
 wukongdnc.dag.DAG_executor_constants.sync_objects_in_lambdas_trigger_their_tasks = False
@@ -79,7 +82,9 @@ wukongdnc.dag.DAG_executor_constants.process_work_queue_Type = "BoundedBuffer"
 #FanIn_Type = "DAG_executor_FanIn_Select"
 #FanInNB_Type = "DAG_executor_FanInNB_Select"
 #process_work_queue_Type = "BoundedBuffer_Select"
+"""
+from . import DAG_executor_constants
+DAG_executor_constants.set_test_number(1)
 
-from .DAG_executor_driver import run
-
-run()
+from . import DAG_executor_driver
+DAG_executor_driver.run()

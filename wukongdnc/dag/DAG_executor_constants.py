@@ -19,8 +19,6 @@ ch.setLevel(logging.INFO)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
-test_number = 0
-
 # Configuraion:
 #
 # True if we are not using Lambdas, i.e., executing tasks with threads or processes
@@ -827,14 +825,21 @@ def check_asserts():
         logging.shutdown()
         os._exit(0)
 
+test_number = 0
+# called by TestAll.py to run testX
+def set_test_number(number):
+    global test_number
+    test_number = number
+
 # Run Tests
-if not test_number == 0:
-    check_asserts()
+
 if test_number == 1:
     test1()
 elif test_number == 2:
     test2()
 
-# ToDo: so TestAll.py can set its test_number before it imports 
-# DAG_executor_constants and DAG_executor_constants can 
-# read the test_number which is default 0 when not testing.
+# Check asserts after setting the configuration constants
+if not test_number == 0:
+    check_asserts()
+
+#Q: where to put global decls? once before testX defs?
