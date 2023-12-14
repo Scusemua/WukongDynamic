@@ -19,6 +19,7 @@ ch.setLevel(logging.INFO)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
+test_number = 0
 
 # Configuraion:
 #
@@ -46,14 +47,14 @@ store_fanins_faninNBs_locally = True
 # execute a Fan_in operaation on the created object.
 # 
 # This mus be false if we aer doing incremental_DAG_generation; this is asserted below.
-create_all_fanins_faninNBs_on_start = False
+create_all_fanins_faninNBs_on_start = True
 
 # True if the DAG is executed by a "pool" of threads/processes. False, if we are
 # using Lambdas or we are using threads to simulate the use of Lambdas. In the latter
 # case, instead of, e.g., starting a Lambda at fan_out operations, we start a thread.
 # This results in the creation of many threads and is only use to test the logic 
 # of the Lambda code.
-using_workers = False
+using_workers = True
 # True when we are not using Lambas and tasks are executed by threads instead of processes. 
 # False when we are not using lambdas and are using multiprocesssing 
 using_threads_not_processes = True
@@ -163,6 +164,12 @@ using_single_lambda_function = False
 #    invoke the function to do an op on the object more than once.
 
 #assert:
+if using_workers and not run_all_tasks_locally:
+    logger.error("[Error]: Configuration error: if using_workers then must run_all_tasks_locally.")
+    logging.shutdown()
+    os._exit(0)     
+
+#assert:
 if bypass_call_lambda_client_invoke and run_all_tasks_locally:
     logger.error("[Error]: Configuration error: if bypass_call_lambda_client_invoke then must be running real Lambdas"
         + " i.e., not run_all_tasks_locally.")
@@ -209,23 +216,13 @@ if sync_objects_in_lambdas_trigger_their_tasks:
         logging.shutdown()
         os._exit(0)
 
-#assert:
-if run_all_tasks_locally and using_workers and store_fanins_faninNBs_locally:
-    if using_threads_not_processes:
-        # if create sync objects on start then we must map them to function so
-        # that we can determine the function an object is in.
-        logger.error("[Error]: Configuration Error: store sync objects locally but using worker processes,"
-            + " which must use remote objects (on server).")
-        logging.shutdown()
-        os._exit(0)
-
 ##########################################
 ###### PageRank settings start here ######
 ##########################################
 
 # Indicates that we are computing pagerank and thus that the pagerank
 # options are active and pagerank asserts should hold
-compute_pagerank = True
+compute_pagerank = False
 # used in BFS_pagerank. For non-loops, we only need 1 iteration
 number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
 name_of_first_groupOrpartition_in_DAG = "PR1_1"
@@ -250,7 +247,7 @@ check_pagerank_output = compute_pagerank and run_all_tasks_locally and (using_wo
 same_output_for_all_fanout_fanin = not compute_pagerank
 
 # True if DAG generation and DAG_execution are overlapped. 
-use_incremental_DAG_generation = compute_pagerank and True
+use_incremental_DAG_generation = compute_pagerank and False
 
 # assert 
 if compute_pagerank and use_incremental_DAG_generation and create_all_fanins_faninNBs_on_start:
@@ -577,3 +574,267 @@ if not_A1s and not_A2 and not_A3s and not_A4s and not_A5 and not_A6:
 # Assert using a lambda option ==> store objects in Lambdas 
 # Assert using_DAG_orchestrator ==> not run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally
 
+
+##### Tests
+
+#test1: simulated lambdas (A2) with non-selective-wait Sync-objects,
+#       create objects at the start
+def test1():
+    print("test1")
+    global store_sync_objects_in_lambdas
+    global using_Lambda_Function_Simulators_to_Store_Objects
+    global sync_objects_in_lambdas_trigger_their_tasks
+    global using_DAG_orchestrator
+    global map_objects_to_lambda_functions
+    global use_anonymous_lambda_functions
+    global using_single_lambda_function
+    global compute_pagerank
+    global check_pagerank_output
+    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
+    global name_of_first_groupOrpartition_in_DAG
+    global same_output_for_all_fanout_fanin
+    global use_incremental_DAG_generation
+    global incremental_DAG_deposit_interval
+    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
+    global tasks_use_result_dictionary_parameter
+    global use_shared_partitions_groups
+    global use_page_rank_group_partitions
+    global use_struct_of_arrays_for_pagerank
+    global run_all_tasks_locally
+    global bypass_call_lambda_client_invoke
+    global store_fanins_faninNBs_locally
+    global create_all_fanins_faninNBs_on_start
+    global using_workers
+    global using_threads_not_processes
+    global num_workers
+    global use_multithreaded_multiprocessing
+    global num_threads_for_multithreaded_multiprocessing
+    global FanIn_Type
+    global FanInNB_Type
+    global process_work_queue_Type
+
+    store_sync_objects_in_lambdas = False
+    using_Lambda_Function_Simulators_to_Store_Objects = False
+    sync_objects_in_lambdas_trigger_their_tasks = False
+    using_DAG_orchestrator = False
+    map_objects_to_lambda_functions = False
+    use_anonymous_lambda_functions = False
+    using_single_lambda_function = False
+
+    # For all: remote objects, using select objects:
+    # 1. run_all_tasks_locally = True, create objects on start = True:
+    # TTFFTF: no trigger and no DAG_orchestrator, but map objects 
+    # (anon is false) and create objects on start
+    # variations:
+    # - change D_O to T, 
+    # - change map to F, and anon to T: Note: no function lock since anon caled only once
+    # - change D_O to F, map F, anon T: Note: no function lock since anon caled only once
+    #
+    # 2. run_all_tasks_locally = False, create objects on start = True:
+    # Note: not running real lambdas yet, so need TTT, i.e., not using threads
+    #       to simulate lambdas and not running real lambdas yet, so need to
+    #       trigger lambdas, which means store objects in lambdas and they call
+    #       DAG_excutor_Lambda to execute task (i.e., "trigger task to run in 
+    #       the same lambda"). Eventually we'll have tests for use real 
+    #       non-triggered lambdas to run tasks (invoked at fanouts/faninNBS)
+    #       and objects stored in lambdas or on server.
+    # TTTTTF: trigger and DAG_orchestrator, map objects (anon is false) and create objects on start
+    # variations:
+    # - change map to F, and anon to T and create on start to F: Note: no function lock since anon called only once
+    # - change DAG_orchestrator to F - so not going through enqueue so will
+    #   create on fly in other places besides equeue.
+
+
+    compute_pagerank = False # True
+    check_pagerank_output = compute_pagerank and True
+    number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
+    name_of_first_groupOrpartition_in_DAG = "PR1_1"
+    same_output_for_all_fanout_fanin = not compute_pagerank
+    use_incremental_DAG_generation = compute_pagerank and False
+    incremental_DAG_deposit_interval = 2
+    work_queue_size_for_incremental_DAG_generation_with_worker_processes =  2**10-1
+    tasks_use_result_dictionary_parameter = compute_pagerank and True
+    use_shared_partitions_groups = compute_pagerank and False
+    use_page_rank_group_partitions = compute_pagerank and True
+    use_struct_of_arrays_for_pagerank = compute_pagerank and False
+
+
+    ## Tests ##
+
+    #running: python -m wukongdnc.dag.DAG_executor_driver and python -m wukongdnc.server.tcp_server or (tcp_server_lambda)
+
+    #Test1: simulated lambdas (A2) with non-selective-wait Sync-objects,
+    # create objects at the start
+
+    run_all_tasks_locally = True 
+    bypass_call_lambda_client_invoke = not run_all_tasks_locally and False
+    store_fanins_faninNBs_locally = True 
+    create_all_fanins_faninNBs_on_start = True
+    using_workers = False
+    using_threads_not_processes = True
+    num_workers = 1
+    use_multithreaded_multiprocessing = False
+    num_threads_for_multithreaded_multiprocessing = 1
+
+    FanIn_Type = "DAG_executor_FanIn"
+    FanInNB_Type = "DAG_executor_FanInNB"
+    process_work_queue_Type = "BoundedBuffer"
+    #FanIn_Type = "DAG_executor_FanIn_Select"
+    #FanInNB_Type = "DAG_executor_FanInNB_Select"
+    #process_work_queue_Type = "BoundedBuffer_Select"
+
+#Test2: simulated lambdas (A2) with selective-wait Sync-objects,
+#        create objects at the start
+def test2():
+    print("test2")
+    global store_sync_objects_in_lambdas
+    global using_Lambda_Function_Simulators_to_Store_Objects
+    global sync_objects_in_lambdas_trigger_their_tasks
+    global using_DAG_orchestrator
+    global map_objects_to_lambda_functions
+    global use_anonymous_lambda_functions
+    global using_single_lambda_function
+    global compute_pagerank
+    global check_pagerank_output
+    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
+    global name_of_first_groupOrpartition_in_DAG
+    global same_output_for_all_fanout_fanin
+    global use_incremental_DAG_generation
+    global incremental_DAG_deposit_interval
+    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
+    global tasks_use_result_dictionary_parameter
+    global use_shared_partitions_groups
+    global use_page_rank_group_partitions
+    global use_struct_of_arrays_for_pagerank
+    global run_all_tasks_locally
+    global bypass_call_lambda_client_invoke
+    global store_fanins_faninNBs_locally
+    global create_all_fanins_faninNBs_on_start
+    global using_workers
+    global using_threads_not_processes
+    global num_workers
+    global use_multithreaded_multiprocessing
+    global num_threads_for_multithreaded_multiprocessing
+    global FanIn_Type
+    global FanInNB_Type
+    global process_work_queue_Type
+
+    run_all_tasks_locally = True 
+    store_fanins_faninNBs_locally = True 
+    create_all_fanins_faninNBs_on_start = True
+    using_workers = False
+    using_threads_not_processes = True
+    num_workers = 1
+    use_multithreaded_multiprocessing = False
+    num_threads_for_multithreaded_multiprocessing = 1
+
+    #FanIn_Type = "DAG_executor_FanIn"
+    #FanInNB_Type = "DAG_executor_FanInNB"
+    #process_work_queue_Type = "BoundedBuffer"
+    FanIn_Type = "DAG_executor_FanIn_Select"
+    FanInNB_Type = "DAG_executor_FanInNB_Select"
+    process_work_queue_Type = "BoundedBuffer_Select"
+
+def check_asserts():
+    #assert:
+    if using_workers and not run_all_tasks_locally:
+        logger.error("[Error]: Configuration error: if using_workers then must run_all_tasks_locally.")
+        logging.shutdown()
+        os._exit(0)     
+
+    #assert:
+    if bypass_call_lambda_client_invoke and run_all_tasks_locally:
+        logger.error("[Error]: Configuration error: if bypass_call_lambda_client_invoke then must be running real Lambdas"
+            + " i.e., not run_all_tasks_locally.")
+        logging.shutdown()
+        os._exit(0)  
+
+    #assert:
+    if using_workers and not using_threads_not_processes:
+        if store_fanins_faninNBs_locally:
+            # When using worker processed, synch objects must be stored remoely
+            logger.error("[Error]: Configuration error: if using_workers and not using_threads_not_processes"
+                + " then store_fanins_faninNBs_locally must be False.")
+            logging.shutdown()
+            os._exit(0)
+
+    #assert:
+    if create_all_fanins_faninNBs_on_start and not run_all_tasks_locally and store_sync_objects_in_lambdas:
+        if not map_objects_to_lambda_functions:
+            # if create sync objects on start and executing tasks in lambdas "
+            # then we must map them to function so that we can determine the 
+            # function an object is in.
+            logger.error("[Error]: Configuration error: if create_all_fanins_faninNBs_on_start"
+                + " then map_objects_to_functions must be True.")
+            logging.shutdown()
+            os._exit(0)
+
+    #assert:
+    if map_objects_to_lambda_functions:
+        if use_anonymous_lambda_functions:
+            # if create sync objects on start then we must map them to function so
+            # that we can determine the function an object is in.
+            logger.error("[Error]: Configuration error: if map_objects_to_lambda_functions"
+                + " then use_anonymous_lambda_functions must be False.")
+            logging.shutdown()
+            os._exit(0)
+
+    #assert:
+    if sync_objects_in_lambdas_trigger_their_tasks:
+        if run_all_tasks_locally:
+            # if create sync objects on start then we must map them to function so
+            # that we can determine the function an object is in.
+            logger.error("[Error]: Configuration error: if sync_objects_in_lambdas_trigger_their_tasks"
+                + " then not run_all_tasks_locally must be True.")
+            logging.shutdown()
+            os._exit(0)
+
+    # assert 
+    if compute_pagerank and use_incremental_DAG_generation and create_all_fanins_faninNBs_on_start:
+        logger.error("[Error]: Configuration error: incremental_DAG_generation"
+            + " requires not create_all_fanins_faninNBs_on_start"
+            + " i.e., create synch objects on the fly since we don't know all of the synch objects "
+            + " at the start (the DAG is not complete)")
+        logging.shutdown()
+        os._exit(0) 
+
+    #assert:
+    if incremental_DAG_deposit_interval < 1:
+        logger.error("[Error]: Configuration error: incremental_DAG_deposit_interval"
+            + " must be >= 1. We mod by incremental_DAG_deposit_interval so it"
+            + " cannot be 0 and using a negative number makes no sense.")
+        logging.shutdown()
+        os._exit(0) 
+
+    #assert:
+    if not same_output_for_all_fanout_fanin and not compute_pagerank:
+        logger.error("[Error]: Configuration error: if same_output_for_all_fanout_fanin"
+            + " then must be computing pagerank.")
+        logging.shutdown()
+        os._exit(0)
+
+    #assert:
+    if compute_pagerank and (use_struct_of_arrays_for_pagerank and not use_shared_partitions_groups):
+        logger.error("[Error]: Configuration error: if use_struct_of_arrays_for_pagerank"
+            + " then must use_shared_partitions_groups.")
+        logging.shutdown()
+        os._exit(0)
+
+    #assert:
+    if compute_pagerank and (use_struct_of_arrays_for_pagerank and not use_shared_partitions_groups):
+        logger.error("[Error]: Configuration error: if use_struct_of_arrays_for_pagerank"
+            + " then must use_shared_partitions_groups.")
+        logging.shutdown()
+        os._exit(0)
+
+# Run Tests
+if not test_number == 0:
+    check_asserts()
+if test_number == 1:
+    test1()
+elif test_number == 2:
+    test2()
+
+# ToDo: so TestAll.py can set its test_number before it imports 
+# DAG_executor_constants and DAG_executor_constants can 
+# read the test_number which is default 0 when not testing.

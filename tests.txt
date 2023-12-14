@@ -1,10 +1,10 @@
-C:\Users\benrc\AppData\Local\Microsoft\WindowsApps\python3.8.exe
+#C:\Users\benrc\AppData\Local\Microsoft\WindowsApps\python3.8.exe
 
 
-WARNING: The script dask.exe is installed in 'C:\Users\benrc\AppData\Local\Programs\Python\Python311\Scripts' which is not on PATH.
-  Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location.
-  WARNING: The scripts dask-scheduler.exe, dask-ssh.exe and dask-worker.exe are installed in 'C:\Users\benrc\AppData\Local\Programs\Python\Python311\Scripts' which is not on PATH.
-  Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location.
+#WARNING: The script dask.exe is installed in 'C:\Users\benrc\AppData\Local\Programs\Python\Python311\Scripts' which is not on PATH.
+#  Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location.
+#  WARNING: The scripts dask-scheduler.exe, dask-ssh.exe and dask-worker.exe are installed in 'C:\Users\benrc\AppData\Local\Programs\Python\Python311\Scripts' which is not on PATH.
+#  Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location.
   
 
 import logging
@@ -25,6 +25,9 @@ logger.addHandler(ch)
 # if running real lambdas or storing synch objects in real lambdas:
 #   Set SERVERLESS_SYNC to True or False in wukongdnc constants !!!!!!!!!!!!!!
 #
+
+# For all non-real lambda tests:
+bypass_call_lambda_client_invoke = not run_all_tasks_locally and False
 
 store_sync_objects_in_lambdas = False
 using_Lambda_Function_Simulators_to_Store_Objects = False
@@ -60,6 +63,7 @@ using_single_lambda_function = False
 
 compute_pagerank = False # True
 check_pagerank_output = compute_pagerank and True
+number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
 name_of_first_groupOrpartition_in_DAG = "PR1_1"
 same_output_for_all_fanout_fanin = not compute_pagerank
 use_incremental_DAG_generation = compute_pagerank and False
@@ -73,10 +77,10 @@ use_struct_of_arrays_for_pagerank = compute_pagerank and False
 
 ## Tests ##
 
-running: python -m wukongdnc.dag.DAG_executor_driver and python -m wukongdnc.server.tcp_server or (tcp_server_lambda)
+#running: python -m wukongdnc.dag.DAG_executor_driver and python -m wukongdnc.server.tcp_server or (tcp_server_lambda)
 
 #Test1: simulated lambdas (A2) with non-selective-wait Sync-objects,
-        create objects at the start
+#        create objects at the start
 
 run_all_tasks_locally = True 
 store_fanins_faninNBs_locally = True 
@@ -95,7 +99,7 @@ process_work_queue_Type = "BoundedBuffer"
 #process_work_queue_Type = "BoundedBuffer_Select"
 
 #Test2: simulated lambdas (A2) with selective-wait Sync-objects,
-        create objects at the start
+#        create objects at the start
 
 run_all_tasks_locally = True 
 store_fanins_faninNBs_locally = True 
@@ -114,7 +118,7 @@ FanInNB_Type = "DAG_executor_FanInNB_Select"
 process_work_queue_Type = "BoundedBuffer_Select"
 
 #Test 3: simulated lambdas (A2) with non-selective-wait Sync-objects,
-        create objects on-the-fly
+#         create objects on-the-fly
 
 run_all_tasks_locally = True 
 store_fanins_faninNBs_locally = True 
@@ -133,7 +137,7 @@ process_work_queue_Type = "BoundedBuffer"
 #process_work_queue_Type = "BoundedBuffer_Select"
 
 #Test 4: simulated lambdas (A2) with selective-wait Sync-objects,
-        create objects on-the-fly
+#         create objects on-the-fly
 
 run_all_tasks_locally = True 
 store_fanins_faninNBs_locally = True 
@@ -861,6 +865,7 @@ using_single_lambda_function = False
 compute_pagerank = True
 check_pagerank_output = compute_pagerank and run_all_tasks_locally and using_workers and using_threads_not_processes and True
 name_of_first_groupOrpartition_in_DAG = "PR1_1"
+number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
 same_output_for_all_fanout_fanin = not compute_pagerank
 use_incremental_DAG_generation = compute_pagerank and False
 incremental_DAG_deposit_interval = 2
@@ -902,6 +907,7 @@ using_single_lambda_function = False
 compute_pagerank = True
 check_pagerank_output = compute_pagerank and run_all_tasks_locally and using_workers and using_threads_not_processes and True
 name_of_first_groupOrpartition_in_DAG = "PR1_1"
+number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
 same_output_for_all_fanout_fanin = not compute_pagerank
 use_incremental_DAG_generation = compute_pagerank and False
 incremental_DAG_deposit_interval = 2
@@ -943,6 +949,7 @@ using_single_lambda_function = False
 compute_pagerank = True
 check_pagerank_output = compute_pagerank and run_all_tasks_locally and using_workers and using_threads_not_processes and True
 name_of_first_groupOrpartition_in_DAG = "PR1_1"
+number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
 same_output_for_all_fanout_fanin = not compute_pagerank
 use_incremental_DAG_generation = compute_pagerank and False
 incremental_DAG_deposit_interval = 2
@@ -984,6 +991,7 @@ using_single_lambda_function = False
 compute_pagerank = True
 check_pagerank_output = compute_pagerank and run_all_tasks_locally and using_workers and using_threads_not_processes and True
 name_of_first_groupOrpartition_in_DAG = "PR1_1"
+number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
 same_output_for_all_fanout_fanin = not compute_pagerank
 use_incremental_DAG_generation = compute_pagerank and False
 incremental_DAG_deposit_interval = 2
@@ -1029,6 +1037,7 @@ using_single_lambda_function = False
 compute_pagerank = True
 check_pagerank_output = compute_pagerank and run_all_tasks_locally and using_workers and using_threads_not_processes and True
 name_of_first_groupOrpartition_in_DAG = "PR1_1"
+number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
 same_output_for_all_fanout_fanin = not compute_pagerank
 use_incremental_DAG_generation = compute_pagerank and False
 incremental_DAG_deposit_interval = 2
@@ -1071,6 +1080,7 @@ using_single_lambda_function = False
 compute_pagerank = True
 check_pagerank_output = compute_pagerank and run_all_tasks_locally and using_workers and using_threads_not_processes and True
 name_of_first_groupOrpartition_in_DAG = "PR1_1"
+number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
 same_output_for_all_fanout_fanin = not compute_pagerank
 use_incremental_DAG_generation = compute_pagerank and False
 incremental_DAG_deposit_interval = 2
@@ -1114,6 +1124,7 @@ using_single_lambda_function = False
 compute_pagerank = True
 check_pagerank_output = compute_pagerank and run_all_tasks_locally and using_workers and using_threads_not_processes and True
 name_of_first_groupOrpartition_in_DAG = "PR1_1"
+number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
 same_output_for_all_fanout_fanin = not compute_pagerank
 use_incremental_DAG_generation = compute_pagerank and False
 incremental_DAG_deposit_interval = 2
@@ -1157,6 +1168,7 @@ using_single_lambda_function = False
 compute_pagerank = True
 check_pagerank_output = compute_pagerank and run_all_tasks_locally and using_workers and using_threads_not_processes and True
 name_of_first_groupOrpartition_in_DAG = "PR1_1"
+number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
 same_output_for_all_fanout_fanin = not compute_pagerank
 use_incremental_DAG_generation = compute_pagerank and False
 incremental_DAG_deposit_interval = 2
@@ -1198,6 +1210,7 @@ using_single_lambda_function = False
 compute_pagerank = True
 check_pagerank_output = compute_pagerank and run_all_tasks_locally and using_workers and using_threads_not_processes and True
 name_of_first_groupOrpartition_in_DAG = "PR1_1"
+number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
 same_output_for_all_fanout_fanin = not compute_pagerank
 use_incremental_DAG_generation = compute_pagerank and False
 incremental_DAG_deposit_interval = 2
@@ -1240,6 +1253,7 @@ using_single_lambda_function = False
 compute_pagerank = True
 check_pagerank_output = compute_pagerank and run_all_tasks_locally and using_workers and using_threads_not_processes and True
 name_of_first_groupOrpartition_in_DAG = "PR1_1"
+number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
 same_output_for_all_fanout_fanin = not compute_pagerank
 use_incremental_DAG_generation = compute_pagerank and False
 incremental_DAG_deposit_interval = 2
@@ -1283,6 +1297,7 @@ using_single_lambda_function = False
 compute_pagerank = True
 check_pagerank_output = compute_pagerank and run_all_tasks_locally and using_workers and using_threads_not_processes and True
 name_of_first_groupOrpartition_in_DAG = "PR1_1"
+number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
 same_output_for_all_fanout_fanin = not compute_pagerank
 use_incremental_DAG_generation = compute_pagerank and False
 incremental_DAG_deposit_interval = 2
@@ -1326,6 +1341,7 @@ using_single_lambda_function = False
 compute_pagerank = True
 check_pagerank_output = compute_pagerank and run_all_tasks_locally and using_workers and using_threads_not_processes and True
 name_of_first_groupOrpartition_in_DAG = "PR1_1"
+number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
 same_output_for_all_fanout_fanin = not compute_pagerank
 use_incremental_DAG_generation = compute_pagerank and False
 incremental_DAG_deposit_interval = 2
@@ -1367,6 +1383,7 @@ using_single_lambda_function = False
 compute_pagerank = True
 check_pagerank_output = compute_pagerank and run_all_tasks_locally and using_workers and using_threads_not_processes and True
 name_of_first_groupOrpartition_in_DAG = "PR1_1"
+number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
 same_output_for_all_fanout_fanin = not compute_pagerank
 use_incremental_DAG_generation = compute_pagerank and True
 incremental_DAG_deposit_interval = 1
@@ -1383,7 +1400,7 @@ so no double output in OS boxes. puts debug lines in mplog file but not DOS box;
 If do logger stuff then get double print to DOS box of ebug stuff, not sure why
 
 #####
-Test using_single_lambda_function?
+Test real lambda code with bypass_call_lambda_client_invoke = not run_all_tasks_locally and True
 ######
 Test PR in Lambdas?
 ######
