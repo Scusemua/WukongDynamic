@@ -1,0 +1,12 @@
+cd C:\Users\benrc\Desktop\Executor\DAG\WukongDynamic
+For ($i=1; $i -le 2; $i++) {
+Write-Host "Test $i"
+Write-Host "#######"
+python -m wukongdnc.dag.TestAll($i)
+Read-Host "Enter any input to continue"
+}
+
+
+To look for string in output file"
+
+https://stackoverflow.com/questions/41871147/find-specific-string-in-textfile
