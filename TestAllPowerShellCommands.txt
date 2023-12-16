@@ -1,9 +1,9 @@
 cd C:\Users\benrc\Desktop\Executor\DAG\WukongDynamic
 For ($i=1; $i -le 2; $i++) {
-Write-Host "Test $i"
-Write-Host "#######"
-python -m wukongdnc.dag.TestAll($i)
-Read-Host "Enter any input to continue"
+	Write-Host "Test $i"
+	Write-Host "#######"
+	python -m wukongdnc.dag.TestAll($i)
+	Read-Host "Enter any input to continue"
 }
 
 

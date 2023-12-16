@@ -3447,7 +3447,6 @@ Test PR in Lambdas?
 ######
 """
 
-
 def check_asserts():
     #assert:
     if using_workers and not run_all_tasks_locally:
@@ -3559,4 +3558,29 @@ elif test_number == 2:
 if not test_number == 0:
     check_asserts()
 
-#Q: where to put global decls? once before testX defs?
+
+#Note: Running this script in the Wndows PowerShell X to run the 
+#tests one-by-one. This is the command line "Windows Powershell"
+# not the "Windows Powershell ISE". The latter gives and error 
+# message when runnging python. (See the comment below.)
+
+#cd C:\Users\benrc\Desktop\Executor\DAG\WukongDynamic
+#For ($i=1; $i -le 2; $i++) {
+#    Write-Host "Test $i"
+#    Write-Host "#######"
+#    python -m wukongdnc.dag.TestAll($i)
+#    Read-Host "Enter any input to continue"
+#}
+
+# Copy the script and paste it into PowerSshell and hit enter twice.
+
+# The error when runnging Powershell ISE is:
+"""'
+python : [2023-12-16 09:38:01,703][DAG_executor_driver][MainProcess][MainThread]: DAG_executor_driver: dask version: 2023.9.1
+At line:5 char:2
++     python -m wukongdnc.dag.TestAll($i)
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([2023-12-16 09:...rsion: 2023.9.1:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+"""
+# This has something to do with pythons stderror stream.
