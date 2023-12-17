@@ -981,7 +981,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                         # fanouts/fanins/etc to an incomplete group. It may do fanouts/fanins/etc to a 
                         # group S in the same partition but that group S does not do any 
                         # fanouts/fanins/etc to an incomplete group.
-                        state_info_of_previous_group.fanout_fanin_faninNB_collapse_groups_are_ToBeContinued = False
+                        state_info_of_previous_group.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued = False
 
                         # mark the groups in the previous previous partition. Since the 
                         # previpus partition has been markd as complete, the groups in the 
@@ -996,10 +996,10 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                                 for previous_previous_group in groups_of_previous_previous_partition:
                                     state_of_previous_previous_group = Group_DAG_states[previous_previous_group]
                                     state_info_of_previous_previous_group = Group_DAG_map[state_of_previous_previous_group]
-                                    state_info_of_previous_previous_group.fanout_fanin_faninNB_collapse_groups_are_ToBeContinued = False
+                                    state_info_of_previous_previous_group.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued = False
                                     
                                     logger.trace("The state_info_of_previous_previous_group " 
-                                        + previous_previous_group + " after update fanout_fanin_faninNB_collapse_groups_are_ToBeContinued is: " 
+                                        + previous_previous_group + " after update fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued is: " 
                                         + str(state_info_of_previous_previous_group))
 
                         logger.info("after update to TBC and fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued"
@@ -1071,10 +1071,10 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                     faninNB_sizes, task_inputs,
                     # to_be_continued parameter can be true or false
                     to_be_continued,
-                    # We do not know whether this frist group will have fanout_fanin_faninNB_collapse_groups_are_ToBeContinued
+                    # We do not know whether this frist group will have fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued
                     # that are incomplete until we process the 2nd partition, except if to_be_continued
-                    # is False in which case there are no more partitions and no fanout_fanin_faninNB_collapse_groups_are_ToBeContinued
-                    # that are incomplete. If to_be_continued is True then we set fanout_fanin_faninNB_collapse_groups_are_ToBeContinued
+                    # is False in which case there are no more partitions and no fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued
+                    # that are incomplete. If to_be_continued is True then we set fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued
                     # to True but we may change this value when we process partition 2.
                     to_be_continued)
                 Group_DAG_states[group_name] = Group_next_state
@@ -1328,29 +1328,29 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                         # executed.
                         state_info_of_previous_group.ToBeContinued = False
                         # if the current partition is to_be_continued then previous_group has incomplete
-                        # groups so we set fanout_fanin_faninNB_collapse_groups_are_ToBeContinued of the previous
-                        # groups to True; otherwise, we set fanout_fanin_faninNB_collapse_groups_are_ToBeContinued to False.
+                        # groups so we set fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued of the previous
+                        # groups to True; otherwise, we set fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued to False.
                         # Note: state_info_of_previous_group.ToBeContinued = False inicates that the
                         # previous groups are not to be continued, while
-                        # state_info_of_previous_group.fanout_fanin_faninNB_collapse_groups_are_ToBeContinued indicates
-                        # whether the previous groups have fanout_fanin_faninNB_collapse_groups_are_ToBeContinued 
+                        # state_info_of_previous_group.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued indicates
+                        # whether the previous groups have fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued 
                         # that are to be continued, i.e., the fanout_fanin_faninNB_collapse are 
                         # to groups in this current partition and whether these groups in the current
                         # partiton are to be continued is indicated by parameter to_be_continued.
                         # (When bfs() calls this method it may determine that some of the graph
                         # nodes have not yet been assigned to any partition so the DAG is
                         # still incomplete and thus to_be_continued = True )
-                        state_info_of_previous_group.fanout_fanin_faninNB_collapse_groups_are_ToBeContinued = to_be_continued
+                        state_info_of_previous_group.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued = to_be_continued
 
                         # Say that the current partition is C , which has a 
                         # previous partition B which has a previous partition A.
                         # In a previous DAG, suppose A is incomplete. When we process
                         # B, we set A to complete (i.e., to_be_continued for A is False)
                         # and B is set to incomplete (i.e., to_be_continued of B is True.)
-                        # We also set fanout_fanin_faninNB_collapse_groups_are_ToBeContinued
+                        # We also set fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued
                         # of A to True, to indicate that A has fanins/fanouts/faninNBs/collapses
                         # to incomplete groups (of B). When we process C, we can set B to complete
-                        # and C to incomplete but we can also reset fanout_fanin_faninNB_collapse_groups_are_ToBeContinued
+                        # and C to incomplete but we can also reset fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued
                         # to False since B is complete so all of A's fanins/fanouts/faninNBs/collpases
                         # are to complete groups. That means if C is group_name, then B
                         # is a previous_group, and C is a previous_previous_group.
@@ -1375,10 +1375,10 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                                 for previous_previous_group in groups_of_previous_previous_partition:
                                     state_of_previous_previous_group = Group_DAG_states[previous_previous_group]
                                     state_info_of_previous_previous_group = Group_DAG_map[state_of_previous_previous_group]
-                                    state_info_of_previous_previous_group.fanout_fanin_faninNB_collapse_groups_are_ToBeContinued = False
+                                    state_info_of_previous_previous_group.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued = False
                                     
                                     logger.trace("The state_info_of_previous_previous_group for group " 
-                                        + previous_previous_group + " after update fanout_fanin_faninNB_collapse_groups_are_ToBeContinued is: " 
+                                        + previous_previous_group + " after update fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued is: " 
                                         + str(state_info_of_previous_previous_group))
 
 

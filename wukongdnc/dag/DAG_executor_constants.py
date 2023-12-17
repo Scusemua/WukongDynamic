@@ -3559,10 +3559,13 @@ if not test_number == 0:
     check_asserts()
 
 
-#Note: Running this script in the Wndows PowerShell X to run the 
-#tests one-by-one. This is the command line "Windows Powershell"
+# Note: Running this script in the Wndows PowerShell X to run the 
+# tests one-by-one. This is the command line "Windows Powershell"
 # not the "Windows Powershell ISE". The latter gives and error 
 # message when runnging python. (See the comment below.)
+
+# This script is also in file TestAllPowerShellCommands.txt in
+# directory C:\Users\benrc\Desktop\Executor\DAG\WukongDynamic
 
 #cd C:\Users\benrc\Desktop\Executor\DAG\WukongDynamic
 #For ($i=1; $i -le 2; $i++) {

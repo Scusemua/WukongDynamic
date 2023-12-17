@@ -2798,7 +2798,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # except the state of a restarted lambda, whcih we add at the start 
                     # of the work loop
                     if not first_iteration_of_work_loop_for_lambda:
-                        logger.trace("[Error]: XXInternal Error: DAG_executor_work_loop:"
+                        logger.error("[Error]: XXInternal Error: DAG_executor_work_loop:"
                             + " continue_queue.qsize() is > 0 for lambda but not"
                             + " first_iteration_of_work_loop_for_lambda.")
 
@@ -3421,7 +3421,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 
 
             if not using_workers and compute_pagerank and use_incremental_DAG_generation and (
-                use_page_rank_group_partitions and state_info.fanout_fanin_faninNB_collapse_groups_are_ToBeContinued
+                use_page_rank_group_partitions and state_info.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued
             ):
                 
 #rhc: lambda inc:
@@ -3478,7 +3478,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # We did not get a new incremental DAG. Note that 
                     # state_info was not changed so we will be using the 
                     # same state_info as above and 
-                    # state_info.fanout_fanin_faninNB_collapse_groups_are_ToBeContinued
+                    # state_info.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued
                     # is True in the condition of the next if-statement.
                     # This means we will return/terminate as we have nothing
                     # we can do (i.e., we cannot execute this groups fanins/fanouts
@@ -3489,7 +3489,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             #os._exit(0)
             
             if (compute_pagerank and use_incremental_DAG_generation and (
-                    use_page_rank_group_partitions and state_info.fanout_fanin_faninNB_collapse_groups_are_ToBeContinued)
+                    use_page_rank_group_partitions and state_info.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued)
                 ):
                 # Group has fanouts/fanins/faninNBs/collapses that are TBC
                 # so put this state in the continue_queue. When we get a new DAG
@@ -3557,9 +3557,9 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         + " state has a collapse but also fanins/fanouts.")
 
 #rhc: If we run-time cluster, then we may have work in the cluster queue.
-# We can put the collpase work in the cluster queue too. If the cluster queue is
-# empty, thn we'll just execute the collapase task next; otherwise, we will add
-# the collapsed work at the end of the cluster queue and do it after all the 
+# We can put the collapse work in the cluster queue too. If the cluster queue is
+# empty, then we'll just execute the collapased task next; otherwise, we will add
+# the collapsed task at the end of the cluster queue and do it after all the 
 # clustered work. 
 
 # The work for collapse will have to be in the same form as the clustered work,
@@ -3591,7 +3591,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 # if it does then need to finish lambda code, which is same as group code above - 
 # send info to synch object.
 #rhc: cluster:
-                    # get the state of the collapsed partition (task)
+                    # get the state of the collapsed partition/group (task)
                     # and put the collapsed task in the cluster_queue for 
                     # execution.
                     DAG_executor_state.state = DAG_info.get_DAG_states()[state_info.collapse[0]]
@@ -3606,8 +3606,9 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     #    worker_needs_input = False
                     ## else: # Config: A1. A2, A3
                 else: 
-#rhc: lambda inc: note that to get here we are doing inc w/ pagerank and not using groups
-                    # we are doing incremental DAG generation with partitions.
+#rhc: lambda inc:   
+                    # Based on if-condition, we are doing inc w/ pagerank and not using 
+                    # groups, i.e., we are doing incremental DAG generation with partitions.
                     state_of_collapsed_task = DAG_info.get_DAG_states()[state_info.collapse[0]]
                     state_info_of_collapse_task = DAG_map[state_of_collapsed_task]
                     logger.trace("DAG_executor_work_loop: check TBC of collapsed task state info: "
@@ -3615,9 +3616,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     if state_info_of_collapse_task.ToBeContinued:
                         # assert: if P has a collapsed task C and C's state_info says C is TBC then 
                         # P's state_info should indicate that P has a TBC collapse
-                        if not state_info.fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:
+                        if not state_info.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued:
                             logger.error("[Error]: P has a collapse task that is TBC but"
-                                + " P does not thnk it has a TBC collapse.")
+                                + " P does not thnk it has a TBC collapse task based on"
+                                + " fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued.")
                             
                         # put TBC states in the continue_queue
                         if using_workers:
@@ -3628,6 +3630,27 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             # not the state of the collapsed task. We will get the state 
                             # out of the continue queue and then get the collapsed task
                             # of this state and excute it.
+                            #
+                            # The difference between incremental DAG generation with partitions
+                            # vs groups: If we excute partition i we know that i has a collapse
+                            # task to partition i+1. If partition i+1 is incomplete, then we 
+                            # cannot execute it so we put ID i and i's output in the continue
+                            # queue. When we get a nwe DAG, we get (i,output) fron the continue
+                            # queue. Since there is only a collapse task for i, we can go ahead
+                            # and execute the collapse task i+1 using the output of i as the 
+                            # input of i+1. That is, we do not get (i,output) and then "execute
+                            # the fanins/fanouts/collapses" of i since there is only a collapse
+                            # task of i and we can execute it. (So we get continued task i
+                            # from the continue queue and we then excute is collapse task i+1,
+                            # not i since i was executed previously and its output was saved.
+                            # For groups, if we execute partition i, i can have fanouts/fanins
+                            # collapse, not just collapses. If the targets of these fanouts/fanins
+                            # collpase are incomplete then we cannot execute them, so we put
+                            # ID i and i's output in the continue queue. When we get a new DAG, 
+                            # we get (i,output) fron the continue queue. Now we can complete
+                            # the processing of the fanouts/fanin/collapse tasks of i. This
+                            # is unlike for partitions where we can get (i,output) then grab the
+                            # collapse of i and execute this collapse task.
 #rhc: lambda inc: cq.put        
                             # Truly a continued task (i.e., with TBC fanins/fanouts/collpases)
                             continue_tuple = (DAG_executor_state.state,True)
@@ -3643,7 +3666,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             # DAG so we can execute the collpase task (after we enqueue it in 
                             # the cluster queue and get it from the cluster queue on the next 
                             # iteration of the work loop.)
-                            new_DAG_info = None; #DAG_infoBuffer_Monitor_for_lambdas.withdraw(DAG_executor_state.state,output)
+                            new_DAG_info = DAG_infobuffer_monitor.withdraw(DAG_executor_state.state,output)
                             if not new_DAG_info == None:
                                 DAG_info = new_DAG_info
                                 # upate DAG_ma and DAG_tasks with their new versions in DAG_info
@@ -3678,8 +3701,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # collapse's TBC. If that TBC is True, then we put the
                     # collapse task in the contine queue. The TBC of the collapse, 
                     # which is effectively the TBC of the next partition, should equal
-                    # the fanout_fanin_faninNB_collapse_groups of the current partition.
-                    if not state_info.fanout_fanin_faninNB_collapse_groups_are_ToBeContinued == state_info_of_collapse_task.ToBeContinued:
+                    # the fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued of the current partition.
+                    if not state_info.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued == state_info_of_collapse_task.ToBeContinued:
                         logger.error("[Error]: Internal error: DAG_executor_work_loop:"
                             + " fanout_fanin_faninNB_collapse_groups of current partition is not"
                             + " equal to ToBeContinued of collapse task (next partition).")
