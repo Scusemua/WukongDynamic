@@ -761,7 +761,6 @@ def generate_DAG_info_incremental_groups(current_partition_name,
 # rhc: Note: Can assert group receiverY below, which receives an output of previous_group,
 #  is also within previous group since current_group is the start of a new CC
                         Group_sink_set = set()
-                        #for senderX in Group_senders:
 
                         fanouts = []
                         fanins = []
@@ -1128,7 +1127,6 @@ def generate_DAG_info_incremental_groups(current_partition_name,
 # START
                         # As commented above, we do not need this
                         Group_sink_set = set()
-                        #for senderX in Group_senders:
 
                         fanouts = []
                         fanins = []

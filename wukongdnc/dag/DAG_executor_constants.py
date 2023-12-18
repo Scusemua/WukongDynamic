@@ -23,7 +23,7 @@ logger.addHandler(ch)
 #
 # True if we are not using Lambdas, i.e., executing tasks with threads or processes
 # local, i.e., on one machine.
-run_all_tasks_locally = True         # vs run tasks remotely (in Lambdas)
+run_all_tasks_locally = False         # vs run tasks remotely (in Lambdas)
 # True if we want to bypass the call to lambda_client.invoke() so that we
 # do not actually create a real Lambda; instead, invoke_lambda_DAG_executor()
 # in invoker.y will call lambda_handler(payload_json,None) directly, where
@@ -32,12 +32,12 @@ run_all_tasks_locally = True         # vs run tasks remotely (in Lambdas)
 # for real lambdas without actually creating real Lambdas.
 # Note: if this is True then run_all_tasks_locally must be False. 
 # This is asserted below.
-bypass_call_lambda_client_invoke = not run_all_tasks_locally and False
+bypass_call_lambda_client_invoke = not run_all_tasks_locally and True
 # True if synch objects are stored locally, i.e., in the memory of the single
 # machine on which the threads are executing.  If we are using multiprocessing
 # or Lambdas, this must be False. When False, the synch objects are stored
 # on the tcp_server or in InfiniX lambdas.
-store_fanins_faninNBs_locally = True
+store_fanins_faninNBs_locally = False
 # True when all FanIn and FanInNB objects are created locally or on the
 # tcp_server or IniniX all at once at the start of the DAG execution. If
 # False, synch objects are created on the fly, i.e, we execute create-and-fanin
@@ -52,7 +52,7 @@ create_all_fanins_faninNBs_on_start = True
 # case, instead of, e.g., starting a Lambda at fan_out operations, we start a thread.
 # This results in the creation of many threads and is only use to test the logic 
 # of the Lambda code.
-using_workers = True
+using_workers = False
 # True when we are not using Lambas and tasks are executed by threads instead of processes. 
 # False when we are not using lambdas and are using multiprocesssing 
 using_threads_not_processes = True

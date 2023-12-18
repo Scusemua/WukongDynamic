@@ -122,6 +122,7 @@ def generate_DAG_info():
             del Partition_receivers[receiver_name]
     """
 
+    """
     print()
     print("Partition_senders:")
     for sender_name,receiver_name_set in Partition_senders.items():
@@ -138,6 +139,7 @@ def generate_DAG_info():
     print("Leaf nodes of partitions:")
     for name in leaf_tasks_of_partitions:
         print(name + " ")
+    """
 
     """
     print()
@@ -174,6 +176,8 @@ def generate_DAG_info():
             Group_receivers[receiver_name_with_L_at_end] = Group_receivers[receiver_name]
             del Group_receivers[receiver_name]
     """
+    
+    """
     print()
     print("Group_senders:")
     for sender_name,receiver_name_set in Group_senders.items():
@@ -190,7 +194,8 @@ def generate_DAG_info():
     print("Leaf nodes of groups:")
     for name in leaf_tasks_of_groups:
         print(name + " ")
-
+    """
+    
     #Note:
     #Informs the logging system to perform an orderly shutdown by flushing 
     #and closing all handlers. This should be called at application exit and no 

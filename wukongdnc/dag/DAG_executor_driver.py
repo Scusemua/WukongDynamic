@@ -320,7 +320,7 @@ import multiprocessing
 from multiprocessing import Process #, Manager
 import time
 import socket
-#import os
+import os
 import logging 
 import cloudpickle
 
@@ -334,6 +334,9 @@ from .DAG_executor_constants import store_sync_objects_in_lambdas, sync_objects_
 from .DAG_executor_constants import use_shared_partitions_groups,use_page_rank_group_partitions
 from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
 from .DAG_executor_constants import compute_pagerank
+from .DAG_executor_constants import use_incremental_DAG_generation
+from .DAG_executor_constants import bypass_call_lambda_client_invoke
+
 
 from .addLoggingLevel import addLoggingLevel
 
@@ -1962,6 +1965,33 @@ def run():
             # work queue and the created workers will withdraw them.
 
             if not (not run_all_tasks_locally and store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks):
+                # For pagerank computation we ned to read a partition of 
+                # nodes. For real lambdas, this will be from an S3 bucket
+                # or somewhere. To avoid this, we can let this DAG_executor_driver
+                # read the partition files and pass them to the Lambdas it starts
+                # in the Lambda's payload. When bypass_call_lambda_client_invoke it means we 
+                # are not actually running the real Lambda code on AWS, we are 
+                # bypassing the call to invoke real AWS Lambdas and running the code
+                # locally, in which case we can read the group/partition file objects
+                # from local files.
+                group_partitions = {}
+                if compute_pagerank and not run_all_tasks_locally and not bypass_call_lambda_client_invoke and not use_incremental_DAG_generation:
+                    group_partition_names = ["PR1_1","PR2_1","PR2_2L","PR2_3","PR3_1","PR3_2","P3_3","PR4_1","PR5_1","PR6_1","PR7_1"]
+                    for name in group_partition_names:
+                        try:
+                            with open(name, 'rb') as handle:
+                                partition_or_group = (cloudpickle.load(handle))
+                        except EOFError:
+                            logger.info("[Error]: Internal Error: PageRank_Function: EOFError:"
+                                + " complete_task_file_name:" + str(name))
+                            import sys, traceback
+                            #print('Problem:', file=sys.stderr)
+                            traceback.print_exc(file=sys.stderr)
+                            logging.shutdown()
+                            os._exit(0)
+                        group_partitions[name] = partition_or_group
+
+
                 # we are not having sync objects trigger their tasks in lambdas
                 for start_state, task_name, inp in zip(DAG_leaf_task_start_states, DAG_leaf_tasks, DAG_leaf_task_inputs):
                     # The state of a DAG executor contains only one application specific member, which is the
@@ -2125,6 +2155,8 @@ def run():
                                     "DAG_executor_state": lambda_DAG_exec_state,
                                     "DAG_info": DAG_info
                                 }
+                                if compute_pagerank and not run_all_tasks_locally and not bypass_call_lambda_client_invoke and not use_incremental_DAG_generation:
+                                    payload["group_partitions"] = group_partitions
 
                                 invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor_lambda:" + task_name)
                             except Exception as ex:
