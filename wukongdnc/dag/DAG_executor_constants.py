@@ -32,7 +32,7 @@ run_all_tasks_locally = False         # vs run tasks remotely (in Lambdas)
 # for real lambdas without actually creating real Lambdas.
 # Note: if this is True then run_all_tasks_locally must be False. 
 # This is asserted below.
-bypass_call_lambda_client_invoke = not run_all_tasks_locally and True
+bypass_call_lambda_client_invoke = (not run_all_tasks_locally) and True
 # True if synch objects are stored locally, i.e., in the memory of the single
 # machine on which the threads are executing.  If we are using multiprocessing
 # or Lambdas, this must be False. When False, the synch objects are stored
@@ -219,7 +219,7 @@ if sync_objects_in_lambdas_trigger_their_tasks:
 
 # Indicates that we are computing pagerank and thus that the pagerank
 # options are active and pagerank asserts should hold
-compute_pagerank = False
+compute_pagerank = True
 # used in BFS_pagerank. For non-loops, we only need 1 iteration
 number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
 name_of_first_groupOrpartition_in_DAG = "PR1_1"

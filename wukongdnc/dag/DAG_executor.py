@@ -3762,7 +3762,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # in Lambda, then fanout task executed in that Lambda.
 #rhc: run tasks changes in process_fanouts
                     DAG_executor_state.state = process_fanouts(state_info.fanouts, state_info.task_name, DAG_info.get_DAG_states(), DAG_executor_state, 
-                        output, DAG_info, server,work_queue,list_of_work_queue_or_payload_fanout_values)
+                        output, DAG_info, server,work_queue,list_of_work_queue_or_payload_fanout_values,
+                        groups_partitions)
                     logger.trace(thread_name + " work_loop: become state:" + str(DAG_executor_state.state))
                     logger.trace(thread_name + " work_loop: list_of_work_queue_payload fanout_values length:" + str(len(list_of_work_queue_or_payload_fanout_values)))
 

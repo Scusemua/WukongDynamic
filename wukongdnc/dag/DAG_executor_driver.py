@@ -1709,6 +1709,9 @@ def run():
                         #work_queue.put(state)
                 #else: Nohing to do; we do not use a work_queue if we are not using workers
         else: # store remotely
+
+            groups_partitions = {}
+            
             # server will be None
             logger.trace("DAG_executor_driver: Connecting to TCP Server at %s." % str(TCP_SERVER_IP))
             websocket.connect(TCP_SERVER_IP)
@@ -2000,7 +2003,7 @@ def run():
                 # locally, in which case we can read the group/partition file objects
                 # from local files.
 #rhc: group partitions
-                groups_partitions = {}
+                #groups_partitions = {}
                 if compute_pagerank and not run_all_tasks_locally and not bypass_call_lambda_client_invoke and not use_incremental_DAG_generation:
                 # hardcoded for testing rel lambdas. May want to enabe this generally in
                 # which case we will need the partition/group names, which BFS could

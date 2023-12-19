@@ -78,6 +78,7 @@ class DAG_executor_FanInNB(MonitorSU):
         self.start_state_fanin_task = kwargs['start_state_fanin_task']
         self.store_fanins_faninNBs_locally = kwargs['store_fanins_faninNBs_locally']
         self.DAG_info = kwargs['DAG_info'] 
+
         if self.DAG_info == None:
             # When running real lambdas, DAG_info must be non-null since
             # the FaninNB will statr a real lambda to excute its fanin task
@@ -92,6 +93,9 @@ class DAG_executor_FanInNB(MonitorSU):
         else:
             logger.trace("FanInNB: fanin_task_name: DAG_info is not None for init().")
 
+#rhc: groups partitions
+        # get it if real lambdas etc
+        # also, in select version
 
     def try_fan_in(self, **kwargs):
         # Does mutex.P as usual

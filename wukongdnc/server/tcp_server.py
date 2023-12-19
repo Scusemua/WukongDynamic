@@ -629,10 +629,11 @@ class TCPHandler(socketserver.StreamRequestHandler):
                                 dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info 
 
                                 groups_partitions = []
-                                if read_groups_partitions:
-                                    read_groups_partitions = False
-                                    groups_partitions = self.read_all_groups_partitions()
- 
+                                if wukongdnc.dag.DAG_executor_constants.compute_pagerank and not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally and not wukongdnc.dag.DAG_executor_constants.bypass_call_lambda_client_invoke and not wukongdnc.dag.DAG_executor_constants.use_incremental_DAG_generation:
+                                    if read_groups_partitions:
+                                        read_groups_partitions = False
+                                        groups_partitions = self.read_all_groups_partitions()
+    
                                 dummy_state_for_create_message.keyword_arguments['groups_partitions'] = groups_partitions 
                             else:
                                 # we are running locally with the fanins/faninNBs on the tcp_server.
@@ -862,7 +863,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 DAG_exec_state.keyword_arguments['calling_task_name'] = qualified_name
 
 
-            logger.trace("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": calling synchronizer.synchronize.")
+            logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": calling synchronizer.synchronize.")
 #rhc: select replace this
             #return_value = synchronizer.synchronize(base_name, DAG_exec_state, **DAG_exec_state.keyword_arguments)
 #rhc: select with this
