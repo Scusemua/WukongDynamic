@@ -1730,7 +1730,9 @@ def run():
                         num_tasks_to_execute = len(DAG_tasks)
                         process_work_queue = Work_Queue_Client(websocket,2*num_tasks_to_execute)
                         #process_work_queue.create()
-                        create_fanins_and_faninNBs_and_work_queue(websocket,num_tasks_to_execute,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
+                        create_fanins_and_faninNBs_and_work_queue(websocket,num_tasks_to_execute,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, 
+                            all_faninNB_task_names, all_faninNB_sizes,
+                            groups_partitions)
                         #Note: you can reversed() this list of leaf node start states to reverse the order of 
                         # appending leaf nodes during testing
                         list_of_work_queue_values = []
@@ -1750,7 +1752,11 @@ def run():
                         # batch put work in remote work_queue
                         process_work_queue.put_all(list_of_work_queue_values)
                     else:
-                        create_fanins_and_faninNBs(websocket,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
+                        create_fanins_and_faninNBs(websocket,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, 
+                            all_faninNB_task_names, all_faninNB_sizes,
+                            groups_partitions)
+                        # since not using real lambdas, groups_partitions is []
+
                         # leaf task states (a task is identified by its state) are put in the work_queue
                         for state in DAG_leaf_task_start_states:
                             #thread_work_queue.put(state)
@@ -1776,7 +1782,10 @@ def run():
                         logger.error("[Error]: DAG_executor_driver: not using_workers but using processes.")
                     # just create a batch of fanins and faninNBs on server - no remote work queue wen using
                     # thread workers or using lambdas.         
-                    create_fanins_and_faninNBs(websocket,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
+                    create_fanins_and_faninNBs(websocket,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, 
+                        all_faninNB_task_names, all_faninNB_sizes,
+                        groups_partitions)
+                    # since not using real lambdas, groups_partitions is []
                 else:
                     # not run_all_tasks_locally and not using workers (must be true (since 
                     # (not run_all_tasks_locally) and using_workers is never used in that case.)
@@ -1791,7 +1800,10 @@ def run():
                         # storing sync objects in lambdas and snc objects trigger their tasks
                         create_fanins_and_faninNBs_and_fanouts(websocket,DAG_map,DAG_states,DAG_info,
                             all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes,
-                            all_fanout_task_names,DAG_leaf_tasks,DAG_leaf_task_start_states)
+                            all_fanout_task_names,DAG_leaf_tasks,DAG_leaf_task_start_states,
+                            groups_partitions)
+                        #rhc: groups partitions
+                        # We are not using real lambdas to execute tasks so groups_partitions is []
                         # call server to trigger the leaf tasks
                         process_leaf_tasks_batch(websocket)
                         # Informs the logging system to perform an orderly 
@@ -1804,7 +1816,20 @@ def run():
                         # in the same lamba that stores the sync object. So, e.g., fanouts are
                         # done by calling lambdas to excute the fanout task (besides the becomes 
                         # task.)
-                        create_fanins_and_faninNBs(websocket,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
+                        create_fanins_and_faninNBs(websocket,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, 
+                            all_faninNB_task_names, all_faninNB_sizes,
+                            groups_partitions)
+                            # For pagerank computation we need to read a partition of 
+                            # nodes. For real lambdas, this could be from an S3 bucket
+                            # or somewhere. To avoid this, we can let this DAG_executor_driver
+                            # read the partition files and pass them to the Lambdas it starts
+                            # in the Lambda's payload. We pass groups_parition here when we create
+                            # the faninNBs since the faninNBs will start real lambdas.
+                            # When bypass_call_lambda_client_invoke it means we 
+                            # are not actually running the real Lambda code on AWS, we are 
+                            # bypassing the call to invoke real AWS Lambdas and running the code
+                            # locally, in which case we can read the group/partition file objects
+                            # from local files.
             else:
                 # going to create fanin and faninNBs on demand, i.e., as we execute
                 # operations on them. But still want to create process_work_queue
@@ -1974,8 +1999,12 @@ def run():
                 # bypassing the call to invoke real AWS Lambdas and running the code
                 # locally, in which case we can read the group/partition file objects
                 # from local files.
-                group_partitions = {}
+#rhc: group partitions
+                groups_partitions = {}
                 if compute_pagerank and not run_all_tasks_locally and not bypass_call_lambda_client_invoke and not use_incremental_DAG_generation:
+                # hardcoded for testing rel lambdas. May want to enabe this generally in
+                # which case we will need the partition/group names, which BFS could
+                # write to a file.
                     group_partition_names = ["PR1_1","PR2_1","PR2_2L","PR2_3","PR3_1","PR3_2","P3_3","PR4_1","PR5_1","PR6_1","PR7_1"]
                     for name in group_partition_names:
                         try:
@@ -1989,8 +2018,7 @@ def run():
                             traceback.print_exc(file=sys.stderr)
                             logging.shutdown()
                             os._exit(0)
-                        group_partitions[name] = partition_or_group
-
+                        groups_partitions[name] = partition_or_group
 
                 # we are not having sync objects trigger their tasks in lambdas
                 for start_state, task_name, inp in zip(DAG_leaf_task_start_states, DAG_leaf_tasks, DAG_leaf_task_inputs):
@@ -2155,8 +2183,9 @@ def run():
                                     "DAG_executor_state": lambda_DAG_exec_state,
                                     "DAG_info": DAG_info
                                 }
+#rhc: group partitions
                                 if compute_pagerank and not run_all_tasks_locally and not bypass_call_lambda_client_invoke and not use_incremental_DAG_generation:
-                                    payload["group_partitions"] = group_partitions
+                                    payload["groups_partitions"] = groups_partitions
 
                                 invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor_lambda:" + task_name)
                             except Exception as ex:
@@ -2327,7 +2356,22 @@ def run():
 
 # create fanin and faninNB messages to be passed to the tcp_server for creating
 # all fanin and faninNB synch objects
-def create_fanin_and_faninNB_messages(DAG_map,DAG_states,DAG_info,all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes):
+def create_fanin_and_faninNB_messages(DAG_map,DAG_states,DAG_info,all_fanin_task_names,all_fanin_sizes,
+    all_faninNB_task_names,all_faninNB_sizes,
+    groups_partitions):
+#rhc: groups partitions
+    # For pagerank computation we need to read a partition of 
+    # nodes. For real lambdas, this could be from an S3 bucket
+    # or somewhere. To avoid this, we can let this DAG_executor_driver
+    # read the partition files and pass them to the Lambdas it starts
+    # in the Lambda's payload. We pass grou_parition here when we create
+    # the faninNBs since the faninNBs will start real lambdas.
+    # When bypass_call_lambda_client_invoke it means we 
+    # are not actually running the real Lambda code on AWS, we are 
+    # bypassing the call to invoke real AWS Lambdas and running the code
+    # locally, in which case we can read the group/partition file objects
+    # from local files.
+    # Note: if we are not using real lambdas, groups_partitions is []
  
     """
     logger.trace("create_fanin_and_faninNB_messages: size of all_fanin_task_names: " + str(len(all_fanin_task_names))
@@ -2380,6 +2424,8 @@ def create_fanin_and_faninNB_messages(DAG_map,DAG_states,DAG_info,all_fanin_task
             dummy_state.keyword_arguments['DAG_info'] = DAG_info
         else:
             dummy_state.keyword_arguments['DAG_info'] = None
+#rhc groups partitions
+        dummy_state.keyword_arguments['groups_partitions'] = groups_partitions
         msg_id = str(uuid.uuid4())
 
         message = {
@@ -2400,7 +2446,12 @@ def create_fanin_and_faninNB_messages(DAG_map,DAG_states,DAG_info,all_fanin_task
 # all fanin and faninNB synch objects
 def create_fanin_and_faninNB_and_fanout_messages(DAG_map,DAG_states,DAG_info,all_fanin_task_names,
     all_fanin_sizes,all_faninNB_task_names, all_faninNB_sizes,
-    all_fanout_task_names,DAG_leaf_tasks,DAG_leaf_task_start_states):
+    all_fanout_task_names,DAG_leaf_tasks,DAG_leaf_task_start_states,
+    groups_partitions):
+#rhc groups partitions
+    # we are not using real lambdas to execute tasks so 
+    # groups_partitions is []
+
  
     """
     logger.trace("create_fanin_and_faninNB_messages: size of all_fanin_task_names: " + str(len(all_fanin_task_names))
@@ -2453,6 +2504,10 @@ def create_fanin_and_faninNB_and_fanout_messages(DAG_map,DAG_states,DAG_info,all
             dummy_state.keyword_arguments['DAG_info'] = DAG_info
         else:
             dummy_state.keyword_arguments['DAG_info'] = None
+
+#rhc groups partitions
+        dummy_state.keyword_arguments['groups_partitions'] = groups_partitions
+
         msg_id = str(uuid.uuid4())
 
         message = {
@@ -2568,9 +2623,13 @@ def create_work_queue(websocket,number_of_tasks):
     create_work_queue_on_server(websocket, work_queue_message)
 """
 
-# creates all fanins and faninNBs at the start of driver executin. If we are using 
-# workers and processes (not threads) then we also crate the work_queue here
-def create_fanins_and_faninNBs_and_work_queue(websocket,number_of_tasks,DAG_map,DAG_states,DAG_info,all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes):
+# creates all fanins and faninNBs at the start of driver executin. Since we are using 
+# workers and processes (not threads) then we also create the work_queue here
+def create_fanins_and_faninNBs_and_work_queue(websocket,number_of_tasks,DAG_map,DAG_states,DAG_info,all_fanin_task_names,all_fanin_sizes,
+    all_faninNB_task_names,all_faninNB_sizes,
+    groups_partitions):
+#rhc: groups partitions 
+# We ar not using real lambdas to excute tasks so groups_partitions is []
     dummy_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
     # we will create the fanin object and call fanin.init(**keyword_arguments)
     dummy_state.keyword_arguments['n'] = 2*number_of_tasks
@@ -2584,7 +2643,9 @@ def create_fanins_and_faninNBs_and_work_queue(websocket,number_of_tasks,DAG_map,
         "id": msg_id
     } 
 
-    fanin_messages, faninNB_messages = create_fanin_and_faninNB_messages(DAG_map,DAG_states,DAG_info,all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes)
+    fanin_messages, faninNB_messages = create_fanin_and_faninNB_messages(DAG_map,DAG_states,DAG_info,all_fanin_task_names,all_fanin_sizes,
+            all_faninNB_task_names,all_faninNB_sizes,
+            groups_partitions)
 
     logger.trace("DAG_executor_driver: create_fanins_and_faninNBs_and_work_queue: Sending a 'create_fanins_and_faninNBs_and_work_queue' message to server.")
     #logger.trace("create_fanins_and_faninNBs_and_work_queue: num fanin created: "  + str(len(fanin_messages))
@@ -2602,11 +2663,15 @@ def create_fanins_and_faninNBs_and_work_queue(websocket,number_of_tasks,DAG_map,
 # will be included in the fanouts.
 def create_fanins_and_faninNBs_and_fanouts(websocket,DAG_map,DAG_states,DAG_info,all_fanin_task_names,all_fanin_sizes,
     all_faninNB_task_names,all_faninNB_sizes,all_fanout_task_names, 
-    DAG_leaf_tasks, DAG_leaf_task_start_states):
+    DAG_leaf_tasks, DAG_leaf_task_start_states,
+    groups_partitions):
+#rhc groups partitions
+    # we are not using real lambdas to execute tasks so groups_partitions is []
 
     fanin_messages, faninNB_messages, fanout_messages = create_fanin_and_faninNB_and_fanout_messages(DAG_map,DAG_states,DAG_info,
         all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes,
-        all_fanout_task_names, DAG_leaf_tasks,DAG_leaf_task_start_states)
+        all_fanout_task_names, DAG_leaf_tasks,DAG_leaf_task_start_states,
+        groups_partitions)
 
     logger.trace("DAG_executor_driver: create_fanins_and_faninNBs_and_fanouts: Sending a 'create_fanins_and_faninNBs_and_fanouts' message to server.")
     #logger.trace("create_fanins_and_faninNBs_and_work_queue: num fanin created: "  + str(len(fanin_messages))
@@ -2620,10 +2685,27 @@ def create_fanins_and_faninNBs_and_fanouts(websocket,DAG_map,DAG_states,DAG_info
         messages, dummy_state)
 
 # creates all fanins and faninNBs at the start of driver execution. 
-def create_fanins_and_faninNBs(websocket,DAG_map,DAG_states,DAG_info,all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes):										
-    fanin_messages, faninNB_messages = create_fanin_and_faninNB_messages(DAG_map,DAG_states,DAG_info,all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes)
+def create_fanins_and_faninNBs(websocket,DAG_map,DAG_states,DAG_info,all_fanin_task_names,all_fanin_sizes,
+    all_faninNB_task_names,all_faninNB_sizes,
+    groups_partitions):
+#rhc: groups partitions
+    # For pagerank computation we need to read a partition of 
+    # nodes. For real lambdas, this could be from an S3 bucket
+    # or somewhere. To avoid this, we can let this DAG_executor_driver
+    # read the partition files and pass them to the Lambdas it starts
+    # in the Lambda's payload. We pass grou_parition here when we create
+    # the faninNBs since the faninNBs will start real lambdas.
+    # When bypass_call_lambda_client_invoke it means we 
+    # are not actually running the real Lambda code on AWS, we are 
+    # bypassing the call to invoke real AWS Lambdas and running the code
+    # locally, in which case we can read the group/partition file objects
+    # from local files.
+    # Note: if we are not using real lambdas, # since not using real lambdas, groups_partitions is []
 
-    
+    fanin_messages, faninNB_messages = create_fanin_and_faninNB_messages(DAG_map,DAG_states,DAG_info,all_fanin_task_names,all_fanin_sizes,
+                all_faninNB_task_names,all_faninNB_sizes,
+                groups_partitions)
+
     #logger.error("create_fanins_and_faninNBs: Sending a 'create_all_fanins_and_faninNBs_and_possibly_work_queue' message to server.")
     #logger.error("create_fanins_and_faninNBs: number of fanin messages: " + str(len(fanin_messages))
     #    + " number of faninNB messages: " + str(len(faninNB_messages)))
@@ -2632,7 +2714,6 @@ def create_fanins_and_faninNBs(websocket,DAG_map,DAG_states,DAG_info,all_fanin_t
     #logger.error("create_fanins_and_faninNBs: size of all_fanin_sizes: " + str(len(all_fanin_sizes))
     #    + " size of all_faninNB_sizes: " + str(len(all_faninNB_sizes)))
     #logger.error("create_fanins_and_faninNBs: all_faninNB_task_names: " + str(all_faninNB_task_names))
-    
 
     # Don't send a message to the server if there are no fanin or faninNBs to create
     # Not tested DAG with no fanins or faninNBs yet.

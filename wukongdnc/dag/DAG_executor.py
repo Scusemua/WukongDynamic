@@ -34,6 +34,7 @@ from .DAG_executor_constants import tasks_use_result_dictionary_parameter, same_
 from .DAG_executor_constants import compute_pagerank, use_shared_partitions_groups, use_page_rank_group_partitions
 from .DAG_executor_constants import use_struct_of_arrays_for_pagerank, using_workers
 from .DAG_executor_constants import use_incremental_DAG_generation, name_of_first_groupOrpartition_in_DAG
+from .DAG_executor_constants import bypass_call_lambda_client_invoke
 #rhc: counter:
 from .DAG_executor_constants import num_workers
 #from .DAG_work_queue_for_threads import thread_work_queue
@@ -967,7 +968,17 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
 
 #def process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State, output, DAG_info, server):
 def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State, 
-    output, DAG_info, server, work_queue, list_of_work_queue_values):
+    output, DAG_info, server, work_queue, list_of_work_queue_values,
+    groups_partitions):
+    # Not using server, which "simuates" tcp_server when we are storing 
+    # sync objects locally - server only handles fanins and faninNBs.
+    # For real lambdas, to avoid reading the partitions/groups from an s3
+    # bucket or whatever, the DAG_executor_driver can input the partitions
+    # or groups and pass them the the real lambdas it starts as part of the 
+    # payload. This list group_partitions will be passed to process_fanouts
+    # and added to the payloags of the real lambdas started for fanouts.
+    # tcp_server can also read group_partitions and make
+    
 
     thread_name = threading.current_thread().name
 
@@ -1215,8 +1226,9 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                         #"input": results,
                         "input": dict_of_results,
                         "DAG_executor_state": lambda_DAG_executor_state,
-                        "DAG_info": DAG_info
+                        "DAG_info": DAG_info,
                         #"server": server   # used to mock server during testing
+                        "groups_partitions": groups_partitions
                     }
                     ###### DAG_executor_State.function_name has not changed
                     invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor_lambda:"+name)
@@ -1473,7 +1485,15 @@ def process_fanins(websocket,fanins, faninNB_sizes, calling_task_name, DAG_state
 # tasks_completed_counter, workers_completed_counter
 def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_workers_counter, DAG_executor_state, DAG_info, 
 #rhc continue
-    work_queue,DAG_infobuffer_monitor):
+    work_queue,DAG_infobuffer_monitor,
+    groups_partitions):
+#rhc: groups partitions
+    # For real lambdas, to avoid reading the partitions/groups from an s3
+    # bucket or whatever, the DAG_executor_driver can input the partitions
+    # or groups and pass them the the real lambdas it starts as part of the 
+    # payload. This list group_partitions will be passed to process_fanouts
+    # and added to the payloags of the real lambdas started for fanouts.
+    # tcp_server can also read group_partitions and make
 
     DAG_map = DAG_info.get_DAG_map()
     DAG_tasks = DAG_info.get_DAG_tasks()
@@ -1482,7 +1502,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 #rhc continue
     # This is a local variabe; each worker has their own 
     # num_tasks_to_execute, which could be different since 
-    # workers may be usng different versions of the incremental DAG.
+    # workers may be using different versions of the incremental DAG.
     # version i includes all the tasks of earlier version i-1, i-2, etc.
     # A later version has 1 or more complete tasks that were incomplete
     # in an earlier version. This is set next.
@@ -4324,13 +4344,21 @@ def DAG_executor(payload):
             logging.shutdown()
             os._exit(0)
 
+#rhc: groups partitions
+    # For worker proceses, we do not read all the groups/partitions
+    # of nodes at the start; a group/partition of nodes is read 
+    # when we compute the pageranks of the group/partition
+    groups_partitions = []
+
     #DAG_info = payload['DAG_info']
     #DAG_executor_work_loop(logger, server, counter, thread_work_queue, DAG_executor_state, DAG_info, data_dict)
 #rhc: counter
 # tasks_completed_counter, workers_completed_counter
     DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_workers_counter, DAG_exec_state, DAG_info, 
 #rhc continue
-        work_queue,wukongdnc.dag.DAG_infoBuffer_Monitor_for_threads.DAG_infobuffer_monitor)
+        work_queue,wukongdnc.dag.DAG_infoBuffer_Monitor_for_threads.DAG_infobuffer_monitor,
+        groups_partitions)
+    
     logger.trace("DAG_executor() method returned from work loop.")
 
 # Config: A5, A6
@@ -4424,6 +4452,11 @@ def DAG_executor_processes(payload,completed_tasks_counter,completed_workers_cou
     work_queue = None
 #rhc continue
     DAG_infobuffer_monitor = None
+#rhc: groups partitions
+    # For worker proceses, we do not read all the groups/partitions
+    # of nodes at the start; a group/partition of nodes is read 
+    # when we compute the pageranks of the group/partition
+    groups_partitions = []
 
     #DAG_info = payload['DAG_info']
     #DAG_executor_work_loop(logger, server, counter, process_work_queue, DAG_exec_state, DAG_info, data_dict)
@@ -4431,7 +4464,7 @@ def DAG_executor_processes(payload,completed_tasks_counter,completed_workers_cou
 # tasks_completed_counter, workers_completed_counter
     DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_workers_counter, DAG_exec_state, DAG_info, 
 #rhc continue
-        work_queue, DAG_infobuffer_monitor)
+        work_queue, DAG_infobuffer_monitor,groups_partitions)
     logger.trace("DAG_executor_processes: returning after work_loop.")
     return
 
@@ -4445,6 +4478,18 @@ def DAG_executor_lambda(payload):
     else:
         DAG_exec_state = payload['DAG_executor_state'] 
         DAG_info = payload['DAG_info']  
+
+#rhc: group_partitions
+    # For real lambdas, to avoid reading the partitions/groups from an s3
+    # bucket or whatever, the DAG_executor_driver can input the partitions
+    # or groups and pass them the the real lambdas it starts as part of the 
+    # payload. This list group_partitions will be passed to process_fanouts
+    # and added to the payloags of the real lambdas started for fanouts.
+    # tcp_server can also read group_partitions and make it available
+    # to the faninNBs, which also start real lambdas.
+    groups_partitions = []
+    if compute_pagerank and not run_all_tasks_locally and not bypass_call_lambda_client_invoke and not use_incremental_DAG_generation:
+        groups_partitions = payload["groups_partitions"]
 
     #logger.trace("payload DAG_exec_state.state:" + str(DAG_exec_state.state))
 
@@ -4497,7 +4542,7 @@ def DAG_executor_lambda(payload):
 # tasks_completed_counter, workers_completed_counter
     DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_workers_counter, DAG_exec_state, DAG_info, 
 #rhc continue
-        work_queue,DAG_infobuffer_monitor )
+        work_queue,DAG_infobuffer_monitor,groups_partitions)
     logger.trace("DAG_executor_lambda: returning after work_loop.")
     return
                         

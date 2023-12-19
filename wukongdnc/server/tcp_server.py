@@ -4,6 +4,8 @@ import traceback
 import socketserver
 import cloudpickle
 import uuid
+import os
+import sys
 from threading import Lock
 
 from .synchronizer import Synchronizer
@@ -262,6 +264,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
     # Also, synchronize_process_faninNBs_batch and synchronize_sync and 
     # async call this ceate when creating the object on the fly.
     def create_obj_but_no_ack_to_client(self,message = None):
+        
         """
         Called by create_all_fanins_and_faninNBs_and_possibly_work_queue and create_work_queue to 
         create an object here on the TCP server. No ack is sent to a client. 
@@ -285,6 +288,27 @@ class TCPHandler(socketserver.StreamRequestHandler):
         logger.trace("Caching new Synchronizer of type '%s' with name '%s'" % (type_arg, synchronizer_name))
         tcp_server.synchronizers[synchronizer_name] = synchronizer # Store Synchronizer object.
  
+    def read_all_groups_partitions():
+        groups_partitions = {}
+        if wukongdnc.dag.DAG_1executor_constants.compute_pagerank and not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally and not wukongdnc.dag.DAG_executor_constants.bypass_call_lambda_client_invoke and not wukongdnc.dag.DAG_executor_constants.use_incremental_DAG_generation:
+            # hardcoded for testing rel lambdas. May want to enabe this generally in
+            # which case we will need the partition/group names, which BFS could
+            # write to a file.
+            group_partition_names = ["PR1_1","PR2_1","PR2_2L","PR2_3","PR3_1","PR3_2","P3_3","PR4_1","PR5_1","PR6_1","PR7_1"]
+            for name in group_partition_names:
+                try:
+                    with open(name, 'rb') as handle:
+                        partition_or_group = (cloudpickle.load(handle))
+                except EOFError:
+                    logger.info("[Error]: Internal Error: tcp_server: read_all_groups_partitions:"
+                        + " file name:" + str(name))
+                    #print('Problem:', file=sys.stderr)
+                    traceback.print_exc(file=sys.stderr)
+                    logging.shutdown()
+                    os._exit(0)
+                groups_partitions[name] = partition_or_group
+        return groups_partitions
+
     def synchronize_process_faninNBs_batch(self, message = None):
         """
         Synchronous process all faninNBs for a given state during DAG execution.
@@ -460,7 +484,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
             logger.trace("tcp_server: synchronize_process_faninNBs_batch: do synchronous_sync after create. ")
 
-        # List list_of_work_queue_or_payload_fanout_values may be empty: if a state has no fanouts this list is empty. 
+        # List list_of_fanout_values may be empty: if a state has no fanouts this list is empty. 
         # If a state has 1 fanout it will be a become task and there will be no more fanouts so this list is empty.
         # If the state has no fanouts, then worker_needs_work will be True and this fanout list will be empty.
         # otherwise, the worker will have a become task so worker_needs_input will be false (and this
@@ -567,6 +591,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 # a map of object name to lock at the start of tcp_server,
                 # similar to wht InfniD does when it creates mapped functions
                 # and their locks.
+                # Note: For incremental DAG generation create_all_fanins_faninNBs_on_start
+                # is always True.
                 with create_synchronization_object_lock:
                     synchronizer = tcp_server.synchronizers.get(synchronizer_name,None)
                     if (synchronizer is None):
@@ -590,7 +616,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                                     read_DAG_info = False
                                     DAG_info = DAG_Info.DAG_info_fromfilename()
                                     logger.info("tcp_server: read DAG_info for real lambdas.")
-    #rhc: DAG_info
+#rhc: DAG_info
                                     print("tcp_server: DAG_map:")
                                     # this required: # pylint: disable=E0601, E0118
                                     DAG_map = DAG_info.get_DAG_map() 
@@ -601,6 +627,13 @@ class TCPHandler(socketserver.StreamRequestHandler):
                                 # and used-prior-global-declaration (E0118) 
                                 # this requried: pylint: disable=E0601, E0118
                                 dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info 
+
+                                groups_partitions = []
+                                if read_groups_partitions:
+                                    read_groups_partitions = False
+                                    groups_partitions = self.read_all_groups_partitions()
+ 
+                                dummy_state_for_create_message.keyword_arguments['groups_partitions'] = groups_partitions 
                             else:
                                 # we are running locally with the fanins/faninNBs on the tcp_server.
                                 # The faninNBs will not try to create any new worker thread/processes
@@ -711,17 +744,20 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             if not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally:
                                 # using real lambdas
                                 # Note: When faninNB start a Lambda, DAG_info will be in the payload so pass DAG_info to faninNBs.
-                                # (Worker Threads and processes read DAG_info from disk. Real Lambdas can read DAG_info from
-                                # disk on the tcp_server but not when incremental DAG generation is used.
-                                # In that case, the DAG is not complete so tcp_server cannot read it as
-                                # the start. Instead, we pass DAG_info to tcp_server.
+                                # (Worker Threads and processes read DAG_info from disk. When incremental DAG generation is used.
+                                # the DAG is not complete so tcp_server cannot read it at the start.
+                                # Instead, we pass DAG_info to tcp_server. For real lambdas, we need DAG_info when 
+                                # a faninNB starts a lambda. We cna pass DAG_info from real lambdas
+                                # to the tcp_server. If we run tcp_server after BFS generates
+                                # a DAG_info for non-incremental DAG generation, tcp_server can read
+                                # the DAG_info from file.
 
                                 dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info_passed_from_DAG_exector
 #rhc: DAG_info          
                                 if DAG_info_passed_from_DAG_exector == None: 
-                                    logger.error(": DAG_info is None for synchronize_process_faninNBs_batch create on fly: " + synchronizer_name)
+                                    logger.trace(": DAG_info is None for synchronize_process_faninNBs_batch create on fly: " + synchronizer_name)
                                 else:
-                                    logger.error("FanInNB: fanin_task_name: DAG_info is NOT None for synchronize_process_faninNBs_batch create on fly :"  + synchronizer_name )
+                                    logger.trace("FanInNB: fanin_task_name: DAG_info is NOT None for synchronize_process_faninNBs_batch create on fly :"  + synchronizer_name )
 
                             else:
                                 # we are running locally with the fanins/faninNBs on the tcp_server.
