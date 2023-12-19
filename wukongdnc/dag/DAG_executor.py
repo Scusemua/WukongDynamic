@@ -1228,8 +1228,11 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                         "DAG_executor_state": lambda_DAG_executor_state,
                         "DAG_info": DAG_info,
                         #"server": server   # used to mock server during testing
-                        "groups_partitions": groups_partitions
                     }
+
+                    if compute_pagerank and not run_all_tasks_locally and not bypass_call_lambda_client_invoke and not use_incremental_DAG_generation:
+                        payload["groups_partitions"] = groups_partitions
+                    
                     ###### DAG_executor_State.function_name has not changed
                     invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor_lambda:"+name)
                 except Exception as ex:
@@ -1493,7 +1496,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
     # or groups and pass them the the real lambdas it starts as part of the 
     # payload. This list group_partitions will be passed to process_fanouts
     # and added to the payloags of the real lambdas started for fanouts.
-    # tcp_server can also read group_partitions and make
+    # tcp_server can also read group_partitions and make.
+    # IF we are not using real lambdas this list is empty.
 
     DAG_map = DAG_info.get_DAG_map()
     DAG_tasks = DAG_info.get_DAG_tasks()
@@ -4465,7 +4469,8 @@ def DAG_executor_processes(payload,completed_tasks_counter,completed_workers_cou
 # tasks_completed_counter, workers_completed_counter
     DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_workers_counter, DAG_exec_state, DAG_info, 
 #rhc continue
-        work_queue, DAG_infobuffer_monitor,groups_partitions)
+        work_queue, DAG_infobuffer_monitor,
+        groups_partitions)
     logger.trace("DAG_executor_processes: returning after work_loop.")
     return
 
@@ -4543,7 +4548,8 @@ def DAG_executor_lambda(payload):
 # tasks_completed_counter, workers_completed_counter
     DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_workers_counter, DAG_exec_state, DAG_info, 
 #rhc continue
-        work_queue,DAG_infobuffer_monitor,groups_partitions)
+        work_queue,DAG_infobuffer_monitor,
+        groups_partitions)
     logger.trace("DAG_executor_lambda: returning after work_loop.")
     return
                         

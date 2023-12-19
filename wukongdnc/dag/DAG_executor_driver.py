@@ -1711,7 +1711,7 @@ def run():
         else: # store remotely
 
             groups_partitions = {}
-            
+
             # server will be None
             logger.trace("DAG_executor_driver: Connecting to TCP Server at %s." % str(TCP_SERVER_IP))
             websocket.connect(TCP_SERVER_IP)
@@ -1736,6 +1736,8 @@ def run():
                         create_fanins_and_faninNBs_and_work_queue(websocket,num_tasks_to_execute,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, 
                             all_faninNB_task_names, all_faninNB_sizes,
                             groups_partitions)
+                        # since not using real lambdas, groups_partitions is []
+
                         #Note: you can reversed() this list of leaf node start states to reverse the order of 
                         # appending leaf nodes during testing
                         list_of_work_queue_values = []
@@ -1798,15 +1800,15 @@ def run():
                         logger.error("[Error]: DAG_executor_driver: interal error: DAG_executor_driver: run_all_tasks_locally shoudl be false.")
                     # not run_all_tasks_locally so using lambdas (real or simulatd)
                     # So do not put leaf tasks in work queue
-
+#rhc: groups partitions
                     if not run_all_tasks_locally and store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks:
                         # storing sync objects in lambdas and snc objects trigger their tasks
                         create_fanins_and_faninNBs_and_fanouts(websocket,DAG_map,DAG_states,DAG_info,
                             all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes,
                             all_fanout_task_names,DAG_leaf_tasks,DAG_leaf_task_start_states,
                             groups_partitions)
-                        #rhc: groups partitions
-                        # We are not using real lambdas to execute tasks so groups_partitions is []
+                        # We are not using real lambdas to execute tasks so groups_partitions is [].
+
                         # call server to trigger the leaf tasks
                         process_leaf_tasks_batch(websocket)
                         # Informs the logging system to perform an orderly 
@@ -2003,7 +2005,6 @@ def run():
                 # locally, in which case we can read the group/partition file objects
                 # from local files.
 #rhc: group partitions
-                #groups_partitions = {}
                 if compute_pagerank and not run_all_tasks_locally and not bypass_call_lambda_client_invoke and not use_incremental_DAG_generation:
                 # hardcoded for testing rel lambdas. May want to enabe this generally in
                 # which case we will need the partition/group names, which BFS could

@@ -295,18 +295,19 @@ class TCPHandler(socketserver.StreamRequestHandler):
             # which case we will need the partition/group names, which BFS could
             # write to a file.
             group_partition_names = ["PR1_1","PR2_1","PR2_2L","PR2_3","PR3_1","PR3_2","P3_3","PR4_1","PR5_1","PR6_1","PR7_1"]
-            for name in group_partition_names:
+            for task_file_name in group_partition_names:
+                complete_task_file_name = './'+task_file_name+'.pickle'
                 try:
-                    with open(name, 'rb') as handle:
+                    with open(complete_task_file_name, 'rb') as handle:
                         partition_or_group = (cloudpickle.load(handle))
                 except EOFError:
                     logger.info("[Error]: Internal Error: tcp_server: read_all_groups_partitions:"
-                        + " file name:" + str(name))
+                        + " file name:" + str(complete_task_file_name))
                     #print('Problem:', file=sys.stderr)
                     traceback.print_exc(file=sys.stderr)
                     logging.shutdown()
                     os._exit(0)
-                groups_partitions[name] = partition_or_group
+                groups_partitions[task_file_name] = partition_or_group
         return groups_partitions
 
     def synchronize_process_faninNBs_batch(self, message = None):
@@ -627,7 +628,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                                 # and used-prior-global-declaration (E0118) 
                                 # this requried: pylint: disable=E0601, E0118
                                 dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info 
-
+#rhc groups partitions
                                 groups_partitions = []
                                 if wukongdnc.dag.DAG_executor_constants.compute_pagerank and not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally and not wukongdnc.dag.DAG_executor_constants.bypass_call_lambda_client_invoke and not wukongdnc.dag.DAG_executor_constants.use_incremental_DAG_generation:
                                     if read_groups_partitions:

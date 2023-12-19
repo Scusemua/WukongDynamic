@@ -252,6 +252,8 @@ def PageRank_Function_Driver(task_file_name,total_num_nodes,results_dictionary):
     return output
 
 def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
+#rhc: groups partitions: pass groups_partitions, either [] or list of g/p
+# if this then grab g/p using task_file name else read from file
         # task_file_name is, e.g., "PR1_1" not "PR1_1.pickle"
         # We check for task_file_name ending with "L" for loop below,
         # so we make this check esy by having 'L' at the end (endswith)
