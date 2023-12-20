@@ -1,6 +1,8 @@
 import logging
 import cloudpickle
 import os
+import sys
+import traceback
 #import numpy as np
 from .BFS_Partition_Node import Partition_Node
 from . import BFS_Shared
@@ -8,6 +10,7 @@ from . import BFS_Shared
 from .DAG_executor_constants import use_page_rank_group_partitions, using_threads_not_processes
 from .DAG_executor_constants import number_of_pagerank_iterations_for_partitions_groups_with_loops
 #from .DAG_executor_constants import use_multithreaded_multiprocessing
+from .DAG_executor_constants import compute_pagerank, run_all_tasks_locally, bypass_call_lambda_client_invoke, use_incremental_DAG_generation
 
 logger = logging.getLogger(__name__)
 
@@ -228,7 +231,9 @@ def PageRank_Function_one_iter(partition_or_group,damping_factor,
 # See also the comment in DAG_executor.py about adding the output values to 
 # the data_dict.
 
-def PageRank_Function_Driver(task_file_name,total_num_nodes,results_dictionary):
+#def PageRank_Function_Driver(task_file_name,total_num_nodes,results_dictionary):
+def PageRank_Function_Driver(task_file_name,total_num_nodes,results_dictionary,
+    groups_partitions):
     input_tuples = []
     for (_,v) in results_dictionary.items():
         # The dictionarry is a task_name key and a result value. We do not 
@@ -248,12 +253,15 @@ def PageRank_Function_Driver(task_file_name,total_num_nodes,results_dictionary):
     # shadow nodes. Helps visualize execution during debugging.
     if (debug_pagerank):
         input_tuples.sort()
-    output = PageRank_Function(task_file_name,total_num_nodes,input_tuples)
+    #output = PageRank_Function(task_file_name,total_num_nodes,input_tuples)
+    output = PageRank_Function(task_file_name,total_num_nodes,input_tuples,
+        groups_partitions)
     return output
 
-def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
-#rhc: groups partitions: pass groups_partitions, either [] or list of g/p
-# if this then grab g/p using task_file name else read from file
+def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partitions):
+
+#rhc: groups partitions
+    if not (compute_pagerank and not run_all_tasks_locally and not bypass_call_lambda_client_invoke and not use_incremental_DAG_generation):
         # task_file_name is, e.g., "PR1_1" not "PR1_1.pickle"
         # We check for task_file_name ending with "L" for loop below,
         # so we make this check esy by having 'L' at the end (endswith)
@@ -267,361 +275,368 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
         except EOFError:
             logger.info("[Error]: Internal Error: PageRank_Function: EOFError:"
                 + " complete_task_file_name:" + str(complete_task_file_name))
-            import sys, traceback
             #print('Problem:', file=sys.stderr)
             traceback.print_exc(file=sys.stderr)
             logging.shutdown()
             os._exit(0)
-        
-        if (debug_pagerank):
-            logger.trace("PageRank_Function: partition_or_group (node:parents):")
-            for node in partition_or_group:
-                #logger.trace(node,end=":")
-                print_val = str(node) + ":"
-                for parent in node.parents:
-                    print_val += str(parent) + " "
-                    #logger.trace(parent,end=" ")
-                if len(node.parents) == 0:
-                    #logger.trace(",",end=" ")
-                    print_val += ", "
-                else:
-                    #logger.trace(",",end=" ")
-                    print_val += ", "
-                logger.trace(print_val)
-            logger.trace("")
-            logger.trace("PageRank_Function:  partition_or_group (node:num_children):")
-            print_val = ""
-            for node in partition_or_group:
-                print_val += str(node)+":"+str(node.num_children) + ", "
-                # logger.trace(str(node)+":"+str(node.num_children),end=", ")
-            logger.trace(print_val)
-            logger.trace("")
-
-            logger.trace("")
-            # node's children set when the partition/grup node created
-
-        #Note: We can compute num_shadow_nodes directly from len(input_tuples)
-        # as there is a tuple for each shadow node.
-        # We are not currently using num_shadow_nodes, though we will probably
-        # use it in PageRank_Function_Shared below.
-        # 
-        # num_shadow_nodes = len(input_tuples)
-        # or
-        #num_shadow_nodes = 0
-        # for node in partition_or_group:
-        #    if node.isShadowNode:
-        #        num_shadow_nodes += 1
-
-        # we iterate over real nodes and shadow nodes the total of which
-        # is num_nodes_for_pagerank_computation computed below. So 
-        # we don't need num_shadow_nodes here.
-        #actual_num_nodes = len(partition_or_group)-num_shadow_nodes
-
-
-
-        # rhc: no total_num_nodes parameter?
-
-        # Note: num_nodes_for_pagerank_computation includes regular nodes plus
-        # shadow nodes, which together are the nodes in partition_or_group.
-        # There are no parent nodes in partition_or_group; we add parent nodes below.
-        # There is an input tuple for each shadow_node, so the number of shadow nodes
-        # is len(input_tuples).
-
-        num_nodes_for_pagerank_computation = len(partition_or_group)
-        total_num_nodes = num_nodes_for_pagerank_computation - len(input_tuples)
-        """
-        # num_nodes is a global variable in BFS.py that is set to the number of
-        # nodes in the graph input by input_graph() in BFS.py.
-        if not total_num_nodes == num_nodes:
-            logger.error("[Error]: Internal Error: BFS_pagerank: total_num_nodes"
-                + " is not equal to num_nodes in input graph.")
+    else:
+        if groups_partitions == []:
+            logger.error("[Error]: Internal Error: PageRank_Function:"
+                + " groups_partitions is [].")
+            traceback.print_exc(file=sys.stderr)
             logging.shutdown()
             os._exit(0)
-        """
+        partition_or_group = groups_partitions[task_file_name]
 
-        damping_factor=0.15
-        random_jumping = damping_factor / total_num_nodes
-        one_minus_dumping_factor = 1 - damping_factor
+    if (debug_pagerank):
+        logger.trace("PageRank_Function: partition_or_group (node:parents):")
+        for node in partition_or_group:
+            #logger.trace(node,end=":")
+            print_val = str(node) + ":"
+            for parent in node.parents:
+                print_val += str(parent) + " "
+                #logger.trace(parent,end=" ")
+            if len(node.parents) == 0:
+                #logger.trace(",",end=" ")
+                print_val += ", "
+            else:
+                #logger.trace(",",end=" ")
+                print_val += ", "
+            logger.trace(print_val)
+        logger.trace("")
+        logger.trace("PageRank_Function:  partition_or_group (node:num_children):")
+        print_val = ""
+        for node in partition_or_group:
+            print_val += str(node)+":"+str(node.num_children) + ", "
+            # logger.trace(str(node)+":"+str(node.num_children),end=", ")
+        logger.trace(print_val)
+        logger.trace("")
 
-        iterations = -1
+        logger.trace("")
+        # node's children set when the partition/grup node created
+
+    #Note: We can compute num_shadow_nodes directly from len(input_tuples)
+    # as there is a tuple for each shadow node.
+    # We are not currently using num_shadow_nodes, though we will probably
+    # use it in PageRank_Function_Shared below.
+    # 
+    # num_shadow_nodes = len(input_tuples)
+    # or
+    #num_shadow_nodes = 0
+    # for node in partition_or_group:
+    #    if node.isShadowNode:
+    #        num_shadow_nodes += 1
+
+    # we iterate over real nodes and shadow nodes the total of which
+    # is num_nodes_for_pagerank_computation computed below. So 
+    # we don't need num_shadow_nodes here.
+    #actual_num_nodes = len(partition_or_group)-num_shadow_nodes
+
+
+
+    # rhc: no total_num_nodes parameter?
+
+    # Note: num_nodes_for_pagerank_computation includes regular nodes plus
+    # shadow nodes, which together are the nodes in partition_or_group.
+    # There are no parent nodes in partition_or_group; we add parent nodes below.
+    # There is an input tuple for each shadow_node, so the number of shadow nodes
+    # is len(input_tuples).
+
+    num_nodes_for_pagerank_computation = len(partition_or_group)
+    total_num_nodes = num_nodes_for_pagerank_computation - len(input_tuples)
+    """
+    # num_nodes is a global variable in BFS.py that is set to the number of
+    # nodes in the graph input by input_graph() in BFS.py.
+    if not total_num_nodes == num_nodes:
+        logger.error("[Error]: Internal Error: BFS_pagerank: total_num_nodes"
+            + " is not equal to num_nodes in input graph.")
+        logging.shutdown()
+        os._exit(0)
+    """
+
+    damping_factor=0.15
+    random_jumping = damping_factor / total_num_nodes
+    one_minus_dumping_factor = 1 - damping_factor
+
+    iterations = -1
+    if not task_file_name.endswith('L'):
+        iterations = int(1)
+    else:
+        iterations = int(number_of_pagerank_iterations_for_partitions_groups_with_loops)
+
+    i=0
+    for tup in input_tuples:
+        logger.trace("PageRank_Function: input tuple:" + str(tup))
+        shadow_node_index = tup[0]
+        pagerank_value = tup[1]
+        # assert
+        if not partition_or_group[shadow_node_index].isShadowNode:
+            logger.error("[Error]: Internal Error: input tuple " + str(tup))
+            logging.shutdown()
+            os._exit(0)
+
+        # If shadow_node x is a shadow_node for node y (where the one or more
+        # shadow nodes of y are immediatley preceeding y) then shadow_node x
+        # represents (is a proxy for) a parent node of y that was in a different partition P or 
+        # group G. P/G will send the pagerank value for parent to the partition
+        # or group for x and y. We set the pagerank for the shadow_node equal to this
+        # received pagerank value. 
+        # We will use the shadow_node's pagerank as the pagerank value for one of 
+        # y's parents (there may be shadow_nodes for other parents of y and y may
+        # have parents in its group/partition). We have two choices: (1) do not compute
+        # the pagerank value of a shadow_node; this prevents the shadow_node's pagerank
+        # value from changing but we need an if-statement to check whether a node ia 
+        # a shadow_node. Choce (2) is to give the shadow_node a parent node that is 
+        # out of the pagerank computation's range and set the pagerank of the
+        # shadow_node's parent such that when we compute the pagerank of the 
+        # shadow_node we always get the same value. For this case, we avoid the
+        # if-statement in the tight pagerank loop. So we avoid missed branch
+        # predictions by the hardware. Note that there is a limit to the number of
+        # missed predictions allowed if out tight loop is to be considered by 
+        # the loop-stream detector as a loop whose micro-ops can be buffered
+        # avoiding the re-decoding of the loop's machine instructions on each 
+        # iteration of the loop. (The frontend of the instruction cycle can be 
+        # powered off also.)
+        #
+        # pagerank of shadow_node is the pagerank value received from the 
+        # parents partition/group executor.
+        partition_or_group[shadow_node_index].pagerank = pagerank_value
         if not task_file_name.endswith('L'):
-            iterations = int(1)
-        else:
-            iterations = int(number_of_pagerank_iterations_for_partitions_groups_with_loops)
-
-        i=0
-        for tup in input_tuples:
-            logger.trace("PageRank_Function: input tuple:" + str(tup))
-            shadow_node_index = tup[0]
-            pagerank_value = tup[1]
-            # assert
-            if not partition_or_group[shadow_node_index].isShadowNode:
-                logger.error("[Error]: Internal Error: input tuple " + str(tup))
-                logging.shutdown()
-                os._exit(0)
-
-            # If shadow_node x is a shadow_node for node y (where the one or more
-            # shadow nodes of y are immediatley preceeding y) then shadow_node x
-            # represents (is a proxy for) a parent node of y that was in a different partition P or 
-            # group G. P/G will send the pagerank value for parent to the partition
-            # or group for x and y. We set the pagerank for the shadow_node equal to this
-            # received pagerank value. 
-            # We will use the shadow_node's pagerank as the pagerank value for one of 
-            # y's parents (there may be shadow_nodes for other parents of y and y may
-            # have parents in its group/partition). We have two choices: (1) do not compute
-            # the pagerank value of a shadow_node; this prevents the shadow_node's pagerank
-            # value from changing but we need an if-statement to check whether a node ia 
-            # a shadow_node. Choce (2) is to give the shadow_node a parent node that is 
-            # out of the pagerank computation's range and set the pagerank of the
-            # shadow_node's parent such that when we compute the pagerank of the 
-            # shadow_node we always get the same value. For this case, we avoid the
-            # if-statement in the tight pagerank loop. So we avoid missed branch
-            # predictions by the hardware. Note that there is a limit to the number of
-            # missed predictions allowed if out tight loop is to be considered by 
-            # the loop-stream detector as a loop whose micro-ops can be buffered
-            # avoiding the re-decoding of the loop's machine instructions on each 
-            # iteration of the loop. (The frontend of the instruction cycle can be 
-            # powered off also.)
-            #
-            # pagerank of shadow_node is the pagerank value received from the 
-            # parents partition/group executor.
             partition_or_group[shadow_node_index].pagerank = pagerank_value
-            if not task_file_name.endswith('L'):
-                partition_or_group[shadow_node_index].pagerank = pagerank_value
-            else:
-                # When we compuet pagerank for nodes in a loop we use .prev
-                # as the previous pagerank value. So we save the current value
-                # to the previous value, etc. We begin the computation by reading 
-                # the .prev value, which here will be the sent value of the parent.
-                partition_or_group[shadow_node_index].prev = pagerank_value
-            
-            # When we print a shadow node with ID n we print "n-s", i.e., we add the "-s"
-            # See toString_PageRank(self) in BFS_Partition_Node which prints a string
-            # representation for a Partition_Node.
-            shadow_node_ID = partition_or_group[shadow_node_index].ID
-            # When we print a parent node with ID "n-s-p", the "-s-p" is already part
-            # of the ID.
-            parent_of_shadow_node_ID = str(shadow_node_ID) + "-s-p"
-            parent_of_shadow_node = Partition_Node(parent_of_shadow_node_ID)
-            # set the pagerank of the parent_of_shadow_node so that when we recompute
-            # the pagerank of the shadow_node we alwas get the same value.
-            if not task_file_name.endswith('L'):
-                parent_of_shadow_node.pagerank = (
-                    (partition_or_group[shadow_node_index].pagerank - random_jumping)  / one_minus_dumping_factor)
-                if (debug_pagerank):
-                    logger.trace("parent " + parent_of_shadow_node_ID + " pagerank set to: " + str(parent_of_shadow_node.pagerank))
-            else:
-                parent_of_shadow_node.prev = (
-                    (partition_or_group[shadow_node_index].pagerank - random_jumping)  / one_minus_dumping_factor)
-                if (debug_pagerank):
-                    logger.trace("parent " + parent_of_shadow_node_ID + " prev set to: " + str(parent_of_shadow_node.pagerank))
- 
-            # num_children = 1 makes the computation easier
-            parent_of_shadow_node.num_children = 1
-            # appending new nodes at the end
-            partition_or_group.append(parent_of_shadow_node)
-            partition_or_group[shadow_node_index].parents[0] = num_nodes_for_pagerank_computation + i
-            i += 1
-
-        if (debug_pagerank):
-            logger.trace("")
-            logger.trace("PageRank_Function output partition_or_group after adding " + str(len(input_tuples)) + " Shad. Node parents (node:parents):")
-            for node in partition_or_group:
-                print_val = str(node) + ":"
-                # print(node,end=":")
-                for parent in node.parents:
-                    #print(parent,end=" ")
-                    print_val += str(parent) + " "
-                if len(node.parents) == 0:
-                    #print(" ,",end=" ")
-                    print_val += " ,"
-                else:
-                    #print(",",end=" ")
-                    print_val += ","
-                logger.trace(print_val)
-            logger.trace("")
-
-        if task_file_name.endswith('L'):
-            for index in range(num_nodes_for_pagerank_computation):
-                if not partition_or_group[index].isShadowNode:
-                    partition_or_group[index].prev = (1/total_num_nodes)
-                # Note: when we created shadow nodes we set:
-                #   partition_or_group[shadow_node_index].prev = pagerank_value
-                # so prv starts with the value computer for its parent for a 
-                # previous partition or group.
-
-        for i in range(1,iterations+1):
+        else:
+            # When we compuet pagerank for nodes in a loop we use .prev
+            # as the previous pagerank value. So we save the current value
+            # to the previous value, etc. We begin the computation by reading 
+            # the .prev value, which here will be the sent value of the parent.
+            partition_or_group[shadow_node_index].prev = pagerank_value
+        
+        # When we print a shadow node with ID n we print "n-s", i.e., we add the "-s"
+        # See toString_PageRank(self) in BFS_Partition_Node which prints a string
+        # representation for a Partition_Node.
+        shadow_node_ID = partition_or_group[shadow_node_index].ID
+        # When we print a parent node with ID "n-s-p", the "-s-p" is already part
+        # of the ID.
+        parent_of_shadow_node_ID = str(shadow_node_ID) + "-s-p"
+        parent_of_shadow_node = Partition_Node(parent_of_shadow_node_ID)
+        # set the pagerank of the parent_of_shadow_node so that when we recompute
+        # the pagerank of the shadow_node we alwas get the same value.
+        if not task_file_name.endswith('L'):
+            parent_of_shadow_node.pagerank = (
+                (partition_or_group[shadow_node_index].pagerank - random_jumping)  / one_minus_dumping_factor)
             if (debug_pagerank):
-                logger.trace("***** PageRank: iteration " + str(i))
-                logger.trace("")
+                logger.trace("parent " + parent_of_shadow_node_ID + " pagerank set to: " + str(parent_of_shadow_node.pagerank))
+        else:
+            parent_of_shadow_node.prev = (
+                (partition_or_group[shadow_node_index].pagerank - random_jumping)  / one_minus_dumping_factor)
+            if (debug_pagerank):
+                logger.trace("parent " + parent_of_shadow_node_ID + " prev set to: " + str(parent_of_shadow_node.pagerank))
 
-            # inlined this function 
-            #PageRank_Function_one_iter(partition_or_group,damping_factor,one_minus_dumping_factor,random_jumping,total_num_nodes,num_nodes_for_pagerank_computation)
-    
-            for index in range(num_nodes_for_pagerank_computation):
+        # num_children = 1 makes the computation easier
+        parent_of_shadow_node.num_children = 1
+        # appending new nodes at the end
+        partition_or_group.append(parent_of_shadow_node)
+        partition_or_group[shadow_node_index].parents[0] = num_nodes_for_pagerank_computation + i
+        i += 1
 
-                if not task_file_name.endswith('L'):
-                    if partition_or_group[index].isShadowNode:
-                        if (debug_pagerank):
-                            logger.trace("PageRank: before pagerank computation: node at position " 
-                            + str(index) + " isShadowNode: " 
-                            + str(partition_or_group[index].isShadowNode) 
-                            + ", pagerank: " + str(partition_or_group[index].pagerank)
-                            + ", parent: " + str(partition_or_group[index].parents[0])
-                            + ", (real) parent's num_children: " + str(partition_or_group[index].num_children)
-                            )
-                else:
-                    if partition_or_group[index].isShadowNode:
-                        if (debug_pagerank):
-                            logger.trace("PageRank: before pagerank computation: node at position " 
-                            + str(index) + " isShadowNode: " 
-                            + str(partition_or_group[index].isShadowNode) 
-                            + ", prev: " + str(partition_or_group[index].prev)
-                            + ", parent: " + str(partition_or_group[index].parents[0])
-                            + ", (real) parent's num_children: " + str(partition_or_group[index].num_children)
-                            )
-                if (debug_pagerank):
-                    logger.trace("")
+    if (debug_pagerank):
+        logger.trace("")
+        logger.trace("PageRank_Function output partition_or_group after adding " + str(len(input_tuples)) + " Shad. Node parents (node:parents):")
+        for node in partition_or_group:
+            print_val = str(node) + ":"
+            # print(node,end=":")
+            for parent in node.parents:
+                #print(parent,end=" ")
+                print_val += str(parent) + " "
+            if len(node.parents) == 0:
+                #print(" ,",end=" ")
+                print_val += " ,"
+            else:
+                #print(",",end=" ")
+                print_val += ","
+            logger.trace(print_val)
+        logger.trace("")
 
-                #print(str(partition_or_group[index].ID) + " type of node: " + str(type(partition_or_group[index])))
+    if task_file_name.endswith('L'):
+        for index in range(num_nodes_for_pagerank_computation):
+            if not partition_or_group[index].isShadowNode:
+                partition_or_group[index].prev = (1/total_num_nodes)
+            # Note: when we created shadow nodes we set:
+            #   partition_or_group[shadow_node_index].prev = pagerank_value
+            # so prv starts with the value computer for its parent for a 
+            # previous partition or group.
 
-                # we are computing pagerank for shadow nodes too - the value does not change
-                if not task_file_name.endswith('L'):
-                    partition_or_group[index].update_PageRank_of_PageRank_Function(partition_or_group, 
-                        damping_factor,one_minus_dumping_factor,random_jumping,total_num_nodes)
-                else:
-                    # multi-iteration
-                    partition_or_group[index].update_PageRank_of_PageRank_Function_loop(partition_or_group, 
-                        damping_factor,one_minus_dumping_factor,random_jumping,total_num_nodes)
+    for i in range(1,iterations+1):
+        if (debug_pagerank):
+            logger.trace("***** PageRank: iteration " + str(i))
+            logger.trace("")
 
-                # we used prev to compute pagerank so show pagerank.
-                # The pagerank value should always be the same, i.e., for the first
-                # computation pagerank will be the asme as prev, and this will be true 
-                # for every iteration that follows. (The shadow node's parrent pagerank
-                # value has been set so this is true.)
+        # inlined this function 
+        #PageRank_Function_one_iter(partition_or_group,damping_factor,one_minus_dumping_factor,random_jumping,total_num_nodes,num_nodes_for_pagerank_computation)
+
+        for index in range(num_nodes_for_pagerank_computation):
+
+            if not task_file_name.endswith('L'):
                 if partition_or_group[index].isShadowNode:
                     if (debug_pagerank):
-                        logger.trace("PageRank:  after pagerank computation: node at position " 
+                        logger.trace("PageRank: before pagerank computation: node at position " 
                         + str(index) + " isShadowNode: " 
                         + str(partition_or_group[index].isShadowNode) 
                         + ", pagerank: " + str(partition_or_group[index].pagerank)
                         + ", parent: " + str(partition_or_group[index].parents[0])
                         + ", (real) parent's num_children: " + str(partition_or_group[index].num_children)
                         )
+            else:
+                if partition_or_group[index].isShadowNode:
+                    if (debug_pagerank):
+                        logger.trace("PageRank: before pagerank computation: node at position " 
+                        + str(index) + " isShadowNode: " 
+                        + str(partition_or_group[index].isShadowNode) 
+                        + ", prev: " + str(partition_or_group[index].prev)
+                        + ", parent: " + str(partition_or_group[index].parents[0])
+                        + ", (real) parent's num_children: " + str(partition_or_group[index].num_children)
+                        )
+            if (debug_pagerank):
+                logger.trace("")
 
-                #if (debug_pagerank):
-                #logger.trace("")
+            #print(str(partition_or_group[index].ID) + " type of node: " + str(type(partition_or_group[index])))
 
-            if task_file_name.endswith('L'):
-                for index in range(num_nodes_for_pagerank_computation):
-                    partition_or_group[index].prev = partition_or_group[index].pagerank
-        
-        """
-        if run_all_tasks_locally and using_threads_not_processes:
-            logger.trace("PageRanks: ")
-            for i in range(num_nodes_for_pagerank_computation):
-                if not partition_or_group[i].isShadowNode:
-                    my_ID = str(partition_or_group[i].ID)
-                    results[partition_or_group[i].ID] = partition_or_group[i].pagerank
-                else:
-                    my_ID = str(partition_or_group[i].ID) + "-s"
-                logger.trace(partition_or_group[i].toString_PageRank())
-        """
+            # we are computing pagerank for shadow nodes too - the value does not change
+            if not task_file_name.endswith('L'):
+                partition_or_group[index].update_PageRank_of_PageRank_Function(partition_or_group, 
+                    damping_factor,one_minus_dumping_factor,random_jumping,total_num_nodes)
+            else:
+                # multi-iteration
+                partition_or_group[index].update_PageRank_of_PageRank_Function_loop(partition_or_group, 
+                    damping_factor,one_minus_dumping_factor,random_jumping,total_num_nodes)
 
-        if (debug_pagerank):
-            logger.trace("")
-            logger.trace("Frontier Parents:")
-            for i in range(len(partition_or_group)):
-                if not partition_or_group[i].isShadowNode:
-                    my_ID = str(partition_or_group[i].ID)
-                else:
-                    my_ID = str(partition_or_group[i].ID) + "-s"
-                logger.trace("ID:" + my_ID + " frontier_parents: " + str(partition_or_group[i].frontier_parents))
-            logger.trace("")
-        """
-        ID:5 frontier_parents: [(2, 1, 2)]
-        ID:17 frontier_parents: [(2, 2, 5)]
-        ID:1 frontier_parents: [(2, 3, 3)]
-        """
-        # Note: We are iterating through the nodes in the partition/group and seeing if
-        # their pagerank value is part of the output. We may want to add a field to 
-        # the "partition object" which is these frontier_parent tuples so we do not 
-        # have to do this iteration. But then the partition objects would be bigger.
-        # Currently a partition is just a list of partition_nodes; we would need a 
-        # partition object with a list of nodes and a list of frontier parent tuples.
-        PageRank_output = {}
+            # we used prev to compute pagerank so show pagerank.
+            # The pagerank value should always be the same, i.e., for the first
+            # computation pagerank will be the asme as prev, and this will be true 
+            # for every iteration that follows. (The shadow node's parrent pagerank
+            # value has been set so this is true.)
+            if partition_or_group[index].isShadowNode:
+                if (debug_pagerank):
+                    logger.trace("PageRank:  after pagerank computation: node at position " 
+                    + str(index) + " isShadowNode: " 
+                    + str(partition_or_group[index].isShadowNode) 
+                    + ", pagerank: " + str(partition_or_group[index].pagerank)
+                    + ", parent: " + str(partition_or_group[index].parents[0])
+                    + ", (real) parent's num_children: " + str(partition_or_group[index].num_children)
+                    )
+
+            #if (debug_pagerank):
+            #logger.trace("")
+
+        if task_file_name.endswith('L'):
+            for index in range(num_nodes_for_pagerank_computation):
+                partition_or_group[index].prev = partition_or_group[index].pagerank
+    
+    """
+    if run_all_tasks_locally and using_threads_not_processes:
+        logger.trace("PageRanks: ")
+        for i in range(num_nodes_for_pagerank_computation):
+            if not partition_or_group[i].isShadowNode:
+                my_ID = str(partition_or_group[i].ID)
+                results[partition_or_group[i].ID] = partition_or_group[i].pagerank
+            else:
+                my_ID = str(partition_or_group[i].ID) + "-s"
+            logger.trace(partition_or_group[i].toString_PageRank())
+    """
+
+    if (debug_pagerank):
+        logger.trace("")
+        logger.trace("Frontier Parents:")
         for i in range(len(partition_or_group)):
-            if len(partition_or_group[i].frontier_parents) > 0:
-                for frontier_parent in partition_or_group[i].frontier_parents:
-                    # Not using these
-                    #partition_number = frontier_parent[0]
-                    #group_number = frontier_parent[1]
+            if not partition_or_group[i].isShadowNode:
+                my_ID = str(partition_or_group[i].ID)
+            else:
+                my_ID = str(partition_or_group[i].ID) + "-s"
+            logger.trace("ID:" + my_ID + " frontier_parents: " + str(partition_or_group[i].frontier_parents))
+        logger.trace("")
+    """
+    ID:5 frontier_parents: [(2, 1, 2)]
+    ID:17 frontier_parents: [(2, 2, 5)]
+    ID:1 frontier_parents: [(2, 3, 3)]
+    """
+    # Note: We are iterating through the nodes in the partition/group and seeing if
+    # their pagerank value is part of the output. We may want to add a field to 
+    # the "partition object" which is these frontier_parent tuples so we do not 
+    # have to do this iteration. But then the partition objects would be bigger.
+    # Currently a partition is just a list of partition_nodes; we would need a 
+    # partition object with a list of nodes and a list of frontier parent tuples.
+    PageRank_output = {}
+    for i in range(len(partition_or_group)):
+        if len(partition_or_group[i].frontier_parents) > 0:
+            for frontier_parent in partition_or_group[i].frontier_parents:
+                # Not using these
+                #partition_number = frontier_parent[0]
+                #group_number = frontier_parent[1]
 
-                    # index of the shadow node in partition_or_group_name that will 
-                    # receiev the parent pagerank value being sent. 
-                    parent_or_group_index = frontier_parent[2]
+                # index of the shadow node in partition_or_group_name that will 
+                # receiev the parent pagerank value being sent. 
+                parent_or_group_index = frontier_parent[2]
 
-                    # Passing name in tuple so that name for loop partition/groups
-                    # will have an "l" at the end
-                    # We can't use the partition and group numbers to generate the name
-                    # since this won't give us the "L" if there is a loop in the partition/group.
-                    #partition_or_group_name = "PR"+str(partition_number)+"_"+str(group_number)
-                    partition_or_group_name = frontier_parent[3]
-                    # keeping a list of outputs for each partition_or_group_name that 
-                    # this just computed task outputs to
-                    output_list = PageRank_output.get(partition_or_group_name)
-                    if output_list == None:
-                        output_list = []
-                    # list of tuples: index of shadow node to receive the parent pagerank
-                    # value, and the pagerank value of parent.
-                    output_tuple = (parent_or_group_index,partition_or_group[i].pagerank)
-                    output_list.append(output_tuple)
-                    # map partition_or_group_name to its list
-                    PageRank_output[partition_or_group_name] = output_list
+                # Passing name in tuple so that name for loop partition/groups
+                # will have an "l" at the end
+                # We can't use the partition and group numbers to generate the name
+                # since this won't give us the "L" if there is a loop in the partition/group.
+                #partition_or_group_name = "PR"+str(partition_number)+"_"+str(group_number)
+                partition_or_group_name = frontier_parent[3]
+                # keeping a list of outputs for each partition_or_group_name that 
+                # this just computed task outputs to
+                output_list = PageRank_output.get(partition_or_group_name)
+                if output_list == None:
+                    output_list = []
+                # list of tuples: index of shadow node to receive the parent pagerank
+                # value, and the pagerank value of parent.
+                output_tuple = (parent_or_group_index,partition_or_group[i].pagerank)
+                output_list.append(output_tuple)
+                # map partition_or_group_name to its list
+                PageRank_output[partition_or_group_name] = output_list
 
-        #if (debug_pagerank):
-        print("XXPageRank output tuples for " + task_file_name + ":")
+    #if (debug_pagerank):
+    print("XXPageRank output tuples for " + task_file_name + ":")
+    if not using_threads_not_processes:
+        logger.trace("XXPageRank output tuples for " + task_file_name + ": ")
+    print_val = ""
+    for k, v in PageRank_output.items():
         if not using_threads_not_processes:
-            logger.trace("XXPageRank output tuples for " + task_file_name + ": ")
-        print_val = ""
-        for k, v in PageRank_output.items():
+            print_val += "(%s, %s) " % (k, v)
+        print((k, v),end=" ")
+    if not using_threads_not_processes:
+        logger.trace(print_val)
+        logger.trace("")
+        logger.trace("")
+
+    print()
+    print()
+
+    print("XXPageRank result for " + task_file_name + ":", end=" ")
+    if not using_threads_not_processes:
+        logger.trace("XXPageRank result for " + task_file_name + ": ")
+    print_val = ""
+    for i in range(num_nodes_for_pagerank_computation):
+        if not partition_or_group[i].isShadowNode:
             if not using_threads_not_processes:
-                print_val += "(%s, %s) " % (k, v)
-            print((k, v),end=" ")
-        if not using_threads_not_processes:
-            logger.trace(print_val)
-            logger.trace("")
-            logger.trace("")
-
-        print()
-        print()
-
-        print("XXPageRank result for " + task_file_name + ":", end=" ")
-        if not using_threads_not_processes:
-            logger.trace("XXPageRank result for " + task_file_name + ": ")
-        print_val = ""
-        for i in range(num_nodes_for_pagerank_computation):
-            if not partition_or_group[i].isShadowNode:
-                if not using_threads_not_processes:
-                    print_val += "%s:%s " % (partition_or_group[i].ID, partition_or_group[i].pagerank)
-                print(str(partition_or_group[i].ID) + ":" + str(partition_or_group[i].pagerank),end=" ")
-        if not using_threads_not_processes:
-            logger.trace(print_val)
-            logger.trace("")
-            logger.trace("")
-        print()
-        print()
-
-        """
-        logger.trace("XXPageRank result for " + task_file_name + ":")
-        for i in range(num_nodes_for_pagerank_computation):
-            if not partition_or_group[i].isShadowNode:
-                print(str(partition_or_group[i].ID) + ":" + str(partition_or_group[i].pagerank))
+                print_val += "%s:%s " % (partition_or_group[i].ID, partition_or_group[i].pagerank)
+            print(str(partition_or_group[i].ID) + ":" + str(partition_or_group[i].pagerank),end=" ")
+    if not using_threads_not_processes:
+        logger.trace(print_val)
         logger.trace("")
         logger.trace("")
-        """
+    print()
+    print()
 
-        return PageRank_output
+    """
+    logger.trace("XXPageRank result for " + task_file_name + ":")
+    for i in range(num_nodes_for_pagerank_computation):
+        if not partition_or_group[i].isShadowNode:
+            print(str(partition_or_group[i].ID) + ":" + str(partition_or_group[i].pagerank))
+    logger.trace("")
+    logger.trace("")
+    """
+
+    return PageRank_output
 
 # 
 def PageRank_Function_Driver_Shared(task_file_name,total_num_nodes,results_dictionary,shared_map,shared_nodes):

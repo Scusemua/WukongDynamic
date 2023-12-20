@@ -134,7 +134,10 @@ def execute_task(task, args):
     return output
 
 #rhc: ToDo: total_num_nodes is hardcoded
-def execute_task_with_result_dictionary(task,task_name,total_num_nodes,resultDictionary):
+#rhc: groups partitions
+#def execute_task_with_result_dictionary(task,task_name,total_num_nodes,resultDictionary):
+def execute_task_with_result_dictionary(task,task_name,total_num_nodes,resultDictionary,
+    groups_partitions):
     #commented out for MM
     thread_name = threading.current_thread().name
     logger.trace(thread_name + ": execute_task_with_result_dictionary: input of execute_task is: " 
@@ -143,7 +146,9 @@ def execute_task_with_result_dictionary(task,task_name,total_num_nodes,resultDic
     #for i in range(0, len(args)):
     #    print("Type of argument #%d: %s" % (i, type(args[i])))
     #    print("Argument #%d: %s" % (i, str(args[i])))
-    output = task(task_name,total_num_nodes,resultDictionary)
+    #output = task(task_name,total_num_nodes,resultDictionary)
+#rhc: groups partitions
+    output = task(task_name,total_num_nodes,resultDictionary,groups_partitions)
     return output
 
 def execute_task_with_result_dictionary_shared(task,task_name,total_num_nodes,resultDictionary,shared_map, shared_nodes):
@@ -3280,7 +3285,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     #def PageRank_Function_Driver_Shared(task_file_name,total_num_nodes,results_dictionary,shared_map,shared_nodes):
                     if not use_shared_partitions_groups:
                         # we will call the task with: task(task_name,resultDictionary)
-                        output = execute_task_with_result_dictionary(task,state_info.task_name,20,result_dictionary)
+#rhc: groups partitions
+                        #output = execute_task_with_result_dictionary(task,state_info.task_name,20,result_dictionary)
+                        output = execute_task_with_result_dictionary(task,state_info.task_name,20,result_dictionary,
+                            groups_partitions)
                     else:
                         if use_page_rank_group_partitions:
                             output = execute_task_with_result_dictionary_shared(task,state_info.task_name,20,result_dictionary,BFS_Shared.shared_groups_map,BFS_Shared.shared_groups)
