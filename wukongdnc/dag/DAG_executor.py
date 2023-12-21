@@ -137,6 +137,7 @@ def execute_task(task, args):
 #rhc: groups partitions
 #def execute_task_with_result_dictionary(task,task_name,total_num_nodes,resultDictionary):
 def execute_task_with_result_dictionary(task,task_name,total_num_nodes,resultDictionary,
+#rhc groups partitions
     groups_partitions):
     #commented out for MM
     thread_name = threading.current_thread().name
@@ -1495,6 +1496,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 #rhc continue
     work_queue,DAG_infobuffer_monitor,
     groups_partitions):
+
 #rhc: groups partitions
     # For real lambdas, to avoid reading the partitions/groups from an s3
     # bucket or whatever, the DAG_executor_driver can input the partitions
@@ -4503,7 +4505,17 @@ def DAG_executor_lambda(payload):
     # to the faninNBs, which also start real lambdas.
     groups_partitions = []
     if compute_pagerank and not run_all_tasks_locally and not bypass_call_lambda_client_invoke and not use_incremental_DAG_generation:
-        groups_partitions = payload["groups_partitions"]
+        groups_partitions = cloudpickle.loads(base64.b64decode(payload['groups_partitions']))
+
+        #print("groups_partitions:")
+        #keys = list(groups_partitions.keys())
+        #for key in keys:
+        #   print(key + ":")
+        #    g_p = groups_partitions[key]
+        #    for node in g_p:
+        #        print(str(node))
+        #logging.shutdown()
+        #os._exit(0)
 
     #logger.trace("payload DAG_exec_state.state:" + str(DAG_exec_state.state))
 

@@ -261,6 +261,7 @@ def PageRank_Function_Driver(task_file_name,total_num_nodes,results_dictionary,
 def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partitions):
 
 #rhc: groups partitions
+    partition_or_group = None
     if not (compute_pagerank and not run_all_tasks_locally and not bypass_call_lambda_client_invoke and not use_incremental_DAG_generation):
         # task_file_name is, e.g., "PR1_1" not "PR1_1.pickle"
         # We check for task_file_name ending with "L" for loop below,
@@ -286,6 +287,17 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partiti
             traceback.print_exc(file=sys.stderr)
             logging.shutdown()
             os._exit(0)
+
+        #print ("BFS_pagerank: groups_partitions:")
+        #keys = list(groups_partitions.keys())
+        #for key in keys:
+        #    print(key + ":")
+        #    g_p = groups_partitions[key]
+        #    for node in g_p:
+        #        print(str(node))
+        #logging.shutdown()
+        #os._exit(0)
+
         partition_or_group = groups_partitions[task_file_name]
 
     if (debug_pagerank):

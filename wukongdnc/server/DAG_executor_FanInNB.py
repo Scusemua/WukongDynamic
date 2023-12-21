@@ -6,6 +6,7 @@ import threading
 import time 
 from threading import Thread
 import traceback 
+#import os
 
 #from DAG_executor import DAG_executor
 #from wukongdnc.dag 
@@ -16,6 +17,8 @@ import traceback
 from wukongdnc.dag.DAG_executor_State import DAG_executor_State
 from wukongdnc.dag.DAG_executor_constants import run_all_tasks_locally, using_workers, using_threads_not_processes
 from wukongdnc.dag.DAG_executor_constants import store_sync_objects_in_lambdas, sync_objects_in_lambdas_trigger_their_tasks
+from wukongdnc.dag.DAG_executor_constants import compute_pagerank, run_all_tasks_locally, bypass_call_lambda_client_invoke, use_incremental_DAG_generation
+
 #from wukongdnc.dag.DAG_work_queue_for_threads import thread_work_queue
 from wukongdnc.dag.DAG_executor_work_queue_for_threads import work_queue
 from wukongdnc.wukong.invoker import invoke_lambda_DAG_executor
@@ -92,6 +95,34 @@ class DAG_executor_FanInNB(MonitorSU):
                 logger.error("Error: FanInNB: fanin_task_name: DAG_info is None for init().")
         else:
             logger.trace("FanInNB: fanin_task_name: DAG_info is not None for init().")
+
+#rhc: groups partitions
+        # When running real lambdas, in order to avoid reading the 
+        # individual groups/partitions when testing pagerank with 
+        # real lambdas, the DAG_executor_driver can input all the 
+        # groups/partitions at the start of execution and pass them
+        # to the real lambdas it starts. Those real lambdas will
+        # pass the groups/partitions to the real lambdas (in their
+        # payloads) statrfed for fanouts. If the fanins/faninNBs are
+        # all created at the start, we pass the groups/partitions
+        # to the create() on the tcp_server and it will call this 
+        # # init() method with the groups_partitions parameter.
+        # Real lambdas call process faninNBs batch on the tcp_server, 
+        # and if we are creating fanins/faninNB on the fly, we pass 
+        # groups_partitions to the create().
+        # 
+        if compute_pagerank and not run_all_tasks_locally and not bypass_call_lambda_client_invoke and not use_incremental_DAG_generation:
+            self.groups_partitions = kwargs['groups_partitions'] 
+
+            #print("groups_partitions:")
+            #keys = list(self.groups_partitions.keys())
+            #for key in keys:
+            #    print(key + ":")
+            #    g_p = self.groups_partitions[key]
+            #    for node in g_p:
+            #        print(str(node))
+            #logging.shutdown()
+            #os._exit(0)
 
 #rhc: groups partitions
         # get it if real lambdas etc
@@ -312,8 +343,12 @@ class DAG_executor_FanInNB(MonitorSU):
                             "DAG_info": self.DAG_info
                             #"server": server   # used to mock server during testing; we use tcp_server with ral lambdas
                         }
-                        ###### DAG_executor_State.function_name has not changed
+
+                        if compute_pagerank and not run_all_tasks_locally and not bypass_call_lambda_client_invoke and not use_incremental_DAG_generation:
+                            # add the groups_partitions to payload 
+                            payload['groups_partitions'] = self.groups_partitions 
                         
+                        ###### DAG_executor_State.function_name has not changed
                         invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor_lambda:"+fanin_task_name)
                     except Exception as ex:
                         logger.trace("FanInNB:[ERROR] Failed to start DAG_executor Lambda.")

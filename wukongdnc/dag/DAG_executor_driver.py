@@ -1711,6 +1711,48 @@ def run():
         else: # store remotely
 
             groups_partitions = {}
+            # For pagerank computation we ned to read a partition of 
+            # nodes. For real lambdas, this will be from an S3 bucket
+            # or somewhere. To avoid this, we can let this DAG_executor_driver
+            # read the partition files and pass them to the Lambdas it starts
+            # in the Lambda's payload. When bypass_call_lambda_client_invoke it means we 
+            # are not actually running the real Lambda code on AWS, we are 
+            # bypassing the call to invoke real AWS Lambdas and running the code
+            # locally, in which case we can read the group/partition file objects
+            # from local files.
+#rhc: group partitions
+            if compute_pagerank and not run_all_tasks_locally and not bypass_call_lambda_client_invoke and not use_incremental_DAG_generation:
+            # hardcoded for testing rel lambdas. May want to enabe this generally in
+            # which case we will need the partition/group names, which BFS could
+            # write to a file.
+                group_partition_names = ["PR1_1","PR2_1","PR2_2L","PR2_3","PR3_1","PR3_2","PR3_3","PR4_1","PR5_1","PR6_1","PR7_1"]
+                for task_file_name in group_partition_names:
+                    # task_file_name is, e.g., "PR1_1" not "PR1_1.pickle"
+                    # We check for task_file_name ending with "L" for loop below,
+                    # so we make this check esy by having 'L' at the end (endswith)
+                    # instead of having to parse ("PR1_1.pickle")
+                    complete_task_file_name = './'+task_file_name+'.pickle'
+                    try:
+                        with open(complete_task_file_name, 'rb') as handle:
+                            partition_or_group = (cloudpickle.load(handle))
+                    except EOFError:
+                        logger.info("[Error]: Internal Error: PageRank_Function: EOFError:"
+                            + " complete_task_file_name:" + str(complete_task_file_name))
+                        import sys, traceback
+                        #print('Problem:', file=sys.stderr)
+                        traceback.print_exc(file=sys.stderr)
+                        logging.shutdown()
+                        os._exit(0)
+                    groups_partitions[task_file_name] = partition_or_group
+                #print("groups_partitions:")
+                #keys = list(groups_partitions.keys())
+                #for key in keys:
+                #    print(key + ":")
+                #    g_p = groups_partitions[key]
+                #    for node in g_p:
+                #        print(str(node))
+                #logging.shutdown()
+                #os._exit(0)
 
             # server will be None
             logger.trace("DAG_executor_driver: Connecting to TCP Server at %s." % str(TCP_SERVER_IP))
@@ -1821,6 +1863,7 @@ def run():
                         # in the same lamba that stores the sync object. So, e.g., fanouts are
                         # done by calling lambdas to excute the fanout task (besides the becomes 
                         # task.)
+                        
                         create_fanins_and_faninNBs(websocket,DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, 
                             all_faninNB_task_names, all_faninNB_sizes,
                             groups_partitions)
@@ -1995,35 +2038,6 @@ def run():
             # work queue and the created workers will withdraw them.
 
             if not (not run_all_tasks_locally and store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks):
-                # For pagerank computation we ned to read a partition of 
-                # nodes. For real lambdas, this will be from an S3 bucket
-                # or somewhere. To avoid this, we can let this DAG_executor_driver
-                # read the partition files and pass them to the Lambdas it starts
-                # in the Lambda's payload. When bypass_call_lambda_client_invoke it means we 
-                # are not actually running the real Lambda code on AWS, we are 
-                # bypassing the call to invoke real AWS Lambdas and running the code
-                # locally, in which case we can read the group/partition file objects
-                # from local files.
-#rhc: group partitions
-                if compute_pagerank and not run_all_tasks_locally and not bypass_call_lambda_client_invoke and not use_incremental_DAG_generation:
-                # hardcoded for testing rel lambdas. May want to enabe this generally in
-                # which case we will need the partition/group names, which BFS could
-                # write to a file.
-                    group_partition_names = ["PR1_1","PR2_1","PR2_2L","PR2_3","PR3_1","PR3_2","P3_3","PR4_1","PR5_1","PR6_1","PR7_1"]
-                    for name in group_partition_names:
-                        try:
-                            with open(name, 'rb') as handle:
-                                partition_or_group = (cloudpickle.load(handle))
-                        except EOFError:
-                            logger.info("[Error]: Internal Error: PageRank_Function: EOFError:"
-                                + " complete_task_file_name:" + str(name))
-                            import sys, traceback
-                            #print('Problem:', file=sys.stderr)
-                            traceback.print_exc(file=sys.stderr)
-                            logging.shutdown()
-                            os._exit(0)
-                        groups_partitions[name] = partition_or_group
-
                 # we are not having sync objects trigger their tasks in lambdas
                 for start_state, task_name, inp in zip(DAG_leaf_task_start_states, DAG_leaf_tasks, DAG_leaf_task_inputs):
                     # The state of a DAG executor contains only one application specific member, which is the
@@ -2188,6 +2202,16 @@ def run():
                                     "DAG_info": DAG_info
                                 }
 #rhc: group partitions
+                                #print("groups_partitions:")
+                                #keys = list(groups_partitions.keys())
+                                #for key in keys:
+                                #    print(key + ":")
+                                #    g_p = groups_partitions[key]
+                                #    for node in g_p:
+                                #        print(str(node))
+                                #logging.shutdown()
+                                #os._exit(0)
+
                                 if compute_pagerank and not run_all_tasks_locally and not bypass_call_lambda_client_invoke and not use_incremental_DAG_generation:
                                     payload["groups_partitions"] = groups_partitions
 

@@ -22,6 +22,7 @@ from wukongdnc.dag.DAG_executor_State import DAG_executor_State
 from wukongdnc.dag.DAG_executor_constants import run_all_tasks_locally, using_workers, using_threads_not_processes
 from wukongdnc.dag.DAG_executor_constants import sync_objects_in_lambdas_trigger_their_tasks
 from wukongdnc.dag.DAG_executor_constants import store_sync_objects_in_lambdas
+from wukongdnc.dag.DAG_executor_constants import compute_pagerank, run_all_tasks_locally, bypass_call_lambda_client_invoke, use_incremental_DAG_generation
 
 # Note: we init self.store_fanins_faninNBs_locally in init()
 #from wukongdnc.dag.DAG_work_queue_for_threads import thread_work_queue
@@ -91,6 +92,25 @@ class DAG_executor_FanInNB_Select(Selector):
         #ToDo: Should we just access the gobal constant like we do for the other constants?
         self.store_fanins_faninNBs_locally = kwargs['store_fanins_faninNBs_locally']
         self.DAG_info = kwargs['DAG_info'] 
+
+#rhc: groups partitions
+        # When running real lambdas, in order to avoid reading the 
+        # individual groups/partitions when testing pagerank with 
+        # real lambdas, the DAG_executor_driver can input all the 
+        # groups/partitions at the start of execution and pass them
+        # to the real lambdas it starts. Those real lambdas will
+        # pass the groups/partitions to the real lambdas (in their
+        # payloads) statrfed for fanouts. If the fanins/faninNBs are
+        # all created at the start, we pass the groups/partitions
+        # to the create() on the tcp_server and it will call this 
+        # # init() method with the groups_partitions parameter.
+        # Real lambdas call process faninNBs batch on the tcp_server, 
+        # and if we are creating fanins/faninNB on the fly, we pass 
+        # groups_partitions to the create().
+        # 
+        if compute_pagerank and not run_all_tasks_locally and not bypass_call_lambda_client_invoke and not use_incremental_DAG_generation:
+            self.groups_partitions = kwargs['groups_partitions'] 
+
 
         # this is the enty that is selected when its guard is true
         self._fan_in = selectableEntry("fan_in")
@@ -314,6 +334,11 @@ class DAG_executor_FanInNB_Select(Selector):
                             "DAG_info": self.DAG_info
                             #"server": server   # used to mock server during testing
                         }
+
+                        if compute_pagerank and not run_all_tasks_locally and not bypass_call_lambda_client_invoke and not use_incremental_DAG_generation:
+                            # add the groups_partitions to payload 
+                            payload['groups_partitions'] = self.groups_partitions 
+
                         ###### DAG_executor_State.function_name has not changed
                         
                         invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor_lambda:"+fanin_task_name)
