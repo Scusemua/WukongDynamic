@@ -3,7 +3,7 @@ import logging
 #import re 
 #import socket
 import time 
-import redis 
+# import redis 
 #import uuid
 
 #import cloudpickle
@@ -53,7 +53,7 @@ def lambda_handler(event, context):
     logger.debug(f'Invocation count: {warm_resources["invocation_count"]}, Seconds since cold start: {round(invocation_time - warm_resources["cold_start_time"], 1)}')
 
     start_time = time.time()
-    rc = redis.Redis(host = REDIS_IP_PRIVATE, port = 6379)
+    # rc = redis.Redis(host = REDIS_IP_PRIVATE, port = 6379)
 
     logger.debug("lambda_handler: Invocation received. Starting DAG_executor_lambda: event/payload is: " + str(event))
     DAG_executor_lambda(event)
@@ -61,4 +61,4 @@ def lambda_handler(event, context):
     end_time = time.time()
     duration = end_time - start_time
     logger.debug("lambda_handler: DAG_executor_lambda finished. Time elapsed: %f seconds." % duration)
-    rc.lpush("durations", duration)    
+    # rc.lpush("durations", duration)    

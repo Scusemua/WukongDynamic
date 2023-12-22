@@ -5,6 +5,7 @@ from .DAG_executor_constants import use_incremental_DAG_generation
 
 # called below in the DAG_info __init__ method
 def input_DAG_info(file_name = './DAG_info.pickle'):
+    print("Reading DAG info from file: \"%s\"" % file_name)
     with open(file_name, 'rb') as handle:
         DAG_info = cloudpickle.load(handle)
     return DAG_info

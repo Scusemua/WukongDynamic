@@ -2179,7 +2179,7 @@ def run():
                             # Config: A1
                             try:
                                 logger.trace("DAG_executor_driver: Starting DAG_Executor_Lambda for leaf task " + task_name)
-                                lambda_DAG_exec_state = DAG_executor_State(function_name = "DAG_executor_lambda:"+task_name, function_instance_ID = str(uuid.uuid4()), state = start_state)
+                                lambda_DAG_exec_state = DAG_executor_State(function_name = "WukongDivideAndConquer:"+task_name, function_instance_ID = str(uuid.uuid4()), state = start_state)
                                 logger.trace ("DAG_executor_driver: lambda payload is DAG_info + " + str(start_state) + "," + str(inp))
                                 lambda_DAG_exec_state.restart = False      # starting new DAG_executor in state start_state_fanin_task
                                 lambda_DAG_exec_state.return_value = None
@@ -2213,10 +2213,11 @@ def run():
                                 if input_all_groups_partitions_at_start:
                                     payload["groups_partitions"] = groups_partitions
 
-                                invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor_lambda:" + task_name)
+                                invoke_lambda_DAG_executor(payload = payload, function_name = "WukongDivideAndConquer:" + task_name)
                             except Exception as ex:
                                 logger.error("[ERROR] DAG_executor_driver: Failed to start DAG_executor Lambda.")
                                 logger.error(ex)
+                                exit(1)
                         else:
                             # sync_objects_in_lambdas_trigger_their_tasks == True so
                             # above we called tcp_server_lambda.process_leaf_tasks_batch
@@ -2775,6 +2776,7 @@ def process_leaf_tasks_batch(websocket):
         "leaf_tasks", dummy_state)
 
 if __name__ == "__main__":
+    print("Running.")
     run()
 
 # xtra:

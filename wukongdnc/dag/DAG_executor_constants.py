@@ -6,8 +6,8 @@ all the configurations and how to set the confguration flags below.
 import logging
 import os
 
-log_level = logging.INFO
-#log_level = "TRACE"
+# log_level = logging.INFO
+log_level = "TRACE"
 logger = logging.getLogger(__name__)
 
 # using INFO level for this constants file - no logger.trace() calls
@@ -32,7 +32,7 @@ run_all_tasks_locally = False         # vs run tasks remotely (in Lambdas)
 # for real lambdas without actually creating real Lambdas.
 # Note: if this is True then run_all_tasks_locally must be False. 
 # This is asserted below.
-bypass_call_lambda_client_invoke = (not run_all_tasks_locally) and True
+bypass_call_lambda_client_invoke = (not run_all_tasks_locally) and False # True
 # True if synch objects are stored locally, i.e., in the memory of the single
 # machine on which the threads are executing.  If we are using multiprocessing
 # or Lambdas, this must be False. When False, the synch objects are stored
@@ -219,7 +219,7 @@ if sync_objects_in_lambdas_trigger_their_tasks:
 
 # Indicates that we are computing pagerank and thus that the pagerank
 # options are active and pagerank asserts should hold
-compute_pagerank = False
+compute_pagerank = True
 # used in BFS_pagerank. For non-loops, we only need 1 iteration
 number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
 name_of_first_groupOrpartition_in_DAG = "PR1_1"
@@ -354,14 +354,14 @@ if compute_pagerank and (use_struct_of_arrays_for_pagerank and not use_shared_pa
 
 # Note: Use this when running real lambdas and avoiding cloud storage 
 # for I/O of the groups or partitions.
-#input_all_groups_partitions_at_start = compute_pagerank and (
-#    not run_all_tasks_locally and (not bypass_call_lambda_client_invoke) and (not use_incremental_DAG_generation)
-#    ) and True
+input_all_groups_partitions_at_start = compute_pagerank and (
+   not run_all_tasks_locally and (not bypass_call_lambda_client_invoke) and (not use_incremental_DAG_generation)
+   ) and True
 
 # Note: Use this to test real lambda code locally without using real lambdas
-input_all_groups_partitions_at_start = compute_pagerank and (
-    not run_all_tasks_locally and (bypass_call_lambda_client_invoke) and (not use_incremental_DAG_generation)
-    ) and True
+# input_all_groups_partitions_at_start = compute_pagerank and (
+#     not run_all_tasks_locally and (bypass_call_lambda_client_invoke) and (not use_incremental_DAG_generation)
+#     ) and True
 
 A1 = A1_Server = A1_FunctionSimulator = A1_SingleFunction = A1_Orchestrator = False
 A2 = False

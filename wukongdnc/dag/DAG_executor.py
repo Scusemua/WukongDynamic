@@ -1184,7 +1184,7 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                     logger.trace(thread_name + ": process_fanouts: Starting fanout DAG_executor Lambda for " + name)
                     fanout_task_start_state = DAG_states[name]
                     # create a new DAG_executor_State object so no DAG_executor_State object is shared by fanout/faninNB threads in a local test.
-                    lambda_DAG_executor_state = DAG_executor_State(function_name = "DAG_executor_lambda:"+name, function_instance_ID = str(uuid.uuid4()), state = fanout_task_start_state)
+                    lambda_DAG_executor_state = DAG_executor_State(function_name = "WukongDivideAndConquer:"+name, function_instance_ID = str(uuid.uuid4()), state = fanout_task_start_state)
                     logger.trace (thread_name + ": process_fanouts: payload is DAG_info + " + str(fanout_task_start_state) + ", " + str(output))
                     lambda_DAG_executor_state.restart = False      # starting new DAG_executor in state start_state_fanin_task
                     lambda_DAG_executor_state.return_value = None
@@ -1240,7 +1240,7 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                         payload["groups_partitions"] = groups_partitions
                     
                     ###### DAG_executor_State.function_name has not changed
-                    invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor_lambda:"+name)
+                    invoke_lambda_DAG_executor(payload = payload, function_name = "WukongDivideAndConquer:"+name)
                 except Exception as ex:
                     logger.error(":ERROR] " + thread_name + " process_fanouts: Failed to start DAG_executor Lambda.")
                     logger.error(ex)

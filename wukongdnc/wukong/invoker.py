@@ -19,7 +19,8 @@ from ..server.api import create
 
 import logging 
 logger = logging.getLogger(__name__)
-lambda_client = boto3.client('lambda', region_name = "us-east-1")
+session = boto3.session.Session(profile_name = 'ccarver37')
+lambda_client = session.client('lambda', region_name = "us-east-1")
 
 from ..dag.DAG_executor_constants import bypass_call_lambda_client_invoke
 # Note: DAG_executor_constants.bypass_call_lambda_client_invoke is TRUE 
@@ -220,7 +221,7 @@ def invoke_lambda(
 # DAG_executor_lambda) it returns to the lambda_handler() which returns
 # back to the invoker's invoke_lambda_DAG_executor.
 def invoke_lambda_DAG_executor(
-    function_name: str = "DAG_executor_lambda",
+    function_name: str = "WukongDivideAndConquer",
     payload: dict = None
 ):
     """
@@ -265,16 +266,28 @@ def invoke_lambda_DAG_executor(
     payload_json = json.dumps(_payload)
     logger.trace("Finished creating AWS Lambda invocation payload in %f ms." % ((time.time() - s) * 1000.0))
 
-    logger.trace("Invoking AWS Lambda function '" + function_name + "' with payload containing " + str(len(payload)) + " key(s).")
+    logger.info("Invoking AWS Lambda function '" + function_name + "' with payload containing " + str(len(payload)) + " key(s).")
     s = time.time()
     
     # bypass_call_lambda_client_invoke is a global constant. 
     if not bypass_call_lambda_client_invoke:
     # This is the call to the AWS API that actually invokes the Lambda.
-        status_code = lambda_client.invoke(
-            FunctionName = function_name, 
-            InvocationType = 'Event',
-            Payload = payload_json) 
+        try:
+            # If we passed a "debugging" function name, then throw away everything up to and including the ':' character.
+            if ":" in function_name:
+                adjusted_function_name = function_name.split(":")[0]
+                logger.info("Adjusted AWS Lambda function name from \"%s\" to \"%s\" prior to invoking.", function_name, adjusted_function_name)
+            else:
+                adjusted_function_name = function_name
+            
+            status_code = lambda_client.invoke(
+                FunctionName = adjusted_function_name, 
+                InvocationType = 'Event',
+                Payload = payload_json) 
+        except Exception as ex:
+            logger.error("Failed to invoke AWS Lambda function \"%s\"" % adjusted_function_name)
+            logger.error("Error: %s" % repr(ex))
+            exit(1)
     else:
         # bridge around the call to lambda_client.invoke() to test th real LAmbda
         # logic without creating real Lambdas.
