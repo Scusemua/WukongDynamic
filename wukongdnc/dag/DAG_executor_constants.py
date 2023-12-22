@@ -1,6 +1,6 @@
 """
-Important: Thsi file incudes many tests which illustrate all the 
-configurations and how to set the flags below.
+Important: Thsi file incudes many tests at the end which illustrate 
+all the configurations and how to set the confguration flags below.
 """
 
 import logging
@@ -344,6 +344,24 @@ if compute_pagerank and (use_struct_of_arrays_for_pagerank and not use_shared_pa
         + " then must use_shared_partitions_groups.")
     logging.shutdown()
     os._exit(0)
+
+# When we use real lamdas, instead of reading the individual group 
+# or partition node files from cloud storage as we need them in BFS_agerank.py, 
+# wecan read all the groups or partitions at the start and pass them along
+# to the lambdas that are started. There is a limit on the total of the sizes
+# of these files. This is not checked yet. We may want to read the files
+# in batches, on demnand, etc.
+
+# Note: Use this when running real lambdas and avoiding cloud storage 
+# for I/O of the groups or partitions.
+#input_all_groups_partitions_at_start = compute_pagerank and (
+#    not run_all_tasks_locally and (not bypass_call_lambda_client_invoke) and (not use_incremental_DAG_generation)
+#    ) and True
+
+# Note: Use this to test real lambda code locally without using real lambdas
+input_all_groups_partitions_at_start = compute_pagerank and (
+    not run_all_tasks_locally and (bypass_call_lambda_client_invoke) and (not use_incremental_DAG_generation)
+    ) and True
 
 A1 = A1_Server = A1_FunctionSimulator = A1_SingleFunction = A1_Orchestrator = False
 A2 = False

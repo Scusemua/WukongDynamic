@@ -10,8 +10,8 @@ from . import BFS_Shared
 from .DAG_executor_constants import use_page_rank_group_partitions, using_threads_not_processes
 from .DAG_executor_constants import number_of_pagerank_iterations_for_partitions_groups_with_loops
 #from .DAG_executor_constants import use_multithreaded_multiprocessing
-from .DAG_executor_constants import compute_pagerank, run_all_tasks_locally, bypass_call_lambda_client_invoke, use_incremental_DAG_generation
-
+#from .DAG_executor_constants import compute_pagerank, run_all_tasks_locally, bypass_call_lambda_client_invoke, use_incremental_DAG_generation
+from .DAG_executor_constants import input_all_groups_partitions_at_start
 logger = logging.getLogger(__name__)
 
 """
@@ -262,7 +262,7 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partiti
 
 #rhc: groups partitions
     partition_or_group = None
-    if not (compute_pagerank and not run_all_tasks_locally and not bypass_call_lambda_client_invoke and not use_incremental_DAG_generation):
+    if not input_all_groups_partitions_at_start:
         # task_file_name is, e.g., "PR1_1" not "PR1_1.pickle"
         # We check for task_file_name ending with "L" for loop below,
         # so we make this check esy by having 'L' at the end (endswith)

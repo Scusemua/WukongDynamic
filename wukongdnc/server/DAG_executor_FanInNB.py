@@ -17,8 +17,7 @@ import traceback
 from wukongdnc.dag.DAG_executor_State import DAG_executor_State
 from wukongdnc.dag.DAG_executor_constants import run_all_tasks_locally, using_workers, using_threads_not_processes
 from wukongdnc.dag.DAG_executor_constants import store_sync_objects_in_lambdas, sync_objects_in_lambdas_trigger_their_tasks
-from wukongdnc.dag.DAG_executor_constants import compute_pagerank, run_all_tasks_locally, bypass_call_lambda_client_invoke, use_incremental_DAG_generation
-
+from wukongdnc.dag.DAG_executor_constants import input_all_groups_partitions_at_start
 #from wukongdnc.dag.DAG_work_queue_for_threads import thread_work_queue
 from wukongdnc.dag.DAG_executor_work_queue_for_threads import work_queue
 from wukongdnc.wukong.invoker import invoke_lambda_DAG_executor
@@ -111,7 +110,7 @@ class DAG_executor_FanInNB(MonitorSU):
         # and if we are creating fanins/faninNB on the fly, we pass 
         # groups_partitions to the create().
         # 
-        if compute_pagerank and not run_all_tasks_locally and not bypass_call_lambda_client_invoke and not use_incremental_DAG_generation:
+        if input_all_groups_partitions_at_start:
             self.groups_partitions = kwargs['groups_partitions'] 
 
             #print("groups_partitions:")
@@ -344,7 +343,7 @@ class DAG_executor_FanInNB(MonitorSU):
                             #"server": server   # used to mock server during testing; we use tcp_server with ral lambdas
                         }
 
-                        if compute_pagerank and not run_all_tasks_locally and not bypass_call_lambda_client_invoke and not use_incremental_DAG_generation:
+                        if input_all_groups_partitions_at_start:
                             # add the groups_partitions to payload 
                             payload['groups_partitions'] = self.groups_partitions 
                         

@@ -334,9 +334,7 @@ from .DAG_executor_constants import store_sync_objects_in_lambdas, sync_objects_
 from .DAG_executor_constants import use_shared_partitions_groups,use_page_rank_group_partitions
 from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
 from .DAG_executor_constants import compute_pagerank
-from .DAG_executor_constants import use_incremental_DAG_generation
-from .DAG_executor_constants import bypass_call_lambda_client_invoke
-
+from .DAG_executor_constants import input_all_groups_partitions_at_start
 
 from .addLoggingLevel import addLoggingLevel
 
@@ -1721,7 +1719,7 @@ def run():
             # locally, in which case we can read the group/partition file objects
             # from local files.
 #rhc: group partitions
-            if compute_pagerank and not run_all_tasks_locally and not bypass_call_lambda_client_invoke and not use_incremental_DAG_generation:
+            if input_all_groups_partitions_at_start:
             # hardcoded for testing rel lambdas. May want to enabe this generally in
             # which case we will need the partition/group names, which BFS could
             # write to a file.
@@ -2212,7 +2210,7 @@ def run():
                                 #logging.shutdown()
                                 #os._exit(0)
 
-                                if compute_pagerank and not run_all_tasks_locally and not bypass_call_lambda_client_invoke and not use_incremental_DAG_generation:
+                                if input_all_groups_partitions_at_start:
                                     payload["groups_partitions"] = groups_partitions
 
                                 invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor_lambda:" + task_name)

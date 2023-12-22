@@ -34,7 +34,7 @@ from .DAG_executor_constants import tasks_use_result_dictionary_parameter, same_
 from .DAG_executor_constants import compute_pagerank, use_shared_partitions_groups, use_page_rank_group_partitions
 from .DAG_executor_constants import use_struct_of_arrays_for_pagerank, using_workers
 from .DAG_executor_constants import use_incremental_DAG_generation, name_of_first_groupOrpartition_in_DAG
-from .DAG_executor_constants import bypass_call_lambda_client_invoke
+from .DAG_executor_constants import input_all_groups_partitions_at_start
 #rhc: counter:
 from .DAG_executor_constants import num_workers
 #from .DAG_work_queue_for_threads import thread_work_queue
@@ -1236,7 +1236,7 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                         #"server": server   # used to mock server during testing
                     }
 
-                    if compute_pagerank and not run_all_tasks_locally and not bypass_call_lambda_client_invoke and not use_incremental_DAG_generation:
+                    if input_all_groups_partitions_at_start:
                         payload["groups_partitions"] = groups_partitions
                     
                     ###### DAG_executor_State.function_name has not changed
@@ -4504,7 +4504,7 @@ def DAG_executor_lambda(payload):
     # tcp_server can also read group_partitions and make it available
     # to the faninNBs, which also start real lambdas.
     groups_partitions = []
-    if compute_pagerank and not run_all_tasks_locally and not bypass_call_lambda_client_invoke and not use_incremental_DAG_generation:
+    if input_all_groups_partitions_at_start:
         groups_partitions = cloudpickle.loads(base64.b64decode(payload['groups_partitions']))
 
         #print("groups_partitions:")
