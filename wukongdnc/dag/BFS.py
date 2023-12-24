@@ -676,6 +676,7 @@ import os
 import time
 #from statistics import mean
 import copy
+import queue
 
 # Note: When we run BFS, BFS will generate a DAG for pagerank and call
 # DAG_excutor_driver.run(). We addLoggingLevel TRACE here before we
@@ -712,11 +713,11 @@ from .DAG_executor_constants import work_queue_size_for_incremental_DAG_generati
 from .DAG_executor_constants import incremental_DAG_deposit_interval
 from .DAG_executor_constants import check_pagerank_output
 from .DAG_executor_constants import using_threads_not_processes
-
+#from .DAG_executor_constants import use_multithreaded_dag_generation_for_pagerank
 
 from .BFS_Node import Node
 from .BFS_Partition_Node import Partition_Node
-from .BFS_generate_DAG_info_incremental_partitions import generate_DAG_info_incremental_partitions
+from . import BFS_generate_DAG_info_incremental_partitions
 # Note: avoiding circular imports:
 # https://stackoverflow.com/questions/744373/what-happens-when-using-mutual-or-circular-cyclic-imports
 from . import BFS_generate_DAG_info_incremental_groups
@@ -768,9 +769,6 @@ logger = logging.getLogger(__name__)
     #ch.setLevel("TRACE")
     #ch.setFormatter(formatter)
     #logger.addHandler(ch)
-
-
-USING_BFS = False
 
 """
 class PageRank_results:
@@ -979,6 +977,46 @@ def visualize():
     # comment 
     #nx.draw_planar(G,with_labels = True, alpha=0.8) #NEW FUNCTION
     fig.canvas.draw()
+
+class DAG_Generator_Multithreaded:
+    def __init__(self):
+        self.buffer = queue.Queue()
+        self.dag_generator_thread = threading.Thread(target=self.generator_thread, name=("dag_generator_thread"))  # args=(payload,))
+
+    def generate_DAG_info_multithreaded_groups(self,current_partition_name,
+        current_partition_number, groups_of_current_partition,
+        groups_of_partitions,
+        to_be_continued):
+        BFS_generate_DAG_info_incremental_groups.generate_DAG_info_incremental_groups(current_partition_name,
+            current_partition_number, groups_of_current_partition,
+            groups_of_partitions,
+            to_be_continued)
+        
+    def generate_DAG_info_multithreaded_partitions(self,current_partition_name,current_partition_number,to_be_continued):
+        BFS_generate_DAG_info_incremental_partitions.generate_DAG_info_incremental_partitions(current_partition_name,current_partition_number,to_be_continued)
+
+    def generator_thread(self):
+        thread_name = threading.current_thread().name
+        logger.trace(thread_name + ": DAG_Generator_Multithreaded thread running.")
+        while(True):
+            DAG_info = None
+            next_partition_or_group = self.buffer.get()
+            if use_page_rank_group_partitions:
+                DAG_info = self.generate_DAG_info_multithreaded_groups(next_partition_or_group)
+            else:
+                DAG_info = self.generate_DAG_info_multithreaded_partitions(next_partition_or_group) 
+            if DAG_info.get_DAGinfo_is_complete():
+                break
+        file_name = "./DAG_info.pickle"                  
+        DAG_info_dictionary = DAG_info.get_DAG_info_dictionary()
+        with open(file_name, 'wb') as handle:
+            cloudpickle.dump(DAG_info_dictionary, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+    def deposit(self,next_partition_or_group):
+        self.buffer.put(next_partition_or_group)
+    def start_thread(self):
+        self.dag_generator_thread.start()
+    def join_thread(self):
+        self.dag_generator_thread.join()
 
 # process children before parent traversal
 # Not used
@@ -3261,7 +3299,7 @@ def bfs(visited, node):
                         if not use_page_rank_group_partitions:
                             logger.trace("BFS: calling generate_DAG_info_incremental_partitions for"
                                 + " partition " + str(partition_name) + " using workers.")
-                            DAG_info = generate_DAG_info_incremental_partitions(partition_name,current_partition_number,to_be_continued)
+                            DAG_info = BFS_generate_DAG_info_incremental_partitions.generate_DAG_info_incremental_partitions(partition_name,current_partition_number,to_be_continued)
                         else:
 #rhc increnetal groups
                             # avoiding circular import - above: from . import FS_generate_DAG_info_incremental_groups
@@ -4530,11 +4568,444 @@ https://stackoverflow.com/questions/18204782/runtimeerror-on-windows-trying-pyth
 
 #Q: Should we guard the BFS.py imports in the above way?
 
+def print_BFS_stats():
+    logger.trace("BFS: print_BFS_stats: ")
+    #partitions.append(current_partition.copy())
+    #frontiers.append(frontier.copy())
+    #frontier_cost = "END" + ":" + str(len(frontier))
+    #frontier_costs.append(frontier_cost)
+    logger.trace("")
+    logger.trace("input_file: generated: num_nodes: " + str(num_nodes) + " num_edges: " + str(num_edges))
+    logger.trace("")
+    logger.trace("visited length: " + str(len(visited)))
+    if len(visited) != num_nodes:
+        logger.error("[Error]: BFS: visited length is " + str(len(visited))
+            + " but num_nodes is " + str(num_nodes))
+    print_val = ""
+    for x in visited:
+        print_val += str(x) + " "
+        #print(x, end=" ")
+    logger.trace(print_val)
+    logger.trace("")
+    logger.trace("")
+    logger.trace("final current_partition length: " + str(len(current_partition)-loop_nodes_added))
+    sum_of_partition_lengths = 0
+    i = 1
+    for x in partitions:
+        sum_of_partition_lengths += len(x)
+        logger.trace(str(i) + ":length of partition: " + str(len(x)))
+        i += 1
+    logger.trace("shadow_nodes_added: " + str(num_shadow_nodes_added_to_partitions))
+    if not use_shared_partitions_groups:
+        sum_of_partition_lengths -= (total_loop_nodes_added + num_shadow_nodes_added_to_partitions)
+        logger.trace("sum_of_partition_lengths (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
+            + str(sum_of_partition_lengths))
+        if sum_of_partition_lengths != num_nodes:
+            logger.error("[Error]: sum_of_partition_lengths is " + str(sum_of_partition_lengths)
+                + " but num_nodes is " + str(num_nodes))
+    else: # use_shared_partitions_groups so computing PageRank
+        if not use_page_rank_group_partitions:
+            if not use_struct_of_arrays_for_pagerank:
+                shared_partition_length = len(BFS_Shared.shared_partition)
+                # added shadow nodes and their parents
+                shared_partition_length -= (total_loop_nodes_added + (2*num_shadow_nodes_added_to_partitions))
+                logger.trace("shared_partition_length (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
+                    + str(shared_partition_length))
+                if shared_partition_length != num_nodes:
+                    logger.error("[Error]: shared_partition_length is " + str(shared_partition_length)
+                        + " but num_nodes is " + str(num_nodes))
+            else:
+                pass
+                # we are not asserting anything about the length of the arrays
+                # in the struct_of_arrays. These arrays length were calculated
+                # and we are not checking that calculation here.
+
+    logger.trace("")
+    sum_of_groups_lengths = 0
+    i = 1
+    for x in groups:
+        sum_of_groups_lengths += len(x)
+        logger.trace(str(i) + ": length of group: " + str(len(x)))
+        i+=1
+    logger.trace("num_shadow_nodes_added_to_groups: " + str(num_shadow_nodes_added_to_groups))
+    if not use_shared_partitions_groups:
+        logger.trace("total_loop_nodes_added : " + str(total_loop_nodes_added))
+        sum_of_groups_lengths -= (total_loop_nodes_added + num_shadow_nodes_added_to_groups)
+        logger.trace("sum_of_groups_lengths (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
+            + str(sum_of_groups_lengths))
+        if sum_of_groups_lengths != num_nodes:
+            logger.error("[Error]: sum_of_groups_lengths is " + str(sum_of_groups_lengths)
+                + " but num_nodes is " + str(num_nodes))
+    else: # use_shared_partitions_groups so computing PageRank
+        if use_page_rank_group_partitions:
+            if not use_struct_of_arrays_for_pagerank:
+                shared_groups_length = len(BFS_Shared.shared_groups)
+                logger.trace("shared_groups_length first value: " + str(shared_groups_length))
+                # added shadow nodes and their parents
+                logger.trace("total_loop_nodes_added : " + str(total_loop_nodes_added))
+                logger.trace("(2*num_shadow_nodes_added_to_groups):" + str(2*num_shadow_nodes_added_to_groups))
+                shared_groups_length -= (total_loop_nodes_added + (2*num_shadow_nodes_added_to_groups))
+                logger.trace("shared_groups_length (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
+                    + str(shared_groups_length))
+                if shared_groups_length != num_nodes:
+                    logger.error("[Error]: shared_groups_length is " + str(shared_groups_length)
+                        + " but num_nodes is " + str(num_nodes))
+            else:
+                pass
+                # we are not asserting anything about the length of the arrays
+                # in the struct_of_arrays. These arrays length were calculated
+                # and we are not checking that calculation here.
+
+    #if (len(current_partition)-loop_nodes_added) != num_nodes
+
+    print_val = ""
+    for x in current_partition:
+        print_val += str(x) + " "
+        # logger.trace(x, end=" ")
+        logger.trace(print_val)
+        logger.trace("")
+
+    # adjusting for loop_nodes_added in dfs_p
+    sum_of_changes = sum(dfs_parent_changes_in_partiton_size)-num_shadow_nodes_added_to_partitions
+    avg_change = sum_of_changes / len(dfs_parent_changes_in_partiton_size)
+    print_val = "dfs_parent_changes_in_partiton_size length, len: " + str(len(dfs_parent_changes_in_partiton_size)) + ", sum_of_changes: " + str(sum_of_changes)
+    print_val += ", average dfs_parent change: %.1f" % avg_change
+    logger.trace(print_val)
+    if PRINT_DETAILED_STATS:
+        if sum_of_changes != num_nodes:
+            logger.error("[Error]: sum_of_changes is " + str(sum_of_changes)
+                + " but num_nodes is " + str(num_nodes))
+        print_val = ""
+        for x in dfs_parent_changes_in_partiton_size:
+            print_val += str(x) + " "
+            # print(x, end=" ")
+        logger.trace(print_val)
+
+    logger.trace("")
+    logger.trace("")
+    if PRINT_DETAILED_STATS:
+        # adjusting for loop_nodes_added in dfs_p
+        sum_of_changes = sum(dfs_parent_changes_in_frontier_size)
+        logger.trace("dfs_parent_changes_in_frontier_size length, len: " + str(len(dfs_parent_changes_in_frontier_size))
+            + ", sum_of_changes: " + str(sum_of_changes))
+        if sum_of_changes != num_nodes:
+            logger.error("[Error]: sum_of_changes is " + str(sum_of_changes)
+                + " but num_nodes is " + str(num_nodes))
+        for x in dfs_parent_changes_in_frontier_size:
+            print_val = str(x) + " "
+            #print(x, end=" ")
+        logger.trace(print_val)
+        logger.trace("")
+        logger.trace("")
+    #logger.trace("frontier length: " + str(len(frontier)))
+    #if len(frontier) != 0:
+    #    logger.error("[Error]: frontier length is " + str(len(frontier))
+    #       + " but num_nodes is " + str(num_nodes))
+    #for x in frontier:
+    #    logger.trace(str(x.ID), end=" ")
+    #logger.trace("")
+    #logger.trace("frontier cost: " + str(len(frontier_cost)))
+    #for x in frontier_cost:
+    #    logger.trace(str(x), end=" ")
+    #logger.trace("")
+    # final frontier shoudl always be empty
+    # assert: 
+    logger.trace("frontiers: (final fronter should be empty), number of frontiers: " + str(len(frontiers))+ " (length):")
+    for frontier_list in frontiers:
+        if PRINT_DETAILED_STATS:
+            print_val = "-- (" + str(len(frontier_list)) + "): "
+            for x in frontier_list:
+                #logger.trace(str(x.ID),end=" ")
+                print_val += str(x) + " "
+                #print(str(x),end=" ")
+            logger.trace(print_val)
+            logger.trace("")
+        else:
+            logger.trace("-- (" + str(len(frontier_list)) + ")") 
+    frontiers_length = len(frontiers)
+    if len(frontiers[frontiers_length-1]) != 0:
+        logger.trace ("Error]: final frontier is not empty.")
+    logger.trace("")
+    logger.trace("partitions, number of partitions: " + str(len(partitions))+" (length):")
+
+    for x in partitions:
+        if PRINT_DETAILED_STATS:
+            #print("-- (" + str(len(x)) + "):", end=" ")
+            print_val = ""
+            print_val += "-- (" + str(len(x)) + "):" + " "
+            for node in x:
+                print_val += str(node) + " "
+                #print(node,end=" ")
+                #if not node.isShadowNode:
+                #    logger.trace(str(index),end=" ")
+                #else:
+                #   logger.trace(str(index)+"-s",end=" ")
+            logger.trace(print_val)
+            logger.trace("")
+        else:
+            logger.trace("-- (" + str(len(x)) + ")")
+    logger.trace("")
+    if use_shared_partitions_groups:
+        logger.trace("Number of shadow nodes (when use_shared_partitions_groups):")
+        for num in partitions_num_shadow_nodes_list:
+            logger.trace(num)
+        logger.trace("")
+    logger.trace("partition names, len: " + str(len(partition_names))+":")
+    for name in partition_names:
+        if PRINT_DETAILED_STATS:
+            logger.trace("-- " + name)
+    logger.trace("")
+    logger.trace("groups, len: " + str(len(groups))+":")
+    for g in groups:
+        if PRINT_DETAILED_STATS:
+            print_val = ""
+            print_val += "-- (" + str(len(g)) + "):" + " "
+            for node in g:
+                print_val += str(node) + " "
+                #print(node,end=" ")
+            logger.trace(print_val)
+            logger.trace("")
+        else:
+            logger.trace("-- (" + str(len(g)) + ")")
+    logger.trace("")
+    if use_shared_partitions_groups:
+        logger.trace("Number of shadow nodes (when use_shared_partitions_groups):")
+        for num in groups_num_shadow_nodes_list:
+            logger.trace(num)
+        logger.trace("")
+    logger.trace("group names, len: " + str(len(group_names))+":")
+    for name in group_names:
+        if PRINT_DETAILED_STATS:
+            logger.trace("-- " + name)
+    logger.trace("")
+    logger.trace("nodes_to_partition_maps (incl. shadow nodes but only last index), len: " + str(len(nodeIndex_to_partitionIndex_maps))+":")
+    for m in nodeIndex_to_partitionIndex_maps:
+        if PRINT_DETAILED_STATS:
+            print_val = ""
+            print_val += "-- (" + str(len(m)) + "):" + " "
+            for k, v in m.items():
+                print_val += str((k, v)) + " "
+                #print((k, v),end=" ")
+            logger.trace(print_val)
+            logger.trace("")
+        else:
+            logger.trace("-- (" + str(len(m)) + ")")
+    logger.trace("")
+    logger.trace("nodes_to_group_maps, ( but only last index), len: " + str(len(nodeIndex_to_groupIndex_maps))+":")
+    for m in nodeIndex_to_groupIndex_maps:
+        if PRINT_DETAILED_STATS:
+            #print("-- (" + str(len(m)) + "):", end=" ")
+            print_val = ""
+            print_val += "-- (" + str(len(m)) + "):" + " "
+            for k, v in m.items():
+                print_val += str((k, v)) + " "
+                #print((k, v),end=" ")
+            logger.trace(print_val)
+            logger.trace("")
+        else:
+            logger.trace("-- (" + str(len(m)) + ")")
+    logger.trace("")
+    if PRINT_DETAILED_STATS:
+        logger.trace("frontier costs (cost=length of frontier), len: " + str(len(frontier_costs))+":")
+        print_val = ""
+        for x in frontier_costs:
+            print_val += "-- " + str(x)
+            #logger.trace("-- ",end="")
+            #logger.trace(str(x))
+        logger.trace(print_val)
+        logger.trace("")
+    sum_of_partition_costs = 0
+    for x in all_frontier_costs:
+        words = x.split(':')
+        cost = int(words[1])
+        sum_of_partition_costs += cost
+    logger.trace("all frontier costs, len: " + str(len(all_frontier_costs)) + ", sum: " 
+        + str(sum_of_partition_costs))
+    if PRINT_DETAILED_STATS:
+        i = 0
+        costs_per_line = 13
+        print_val = ""
+        for x in all_frontier_costs:
+            if (i < costs_per_line):
+                print_val = str(x) + " "
+                #print(str(x),end=" ")
+            else:
+                logger.trace(str(x))
+                i = 0
+            i += 1
+        logger.trace(print_val)
+    logger.trace("")
+    """
+    # Doing this for each node in each partition now (next)
+    logger.trace("")
+    if PRINT_DETAILED_STATS:
+        logger.trace("Node frontier_parent_tuples:")
+        for node in nodes:
+            logger.trace(str(node.ID) + ": frontier_parent_tuples: ", end = " ")
+            for parent_tuple in node.frontier_parents:
+                logger.trace(str(parent_tuple), end=" ")
+            logger.trace("")
+    else:
+        logger.trace("-- (" + str(len(x)) + ")")
+    """
+    logger.trace("")
+    if PRINT_DETAILED_STATS:
+        logger.trace("partition nodes' frontier_parent_tuples:")
+        for x in partitions:
+            if PRINT_DETAILED_STATS:
+                print_val = "-- (" + str(len(x)) + "):" + " "
+                print_val = ""
+                for node in x:
+                    print_val += str(node.ID) + ": " 
+                    # logger.trace(node.ID,end=": ")
+                    for parent_tuple in node.frontier_parents:
+                        print_val += str(parent_tuple) + " "
+                        # print(str(parent_tuple), end=" ")
+                logger.trace(print_val)
+                logger.trace("")
+            else:
+                logger.trace("-- (" + str(len(x)) + ")")
+    else:
+        logger.trace("-- (" + str(len(x)) + ")")
+    logger.trace("")
+    if PRINT_DETAILED_STATS:
+        logger.trace("group nodes' frontier_parent_tuples:")
+        for x in groups:
+            if PRINT_DETAILED_STATS:
+                print_val = "-- (" + str(len(x)) + "): "
+                for node in x:
+                    print_val += str(node.ID) + ": "
+                    # logger.trace(node.ID,end=": ")
+                    for parent_tuple in node.frontier_parents:
+                        print_val += str(parent_tuple) + " "
+                        # print(str(parent_tuple), end=" ")
+                logger.trace(print_val)
+                logger.trace("")
+            else:
+                logger.trace("-- (" + str(len(x)) + ")")
+    else:
+        logger.trace("-- (" + str(len(x)) + ")")
+    logger.trace("")
+    logger.trace("frontier_groups_sum: " + str(frontier_groups_sum) + ", len(frontiers)-1: " 
+        +  str(len(frontiers)-1))
+    logger.trace("Average number of frontier groups: " + (str(frontier_groups_sum / (len(frontiers)-1))))
+    logger.trace("")
+    i#f True: # 
+    if use_shared_partitions_groups: 
+        logger.trace("Shared partition map frontier_parent_tuples:")                 
+        for (k,v) in BFS_Shared.shared_partition_frontier_parents_map.items():
+            logger.trace(str(k) + ": " + str(v))
+        logger.trace("")
+    #if True: # 
+    if use_shared_partitions_groups:  
+        logger.trace("Shared groups map frontier_parent_tuples:")                  
+        for (k,v) in BFS_Shared.shared_groups_frontier_parents_map.items():
+            logger.trace(str(k) + ": " + str(v))
+        logger.trace("")
+    logger.trace("nodeIndex_to_partition_partitionIndex_group_groupIndex_map, len: " + str(len(nodeIndex_to_partition_partitionIndex_group_groupIndex_map)) + ":")
+    logger.trace("shadow nodes not mapped and not shown")
+    if PRINT_DETAILED_STATS:
+        for k, v in nodeIndex_to_partition_partitionIndex_group_groupIndex_map.items():
+            logger.trace((k, v))
+        logger.trace("")
+    else:
+        logger.trace("-- (" + str(len(nodeIndex_to_partition_partitionIndex_group_groupIndex_map)) + ")")
+    logger.trace("")
+    logger.trace("Partition Node parents (shad. node is a parent), len: " + str(len(partitions))+":")
+    for x in partitions:
+        if PRINT_DETAILED_STATS:
+            #logger.trace("-- (" + str(len(x)) + "):", end=" ")
+            for node in x:
+                print_val = ""
+                print_val += str(node) + ": "
+                #print(node,end=":")
+                for parent in node.parents:
+                    print_val += str(parent) + " "
+                    #print(parent,end=" ")
+                logger.trace(print_val)
+                logger.trace("")
+                #if not node.isShadowNode:
+                #    logger.trace(str(index),end=" ")
+                #else:
+                #   logger.trace(str(index)+"-s",end=" ")
+            logger.trace("")
+        else:
+            logger.trace("-- (" + str(len(x)) + ")")
+    logger.trace("")
+    logger.trace("Group Node parents (shad. node is a parent), len: " + str(len(partitions))+":")
+    for x in groups:
+        if PRINT_DETAILED_STATS:
+            #logger.trace("-- (" + str(len(x)) + "):", end=" ")
+            for node in x:
+                print_val = ""
+                print_val += str(node) + ": "
+                #print(node,end=":")
+                for parent in node.parents:
+                    print_val += str(parent) + " "
+                    #print(parent,end=" ")
+                logger.trace(print_val)
+                logger.trace("")
+                #if not node.isShadowNode:
+                #    logger.trace(str(index),end=" ")
+                #else:
+                #   logger.trace(str(index)+"-s",end=" ")
+            logger.trace("")
+        else:
+            logger.trace("-- (" + str(len(x)) + ")")
+    logger.trace("")
+    logger.trace("Group Node num_children, len: " + str(len(groups))+":")
+    for x in groups:
+        if PRINT_DETAILED_STATS:
+            #logger.trace("-- (" + str(len(x)) + "):", end=" ")
+            print_val = ""
+            for node in x:
+                print_val += str(node) + ":" + str(node.num_children) + ", "
+                #print(str(node) + ":" + str(node.num_children),end=", ")
+            logger.trace(print_val)
+            logger.trace("")
+        else:
+            logger.trace("-- (" + str(len(x)) + ")")
+    logger.trace("")
+    logger.trace("Partition_senders, len: " + str(len(Partition_senders)) + ":")
+    if PRINT_DETAILED_STATS:
+        for k, v in Partition_senders.items():
+            logger.trace((k, v))
+        logger.trace("")
+    else:
+        logger.trace("-- (" + str(len(Partition_senders)) + ")")
+        logger.trace("")
+    logger.trace("Partition_receivers, len: " + str(len(Partition_receivers)) + ":")
+    if PRINT_DETAILED_STATS:
+        for k, v in Partition_receivers.items():
+            logger.trace((k, v))
+        logger.trace("")
+    else:
+        logger.trace("-- (" + str(len(Partition_receivers)) + ")")
+        logger.trace("")
+    logger.trace("Group_senders, len: " + str(len(Group_senders)) + ":")
+    if PRINT_DETAILED_STATS:
+        for k, v in Group_senders.items():
+            logger.trace((k, v))
+        logger.trace("")
+    else:
+        logger.trace("-- (" + str(len(Group_senders)) + ")")
+        logger.trace("")
+
+    logger.trace("Group_receivers, len: " + str(len(Group_receivers)) + ":")
+    if PRINT_DETAILED_STATS:
+        for k, v in Group_receivers.items():
+            logger.trace((k, v))
+    else:
+        logger.trace("-- (" + str(len(Group_receivers)) + ")")
+        logger.trace("")
+
+
+
 if __name__ == '__main__':
     if use_page_rank_group_partitions:
-        logger.trace("BFS: using groups")
+        logger.info("BFS: using groups")
     else:
-        logger.trace("BFS: using partitions.")
+        logger.info("BFS: using partitions.")
 
     if compute_pagerank and use_incremental_DAG_generation: 
 #rhc continue
@@ -4658,445 +5129,41 @@ if __name__ == '__main__':
             partitions_num_shadow_nodes_list,num_shadow_nodes_added_to_partitions,
             groups, group_names,groups_num_shadow_nodes_list,num_shadow_nodes_added_to_groups)
 
-    #logging.shutdown()
-    #os._exit(0)
-
-    def print_BFS_stats():
-        logger.trace("BFS: print_BFS_stats: ")
-        #partitions.append(current_partition.copy())
-        #frontiers.append(frontier.copy())
-        #frontier_cost = "END" + ":" + str(len(frontier))
-        #frontier_costs.append(frontier_cost)
-        logger.trace("")
-        logger.trace("input_file: generated: num_nodes: " + str(num_nodes) + " num_edges: " + str(num_edges))
-        logger.trace("")
-        logger.trace("visited length: " + str(len(visited)))
-        if len(visited) != num_nodes:
-            logger.error("[Error]: BFS: visited length is " + str(len(visited))
-                + " but num_nodes is " + str(num_nodes))
-        print_val = ""
-        for x in visited:
-            print_val += str(x) + " "
-            #print(x, end=" ")
-        logger.trace(print_val)
-        logger.trace("")
-        logger.trace("")
-        logger.trace("final current_partition length: " + str(len(current_partition)-loop_nodes_added))
-        sum_of_partition_lengths = 0
-        i = 1
-        for x in partitions:
-            sum_of_partition_lengths += len(x)
-            logger.trace(str(i) + ":length of partition: " + str(len(x)))
-            i += 1
-        logger.trace("shadow_nodes_added: " + str(num_shadow_nodes_added_to_partitions))
-        if not use_shared_partitions_groups:
-            sum_of_partition_lengths -= (total_loop_nodes_added + num_shadow_nodes_added_to_partitions)
-            logger.trace("sum_of_partition_lengths (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
-                + str(sum_of_partition_lengths))
-            if sum_of_partition_lengths != num_nodes:
-                logger.error("[Error]: sum_of_partition_lengths is " + str(sum_of_partition_lengths)
-                    + " but num_nodes is " + str(num_nodes))
-        else: # use_shared_partitions_groups so computing PageRank
-            if not use_page_rank_group_partitions:
-                if not use_struct_of_arrays_for_pagerank:
-                    shared_partition_length = len(BFS_Shared.shared_partition)
-                    # added shadow nodes and their parents
-                    shared_partition_length -= (total_loop_nodes_added + (2*num_shadow_nodes_added_to_partitions))
-                    logger.trace("shared_partition_length (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
-                        + str(shared_partition_length))
-                    if shared_partition_length != num_nodes:
-                        logger.error("[Error]: shared_partition_length is " + str(shared_partition_length)
-                            + " but num_nodes is " + str(num_nodes))
-                else:
-                    pass
-                    # we are not asserting anything about the length of the arrays
-                    # in the struct_of_arrays. These arrays length were calculated
-                    # and we are not checking that calculation here.
-
-        logger.trace("")
-        sum_of_groups_lengths = 0
-        i = 1
-        for x in groups:
-            sum_of_groups_lengths += len(x)
-            logger.trace(str(i) + ": length of group: " + str(len(x)))
-            i+=1
-        logger.trace("num_shadow_nodes_added_to_groups: " + str(num_shadow_nodes_added_to_groups))
-        if not use_shared_partitions_groups:
-            logger.trace("total_loop_nodes_added : " + str(total_loop_nodes_added))
-            sum_of_groups_lengths -= (total_loop_nodes_added + num_shadow_nodes_added_to_groups)
-            logger.trace("sum_of_groups_lengths (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
-                + str(sum_of_groups_lengths))
-            if sum_of_groups_lengths != num_nodes:
-                logger.error("[Error]: sum_of_groups_lengths is " + str(sum_of_groups_lengths)
-                    + " but num_nodes is " + str(num_nodes))
-        else: # use_shared_partitions_groups so computing PageRank
-            if use_page_rank_group_partitions:
-                if not use_struct_of_arrays_for_pagerank:
-                    shared_groups_length = len(BFS_Shared.shared_groups)
-                    logger.trace("shared_groups_length first value: " + str(shared_groups_length))
-                    # added shadow nodes and their parents
-                    logger.trace("total_loop_nodes_added : " + str(total_loop_nodes_added))
-                    logger.trace("(2*num_shadow_nodes_added_to_groups):" + str(2*num_shadow_nodes_added_to_groups))
-                    shared_groups_length -= (total_loop_nodes_added + (2*num_shadow_nodes_added_to_groups))
-                    logger.trace("shared_groups_length (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
-                        + str(shared_groups_length))
-                    if shared_groups_length != num_nodes:
-                        logger.error("[Error]: shared_groups_length is " + str(shared_groups_length)
-                            + " but num_nodes is " + str(num_nodes))
-                else:
-                    pass
-                    # we are not asserting anything about the length of the arrays
-                    # in the struct_of_arrays. These arrays length were calculated
-                    # and we are not checking that calculation here.
-
-        #if (len(current_partition)-loop_nodes_added) != num_nodes
-
-        print_val = ""
-        for x in current_partition:
-            print_val += str(x) + " "
-            # logger.trace(x, end=" ")
-            logger.trace(print_val)
-            logger.trace("")
-
-        # adjusting for loop_nodes_added in dfs_p
-        sum_of_changes = sum(dfs_parent_changes_in_partiton_size)-num_shadow_nodes_added_to_partitions
-        avg_change = sum_of_changes / len(dfs_parent_changes_in_partiton_size)
-        print_val = "dfs_parent_changes_in_partiton_size length, len: " + str(len(dfs_parent_changes_in_partiton_size)) + ", sum_of_changes: " + str(sum_of_changes)
-        print_val += ", average dfs_parent change: %.1f" % avg_change
-        logger.trace(print_val)
-        if PRINT_DETAILED_STATS:
-            if sum_of_changes != num_nodes:
-                logger.error("[Error]: sum_of_changes is " + str(sum_of_changes)
-                    + " but num_nodes is " + str(num_nodes))
-            print_val = ""
-            for x in dfs_parent_changes_in_partiton_size:
-                print_val += str(x) + " "
-                # print(x, end=" ")
-            logger.trace(print_val)
-
-        logger.trace("")
-        logger.trace("")
-        if PRINT_DETAILED_STATS:
-            # adjusting for loop_nodes_added in dfs_p
-            sum_of_changes = sum(dfs_parent_changes_in_frontier_size)
-            logger.trace("dfs_parent_changes_in_frontier_size length, len: " + str(len(dfs_parent_changes_in_frontier_size))
-                + ", sum_of_changes: " + str(sum_of_changes))
-            if sum_of_changes != num_nodes:
-                logger.error("[Error]: sum_of_changes is " + str(sum_of_changes)
-                    + " but num_nodes is " + str(num_nodes))
-            for x in dfs_parent_changes_in_frontier_size:
-                print_val = str(x) + " "
-                #print(x, end=" ")
-            logger.trace(print_val)
-            logger.trace("")
-            logger.trace("")
-        #logger.trace("frontier length: " + str(len(frontier)))
-        #if len(frontier) != 0:
-        #    logger.error("[Error]: frontier length is " + str(len(frontier))
-        #       + " but num_nodes is " + str(num_nodes))
-        #for x in frontier:
-        #    logger.trace(str(x.ID), end=" ")
-        #logger.trace("")
-        #logger.trace("frontier cost: " + str(len(frontier_cost)))
-        #for x in frontier_cost:
-        #    logger.trace(str(x), end=" ")
-        #logger.trace("")
-        # final frontier shoudl always be empty
-        # assert: 
-        logger.trace("frontiers: (final fronter should be empty), number of frontiers: " + str(len(frontiers))+ " (length):")
-        for frontier_list in frontiers:
-            if PRINT_DETAILED_STATS:
-                print_val = "-- (" + str(len(frontier_list)) + "): "
-                for x in frontier_list:
-                    #logger.trace(str(x.ID),end=" ")
-                    print_val += str(x) + " "
-                    #print(str(x),end=" ")
-                logger.trace(print_val)
-                logger.trace("")
-            else:
-                logger.trace("-- (" + str(len(frontier_list)) + ")") 
-        frontiers_length = len(frontiers)
-        if len(frontiers[frontiers_length-1]) != 0:
-            logger.trace ("Error]: final frontier is not empty.")
-        logger.trace("")
-        logger.trace("partitions, number of partitions: " + str(len(partitions))+" (length):")
-
-        for x in partitions:
-            if PRINT_DETAILED_STATS:
-                #print("-- (" + str(len(x)) + "):", end=" ")
-                print_val = ""
-                print_val += "-- (" + str(len(x)) + "):" + " "
-                for node in x:
-                    print_val += str(node) + " "
-                    #print(node,end=" ")
-                    #if not node.isShadowNode:
-                    #    logger.trace(str(index),end=" ")
-                    #else:
-                    #   logger.trace(str(index)+"-s",end=" ")
-                logger.trace(print_val)
-                logger.trace("")
-            else:
-                logger.trace("-- (" + str(len(x)) + ")")
-        logger.trace("")
-        if use_shared_partitions_groups:
-            logger.trace("Number of shadow nodes (when use_shared_partitions_groups):")
-            for num in partitions_num_shadow_nodes_list:
-                logger.trace(num)
-            logger.trace("")
-        logger.trace("partition names, len: " + str(len(partition_names))+":")
-        for name in partition_names:
-            if PRINT_DETAILED_STATS:
-                logger.trace("-- " + name)
-        logger.trace("")
-        logger.trace("groups, len: " + str(len(groups))+":")
-        for g in groups:
-            if PRINT_DETAILED_STATS:
-                print_val = ""
-                print_val += "-- (" + str(len(g)) + "):" + " "
-                for node in g:
-                    print_val += str(node) + " "
-                    #print(node,end=" ")
-                logger.trace(print_val)
-                logger.trace("")
-            else:
-                logger.trace("-- (" + str(len(g)) + ")")
-        logger.trace("")
-        if use_shared_partitions_groups:
-            logger.trace("Number of shadow nodes (when use_shared_partitions_groups):")
-            for num in groups_num_shadow_nodes_list:
-                logger.trace(num)
-            logger.trace("")
-        logger.trace("group names, len: " + str(len(group_names))+":")
-        for name in group_names:
-            if PRINT_DETAILED_STATS:
-                logger.trace("-- " + name)
-        logger.trace("")
-        logger.trace("nodes_to_partition_maps (incl. shadow nodes but only last index), len: " + str(len(nodeIndex_to_partitionIndex_maps))+":")
-        for m in nodeIndex_to_partitionIndex_maps:
-            if PRINT_DETAILED_STATS:
-                print_val = ""
-                print_val += "-- (" + str(len(m)) + "):" + " "
-                for k, v in m.items():
-                    print_val += str((k, v)) + " "
-                    #print((k, v),end=" ")
-                logger.trace(print_val)
-                logger.trace("")
-            else:
-                logger.trace("-- (" + str(len(m)) + ")")
-        logger.trace("")
-        logger.trace("nodes_to_group_maps, ( but only last index), len: " + str(len(nodeIndex_to_groupIndex_maps))+":")
-        for m in nodeIndex_to_groupIndex_maps:
-            if PRINT_DETAILED_STATS:
-                #print("-- (" + str(len(m)) + "):", end=" ")
-                print_val = ""
-                print_val += "-- (" + str(len(m)) + "):" + " "
-                for k, v in m.items():
-                    print_val += str((k, v)) + " "
-                    #print((k, v),end=" ")
-                logger.trace(print_val)
-                logger.trace("")
-            else:
-                logger.trace("-- (" + str(len(m)) + ")")
-        logger.trace("")
-        if PRINT_DETAILED_STATS:
-            logger.trace("frontier costs (cost=length of frontier), len: " + str(len(frontier_costs))+":")
-            print_val = ""
-            for x in frontier_costs:
-                print_val += "-- " + str(x)
-                #logger.trace("-- ",end="")
-                #logger.trace(str(x))
-            logger.trace(print_val)
-            logger.trace("")
-        sum_of_partition_costs = 0
-        for x in all_frontier_costs:
-            words = x.split(':')
-            cost = int(words[1])
-            sum_of_partition_costs += cost
-        logger.trace("all frontier costs, len: " + str(len(all_frontier_costs)) + ", sum: " 
-            + str(sum_of_partition_costs))
-        if PRINT_DETAILED_STATS:
-            i = 0
-            costs_per_line = 13
-            print_val = ""
-            for x in all_frontier_costs:
-                if (i < costs_per_line):
-                    print_val = str(x) + " "
-                    #print(str(x),end=" ")
-                else:
-                    logger.trace(str(x))
-                    i = 0
-                i += 1
-            logger.trace(print_val)
-        logger.trace("")
-        """
-        # Doing this for each node in each partition now (next)
-        logger.trace("")
-        if PRINT_DETAILED_STATS:
-            logger.trace("Node frontier_parent_tuples:")
-            for node in nodes:
-                logger.trace(str(node.ID) + ": frontier_parent_tuples: ", end = " ")
-                for parent_tuple in node.frontier_parents:
-                    logger.trace(str(parent_tuple), end=" ")
-                logger.trace("")
-        else:
-            logger.trace("-- (" + str(len(x)) + ")")
-        """
-        logger.trace("")
-        if PRINT_DETAILED_STATS:
-            logger.trace("partition nodes' frontier_parent_tuples:")
-            for x in partitions:
-                if PRINT_DETAILED_STATS:
-                    print_val = "-- (" + str(len(x)) + "):" + " "
-                    print_val = ""
-                    for node in x:
-                        print_val += str(node.ID) + ": " 
-                        # logger.trace(node.ID,end=": ")
-                        for parent_tuple in node.frontier_parents:
-                            print_val += str(parent_tuple) + " "
-                            # print(str(parent_tuple), end=" ")
-                    logger.trace(print_val)
-                    logger.trace("")
-                else:
-                    logger.trace("-- (" + str(len(x)) + ")")
-        else:
-            logger.trace("-- (" + str(len(x)) + ")")
-        logger.trace("")
-        if PRINT_DETAILED_STATS:
-            logger.trace("group nodes' frontier_parent_tuples:")
-            for x in groups:
-                if PRINT_DETAILED_STATS:
-                    print_val = "-- (" + str(len(x)) + "): "
-                    for node in x:
-                        print_val += str(node.ID) + ": "
-                        # logger.trace(node.ID,end=": ")
-                        for parent_tuple in node.frontier_parents:
-                            print_val += str(parent_tuple) + " "
-                            # print(str(parent_tuple), end=" ")
-                    logger.trace(print_val)
-                    logger.trace("")
-                else:
-                    logger.trace("-- (" + str(len(x)) + ")")
-        else:
-            logger.trace("-- (" + str(len(x)) + ")")
-        logger.trace("")
-        logger.trace("frontier_groups_sum: " + str(frontier_groups_sum) + ", len(frontiers)-1: " 
-            +  str(len(frontiers)-1))
-        logger.trace("Average number of frontier groups: " + (str(frontier_groups_sum / (len(frontiers)-1))))
-        logger.trace("")
-        i#f True: # 
-        if use_shared_partitions_groups: 
-            logger.trace("Shared partition map frontier_parent_tuples:")                 
-            for (k,v) in BFS_Shared.shared_partition_frontier_parents_map.items():
-                logger.trace(str(k) + ": " + str(v))
-            logger.trace("")
-        #if True: # 
-        if use_shared_partitions_groups:  
-            logger.trace("Shared groups map frontier_parent_tuples:")                  
-            for (k,v) in BFS_Shared.shared_groups_frontier_parents_map.items():
-                logger.trace(str(k) + ": " + str(v))
-            logger.trace("")
-        logger.trace("nodeIndex_to_partition_partitionIndex_group_groupIndex_map, len: " + str(len(nodeIndex_to_partition_partitionIndex_group_groupIndex_map)) + ":")
-        logger.trace("shadow nodes not mapped and not shown")
-        if PRINT_DETAILED_STATS:
-            for k, v in nodeIndex_to_partition_partitionIndex_group_groupIndex_map.items():
-                logger.trace((k, v))
-            logger.trace("")
-        else:
-            logger.trace("-- (" + str(len(nodeIndex_to_partition_partitionIndex_group_groupIndex_map)) + ")")
-        logger.trace("")
-        logger.trace("Partition Node parents (shad. node is a parent), len: " + str(len(partitions))+":")
-        for x in partitions:
-            if PRINT_DETAILED_STATS:
-                #logger.trace("-- (" + str(len(x)) + "):", end=" ")
-                for node in x:
-                    print_val = ""
-                    print_val += str(node) + ": "
-                    #print(node,end=":")
-                    for parent in node.parents:
-                        print_val += str(parent) + " "
-                        #print(parent,end=" ")
-                    logger.trace(print_val)
-                    logger.trace("")
-                    #if not node.isShadowNode:
-                    #    logger.trace(str(index),end=" ")
-                    #else:
-                    #   logger.trace(str(index)+"-s",end=" ")
-                logger.trace("")
-            else:
-                logger.trace("-- (" + str(len(x)) + ")")
-        logger.trace("")
-        logger.trace("Group Node parents (shad. node is a parent), len: " + str(len(partitions))+":")
-        for x in groups:
-            if PRINT_DETAILED_STATS:
-                #logger.trace("-- (" + str(len(x)) + "):", end=" ")
-                for node in x:
-                    print_val = ""
-                    print_val += str(node) + ": "
-                    #print(node,end=":")
-                    for parent in node.parents:
-                        print_val += str(parent) + " "
-                        #print(parent,end=" ")
-                    logger.trace(print_val)
-                    logger.trace("")
-                    #if not node.isShadowNode:
-                    #    logger.trace(str(index),end=" ")
-                    #else:
-                    #   logger.trace(str(index)+"-s",end=" ")
-                logger.trace("")
-            else:
-                logger.trace("-- (" + str(len(x)) + ")")
-        logger.trace("")
-        logger.trace("Group Node num_children, len: " + str(len(groups))+":")
-        for x in groups:
-            if PRINT_DETAILED_STATS:
-                #logger.trace("-- (" + str(len(x)) + "):", end=" ")
-                print_val = ""
-                for node in x:
-                    print_val += str(node) + ":" + str(node.num_children) + ", "
-                    #print(str(node) + ":" + str(node.num_children),end=", ")
-                logger.trace(print_val)
-                logger.trace("")
-            else:
-                logger.trace("-- (" + str(len(x)) + ")")
-        logger.trace("")
-        logger.trace("Partition_senders, len: " + str(len(Partition_senders)) + ":")
-        if PRINT_DETAILED_STATS:
-            for k, v in Partition_senders.items():
-                logger.trace((k, v))
-            logger.trace("")
-        else:
-            logger.trace("-- (" + str(len(Partition_senders)) + ")")
-            logger.trace("")
-        logger.trace("Partition_receivers, len: " + str(len(Partition_receivers)) + ":")
-        if PRINT_DETAILED_STATS:
-            for k, v in Partition_receivers.items():
-                logger.trace((k, v))
-            logger.trace("")
-        else:
-            logger.trace("-- (" + str(len(Partition_receivers)) + ")")
-            logger.trace("")
-        logger.trace("Group_senders, len: " + str(len(Group_senders)) + ":")
-        if PRINT_DETAILED_STATS:
-            for k, v in Group_senders.items():
-                logger.trace((k, v))
-            logger.trace("")
-        else:
-            logger.trace("-- (" + str(len(Group_senders)) + ")")
-            logger.trace("")
-
-        logger.trace("Group_receivers, len: " + str(len(Group_receivers)) + ":")
-        if PRINT_DETAILED_STATS:
-            for k, v in Group_receivers.items():
-                logger.trace((k, v))
-        else:
-            logger.trace("-- (" + str(len(Group_receivers)) + ")")
-            logger.trace("")
-
-
-
 #rhc incremental
     if not use_incremental_DAG_generation:
         print_BFS_stats()
+
+        """
+        Working on this: 12/21/23 - instead of generating DAG_info
+        at the end (non-incrementally), bfs deposits the next partition
+        or group in a beffer and a DAG generator thread withdraws the 
+        partition or group and adds it to the DAG. So we ar overlapping
+        the execution of bfs, which build the partitions/groups and 
+        DAG_info generation. This is like incremental DAG generation
+        but here we are essentially multithreading bfs() - one thread to 
+        identify the partitions/groups and one thread to build the 
+        DAG of partitions/groups. Incremental DAG generation overlasps
+        the execution of the DAG by DAG_executor with the building
+        of the DAG by bfs.
+        Consider: Combining this: incremental DAG generation, which
+        overlaps DAG execution by DAG_eecutor with DAG generation 
+        by bfs(), where bfs() is multithreaded - bfs indentifies the 
+        next partition/group and deposted it into buffer to be 
+        withdrawn by the DAG generator thread and used to incremeentally
+        extend the DAG. Note: The ADG generator thread would have to 
+        deposit the incremental DAG into the buffer to be withdrawn
+        by the DAG_excutor.
+        """
+        
+        """
+        if not use_multithreaded_dag_generation_for_pagerank:
+            generate_DAG_info()
+        else:
+            global DAG_generator_for_multithreaded_DAG_generation
+            DAG_generator_for_multithreaded_DAG_generation = DAG_generator_multithreaded()
+            DAG_generator_for_multithreaded_DAG_generation.start_thread()
+            DAG_generator_for_multithreaded_DAG_generation.join_thread()
+        """
 
         generate_DAG_info()
 
@@ -5106,10 +5173,18 @@ if __name__ == '__main__':
         logger.trace("Output partitions/groups")
         output_partitions()
 
-#rhc: Issue: can't start TCP server until output DAG_info
-# so this is for not using tcp server. If use tp_server then
-# need to just run bfs then start tcp_server then run 
-# dag_executor, where dag executor does this close shared mem?
+        # Calling the run() method of DAG_executor_driver. Assuming we have
+        # already started tcp_server. The tcp_server needs DAG_info but
+        # tcp_server does not read DAG_info when it starts since we can't
+        # read DAG_info until after bfs() writes it. So tcp_server will
+        # read DAG_info the first time it needs it.
+        # Alternative: start tcp_server and have tcp_server call bfs()
+        # then bfs() ca nsignal tcp_server when bfs after bfs writes
+        # DAG_info. tcp_server can read DAG_info and call DAG_executor
+        # _driver's run() method. This is for non-incremental. For
+        # incremental DAG generation, tcp_server would call bfs() and 
+        # do nothing else since in that case bfs() is calling 
+        # DAG_executor_driver after bfs write the first incremental DAG.
         run()
 
         if use_struct_of_arrays_for_pagerank and use_shared_partitions_groups and not using_threads_not_processes:
@@ -5121,6 +5196,11 @@ if __name__ == '__main__':
                 logger.trace("[ERROR] BFS: Failed to close or unlink shared memory.")
                 logger.trace(ex)
     else:
+        # bfs generates the DAG incrementally, i.e., the DAG_executor
+        # and bfs() overlap their executions. bfs depsoits incremental
+        # DAGs in a bounded buffer that DAG_executor withdraws.
+        # bfs will call DAG_executor_driver's run() method after bfs 
+        # writes the first incremental DAG.
         logger.trace("\nBFS:join invoker_thread_for_DAG_executor_driver.")
         invoker_thread_for_DAG_executor_driver.join()   # global
         # 1. perhaps invoker_thread.join() here when inc dag gen
@@ -5138,7 +5218,7 @@ if __name__ == '__main__':
         verified = verify_pagerank_outputs(number_of_groups_or_partitions)
         
         #if not verified:
-        # might do somethig with this
+        #   might do somethig with this
 
         logger.trace("")
         logger.trace("")
@@ -5149,7 +5229,6 @@ if __name__ == '__main__':
         sorted_pagerank_outputs = {i: pr_outputs[i] for i in output_keys}
         for (k,v) in sorted_pagerank_outputs.items():
             logger.trace(str(k) + ":"+str(v))
-
 
 """
 logger.trace("Sorted simple cycles:")

@@ -86,7 +86,7 @@ def generate_DAG_info():
 
     Partition_DAG_number_of_tasks = 0
 
-    """ Add L to end of names
+    """ Add L to end of names: No longer needed
     print()
     print("Partition_loops:" + str(Partition_loops))
     Partition_senders_Copy = Partition_senders.copy()
@@ -195,7 +195,7 @@ def generate_DAG_info():
     for name in leaf_tasks_of_groups:
         print(name + " ")
     """
-    
+
     #Note:
     #Informs the logging system to perform an orderly shutdown by flushing 
     #and closing all handlers. This should be called at application exit and no 
@@ -210,11 +210,6 @@ def generate_DAG_info():
         Group_senders[group_name_with_L_at_end] = Group_senders[group_name]
         del Group_senders[group_name]
     """
-
-#rhc: ToDo: use the loop map to change the nambes in the 
-# Partition/roup senders and receivers.
-#dictionary[new_key] = dictionary[old_key]
-#del dictionary[old_key]
 
     # sink nodes, i.e., nodes that do not send any inputs
     Partition_sink_set = set()
@@ -583,12 +578,6 @@ def generate_DAG_info():
     Group_DAG_tasks = {}
 
     Group_DAG_number_of_tasks = 0
-
-
-#rhc: ToDo: use the loop map to change the nambes in the 
-# Partition/roup senders and receivers.
-#dictionary[new_key] = dictionary[old_key]
-#del dictionary[old_key]
 
     # sink nodes, i.e., nodes that do not send any inputs
     Group_sink_set = set()
