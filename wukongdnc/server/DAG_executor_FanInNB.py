@@ -307,7 +307,7 @@ class DAG_executor_FanInNB(MonitorSU):
                 if store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks:
                     try:
                         logger.trace("DAG_executor_FanInNB_Select: triggering DAG_Executor_Lambda() for task " + fanin_task_name)
-                        lambda_DAG_exec_state = DAG_executor_State(function_name = "DAG_executor_lambda:"+fanin_task_name, function_instance_ID = str(uuid.uuid4()), state = start_state_fanin_task)
+                        lambda_DAG_exec_state = DAG_executor_State(function_name = "WukongDivideAndConquer:"+fanin_task_name, function_instance_ID = str(uuid.uuid4()), state = start_state_fanin_task)
                         logger.trace ("DAG_executor_FanInNB_Select: lambda payload is DAG_info + " + str(start_state_fanin_task) + "," + str(self._results))
                         lambda_DAG_exec_state.restart = False      # starting new DAG_executor in state start_state_fanin_task
                         lambda_DAG_exec_state.return_value = None
@@ -325,7 +325,7 @@ class DAG_executor_FanInNB(MonitorSU):
                         logger.error(ex) 
                 else:      
                     try:
-                        DAG_executor_state = DAG_executor_State(function_name = "DAG_executor_lambda:"+fanin_task_name, function_instance_ID = str(uuid.uuid4()), state = start_state_fanin_task)
+                        DAG_executor_state = DAG_executor_State(function_name = "WukongDivideAndConquer:"+fanin_task_name, function_instance_ID = str(uuid.uuid4()), state = start_state_fanin_task)
                         DAG_executor_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
                         DAG_executor_state.return_value = self._results
                         DAG_executor_state.blocking = False            
@@ -348,7 +348,7 @@ class DAG_executor_FanInNB(MonitorSU):
                             payload['groups_partitions'] = self.groups_partitions 
                         
                         ###### DAG_executor_State.function_name has not changed
-                        invoke_lambda_DAG_executor(payload = payload, function_name = "DAG_executor_lambda:"+fanin_task_name)
+                        invoke_lambda_DAG_executor(payload = payload, function_name = "WukongDivideAndConquer:"+fanin_task_name)
                     except Exception as ex:
                         logger.trace("FanInNB:[ERROR] Failed to start DAG_executor Lambda.")
                         logger.trace(ex)
