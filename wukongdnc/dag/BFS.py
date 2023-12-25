@@ -987,12 +987,14 @@ class DAG_Generator_Multithreaded:
         current_partition_number, groups_of_current_partition,
         groups_of_partitions,
         to_be_continued):
+
         BFS_generate_DAG_info_incremental_groups.generate_DAG_info_incremental_groups(current_partition_name,
             current_partition_number, groups_of_current_partition,
             groups_of_partitions,
             to_be_continued)
         
     def generate_DAG_info_multithreaded_partitions(self,current_partition_name,current_partition_number,to_be_continued):
+
         BFS_generate_DAG_info_incremental_partitions.generate_DAG_info_incremental_partitions(current_partition_name,current_partition_number,to_be_continued)
 
     def generator_thread(self):
@@ -1002,11 +1004,22 @@ class DAG_Generator_Multithreaded:
             DAG_info = None
             next_partition_or_group = self.buffer.get()
             if use_page_rank_group_partitions:
-                DAG_info = self.generate_DAG_info_multithreaded_groups(next_partition_or_group)
+                current_partition_name = next_partition_or_group.current_partition_name
+                current_partition_number =  next_partition_or_group.current_partition_number
+                groups_of_current_partition =  next_partition_or_group.groups_of_current_partition
+                groups_of_partitions = next_partition_or_group.groups_of_partitions
+                to_be_continued = next_partition_or_group.to_be_continued
+                DAG_info = self.generate_DAG_info_multithreaded_groups(current_partition_name,current_partition_number,
+                    groups_of_current_partition,groups_of_partitions,to_be_continued)
             else:
-                DAG_info = self.generate_DAG_info_multithreaded_partitions(next_partition_or_group) 
+                current_partition_name = next_partition_or_group.current_partition_name
+                current_partition_number =  next_partition_or_group.current_partition_number
+                to_be_continued = next_partition_or_group.to_be_continued
+                DAG_info = self.generate_DAG_info_multithreaded_partitions(current_partition_name,
+                    current_partition_number, to_be_continued)
             if DAG_info.get_DAGinfo_is_complete():
                 break
+
         file_name = "./DAG_info.pickle"                  
         DAG_info_dictionary = DAG_info.get_DAG_info_dictionary()
         with open(file_name, 'wb') as handle:
@@ -3815,6 +3828,49 @@ def bfs(visited, node):
                     else:
                         pass # complete this code for lambdas
  
+                elif compute_pagerank and False:
+                    # partitioning is over when all graph nodes have been
+                    # put in some partition
+                    num_graph_nodes_in_partitions = num_nodes_in_partitions - num_shadow_nodes_added_to_partitions
+                    # to_be_continued set to False when the DAG has been completely generated
+                    to_be_continued = (num_graph_nodes_in_partitions < num_nodes)
+                    logger.trace("BFS: calling gen DAG incremental"
+                        + " num_nodes_in_partitions: " + str(num_nodes_in_partitions)
+                        + " num_shadow_nodes_added_to_partitions: " + str(num_shadow_nodes_added_to_partitions)
+                        + " num_graph_nodes_in_partitions: " + str(num_graph_nodes_in_partitions)
+                        + " num_nodes: " + str(num_nodes) + " to_be_continued: "
+                        + str(to_be_continued))
+                    if using_workers or not using_workers:
+                        if not use_page_rank_group_partitions:
+                            logger.trace("BFS: calling Foo for"
+                                + " partition " + str(partition_name) + " using workers.")
+                            SomeObject = None
+                            # All of these parameters are immutable: string, int, boolean
+                            partition_tuple = (partition_name, current_partition_number,to_be_continued)
+                            DAG_info = SomeObjct.deposit(partition_tuple)
+                        else:
+#rhc increnetal groups
+                            # avoiding circular import - above: from . import FS_generate_DAG_info_incremental_groups
+                            # then use FS_generate_DAG_info_incremental_groups.generate_DAG_info_incremental_groups(...)
+                            logger.info("BFS: calling Foo for"
+                                + " partition " + str(partition_name) + " groups_of_current_partition: "
+                                + str(groups_of_current_partition)
+                                + " groups_of_partitions: " + str(groups_of_partitions))
+                            # these parameters are immutable: partition_name,current_partition_number, to_be_continued
+
+                            #ToDo: # Copy? Deep, shallow?
+                            group_tuple = (partition_name,current_partition_number,
+                                groups_of_current_partition,groups_of_partitions, to_be_continued)
+                            DAG_info = BFS_generate_DAG_info_incremental_groups.generate_DAG_info_incremental_groups(group_tuple)
+                            # we are done with groups_of_current_partition so clear it so it is empty at start
+                            # of next partition.
+                            groups_of_current_partition.clear()
+                            logger.trace("BFS: after calling Foo for"
+                                + " partition " + str(partition_name) + " groups_of_current_partition: "
+                                + str(groups_of_current_partition)
+                                + ", groups_of_partitions: " + str(groups_of_partitions))
+
+                            pass # ToDo: if DAG_info is complete then ....
 
                 #global frontier_groups_sum
                 #global num_frontier_groups
@@ -5160,7 +5216,7 @@ if __name__ == '__main__':
             generate_DAG_info()
         else:
             global DAG_generator_for_multithreaded_DAG_generation
-            DAG_generator_for_multithreaded_DAG_generation = DAG_generator_multithreaded()
+            DAG_generator_for_multithreaded_DAG_generation = DAG_Generator_Multithreaded()
             DAG_generator_for_multithreaded_DAG_generation.start_thread()
             DAG_generator_for_multithreaded_DAG_generation.join_thread()
         """
