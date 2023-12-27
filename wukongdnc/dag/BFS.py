@@ -713,7 +713,7 @@ from .DAG_executor_constants import work_queue_size_for_incremental_DAG_generati
 from .DAG_executor_constants import incremental_DAG_deposit_interval
 from .DAG_executor_constants import check_pagerank_output
 from .DAG_executor_constants import using_threads_not_processes
-#from .DAG_executor_constants import use_multithreaded_dag_generation_for_pagerank
+from .DAG_executor_constants import use_multithreaded_BFS
 
 from .BFS_Node import Node
 from .BFS_Partition_Node import Partition_Node
@@ -3828,7 +3828,7 @@ def bfs(visited, node):
                     else:
                         pass # complete this code for lambdas
  
-                elif compute_pagerank and False:
+                elif compute_pagerank and use_multithreaded_BFS:
                     # partitioning is over when all graph nodes have been
                     # put in some partition
                     num_graph_nodes_in_partitions = num_nodes_in_partitions - num_shadow_nodes_added_to_partitions
@@ -3844,10 +3844,10 @@ def bfs(visited, node):
                         if not use_page_rank_group_partitions:
                             logger.trace("BFS: calling Foo for"
                                 + " partition " + str(partition_name) + " using workers.")
-                            SomeObject = None
                             # All of these parameters are immutable: string, int, boolean
+                            global DAG_generator_for_multithreaded_DAG_generation
                             partition_tuple = (partition_name, current_partition_number,to_be_continued)
-                            DAG_info = SomeObjct.deposit(partition_tuple)
+                            DAG_info = DAG_generator_for_multithreaded_DAG_generation.deposit(partition_tuple)
                         else:
 #rhc increnetal groups
                             # avoiding circular import - above: from . import FS_generate_DAG_info_incremental_groups
@@ -3859,9 +3859,11 @@ def bfs(visited, node):
                             # these parameters are immutable: partition_name,current_partition_number, to_be_continued
 
                             #ToDo: # Copy? Deep, shallow?
+                            copy_of_groups_of_current_partition = copy.copy(groups_of_current_partition)
+                            copy_of_groups_of_partitions = copy.copy(groups_of_partitions)
                             group_tuple = (partition_name,current_partition_number,
-                                groups_of_current_partition,groups_of_partitions, to_be_continued)
-                            DAG_info = BFS_generate_DAG_info_incremental_groups.generate_DAG_info_incremental_groups(group_tuple)
+                                copy_of_groups_of_current_partition,copy_of_groups_of_partitions, to_be_continued)
+                            DAG_info = DAG_generator_for_multithreaded_DAG_generation.generate_DAG_info_incremental_groups(group_tuple)
                             # we are done with groups_of_current_partition so clear it so it is empty at start
                             # of next partition.
                             groups_of_current_partition.clear()
@@ -5187,7 +5189,6 @@ if __name__ == '__main__':
 
 #rhc incremental
     if not use_incremental_DAG_generation:
-        print_BFS_stats()
 
         """
         Working on this: 12/21/23 - instead of generating DAG_info
@@ -5212,15 +5213,18 @@ if __name__ == '__main__':
         """
         
         """
-        if not use_multithreaded_dag_generation_for_pagerank:
+        if not use_multithreaded_BFS:
+            print_BFS_stats()
             generate_DAG_info()
         else:
             global DAG_generator_for_multithreaded_DAG_generation
             DAG_generator_for_multithreaded_DAG_generation = DAG_Generator_Multithreaded()
             DAG_generator_for_multithreaded_DAG_generation.start_thread()
             DAG_generator_for_multithreaded_DAG_generation.join_thread()
+            print_BFS_stats()
         """
 
+        print_BFS_stats()
         generate_DAG_info()
 
         #visualize()

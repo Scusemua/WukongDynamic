@@ -334,9 +334,28 @@ if compute_pagerank and (use_shared_partitions_groups and not run_all_tasks_loca
 # If True use groups else use partitions
 use_page_rank_group_partitions = compute_pagerank and True
 
-# For pagerank
+# For PageRank:
 # Use a struct of arrays to improve cache performance
 use_struct_of_arrays_for_pagerank = compute_pagerank and False
+
+# For PageRank:
+# Use a multithreaded BFS where bfs() is generating the next group
+# or partition and depositing this is a buffer to be withdrawn
+# by a separate thread that adds information about this group/partition
+# to the DAG_info. So partitions/groups can be generated concurrently 
+# with generating the DAG_info object. This is not to be confused with 
+# incremental DAG generation in which the DAG is executed concurrently 
+# with bfs() generating the partitions/groups and the DAG_info object.
+# Consider also the combination of use_incremental_DAG_generation and 
+# use_multithreaded_BFS. 
+use_multithreaded_BFS = compute_pagerank and False
+
+#assert:
+if use_multithreaded_BFS and use_incremental_DAG_generation:
+    logger.error("[Error]: Configuration error: if use_multithreaded_BFS"
+        + " then must not use_incremental_DAG_generation .")
+    logging.shutdown()
+    os._exit(0)
 
 #assert:
 if compute_pagerank and (use_struct_of_arrays_for_pagerank and not use_shared_partitions_groups):
@@ -347,7 +366,7 @@ if compute_pagerank and (use_struct_of_arrays_for_pagerank and not use_shared_pa
 
 # When we use real lamdas, instead of reading the individual group 
 # or partition node files from cloud storage as we need them in BFS_agerank.py, 
-# wecan read all the groups or partitions at the start and pass them along
+# we can read all the groups or partitions at the start and pass them along
 # to the lambdas that are started. There is a limit on the total of the sizes
 # of these files. This is not checked yet. We may want to read the files
 # in batches, on demnand, etc.
