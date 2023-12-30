@@ -32,7 +32,7 @@ run_all_tasks_locally = False         # vs run tasks remotely (in Lambdas)
 # for real lambdas without actually creating real Lambdas.
 # Note: if this is True then run_all_tasks_locally must be False. 
 # This is asserted below.
-bypass_call_lambda_client_invoke = (not run_all_tasks_locally) and False # True
+bypass_call_lambda_client_invoke = (not run_all_tasks_locally) and True
 # True if synch objects are stored locally, i.e., in the memory of the single
 # machine on which the threads are executing.  If we are using multiprocessing
 # or Lambdas, this must be False. When False, the synch objects are stored
@@ -162,13 +162,19 @@ using_single_lambda_function = False
 
 #assert:
 if using_workers and not run_all_tasks_locally:
-    logger.error("[Error]: Configuration error: if using_workers then must run_all_tasks_locally.")
+    logger.error("[Internal Error]: Configuration error: if using_workers then must run_all_tasks_locally.")
     logging.shutdown()
-    os._exit(0)     
+    os._exit(0)  
+
+#assert
+if not run_all_tasks_locally and store_fanins_faninNBs_locally:
+    logger.error("[Internal Error]: Configuration error: if not run_all_tasks_locally (i.e., using real lambdas) then objects cannot be stored locally.")
+    logging.shutdown()
+    os._exit(0) 
 
 #assert:
 if bypass_call_lambda_client_invoke and run_all_tasks_locally:
-    logger.error("[Error]: Configuration error: if bypass_call_lambda_client_invoke then must be running real Lambdas"
+    logger.error("[Internal Error]: Configuration error: if bypass_call_lambda_client_invoke then must be running real Lambdas"
         + " i.e., not run_all_tasks_locally.")
     logging.shutdown()
     os._exit(0)  
@@ -177,7 +183,7 @@ if bypass_call_lambda_client_invoke and run_all_tasks_locally:
 if using_workers and not using_threads_not_processes:
     if store_fanins_faninNBs_locally:
         # When using worker processed, synch objects must be stored remoely
-        logger.error("[Error]: Configuration error: if using_workers and not using_threads_not_processes"
+        logger.error("[Internal Error]: Configuration error: if using_workers and not using_threads_not_processes"
             + " then store_fanins_faninNBs_locally must be False.")
         logging.shutdown()
         os._exit(0)
@@ -188,7 +194,7 @@ if create_all_fanins_faninNBs_on_start and not run_all_tasks_locally and store_s
         # if create sync objects on start and executing tasks in lambdas "
         # then we must map them to function so that we can determine the 
         # function an object is in.
-        logger.error("[Error]: Configuration error: if create_all_fanins_faninNBs_on_start"
+        logger.error("[Internal Error]: Configuration error: if create_all_fanins_faninNBs_on_start"
             + " then map_objects_to_functions must be True.")
         logging.shutdown()
         os._exit(0)
@@ -198,7 +204,7 @@ if map_objects_to_lambda_functions:
     if use_anonymous_lambda_functions:
         # if create sync objects on start then we must map them to function so
         # that we can determine the function an object is in.
-        logger.error("[Error]: Configuration error: if map_objects_to_lambda_functions"
+        logger.error("[Internal Error]: Configuration error: if map_objects_to_lambda_functions"
             + " then use_anonymous_lambda_functions must be False.")
         logging.shutdown()
         os._exit(0)
@@ -208,7 +214,7 @@ if sync_objects_in_lambdas_trigger_their_tasks:
     if run_all_tasks_locally:
         # if create sync objects on start then we must map them to function so
         # that we can determine the function an object is in.
-        logger.error("[Error]: Configuration error: if sync_objects_in_lambdas_trigger_their_tasks"
+        logger.error("[Internal Error]: Configuration error: if sync_objects_in_lambdas_trigger_their_tasks"
             + " then not run_all_tasks_locally must be True.")
         logging.shutdown()
         os._exit(0)
@@ -248,7 +254,7 @@ use_incremental_DAG_generation = compute_pagerank and False
 
 # assert 
 if compute_pagerank and use_incremental_DAG_generation and create_all_fanins_faninNBs_on_start:
-    logger.error("[Error]: Configuration error: incremental_DAG_generation"
+    logger.error("[Internal Error]: Configuration error: incremental_DAG_generation"
         + " requires not create_all_fanins_faninNBs_on_start"
         + " i.e., create synch objects on the fly since we don't know all of the synch objects "
         + " at the start (the DAG is not complete)")
@@ -284,7 +290,7 @@ incremental_DAG_deposit_interval = 2
 
 #assert:
 if incremental_DAG_deposit_interval < 1:
-    logger.error("[Error]: Configuration error: incremental_DAG_deposit_interval"
+    logger.error("[Internal Error]: Configuration error: incremental_DAG_deposit_interval"
          + " must be >= 1. We mod by incremental_DAG_deposit_interval so it"
          + " cannot be 0 and using a negative number makes no sense.")
     logging.shutdown()
@@ -297,7 +303,7 @@ work_queue_size_for_incremental_DAG_generation_with_worker_processes =  2**10-1
 
 #assert:
 if not same_output_for_all_fanout_fanin and not compute_pagerank:
-    logger.error("[Error]: Configuration error: if same_output_for_all_fanout_fanin"
+    logger.error("[Internal Error]: Configuration error: if same_output_for_all_fanout_fanin"
         + " then must be computing pagerank.")
     logging.shutdown()
     os._exit(0)
@@ -324,7 +330,7 @@ use_shared_partitions_groups = compute_pagerank and False
 #assert:
 #if compute_pagerank and (use_shared_partitions_groups and not run_all_tasks_locally)):#
 if compute_pagerank and (use_shared_partitions_groups and not run_all_tasks_locally):
-    logger.error("[Error]: Configuration error: if using a single shared array of"
+    logger.error("[Internal Error]: Configuration error: if using a single shared array of"
         + " partitions or groups then must run_tasks_locally and be using_threads_not_processes.")
     logging.shutdown()
     os._exit(0)
@@ -348,18 +354,18 @@ use_struct_of_arrays_for_pagerank = compute_pagerank and False
 # with bfs() generating the partitions/groups and the DAG_info object.
 # Consider also the combination of use_incremental_DAG_generation and 
 # use_multithreaded_BFS. 
-use_multithreaded_BFS = compute_pagerank and False
+use_multithreaded_BFS = compute_pagerank and True
 
 #assert:
 if use_multithreaded_BFS and use_incremental_DAG_generation:
-    logger.error("[Error]: Configuration error: if use_multithreaded_BFS"
+    logger.error("[Internal Error]: Configuration error: if use_multithreaded_BFS"
         + " then must not use_incremental_DAG_generation .")
     logging.shutdown()
     os._exit(0)
 
 #assert:
 if compute_pagerank and (use_struct_of_arrays_for_pagerank and not use_shared_partitions_groups):
-    logger.error("[Error]: Configuration error: if use_struct_of_arrays_for_pagerank"
+    logger.error("[Internal Error]: Configuration error: if use_struct_of_arrays_for_pagerank"
         + " then must use_shared_partitions_groups.")
     logging.shutdown()
     os._exit(0)
@@ -3487,13 +3493,13 @@ Test PR in Lambdas?
 def check_asserts():
     #assert:
     if using_workers and not run_all_tasks_locally:
-        logger.error("[Error]: Configuration error: if using_workers then must run_all_tasks_locally.")
+        logger.error("[Internal Error]: Configuration error: if using_workers then must run_all_tasks_locally.")
         logging.shutdown()
         os._exit(0)     
 
     #assert:
     if bypass_call_lambda_client_invoke and run_all_tasks_locally:
-        logger.error("[Error]: Configuration error: if bypass_call_lambda_client_invoke then must be running real Lambdas"
+        logger.error("[Internal Error]: Configuration error: if bypass_call_lambda_client_invoke then must be running real Lambdas"
             + " i.e., not run_all_tasks_locally.")
         logging.shutdown()
         os._exit(0)  
@@ -3502,7 +3508,7 @@ def check_asserts():
     if using_workers and not using_threads_not_processes:
         if store_fanins_faninNBs_locally:
             # When using worker processed, synch objects must be stored remoely
-            logger.error("[Error]: Configuration error: if using_workers and not using_threads_not_processes"
+            logger.error("[Internal Error]: Configuration error: if using_workers and not using_threads_not_processes"
                 + " then store_fanins_faninNBs_locally must be False.")
             logging.shutdown()
             os._exit(0)
@@ -3513,7 +3519,7 @@ def check_asserts():
             # if create sync objects on start and executing tasks in lambdas "
             # then we must map them to function so that we can determine the 
             # function an object is in.
-            logger.error("[Error]: Configuration error: if create_all_fanins_faninNBs_on_start"
+            logger.error("[Internal Error]: Configuration error: if create_all_fanins_faninNBs_on_start"
                 + " then map_objects_to_functions must be True.")
             logging.shutdown()
             os._exit(0)
@@ -3523,7 +3529,7 @@ def check_asserts():
         if use_anonymous_lambda_functions:
             # if create sync objects on start then we must map them to function so
             # that we can determine the function an object is in.
-            logger.error("[Error]: Configuration error: if map_objects_to_lambda_functions"
+            logger.error("[Internal Error]: Configuration error: if map_objects_to_lambda_functions"
                 + " then use_anonymous_lambda_functions must be False.")
             logging.shutdown()
             os._exit(0)
@@ -3533,14 +3539,14 @@ def check_asserts():
         if run_all_tasks_locally:
             # if create sync objects on start then we must map them to function so
             # that we can determine the function an object is in.
-            logger.error("[Error]: Configuration error: if sync_objects_in_lambdas_trigger_their_tasks"
+            logger.error("[Internal Error]: Configuration error: if sync_objects_in_lambdas_trigger_their_tasks"
                 + " then not run_all_tasks_locally must be True.")
             logging.shutdown()
             os._exit(0)
 
     # assert 
     if compute_pagerank and use_incremental_DAG_generation and create_all_fanins_faninNBs_on_start:
-        logger.error("[Error]: Configuration error: incremental_DAG_generation"
+        logger.error("[Internal Error]: Configuration error: incremental_DAG_generation"
             + " requires not create_all_fanins_faninNBs_on_start"
             + " i.e., create synch objects on the fly since we don't know all of the synch objects "
             + " at the start (the DAG is not complete)")
@@ -3549,7 +3555,7 @@ def check_asserts():
 
     #assert:
     if incremental_DAG_deposit_interval < 1:
-        logger.error("[Error]: Configuration error: incremental_DAG_deposit_interval"
+        logger.error("[Internal Error]: Configuration error: incremental_DAG_deposit_interval"
             + " must be >= 1. We mod by incremental_DAG_deposit_interval so it"
             + " cannot be 0 and using a negative number makes no sense.")
         logging.shutdown()
@@ -3557,21 +3563,21 @@ def check_asserts():
 
     #assert:
     if not same_output_for_all_fanout_fanin and not compute_pagerank:
-        logger.error("[Error]: Configuration error: if same_output_for_all_fanout_fanin"
+        logger.error("[Internal Error]: Configuration error: if same_output_for_all_fanout_fanin"
             + " then must be computing pagerank.")
         logging.shutdown()
         os._exit(0)
 
     #assert:
     if compute_pagerank and (use_struct_of_arrays_for_pagerank and not use_shared_partitions_groups):
-        logger.error("[Error]: Configuration error: if use_struct_of_arrays_for_pagerank"
+        logger.error("[Internal Error]: Configuration error: if use_struct_of_arrays_for_pagerank"
             + " then must use_shared_partitions_groups.")
         logging.shutdown()
         os._exit(0)
 
     #assert:
     if compute_pagerank and (use_struct_of_arrays_for_pagerank and not use_shared_partitions_groups):
-        logger.error("[Error]: Configuration error: if use_struct_of_arrays_for_pagerank"
+        logger.error("[Internal Error]: Configuration error: if use_struct_of_arrays_for_pagerank"
             + " then must use_shared_partitions_groups.")
         logging.shutdown()
         os._exit(0)

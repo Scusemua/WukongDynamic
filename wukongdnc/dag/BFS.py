@@ -978,52 +978,67 @@ def visualize():
     #nx.draw_planar(G,with_labels = True, alpha=0.8) #NEW FUNCTION
     fig.canvas.draw()
 
+def generator_thread(DAG_generator_for_multithreaded_DAG_generation,buffer):
+    thread_name = threading.current_thread().name
+    while(True):
+        DAG_info = None
+        next_partition_or_group = buffer.get()
+        logger.trace(thread_name + ": called get."
+            + " use_page_rank_group_partitions: " + str(use_page_rank_group_partitions))
+
+        if use_page_rank_group_partitions:
+            # tuple was created as:
+            # group_tuple = (partition_name,current_partition_number,
+            # copy_of_groups_of_current_partition,copy_of_groups_of_partitions, to_be_continued)
+
+            current_partition_name = next_partition_or_group[0]
+            current_partition_number =  next_partition_or_group[1]
+            groups_of_current_partition =  next_partition_or_group[2]
+            groups_of_partitions = next_partition_or_group[3]
+            to_be_continued = next_partition_or_group[4]
+            logger.info("BFS: calling generate.")
+
+            DAG_info = DAG_generator_for_multithreaded_DAG_generation.generate_DAG_info_multithreaded_groups(current_partition_name,current_partition_number,
+                groups_of_current_partition,groups_of_partitions,to_be_continued)
+            logger.info("BFS: called generate.")
+        else:
+            # tuple was created as:
+            # partition_tuple = (partition_name, current_partition_number,to_be_continued)
+            current_partition_name = next_partition_or_group[0]
+            current_partition_number =  next_partition_or_group[1]
+            to_be_continued = next_partition_or_group[2]
+            DAG_info = DAG_generator_for_multithreaded_DAG_generation.generate_DAG_info_multithreaded_partitions(current_partition_name,
+                current_partition_number, to_be_continued)
+
+        if DAG_info.get_DAG_info_is_complete():
+            break
+
+    file_name = "./DAG_info.pickle"                  
+    DAG_info_dictionary = DAG_info.get_DAG_info_dictionary()
+    with open(file_name, 'wb') as handle:
+        cloudpickle.dump(DAG_info_dictionary, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+    
 class DAG_Generator_Multithreaded:
     def __init__(self):
         self.buffer = queue.Queue()
-        self.dag_generator_thread = threading.Thread(target=self.generator_thread, name=("dag_generator_thread"))  # args=(payload,))
+        self.dag_generator_thread = threading.Thread(target=generator_thread, name=("dag_generator_thread"), args=(self,self.buffer,))
 
     def generate_DAG_info_multithreaded_groups(self,current_partition_name,
         current_partition_number, groups_of_current_partition,
         groups_of_partitions,
         to_be_continued):
 
-        BFS_generate_DAG_info_incremental_groups.generate_DAG_info_incremental_groups(current_partition_name,
+        DAG_info = BFS_generate_DAG_info_incremental_groups.generate_DAG_info_incremental_groups(current_partition_name,
             current_partition_number, groups_of_current_partition,
             groups_of_partitions,
             to_be_continued)
+        return DAG_info
         
     def generate_DAG_info_multithreaded_partitions(self,current_partition_name,current_partition_number,to_be_continued):
 
-        BFS_generate_DAG_info_incremental_partitions.generate_DAG_info_incremental_partitions(current_partition_name,current_partition_number,to_be_continued)
+        DAG_info = BFS_generate_DAG_info_incremental_partitions.generate_DAG_info_incremental_partitions(current_partition_name,current_partition_number,to_be_continued)
+        return DAG_info
 
-    def generator_thread(self):
-        thread_name = threading.current_thread().name
-        logger.trace(thread_name + ": DAG_Generator_Multithreaded thread running.")
-        while(True):
-            DAG_info = None
-            next_partition_or_group = self.buffer.get()
-            if use_page_rank_group_partitions:
-                current_partition_name = next_partition_or_group.current_partition_name
-                current_partition_number =  next_partition_or_group.current_partition_number
-                groups_of_current_partition =  next_partition_or_group.groups_of_current_partition
-                groups_of_partitions = next_partition_or_group.groups_of_partitions
-                to_be_continued = next_partition_or_group.to_be_continued
-                DAG_info = self.generate_DAG_info_multithreaded_groups(current_partition_name,current_partition_number,
-                    groups_of_current_partition,groups_of_partitions,to_be_continued)
-            else:
-                current_partition_name = next_partition_or_group.current_partition_name
-                current_partition_number =  next_partition_or_group.current_partition_number
-                to_be_continued = next_partition_or_group.to_be_continued
-                DAG_info = self.generate_DAG_info_multithreaded_partitions(current_partition_name,
-                    current_partition_number, to_be_continued)
-            if DAG_info.get_DAGinfo_is_complete():
-                break
-
-        file_name = "./DAG_info.pickle"                  
-        DAG_info_dictionary = DAG_info.get_DAG_info_dictionary()
-        with open(file_name, 'wb') as handle:
-            cloudpickle.dump(DAG_info_dictionary, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
     def deposit(self,next_partition_or_group):
         self.buffer.put(next_partition_or_group)
     def start_thread(self):
@@ -3542,9 +3557,6 @@ def bfs(visited, node):
                                                 cloudpickle.dump(groups[index_in_groups_list_of_current_group], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
                                             
                                             i += 1
-                                    
-                                    #logging.shutdown()
-                                    #os._exit(0) 
 
                                 # Try to make sure workers are waiting for the DAG that is deposted below.
                                 #logger.trace("BFS: sleeping before calling DAG_infobuffer_monitor.deposit(DAG_info).")
@@ -3818,8 +3830,6 @@ def bfs(visited, node):
                                         with open(file_name, 'wb') as handle:
                                             cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
                             
-                                    #logging.shutdown()
-                                    #os._exit(0)  
                             else:
                                 pass 
                                 # this helps document that we are using same code for partitions
@@ -3842,7 +3852,7 @@ def bfs(visited, node):
                         + str(to_be_continued))
                     if using_workers or not using_workers:
                         if not use_page_rank_group_partitions:
-                            logger.trace("BFS: calling Foo for"
+                            logger.trace("BFS: calling deposit for"
                                 + " partition " + str(partition_name) + " using workers.")
                             # All of these parameters are immutable: string, int, boolean
                             global DAG_generator_for_multithreaded_DAG_generation
@@ -3852,7 +3862,7 @@ def bfs(visited, node):
 #rhc increnetal groups
                             # avoiding circular import - above: from . import FS_generate_DAG_info_incremental_groups
                             # then use FS_generate_DAG_info_incremental_groups.generate_DAG_info_incremental_groups(...)
-                            logger.info("BFS: calling Foo for"
+                            logger.info("BFS: calling deposit for"
                                 + " partition " + str(partition_name) + " groups_of_current_partition: "
                                 + str(groups_of_current_partition)
                                 + " groups_of_partitions: " + str(groups_of_partitions))
@@ -3863,11 +3873,11 @@ def bfs(visited, node):
                             copy_of_groups_of_partitions = copy.copy(groups_of_partitions)
                             group_tuple = (partition_name,current_partition_number,
                                 copy_of_groups_of_current_partition,copy_of_groups_of_partitions, to_be_continued)
-                            DAG_info = DAG_generator_for_multithreaded_DAG_generation.generate_DAG_info_incremental_groups(group_tuple)
+                            DAG_info = DAG_generator_for_multithreaded_DAG_generation.deposit(group_tuple)
                             # we are done with groups_of_current_partition so clear it so it is empty at start
                             # of next partition.
                             groups_of_current_partition.clear()
-                            logger.trace("BFS: after calling Foo for"
+                            logger.trace("BFS: after calling deposit for"
                                 + " partition " + str(partition_name) + " groups_of_current_partition: "
                                 + str(groups_of_current_partition)
                                 + ", groups_of_partitions: " + str(groups_of_partitions))
@@ -4461,9 +4471,6 @@ def input_graph():
         Returns the periphery of the graph G. The periphery is the set of 
         nodes with eccentricity equal to the diameter.
         """ 
-
-    #logging.shutdown()
-    #os._exit(0)    
 
 def output_partitions():
     if use_page_rank_group_partitions:
@@ -5080,8 +5087,6 @@ if __name__ == '__main__':
             DAG_infobuffer_monitor = Remote_Client_for_DAG_infoBuffer_Monitor(websocket)
             DAG_infobuffer_monitor.create()
             logger.trace("BFS: created Remote DAG_infobuffer_monitor.")
-            #logging.shutdown()
-            #os._exit(0) 
             work_queue = Work_Queue_Client(websocket,estimated_num_tasks_to_execute)
 
     logger.trace("BFS: Following is the Breadth-First Search")
@@ -5095,6 +5100,11 @@ if __name__ == '__main__':
     if use_shared_partitions_groups:
         BFS_Shared.initialize()
 
+    if use_multithreaded_BFS:
+        global DAG_generator_for_multithreaded_DAG_generation
+        DAG_generator_for_multithreaded_DAG_generation = DAG_Generator_Multithreaded()
+        DAG_generator_for_multithreaded_DAG_generation.start_thread()
+    
     #bfs(visited, graph, '5')    # function calling
     # example: num_nodes = 100, so Nodes in nodes[1] to nodes[100]
     # i start = 1 as nodes[0] not used, i end is (num_nodes+1) - 1  = 100
@@ -5212,20 +5222,23 @@ if __name__ == '__main__':
         by the DAG_excutor.
         """
         
-        """
         if not use_multithreaded_BFS:
             print_BFS_stats()
             generate_DAG_info()
         else:
-            global DAG_generator_for_multithreaded_DAG_generation
-            DAG_generator_for_multithreaded_DAG_generation = DAG_Generator_Multithreaded()
-            DAG_generator_for_multithreaded_DAG_generation.start_thread()
+            # started the DAG_generator_for_multithreaded_DAG_generation
+            # at the statr of bfs() execution.
             DAG_generator_for_multithreaded_DAG_generation.join_thread()
             print_BFS_stats()
-        """
 
-        print_BFS_stats()
-        generate_DAG_info()
+        # old: do this if not incremental dag geeration. New: 
+        # if doing multithhreaded bfs then we aer not using 
+        # generate_DAG_info() and we print BFS stats after
+        # bfs() and the generator thread are both finished.
+        # We are bfs() so we just need to join the generator 
+        # thread.
+        #print_BFS_stats()
+        #generate_DAG_info()
 
         #visualize()
         #input('Press <ENTER> to continue')

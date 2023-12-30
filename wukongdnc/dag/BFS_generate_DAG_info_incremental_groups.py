@@ -404,19 +404,19 @@ def generate_DAG_info_incremental_groups(current_partition_name,
 
     logger.trace("")
     logger.trace("generate_DAG_info_incremental_groups: Group_senders:")
-    for sender_name,receiver_name_set in Group_senders.items():
+    for sender_name,receiver_name_set in Group_senders.copy().items():
         logger.trace("sender:" + sender_name)
         logger.trace("receiver_name_set:" + str(receiver_name_set))
     logger.trace("")
     logger.trace("")
     logger.trace("generate_DAG_info_incremental_groups: Group_receivers:")
-    for receiver_name,sender_name_set in Group_receivers.items():
+    for receiver_name,sender_name_set in Group_receivers.copy().items():
         logger.trace("receiver:" + receiver_name)
         logger.trace("sender_name_set:" + str(sender_name_set))
     logger.trace("")
     logger.trace("")
     logger.trace("generate_DAG_info_incremental_groups: Leaf nodes of groups:")
-    for name in leaf_tasks_of_groups_incremental:
+    for name in leaf_tasks_of_groups_incremental.copy():
         logger.trace(name + " ")
     logger.trace("")
 

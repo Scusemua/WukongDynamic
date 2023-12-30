@@ -19,10 +19,19 @@ from ..server.api import create
 
 import logging 
 logger = logging.getLogger(__name__)
-session = boto3.session.Session(profile_name = 'ccarver37')
-lambda_client = session.client('lambda', region_name = "us-east-1")
 
 from ..dag.DAG_executor_constants import bypass_call_lambda_client_invoke
+from ..dag.DAG_executor_constants import run_all_tasks_locally, bypass_call_lambda_client_invoke
+
+if run_all_tasks_locally and not bypass_call_lambda_client_invoke:
+    session = boto3.session.Session(profile_name = 'ccarver37')
+    lambda_client = session.client('lambda', region_name = "us-east-1")
+else:
+    # not using when bypassing calls to invoke AWS lambdas
+    lambda_client = None 
+    session = None
+
+
 # Note: DAG_executor_constants.bypass_call_lambda_client_invoke is TRUE 
 # if we are testing the real lambd code by bypassing the 
 # call to start a real lambda on AWS Lambda. i.e., the 

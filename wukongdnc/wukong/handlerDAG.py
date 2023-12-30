@@ -10,7 +10,7 @@ import time
 #from wukongdnc.wukong.invoker import invoke_lambda
 #from wukongdnc.server.state import State 
 #from wukongdnc.server.api import synchronize_sync
-from wukongdnc.constants import REDIS_IP_PRIVATE  #, TCP_SERVER_IP
+#from wukongdnc.constants import REDIS_IP_PRIVATE  #, TCP_SERVER_IP
 from wukongdnc.dag.DAG_executor import DAG_executor_lambda
 from wukongdnc.dag.DAG_executor_constants import log_level
 from wukongdnc.dag.addLoggingLevel import addLoggingLevel
