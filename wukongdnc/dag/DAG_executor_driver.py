@@ -12,8 +12,7 @@
 # try matrixMult
 
 # Where are we:
-# check code
-# Note in ADG orchestrator, line 392 we tabbed this stuff
+# Note in DAG orchestrator, line 392 we tabbed this stuff
 #  right so it's part of no-trigger else. this is becuase
 #  of the return when we do trigger, so this code is only
 #  executed when no trigger. It was correct but misleading.
