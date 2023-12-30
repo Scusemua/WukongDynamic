@@ -407,20 +407,26 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
     # partitions of nodes. So BFS builds the sender/receivers and 
     # passes then here so that the DAG_info object can be generated.
     print()
+    # Using copy() here and below to avoid the error: "RuntimeError: dictionary changed size during iteration"
+    # when we are using multithreaded bfs(). That is, while the generator thread is
+    # iterating here bfs() could add a key:value to the dictionary
+    # and an exceptioj is thrown when a dictionary is changed in size (i.e., an item is added or removed) 
+    # while it is being iterated over in a loop. We also use copy() for thr 
+    # list we are iterating over.
     print("generate_DAG_info_incremental_partitions: Partition_senders:")
-    for sender_name,receiver_name_set in Partition_senders.items():
+    for sender_name,receiver_name_set in Partition_senders.copy().items():
         print("sender:" + sender_name)
         print("receiver_name_set:" + str(receiver_name_set))
     print()
     print()
     print("generate_DAG_info_incremental_partitions: Partition_receivers:")
-    for receiver_name,sender_name_set in Partition_receivers.items():
+    for receiver_name,sender_name_set in Partition_receivers.copy().items():
         print("receiver:" + receiver_name)
         print("sender_name_set:" + str(sender_name_set))
     print()
     print()
     print("generate_DAG_info_incremental_partitions: Leaf nodes of partitions:")
-    for name in leaf_tasks_of_partitions_incremental:
+    for name in leaf_tasks_of_partitions_incremental.copy():
         print(name + " ")
     print()
 

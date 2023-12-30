@@ -403,6 +403,14 @@ def generate_DAG_info_incremental_groups(current_partition_name,
     logger.trace("generate_DAG_info_incremental_groups: current_partition_number: " + str(current_partition_number))
 
     logger.trace("")
+
+    # Using copy() here and below to avoid the error: "RuntimeError: dictionary changed size during iteration"
+    # when we are using multithreaded bfs(). That is, while the generator thread is
+    # iterating here bfs() could add a key:value to the dictionary
+    # and an exceptioj is thrown when a dictionary is changed in size (i.e., an item is added or removed) 
+    # while it is being iterated over in a loop. We also use copy() for thr 
+    # list we are iterating over.
+
     logger.trace("generate_DAG_info_incremental_groups: Group_senders:")
     for sender_name,receiver_name_set in Group_senders.copy().items():
         logger.trace("sender:" + sender_name)
