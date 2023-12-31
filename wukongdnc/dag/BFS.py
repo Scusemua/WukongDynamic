@@ -676,7 +676,6 @@ import os
 import time
 #from statistics import mean
 import copy
-import queue
 
 # Note: When we run BFS, BFS will generate a DAG for pagerank and call
 # DAG_excutor_driver.run(). We addLoggingLevel TRACE here before we
@@ -729,7 +728,7 @@ from .BFS_generate_shared_partitions_groups import generate_shared_partitions_gr
 
 # This will either be a DAG_infoBuffer_Monitor or a DAG_infoBuffer_Monitor_for_Lambdas
 from .DAG_infoBuffer_Monitor_for_threads import DAG_infobuffer_monitor
-
+from .BFS_DAG_Generator_Multithreaded import DAG_Generator_Multithreaded
 #if not using_workers:
 #    import wukongdnc.dag.DAG_infoBuffer_Monitor_for_lambdas_for_threads 
 #    DAG_infobuffer_monitor = wukongdnc.dag.DAG_infoBuffer_Monitor_for_lambdas_for_threads .DAG_infobuffer_monitor
@@ -742,17 +741,11 @@ from .DAG_infoBuffer_Monitor_for_threads import DAG_infobuffer_monitor
 #from .DAG_executor import shared_partition_map, shared_groups_map
 #from .Shared import shared_partition, shared_groups, shared_partition_map,  shared_groups_map
 from . import BFS_Shared
-
-
 from .DAG_executor_driver import run
-
 from .DAG_boundedbuffer_work_queue import Work_Queue_Client
 from .Remote_Client_for_DAG_infoBuffer_Monitor import Remote_Client_for_DAG_infoBuffer_Monitor
-
-
 from .DAG_executor_output_checker import get_pagerank_outputs
 from .DAG_executor_output_checker import verify_pagerank_outputs
-
 from wukongdnc.constants import TCP_SERVER_IP
 
 logger = logging.getLogger(__name__)
@@ -978,73 +971,7 @@ def visualize():
     #nx.draw_planar(G,with_labels = True, alpha=0.8) #NEW FUNCTION
     fig.canvas.draw()
 
-def generator_thread(DAG_generator_for_multithreaded_DAG_generation,buffer):
-    thread_name = threading.current_thread().name
-    while(True):
-        DAG_info = None
-        next_partition_or_group = buffer.get()
-        logger.trace(thread_name + ": called get."
-            + " use_page_rank_group_partitions: " + str(use_page_rank_group_partitions))
 
-        if use_page_rank_group_partitions:
-            # tuple was created as:
-            # group_tuple = (partition_name,current_partition_number,
-            # copy_of_groups_of_current_partition,copy_of_groups_of_partitions, to_be_continued)
-
-            current_partition_name = next_partition_or_group[0]
-            current_partition_number =  next_partition_or_group[1]
-            groups_of_current_partition =  next_partition_or_group[2]
-            groups_of_partitions = next_partition_or_group[3]
-            to_be_continued = next_partition_or_group[4]
-            logger.info("BFS: calling generate.")
-
-            DAG_info = DAG_generator_for_multithreaded_DAG_generation.generate_DAG_info_multithreaded_groups(current_partition_name,current_partition_number,
-                groups_of_current_partition,groups_of_partitions,to_be_continued)
-            logger.info("BFS: called generate.")
-        else:
-            # tuple was created as:
-            # partition_tuple = (partition_name, current_partition_number,to_be_continued)
-            current_partition_name = next_partition_or_group[0]
-            current_partition_number =  next_partition_or_group[1]
-            to_be_continued = next_partition_or_group[2]
-            DAG_info = DAG_generator_for_multithreaded_DAG_generation.generate_DAG_info_multithreaded_partitions(current_partition_name,
-                current_partition_number, to_be_continued)
-
-        if DAG_info.get_DAG_info_is_complete():
-            break
-
-    file_name = "./DAG_info.pickle"                  
-    DAG_info_dictionary = DAG_info.get_DAG_info_dictionary()
-    with open(file_name, 'wb') as handle:
-        cloudpickle.dump(DAG_info_dictionary, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
-    
-class DAG_Generator_Multithreaded:
-    def __init__(self):
-        self.buffer = queue.Queue()
-        self.dag_generator_thread = threading.Thread(target=generator_thread, name=("dag_generator_thread"), args=(self,self.buffer,))
-
-    def generate_DAG_info_multithreaded_groups(self,current_partition_name,
-        current_partition_number, groups_of_current_partition,
-        groups_of_partitions,
-        to_be_continued):
-
-        DAG_info = BFS_generate_DAG_info_incremental_groups.generate_DAG_info_incremental_groups(current_partition_name,
-            current_partition_number, groups_of_current_partition,
-            groups_of_partitions,
-            to_be_continued)
-        return DAG_info
-        
-    def generate_DAG_info_multithreaded_partitions(self,current_partition_name,current_partition_number,to_be_continued):
-
-        DAG_info = BFS_generate_DAG_info_incremental_partitions.generate_DAG_info_incremental_partitions(current_partition_name,current_partition_number,to_be_continued)
-        return DAG_info
-
-    def deposit(self,next_partition_or_group):
-        self.buffer.put(next_partition_or_group)
-    def start_thread(self):
-        self.dag_generator_thread.start()
-    def join_thread(self):
-        self.dag_generator_thread.join()
 
 # process children before parent traversal
 # Not used
@@ -3852,8 +3779,8 @@ def bfs(visited, node):
                         + str(to_be_continued))
                     if using_workers or not using_workers:
                         if not use_page_rank_group_partitions:
-                            logger.trace("BFS: calling deposit for"
-                                + " partition " + str(partition_name) + " using workers.")
+                            #logger.trace("BFS: calling deposit for"
+                            #    + " partition " + str(partition_name) + " using workers.")
                             # All of these parameters are immutable: string, int, boolean
                             global DAG_generator_for_multithreaded_DAG_generation
                             partition_tuple = (partition_name, current_partition_number,to_be_continued)
@@ -3862,10 +3789,10 @@ def bfs(visited, node):
 #rhc increnetal groups
                             # avoiding circular import - above: from . import FS_generate_DAG_info_incremental_groups
                             # then use FS_generate_DAG_info_incremental_groups.generate_DAG_info_incremental_groups(...)
-                            logger.info("BFS: calling deposit for"
-                                + " partition " + str(partition_name) + " groups_of_current_partition: "
-                                + str(groups_of_current_partition)
-                                + " groups_of_partitions: " + str(groups_of_partitions))
+                            #logger.info("BFS: calling deposit for"
+                            #    + " partition " + str(partition_name) + " groups_of_current_partition: "
+                            #    + str(groups_of_current_partition)
+                            #    + " groups_of_partitions: " + str(groups_of_partitions))
                             # these parameters are immutable: partition_name,current_partition_number, to_be_continued
 
                             #ToDo: # Copy? Deep, shallow?
@@ -3877,10 +3804,10 @@ def bfs(visited, node):
                             # we are done with groups_of_current_partition so clear it so it is empty at start
                             # of next partition.
                             groups_of_current_partition.clear()
-                            logger.trace("BFS: after calling deposit for"
-                                + " partition " + str(partition_name) + " groups_of_current_partition: "
-                                + str(groups_of_current_partition)
-                                + ", groups_of_partitions: " + str(groups_of_partitions))
+                            #logger.trace("BFS: after calling deposit for"
+                            #    + " partition " + str(partition_name) + " groups_of_current_partition: "
+                            #    + str(groups_of_current_partition)
+                            #    + ", groups_of_partitions: " + str(groups_of_partitions))
 
                             pass # ToDo: if DAG_info is complete then ....
 
@@ -5200,34 +5127,14 @@ if __name__ == '__main__':
 #rhc incremental
     if not use_incremental_DAG_generation:
 
-        """
-        Working on this: 12/21/23 - instead of generating DAG_info
-        at the end (non-incrementally), bfs deposits the next partition
-        or group in a beffer and a DAG generator thread withdraws the 
-        partition or group and adds it to the DAG. So we ar overlapping
-        the execution of bfs, which build the partitions/groups and 
-        DAG_info generation. This is like incremental DAG generation
-        but here we are essentially multithreading bfs() - one thread to 
-        identify the partitions/groups and one thread to build the 
-        DAG of partitions/groups. Incremental DAG generation overlasps
-        the execution of the DAG by DAG_executor with the building
-        of the DAG by bfs.
-        Consider: Combining this: incremental DAG generation, which
-        overlaps DAG execution by DAG_eecutor with DAG generation 
-        by bfs(), where bfs() is multithreaded - bfs indentifies the 
-        next partition/group and deposted it into buffer to be 
-        withdrawn by the DAG generator thread and used to incremeentally
-        extend the DAG. Note: The ADG generator thread would have to 
-        deposit the incremental DAG into the buffer to be withdrawn
-        by the DAG_excutor.
-        """
+
         
         if not use_multithreaded_BFS:
             print_BFS_stats()
             generate_DAG_info()
         else:
             # started the DAG_generator_for_multithreaded_DAG_generation
-            # at the statr of bfs() execution.
+            # at the start of bfs() execution.
             DAG_generator_for_multithreaded_DAG_generation.join_thread()
             print_BFS_stats()
 

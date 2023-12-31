@@ -7,7 +7,7 @@ import logging
 import os
 
 # log_level = logging.INFO
-log_level = "TRACE"
+log_level = "INFO"
 logger = logging.getLogger(__name__)
 
 # using INFO level for this constants file - no logger.trace() calls

@@ -617,7 +617,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
             number_of_incomplete_tasks = 0
         DAG_info = generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks)
 
-        logger.info("generate_DAG_info_incremental_groups: returning from generate_DAG_info_incremental_groups for"
+        logger.trace("generate_DAG_info_incremental_groups: returning from generate_DAG_info_incremental_groups for"
             + " group " + str(name_of_first_group_in_DAG))
         
         # This will be set to 2
@@ -666,7 +666,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 # DAG. The first partition/group is always a leaf task and it is handled by the 
                 # DAG_executor_driver.
 
-                logger.info("generate_DAG_info_incremental_groups: start of new connected component is group "
+                logger.trace("generate_DAG_info_incremental_groups: start of new connected component is group "
                     + group_name)
 
                 # task input is same as for leaf task group 1 above - empty
@@ -733,7 +733,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 if first_previous_group:
                     first_previous_group = False
 
-                    logger.info("generate_DAG_info_incremental_groups: update the state_info for previous groups: "
+                    logger.trace("generate_DAG_info_incremental_groups: update the state_info for previous groups: "
                         + str(groups_of_previous_partition))
                     # flag so we only do this for the first group of groups in previous previous partition
                     first_previous_previous_group = True
@@ -978,7 +978,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                         faninNB_sizes_of_previous_state += faninNB_sizes
 # END
 
-                        logger.info("before update to TBC and fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued"
+                        logger.trace("before update to TBC and fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued"
                             + " for previous_group " + previous_group + " state_info_of_previous_group: " + str(state_info_of_previous_group))
 
                         # Groups in previous partition are now complete so TBC is set to False.
@@ -1009,7 +1009,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                                         + previous_previous_group + " after update fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued is: " 
                                         + str(state_info_of_previous_previous_group))
 
-                        logger.info("after update to TBC and fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued"
+                        logger.trace("after update to TBC and fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued"
                             + " for previous_group " + previous_group + " state_info_of_previous_group: " 
                             + str(state_info_of_previous_group))
 
