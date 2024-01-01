@@ -1603,7 +1603,7 @@ def run():
             state_info.task_inputs = None
 
 #rhc cleanup
-    output_DAG = False
+    output_DAG = True
     # add-0bec4d19-bce6-4394-ad62-9b0eab3081a9
     if output_DAG:
         logger.info("DAG_executor_driver at start: Output DAG:")
@@ -1613,6 +1613,7 @@ def run():
             logger.info(str(key))
             logger.info(str(value))
         logger.info("  ")
+        """
         logger.info("DAG_executor_driver: DAG states:")         
         for key, value in DAG_states.items():
             logger.info(str(key))
@@ -1641,6 +1642,7 @@ def run():
         logger.info("")
         logger.info("DAG_number_of_tasks: " + str(DAG_number_of_tasks))
         logger.info("")
+        """
 
 #rhc cleanup
         #from . import BFS_Shared

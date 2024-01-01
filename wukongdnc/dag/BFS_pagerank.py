@@ -254,9 +254,9 @@ def PageRank_Function_Driver(task_file_name,total_num_nodes,results_dictionary,
     if (debug_pagerank):
         input_tuples.sort()
     #output = PageRank_Function(task_file_name,total_num_nodes,input_tuples)
-    output = PageRank_Function(task_file_name,total_num_nodes,input_tuples,
+    output, result_tuple_list = PageRank_Function(task_file_name,total_num_nodes,input_tuples,
         groups_partitions)
-    return output
+    return output, result_tuple_list
 
 def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partitions):
 
@@ -607,14 +607,14 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partiti
                 PageRank_output[partition_or_group_name] = output_list
 
     #if (debug_pagerank):
-    print("XXPageRank output tuples for " + task_file_name + ":")
+    #print("XXPageRank output tuples for " + task_file_name + ":")
     if not using_threads_not_processes:
         logger.trace("XXPageRank output tuples for " + task_file_name + ": ")
     print_val = ""
     for k, v in PageRank_output.items():
         if not using_threads_not_processes:
             print_val += "(%s, %s) " % (k, v)
-        print((k, v),end=" ")
+        #print((k, v),end=" ")
     if not using_threads_not_processes:
         logger.trace(print_val)
         logger.trace("")
@@ -623,6 +623,7 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partiti
     print()
     print()
 
+    result_tuple_list = []
     print("XXPageRank result for " + task_file_name + ":", end=" ")
     if not using_threads_not_processes:
         logger.trace("XXPageRank result for " + task_file_name + ": ")
@@ -631,6 +632,8 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partiti
         if not partition_or_group[i].isShadowNode:
             if not using_threads_not_processes:
                 print_val += "%s:%s " % (partition_or_group[i].ID, partition_or_group[i].pagerank)
+            result_tuple = (partition_or_group[i].ID,partition_or_group[i].pagerank)
+            result_tuple_list.append(result_tuple)
             print(str(partition_or_group[i].ID) + ":" + str(partition_or_group[i].pagerank),end=" ")
     if not using_threads_not_processes:
         logger.trace(print_val)
@@ -648,7 +651,7 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partiti
     logger.trace("")
     """
 
-    return PageRank_output
+    return PageRank_output, result_tuple_list
 
 # 
 def PageRank_Function_Driver_Shared(task_file_name,total_num_nodes,results_dictionary,shared_map,shared_nodes):
@@ -682,8 +685,8 @@ def PageRank_Function_Driver_Shared(task_file_name,total_num_nodes,results_dicti
     if (debug_pagerank):
         logger.trace("PageRank_Function_Driver_Shared: input_tuples: " + str(input_tuples))
 
-    output = PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_map,shared_nodes)
-    return output
+    output, result_tuple_list = PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_map,shared_nodes)
+    return output, result_tuple_list
 
 def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_map,shared_nodes):
 
@@ -1373,6 +1376,9 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
         print()
         print()
 
+        # generate a list of results, which is for each node its
+        # pagerank value, so we can return it to DAG_executor.
+        result_tuple_list = []
         print("XXPageRank result for " + task_file_name + ":", end=" ")
         if not using_threads_not_processes:
             logger.trace("XXPageRank result for " + task_file_name + ": ")
@@ -1386,7 +1392,11 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
             if not shared_nodes[node_index].isShadowNode:
                 #rhc shared
                 #print(str(partition_or_group[i].ID) + ":" + str(partition_or_group[i].pagerank),end=" ")
-                print(str(shared_nodes[node_index].ID) + ":" + str(shared_nodes[node_index].pagerank),end=" ")
+                node_ID = shared_nodes[node_index].ID
+                node_pagerank = shared_nodes[node_index].pagerank
+                result_tuple = (node_ID,node_pagerank)
+                result_tuple_list.append(result_tuple)
+                print(str(node_ID) + ":" + str(node_pagerank),end=" ")
                 if not using_threads_not_processes:
                     print_val += "%s:%s " % (shared_nodes[node_index].ID, shared_nodes[node_index].pagerank)
 
@@ -1405,7 +1415,7 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
         logger.trace("")
         logger.trace("")
         """
-        return PageRank_output
+        return PageRank_output, result_tuple_list
 
 def PageRank_Task(task_file_name,total_num_nodes,payload,results):
     input_tuples = payload['input']

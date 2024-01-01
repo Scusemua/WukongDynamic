@@ -4175,13 +4175,16 @@ def input_graph():
     # usd to convert the gaph to networkX format so we can run networkX 
     # algorithms on it, e.g., fnd_cycle, diameter.
     networkX_lines = []
-    #fname = "graph_3000"
-    # fname = "graph_WB"
+    fname = "graph_3000"
+    #fname = "graph_WB"
+    # These are whiteboard graphs with various extensions
+    # that, e.g., add connected components (CC)
     #fname = "graph_22N_2CC"
     #fname = "graph_23N"
     #fname = "graph_24N_3CC"
 
-    fname = "graph_24N_3CC_fanin"   # fanin at end
+    #fname = "graph_24N_3CC_fanin"   # fanin at end
+
     #fname = "graph_2N_2CC"  # 2 nodes (CCs) no edges
     #fname = "graph_3N_3CC"  # 3 nodes (CCs) no edges
     #fname = "graph_2N"
@@ -4746,8 +4749,8 @@ def print_BFS_stats():
     for name in partition_names:
         if PRINT_DETAILED_STATS:
             logger.trace("-- " + name)
-    logger.trace("")
-    logger.trace("groups, len: " + str(len(groups))+":")
+    logger.info("")
+    logger.info("groups, len: " + str(len(groups))+":")
     for g in groups:
         if PRINT_DETAILED_STATS:
             print_val = ""
@@ -4758,8 +4761,8 @@ def print_BFS_stats():
             logger.trace(print_val)
             logger.trace("")
         else:
-            logger.trace("-- (" + str(len(g)) + ")")
-    logger.trace("")
+            logger.info("-- (" + str(len(g)) + ")")
+    logger.info("")
     if use_shared_partitions_groups:
         logger.trace("Number of shadow nodes (when use_shared_partitions_groups):")
         for num in groups_num_shadow_nodes_list:
@@ -5150,7 +5153,7 @@ if __name__ == '__main__':
         #visualize()
         #input('Press <ENTER> to continue')
 
-        logger.trace("Output partitions/groups")
+        logger.info("Output partitions/groups")
         output_partitions()
 
         # Calling the run() method of DAG_executor_driver. Assuming we have
@@ -5159,12 +5162,13 @@ if __name__ == '__main__':
         # read DAG_info until after bfs() writes it. So tcp_server will
         # read DAG_info the first time it needs it.
         # Alternative: start tcp_server and have tcp_server call bfs()
-        # then bfs() ca nsignal tcp_server when bfs after bfs writes
+        # then bfs() can signal tcp_server when bfs after bfs writes
         # DAG_info. tcp_server can read DAG_info and call DAG_executor
         # _driver's run() method. This is for non-incremental. For
         # incremental DAG generation, tcp_server would call bfs() and 
         # do nothing else since in that case bfs() is calling 
         # DAG_executor_driver after bfs write the first incremental DAG.
+
         run()
 
         if use_struct_of_arrays_for_pagerank and use_shared_partitions_groups and not using_threads_not_processes:
@@ -5200,15 +5204,15 @@ if __name__ == '__main__':
         #if not verified:
         #   might do somethig with this
 
-        logger.trace("")
-        logger.trace("")
-        logger.trace("DAG_executor_outputs:")
+        logger.info("")
+        logger.info("")
+        logger.info("DAG_executor_outputs:")
         pr_outputs = get_pagerank_outputs()
         output_keys = list(pr_outputs.keys())
         output_keys.sort()
         sorted_pagerank_outputs = {i: pr_outputs[i] for i in output_keys}
         for (k,v) in sorted_pagerank_outputs.items():
-            logger.trace(str(k) + ":"+str(v))
+            logger.info(str(k) + ":" + group_names[k-1] + ":" +str(v))
 
 """
 logger.trace("Sorted simple cycles:")

@@ -347,8 +347,8 @@ def PageRank_Function_Driver_Shared_Fast(task_file_name,total_num_nodes,results_
     if (debug_pagerank):
         logger.trace("PageRank_Function_Driver_Shared: input_tuples: " + str(input_tuples))
 
-    output = PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,shared_map,shared_nodes)
-    return output
+    output, result_tuple_list = PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,shared_map,shared_nodes)
+    return output, result_tuple_list
 
 """
 def PageRank_Function_Shared_FastX(shared_nodes, position_size_tuple ,damping_factor,
@@ -842,6 +842,9 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
             logger.trace("")
 
 #rhc: ToDo: print array values
+        # generate a list of results, which is for each node its
+        # pagerank value, so we can return it to DAG_executor.
+        result_tuple_list = []
         print("XXPageRank result for " + task_file_name + ":", end=" ")
         #rhc shared
         for node_index in range (starting_position_in_partition_group,starting_position_in_partition_group+num_nodes_for_pagerank_computation):
@@ -851,7 +854,11 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
             #if not shared_nodes[node_index].isShadowNode:
             #rhc shared
             #print(str(partition_or_group[i].ID) + ":" + str(partition_or_group[i].pagerank),end=" ")
-            print(str(IDs[node_index]) + ":" + str(pagerank[node_index]),end=" ")
+            node_ID = IDs[node_index]
+            node_pagerank = pagerank[node_index]
+            result_tuple = (node_ID,node_pagerank)
+            result_tuple_list.append(result_tuple)
+            print(str(node_ID) + ":" + str(node_pagerank),end=" ")
         print()
         print()
         print("pagerank:")
@@ -874,7 +881,7 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
             logger.trace("pagerank:")
             logger.trace("\n"+str(pagerank))
 
-        return PageRank_output
+        return PageRank_output, result_tuple_list
 
 
 def update_PageRank_of_PageRank_Function_Shared_Fast(task_file_name,

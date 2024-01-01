@@ -149,8 +149,8 @@ def execute_task_with_result_dictionary(task,task_name,total_num_nodes,resultDic
     #    print("Argument #%d: %s" % (i, str(args[i])))
     #output = task(task_name,total_num_nodes,resultDictionary)
 #rhc: groups partitions
-    output = task(task_name,total_num_nodes,resultDictionary,groups_partitions)
-    return output
+    output,result_tuple_list = task(task_name,total_num_nodes,resultDictionary,groups_partitions)
+    return output, result_tuple_list
 
 def execute_task_with_result_dictionary_shared(task,task_name,total_num_nodes,resultDictionary,shared_map, shared_nodes):
     #commented out for MM
@@ -161,10 +161,8 @@ def execute_task_with_result_dictionary_shared(task,task_name,total_num_nodes,re
     #for i in range(0, len(args)):
     #    print("Type of argument #%d: %s" % (i, type(args[i])))
     #    print("Argument #%d: %s" % (i, str(args[i])))
-    output = task(task_name,total_num_nodes,resultDictionary,shared_map,shared_nodes)
-    return output
-
-
+    output, result_tuple_list = task(task_name,total_num_nodes,resultDictionary,shared_map,shared_nodes)
+    return output, result_tuple_list
 
 def create_and_faninNB_remotely(websocket,**keyword_arguments):
     # pass
@@ -2641,7 +2639,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         DAG_executor_state.state = cluster_queue.get()
                         #old design
                         #worker_needs_input = cluster_queue.qsize() == 0
-                        logger.info("DAG_executor_work_loop: cluster_queue contains work:"
+                        logger.trace("DAG_executor_work_loop: cluster_queue contains work:"
                             + " got state " + str(DAG_executor_state.state))
 
     #rhc: cluster:
@@ -3289,21 +3287,39 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         # we will call the task with: task(task_name,resultDictionary)
 #rhc: groups partitions
                         #output = execute_task_with_result_dictionary(task,state_info.task_name,20,result_dictionary)
-                        output = execute_task_with_result_dictionary(task,state_info.task_name,20,result_dictionary,
+                        output, result_tuple_list = execute_task_with_result_dictionary(task,state_info.task_name,20,result_dictionary,
                             groups_partitions)
                     else:
                         if use_page_rank_group_partitions:
-                            output = execute_task_with_result_dictionary_shared(task,state_info.task_name,20,result_dictionary,BFS_Shared.shared_groups_map,BFS_Shared.shared_groups)
+                            output, result_tuple_list = execute_task_with_result_dictionary_shared(task,state_info.task_name,20,result_dictionary,BFS_Shared.shared_groups_map,BFS_Shared.shared_groups)
                         else: # use the partition partitions
-                            output = execute_task_with_result_dictionary_shared(task,state_info.task_name,20,result_dictionary,BFS_Shared.shared_partition_map,BFS_Shared.shared_partition)
+                            output, result_tuple_list = execute_task_with_result_dictionary_shared(task,state_info.task_name,20,result_dictionary,BFS_Shared.shared_partition_map,BFS_Shared.shared_partition)
 
-                    # save outputs so we can check them after execution.
-                    # These are values sent to other partitions/groups,
+                    # save outputs or result so we can check them after execution.
+                    # Outputs are the values sent to other partitions/groups,
                     # not the pagerank values for each node. The outputs
                     # can be empty since a partition/group can have no 
                     # fanouts/fanins/faninNBs/collapses.
+                    # Results are the pagerank values that are computed, one
+                    # per node in the partition/group.
+                    #
+                    # At the end of execution, we wil lcheck whether an output/result
+                    # was set for each task (partition/group) and print the outputs/results.
+                    #
+                    # check_pagerank_output will only be true if:
+                    # we are computing pagerank and run_all_tasks_locally (i.e., not using real lambdas) 
+                    # and we are using workers or simulatng lambdas with threads.
+                    # In these cases, we can save the results locally in a shared
+                    # map, i.e., shared/accessed by worker threads or the threads 
+                    # simulating lambdas. When using processes or rel lambdas we woould
+                    # have to sav the results/outputs remotely. 
+                    # We might want to do that, i.e., create a map synchronzation
+                    # object stored on the tcp_server and send the outputs/results to it.
                     if check_pagerank_output:
-                        set_pagerank_output(DAG_executor_state.state,output)
+                        # We can save the task's outputs or the pagerank values
+                        # it computed, for debugging.
+                        #set_pagerank_output(DAG_executor_state.state,output)
+                        set_pagerank_output(DAG_executor_state.state,result_tuple_list)
       
                 """ where:
                     def execute_task(task,args):
