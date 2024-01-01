@@ -4758,8 +4758,8 @@ def print_BFS_stats():
             for node in g:
                 print_val += str(node) + " "
                 #print(node,end=" ")
-            logger.trace(print_val)
-            logger.trace("")
+            logger.info(print_val)
+            logger.info("")
         else:
             logger.info("-- (" + str(len(g)) + ")")
     logger.info("")
@@ -5134,6 +5134,8 @@ if __name__ == '__main__':
         
         if not use_multithreaded_BFS:
             print_BFS_stats()
+            logging.shutdown()
+            os._exit(0)
             generate_DAG_info()
         else:
             # started the DAG_generator_for_multithreaded_DAG_generation
