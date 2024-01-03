@@ -35,6 +35,10 @@ leaf_tasks_of_partitions_incremental = []
 leaf_tasks_of_groups = set()
 leaf_tasks_of_groups_incremental = []
 
+#rhc: clustering
+groups_num_shadow_nodes_map = {}
+partitions_num_shadow_nodes_map = {}
+
 # ToDo:
 # run and compare to non-incremental version
 # do incremental outputs
@@ -219,6 +223,7 @@ def generate_DAG_info():
     # Task senderX sends inputs to one or more other tasks
     for senderX in Partition_senders:
         fanouts = []
+        fanout_partition_group_sizes = []
         faninNBs = []
         fanins = []
         collapse = []
@@ -257,6 +262,14 @@ def generate_DAG_info():
                     if not receiverY in Partition_all_fanout_task_names:
                         Partition_all_fanout_task_names.append(receiverY)
                     fanouts.append(receiverY)
+#rhc: clustering
+                    #if use_page_rank_group_partitions:
+                    #   num_shadow_nodes = groups_num_shadow_nodes_map[receiverY]
+                    #else:
+                    #   num_shadow_nodes = partitions_num_shadow_nodes_map[receiverY]
+                    #fanout_partition_group_sizes.append(num_shadow_nodes)
+                    #TODO: add this to state_info
+                    #TODO: do this for groups too
             else:
                 # fanin or fannNB since receiverY receives inputs from multiple tasks
                 isFaninNB = False

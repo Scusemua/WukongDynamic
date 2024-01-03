@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 """
 For non-incremental DAG generation, Instead of generating the
 DAG_info at the end of bfs(), bfs deposits the next partition
-or group it collects in a beffer and a DAG generator thread 
+or group it collects in a buffer and a DAG generator thread 
 withdraws the partition or group and adds it to DAG_info. 
 So we ar overlapping the execution of bfs(), which builds the 
 partitions/groups, with DAG_info generation by the generator_thread. 
@@ -30,6 +30,13 @@ extend the DAG. Note: The DAG generator thread would have to
 deposit the incremental DAG into the buffer from which incremental 
 DAGs are withdrawn by the DAG_excutor threads/processes or where
 lambdas are started to excute the new tasks in the DAG.
+
+For incremental and multithreaded DAG generation we could delete
+some of the info that has been maintained for DAG generation 
+while we go, i.e., as infomation is no longer needed, delete it.
+If we generate the DAG at the end, then all of the maintained information 
+is needed at the end, which might be a lot of information.
+
 """
 
 def generator_thread(DAG_generator_for_multithreaded_DAG_generation,buffer):
@@ -39,7 +46,7 @@ def generator_thread(DAG_generator_for_multithreaded_DAG_generation,buffer):
     # by bfs().
 
     #thread_name = threading.current_thread().name # for debugging
-    
+
     while(True):
         DAG_info = None
         # get the nect partition/group from the FIFO buffer

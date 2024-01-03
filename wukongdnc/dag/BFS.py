@@ -294,7 +294,7 @@ BFS(node):
     group_names.append(group_name)
 
     # the first group collected is a leaf group of the DAG
-    leaf_tasks_of_groups.add(group_name)
+    BFS_generate_DAG_info.leaf_tasks_of_groups.add(group_name)
 
     while BFS_queue:          # loop to visit each node
         ID = BFS_queue.pop(0) # queue of integer IDs, not nodes
@@ -338,8 +338,8 @@ BFS(node):
                 # There may be many calls to BFS(). We set is_leaf_node = True at thr
                 # start of BFS.
                 if is_leaf_node:
-                    leaf_tasks_of_partitions.add(partition_name)
-                    leaf_tasks_of_partitions_incremental.add(partition_name)
+                    BFS_generate_DAG_info.leaf_tasks_of_partitions.add(partition_name)
+                    BFS_generate_DAG_info.leaf_tasks_of_partitions_incremental.add(partition_name)
                     is_leaf_node = False
 
                 ...  various other things ...
@@ -713,6 +713,7 @@ from .DAG_executor_constants import incremental_DAG_deposit_interval
 from .DAG_executor_constants import check_pagerank_output
 from .DAG_executor_constants import using_threads_not_processes
 from .DAG_executor_constants import use_multithreaded_BFS
+from .DAG_executor_constants import enable_runtime_task_clustering
 
 from .BFS_Node import Node
 from .BFS_Partition_Node import Partition_Node
@@ -720,10 +721,11 @@ from . import BFS_generate_DAG_info_incremental_partitions
 # Note: avoiding circular imports:
 # https://stackoverflow.com/questions/744373/what-happens-when-using-mutual-or-circular-cyclic-imports
 from . import BFS_generate_DAG_info_incremental_groups
-from .BFS_generate_DAG_info import generate_DAG_info
-from .BFS_generate_DAG_info import Partition_senders, Partition_receivers, Group_senders, Group_receivers
-from .BFS_generate_DAG_info import leaf_tasks_of_partitions, leaf_tasks_of_partitions_incremental
-from .BFS_generate_DAG_info import leaf_tasks_of_groups, leaf_tasks_of_groups_incremental
+#from .BFS_generate_DAG_info import generate_DAG_info
+from . import BFS_generate_DAG_info
+#from .BFS_generate_DAG_info import Partition_senders, Partition_receivers, Group_senders, Group_receivers
+#from .BFS_generate_DAG_info import leaf_tasks_of_partitions, leaf_tasks_of_partitions_incremental
+#from .BFS_generate_DAG_info import leaf_tasks_of_groups, leaf_tasks_of_groups_incremental
 from .BFS_generate_shared_partitions_groups import generate_shared_partitions_groups
 
 # This will either be a DAG_infoBuffer_Monitor or a DAG_infoBuffer_Monitor_for_Lambdas
@@ -1950,17 +1952,17 @@ def dfs_parent(visited, node):  #function for dfs
                         #sending_group = "PR"+str(parent_partition_number)+"_"+str(parent_group_number)
                         #receiving_group = "PR"+str(current_partition_number)+"_"+str(num_frontier_groups)
                         # get the set of receivers for sending_group
-                        sender_set = Group_senders.get(sending_group)
+                        sender_set = BFS_generate_DAG_info.Group_senders.get(sending_group)
                         if sender_set == None:
-                            Group_senders[sending_group] = set()
+                            BFS_generate_DAG_info.Group_senders[sending_group] = set()
                         # add receiving group as another group sending_group sends to 
-                        Group_senders[sending_group].add(receiving_group)
+                        BFS_generate_DAG_info.Group_senders[sending_group].add(receiving_group)
                         # these are the senders that send to receiver receiving_group
-                        receiver_set = Group_receivers.get(receiving_group)
+                        receiver_set = BFS_generate_DAG_info.Group_receivers.get(receiving_group)
                         if receiver_set == None:
-                            Group_receivers[receiving_group] = set()
+                            BFS_generate_DAG_info.Group_receivers[receiving_group] = set()
                         # add sending_group as another sender that sends to receiving_group
-                        Group_receivers[receiving_group].add(sending_group)
+                        BFS_generate_DAG_info.Group_receivers[receiving_group].add(sending_group)
                         # So now task receiving_group depends on sending_group
 
                         # We may nee to patch the name of the receiving group, i.e., we may yet
@@ -2298,17 +2300,17 @@ def dfs_parent(visited, node):  #function for dfs
                 #receiving_partition = "PR"+str(current_partition_number)+"_1"
                 receiving_partition = current_partition_name
                 # sender set is the partitions that receive from the sender
-                sender_set = Partition_senders.get(sending_partition)
+                sender_set = BFS_generate_DAG_info.Partition_senders.get(sending_partition)
                 if sender_set == None:
-                    Partition_senders[sending_partition] = set()
+                    BFS_generate_DAG_info.Partition_senders[sending_partition] = set()
                 # add the receiving_partition to the sender set of the sending partition
-                Partition_senders[sending_partition].add(receiving_partition)
+                BFS_generate_DAG_info.Partition_senders[sending_partition].add(receiving_partition)
                 # receiver set is the partitions that send to the receiver
-                receiver_set = Partition_receivers.get(receiving_partition)
+                receiver_set = BFS_generate_DAG_info.Partition_receivers.get(receiving_partition)
                 if receiver_set == None:
-                    Partition_receivers[receiving_partition] = set()
+                    BFS_generate_DAG_info.Partition_receivers[receiving_partition] = set()
                 # add the sending_partition to the receievr set of the receiving_partition
-                Partition_receivers[receiving_partition].add(sending_partition)
+                BFS_generate_DAG_info.Partition_receivers[receiving_partition].add(sending_partition)
                 # It's possible that even though we have not seen a loop yet in this partition,
                 # we will. At that point current_partition_isLoop will be set to true and the 
                 # current_partition_name will become an L-name, i.e., it will have an 'L'
@@ -2330,16 +2332,16 @@ def dfs_parent(visited, node):  #function for dfs
                 #receiving_group = "PR"+str(current_partition_number)+"_"+str(num_frontier_groups)
                 receiving_group = current_group_name
                 # sender set is the groups that receive from the sender
-                sender_set = Group_senders.get(sending_group)
+                sender_set = BFS_generate_DAG_info.Group_senders.get(sending_group)
                 if sender_set == None:
-                    Group_senders[sending_group] = set()
-                Group_senders[sending_group].add(receiving_group)
+                    BFS_generate_DAG_info.Group_senders[sending_group] = set()
+                BFS_generate_DAG_info.Group_senders[sending_group].add(receiving_group)
                 # receiver set is the groups that send to the receiver
-                receiver_set = Group_receivers.get(receiving_group)
+                receiver_set = BFS_generate_DAG_info.Group_receivers.get(receiving_group)
                 if receiver_set == None:
-                    Group_receivers[receiving_group] = set()
+                    BFS_generate_DAG_info.Group_receivers[receiving_group] = set()
                 # add the sending_partition to the receievr set of the receiving_partition
-                Group_receivers[receiving_group].add(sending_group)
+                BFS_generate_DAG_info.Group_receivers[receiving_group].add(sending_group)
                 # see the comment above for partitions
                 if not current_group_isLoop:
                     sender_receiver_group_patch_tuple = (parent_index_in_groups_list,receiving_group)
@@ -2566,10 +2568,10 @@ def bfs(visited, node):
     dfs_parent_loop_nodes_added_start = loop_nodes_added
 
 #rhc shared
-    if use_shared_partitions_groups:
+    if use_shared_partitions_groups or enable_runtime_task_clustering:
         # we keep a count of the total number of shadow nodes added to a group
         # or partition. Then we track the start and end values of this counter
-        # at the start of dfs_parent() so we can ientify the number end-start
+        # at the start of dfs_parent() so we can identify the number end-start
         # of shadow nodes added by dfs_parent. There is one shadow node in 
         # a group or partition for each node whose parent nodes is in a different
         # group or partition. Shadow nodes get there paerank values from the 
@@ -2675,7 +2677,6 @@ def bfs(visited, node):
     # group 1. We collect the first group here. We collect the first
     # partition (same nodes) below.
     groups.append(current_group)
-    current_group = []
 
     # this first group ends here after first dfs_parent
     global nodeIndex_to_groupIndex_maps
@@ -2730,27 +2731,36 @@ def bfs(visited, node):
     # partition. Set is_leaf_node to True so we know it is the first partition
     # collected on this call to bfs(). In general, a leaf group/partition
     # is the first group/partition of a connected component.
-    leaf_tasks_of_groups.add(group_name)
-    leaf_tasks_of_groups_incremental.append(group_name)
+    BFS_generate_DAG_info.leaf_tasks_of_groups.add(group_name)
+    BFS_generate_DAG_info.leaf_tasks_of_groups_incremental.append(group_name)
     is_leaf_node = True
-    
-    if use_shared_partitions_groups:
+
+#rhc: clustering
+    #if use_shared_partitions_groups:
+    if use_shared_partitions_groups or enable_runtime_task_clustering:
         # we are using worker processes/threads and we are putting all the 
         # groups in one shared array in an order that minimizes cache 
         # misses during the pagerank computation.
 #rhc shared
         # assert: first partition/group has no shadow_nodes
-        # compute number o shadow nodes added to first group
+        # compute number of shadow nodes added to first group
         change_in_shadow_nodes_for_group = end_num_shadow_nodes_for_groups - start_num_shadow_nodes_for_groups
         groups_num_shadow_nodes_list.append(change_in_shadow_nodes_for_group)
+        BFS_generate_DAG_info.groups_num_shadow_nodes_map[partition_name] = change_in_shadow_nodes_for_groups
         # start it here before next call to dfs_parent but note that we 
         # may not call dfs_parent() since a node popped from bfs queue
         # may not have any (unvisited) children in which case we will generate a final partition/group
         # and we need to have called start here.
         # Note that num_shadow_nodes_added_to_groups is a running total 
-        # that is not reset. We get start and end values o we can get the 
+        # that is not reset. We get start and end values so we can get the 
         # number of shadow nodes in some interval.
         start_num_shadow_nodes_for_groups = num_shadow_nodes_added_to_groups
+        #
+        # Note: This first group is also the first partition. We process the first partition 
+        # below and we add the change in the number of shadow nodes to partitions_num_shadow_nodes_list.
+
+    current_group = []
+    
 # rhc : ******* end Group
 
     # tracking the groups with loops that we found if TRACK_PARTITION_LOOPS
@@ -2849,7 +2859,6 @@ def bfs(visited, node):
                 # this includes regulat nodes and shadow nodes
                 num_nodes_in_partitions += len(current_partition)
                 # reset current_partition
-                current_partition = []
 
                 # For example: "PR2_1", "PR3_1" for partitions 2 and 3.
                 # The 1 is the group number. When we are collcting partitions
@@ -2864,6 +2873,30 @@ def bfs(visited, node):
                     partition_name = partition_name + "L"
                     # Not using this anymore, but could be usefuk later.
                     Partition_loops.add(partition_name)
+
+#rhc: clustering
+                #if use_shared_partitions_groups:
+                if use_shared_partitions_groups or enable_runtime_task_clustering:
+                    # tracking the number of shadow nodes added to current partition.
+                    # num_shadow_nodes_added_to_partitions is grand total of shadow
+                    # nodes added to the partitions. We got the start value of this 
+                    # and now we get the end value of this so that end - start is the 
+                    # number of shadow nodes added to the current partition.
+                    # For clustering, we need to know the number of nodes in the 
+                    # partition/group so we need to subtract the number of shadow 
+                    # nodes from the number of nodes in the partition/group.
+                    #
+                    # For clustering, we need to know the number of nodes in the 
+                    # partition/group so we need to subtract the number of shadow 
+                    # nodes from the number of nodes in the partition/group.
+#rhc shared
+                    end_num_shadow_nodes_for_partitions = num_shadow_nodes_added_to_partitions
+                    change_in_shadow_nodes_for_partitions = end_num_shadow_nodes_for_partitions - start_num_shadow_nodes_for_partitions
+                    partitions_num_shadow_nodes_list.append(change_in_shadow_nodes_for_partitions)
+                    BFS_generate_DAG_info.partitions_num_shadow_nodes_map[partition_name] = change_in_shadow_nodes_for_partitions
+                    start_num_shadow_nodes_for_partitions = num_shadow_nodes_added_to_partitions
+
+                current_partition = []
 
 #rhc: incremental groups
                 # For incremental DAG generation, we need to know the 
@@ -2882,8 +2915,8 @@ def bfs(visited, node):
                 # There may be many calls to BFS(). We set is_leaf_node = True at the
                 # start of bfs() above.
                 if is_leaf_node:
-                    leaf_tasks_of_partitions.add(partition_name)
-                    leaf_tasks_of_partitions_incremental.append(partition_name)
+                    BFS_generate_DAG_info.leaf_tasks_of_partitions.add(partition_name)
+                    BFS_generate_DAG_info.leaf_tasks_of_partitions_incremental.append(partition_name)
                     is_leaf_node = False
 
                 # Patch the partition name of the frontier_parent tuples. 
@@ -3022,7 +3055,7 @@ def bfs(visited, node):
                         #
                         # Patch the receiving_partition name
                         # sender set is the partitions that receive from the sender
-                        sender_name_set = Partition_senders[sending_partition]
+                        sender_name_set = BFS_generate_DAG_info.Partition_senders[sending_partition]
                         logger.trace("BFS: patching partition sender_set receiver name "
                             + receiving_partition + " to " + partition_name)
                         # remove old receiving_partition name, without the "L"
@@ -3037,9 +3070,9 @@ def bfs(visited, node):
                         # to N. But we have changed the name N by adding an "L", so we 
                         # need to use Partition_receivers[partition_name] instead of 
                         # Partition_receivers[N]. 
-                        Partition_receivers[partition_name] = Partition_receivers[receiving_partition]
-                        del Partition_receivers[receiving_partition]
-                        logger.trace("BFS: new Partition_receivers[partition_name]: " + str(Partition_receivers[partition_name]))
+                        BFS_generate_DAG_info.Partition_receivers[partition_name] = BFS_generate_DAG_info.Partition_receivers[receiving_partition]
+                        del BFS_generate_DAG_info.Partition_receivers[receiving_partition]
+                        logger.trace("BFS: new Partition_receivers[partition_name]: " + str(BFS_generate_DAG_info.Partition_receivers[partition_name]))
                 
                 sender_receiver_partition_patch_tuple_list.clear()
 
@@ -3048,17 +3081,6 @@ def bfs(visited, node):
                 # track all partition names
                 partition_names.append(partition_name)
 
-                if use_shared_partitions_groups:
-                    # tracking the number of shadow nodes added to current partition.
-                    # num_shadow_nodes_added_to_partitions is grand total of shadow
-                    # nodes added to the partitions. We got the start value of this 
-                    # and now we get the end value of this so that end - start is the 
-                    # number of shadow nodes added to the current partition.
-                    #rhc shared
-                    end_num_shadow_nodes_for_partitions = num_shadow_nodes_added_to_partitions
-                    change_in_shadow_nodes_for_partitions = end_num_shadow_nodes_for_partitions - start_num_shadow_nodes_for_partitions
-                    partitions_num_shadow_nodes_list.append(change_in_shadow_nodes_for_partitions)
-                    start_num_shadow_nodes_for_partitions = num_shadow_nodes_added_to_partitions
 
                 global patch_parent_mapping_for_partitions
                 logger.trace("BFS: partition_nodes to patch: ")
@@ -3285,19 +3307,19 @@ def bfs(visited, node):
                         if current_partition_number == 1:
 #rhc incremental groups
                             if not use_page_rank_group_partitions:
-                                if not partition_name in leaf_tasks_of_partitions_incremental:
+                                if not partition_name in BFS_generate_DAG_info.leaf_tasks_of_partitions_incremental:
                                     logger.error("partition " + partition_name + " is the first partition"
                                         + " but it is not in leaf_tasks_of_partitions_incemental.")
                                 else:
                                     # we have generated a state for leaf task partition_name. 
-                                    leaf_tasks_of_partitions_incremental.remove(partition_name)
+                                    BFS_generate_DAG_info.leaf_tasks_of_partitions_incremental.remove(partition_name)
                             else:
-                                if not group_name in leaf_tasks_of_groups_incremental:
+                                if not group_name in BFS_generate_DAG_info.leaf_tasks_of_groups_incremental:
                                     logger.error("group " + group_name + " is the first group/partition"
                                         + " but it is not in leaf_tasks_of_groups_incemental.")
                                 else:
                                     # we have generated a state for leaf task group_name. 
-                                    leaf_tasks_of_groups_incremental.remove(group_name)
+                                    BFS_generate_DAG_info.leaf_tasks_of_groups_incremental.remove(group_name)
 
 
                             if DAG_info.get_DAG_info_is_complete():
@@ -3533,7 +3555,7 @@ def bfs(visited, node):
                                     new_leaf_task_work_tuples = []           
 #rhc incremental groups
                                     if not use_page_rank_group_partitions:
-                                        if len(leaf_tasks_of_partitions_incremental) > 0:
+                                        if len(BFS_generate_DAG_info.leaf_tasks_of_partitions_incremental) > 0:
                                             # New leaf task partitions have been generated. Since no task
                                             # will fanout/fanin these leaf tasks, we must ensure they 
                                             # get started. if we are using workers, deposit these leaf 
@@ -3555,7 +3577,7 @@ def bfs(visited, node):
                                             # We need the states of these leaf tasks so we can 
                                             # create the work that is added to the work_queue.
 
-                                            logger.trace("BFS: new leaf tasks (some may be for partition/group 2):" + str(leaf_tasks_of_partitions_incremental))
+                                            logger.trace("BFS: new leaf tasks (some may be for partition/group 2):" + str(BFS_generate_DAG_info.leaf_tasks_of_partitions_incremental))
                                             DAG_states_incremental = DAG_info.get_DAG_states()
                                             # This is DAG_states of DAG_info
                                             logger.trace("BFS: DAG_states_incremental of new DAG_info: " + str(DAG_states_incremental))
@@ -3564,7 +3586,7 @@ def bfs(visited, node):
 
                                             if using_workers or not using_workers:
                                                 # leaf task states (a task is identified by its state) are put in work_queue
-                                                for name in leaf_tasks_of_partitions_incremental:
+                                                for name in BFS_generate_DAG_info.leaf_tasks_of_partitions_incremental:
                                                     state_incremental = DAG_states_incremental[name]
                                                     state_info_incremental = DAG_map_incremental[state_incremental]
                                                     logger.trace("BFS: state_info_incremental: " + str(state_info_incremental))
@@ -3588,10 +3610,10 @@ def bfs(visited, node):
                                                 pass 
                                                 # documents that we are using the same code for lambdas and workers
 
-                                            leaf_tasks_of_partitions_incremental.clear()
-                                            #logger.trace("BFS: leaf tasks after clear: " + str(leaf_tasks_of_partitions_incremental))
+                                            BFS_generate_DAG_info.leaf_tasks_of_partitions_incremental.clear()
+                                            #logger.trace("BFS: leaf tasks after clear: " + str(BFS_generate_DAG_info.leaf_tasks_of_partitions_incremental))
                                     else:
-                                        if len(leaf_tasks_of_groups_incremental) > 0:
+                                        if len(BFS_generate_DAG_info.leaf_tasks_of_groups_incremental) > 0:
                                             # New leaf task partitions have been generated. Since no task
                                             # will fanout/fanin these leaf tasks, we must ensure they 
                                             # get started; if we are using workers, deposit these leaf tasks
@@ -3641,7 +3663,7 @@ def bfs(visited, node):
     # call get_work again?
 
 
-                                            logger.trace("BFS: new leaf tasks (some may be for partition/group 2): " + str(leaf_tasks_of_groups_incremental))
+                                            logger.trace("BFS: new leaf tasks (some may be for partition/group 2): " + str(BFS_generate_DAG_info.leaf_tasks_of_groups_incremental))
                                             DAG_states_incremental = DAG_info.get_DAG_states()
                                             logger.trace("BFS: DAG_states_incremental: " + str(DAG_states_incremental))
                                             #DAG_leaf_task_start_states_incremental = DAG_info.get_DAG_leaf_task_start_states()
@@ -3649,7 +3671,7 @@ def bfs(visited, node):
 
                                             if using_workers or not using_workers:
                                                 # leaf task states (a task is identified by its state) are put in work_queue
-                                                for name in leaf_tasks_of_groups_incremental:
+                                                for name in BFS_generate_DAG_info.leaf_tasks_of_groups_incremental:
                                                     state_incremental = DAG_states_incremental[name]
                                                     state_info_incremental = DAG_map_incremental[state_incremental]
                                                     logger.trace("BFS: state_info_incremental: " + str(state_info_incremental))
@@ -3673,8 +3695,8 @@ def bfs(visited, node):
                                                 pass # complete for lambdas
                                                 # start a lambda with empty input payload (like DAG_executor_driver)
 
-                                            leaf_tasks_of_groups_incremental.clear()
-                                            #logger.trace("BFS: leaf tasks after clear: " + str(leaf_tasks_of_groups_incremental))
+                                            BFS_generate_DAG_info.leaf_tasks_of_groups_incremental.clear()
+                                            #logger.trace("BFS: leaf tasks after clear: " + str(BFS_generate_DAG_info.leaf_tasks_of_groups_incremental))
 
                                     # Deposit new incremental DAG. This may be the 
                                     # first DAG and since the workers and lambdas
@@ -3883,8 +3905,7 @@ def bfs(visited, node):
 # rhc : ******* Group
                 # Note: append() uses a shallow copy.
                 groups.append(current_group)
-                # this is a list of partition_nodes in the current group
-                current_group = []
+
                 group_name = "PR" + str(current_partition_number) + "_" + str(current_group_number)
                 if current_group_isLoop:
                     # These are the names of the groups that have a loop. In the 
@@ -3900,6 +3921,23 @@ def bfs(visited, node):
                 logger.trace("BFS: add " + group_name + "for partition number " 
                     + str(current_partition_number) 
                     + " to groups_of_current_partition: " + str(groups_of_current_partition))
+
+#rhc: clustering
+                #if use_shared_partitions_groups:
+                if use_shared_partitions_groups or enable_runtime_task_clustering:
+                    #rhc shared
+                    end_num_shadow_nodes_for_groups = num_shadow_nodes_added_to_groups
+                    change_in_shadow_nodes_for_groups = end_num_shadow_nodes_for_groups - start_num_shadow_nodes_for_groups
+                    groups_num_shadow_nodes_list.append(change_in_shadow_nodes_for_groups)
+                    BFS_generate_DAG_info.groups_num_shadow_nodes_map[partition_name] = change_in_shadow_nodes_for_groups
+                    # call start here before next call to dfs_parents(), if any, since we 
+                    # may not call dfs_parents() again as node may not have any (unvisited) children.
+                    # if no call to dfs_parent() we may still have a final partition/group and we
+                    # need to have called start before then.
+                    start_num_shadow_nodes_for_groups = num_shadow_nodes_added_to_groups
+
+                # this is a list of partition_nodes in the current group
+                current_group = []
 
 #rhc:
 # 1. clear instead of re-init?
@@ -3987,7 +4025,7 @@ def bfs(visited, node):
                         receiving_group = sender_receiver_group_patch_tuple[1]
 
                         sending_group = partition_names[index_in_groups_list_of_previous_group]
-                        sender_name_set = Group_senders[sending_group]
+                        sender_name_set = BFS_generate_DAG_info.Group_senders[sending_group]
                         logger.trace("XXXXXXX BFS: patching group sender_set receiving_group "
                             + receiving_group + " to " + group_name)
                         sender_name_set.remove(receiving_group)
@@ -3996,26 +4034,15 @@ def bfs(visited, node):
 
                         logger.trace("XXXXXXX BFS: patching Group_receivers receiver name "
                             + receiving_group + " to " + group_name)
-                        Group_receivers[group_name] = Group_receivers[receiving_group]
-                        del Group_receivers[receiving_group]
-                        logger.trace("XXXXXXX BFS:  new Group_receivers[group_name]: " + str(Group_receivers[group_name]))
+                        BFS_generate_DAG_info.Group_receivers[group_name] = BFS_generate_DAG_info.Group_receivers[receiving_group]
+                        del BFS_generate_DAG_info.Group_receivers[receiving_group]
+                        logger.trace("XXXXXXX BFS:  new Group_receivers[group_name]: " + str(BFS_generate_DAG_info.Group_receivers[group_name]))
                 
                 sender_receiver_group_patch_tuple_list.clear()
 
                 current_group_isLoop = False
                 current_group_number += 1
                 group_names.append(group_name)
-
-                if use_shared_partitions_groups:
-                    #rhc shared
-                    end_num_shadow_nodes_for_groups = num_shadow_nodes_added_to_groups
-                    change_in_shadow_nodes_for_groups = end_num_shadow_nodes_for_groups - start_num_shadow_nodes_for_groups
-                    groups_num_shadow_nodes_list.append(change_in_shadow_nodes_for_groups)
-                    # call start here before next call to dfs_parents(), if any, since we 
-                    # may not call dfs_parents() again as node may not have any (unvisited) children.
-                    # if no call to dfs_parent() we may still have a final partition/group and we
-                    # need to have called start before then.
-                    start_num_shadow_nodes_for_groups = num_shadow_nodes_added_to_groups
 
                 #global patch_parent_mapping_for_partitions
                 global patch_parent_mapping_for_groups
@@ -4961,37 +4988,37 @@ def print_BFS_stats():
         else:
             logger.trace("-- (" + str(len(x)) + ")")
     logger.trace("")
-    logger.trace("Partition_senders, len: " + str(len(Partition_senders)) + ":")
+    logger.trace("Partition_senders, len: " + str(len(BFS_generate_DAG_info.Partition_senders)) + ":")
     if PRINT_DETAILED_STATS:
-        for k, v in Partition_senders.items():
+        for k, v in BFS_generate_DAG_info.Partition_senders.items():
             logger.trace((k, v))
         logger.trace("")
     else:
-        logger.trace("-- (" + str(len(Partition_senders)) + ")")
+        logger.trace("-- (" + str(len(BFS_generate_DAG_info.Partition_senders)) + ")")
         logger.trace("")
-    logger.trace("Partition_receivers, len: " + str(len(Partition_receivers)) + ":")
+    logger.trace("Partition_receivers, len: " + str(len(BFS_generate_DAG_info.Partition_receivers)) + ":")
     if PRINT_DETAILED_STATS:
-        for k, v in Partition_receivers.items():
+        for k, v in BFS_generate_DAG_info.Partition_receivers.items():
             logger.trace((k, v))
         logger.trace("")
     else:
-        logger.trace("-- (" + str(len(Partition_receivers)) + ")")
+        logger.trace("-- (" + str(len(BFS_generate_DAG_info.Partition_receivers)) + ")")
         logger.trace("")
-    logger.trace("Group_senders, len: " + str(len(Group_senders)) + ":")
+    logger.trace("Group_senders, len: " + str(len(BFS_generate_DAG_info.Group_senders)) + ":")
     if PRINT_DETAILED_STATS:
-        for k, v in Group_senders.items():
+        for k, v in BFS_generate_DAG_info.Group_senders.items():
             logger.trace((k, v))
         logger.trace("")
     else:
-        logger.trace("-- (" + str(len(Group_senders)) + ")")
+        logger.trace("-- (" + str(len(BFS_generate_DAG_info.Group_senders)) + ")")
         logger.trace("")
 
-    logger.trace("Group_receivers, len: " + str(len(Group_receivers)) + ":")
+    logger.trace("Group_receivers, len: " + str(len(BFS_generate_DAG_info.Group_receivers)) + ":")
     if PRINT_DETAILED_STATS:
-        for k, v in Group_receivers.items():
+        for k, v in BFS_generate_DAG_info.Group_receivers.items():
             logger.trace((k, v))
     else:
-        logger.trace("-- (" + str(len(Group_receivers)) + ")")
+        logger.trace("-- (" + str(len(BFS_generate_DAG_info.Group_receivers)) + ")")
         logger.trace("")
 
 
@@ -5051,7 +5078,6 @@ if __name__ == '__main__':
         logger.trace("BFS: create final sub-partition")
         # does not require a deepcop
         partitions.append(current_partition.copy())
-        current_partition = []
 
         #rhc shared: added all the name stuff - should have been there
         partition_name = "PR" + str(current_partition_number) + "_1"
@@ -5065,18 +5091,22 @@ if __name__ == '__main__':
         current_partition_isLoop = False
         partition_names.append(partition_name)
 
-        if use_shared_partitions_groups:
+#rhc: clustering
+        #if use_shared_partitions_groups:
+        if use_shared_partitions_groups or enable_runtime_task_clustering:
             #rhc shared
             end_num_shadow_nodes_for_partitions = num_shadow_nodes_added_to_partitions
             change_in_shadow_nodes_for_partitions = end_num_shadow_nodes_for_partitions - start_num_shadow_nodes_for_partitions
             partitions_num_shadow_nodes_list.append(change_in_shadow_nodes_for_partitions)
+            BFS_generate_DAG_info.partitions_num_shadow_nodes_map[partition_name] = change_in_shadow_nodes_for_partitions
             # not needed here since we are done but kept to be consisent with use above
             start_num_shadow_nodes_for_partitions = num_shadow_nodes_added_to_partitions
+
+        current_partition = []
 
 # rhc : ******* Group
 # ToDo: if len(current_group) > 0:
         groups.append(current_group)
-        current_group = []
 
         group_name = "PR" + str(current_partition_number) + "_" + str(current_group_number)
         if current_group_isLoop:
@@ -5091,13 +5121,18 @@ if __name__ == '__main__':
         current_group_isLoop = False
         group_names.append(group_name)
 
-        if use_shared_partitions_groups:
+#rhc: clustering
+        #if use_shared_partitions_groups:
+        if use_shared_partitions_groups or enable_runtime_task_clustering:
             #rhc shared
             end_num_shadow_nodes_for_groups = num_shadow_nodes_added_to_groups
             change_in_shadow_nodes_for_groups = end_num_shadow_nodes_for_groups - start_num_shadow_nodes_for_groups
             groups_num_shadow_nodes_list.append(change_in_shadow_nodes_for_groups)
+            BFS_generate_DAG_info.groups_num_shadow_nodes_map[partition_name] = change_in_shadow_nodes_for_groups
             # not needed here since we are done but kept to be consisent with use above
             start_num_shadow_nodes_for_groups = num_shadow_nodes_added_to_groups
+
+        current_group = []
 
         nodeIndex_to_partitionIndex_maps.append(nodeIndex_to_partitionIndex_map)
         nodeIndex_to_partitionIndex_map = {}
@@ -5130,13 +5165,11 @@ if __name__ == '__main__':
 #rhc incremental
     if not use_incremental_DAG_generation:
 
-
-        
         if not use_multithreaded_BFS:
             print_BFS_stats()
-            logging.shutdown()
-            os._exit(0)
-            generate_DAG_info()
+            #logging.shutdown()
+            #os._exit(0)
+            BFS_generate_DAG_info.generate_DAG_info()
         else:
             # started the DAG_generator_for_multithreaded_DAG_generation
             # at the start of bfs() execution.
@@ -5150,7 +5183,7 @@ if __name__ == '__main__':
         # We are bfs() so we just need to join the generator 
         # thread.
         #print_BFS_stats()
-        #generate_DAG_info()
+        #BFS_generate_DAG_info.generate_DAG_info()
 
         #visualize()
         #input('Press <ENTER> to continue')

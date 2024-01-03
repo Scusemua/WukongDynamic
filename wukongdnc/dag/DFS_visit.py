@@ -50,6 +50,8 @@ class state_info:
         self.faninNB_sizes = faninNB_sizes
         self.collapse = collapse
         self.task_inputs = task_inputs
+#rhc: clustering
+        #self.fanout_partition_group_sizes = fanout_partition_group_sizes
 #rhc continue
         # True if we are using incremental DAG_info generation, which is 
         # currently only for pagerank.  For Dask Dags, we use DFS_visit.py
@@ -97,6 +99,11 @@ class state_info:
             task_inputs_string = str(self.task_inputs)
         else:
             task_inputs_string = "None"
+#rhc: clustering
+        #if self.fanout_partition_group_sizes != None:
+        #    fanout_partition_group_sizes_string = str(self.fanout_partition_group_sizes)
+        #else:
+        #    fanout_partition_group_sizes_string = "None"        
 
         ToBeContinued_string = str(self.ToBeContinued)
         fanout_fanin_faninNB_collapse_groups_partitions_string = str(self.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued)
@@ -107,7 +114,9 @@ class state_info:
 #rhc continue
             + ", ToBeContinued:" + ToBeContinued_string
             + ", fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:" + fanout_fanin_faninNB_collapse_groups_partitions_string)
-
+#rhc: clustering
+            # move this up?
+            #+ ", fanout_partition_group_sizes:" + fanout_partition_group_sizes_string)
     def __deepcopy__(self, memodict={}):
         new_instance = state_info(self.task_name,
             self.fanouts, self.fanins, self.faninNBs, self.fanin_sizes,
@@ -122,7 +131,9 @@ class state_info:
         new_instance.faninNB_sizes = copy.deepcopy(self.faninNB_sizes, memodict)
         new_instance.task_inputs = copy.deepcopy(self.task_inputs, memodict)
         new_instance.ToBeContinued = copy.deepcopy(self.ToBeContinued, memodict)
-        new_instance.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued = copy.deepcopy(self.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued, memodict)
+        new_instance.fanout_partition_group_sizes = copy.deepcopy(self.fanout_partition_group_sizes, memodict)
+#rhc: clustering
+        #new_instance.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued = copy.deepcopy(self.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued, memodict)
         
         return new_instance
 

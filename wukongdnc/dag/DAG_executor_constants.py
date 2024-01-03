@@ -252,6 +252,9 @@ same_output_for_all_fanout_fanin = not compute_pagerank
 # True if DAG generation and DAG_execution are overlapped. 
 use_incremental_DAG_generation = compute_pagerank and False
 
+# True if we are clustering fanouts that satisfy the cluster criteria
+enable_runtime_task_clustering = compute_pagerank and False
+
 # assert 
 if compute_pagerank and use_incremental_DAG_generation and create_all_fanins_faninNBs_on_start:
     logger.error("[Internal Error]: Configuration error: incremental_DAG_generation"

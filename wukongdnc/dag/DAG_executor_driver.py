@@ -1613,7 +1613,7 @@ def run():
             logger.info(str(key))
             logger.info(str(value))
         logger.info("  ")
-        """
+        
         logger.info("DAG_executor_driver: DAG states:")         
         for key, value in DAG_states.items():
             logger.info(str(key))
@@ -1642,7 +1642,7 @@ def run():
         logger.info("")
         logger.info("DAG_number_of_tasks: " + str(DAG_number_of_tasks))
         logger.info("")
-        """
+        
 
 #rhc cleanup
         #from . import BFS_Shared
