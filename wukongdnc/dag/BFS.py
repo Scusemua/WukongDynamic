@@ -2736,17 +2736,26 @@ def bfs(visited, node):
     is_leaf_node = True
 
 #rhc: clustering
+    # Note: need the group name here.
+    # Need to know the number of shadow nodes when clustering in order
+    # to compute the number of non-shadow nodes (nodies-shadow_nodes = non-shadow nodes)
     #if use_shared_partitions_groups:
     if use_shared_partitions_groups or enable_runtime_task_clustering:
         # we are using worker processes/threads and we are putting all the 
         # groups in one shared array in an order that minimizes cache 
         # misses during the pagerank computation.
 #rhc shared
-        # assert: first partition/group has no shadow_nodes
         # compute number of shadow nodes added to first group
+        end_num_shadow_nodes_for_groups = num_shadow_nodes_added_to_groups
+        # assert: first group/partition should have no shadow nodes as its nodes have no parent nodes
+        if not end_num_shadow_nodes_for_groups == 0:
+            logger.error("[Error]: Internal Error: bfs: first group/partition has shadow nodes (non-zero end).")
         change_in_shadow_nodes_for_group = end_num_shadow_nodes_for_groups - start_num_shadow_nodes_for_groups
+        # assert:
+        if not change_in_shadow_nodes_for_group == 0:
+            logger.error("[Error]: Internal Error: bfs: first group/partition has shadow nodes (non-zero change).")
         groups_num_shadow_nodes_list.append(change_in_shadow_nodes_for_group)
-        BFS_generate_DAG_info.groups_num_shadow_nodes_map[partition_name] = change_in_shadow_nodes_for_groups
+        BFS_generate_DAG_info.groups_num_shadow_nodes_map[group_name] = change_in_shadow_nodes_for_groups
         # start it here before next call to dfs_parent but note that we 
         # may not call dfs_parent() since a node popped from bfs queue
         # may not have any (unvisited) children in which case we will generate a final partition/group
@@ -2874,7 +2883,12 @@ def bfs(visited, node):
                     # Not using this anymore, but could be usefuk later.
                     Partition_loops.add(partition_name)
 
+                # Note: partition_name is collected below
+
 #rhc: clustering
+                 # Note: need the partition name here.
+                # Need to know the number of shadow nodes when clustering in order
+                # to compute the number of non-shadow nodes (nodies-shadow_nodes = non-shadow nodes)
                 #if use_shared_partitions_groups:
                 if use_shared_partitions_groups or enable_runtime_task_clustering:
                     # tracking the number of shadow nodes added to current partition.
@@ -3593,11 +3607,11 @@ def bfs(visited, node):
                                                     task_inputs = state_info_incremental.task_inputs
                                                     # assert:
                                                     if len(task_inputs) != 0:
-                                                        logger.trace("[Error]: Internal Error: task_input for leaf"
+                                                        logger.error("[Error]: Internal Error: task_input for leaf"
                                                             + " task/partition for incremental DAG generation is not empty.")
                                                     task_name = state_info_incremental.task_name
                                                     if not task_name == name:
-                                                        logger.trace("[Error]: Internal Error: task name of leaf task is not"
+                                                        logger.error("[Error]: Internal Error: task name of leaf task is not"
                                                             + " name in leaf_tasks_of_partitions_incremental.")
                                                     dict_of_results_incremental =  {}
                                                     dict_of_results_incremental[task_name] = task_inputs
@@ -3678,11 +3692,11 @@ def bfs(visited, node):
                                                     task_inputs = state_info_incremental.task_inputs
                                                     # assert:
                                                     if len(task_inputs) != 0:
-                                                        logger.trace("[Error]: Internal Error: task_input for leaf"
+                                                        logger.error("[Error]: Internal Error: task_input for leaf"
                                                             + " task/partition for incremental DAG generation is not empty.")
                                                     task_name = state_info_incremental.task_name
                                                     if not task_name == name:
-                                                        logger.trace("[Error]: Internal Error: task name of leaf task is not"
+                                                        logger.error("[Error]: Internal Error: task name of leaf task is not"
                                                             + " name in leaf_tasks_of_groups_incremental.")
                                                     dict_of_results_incremental =  {}
                                                     dict_of_results_incremental[task_name] = task_inputs
@@ -3916,6 +3930,8 @@ def bfs(visited, node):
                     group_name = group_name + "L"
                     Group_loops.add(group_name)
 
+                # Note: group_name is collected below
+
 #rhc: incremental groups
                 groups_of_current_partition.append(group_name)
                 logger.trace("BFS: add " + group_name + "for partition number " 
@@ -3923,13 +3939,17 @@ def bfs(visited, node):
                     + " to groups_of_current_partition: " + str(groups_of_current_partition))
 
 #rhc: clustering
+                # Note: need the group name here.
+                # Need to know the number of shadow nodes when clustering in order
+                # to compute the number of non-shadow nodes (nodies-shadow_nodes = non-shadow nodes)
+
                 #if use_shared_partitions_groups:
                 if use_shared_partitions_groups or enable_runtime_task_clustering:
                     #rhc shared
                     end_num_shadow_nodes_for_groups = num_shadow_nodes_added_to_groups
                     change_in_shadow_nodes_for_groups = end_num_shadow_nodes_for_groups - start_num_shadow_nodes_for_groups
                     groups_num_shadow_nodes_list.append(change_in_shadow_nodes_for_groups)
-                    BFS_generate_DAG_info.groups_num_shadow_nodes_map[partition_name] = change_in_shadow_nodes_for_groups
+                    BFS_generate_DAG_info.groups_num_shadow_nodes_map[group_name] = change_in_shadow_nodes_for_groups
                     # call start here before next call to dfs_parents(), if any, since we 
                     # may not call dfs_parents() again as node may not have any (unvisited) children.
                     # if no call to dfs_parent() we may still have a final partition/group and we
@@ -4601,7 +4621,7 @@ def print_BFS_stats():
     logger.trace("")
     logger.trace("visited length: " + str(len(visited)))
     if len(visited) != num_nodes:
-        logger.error("[Error]: BFS: visited length is " + str(len(visited))
+        logger.error("[Error]: print_BFS_stats: visited length is " + str(len(visited))
             + " but num_nodes is " + str(num_nodes))
     print_val = ""
     for x in visited:
@@ -4623,7 +4643,7 @@ def print_BFS_stats():
         logger.trace("sum_of_partition_lengths (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
             + str(sum_of_partition_lengths))
         if sum_of_partition_lengths != num_nodes:
-            logger.error("[Error]: sum_of_partition_lengths is " + str(sum_of_partition_lengths)
+            logger.error("[Error]: print_BFS_stats: sum_of_partition_lengths is " + str(sum_of_partition_lengths)
                 + " but num_nodes is " + str(num_nodes))
     else: # use_shared_partitions_groups so computing PageRank
         if not use_page_rank_group_partitions:
@@ -4634,7 +4654,7 @@ def print_BFS_stats():
                 logger.trace("shared_partition_length (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
                     + str(shared_partition_length))
                 if shared_partition_length != num_nodes:
-                    logger.error("[Error]: shared_partition_length is " + str(shared_partition_length)
+                    logger.error("[Error]: print_BFS_stats: shared_partition_length is " + str(shared_partition_length)
                         + " but num_nodes is " + str(num_nodes))
             else:
                 pass
@@ -4656,7 +4676,7 @@ def print_BFS_stats():
         logger.trace("sum_of_groups_lengths (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
             + str(sum_of_groups_lengths))
         if sum_of_groups_lengths != num_nodes:
-            logger.error("[Error]: sum_of_groups_lengths is " + str(sum_of_groups_lengths)
+            logger.error("[Error]: print_BFS_stats: sum_of_groups_lengths is " + str(sum_of_groups_lengths)
                 + " but num_nodes is " + str(num_nodes))
     else: # use_shared_partitions_groups so computing PageRank
         if use_page_rank_group_partitions:
@@ -4670,7 +4690,7 @@ def print_BFS_stats():
                 logger.trace("shared_groups_length (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
                     + str(shared_groups_length))
                 if shared_groups_length != num_nodes:
-                    logger.error("[Error]: shared_groups_length is " + str(shared_groups_length)
+                    logger.error("[Error]: print_BFS_stats: shared_groups_length is " + str(shared_groups_length)
                         + " but num_nodes is " + str(num_nodes))
             else:
                 pass
@@ -4695,7 +4715,7 @@ def print_BFS_stats():
     logger.trace(print_val)
     if PRINT_DETAILED_STATS:
         if sum_of_changes != num_nodes:
-            logger.error("[Error]: sum_of_changes is " + str(sum_of_changes)
+            logger.error("[Error]: print_BFS_stats: sum_of_changes is " + str(sum_of_changes)
                 + " but num_nodes is " + str(num_nodes))
         print_val = ""
         for x in dfs_parent_changes_in_partiton_size:
@@ -4711,7 +4731,7 @@ def print_BFS_stats():
         logger.trace("dfs_parent_changes_in_frontier_size length, len: " + str(len(dfs_parent_changes_in_frontier_size))
             + ", sum_of_changes: " + str(sum_of_changes))
         if sum_of_changes != num_nodes:
-            logger.error("[Error]: sum_of_changes is " + str(sum_of_changes)
+            logger.error("[Error]: print_BFS_stats: sum_of_changes is " + str(sum_of_changes)
                 + " but num_nodes is " + str(num_nodes))
         for x in dfs_parent_changes_in_frontier_size:
             print_val = str(x) + " "
@@ -4721,7 +4741,7 @@ def print_BFS_stats():
         logger.trace("")
     #logger.trace("frontier length: " + str(len(frontier)))
     #if len(frontier) != 0:
-    #    logger.error("[Error]: frontier length is " + str(len(frontier))
+    #    logger.error("[Error]: print_BFS_stats: frontier length is " + str(len(frontier))
     #       + " but num_nodes is " + str(num_nodes))
     #for x in frontier:
     #    logger.trace(str(x.ID), end=" ")
@@ -4746,7 +4766,7 @@ def print_BFS_stats():
             logger.trace("-- (" + str(len(frontier_list)) + ")") 
     frontiers_length = len(frontiers)
     if len(frontiers[frontiers_length-1]) != 0:
-        logger.trace ("Error]: final frontier is not empty.")
+        logger.error ("Error]: print_BFS_stats: final frontier is not empty.")
     logger.trace("")
     logger.trace("partitions, number of partitions: " + str(len(partitions))+" (length):")
 
@@ -5092,6 +5112,9 @@ if __name__ == '__main__':
         partition_names.append(partition_name)
 
 #rhc: clustering
+        # Note: need the partition name here.
+        # Need to know the number of shadow nodes when clustering in order
+        # to compute the number of non-shadow nodes (nodies-shadow_nodes = non-shadow nodes)
         #if use_shared_partitions_groups:
         if use_shared_partitions_groups or enable_runtime_task_clustering:
             #rhc shared
@@ -5122,13 +5145,14 @@ if __name__ == '__main__':
         group_names.append(group_name)
 
 #rhc: clustering
+        # Note: need the group name here.
         #if use_shared_partitions_groups:
         if use_shared_partitions_groups or enable_runtime_task_clustering:
             #rhc shared
             end_num_shadow_nodes_for_groups = num_shadow_nodes_added_to_groups
             change_in_shadow_nodes_for_groups = end_num_shadow_nodes_for_groups - start_num_shadow_nodes_for_groups
             groups_num_shadow_nodes_list.append(change_in_shadow_nodes_for_groups)
-            BFS_generate_DAG_info.groups_num_shadow_nodes_map[partition_name] = change_in_shadow_nodes_for_groups
+            BFS_generate_DAG_info.groups_num_shadow_nodes_map[group_name] = change_in_shadow_nodes_for_groups
             # not needed here since we are done but kept to be consisent with use above
             start_num_shadow_nodes_for_groups = num_shadow_nodes_added_to_groups
 

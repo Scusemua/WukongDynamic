@@ -223,6 +223,7 @@ def generate_DAG_info():
     # Task senderX sends inputs to one or more other tasks
     for senderX in Partition_senders:
         fanouts = []
+#rhc: clustering
         fanout_partition_group_sizes = []
         faninNBs = []
         fanins = []
@@ -263,13 +264,8 @@ def generate_DAG_info():
                         Partition_all_fanout_task_names.append(receiverY)
                     fanouts.append(receiverY)
 #rhc: clustering
-                    #if use_page_rank_group_partitions:
-                    #   num_shadow_nodes = groups_num_shadow_nodes_map[receiverY]
-                    #else:
-                    #   num_shadow_nodes = partitions_num_shadow_nodes_map[receiverY]
-                    #fanout_partition_group_sizes.append(num_shadow_nodes)
-                    #TODO: add this to state_info
-                    #TODO: do this for groups too
+                    num_shadow_nodes = partitions_num_shadow_nodes_map[receiverY]
+                    fanout_partition_group_sizes.append(num_shadow_nodes)
             else:
                 # fanin or fannNB since receiverY receives inputs from multiple tasks
                 isFaninNB = False
@@ -333,7 +329,9 @@ def generate_DAG_info():
                 sender_set_for_senderX_with_qualified_names.add(qualified_name)
             # sender_set_for_senderX provides input for senderX
             task_inputs = tuple(sender_set_for_senderX_with_qualified_names)
-        Partition_DAG_map[state] = state_info(senderX, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs)
+        Partition_DAG_map[state] = state_info(senderX, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs,
+#rhc: clustering
+            fanout_partition_group_sizes)
         Partition_DAG_states[senderX] = state
 
         state += 1
@@ -342,14 +340,16 @@ def generate_DAG_info():
         # there is a partition that is a leaf task but it is not a sender and not 
         # a receiver so this leaf task is not connected to any other node in the 
         # DAG. Above we see leaf tasks when we iterate thru Senders but since this
-        # leaf task is not a Sender and ny definition t is not a Receiver, we will
+        # leaf task is not a Sender and by definition it is not a Receiver, we will
         # not see it above so we take care of it here.
-        # Note: leaf tasks are the first partition/grouo collected by any call to 
+        # Note: leaf tasks are the first partition/group collected by any call to 
         # BFS(). There may be many cals to BFS(). 
         # Note: We could have more than one leaf partition/group that is 
         # disconnected. 
         logger.trace("generate_DAG_info: len(leaf_tasks_of_partitions)>0, add leaf tasks")
         fanouts = []
+#rhc: clustering
+        fanout_partition_group_sizes = []
         faninNBs = []
         fanins = []
         collapse = []
@@ -363,7 +363,9 @@ def generate_DAG_info():
             Partition_DAG_leaf_task_start_states.append(state)
             Partition_DAG_leaf_task_inputs.append(task_inputs)
 
-            Partition_DAG_map[state] = state_info(name, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs)
+            Partition_DAG_map[state] = state_info(name, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs,
+#rhc: clustering
+                fanout_partition_group_sizes)
             Partition_DAG_states[name] = state
             state += 1
 
@@ -373,6 +375,8 @@ def generate_DAG_info():
     for receiverY in Partition_sink_set: # Partition_receivers:
         #if not receiverY in Partition_DAG_states:
         fanouts = []
+#rhc: clustering
+        fanout_partition_group_sizes = []
         faninNBs = []
         fanins = []
         collapse = []
@@ -400,7 +404,9 @@ def generate_DAG_info():
         # sender_set_for_senderX provides input for senderX
         task_inputs = tuple(sender_set_for_receiverY_with_qualified_names)
 
-        Partition_DAG_map[state] = state_info(receiverY, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs)
+        Partition_DAG_map[state] = state_info(receiverY, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs,
+#rhc: clustering
+            fanout_partition_group_sizes)
         Partition_DAG_states[receiverY] = state
         state += 1
 
@@ -599,6 +605,8 @@ def generate_DAG_info():
     for senderX in Group_senders:
         logger.trace("senderX: " + senderX)
         fanouts = []
+#rhc: clustering
+        fanout_partition_group_sizes = []
         fanins = []
         faninNBs = []
         collapse = []
@@ -633,6 +641,10 @@ def generate_DAG_info():
                     if not receiverY in Group_all_fanout_task_names:
                         Group_all_fanout_task_names.append(receiverY)
                     fanouts.append(receiverY)
+#rhc: clustering
+                    num_shadow_nodes = groups_num_shadow_nodes_map[receiverY]
+                    fanout_partition_group_sizes.append(num_shadow_nodes)
+
             else:
                 # fanin or fannNB since receiverY receives inputs from multiple tasks
                 isFaninNB = False
@@ -700,7 +712,9 @@ def generate_DAG_info():
                 sender_set_for_senderX_with_qualified_names.add(qualified_name)
             # sender_set_for_senderX provides input for senderX
             task_inputs = tuple(sender_set_for_senderX_with_qualified_names)
-        Group_DAG_map[state] = state_info(senderX, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs)
+        Group_DAG_map[state] = state_info(senderX, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs,
+#rhc: clustering
+            fanout_partition_group_sizes)
         Group_DAG_states[senderX] = state
 
         state += 1
@@ -712,6 +726,8 @@ def generate_DAG_info():
     if not len(leaf_tasks_of_groups) == 0:
         logger.trace("generate_DAG_info: len(leaf_tasks_of_groups)>0, add leaf tasks")
         fanouts = []
+#rhc: clustering
+        fanout_partition_group_sizes = []
         faninNBs = []
         fanins = []
         collapse = []
@@ -725,7 +741,9 @@ def generate_DAG_info():
             Group_DAG_leaf_task_start_states.append(state)
             Group_DAG_leaf_task_inputs.append(task_inputs)
 
-            Group_DAG_map[state] = state_info(name, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs)
+            Group_DAG_map[state] = state_info(name, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs,
+#rhc: clustering
+                fanout_partition_group_sizes)
             Group_DAG_states[name] = state
             state += 1
 
@@ -735,6 +753,8 @@ def generate_DAG_info():
     for receiverY in Group_sink_set: # Partition_receivers:
         #if not receiverY in Partition_DAG_states:
             fanouts = []
+#rhc: clustering
+            fanout_partition_group_sizes = []
             faninNBs = []
             fanins = []
             collapse = []
@@ -760,7 +780,9 @@ def generate_DAG_info():
             # sender_set_for_senderX provides input for senderX
             task_inputs = tuple(sender_set_for_receiverY_with_qualified_names)
 
-            Group_DAG_map[state] = state_info(receiverY, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs)
+            Group_DAG_map[state] = state_info(receiverY, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs,
+#rhc: clustering
+                fanout_partition_group_sizes)
             Group_DAG_states[receiverY] = state
             state += 1
 
@@ -1052,7 +1074,7 @@ def generate_DAG_info():
 
 
 """
-DELETE THIS
+DELETE THIS - note: it was not updated with changes, e.g., clustering
 def OLD_generate_DAG_info_incremental_partitions(partition_name,current_partition_number,is_complete):
     Partition_all_fanout_task_names = []
     Partition_all_fanin_task_names = []
@@ -1100,6 +1122,8 @@ def OLD_generate_DAG_info_incremental_partitions(partition_name,current_partitio
 
     for senderX in Partition_senders:
         fanouts = []
+#rhc: clustering
+        fanout_partition_group_sizes = []
         faninNBs = []
         fanins = []
         collapse = []
@@ -1152,6 +1176,8 @@ def OLD_generate_DAG_info_incremental_partitions(partition_name,current_partitio
         receiverY = next(iter(Partition_sink_set))
         #if not receiverY in Partition_DAG_states:
         fanouts = []
+#rhc: clustering
+        fanout_partition_group_sizes = []
         faninNBs = []
         fanins = []
         collapse = []

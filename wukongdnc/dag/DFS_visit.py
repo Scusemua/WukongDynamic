@@ -40,18 +40,20 @@ class state_info:
         fanin_sizes = None, faninNB_sizes = None, task_inputs = None,
 #rhc continue
         ToBeContinued = False,
-        fanout_fanin_faninNB_collapse_groups_partitions=False):
+        fanout_fanin_faninNB_collapse_groups_partitions=False,
+#rhc: clustering
+        fanout_partition_group_sizes = None):
 
         self.task_name = task_name
         self.fanouts = fanouts      # see comment below for examples
+#rhc: clustering
+        self.fanout_partition_group_sizes = fanout_partition_group_sizes
         self.fanins = fanins
         self.faninNBs = faninNBs
         self.fanin_sizes = fanin_sizes
         self.faninNB_sizes = faninNB_sizes
         self.collapse = collapse
         self.task_inputs = task_inputs
-#rhc: clustering
-        #self.fanout_partition_group_sizes = fanout_partition_group_sizes
 #rhc continue
         # True if we are using incremental DAG_info generation, which is 
         # currently only for pagerank.  For Dask Dags, we use DFS_visit.py
@@ -66,9 +68,11 @@ class state_info:
         state_info_cls = state_info_object
         return cls(state_info_cls.task_name, state_info_cls.fanouts, state_info_cls.fanins, state_info_cls.faninNBs, state_info_cls.collapse,
             state_info_cls.fanin_sizes, state_info_cls.faninNB_sizes, state_info_cls.task_inputs,
-#rhc continue
+#rhc: continue
             state_info_cls.ToBeContinued,
-            state_info_cls.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued)
+            state_info_cls.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued,
+#rhc: clustering
+            state_info_cls.fanout_partition_group_sizes)
 
     def __str__(self):
         if self.fanouts != None:
@@ -100,27 +104,29 @@ class state_info:
         else:
             task_inputs_string = "None"
 #rhc: clustering
-        #if self.fanout_partition_group_sizes != None:
-        #    fanout_partition_group_sizes_string = str(self.fanout_partition_group_sizes)
-        #else:
-        #    fanout_partition_group_sizes_string = "None"        
-
+        if self.fanout_partition_group_sizes != None:
+            fanout_partition_group_sizes_string = str(self.fanout_partition_group_sizes)
+        else:
+            fanout_partition_group_sizes_string = "None"  
         ToBeContinued_string = str(self.ToBeContinued)
         fanout_fanin_faninNB_collapse_groups_partitions_string = str(self.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued)
 
         return (" task: " + self.task_name + ", fanouts:" + fanouts_string + ", fanins:" + fanins_string + ", faninsNB:" + faninNBs_string
             + ", collapse:" + collapse_string + ", fanin_sizes:" + fanin_sizes_string
             + ", faninNB_sizes:" + faninNB_sizes_string + ", task_inputs:" + task_inputs_string
+#rhc: clustering
+            + ", fanout_partition_group_sizes:" + fanout_partition_group_sizes_string
 #rhc continue
             + ", ToBeContinued:" + ToBeContinued_string
             + ", fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:" + fanout_fanin_faninNB_collapse_groups_partitions_string)
-#rhc: clustering
-            # move this up?
-            #+ ", fanout_partition_group_sizes:" + fanout_partition_group_sizes_string)
+
     def __deepcopy__(self, memodict={}):
         new_instance = state_info(self.task_name,
             self.fanouts, self.fanins, self.faninNBs, self.fanin_sizes,
-            self.faninNB_sizes, self.collapse, self.task_inputs, self.ToBeContinued)
+            self.faninNB_sizes, self.collapse, self.task_inputs, self.ToBeContinued,
+            self.state_info_cls.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued,
+#rhc: clustering
+            self.state_info_cls.fanout_partition_group_sizes)
         new_instance.__dict__.update(self.__dict__)
         new_instance.task_name = copy.deepcopy(self.task_name, memodict)
         new_instance.fanouts = copy.deepcopy(self.fanouts, memodict)
@@ -131,9 +137,9 @@ class state_info:
         new_instance.faninNB_sizes = copy.deepcopy(self.faninNB_sizes, memodict)
         new_instance.task_inputs = copy.deepcopy(self.task_inputs, memodict)
         new_instance.ToBeContinued = copy.deepcopy(self.ToBeContinued, memodict)
+        new_instance.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued = copy.deepcopy(self.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued, memodict)
+#rhc: clusteting
         new_instance.fanout_partition_group_sizes = copy.deepcopy(self.fanout_partition_group_sizes, memodict)
-#rhc: clustering
-        #new_instance.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued = copy.deepcopy(self.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued, memodict)
         
         return new_instance
 
