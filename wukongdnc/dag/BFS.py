@@ -2756,7 +2756,8 @@ def bfs(visited, node):
             logging.shutdown()
             os._exit(0)
         groups_num_shadow_nodes_list.append(change_in_shadow_nodes_for_groups)
-        BFS_generate_DAG_info.groups_num_shadow_nodes_map[group_name] = change_in_shadow_nodes_for_groups
+        size_of_group = len(current_group) - change_in_shadow_nodes_for_groups
+        BFS_generate_DAG_info.groups_num_shadow_nodes_map[group_name] = size_of_group
         # start it here before next call to dfs_parent but note that we 
         # may not call dfs_parent() since a node popped from bfs queue
         # may not have any (unvisited) children in which case we will generate a final partition/group
@@ -2908,7 +2909,8 @@ def bfs(visited, node):
                     end_num_shadow_nodes_for_partitions = num_shadow_nodes_added_to_partitions
                     change_in_shadow_nodes_for_partitions = end_num_shadow_nodes_for_partitions - start_num_shadow_nodes_for_partitions
                     partitions_num_shadow_nodes_list.append(change_in_shadow_nodes_for_partitions)
-                    BFS_generate_DAG_info.partitions_num_shadow_nodes_map[partition_name] = change_in_shadow_nodes_for_partitions
+                    size_of_partition = len(current_partition) - change_in_shadow_nodes_for_partitions
+                    BFS_generate_DAG_info.partitions_num_shadow_nodes_map[partition_name] = size_of_partition
                     start_num_shadow_nodes_for_partitions = num_shadow_nodes_added_to_partitions
 
                 current_partition = []
@@ -3951,7 +3953,8 @@ def bfs(visited, node):
                     end_num_shadow_nodes_for_groups = num_shadow_nodes_added_to_groups
                     change_in_shadow_nodes_for_groups = end_num_shadow_nodes_for_groups - start_num_shadow_nodes_for_groups
                     groups_num_shadow_nodes_list.append(change_in_shadow_nodes_for_groups)
-                    BFS_generate_DAG_info.groups_num_shadow_nodes_map[group_name] = change_in_shadow_nodes_for_groups
+                    size_of_group = len(current_group) - change_in_shadow_nodes_for_groups
+                    BFS_generate_DAG_info.groups_num_shadow_nodes_map[group_name] = size_of_group
                     # call start here before next call to dfs_parents(), if any, since we 
                     # may not call dfs_parents() again as node may not have any (unvisited) children.
                     # if no call to dfs_parent() we may still have a final partition/group and we
@@ -5123,7 +5126,8 @@ if __name__ == '__main__':
             end_num_shadow_nodes_for_partitions = num_shadow_nodes_added_to_partitions
             change_in_shadow_nodes_for_partitions = end_num_shadow_nodes_for_partitions - start_num_shadow_nodes_for_partitions
             partitions_num_shadow_nodes_list.append(change_in_shadow_nodes_for_partitions)
-            BFS_generate_DAG_info.partitions_num_shadow_nodes_map[partition_name] = change_in_shadow_nodes_for_partitions
+            size_of_partition = len(current_partition) - change_in_shadow_nodes_for_partitions
+            BFS_generate_DAG_info.partitions_num_shadow_nodes_map[partition_name] = size_of_partition
             # not needed here since we are done but kept to be consisent with use above
             start_num_shadow_nodes_for_partitions = num_shadow_nodes_added_to_partitions
 
@@ -5154,7 +5158,8 @@ if __name__ == '__main__':
             end_num_shadow_nodes_for_groups = num_shadow_nodes_added_to_groups
             change_in_shadow_nodes_for_groups = end_num_shadow_nodes_for_groups - start_num_shadow_nodes_for_groups
             groups_num_shadow_nodes_list.append(change_in_shadow_nodes_for_groups)
-            BFS_generate_DAG_info.groups_num_shadow_nodes_map[group_name] = change_in_shadow_nodes_for_groups
+            size_of_group = len(current_group) - change_in_shadow_nodes_for_groups
+            BFS_generate_DAG_info.groups_num_shadow_nodes_map[group_name] = size_of_group
             # not needed here since we are done but kept to be consisent with use above
             start_num_shadow_nodes_for_groups = num_shadow_nodes_added_to_groups
 

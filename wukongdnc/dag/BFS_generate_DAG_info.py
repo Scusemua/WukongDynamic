@@ -649,7 +649,7 @@ def generate_DAG_info():
                         num_shadow_nodes = groups_num_shadow_nodes_map[receiverY]
                         logger.trace("number of shadow nodes for " + receiverY + " is " + str(num_shadow_nodes)) 
                         fanout_partition_group_sizes.append(num_shadow_nodes)
-                        logger.trce("fanout_partition_group_sizes after append: " + str(fanout_partition_group_sizes))
+                        logger.trace("fanout_partition_group_sizes after append: " + str(fanout_partition_group_sizes))
 
             else:
                 # fanin or fannNB since receiverY receives inputs from multiple tasks
