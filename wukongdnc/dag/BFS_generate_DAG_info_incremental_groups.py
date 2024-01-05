@@ -560,6 +560,8 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         # upon return to BFS() (when we see tht leaf tasks have been added to the DAG)
 
         fanouts = []
+#rhc: clustering
+        fanout_partition_group_sizes = []
         faninNBs = []
         fanins = []
         collapse = []
@@ -627,7 +629,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
 
     else:
         # Flag to indicate whether we are processing the first group_name of the groups in the 
-        # previous partition. Used and rset below.
+        # previous partition. Used and reset below.
         first_previous_group = True
         for group_name in groups_of_current_partition:
             # Get groups, if any, that output to group group_name. These are groups in 

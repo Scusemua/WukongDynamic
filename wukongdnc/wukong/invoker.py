@@ -25,7 +25,7 @@ from ..dag.DAG_executor_constants import bypass_call_lambda_client_invoke
 from ..dag.DAG_executor_constants import run_all_tasks_locally, bypass_call_lambda_client_invoke
 
 if run_all_tasks_locally and not bypass_call_lambda_client_invoke:
-    logger.trace("invoker: AWS_PROFILE: " + AWS_PROFILE)
+    #logger.trace("invoker: AWS_PROFILE: " + AWS_PROFILE)
     session = boto3.session.Session(profile_name = AWS_PROFILE)
     lambda_client = session.client('lambda', region_name = "us-east-1")
 else:

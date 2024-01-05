@@ -62,7 +62,8 @@ class state_info:
         self.ToBeContinued = ToBeContinued
         # True if any of the fanout_fanin_faninNB_collapse_group_partitions are incomplete
         self.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued = fanout_fanin_faninNB_collapse_groups_partitions
-
+        self.fanout_partition_group_sizes = fanout_partition_group_sizes
+        
     @classmethod
     def state_info_fromstate_info(cls, state_info_object):
         state_info_cls = state_info_object
@@ -124,9 +125,9 @@ class state_info:
         new_instance = state_info(self.task_name,
             self.fanouts, self.fanins, self.faninNBs, self.fanin_sizes,
             self.faninNB_sizes, self.collapse, self.task_inputs, self.ToBeContinued,
-            self.state_info_cls.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued,
+            self.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued,
 #rhc: clustering
-            self.state_info_cls.fanout_partition_group_sizes)
+            self.fanout_partition_group_sizes)
         new_instance.__dict__.update(self.__dict__)
         new_instance.task_name = copy.deepcopy(self.task_name, memodict)
         new_instance.fanouts = copy.deepcopy(self.fanouts, memodict)

@@ -1,5 +1,7 @@
 import logging
 import cloudpickle
+import os
+
 from .DAG_info import DAG_Info
 from .DFS_visit import state_info
 from .BFS_pagerank import PageRank_Function_Driver, PageRank_Function_Driver_Shared
@@ -7,7 +9,7 @@ from .BFS_Shared import PageRank_Function_Driver_Shared_Fast
 from .DAG_executor_constants import use_shared_partitions_groups, use_page_rank_group_partitions
 from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
 #from .DAG_executor_constants import using_threads_not_processes, use_multithreaded_multiprocessing
-
+from .DAG_executor_constants import enable_runtime_task_clustering
 logger = logging.getLogger(__name__)
 
 """
@@ -264,8 +266,9 @@ def generate_DAG_info():
                         Partition_all_fanout_task_names.append(receiverY)
                     fanouts.append(receiverY)
 #rhc: clustering
-                    num_shadow_nodes = partitions_num_shadow_nodes_map[receiverY]
-                    fanout_partition_group_sizes.append(num_shadow_nodes)
+                    if enable_runtime_task_clustering:
+                        num_shadow_nodes = partitions_num_shadow_nodes_map[receiverY]
+                        fanout_partition_group_sizes.append(num_shadow_nodes)
             else:
                 # fanin or fannNB since receiverY receives inputs from multiple tasks
                 isFaninNB = False
@@ -331,7 +334,7 @@ def generate_DAG_info():
             task_inputs = tuple(sender_set_for_senderX_with_qualified_names)
         Partition_DAG_map[state] = state_info(senderX, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs,
 #rhc: clustering
-            fanout_partition_group_sizes)
+            False,  False, fanout_partition_group_sizes)
         Partition_DAG_states[senderX] = state
 
         state += 1
@@ -365,7 +368,7 @@ def generate_DAG_info():
 
             Partition_DAG_map[state] = state_info(name, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs,
 #rhc: clustering
-                fanout_partition_group_sizes)
+                False,  False, fanout_partition_group_sizes)
             Partition_DAG_states[name] = state
             state += 1
 
@@ -406,7 +409,7 @@ def generate_DAG_info():
 
         Partition_DAG_map[state] = state_info(receiverY, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs,
 #rhc: clustering
-            fanout_partition_group_sizes)
+            False,  False, fanout_partition_group_sizes)
         Partition_DAG_states[receiverY] = state
         state += 1
 
@@ -637,13 +640,16 @@ def generate_DAG_info():
                     # only one task sends input to receiverY and this sending 
                     # task sends to other tasks too, so senderX does a fanout 
                     # to receiverY   
-                    logger.trace("sender " + senderX + " --> " + receiverY + " : Fanout")
+                    logger.info("sender " + senderX + " --> " + receiverY + " : Fanout")
                     if not receiverY in Group_all_fanout_task_names:
                         Group_all_fanout_task_names.append(receiverY)
                     fanouts.append(receiverY)
 #rhc: clustering
-                    num_shadow_nodes = groups_num_shadow_nodes_map[receiverY]
-                    fanout_partition_group_sizes.append(num_shadow_nodes)
+                    if enable_runtime_task_clustering:
+                        num_shadow_nodes = groups_num_shadow_nodes_map[receiverY]
+                        logger.trace("number of shadow nodes for " + receiverY + " is " + str(num_shadow_nodes)) 
+                        fanout_partition_group_sizes.append(num_shadow_nodes)
+                        logger.trce("fanout_partition_group_sizes after append: " + str(fanout_partition_group_sizes))
 
             else:
                 # fanin or fannNB since receiverY receives inputs from multiple tasks
@@ -712,9 +718,11 @@ def generate_DAG_info():
                 sender_set_for_senderX_with_qualified_names.add(qualified_name)
             # sender_set_for_senderX provides input for senderX
             task_inputs = tuple(sender_set_for_senderX_with_qualified_names)
+        
+        logger.info("fanout_partition_group_sizes for state_info: " + str(fanout_partition_group_sizes))
         Group_DAG_map[state] = state_info(senderX, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs,
 #rhc: clustering
-            fanout_partition_group_sizes)
+            False, False, fanout_partition_group_sizes)
         Group_DAG_states[senderX] = state
 
         state += 1
@@ -743,7 +751,7 @@ def generate_DAG_info():
 
             Group_DAG_map[state] = state_info(name, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs,
 #rhc: clustering
-                fanout_partition_group_sizes)
+                False,  False, fanout_partition_group_sizes)
             Group_DAG_states[name] = state
             state += 1
 
@@ -782,7 +790,7 @@ def generate_DAG_info():
 
             Group_DAG_map[state] = state_info(receiverY, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs,
 #rhc: clustering
-                fanout_partition_group_sizes)
+                False,  False, fanout_partition_group_sizes)
             Group_DAG_states[receiverY] = state
             state += 1
 

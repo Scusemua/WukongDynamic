@@ -2,6 +2,7 @@ import logging
 import cloudpickle
 import threading
 import queue
+import os
 
 from . import BFS_generate_DAG_info_incremental_partitions
 from . import BFS_generate_DAG_info_incremental_groups
@@ -45,7 +46,7 @@ def generator_thread(DAG_generator_for_multithreaded_DAG_generation,buffer):
     # buffer is where it withdraws the partitions/groups deposited 
     # by bfs().
 
-    #thread_name = threading.current_thread().name # for debugging
+    thread_name = threading.current_thread().name # for debugging
 
     while(True):
         DAG_info = None
@@ -63,8 +64,8 @@ def generator_thread(DAG_generator_for_multithreaded_DAG_generation,buffer):
         #
         # See the comment on deposit() below.
         next_partition_or_group = buffer.get()
-        #logger.trace(thread_name + "generator_thread: called get."
-        #    + " use_page_rank_group_partitions: " + str(use_page_rank_group_partitions))
+        logger.info(thread_name + "generator_thread: called get."
+            + " use_page_rank_group_partitions: " + str(use_page_rank_group_partitions))
 
         if use_page_rank_group_partitions:
             # tuple was created as:
@@ -139,12 +140,53 @@ class DAG_Generator_Multithreaded:
             current_partition_number, groups_of_current_partition,
             groups_of_partitions,
             to_be_continued)
+        
+        logger.info("here")
+        DAG_map = DAG_info.get_DAG_map()
+        DAG_states = DAG_info.get_DAG_states()
+        DAG_leaf_tasks = DAG_info.get_DAG_leaf_tasks()
+        DAG_leaf_task_start_states = DAG_info.get_DAG_leaf_task_start_states()
+        DAG_version_number = DAG_info.get_DAG_version_number()
+        DAG_is_complete = DAG_info.get_DAG_info_is_complete()
+        DAG_number_of_tasks = DAG_info.get_DAG_number_of_tasks()
+        # FYI:
+        logger.info("DAG_executor_driver: DAG_map:")
+        for key, value in DAG_map.items():
+            logger.info(str(key))
+            logger.info(str(value))
+        logger.info("  ")
+        logger.info("DAG_executor_driver: DAG states:")         
+        for key, value in DAG_states.items():
+            logger.info(str(key))
+            logger.info(str(value))
+        logger.info("   ")
+        logger.info("DAG_executor_driver: DAG leaf task start states")
+        for start_state in DAG_leaf_task_start_states:
+            logger.info(str(start_state))
+        logger.info("")
+        logger.info("DAG_executor_driver: DAG_leaf_tasks:")
+        for task_name in DAG_leaf_tasks:
+            logger.info(task_name)
+        logger.info("") 
+        logger.info("'")
+        logger.info("DAG_version: " + str(DAG_version_number))
+        logger.info("")
+        logger.info("DAG_is_complete: " + str(DAG_is_complete))
+        logger.info("")
+        logger.info("DAG_number_of_tasks: " + str(DAG_number_of_tasks))
+        logger.info("")
+
+        if DAG_number_of_tasks > 1:
+            logging.shutdown()
+            os._exit(0)
+        
         return DAG_info
     
     # see comment for group version above
     def generate_DAG_info_multithreaded_partitions(self,
             current_partition_name,current_partition_number,to_be_continued):
         
+
         DAG_info = BFS_generate_DAG_info_incremental_partitions.generate_DAG_info_incremental_partitions(current_partition_name,current_partition_number,to_be_continued)
         return DAG_info
 

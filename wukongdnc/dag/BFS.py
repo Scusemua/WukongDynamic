@@ -2720,11 +2720,13 @@ def bfs(visited, node):
     group_names.append(group_name)
 
 #rhc: incremental groups
-    # For incremental DAG generation, we track the groups in the current
-    # partition. We will need to iterate through these groups.
-    groups_of_current_partition.append(group_name)
-    logger.trace("BFS: add " + group_name + "to groups_of_current_partition: "
-        + str(groups_of_current_partition))
+    if compute_pagerank and (use_incremental_DAG_generation or use_multithreaded_BFS):
+        # For incremental DAG generation, we track the groups in the current
+        # partition. We will need to iterate through these groups.
+        groups_of_current_partition.append(group_name)
+        logger.info("BFS: add " + group_name + " to groups_of_current_partition: "
+            + str(groups_of_current_partition))
+    
 
     # The first group collected by call to bfs() is a leaf node of the DAG.
     # There may be many calls to bfs(). Below, we will collect the first
@@ -2747,14 +2749,13 @@ def bfs(visited, node):
 #rhc shared
         # compute number of shadow nodes added to first group
         end_num_shadow_nodes_for_groups = num_shadow_nodes_added_to_groups
-        # assert: first group/partition should have no shadow nodes as its nodes have no parent nodes
-        if not end_num_shadow_nodes_for_groups == 0:
-            logger.error("[Error]: Internal Error: bfs: first group/partition has shadow nodes (non-zero end).")
-        change_in_shadow_nodes_for_group = end_num_shadow_nodes_for_groups - start_num_shadow_nodes_for_groups
+        change_in_shadow_nodes_for_groups = end_num_shadow_nodes_for_groups - start_num_shadow_nodes_for_groups
         # assert:
-        if not change_in_shadow_nodes_for_group == 0:
+        if not change_in_shadow_nodes_for_groups == 0:
             logger.error("[Error]: Internal Error: bfs: first group/partition has shadow nodes (non-zero change).")
-        groups_num_shadow_nodes_list.append(change_in_shadow_nodes_for_group)
+            logging.shutdown()
+            os._exit(0)
+        groups_num_shadow_nodes_list.append(change_in_shadow_nodes_for_groups)
         BFS_generate_DAG_info.groups_num_shadow_nodes_map[group_name] = change_in_shadow_nodes_for_groups
         # start it here before next call to dfs_parent but note that we 
         # may not call dfs_parent() since a node popped from bfs queue
@@ -2913,17 +2914,17 @@ def bfs(visited, node):
                 current_partition = []
 
 #rhc: incremental groups
-                # For incremental DAG generation, we need to know the 
-                # groups that each partition contains. That is, when we process
-                # the groups of the current_partion, which is being added to the 
-                # end of the incremental DAG, we need to know the groups of the 
-                # previous partition an the groups of the previous previous partition.
-                groups_of_partitions.append(copy.copy(groups_of_current_partition))
+                if compute_pagerank and (use_incremental_DAG_generation or use_multithreaded_BFS):
+                    # For incremental DAG generation, we need to know the 
+                    # groups that each partition contains. That is, when we process
+                    # the groups of the current_partion, which is being added to the 
+                    # end of the incremental DAG, we need to know the groups of the 
+                    # previous partition an the groups of the previous previous partition.
+                    groups_of_partitions.append(copy.copy(groups_of_current_partition))
 
-                logger.trace("BFS: for partition " + partition_name + " collect groups_of_current_partition: "
-                    + str(groups_of_current_partition)
-                    + ", groups_of_partitions: " + str(groups_of_partitions)) 
-
+                    logger.trace("BFS: for partition " + partition_name + " collect groups_of_current_partition: "
+                        + str(groups_of_current_partition)
+                        + ", groups_of_partitions: " + str(groups_of_partitions)) 
 
                 # The first partition collected by any call to BFS() is a leaf node of the DAG.
                 # There may be many calls to BFS(). We set is_leaf_node = True at the
@@ -3933,10 +3934,11 @@ def bfs(visited, node):
                 # Note: group_name is collected below
 
 #rhc: incremental groups
-                groups_of_current_partition.append(group_name)
-                logger.trace("BFS: add " + group_name + "for partition number " 
-                    + str(current_partition_number) 
-                    + " to groups_of_current_partition: " + str(groups_of_current_partition))
+                if compute_pagerank and (use_incremental_DAG_generation or use_multithreaded_BFS):
+                    groups_of_current_partition.append(group_name)
+                    logger.trace("BFS: add " + group_name + "for partition number " 
+                        + str(current_partition_number) 
+                        + " to groups_of_current_partition: " + str(groups_of_current_partition))
 
 #rhc: clustering
                 # Note: need the group name here.
@@ -4222,7 +4224,7 @@ def input_graph():
     # usd to convert the gaph to networkX format so we can run networkX 
     # algorithms on it, e.g., fnd_cycle, diameter.
     networkX_lines = []
-    fname = "graph_3000"
+    #fname = "graph_3000"
     #fname = "graph_WB"
     # These are whiteboard graphs with various extensions
     # that, e.g., add connected components (CC)
@@ -4230,7 +4232,7 @@ def input_graph():
     #fname = "graph_23N"
     #fname = "graph_24N_3CC"
 
-    #fname = "graph_24N_3CC_fanin"   # fanin at end
+    fname = "graph_24N_3CC_fanin"   # fanin at end
 
     #fname = "graph_2N_2CC"  # 2 nodes (CCs) no edges
     #fname = "graph_3N_3CC"  # 3 nodes (CCs) no edges
