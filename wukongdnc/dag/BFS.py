@@ -2808,6 +2808,13 @@ def bfs(visited, node):
             # got a -1 so pop again to get an ID, if the bfs queue is not empty 
             if BFS_queue:
                 ID = BFS_queue.pop(0)
+                #assert: 
+                if ID == -1:
+                    logger.error("[Error]: Internal Error: bfs: immediately after popping a -1"
+                        + " we pop a second -1.")
+                    logging.shutdown()
+                    os._exit(0)
+
                 logger.trace("bfs after pop -1; pop node " + str(ID) + " from queue") 
                 # add -1 to the end of bfs_queue, which means that all the IDs in the 
                 # queue are the Node IDs of the nodes in the next partition (and its groups)
@@ -4755,7 +4762,7 @@ def print_BFS_stats():
     #for x in frontier_cost:
     #    logger.trace(str(x), end=" ")
     #logger.trace("")
-    # final frontier shoudl always be empty
+    # final frontier should always be empty
     # assert: 
     logger.trace("frontiers: (final fronter should be empty), number of frontiers: " + str(len(frontiers))+ " (length):")
     for frontier_list in frontiers:
@@ -5098,10 +5105,28 @@ if __name__ == '__main__':
 
 # rhc : ******* Partition
 
-    # Do last partition/group if there is one
+    # This should never happen? If it can, we need to add the 
+    # partition/group to incremental DAG if we are generating
+    # DAGs incrementally. 
+    # When we pop a -1 from the BFSQueue
+    # the currrent partition is complete - we collect the 
+    # current partition and process it. If the BFSQueue is 
+    # now empty, we break the while(BFS_queue) loop which
+    # ends bfs() and brings us here. As part of procssing 
+    # the current partition, we set current_partition to []
+    # and do frontier.clear(). So len(current_partition) should
+    # be 0 and likewise for frontier.
+    #      
+    # Do last partition/group if there is one.
+    # assert:
     if len(current_partition) > 0:
+        logger.error("[Error] Internal Error: bfs: len(current_partition) > 0"
+            + " after last call to bfs.")
+        logging.shutdown()
+        os._exit(0)
+
         logger.trace("BFS: create final sub-partition")
-        # does not require a deepcop
+        # does not require a deepcopy
         partitions.append(current_partition.copy())
 
         #rhc shared: added all the name stuff - should have been there
@@ -5181,8 +5206,17 @@ if __name__ == '__main__':
         frontier_cost = "atEnd:" + str(len(frontier))
         frontier_costs.append(frontier_cost)
     else:
-        # always do this - below we assert final frontier is empty
-        # does not require a deepcop
+
+        if len(frontier) > 0:
+            logger.error("[Error] Internal Error: bfs: len(frontier) > 0"
+                + " after last call to bfs.")
+            logging.shutdown()
+            os._exit(0)
+
+        # Always do this - below we assert final frontier is empty.
+        # Does not require a deepcopy.
+        # ToDo: We can stop doing this and remove the assertion
+        # in print_BFS_stats().
         frontiers.append(frontier.copy())
 
     # generate shared array of partitions/groups if using multithreaded workers

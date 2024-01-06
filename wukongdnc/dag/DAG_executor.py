@@ -2460,7 +2460,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                     # value that can be returned and hence no wrapper is used.
 
                                     #new_DAG_info, new_leaf_task_states = DAG_infobuffer_monitor.withdraw(requested_current_version_number)
-                                    logger.trace("calling withdraw:")
+                                    logger.info("calling withdraw:")
                                     DAG_info_and_new_leaf_task_states_tuple = DAG_infobuffer_monitor.withdraw(requested_current_version_number)
                                     new_DAG_info = DAG_info_and_new_leaf_task_states_tuple[0]
                                     new_leaf_task_states = DAG_info_and_new_leaf_task_states_tuple[1]
@@ -2849,6 +2849,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         logger.error("[Error]: For lambda, continued_task is True"
                             + " but continued_due_to_TBC is False.")
                     continued_task = continued_due_to_TBC
+                    logger.info("lambda continued task is true")
 
                 elif cluster_queue.qsize() > 0:
                     first_iteration_of_work_loop_for_lambda == False
@@ -2964,7 +2965,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             # Also, a group task that has been executed but that has TBC fanins/fanouts
             # to continued groups is put into the continue queue. We need
             # to know whether a task taken out of the continue queue should 
-            # be executed or not. So, when we put a task i the continue queue
+            # be executed or not. So, when we put a task ni the continue queue
             # we also mark the reason it was put in there, i.e., if it had
             # TBC fanins/fanouts then it does not need to be executed. So
             # above when we take it out of the continue queue, it it was already
@@ -2981,6 +2982,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             # it has TBC fanins/fanouts so it is again placed in the continue
             # queue and should not be excuted again after we get it from the 
             # continue queue.
+            logger.info("here1")
             if incremental_dag_generation_with_groups and continued_task:
             #if incremental_dag_generation_with_groups and continued_task and (
             # (state_info.task_name == name_of_first_groupOrpartition_in_DAG or not state_info.task_name in DAG_info.get_DAG_leaf_tasks())
@@ -2993,7 +2995,11 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # "input" in the payload. Here we assign input to output
                 # which we will use when we process the restarted task's
                 # fanins/fanouts/collpases (next).
-                output = input
+                logger.info("here2")
+                logging.shutdown()
+                os._exit(0)
+                if not using_workers:
+                    output = input
                 # do not execute this group/task since it has been excuted before.
             else:
                 # Execute task (but which task?)
@@ -3417,7 +3423,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         data_dict_value = v
                         data_dict[data_dict_key] = data_dict_value
 
-                logger.trace("data_dict: " + str(data_dict))
+                logger.info("data_dict: " + str(data_dict))
+                logger.info("output: " + str(output))
 
                 # Can use this sleep to make a thread last to call FaninNB - adjust the state in which you want
                 # the call to fan_in to be last. Last caller can get the faninNB task work, if it has 
@@ -3468,8 +3475,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 # AFTER TASK EXECUTION - process fanout/faninNB/fanin/collapse
 # ------------------------------------------------------------------
 # ------------------------------------------------------------------
-
-
+            logger.info("output2: " + str(output))
             if not using_workers and compute_pagerank and use_incremental_DAG_generation and (
                 use_page_rank_group_partitions and state_info.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued
             ):
@@ -3506,6 +3512,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 requested_current_version_number = DAG_info.get_DAG_version_number() + 1
                 logger.trace("DAG_executor: call withdraw.")
                 logger.trace("type is " + str(type(DAG_infobuffer_monitor)))
+                logger.info("before call witdraw: output: " + str(output))
                 new_DAG_info = DAG_infobuffer_monitor.withdraw(requested_current_version_number,DAG_executor_state.state,output)
                 logger.trace("DAG_executor: back from withdraw.")
                 if not new_DAG_info == None:
@@ -3534,10 +3541,14 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # we can do (i.e., we cannot execute this groups fanins/fanouts
                     # so we can stop.)
             else:
-                logger.trace("DAG_executor: lambda does NOT try to get new incremental DAG for lambda.")
-            #logging.shutdown()
-            #os._exit(0)
+                if not using_workers and compute_pagerank and use_incremental_DAG_generation and (
+                    use_page_rank_group_partitions
+                ):
+                    logger.trace("DAG_executor: Lambda does NOT try to get new incremental DAG for lambda.")
+                    #logging.shutdown()
+                    #os._exit(0)
             
+            logger.info("output3: " + str(output))
             if (compute_pagerank and use_incremental_DAG_generation and (
                     use_page_rank_group_partitions and state_info.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued)
                 ):
@@ -3557,6 +3568,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # Truly a continued task (i.e., with TBC fanins/fanouts/collpases)
                     continue_tuple = (DAG_executor_state.state,True)
                     #continue_queue.put(DAG_executor_state.state)
+                    logger.info("output4: " + str(output))
                     continue_queue.put(continue_tuple)
                     logger.trace("DAG_executor_work_loop: put TBC collapsed work in continue_queue:"
                         + " state is " + str(DAG_executor_state.state))
@@ -3633,7 +3645,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 # has no TBC. So if we get past that, the group has no TBC or we aer using partitions
 # or not doing inc?
 # Q: what if using lambdas and groups (i.e., second conjunct is true)?
-
+                
                 if not(compute_pagerank and use_incremental_DAG_generation) or (compute_pagerank and use_incremental_DAG_generation and use_page_rank_group_partitions):
 #rhc: lambda inc: # implied that this state has no TBC otherwise preceding if would have been true?
 # So we handle group TBC collapse above and partition TBC collapse below? Here is no inc

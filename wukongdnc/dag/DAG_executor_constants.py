@@ -45,14 +45,14 @@ store_fanins_faninNBs_locally = True
 # execute a Fan_in operaation on the created object.
 # 
 # This mus be false if we aer doing incremental_DAG_generation; this is asserted below.
-create_all_fanins_faninNBs_on_start = True
+create_all_fanins_faninNBs_on_start = False
 
 # True if the DAG is executed by a "pool" of threads/processes. False, if we are
 # using Lambdas or we are using threads to simulate the use of Lambdas. In the latter
 # case, instead of, e.g., starting a Lambda at fan_out operations, we start a thread.
 # This results in the creation of many threads and is only use to test the logic 
 # of the Lambda code.
-using_workers = True
+using_workers = False
 # True when we are not using Lambas and tasks are executed by threads instead of processes. 
 # False when we are not using lambdas and are using multiprocesssing 
 using_threads_not_processes = True
@@ -250,7 +250,7 @@ check_pagerank_output = compute_pagerank and run_all_tasks_locally and (using_wo
 same_output_for_all_fanout_fanin = not compute_pagerank
 
 # True if DAG generation and DAG_execution are overlapped. 
-use_incremental_DAG_generation = compute_pagerank and False
+use_incremental_DAG_generation = compute_pagerank and True
 
 # True if we are clustering fanouts that satisfy the cluster criteria
 enable_runtime_task_clustering = compute_pagerank and True

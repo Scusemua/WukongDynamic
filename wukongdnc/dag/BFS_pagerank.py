@@ -607,14 +607,14 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partiti
                 PageRank_output[partition_or_group_name] = output_list
 
     #if (debug_pagerank):
-    #print("XXPageRank output tuples for " + task_file_name + ":")
+    print("XXPageRank output tuples for " + task_file_name + ":")
     if not using_threads_not_processes:
         logger.trace("XXPageRank output tuples for " + task_file_name + ": ")
     print_val = ""
     for k, v in PageRank_output.items():
         if not using_threads_not_processes:
             print_val += "(%s, %s) " % (k, v)
-        #print((k, v),end=" ")
+        print((k, v),end=" ")
     if not using_threads_not_processes:
         logger.trace(print_val)
         logger.trace("")

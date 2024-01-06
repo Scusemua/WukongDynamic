@@ -10,9 +10,11 @@ from .BFS_Shared import PageRank_Function_Driver_Shared_Fast
 from .DAG_executor_constants import use_shared_partitions_groups
 from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
 #from .DAG_executor_constants import using_threads_not_processes, use_multithreaded_multiprocessing
+from .DAG_executor_constants import enable_runtime_task_clustering
 
 from .BFS_generate_DAG_info import Group_senders, Group_receivers
 from .BFS_generate_DAG_info import leaf_tasks_of_groups_incremental
+from .BFS_generate_DAG_info import groups_num_shadow_nodes_map
 
 # Note: avoiding circular imports:
 # https://stackoverflow.com/questions/744373/what-happens-when-using-mutual-or-circular-cyclic-imports
@@ -577,7 +579,10 @@ def generate_DAG_info_incremental_groups(current_partition_name,
             # is False in which case there are no more partitions and no fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued
             # that are incomplete. If to_be_continued is True then we set fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued
             # to True but we may change this value when we process partition 2.
-            to_be_continued)
+            to_be_continued,
+#rhc: clustering
+            fanout_partition_group_sizes)
+
         Group_DAG_states[name_of_first_group_in_DAG] = Group_next_state
 
         # identify the function that will be used to execute this task
@@ -678,6 +683,8 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 Group_DAG_leaf_task_inputs.append(task_inputs)
 
                 fanouts = []
+#rhc: clustering
+                fanout_partition_group_sizes = []
                 faninNBs = []
                 fanins = []
                 collapse = []
@@ -693,7 +700,10 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                     # is False in which case there are no more partitions and no fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued
                     # that are incomplete. If to_be_continued is True then we set fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued
                     # to True but we may change this value when we process partition 2.
-                    to_be_continued)
+                    to_be_continued,
+#rhc: clustering
+                    fanout_partition_group_sizes)
+                
                 Group_DAG_states[group_name] = Group_next_state
 
                 # identify the function that will be used to execute this task
@@ -773,6 +783,8 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                         Group_sink_set = set()
 
                         fanouts = []
+#rhc: clustering
+                        fanout_partition_group_sizes = []
                         fanins = []
                         faninNBs = []
                         collapse = []
@@ -881,6 +893,13 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                                         Group_all_fanout_task_names.append(receiverY)
                                     # add receiverY to the fanout set of previous_group
                                     fanouts.append(receiverY)
+#rhc: clustering
+                                    if enable_runtime_task_clustering:
+                                        num_shadow_nodes = groups_num_shadow_nodes_map[receiverY]
+                                        logger.trace("number of shadow nodes for " + receiverY + " is " + str(num_shadow_nodes)) 
+                                        fanout_partition_group_sizes.append(num_shadow_nodes)
+                                        logger.trace("fanout_partition_group_sizes after append: " + str(fanout_partition_group_sizes))
+
                             else:
                                 # previous_group has fanin or fannNB to group receiverY since 
                                 # receiverY receives inputs from multiple groups. Determine
@@ -963,6 +982,9 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                         # this below.
                         fanouts_of_previous_state = state_info_of_previous_group.fanouts
                         fanouts_of_previous_state += fanouts
+
+                        fanout_partition_group_sizes_of_previous_state = state_info_of_previous_group.fanout_partition_group_sizes
+                        fanout_partition_group_sizes_of_previous_state += fanout_partition_group_sizes                      
 
                         fanins_of_previous_state = state_info_of_previous_group.fanins
                         fanins_of_previous_state += fanins
@@ -1071,6 +1093,8 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 # incomplete and we will complete it when we process
                 # the (groups in the) next partition.
                 fanouts = []
+#rhc: clustering
+                fanout_partition_group_sizes = []
                 faninNBs = []
                 fanins = []
                 collapse = []
@@ -1085,7 +1109,10 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                     # is False in which case there are no more partitions and no fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued
                     # that are incomplete. If to_be_continued is True then we set fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued
                     # to True but we may change this value when we process partition 2.
-                    to_be_continued)
+                    to_be_continued,
+#rhc: clustering
+                    fanout_partition_group_sizes)
+                
                 Group_DAG_states[group_name] = Group_next_state
 
                 # identify function used to execute this pagerank task (see comments above)
@@ -1139,6 +1166,8 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                         Group_sink_set = set()
 
                         fanouts = []
+#rhc: clustering
+                        fanout_partition_group_sizes = []
                         fanins = []
                         faninNBs = []
                         collapse = []
@@ -1247,6 +1276,13 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                                     # we are generating the sets of collapse/fanin/fanout/faninNB
                                     # of previous_group
                                     fanouts.append(receiverY)
+#rhc: clustering
+                                    if enable_runtime_task_clustering:
+                                        num_shadow_nodes = groups_num_shadow_nodes_map[receiverY]
+                                        logger.trace("number of shadow nodes for " + receiverY + " is " + str(num_shadow_nodes)) 
+                                        fanout_partition_group_sizes.append(num_shadow_nodes)
+                                        logger.trace("fanout_partition_group_sizes after append: " + str(fanout_partition_group_sizes))
+
                             else:
                                 # previous_group has fanin or fannNB to group receiverY since 
                                 # receiverY receives inputs from multiple groups.
@@ -1313,6 +1349,9 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                         # constructed incrementally. 
                         fanouts_of_previous_state = state_info_of_previous_group.fanouts
                         fanouts_of_previous_state += fanouts
+
+                        fanout_partition_group_sizes_of_previous_state = state_info_of_previous_group.fanout_partition_group_sizes
+                        fanout_partition_group_sizes_of_previous_state += fanout_partition_group_sizes                      
 
                         fanins_of_previous_state = state_info_of_previous_group.fanins
                         fanins_of_previous_state += fanins
