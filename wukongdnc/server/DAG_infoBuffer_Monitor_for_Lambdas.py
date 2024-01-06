@@ -408,7 +408,8 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     # we must execute the colapse task. So when we restart the partition/task,
                     # we supply the input for the collpase task and execute the collapse task.)
                     input_or_output = start_tuple[1]              
-                    DAG_exec_state = DAG_executor_State(function_name = "WukongDivideAndConquer:"+task_name, function_instance_ID = str(uuid.uuid4()), state = start_state, continued_task = True)
+                    DAG_exec_state = DAG_executor_State(function_name = "WukongDivideAndConquer:"+task_name, function_instance_ID = str(uuid.uuid4()), 
+                        state = start_state, continued_task = True)
                     DAG_exec_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
                     DAG_exec_state.return_value = None
                     DAG_exec_state.blocking = False

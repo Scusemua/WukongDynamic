@@ -3790,6 +3790,7 @@ def bfs(visited, node):
                                     invoker_thread_for_DAG_executor_driver = threading.Thread(target=DAG_executor_driver_Invoker_Thread, name=(thread_name), args=())
 
                                     invoker_thread_for_DAG_executor_driver.start()
+                                    time.sleep(10)
                                 else:
                                     # For debugging:
                                     # This is not partition 1 and it is not partition 2 so we do not 

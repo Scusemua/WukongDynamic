@@ -1525,7 +1525,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
         num_tasks_to_execute = DAG_number_of_tasks
 #rhc: lambda inc:
         continued_task = DAG_executor_state.continued_task
-        logger.trace("DAG_executor_work_loop: at start: lambda executes a continued task: " + str(continued_task)
+        logger.info("DAG_executor_work_loop: at start: lambda executes a continued task: " + str(continued_task)
             + " for state " + str(DAG_executor_state.state))
     else:
         if not (compute_pagerank and use_incremental_DAG_generation):
@@ -2982,6 +2982,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             # it has TBC fanins/fanouts so it is again placed in the continue
             # queue and should not be excuted again after we get it from the 
             # continue queue.
+
             logger.info("here1")
             if incremental_dag_generation_with_groups and continued_task:
             #if incremental_dag_generation_with_groups and continued_task and (
@@ -2995,11 +2996,13 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # "input" in the payload. Here we assign input to output
                 # which we will use when we process the restarted task's
                 # fanins/fanouts/collpases (next).
-                logger.info("here2")
-                logging.shutdown()
-                os._exit(0)
-                if not using_workers:
-                    output = input
+                logger.info("here2: state_info.task_inputs: "
+                    + str(state_info.task_inputs))
+                #logging.shutdown()
+                #os._exit(0)
+                #if not using_workers:
+                #output = input
+                output = state_info.task_inputs
                 # do not execute this group/task since it has been excuted before.
             else:
                 # Execute task (but which task?)
@@ -3192,7 +3195,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # as the task_inputs, instad of just using "S", which is the Dask way.
                 result_dictionary =  {}
                 if not is_leaf_task:
-                    logger.trace("Packing data. Task inputs: %s. Data dict (keys only): %s" % (str(task_inputs), str(data_dict.keys())))
+                    logger.info("Packing data for non-leaf task. Task inputs: %s. Data dict (keys only): %s" % (str(task_inputs), str(data_dict.keys())))
                     # task_inputs is a tuple of task_names
                     args = pack_data(task_inputs, data_dict)
                     logger.trace(thread_name + " argsX: " + str(args))
@@ -3246,6 +3249,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         os._exit(0)
                     """
                 else:
+                    logger.info("for leaf task args is task_inputs.")
                     # if not triggering tasks in lambdas task_inputs is a tuple of input values, e.g., (1,)
                     if not (store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks):
                         args = task_inputs
@@ -3433,16 +3437,16 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 #if DAG_executor_state.state == 8:
                 #    time.sleep(0.5)
 
-                # If len(state_info.fanouts) > 0 then we will make one 
-                # fanout task a become task and remove this task from
-                # fanouts. Thus, starting_number_of_fanouts allows to 
-                # remember whether we will have a become task. If
-                # we are using threads to simulate lambdas and real lambdas
-                # then we should not return after processing the fanouts
-                # and faninNBs since we can continue and execure the 
-                # become task. The check of starting_number_of_fanouts
-                # is below.
-                starting_number_of_fanouts = len(state_info.fanouts)
+            # If len(state_info.fanouts) > 0 then we will make one 
+            # fanout task a become task and remove this task from
+            # fanouts. Thus, starting_number_of_fanouts allows to 
+            # remember whether we will have a become task. If
+            # we are using threads to simulate lambdas and real lambdas
+            # then we should not return after processing the fanouts
+            # and faninNBs since we can continue and execure the 
+            # become task. The check of starting_number_of_fanouts
+            # is below.
+            starting_number_of_fanouts = len(state_info.fanouts)
 
             #rhc continue
             """
@@ -3481,10 +3485,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             ):
                 
 #rhc: lambda inc:
-                logger.trace("DAG_executor: work loop: after task execution, lambda"
-                    + " checks for new DAG if TBC and if TBC and no new DAG then stops."
-                    + " if TBC workers with groups will add groups to continue_queue"
-                    + " else all will process collapse/fanout/faninNB/fanins.")
+                logger.info("DAG_executor: work loop: after task execution, lambda"
+                    + " checks for new DAG if TBC and if TBC and no new DAG then stops.")
 
                 logger.trace("DAG_executor: Work_loop: lambda try to get new incremental DAG for lambda.")
 
@@ -4346,9 +4348,15 @@ def DAG_executor(payload):
     
     if not using_workers:
         state_info = DAG_map[DAG_exec_state.state]
-        logger.info("DAG_executor(): simulated lambda (thread) starting for " + state_info.task_name)
+        logger.info("DAG_executor: simulated lambda (thread) starting for " + state_info.task_name)
 
+        continued_task = DAG_exec_state.continued_task
+        logger.info("DAG_executor: state_info.task_name: " + state_info.task_name
+            + " continued_task: " + str(continued_task))
+    
         is_leaf_task = state_info.task_name in DAG_info.get_DAG_leaf_tasks()
+        logger.info("DAG_executor: state_info.task_name: " + state_info.task_name
+            + " is_leaf_task: " + str(is_leaf_task))
         if not is_leaf_task:
             logger.trace("DAG_executor(): verify inputs are in data_dict: ")
             # lambdas invoked with inputs. We do not add leaf task inputs to the data
@@ -4363,10 +4371,37 @@ def DAG_executor(payload):
                         + " data_dict missing value for input key " + str(key))
                 else:
                     logger.trace("DAG_executor:verified: " + str(key))
+#rhc:  input output
+            if continued_task:
+                state_info.task_inputs = dict_of_results
+                logger.info("DAG_executor: dict_of_results for continued and non-leaf task"
+                    + state_info.task_name + ": state_info.task_inputs:"
+                    + str(dict_of_results))
         else:
-            pass
+#rhc:  input output
+            if continued_task:
+                dict_of_results = payload['input']
+                state_info.task_inputs = dict_of_results
+                logger.info("DAG_executor: dict_of_results for continued and leaf task"
+                    + state_info.task_name + ": state_info.task_inputs:"
+                    + str(dict_of_results))
             # leaf tasks have no input arguments; the inputs for leaf tasks are
             # stored in the DAG (as Dask does)']
+            #
+            # Not however, for incrementl DAG generation, for a continued
+            # task that is a group, we will not excuet the task as it
+            # has already been executed. We need the outputs of this
+            # execution, which were passsed for lambdas in the payload
+            # when the lambda was (re)started to exexcute the continued
+            # task as the payload's "input". We gran these inputs/outputs
+            # and sore them in state_info.task_inputs, from which we
+            # will retrieve the outputs when we see tha the task is
+            # continued, i.e., we grab te output and do the fanouts/fanins
+            # of the continued task.
+            # Note: It is kay to put the outputs in state_info.task_inputs since
+            # we will not ty to retrieve this output as the input for
+            # excuting that task; this is because the task is continued
+            # so we do not try to execute it.
 
     # work_queue is the global shared work queue, which is none when we are using threads
     # to simulate lambdas and is a Queue when we are using worker threads. See imported file
@@ -4549,11 +4584,15 @@ def DAG_executor_lambda(payload):
 
     DAG_map = DAG_info.get_DAG_map()
 
-    #rhc: lambda: Need to get the continued_task flag from the payload.
+    #Note: get the continued_task flag from the payload.
     
     state_info = DAG_map[DAG_exec_state.state]
     logger.info("DAG_executor_lambda() starting for " + state_info.task_name)
 
+#rhc:  input output
+    continued_task = state_info.ToBeContinued
+    logger.info("DAG_executor_lambda(): state_info.task_name: " + state_info.task_name
+        + " continued_task: " + str(continued_task))
     is_leaf_task = state_info.task_name in DAG_info.get_DAG_leaf_tasks()
     if not is_leaf_task:
         # lambdas invoked with inputs. We do not add leaf task inputs to the data
@@ -4563,8 +4602,16 @@ def DAG_executor_lambda(payload):
             dict_of_results = cloudpickle.loads(base64.b64decode(payload['input']))
         else:
             dict_of_results = payload['input']
+        # If this is a continued task then input is actually the output
+        # of a task that was executed previously and that then stopped
+        # because it was a group with TBC fanouts/fanins.
+
         for key, value in dict_of_results.items():
             data_dict[key] = value
+
+#rhc:  input output
+        if continued_task:
+            state_info.task_input = dict_of_results
     else:
         # Passing leaf task input as state_info.task_inputs in DAG_info; 
         # We don't want to add a leaf task input parameter to DAG_executor_work_loop(); 
