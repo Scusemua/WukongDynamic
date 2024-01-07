@@ -338,8 +338,14 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
         # will create a new simulated Lambda to run the fanin task. Since
         # we pass the DAG_info in the payload to the created simulated Lambda,
         # we need to give DAG_info to the FaninNB so we pass it here.
-        if store_fanins_faninNBs_locally and run_all_tasks_locally and not using_workers:
-            keyword_arguments['DAG_info'] = DAG_info
+        # 
+        # Note: When we are using workers we do not need to pass DAG_info
+        # since the worker threads have the (incremental or non-incremental)
+        # DAG_info and the faninNB will put the fanin task in the work queue
+        # for the workers to execute. 
+        # We pass DAG_info all the time.
+        #if store_fanins_faninNBs_locally and run_all_tasks_locally: 
+        keyword_arguments['DAG_info'] = DAG_info
         # We start a thread that makes the local call to server.create_and_faninNB_locally
         # or server.faninNB_locally. server.create_and_faninNB_locally will
         # crrate the local FaninB and call its init() method passing this DAG_info.
@@ -1598,24 +1604,19 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             # are computing pagerank, so far. Pagerank DAGS are the
             # only DAGS we generate ourselves, so far.
             if compute_pagerank and use_incremental_DAG_generation:
-                if using_workers:
-                    DAG_infobuffer_monitor = Remote_Client_for_DAG_infoBuffer_Monitor(websocket)
-                else:
-                    DAG_infobuffer_monitor = Remote_Client_for_DAG_infoBuffer_Monitor_for_Lambdas(websocket)  
-
-#rhc continue
-# ToDo: need to create the remote DAG_infobuffer_monitor. The remote
-#       work queue is created by the DAG_executor_driver since the driver
-#       needs to deposit leaf task work in the work queue before
-#       creating the worker processes.
-#       We can create it here? or let the driver create it and 
-#       just make calls to deposit and withdraw in DAG_executor,
-#       as we do for the work queue.
-#       Note: the driver either creates the work queue at the start
-#       in which case is does not need to call create() or the
-#       fanins/fanouts/faninNBs are crated on demand in which case
-#       since the driver needs to use the work queue it calls create().
-#
+                # Note: we are using_workers with worker processes
+                DAG_infobuffer_monitor = Remote_Client_for_DAG_infoBuffer_Monitor(websocket)
+ 
+            # Note: The remote work queue is created by the DAG_executor_driver 
+            # since the driver needs to deposit leaf task work in the work queue before
+            # creating the worker processes. We let the driver also create the 
+            # DAG_infobuffer_monitor and below we make calls to deposit and withdraw 
+            # in DAG_executor, as we do for the work queue.
+            # Note: the driver either creates the work queue at the start
+            # in which case is does not need to call create() the first time
+            # it accesses the work queue, or the fanins/fanouts/faninNBs are created 
+            # on demand in which case since the driver needs to use the work queue 
+            # it calls create() before its first access of the queue.
 
         #else: # Config: A1, A2, A3, A4_local, A4_Remote
 
@@ -2165,6 +2166,11 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     continued_task = continued_due_to_TBC
                     #continued_task = True
 
+                    if continued_task:
+                        continued_output_for_worker = continue_tuple[2]
+                    else:
+                        continued_output_for_worker = None
+
                     # If we are done executing the continued tasks then turn
                     # process_continue_queue off. Note: When we aer executing 
                     # partitions, instead of groups, there is only ever one
@@ -2308,7 +2314,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                                         + " put work in continue_queue:"
                                                         + " state is " + str(DAG_executor_state.state))
                                                 else:
-                                                    pass # lambdas TBD: call Continue object w/output
+                                                    # This work loop is only for non-ambdas
+                                                    pass
                                             else:
                                                 # we got work (not -1) from the work queue (a non-leaf task),
                                                 # so break the while(True) loop.
@@ -2460,7 +2467,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                     # value that can be returned and hence no wrapper is used.
 
                                     #new_DAG_info, new_leaf_task_states = DAG_infobuffer_monitor.withdraw(requested_current_version_number)
-                                    logger.info("calling withdraw:")
+                                    logger.info("calling withdrawX:")
                                     DAG_info_and_new_leaf_task_states_tuple = DAG_infobuffer_monitor.withdraw(requested_current_version_number)
                                     new_DAG_info = DAG_info_and_new_leaf_task_states_tuple[0]
                                     new_leaf_task_states = DAG_info_and_new_leaf_task_states_tuple[1]
@@ -2473,7 +2480,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 
                                     # worker got a new DAG_info and will keep going.
                                     completed_workers = completed_workers_counter.decrement_and_get()
-                                    logger.trace("DAG_executor_work_loop: after withdraw: workers_completed:  " + str(completed_workers))
+                                    logger.info("DAG_executor_work_loop: after withdraw: workers_completed:  " + str(completed_workers))
                                     # make this explicit
                                     DAG_info = new_DAG_info
                                     # upate DAG_ma and DAG_tasks with their new versions in DAG_info
@@ -2531,7 +2538,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                             # A later version has 1 or more complete tasks that were incomplete
                                             # in an earlier version.
                                             num_tasks_to_execute = DAG_number_of_tasks - number_of_incomplete_tasks
-                                            logger.trace("DAG_executor_work_loop: after withdraw: DAG_info not complete: new num_tasks_to_execute: " 
+                                            logger.info("DAG_executor_work_loop: after withdraw: DAG_info not complete: new num_tasks_to_execute: " 
                                                 + str(num_tasks_to_execute) + " with number_of_incomplete_tasks "
                                                 + str(number_of_incomplete_tasks))
                                         else:
@@ -2560,12 +2567,17 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                         # indicate whether we are rexecuting a continued_task
                                         continued_task = continued_due_to_TBC
                                         #continued_task = True
+                                        if continued_task:
+                                            continued_output_for_worker = continue_tuple[2]
+                                        else:
+                                            continued_output_for_worker = None
 
                                         #state_info = DAG_map[DAG_executor_state.state]
                                         # The continued task will be executed next.
                                         # We get its state info below.
-                                        logger.trace("DAG_executor_work_loop: For new DAG_info, continued state: " + str(DAG_executor_state.state)
-                                            +" state_info: " + str(DAG_map[DAG_executor_state.state]))
+                                        logger.info("DAG_executor_work_loop: For new DAG_info, continued state: " + str(DAG_executor_state.state)
+                                            + " state_info: " + str(DAG_map[DAG_executor_state.state])
+                                            + " continued_output_for_worker: " + str(continued_output_for_worker))
 #rhc continue
 
                                         # if there are more continued tasks, we set flag 
@@ -2582,6 +2594,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                             process_continue_queue = True
 
                                     else:
+                                        logger.info("DAG_executor_work_loop: after withdraw continue queue is empty.")
                                         # We got a new DAG_info, but we have no continued tasks to execute.
                                         # Note that we tried to get work which ultimaely led to us getting
                                         # a new DAG and reaching this point. We have to continued tasks
@@ -2857,10 +2870,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     DAG_executor_state.state = cluster_queue.get()
                     # Question: Do not do this
                     #worker_needs_input = cluster_queue.qsize() == 0
-                    state_info = DAG_map[DAG_executor_state.state]
+                    dummy_state_info = DAG_map[DAG_executor_state.state]
                     logger.info("DAG_executor_work_loop: simulated or real lambda:"
                         + " cluster_queue contains work: got state " + str(DAG_executor_state.state)
-                        + " for task name " + state_info.task_name)
+                        + " for task name " + dummy_state_info.task_name)
 #rhc: cluster:
                     #assert:
                     if not cluster_queue.qsize() == 0:
@@ -2998,11 +3011,16 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # fanins/fanouts/collpases (next).
                 logger.info("here2: state_info.task_inputs: "
                     + str(state_info.task_inputs))
+                logger.info("here2: continued_output_for_worker: "
+                    + str(continued_output_for_worker))
                 #logging.shutdown()
                 #os._exit(0)
                 #if not using_workers:
                 #output = input
-                output = state_info.task_inputs
+                if not using_workers:
+                    output = state_info.task_inputs
+                else:
+                    output = continued_output_for_worker
                 # do not execute this group/task since it has been excuted before.
             else:
                 # Execute task (but which task?)
@@ -3568,11 +3586,11 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     #    + " state is " + str(DAG_executor_state.state))
 #rhc: lambda inc: cq.put                    
                     # Truly a continued task (i.e., with TBC fanins/fanouts/collpases)
-                    continue_tuple = (DAG_executor_state.state,True)
+                    continue_tuple = (DAG_executor_state.state,True,output)
                     #continue_queue.put(DAG_executor_state.state)
                     logger.info("output4: " + str(output))
                     continue_queue.put(continue_tuple)
-                    logger.trace("DAG_executor_work_loop: put TBC collapsed work in continue_queue:"
+                    logger.info("DAG_executor_work_loop: put TBC collapsed work in continue_queue:"
                         + " state is " + str(DAG_executor_state.state))
                 else:
 #rhc: lambda inc:
@@ -3717,7 +3735,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             # collapse of i and execute this collapse task.
 #rhc: lambda inc: cq.put        
                             # Truly a continued task (i.e., with TBC fanins/fanouts/collpases)
-                            continue_tuple = (DAG_executor_state.state,True)
+                            continue_tuple = (DAG_executor_state.state,True,output)
                             #continue_queue.put(DAG_executor_state.state)
                             continue_queue.put(continue_tuple)
                             logger.trace("DAG_executor_work_loop: put state with TBC collapse in continue_queue:"

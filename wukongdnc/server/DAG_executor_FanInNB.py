@@ -239,7 +239,7 @@ class DAG_executor_FanInNB(MonitorSU):
                     return self._results, restart  # all threads have called so return results
                     #return 1, restart  # all threads have called so return results
             elif self.store_fanins_faninNBs_locally and run_all_tasks_locally:
-                # Note this FaNInNBs is stored locally; we start a new thread to execute fanin task
+                # Note this FaNInNBs is stored locally; using simulated lambdas
                 if not using_threads_not_processes:
                     logger.error("[Error]: FaninB: storing fanins locally but not using threads.")
   
