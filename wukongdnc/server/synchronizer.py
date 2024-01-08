@@ -40,7 +40,7 @@ class Synchronizer(object):
         "fanin", "FanIn", "CountingSemaphore_Monitor", "CountingSemaphore_Monitor_Select", 
         "BoundedBuffer_Select", "DAG_executor_FanIn", "DAG_executor_FanInNB",
         "DAG_executor_FanIn_Select", "DAG_executor_FanInNB_Select",
-        "DAG_infoBuffer_Monitor"}
+        "DAG_infoBuffer_Monitor", "DAG_infoBuffer_Monitor_for_Lambdas"}
 
     # Mapping from class to the file in which it is defined.
     file_map = {
@@ -54,7 +54,8 @@ class Synchronizer(object):
         "DAG_executor_FanInNB": "DAG_executor_FanInNB",
         "DAG_executor_FanIn_Select": "DAG_executor_FanIn_select",
         "DAG_executor_FanInNB_Select": "DAG_executor_FanInNB_select",
-        "DAG_infoBuffer_Monitor": "DAG_infoBuffer_Monitor"
+        "DAG_infoBuffer_Monitor": "DAG_infoBuffer_Monitor",
+        "DAG_infoBuffer_Monitor_for_Lambdas": "DAG_infoBuffer_Monitor_for_Lambdas"
     }
     
     def __init__(self):
@@ -109,17 +110,18 @@ class Synchronizer(object):
         #e.g. “Barrier_b”
         self._synchronizer_name = (str(synchronizer_class_name) + '_' + str(synchronizer_object_name))
         
-        logger.trace("create: Attempting to locate class '%s'" % synchronizer_class_name)
+        logger.info("create: Attempting to locate class '%s'" % synchronizer_class_name)
         
         src_file = Synchronizer.file_map[synchronizer_class_name]
-        #logger.trace("Creating synchronizer with name '%s' by calling locate('%s.%s')"  % (self._synchronizer_name, src_file, synchronizer_class_name))
-        logger.trace("create: Creating synchronizer with name '%s'" % self._synchronizer_name)
-
+        logger.info("Creating synchronizer with name '%s' by calling locate('%s.%s')"  % (self._synchronizer_name, src_file, synchronizer_class_name))
+        logger.info("create: Creating synchronizer with name '%s'" % self._synchronizer_name)
+        logger.info("src_file: " + src_file)
         # Get the class object for a synchronizer object, e.g.. Barrier
         module = importlib.import_module("wukongdnc.server." + src_file)
         #module = importlib.import_module(src_file)
+        logger.info("foo1")
         self._synchClass = getattr(module, synchronizer_class_name)
-
+        logger.info("foo2")
         if (self._synchClass is None):
             raise ValueError("Failed to locate and create synchronizer of type %s" % synchronizer_class_name)
 
@@ -132,15 +134,15 @@ class Synchronizer(object):
         
         #e.g. "b"
         self._synchronizer_object_name = synchronizer_object_name
-        logger.trace("create: self._sycnhronizer_object_name: " + self._synchronizer_object_name)
+        logger.info("create: self._sycnhronizer_object_name: " + self._synchronizer_object_name)
 
         # init the synchronzation object
-        logger.trace("create: Calling _synchronizer init")
+        logger.info("create: Calling _synchronizer init")
         self._synchronizer.init(**kwargs)  #2
         # where Barrier init is: init(**kwargs): if len(kwargs) not == 1
 	    # logger.trace(“Error: Barrier init has too many argos”) self._n = kwargs[‘n’]
 
-        logger.trace ("create: Called _synchronizer init")
+        logger.info ("create: Called _synchronizer init")
         return 0
 
     # def synchronize_sync(self, tcp_server, obj_name, method_name, type_arg, state, synchronizer_name):        

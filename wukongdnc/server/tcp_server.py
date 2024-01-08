@@ -143,7 +143,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             message (dict):
                 The payload from the AWS Lambda function.
         """        
-        logger.trace("[HANDLER] server.create() called.")
+        logger.info("[HANDLER] server.create() called.")
         type_arg = message["type"]
         name = message["name"]
         state = decode_and_deserialize(message["state"])
@@ -153,7 +153,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         synchronizer.create(type_arg, name, **state.keyword_arguments)
         
         synchronizer_name = self._get_synchronizer_name(type_name = type_arg, name = name)
-        logger.trace("Caching new Synchronizer of type '%s' with name '%s'" % (type_arg, synchronizer_name))
+        logger.info("Caching new Synchronizer of type '%s' with name '%s'" % (type_arg, synchronizer_name))
         tcp_server.synchronizers[synchronizer_name] = synchronizer # Store Synchronizer object.
 
         resp = {
@@ -163,10 +163,10 @@ class TCPHandler(socketserver.StreamRequestHandler):
         #############################
         # Write ACK back to client. #
         #############################
-        logger.trace("Sending ACK to client %s for CREATE operation." % self.client_address[0])
+        logger.info("Sending ACK to client %s for CREATE operation." % self.client_address[0])
         resp_encoded = json.dumps(resp).encode('utf-8')
         self.send_serialized_object(resp_encoded)
-        logger.trace("Sent ACK of size %d bytes to client %s for CREATE operation." % (len(resp_encoded), self.client_address[0]))  
+        logger.info("Sent ACK of size %d bytes to client %s for CREATE operation." % (len(resp_encoded), self.client_address[0]))  
 
     # Not used and not tested. Currently create work queue in 
     # create_all_fanins_and_faninNBs_and_possibly_work_queue. 

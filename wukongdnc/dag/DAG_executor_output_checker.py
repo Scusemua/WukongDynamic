@@ -32,6 +32,6 @@ def verify_pagerank_outputs(number_of_groups_or_partitions):
     else:
         logger.info("")
         logger.info("")
-        logger.info("BFS: verify_pagerank_outputs: outputs verified")
+        logger.info("BFS: verify_pagerank_outputs all outputs generated: outputs verified")
         return True
  

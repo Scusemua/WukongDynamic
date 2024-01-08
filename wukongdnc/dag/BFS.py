@@ -746,6 +746,7 @@ from . import BFS_Shared
 from .DAG_executor_driver import run
 from .DAG_boundedbuffer_work_queue import Work_Queue_Client
 from .Remote_Client_for_DAG_infoBuffer_Monitor import Remote_Client_for_DAG_infoBuffer_Monitor
+from .Remote_Client_for_DAG_infoBuffer_Monitor_for_Lambdas import Remote_Client_for_DAG_infoBuffer_Monitor_for_Lambdas
 from .DAG_executor_output_checker import get_pagerank_outputs
 from .DAG_executor_output_checker import verify_pagerank_outputs
 from wukongdnc.constants import TCP_SERVER_IP
@@ -5067,7 +5068,8 @@ if __name__ == '__main__':
     # we are only using incremental_DAG_generation when we
     # are computing pagerank, so far. Pagerank DAGS are the
     # only DAGS we generate ourselves, so far.
-
+        pass
+        """
         if (run_all_tasks_locally and using_workers and not using_threads_not_processes): 
             # Config: A5, A6
             # sent the create() for work_queue to the tcp server in the DAG_executor_driver
@@ -5078,6 +5080,13 @@ if __name__ == '__main__':
             DAG_infobuffer_monitor.create()
             logger.trace("BFS: created Remote DAG_infobuffer_monitor.")
             work_queue = Work_Queue_Client(websocket,estimated_num_tasks_to_execute)
+        elif not run_all_tasks_locally:
+            websocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            websocket.connect(TCP_SERVER_IP)
+            DAG_infobuffer_monitor = Remote_Client_for_DAG_infoBuffer_Monitor_for_Lambdas(websocket)
+            DAG_infobuffer_monitor.create_Remote_Client()
+            logger.trace("BFS: created Remote DAG_infobuffer_monitor_for_lambdas.")
+        """
 
     logger.trace("BFS: Following is the Breadth-First Search")
     input_graph()

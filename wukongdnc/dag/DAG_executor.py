@@ -3009,17 +3009,18 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # "input" in the payload. Here we assign input to output
                 # which we will use when we process the restarted task's
                 # fanins/fanouts/collpases (next).
-                logger.info("here2: state_info.task_inputs: "
-                    + str(state_info.task_inputs))
-                logger.info("here2: continued_output_for_worker: "
-                    + str(continued_output_for_worker))
+
                 #logging.shutdown()
                 #os._exit(0)
                 #if not using_workers:
                 #output = input
                 if not using_workers:
+                    logger.info("here2: state_info.task_inputs: "
+                        + str(state_info.task_inputs))
                     output = state_info.task_inputs
                 else:
+                    logger.info("here2: continued_output_for_worker: "
+                        + str(continued_output_for_worker))
                     output = continued_output_for_worker
                 # do not execute this group/task since it has been excuted before.
             else:
@@ -3531,7 +3532,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # created before iterating the work loop.
                 requested_current_version_number = DAG_info.get_DAG_version_number() + 1
                 logger.trace("DAG_executor: call withdraw.")
-                logger.trace("type is " + str(type(DAG_infobuffer_monitor)))
+                logger.info("type is " + str(type(DAG_infobuffer_monitor)))
                 logger.info("before call witdraw: output: " + str(output))
                 new_DAG_info = DAG_infobuffer_monitor.withdraw(requested_current_version_number,DAG_executor_state.state,output)
                 logger.trace("DAG_executor: back from withdraw.")
