@@ -43,20 +43,3 @@ elif run_all_tasks_locally and not using_workers and compute_pagerank and use_in
     # This wrapper does not take a websocket for __init__ since the
     # DAG_infoBuffer_Monitor is local. 
     DAG_infobuffer_monitor = Local_Client_for_DAG_infoBuffer_Monitor_for_Lambdas(wrapped_DAG_infobuffer_monitor_for_Lambdas)
-
-elif (run_all_tasks_locally and using_workers and compute_pagerank and use_incremental_DAG_generation and not using_threads_not_processes): 
-    # Config: A5, A6
-    # sent the create() for work_queue to the tcp server in the DAG_executor_driver
-    websocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    websocket.connect(TCP_SERVER_IP)
-    estimated_num_tasks_to_execute = work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    DAG_infobuffer_monitor = Remote_Client_for_DAG_infoBuffer_Monitor(websocket)
-    DAG_infobuffer_monitor.create()
-    logger.info("BFS: created Remote DAG_infobuffer_monitor.")
-    work_queue = Work_Queue_Client(websocket,estimated_num_tasks_to_execute)
-elif not run_all_tasks_locally and compute_pagerank and use_incremental_DAG_generation:
-    websocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    websocket.connect(TCP_SERVER_IP)
-    DAG_infobuffer_monitor = Remote_Client_for_DAG_infoBuffer_Monitor_for_Lambdas(websocket)
-    DAG_infobuffer_monitor.create_Remote_Client()
-    logger.info("BFS: created Remote DAG_infobuffer_monitor_for_lambdas.")

@@ -44,11 +44,15 @@ class Remote_Client_for_DAG_infoBuffer_Monitor_for_Lambdas:
         # name of object is process_DAG_infoBuffer_Monitor, type specified on create
         synchronize_async(self.websocket,"synchronize_async", "process_DAG_infoBuffer_Monitor_for_Lambdas", "deposit", dummy_state)
  
-    def withdraw(self,requested_current_version_number):
+    def withdraw(self,requested_current_version_number,state,output):
         dummy_state = DAG_executor_State()
         dummy_state.keyword_arguments['requested_current_version_number'] = requested_current_version_number
+        value_tuple = (state,output)
+        dummy_state.keyword_arguments['value'] = value_tuple
         # name of object is process_DAG_infoBuffer_Monitor, type specified on create
         # This call returns a new DAG_info object that is being 
         # constructed incrementally.
         dummy_state = synchronize_sync(self.websocket,"synchronize_sync", "process_DAG_infoBuffer_Monitor_for_Lambdas", "withdraw", dummy_state)
+        logger.info("Remote_Client_for_DAG_infoBuffer_Monitor_for_Lambdas: withdraw: back from synchronize_sync"
+                + " return " + str(dummy_state.return_value))
         return dummy_state.return_value

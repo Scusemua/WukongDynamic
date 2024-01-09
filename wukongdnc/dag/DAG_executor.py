@@ -35,6 +35,7 @@ from .DAG_executor_constants import compute_pagerank, use_shared_partitions_grou
 from .DAG_executor_constants import use_struct_of_arrays_for_pagerank, using_workers
 from .DAG_executor_constants import use_incremental_DAG_generation, name_of_first_groupOrpartition_in_DAG
 from .DAG_executor_constants import input_all_groups_partitions_at_start
+from .DAG_executor_constants import work_queue_size_for_incremental_DAG_generation_with_worker_processes
 #rhc: counter:
 from .DAG_executor_constants import num_workers
 #from .DAG_work_queue_for_threads import thread_work_queue
@@ -1597,7 +1598,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             #
             # each thread in multithreading multiprocesssing needs its own socket.
             # each process when single threaded multiprocessing needs its own socket.
-            work_queue = Work_Queue_Client(websocket,2*num_tasks_to_execute)
+            #work_queue = Work_Queue_Client(websocket,2*num_tasks_to_execute)
 
 #rhc continue
             # we are only using incremental_DAG_generation when we
@@ -1606,19 +1607,46 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             if compute_pagerank and use_incremental_DAG_generation:
                 # Note: we are using_workers with worker processes
                 DAG_infobuffer_monitor = Remote_Client_for_DAG_infoBuffer_Monitor(websocket)
- 
-            # Note: The remote work queue is created by the DAG_executor_driver 
-            # since the driver needs to deposit leaf task work in the work queue before
-            # creating the worker processes. We let the driver also create the 
-            # DAG_infobuffer_monitor and below we make calls to deposit and withdraw 
-            # in DAG_executor, as we do for the work queue.
-            # Note: the driver either creates the work queue at the start
-            # in which case is does not need to call create() the first time
-            # it accesses the work queue, or the fanins/fanouts/faninNBs are created 
-            # on demand in which case since the driver needs to use the work queue 
-            # it calls create() before its first access of the queue.
+                DAG_infobuffer_monitor.create()
+                logger.info("BFS: created Remote DAG_infobuffer_monitor for process.")
+                estimated_num_tasks_to_execute = work_queue_size_for_incremental_DAG_generation_with_worker_processes
+                work_queue = Work_Queue_Client(websocket,estimated_num_tasks_to_execute)        
+                # Note: The remote work queue is created by the DAG_executor_driver 
+                # since the driver needs to deposit leaf task work in the work queue before
+                # creating the worker processes. We let the driver also create the 
+                # DAG_infobuffer_monitor and below we make calls to deposit and withdraw 
+                # in DAG_executor, as we do for the work queue.
+                # Note: the driver either creates the work queue at the start
+                # in which case is does not need to call create() the first time
+                # it accesses the work queue, or the fanins/fanouts/faninNBs are created 
+                # on demand in which case since the driver needs to use the work queue 
+                # it calls create() before its first access of the queue.
+            else:
+                # Config: A5, A6
+                # sent the create() for work_queue to the tcp server in the DAG_executor_driver
+                #
+                # each thread in multithreading multiprocesssing needs its own socket.
+                # each process when single threaded multiprocessing needs its own socket.
+                work_queue = Work_Queue_Client(websocket,2*num_tasks_to_execute)
+        #elif (run_all_tasks_locally and using_workers and compute_pagerank and use_incremental_DAG_generation and not using_threads_not_processes): 
+        #    # Config: A5, A6
+        #    # sent the create() for work_queue to the tcp server in the DAG_executor_driver
+            
+        #    #websocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        #    #websocket.connect(TCP_SERVER_IP)
+        #    DAG_infobuffer_monitor = Remote_Client_for_DAG_infoBuffer_Monitor(websocket)
+        #    DAG_infobuffer_monitor.create()
+        #    logger.info("BFS: created Remote DAG_infobuffer_monitor.")
+        #    estimated_num_tasks_to_execute = work_queue_size_for_incremental_DAG_generation_with_worker_processes
+        #    work_queue = Work_Queue_Client(websocket,estimated_num_tasks_to_execute)        
+        elif not run_all_tasks_locally and compute_pagerank and use_incremental_DAG_generation:
+            #websocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            #websocket.connect(TCP_SERVER_IP)
+            DAG_infobuffer_monitor = Remote_Client_for_DAG_infoBuffer_Monitor_for_Lambdas(websocket)
+            #DAG_infobuffer_monitor.create_Remote_Client()
+            #logger.info("BFS: created Remote DAG_infobuffer_monitor_for_lambdas for labdas.")
 
-        #else: # Config: A1, A2, A3, A4_local, A4_Remote
+    #else: # Config: A1, A2, A3, A4_local, A4_Remote
 
 #rhc: cluster:
         # worker_needs_input initialized to false and stays false
@@ -3547,7 +3575,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     DAG_tasks = DAG_info.get_DAG_tasks()
                     DAG_number_of_tasks = DAG_info.get_DAG_number_of_tasks()
                 else:
-                    logger.trace("DAG_executor: no new incremental DAG for lambda returned by withdraw().")
+                    logger.info("DAG_executor: no new incremental DAG for lambda returned by withdraw().")
                     # Note: we are going to excute the next if-statement. Its condition
                     # will be True (It is he same as this if statement and nothing has
                     # changed) and since using_workers is False, we will return. So we
@@ -3595,8 +3623,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         + " state is " + str(DAG_executor_state.state))
                 else:
 #rhc: lambda inc:
-                    logger.trace("DAG_executor_work_loop: group has TBC fanins/fanouts and we did not"
-                        + " get a new incremental ADG on withdraw() so lambda returns/terminates.")
+                    logger.info("DAG_executor_work_loop: group has TBC fanins/fanouts and we did not"
+                        + " get a new incremental DAG on withdraw() so lambda returns/terminates.")
                     # no new DAG yet so with nothing to do the lambda returns/terminates
                     return
 
@@ -4568,7 +4596,7 @@ def DAG_executor_processes(payload,completed_tasks_counter,completed_workers_cou
 
 # Config: A1
 def DAG_executor_lambda(payload):
-    logger.trace("Lambda: started.")
+    logger.info("Lambda: started.")
 
     if not (store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks):
         DAG_exec_state = cloudpickle.loads(base64.b64decode(payload['DAG_executor_state']))
@@ -4609,7 +4637,14 @@ def DAG_executor_lambda(payload):
     logger.info("DAG_executor_lambda() starting for " + state_info.task_name)
 
 #rhc:  input output
-    continued_task = state_info.ToBeContinued
+    #if this is a continued task, then in the DAG the state info for
+    # the task will show that tate_info.ToBeContinued is false, i.e., 
+    # we completed the task information in the DAg and we are now
+    # restarting the continud task so we can do its fanout/fanins/collpases.
+    # The fact that we are restarting a continues task is given by
+    # DAG_executor_state.state.
+    #continued_task = state_info.ToBeContinued
+    continued_task =  DAG_exec_state.continued_task
     logger.info("DAG_executor_lambda(): state_info.task_name: " + state_info.task_name
         + " continued_task: " + str(continued_task))
     is_leaf_task = state_info.task_name in DAG_info.get_DAG_leaf_tasks()

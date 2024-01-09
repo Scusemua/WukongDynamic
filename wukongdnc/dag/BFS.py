@@ -975,6 +975,23 @@ def visualize():
     fig.canvas.draw()
 
 
+if (run_all_tasks_locally and using_workers and not using_threads_not_processes): 
+    # Config: A5, A6
+    # sent the create() for work_queue to the tcp server in the DAG_executor_driver
+    websocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    websocket.connect(TCP_SERVER_IP)
+    estimated_num_tasks_to_execute = work_queue_size_for_incremental_DAG_generation_with_worker_processes
+    DAG_infobuffer_monitor = Remote_Client_for_DAG_infoBuffer_Monitor(websocket)
+    DAG_infobuffer_monitor.create()
+    logger.trace("BFS: created Remote DAG_infobuffer_monitor.")
+    #work_queue = Work_Queue_Client(websocket,estimated_num_tasks_to_execute)
+elif not run_all_tasks_locally:
+    websocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    websocket.connect(TCP_SERVER_IP)
+    DAG_infobuffer_monitor = Remote_Client_for_DAG_infoBuffer_Monitor_for_Lambdas(websocket)
+    DAG_infobuffer_monitor.create_Remote_Client()
+    logger.trace("BFS: created Remote DAG_infobuffer_monitor_for_lambdas.")
+
 
 # process children before parent traversal
 # Not used

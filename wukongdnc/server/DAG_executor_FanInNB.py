@@ -306,13 +306,13 @@ class DAG_executor_FanInNB(MonitorSU):
                 # is why we have the select version of FanInNB.)
                 if store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks:
                     try:
-                        logger.trace("DAG_executor_FanInNB_Select: triggering DAG_Executor_Lambda() for task " + fanin_task_name)
+                        logger.info("DAG_executor_FanInNB_Select: triggering DAG_Executor_Lambda() for task " + fanin_task_name)
                         lambda_DAG_exec_state = DAG_executor_State(function_name = "WukongDivideAndConquer:"+fanin_task_name, function_instance_ID = str(uuid.uuid4()), state = start_state_fanin_task)
-                        logger.trace ("DAG_executor_FanInNB_Select: lambda payload is DAG_info + " + str(start_state_fanin_task) + "," + str(self._results))
+                        logger.info ("DAG_executor_FanInNB_Select: lambda payload is DAG_info + " + str(start_state_fanin_task) + "," + str(self._results))
                         lambda_DAG_exec_state.restart = False      # starting new DAG_executor in state start_state_fanin_task
                         lambda_DAG_exec_state.return_value = None
                         lambda_DAG_exec_state.blocking = False            
-                        logger.trace("DAG_executor_FanInNB_Select: Starting Lambda function %s." % lambda_DAG_exec_state.function_name) 
+                        logger.info("DAG_executor_FanInNB_Select: Starting Lambda function %s." % lambda_DAG_exec_state.function_name) 
                         payload = {
                             "input": self._results,
                             "DAG_executor_state": lambda_DAG_exec_state,

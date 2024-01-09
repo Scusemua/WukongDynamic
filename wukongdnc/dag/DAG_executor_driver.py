@@ -2364,7 +2364,8 @@ def run():
 
         logger.info("DAG_executor_driver: Sleeping 3.0 seconds...")
         #print("DAG_executor_driver: Sleeping 3.0 seconds...")
-        time.sleep(10.0)
+        time.sleep(180.0)
+        logger.info("DAG_executor_driver: done Sleeping.")
         #print(BFS_Shared.pagerank_sent_to_processes)
 
         # if using tcp_server (i.e., storing objects remotely)
@@ -2377,6 +2378,7 @@ def run():
         # exisiting "old" fanin/fanout objects will have already
         # been triggered.
         if not store_fanins_faninNBs_locally:
+            logger.info("DAG_executor_driver: close all.")
             close_all(websocket)
                 
     logger.info("DAG_executor_driver: DAG_Execution finished in %f seconds." % duration)

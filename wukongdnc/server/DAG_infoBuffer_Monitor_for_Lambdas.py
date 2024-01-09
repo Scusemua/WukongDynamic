@@ -4,6 +4,8 @@ import threading
 import time
 import uuid
 import os
+import sys
+import traceback
 from ..dag.DAG_executor_constants import run_all_tasks_locally
 from ..dag.DAG_executor_State import DAG_executor_State
 #from ..dag.DAG_executor import DAG_executor
@@ -161,7 +163,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
 
 #rhc: lambda inc
         #logger.trace("DAG_infoBuffer_Monitor_for_Lambdas: deposit() entered monitor, len(self._new_version) ="+str(len(self._next_version)))
-        logger.trace("DAG_infoBuffer_Monitor_for_Lambdas: deposit() entered monitor")
+        logger.info("DAG_infoBuffer_Monitor_for_Lambdas: deposit() entered monitor")
         self.current_version_DAG_info = kwargs['new_current_version_DAG_info']
         self.current_version_number_DAG_info = self.current_version_DAG_info.get_DAG_version_number()
 #rhc leaf tasks
@@ -190,7 +192,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             logging.shutdown()
             os._exit(0) 
 
-        logger.trace("DAG_infoBuffer_Monitor_for_Lambdas: DAG_info deposited: ")
+        logger.info("DAG_infoBuffer_Monitor_for_Lambdas: DAG_info deposited: ")
         self.print_DAG_info(self.current_version_DAG_info)
 
 #rhc leaf tasks
@@ -384,8 +386,8 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     self.continue_queue += new_leaf_tasks
 
             except Exception as ex:
-                logger.trace("[ERROR] DAG_executor_driver: Failed to start DAG_executor thread for state " + str(start_state))
-                logger.trace(ex)
+                logger.error("[ERROR] DAG_executor_driver: Failed to start DAG_executor thread for state " + str(start_state))
+                logger.error(ex)
                 logging.shutdown()
                 os._exit(0) 
         else:
@@ -393,57 +395,67 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             try:
                 # start simulated lambdas that with the new DAG_info
                 for start_tuple in self._buffer:
-                    # pass the state/task the thread is to execute at the start of its DFS path
-                    start_state = start_tuple[0]
-                    # Note: for incremental DAG generation, when we restart a lambda
-                    # for a continued task, if the task is a group, we give it the output
-                    # it generated previously (before terminating) sand use the output
-                    # to do the group's/task's fanins/fanout. If the task is a partition,
-                    # we give the partition the input for its execution. 
-                    #(Tricky: after executing a group with TBC fanins/fanout/collpases,
-                    # if it has TBC fanouts/faninNBs/fanins, we cannot do any of them so we
-                    # have to wait until we get a new DAG and restart the group/task
-                    # so we can complete the fanouts/faninNBs/fanins. After excuting 
-                    # a partition the partition can only have a collapse, i.e., we know
-                    # we must execute the colapse task. So when we restart the partition/task,
-                    # we supply the input for the collpase task and execute the collapse task.)
-                    input_or_output = start_tuple[1]              
-                    DAG_exec_state = DAG_executor_State(function_name = "WukongDivideAndConquer:"+task_name, function_instance_ID = str(uuid.uuid4()), 
-                        state = start_state, continued_task = True)
-                    DAG_exec_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
-                    DAG_exec_state.return_value = None
-                    DAG_exec_state.blocking = False
-                    logger.info("DAG_infoBuffer_Monitor_for_Lambdas: (re)starting lambda with DAG_executor_state.state: " + str(DAG_exec_state.state)
-                        + " continued task: " + str(DAG_exec_state.continued_task))
-                    #logger.trace("DAG_executor_state.function_name: " + DAG_executor_state.function_name)
+                    try: 
+                        logger.info("get tuple")
+                        # pass the state/task the thread is to execute at the start of its DFS path
+                        start_state = start_tuple[0]
+                        # Note: for incremental DAG generation, when we restart a lambda
+                        # for a continued task, if the task is a group, we give it the output
+                        # it generated previously (before terminating) sand use the output
+                        # to do the group's/task's fanins/fanout. If the task is a partition,
+                        # we give the partition the input for its execution. 
+                        #(Tricky: after executing a group with TBC fanins/fanout/collpases,
+                        # if it has TBC fanouts/faninNBs/fanins, we cannot do any of them so we
+                        # have to wait until we get a new DAG and restart the group/task
+                        # so we can complete the fanouts/faninNBs/fanins. After excuting 
+                        # a partition the partition can only have a collapse, i.e., we know
+                        # we must execute the colapse task. So when we restart the partition/task,
+                        # we supply the input for the collpase task and execute the collapse task.)
+                        input_or_output = start_tuple[1]  
+                        logger.info("got tuple: start_state: " + str(start_state) 
+                            + " input_or_output: " + str(input_or_output))
+                        DAG_map = self.current_version_DAG_info.get_DAG_map()
+                        task_name = DAG_map[start_state].task_name            
+                        DAG_exec_state = DAG_executor_State(function_name = "WukongDivideAndConquer:"+task_name, function_instance_ID = str(uuid.uuid4()), 
+                            state = start_state, continued_task = True)
+                        logger.info("create state")  
+                        DAG_exec_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
+                        DAG_exec_state.return_value = None
+                        DAG_exec_state.blocking = False
+                        logger.info("DAG_infoBuffer_Monitor_for_Lambdas: (re)starting lambda with DAG_executor_state.state: " + str(DAG_exec_state.state)
+                            + " continued task: " + str(DAG_exec_state.continued_task))
+                        #logger.trace("DAG_executor_state.function_name: " + DAG_executor_state.function_name)
 
-                    payload = {
-                        #"state": int(start_state_fanin_task),
-                        # We are using threads to simulate lambdas. The data_dict in 
-                        # this case is a global object visible to all threads. Each thread
-                        # will put its results in the data_dict befoer sending the results
-                        # to the FanInNB, so the fanin results collected by the FanInNB 
-                        # are already available in the global data_dict. Thus, we do not 
-                        # really need to put the results in the payload for the started
-                        # thread (simulating a real lambda) but we do to be conistent 
-                        # with real lambdas.
-                        "input": input_or_output,
-                        "DAG_executor_state": DAG_exec_state,
-                        # Using threads to simulate lambdas and th threads
-                        # just read DAG_info locally, we do not need to pass it 
-                        # to each Lambda.
-                        # passing DAG_info to be consistent with real lambdas
-                        "DAG_info": self.current_version_DAG_info,
-                        # server takes the place of tcp_server which the real lambdas
-                        # use. server is accessibl to the lambda simulator threads as 
-                        # a global variable
-                        #"server": server
-                    }
-                    DAG_states = self.current_version_DAG_info.get_DAG_states()
-                    task_name = DAG_states[start_state].task_name
-
-                    invoke_lambda_DAG_executor(payload = payload, function_name = "WukongDivideAndConquer:"+task_name)
-                self._buffer.clear()
+                        payload = {
+                            #"state": int(start_state_fanin_task),
+                            # We are using threads to simulate lambdas. The data_dict in 
+                            # this case is a global object visible to all threads. Each thread
+                            # will put its results in the data_dict befoer sending the results
+                            # to the FanInNB, so the fanin results collected by the FanInNB 
+                            # are already available in the global data_dict. Thus, we do not 
+                            # really need to put the results in the payload for the started
+                            # thread (simulating a real lambda) but we do to be conistent 
+                            # with real lambdas.
+                            "input": input_or_output,
+                            "DAG_executor_state": DAG_exec_state,
+                            # Using threads to simulate lambdas and th threads
+                            # just read DAG_info locally, we do not need to pass it 
+                            # to each Lambda.
+                            # passing DAG_info to be consistent with real lambdas
+                            "DAG_info": self.current_version_DAG_info,
+                            # server takes the place of tcp_server which the real lambdas
+                            # use. server is accessibl to the lambda simulator threads as 
+                            # a global variable
+                            #"server": server
+                        }
+                        invoke_lambda_DAG_executor(payload = payload, function_name = "WukongDivideAndConquer:"+task_name)
+                    except Exception as ex:
+                        logger.error("[ERROR] DAG_executor_driver: Failed to start DAG_executor thread for state " + str(start_state))
+                        logger.error(ex)
+                        traceback.print_exc(file=sys.stderr)
+                        logging.shutdown()
+                        os._exit(0) 
+                        self._buffer.clear()
 
                 # If the DAG_info is complete, then the leaf task is complete and
                 # so dos not need to be continued later, we can start a labda for the
@@ -479,6 +491,8 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     # we must execute the colapse task. So when we restart the partition/task,
                     # we supply the input for the collpase task and execute the collapse task.)
                     input_or_output = [] 
+                    DAG_map = self.current_version_DAG_info.get_DAG_map()
+                    task_name = DAG_map[start_state].task_name            
                     DAG_exec_state = DAG_executor_State(function_name = "WukongDivideAndConquer:"+task_name, function_instance_ID = str(uuid.uuid4()), state = start_state, continued_task = False)
                     DAG_exec_state.restart = False      # starting  new DAG_executor in state start_state_fanin_task
                     DAG_exec_state.return_value = None
@@ -488,7 +502,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     #logger.trace("DAG_executor_state.function_name: " + DAG_executor_state.function_name)
                     payload = {
                         #"state": int(start_state_fanin_task),
-                        # We aer using threads to simulate lambdas. The data_dict in 
+                        # We are using threads to simulate lambdas. The data_dict in 
                         # this case is a global object visible to all threads. Each thread
                         # will put its results in the data_dict befoer sending the results
                         # to the FanInNB, so the fanin results collected by the FanInNB 
@@ -508,8 +522,6 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                         # a global variable
                         #"server": server
                     }
-                    DAG_states = self.current_version_DAG_info.get_DAG_states()
-                    task_name = DAG_states[start_state].task_name
                     invoke_lambda_DAG_executor(payload = payload, function_name = "WukongDivideAndConquer"+task_name)
                 # clear the started leaf tasks
                 self.continue_queue.clear()
@@ -518,8 +530,9 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                 if not DAG_info_is_complete:
                     self.continue_queue += new_leaf_tasks
             except Exception as ex:
-                logger.trace("[ERROR] DAG_executor_driver: Failed to start DAG_executor thread for state " + str(start_state))
-                logger.trace(ex)
+                logger.error("[ERROR] DAG_executor_driver: Failed to start DAG_executor thread for state " + str(start_state))
+                logger.error(ex)
+                traceback.print_exc(file=sys.stderr)
                 logging.shutdown()
                 os._exit(0) 
         try:
@@ -527,7 +540,8 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         except Exception as ex:
             logger.error("[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas: deposit: exit_monitor: Failed super(DAG_infoBuffer_Monitor_for_Lambdas, self)")
             logger.error("[ERROR] self: " + str(self.__class__.__name__))
-            logger.trace(ex)
+            logger.error(ex)
+            traceback.print_exc(file=sys.stderr)
             logging.shutdown()
             os._exit(0) 
         
@@ -549,6 +563,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         restart = False
         if requested_current_version_number <= self.current_version_number_DAG_info:
             DAG_info = self.current_version_DAG_info
+            logger.info("DAG_infoBuffer_Monitor_for_Lambdas: withdraw return None")
 #rhc leaf tasks
 
 #rhc: lambda inc: 
@@ -560,7 +575,8 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             except Exception as ex:
                 logger.error("[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas: withdraw: exit_monitor: Failed super(DAG_infoBuffer_Monitor_for_Lambdas, self)")
                 logger.error("[ERROR] self: " + str(self.__class__.__name__))
-                logger.trace(ex)
+                logger.error(ex)
+                traceback.print_exc(file=sys.stderr)
                 logging.shutdown()
                 os._exit(0) 
 
@@ -574,13 +590,13 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
 #rhc: lambda inc
             # save start tuple which deposit wil use to restart lambda
             value = kwargs["value"]
-            logger.trace("Value to deposit: " + str(value))
+            logger.info("Value to deposit: " + str(value))
             self._buffer.append(value)
             #self._buffer.insert(self._in,value)
             #self._buffer[self._in] = value
             #self._in=(self._in+1) % int(self._capacity)
             
-            logger.trace("DAG_infoBuffer_Monitor_for_Lambdas: return None")
+            logger.info("DAG_infoBuffer_Monitor_for_Lambdas: withdraw return None")
 #rhc: lambda inc
             # For lambdas, we do not return leaf tasks, deposit is starting them instead.
             #return DAG_info_and_new_leaf_task_states_tuple, restart
@@ -590,7 +606,8 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             except Exception as ex:
                 logger.error("[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas: withdraw: exit_monitor: Failed super(DAG_infoBuffer_Monitor_for_Lambdas, self)")
                 logger.error("[ERROR] self: " + str(self.__class__.__name__))
-                logger.trace(ex)
+                logger.error(ex)
+                traceback.print_exc(file=sys.stderr)
                 logging.shutdown()
                 os._exit(0) 
 

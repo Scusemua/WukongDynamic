@@ -378,7 +378,7 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partiti
 
     i=0
     for tup in input_tuples:
-        logger.trace("PageRank_Function: input tuple:" + str(tup))
+        logger.info("PageRank_Function: input tuple:" + str(tup))
         shadow_node_index = tup[0]
         pagerank_value = tup[1]
         # assert
