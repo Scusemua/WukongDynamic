@@ -3344,6 +3344,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         # we will call the task with: task(task_name,resultDictionary)
 #rhc: groups partitions
                         #output = execute_task_with_result_dictionary(task,state_info.task_name,20,result_dictionary)
+                        logger.info("execute task: " + state_info.task_name)
                         output, result_tuple_list = execute_task_with_result_dictionary(task,state_info.task_name,20,result_dictionary,
                             groups_partitions)
                     else:
@@ -4662,6 +4663,30 @@ def DAG_executor_lambda(payload):
 
         for key, value in dict_of_results.items():
             data_dict[key] = value
+
+        """ Use: (k,v) in dict_of_results.items() 
+        Check that output is not using qualified names
+        for (k,v) in output.items():
+            # example: state_info.task_name = "PR1_1" and 
+            # k is "PR2_3" so data_dict_key is "PR1_1-PR2_3"
+            data_dict_key = str(state_info.task_name+"-"+k)
+            # list of input tuples. Example: list of single tuple:
+            # [(3, 0.012042187499999999)], hich says that the pagerank
+            # value of the shadow_node in position 3 of PR2_3's 
+            # partition is 0.012042187499999999. This is the pagerank
+            # value of a parent node of the node in position 4 of 
+            # PR2_3's partition. We set the shadow nodes's value before
+            # we start the pagerank calculation. There is a trick used
+            # to make sure the hadow node's pageran value is not changed 
+            # by the pagerank calculation. (We compute the shadow node's 
+            # new paerank but we hardcode the shadow node's (dummy) parent
+            # pagerank vaue so that the new shadow node pagerank is he same 
+            # as the old value.)
+            data_dict_value = v
+            data_dict[data_dict_key] = data_dict_value
+        """
+
+        logger.info("DAG_executor_lambda: data_dict after: " + str(data_dict))
 
 #rhc:  input output
         if continued_task:
