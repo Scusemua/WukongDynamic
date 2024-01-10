@@ -455,8 +455,8 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                         traceback.print_exc(file=sys.stderr)
                         logging.shutdown()
                         os._exit(0) 
-                        self._buffer.clear()
-
+                   
+                self._buffer.clear()
                 # If the DAG_info is complete, then the leaf task is complete and
                 # so dos not need to be continued later, we can start a labda for the
                 # leaf task now (as oppsed to putting the leaf tsk in the continue queue
@@ -590,7 +590,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
 #rhc: lambda inc
             # save start tuple which deposit wil use to restart lambda
             value = kwargs["value"]
-            logger.info("Value to deposit: " + str(value))
+            logger.info("DAG_infoBuffer_Monitor_for_Lambdas: withdraw: value to deposit: " + str(value))
             self._buffer.append(value)
             #self._buffer.insert(self._in,value)
             #self._buffer[self._in] = value

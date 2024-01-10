@@ -2680,7 +2680,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         DAG_executor_state.state = cluster_queue.get()
                         #old design
                         #worker_needs_input = cluster_queue.qsize() == 0
-                        logger.trace("DAG_executor_work_loop: cluster_queue contains work:"
+                        logger.info("DAG_executor_work_loop: cluster_queue contains work:"
                             + " got state " + str(DAG_executor_state.state))
 
     #rhc: cluster:
@@ -2689,8 +2689,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             logger.error("[Error]: DAG_executor_work_loop: Internal Error: cluster_queue contained"
                                 + " more than one item of work - queue size > 0 after cluster_queue.get")
 
-                        logger.trace(thread_name + " DAG_executor_work_loop: Worker doesn't access work_queue")
-                        logger.trace("**********************" + thread_name + " process cluster_queue state: " + str(DAG_executor_state.state))
+                        logger.info(thread_name + " DAG_executor_work_loop: Worker doesn't access work_queue")
+                        logger.info("**********************" + thread_name + " process cluster_queue state: " + str(DAG_executor_state.state))
                     
     #rhc: counter
     
@@ -3564,7 +3564,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 logger.info("type is " + str(type(DAG_infobuffer_monitor)))
                 logger.info("before call witdraw: output: " + str(output))
                 new_DAG_info = DAG_infobuffer_monitor.withdraw(requested_current_version_number,DAG_executor_state.state,output)
-                logger.trace("DAG_executor: back from withdraw.")
+                logger.info("DAG_executor: back from withdraw.")
                 if not new_DAG_info == None:
                     logger.trace("DAG_executor: got new incremental DAG for lambda returned by withdraw().")
                     DAG_info = new_DAG_info
@@ -3856,8 +3856,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     DAG_executor_state.state = process_fanouts(state_info.fanouts, state_info.task_name, DAG_info.get_DAG_states(), DAG_executor_state, 
                         output, DAG_info, server,work_queue,list_of_work_queue_or_payload_fanout_values,
                         groups_partitions)
-                    logger.trace(thread_name + " work_loop: become state:" + str(DAG_executor_state.state))
-                    logger.trace(thread_name + " work_loop: list_of_work_queue_payload fanout_values length:" + str(len(list_of_work_queue_or_payload_fanout_values)))
+                    logger.info(thread_name + " work_loop: become state:" + str(DAG_executor_state.state))
+                    logger.info(thread_name + " work_loop: list_of_work_queue_payload fanout_values length:" + str(len(list_of_work_queue_or_payload_fanout_values)))
 
                     # at this point list_of_work_queue_or_payload_fanout_values may or may not be empty. We wll
                     # piggyback this list on the call to process_faninNBs_batch if there are faninnbs.
@@ -4405,6 +4405,7 @@ def DAG_executor(payload):
         is_leaf_task = state_info.task_name in DAG_info.get_DAG_leaf_tasks()
         logger.info("DAG_executor: state_info.task_name: " + state_info.task_name
             + " is_leaf_task: " + str(is_leaf_task))
+        # assert:
         if not is_leaf_task:
             logger.trace("DAG_executor(): verify inputs are in data_dict: ")
             # lambdas invoked with inputs. We do not add leaf task inputs to the data
@@ -4417,6 +4418,8 @@ def DAG_executor(payload):
                 if value_in_dict == None:
                     logger.error("[Error]: Internal Error: starting DAG_executor for simulated lambda"
                         + " data_dict missing value for input key " + str(key))
+                    logging.shutdown()
+                    os._exit(0)
                 else:
                     logger.trace("DAG_executor:verified: " + str(key))
 #rhc:  input output
@@ -4646,10 +4649,12 @@ def DAG_executor_lambda(payload):
     # DAG_executor_state.state.
     #continued_task = state_info.ToBeContinued
     continued_task =  DAG_exec_state.continued_task
-    logger.info("DAG_executor_lambda(): state_info.task_name: " + state_info.task_name
-        + " continued_task: " + str(continued_task))
+
     is_leaf_task = state_info.task_name in DAG_info.get_DAG_leaf_tasks()
-    if not is_leaf_task:
+    logger.info("DAG_executor_lambda(): state_info.task_name: " + state_info.task_name
+        + " continued_task: " + str(continued_task)
+        + " is_leaf_task: " + str(is_leaf_task))
+    if not is_leaf_task or continued_task:
         # lambdas invoked with inputs. We do not add leaf task inputs to the data
         # dictionary, we use them directly when we execute the leaf task.
         # Also, leaf task inputs are not in a dictionary.
@@ -4661,36 +4666,37 @@ def DAG_executor_lambda(payload):
         # of a task that was executed previously and that then stopped
         # because it was a group with TBC fanouts/fanins.
 
-        for key, value in dict_of_results.items():
-            data_dict[key] = value
+        logger.info("DAG_executor_lambda(): " + state_info.task_name + " dict_of_results: " + str(dict_of_results))
+        if not continued_task:
+            for key, value in dict_of_results.items():
+                data_dict[key] = value
+        else: 
+            for (k,v) in dict_of_results.items():
+                # example: state_info.task_name = "PR1_1" and 
+                # k is "PR2_3" so data_dict_key is "PR1_1-PR2_3"
+                data_dict_key = str(state_info.task_name+"-"+k)
+                # list of input tuples. Example: list of single tuple:
+                # [(3, 0.012042187499999999)], hich says that the pagerank
+                # value of the shadow_node in position 3 of PR2_3's 
+                # partition is 0.012042187499999999. This is the pagerank
+                # value of a parent node of the node in position 4 of 
+                # PR2_3's partition. We set the shadow nodes's value before
+                # we start the pagerank calculation. There is a trick used
+                # to make sure the hadow node's pageran value is not changed 
+                # by the pagerank calculation. (We compute the shadow node's 
+                # new paerank but we hardcode the shadow node's (dummy) parent
+                # pagerank vaue so that the new shadow node pagerank is he same 
+                # as the old value.)
+                data_dict_value = v
+                data_dict[data_dict_key] = data_dict_value
 
-        """ Use: (k,v) in dict_of_results.items() 
-        Check that output is not using qualified names
-        for (k,v) in output.items():
-            # example: state_info.task_name = "PR1_1" and 
-            # k is "PR2_3" so data_dict_key is "PR1_1-PR2_3"
-            data_dict_key = str(state_info.task_name+"-"+k)
-            # list of input tuples. Example: list of single tuple:
-            # [(3, 0.012042187499999999)], hich says that the pagerank
-            # value of the shadow_node in position 3 of PR2_3's 
-            # partition is 0.012042187499999999. This is the pagerank
-            # value of a parent node of the node in position 4 of 
-            # PR2_3's partition. We set the shadow nodes's value before
-            # we start the pagerank calculation. There is a trick used
-            # to make sure the hadow node's pageran value is not changed 
-            # by the pagerank calculation. (We compute the shadow node's 
-            # new paerank but we hardcode the shadow node's (dummy) parent
-            # pagerank vaue so that the new shadow node pagerank is he same 
-            # as the old value.)
-            data_dict_value = v
-            data_dict[data_dict_key] = data_dict_value
-        """
-
-        logger.info("DAG_executor_lambda: data_dict after: " + str(data_dict))
+            logger.info("DAG_executor_lambda: data_dict after: " + str(data_dict))
 
 #rhc:  input output
         if continued_task:
-            state_info.task_input = dict_of_results
+            state_info.task_inputs = dict_of_results
+            logger.info("DAG_executor_lambda(): " + state_info.task_name + " set state_info.task_inputs: "
+                + str(state_info.task_inputs))
     else:
         # Passing leaf task input as state_info.task_inputs in DAG_info; 
         # We don't want to add a leaf task input parameter to DAG_executor_work_loop(); 
@@ -4704,6 +4710,7 @@ def DAG_executor_lambda(payload):
         # after we start the leaf lambdas, in order to save space, i.e., there is no need to 
         # pass this leaf task input as part of the DAG_info to all the 
         # non-leaf tasks.
+        logger.info("DAG_executor_lambda(): " + state_info.task_name + " is leaf task.")
         if not (store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks):
             inp = cloudpickle.loads(base64.b64decode(payload['input']))
         else:
