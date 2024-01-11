@@ -1691,6 +1691,25 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
         # any states in their cluster_queues (they each have a queue); instead they
         # will get work from the work_queue; the driver will put leaf task inputs
         # in the work_queue before it starts the worker(s).)
+        #
+        # Likewise, if the ral lambda is executing a continued task,
+        # we put the task in the continue queue (as a tuple). Note that 
+        # we have already processed the output of the continued task
+        # in DAG_executor_lambda, where we put the output in the 
+        # data_dict and saved the output in state_info.task_inputs from 
+        # which it will be retrieved and used to process the fanins/
+        # fanouts of the continued group, or to execute the collapse
+        # task of the continued parttion. Noet that for partitons,
+        # we can execute the partition/task, and since a partition 
+        # does not have any fanouts/fanins, it only has a collapse task, 
+        # when a parition is continued, we can execute its collapse
+        # task. (There is no need to "process" the fanouts/fanins of the
+        # partition as it has none, we can just execute the collapse
+        # task, if there is one. The last partition of any connected component
+        # does not have a collapse task.)
+        #
+        # Note: As the next step, we will immediately retrieve the task from from the continue_queue
+        # or the cluster_queue. 
         if (run_all_tasks_locally and not using_workers) or not run_all_tasks_locally:
             # simulated or real lambdas are started with a payload that has a state,
             # put this state in the cluster_queue or the continue_queue
@@ -2330,7 +2349,37 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                                 # so we will be able to execute this leaf task after we get the new 
                                                 # DAG. Note: each leaf task is the start of a new connected component
                                                 # in the graph (you cannot reach one CC from another CC.) and the 
-                                                # partitions of the connected components can be executed in parallel
+                                                # partitions of the connected components can be executed in parallel.
+                                                #
+                                                # Note: We add this unexecutable leaf task to the continue
+                                                # queue. It is not a "usual" to be continued task, in that 
+                                                # it was contnued becuase it had fanins/fanouts to incomplete
+                                                # tasks; it is continued because we do not yet have an 
+                                                # incremental DAG that contains this task - the next incremental
+                                                # DAG we withdraw will ave this task. So we add it to the 
+                                                # continue queue with a tuple having "False" for 
+                                                # continued_task and no output since we have no executed this
+                                                # task yet. When we get this tuple from the continue_queue we\
+                                                # will see continued_tsk is False so we will not ty to get
+                                                # the output (from tuple[2)). Tasks that are executed and then 
+                                                # added to the continue_queue as continued_task = True, are added
+                                                # using a tuple (DAG_executor_state.state,False,output). So when 
+                                                # we get the tuple from the continue_queue we will get the 
+                                                # output of the (previous execution of the) task and use it to 
+                                                # process the task's fanins/fanouts if it is a group and 
+                                                # excute the continued tasks's collapse task if it is a 
+                                                # partition. (Again, this is for workers, real lambdas
+                                                # that execute a task and find the tsk has to be continued
+                                                # fanins/fanouts will stop after saving the task's output 
+                                                # via a DAF_infoBuffer_Monitor_for_Lambdas.withdraw)() on the tcp_server.
+                                                # A lambdas will be (re)started to process the continued tasks's
+                                                # fanins/fanouts (using the saved task output) when a new
+                                                # incremental DAG_info is deposited by bfs() via
+                                                # DAF_infoBuffer_Monitor_for_Lambdas.deposit(). (That is deposit()
+                                                # restarts a real lambdas for each task saved by withdraw(),
+                                                # and for any new leaf tasks in the deposited DAG_info. A new
+                                                # leaf task(s) will be identified for each new connected component
+                                                # discovered in the new incremental DAG.
                                                 if using_workers:
 #rhc: lambda inc: cq.put
                                                     # An unexecutable leaf task should be executed so 
@@ -2355,7 +2404,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                             break # while(True) loop
                                     else:
                                         pass # finish for groups
-                            else:
+                            else: # using worker threads
                                 # Config: A4_local, A4_Remote
                                 logger.trace("DAG_executor_work_loop:: get work for thread " + thread_name)
                                 work_tuple = work_queue.get()
@@ -2396,6 +2445,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                             is_unexecutable_leaf_task = state_info == None or (
                                                 state_info.task_name in DAG_info.get_DAG_leaf_tasks() and state_info.ToBeContinued
                                             )
+                                            # See the corresponding comment above for worker processes
                                             if is_unexecutable_leaf_task:
                                                 # Cannot execute this leaf task until we get a new DAG. Note: the
                                                 # DAG generator added this leaf task to the work queue after it
@@ -3610,6 +3660,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # we get a new DAG that this group that had continued 
                 # fanouts/fanins/faninNBs/collapses now is complete, i.e., it has
                 # no continud fanouts/fanins/faninNBs/collapses.
+                # Note: we save the output in the tuple so we'll have it
+                # when we continue processing the task's fanins/fanouts.
                 if using_workers:
                     #continue_queue.put(DAG_executor_state.state)
                     #logger.trace("DAG_executor_work_loop: put TBC collapsed work in continue_queue:"
@@ -3630,30 +3682,31 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     return
 
 #rhc: cluster queue:
-# Note: if this just executed task T has a collapse task then T has no
-# fanouts/fanins/faninNBs, so next it will execute the clustered task
-# with the resultsleepexecutes it just placed in the data_dict.
-# Note: if the just executed task T has multiple fanouts and it clusters them
-# then the fanouts will be added to the cluster queue, i.e., their state
-# returned by DAG_info.get_DAG_states() will be added to the cluster queue.
-# We were going to add the fanouts to the work queue (minus the become
-# task). For the become task, we only set DAG_executor_state.state and execute
-# that task next, so just like a collapsed task. Notice that the input for
-# the become task (a fanout task) will be retieved from the data_dict, i.e., 
-# after T was excuted, we saved its output in the data dict so we know it
-# is there (in our local data dict if we are a process or lambda or the 
-# global data dict if we are a thread.) So we only put the state in the 
-# cluster queue, not the output of T since the output of T is in the data dict.
-# For clustered fanouts, we can also only put the state in the cluster queue 
-# since the output we need to execute them is T's output and it is in our
-# data dict.
-# Note: A fanin task can also be a become task. So we will want to add
-# such become tasks to the cluster queue, in the same way. Note that 
-# a fanin op returns all the results that were sent to the fanin and we 
-# put them in the data dict when the fanin op returns. So they will be
-# there when we execute the fanin task. That is, when we add the fanin 
-# task to the cluster queue it may be behind one or more clustered tasks
-# but when we eventually execute, we will have its inputs in our data dict.
+            # Note: if this just executed task T has a (non to be continued) collapse task then T has no
+            # fanouts/fanins/faninNBs, so next we will execute the clustered task
+            # with the result/output just placed in the data_dict.
+            # Note: if the just executed task T has multiple fanouts and it clusters them
+            # then the fanouts will be added to the cluster queue, i.e., their state
+            # returned by DAG_info.get_DAG_states() will be added to the cluster queue.
+            # We were going to add the fanouts to the work queue (minus the become
+            # task) or start real lambdas to execute them, but clustered them instad. 
+            # We add the becomre task's state to the cluster queue, just like a collapsed task. 
+            # Notice that the input for
+            # the become task (a fanout task) will be retieved from the data_dict, i.e., 
+            # after T was excuted, we saved its output in the data dict so we know it
+            # is there (in our local data dict if we are a process or lambda or the 
+            # global data dict if we are a thread.) So we only put the state in the 
+            # cluster queue, not the output of T since the output of T is in the data dict.
+            # For clustered fanouts, we can also only put the state in the cluster queue 
+            # since the output we need to execute them is T's output and it is in our
+            # data dict.
+            # Note: A fanin task can also be a become task. So we  add
+            # such become tasks to the cluster queue, in the same way. Note that 
+            # a fanin op returns all the results that were sent to the fanin and we 
+            # put them in the data dict when the fanin op returns. So they will be
+            # there when we execute the fanin task. That is, when we add the fanin 
+            # task to the cluster queue it may be behind one or more clustered tasks
+            # but when we eventually execute, we will have its inputs in our data dict.
 
 # ------------------------------------------------------------------
 # ------------------------------------------------------------------
@@ -3668,29 +3721,32 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     logger.error("[Error]: Internal Error: DAG_executor_work_loop:"
                         + " state has a collapse but also fanins/fanouts.")
 
-#rhc: If we run-time cluster, then we may have work in the cluster queue.
-# We can put the collapse work in the cluster queue too. If the cluster queue is
-# empty, then we'll just execute the collapased task next; otherwise, we will add
-# the collapsed task at the end of the cluster queue and do it after all the 
-# clustered work. 
+                # Note If we run-time cluster, then we may have work in the cluster queue.
+                # We can put the collapse work in the cluster queue too. If the cluster queue is
+                # empty, then we'll just execute the collapased task next; otherwise, we will add
+                # the collapsed task at the end of the cluster queue and excute it after all the 
+                # clustered work. 
 
-# The work for collapse will have to be in the same form as the clustered work,
-# e.g., a becomes task from fanouts. So:
-# - put all becomes work and collapsed work, etc in the cluster queue
-# - get work from the non-empty cluster queue rather then from the work queue.
-#   If only a become task or collased task is in the cluster queue then not 
-#   cluster_queue is empty and the work is in the cluster queue. 
+                # The work for collapse will have to be in the same form as the clustered work,
+                # e.g., a becomes task from fanouts. So:
+                # - put all becomes work and collapsed work, etc in the cluster queue
+                # - get work from the non-empty cluster queue rather then from the work queue.
+                #   If only a become task or collased task is in the cluster queue then not 
+                #   cluster_queue is empty and the work is in the cluster queue. 
 
-                # execute collapsed task next - transition to new state and iterate loop
+                # We will execute collapsed task next.
                 # collapse is a list [] so get task name of the collapsed task which is collapse[0],
-                # the only name in this list. Note: DAG_states() is amap from 
-                # task name to an int that is the task state.
+                # the only name in this list. Note: DAG_states() is a map from 
+                # task name to an int that is the task state_info, which has all the information 
+                # about the task - it's fanins/fanouts/collapses, python function, whether it is
+                # complete or not (for incremental DAG generation), etc.
                 
-                # DAG_executor_state.state is the state that has the 
-                # collapsed partition. state_info is the state info
-                # of the tate with the collapsed partition.
+                # DAG_executor_state.state is the (current) state that has a 
+                # collapsed partition/group. state_info is the state info
+                # of the state with the collapsed partition.
 #rhc continue 
-#rhc: lambda inc: above if means that this group has no to-be-continued? as in we 
+#rhc: lambda inc:               
+# above if means that this group has no to-be-continued? as in we 
 # put that if at front as special case of inc with groups where task just executed
 # has no TBC. So if we get past that, the group has no TBC or we aer using partitions
 # or not doing inc?
@@ -3821,13 +3877,13 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         logging.shutdown()
                         os._exit(0)
 
-#    Note: for multithreaded worked, no difference between adding work to the 
-#    work queue and adding it to the cluster_queue, i.e., doesn't eliminate 
-#    any overhead. The difference is when using multiprocessing or lambdas
-#    (where lambdas are really just processes.) So for multiP we are putting
-#    work in lists and sending it to the tcp_server for deposit into the 
-#    work_queue; instead, we will cluster work locally. Likewise, we will cluster 
-#    instead of starting a lambda for the (non-become) fanouts.
+            # Note: for multithreaded workers, there is no difference between adding work to the 
+            # work queue and adding it to the cluster_queue, i.e., the cluster_queue doesn't eliminate 
+            # any overhead. The difference is when using multiprocessing (i.e., worker processses) or lambdas
+            # (where lambdas are really also just processes.) So for worker processes we are putting
+            # work in lists and sending it to the tcp_server for deposit into the 
+            # work_queue; when we cluster a task we add the task/work to a local cluster_queue. Likewise, 
+            # For Lambdas we cluster work to a local cluster_queue instead of starting a lambda for the (non-become) fanouts.
 
 # ------------------------------------------------------------------
 # ------------------------------------------------------------------
@@ -4381,6 +4437,7 @@ def DAG_executor(payload):
 # The data_dict is global to the threads, so all of the inputs to this task were previously
 # outputs of some task T that T put in the data_dict. Here we just assert
 # that the key is already in the data_dict.
+#
 # Note: The input can be for a regular task or for a contunued task that 
 # is continued during incremental DAG generation. Note however, that for
 # incremental DAG generation, when we are using groups, the payload input 
@@ -4391,7 +4448,22 @@ def DAG_executor(payload):
 # for when a new lambda could executed with P (i.e., afte the next incremental
 # DAG is generated.) The new Lambda will not execute the task T again since
 # it was already executed; instead, the new lmabda will perform T's fanins/fanouts.
-    #assert:    
+#
+# Note: For incemental testing, when using threads or simulated
+# lambdas, the output values of a group are already in the data_dict
+# so we do not need to add them to the dictionary. (The values 
+# are added with qualified names, e.g., "PR1_1-PR2_1". For real 
+# lambdas, a lambdas is restarted with the output value and must
+# add these values to the data_dict (with qualidied names).
+# For simulated lambdas, a simulated lambda is restarted by 
+# to excute a continued task, and the output of the continued task
+# is in the payload as "input", but we do not actually need this 
+# input since simulated lambdas are threads that share a global
+# data_dict so the output was added to the data_dict and is still
+# there; thus we do not need the output in the payloa and we do 
+# need to add the output to the data_dict, which is something we
+# do for real lambdas (in DAG_executor_lambda).
+    #assert: the payload "input" is in the shared global data_dict
     DAG_map = DAG_info.get_DAG_map()
     
     if not using_workers:
@@ -4553,6 +4625,10 @@ def DAG_executor_processes(payload,completed_tasks_counter,completed_workers_cou
     #else:
     DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
 
+    # Note: For incemental testing, when using processes, 
+    # the output values of a group are already in the data_dict
+    # when a process get a continued task from the continue queue.
+
     #logger.trace("DAG_executor_processes: DAG_exec_state: " + str(DAG_exec_state))
     ##state = payload['state'] # refers to state var, not the usual State of DAG_executor 
     ##logger.trace("state:" + str(state))
@@ -4642,20 +4718,50 @@ def DAG_executor_lambda(payload):
 
 #rhc:  input output
     #if this is a continued task, then in the DAG the state info for
-    # the task will show that tate_info.ToBeContinued is false, i.e., 
-    # we completed the task information in the DAg and we are now
+    # the task will show that state_info.ToBeContinued is false, i.e., 
+    # we completed the task information in the DAG and we are now
     # restarting the continud task so we can do its fanout/fanins/collpases.
-    # The fact that we are restarting a continues task is given by
+    # The fact that we are restarting a continued task is given by
     # DAG_executor_state.state.
-    #continued_task = state_info.ToBeContinued
     continued_task =  DAG_exec_state.continued_task
 
     is_leaf_task = state_info.task_name in DAG_info.get_DAG_leaf_tasks()
     logger.info("DAG_executor_lambda(): state_info.task_name: " + state_info.task_name
         + " continued_task: " + str(continued_task)
         + " is_leaf_task: " + str(is_leaf_task))
-    if not is_leaf_task or continued_task:
-        # lambdas invoked with inputs. We do not add leaf task inputs to the data
+    
+    # A task is a leaf task or non-leaf task. The first group/partition
+    # in the DAG is a leaf task. If the task is not a leaf task
+    # and it is a continued task then we need to add the outputs
+    # (which are the payload's "input") to the data_dict. If
+    # the task is a leaf task and it is not a continued task,
+    # then the payload "input" is the actual input to the task when we
+    # execute the task. Examples of this are the first group/partition
+    # when we execute it for the first time. Likewise for a 
+    # group/partition that is the start of a new connected component,
+    # which makes the group/partition a (new) leaf task. (The 
+    # first group/partiton in the DAG is the first group/partition 
+    # in its connected component. There may be other connected
+    # components and they will have leaf task(s).)
+    # When we execute the first group in the DAG we will find that
+    # it is complete but its fanins/fanouts are to incomplete
+    # partition 2 or the groups in incomplete partition 2. IF we 
+    # are executing groups, the real lamba that executes this first
+    # task/grup, will stop after saving the task's output (to
+    # the DAG_infoBuffer_monitor_for_Lambdas on the tcp_server.)
+    # When re restart a real lmabda to continue processing the 
+    # task by excuting its fanouts/fanins, this first group will 
+    # be a continued_task that is a leaf task. So even though it is
+    # leaf task, it is also a continued task (so it has been executed
+    # before) so the payload's "input" is the output of this task from 
+    # its previous execution and we need to add the input/ouput
+    # to the data_dict using qualified names. (For example, if we
+    # execute "PR1_1" and it has a fanout to "PR2_1" with output X,
+    # Then we add ("PR1_1-PR2_1",X) to the data_dict; lkewise, when 
+    # we do the fanout for "PR2_1", we retrieve its input (which was 
+    # an output of "PR1_1") using the key "PR1_1-PR2_1" for the data_dict.
+    if not is_leaf_task or (compute_pagerank and use_incremental_DAG_generation and continued_task):
+        # Real lambdas are invoked with inputs. We do not add leaf task inputs to the data
         # dictionary, we use them directly when we execute the leaf task.
         # Also, leaf task inputs are not in a dictionary.
         if not (store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks):
@@ -4684,7 +4790,7 @@ def DAG_executor_lambda(payload):
                 # we start the pagerank calculation. There is a trick used
                 # to make sure the hadow node's pageran value is not changed 
                 # by the pagerank calculation. (We compute the shadow node's 
-                # new paerank but we hardcode the shadow node's (dummy) parent
+                # new pagerank but we hardcode the shadow node's (dummy) parent
                 # pagerank vaue so that the new shadow node pagerank is he same 
                 # as the old value.)
                 data_dict_value = v
@@ -4693,6 +4799,9 @@ def DAG_executor_lambda(payload):
             logger.info("DAG_executor_lambda: data_dict after: " + str(data_dict))
 
 #rhc:  input output
+        # The code for task execution will get the input for the 
+        # execution from state_info.task_inputs, so we put the 
+        # payload "input" there.
         if continued_task:
             state_info.task_inputs = dict_of_results
             logger.info("DAG_executor_lambda(): " + state_info.task_name + " set state_info.task_inputs: "
@@ -4715,6 +4824,9 @@ def DAG_executor_lambda(payload):
             inp = cloudpickle.loads(base64.b64decode(payload['input']))
         else:
             inp = payload['input']
+        # The code for task execution will get the input for the 
+        # execution from state_info.task_inputs, so we put the 
+        # payload "input" there.
         state_info.task_inputs = inp
 
     # lambdas do not use work_queues, for now.

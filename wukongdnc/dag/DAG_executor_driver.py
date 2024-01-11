@@ -2364,7 +2364,7 @@ def run():
 
         logger.info("DAG_executor_driver: Sleeping 3.0 seconds...")
         #print("DAG_executor_driver: Sleeping 3.0 seconds...")
-        time.sleep(180.0)
+        time.sleep(10.0)
         logger.info("DAG_executor_driver: done Sleeping.")
         #print(BFS_Shared.pagerank_sent_to_processes)
 
