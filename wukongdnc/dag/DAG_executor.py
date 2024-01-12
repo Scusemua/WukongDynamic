@@ -2977,26 +2977,25 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             # and finds that it has a fanin/fanout/faninNB/collapse task that is 
             # to-be-continued, the lambda does not enqueue the continued task in the 
             # continue queue. Likewise, lambdas do not use a work_queue - after a lambda
-            # excutes its payload task and any become tasks it gets after that, the 
+            # excutes its payload task and any become/clustered tasks it gets after that, the 
             # lambda will terminate. (The lambda may start new lambdas for fanouts.)
-            # The lambda does not wait for a new incremental DAG either, as we do not
+            # A lambda does not wait for a new incremental DAG either, as we do not
             # want lambdas waiting for anything (no-wait). Instead, the lambda will
-            # send the to-be-continued task and the task's input/output, whichever
-            # is needed for the continued task to a synch object that will start a new
-            # lambda to excute the continued tsk when a new incrmental ADG becomes
-            # available. 
-            #
-            # We need to make sure that lambdas do not execute the incremental DAG
-            # generation code that is used by workers. We can use the flag 
-            # using_workers to indicate that this is worker code. Since continued_task
-            # is never True when using lambdas, the continued_task flag will often prevent
-            # lambdas from excuting this worker code too.
-
+            # send the to-be-continued task's state and the task's output, to a synch object 
+            # that will start a new lambda to excute the continued task when a new incrmental 
+            # DAG becomes available. (Th lambda calls withdraw to get a nwe incemental DAG.
+            # If no DAG is available, the task state and output are saved in a queue and the 
+            # lambda will terminate when no DAG is returned. BFS will generate a new incremental
+            # DAG and call deposit(). In eposit, and enqueued (state,output) tuples are processed
+            # by starting a new lambda and giving it the state and output in its payload. Method
+            # deposit() will also start new landas for any new leaf tasks in the new DAG. (Leaf tasks
+            # are the fitst group/partition of a new connected component that is being searched by 
+            # (a new call to) bfs()))
 
             # If we got a become task when we processed fanouts, we set
-            # DAG_executor_state.state to the become task state so we
-            # will be processing the become state here. Tbis being
-            # changed so that become tasks are added to the cluster_queue.
+            # DAG_executor_state.state to the become task state (that was
+            # obtained from the cluster queue) so we
+            # will be processing the become state here.
             logger.trace (thread_name + ": DAG_executor_work_loop: access DAG_map with state " + str(DAG_executor_state.state))
             state_info = DAG_map[DAG_executor_state.state]
 
@@ -3005,22 +3004,34 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             logger.trace(thread_name + ": DAG_executor_work_loop: task to execute: " + state_info.task_name 
                 + " (though this task may be a continued task that was already executed.)")
 
-            # This task may or may not be a continued task In either
-            # case, the inputs needed by this task are needed: For worker threads
+            # This task may or may not be a continued task. In either
+            # case, we need the inputs for task execution. For worker threads
             # and processes when using partitions, the needed inputs were added to the 
-            # data_dict after the previous partition was executed, so they are
-            # still available, as usual.
+            # data_dict after the previous partition/task was executed, so they are
+            # still available in the data_dict as usual.
             #
             # For incremental DAG generation using groups (instead of partitions)
-            # we never execute the continued task unless it is a leaf task
-            # that is not the first group in the DAG. These leaf tasks are
+            # we do not execute a continued task unless it is a leaf task
+            # that is not the very first group in the DAG. These leaf tasks are
             # groups that start a new connected component. They are added to the 
             # work queue by the DAG generator. When we get such a leaf task from the 
-            # work_queue it may not yet be executable, in which case it is added
-            # to the continue queue. (It will become executable when we get our
-            # next incremental DAG). It then becomes a continued task and it has
-            # not been executed before so we need to execute it as oppsed to 
-            # executing its collapse task.
+            # work_queue it may not yet be executable (i.e., this leaf task is not in the 
+            # current version of the DAG but it will be in the next incremental DAG we get 
+            # and then it will be executable), in which case it is added
+            # to the continue queue. It then becomes a continued task but unlike normal, non-leaf
+            # continued tasksm, it has not been executed before so we need to execute ithe leaf task 
+            # as opposed to executing its collapse task, as we do for non-lead tasks. (In general,
+            # for continued tasks that are not leaf tasks, we have prviously executed the task and 
+            # so when we get it from the continue queue, if we are using partitions, not groups,
+            # we in theory need to process its fanins/fanouts/ollapses, but since a partition only
+            # has a collapse task which is the next partition, we an "process the fanins/fanouts/collapses"
+            # simply by grabbing the collapse task/partittion, which we know is there, and executing
+            # this collapse task. When using groups, there may be many fanouts/faninNB, or a faninm or
+            # a collapse task so "procssing the fanouts/fanins/collapse" means performing the fanouts, etc.
+            # Note: We do not, e.g., put all the fanout tasks of a continued task in the continue queue
+            # since we would then be stucj with excuting all of them - it seems better to proces them
+            # as normal (e.g., start a lamba for each one, or put them in the work queue) so they are
+            # distributed among multiple lambdas/workers, as usual.
             incremental_dag_generation_with_groups = compute_pagerank and use_incremental_DAG_generation and use_page_rank_group_partitions
 
             #logger.trace(thread_name + " DAG_executor_work_loop: incremental_dag_generation_with_groups: "
@@ -3074,6 +3085,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             # queue and should not be excuted again after we get it from the 
             # continue queue.
 
+            # Note: continue_task may be true, telling us that this task is being 
+            # continued and thus has already been executed. This next if-statement
+            # will set continued_task to False in all of its branches.
+
             logger.info("here1")
             if incremental_dag_generation_with_groups and continued_task:
             #if incremental_dag_generation_with_groups and continued_task and (
@@ -3083,13 +3098,12 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 continued_task = False  # reset flag
 #rhc: lambda inc:
                 # We restart the continued group task with the output that it
-                # generated before it terminated. This output was labeled
-                # "input" in the payload. Here we assign input to output
+                # generated. For a lambda, this output was labeled
+                # "input" in its payload. For workers, this output was part of the 
+                # tuple we got from the continue queue, Here we assign input to output
                 # which we will use when we process the restarted task's
                 # fanins/fanouts/collpases (next).
 
-                #logging.shutdown()
-                #os._exit(0)
                 #if not using_workers:
                 #output = input
                 if not using_workers:
@@ -3106,73 +3120,91 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 #
                 # But first see if we are doing incremental DAG generation and
                 # we are using partitions. If so, we may need to get the collapse
-                # task of the continued state and excute the collapse task.
+                # task of the continued state and excute the collapse task. 
+                # 
                 # Note: We can also get here if we are doing incremental DAG generation
                 # with groups and the task is a leaf task (that is not the first group in the 
                 # DAG) that starts a new connected component (which is the first 
                 # group generated on any call to BFS()). We will execute the 
-                # group task. 
+                # group/leaf task since it has not ben executed before.
                 #
-                # Note: The if-condition will be False if we are executing a leaf
-                # task/group that is a new connected component (not "PR1_1"), 
-                # in which case continued_task may have been true and it's
-                # still True. We need to set it to False.
+                # Note: The above if-condition will be False if we are executing a leaf
+                # task/group that is a new connected component (not "PR1_1"), since
+                # when we get the tuple for such a task it will indicate that we should 
+                # set continued_task to False, so that we treat the leaf task as a non-continued
+                # task that needs to be executed.
                 incremental_dag_generation_with_partitions = compute_pagerank and use_incremental_DAG_generation and not use_page_rank_group_partitions
 
+                # This is not a continued task that is a group. It may be a continued task that is a 
+                # partition or it may be a non-continued leaf task.
                 if incremental_dag_generation_with_partitions and continued_task:
+                    # it is a continued task that is a partition.
                     continued_task = False  # reset flag
-                    # if continued state is the first partition (which is a leaf task) or is not a leaf task
-                    # then get the collapse task of the continued state; otherwise, execute the 
-                    # continued state, which is a leaf task that starts a new conncted
-                    # component. Note: For groups, we do not get the collapsed task.
-                    # We do for partitions because partitions only have collapsed tasks,
-                    # i.e., no fanouts or fanins and if task T has a collapsed task C then 
-                    # the same worker W that executed T executes C. So we add C to W's
-                    # contnue queue and W will execute C. For groups, we execute the task and 
+                    # if continued task is the first partition in the DAG (which is a leaf task, but
+                    # we have already executed this first leaf task) or it is not a leaf task
+                    # then get the collapse task of the continued task. Here we are eseentally 
+                    # processing the fanouts/fanins/collpase of the continued partition/task by 
+                    # simply grabbing the collapse task, as we know a partition has no fanins/fanouts.
+                    # if task T has a collapsed task C then 
+                    # the same worker/lambda W that executed T executes C. So we add C to W's
+                    # cluster queue and W will execute C. For groups, we execute the task and 
                     # if it is to be continued, we put the state in the continue
                     # queue and when we get it from the continue queue we do its 
                     # fanins/fanouts/collapses. Note that if W executed T and T has 
-                    # mny fanouts then we do not want to put all of these fanouts in 
-                    # W's continue queue since that would mean W woudl execute all
+                    # many fanouts then we do not want to put all of these fanouts in 
+                    # W's cluster queue since that would mean W would execute all
                     # the fanout tasks of T. Instead, when W gets the state for T 
-                    # from the continue queue Q can (skip th execution of T since that
+                    # from the continue queue W can (skip the execution of T since that
                     # already happened) do T's fanouts as ususal, i.e., W will 
                     # become/cluster one of T's fanouts and put the rest on the shared
-                    # worker queue to distribute the fanout tasks amoung the workers.
+                    # worker queue to distribute the fanout tasks amoung the workers, or 
+                    # start new lambdas to execute the fanout tasks.
                     #
                     # Example: In the white board DAG, we execute PR1_1, PR2_1L, and PR3_1
                     # and assume we added to the DAG a new connected component PR4_1 that has a collapse
                     # to PR5_1. When we deposit the new DAG with PR4_1, since it is a leaf task, we also add
-                    # PR4_1 to the work_queue. No task in the current conencte component 
-                    # will have a fanout/fanin to PR4_1 since PR4_1 starts a new connected
+                    # PR4_1 to the work_queue or start a new lambda to execute it. No task in the current conencte 
+                    # component will have a fanout/fanin to PR4_1 since PR4_1 starts a new connected
                     # component; thus, we have to put PR4_1 in the work queue when we detect
-                    # it is the start of a new component so Pr4_1 will be executed.
+                    # it is the start of a new component so Pr4_1 will be executed, or start a new 
+                    # lambda to execute it.
                     # When we get PR4_1 from the work_queue, assume
                     # it is unexecutable (not in the current DAG as we did not yet get the new
-                    # DAG that has PR4_1 in it, or in new DAG but to-be-contnued) then we put
-                    # PR4_1 in the continue_queue. When we get a new DAG it will have a 
-                    # completed PR4_1 so we get PR4_1 from the continue_queue; however,
-                    # we did not put state 4 in the continue_queue as a state/partition with a 
-                    # TBC collapse, so we should not grab the collape of 4. Instead, we 
-                    # should execute state/partition 4, known as "PR4_1". We know this since PR4_1
-                    # is a leaf task and a leaf task is only added to the continue
-                    # queue when we want to execute the leaf task.
+                    # DAG that has PR4_1 in it, or it is in new DAG but it is to-be-contnued, i.e., we do not
+                    # yet know the fanins/fanouts of PR4_1,  then we put
+                    # PR4_1 in the continue_queue. When we get a new DAG it will definitely have a 
+                    # completed PR4_1 (as we processed PR5_1) so we get PR4_1 from the continue_queue; however,
+                    # we did not put state 4 in the continue_queue as a notmal continued state/partition that we
+                    # have already executed and that when we get it from the continue queue we will just need
+                    # to process its fanouts/fanins/collapse, so we shdoould not grab the collape of partition 
+                    # PR4_1. Instead, we execute leaf task "PR4_1". Note: For tuple T in the continue queue,
+                    # T[1] is a boolean that indicates whether this is a normal continued task (True) or a leaf
+                    # task that has not been executed. T[0] is the state of the task and T[1] is the saved output.
+                    # There is no saved output for a leaf task like PR4_1 since PR4_1 has not been executed yet,
+                    # i.ee., we aer not really continuing it.
                     if state_info.task_name == name_of_first_groupOrpartition_in_DAG or (not state_info.task_name in DAG_info.get_DAG_leaf_tasks()):
+                        # task is a leaf task but its the first leaf task in the ADG (PR1_1) or it is not a leaf task.
+                        # Process its fanins/fanouts/collapse by grabbing the collapse as there are no fanins/fanouts.
+                        # Next we will execute the collapse task, which we now was added to the new incremental DAG.
                         DAG_executor_state.state = DAG_info.get_DAG_states()[state_info.collapse[0]]
                         state_info = DAG_map[DAG_executor_state.state]
                         logger.trace("DAG_executor_work_loop: got state and state_info of continued, collapsed partition for collapsed task " + state_info.task_name)
                     else:
-                        # execute task - partition task is a leaf task that is not the first
-                        # partition in the DAG. (Leaf tasks start a new connected component.)
+                        # task is a leaf task that is not the first
+                        # partition PR1_1 in the DAG. (Leaf tasks start a new connected component.)
                         logger.trace("DAG_executor_work_loop: continued partition  " 
                             + state_info.task_name + " is a leaf task so do not get its collapse task"
                             + " instead, execute the leaf task.")
                 else:
+                    # assert: continued_task should be set to False if we get a tuple from the continue_queue
+                    # for a leaf task that is not the first leaf task/partition/grup PR1_1 in the DAG.
+                    if continued_task:
+                        logger.error("[Error]: Internal Error: continued_task is true for a leaf task that"
+                            + " is not the first leaf task/partition/group in the DAG (PR!_1).")
+                        logging.shutdown()
+                        os._exit(0)
                     # if continued tasks is TRUE this will set it to False
                     continued_task = False
-                    # execute task - task is a group task that is a 
-                    # leaf task (but not the fitst group in the DAG)
-                    # or it is a patition task that is not a continued task.
                     
 # ------------------------------------------------------------------
 # ------------------------------------------------------------------
@@ -3577,10 +3609,24 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 # AFTER TASK EXECUTION - process fanout/faninNB/fanin/collapse
 # ------------------------------------------------------------------
 # ------------------------------------------------------------------
+
+            #Note: above we either executed the task T or it was a continued task and we skipped
+            # the execution of T since T was executed before. If T was a continued task, then 
+            # we know that in the new DAG its fanins/fanouts/collapse are complete and we can 
+            # now process them. If T was not a continued task so T was executed, then T may 
+            # be incomplete, i.e., its fanouts/fanins/collapse are to be continued (which means that 
+            # state_info.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued is True) 
+            # so we cannot process T's fanouts/fanins/collapse. In this case, T becomes a contiued
+            # task and we deal with t accordingly.
             logger.info("output2: " + str(output))
             if not using_workers and compute_pagerank and use_incremental_DAG_generation and (
                 use_page_rank_group_partitions and state_info.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued
             ):
+                # This task now becomes a continued task. We are not using workers, i.e., we are using 
+                # lamdas, so we do not put T in the continue queue. Instead we try to get a new 
+                # incremental DAG. If T is in the new DAG then T's fanouts/fanins/collpase are complete
+                # and we can process the,. Otherwise, this lambda will save T and its output to a 
+                # tcp_server object and terminate.
                 
 #rhc: lambda inc:
                 logger.info("DAG_executor: work loop: after task execution, lambda"
@@ -3588,38 +3634,32 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 
                 logger.trace("DAG_executor: Work_loop: lambda try to get new incremental DAG for lambda.")
 
-                # Note: if this group was a continued task from the continue_queue then 
-                # we did not execute it and we set continued_task to False. 
-                # This if is checking whether the group/task should be continued. If we just
-                # got this group G from the continue queue then G should not have 
-                # any fanins/fanouts/collapses that are to-be-continued in the new
-                # DAG that we just got. 
-                #
                 # Try to get a new incremental DAG. if we do not get one, we will 
                 # terminate. When a new DAG is generated a lambda will be 
                 # (re)started to excute the fanins/fanouts/collpases of this
-                # group G. Otherwise, we have a new DAG in which G is a
-                # completed group so we can finish processng G by executing
+                # group G. Otherwise, we got a new DAG in which G is a
+                # completed group so we can finish processing G by executing
                 # below its fanins/fanouts/collases. 
                 # Note: we need to get this new DAG before we excute the 
-                # next if-statement. This is-statement is the one that 
+                # next if-statement. This if-statement is the one that 
                 # executes G's fanins/fanouts/collpases.
 #rhc: lambda inc:     
-                # object DAG_infobuffer_monitor could be one of 
+                # Object DAG_infobuffer_monitor could be one of 
                 # several classes, all of which have deposit and withdraw
-                # methods for incremental DAG generation. this object is
+                # methods for incremental DAG generation. This object is
                 # created before iterating the work loop.
                 requested_current_version_number = DAG_info.get_DAG_version_number() + 1
                 logger.trace("DAG_executor: call withdraw.")
                 logger.info("type is " + str(type(DAG_infobuffer_monitor)))
-                logger.info("before call witdraw: output: " + str(output))
+                logger.info("before call witdraw: output is: " + str(output))
                 new_DAG_info = DAG_infobuffer_monitor.withdraw(requested_current_version_number,DAG_executor_state.state,output)
                 logger.info("DAG_executor: back from withdraw.")
                 if not new_DAG_info == None:
                     logger.trace("DAG_executor: got new incremental DAG for lambda returned by withdraw().")
                     DAG_info = new_DAG_info
-                    # upate DAG_ma and DAG_tasks with their new versions in DAG_info
+                    # update DAG_map and DAG_tasks with their new versions in the new DAG_info
                     DAG_map = DAG_info.get_DAG_map()
+                    # The new version of state_info will have the completed fanins/fanouts/collapse for this task
                     state_info = DAG_map[DAG_executor_state.state]
                     # number of tasks in the incremental DAG. Not all tasks can 
                     # be executed if the new DAG is still imcomplete.
@@ -3627,12 +3667,12 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     DAG_number_of_tasks = DAG_info.get_DAG_number_of_tasks()
                 else:
                     logger.info("DAG_executor: no new incremental DAG for lambda returned by withdraw().")
-                    # Note: we are going to excute the next if-statement. Its condition
-                    # will be True (It is he same as this if statement and nothing has
-                    # changed) and since using_workers is False, we will return. So we
-                    # could just return here.
+                    # Note: we are going to execute the next if-statement. Its condition
+                    # will be True (It is the same condition as this if statement and nothing has
+                    # changed, i.e., in particular state_info has not changed) and since using_workers 
+                    # is False, ths lambda will return. So we could just return here.
                     pass 
-                    # We did not get a new incremental DAG. Note that 
+                    # We did not get a new incremental DAG. this means that 
                     # state_info was not changed so we will be using the 
                     # same state_info as above and 
                     # state_info.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued
@@ -3644,6 +3684,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 if not using_workers and compute_pagerank and use_incremental_DAG_generation and (
                     use_page_rank_group_partitions
                 ):
+                    # this task is complete, i.e., it has completed fannis/fanouts/collpase so we will
+                    # process the fanins/fanouts/collapse next.
                     logger.trace("DAG_executor: Lambda does NOT try to get new incremental DAG for lambda.")
                     #logging.shutdown()
                     #os._exit(0)
@@ -3653,7 +3695,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     use_page_rank_group_partitions and state_info.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued)
                 ):
                 # Group has fanouts/fanins/faninNBs/collapses that are TBC
-                # so put this state in the continue_queue. When we get a new DAG
+                # so workers will put this state in the continue_queue and lambdas
+                # will terminaet. Note that the lambda called withdraw() above abd passed 
+                # the task sate and output in case no new DAG was available in which case 
+                # the (state,output) will have been saved by withdraw(), When we get a new DAG
                 # we will get this state from the continue queue. We have already
                 # executed this state, so we will skip task execution and do 
                 # the continued fanouts/fanins/faninNBs/collapses. Note that when
@@ -3667,7 +3712,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     #logger.trace("DAG_executor_work_loop: put TBC collapsed work in continue_queue:"
                     #    + " state is " + str(DAG_executor_state.state))
 #rhc: lambda inc: cq.put                    
-                    # Truly a continued task (i.e., with TBC fanins/fanouts/collpases)
+                    # True --> Truly a continued task (i.e., with TBC fanins/fanouts/collpases)
                     continue_tuple = (DAG_executor_state.state,True,output)
                     #continue_queue.put(DAG_executor_state.state)
                     logger.info("output4: " + str(output))
@@ -3680,8 +3725,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         + " get a new incremental DAG on withdraw() so lambda returns/terminates.")
                     # no new DAG yet so with nothing to do the lambda returns/terminates
                     return
-
-#rhc: cluster queue:
+            
+            # Notes on cluster queue and clustering:
             # Note: if this just executed task T has a (non to be continued) collapse task then T has no
             # fanouts/fanins/faninNBs, so next we will execute the clustered task
             # with the result/output just placed in the data_dict.
@@ -3722,46 +3767,42 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         + " state has a collapse but also fanins/fanouts.")
 
                 # Note If we run-time cluster, then we may have work in the cluster queue.
-                # We can put the collapse work in the cluster queue too. If the cluster queue is
-                # empty, then we'll just execute the collapased task next; otherwise, we will add
+                # We can put this collapse work in the cluster queue too. If the cluster queue is
+                # empty, then we'll just execute the collapsed task next; otherwise, we will add
                 # the collapsed task at the end of the cluster queue and excute it after all the 
-                # clustered work. 
+                # clustered (e.g., fanout) work.
 
-                # The work for collapse will have to be in the same form as the clustered work,
-                # e.g., a becomes task from fanouts. So:
-                # - put all becomes work and collapsed work, etc in the cluster queue
-                # - get work from the non-empty cluster queue rather then from the work queue.
-                #   If only a become task or collased task is in the cluster queue then not 
-                #   cluster_queue is empty and the work is in the cluster queue. 
-
-                # We will execute collapsed task next.
+                # We will execute collapsed task next (i.e., put it in the cluster queue and on the 
+                # next itertation of the work loop since the cluster queue is not empty, get the 
+                # collpased task from the cluster queue, unless there are clustered (fanout) tasks 
+                # at the front of the queue in which case we will excute them first.)
                 # collapse is a list [] so get task name of the collapsed task which is collapse[0],
-                # the only name in this list. Note: DAG_states() is a map from 
-                # task name to an int that is the task state_info, which has all the information 
+                # the only name in this collapse list. Note: DAG_states() is a map from 
+                # task name to an int that can be used as a key in DAG_map to get the task's state_info, 
+                # which has all the information 
                 # about the task - it's fanins/fanouts/collapses, python function, whether it is
                 # complete or not (for incremental DAG generation), etc.
                 
-                # DAG_executor_state.state is the (current) state that has a 
+                # DAG_executor_state.state is an int representing the the (current) state/task that has a 
                 # collapsed partition/group. state_info is the state info
-                # of the state with the collapsed partition.
+                # of the state with the collapse task.
 #rhc continue 
 #rhc: lambda inc:               
-# above if means that this group has no to-be-continued? as in we 
-# put that if at front as special case of inc with groups where task just executed
-# has no TBC. So if we get past that, the group has no TBC or we aer using partitions
-# or not doing inc?
-# Q: what if using lambdas and groups (i.e., second conjunct is true)?
-                
+                # The above if before the current elif if True if we are using groups and the current group/task
+                # has to-be-continued fanins/fanouts/collapse. In that case, the worker put the task/group in the 
+                # continue queue or the lambda returned? So since we got past that if, the curren task is a group 
+                # that has has no TBC or we are using partitions or we are not doing incremental DAG generation.
+
+                # Determine whch case we have: if this if is true then either we are not doing incremental
+                # DAG gneration or we are doing incremental DAG generation with groups and the current
+                # group is complete so we can process the collapse. If this if 
+                # is False, then we are using partitions and the current partition/task may or may not 
+                # be complete. If it is complete, we can process the collapse task; otherwise, we put the 
+                # current partition/task in the continue queue.
                 if not(compute_pagerank and use_incremental_DAG_generation) or (compute_pagerank and use_incremental_DAG_generation and use_page_rank_group_partitions):
-#rhc: lambda inc: # implied that this state has no TBC otherwise preceding if would have been true?
-# So we handle group TBC collapse above and partition TBC collapse below? Here is no inc
-# a group with no TBC. otherwise we handle partition which may or may not have TBC collapse.
-# if it does then need to finish lambda code, which is same as group code above - 
-# send info to synch object.
 #rhc: cluster:
                     # get the state of the collapsed partition/group (task)
-                    # and put the collapsed task in the cluster_queue for 
-                    # execution.
+                    # and put the collapsed task in the cluster_queue for execution.
                     DAG_executor_state.state = DAG_info.get_DAG_states()[state_info.collapse[0]]
                     cluster_queue.put(DAG_executor_state.state)
                     logger.trace("DAG_executor_work_loop: put collapsed work in cluster_queue:"
@@ -3775,8 +3816,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     ## else: # Config: A1. A2, A3
                 else: 
 #rhc: lambda inc:   
-                    # Based on if-condition, we are doing inc w/ pagerank and not using 
-                    # groups, i.e., we are doing incremental DAG generation with partitions.
+                    # we are doing incremental DAG generation with partitions. The partition may
+                    # or may not be complete.
+                    # Get the collapsed task and see if it is to be continued - f so, then we 
+                    # cannot execute the collpase task.
                     state_of_collapsed_task = DAG_info.get_DAG_states()[state_info.collapse[0]]
                     state_info_of_collapse_task = DAG_map[state_of_collapsed_task]
                     logger.trace("DAG_executor_work_loop: check TBC of collapsed task state info: "
@@ -3789,7 +3832,12 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                 + " P does not thnk it has a TBC collapse task based on"
                                 + " fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued.")
                             
-                        # put TBC states in the continue_queue
+                        # put current state in the continue_queue. Noet, we have excuted the current
+                        # state/task, which is a partition. We put this state in the coninue queue, not the 
+                        # state of the collapse task. when we get this state S from the continue queue we will 
+                        # process its collapse task C, which means we will set the current state to the 
+                        # collapse task C. We will then execute the current state as usual, which will be 
+                        # collapse task C.
                         if using_workers:
                             #continue_queue.put(DAG_executor_state.state)
                             #logger.trace("DAG_executor_work_loop: put TBC collapsed work in continue_queue:"
@@ -3800,27 +3848,27 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             # of this state and excute it.
                             #
                             # The difference between incremental DAG generation with partitions
-                            # vs groups: If we excute partition i we know that i has a collapse
+                            # vs groups: If we excute partition i we know that i only has a collapse
                             # task to partition i+1. If partition i+1 is incomplete, then we 
-                            # cannot execute it so we put ID i and i's output in the continue
-                            # queue. When we get a nwe DAG, we get (i,output) fron the continue
+                            # cannot execute i so we put i and i's just collectd output in the continue
+                            # queue. When we get a new DAG, we get (i,output) rom the continue
                             # queue. Since there is only a collapse task for i, we can go ahead
                             # and execute the collapse task i+1 using the output of i as the 
                             # input of i+1. That is, we do not get (i,output) and then "execute
                             # the fanins/fanouts/collapses" of i since there is only a collapse
-                            # task of i and we can execute it. (So we get continued task i
+                            # task i+1 of i and we can thus simply execute i+1. (So we get continued task i
                             # from the continue queue and we then excute is collapse task i+1,
                             # not i since i was executed previously and its output was saved.
-                            # For groups, if we execute partition i, i can have fanouts/fanins
+                            # For groups, if we execute group i, i can have fanouts/fanins
                             # collapse, not just collapses. If the targets of these fanouts/fanins
-                            # collpase are incomplete then we cannot execute them, so we put
-                            # ID i and i's output in the continue queue. When we get a new DAG, 
-                            # we get (i,output) fron the continue queue. Now we can complete
-                            # the processing of the fanouts/fanin/collapse tasks of i. This
+                            # collpase are incomplete then we cannot process them, so we put
+                            # i and i's output in the continue queue. When we get a new DAG, 
+                            # we get (i,output) from the continue queue. Now we can complete
+                            # the processing of the fanouts/fanin/collapse tasks of group/task i. This
                             # is unlike for partitions where we can get (i,output) then grab the
-                            # collapse of i and execute this collapse task.
+                            # collapse of i and then immediately execute this collapse task.
 #rhc: lambda inc: cq.put        
-                            # Truly a continued task (i.e., with TBC fanins/fanouts/collpases)
+                            # True ==> Truly a continued task (i.e., with TBC fanins/fanouts/collpases)
                             continue_tuple = (DAG_executor_state.state,True,output)
                             #continue_queue.put(DAG_executor_state.state)
                             continue_queue.put(continue_tuple)
@@ -3832,8 +3880,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             # Try to get a new incrmental DAG. If we get one then the collapsed
                             # task which is TBC in the current DAG will not be TBC in the new
                             # DAG so we can execute the collpase task (after we enqueue it in 
-                            # the cluster queue and get it from the cluster queue on the next 
-                            # iteration of the work loop.)
+                            # the cluster queue and we get it from the cluster queue (after possibly 
+                            # getting and executing other clustered tasks.)
                             new_DAG_info = DAG_infobuffer_monitor.withdraw(DAG_executor_state.state,output)
                             if not new_DAG_info == None:
                                 DAG_info = new_DAG_info
@@ -3851,8 +3899,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                 # No new DAG yet so return/terminate as we have nothing to do 
                                 # (i.e., this lambda cannot execute this groups collapse
                                 # so the lambda can terminate.) A new lambda will be 
-                                # (re)started to execute this collapsed state after a 
-                                # new incremental DAG is generated.
+                                # (re)started to execute this collapsed state/task after a 
+                                # new incremental DAG is generated and deposited().
                                 return
                     else:
 #hc: cluster:
