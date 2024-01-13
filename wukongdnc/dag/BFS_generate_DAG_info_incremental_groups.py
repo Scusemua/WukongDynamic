@@ -1107,6 +1107,14 @@ def generate_DAG_info_incremental_groups(current_partition_name,
 # now, i.e., can;t wait until next partition since there is no next
 # partition .So if not to be continued, we need to look at 
 # groups within partition.
+# No? When current partition is 3, we look at groups n partition 2,
+# which is fine for seeing the PR2_2L has a faninNB to PR3_2,
+# but we fail to detect that PR3_1 has a faninNB to PR3_2. 
+# This is because we only look at the groups in the previous
+# partition, like for using partitions, but we should also "Add"
+# groups in the current partition that are before group_name in 
+# that list (assuming groups are added left to right in this list
+# as the are detected.)
                 # generate empty state_info for group group_name. This will be filled in 
                 # when we process the groups in the next partition collected. See below.
                 # That is, this group (recall that we are iterating
@@ -1216,7 +1224,13 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                         logger.trace("generate_DAG_info_incremental_groups: previous_group: " + previous_group)
 
                         # get groups that previous group sends inputs to. These
-                        # groups "reveive" inputs from the sender
+                        # groups "receive" inputs from the sender
+#rhc: Note: here we only get groups in previous partition, but if 
+# to be continued is False, then we could ad the groups of the 
+# current partition that have an index that is less than that of 
+# group_name, e.g., for PR3_2, we consider the groups PR2_1, PR2_2L, PR2_3
+# and also group PR3_1 of current partition, where PR3_1 is sender
+# for receiver PR3_2.
                         receiver_set_for_previous_group = Group_senders[previous_group]
                         # for each group that receives an input from the previous_group
                         for receiverY in receiver_set_for_previous_group:
