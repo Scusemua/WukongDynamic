@@ -368,9 +368,9 @@ def generate_DAG_info_incremental_groups(current_partition_name,
     current_partition_number, groups_of_current_partition,
     groups_of_partitions,
     to_be_continued):
-# to_be_continued is True if BFS (caller) finds num_nodes_in_partitions < num_nodes, 
+# to_be_continued is True if BFS (caller) finds num_nodes_in_partitions < num_nodes in graph, 
 # which means that incremeental DAG generation is not complete 
-# (some gtaph nodes are not in any partition.)
+# (some graph nodes are not in any partition.)
 # groups_of_current_partition is a list of groups in the current partition.
 # groups_of_partitions is a list of the groups_of_current_partition. We need
 # this to get the groups of the previous partition and th previous previous partition. 
@@ -401,10 +401,10 @@ def generate_DAG_info_incremental_groups(current_partition_name,
     # used to generate IDs; state for next group added to DAG
     global Group_next_state 
 
-    logger.trace("generate_DAG_info_incremental_groups: to_be_continued: " + str(to_be_continued))
-    logger.trace("generate_DAG_info_incremental_groups: current_partition_number: " + str(current_partition_number))
+    logger.info("generate_DAG_info_incremental_groups: to_be_continued: " + str(to_be_continued))
+    logger.info("generate_DAG_info_incremental_groups: current_partition_number: " + str(current_partition_number))
 
-    logger.trace("")
+    logger.info("")
 
     # Using copy() here and below to avoid the error: "RuntimeError: dictionary changed size during iteration"
     # when we are using multithreaded bfs(). That is, while the generator thread is
@@ -413,24 +413,24 @@ def generate_DAG_info_incremental_groups(current_partition_name,
     # while it is being iterated over in a loop. We also use copy() for thr 
     # list we are iterating over.
 
-    logger.trace("generate_DAG_info_incremental_groups: Group_senders:")
+    logger.info("generate_DAG_info_incremental_groups: Group_senders:")
     for sender_name,receiver_name_set in Group_senders.copy().items():
-        logger.trace("sender:" + sender_name)
-        logger.trace("receiver_name_set:" + str(receiver_name_set))
-    logger.trace("")
-    logger.trace("")
-    logger.trace("generate_DAG_info_incremental_groups: Group_receivers:")
+        logger.info("sender:" + sender_name)
+        logger.info("receiver_name_set:" + str(receiver_name_set))
+    logger.info("")
+    logger.info("")
+    logger.info("generate_DAG_info_incremental_groups: Group_receivers:")
     for receiver_name,sender_name_set in Group_receivers.copy().items():
-        logger.trace("receiver:" + receiver_name)
-        logger.trace("sender_name_set:" + str(sender_name_set))
-    logger.trace("")
-    logger.trace("")
-    logger.trace("generate_DAG_info_incremental_groups: Leaf nodes of groups:")
+        logger.info("receiver:" + receiver_name)
+        logger.info("sender_name_set:" + str(sender_name_set))
+    logger.info("")
+    logger.info("")
+    logger.info("generate_DAG_info_incremental_groups: Leaf nodes of groups:")
     for name in leaf_tasks_of_groups_incremental.copy():
-        logger.trace(name + " ")
-    logger.trace("")
+        logger.info(name + " ")
+    logger.info("")
 
-    logger.trace("generate_DAG_info_incremental_groups: Partition DAG incrementally:")
+    logger.info("generate_DAG_info_incremental_groups: Partition DAG incrementally:")
 
 
     # in the DAG_map, partition/group i is state i. The first group is also 
@@ -520,6 +520,19 @@ def generate_DAG_info_incremental_groups(current_partition_name,
     if current_partition_number == 1:
         # there is always one group in the groups of partition 1. So group 1 and 
         # partition 1 are the same, i.e., have the same nodes.
+        # If the nodes in this partition/group have parents then 
+        # the parents are in this partition/group..
+        # There is only one group in the first partition, and this 
+        # group is also the first partition. If this is the only
+        # group/partition in the DAG, then it has no edges to any
+        # other group/partition.
+        # In general, a partition may have many groups and a group in a 
+        # partition may have edges to anoher group in the partition or
+        # to a group in the next partition. So if group G is the 
+        # last group processed in the DAG, G may have edges to other
+        # groups in the same partition (but since it is in the last 
+        # partition processed it has no edges to groups in other 
+        # partitions.)
 
         #assert:
         if not len(groups_of_current_partition) == 1:
@@ -574,7 +587,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         Group_DAG_map[Group_next_state] = state_info(name_of_first_group_in_DAG, fanouts, fanins, faninNBs, collapse, fanin_sizes, 
             faninNB_sizes, task_inputs,
             to_be_continued,
-            # We do not know whether this first group will have fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued
+            # We do not know whether this first group will have fanout_fanin_faninNB_collapse_groups_are_ToBeContinued
             # that are incomplete until we process the 2nd partition, except if to_be_continued
             # is False in which case there are no more partitions and no fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued
             # that are incomplete. If to_be_continued is True then we set fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued
@@ -637,6 +650,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         # previous partition. Used and reset below.
         first_previous_group = True
         for group_name in groups_of_current_partition:
+            logger.info("generate_DAG_info_incremental_groups: process group " + group_name)
             # Get groups, if any, that output to group group_name. These are groups in 
             # previous partition or in this current partition.
             senders = Group_receivers.get(group_name) 
@@ -1075,7 +1089,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 # of "T" sent to task "X"
 
                 sender_set_for_group_name = Group_receivers.get(group_name)
-                logger.trace("sender_set_for_group_name, i.e., Receivers " + group_name + ":" + str(sender_set_for_group_name))
+                logger.info("sender_set_for_group_name, i.e., send to " + group_name + ":" + str(sender_set_for_group_name))
 
                 sender_set_for_group_name_with_qualified_names = set()
                 # For each sender task "name" that sends output to group_name, the 
@@ -1086,6 +1100,13 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 # sender_set_for_senderX provides input for group_name
                 task_inputs = tuple(sender_set_for_group_name_with_qualified_names)
 
+#rhc: Problem: If not to_be_Continued then there is no next partition 
+# of groups to process, e.g., for th white board we have partition 3
+# with groups 3_1, 3_2, and 3_3, where 3_1 has a faninB to 3_2.
+# We won;t get a chance to compuet this faninNB uness we do it 
+# now, i.e., can;t wait until next partition since there is no next
+# partition .So if not to be continued, we need to look at 
+# groups within partition.
                 # generate empty state_info for group group_name. This will be filled in 
                 # when we process the groups in the next partition collected. See below.
                 # That is, this group (recall that we are iterating

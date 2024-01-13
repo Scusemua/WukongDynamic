@@ -4254,14 +4254,14 @@ def input_graph():
     # algorithms on it, e.g., fnd_cycle, diameter.
     networkX_lines = []
     #fname = "graph_3000"
-    #fname = "graph_WB"
+    fname = "graph_WB"
     # These are whiteboard graphs with various extensions
     # that, e.g., add connected components (CC)
     #fname = "graph_22N_2CC"
     #fname = "graph_23N"
     #fname = "graph_24N_3CC"
 
-    fname = "graph_24N_3CC_fanin"   # fanin at end
+    #fname = "graph_24N_3CC_fanin"   # fanin at end
 
     #fname = "graph_2N_2CC"  # 2 nodes (CCs) no edges
     #fname = "graph_3N_3CC"  # 3 nodes (CCs) no edges
@@ -4798,8 +4798,8 @@ def print_BFS_stats():
     frontiers_length = len(frontiers)
     if len(frontiers[frontiers_length-1]) != 0:
         logger.error ("Error]: print_BFS_stats: final frontier is not empty.")
-    logger.trace("")
-    logger.trace("partitions, number of partitions: " + str(len(partitions))+" (length):")
+    logger.info("")
+    logger.info("partitions, number of partitions: " + str(len(partitions))+" (length):")
 
     for x in partitions:
         if PRINT_DETAILED_STATS:
@@ -4813,11 +4813,11 @@ def print_BFS_stats():
                 #    logger.trace(str(index),end=" ")
                 #else:
                 #   logger.trace(str(index)+"-s",end=" ")
-            logger.trace(print_val)
-            logger.trace("")
+            logger.info(print_val)
+            logger.info("")
         else:
-            logger.trace("-- (" + str(len(x)) + ")")
-    logger.trace("")
+            logger.info("-- (" + str(len(x)) + ")")
+    logger.info("")
     if use_shared_partitions_groups:
         logger.trace("Number of shadow nodes (when use_shared_partitions_groups):")
         for num in partitions_num_shadow_nodes_list:
@@ -4921,9 +4921,9 @@ def print_BFS_stats():
     else:
         logger.trace("-- (" + str(len(x)) + ")")
     """
-    logger.trace("")
+    logger.info("")
     if PRINT_DETAILED_STATS:
-        logger.trace("partition nodes' frontier_parent_tuples:")
+        logger.info("partition nodes' frontier_parent_tuples:")
         for x in partitions:
             if PRINT_DETAILED_STATS:
                 print_val = "-- (" + str(len(x)) + "):" + " "
@@ -4934,15 +4934,15 @@ def print_BFS_stats():
                     for parent_tuple in node.frontier_parents:
                         print_val += str(parent_tuple) + " "
                         # print(str(parent_tuple), end=" ")
-                logger.trace(print_val)
-                logger.trace("")
+                logger.info(print_val)
+                logger.info("")
             else:
-                logger.trace("-- (" + str(len(x)) + ")")
+                logger.info("-- (" + str(len(x)) + ")")
     else:
-        logger.trace("-- (" + str(len(x)) + ")")
-    logger.trace("")
+        logger.info("-- (" + str(len(x)) + ")")
+    logger.info("")
     if PRINT_DETAILED_STATS:
-        logger.trace("group nodes' frontier_parent_tuples:")
+        logger.info("group nodes' frontier_parent_tuples:")
         for x in groups:
             if PRINT_DETAILED_STATS:
                 print_val = "-- (" + str(len(x)) + "): "
@@ -4952,13 +4952,13 @@ def print_BFS_stats():
                     for parent_tuple in node.frontier_parents:
                         print_val += str(parent_tuple) + " "
                         # print(str(parent_tuple), end=" ")
-                logger.trace(print_val)
-                logger.trace("")
+                logger.info(print_val)
+                logger.info("")
             else:
-                logger.trace("-- (" + str(len(x)) + ")")
+                logger.info("-- (" + str(len(x)) + ")")
     else:
-        logger.trace("-- (" + str(len(x)) + ")")
-    logger.trace("")
+        logger.info("-- (" + str(len(x)) + ")")
+    logger.info("")
     logger.trace("frontier_groups_sum: " + str(frontier_groups_sum) + ", len(frontiers)-1: " 
         +  str(len(frontiers)-1))
     logger.trace("Average number of frontier groups: " + (str(frontier_groups_sum / (len(frontiers)-1))))
@@ -4983,8 +4983,8 @@ def print_BFS_stats():
         logger.trace("")
     else:
         logger.trace("-- (" + str(len(nodeIndex_to_partition_partitionIndex_group_groupIndex_map)) + ")")
-    logger.trace("")
-    logger.trace("Partition Node parents (shad. node is a parent), len: " + str(len(partitions))+":")
+    logger.info("")
+    logger.info("Partition Node parents (shad. node is a parent), len: " + str(len(partitions))+":")
     for x in partitions:
         if PRINT_DETAILED_STATS:
             #logger.trace("-- (" + str(len(x)) + "):", end=" ")
@@ -4995,17 +4995,30 @@ def print_BFS_stats():
                 for parent in node.parents:
                     print_val += str(parent) + " "
                     #print(parent,end=" ")
-                logger.trace(print_val)
-                logger.trace("")
+                logger.info(print_val)
+                logger.info("")
                 #if not node.isShadowNode:
                 #    logger.trace(str(index),end=" ")
                 #else:
                 #   logger.trace(str(index)+"-s",end=" ")
-            logger.trace("")
+            logger.info("")
         else:
-            logger.trace("-- (" + str(len(x)) + ")")
-    logger.trace("")
-    logger.trace("Group Node parents (shad. node is a parent), len: " + str(len(partitions))+":")
+            logger.info("-- (" + str(len(x)) + ")")
+    logger.info("")
+    logger.info("Partition Node num_children, len: " + str(len(partitions))+":")
+    for x in partitions:
+        if PRINT_DETAILED_STATS:
+            #logger.trace("-- (" + str(len(x)) + "):", end=" ")
+            print_val = ""
+            for node in x:
+                print_val += str(node) + ":" + str(node.num_children) + ", "
+                #print(str(node) + ":" + str(node.num_children),end=", ")
+            logger.info(print_val)
+            logger.info("")
+        else:
+            logger.info("-- (" + str(len(x)) + ")")
+    logger.info("")
+    logger.info("Group Node parents (shad. node is a parent), len: " + str(len(partitions))+":")
     for x in groups:
         if PRINT_DETAILED_STATS:
             #logger.trace("-- (" + str(len(x)) + "):", end=" ")
@@ -5016,17 +5029,17 @@ def print_BFS_stats():
                 for parent in node.parents:
                     print_val += str(parent) + " "
                     #print(parent,end=" ")
-                logger.trace(print_val)
-                logger.trace("")
+                logger.info(print_val)
+                logger.info("")
                 #if not node.isShadowNode:
                 #    logger.trace(str(index),end=" ")
                 #else:
                 #   logger.trace(str(index)+"-s",end=" ")
-            logger.trace("")
+            logger.info("")
         else:
-            logger.trace("-- (" + str(len(x)) + ")")
-    logger.trace("")
-    logger.trace("Group Node num_children, len: " + str(len(groups))+":")
+            logger.info("-- (" + str(len(x)) + ")")
+    logger.info("")
+    logger.info("Group Node num_children, len: " + str(len(groups))+":")
     for x in groups:
         if PRINT_DETAILED_STATS:
             #logger.trace("-- (" + str(len(x)) + "):", end=" ")
@@ -5034,11 +5047,11 @@ def print_BFS_stats():
             for node in x:
                 print_val += str(node) + ":" + str(node.num_children) + ", "
                 #print(str(node) + ":" + str(node.num_children),end=", ")
-            logger.trace(print_val)
-            logger.trace("")
+            logger.info(print_val)
+            logger.info("")
         else:
-            logger.trace("-- (" + str(len(x)) + ")")
-    logger.trace("")
+            logger.info("-- (" + str(len(x)) + ")")
+    logger.info("")
     logger.trace("Partition_senders, len: " + str(len(BFS_generate_DAG_info.Partition_senders)) + ":")
     if PRINT_DETAILED_STATS:
         for k, v in BFS_generate_DAG_info.Partition_senders.items():
@@ -5338,8 +5351,13 @@ if __name__ == '__main__':
         output_keys = list(pr_outputs.keys())
         output_keys.sort()
         sorted_pagerank_outputs = {i: pr_outputs[i] for i in output_keys}
-        for (k,v) in sorted_pagerank_outputs.items():
-            logger.info(str(k) + ":" + group_names[k-1] + ":" +str(v))
+        if use_page_rank_group_partitions:
+            for (k,v) in sorted_pagerank_outputs.items():
+                logger.info(str(k) + ":" + group_names[k-1] + ":" +str(v))
+        else:
+            for (k,v) in sorted_pagerank_outputs.items():
+                logger.info(str(k) + ":" + partition_names[k-1] + ":" +str(v))
+     
 
 """
 logger.trace("Sorted simple cycles:")

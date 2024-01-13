@@ -116,26 +116,26 @@ class Partition_Node:
             my_ID = str(self.ID) + "-s"
 
         global debug_pagerank
-        if (debug_pagerank):
-            logger.trace("update_PageRank_of_PageRank_Function_loop: update_pagerank: of node " + my_ID)
-            logger.trace("update_PageRank_of_PageRank_Function_loop: update_pagerank: parent_nodes of " + my_ID + ": " + str(parent_nodes))
-            logger.trace("update_PageRank_of_PageRank_Function_loop: update_pagerank of node " + my_ID + ": num_children: " + str(self.num_children))
+        if (debug_pagerank and self.ID == 2 and not self.isShadowNode):
+            logger.info("update_PageRank_of_PageRank_Function_loop: update_pagerank: of node " + my_ID)
+            logger.info("update_PageRank_of_PageRank_Function_loop: update_pagerank: parent_nodes of " + my_ID + ": " + str(parent_nodes))
+            logger.info("update_PageRank_of_PageRank_Function_loop: update_pagerank of node " + my_ID + ": num_children: " + str(self.num_children))
 
             for node_indexD in parent_nodes:
-                logger.trace("update_PageRank_of_PageRank_Function_loop: node_indexD: " + str(node_indexD))
-                logger.trace("update_PageRank_of_PageRank_Function_loop: partition_or_group[node_indexD].prev: " + str(partition_or_group[node_indexD].prev))
-                logger.trace("update_PageRank_of_PageRank_Function_loop: partition_or_group[node_indexD].num_children: " + str(partition_or_group[node_indexD].num_children))
+                logger.info("update_PageRank_of_PageRank_Function_loop: node_indexD of parent: " + str(node_indexD))
+                logger.info("update_PageRank_of_PageRank_Function_loop: partition_or_group[node_indexD].prev: " + str(partition_or_group[node_indexD].prev))
+                logger.info("update_PageRank_of_PageRank_Function_loop: partition_or_group[node_indexD].num_children: " + str(partition_or_group[node_indexD].num_children))
                 
         #Note: a paent has at least one child so num_children is not 0
         pagerank_sum = sum((partition_or_group[node_index].prev / partition_or_group[node_index].num_children) for node_index in parent_nodes)
-        if (debug_pagerank):
-            logger.trace("update_PageRank_of_PageRank_Function_loop: update_pagerank: pagerank_sum: " + str(pagerank_sum))
-        if (debug_pagerank):
-            logger.trace("update_PageRank_of_PageRank_Function_loop: damping_factor:" + str(damping_factor) + " 1-damping_factor:" + str(1-damping_factor) + " num_nodes: " + str(total_num_nodes) + " random_jumping: " + str(random_jumping))
+        if (debug_pagerank and self.ID == 2 and not self.isShadowNode):
+            logger.info("update_PageRank_of_PageRank_Function_loop: update_pagerank: pagerank_sum: " + str(pagerank_sum))
+        if (debug_pagerank and self.ID == 2 and not self.isShadowNode):
+            logger.info("update_PageRank_of_PageRank_Function_loop: damping_factor:" + str(damping_factor) + " 1-damping_factor:" + str(1-damping_factor) + " num_nodes: " + str(total_num_nodes) + " random_jumping: " + str(random_jumping))
         self.pagerank = random_jumping + (one_minus_dumping_factor * pagerank_sum)
-        if (debug_pagerank):
-            logger.trace ("update_PageRank_of_PageRank_Function_loop: update_pagerank: pagerank of node: " + str(self.ID) + ": " + str(self.pagerank))
-            logger.trace("")
+        if (debug_pagerank and self.ID == 2 and not self.isShadowNode):
+            logger.info ("update_PageRank_of_PageRank_Function_loop: update_pagerank: pagerank of node: " + str(self.ID) + ": " + str(self.pagerank))
+            logger.info("")
 
     
 #rhc shared

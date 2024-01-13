@@ -301,7 +301,7 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partiti
         partition_or_group = groups_partitions[task_file_name]
 
     if (debug_pagerank):
-        logger.trace("PageRank_Function: partition_or_group (node:parents):")
+        logger.info("PageRank_Function: partition_or_group (node:parent indices):")
         for node in partition_or_group:
             #logger.trace(node,end=":")
             print_val = str(node) + ":"
@@ -314,17 +314,17 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partiti
             else:
                 #logger.trace(",",end=" ")
                 print_val += ", "
-            logger.trace(print_val)
-        logger.trace("")
-        logger.trace("PageRank_Function:  partition_or_group (node:num_children):")
+            logger.info(print_val)
+        logger.info("")
+        logger.info("PageRank_Function:  partition_or_group (node:num_children):")
         print_val = ""
         for node in partition_or_group:
             print_val += str(node)+":"+str(node.num_children) + ", "
             # logger.trace(str(node)+":"+str(node.num_children),end=", ")
-        logger.trace(print_val)
-        logger.trace("")
+        logger.info(print_val)
+        logger.info("")
 
-        logger.trace("")
+        logger.info("")
         # node's children set when the partition/grup node created
 
     #Note: We can compute num_shadow_nodes directly from len(input_tuples)
@@ -350,12 +350,13 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partiti
 
     # Note: num_nodes_for_pagerank_computation includes regular nodes plus
     # shadow nodes, which together are the nodes in partition_or_group.
-    # There are no parent nodes in partition_or_group; we add parent nodes below.
+    # There are no parent nodes in partition_or_group yet; we add parent nodes below.
     # There is an input tuple for each shadow_node, so the number of shadow nodes
     # is len(input_tuples).
 
     num_nodes_for_pagerank_computation = len(partition_or_group)
-    total_num_nodes = num_nodes_for_pagerank_computation - len(input_tuples)
+    #total_num_nodes = num_nodes_for_pagerank_computation - len(input_tuples)
+    
     """
     # num_nodes is a global variable in BFS.py that is set to the number of
     # nodes in the graph input by input_graph() in BFS.py.
@@ -365,6 +366,7 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partiti
         logging.shutdown()
         os._exit(0)
     """
+    logger.info("PageRank_Function: total_num_nodes: " + str(total_num_nodes))
 
     damping_factor=0.15
     random_jumping = damping_factor / total_num_nodes
@@ -451,8 +453,8 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partiti
         i += 1
 
     if (debug_pagerank):
-        logger.trace("")
-        logger.trace("PageRank_Function output partition_or_group after adding " + str(len(input_tuples)) + " Shad. Node parents (node:parents):")
+        logger.info("")
+        logger.info("PageRank_Function output partition_or_group after adding " + str(len(input_tuples)) + " Shad. Node parents (node:parents):")
         for node in partition_or_group:
             print_val = str(node) + ":"
             # print(node,end=":")
@@ -465,8 +467,8 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partiti
             else:
                 #print(",",end=" ")
                 print_val += ","
-            logger.trace(print_val)
-        logger.trace("")
+            logger.info(print_val)
+        logger.info("")
 
     if task_file_name.endswith('L'):
         for index in range(num_nodes_for_pagerank_computation):
@@ -479,8 +481,8 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partiti
 
     for i in range(1,iterations+1):
         if (debug_pagerank):
-            logger.trace("***** PageRank: iteration " + str(i))
-            logger.trace("")
+            logger.info("***** PageRank: iteration " + str(i))
+            logger.info("")
 
         # inlined this function 
         #PageRank_Function_one_iter(partition_or_group,damping_factor,one_minus_dumping_factor,random_jumping,total_num_nodes,num_nodes_for_pagerank_computation)

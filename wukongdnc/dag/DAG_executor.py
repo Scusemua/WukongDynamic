@@ -3798,7 +3798,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # group is complete so we can process the collapse. If this if 
                 # is False, then we are using partitions and the current partition/task may or may not 
                 # be complete. If it is complete, we can process the collapse task; otherwise, we put the 
-                # current partition/task in the continue queue.
+                # *current* partition/task in the continue queue, not the collapse task. When we get the
+                # current task out of the continue_queue, we process is fanouts/fanins/collapse by 
+                # grabbing its collapse (partitions have no fanins/fanouts). We will execute the collapsed
+                # task using the output of the current task as the input to the collapse task.
                 if not(compute_pagerank and use_incremental_DAG_generation) or (compute_pagerank and use_incremental_DAG_generation and use_page_rank_group_partitions):
 #rhc: cluster:
                     # get the state of the collapsed partition/group (task)
@@ -3818,8 +3821,14 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 #rhc: lambda inc:   
                     # we are doing incremental DAG generation with partitions. The partition may
                     # or may not be complete.
-                    # Get the collapsed task and see if it is to be continued - f so, then we 
-                    # cannot execute the collpase task.
+                    # Get the collapsed task and see if it is to be continued - if so, then 
+                    # if using workers: put current task and its output in continue queue as a tuple.
+                    # if using lambdas: call withdraw() to try to get a new incremental DAG. 
+                    # If we get one then the collapsed task will be in it as a completed task 
+                    # so we can execute the collapsed task; otherwise, withdraw() will save the 
+                    # task (state) and its output and the next call to deposit() by bfs() will 
+                    # deposit a new DAG and will restart the continued tasks with their outputs
+                    # in their payloads as "input". 
                     state_of_collapsed_task = DAG_info.get_DAG_states()[state_info.collapse[0]]
                     state_info_of_collapse_task = DAG_map[state_of_collapsed_task]
                     logger.trace("DAG_executor_work_loop: check TBC of collapsed task state info: "
