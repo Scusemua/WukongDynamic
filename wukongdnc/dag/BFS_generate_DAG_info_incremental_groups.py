@@ -445,7 +445,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
 
     # a list of groups that have a fanot/fanin/collapse to the 
     # target group. (They "send" to the target group which "receives".)
-    senders = Group_receivers.get(current_partition_name)
+    #senders = Group_receivers.get(current_partition_name)
     # Note: a group that starts a new connected component (which is 
     # the first partition collected on a call to BFS(), of which there 
     # may be many calls if the graph is not connected) is a leaf
@@ -518,14 +518,17 @@ def generate_DAG_info_incremental_groups(current_partition_name,
     """
 
     if current_partition_number == 1:
-        # there is always one group in the groups of partition 1. So group 1 and 
+        # There is always one group in the groups of partition 1. So group 1 and 
         # partition 1 are the same, i.e., have the same nodes.
         # If the nodes in this partition/group have parents then 
         # the parents are in this partition/group..
         # There is only one group in the first partition, and this 
-        # group is also the first partition. If this is the only
+        # group is also the first partition. Since there is only 
+        # one group in this partition there are no edges between 
+        # the groups in this first partition. If this is the only
         # group/partition in the DAG, then it has no edges to any
-        # other group/partition.
+        # other group/partition.  That is, the DAG has one node qnd 
+        # no edges.
         # In general, a partition may have many groups and a group in a 
         # partition may have edges to anoher group in the partition or
         # to a group in the next partition. So if group G is the 
@@ -649,16 +652,40 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         # Flag to indicate whether we are processing the first group_name of the groups in the 
         # previous partition. Used and reset below.
         first_previous_group = True
+
+#rhc: undo 1
+# Possible fix:
+# - Take these out of original place
+# - get rid of sender_set_for_group_name
+# - get rid of second group_name loop since we only need one iteration now?
+# - comment on changes: we need stat_info of al groups in previous partition and curret
+#   partition if not to be continued since we will be setting fina lstate info 
+#   for groups in current partition too. (Though they have empty state info when we get
+#   then for final set so we could just use an empty state info if not in there,
+#   but we may as well clean this up.)
+# 
+# Do we need sthe two cases? Maybe but perhaps put the edge generation in a method that both can call?
+        
         for group_name in groups_of_current_partition:
-            logger.info("generate_DAG_info_incremental_groups: process group " + group_name)
-            # Get groups, if any, that output to group group_name. These are groups in 
-            # previous partition or in this current partition.
             senders = Group_receivers.get(group_name) 
             if (senders == None):
                 # This is a leaf group since it gets no inputs from any other groups.
                 # This means group_name is the only group in groups_of_current_partition.
                 # (So no group in any other partition or in this current partition outputs
-                # to group_name.)
+                # to group_name.) 
+                # That is, all leaf groups are detected as the first
+                # group identified on a call to bfs(). This group is 
+                # also a partition, i.e., the first partition hs a single group.
+                # There may be many calls to bfs(), each call starts a new 
+                # connected component. For example, in the whiteboard example,
+                # with addtional components 4-->5 and 6-->7, the first group
+                # partition in the DAG is PR1_1, it is the start of the first
+                # connected component (CC) searched by bfs(). The second CC
+                # starts with a group/partition containing 4, and ends with 
+                # group/partition conaining 5, the second CC starts with 
+                # the group/partition containing 6, and ends with the group
+                # /partition containing 7. bfs() is called each time we start
+                # the search of a CC.
                 # assert:
                 if len(groups_of_current_partition) > 1:
                     logger.error("[Error]: Internal error: generate_DAG_info_incremental_groups:"
@@ -717,7 +744,165 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 Group_DAG_map[Group_next_state] = state_info(group_name, fanouts, fanins, faninNBs, collapse, fanin_sizes, 
                     faninNB_sizes, task_inputs,
                     to_be_continued,
-                    # We do not know whether this frist group will have fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued
+                    # We do not know whether this first group will have fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued
+                    # that are incomplete until we process the 2nd partition, except if to_be_continued
+                    # is False in which case there are no more partitions and no fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued
+                    # that are incomplete. If to_be_continued is True then we set fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued
+                    # to True but we may change this value when we process partition 2.
+                    to_be_continued,
+#rhc: clustering
+                    fanout_partition_group_sizes)
+                
+                Group_DAG_states[group_name] = Group_next_state
+
+                # identify the function that will be used to execute this task
+                if not use_shared_partitions_groups:
+                    Group_DAG_tasks[group_name] = PageRank_Function_Driver
+                else:
+                    if not use_struct_of_arrays_for_pagerank:
+                        Group_DAG_tasks[group_name] = PageRank_Function_Driver_Shared 
+                    else:
+                        Group_DAG_tasks[group_name] = PageRank_Function_Driver_Shared_Fast  
+
+                logger.trace("generate_DAG_info_incremental_groups: state_info for current " + group_name)
+            else:
+                sender_set_for_group_name = Group_receivers.get(group_name)
+                logger.info("sender_set_for_group_name, i.e., send to " + group_name + ":" + str(sender_set_for_group_name))
+
+                sender_set_for_group_name_with_qualified_names = set()
+                # For each sender task "name" that sends output to group_name, the 
+                # qualified name of the output is: name+"-"+group_name
+                for name in sender_set_for_group_name:
+                    qualified_name = str(name) + "-" + str(group_name)
+                    sender_set_for_group_name_with_qualified_names.add(qualified_name)
+                # sender_set_for_senderX provides input for group_name
+                task_inputs = tuple(sender_set_for_group_name_with_qualified_names)
+
+
+                # generate empty state_info for group group_name. This will be filled in 
+                # when we process the groups in the next partition collected. See below.
+                # That is, this group (recall that we are iterating
+                # through the groups of the current partition) is 
+                # incomplete and we will complete it when we process
+                # the (groups in the) next partition.
+                fanouts = []
+#rhc: clustering
+                fanout_partition_group_sizes = []
+                faninNBs = []
+                fanins = []
+                collapse = []
+                fanin_sizes = []
+                faninNB_sizes = []
+                Group_DAG_map[Group_next_state] = state_info(group_name, fanouts, fanins, faninNBs, collapse, fanin_sizes, 
+                    faninNB_sizes, task_inputs,
+                    # to_be_continued parameter can be true or false
+                    to_be_continued,
+                    # We do not know whether this frist group will have fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued
+                    # that are incomplete until we process the 2nd partition, except if to_be_continued
+                    # is False in which case there are no more partitions and no fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued
+                    # that are incomplete. If to_be_continued is True then we set fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued
+                    # to True but we may change this value when we process partition 2.
+                    to_be_continued,
+#rhc: clustering
+                    fanout_partition_group_sizes)
+                
+                Group_DAG_states[group_name] = Group_next_state
+
+                # identify function used to execute this pagerank task (see comments above)
+                if not use_shared_partitions_groups:
+                    Group_DAG_tasks[group_name] = PageRank_Function_Driver
+                else:
+                    if not use_struct_of_arrays_for_pagerank:
+                        Group_DAG_tasks[group_name] = PageRank_Function_Driver_Shared 
+                    else:
+                        Group_DAG_tasks[group_name] = PageRank_Function_Driver_Shared_Fast  
+
+                logger.trace("generate_DAG_info_incremental_groups: Group_DAG_map[Group_next_state]: " + str(Group_DAG_map[Group_next_state] ))
+
+
+
+        for group_name in groups_of_current_partition:
+            logger.info("generate_DAG_info_incremental_groups: process group " + group_name)
+            # Get groups, if any, that output to group group_name. These are groups in 
+            # previous partition or in this current partition.
+            senders = Group_receivers.get(group_name) 
+            if (senders == None):
+                # This is a leaf group since it gets no inputs from any other groups.
+                # This means group_name is the only group in groups_of_current_partition.
+                # (So no group in any other partition or in this current partition outputs
+                # to group_name.) 
+                # That is, all leaf groups are detected as the first
+                # group identified on a call to bfs(). This group is 
+                # also a partition, i.e., the first partition hs a single group.
+                # There may be many calls to bfs(), each call starts a new 
+                # connected component. For example, in the whiteboard example,
+                # with addtional components 4-->5 and 6-->7, the first group
+                # partition in the DAG is PR1_1, it is the start of the first
+                # connected component (CC) searched by bfs(). The second CC
+                # starts with a group/partition containing 4, and ends with 
+                # group/partition conaining 5, the second CC starts with 
+                # the group/partition containing 6, and ends with the group
+                # /partition containing 7. bfs() is called each time we start
+                # the search of a CC.
+                # assert:
+                if len(groups_of_current_partition) > 1:
+                    logger.error("[Error]: Internal error: generate_DAG_info_incremental_groups:"
+                        + " start of new connected component (i.e., called BFS()) but there is more than one group.")
+
+                # This is not group 1. But it is a leaf group, which means
+                # it was the first group generated by some call to BFS(), i.e., 
+                # it is the start of a new connected component. This also means there
+                # are no fanouts/fanins/faninNBs/collapses from any group in the previous
+                # partition to this group or from any group in this current
+                # partition to this group (since this group is the only group
+                # in the current partition.) Note however, that we are computing 
+                # the fanouts/fanins/collapse of the groups in the previous 
+                # partition and the groups in that partition may have fanouts/
+                # fanins to each other (left to right), so we still need to 
+                # generate these edges in the DAG.
+                # 
+                # Note: when we call BFS() we will collect a single partition/group
+                # that is the start of a new connected component. Thus group_name is the 
+                # only group in groups_of_current_partition.
+
+                # Since this is a leaf group (it has no predecessor) we will need to add 
+                # this partition/group to the work queue or start a new lambda for it (
+                # like the DAG_executor_driver does. (Note that since this partition/group has
+                # no predecessor, no worker or lambda can enable this task via a fanout, collapse,
+                # or fanin, thus we must add this partition/group as work explicitly ourselves.)
+                # This is done when BFS deposits a new DAG, i.e., in method deposit.
+            
+                # Mark this partition/group as a leaf task/group. If any more of these leaf task 
+                # partitions/groups are found (by later calls to BFS()) they will accumulate 
+                # in these lists. BFS() uses these lists to identify leaf tasks - when BFS generates an 
+                # incremental DAG_info, it adds work to the work queue or starts a
+                # lambda for each leaf task that is not the very first partition/group in the 
+                # DAG. The first partition/group is always a leaf task and it is handled by the 
+                # DAG_executor_driver.
+
+                logger.trace("generate_DAG_info_incremental_groups: start of new connected component is group "
+                    + group_name)
+
+                # task input is same as for leaf task group 1 above - empty
+                Group_DAG_leaf_tasks.append(group_name)
+                Group_DAG_leaf_task_start_states.append(Group_next_state)
+                task_inputs = ()
+                Group_DAG_leaf_task_inputs.append(task_inputs)
+
+                fanouts = []
+#rhc: clustering
+                fanout_partition_group_sizes = []
+                faninNBs = []
+                fanins = []
+                collapse = []
+                fanin_sizes = []
+                faninNB_sizes = []
+
+                # generate state_info for group group_name
+                Group_DAG_map[Group_next_state] = state_info(group_name, fanouts, fanins, faninNBs, collapse, fanin_sizes, 
+                    faninNB_sizes, task_inputs,
+                    to_be_continued,
+                    # We do not know whether this first group will have fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued
                     # that are incomplete until we process the 2nd partition, except if to_be_continued
                     # is False in which case there are no more partitions and no fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued
                     # that are incomplete. If to_be_continued is True then we set fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued
@@ -745,24 +930,44 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 ## end to mark it as a loop partition. So save the name so we have it.
                 #Group_DAG_previous_partition_name = current_partition_name
 
-                # None of the groups in the previous partiton output to 
+                # None of the groups in the previous partition output to 
                 # group_name since senders is None. So we initialized the state
                 # info of these groups in the previous partition to have empty sets for
                 # fanouts/fanins/faninNBs/collapses/fanin_sizes/faninNB_sizes
                 # and we do not need to modify these empty sets with respect to group_name
                 # since the previous groups do not output to group_name. This
                 # group group_name is a leaf task.
-                # Note: Since group_name is a leaf group it is the only group \
+                # Note: Since group_name is a leaf group it is the only group
                 # in groups_of_current_partition so there are no other groups
                 # in groups_of_current_partition that can output to group_name.
  
                 previous_partition_state = current_partition_state - 1
                 groups_of_previous_partition = groups_of_partitions[previous_partition_state-1]
-#rhc: ToDo: fixes bug
-                if not to_be_continued:
-                    groups_of_previous_partition += groups_of_current_partition 
-                    # add current groups to groups_of_previous_partition so we will
-                    # ad edges to DAG for their outputs too.
+                # Note: if this is the last group/partition in the DAG, i.e., to
+                # be added to the DAG, we know that this group is the only 
+                # group in the partition and thus there are no other groups
+                # in this partition that have an edge (i.e., send outputs to)
+                # to this group. This means we do not have to add the groups
+                # of the current partition (which is just this group) to 
+                # the groups_of_previous_partition like we do in the case below
+                # for non-sink groups. We do this below to cover the case
+                # where we have a partition P that is the last partiton in the DAG.
+                # For such a partiton there is no "next partition" to process and 
+                # when we process the next partition is when we add edges from 
+                # the group in P to the groups in the next partition and to the 
+                # groups in P (i.e., a group in P can have an edge to another
+                # group in P). Since here is no next partition, there are no edges
+                # from groups in P to groups in the next partition; however, there
+                # can be edges between the groups in P and we must cover those
+                # edges even though we won't be able to process them as we normally
+                # do when we process the next partition. So we add the groups in 
+                # P to the groups of groups_of_previous_partition when P is the last 
+                # partition to be processed in the DAG which ensures we consider 
+                # the edges from each group in P to the other groups in P.
+                # (In general, for each grooup g in groups_of_previous_partition,
+                # we identify all the edges (fanouts/fanins/collapse) between g
+                # and other groups; these other groups are in P or in the 
+                # next partition (if there is one) to be processed.)
                 logger.trace("generate_DAG_info_incremental_groups: current_partition_state: " 
                     + str(current_partition_state) + ", previous_partition_state: "
                     + str(previous_partition_state))
@@ -790,6 +995,24 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 #       }
                 #    }
                 # Consider taking "Do this one time" out of the loop.
+                #
+                # Note: For group_name we set its state info above. This
+                # state info is incomplete, i.e., we will not not know
+                # which groups group_name outputs to until we process the 
+                # next partition. But we are now processing the current
+                # partition (i.e., the one containing group_name) so we 
+                # have discovered all the edges from the groups in the 
+                # previous partition to the groups in the current partition.
+                # Also, a group in the previous partition can have abn edge 
+                # to a group that is in the previous partition. (We could
+                # see these edges whwn we processed the previous partition,
+                # but we don't add them until we process the next partition,
+                # which is the current_partition here. Note that if there 
+                # is no next partition then we need to do something to 
+                # cover the edges between the groups of the previous partition,
+                # which we described above. This does not apply here since we 
+                # are dealing with a partition that has a single group and thus
+                # there are no edges between groups that we can miss.)
                 if first_previous_group:
                     first_previous_group = False
 
@@ -873,18 +1096,6 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                         # or it may send no outputs at all. Since the current group
                         # is a leaf group, we know that P does not send outputs to this leaf group,
                         # which by definition of being a lwaf has no inputs at all.
-
-        #rhc: ToDo: Q: Issue: But we are computing the state info for the 
-        # groups in the previous partition, not the groups in the current
-        # partition, of which group_name is one? So here we iterate through groups
-        # of previous partition (which should be in Group_receivers.get(group_name))
-        # and compuet their state_info which is complete now. Note: state info 
-        # of group_name in current partition is not complete.
-        # So like:
-        #  previous_partition_state = current_partition_state - 1
-        #  groups_of_previous_partition = groups_of_partitions[previous_partition_state-1]
-        #  for name_of_group_in_previous_partition in groups_of_previous_partition:
-        # where change "group_name" to name_of_group_in_previous_partition
 
                         logger.trace("generate_DAG_info_incremental_groups: previous_group: " + previous_group)
                         # get the set of groups that previous_group sends to, i.e., the set of groups 
@@ -1233,6 +1444,34 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 # Positions in groups_of_partitions statr at 0.
                 previous_partition_state = current_partition_state - 1
                 groups_of_previous_partition = groups_of_partitions[previous_partition_state-1]
+#rhc: Problem: If not to_be_Continued then there is no next partition 
+# of groups to process, e.g., for th white board we have partition 3
+# with groups 3_1, 3_2, and 3_3, where 3_1 has a faninB to 3_2.
+# We won;t get a chance to compuet this faninNB uness we do it 
+# now, i.e., can;t wait until next partition since there is no next
+# partition .So if not to be continued, we need to look at 
+# groups within partition.
+# No? When current partition is 3, we look at groups n partition 2,
+# which is fine for seeing the PR2_2L has a faninNB to PR3_2,
+# but we fail to detect that PR3_1 has a faninNB to PR3_2. 
+# This is because we only look at the groups in the previous
+# partition, like for using partitions, but we should also "Add"
+# groups in the current partition that are before group_name in 
+# that list (assuming groups are added left to right in this list
+# as the are detected.)
+#rhc: ToDo: fixes bug
+                
+#rhc: undo 2
+                groups_to_consider = []
+                if not to_be_continued:
+                    groups_to_consider += groups_of_previous_partition
+                    groups_to_consider += groups_of_current_partition
+                    #groups_of_previous_partition += groups_of_current_partition 
+                    # add current groups to groups_of_previous_partition so we will
+                    # ad edges to DAG for their outputs too.
+                else:
+                    groups_to_consider += groups_of_previous_partition
+
                 logger.trace("generate_DAG_info_incremental_groups: current_partition_state: " 
                     + str(current_partition_state) + ", previous_partition_state: "
                     + str(previous_partition_state))
@@ -1245,6 +1484,37 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 # previous partition. Those groups can send inputs to the groups in the 
                 # current partition (which we are processing here) or to other
                 # groups in their same partition, which is the previous partition.
+
+                # Note that above we are setting the state_info for group_name:
+                #   Group_DAG_map[Group_next_state] = state_info(group_name,...
+                # and we need to do this for each group_name. So the logic is:
+                #    for each group_name in the current group {
+                #       set state info
+                #       Do this one time in this loop {
+                #          for each previous_group in the previous partition {
+                #               compute the edges for previous_group
+                #          }
+                #       }
+                #    }
+                # Consider taking "Do this one time" out of the loop.
+                #
+                # Note: For group_name we set its state info above. This
+                # state info is incomplete, i.e., we will not not know
+                # which groups group_name outputs to until we process the 
+                # next partition. But we are now processing the current
+                # partition (i.e., the one containing group_name) so we 
+                # have discovered all the edges from the groups in the 
+                # previous partition to the groups in the current partition.
+                # Also, a group in the previous partition can have abn edge 
+                # to a group that is in the previous partition. (We could
+                # see these edges whwn we processed the previous partition,
+                # but we don't add them until we process the next partition,
+                # which is the current_partition here. Note that if there 
+                # is no next partition then we need to do something to 
+                # cover the edges between the groups of the previous partition,
+                # which we described above - add the groups of the current 
+                # partiton to the groups of the previous partition.)
+
                 if first_previous_group:
                     first_previous_group = False
 
@@ -1258,8 +1528,39 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                     # a group in its same partition or to a group in the next partition. So 
                     # when we collect the groups in (current) partition i, we know the behavior 
                     # of the groups in (previous) partition i-1.
+
+                    # Note: From above, we described the logic for processing
+                    # the groups in the previous partition. When we process the groups
+                    # in the previous partition, we also need to process the groups
+                    # in the partition previous to the previous partition, which 
+                    # we refer to as previous_previous_group, But similar to the 
+                    # processing of previous groups, we only need to process the 
+                    # previous previous groups one time, not once for each previous
+                    # group. So the total logic is:
+                    # flag so we only do this for the first group of groups in previous previous partition
+                    #    A: for each group_name in the current group {
+                    #       set state info;
+                    #       Do this one time in this A loop {
+                    #          B: for each previous_group in the previous partition {
+                    #                compute the edges for previous_group and set its state_info;
+                    #                Do this one time in this B loop {
+                    #                   C: for each previous_previous group in the previous previous partition {
+                    #                          set the state info for previous_previous_group; 
+                    #                   }C
+                    #                }Do
+                    #          }B
+                    #       }Do
+                    #    }A
+                    #  Note: We do the one time code on the first iterations
+                    #  of the A and B loops, which is why we have first_itration 
+                    #  flags to identify the first iteration and turn off the 
+                    #  do one time code for the succeeding iterations. There is
+                    #  nothing special about the first iteration.
+                    # Consider taking the Do one time code out of the loops.
                     first_previous_previous_group = True
-                    for previous_group in groups_of_previous_partition:
+#rhc: undo 3
+                    for previous_group in groups_to_consider:
+                    #for previous_group in groups_of_previous_partition:
                         # sink nodes, i.e., nodes that do not send any outputs to other nodes
 
 
@@ -1282,29 +1583,13 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                         # partition, i.e., the same partition as group previous_group,
                         # or a group in the current partition, or it may send no outputs at all.
 
-        #rhc: ToDo: Q: Issue: But we are computing the state info for the 
-        # groups in the previous partition, not the groups in the current
-        # partition, of which group_name is one? So here we iterate through groups
-        # of previous partition (which should be in Group_receivers.get(group_name))
-        # and compuet their state_info which is complete now. Note: state info 
-        # of group_name in current partition is not complete.
-        # So like:
-        #  previous_partition_state = current_partition_state - 1
-        #  groups_of_previous_partition = groups_of_partitions[previous_partition_state-1]
-        #  for name_of_group_in_previous_partition in groups_of_previous_partition:
-        # where change "group_name" to name_of_group_in_previous_partition
-
                         logger.trace("generate_DAG_info_incremental_groups: previous_group: " + previous_group)
 
                         # get groups that previous group sends inputs to. These
                         # groups "receive" inputs from the sender
-#rhc: Note: here we only get groups in previous partition, but if 
-# to be continued is False, then we could ad the groups of the 
-# current partition that have an index that is less than that of 
-# group_name, e.g., for PR3_2, we consider the groups PR2_1, PR2_2L, PR2_3
-# and also group PR3_1 of current partition, where PR3_1 is sender
-# for receiver PR3_2.
-                        receiver_set_for_previous_group = Group_senders[previous_group]
+
+                        #receiver_set_for_previous_group = Group_senders[previous_group]
+                        receiver_set_for_previous_group = Group_senders.get(previous_group,[])
                         # for each group that receives an input from the previous_group
                         for receiverY in receiver_set_for_previous_group:
                             # Get the groups that receive inputs from receiverY.
@@ -1314,10 +1599,10 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                             # to know whether receiverY is a task for a fanin/fanout/faniNB/collapse
                             # of previous_group.
 
-                            # Here we chck whether rceiverY is a sink, i.e., it does not
+                            # Here we check whether rceiverY is a sink, i.e., it does not
                             # send inputs to any other group.
                             receiver_set_for_receiverY = Group_senders.get(receiverY)
-                            if receiver_set_for_receiverY == None:
+                            if receiver_set_for_receiverY == None:  # None is default
                                 # receiverY does not send any inputs to other groups
                                 # so it is a sink.
                                 # 
@@ -1354,7 +1639,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                             # faninNBs, no no fanins.
                             sender_set_for_receiverY = Group_receivers[receiverY]
                             # number of groups that send inputs to receiverY
-                            length_of_sender_set_for_receiverY = len(sender_set_for_receiverY)
+                            length_of_sender_set_for_receiverY = len(sender_set_for_receiverY) # must be > 0, from above
                             # number of groups that receive input from previous_group
                             length_of_receiver_set_for_previous_group = len(receiver_set_for_previous_group)
 
