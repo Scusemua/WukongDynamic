@@ -564,11 +564,13 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         if not senders == None:
             logger.error("[Error]: Internal error: generate_DAG_info_incremental_groups"
                 + " leaf node has non-None senders.")
-        
+
+        logger.info("generate_DAG_info_incremental_groups: generate empty state_info for first group "
+            + name_of_first_group_in_DAG + " with Group_next_state: "  + str(Group_next_state))
         # record DAG information 
         # leaf task name
         Group_DAG_leaf_tasks.append(name_of_first_group_in_DAG)
-        # leaf task state
+        # leaf task state. Group_next_state is a global variable
         Group_DAG_leaf_task_start_states.append(Group_next_state)
         # leaf tasks have no input
         task_inputs = ()
@@ -666,6 +668,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
 # 
 # Do we need sthe two cases? Maybe but perhaps put the edge generation in a method that both can call?
         
+        
         for group_name in groups_of_current_partition:
             senders = Group_receivers.get(group_name) 
             if (senders == None):
@@ -721,13 +724,18 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 # lambda for each leaf task that is not the very first partition/group in the 
                 # DAG. The first partition/group is always a leaf task and it is handled by the 
                 # DAG_executor_driver.
-
-                logger.trace("generate_DAG_info_incremental_groups: start of new connected component is group "
+                
+                
+                logger.info("generate_DAG_info_incremental_groups: start of new connected component is group "
                     + group_name)
+                logger.info("generate_DAG_info_incremental_groups: generate empty state_info for leaf task"
+                    + group_name + " with Group_next_state: "  + str(Group_next_state))
 
-                # task input is same as for leaf task group 1 above - empty
+                # save leaf task. Group_next_state is a global variable
                 Group_DAG_leaf_tasks.append(group_name)
                 Group_DAG_leaf_task_start_states.append(Group_next_state)
+                
+                # compute task inputs == task input is same as for leaf task group 1 above - empty
                 task_inputs = ()
                 Group_DAG_leaf_task_inputs.append(task_inputs)
 
@@ -740,7 +748,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 fanin_sizes = []
                 faninNB_sizes = []
 
-                # generate state_info for group group_name
+                # generate state_info for group group_name. Group_next_state is glob
                 Group_DAG_map[Group_next_state] = state_info(group_name, fanouts, fanins, faninNBs, collapse, fanin_sizes, 
                     faninNB_sizes, task_inputs,
                     to_be_continued,
@@ -764,11 +772,15 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                     else:
                         Group_DAG_tasks[group_name] = PageRank_Function_Driver_Shared_Fast  
 
-                logger.trace("generate_DAG_info_incremental_groups: state_info for current " + group_name)
+                logger.info("generate_DAG_info_incremental_groups: state_info for current " + group_name)
             else:
+                logger.info("generate_DAG_info_incremental_groups: generate empty state_info for "
+                    + group_name + " with Group_next_state: "  + str(Group_next_state))
+                
                 sender_set_for_group_name = Group_receivers.get(group_name)
-                logger.info("sender_set_for_group_name, i.e., send to " + group_name + ":" + str(sender_set_for_group_name))
+                logger.info("sender_set_for_group_name, i.e., the groups that send to " + group_name + ":" + str(sender_set_for_group_name))
 
+                # compute task inputs
                 sender_set_for_group_name_with_qualified_names = set()
                 # For each sender task "name" that sends output to group_name, the 
                 # qualified name of the output is: name+"-"+group_name
@@ -777,7 +789,6 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                     sender_set_for_group_name_with_qualified_names.add(qualified_name)
                 # sender_set_for_senderX provides input for group_name
                 task_inputs = tuple(sender_set_for_group_name_with_qualified_names)
-
 
                 # generate empty state_info for group group_name. This will be filled in 
                 # when we process the groups in the next partition collected. See below.
@@ -817,9 +828,9 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                     else:
                         Group_DAG_tasks[group_name] = PageRank_Function_Driver_Shared_Fast  
 
-                logger.trace("generate_DAG_info_incremental_groups: Group_DAG_map[Group_next_state]: " + str(Group_DAG_map[Group_next_state] ))
+                logger.info("generate_DAG_info_incremental_groups: Group_DAG_map[Group_next_state]: " + str(Group_DAG_map[Group_next_state] ))
 
-
+            Group_next_state += 1
 
         for group_name in groups_of_current_partition:
             logger.info("generate_DAG_info_incremental_groups: process group " + group_name)
@@ -880,9 +891,12 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 # DAG. The first partition/group is always a leaf task and it is handled by the 
                 # DAG_executor_driver.
 
+                """
                 logger.trace("generate_DAG_info_incremental_groups: start of new connected component is group "
                     + group_name)
-
+                logger.trace("generate_DAG_info_incremental_groups: generate default state_info for leaf task"
+                    + group_name)
+                
                 # task input is same as for leaf task group 1 above - empty
                 Group_DAG_leaf_tasks.append(group_name)
                 Group_DAG_leaf_task_start_states.append(Group_next_state)
@@ -921,8 +935,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                         Group_DAG_tasks[group_name] = PageRank_Function_Driver_Shared 
                     else:
                         Group_DAG_tasks[group_name] = PageRank_Function_Driver_Shared_Fast  
-
-                logger.trace("generate_DAG_info_incremental_groups: state_info for current " + group_name)
+                """
 
                 # Not used.
                 ## save current name as previous name. If this is partition PRi_1
@@ -1371,6 +1384,10 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 # set is Group_receivers.get(group_name).  Task name "T-X" is
                 # used as a key in the data dictionary to get the output value 
                 # of "T" sent to task "X"
+                
+                """
+                logger.trace("generate_DAG_info_incremental_groups: generate default state_info for leaf task"
+                    + group_name)
 
                 sender_set_for_group_name = Group_receivers.get(group_name)
                 logger.info("sender_set_for_group_name, i.e., send to " + group_name + ":" + str(sender_set_for_group_name))
@@ -1384,21 +1401,6 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 # sender_set_for_senderX provides input for group_name
                 task_inputs = tuple(sender_set_for_group_name_with_qualified_names)
 
-#rhc: Problem: If not to_be_Continued then there is no next partition 
-# of groups to process, e.g., for th white board we have partition 3
-# with groups 3_1, 3_2, and 3_3, where 3_1 has a faninB to 3_2.
-# We won;t get a chance to compuet this faninNB uness we do it 
-# now, i.e., can;t wait until next partition since there is no next
-# partition .So if not to be continued, we need to look at 
-# groups within partition.
-# No? When current partition is 3, we look at groups n partition 2,
-# which is fine for seeing the PR2_2L has a faninNB to PR3_2,
-# but we fail to detect that PR3_1 has a faninNB to PR3_2. 
-# This is because we only look at the groups in the previous
-# partition, like for using partitions, but we should also "Add"
-# groups in the current partition that are before group_name in 
-# that list (assuming groups are added left to right in this list
-# as the are detected.)
                 # generate empty state_info for group group_name. This will be filled in 
                 # when we process the groups in the next partition collected. See below.
                 # That is, this group (recall that we are iterating
@@ -1438,7 +1440,8 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                         Group_DAG_tasks[group_name] = PageRank_Function_Driver_Shared_Fast  
 
                 logger.trace("generate_DAG_info_incremental_groups: Group_DAG_map[Group_next_state]: " + str(Group_DAG_map[Group_next_state] ))
-                
+                """
+
                 # This is not the first partition and it is not a leaf partition.
                 # So current_partition_state is 2 or more (states start at 1)
                 # Positions in groups_of_partitions statr at 0.
@@ -1831,7 +1834,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 at the end of the group loop below.
                 """
 
-            Group_next_state += 1  
+            #Group_next_state += 1  
 
         logger.trace("generate_DAG_info_incremental_groups: generate_DAG_info_incremental_groups for"
             + " group " + str(group_name))
@@ -1879,7 +1882,11 @@ def generate_DAG_info_incremental_groups(current_partition_name,
             # so start_of_incomplete_states = 5 - 3 = 2. Then
             # range(start_of_incomplete_states,Group_next_state) is (2,5)
             # where 2 is inclusive and 5 is exclusive.
+            logger.info("Group_next_state: " + str(Group_next_state) 
+                + " len(groups_of_current_partition): " + str(len(groups_of_current_partition)))
             start_of_incomplete_states = Group_next_state - len(groups_of_current_partition)
+            logger.info("start_of_incomplete_states: " + str(start_of_incomplete_states))
+
             for state in range(start_of_incomplete_states,Group_next_state):
                 DAG_info_DAG_map = DAG_info.get_DAG_map()
 
@@ -1895,6 +1902,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 # the ongoing incremental DAG.
                 # 
                 # Get the state_info from the DAG_map
+                logger.info("state is: " + str(state))
                 state_info_of_current_group_state = DAG_info_DAG_map[state]
 
                 # Note: in DAG_info __init__:
