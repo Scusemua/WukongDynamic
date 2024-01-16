@@ -662,15 +662,35 @@ def generate_DAG_info_incremental_groups(current_partition_name,
 # - get rid of second group_name loop since we only need one iteration now?
 # - comment on changes: we need stat_info of al groups in previous partition and curret
 #   partition if not to be continued since we will be setting fina lstate info 
-#   for groups in current partition too. (Though they have empty state info when we get
+# - for groups in current partition too. (Though they have empty state info when we get
 #   then for final set so we could just use an empty state info if not in there,
-#   but we may as well clean this up.)
+#   but we may as well clean this up.) 
+#   group with no senders is a specail cse in tht we know no
+#   group in previous partition or current group sends to it
+#   so don;t have to add it to groups_to_consider
+# - commented out the assert #if len(senders) == 0:
 # 
-# Do we need sthe two cases? Maybe but perhaps put the edge generation in a method that both can call?
-        
+# Do we need the two cases? Maybe but perhaps put the edge generation in a method that both can call?
         
         for group_name in groups_of_current_partition:
             senders = Group_receivers.get(group_name) 
+            # The two cases differ in that if senders is None then 
+            # no other group sends to group_name, so it is a leaf 
+            # task. Thus, we we add it to the collection of leaf tasks,
+            # set its task_inputs to empty (). For non-leaf tasks,
+            # we generate ots inputs using qualified names, e.g.,
+            # for PR2_1 its input is from PR1_1 so we use "PR1_1-PR2_!"
+            # since PR1_1 has other outputs to other tasks and it only
+            # sends its output for PR2_1 to task PR2_1. So the fanout
+            # outputs can be different, unlke for Dask which sends all 
+            # of its outputs to all of its fanout/fanin tasks.
+            # So: If PRX_1 has snders PRY_1 and PRZ_1, then its inputs
+            # are "PRY_1-PRX_1" and "PRZ_1-PRX-1". These inputs strings
+            # are used to access the data_dict during execution, which 
+            # is a map which would contain keys "PRY_1-PRX_1" and "PRZ_1-PRX-1"
+            # and their mapped values. The values for PRX_1 will be obtained from 
+            # the map using keys "PRY_1-PRX_1" and "PRZ_1-PRX-1" and used
+            # to execute task PRX_1.
             if (senders == None):
                 # This is a leaf group since it gets no inputs from any other groups.
                 # This means group_name is the only group in groups_of_current_partition.
@@ -773,18 +793,21 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                         Group_DAG_tasks[group_name] = PageRank_Function_Driver_Shared_Fast  
 
                 logger.info("generate_DAG_info_incremental_groups: state_info for current " + group_name)
+
             else:
+
                 logger.info("generate_DAG_info_incremental_groups: generate empty state_info for "
                     + group_name + " with Group_next_state: "  + str(Group_next_state))
                 
-                sender_set_for_group_name = Group_receivers.get(group_name)
-                logger.info("sender_set_for_group_name, i.e., the groups that send to " + group_name + ":" + str(sender_set_for_group_name))
+                #sender_set_for_group_name = Group_receivers.get(group_name)
+                logger.info("senders, i.e., the groups that send to " + group_name + ":" + str(senders))
 
                 # compute task inputs
                 sender_set_for_group_name_with_qualified_names = set()
                 # For each sender task "name" that sends output to group_name, the 
                 # qualified name of the output is: name+"-"+group_name
-                for name in sender_set_for_group_name:
+                #for name in sender_set_for_group_name:
+                for name in senders:
                     qualified_name = str(name) + "-" + str(group_name)
                     sender_set_for_group_name_with_qualified_names.add(qualified_name)
                 # sender_set_for_senderX provides input for group_name
@@ -832,12 +855,17 @@ def generate_DAG_info_incremental_groups(current_partition_name,
 
             Group_next_state += 1
 
-        for group_name in groups_of_current_partition:
-            logger.info("generate_DAG_info_incremental_groups: process group " + group_name)
+
+#rhc undo if True and if False
+        
+        #for group_name in groups_of_current_partition:
+        if True:
+
+            #logger.info("generate_DAG_info_incremental_groups: process group " + group_name)
             # Get groups, if any, that output to group group_name. These are groups in 
             # previous partition or in this current partition.
             senders = Group_receivers.get(group_name) 
-            if (senders == None):
+            if False: # (senders == None):
                 # This is a leaf group since it gets no inputs from any other groups.
                 # This means group_name is the only group in groups_of_current_partition.
                 # (So no group in any other partition or in this current partition outputs
@@ -851,7 +879,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 # partition in the DAG is PR1_1, it is the start of the first
                 # connected component (CC) searched by bfs(). The second CC
                 # starts with a group/partition containing 4, and ends with 
-                # group/partition conaining 5, the second CC starts with 
+                # group/partition containing 5, the second CC starts with 
                 # the group/partition containing 6, and ends with the group
                 # /partition containing 7. bfs() is called each time we start
                 # the search of a CC.
@@ -1355,14 +1383,16 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 # senders set when we get the first sender.)
 
                 # assert: no length 0 senders lists
-                if len(senders) == 0:
-                    logger.error("[Error]: Internal Error: generate_DAG_info_incremental_groups:"
-                        + " group has a senders list with length 0.")
+
+#rhc: undo
+                #if len(senders) == 0:
+                #    logger.error("[Error]: Internal Error: generate_DAG_info_incremental_groups:"
+                #        + " group has a senders list with length 0.")
 
                 # This is not the first partition and it is not a leaf partition.
 
                 # Not a leaf group so it has inputs. Generate the names of the inputs.
-                # These names are used to get the inputs from the dta dictiionary that 
+                # These names are used to get the inputs from the data dictiionary that 
                 # holds all outputs/inputs during DAG excution.
                 # Create a new set from set sender_set_for_group_name. For 
                 # each name in sender_set_for_group_name, qualify the name by
@@ -1465,6 +1495,29 @@ def generate_DAG_info_incremental_groups(current_partition_name,
 #rhc: ToDo: fixes bug
                 
 #rhc: undo 2
+                # Note: if the current group/partition is a leaf group/partition (that is not the first
+                # group in the DAG PR1_1) then it has no senders, i.e., no task sends its output
+                # to it; it is the only group in its partititon; and if not to_be_continued then
+                # it has no receivers, i.e., since it is the only group in the last partition in the 
+                # DAG. So groups_of_current_partition is this single group, and when not to_be_continued
+                # we add it to groups_to_consider. We will get groups that this group sends inputs to
+                # and since this will be empty, we will not generate any edges for this group in the 
+                # DAG, which is correct since it does not send any outputs to any other group.
+                # This requires only the execution of one if-statement so we do not try to avoid adding this group.
+                # Note that groups_to_consider are the groups for which we are identifying edges,
+                # i.e., adding an edge for a group G in groups_to_consider to the groups that G
+                # sends outputs to (which are in the same partition as G or are groups in the 
+                # current partition). The edges always go from the previous groups to the 
+                # current groups, or the edges go from left to right for the groups in a partition since
+                # if node P is a parent of node C in the same partition, then P has an index in the partition (list) 
+                # that is less than the index of C, and the edges go in the parent to child direction, i.e., left to right.
+                # The general idea is that the parent nodes of a node C are always either in the same partition
+                # (at a position with a smaller index than C (so "to the left of C in the list of nodes")) or are in the
+                # prevous partition (but no other partition). This restricts the flow of parent values 
+                # to: between one partition and the next partition, or between grooups in the same partition.
+                # As opposed to one group can send to any other groups in the DAG, so we try to have communication of
+                # parent values (say, between Lambdas executing pagerank tasks) that is "one group/task/lambda
+                # to a few groups/tasks/lambdas" instead of "one group/task/lambda to many groups/tasks/lambdas".
                 groups_to_consider = []
                 if not to_be_continued:
                     groups_to_consider += groups_of_previous_partition
@@ -1887,7 +1940,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
             start_of_incomplete_states = Group_next_state - len(groups_of_current_partition)
             logger.info("start_of_incomplete_states: " + str(start_of_incomplete_states))
 
-            for state in range(start_of_incomplete_states,Group_next_state):
+            for state in range(start_of_incomplete_states,Group_next_state): #range(inclusive,exclusive)
                 DAG_info_DAG_map = DAG_info.get_DAG_map()
 
                 # The DAG_info object is shared between this DAG_info generator
