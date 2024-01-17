@@ -653,7 +653,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
     else:
         # Flag to indicate whether we are processing the first group_name of the groups in the 
         # previous partition. Used and reset below.
-        first_previous_group = True
+        #first_previous_group = True
 
 #rhc: undo 1
 # Possible fix:
@@ -1021,7 +1021,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         #  do one time code for the succeeding iterations. There is
         #  nothing special about the first iteration.
         # Consider taking the Do one time code out of the loops.
-        first_previous_previous_group = True
+        #first_previous_previous_group = True
 #rhc: undo 3
         for previous_group in groups_to_consider:
         #for previous_group in groups_of_previous_partition:
@@ -1284,6 +1284,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
             # groups of B2. So do this resetting of the previous groups 
             # of B1 and B2 (which are the previous previous groups of A) for
             # only one of B1 or B2. In our case, we always choose the first group
+            """
             # in the list of groups.
             if first_previous_previous_group:
                 first_previous_previous_group = False
@@ -1298,12 +1299,50 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                         logger.trace("The state_info_of_previous_previous_group for group " 
                             + previous_previous_group + " after update fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued is: " 
                             + str(state_info_of_previous_previous_group))
-
+            """
 
             logger.trace("after update to TBC and fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued"
                 + " for previous_group " + previous_group + " state_info_of_previous_group: " 
                 + str(state_info_of_previous_group))
+
+        # Say that the current partition is C , which has a 
+        # previous partition B which has a previous partition A.
+        # In a previous DAG, suppose A is incomplete. When we process
+        # B, we set A to complete (i.e., to_be_continued for A is False)
+        # and B is set to incomplete (i.e., to_be_continued of B is True.)
+        # We also set fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued
+        # of A to True, to indicate that A has fanins/fanouts/faninNBs/collapses
+        # to incomplete groups (of B). When we process C, we can set B to complete
+        # and C to incomplete but we can also reset fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued
+        # to False since B is complete so all of A's fanins/fanouts/faninNBs/collpases
+        # are to complete groups. That means if C is group_name, then B
+        # is a previous_group, and C is a previous_previous_group.
+        #
+        # For the previous_group (e.g., B), we need to reset a flag 
+        # for its previous groups, hence "previous_previous"
+        # but we only need to do this once. That is, the current
+        # group group_name (e.g., A) may have many previous_groups, and these
+        # previous groups may have many previous_groups. However two
+        # previous_groups of A, say, B1 and B2 have the same previous_groups, 
+        # which are the previous previous groups of A, so when we reset
+        # the previous groups of B1 we are also resetting the previous
+        # groups of B2. So do this resetting of the previous groups 
+        # of B1 and B2 (which are the previous previous groups of A) for
+        # only one of B1 or B2. In our case, we always choose the first group
+        # in the list of groups.
+        #if first_previous_previous_group:
+        #    first_previous_previous_group = False
+        if current_partition_number > 2:
+            previous_previous_partition_state = previous_partition_state - 1
+            groups_of_previous_previous_partition = groups_of_partitions[previous_previous_partition_state-1]
+            for previous_previous_group in groups_of_previous_previous_partition:
+                state_of_previous_previous_group = Group_DAG_states[previous_previous_group]
+                state_info_of_previous_previous_group = Group_DAG_map[state_of_previous_previous_group]
+                state_info_of_previous_previous_group.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued = False
                 
+                logger.trace("The state_info_of_previous_previous_group for group " 
+                    + previous_previous_group + " after update fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued is: " 
+                    + str(state_info_of_previous_previous_group))     
         """
         Note: We handle the shared state_info objects for all the groups
         at the end of the group loop below.
