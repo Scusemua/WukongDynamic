@@ -37,14 +37,18 @@ bypass_call_lambda_client_invoke = (not run_all_tasks_locally) and True
 # machine on which the threads are executing.  If we are using multiprocessing
 # or Lambdas, this must be False. When False, the synch objects are stored
 # on the tcp_server or in InfiniX lambdas.
-store_fanins_faninNBs_locally = True
+# Note: When using partitions instead of groups, partition i 
+# has a collapse to partition i+1, so there are no synch objects
+# needed when we are using partitions, so it does not matter
+# whether we set store_fanins_faninNBs_locally to True or False.
+store_fanins_faninNBs_locally = False
 # True when all FanIn and FanInNB objects are created locally or on the
 # tcp_server or IniniX all at once at the start of the DAG execution. If
 # False, synch objects are created on the fly, i.e, we execute create-and-fanin
 # operations that create a synch object if it has not been created yet and then
 # execute a Fan_in operaation on the created object.
 # 
-# This mus be false if we aer doing incremental_DAG_generation; this is asserted below.
+# This must be false if we aer doing incremental_DAG_generation; this is asserted below.
 create_all_fanins_faninNBs_on_start = False
 
 # True if the DAG is executed by a "pool" of threads/processes. False, if we are
@@ -55,7 +59,7 @@ create_all_fanins_faninNBs_on_start = False
 using_workers = True
 # True when we are not using Lambas and tasks are executed by threads instead of processes. 
 # False when we are not using lambdas and are using multiprocesssing 
-using_threads_not_processes = True
+using_threads_not_processes = False
 # When using_workers, this is how many threads or processes in the pool.
 num_workers = 2
 # Use one or more worker processes (num_workers) with one or more threads
@@ -341,7 +345,7 @@ if compute_pagerank and (use_shared_partitions_groups and not run_all_tasks_loca
 # For PageRank:
 # Execute page rank partitions or execute page rank groups
 # If True use groups else use partitions
-use_page_rank_group_partitions = compute_pagerank and True
+use_page_rank_group_partitions = compute_pagerank and False
 
 # For PageRank:
 # Use a struct of arrays to improve cache performance

@@ -744,7 +744,7 @@ from .BFS_DAG_Generator_Multithreaded import DAG_Generator_Multithreaded
 #from .Shared import shared_partition, shared_groups, shared_partition_map,  shared_groups_map
 from . import BFS_Shared
 from .DAG_executor_driver import run
-from .DAG_boundedbuffer_work_queue import Work_Queue_Client
+#from .DAG_boundedbuffer_work_queue import Work_Queue_Client
 from .Remote_Client_for_DAG_infoBuffer_Monitor import Remote_Client_for_DAG_infoBuffer_Monitor
 from .Remote_Client_for_DAG_infoBuffer_Monitor_for_Lambdas import Remote_Client_for_DAG_infoBuffer_Monitor_for_Lambdas
 from .DAG_executor_output_checker import get_pagerank_outputs
@@ -3316,7 +3316,7 @@ def bfs(visited, node):
 
                     if using_workers or not using_workers:
                         if not use_page_rank_group_partitions:
-                            logger.trace("BFS: calling generate_DAG_info_incremental_partitions for"
+                            logger.info("BFS: calling generate_DAG_info_incremental_partitions for"
                                 + " partition " + str(partition_name) + " using workers.")
                             DAG_info = BFS_generate_DAG_info_incremental_partitions.generate_DAG_info_incremental_partitions(partition_name,current_partition_number,to_be_continued)
                         else:
@@ -3711,6 +3711,7 @@ def bfs(visited, node):
                                             #DAG_leaf_task_start_states_incremental = DAG_info.get_DAG_leaf_task_start_states()
                                             DAG_map_incremental = DAG_info.get_DAG_map()
 
+#rhc: issue: don't do this for lambdas?
                                             if using_workers or not using_workers:
                                                 # leaf task states (a task is identified by its state) are put in work_queue
                                                 for name in BFS_generate_DAG_info.leaf_tasks_of_groups_incremental:
@@ -3748,7 +3749,7 @@ def bfs(visited, node):
                                     # incremental DAG is for any newer DAG than the 
                                     # first DAG (i.e., any version later than version 1.)
 
-                                    logger.trace("BFS: deposit next DAG with num_incremental_DAGs_generated:"
+                                    logger.info("BFS: deposit next DAG with num_incremental_DAGs_generated:"
                                         + str(num_incremental_DAGs_generated)
                                         + " current_partition_number: " + str(current_partition_number))
                                     # if not current_partition_number == 2:
@@ -4254,6 +4255,7 @@ def input_graph():
     # algorithms on it, e.g., fnd_cycle, diameter.
     networkX_lines = []
     #fname = "graph_3000"
+    # whiteboard graph
     fname = "graph_WB"
     # These are whiteboard graphs with various extensions
     # that, e.g., add connected components (CC)

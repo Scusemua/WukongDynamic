@@ -247,8 +247,8 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
 #rhc: cluster:
     cluster_queue):
     thread_name = threading.current_thread().name
-    logger.trace(thread_name + ": process_faninNBs")
-    logger.trace(thread_name + ": process_faninNBs: worker_needs_input: " + str(worker_needs_input))
+    logger.info(thread_name + ": process_faninNBs")
+    logger.info(thread_name + ": process_faninNBs: worker_needs_input: " + str(worker_needs_input))
 	# There may be multiple faninNBs; we cannot become one, by definition.
 	# Note: This thread cannot become since it may need to become a fanout.
 	# Or: faninNB is asynch wo/terminate, so create a thread that does the
@@ -1608,7 +1608,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # Note: we are using_workers with worker processes
                 DAG_infobuffer_monitor = Remote_Client_for_DAG_infoBuffer_Monitor(websocket)
                 DAG_infobuffer_monitor.create()
-                logger.info("BFS: created Remote DAG_infobuffer_monitor for process.")
+                logger.info("DAG_executor_work_loop: created Work_Queue_Client for work queue.")
                 estimated_num_tasks_to_execute = work_queue_size_for_incremental_DAG_generation_with_worker_processes
                 work_queue = Work_Queue_Client(websocket,estimated_num_tasks_to_execute)        
                 # Note: The remote work queue is created by the DAG_executor_driver 
@@ -2590,7 +2590,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                             # A later version has 1 or more complete tasks that were incomplete
                                             # in an earlier version.
                                             num_tasks_to_execute = DAG_number_of_tasks - 1
-                                            logger.trace("DAG_executor_work_loop: after withdraw: DAG_info not complete: new num_tasks_to_execute: " + str(num_tasks_to_execute))
+                                            logger.info("DAG_executor_work_loop: after withdraw: DAG_info not complete: new num_tasks_to_execute: " + str(num_tasks_to_execute))
                                         else:
                                             # the new DAG is complete (so is the last incremental DAG
                                             # we will get.) We can execute all the partitions in the 
@@ -2604,7 +2604,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                             # A later version has 1 or more complete tasks that were incomplete
                                             # in an earlier version.
                                             num_tasks_to_execute = DAG_number_of_tasks
-                                            logger.trace("DAG_executor_work_loop: after withdraw: DAG_info complete new num_tasks_to_execute: " + str(num_tasks_to_execute))
+                                            logger.info("DAG_executor_work_loop: after withdraw: DAG_info complete new num_tasks_to_execute: " + str(num_tasks_to_execute))
                                     else:
                                         # using groups
                                         if not DAG_info.get_DAG_info_is_complete():
@@ -3831,7 +3831,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # in their payloads as "input". 
                     state_of_collapsed_task = DAG_info.get_DAG_states()[state_info.collapse[0]]
                     state_info_of_collapse_task = DAG_map[state_of_collapsed_task]
-                    logger.trace("DAG_executor_work_loop: check TBC of collapsed task state info: "
+                    logger.info("DAG_executor_work_loop: check TBC of collapsed task state info: "
                         + str(state_info_of_collapse_task))
                     if state_info_of_collapse_task.ToBeContinued:
                         # assert: if P has a collapsed task C and C's state_info says C is TBC then 
@@ -3881,7 +3881,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             continue_tuple = (DAG_executor_state.state,True,output)
                             #continue_queue.put(DAG_executor_state.state)
                             continue_queue.put(continue_tuple)
-                            logger.trace("DAG_executor_work_loop: put state with TBC collapse in continue_queue:"
+                            logger.info("DAG_executor_work_loop: put state with TBC collapse in continue_queue:"
                                 + " state is " + str(DAG_executor_state.state))
 #rhc: continue
 #rhc: lambda inc:
@@ -3891,7 +3891,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             # DAG so we can execute the collpase task (after we enqueue it in 
                             # the cluster queue and we get it from the cluster queue (after possibly 
                             # getting and executing other clustered tasks.)
-                            new_DAG_info = DAG_infobuffer_monitor.withdraw(DAG_executor_state.state,output)
+                            requested_current_version_number = DAG_info.get_DAG_version_number() + 1
+                            new_DAG_info = DAG_infobuffer_monitor.withdraw(requested_current_version_number,DAG_executor_state.state,output)
                             if not new_DAG_info == None:
                                 DAG_info = new_DAG_info
                                 # upate DAG_ma and DAG_tasks with their new versions in DAG_info

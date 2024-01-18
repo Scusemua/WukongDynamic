@@ -135,7 +135,7 @@ class DAG_infoBuffer_Monitor(MonitorSU):
 #rhc leaf tasks
         new_leaf_tasks = kwargs['new_current_version_new_leaf_tasks']
         self.current_version_new_leaf_tasks += new_leaf_tasks
-        logger.trace("DAG_infoBuffer_Monitor: DAG_info deposited: ")
+        logger.info("DAG_infoBuffer_Monitor: DAG_info deposited: ")
         self.print_DAG_info(self.current_version_DAG_info)
 
 #rhc leaf tasks
@@ -195,7 +195,7 @@ class DAG_infoBuffer_Monitor(MonitorSU):
             #return DAG_info, new_leaf_task_states, restart
             return DAG_info_and_new_leaf_task_states_tuple, restart
         else:
-            logger.trace("DAG_infoBuffer_Monitor: withdraw waiting for version " + str(requested_current_version_number))
+            logger.info("DAG_infoBuffer_Monitor: withdraw waiting for version " + str(requested_current_version_number))
             self._next_version.wait_c()
             DAG_info = self.current_version_DAG_info
 #rhc leaf tasks

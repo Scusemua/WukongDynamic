@@ -556,7 +556,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         super().enter_monitor(method_name = "withdraw")
         requested_current_version_number = kwargs['requested_current_version_number']
 #rhc: lambad inc
-        logger.trace("DAG_infoBuffer_Monitor_for_Lambdas: withdraw() entered monitor, requested_current_version_number = "
+        logger.info("DAG_infoBuffer_Monitor_for_Lambdas: withdraw() entered monitor, requested_current_version_number = "
             + str(requested_current_version_number))
 
         DAG_info = None
