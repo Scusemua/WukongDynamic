@@ -708,7 +708,6 @@ from .DAG_executor_constants import use_shared_partitions_groups, use_page_rank_
 from .DAG_executor_constants import use_struct_of_arrays_for_pagerank, compute_pagerank
 from .DAG_executor_constants import use_incremental_DAG_generation, using_workers
 from .DAG_executor_constants import run_all_tasks_locally, using_threads_not_processes
-from .DAG_executor_constants import work_queue_size_for_incremental_DAG_generation_with_worker_processes
 from .DAG_executor_constants import incremental_DAG_deposit_interval
 from .DAG_executor_constants import check_pagerank_output
 from .DAG_executor_constants import using_threads_not_processes
@@ -973,25 +972,6 @@ def visualize():
     # comment 
     #nx.draw_planar(G,with_labels = True, alpha=0.8) #NEW FUNCTION
     fig.canvas.draw()
-
-
-if (run_all_tasks_locally and using_workers and not using_threads_not_processes): 
-    # Config: A5, A6
-    # sent the create() for work_queue to the tcp server in the DAG_executor_driver
-    websocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    websocket.connect(TCP_SERVER_IP)
-    estimated_num_tasks_to_execute = work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    DAG_infobuffer_monitor = Remote_Client_for_DAG_infoBuffer_Monitor(websocket)
-    DAG_infobuffer_monitor.create()
-    logger.trace("BFS: created Remote DAG_infobuffer_monitor.")
-    #work_queue = Work_Queue_Client(websocket,estimated_num_tasks_to_execute)
-elif not run_all_tasks_locally:
-    websocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    websocket.connect(TCP_SERVER_IP)
-    DAG_infobuffer_monitor = Remote_Client_for_DAG_infoBuffer_Monitor_for_Lambdas(websocket)
-    DAG_infobuffer_monitor.create_Remote_Client()
-    logger.trace("BFS: created Remote DAG_infobuffer_monitor_for_lambdas.")
-
 
 # process children before parent traversal
 # Not used
@@ -4256,14 +4236,14 @@ def input_graph():
     networkX_lines = []
     #fname = "graph_3000"
     # whiteboard graph
-    fname = "graph_WB"
+    # fname = "graph_WB"
     # These are whiteboard graphs with various extensions
     # that, e.g., add connected components (CC)
     #fname = "graph_22N_2CC"
     #fname = "graph_23N"
     #fname = "graph_24N_3CC"
 
-    #fname = "graph_24N_3CC_fanin"   # fanin at end
+    fname = "graph_24N_3CC_fanin"   # fanin at end
 
     #fname = "graph_2N_2CC"  # 2 nodes (CCs) no edges
     #fname = "graph_3N_3CC"  # 3 nodes (CCs) no edges
@@ -4312,6 +4292,16 @@ def input_graph():
     global num_nodes
     num_nodes = int(words[2])
     global num_edges
+
+#rhc: num_nodes
+    # save number of graph nodes in BFS_generate_DAG_info
+    # which is where the DAG_info is built. num_nodes_in_graph
+    # is now a field in DAG_info.
+    BFS_generate_DAG_info.num_nodes_in_graph = num_nodes
+
+    logging.shutdown()
+    os._exit(0)
+
     num_edges = int(words[3])
     logger.trace("input_file: read: num_nodes:" + str(num_nodes) + " num_edges:" + str(num_edges))
 
@@ -5095,31 +5085,6 @@ if __name__ == '__main__':
     else:
         logger.info("BFS: using partitions.")
 
-    if compute_pagerank and use_incremental_DAG_generation: 
-#rhc continue
-    # we are only using incremental_DAG_generation when we
-    # are computing pagerank, so far. Pagerank DAGS are the
-    # only DAGS we generate ourselves, so far.
-        pass
-        """
-        if (run_all_tasks_locally and using_workers and not using_threads_not_processes): 
-            # Config: A5, A6
-            # sent the create() for work_queue to the tcp server in the DAG_executor_driver
-            websocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            websocket.connect(TCP_SERVER_IP)
-            estimated_num_tasks_to_execute = work_queue_size_for_incremental_DAG_generation_with_worker_processes
-            DAG_infobuffer_monitor = Remote_Client_for_DAG_infoBuffer_Monitor(websocket)
-            DAG_infobuffer_monitor.create()
-            logger.trace("BFS: created Remote DAG_infobuffer_monitor.")
-            work_queue = Work_Queue_Client(websocket,estimated_num_tasks_to_execute)
-        elif not run_all_tasks_locally:
-            websocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            websocket.connect(TCP_SERVER_IP)
-            DAG_infobuffer_monitor = Remote_Client_for_DAG_infoBuffer_Monitor_for_Lambdas(websocket)
-            DAG_infobuffer_monitor.create_Remote_Client()
-            logger.trace("BFS: created Remote DAG_infobuffer_monitor_for_lambdas.")
-        """
-
     logger.trace("BFS: Following is the Breadth-First Search")
     input_graph()
     logger.trace("BFS: num_nodes after input graph: " + str(num_nodes))
@@ -5136,6 +5101,26 @@ if __name__ == '__main__':
         DAG_generator_for_multithreaded_DAG_generation = DAG_Generator_Multithreaded()
         DAG_generator_for_multithreaded_DAG_generation.start_thread()
     
+    # we are only using incremental_DAG_generation when we
+    # are computing pagerank, so far. Pagerank DAGS are the
+    # only DAGS we generate ourselves, so far.
+    if compute_pagerank and use_incremental_DAG_generation:
+        # create the connections to tcp_server needed for  
+        if (run_all_tasks_locally and using_workers and not using_threads_not_processes): 
+            # Config: A5, A6
+            # sent the create() for work_queue to the tcp server in the DAG_executor_driver
+            websocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            websocket.connect(TCP_SERVER_IP)
+            DAG_infobuffer_monitor = Remote_Client_for_DAG_infoBuffer_Monitor(websocket)
+            DAG_infobuffer_monitor.create()
+            logger.info("BFS: created Remote DAG_infobuffer_monitor.")
+        elif not run_all_tasks_locally:
+            websocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            websocket.connect(TCP_SERVER_IP)
+            DAG_infobuffer_monitor = Remote_Client_for_DAG_infoBuffer_Monitor_for_Lambdas(websocket)
+            DAG_infobuffer_monitor.create_Remote_Client()
+            logger.trace("BFS: created Remote DAG_infobuffer_monitor_for_lambdas.")
+
     #bfs(visited, graph, '5')    # function calling
     # example: num_nodes = 100, so Nodes in nodes[1] to nodes[100]
     # i start = 1 as nodes[0] not used, i end is (num_nodes+1) - 1  = 100

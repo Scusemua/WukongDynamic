@@ -79,6 +79,8 @@ class DAG_Info(object):
             self.DAG_number_of_incomplete_tasks = 0
         else:
             self.DAG_number_of_incomplete_tasks = DAG_info_dictionary["DAG_number_of_incomplete_tasks"]
+#rhc: num_nodes
+        #self.DAG_num_nodes_in_graph = DAG_info_dictionary["DAG_num_nodes_in_graph"]
 
     def get_DAG_info_dictionary(self):
         DAG_info_dictionary = {}
@@ -98,6 +100,8 @@ class DAG_Info(object):
         DAG_info_dictionary["DAG_is_complete"] = self.DAG_is_complete
         DAG_info_dictionary["DAG_number_of_tasks"] = self.DAG_number_of_tasks
         DAG_info_dictionary["DAG_number_of_incomplete_tasks"] = self.DAG_number_of_incomplete_tasks
+#rhc: num_nodes
+        #DAG_info_dictionary["DAG_num_nodes_in_graph"] = self.DAG_num_nodes_in_graph
         return DAG_info_dictionary
 
     def get_DAG_map(self):
@@ -135,7 +139,9 @@ class DAG_Info(object):
         return self.DAG_number_of_tasks
     def get_DAG_number_of_incomplete_tasks(self):
         return self.DAG_number_of_incomplete_tasks
-    
+#rhc: num_nodes
+    #def DAG_get_num_nodes_in_graph(self):
+    #    return DAG_num_nodes_in_graph
     
     # After the driver gets the leaf task inputs it sets DAG_info["DAG_leaf_task_inputs"]
     # to None so that we are not passing all of these inputs to each Lambda executor.

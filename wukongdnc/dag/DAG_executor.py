@@ -1607,10 +1607,11 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             if compute_pagerank and use_incremental_DAG_generation:
                 # Note: we are using_workers with worker processes
                 DAG_infobuffer_monitor = Remote_Client_for_DAG_infoBuffer_Monitor(websocket)
-                DAG_infobuffer_monitor.create()
-                logger.info("DAG_executor_work_loop: created Work_Queue_Client for work queue.")
+                # Note: BFS calls DAG_infobuffer_monitor.create() so no call should be made here
                 estimated_num_tasks_to_execute = work_queue_size_for_incremental_DAG_generation_with_worker_processes
                 work_queue = Work_Queue_Client(websocket,estimated_num_tasks_to_execute)        
+                logger.info("DAG_executor_work_loop: created Work_Queue_Client for work queue.")
+
                 # Note: The remote work queue is created by the DAG_executor_driver 
                 # since the driver needs to deposit leaf task work in the work queue before
                 # creating the worker processes. We let the driver also create the 
@@ -1628,22 +1629,11 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # each thread in multithreading multiprocesssing needs its own socket.
                 # each process when single threaded multiprocessing needs its own socket.
                 work_queue = Work_Queue_Client(websocket,2*num_tasks_to_execute)
-        #elif (run_all_tasks_locally and using_workers and compute_pagerank and use_incremental_DAG_generation and not using_threads_not_processes): 
-        #    # Config: A5, A6
-        #    # sent the create() for work_queue to the tcp server in the DAG_executor_driver
-            
-        #    #websocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        #    #websocket.connect(TCP_SERVER_IP)
-        #    DAG_infobuffer_monitor = Remote_Client_for_DAG_infoBuffer_Monitor(websocket)
-        #    DAG_infobuffer_monitor.create()
-        #    logger.info("BFS: created Remote DAG_infobuffer_monitor.")
-        #    estimated_num_tasks_to_execute = work_queue_size_for_incremental_DAG_generation_with_worker_processes
-        #    work_queue = Work_Queue_Client(websocket,estimated_num_tasks_to_execute)        
         elif not run_all_tasks_locally and compute_pagerank and use_incremental_DAG_generation:
             #websocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             #websocket.connect(TCP_SERVER_IP)
             DAG_infobuffer_monitor = Remote_Client_for_DAG_infoBuffer_Monitor_for_Lambdas(websocket)
-            #DAG_infobuffer_monitor.create_Remote_Client()
+            # Note: BFS calls DAG_infobuffer_monitor.create_Remote_Client() so no call should be made here
             #logger.info("BFS: created Remote DAG_infobuffer_monitor_for_lambdas for labdas.")
 
     #else: # Config: A1, A2, A3, A4_local, A4_Remote
@@ -3416,6 +3406,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 
                 # using map DAG_tasks from task_name to task
                 task = DAG_tasks[state_info.task_name]
+
+#rhc: num_nodes: get the num_nodes_in_graph from DAG_info
+# num_nodes_in_graph = DAG_info.get_num_nodes_in_graph()
+#rhc: use this value below
 
                 if not tasks_use_result_dictionary_parameter:
                     # we will call the task with tuple args and unfold args: task(*args)

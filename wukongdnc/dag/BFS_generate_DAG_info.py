@@ -41,6 +41,10 @@ leaf_tasks_of_groups_incremental = []
 groups_num_shadow_nodes_map = {}
 partitions_num_shadow_nodes_map = {}
 
+#rhc: num_nodes
+#rhc: ToDo: if this works, do for inc groups/partitions too
+num_nodes_in_graph = 0
+
 # ToDo:
 # run and compare to non-incremental version
 # do incremental outputs
@@ -72,7 +76,6 @@ def generate_DAG_info():
 # If we pre-load the partitions, thn we would want to do fanouts/faninNBs
 # so we can use the pre-loaded partition?
 
-
 #rhc: Problem: Need lists for faninNB and fanin names
     Partition_all_fanout_task_names = []
     Partition_all_fanin_task_names = []
@@ -91,6 +94,9 @@ def generate_DAG_info():
     Partition_DAG_tasks = {}
 
     Partition_DAG_number_of_tasks = 0
+
+#rhc: num_nodes:
+    #Partition_DAG_num_nodes_in_graph = num_nodes_in_graph
 
     """ Add L to end of names: No longer needed
     print()
@@ -451,6 +457,9 @@ def generate_DAG_info():
     DAG_info["DAG_is_complete"] = DAG_is_complete
     DAG_info['DAG_number_of_tasks'] = Partition_DAG_number_of_tasks
 
+    #rhc: num_nodes:
+    #DAG_info["Partition_DAG_num_nodes_in_graph"] = Partition_DAG_num_nodes_in_graph
+
     file_name = "./DAG_info_Partition.pickle"
     with open(file_name, 'wb') as handle:
         cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
@@ -520,7 +529,12 @@ def generate_DAG_info():
     logger.trace("")
     logger.trace("DAG_number_of_tasks:")
     logger.trace(Partition_DAG_number_of_tasks)
+#rhc: num_nodes
     logger.trace("")
+    #logger.trace("Partition_DAG_num_nodes_in_graph:")
+    #logger.trace(Partition_DAG_num_nodes_in_graph)
+    #logger.trace("")
+    
 
     if (False):
         DAG_info_partition_read = DAG_Info.DAG_info_fromfilename(file_name_parm = "./DAG_info_Partition.pickle")
@@ -583,6 +597,10 @@ def generate_DAG_info():
             logger.trace("DAG_number_of_tasks:")
             logger.trace(DAG_number_of_tasks)
             logger.trace("")
+#rhc: num_nodes
+            logger.trace("Partition_DAG_num_nodes_in_graph:")
+            logger.trace(Partition_DAG_num_nodes_in_graph)
+            logger.trace("")
 
     Group_all_fanout_task_names = []
     Group_all_fanin_task_names = []
@@ -600,6 +618,9 @@ def generate_DAG_info():
     Group_DAG_tasks = {}
 
     Group_DAG_number_of_tasks = 0
+
+    #rhc_ num_nodes
+    #Group_DAG_num_nodes_in_graph = num_nodes_in_graph
 
     # sink nodes, i.e., nodes that do not send any inputs
     Group_sink_set = set()
@@ -827,6 +848,9 @@ def generate_DAG_info():
     DAG_info["DAG_is_complete"] = DAG_is_complete
     DAG_info["DAG_number_of_tasks"] = Group_DAG_number_of_tasks
     DAG_info["DAG_number_of_incomplete_tasks"] = 0
+#rhc: num_nodes
+    #DAG_info["Group_DAG_num_nodes_in_graph"] = Group_DAG_num_nodes_in_graph
+    
 
     file_name = "./DAG_info_Group.pickle"
     with open(file_name, 'wb') as handle:
@@ -902,6 +926,12 @@ def generate_DAG_info():
     logger.trace("DAG_number_of_tasks:")
     logger.trace(Group_DAG_number_of_tasks)
     logger.trace("")
+#rhc: num_nodes
+    #logger.trace("")
+    #logger.trace("Group_DAG_num_nodes_in_graph:")
+    #logger.trace(Group_DAG_num_nodes_in_graph)
+    #logger.trace("")
+    
 
     if (False):
         DAG_info_partition_read = DAG_Info.DAG_info_fromfilename(file_name_parm = "./DAG_info_Group.pickle")
@@ -971,6 +1001,11 @@ def generate_DAG_info():
             logger.trace("DAG_info_number_of_tasks:")
             logger.trace(DAG_number_of_tasks)
             logger.trace("")
+#rhc: num_nodes
+            #logger.trace("")
+            #logger.trace("Group_DAG_num_nodes_in_graph:")
+            #logger.trace(Group_DAG_num_nodes_in_graph)
+            #logger.trace("")
 
     """
     dsk = {
