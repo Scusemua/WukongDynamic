@@ -3407,9 +3407,9 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # using map DAG_tasks from task_name to task
                 task = DAG_tasks[state_info.task_name]
 
-#rhc: num_nodes: get the num_nodes_in_graph from DAG_info
-# num_nodes_in_graph = DAG_info.get_num_nodes_in_graph()
-#rhc: use this value below
+#rhc: num_nodes: 
+                num_nodes_in_graph = DAG_info.get_DAG_num_nodes_in_graph()
+                logger.info("execute task: num_nodes_in_graph: " + str(num_nodes_in_graph))
 
                 if not tasks_use_result_dictionary_parameter:
                     # we will call the task with tuple args and unfold args: task(*args)
@@ -3421,13 +3421,13 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 #rhc: groups partitions
                         #output = execute_task_with_result_dictionary(task,state_info.task_name,20,result_dictionary)
                         logger.info("execute task: " + state_info.task_name)
-                        output, result_tuple_list = execute_task_with_result_dictionary(task,state_info.task_name,20,result_dictionary,
+                        output, result_tuple_list = execute_task_with_result_dictionary(task,state_info.task_name,num_nodes_in_graph,result_dictionary,
                             groups_partitions)
                     else:
                         if use_page_rank_group_partitions:
-                            output, result_tuple_list = execute_task_with_result_dictionary_shared(task,state_info.task_name,20,result_dictionary,BFS_Shared.shared_groups_map,BFS_Shared.shared_groups)
+                            output, result_tuple_list = execute_task_with_result_dictionary_shared(task,state_info.task_name,num_nodes_in_graph,result_dictionary,BFS_Shared.shared_groups_map,BFS_Shared.shared_groups)
                         else: # use the partition partitions
-                            output, result_tuple_list = execute_task_with_result_dictionary_shared(task,state_info.task_name,20,result_dictionary,BFS_Shared.shared_partition_map,BFS_Shared.shared_partition)
+                            output, result_tuple_list = execute_task_with_result_dictionary_shared(task,state_info.task_name,num_nodes_in_graph,result_dictionary,BFS_Shared.shared_partition_map,BFS_Shared.shared_partition)
 
                     # save outputs or result so we can check them after execution.
                     # Outputs are the values sent to other partitions/groups,

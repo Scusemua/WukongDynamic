@@ -42,13 +42,8 @@ groups_num_shadow_nodes_map = {}
 partitions_num_shadow_nodes_map = {}
 
 #rhc: num_nodes
-#rhc: ToDo: if this works, do for inc groups/partitions too
+# this is set BFS.input_graph when doing non-incremental DAG generation
 num_nodes_in_graph = 0
-
-# ToDo:
-# run and compare to non-incremental version
-# do incremental outputs
-# call deposit()
 
 """
 get 1: DAG_info is
@@ -92,11 +87,13 @@ def generate_DAG_info():
     Partition_DAG_map = {}
     Partition_DAG_states = {}
     Partition_DAG_tasks = {}
-
     Partition_DAG_number_of_tasks = 0
 
 #rhc: num_nodes:
-    #Partition_DAG_num_nodes_in_graph = num_nodes_in_graph
+    # The value of num_nodes_in_graph is set by BFS_input_graph
+    # at the beginning of execution, which is before we start
+    # DAG generation. This value does not change.
+    Partition_DAG_num_nodes_in_graph = num_nodes_in_graph
 
     """ Add L to end of names: No longer needed
     print()
@@ -225,7 +222,7 @@ def generate_DAG_info():
 
     # sink nodes, i.e., nodes that do not send any inputs
     Partition_sink_set = set()
-    logger.trace("Partition DAG:")
+    logger.info("Partition DAG:")
     state = 1
     # partition i has a collapse to partition i+1
     # Task senderX sends inputs to one or more other tasks
@@ -457,8 +454,8 @@ def generate_DAG_info():
     DAG_info["DAG_is_complete"] = DAG_is_complete
     DAG_info['DAG_number_of_tasks'] = Partition_DAG_number_of_tasks
 
-    #rhc: num_nodes:
-    #DAG_info["Partition_DAG_num_nodes_in_graph"] = Partition_DAG_num_nodes_in_graph
+#rhc: num_nodes:
+    DAG_info["DAG_num_nodes_in_graph"] = Partition_DAG_num_nodes_in_graph
 
     file_name = "./DAG_info_Partition.pickle"
     with open(file_name, 'wb') as handle:
@@ -531,30 +528,31 @@ def generate_DAG_info():
     logger.trace(Partition_DAG_number_of_tasks)
 #rhc: num_nodes
     logger.trace("")
-    #logger.trace("Partition_DAG_num_nodes_in_graph:")
-    #logger.trace(Partition_DAG_num_nodes_in_graph)
-    #logger.trace("")
+    logger.trace("DAG_num_nodes_in_graph:")
+    logger.trace(Partition_DAG_num_nodes_in_graph)
+    logger.trace("")
     
 
-    if (False):
-        DAG_info_partition_read = DAG_Info.DAG_info_fromfilename(file_name_parm = "./DAG_info_Partition.pickle")
+    if False:
+        DAG_info_Partition_read = DAG_Info.DAG_info_fromfilename(file_name_parm = "./DAG_info_Partition.pickle")
         
-        DAG_map = DAG_info_partition_read.get_DAG_map()
+        DAG_map = DAG_info_Partition_read.get_DAG_map()
         #all_fanin_task_names = DAG_info_partition_read.get_all_fanin_task_names()
         #all_faninNB_task_names = DAG_info_partition_read.get_all_faninNB_task_names()
         #all_faninNB_sizes = DAG_info_partition_read.get_all_faninNB_sizes()
         #all_fanout_task_names = DAG_info_partition_read.get_all_fanout_task_names()
         # Note: all fanout_sizes is not needed since fanouts are fanins that have size 1
-        DAG_states = DAG_info_partition_read.get_DAG_states()
-        DAG_leaf_tasks = DAG_info_partition_read.get_DAG_leaf_tasks()
-        DAG_leaf_task_start_states = DAG_info_partition_read.get_DAG_leaf_task_start_states()
-        DAG_tasks = DAG_info_partition_read.get_DAG_tasks()
+        DAG_states = DAG_info_Partition_read.get_DAG_states()
+        DAG_leaf_tasks = DAG_info_Partition_read.get_DAG_leaf_tasks()
+        DAG_leaf_task_start_states = DAG_info_Partition_read.get_DAG_leaf_task_start_states()
+        DAG_tasks = DAG_info_Partition_read.get_DAG_tasks()
 
-        DAG_leaf_task_inputs = DAG_info_partition_read.get_DAG_leaf_task_inputs()
+        DAG_leaf_task_inputs = DAG_info_Partition_read.get_DAG_leaf_task_inputs()
 
-        DAG_is_complete = DAG_info_partition_read.get_DAG_info_is_complete()
-        DAG_version_number = DAG_info_partition_read.get_DAG_version_number()
-        DAG_number_of_tasks = DAG_info_partition_read.get_DAG_number_of_tasks()
+        DAG_is_complete = DAG_info_Partition_read.get_DAG_info_is_complete()
+        DAG_version_number = DAG_info_Partition_read.get_DAG_version_number()
+        DAG_number_of_tasks = DAG_info_Partition_read.get_DAG_number_of_tasks()
+        DAG_num_nodes_in_graph = DAG_info_Partition_read.get_DAG_num_nodes_in_graph()
 
         logger.trace("")
         logger.trace("DAG_info partition after read:")
@@ -598,8 +596,8 @@ def generate_DAG_info():
             logger.trace(DAG_number_of_tasks)
             logger.trace("")
 #rhc: num_nodes
-            logger.trace("Partition_DAG_num_nodes_in_graph:")
-            logger.trace(Partition_DAG_num_nodes_in_graph)
+            logger.trace("DAG_num_nodes_in_graph:")
+            logger.trace(DAG_num_nodes_in_graph)
             logger.trace("")
 
     Group_all_fanout_task_names = []
@@ -619,8 +617,8 @@ def generate_DAG_info():
 
     Group_DAG_number_of_tasks = 0
 
-    #rhc_ num_nodes
-    #Group_DAG_num_nodes_in_graph = num_nodes_in_graph
+#rhc_ num_nodes
+    Group_DAG_num_nodes_in_graph = num_nodes_in_graph
 
     # sink nodes, i.e., nodes that do not send any inputs
     Group_sink_set = set()
@@ -849,7 +847,7 @@ def generate_DAG_info():
     DAG_info["DAG_number_of_tasks"] = Group_DAG_number_of_tasks
     DAG_info["DAG_number_of_incomplete_tasks"] = 0
 #rhc: num_nodes
-    #DAG_info["Group_DAG_num_nodes_in_graph"] = Group_DAG_num_nodes_in_graph
+    DAG_info["DAG_num_nodes_in_graph"] = Group_DAG_num_nodes_in_graph
     
 
     file_name = "./DAG_info_Group.pickle"
@@ -927,32 +925,31 @@ def generate_DAG_info():
     logger.trace(Group_DAG_number_of_tasks)
     logger.trace("")
 #rhc: num_nodes
-    #logger.trace("")
-    #logger.trace("Group_DAG_num_nodes_in_graph:")
-    #logger.trace(Group_DAG_num_nodes_in_graph)
-    #logger.trace("")
+    logger.trace("DAG_num_nodes_in_graph:")
+    logger.trace(Group_DAG_num_nodes_in_graph)
+    logger.trace("")
     
 
     if (False):
-        DAG_info_partition_read = DAG_Info.DAG_info_fromfilename(file_name_parm = "./DAG_info_Group.pickle")
+        DAG_info_Partition_read = DAG_Info.DAG_info_fromfilename(file_name_parm = "./DAG_info_Group.pickle")
         
-        DAG_map = DAG_info_partition_read.get_DAG_map()
+        DAG_map = DAG_info_Partition_read.get_DAG_map()
         #all_fanin_task_names = DAG_info_partition_read.get_all_fanin_task_names()
         #all_fanin_sizes = DAG_info_partition_read.get_all_fanin_sizes()
         #all_faninNB_task_names = DAG_info_partition_read.get_all_faninNB_task_names()
         #all_faninNB_sizes = DAG_info_partition_read.get_all_faninNB_sizes()
         #all_fanout_task_names = DAG_info_partition_read.get_all_fanout_task_names()
         # Note: all fanout_sizes is not needed since fanouts are fanins that have size 1
-        DAG_states = DAG_info_partition_read.get_DAG_states()
-        DAG_leaf_tasks = DAG_info_partition_read.get_DAG_leaf_tasks()
-        DAG_leaf_task_start_states = DAG_info_partition_read.get_DAG_leaf_task_start_states()
-        DAG_tasks = DAG_info_partition_read.get_DAG_tasks()
+        DAG_states = DAG_info_Partition_read.get_DAG_states()
+        DAG_leaf_tasks = DAG_info_Partition_read.get_DAG_leaf_tasks()
+        DAG_leaf_task_start_states = DAG_info_Partition_read.get_DAG_leaf_task_start_states()
+        DAG_tasks = DAG_info_Partition_read.get_DAG_tasks()
 
-        DAG_leaf_task_inputs = DAG_info_partition_read.get_DAG_leaf_task_inputs()
+        DAG_leaf_task_inputs = DAG_info_Partition_read.get_DAG_leaf_task_inputs()
 
-        DAG_is_complete = DAG_info_partition_read.get_DAG_info_is_complete()
-        DAG_version_number = DAG_info_partition_read.get_DAG_version_number()
-        DAG_number_of_tasks = DAG_info_partition_read.get_DAG_number_of_tasks()
+        DAG_is_complete = DAG_info_Partition_read.get_DAG_info_is_complete()
+        DAG_version_number = DAG_info_Partition_read.get_DAG_version_number()
+        DAG_number_of_tasks = DAG_info_Partition_read.get_DAG_number_of_tasks()
 
         logger.trace("")
         logger.trace("DAG_info group after read:")
@@ -1002,10 +999,9 @@ def generate_DAG_info():
             logger.trace(DAG_number_of_tasks)
             logger.trace("")
 #rhc: num_nodes
-            #logger.trace("")
-            #logger.trace("Group_DAG_num_nodes_in_graph:")
-            #logger.trace(Group_DAG_num_nodes_in_graph)
-            #logger.trace("")
+            logger.trace("Group_DAG_num_nodes_in_graph:")
+            logger.trace(Group_DAG_num_nodes_in_graph)
+            logger.trace("")
 
     """
     dsk = {

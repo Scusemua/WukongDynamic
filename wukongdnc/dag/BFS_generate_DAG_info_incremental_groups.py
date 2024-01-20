@@ -15,6 +15,7 @@ from .DAG_executor_constants import enable_runtime_task_clustering
 from .BFS_generate_DAG_info import Group_senders, Group_receivers
 from .BFS_generate_DAG_info import leaf_tasks_of_groups_incremental
 from .BFS_generate_DAG_info import groups_num_shadow_nodes_map
+#from .BFS_generate_DAG_info import num_nodes_in_graph
 
 # Note: avoiding circular imports:
 # https://stackoverflow.com/questions/744373/what-happens-when-using-mutual-or-circular-cyclic-imports
@@ -33,6 +34,10 @@ if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
     ch.setFormatter(formatter)
     logger.addHandler(ch)
 """
+
+#rhc: num_nodes
+# this is set BFS.input_graph when doing non-incremental DAG generation with groups
+num_nodes_in_graph = 0
 
 # See the comments in BFS_generate_DAG_info_incremental_partitions.py. Processng
 # group is very similar to processing partitons. We generate a partition and 
@@ -80,6 +85,9 @@ Group_DAG_number_of_incomplete_tasks = 0
 # used to generate IDs; starting with 1, not 0
 Group_next_state = 1
 
+#rhc: num_nodes:
+Group_DAG_num_nodes_in_graph = 0
+
 # Called by generate_DAG_info_incremental_partitions below to generate 
 # the DAG_info object when we are using partitions.
 def generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks):
@@ -109,6 +117,8 @@ def generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks):
 
     global Group_DAG_number_of_tasks
     global Group_DAG_number_of_incomplete_tasks
+#rhc: num_nodes
+    global Group_DAG_num_nodes_in_graph
 
     # used for debugging
     show_generated_DAG_info = True
@@ -178,10 +188,18 @@ def generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks):
     # of groups, there may be many groups in the incomplete last
     # partition and they will all be considered to be incomplete.
     Group_DAG_number_of_incomplete_tasks = number_of_incomplete_tasks # parameter of method
+#rhc: num_nodes
+    # The value of num_nodes_in_graph is set by BFS_input_graph
+    # at the beginning of execution, which is before we start
+    # DAG generation. This value does not change.
+    Group_DAG_num_nodes_in_graph = num_nodes_in_graph
     DAG_info_dictionary["DAG_version_number"] = Group_DAG_version_number
     DAG_info_dictionary["DAG_is_complete"] = Group_DAG_is_complete
     DAG_info_dictionary["DAG_number_of_tasks"] = Group_DAG_number_of_tasks
     DAG_info_dictionary["DAG_number_of_incomplete_tasks"] = Group_DAG_number_of_incomplete_tasks
+
+#rhc: num_nodes:
+    DAG_info_dictionary["DAG_num_nodes_in_graph"] = Group_DAG_num_nodes_in_graph
 
     # Note: we are saving all the incemental DAG_info files for debugging but 
     # we probably want to turn this off otherwise.
@@ -260,7 +278,10 @@ def generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks):
         logger.trace("DAG_number_of_incomplete_tasks:")
         logger.trace(Group_DAG_number_of_incomplete_tasks)
         logger.trace("")
-
+#rhc: num_nodes
+        logger.trace("DAG_num_nodes_in_graph:")
+        logger.trace(Group_DAG_num_nodes_in_graph)
+        logger.trace("")
     # for debugging
     # read file file_name_incremental just written and display contents 
     if False:
@@ -286,6 +307,8 @@ def generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks):
         DAG_version_number = DAG_info_Group_read.get_DAG_version_number()
         DAG_number_of_tasks = DAG_info_Group_read.get_DAG_number_of_tasks()
         DAG_number_of_incomplete_tasks = DAG_info_Group_read.get_DAG_number_of_incomplete_tasks()
+#rhc: num_nodes
+        DAG_num_nodes_in_graph = DAG_info_Group_read.get_DAG_num_nodes_in_graph()
 
         logger.trace("")
         logger.trace("DAG_info Group after read:")
@@ -333,6 +356,10 @@ def generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks):
             logger.trace("")
             logger.trace("DAG_number_of_incomplete_tasks:")
             logger.trace(DAG_number_of_incomplete_tasks)
+            logger.trace("")
+#rhc: num_nodes
+            logger.trace("DAG_num_nodes_in_graph:")
+            logger.trace(DAG_num_nodes_in_graph)
             logger.trace("")
 
     DAG_info = DAG_Info.DAG_info_fromdictionary(DAG_info_dictionary)
@@ -400,6 +427,10 @@ def generate_DAG_info_incremental_groups(current_partition_name,
 
     # used to generate IDs; state for next group added to DAG
     global Group_next_state 
+
+    #rhc_ num_nodes
+    # This was set above and will not be changed in this method
+    global Group_DAG_num_nodes_in_graph
 
     logger.info("generate_DAG_info_incremental_groups: to_be_continued: " + str(to_be_continued))
     logger.info("generate_DAG_info_incremental_groups: current_partition_number: " + str(current_partition_number))

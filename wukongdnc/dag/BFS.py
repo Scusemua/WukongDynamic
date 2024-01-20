@@ -722,6 +722,8 @@ from . import BFS_generate_DAG_info_incremental_partitions
 from . import BFS_generate_DAG_info_incremental_groups
 #from .BFS_generate_DAG_info import generate_DAG_info
 from . import BFS_generate_DAG_info
+from . import BFS_generate_DAG_info_incremental_groups
+from . import BFS_generate_DAG_info_incremental_partitions
 #from .BFS_generate_DAG_info import Partition_senders, Partition_receivers, Group_senders, Group_receivers
 #from .BFS_generate_DAG_info import leaf_tasks_of_partitions, leaf_tasks_of_partitions_incremental
 #from .BFS_generate_DAG_info import leaf_tasks_of_groups, leaf_tasks_of_groups_incremental
@@ -4258,13 +4260,13 @@ def input_graph():
     count = 0
     file_name_line = graph_file.readline()
     count += 1
-    logger.trace("file_name_line{}: {}".format(count, file_name_line.strip()))
+    logger.trace("input_graph: file_name_line{}: {}".format(count, file_name_line.strip()))
     vertices_line = graph_file.readline()
     count += 1
-    logger.trace("vertices_line{}: {}".format(count, vertices_line.strip()))
+    logger.trace("input_graph: vertices_line{}: {}".format(count, vertices_line.strip()))
     edges_line = graph_file.readline()
     count += 1
-    logger.trace("edges_line{}: {}".format(count, edges_line.strip()))
+    logger.trace("input_graph: edges_line{}: {}".format(count, edges_line.strip()))
     
 
     _max_weight_line_ignored = graph_file.readline()
@@ -4285,10 +4287,10 @@ def input_graph():
     
     vertices_edges_line = graph_file.readline()
     count += 1
-    logger.trace("vertices_edges_line {}: {}".format(count, vertices_edges_line.strip()))
+    logger.trace("input_graph: vertices_edges_line {}: {}".format(count, vertices_edges_line.strip()))
 
     words = vertices_edges_line.split(' ')
-    logger.trace("nodes:" + words[2] + " edges:" + words[3])
+    logger.trace("input_graph: nodes:" + words[2] + " edges:" + words[3])
     global num_nodes
     num_nodes = int(words[2])
     global num_edges
@@ -4297,10 +4299,20 @@ def input_graph():
     # save number of graph nodes in BFS_generate_DAG_info
     # which is where the DAG_info is built. num_nodes_in_graph
     # is now a field in DAG_info.
-    BFS_generate_DAG_info.num_nodes_in_graph = num_nodes
+    if not use_incremental_DAG_generation:
+        BFS_generate_DAG_info.num_nodes_in_graph = num_nodes
+        logger.info("input_graph: set BFS_generate_DAG_info.num_nodes_in_graph to "
+            + str(BFS_generate_DAG_info.num_nodes_in_graph))
+    else:
+        if use_page_rank_group_partitions:
+            BFS_generate_DAG_info_incremental_groups.num_nodes_in_graph = num_nodes
+            logger.info("input_graph: set BFS_generate_DAG_info_incemental_groups.num_nodes_in_graph to "
+                + str(BFS_generate_DAG_info.num_nodes_in_graph))
+        else:
+            BFS_generate_DAG_info_incremental_partitions.num_nodes_in_graph = num_nodes
+            logger.info("input_graph: set BFS_generate_DAG_info_incremental_partitions.num_nodes_in_graph to "
+                + str(BFS_generate_DAG_info.num_nodes_in_graph))
 
-    logging.shutdown()
-    os._exit(0)
 
     num_edges = int(words[3])
     logger.trace("input_file: read: num_nodes:" + str(num_nodes) + " num_edges:" + str(num_edges))
@@ -4328,7 +4340,7 @@ def input_graph():
         source = int(words[1])
         target = int(words[2])
         if source == target:
-            logger.trace("[Warning]: self loop: " + str(source) + " -->" + str(target))
+            logger.trace("input_graph: [Warning]: self loop: " + str(source) + " -->" + str(target))
             num_self_loops += 1
             continue
         #logger.trace("target:" + str(target))
@@ -4352,11 +4364,11 @@ def input_graph():
             # the number_of_nodes_to_append to be 1, as needed.
             if len(nodes) < target+1:
                 number_of_nodes_to_append = target - num_nodes
-                logger.trace("number_of_nodes_to_append:" + str(number_of_nodes_to_append))
+                logger.trace("input_graph: number_of_nodes_to_append:" + str(number_of_nodes_to_append))
                 # in our example, number_of_nodes_to_append = 1 so i starts
                 # with 0 (default) and ends with number_of_nodes_to_append-1 = 0
                 for i in range(number_of_nodes_to_append):
-                    logger.trace("Node(" + str(num_nodes+i+1) + ")")
+                    logger.trace("input_graph: Node(" + str(num_nodes+i+1) + ")")
                     # new node ID for our example is 101 = num_nodes+i+1 = 100 + 0 + 1 = 101
                     nodes.append(Node((num_nodes+i+1)))
                 num_nodes += number_of_nodes_to_append
@@ -4410,10 +4422,10 @@ def input_graph():
         #logger.trace (str(i) + ": get children: " + str(len(node.children)))
         count_child_edges += len(node.children)
         i += 1
-    logger.trace("num edges in graph: " + str(num_edges) + " = num child edges: " 
+    logger.trace("input_graph: num edges in graph: " + str(num_edges) + " = num child edges: " 
         + str(count_child_edges) + " + num_self_loops: " + str(num_self_loops))
     if not ((num_edges - num_self_loops) == count_child_edges):
-        logger.error("[Error]: num child edges in graph is " + str(count_child_edges) + " but edges in file is "
+        logger.error("[Error]: input_graph: num child edges in graph is " + str(count_child_edges) + " but edges in file is "
             + str(num_edges))
 
     count_parent_edges = 0
@@ -4424,21 +4436,21 @@ def input_graph():
         count_parent_edges += len(node.parents)
         i += 1
 
-    logger.trace("num_edges in graph: " + str(num_edges) + " = num parent edges: " 
+    logger.trace("input_graph: num_edges in graph: " + str(num_edges) + " = num parent edges: " 
         + str(count_parent_edges) + " + num_self_loops: " + str(num_self_loops))
     if not ((num_edges - num_self_loops) == count_parent_edges):
-        logger.error("[Error]: num parent edges in graph is " + str(count_parent_edges) + " but edges in file is "
+        logger.error("[Error]: input_graph: num parent edges in graph is " + str(count_parent_edges) + " but edges in file is "
         + str(num_edges))
 
-    logger.trace("num_parent_appends:" + str(num_parent_appends))
-    logger.trace("num_children_appends:" + str(num_children_appends))
-    logger.trace("num_self_loops: " + str(num_self_loops))
+    logger.trace("input_graph: num_parent_appends:" + str(num_parent_appends))
+    logger.trace("input_graph: num_children_appends:" + str(num_children_appends))
+    logger.trace("input_graph: num_self_loops: " + str(num_self_loops))
     if num_self_loops > 0:
         save_num_edges = num_edges
         num_edges -= + num_self_loops
-        logger.trace("old num_edges: " + str(save_num_edges) + " num_edges: " + str(num_edges))
+        logger.trace("input_graph: old num_edges: " + str(save_num_edges) + " num_edges: " + str(num_edges))
     else:
-        logger.trace("num_edges: " + str(num_edges))
+        logger.trace("input_graph: num_edges: " + str(num_edges))
 
     graph_file.close()
 

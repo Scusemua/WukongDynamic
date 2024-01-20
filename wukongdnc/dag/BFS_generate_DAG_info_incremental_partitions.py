@@ -13,7 +13,7 @@ from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
 
 from .BFS_generate_DAG_info import Partition_senders, Partition_receivers
 from .BFS_generate_DAG_info import leaf_tasks_of_partitions_incremental
-
+#from .BFS_generate_DAG_info import num_nodes_in_graph
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +27,10 @@ if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
     ch.setFormatter(formatter)
     logger.addHandler(ch)
 """
+
+#rhc: num_nodes
+# this is set BFS.input_graph when doing non-incremental DAG generation with partitions
+num_nodes_in_graph = 0
 
 # Global variables for DAG_info. These are updated as the DAG
 # is incrementally generated. 
@@ -65,6 +69,9 @@ Partition_DAG_number_of_tasks = 0
 # incrementally published. For partitions this is 1 or 0.
 Partition_DAG_number_of_incomplete_tasks = 0
 
+#rhc: num_nodes: 
+Partition_DAG_num_nodes_in_graph = 0
+
 # Called by generate_DAG_info_incremental_partitions below to generate 
 # the DAG_info object when we are using an incremental DAG of partitions.
 def generate_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks):
@@ -91,6 +98,8 @@ def generate_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks):
     global Partition_DAG_previous_partition_name
     global Partition_DAG_number_of_tasks
     global Partition_DAG_number_of_incomplete_tasks
+#rhc: num_nodes
+    global Partition_DAG_num_nodes_in_graph
 
     # for debugging
     show_generated_DAG_info = True
@@ -164,10 +173,18 @@ def generate_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks):
     # of groups, there may be many groups in the incomplete last
     # partition and they will all be considered to be incomplete.
     Partition_DAG_number_of_incomplete_tasks = number_of_incomplete_tasks
+#rhc: num_nodes
+    # The value of num_nodes_in_graph is set by BFS_input_graph
+    # at the beginning of execution, which is before we start
+    # DAG generation.  This value does not change.
+    Partition_DAG_num_nodes_in_graph = num_nodes_in_graph
+
     DAG_info_dictionary["DAG_version_number"] = Partition_DAG_version_number
     DAG_info_dictionary["DAG_is_complete"] = Partition_DAG_is_complete
     DAG_info_dictionary["DAG_number_of_tasks"] = Partition_DAG_number_of_tasks
     DAG_info_dictionary["DAG_number_of_incomplete_tasks"] = Partition_DAG_number_of_incomplete_tasks
+#rhc: num_nodes:
+    DAG_info_dictionary["DAG_num_nodes_in_graph"] = Partition_DAG_num_nodes_in_graph
 
 #rhc: Note: we are saving all the incemental DAG_info files for debugging but 
 #     we probably want to turn this off otherwise.
@@ -245,33 +262,38 @@ def generate_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks):
         logger.trace("DAG_number_of_incomplete_tasks:")
         logger.trace(Partition_DAG_number_of_incomplete_tasks)
         logger.trace("")
+    #rhc: num_nodes
+        logger.trace("DAG_num_nodes_in_graph:")
+        logger.trace(Partition_DAG_num_nodes_in_graph)
+        logger.trace("")
 
     # for debugging:
     # read file file_name_incremental just written and display its contents 
     if False:
-        DAG_info_partition_read = DAG_Info.DAG_info_fromfilename(file_name_incremental)
+        DAG_info_Partition_read = DAG_Info.DAG_info_fromfilename(file_name_incremental)
         
-        DAG_map = DAG_info_partition_read.get_DAG_map()
+        DAG_map = DAG_info_Partition_read.get_DAG_map()
         # these are not displayed
-        all_collapse_task_names = DAG_info_partition_read.get_all_collapse_task_names()
+        all_collapse_task_names = DAG_info_Partition_read.get_all_collapse_task_names()
         # Note: prefixing name with '_' turns off th warning about variabel not used
-        _all_fanin_task_names = DAG_info_partition_read.get_all_fanin_task_names()
-        _all_faninNB_task_names = DAG_info_partition_read.get_all_faninNB_task_names()
-        _all_faninNB_sizes = DAG_info_partition_read.get_all_faninNB_sizes()
-        _all_fanout_task_names = DAG_info_partition_read.get_all_fanout_task_names()
+        _all_fanin_task_names = DAG_info_Partition_read.get_all_fanin_task_names()
+        _all_faninNB_task_names = DAG_info_Partition_read.get_all_faninNB_task_names()
+        _all_faninNB_sizes = DAG_info_Partition_read.get_all_faninNB_sizes()
+        _all_fanout_task_names = DAG_info_Partition_read.get_all_fanout_task_names()
         # Note: all fanout_sizes is not needed since fanouts are fanins that have size 1
-        DAG_states = DAG_info_partition_read.get_DAG_states()
-        DAG_leaf_tasks = DAG_info_partition_read.get_DAG_leaf_tasks()
-        DAG_leaf_task_start_states = DAG_info_partition_read.get_DAG_leaf_task_start_states()
-        DAG_tasks = DAG_info_partition_read.get_DAG_tasks()
+        DAG_states = DAG_info_Partition_read.get_DAG_states()
+        DAG_leaf_tasks = DAG_info_Partition_read.get_DAG_leaf_tasks()
+        DAG_leaf_task_start_states = DAG_info_Partition_read.get_DAG_leaf_task_start_states()
+        DAG_tasks = DAG_info_Partition_read.get_DAG_tasks()
 
-        DAG_leaf_task_inputs = DAG_info_partition_read.get_DAG_leaf_task_inputs()
+        DAG_leaf_task_inputs = DAG_info_Partition_read.get_DAG_leaf_task_inputs()
 
-        Partition_DAG_is_complete = DAG_info_partition_read.get_DAG_info_is_complete()
-        DAG_version_number = DAG_info_partition_read.get_DAG_version_number()
-        DAG_number_of_tasks = DAG_info_partition_read.get_DAG_number_of_tasks()
-        DAG_number_of_incomplete_tasks = DAG_info_partition_read.get_DAG_number_of_incomplete_tasks()
-
+        Partition_DAG_is_complete = DAG_info_Partition_read.get_DAG_info_is_complete()
+        DAG_version_number = DAG_info_Partition_read.get_DAG_version_number()
+        DAG_number_of_tasks = DAG_info_Partition_read.get_DAG_number_of_tasks()
+        DAG_number_of_incomplete_tasks = DAG_info_Partition_read.get_DAG_number_of_incomplete_tasks()
+#rhc: num_nodes
+        DAG_num_nodes_in_graph = DAG_info_Partition_read.get_DAG_num_nodes_in_graph()
         logger.trace("")
         logger.trace("DAG_info partition after read:")
         output_DAG = True
@@ -318,6 +340,10 @@ def generate_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks):
             logger.trace("")
             logger.trace("DAG_number_of_incomplete_tasks:")
             logger.trace(DAG_number_of_incomplete_tasks)
+            logger.trace("")
+#rhc: num_nodes
+            logger.trace("DAG_num_nodes_in_graph:")
+            logger.trace(DAG_num_nodes_in_graph)
             logger.trace("")
 
     # create the DAG_info object from the dictionary
@@ -395,6 +421,10 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
     # save the actual name "PR2_1L" and retrive it when we process PR3_1
     global Partition_DAG_previous_partition_name
     global Partition_DAG_number_of_tasks
+
+#rhc_ num_nodes
+    # This was set above and will not be changed in this method
+    global Partition_DAG_num_nodes_in_graph
 
     logger.trace("generate_DAG_info_incremental_partitions: to_be_continued: " + str(to_be_continued))
     logger.trace("generate_DAG_info_incremental_partitions: current_partition_number: " + str(current_partition_number))
