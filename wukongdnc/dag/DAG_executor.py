@@ -3408,6 +3408,12 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 task = DAG_tasks[state_info.task_name]
 
 #rhc: num_nodes: 
+                # num_nodes_in_graph is saved when we input the 
+                # graph n BFS.input_graph() and the saved value
+                # is added to DAG_info when bfs() generates 
+                # DAG_info (BFS_generate_DAG_info.py and the 
+                # "..._incemental_groups.py" and "..._incremental_partitions.py"
+                # incremental versions.
                 num_nodes_in_graph = DAG_info.get_DAG_num_nodes_in_graph()
                 logger.info("execute task: num_nodes_in_graph: " + str(num_nodes_in_graph))
 

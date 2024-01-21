@@ -134,6 +134,15 @@ Partiton P2 is a loop partition since there is a cycle:
           v      v    v
         G5----> G6    G7
 
+ Note: This DAG has 20 nodes. There is also an extended version of this in which we 
+ add two more connected components, each with two nodes. One
+ is nodes 21-->22, which results in groups G8->G9 and the other is 
+ 23-->24, which results in groups G10-->G11. There is also an
+ addtional fanin from G6 to G7 so that G7 is a fanin node.
+ This file is "graph_24N_3CC_fanin.gr"
+
+ graph_24N_3CC_fanin.gr 
+
 This DAG is based on the parent-relationship between the nodes within a group.
 e.g., for G3:
   20->8->11->3->19  # 20 is parent of 8 is parent of 11 ...

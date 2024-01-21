@@ -21,6 +21,182 @@ from .BFS_generate_DAG_info import groups_num_shadow_nodes_map
 # https://stackoverflow.com/questions/744373/what-happens-when-using-mutual-or-circular-cyclic-imports
 #from . import BFS
 
+"""
+Consider the group-based DAG for the whiteboard example:
+
+                G1
+             /  |   \
+            /   |    \
+          v     v     v
+        G2----> G3L   G4     # G3L indicates G3 is a loop group, likewise for P2L
+             /   |    |
+            /    |    |
+          v      v    v
+        G5----> G6    G7
+
+To construct the DAG incrementaly:
+- generate the first group G1. This group is 5 --> 17 --> 1
+  (note: B --> A means B is the parent of A) where we added 
+  1 to the bfs queue at the start, then we dequeued 1 and 
+  did dfs(1) to get the parent 17 of 1 and the parent 5 of 17.
+- This first group is also the first partition (which has one group)
+- We know the nodes of group 1 but group 1 is incomplete since
+  we do not know which groups have parent nodes that are in 
+  group 1. We say group 1 is "to-be-continued". the BFS queue
+  will contain 5, 17 an 1 (there are added to the bfs queueu
+  in the reverse order that they weer visited since dfs is 
+  recursive and they are added as the recursion unwinds).
+  We will visit the child of 5, 17, and 1, in that order
+  to get the groups of partition 2. These groups are G2,
+  G3L ('L' since G3 contains a cycle of nodes), and G4.
+- At this point, group 1 is now complete - we know its nodes 
+  and we know the edges from group 1 to the other groups,
+  which are all in partition 2. the groups G3, G3L, and G4
+  are all incomplete, since we know their nodes but we have 
+  not visited the childen of these nodes, which will all
+  be nodes in (the group of) partition 3. 
+- In general, as we identify the nodes/groups in partition i, we 
+  complete the groups in partition i-1.
+Note: When we execute the DAG, a group Gi wil be executed by 
+a lambda/worker process. After execution, we will process all 
+the pagerank values of of the nodes that are parent nodes to 
+nodes that are in another group . For example, for group G1
+above, ndoe 5 in G1 is the parent of node 16 in G2, so group
+G2 needs the pagerank value computed for 5 in order to compute
+the pagerank value for 16. (Noet that 16 has two parents 10
+and 5 and 10's value is local to group G2) Since G1 has a fanout
+to G2, G1 will send the pagerank value of 5 to G2 as part
+of the fanout from G1 to G2. G1 will also send its pagerank
+(output) value for node 17 in G1 to group G3L as part of the
+fanin from G1 to G3L. (This is actally a FaninNB ("NB" = No Become)
+since G1 also has fanouts to G2 and G4 so G1 cannot "become" G3L)
+So communication between lammbdas/workers executing groups happen
+through the synchronization objects (fanin or faninNB) or through
+fanouts. The values communicated are the pagerank values of the
+parent nodes that are needed by children nodes in other groups.
+Note: Group G2 in partition 2 has the parent value of node 2
+that is needed by node 20 in group G3L.
+
+An expanded version of the above whiteboard DAG that shows all
+the nodes is shown below. The parent edges between nodes in a group 
+are not shown, e.g., 5-->17 as 5 is the paretn of 17. The edges
+shown are edges between groups/tasks in the DAG, whcih are formed
+from child edhes between the nodes, e.g., G1 --> G2 since 5
+in G1 has a child 16 in G2. So we visit 1 then 17 then 5, add 
+them to the bfs queue in rverse order 5, 17, 1. Visit the
+child 16 of 5 to get G2, visit the child 19 of 17 to get G2L,
+and visit the child 12 of 1 to get G4. 
+
+                 G1: 5       17               1
+                 /          |                \
+                /           |                 \
+              v             |                  \ 
+    G2: 2 10 16             |                   \
+        |       G3L:        v    G4:             v
+        |------>20 8  11 3 19      4       6 13 12
+                  /    |            \     /
+                /      |             \   /
+               v       |              \ /   
+           G5:13  G6:  v               \     # 18 is a child of 4
+                     7 15             / \    # 9 is a child of 6
+                                    v   v
+                               G7: 9    18
+
+In the code below, we add the groups of the current partition to the DAG.s
+
+The first partition has one group G1. It is added as an incomplete
+group, i.e., it is to-be-continued.
+
+For the remaining groups/partition, when bfs() identifies the
+current groups in the current partition Pi, we:
+- add each group of Pi as an incomplete group. Essentially, this mans that 
+  the fanins/fanouts for the group are empty since we only
+  identify these fanins/fanouts when we generate the groups 
+  in the next partition Pi+1. At that point. Pi+1 will be the 
+  current partition and Pi will be the previous partition. Note also
+  that Pi-1 is the previous-previous partition.
+- The groups in the previous partition Pi-1 are now complete.
+  Thus we mark the groups is Pi-1 as complete groups. We also 
+  generate the fanin/fanout sets for these groups since we
+  identified all the edges between the groups of the previous
+  partition and the groups of the current partition when we 
+  generated the groups of the current partition. For example, 
+  in the whiteboard DAg above, G1 is incomplete. We identify
+  groups G2, G3L and G4 and the edges between G1 and these
+  groups. So we mark G1 as complete and fill in it fanout/
+  fanin sets as fanouts = {G2, G4}, fanins = {}, faninNBs={G3L}.
+  Note that G1's collapse = {}. A collapse is the case where
+  a group S has one out edge anf that edge is to a group T 
+  where T has one in edge which is from S. In the whiteboard
+  DAG, G4 has a collapse to G7; this is a cluster that is done
+  when we generate the ADAG instead of at runtime. So the 
+  worker/lambda that executes G4 will clster G7, i.e., this 
+  lambda/worker will also execute G7. G4 has two parent pagerank
+  values that are needed by the child nodes in G7.
+- As we just said, when we process current partition Pi,
+  we compute the fanins/fanout/collapse of Pi-1 and mark
+  Pi-1 as complete (so not to-be-continued). We also 
+  track for each group G, in addition to whether or not it
+  is complete, whether it has fanins/fanouts/collapse to 
+  groups that are incomplete. For example, when we process
+  the groups G2, G3L, and G4 in the current partition P2,
+  we set G1 to complete, but G1 has fanins/fanouts/collapse
+  (that are crrently unknown) to the incomplete groups G2,
+  G3L, G4 in P2. So G2 is marked as complete but we also 
+  mark G1 as having fanins/fanouts/collapses to incomplete
+  groups (in this case G2, G3L and G4). Note that when 
+  we process current group Pi, we set all the groups
+  in Pi-1 to complete (as described in the previous step).
+  We also set all the groups in partition Pi-2 to have 
+  NO fanins/fanouts/collapse to incomplete groups, since
+  the groups in Pi-1 were set to complete. For example, when we
+  process partition 3 above, we set the groups G2, G3L, and G4
+  to complete, and we set group G1 to have no complete 
+  fanins/fanouts/collapse.
+Complication: Note that partition 3 is the last partition
+in the DAG. We will see this since all of the nodes will have
+been added to some partition P1, P2, or P#. Thus, when 
+we process partition 3, we can set its groups to be complete as none
+of the nodes in th groups of this partition have any child 
+edges to nodes in another partition (as there are no more partitons). 
+This means we also can set the groups in partition 2 to be compete
+(as usual) but also we can set the groups in partition 2 to have
+no fanins/fanouts/collapse to an incomplete group. Lkewise as 
+usual for the group in partition 1. The complication is that 
+the groups in partition 3, while not having any edges to 
+groups in the next partition (as there is no next partition) do 
+have intra-partition edges, e.g., G2-->G3L. In the normal case,
+these intra-partition dges would be detected when we processed
+partition 4, i.e., we would find the intra-partition edges between
+the groups of partition 3, and the inter-partition edges between 
+parttiton 3 and partiton 4, when we processed partition 4. But there
+is no partition 4 so we need to ensure that the intra-partition
+edges of partition 3 aer detected when we process partition 3
+as the current partition. When processing the current partiton, 
+the code for detecting edges would typically only consider the 
+groups in the previous partition, since we just detected the
+edges between the groups in the previous partition and the 
+groups in the current partition. But we also detectd the 
+intra-partiton edges between the groups in the current 
+partition. So to handle this complication, we compute a 
+set of "groups to consider" which is normally the groups 
+in the previous partition but when the current partition 
+is the last partition in the DAG we also add the groups
+of the current partition to the "groups to consider". 
+For exmapl, when partitin 3 is the current partition, it
+is the last partiton in the DAG. Thus we need to compute
+the fanins/fanouts/collapse of the groups G3, G3L, and G4
+in previous partition 2 (based on the edges that were 
+idetified by bfs() when it generated current partition 3)
+and we need to compute the fanous/fanins/collapse of the 
+groups G5, G6, and G7 in current partition P3. We do this
+by letting "groups to consider" be the groups G2, G3L,and 
+G4 plus the groups G5, G6, and G7. This ensures that G5
+will have a faninNB to G6. (G3L also has a faninNB to G6., 
+as well as a fanout to G5.)
+                               
+                               
+"""
 
 logger = logging.getLogger(__name__)
 
