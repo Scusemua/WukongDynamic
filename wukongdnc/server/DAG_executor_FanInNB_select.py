@@ -92,6 +92,31 @@ class DAG_executor_FanInNB_Select(Selector):
         self.store_fanins_faninNBs_locally = kwargs['store_fanins_faninNBs_locally']
         self.DAG_info = kwargs['DAG_info'] 
 
+        if self.DAG_info == None:
+            # When running real lambdas, DAG_info must be non-null since
+            # the FaninNB will start a real lambda to excute its fanin task
+            # and pass the DAG_info on the payload. For simulated lambdas
+            # (run_all_tasks_locally and not using_workers), when this 
+            # FaninNB is stored on the tcp_servr, the fanin task will be executed 
+            # by a new simulated lambda thread that is started by the simulated 
+            # lambda that was the last simulated lambda to called fanin on the faninNB. 
+            # (A remote FaninNB on the tcpServer cannot start a local thread to simuate 
+            # a lambda as that thread would run on the tcp_server. When 
+            # this FaninNB is stored locally, it does start a new simulated
+            # lambda to execute the fanin task and it puts DG_info in the
+            # payload of he simulated lambda. Thus, DAG_info is needed 
+            # when we aer using real lambdas (not run_all_tasks_locally) or
+            # weare using simulated lambdas (run_all_tasks_locally and not using_workers) 
+            # and the FaninNB object is stored locally 
+            # (store_fanins_faninNBs_locally)
+            if not run_all_tasks_locally or (run_all_tasks_locally and not using_workers and store_fanins_faninNBs_locally):
+                logger.error("[Error]: FanInNB: fanin_task_name: DAG_info is None for FaninNB init().")
+                logging.shutdown()
+                os._exit(0)
+        else:
+            logger.trace("FanInNB: fanin_task_name: DAG_info is not None for init().")
+
+
 #rhc: groups partitions
         # When running real lambdas, in order to avoid reading the 
         # individual groups/partitions when testing pagerank with 

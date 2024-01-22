@@ -240,7 +240,11 @@ def create_and_faninNB_remotely_batch(websocket,**keyword_arguments):
     DAG_exec_state = faninNB_remotely_batch(websocket,**keyword_arguments)
     return DAG_exec_state
 
-#def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_states, DAG_exec_state, output, DAG_info, server):
+# Called to process faninNBs when we are not using real lambdas
+# or worker processes, which means we are using simulated lambdas
+# (a lambda is simulated by a thread) or we are using worker
+# threads. Worker threads share a local work queue, while worker
+# processes share a remote work queue on tp_servr.
 def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_states, 
     DAG_exec_state, output, DAG_info, server, work_queue,worker_needs_input,
 
@@ -314,42 +318,62 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
         # Note: This process_faninNBs method is only called when we are 
         # running locally, i.e., we are not using real lambdas. 
         #
-        # When storing objects remotely:
-        # For real lambdas, for faninNBs we always call process_faninNBs_batch and faninNB_remotely_batch.
-        # Here, we do not need to pass DAG_info since neither the faninNBs nor
-        # the fanins need DAG_info in this case. fanins never need DAG_info since
-        # they do not start and lambda etc to do their fanin task; instead the
-        # last caller becomes the executor of the fanin task. For faninNBs, when
-        # running locally it must be simulated lambdas or worker threads/processes
-        # that are running and the faninNB does not create a simulted lambda to
-        # run the fanin task since that simulated lambda (thread) would run on 
-        # the server and that is not local (if the server is remote.)
-        # Note: We will pass DAG_info of None to the FaninNB as a keywork argument,
-        # so when the FaninNB acesses keyword argument 'DAG_info' it will be there
-        # as None and this DAG_info will never be used so None is okay.
-        # Deleted:
-        # Note: We have the same if-condition  in faninNB_remotely.
-        #if not run_all_tasks_locally:
-        #    #   Note: When faninNB start a Lambda, DAG_info is in the payload. 
-        #    # (Threads and processes read it from disk.)
-        #   keyword_arguments['DAG_info'] = DAG_info
-        #
-        # When storing objects locally we are running locally and whwn we are
-        # using simulated lambdas, the FaninNB will be stored locally and it
-        # will create a new simulated Lambda to run the fanin task. Since
-        # we pass the DAG_info in the payload to the created simulated Lambda,
-        # we need to give DAG_info to the FaninNB so we pass it here.
+        # For real lambdas, we always storing synch objects remotely.
+        # Likewise for worker processes. For real lambdas and worker processes, 
+        # we always call process_faninNBs_batch and faninNB_remotely_batch.
+        # That is, we do not call this process_faninNBs method.
+        # Here, we have a choice about whether or not to pass DAG_info 
+        # to the FaninNB. (DAG_info may be large for large DAGs)
+        # (Note we do not need to pass DAG_info for FanIns.
+        # FanIns never need DAG_info since they do not start a lambda etc 
+        # to execute their fanin task; instead the last caller to all fanin() 
+        # becomes the executor of the fanin task.) For faninNBs, we only 
+        # call process_faninNBs when we are running simulated lambdas (as threads)
+        # or we are using worker threads. For these two cases, we distinguihs
+        # between storing the synch objects (FaninNbs) on the tcp_server versus 
+        # storing the sync objects locally. When the FaninNB is on 
+        # tcp_server, the faninNB does not create a simulated lambda to run the 
+        # fanin task since that simulated lambda (thread) would run on 
+        # the server. Likewise, a FaninNb on tcp_server dos not enqueue
+        # the fanin task in the worker thread's work queue since the 
+        # shared work queue is not on the tcp_server (as it is for
+        # worker processes); rather, it is a local object that cannot 
+        # be directly accessed by tcp_server. In these cases, the
+        # FaninNB on the tcp_server, just returns the fanin results 
+        # to the simulated lambda or worker thread that made the remote
+        # call to fanin() and the simulated lambda or worker thread 
+        # deals with starting a new simulated lamba to execute the 
+        # fanin task, or adding the fanin task to the work queue. In
+        # either case, the simulated lambda or worker thread both have
+        # access to their local DAG_info (which they raad from a 
+        # file and so do not need the FaninNB to supply it.)
+        # When the FaninNB is stored locally (as a regular object in 
+        # the Python program) it creates a simulated lambda (thread) 
+        # to execute the fanin task or it adds the fanin task 
+        # to the local shared work queue of the worker threads. The 
+        # question is whether FaninNB needs to pass DAG_info to the 
+        # simulated lambda or worker thread that excutes the 
+        # fanin task. For simulated lambdas, the answer is yes since
+        # simulated lambdas expect the DAG_info to be part of their 
+        # payload (just like the real lambdas they are simulating).
+        # Worker threads do not need the FaninNB to pass DAG_info 
+        # to them as worker threads read DAG_info from a local file.
+        # (as do worker processes)
         # 
-        # Note: When we are using workers we do not need to pass DAG_info
-        # since the worker threads have the (incremental or non-incremental)
-        # DAG_info and the faninNB will put the fanin task in the work queue
-        # for the workers to execute. 
-        # We pass DAG_info all the time.
-        #if store_fanins_faninNBs_locally and run_all_tasks_locally: 
-        keyword_arguments['DAG_info'] = DAG_info
+        # pass DAG_info if we are using simulated lambdas. If
+        # we are using worker threads pass None - the FaninNB
+        # will not use DAG_info if we aer using worker threads.
+        # Note: not run_all_tasks_locally means we are using 
+        # real lambdas. When run_all_tasks_locally and 
+        # not using_workers means we are usin simulated lambdas.
+        if not run_all_tasks_locally or (run_all_tasks_locally and not using_workers and store_fanins_faninNBs_locally):
+            keyword_arguments['DAG_info'] = DAG_info
+        else:
+            keyword_arguments['DAG_info'] = None
+
         # We start a thread that makes the local call to server.create_and_faninNB_locally
         # or server.faninNB_locally. server.create_and_faninNB_locally will
-        # crrate the local FaninB and call its init() method passing this DAG_info.
+        # create the local FaninB and call its init() method passing this DAG_info.
 
 		#Q: kwargs put in DAG_executor_State keywords and on server it gets keywords from state and passes to create and fanin
 

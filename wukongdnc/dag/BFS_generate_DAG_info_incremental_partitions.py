@@ -28,6 +28,140 @@ if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
     logger.addHandler(ch)
 """
 
+
+"""
+Fist, consider the group-based DAG for the whiteboard example:
+
+                G1
+             /  |   \
+            /   |    \
+          v     v     v
+        G2----> G3L   G4     # G3L indicates G3 is a loop group, likewise for P2L
+             /   |    |
+            /    |    |
+          v      v    v
+        G5----> G6    G7
+
+Expanding the groups to see the nodes:
+
+
+                 G1: 5       17               1
+                 /          |                \
+                /           |                 \
+              v             |                  \ 
+    G2: 2 10 16             |                   \
+        |       G3L:        v    G4:             v
+        |------>20 8  11 3 19      4       6 13 12
+                  /    |            \     /
+                /      |             \   /
+               v       |              \ /   
+           G5:13  G6:  v               \     # 18 is a child of 4
+                     7 15             / \    # 9 is a child of 6
+                                    v   v
+                               G7: 9    18
+
+
+Since here we are using partitions. not groups, the complete DAG looks like:
+
+          P1: 5 17 1
+                | 
+                |  
+                v
+P2L: 2 10 16 20 8 11 3 19 4 6 13 12       # P2L indicates P2 has a cycle of nodes
+                |
+                |
+                v
+        P3: 13 7 15 9 28
+
+Each partition has a single edge to the next partition. Thus,
+the partitions of a connected component in a graph are executed
+sequentally. If there are muliple connected components, then 
+the we can excute the components concurrently. Also note that
+nofes 20 8 11 3 19 are in a loop (20 is the parent of 8 is the
+parent of 11 .... is the parent of 19 is the parent of 20.) When 
+we excute P2L, we will iterate over all of the nodes in P2L
+many times, e.g., 80 times, but the nodes outside the loop 
+require only one iteration. This is what would happen if we 
+executed groups instead of nodes, i.e., we would iterate over
+the noodes in G2 and G4 only once, while iterating many times
+over the nodes in G3L. 
+Note: When using partitions, we could still identify the groups
+within a partition, and use the groups to reduce th number
+of iterations for the nodes in groups of the partition that do 
+not have a loop. That is, pagerabk valus for the nodes in P2L 
+in G2 would be computd first, using one iteration, then the nodes
+in G3L using many itetations, then the nodes in G4 using one iteration.
+This would reduce the total number of iterations.
+
+To construct the DAG incrementally:
+- generate the first partition P1. This partition is 5 --> 17 --> 1
+  (note: B --> A means node B is the parent of node A) where we added 
+  1 to the bfs queue at the start, then we dequeued 1 and 
+  did dfs(1) to get the parent 17 of 1 and the parent 5 of 17.
+- This first partition is also the first group.
+- We know the nodes of P1 but P1 is incomplete since
+  we do not know which nodes in P1 have children. The child
+  nodes of the nodes in P1 that are not in P1 will be in P2.
+  We say P1 is "to-be-continued". The BFS queue
+  will contain 5, 17 an 1 (there are added to the bfs queue
+  in the reverse order that they weer visited since dfs is 
+  recursive and they are added as the recursion unwinds).
+  We will visit the child of 5, 17, and 1, in that order
+  to get partition 2. 
+- At this point, P1 is now complete - we know its nodes 
+  and we know the nodes in P1 that are parent nodes of nodes
+  in P2 2. Partition P2 is incomplete. It becomes complete when 
+  we visit the unvisited children of the nodes in P2 (some 
+  children are in P2 and thus have been vsited)
+- In general, when we identify the nodes in partition i, 
+   partition i-1 becomes complete.
+Note: Pi has a single fanout, which is to Pi+1, and Pi+1
+has a single fanin which is from Pi. thus, we can cluster
+Pi and Pi+1, which means that Pi has a collpase set that 
+Pi+1. (The fanout and fanin sets of Pi are empty) The worker/
+lambda that excutes the first partition of a connected
+component in the graph will (sequentially) execute all of the 
+partitions in the component. 
+
+In the code below, we add the current partition to the DAG.
+
+The first partition is added as an incomplete
+partition, i.e., it is to-be-continued.
+
+For the remaining partitions, when bfs() identifies the
+current partition Pi:
+- add Pi as an incomplete partition. Essentially, this means that 
+  the fanins/fanouts/collapse for the partition are empty.
+  The next partition Pi+1 will be added to the collapse set
+  for Pi when Pi+1 is identified by bfs(). At that point. 
+  Pi+1 will be the current partition and Pi will be the 
+  previous partition. Note also that Pi-1 is the 
+  previous-previous partition.
+- Mark the previous partition Pi-1 as complete.  Generate the 
+  collapse set for Pi-1, which contains Pi.
+  For example, in the whiteboard DAG above, P1 is incomplete. 
+  When we identify (the nodes in) P2, we mark P1 as complete
+  and add P2 the the collapse set of P1. 
+- As we just said, when we process current partition Pi,
+  we compute the collapse of Pi-1 and mark Pi-1 as complete 
+  (or not to-be-continued). We also track for each partition
+  P, in addition to whether or not it is complete, whether
+  whether it has a collapse to an incomplete partition.
+  groups that are incomplete. For example, when we process
+  partition P2, we set P1 to complete, but P1 has a collapse
+  to the incomplete partition P2. So P1 is marked as complete 
+  but we also mark P1 as having a collapse to an incomplete
+  partition. Note that when we process current group Pi, we 
+  set Pi-1 to complete (as described in the previous step).
+  We also partition Pi-2 to have NO collapse to an incomplete 
+  partition, since Pi-1 was set to complete. For example, when we
+  process partition P3 in the DAG above, we set P2 to complete,
+  and we set group P1 to have no collapse to an incomplete group.
+  In the code below, we maintain the index of the current, 
+  previous, and previous-previous partitions.
+
+"""
+
 #rhc: num_nodes
 # this is set BFS.input_graph when doing non-incremental DAG generation with partitions
 num_nodes_in_graph = 0

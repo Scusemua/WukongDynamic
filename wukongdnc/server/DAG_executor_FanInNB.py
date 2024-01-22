@@ -6,7 +6,7 @@ import threading
 import time 
 from threading import Thread
 import traceback 
-#import os
+import os
 
 #from DAG_executor import DAG_executor
 #from wukongdnc.dag 
@@ -18,6 +18,7 @@ from wukongdnc.dag.DAG_executor_State import DAG_executor_State
 from wukongdnc.dag.DAG_executor_constants import run_all_tasks_locally, using_workers, using_threads_not_processes
 from wukongdnc.dag.DAG_executor_constants import store_sync_objects_in_lambdas, sync_objects_in_lambdas_trigger_their_tasks
 from wukongdnc.dag.DAG_executor_constants import input_all_groups_partitions_at_start
+from wukongdnc.dag.DAG_executor_constants import store_fanins_faninNBs_locally
 #from wukongdnc.dag.DAG_work_queue_for_threads import thread_work_queue
 from wukongdnc.dag.DAG_executor_work_queue_for_threads import work_queue
 from wukongdnc.wukong.invoker import invoke_lambda_DAG_executor
@@ -83,15 +84,25 @@ class DAG_executor_FanInNB(MonitorSU):
 
         if self.DAG_info == None:
             # When running real lambdas, DAG_info must be non-null since
-            # the FaninNB will statr a real lambda to excute its fanin task
-            # and pass the DAG_info on the payload. For simulated lambdas,
-            # the fanin task will be executed by a new simulated lambda
-            # thread that is started by the simulated lambda that last called
-            # fanin on the faninNB. A remote FaninNB on the tcpServer cannot
-            # start a local thread to simuate a lambda as that thread would 
-            # run on the tcp_server.
-            if not run_all_tasks_locally:
-                logger.error("Error: FanInNB: fanin_task_name: DAG_info is None for init().")
+            # the FaninNB will start a real lambda to excute its fanin task
+            # and pass the DAG_info on the payload. For simulated lambdas
+            # (run_all_tasks_locally and not using_workers), when this 
+            # FaninNB is stored on the tcp_servr, the fanin task will be executed 
+            # by a new simulated lambda thread that is started by the simulated 
+            # lambda that was the last simulated lambda to called fanin on the faninNB. 
+            # (A remote FaninNB on the tcpServer cannot start a local thread to simuate 
+            # a lambda as that thread would run on the tcp_server. When 
+            # this FaninNB is stored locally, it does start a new simulated
+            # lambda to execute the fanin task and it puts DG_info in the
+            # payload of he simulated lambda. Thus, DAG_info is needed 
+            # when we aer using real lambdas (not run_all_tasks_locally) or
+            # weare using simulated lambdas (run_all_tasks_locally and not using_workers) 
+            # and the FaninNB object is stored locally 
+            # (store_fanins_faninNBs_locally)
+            if not run_all_tasks_locally or (run_all_tasks_locally and not using_workers and store_fanins_faninNBs_locally):
+                logger.error("Error: FanInNB: fanin_task_name: DAG_info is None for FaninNB init().")
+                logging.shutdown()
+                os._exit(0)
         else:
             logger.trace("FanInNB: fanin_task_name: DAG_info is not None for init().")
 

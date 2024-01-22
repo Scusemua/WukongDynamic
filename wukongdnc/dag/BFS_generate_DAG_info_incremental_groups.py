@@ -28,13 +28,13 @@ Consider the group-based DAG for the whiteboard example:
              /  |   \
             /   |    \
           v     v     v
-        G2----> G3L   G4     # G3L indicates G3 is a loop group, likewise for P2L
+        G2----> G3L   G4     # G3L indicates group G3 has a cycle of nodes
              /   |    |
             /    |    |
           v      v    v
         G5----> G6    G7
 
-To construct the DAG incrementaly:
+To construct the DAG incrementally:
 - generate the first group G1. This group is 5 --> 17 --> 1
   (note: B --> A means B is the parent of A) where we added 
   1 to the bfs queue at the start, then we dequeued 1 and 
