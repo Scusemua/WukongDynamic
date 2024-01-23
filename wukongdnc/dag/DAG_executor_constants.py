@@ -19,6 +19,8 @@ ch.setLevel(logging.INFO)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
+exit_program_on_exception = True
+
 # Configuraion:
 #
 # True if we are not using Lambdas, i.e., executing tasks with threads or processes

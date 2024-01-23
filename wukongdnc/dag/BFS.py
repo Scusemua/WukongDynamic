@@ -722,7 +722,7 @@ from .DAG_executor_constants import check_pagerank_output
 from .DAG_executor_constants import using_threads_not_processes
 from .DAG_executor_constants import use_multithreaded_BFS
 from .DAG_executor_constants import enable_runtime_task_clustering
-
+from .DAG_executor_constants import exit_program_on_exception
 from .BFS_Node import Node
 from .BFS_Partition_Node import Partition_Node
 from . import BFS_generate_DAG_info_incremental_partitions
@@ -4202,22 +4202,27 @@ def bfs(visited, node):
                 """
             else:
                 logger.trace ("bfs node " + str(neighbor.ID) + " already visited")
-        #frontier.remove(node)
-        #frontier.remove(node.ID)
+
+        """ This raises an exception. We ar not using the frontier concept anymore.
+            Frontiers and partition are now the same.
         try:
             frontier.remove(node.ID)
         except ValueError:
-            logger.trace("*******bfs: " + str(node.ID)
-                + " not in frontier.")
+            logger.exception("[Error]: PageRank_Function: ValueError:"
+                + "*******bfs: " + str(node.ID)+ " not in frontier.")
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
 
         if DEBUG_ON:
             print_val = "frontier after remove " + str(node.ID) + ": "
             for x in frontier:
                 #logger.trace(x.ID, end=" ")
                 print_val = print_val + str(x) + " "
-            logger.trace(print_val)
-            logger.trace("")
-    
+            logger.info(print_val)
+            logger.info("")
+        """
+
     """
     if len(current_partition) >= 0:
         logger.trace("BFS: create final sub-partition")
@@ -4796,7 +4801,7 @@ def print_BFS_stats():
     #logger.trace("")
     # final frontier should always be empty
     # assert: 
-    logger.trace("frontiers: (final fronter should be empty), number of frontiers: " + str(len(frontiers))+ " (length):")
+    logger.info("frontiers: (final fronter should be empty), number of frontiers: " + str(len(frontiers))+ " (length):")
     for frontier_list in frontiers:
         if PRINT_DETAILED_STATS:
             print_val = "-- (" + str(len(frontier_list)) + "): "
@@ -4804,10 +4809,10 @@ def print_BFS_stats():
                 #logger.trace(str(x.ID),end=" ")
                 print_val += str(x) + " "
                 #print(str(x),end=" ")
-            logger.trace(print_val)
-            logger.trace("")
+            logger.info(print_val)
+            logger.info("")
         else:
-            logger.trace("-- (" + str(len(frontier_list)) + ")") 
+            logger.info("-- (" + str(len(frontier_list)) + ")") 
     frontiers_length = len(frontiers)
     if len(frontiers[frontiers_length-1]) != 0:
         logger.error ("Error]: print_BFS_stats: final frontier is not empty.")
@@ -5101,6 +5106,7 @@ def print_BFS_stats():
 
 
 if __name__ == '__main__':
+
     if use_page_rank_group_partitions:
         logger.info("BFS: using groups")
     else:
@@ -5325,8 +5331,11 @@ if __name__ == '__main__':
                 BFS_Shared.close_shared_memory()
                 BFS_Shared.unlink_shared_memory()
             except Exception as ex:
-                logger.trace("[ERROR] BFS: Failed to close or unlink shared memory.")
-                logger.trace(ex)
+                logger.exception("[Error]: PageRank_Function:"
+                    + " BFS: Failed to close or unlink shared memory.")
+                if exit_program_on_exception:
+                    logging.shutdown()
+                    os._exit(0)
     else:
         # bfs generates the DAG incrementally, i.e., the DAG_executor
         # and bfs() overlap their executions. bfs depsoits incremental

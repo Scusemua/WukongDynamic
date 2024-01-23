@@ -294,7 +294,7 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
 
                 else:
                     # assert: this is an Error
-                    logger.trace ("dfs_parent do not add " + str(unvisited_child.ID) + " to partition "
+                    logger.error ("[Error]: dfs_parent do not add " + str(unvisited_child.ID) + " to partition "
                         + current_partition_number + " since it is already in partition " 
                         + unvisited_child.partition_number)
 

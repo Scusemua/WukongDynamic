@@ -38,6 +38,7 @@ from .DAG_executor_constants import input_all_groups_partitions_at_start
 from .DAG_executor_constants import work_queue_size_for_incremental_DAG_generation_with_worker_processes
 #rhc: counter:
 from .DAG_executor_constants import num_workers
+from .DAG_executor_constants import exit_program_on_exception
 #from .DAG_work_queue_for_threads import thread_work_queue
 from .DAG_executor_work_queue_for_threads import work_queue
 from .DAG_data_dict_for_threads import data_dict
@@ -391,18 +392,21 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
                         NBthread = threading.Thread(target=create_and_faninNB_task_locally, name=("create_and_faninNB_task_"+name), args=(keyword_arguments,))
                         NBthread.start()
                     except Exception as ex:
-                        logger.error("[ERROR]:" + thread_name + ": process_faninNBs: Failed to start create_and_faninNB_task thread.")
-                        logger.trace(ex)
-                        return 0
+                        logger.exception("[ERROR]:" + thread_name + ": process_faninNBs: Failed to start create_and_faninNB_task thread.")
+                        if exit_program_on_exception:
+                            logging.shutdown()
+                            os._exit(0) 
                 else:
                     try:
                         logger.trace(thread_name + ": process_faninNBs: Starting asynch simulation faninNB_task for faninNB " + name)
                         NBthread = threading.Thread(target=faninNB_task_locally, name=("faninNB_task_"+name), args=(keyword_arguments,))
                         NBthread.start()
                     except Exception as ex:
-                        logger.error("[ERROR]:" + thread_name + ": process_faninNBs: Failed to start faninNB_task thread.")
-                        logger.trace(ex)
-                        return 0
+                        logger.exception("[ERROR]:" + thread_name 
+                            + ": process_faninNBs: Failed to start faninNB_task thread.")
+                        if exit_program_on_exception:
+                            logging.shutdown()
+                            os._exit(0) 
             else:
                 # When we are using workers, we use this faster code which calls the
                 # faninNB locally directly instead of starting a thread to do it. (Starting
@@ -549,8 +553,10 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
                         thread.start()
                         #_thread.start_new_thread(DAG_executor.DAG_executor_task, (payload,))
                     except Exception as ex:
-                        logger.error("[ERROR]:" + thread_name + ": process_faninNBs: Failed to start DAG_executor thread.")
-                        logger.trace(ex)
+                        logger.exception("[ERROR]:" + thread_name + ": process_faninNBs: Failed to start DAG_executor thread.")
+                        if exit_program_on_exception:
+                            logging.shutdown()
+                            os._exit(0) 
 
                     # using_workers is false so worker_needs_input should never be true
                     #else:
@@ -983,8 +989,10 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
                     thread.start()
                     #_thread.start_new_thread(DAG_executor.DAG_executor_task, (payload,))
                 except Exception as ex:
-                    logger.error("[ERROR]: " + thread_name + ": process_faninNBs_batch: Failed to start DAG_executor thread.")
-                    logger.trace(ex)
+                    logger.exception("[ERROR]: " + thread_name + ": process_faninNBs_batch: Failed to start DAG_executor thread.")
+                    if exit_program_on_exception:
+                        logging.shutdown()
+                        os._exit(0) 
 
             # using_workers is false so worker_needs_input should never be true
             #else:
@@ -1205,8 +1213,11 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
 
                     _thread.start_new_thread(DAG_executor_task, (payload,))
                 except Exception as ex:
-                    logger.error("[ERROR] " + thread_name + ": process_fanouts: Failed to start DAG_executor thread for " + name)
-                    logger.trace(ex)
+                    logger.exception("[ERROR] " + thread_name + ": process_fanouts: Failed to start DAG_executor thread for " 
+                        + name)
+                    if exit_program_on_exception:
+                        logging.shutdown()
+                        os._exit(0) 
 #rhc run tasks changed to elif so can use else to check whether we aer missing a case
             elif not run_all_tasks_locally:
                 try:
@@ -1271,8 +1282,10 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                     ###### DAG_executor_State.function_name has not changed
                     invoke_lambda_DAG_executor(payload = payload, function_name = "WukongDivideAndConquer:"+name)
                 except Exception as ex:
-                    logger.error(":ERROR] " + thread_name + " process_fanouts: Failed to start DAG_executor Lambda.")
-                    logger.error(ex)
+                    logger.exception(":ERROR] " + thread_name + " process_fanouts: Failed to start DAG_executor Lambda.")
+                    if exit_program_on_exception:
+                        logging.shutdown()
+                        os._exit(0) 
 #rhc: run task
             else:
                 logger.error(":ERROR] " + thread_name + " Internal Error: process_fanouts: invalid configuration.")
@@ -5067,8 +5080,10 @@ def main():
         }
         _thread.start_new_thread(DAG_executor_task, (payload,))
     except Exception as ex:
-        logger.error("[ERROR] Failed to start DAG_executor thread for state 1")
-        logger.trace(ex)
+        logger.exception("[ERROR] Failed to start DAG_executor thread for state 1")
+        if exit_program_on_exception:
+            logging.shutdown()
+            os._exit(0) 
         
     try:
         DAG_executor_State3 = DAG_executor_State(state = int(3))
@@ -5081,8 +5096,10 @@ def main():
         }
         _thread.start_new_thread(DAG_executor_task, (payload,))
     except Exception as ex:
-        logger.error("[ERROR] Failed to start DAG_executor thread for state 3")
-        logger.trace(ex)
+        logger.exception("[ERROR] Failed to start DAG_executor thread for state 3")
+        if exit_program_on_exception:
+            logging.shutdown()
+            os._exit(0) 
         
     logger.trace("Sleeping")
     time.sleep(5)

@@ -6,6 +6,7 @@ import cloudpickle
 import uuid
 import threading
 from threading import Lock
+import os
 
 from wukongdnc.server.message_handler_lambda import MessageHandler
 from .DAG_executor_State import DAG_executor_State
@@ -15,8 +16,8 @@ from .DAG_executor_constants import store_fanins_faninNBs_locally
 from .DAG_executor_constants import FanIn_Type, FanInNB_Type
 from .DAG_executor_constants import using_single_lambda_function
 from .DAG_executor_constants import create_all_fanins_faninNBs_on_start, map_objects_to_lambda_functions
-
-
+from .DAG_executor_constants import exit_program_on_exception
+from .DAG_executor_constants import exit_program_on_exception
 import logging 
 logger = logging.getLogger(__name__)
 
@@ -402,9 +403,12 @@ class DAG_orchestrator:
 						"""
 						return_value = simulated_lambda_function.lambda_handler(payload)
 						logger.trace("DAG_Orchestrator: called simulated_lambda_function.lambda_handler(payload)")
-					except Exception as ex:
-						logger.error("[ERROR]: " + thread_name + ": invoke_lambda_synchronously: Failed to run lambda handler for synch object: " + sync_object_name)
-						logger.error(ex)
+					except Exception:
+						logger.exception("[ERROR]: " + thread_name + ": invoke_lambda_synchronously: Failed to run lambda handler for synch object: " 
+					   		+ sync_object_name)
+						if exit_program_on_exception:
+							logging.shutdown()
+							os._exit(0) 
 			else:
 				# we are not mapping objects to functions; instead, we are using
 				# anonymous functions that can inherently only be invoked one
@@ -424,9 +428,11 @@ class DAG_orchestrator:
 # the call. Faster when we are invoking a real lambda, which we will do with invoke_lambda_asynch
 					return_value = simulated_lambda_function.lambda_handler(payload)
 					logger.trace("DAG_Orchestrator: called simulated_lambda_function.lambda_handler(payload)")
-				except Exception as ex:
-					logger.error("[ERROR]: " + thread_name + ": invoke_lambda_synchronously: Failed to run lambda handler for synch object: " + sync_object_name)
-					logger.error(ex)					
+				except Exception:
+					logger.exception("[ERROR]: " + thread_name + ": invoke_lambda_synchronously: Failed to run lambda handler for synch object: " + sync_object_name)
+					if exit_program_on_exception:
+						logging.shutdown()
+						os._exit(0) 					
 
 			return return_value
 
@@ -685,10 +691,12 @@ Scheme: The Lambda_Function_Simulator(), which stores a sych object does:
 				"DAG_info": self.DAG_info
 			}
 			DAG_executor.DAG_executor_lambda(payload)
-		except Exception as ex:
-			logger.error("[ERROR] DAG_executor_FanInNB_Select: Failed to start DAG_executor.DAG_executor_lambda"
+		except Exception as ex: 
+			logger.exception("[ERROR] DAG_executor_FanInNB_Select: Failed to start DAG_executor.DAG_executor_lambda"
 				+ " for triggered task " + fanin_task_name)
-			logger.error(ex) 
+			if exit_program_on_exception:
+				logging.shutdown()
+				os._exit(0) 
 
 So the data for the above (possibly creating fanin objects and calling fanin ops and 
 invoking or triggering fanin tasks), which is performed by the invoked lambda function

@@ -1,13 +1,17 @@
 
+import queue
+import numpy as np
+import os
+
 from . import BFS_Shared
 from .DAG_executor_constants import use_shared_partitions_groups, use_page_rank_group_partitions
 from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
 from .DAG_executor_constants import using_threads_not_processes
+from .DAG_executor_constants import exit_program_on_exception
 #from .DAG_executor_constants import use_multithreaded_multiprocessing
 
 from .BFS_Partition_Node import Partition_Node
-import queue
-import numpy as np
+
 
 import logging 
 
@@ -54,10 +58,18 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
     partitions_num_shadow_nodes_list,num_shadow_nodes_added_to_partitions,
     groups, group_names,groups_num_shadow_nodes_list,num_shadow_nodes_added_to_groups):
     
-    # assert
-    if not use_shared_partitions_groups:
-        logger.trace("[Error]: Internal Error: Called generate_shared_partitions_groups"
-            + " but use_shared_partitions_groups is False.")
+    try:
+        assert use_shared_partitions_groups , "[Error]: Internal Error: Called generate_shared_partitions_groups"
+        + " but use_shared_partitions_groups is False."
+    except AssertionError:
+        logger.exception("[Error]: assertion failed")
+        if exit_program_on_exception:
+            logging.shutdown()
+            os._exit(0)
+    # assertOld
+    #if not use_shared_partitions_groups:
+    #    logger.trace("[Error]: Internal Error: Called generate_shared_partitions_groups"
+    #        + " but use_shared_partitions_groups is False.")
 
     # Either the values needed for pagerank are stored in individual 
     # Partition_Node in a single shared array, or we have multiple

@@ -1,6 +1,8 @@
 import logging
 import logging.handlers
 
+from .DAG_executor_constants import exit_program_on_exception
+
 # https://docs.python.org/3/howto/logging-cookbook.html
 #
 # "Because you'll want to define the logging configurations for listener and workers, the
@@ -75,9 +77,11 @@ def listener_process(queue, configurer):
             logger = logging.getLogger(record.name)
             logger.handle(record)  # No level or filter logic applied - just do it!
         except Exception:
-            import sys, traceback
-            print('Problem:', file=sys.stderr)
-            traceback.print_exc(file=sys.stderr)
+            logger.exception("[ERROR] Problen with listener_process.")
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0) 
+
 
 # Arrays used for random selections in this demo
 

@@ -334,6 +334,7 @@ from .DAG_executor_constants import use_shared_partitions_groups,use_page_rank_g
 from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
 from .DAG_executor_constants import compute_pagerank
 from .DAG_executor_constants import input_all_groups_partitions_at_start
+from .DAG_executor_constants import exit_program_on_exception
 
 from .addLoggingLevel import addLoggingLevel
 
@@ -1731,17 +1732,17 @@ def run():
                     # so we make this check esy by having 'L' at the end (endswith)
                     # instead of having to parse ("PR1_1.pickle")
                     complete_task_file_name = './'+task_file_name+'.pickle'
+
                     try:
                         with open(complete_task_file_name, 'rb') as handle:
                             partition_or_group = (cloudpickle.load(handle))
                     except EOFError:
-                        logger.info("[Error]: Internal Error: PageRank_Function: EOFError:"
+                        logger.exception("[Error]: PageRank_Function: EOFError:"
                             + " complete_task_file_name:" + str(complete_task_file_name))
-                        import sys, traceback
-                        #print('Problem:', file=sys.stderr)
-                        traceback.print_exc(file=sys.stderr)
-                        logging.shutdown()
-                        os._exit(0)
+                        if exit_program_on_exception:
+                            logging.shutdown()
+                            os._exit(0)
+
                     groups_partitions[task_file_name] = partition_or_group
                 #print("groups_partitions:")
                 #keys = list(groups_partitions.keys())
@@ -2109,9 +2110,13 @@ def run():
                                 else: 
                                     thread.start()
                                 num_threads_created += 1
-                            except Exception as ex:
-                                logger.trace("[ERROR] DAG_executor_driver: Failed to start DAG_executor thread for state " + str(start_state))
-                                logger.trace(ex)
+                            except Exception:
+                                logger.exception("[ERROR] DAG_executor_driver: Failed to start DAG_executor thread for state." 
+                                    + str(start_state))
+                                if exit_program_on_exception:
+                                    logging.shutdown()
+                                    os._exit(0)
+
                         else:   # multiprocessing - must be using a process pool
                             # Config: A5
                             try:
@@ -2169,9 +2174,12 @@ def run():
                                 #thread.start()
                                 num_threads_created += 1
                                 #_thread.start_new_thread(DAG_executor.DAG_executor_task, (payload,))
-                            except Exception as ex:
-                                logger.trace("[ERROR] DAG_executor_driver: Failed to start DAG_executor process for state " + str(start_state))
-                                logger.trace(ex)     
+                            except Exception:
+                                logger.exception("[ERROR] DAG_executor_driver: Failed to start DAG_executor process for state " 
+                                    + str(start_state))
+                                if exit_program_on_exception:
+                                    logging.shutdown()
+                                    os._exit(0)   
 
                         if using_workers and num_threads_created == num_workers:
                             break
@@ -2215,10 +2223,11 @@ def run():
                                     payload["groups_partitions"] = groups_partitions
 
                                 invoke_lambda_DAG_executor(payload = payload, function_name = "WukongDivideAndConquer:" + task_name)
-                            except Exception as ex:
-                                logger.error("[ERROR] DAG_executor_driver: Failed to start DAG_executor Lambda.")
-                                logger.error(ex)
-                                exit(1)
+                            except Exception:
+                                logger.exception("[ERROR] DAG_executor_driver: Failed to start DAG_executor Lambda.")
+                                if exit_program_on_exception:
+                                    logging.shutdown()
+                                    os._exit(0)  
                         else:
                             # sync_objects_in_lambdas_trigger_their_tasks == True so
                             # above we called tcp_server_lambda.process_leaf_tasks_batch
@@ -2252,9 +2261,12 @@ def run():
                                 thread_proc_list.append(thread)
                                 #thread.start()
                                 num_threads_created += 1
-                            except Exception as ex:
-                                logger.trace("[ERROR] DAG_executor_driver: Failed to start DAG_executor worker thread for non-leaf task " + task_name)
-                                logger.trace(ex)
+                            except Exception:
+                                logger.exception("[ERROR] DAG_executor_driver: Failed to start DAG_executor worker thread for non-leaf task " 
+                                    + task_name)
+                                if exit_program_on_exception:
+                                    logging.shutdown()
+                                    os._exit(0) 
                         else:
                             try:
                                 if not using_workers:
@@ -2304,9 +2316,12 @@ def run():
                                     #proc.start()
                                 thread_proc_list.append(proc)
                                 num_threads_created += 1                      
-                            except Exception as ex:
-                                logger.trace("[ERROR] DAG_executor_driver: Failed to start DAG_executor worker process for non-leaf task " + task_name)
-                                logger.trace(ex)
+                            except Exception:
+                                logger.exception("[ERROR] DAG_executor_driver: Failed to start DAG_executor worker process for non-leaf task " 
+                                    + task_name)
+                                if exit_program_on_exception:
+                                    logging.shutdown()
+                                    os._exit(0) 
 
                         if using_workers and num_threads_created == num_workers:
                             break 

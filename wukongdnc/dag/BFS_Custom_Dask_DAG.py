@@ -1,8 +1,10 @@
 import logging
 import cloudpickle
+import os
 # May want to use numpy arrays eventually for better cache performance
 #import numpy as np
 from .BFS_Partition_Node import Partition_Node
+from .DAG_executor_constants import exit_program_on_exception
 
 logger = logging.getLogger(__name__)
 """
@@ -85,9 +87,17 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
             logger.trace("PageRank_Function: input tuple:" + str(tup))
             shadow_node_index = tup[0]
             pagerank_value = tup[1]
-            # assert
-            if not partition_or_group[shadow_node_index].isShadowNode:
-                logger.trace("[Error]: Internal Error: input tuple " + str(tup))
+            try:
+                assert partition_or_group[shadow_node_index].isShadowNode , "[Error]: node is not a shadow node"
+            except AssertionError:
+                logger.exception("[Error]: assertion failed")
+                if exit_program_on_exception:
+                    logging.shutdown()
+                    os._exit(0)
+            # assertOld
+            #if not partition_or_group[shadow_node_index].isShadowNode:
+            #    logger.trace("[Error]: Internal Error: input tuple " + str(tup))
+                    
             # If shadow_node x is a shadow_node for node y (where the one or more
             # shadow nodes of y are immediatley preceeding y) then shadow_node x
             # represents a parent node of y that was in a different partition P or 

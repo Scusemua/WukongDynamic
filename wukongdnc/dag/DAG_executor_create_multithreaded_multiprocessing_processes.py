@@ -1,8 +1,11 @@
+import os
+
 from multiprocessing import Process #, Manager
 
 from .DAG_executor_constants import run_all_tasks_locally,  using_workers, num_workers 
 from .DAG_executor_constants import compute_pagerank, use_shared_partitions_groups,use_page_rank_group_partitions
 from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
+from .DAG_executor_constants import exit_program_on_exception
 #from .DAG_executor_constants import using_threads_not_processes, use_multithreaded_multiprocessing
 
 from . import BFS_Shared
@@ -80,8 +83,13 @@ def create_multithreaded_multiprocessing_processes(num_processes_created_for_mul
                 logger.trace("process creation loop breaking")
                 break 
 
-        except Exception as ex:
-            logger.trace("[ERROR] DAG_executor_driver: Failed to start worker process for multithreaded multiprocessing " + "Worker_process_multithreaded_multiproc_" + str(num_processes_created_for_multithreaded_multiprocessing + 1))
-            logger.trace(ex)
+        except Exception:
+            logger.exception("[Error]:"
+                + " DAG_executor_driver: Failed to start worker process for multithreaded multiprocessing " 
+                + "Worker_process_multithreaded_multiproc_" 
+                + str(num_processes_created_for_multithreaded_multiprocessing + 1))
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
 
     return num_processes_created_for_multithreaded_multiprocessing

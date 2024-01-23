@@ -8,7 +8,7 @@ else:
 import threading
 
 #import time
-#import os
+import os
 #import time 
 #from threading import Thread
 
@@ -23,6 +23,7 @@ from wukongdnc.dag.DAG_executor_constants import run_all_tasks_locally, using_wo
 from wukongdnc.dag.DAG_executor_constants import sync_objects_in_lambdas_trigger_their_tasks
 from wukongdnc.dag.DAG_executor_constants import store_sync_objects_in_lambdas
 from wukongdnc.dag.DAG_executor_constants import input_all_groups_partitions_at_start
+from wukongdnc.dag.DAG_executor_constants import store_fanins_faninNBs_locally
 # Note: we init self.store_fanins_faninNBs_locally in init()
 #from wukongdnc.dag.DAG_work_queue_for_threads import thread_work_queue
 from wukongdnc.dag.DAG_executor_work_queue_for_threads import work_queue

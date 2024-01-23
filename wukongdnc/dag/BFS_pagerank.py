@@ -9,6 +9,7 @@ from . import BFS_Shared
 #from .BFS import num_nodes
 from .DAG_executor_constants import use_page_rank_group_partitions, using_threads_not_processes
 from .DAG_executor_constants import number_of_pagerank_iterations_for_partitions_groups_with_loops
+from .DAG_executor_constants import exit_program_on_exception
 #from .DAG_executor_constants import use_multithreaded_multiprocessing
 #from .DAG_executor_constants import compute_pagerank, run_all_tasks_locally, bypass_call_lambda_client_invoke, use_incremental_DAG_generation
 from .DAG_executor_constants import input_all_groups_partitions_at_start
@@ -274,12 +275,11 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partiti
             with open(complete_task_file_name, 'rb') as handle:
                 partition_or_group = (cloudpickle.load(handle))
         except EOFError:
-            logger.info("[Error]: Internal Error: PageRank_Function: EOFError:"
+            logger.exception("[Error]: PageRank_Function: EOFError:"
                 + " complete_task_file_name:" + str(complete_task_file_name))
-            #print('Problem:', file=sys.stderr)
-            traceback.print_exc(file=sys.stderr)
-            logging.shutdown()
-            os._exit(0)
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
     else:
         if groups_partitions == []:
             logger.error("[Error]: Internal Error: PageRank_Function:"
@@ -383,11 +383,19 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partiti
         logger.info("PageRank_Function: input tuple:" + str(tup))
         shadow_node_index = tup[0]
         pagerank_value = tup[1]
-        # assert
-        if not partition_or_group[shadow_node_index].isShadowNode:
-            logger.error("[Error]: Internal Error: input tuple " + str(tup))
-            logging.shutdown()
-            os._exit(0)
+        try:
+            msg = "[Error]: Internal Error: input tuple " + str(tup)
+            assert partition_or_group[shadow_node_index].isShadowNode , msg
+        except AssertionError:
+            logger.exception("[Error]: assertion failed")
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
+        # assertOld
+        #if not partition_or_group[shadow_node_index].isShadowNode:
+        #    logger.error("[Error]: Internal Error: input tuple " + str(tup))
+        #    logging.shutdown()
+        #    os._exit(0)
 
         # If shadow_node x is a shadow_node for node y (where the one or more
         # shadow nodes of y are immediatley preceeding y) then shadow_node x
@@ -833,13 +841,24 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
             logger.trace("PageRank_Function: input tuple:" + str(tup))
             shadow_node_index = tup[0]
             pagerank_value = tup[1]
-            # assert
+
             #rhc shared
             position_of_shadow_node = starting_position_in_partition_group + shadow_node_index
+            try:
+                msg = "[Error]: Internal Error: input tuple " + str(tup)
+                + " position " + str(position_of_shadow_node) + " is not a shadow node."
+                assert shared_nodes[position_of_shadow_node].isShadowNodee , msg
+            except AssertionError:
+                logger.exception("[Error]: assertion failed")
+                if exit_program_on_exception:
+                    logging.shutdown()
+                    os._exit(0)
+            # assertOld
             #if not partition_or_group[shadow_node_index].isShadowNode:
-            if not shared_nodes[position_of_shadow_node].isShadowNode:
-                logger.error("[Error]: Internal Error: input tuple " + str(tup)
-                    + " position " + str(position_of_shadow_node) + " is not a shadow node.")
+            #if not shared_nodes[position_of_shadow_node].isShadowNode:
+            #    logger.error("[Error]: Internal Error: input tuple " + str(tup)
+            #        + " position " + str(position_of_shadow_node) + " is not a shadow node.")
+            
             # If shadow_node x is a shadow_node for node y (where the one or more
             # shadow nodes of y are immediatley preceeding y) then shadow_node x
             # represents a parent node of y that was in a different partition P or 
@@ -1267,7 +1286,7 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
             #group_number = frontier_parent[1]
             position_or_group_index_of_output_task = frontier_parent_tuple[2]
             partition_or_group_name_of_output_task = frontier_parent_tuple[3]
-            # assert: partition_or_group_name_of_output_task == task_file_name
+            # suggest assert: partition_or_group_name_of_output_task == task_file_name
 
             # Note: We added this field to the frontier tuple so that when
             # we ar using a shared_nodes array or multithreading we can

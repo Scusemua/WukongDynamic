@@ -1170,7 +1170,7 @@ def OLD_generate_DAG_info_incremental_partitions(partition_name,current_partitio
         faninNB_sizes = []
         # tasks that receive inputs from senderX
         receiver_set_for_senderX = Partition_senders[senderX]
-        # assert len = 1
+        # suggest assert len = 1
         receiverY = receiver_set_for_senderX[0]
 
         receiver_set_for_receiverY = Partition_senders.get(receiverY)
@@ -1180,13 +1180,13 @@ def OLD_generate_DAG_info_incremental_partitions(partition_name,current_partitio
             Partition_sink_set.add(receiverY)
 
         sender_set_for_receiverY = Partition_receivers[receiverY]
-        # assert len = 0
+        # suggest assert len = 0
         logger.trace("sender " + senderX + " --> " + receiverY + " : Collapse")
         Partition_all_collapse_task_names.append(receiverY)
         collapse.append(receiverY)
         sender_set_for_senderX = Partition_receivers.get(senderX)
         if partition_number == 1:
-            # assert len ssfsX = None
+            # suggest assert len ssfsX = None
             Partition_DAG_leaf_tasks.append(senderX)
             Partition_DAG_leaf_task_start_states.append(state)
             task_inputs = ()
@@ -1210,7 +1210,7 @@ def OLD_generate_DAG_info_incremental_partitions(partition_name,current_partitio
         partition_number += 1
 
     if partition_number > 2:
-        #assert len Partition_sink_set == 1
+        # suggest assert len Partition_sink_set == 1
         # get first and only element of set, which is last partition
         receiverY = next(iter(Partition_sink_set))
         #if not receiverY in Partition_DAG_states:

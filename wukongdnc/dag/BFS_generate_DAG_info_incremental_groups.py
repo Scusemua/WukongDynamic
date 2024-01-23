@@ -11,6 +11,7 @@ from .DAG_executor_constants import use_shared_partitions_groups
 from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
 #from .DAG_executor_constants import using_threads_not_processes, use_multithreaded_multiprocessing
 from .DAG_executor_constants import enable_runtime_task_clustering
+from .DAG_executor_constants import exit_program_on_exception
 
 from .BFS_generate_DAG_info import Group_senders, Group_receivers
 from .BFS_generate_DAG_info import leaf_tasks_of_groups_incremental
@@ -744,17 +745,36 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         # partition processed it has no edges to groups in other 
         # partitions.)
 
-        #assert:
-        if not len(groups_of_current_partition) == 1:
-            logger.error("[Error]: Internal error: generate_DAG_info_incremental_groups"
-                + " number of groups in first partition is not 1 it is "
-                + str(len(groups_of_current_partition)))
-        #assert:
+        try:
+            assert len(groups_of_current_partition) == 1 , "[Error]: Internal error: generate_DAG_info_incremental_groups"
+            + " number of groups in first partition is not 1 it is "
+            + str(len(groups_of_current_partition))
+        except AssertionError:
+            logger.exception("[Error]: assertion failed")
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
+        #assertOld:
+        #if not len(groups_of_current_partition) == 1:
+        #    logger.error("[Error]: Internal error: generate_DAG_info_incremental_groups"
+        #        + " number of groups in first partition is not 1 it is "
+        #        + str(len(groups_of_current_partition)))
+
+        try:
+            assert current_partition_state == Group_next_state , "[Error]: Internal error:generate_DAG_info_incremental_groups"
+            + " current_partition_state for first partition is not equal to"
+            + " Group_next_state - both should be 1."
+        except AssertionError:
+            logger.exception("[Error]: assertion failed")
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
+        #assertOld:
         # Note: Group_next_state is inited to 1. as is current_partition_state
-        if not current_partition_state == Group_next_state:
-            logger.error("[Error]: Internal error:generate_DAG_info_incremental_groups"
-                + " current_partition_state for first partition is not equal to"
-                + " Group_next_state - both should be 1.")
+        #if not current_partition_state == Group_next_state:
+        #    logger.error("[Error]: Internal error:generate_DAG_info_incremental_groups"
+        #        + " current_partition_state for first partition is not equal to"
+        #        + " Group_next_state - both should be 1.")
           
         name_of_first_group_in_DAG = groups_of_current_partition[0]
         # a list of groups that have a fanout/fanin/collapse to this
@@ -768,9 +788,19 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         
         # Group 1 is a leaf; so there is no previous partition that can 
         # send (its outputs as inputs) to the first group
-        if not senders == None:
-            logger.error("[Error]: Internal error: generate_DAG_info_incremental_groups"
-                + " leaf node has non-None senders.")
+
+        try:
+            assert senders == None , "[Error]: Internal error: generate_DAG_info_incremental_groups"
+            + " leaf node has non-None senders."
+        except AssertionError:
+            logger.exception("[Error]: assertion failed")
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
+        # assertOld
+        #if not senders == None:
+        #    logger.error("[Error]: Internal error: generate_DAG_info_incremental_groups"
+        #        + " leaf node has non-None senders.")
 
         logger.info("generate_DAG_info_incremental_groups: generate empty state_info for first group "
             + name_of_first_group_in_DAG + " with Group_next_state: "  + str(Group_next_state))
@@ -916,10 +946,18 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 # the group/partition containing 6, and ends with the group
                 # /partition containing 7. bfs() is called each time we start
                 # the search of a CC.
-                # assert:
-                if len(groups_of_current_partition) > 1:
-                    logger.error("[Error]: Internal error: generate_DAG_info_incremental_groups:"
-                        + " start of new connected component (i.e., called BFS()) but there is more than one group.")
+                try:
+                    assert not len(groups_of_current_partition) > 1, "[Error]: Internal error: generate_DAG_info_incremental_groups:"
+                    + " start of new connected component (i.e., called BFS()) but there is more than one group."
+                except AssertionError:
+                    logger.exception("[Error]: assertion failed")
+                    if exit_program_on_exception:
+                        logging.shutdown()
+                        os._exit(0)
+                # assertOld:
+                #if len(groups_of_current_partition) > 1:
+                #    logger.error("[Error]: Internal error: generate_DAG_info_incremental_groups:"
+                #        + " start of new connected component (i.e., called BFS()) but there is more than one group.")
 
                 # This is not group 1. But it is a leaf group, which means
                 # it was the first group generated by some call to BFS(), i.e., 
@@ -1266,9 +1304,18 @@ def generate_DAG_info_incremental_groups(current_partition_name,
             # for current_partition_name. That is, we only create a 
             # Group_senders set when we get the first sender.)
             # assert: no length 0 Group_senders lists
-#rhc: 0 list for PR3_2, which is in current group; we have not processed partition 3 so there are
-# no senders for it yet?
+            # 0 list for PR3_2, which is in current group; we have not processed partition 3 so there are
+            # no senders for it yet?
             
+            #try:
+            #    assert not len(receiver_set_for_previous_group) == 0 , "[Error]: Internal Error: generate_DAG_info_incremental_groups:"
+            #    + " group " + previous_group + " has a receiver_set_for_previous_group list with length 0."
+            #except AssertionError:
+            #    logger.exception("[Error]: assertion failed")
+            #    if exit_program_on_exception:
+            #        logging.shutdown()
+            #        os._exit(0)
+            # assertOld
             #if len(receiver_set_for_previous_group) == 0:
             #    logger.error("[Error]: Internal Error: generate_DAG_info_incremental_groups:"
             #        + " group " + previous_group + " has a receiver_set_for_previous_group list with length 0.")

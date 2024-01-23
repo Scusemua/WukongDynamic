@@ -1,8 +1,9 @@
 import threading
-#import os
+import os
 
 from .DAG_executor_constants import run_all_tasks_locally, num_threads_for_multithreaded_multiprocessing
 #from .DAG_executor_constants import using_threads_not_processes, use_multithreaded_multiprocessing
+from .DAG_executor_constants import exit_program_on_exception
 
 from . import DAG_executor
 
@@ -90,9 +91,13 @@ def create_and_run_threads_for_multiT_multiP(process_name,payload,completed_task
             #    logger.trace(process_name + " breaking")
             #    break     
             iteration += 1
-        except Exception as ex:
-            logger.trace("[ERROR] DAG_executor_driver: create_and_run_threads_for_multiT_multiP: Failed to start tread for multithreaded multiprocessing " + "thread_multitheaded_multiproc_" + str(num_threads_created_for_multiP + 1))
-            logger.trace(ex)
+        except Exception:
+            logger.exception("[Error]:"
+                + " DAG_executor_driver: create_and_run_threads_for_multiT_multiP: Failed to start tread for multithreaded multiprocessing " 
+                + "thread_multitheaded_multiproc_" + str(num_threads_created_for_multiP + 1))
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
 
     logger.trace(process_name + ": DAG_executor_driver: create_and_run_threads_for_multiT_multiP: "
         + process_name + " created " + str(len(thread_list)) + " threads")
