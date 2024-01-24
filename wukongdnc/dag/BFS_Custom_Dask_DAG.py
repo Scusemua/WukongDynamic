@@ -96,7 +96,7 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
                     os._exit(0)
             # assertOld
             #if not partition_or_group[shadow_node_index].isShadowNode:
-            #    logger.trace("[Error]: Internal Error: input tuple " + str(tup))
+            #    logger.trace("[Error]: input tuple " + str(tup))
                     
             # If shadow_node x is a shadow_node for node y (where the one or more
             # shadow nodes of y are immediatley preceeding y) then shadow_node x

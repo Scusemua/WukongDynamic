@@ -281,8 +281,9 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partiti
                 logging.shutdown()
                 os._exit(0)
     else:
+        #assert
         if groups_partitions == []:
-            logger.error("[Error]: Internal Error: PageRank_Function:"
+            logger.error("[Error]: PageRank_Function:"
                 + " groups_partitions is [].")
             traceback.print_exc(file=sys.stderr)
             logging.shutdown()
@@ -361,7 +362,7 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partiti
     # num_nodes is a global variable in BFS.py that is set to the number of
     # nodes in the graph input by input_graph() in BFS.py.
     if not total_num_nodes == num_nodes:
-        logger.error("[Error]: Internal Error: BFS_pagerank: total_num_nodes"
+        logger.error("[Error]: BFS_pagerank: total_num_nodes"
             + " is not equal to num_nodes in input graph.")
         logging.shutdown()
         os._exit(0)
@@ -384,7 +385,7 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partiti
         shadow_node_index = tup[0]
         pagerank_value = tup[1]
         try:
-            msg = "[Error]: Internal Error: input tuple " + str(tup)
+            msg = "[Error]: input tuple " + str(tup)
             assert partition_or_group[shadow_node_index].isShadowNode , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
@@ -393,7 +394,7 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partiti
                 os._exit(0)
         # assertOld
         #if not partition_or_group[shadow_node_index].isShadowNode:
-        #    logger.error("[Error]: Internal Error: input tuple " + str(tup))
+        #    logger.error("[Error]: input tuple " + str(tup))
         #    logging.shutdown()
         #    os._exit(0)
 
@@ -813,7 +814,7 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
         # num_nodes is a global variable in BFS.py that is set to the number of
         # nodes in the graph input by input_graph() in BFS.py.
         if not total_num_nodes == num_nodes:
-            logger.error("[Error]: Internal Error: BFS_pagerank: total_num_nodes"
+            logger.error("[Error]: BFS_pagerank: total_num_nodes"
                 + " is not equal to num_nodes in input graph.")
             logging.shutdown()
             os._exit(0)
@@ -845,8 +846,7 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
             #rhc shared
             position_of_shadow_node = starting_position_in_partition_group + shadow_node_index
             try:
-                msg = "[Error]: Internal Error: input tuple " + str(tup)
-                + " position " + str(position_of_shadow_node) + " is not a shadow node."
+                msg = "[Error]: input tuple " + str(tup) + " position " + str(position_of_shadow_node) + " is not a shadow node."
                 assert shared_nodes[position_of_shadow_node].isShadowNodee , msg
             except AssertionError:
                 logger.exception("[Error]: assertion failed")
@@ -856,7 +856,7 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
             # assertOld
             #if not partition_or_group[shadow_node_index].isShadowNode:
             #if not shared_nodes[position_of_shadow_node].isShadowNode:
-            #    logger.error("[Error]: Internal Error: input tuple " + str(tup)
+            #    logger.error("[Error]: input tuple " + str(tup)
             #        + " position " + str(position_of_shadow_node) + " is not a shadow node.")
             
             # If shadow_node x is a shadow_node for node y (where the one or more
@@ -929,7 +929,7 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
 # no input tuples. Need to turn off output loop so PageRank_output = {} is empty.
             #rhc shared
             if not shared_nodes[position_of_shadow_node].pagerank == pagerank_value:
-                logger.error("[Error]: Internal Error: " 
+                logger.error("[Error]: " 
                     + task_file_name + " Copied value is not equal to input value,"
                     + " shared_nodes[position_of_shadow_node].pagerank: " 
                     + str(shared_nodes[position_of_shadow_node].pagerank)
@@ -968,8 +968,9 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
 
             pagerank_value_of_parent_node = ((shared_nodes[position_of_shadow_node].pagerank - random_jumping)  / one_minus_dumping_factor)
             #rhc shared
+            #assert
             if not parent_of_shadow_node.pagerank == pagerank_value_of_parent_node:
-                logger.error("[Error]: Internal Error: " 
+                logger.error("[Error]: " 
                     + task_file_name + " pagerank value to be set for parent of shadow node: "
                     + str(pagerank_value_of_parent_node)
                     + " is not the current pagerank value of the parent node: "

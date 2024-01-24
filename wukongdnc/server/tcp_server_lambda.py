@@ -543,7 +543,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         worker_needs_input = DAG_exec_state.keyword_arguments['worker_needs_input']
         # assert: when using workers we use tcp_server not tcp_sever_lambda
         if using_workers or worker_needs_input:
-            logger.error("[Error]: tcp_server_lambda: synchronize_process_faninNBs_batch: Internal Error: "
+            logger.error("[Error]: tcp_server_lambda: synchronize_process_faninNBs_batch: "
             + " when using workers we should not be storing objects in lambdas and running tcp_server_lambda.")
         
         # Commented out: since using lambdas there are no workers and thus no work to steal
@@ -813,7 +813,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 is_fanin = task_name in all_fanin_task_names
                 is_faninNB = task_name in all_faninNB_task_names
                 if not is_fanin and not is_faninNB:
-                    logger.error("[Error]: Internal Error: synchronize_process_faninNBs_batch:"
+                    logger.error("[Error]: synchronize_process_faninNBs_batch:"
                         + " sync object for synchronize_sync is neither a fanin nor a faninNB.")
 
                 # compute size of fanin or faninNB 
@@ -1358,7 +1358,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             is_fanin = task_name in all_fanin_task_names
             is_faninNB = task_name in all_faninNB_task_names
             if not is_fanin and not is_faninNB:
-                logger.error("[Error]: Internal Error: tcp_server_lambda_synchronize_sync:"
+                logger.error("[Error]: tcp_server_lambda_synchronize_sync:"
                     + " sync object for synchronize_sync is neither a fanin nor a faninNB.")
 
             # compute size of fanin or faninNB 
@@ -1505,7 +1505,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             is_fanin = task_name in all_fanin_task_names
             is_faninNB = task_name in all_faninNB_task_names
             if not is_fanin and not is_faninNB:
-                logger.error("[Error]: Internal Error: tcp_server_lambda synchronize_async:"
+                logger.error("[Error]: tcp_server_lambda synchronize_async:"
                     + " sync object for synchronize_sync is neither a fanin nor a faninNB.")
 
             # compute size of fanin or faninNB 

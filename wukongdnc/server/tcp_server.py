@@ -301,7 +301,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     with open(complete_task_file_name, 'rb') as handle:
                         partition_or_group = (cloudpickle.load(handle))
                 except EOFError:
-                    logger.info("[Error]: Internal Error: tcp_server: read_all_groups_partitions:"
+                    logger.info("[Error]: tcp_server: read_all_groups_partitions:"
                         + " file name:" + str(complete_task_file_name))
                     #print('Problem:', file=sys.stderr)
                     traceback.print_exc(file=sys.stderr)
@@ -363,7 +363,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally)
         ):
             if DAG_info_passed_from_DAG_exector == None:
-                logger.error("[Error]: Internal Error: synchronize_process_faninNBs_batch: using incremental DAG generation"
+                logger.error("[Error]: synchronize_process_faninNBs_batch: using incremental DAG generation"
                     + " with real Lambdas but received None from DAG_executor process_faninNBs_batch.")
 
         logger.trace("tcp_server: synchronize_process_faninNBs_batch: calling_task_name: " + calling_task_name + ": worker_needs_input: " + str(worker_needs_input)
@@ -375,12 +375,12 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # assert:
         if worker_needs_input:
             if not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally:
-                logger.error("[Error: Internal Error: synchronize_process_faninNBs_batch: worker needs input but using lambdas.")
+                logger.error("[Error: synchronize_process_faninNBs_batch: worker needs input but using lambdas.")
 
         #assert: if worker needs work then we should be using synch call so we can check the results for work
         if worker_needs_input:
             if async_call:
-                logger.trace("[Error]: Internal Error: synchronize_process_faninNBs_batch: worker_needs_input but using async_call")
+                logger.trace("[Error]: synchronize_process_faninNBs_batch: worker_needs_input but using async_call")
 
         # assert:
         if async_call:
@@ -397,7 +397,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             # Note: using_workers and not using_threads_not_processes means we 
             # will be calling process_faninNBs_batch (i.e., this method)
             if not (not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally or (wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally and wukongdnc.dag.DAG_executor_constants.using_workers and not wukongdnc.dag.DAG_executor_constants.using_threads_not_processes and not worker_needs_input)):
-                logger.error("[Error: Internal Error: synchronize_process_faninNBs_batch: async_call but not (not run_all_tasks_locally).")
+                logger.error("[Error: synchronize_process_faninNBs_batch: async_call but not (not run_all_tasks_locally).")
 
         # Note: If we are using lambdas, then we are not using workers (for now) so worker_needs_input
         # must be false. Also, we are currently not piggybacking the fanouts so there should be no 
@@ -432,7 +432,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             synchronizer = tcp_server.synchronizers[synchronizer_name]
 
             if (synchronizer is None):
-                logger.error("[Error]: Internal Error: tcp_server: synchronize_process_faninNBs_batch:"
+                logger.error("[Error]: tcp_server: synchronize_process_faninNBs_batch:"
                     + " could not find existing Synchronizer with name '%s'" % synchronizer_name)
                 raise ValueError("synchronize_process_faninNBs_batch: Could not find existing Synchronizer with name '%s'" % synchronizer_name)
 
@@ -605,7 +605,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
                             ## assert:
                             #if not DAG_states[name] == start_state_fanin_task:
-                            #    logger.trace("[Error]: Internal Error: tcp_server: synchronize_process_faninNBs_batch:"
+                            #    logger.trace("[Error]: tcp_server: synchronize_process_faninNBs_batch:"
                             #       + "DAG_states[name] != start_state_fanin_task")
                                 
                             #dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = DAG_states[name]
@@ -659,12 +659,12 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             ## on fanins and faninNBs, but we only batch process faninNBs
                             ## here so there should be no fanins. 
                             #if is_fanin:
-                            #    logger.error("[Error]: Internal Error: tcp_server: synchronize_process_faninNBs_batch:"
+                            #    logger.error("[Error]: tcp_server: synchronize_process_faninNBs_batch:"
                             #        + " fanin " + name + " in batch.")
 
                             #is_faninNB = name in all_faninNB_task_names
                             #if not is_fanin and not is_faninNB:
-                            #    logger.error("[Error]: Internal Error: tcp_server: synchronize_process_faninNBs_batch:"
+                            #    logger.error("[Error]: tcp_server: synchronize_process_faninNBs_batch:"
                             #        + " sync object for synchronize_sync is neither a fanin nor a faninNB.")
 
                             # compute size of fanin or faninNB 
@@ -684,7 +684,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             
                             ##assert:
                             #    if not faninNB_size == all_faninNB_sizes[faninNB_index]:
-                            #        logger.error("[Error]: Internal Error: tcp_server: synchronize_process_faninNBs_batch: "
+                            #        logger.error("[Error]: tcp_server: synchronize_process_faninNBs_batch: "
                             #            + " not faninNB_size == all_faninNB_sizes[faninNB_index]")
                             #    else:
                             #        logger.trace("EQUAL SIZES")
@@ -738,7 +738,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
                             # assert:
                             #if not DAG_states[name] == start_state_fanin_task:
-                            #    logger.trace("[Error]: Internal Error: tcp_server: synchronize_process_faninNBs_batch:"
+                            #    logger.trace("[Error]: tcp_server: synchronize_process_faninNBs_batch:"
                              #       + "DAG_states[name] != start_state_fanin_task")
                                 
                             dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = start_state_fanin_task
@@ -783,12 +783,12 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             # on fanins and faninNBs, but we only batch process faninNBs
                             # here so there should be no fanins. 
                             #if is_fanin:
-                            #    logger.error("[Error]: Internal Error: tcp_server: synchronize_process_faninNBs_batch:"
+                            #    logger.error("[Error]: tcp_server: synchronize_process_faninNBs_batch:"
                             #        + " fanin " + name + " in batch.")
 
                             #is_faninNB = True # name in all_faninNB_task_names
                             #if not is_fanin and not is_faninNB:
-                            #    logger.error("[Error]: Internal Error: tcp_server: synchronize_process_faninNBs_batch:"
+                            #    logger.error("[Error]: tcp_server: synchronize_process_faninNBs_batch:"
                             #        + " sync object for synchronize_sync is neither a fanin nor a faninNB.")
 
                             # compute size of fanin or faninNB 
@@ -810,7 +810,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             
                             #assert:
                             #if not faninNB_size == all_faninNB_sizes[faninNB_index]:
-                            #    logger.error("[Error]: Internal Error: tcp_server: synchronize_process_faninNBs_batch: "
+                            #    logger.error("[Error]: tcp_server: synchronize_process_faninNBs_batch: "
                             #        + " not faninNB_size == all_faninNB_sizes[faninNB_index]")
                             #else:
                             #    logger.trace("EQUAL SIZES")
@@ -1139,7 +1139,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             is_fanin = synchronizer_name in all_fanin_task_names
                             is_faninNB = synchronizer_name in all_faninNB_task_names
                             if not is_fanin and not is_faninNB:
-                                logger.error("[Error]: Internal Error: tcp_server: synchronize_sync:"
+                                logger.error("[Error]: tcp_server: synchronize_sync:"
                                     + " sync object " + synchronizer_name + " for synchronize_sync is neither a fanin nor a faninNB.")
 
                             # compute size of fanin or faninNB 
@@ -1208,7 +1208,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             #DAG_states = DAG_info.get_DAG_states()
                             # assert:
                             #if not DAG_states[name] == start_state_fanin_task:
-                            #    logger.trace("[Error]: Internal Error: tcp_server: synchronize_process_faninNBs_batch:"
+                            #    logger.trace("[Error]: tcp_server: synchronize_process_faninNBs_batch:"
                             #       + "DAG_states[name] != start_state_fanin_task")
                             
                             # We modified DAG_executor.faninNB_remotely to add the DAG_info 
@@ -1280,7 +1280,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                                 dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = state.keyword_arguments['start_state_fanin_task']
                             #assert:
                             #if not faninNB_size == all_faninNB_sizes[faninNB_index]:
-                            #    logger.error("[Error]: Internal Error: tcp_server: synchronize_process_faninNBs_batch: "
+                            #    logger.error("[Error]: tcp_server: synchronize_process_faninNBs_batch: "
                             #        + " not faninNB_size == all_faninNB_sizes[faninNB_index]")
                             #else:
                             #    logger.trace("EQUAL SIZES")
@@ -1357,7 +1357,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         logger.trace("[TCPSERVER] createif_and_synchronize_sync() called.")
 
         if wukongdnc.dag.DAG_executor_constants.create_all_fanins_faninNBs_on_start:
-            logger.error("[Error]: Internal Error: tcp_server: createif_and_synchronize_sync: "
+            logger.error("[Error]: tcp_server: createif_and_synchronize_sync: "
                 + "called createif_and_synchronize_sync but create_all_fanins_faninNBs_on_start")
 
         messages = message['name']

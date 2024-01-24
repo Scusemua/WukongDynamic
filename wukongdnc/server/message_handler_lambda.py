@@ -220,7 +220,7 @@ class MessageHandler(object):
         list_of_messages = message['name']
         #assert:
         if len(list_of_messages) == 0:
-            logger.error("[Error]: Internal error: process_enqueued_fan_ins: "
+            logger.error("[Error]: process_enqueued_fan_ins: "
                 + " length of list_of_messages is 0 but fanin size > 0.")
 
         if not create_all_fanins_faninNBs_on_start:
@@ -357,7 +357,7 @@ class MessageHandler(object):
         logger.trace("[MESSAGEHANDLERLAMBDA] createif_and_synchronize_sync() called.")
 
         if create_all_fanins_faninNBs_on_start:
-            logger.error("[Error]: Internal Error: message_handler_lambda: createif_and_synchronize_sync: "
+            logger.error("[Error]: message_handler_lambda: createif_and_synchronize_sync: "
                 + "called createif_and_synchronize_sync but create_all_fanins_faninNBs_on_start")
 
         messages = message['name']
@@ -464,7 +464,7 @@ class MessageHandler(object):
         logger.trace("[MESSAGEHANDLERLAMBDA] synchronize_async() called.")
 
         if create_all_fanins_faninNBs_on_start:
-            logger.error("[Error]: Internal Error: message_handler_lambda: createif_and_synchronize_async: "
+            logger.error("[Error]: message_handler_lambda: createif_and_synchronize_async: "
                 + "called createif_and_synchronize_async but create_all_fanins_faninNBs_on_start")
 
         messages = message['name']

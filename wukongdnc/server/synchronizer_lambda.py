@@ -607,7 +607,7 @@ class Synchronizer(object):
             logger.trace("synchronizer_lambda: synchronizeLamba: after result_buffer.withdraw: restart " + str(restart))
             logger.trace("synchronizer_lambda: synchronizeLamba: result_buffer.withdraw: " + str(returnValue))
             if restart: #assert
-                logger.error("synchronizer_lambda: synchronizeLamba: Internal ERROR: result_buffer.withdraw returned restart true.")
+                logger.error("synchronizer_lambda: synchronizeLamba: result_buffer.withdraw returned restart true.")
 #5:
         else:
             # If we did not wait_for_result we do not want to return the return_value of the operation to the user since there

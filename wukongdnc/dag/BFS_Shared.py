@@ -437,7 +437,7 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
         # num_nodes is a global variable in BFS.py that is set to the number of
         # nodes in the graph input by input_graph() in BFS.py.
         if not total_num_nodes == num_nodes:
-            logger.error("[Error]: Internal Error: BFS_Shared: total_num_nodes"
+            logger.error("[Error]: BFS_Shared: total_num_nodes"
                 + " is not equal to num_nodes in input graph.")
             logging.shutdown()
             os._exit(0)

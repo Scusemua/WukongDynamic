@@ -33,11 +33,28 @@ def create_multithreaded_multiprocessing_processes(num_processes_created_for_mul
     while True:
         logger.trace("create processes iteration: " + str(iteration))
         iteration += 1
-         # asserts:
-        if not run_all_tasks_locally:
-            logger.error("[Error]: multithreaded multiprocessing loop but not run_all_tasks_locally")
-        if not using_workers:
-            logger.trace("[ERROR] DAG_executor_driver: Starting multi processes for multithreaded multiprocessing but using_workers is false.")
+        try:
+            msg = "[Error]: multithreaded multiprocessing loop but not run_all_tasks_locally"
+            assert run_all_tasks_locally , msg
+        except AssertionError:
+            logger.exception("[Error]: assertion failed")
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
+        #assertOld:
+        #if not run_all_tasks_locally:
+        #    logger.error("[Error]: multithreaded multiprocessing loop but not run_all_tasks_locally")
+        try:
+            msg = "[Error]: DAG_executor_driver: Starting multi processes for multithreaded multiprocessing but using_workers is false."
+            assert using_workers , msg
+        except AssertionError:
+            logger.exception("[Error]: assertion failed")
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
+        #assertOld:
+        #if not using_workers:
+        #    logger.trace("[ERROR] DAG_executor_driver: Starting multi processes for multithreaded multiprocessing but using_workers is false.")
 
         try:
             payload = {

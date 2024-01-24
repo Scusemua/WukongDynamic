@@ -394,7 +394,7 @@ class DAG_executor_FanInNB(MonitorSU):
                 return self._results, restart
 
             else:
-                logger.error("FanInNB:[ERROR] Internal Error: reached else: error at end of fanin")
+                logger.error("[ERROR]: FanInNB: reached else: error at end of fanin")
 
             # No signal of non-last client; they did not block and they are done executing. 
             # does mutex.V

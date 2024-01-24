@@ -391,7 +391,7 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
                         logger.trace(thread_name + ": process_faninNBs: Starting asynch simulation create_and_fanin task for faninNB " + name)
                         NBthread = threading.Thread(target=create_and_faninNB_task_locally, name=("create_and_faninNB_task_"+name), args=(keyword_arguments,))
                         NBthread.start()
-                    except Exception as ex:
+                    except Exception:
                         logger.exception("[ERROR]:" + thread_name + ": process_faninNBs: Failed to start create_and_faninNB_task thread.")
                         if exit_program_on_exception:
                             logging.shutdown()
@@ -401,7 +401,7 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
                         logger.trace(thread_name + ": process_faninNBs: Starting asynch simulation faninNB_task for faninNB " + name)
                         NBthread = threading.Thread(target=faninNB_task_locally, name=("faninNB_task_"+name), args=(keyword_arguments,))
                         NBthread.start()
-                    except Exception as ex:
+                    except Exception:
                         logger.exception("[ERROR]:" + thread_name 
                             + ": process_faninNBs: Failed to start faninNB_task thread.")
                         if exit_program_on_exception:
@@ -529,7 +529,7 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
                     
                     #if not worker_needs_input:
                     if worker_needs_input:
-                        logger.error("[Error]: " + thread_name + ": process_faninNBs: Internal Error: not using_workers but worker_needs_input = True")
+                        logger.error("[Error]: " + thread_name + ": process_faninNBs: not using_workers but worker_needs_input = True")
                     
                     try:
                         logger.trace(thread_name + ": process_faninNBs: starting DAG_executor thread for task " + name + " with start state " + str(start_state_fanin_task))
@@ -552,7 +552,7 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
                         thread = threading.Thread(target=DAG_executor_task, name=(thread_name_prefix+str(start_state_fanin_task)), args=(payload,))
                         thread.start()
                         #_thread.start_new_thread(DAG_executor.DAG_executor_task, (payload,))
-                    except Exception as ex:
+                    except Exception:
                         logger.exception("[ERROR]:" + thread_name + ": process_faninNBs: Failed to start DAG_executor thread.")
                         if exit_program_on_exception:
                             logging.shutdown()
@@ -689,10 +689,18 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
     # rhc: async batch
     logger.trace(thread_name + ": process_faninNBs_batch: " + calling_task_name + ": async_call: " + str(async_call))
 
-    #assert: if worker needs work then we should be using synch call so we can check the results for work
-    if worker_needs_input:
-        if async_call:
-            logger.trace(thread_name + "[Error]: Internal Error: process_faninNBs_batch: worker_needs_input but using async_call")
+    try:
+        msg = thread_name + "[Error]: process_faninNBs_batch: worker_needs_input but using async_call"
+        assert not (worker_needs_input and async_call) , msg
+    except AssertionError:
+        logger.exception("[Error]: assertion failed")
+        if exit_program_on_exception:
+            logging.shutdown()
+            os._exit(0)
+    #assertOld: if worker needs work then we should be using synch call so we can check the results for work
+    #if worker_needs_input:
+    #    if async_call:
+    #        logger.error(thread_name + "[Error]: process_faninNBs_batch: worker_needs_input but using async_call")
 
 	# There may be multiple faninNBs; we cannot become one, by definition.
 	# Note: This thread cannot become since it may need to become a fanout.
@@ -849,7 +857,7 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
                 # 
                 # This should be unreachable; leaving it for now.
                 # If we don't need work then any work from faninNBs should have been enqueued in work queue instead of being returned
-                logger.error("[Error]: " + thread_name + ": process_faninNBs_batch: Internal Error: got work but not worker_needs_input.")
+                logger.error("[Error]: " + thread_name + ": process_faninNBs_batch: got work but not worker_needs_input.")
                 
                 # Also, don't pass in the multprocessing data_dict, so will use the global data dict
                 logger.trace(thread_name + ": process_faninNBs_batch: " + calling_task_name + ": process_faninNBs_batch Results: ")
@@ -936,7 +944,7 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
             # if not using_workers then not worker_needs_input must be true. That is, we init worker_needs_input
             # to false and we never set it to true since setting worker_needs_input is guarded everywhere by using_workers.
             if worker_needs_input:
-                logger.error("[Error]:" + thread_name + ": process_faninNBs_batch: Internal Error: not using_workers but worker_needs_input = True")
+                logger.error("[Error]:" + thread_name + ": process_faninNBs_batch: not using_workers but worker_needs_input = True")
 
             list_of_work_tuples = dummy_DAG_exec_state.return_value
             # Note: On tcp_server, a work tupe is : work_tuple = (start_state_fanin_task,returned_state)
@@ -988,7 +996,7 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
                     thread = threading.Thread(target=DAG_executor_task, name=(thread_name_prefix+str(start_state_fanin_task)), args=(payload,))
                     thread.start()
                     #_thread.start_new_thread(DAG_executor.DAG_executor_task, (payload,))
-                except Exception as ex:
+                except Exception:
                     logger.exception("[ERROR]: " + thread_name + ": process_faninNBs_batch: Failed to start DAG_executor thread.")
                     if exit_program_on_exception:
                         logging.shutdown()
@@ -1212,7 +1220,7 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                     }
 
                     _thread.start_new_thread(DAG_executor_task, (payload,))
-                except Exception as ex:
+                except Exception:
                     logger.exception("[ERROR] " + thread_name + ": process_fanouts: Failed to start DAG_executor thread for " 
                         + name)
                     if exit_program_on_exception:
@@ -1281,14 +1289,14 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                     
                     ###### DAG_executor_State.function_name has not changed
                     invoke_lambda_DAG_executor(payload = payload, function_name = "WukongDivideAndConquer:"+name)
-                except Exception as ex:
-                    logger.exception(":ERROR] " + thread_name + " process_fanouts: Failed to start DAG_executor Lambda.")
+                except Exception:
+                    logger.exception("[ERROR]: " + thread_name + " process_fanouts: Failed to start DAG_executor Lambda.")
                     if exit_program_on_exception:
                         logging.shutdown()
                         os._exit(0) 
 #rhc: run task
             else:
-                logger.error(":ERROR] " + thread_name + " Internal Error: process_fanouts: invalid configuration.")
+                logger.error("[ERROR]: " + thread_name + " : process_fanouts: invalid configuration.")
 
     # Note: If we do not piggyback the fanouts with process_faninNBs_batch, we would add
     # all the work to the remote work queue here.
@@ -1357,7 +1365,7 @@ def process_fanins(websocket,fanins, faninNB_sizes, calling_task_name, DAG_state
     thread_name = threading.current_thread().name
     logger.trace(thread_name + ": process_fanins: calling_task_name: " + calling_task_name)
 
-    # assert len(fanins) == len(faninNB_sizes) ==  1
+    # Suggsted assert len(fanins) == len(faninNB_sizes) ==  1
 
     # call synch-op try-op on the fanin with name f, passing output and start_state.
     # The return value will have [state,input] tuple? Or we know state when we call
@@ -1582,7 +1590,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     #num_tasks_to_execute = len(DAG_tasks) - 1
                     number_of_incomplete_tasks = DAG_info.get_DAG_number_of_incomplete_tasks()
                     if not number_of_incomplete_tasks == 1:
-                        logger.error("[Error]: Internal Error: DAG_executor_work_loop at start:"
+                        logger.error("[Error]: DAG_executor_work_loop at start:"
                             + " Using incremental DAG generation with partitions and"
                             + " DAG is incomplete but number_of_incomplete_tasks is not 1: "
                             + str(number_of_incomplete_tasks))
@@ -2606,7 +2614,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                             #num_tasks_to_execute = len(DAG_tasks) - 1
                                             number_of_incomplete_tasks = DAG_info.get_DAG_number_of_incomplete_tasks()
                                             if not number_of_incomplete_tasks == 1:
-                                                logger.error("[Error]: Internal Error: DAG_executor_work_loop:"
+                                                logger.error("[Error]: DAG_executor_work_loop:"
                                                     + " Using incremental DAG generation with partitions and"
                                                     + " DAG is incomplete but number_of_incomplete_tasks is not 1: "
                                                     + str(number_of_incomplete_tasks))
@@ -2731,7 +2739,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         #assert:
                         # cluster_queue was empty so we got work, which means the ecluster_queue should still be empty.
                         if not cluster_queue.qsize() == 0:
-                            logger.error("[Error]: Internal Error: DAG_executor_work_loop: cluster_queue.qsize() == 0 was true before"
+                            logger.error("[Error]: DAG_executor_work_loop: cluster_queue.qsize() == 0 was true before"
                                 + " we got work from worker queue but not after - queue size should not change.")
 
     #rhc: cluster:
@@ -2763,7 +2771,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
     #rhc: cluster:
                         #assert:
                         if not cluster_queue.qsize() == 0:
-                            logger.error("[Error]: DAG_executor_work_loop: Internal Error: cluster_queue contained"
+                            logger.error("[Error]: DAG_executor_work_loop: cluster_queue contained"
                                 + " more than one item of work - queue size > 0 after cluster_queue.get")
 
                         logger.info(thread_name + " DAG_executor_work_loop: Worker doesn't access work_queue")
@@ -2934,7 +2942,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # assert: 
                 if first_iteration_of_work_loop_for_lambda and not (compute_pagerank and use_incremental_DAG_generation and continued_task):
                     if cluster_queue.qsize() == 0:
-                        logger.trace("[Error]: Internal Error: DAG_executor_work_loop:"
+                        logger.trace("[Error]: DAG_executor_work_loop:"
                             + " first_iteration_of_work_loop_for_lambda and not continued_task"
                             + " but cluster_queue.qsize() is 0; the state of a lambda that has"
                             + " not been restarted for incremental DAG generation shoudl be added"
@@ -2945,7 +2953,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # except the state of a restarted lambda, whcih we add at the start 
                     # of the work loop
                     if not first_iteration_of_work_loop_for_lambda:
-                        logger.error("[Error]: XXInternal Error: DAG_executor_work_loop:"
+                        logger.error("[Error]: DAG_executor_work_loop:"
                             + " continue_queue.qsize() is > 0 for lambda but not"
                             + " first_iteration_of_work_loop_for_lambda.")
 
@@ -2982,11 +2990,11 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 #rhc: cluster:
                     #assert:
                     if not cluster_queue.qsize() == 0:
-                        logger.error("[Error]: DAG_executor_work_loop: Internal Error: simulated or real lambda:"
+                        logger.error("[Error]: DAG_executor_work_loop: simulated or real lambda:"
                             + " cluster_queue contained more than one item of work - queue size > 0 after cluster_queue.get")
 #rhc: lambda inc:
                 else:
-                    logger.trace("[Error]: Internal Error: DAG_executor_work_loop:"
+                    logger.trace("[Error]: DAG_executor_work_loop:"
                         + " cluster_queue and continue_queue are both empty"
                         + " for a lambda but this lambda now has nothing to do"
                         + " and should have terminated at the end of the last iteration"
@@ -3226,7 +3234,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # assert: continued_task should be set to False if we get a tuple from the continue_queue
                     # for a leaf task that is not the first leaf task/partition/grup PR1_1 in the DAG.
                     if continued_task:
-                        logger.error("[Error]: Internal Error: continued_task is true for a leaf task that"
+                        logger.error("[Error]: continued_task is true for a leaf task that"
                             + " is not the first leaf task/partition/group in the DAG (PR!_1).")
                         logging.shutdown()
                         os._exit(0)
@@ -3800,7 +3808,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 
                 if len(state_info.fanins) + len(state_info.fanouts) + len(state_info.faninNBs) > 0:
                     # a state with a collapse has no other fanins/fanuts.
-                    logger.error("[Error]: Internal Error: DAG_executor_work_loop:"
+                    logger.error("[Error]: DAG_executor_work_loop:"
                         + " state has a collapse but also fanins/fanouts.")
 
                 # Note If we run-time cluster, then we may have work in the cluster queue.
@@ -3966,7 +3974,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # which is effectively the TBC of the next partition, should equal
                     # the fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued of the current partition.
                     if not state_info.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued == state_info_of_collapse_task.ToBeContinued:
-                        logger.error("[Error]: Internal error: DAG_executor_work_loop:"
+                        logger.error("[Error]: DAG_executor_work_loop:"
                             + " fanout_fanin_faninNB_collapse_groups of current partition is not"
                             + " equal to ToBeContinued of collapse task (next partition).")
                         logging.shutdown()
@@ -4030,7 +4038,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             # We became one fanout task and removed it from fanouts, but there maybe were more fanouts
                             # and we should have added the fanouts to list_of_work_queue_or_payload_fanout_values.
                             if len(list_of_work_queue_or_payload_fanout_values) == 0:
-                                logger.error("[Error]: work loop: after process_fanouts: Internal Error: fanouts > 1 but no work in list_of_work_queue_or_payload_fanout_values.")
+                                logger.error("[Error]: work loop: after process_fanouts: fanouts > 1 but no work in list_of_work_queue_or_payload_fanout_values.")
                     # else: # Config: A1, A2, A3, A4_local, A4_Remote
 
 #rhc: cluster:      # Add become task to cluster queue
@@ -4052,7 +4060,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 #rhc: cluster:
                     #assert
                     if cluster_queue.qsize() > 0:
-                        logger.error("[Error] Internal error: No fanouts but cluster_queue.qsize() > 0.")
+                        logger.error("[Error]: No fanouts but cluster_queue.qsize() > 0.")
 #rhc: cluster:
                     #Do NOT do this.
                     #if using_workers: 
@@ -4174,7 +4182,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 
                         # assert:
                         if worker_needs_input and not using_workers:
-                            logger.error("[Error]: Internal error: after process_faninNBs_batch"
+                            logger.error("[Error]: after process_faninNBs_batch"
                                 + " worker_needs_input is True when not using workers.")
 
 #rhc: cluster:
@@ -4191,7 +4199,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         #    # also deposted a become task in the cluster queue, so the cluster_queue
                         #    # shudl not be different.
                             if cluster_queue.qsize() == 0:
-                                logger.error("[Error]: Internal error: process_faninNBs_batch set"
+                                logger.error("[Error]: process_faninNBs_batch set"
                                     + " worker_needs_input to False when using workers but cluster_queue"
                                     + " size is 0.")
                     else: 
@@ -4218,14 +4226,14 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             cluster_queue)
 
                         if worker_needs_input and not using_workers:
-                            logger.error("[Error]: Internal error: after process_faninNBs"
+                            logger.error("[Error]: after process_faninNBs"
                                 + " worker_needs_input is True when not using workers.")
 #rhc: cluster:
                         # assert:
                         if using_workers and worker_needs_input != save_worker_needs_input:
                         #    # Note: See comment in same assertion above.
                             if cluster_queue.qsize() == 0:
-                                logger.error("[Error]: Internal error: process_faninNBs set"
+                                logger.error("[Error]: process_faninNBs set"
                                     + " worker_needs_input to False when using workers but cluster_queue"
                                     + " size is 0.")
 
@@ -4254,13 +4262,13 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             #if worker_needs_input:
                                 # when there is at least one fanout we will become one of the fanout tasks
                                 # so we should not need work.
-                                logger.error("[Error]: work loop: Internal Error: fanouts but worker needs work.")
+                                logger.error("[Error]: work loop: fanouts but worker needs work.")
  
                             if len(state_info.fanouts) > 1:
                                 # We became one fanout task but there were more and we should have added the 
                                 # fanouts to list_of_work_queue_or_payload_fanout_values.
                                 if len(list_of_work_queue_or_payload_fanout_values) == 0:
-                                    logger.error("[Error]: work loop: Internal Error: fanouts > 1 but no work in list_of_work_queue_or_payload_fanout_values.")
+                                    logger.error("[Error]: work loop: fanouts > 1 but no work in list_of_work_queue_or_payload_fanout_values.")
                                 # since we could not piggyback on process_faninNB_batch, enqueue the fanouts
                                 # directly into the work_queue
                                 logger.trace(thread_name + " work loop: no faninNBs so enqueue fanouts directly.")
@@ -4273,7 +4281,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                 # assert
                                 # there was one fanout so we became that one fanout and should have enqueued no fanouts
                                 if not len(list_of_work_queue_or_payload_fanout_values) == 0:
-                                    logger.error("[Error]: work loop: Internal Error: len(state_info.fanouts) is 1 but list_of_work_queue_or_payload_fanout_values is not empty.")
+                                    logger.error("[Error]: work loop: len(state_info.fanouts) is 1 but list_of_work_queue_or_payload_fanout_values is not empty.")
                     # else: # Config: A1, A2, A3, A4_local, A4_Remote
                 # If we are not using_workers and there were fanouts then continue with become 
                 # task; otherwise, this thread (simulatng a Lambda) or Lambda is done, as it has reached the
@@ -4583,7 +4591,7 @@ def DAG_executor(payload):
                 #data_dict[key] = _value
                 value_in_dict = data_dict.get(key,None)
                 if value_in_dict == None:
-                    logger.error("[Error]: Internal Error: starting DAG_executor for simulated lambda"
+                    logger.error("[Error]: starting DAG_executor for simulated lambda"
                         + " data_dict missing value for input key " + str(key))
                     logging.shutdown()
                     os._exit(0)
@@ -4636,7 +4644,7 @@ def DAG_executor(payload):
     # assert: 
     if run_all_tasks_locally and (using_workers or not using_workers) and compute_pagerank and use_incremental_DAG_generation and using_threads_not_processes:
         if wukongdnc.dag.DAG_infoBuffer_Monitor_for_threads.DAG_infobuffer_monitor == None:
-            logger.error("[Error]: Internal Error: method DAG_executor: DAG_infobuffer_monitor is None.")
+            logger.error("[Error]: method DAG_executor: DAG_infobuffer_monitor is None.")
             logging.shutdown()
             os._exit(0)
 
@@ -4708,7 +4716,7 @@ def DAG_executor_processes(payload,completed_tasks_counter,completed_workers_cou
     logger.trace("proc " + proc_name + " " + " thread " + thread_name + ": worker process started.")
 
     if not using_workers:
-        logger.error("Error: DAG_executor_processes: executing multiprocesses but using_workers is false.")
+        logger.error("[Error]: DAG_executor_processes: executing multiprocesses but using_workers is false.")
 
     #logger = logging.getLogger('main')__name__
     #level = logging.DEBUG

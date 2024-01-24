@@ -98,7 +98,7 @@ class Selector():
         if called_entry.get_num_arrivals() > 1 or called_entry.testGuard() == False:
             # assert: 
             if (called_entry.get_num_arrivals() > 1) and called_entry.testGuard():
-                logger.trace("execute: Internal ERROR: called_entry.testGuard() is True but this is not the first arrival."
+                logger.trace("execute: called_entry.testGuard() is True but this is not the first arrival."
                 + " A previous arrival thus had a True guard and should have been selected earlier.")
             
             # Q return what? return 0 for now. Eventually the value may be part of delay alternative processing, which is TBD.

@@ -17,7 +17,7 @@ pagerank_outputs = {}
 def set_pagerank_output(state,output):
     multiple_output = pagerank_outputs.get(state)
     if not multiple_output == None:
-        logger.error("[Error]: Internal Error: set_pagerank_output:"
+        logger.error("[Error]: set_pagerank_output:"
             + " more than one pagerank output for state " + str(state))
     pagerank_outputs[state] = output
 
@@ -26,7 +26,7 @@ def get_pagerank_outputs():
 
 def verify_pagerank_outputs(number_of_groups_or_partitions):
     if len(pagerank_outputs) != number_of_groups_or_partitions:
-        logger.error("[Error]: Internal Error: verify_pagerank_outputs:"
+        logger.error("[Error]: verify_pagerank_outputs:"
             + " missing pagerank output, number of outputs is " + str(len(pagerank_outputs))) 
         return False
     else:

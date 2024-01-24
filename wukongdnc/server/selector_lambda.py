@@ -101,9 +101,9 @@ class Selector():
             if send_result:
                 # Note asynch calls always have send_result = False, whether they block or not.
                 # try-op calls have send_result True if they are not blocking
-                logger.trace("execute: Internal ERROR: send_result is True but entry will not be accepted.") 
+                logger.trace("[Error]: execute: send_result is True but entry will not be accepted.") 
             if (called_entry.get_num_arrivals() > 1) and called_entry.testGuard():
-                logger.trace("execute: Internal ERROR: called_entry.testGuard() is True but this is not the first arrival."
+                logger.trace("[Error]: execute: called_entry.testGuard() is True but this is not the first arrival."
                     + " A previous arrival thus had a True guard and should have been selected earlier.")
                 
             # This is not the first wating arrival; guard cannot be true or the 
@@ -179,7 +179,7 @@ class Selector():
                     # Note asynch calls always have send_result = False, whether they block or not.
                     # Also, only async calls can be restarted above, i.e., can have get_restart_on_noblock() is True.
                     # So if restart is true then send_result must be False
-                    logger.trace("execute: Internal ERROR: send_result is True and restart is True, but restart can only "
+                    logger.trace("execute: send_result is True and restart is True, but restart can only "
                         + "be True for aynch calls while send_result is always False for aynch calls.")             
                 restart = False
                 return_tuple = (return_value, restart)
@@ -236,7 +236,7 @@ class Selector():
                     self.doRestart(state,restart,return_value)
 #9:
                 else: #Error lambda clients must be restarted for this version in which sync objects are stored in client
-                    logger.trace("execute: Internal ERROR: Blocking Lambdas must be restarted.")
+                    logger.trace("execute: Blocking Lambdas must be restarted.")
 #10: ToConsider: We could allow clients to wait - Lambda will send return value (via TCP) to tcp_server when the call
 #    completes. Need to match return values to callers/operations.
                              

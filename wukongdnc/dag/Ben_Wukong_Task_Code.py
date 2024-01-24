@@ -61,6 +61,7 @@ if not is_leaf_task:
         # where result_dictionary['task1'] = 1 and result_dictionary['task2'] = 2.
         # We pass a result_dictionary of inputs instead of the *args tuple (1,2).
 
+        #assert
         # Should be true
         if len(task_inputs) == len(args):
             logger.info("Foo1b")

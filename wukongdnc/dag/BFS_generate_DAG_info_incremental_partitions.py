@@ -679,7 +679,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         # i.e., sender
 
         try:
-            assert senders == None , "[Error]: Internal error: def generate_DAG_info_incremental_partitions"
+            assert senders == None , "[Error]: def generate_DAG_info_incremental_partitions"
             + " leaf node has non-None senders."
         except AssertionError:
             logger.exception("[Error]: assertion failed")
@@ -688,7 +688,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
                 os._exit(0)
         #assertOld:
         #if not senders == None:
-        #    logger.error("[Error]: Internal error: def generate_DAG_info_incremental_partitions"
+        #    logger.error("[Error]: def generate_DAG_info_incremental_partitions"
         #        + " leaf node has non-None senders.")
         
         # record DAG information 
@@ -788,7 +788,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         # Note: We know this is not partition 1 based on if-condition
 
         try:
-            assert not(not senders == None and len(senders) == 0) , "[Error]: Internal Error: generate_DAG_info_incremental_partitions:"
+            assert not(not senders == None and len(senders) == 0) , "[Error]: generate_DAG_info_incremental_partitions:"
             + " partition has a senders with length 0."
         except AssertionError:
             logger.exception("[Error]: assertion failed")
@@ -797,7 +797,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
                 os._exit(0)
         # assertOld
         #if not senders == None and len(senders) == 0:
-        #    logger.error("[Error]: Internal Error: generate_DAG_info_incremental_partitions:"
+        #    logger.error("[Error]: generate_DAG_info_incremental_partitions:"
         #        + " partition has a senders with length 0.")
 
         # This is not the first partition but it is a leaf partition, which means
@@ -1013,7 +1013,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
     else: # current_partition_number >= 2
 
         try:
-            assert not len(senders) == 0 , "[Error]: Internal Error: generate_DAG_info_incremental_groups:"
+            assert not len(senders) == 0 , "[Error]: generate_DAG_info_incremental_groups:"
             + " partition has a senders with length 0."
         except AssertionError:
             logger.exception("[Error]: assertion failed")
@@ -1022,13 +1022,13 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
                 os._exit(0)
         # assertOld: no length 0 senders lists
         #if len(senders) == 0:
-        #    logger.error("[Error]: Internal Error: generate_DAG_info_incremental_groups:"
+        #    logger.error("[Error]: generate_DAG_info_incremental_groups:"
         #        + " partition has a senders with length 0.")
 
         # This is not the first partition and it is not a leaf partition.
 
         try:
-            assert not (len(senders) != 1) , "[Error]: Internal Error: generate_DAG_info_incremental_partitions: using partitions and a"
+            assert not (len(senders) != 1) , "[Error]: generate_DAG_info_incremental_partitions: using partitions and a"
             + " partition has more than one sending partition."
         except AssertionError:
             logger.exception("[Error]: assertion failed")
@@ -1043,13 +1043,13 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         # can be executed concurrently. So the eecution of a graph with two or more 
         # components can have some parallelism.
         #if len(senders) != 1:
-        #    logger.error("[Error]: Internal Error: generate_DAG_info_incremental_partitions: using partitions and a"
+        #    logger.error("[Error]: generate_DAG_info_incremental_partitions: using partitions and a"
         #        + " partition has more than one sending partition.")
                 
         sender = next(iter(senders)) # sender is first and only element in set
 
         try:
-            assert sender == Partition_DAG_previous_partition_name , "[Error]: Internal Error: generate_DAG_info_incremental_partitionsusing partitions and"
+            assert sender == Partition_DAG_previous_partition_name , "[Error]: generate_DAG_info_incremental_partitionsusing partitions and"
             + " the sender for a partition is not previous_partition_name."
         except AssertionError:
             logger.exception("[Error]: assertion failed")
@@ -1058,7 +1058,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
                 os._exit(0)
         #assertOld: the sender should be equal to the previous_partition_name
         #if not sender == Partition_DAG_previous_partition_name:
-        #    logger.error("[Error]: Internal Error: generate_DAG_info_incremental_partitionsusing partitions and"
+        #    logger.error("[Error]: generate_DAG_info_incremental_partitionsusing partitions and"
         #        + " the sender for a partition is not previous_partition_name.")
 
         # generate current partition's input - current partiton rrceives its 

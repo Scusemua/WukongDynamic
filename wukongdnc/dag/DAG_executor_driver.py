@@ -1549,11 +1549,20 @@ def run():
     #   - if using multithreaded worker processes. workers will start and join their threads
     #     then we join the multithreaded worker processes. 
     #asserts on configuration:
-    if using_workers:
-        if not run_all_tasks_locally:
-            # running in Lambdas so no schedule of tasks on a pool of executors
-            # i.e., schedule tasks using DFS_paths
-            logger.error("Error: DAG_executor_driver: if using_workers then run_fanout_tasks_locally must also be true.")
+    try:
+        msg = "[Error]: DAG_executor_driver: if using_workers then run_fanout_tasks_locally must also be true."
+        assert not (using_workers and not run_all_tasks_locally) , msg
+    except AssertionError:
+        logger.exception("[Error]: assertion failed")
+        if exit_program_on_exception:
+            logging.shutdown()
+            os._exit(0)
+    #assertOld:
+    #if using_workers:
+    #    if not run_all_tasks_locally:
+    #        # running in Lambdas so no schedule of tasks on a pool of executors
+    #        # i.e., schedule tasks using DFS_paths
+    #        logger.error("Error: DAG_executor_driver: if using_workers then run_fanout_tasks_locally must also be true.")
 
     # reads from default file './DAG_info.pickle'
     #file_name_foo = "./DAG_info_Group" + ".pickle"
@@ -2235,6 +2244,15 @@ def run():
                             # assert: this should be unreachble - if trigger tassk in their 
                             # lambdas then we should not have entered this loop for 
                             # starting tasks.
+                            try:
+                                msg = "[Error]: DAG_executor_driver: reached unreachable code for starting triggered tasks"
+                                assert False , msg
+                            except AssertionError:
+                                logger.exception("[Error]: assertion failed")
+                                if exit_program_on_exception:
+                                    logging.shutdown()
+                                    os._exit(0)
+                            #assertOld
                             logger.error("[ERROR] DAG_executor_driver: reached unreachable code for starting triggered tasks")
                 
             #else we started the leaf tasks above with process_leaf_tasks_batch

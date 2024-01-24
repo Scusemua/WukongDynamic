@@ -437,7 +437,7 @@ class DAG_executor_FanInNB_Select(Selector):
                 #work_tuple = (start_state_fanin_task,self._results)
                 #return work_tuple 
             else:
-                logger.error("[ERROR]: Internal Error: DAG_executor_FanInNB_Select: fan_in: reached else: error at end of fanin")
+                logger.error("[ERROR]: DAG_executor_FanInNB_Select: fan_in: reached else: error at end of fanin")
 
             # No signal of non-last client; they did not block and they are done executing. 
             # does mutex.V

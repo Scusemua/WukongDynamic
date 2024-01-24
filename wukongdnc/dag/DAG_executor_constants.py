@@ -167,64 +167,127 @@ using_single_lambda_function = False
 #    way you need to map sync object names to functions if you want to 
 #    invoke the function to do an op on the object more than once.
 
-#assert:
-if using_workers and not run_all_tasks_locally:
-    logger.error("[Internal Error]: Configuration error: if using_workers then must run_all_tasks_locally.")
-    logging.shutdown()
-    os._exit(0)  
-
-#assert
-if not run_all_tasks_locally and store_fanins_faninNBs_locally:
-    logger.error("[Internal Error]: Configuration error: if not run_all_tasks_locally (i.e., using real lambdas) then objects cannot be stored locally.")
-    logging.shutdown()
-    os._exit(0) 
-
-#assert:
-if bypass_call_lambda_client_invoke and run_all_tasks_locally:
-    logger.error("[Internal Error]: Configuration error: if bypass_call_lambda_client_invoke then must be running real Lambdas"
-        + " i.e., not run_all_tasks_locally.")
-    logging.shutdown()
-    os._exit(0)  
-
-#assert:
-if using_workers and not using_threads_not_processes:
-    if store_fanins_faninNBs_locally:
-        # When using worker processed, synch objects must be stored remoely
-        logger.error("[Internal Error]: Configuration error: if using_workers and not using_threads_not_processes"
-            + " then store_fanins_faninNBs_locally must be False.")
+try:
+    msg = "[Error]: Configuration error: if using_workers then must run_all_tasks_locally."
+    assert not (using_workers and not run_all_tasks_locally), msg
+except AssertionError:
+    logger.exception("[Error]: assertion failed")
+    if exit_program_on_exception:
         logging.shutdown()
         os._exit(0)
+#assertOld:
+#if using_workers and not run_all_tasks_locally:
+#    logger.error("[Error]: Configuration error: if using_workers then must run_all_tasks_locally.")
+#    logging.shutdown()
+#    os._exit(0)  
 
-#assert:
-if create_all_fanins_faninNBs_on_start and not run_all_tasks_locally and store_sync_objects_in_lambdas:
-    if not map_objects_to_lambda_functions:
-        # if create sync objects on start and executing tasks in lambdas "
-        # then we must map them to function so that we can determine the 
-        # function an object is in.
-        logger.error("[Internal Error]: Configuration error: if create_all_fanins_faninNBs_on_start"
-            + " then map_objects_to_functions must be True.")
+try:
+    msg = "[Error]: Configuration error: if not run_all_tasks_locally (i.e., using real lambdas) then objects cannot be stored locally."
+    assert not (not run_all_tasks_locally and store_fanins_faninNBs_locally), msg
+except AssertionError:
+    logger.exception("[Error]: assertion failed")
+    if exit_program_on_exception:
         logging.shutdown()
         os._exit(0)
+#assertOld
+#if not run_all_tasks_locally and store_fanins_faninNBs_locally:
+#    logger.error("[Error]: Configuration error: if not run_all_tasks_locally (i.e., using real lambdas) then objects cannot be stored locally.")
+#    logging.shutdown()
+#   os._exit(0) 
 
-#assert:
-if map_objects_to_lambda_functions:
-    if use_anonymous_lambda_functions:
-        # if create sync objects on start then we must map them to function so
-        # that we can determine the function an object is in.
-        logger.error("[Internal Error]: Configuration error: if map_objects_to_lambda_functions"
-            + " then use_anonymous_lambda_functions must be False.")
+try:
+    msg = "[Error]: Configuration error: if bypass_call_lambda_client_invoke then must be running real Lambdas" + " i.e., not run_all_tasks_locally."
+    assert not (bypass_call_lambda_client_invoke and run_all_tasks_locally), msg
+except AssertionError:
+    logger.exception("[Error]: assertion failed")
+    if exit_program_on_exception:
         logging.shutdown()
         os._exit(0)
+#assertOld:
+#if bypass_call_lambda_client_invoke and run_all_tasks_locally:
+#   logger.error("[Error]: Configuration error: if bypass_call_lambda_client_invoke then must be running real Lambdas"
+#       + " i.e., not run_all_tasks_locally.")
+#    logging.shutdown()
+#    os._exit(0)  
 
-#assert:
-if sync_objects_in_lambdas_trigger_their_tasks:
-    if run_all_tasks_locally:
-        # if create sync objects on start then we must map them to function so
-        # that we can determine the function an object is in.
-        logger.error("[Internal Error]: Configuration error: if sync_objects_in_lambdas_trigger_their_tasks"
-            + " then not run_all_tasks_locally must be True.")
+try:
+    msg = "[Error]: Configuration error: if using_workers and not using_threads_not_processes" + " then store_fanins_faninNBs_locally must be False."
+    assert not (using_workers and not using_threads_not_processes), msg
+except AssertionError:
+    logger.exception("[Error]: assertion failed")
+    if exit_program_on_exception:
         logging.shutdown()
         os._exit(0)
+#assertOld:
+#if using_workers and not using_threads_not_processes:
+#    if store_fanins_faninNBs_locally:
+#        # When using worker processed, synch objects must be stored remoely
+#        logger.error("[Error]: Configuration error: if using_workers and not using_threads_not_processes"
+#            + " then store_fanins_faninNBs_locally must be False.")
+#        logging.shutdown()
+#       os._exit(0)
+
+try:
+    msg = "[Error]: Configuration error: if create_all_fanins_faninNBs_on_start" + " then map_objects_to_functions must be True."
+    # if create sync objects on start and executing tasks in lambdas "
+    # then we must map them to function so that we can determine the 
+    # function an object is in.
+    assert not (create_all_fanins_faninNBs_on_start and not run_all_tasks_locally and store_sync_objects_in_lambdas and not(not map_objects_to_lambda_functions)), msg
+except AssertionError:
+    logger.exception("[Error]: assertion failed")
+    if exit_program_on_exception:
+        logging.shutdown()
+        os._exit(0)
+#assertOld:
+#if create_all_fanins_faninNBs_on_start and not run_all_tasks_locally and store_sync_objects_in_lambdas:
+#    if not map_objects_to_lambda_functions:
+#        # if create sync objects on start and executing tasks in lambdas "
+#        # then we must map them to function so that we can determine the 
+#        # function an object is in.
+#        logger.error("[Error]: Configuration error: if create_all_fanins_faninNBs_on_start"
+#            + " then map_objects_to_functions must be True.")
+#        logging.shutdown()
+#        os._exit(0)
+
+try:
+    msg = "[Error]: Configuration error: if map_objects_to_lambda_functions" + " then use_anonymous_lambda_functions must be False."
+    # if create sync objects on start then we must map them to function so
+    # that we can determine the function an object is in.
+    assert not (map_objects_to_lambda_functions and use_anonymous_lambda_functions), msg
+except AssertionError:
+    logger.exception("[Error]: assertion failed")
+    if exit_program_on_exception:
+        logging.shutdown()
+        os._exit(0)
+#assertOld:
+#if map_objects_to_lambda_functions:
+#    if use_anonymous_lambda_functions:
+#        # if create sync objects on start then we must map them to function so
+#        # that we can determine the function an object is in.
+#        logger.error("[Error]: Configuration error: if map_objects_to_lambda_functions"
+#            + " then use_anonymous_lambda_functions must be False.")
+#        logging.shutdown()
+#        os._exit(0)
+
+try:
+    msg = "[Error]: Configuration error: if sync_objects_in_lambdas_trigger_their_tasks" + " then not run_all_tasks_locally must be True."
+    # if create sync objects on start then we must map them to function so
+    # that we can determine the function an object is in.
+    assert not (sync_objects_in_lambdas_trigger_their_tasks and run_all_tasks_locally), msg
+except AssertionError:
+    logger.exception("[Error]: assertion failed")
+    if exit_program_on_exception:
+        logging.shutdown()
+        os._exit(0)
+#assertOld:
+#if sync_objects_in_lambdas_trigger_their_tasks:
+#    if run_all_tasks_locally:
+#        # if create sync objects on start then we must map them to function so
+#        # that we can determine the function an object is in.
+#        logger.error("[Error]: Configuration error: if sync_objects_in_lambdas_trigger_their_tasks"
+#            + " then not run_all_tasks_locally must be True.")
+#        logging.shutdown()
+ #       os._exit(0)
 
 ##########################################
 ###### PageRank settings start here ######
@@ -262,14 +325,22 @@ use_incremental_DAG_generation = compute_pagerank and False
 # True if we are clustering fanouts that satisfy the cluster criteria
 enable_runtime_task_clustering = compute_pagerank and True
 
-# assert 
-if compute_pagerank and use_incremental_DAG_generation and create_all_fanins_faninNBs_on_start:
-    logger.error("[Internal Error]: Configuration error: incremental_DAG_generation"
-        + " requires not create_all_fanins_faninNBs_on_start"
-        + " i.e., create synch objects on the fly since we don't know all of the synch objects "
-        + " at the start (the DAG is not complete)")
-    logging.shutdown()
-    os._exit(0)  
+try:
+    msg = "[Error]: Configuration error: incremental_DAG_generation" + " requires not create_all_fanins_faninNBs_on_start" + " i.e., create synch objects on the fly since we don't know all of the synch objects " + " at the start (the DAG is not complete)"
+    assert not (compute_pagerank and use_incremental_DAG_generation and create_all_fanins_faninNBs_on_start), msg
+except AssertionError:
+    logger.exception("[Error]: assertion failed")
+    if exit_program_on_exception:
+        logging.shutdown()
+        os._exit(0)
+# assertOld 
+#if compute_pagerank and use_incremental_DAG_generation and create_all_fanins_faninNBs_on_start:
+#    logger.error("[Error]: Configuration error: incremental_DAG_generation"
+#        + " requires not create_all_fanins_faninNBs_on_start"
+#        + " i.e., create synch objects on the fly since we don't know all of the synch objects "
+#        + " at the start (the DAG is not complete)")
+#    logging.shutdown()
+#    os._exit(0)  
 
 # generate next DAG when num_incremental_DAGs_generated mod 
 # incremental_interval == 0. For example, if we set this
@@ -298,25 +369,41 @@ if compute_pagerank and use_incremental_DAG_generation and create_all_fanins_fan
 # the last DAG generated.)
 incremental_DAG_deposit_interval = 2
 
-#assert:
-if incremental_DAG_deposit_interval < 1:
-    logger.error("[Internal Error]: Configuration error: incremental_DAG_deposit_interval"
-         + " must be >= 1. We mod by incremental_DAG_deposit_interval so it"
-         + " cannot be 0 and using a negative number makes no sense.")
-    logging.shutdown()
-    os._exit(0)
+try:
+    msg = "[Error]: Configuration error: incremental_DAG_deposit_interval" + " must be >= 1. We mod by incremental_DAG_deposit_interval so it" + " cannot be 0 and using a negative number makes no sense."
+    assert not (incremental_DAG_deposit_interval < 1), msg
+except AssertionError:
+    logger.exception("[Error]: assertion failed")
+    if exit_program_on_exception:
+        logging.shutdown()
+        os._exit(0)
+#assertOld:
+#if incremental_DAG_deposit_interval < 1:
+#    logger.error("[Error]: Configuration error: incremental_DAG_deposit_interval"
+#         + " must be >= 1. We mod by incremental_DAG_deposit_interval so it"
+#         + " cannot be 0 and using a negative number makes no sense.")
+#    logging.shutdown()
+#    os._exit(0)
 
 #rhc: ToDo: what should this be? Used as capacity of boundedbuffer
 # Note: Pythin has no max Int
 # rhc: ToDo: Make a bounded_buffer with a dynamic buffer 
 work_queue_size_for_incremental_DAG_generation_with_worker_processes =  2**10-1
 
-#assert:
-if not same_output_for_all_fanout_fanin and not compute_pagerank:
-    logger.error("[Internal Error]: Configuration error: if same_output_for_all_fanout_fanin"
-        + " then must be computing pagerank.")
-    logging.shutdown()
-    os._exit(0)
+try:
+    msg = "[Error]: Configuration error: if same_output_for_all_fanout_fanin" + " then must be computing pagerank."
+    assert not (not same_output_for_all_fanout_fanin and not compute_pagerank), msg
+except AssertionError:
+    logger.exception("[Error]: assertion failed")
+    if exit_program_on_exception:
+        logging.shutdown()
+        os._exit(0)
+#assertOld:
+#if not same_output_for_all_fanout_fanin and not compute_pagerank:
+#    logger.error("[Error]: Configuration error: if same_output_for_all_fanout_fanin"
+#        + " then must be computing pagerank.")
+#    logging.shutdown()
+#    os._exit(0)
 
 # For PageRank:
 # set tasks_use_result_dictionary_parameter = True
@@ -337,13 +424,21 @@ tasks_use_result_dictionary_parameter = compute_pagerank and True
 # tasks.
 use_shared_partitions_groups = compute_pagerank and False
 
-#assert:
+try:
+    msg = "[Error]: Configuration error: if using a single shared array of" + " partitions or groups then must run_tasks_locally and be using_threads_not_processes."
+    assert not (compute_pagerank and (use_shared_partitions_groups and not run_all_tasks_locally)), msg
+except AssertionError:
+    logger.exception("[Error]: assertion failed")
+    if exit_program_on_exception:
+        logging.shutdown()
+        os._exit(0)
+#assertOld:
 #if compute_pagerank and (use_shared_partitions_groups and not run_all_tasks_locally)):#
-if compute_pagerank and (use_shared_partitions_groups and not run_all_tasks_locally):
-    logger.error("[Internal Error]: Configuration error: if using a single shared array of"
-        + " partitions or groups then must run_tasks_locally and be using_threads_not_processes.")
-    logging.shutdown()
-    os._exit(0)
+#if compute_pagerank and (use_shared_partitions_groups and not run_all_tasks_locally):
+#    logger.error("[Error]: Configuration error: if using a single shared array of"
+#        + " partitions or groups then must run_tasks_locally and be using_threads_not_processes.")
+#    logging.shutdown()
+#    os._exit(0)
 
 # For PageRank:
 # Execute page rank partitions or execute page rank groups
@@ -366,19 +461,35 @@ use_struct_of_arrays_for_pagerank = compute_pagerank and False
 # use_multithreaded_BFS. 
 use_multithreaded_BFS = compute_pagerank and False
 
-#assert:
-if use_multithreaded_BFS and use_incremental_DAG_generation:
-    logger.error("[Internal Error]: Configuration error: if use_multithreaded_BFS"
-        + " then must not use_incremental_DAG_generation .")
-    logging.shutdown()
-    os._exit(0)
+try:
+    msg = "[Error]: Configuration error: if use_multithreaded_BFS" + " then must not use_incremental_DAG_generation ."
+    assert not (use_multithreaded_BFS and use_incremental_DAG_generation), msg
+except AssertionError:
+    logger.exception("[Error]: assertion failed")
+    if exit_program_on_exception:
+        logging.shutdown()
+        os._exit(0)
+#assertOld:
+#if use_multithreaded_BFS and use_incremental_DAG_generation:
+#    logger.error("[Error]: Configuration error: if use_multithreaded_BFS"
+#        + " then must not use_incremental_DAG_generation .")
+#    logging.shutdown()
+#    os._exit(0)
 
-#assert:
-if compute_pagerank and (use_struct_of_arrays_for_pagerank and not use_shared_partitions_groups):
-    logger.error("[Internal Error]: Configuration error: if use_struct_of_arrays_for_pagerank"
-        + " then must use_shared_partitions_groups.")
-    logging.shutdown()
-    os._exit(0)
+try:
+    msg = "[Error]: Configuration error: if use_struct_of_arrays_for_pagerank" + " then must use_shared_partitions_groups."
+    assert not (compute_pagerank and (use_struct_of_arrays_for_pagerank and not use_shared_partitions_groups)), msg
+except AssertionError:
+    logger.exception("[Error]: assertion failed")
+    if exit_program_on_exception:
+        logging.shutdown()
+        os._exit(0)
+#assertOld:
+#if compute_pagerank and (use_struct_of_arrays_for_pagerank and not use_shared_partitions_groups):
+#    logger.error("[Error]: Configuration error: if use_struct_of_arrays_for_pagerank"
+#        + " then must use_shared_partitions_groups.")
+#    logging.shutdown()
+#    os._exit(0)
 
 # When we use real lamdas, instead of reading the individual group 
 # or partition node files from cloud storage as we need them in BFS_agerank.py, 
@@ -619,10 +730,10 @@ if not_A1s and not_A2 and not_A3s and not_A4s and not_A5 and not_A6:
     pass
 """
 
-# Assert using worker processes  ==> store objects remotely
-# Assert sync_objects_in_lambdas_trigger_their_tasks ==> using_DAG_orchestrator
-# Assert using a lambda option ==> store objects in Lambdas 
-# Assert using_DAG_orchestrator ==> not run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally
+# Suggested Assert using worker processes  ==> store objects remotely
+# Suggested Assert sync_objects_in_lambdas_trigger_their_tasks ==> using_DAG_orchestrator
+# Suggested Assert using a lambda option ==> store objects in Lambdas 
+# Suggested Assert using_DAG_orchestrator ==> not run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally
 
 ##########################################
 ###### Tests start here ######
@@ -3501,96 +3612,192 @@ Test PR in Lambdas?
 """
 
 def check_asserts():
-    #assert:
-    if using_workers and not run_all_tasks_locally:
-        logger.error("[Internal Error]: Configuration error: if using_workers then must run_all_tasks_locally.")
-        logging.shutdown()
-        os._exit(0)     
-
-    #assert:
-    if bypass_call_lambda_client_invoke and run_all_tasks_locally:
-        logger.error("[Internal Error]: Configuration error: if bypass_call_lambda_client_invoke then must be running real Lambdas"
-            + " i.e., not run_all_tasks_locally.")
-        logging.shutdown()
-        os._exit(0)  
-
-    #assert:
-    if using_workers and not using_threads_not_processes:
-        if store_fanins_faninNBs_locally:
-            # When using worker processed, synch objects must be stored remoely
-            logger.error("[Internal Error]: Configuration error: if using_workers and not using_threads_not_processes"
-                + " then store_fanins_faninNBs_locally must be False.")
+    try:
+        msg = "[Error]: Configuration error: if using_workers then must run_all_tasks_locally."
+        assert not (using_workers and not run_all_tasks_locally), msg
+    except AssertionError:
+        logger.exception("[Error]: assertion failed")
+        if exit_program_on_exception:
             logging.shutdown()
             os._exit(0)
+    #assertOld:
+    #if using_workers and not run_all_tasks_locally:
+    #    logger.error("[Error]: Configuration error: if using_workers then must run_all_tasks_locally.")
+    #    logging.shutdown()
+    #    os._exit(0)     
 
-    #assert:
-    if create_all_fanins_faninNBs_on_start and not run_all_tasks_locally and store_sync_objects_in_lambdas:
-        if not map_objects_to_lambda_functions:
-            # if create sync objects on start and executing tasks in lambdas "
-            # then we must map them to function so that we can determine the 
-            # function an object is in.
-            logger.error("[Internal Error]: Configuration error: if create_all_fanins_faninNBs_on_start"
-                + " then map_objects_to_functions must be True.")
+
+    try:
+        msg = "[Error]: Configuration error: if bypass_call_lambda_client_invoke then must be running real Lambdas" + " i.e., not run_all_tasks_locally."
+        assert not (bypass_call_lambda_client_invoke and run_all_tasks_locally), msg
+    except AssertionError:
+        logger.exception("[Error]: assertion failed")
+        if exit_program_on_exception:
             logging.shutdown()
             os._exit(0)
+    #assertOld:
+    #if bypass_call_lambda_client_invoke and run_all_tasks_locally:
+    #    logger.error("[Error]: Configuration error: if bypass_call_lambda_client_invoke then must be running real Lambdas"
+    #        + " i.e., not run_all_tasks_locally.")
+    #    logging.shutdown()
+    #    os._exit(0)  
 
-    #assert:
-    if map_objects_to_lambda_functions:
-        if use_anonymous_lambda_functions:
-            # if create sync objects on start then we must map them to function so
-            # that we can determine the function an object is in.
-            logger.error("[Internal Error]: Configuration error: if map_objects_to_lambda_functions"
-                + " then use_anonymous_lambda_functions must be False.")
+    try:
+        msg = "[Error]: Configuration error: if using_workers and not using_threads_not_processes" + " then store_fanins_faninNBs_locally must be False."
+        assert not (using_workers and not using_threads_not_processes), msg
+    except AssertionError:
+        logger.exception("[Error]: assertion failed")
+        if exit_program_on_exception:
             logging.shutdown()
             os._exit(0)
+    #assertOld:
+    #if using_workers and not using_threads_not_processes:
+    #    if store_fanins_faninNBs_locally:
+    #        # When using worker processed, synch objects must be stored remoely
+    #        logger.error("[Error]: Configuration error: if using_workers and not using_threads_not_processes"
+    #            + " then store_fanins_faninNBs_locally must be False.")
+    #        logging.shutdown()
+    #        os._exit(0)
 
-    #assert:
-    if sync_objects_in_lambdas_trigger_their_tasks:
-        if run_all_tasks_locally:
-            # if create sync objects on start then we must map them to function so
-            # that we can determine the function an object is in.
-            logger.error("[Internal Error]: Configuration error: if sync_objects_in_lambdas_trigger_their_tasks"
-                + " then not run_all_tasks_locally must be True.")
+    try:
+        msg = "[Error]: Configuration error: if create_all_fanins_faninNBs_on_start" + " then map_objects_to_functions must be True."
+        # if create sync objects on start and executing tasks in lambdas "
+        # then we must map them to function so that we can determine the 
+        # function an object is in.
+        assert not (create_all_fanins_faninNBs_on_start and not run_all_tasks_locally and store_sync_objects_in_lambdas and not(not map_objects_to_lambda_functions)), msg
+    except AssertionError:
+        logger.exception("[Error]: assertion failed")
+        if exit_program_on_exception:
             logging.shutdown()
             os._exit(0)
+    #assertOld:
+    #if create_all_fanins_faninNBs_on_start and not run_all_tasks_locally and store_sync_objects_in_lambdas:
+    #    if not map_objects_to_lambda_functions:
+    #        # if create sync objects on start and executing tasks in lambdas "
+    #        # then we must map them to function so that we can determine the 
+    #        # function an object is in.
+    #        logger.error("[Error]: Configuration error: if create_all_fanins_faninNBs_on_start"
+    #            + " then map_objects_to_functions must be True.")
+    #        logging.shutdown()
+    #        os._exit(0)
 
-    # assert 
-    if compute_pagerank and use_incremental_DAG_generation and create_all_fanins_faninNBs_on_start:
-        logger.error("[Internal Error]: Configuration error: incremental_DAG_generation"
-            + " requires not create_all_fanins_faninNBs_on_start"
-            + " i.e., create synch objects on the fly since we don't know all of the synch objects "
-            + " at the start (the DAG is not complete)")
-        logging.shutdown()
-        os._exit(0) 
+    try:
+        msg = "[Error]: Configuration error: if map_objects_to_lambda_functions" + " then use_anonymous_lambda_functions must be False."
+        # if create sync objects on start then we must map them to function so
+        # that we can determine the function an object is in.
+        assert not (map_objects_to_lambda_functions and use_anonymous_lambda_functions), msg
+    except AssertionError:
+        logger.exception("[Error]: assertion failed")
+        if exit_program_on_exception:
+            logging.shutdown()
+            os._exit(0)
+    #assertOld:
+    #if map_objects_to_lambda_functions:
+    #    if use_anonymous_lambda_functions:
+    #        # if create sync objects on start then we must map them to function so
+    #        # that we can determine the function an object is in.
+    #        logger.error("[Error]: Configuration error: if map_objects_to_lambda_functions"
+    #            + " then use_anonymous_lambda_functions must be False.")
+    #        logging.shutdown()
+    #        os._exit(0)
 
-    #assert:
-    if incremental_DAG_deposit_interval < 1:
-        logger.error("[Internal Error]: Configuration error: incremental_DAG_deposit_interval"
-            + " must be >= 1. We mod by incremental_DAG_deposit_interval so it"
-            + " cannot be 0 and using a negative number makes no sense.")
-        logging.shutdown()
-        os._exit(0) 
+    try:
+        msg = "[Error]: Configuration error: if sync_objects_in_lambdas_trigger_their_tasks" + " then not run_all_tasks_locally must be True."
+        # if create sync objects on start then we must map them to function so
+        # that we can determine the function an object is in.
+        assert not (sync_objects_in_lambdas_trigger_their_tasks and run_all_tasks_locally), msg
+    except AssertionError:
+        logger.exception("[Error]: assertion failed")
+        if exit_program_on_exception:
+            logging.shutdown()
+            os._exit(0)
+    #assertOld:
+    #if sync_objects_in_lambdas_trigger_their_tasks:
+    #    if run_all_tasks_locally:
+    #        # if create sync objects on start then we must map them to function so
+    #        # that we can determine the function an object is in.
+    #        logger.error("[Error]: Configuration error: if sync_objects_in_lambdas_trigger_their_tasks"
+    #            + " then not run_all_tasks_locally must be True.")
+    #        logging.shutdown()
+    #        os._exit(0)
 
-    #assert:
-    if not same_output_for_all_fanout_fanin and not compute_pagerank:
-        logger.error("[Internal Error]: Configuration error: if same_output_for_all_fanout_fanin"
-            + " then must be computing pagerank.")
-        logging.shutdown()
-        os._exit(0)
+    try:
+        msg = "[Error]: Configuration error: incremental_DAG_generation" + " requires not create_all_fanins_faninNBs_on_start" + " i.e., create synch objects on the fly since we don't know all of the synch objects " + " at the start (the DAG is not complete)"
+        assert not (compute_pagerank and use_incremental_DAG_generation and create_all_fanins_faninNBs_on_start), msg
+    except AssertionError:
+        logger.exception("[Error]: assertion failed")
+        if exit_program_on_exception:
+            logging.shutdown()
+            os._exit(0)
+    # assertOld
+    #if compute_pagerank and use_incremental_DAG_generation and create_all_fanins_faninNBs_on_start:
+    #    logger.error("[Error]: Configuration error: incremental_DAG_generation"
+    #        + " requires not create_all_fanins_faninNBs_on_start"
+    #        + " i.e., create synch objects on the fly since we don't know all of the synch objects "
+    #        + " at the start (the DAG is not complete)")
+    #    logging.shutdown()
+    #    os._exit(0) 
 
-    #assert:
-    if compute_pagerank and (use_struct_of_arrays_for_pagerank and not use_shared_partitions_groups):
-        logger.error("[Internal Error]: Configuration error: if use_struct_of_arrays_for_pagerank"
-            + " then must use_shared_partitions_groups.")
-        logging.shutdown()
-        os._exit(0)
+    try:
+        msg = "[Error]: Configuration error: incremental_DAG_deposit_interval" + " must be >= 1. We mod by incremental_DAG_deposit_interval so it" + " cannot be 0 and using a negative number makes no sense."
+        assert not (incremental_DAG_deposit_interval < 1), msg
+    except AssertionError:
+        logger.exception("[Error]: assertion failed")
+        if exit_program_on_exception:
+            logging.shutdown()
+            os._exit(0)
+    #assertOld:
+    #if incremental_DAG_deposit_interval < 1:
+    #    logger.error("[Error]: Configuration error: incremental_DAG_deposit_interval"
+    #        + " must be >= 1. We mod by incremental_DAG_deposit_interval so it"
+    #        + " cannot be 0 and using a negative number makes no sense.")
+    #    logging.shutdown()
+    #    os._exit(0) 
 
-    #assert:
-    if compute_pagerank and (use_struct_of_arrays_for_pagerank and not use_shared_partitions_groups):
-        logger.error("[Internal Error]: Configuration error: if use_struct_of_arrays_for_pagerank"
-            + " then must use_shared_partitions_groups.")
-        logging.shutdown()
-        os._exit(0)
+    try:
+        msg = "[Error]: Configuration error: if same_output_for_all_fanout_fanin" + " then must be computing pagerank."
+        assert not (not same_output_for_all_fanout_fanin and not compute_pagerank), msg
+    except AssertionError:
+        logger.exception("[Error]: assertion failed")
+        if exit_program_on_exception:
+            logging.shutdown()
+            os._exit(0)
+    #assertOld:
+    #if not same_output_for_all_fanout_fanin and not compute_pagerank:
+    #    logger.error("[Error]: Configuration error: if same_output_for_all_fanout_fanin"
+    #        + " then must be computing pagerank.")
+    #    logging.shutdown()
+    #    os._exit(0)
+
+    try:
+        msg = "[Error]: Configuration error: if using a single shared array of" + " partitions or groups then must run_tasks_locally and be using_threads_not_processes."
+        assert not (compute_pagerank and (use_shared_partitions_groups and not run_all_tasks_locally)), msg
+    except AssertionError:
+        logger.exception("[Error]: assertion failed")
+        if exit_program_on_exception:
+            logging.shutdown()
+            os._exit(0)
+    #assertOld:
+    #if compute_pagerank and (use_struct_of_arrays_for_pagerank and not use_shared_partitions_groups):
+    #    logger.error("[Error]: Configuration error: if use_struct_of_arrays_for_pagerank"
+    #        + " then must use_shared_partitions_groups.")
+    #    logging.shutdown()
+    #    os._exit(0)
+
+    try:
+        msg = "[Error]: Configuration error: if use_struct_of_arrays_for_pagerank" + " then must use_shared_partitions_groups."
+        assert not (compute_pagerank and (use_struct_of_arrays_for_pagerank and not use_shared_partitions_groups)), msg
+    except AssertionError:
+        logger.exception("[Error]: assertion failed")
+        if exit_program_on_exception:
+            logging.shutdown()
+            os._exit(0)
+    #assertOld:
+    #if compute_pagerank and (use_struct_of_arrays_for_pagerank and not use_shared_partitions_groups):
+    #    logger.error("[Error]: Configuration error: if use_struct_of_arrays_for_pagerank"
+    #        + " then must use_shared_partitions_groups.")
+    #    logging.shutdown()
+    #    os._exit(0)
 
 test_number = 0
 # called by TestAll.py to run testX
