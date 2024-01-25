@@ -4116,7 +4116,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         # process_fanouts start the lambdas. We may use the parallel invoker on tcp_server 
                         # and piggyback the list of fanouts, or use the parallel invoker in process_fanouts.
                         try:
-                            msg = "[Error]: work loop: after process_fanouts: fanouts > 1 but no work in list_of_work_queue_or_payload_fanout_values.")
+                            msg = "[Error]: work loop: after process_fanouts: fanouts > 1 but no work in list_of_work_queue_or_payload_fanout_values."
                             assert not (len(list_of_work_queue_or_payload_fanout_values) == 0 and len(list_of_work_queue_or_payload_fanout_values) == 0), msg
                         except AssertionError:
                             logger.exception("[Error]: assertion failed")
@@ -4772,7 +4772,7 @@ def DAG_executor(payload):
 
             try:
                 dict_of_results = payload['input']
-                msg = "[Error]: starting DAG_executor for simulated lambda" + " data_dict missing value for input key " + str(key)
+                msg = "[Error]: starting DAG_executor for simulated lambda" + " data_dict missing value for input key."
                 assert DD(dict_of_results,data_dict), msg
             except AssertionError:
                 logger.exception("[Error]: assertion failed")
@@ -5294,7 +5294,7 @@ def main():
             "server": server
         }
         _thread.start_new_thread(DAG_executor_task, (payload,))
-    except Exception as ex:
+    except Exception:
         logger.exception("[ERROR] Failed to start DAG_executor thread for state 1")
         if exit_program_on_exception:
             logging.shutdown()
@@ -5310,7 +5310,7 @@ def main():
             "server": server
         }
         _thread.start_new_thread(DAG_executor_task, (payload,))
-    except Exception as ex:
+    except Exception:
         logger.exception("[ERROR] Failed to start DAG_executor thread for state 3")
         if exit_program_on_exception:
             logging.shutdown()
