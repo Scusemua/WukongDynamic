@@ -2226,10 +2226,18 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # complete only if the DAG is complete (all the grah nodes
                 # aer in a paritition.)
                 if process_continue_queue:
-                    # assert
-                    if not (compute_pagerank and use_incremental_DAG_generation):
-                        logger.error("[Error]: work loop: process_continue_queue but"
-                            +  " not compute_pagerank or not use_incremental_DAG_generation.")
+                    try:
+                        msg = "[Error]: work loop: process_continue_queue but" +  " not compute_pagerank or not use_incremental_DAG_generation."
+                        assert compute_pagerank and use_incremental_DAG_generation , msg
+                    except AssertionError:
+                        logger.exception("[Error]: assertion failed")
+                        if exit_program_on_exception:
+                            logging.shutdown()
+                            os._exit(0)
+                    # assertOld
+                    #if not (compute_pagerank and use_incremental_DAG_generation):
+                    #    logger.error("[Error]: work loop: process_continue_queue but"
+                    #        +  " not compute_pagerank or not use_incremental_DAG_generation.")
 
                     # The first partition was obtained from the continue queue 
                     # when we got the new DAG_info and there should be no more
@@ -2349,7 +2357,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                     for key, value in dict_of_results.items():
                                         data_dict[key] = value
                                 #else: dict_of_results == None 
-                                #  assert state is -1
+                                #  Suggest assert state is -1
 
                                 logger.trace("DAG_executor_work_loop: got work/-1 for thread " + thread_name
                                     + " state is " + str(DAG_executor_state.state))
@@ -2736,11 +2744,19 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         # old design
                         #worker_needs_input = cluster_queue.qsize() == 0
 
-                        #assert:
+                        try:
+                            msg = "[Error]: DAG_executor_work_loop: cluster_queue.qsize() == 0 was true before" + " we got work from worker queue but not after - queue size should not change."
+                            assert cluster_queue.qsize() == 0 , msg
+                        except AssertionError:
+                            logger.exception("[Error]: assertion failed")
+                            if exit_program_on_exception:
+                                logging.shutdown()
+                                os._exit(0)
+                        #assertOld:
                         # cluster_queue was empty so we got work, which means the ecluster_queue should still be empty.
-                        if not cluster_queue.qsize() == 0:
-                            logger.error("[Error]: DAG_executor_work_loop: cluster_queue.qsize() == 0 was true before"
-                                + " we got work from worker queue but not after - queue size should not change.")
+                        #if not cluster_queue.qsize() == 0:
+                        #    logger.error("[Error]: DAG_executor_work_loop: cluster_queue.qsize() == 0 was true before"
+                        #        + " we got work from worker queue but not after - queue size should not change.")
 
     #rhc: cluster:
                         # Do not do this
@@ -2769,10 +2785,18 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             + " got state " + str(DAG_executor_state.state))
 
     #rhc: cluster:
-                        #assert:
-                        if not cluster_queue.qsize() == 0:
-                            logger.error("[Error]: DAG_executor_work_loop: cluster_queue contained"
-                                + " more than one item of work - queue size > 0 after cluster_queue.get")
+                        try:
+                            msg = "[Error]: DAG_executor_work_loop: cluster_queue contained" + " more than one item of work - queue size > 0 after cluster_queue.get"
+                            assert cluster_queue.qsize() == 0, msg
+                        except AssertionError:
+                            logger.exception("[Error]: assertion failed")
+                            if exit_program_on_exception:
+                                logging.shutdown()
+                                os._exit(0)
+                        #assertOld:
+                        #if not cluster_queue.qsize() == 0:
+                        #    logger.error("[Error]: DAG_executor_work_loop: cluster_queue contained"
+                        #        + " more than one item of work - queue size > 0 after cluster_queue.get")
 
                         logger.info(thread_name + " DAG_executor_work_loop: Worker doesn't access work_queue")
                         logger.info("**********************" + thread_name + " process cluster_queue state: " + str(DAG_executor_state.state))
@@ -2939,23 +2963,39 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 logger.trace("work_loop: first_iteration_of_work_loop_for_lambda: "
                     + str(first_iteration_of_work_loop_for_lambda))
                 # Note: not using_workers is True
-                # assert: 
-                if first_iteration_of_work_loop_for_lambda and not (compute_pagerank and use_incremental_DAG_generation and continued_task):
-                    if cluster_queue.qsize() == 0:
-                        logger.trace("[Error]: DAG_executor_work_loop:"
-                            + " first_iteration_of_work_loop_for_lambda and not continued_task"
-                            + " but cluster_queue.qsize() is 0; the state of a lambda that has"
-                            + " not been restarted for incremental DAG generation shoudl be added"
-                            + " to the cluster_queue at the start of the work loop.")
+                try:
+                    msg = "[Error]: DAG_executor_work_loop:" + " first_iteration_of_work_loop_for_lambda and not continued_task" + " but cluster_queue.qsize() is 0; the state of a lambda that has" + " not been restarted for incremental DAG generation shoudl be added" + " to the cluster_queue at the start of the work loop."
+                    assert not (first_iteration_of_work_loop_for_lambda and not (compute_pagerank and use_incremental_DAG_generation and continued_task) and cluster_queue.qsize() == 0) , msg
+                except AssertionError:
+                    logger.exception("[Error]: assertion failed")
+                    if exit_program_on_exception:
+                        logging.shutdown()
+                        os._exit(0)
+                #assertOld:
+                #if first_iteration_of_work_loop_for_lambda and not (compute_pagerank and use_incremental_DAG_generation and continued_task):
+                #    if cluster_queue.qsize() == 0:
+                #        logger.trace("[Error]: DAG_executor_work_loop:"
+                #            + " first_iteration_of_work_loop_for_lambda and not continued_task"
+                #            + " but cluster_queue.qsize() is 0; the state of a lambda that has"
+                #            + " not been restarted for incremental DAG generation shoudl be added"
+                #            + " to the cluster_queue at the start of the work loop.")
 #rhc: lambda inc:
                 if compute_pagerank and use_incremental_DAG_generation and continued_task and continue_queue.qsize() > 0:
-                    # assert: For lambdas, we never put anything in the continue_queue
+                    try:
+                        msg = "[Error]: DAG_executor_work_loop:" + " continue_queue.qsize() is > 0 for lambda but not" + " first_iteration_of_work_loop_for_lambda."
+                        assert first_iteration_of_work_loop_for_lambda , msg
+                    except AssertionError:
+                        logger.exception("[Error]: assertion failed")
+                        if exit_program_on_exception:
+                            logging.shutdown()
+                            os._exit(0)
+                    # assertOld: For lambdas, we never put anything in the continue_queue
                     # except the state of a restarted lambda, whcih we add at the start 
                     # of the work loop
-                    if not first_iteration_of_work_loop_for_lambda:
-                        logger.error("[Error]: DAG_executor_work_loop:"
-                            + " continue_queue.qsize() is > 0 for lambda but not"
-                            + " first_iteration_of_work_loop_for_lambda.")
+                    #if not first_iteration_of_work_loop_for_lambda:
+                    #    logger.error("[Error]: DAG_executor_work_loop:"
+                    #        + " continue_queue.qsize() is > 0 for lambda but not"
+                    #        + " first_iteration_of_work_loop_for_lambda.")
 
                     # if we fail the assertion above we will terminate
                     # the program.
@@ -2965,15 +3005,24 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     continue_tuple = continue_queue.get()
                     DAG_executor_state.state = continue_tuple[0]
                     continued_due_to_TBC = continue_tuple[1]
-                    # assert: continued_due_to_TBC must be True since
+                    try:
+                        msg = "[Error]: For lambda, continued_task is True" + " but continued_due_to_TBC is False."
+                        assert continued_due_to_TBC , msg
+                    except AssertionError:
+                        logger.exception("[Error]: assertion failed")
+                        if exit_program_on_exception:
+                            logging.shutdown()
+                            os._exit(0)
+                    # assertOld: continued_due_to_TBC must be True since
                     # continued_task is True for lambda - Since we found continued_task
                     # was true for lambda at the start we added the task to the continue
                     # queue with the continued_due_to_TBC field of the continue_tuple
                     # set to True so it should be True here when we take the tuple out
                     # (immediately after adding the tuple to the continue queue.)
-                    if not continued_due_to_TBC:
-                        logger.error("[Error]: For lambda, continued_task is True"
-                            + " but continued_due_to_TBC is False.")
+                    #if not continued_due_to_TBC:
+                    #    logger.error("[Error]: For lambda, continued_task is True"
+                    #        + " but continued_due_to_TBC is False.")
+
                     continued_task = continued_due_to_TBC
                     logger.info("lambda continued task is true")
 
@@ -2988,10 +3037,18 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         + " cluster_queue contains work: got state " + str(DAG_executor_state.state)
                         + " for task name " + dummy_state_info.task_name)
 #rhc: cluster:
-                    #assert:
-                    if not cluster_queue.qsize() == 0:
-                        logger.error("[Error]: DAG_executor_work_loop: simulated or real lambda:"
-                            + " cluster_queue contained more than one item of work - queue size > 0 after cluster_queue.get")
+                    try:
+                        msg = "[Error]: DAG_executor_work_loop: simulated or real lambda:" + " cluster_queue contained more than one item of work - queue size > 0 after cluster_queue.get"
+                        assert cluster_queue.qsize() == 0 , msg
+                    except AssertionError:
+                        logger.exception("[Error]: assertion failed")
+                        if exit_program_on_exception:
+                            logging.shutdown()
+                            os._exit(0)
+                    #assertOld:
+                    #if not cluster_queue.qsize() == 0:
+                    #    logger.error("[Error]: DAG_executor_work_loop: simulated or real lambda:"
+                    #       + " cluster_queue contained more than one item of work - queue size > 0 after cluster_queue.get")
 #rhc: lambda inc:
                 else:
                     logger.trace("[Error]: DAG_executor_work_loop:"
@@ -3231,13 +3288,22 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             + state_info.task_name + " is a leaf task so do not get its collapse task"
                             + " instead, execute the leaf task.")
                 else:
-                    # assert: continued_task should be set to False if we get a tuple from the continue_queue
+                    try:
+                        msg = "[Error]: continued_task is true for a leaf task that" + " is not the first leaf task/partition/group in the DAG (PR!_1)."
+                        assert not continued_task , msg
+                    except AssertionError:
+                        logger.exception("[Error]: assertion failed")
+                        if exit_program_on_exception:
+                            logging.shutdown()
+                            os._exit(0)
+                    # assertOld: continued_task should be set to False if we get a tuple from the continue_queue
                     # for a leaf task that is not the first leaf task/partition/grup PR1_1 in the DAG.
-                    if continued_task:
-                        logger.error("[Error]: continued_task is true for a leaf task that"
-                            + " is not the first leaf task/partition/group in the DAG (PR!_1).")
-                        logging.shutdown()
-                        os._exit(0)
+                    #if continued_task:
+                    #    logger.error("[Error]: continued_task is true for a leaf task that"
+                    #        + " is not the first leaf task/partition/group in the DAG (PR!_1).")
+                    #   logging.shutdown()
+                    #    os._exit(0)
+
                     # if continued tasks is TRUE this will set it to False
                     continued_task = False
                     
@@ -3879,12 +3945,20 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     logger.info("DAG_executor_work_loop: check TBC of collapsed task state info: "
                         + str(state_info_of_collapse_task))
                     if state_info_of_collapse_task.ToBeContinued:
-                        # assert: if P has a collapsed task C and C's state_info says C is TBC then 
+                        try:
+                            msg = "[Error]: P has a collapse task that is TBC but" + " P does not thnk it has a TBC collapse task based on" + " fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued."
+                            assert state_info.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued , msg
+                        except AssertionError:
+                            logger.exception("[Error]: assertion failed")
+                            if exit_program_on_exception:
+                                logging.shutdown()
+                                os._exit(0)
+                        # assertOld: if P has a collapsed task C and C's state_info says C is TBC then 
                         # P's state_info should indicate that P has a TBC collapse
-                        if not state_info.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued:
-                            logger.error("[Error]: P has a collapse task that is TBC but"
-                                + " P does not thnk it has a TBC collapse task based on"
-                                + " fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued.")
+                        #if not state_info.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued:
+                        #    logger.error("[Error]: P has a collapse task that is TBC but"
+                        #        + " P does not thnk it has a TBC collapse task based on"
+                        #        + " fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued.")
                             
                         # put current state in the continue_queue. Noet, we have excuted the current
                         # state/task, which is a partition. We put this state in the coninue queue, not the 
@@ -3965,7 +4039,15 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         logger.trace("DAG_executor_work_loop: put collapsed work in cluster_queue:"
                             + " state is " + str(DAG_executor_state.state))
 
-                    # assert:
+                    try:
+                        msg = "[Error]: DAG_executor_work_loop:" + " fanout_fanin_faninNB_collapse_groups of current partition is not" + " equal to ToBeContinued of collapse task (next partition)."
+                        assert state_info.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued == state_info_of_collapse_task.ToBeContinued , msg
+                    except AssertionError:
+                        logger.exception("[Error]: assertion failed")
+                        if exit_program_on_exception:
+                            logging.shutdown()
+                            os._exit(0)
+                    # assertOld:
                     # For partitions, we currently grab the collapse of the current
                     # partition, which is the only thing to do since there are no 
                     # fanouts/fanins/faninNBs for partitions, and check the 
@@ -3973,12 +4055,12 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # collapse task in the contine queue. The TBC of the collapse, 
                     # which is effectively the TBC of the next partition, should equal
                     # the fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued of the current partition.
-                    if not state_info.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued == state_info_of_collapse_task.ToBeContinued:
-                        logger.error("[Error]: DAG_executor_work_loop:"
-                            + " fanout_fanin_faninNB_collapse_groups of current partition is not"
-                            + " equal to ToBeContinued of collapse task (next partition).")
-                        logging.shutdown()
-                        os._exit(0)
+                    #if not state_info.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued == state_info_of_collapse_task.ToBeContinued:
+                    #    logger.error("[Error]: DAG_executor_work_loop:"
+                    #       + " fanout_fanin_faninNB_collapse_groups of current partition is not"
+                    #        + " equal to ToBeContinued of collapse task (next partition).")
+                    #    logging.shutdown()
+                    #    os._exit(0)
 
             # Note: for multithreaded workers, there is no difference between adding work to the 
             # work queue and adding it to the cluster_queue, i.e., the cluster_queue doesn't eliminate 
@@ -3995,7 +4077,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 # ------------------------------------------------------------------
 
             elif len(state_info.faninNBs) > 0 or len(state_info.fanouts) > 0:
-                # assert len(collapse) + len(fanin) == 0
+                # Suggested assert len(collapse) + len(fanin) == 0
                 # If len(state_info.collapse) > 0 then there are no fanins, fanouts, or faninNBs and we will not excute this elif or the else
 
                 
@@ -4033,12 +4115,20 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         # Note: We are not currently piggybacking this list whn we use lambdas; instead,
                         # process_fanouts start the lambdas. We may use the parallel invoker on tcp_server 
                         # and piggyback the list of fanouts, or use the parallel invoker in process_fanouts.
-                        # assert:
-                        if len(state_info.fanouts) > 0: # Note: this is the length after removing the become fanout 
-                            # We became one fanout task and removed it from fanouts, but there maybe were more fanouts
-                            # and we should have added the fanouts to list_of_work_queue_or_payload_fanout_values.
-                            if len(list_of_work_queue_or_payload_fanout_values) == 0:
-                                logger.error("[Error]: work loop: after process_fanouts: fanouts > 1 but no work in list_of_work_queue_or_payload_fanout_values.")
+                        try:
+                            msg = "[Error]: work loop: after process_fanouts: fanouts > 1 but no work in list_of_work_queue_or_payload_fanout_values.")
+                            assert not (len(list_of_work_queue_or_payload_fanout_values) == 0 and len(list_of_work_queue_or_payload_fanout_values) == 0), msg
+                        except AssertionError:
+                            logger.exception("[Error]: assertion failed")
+                            if exit_program_on_exception:
+                                logging.shutdown()
+                                os._exit(0)
+                        # assertOld:
+                        #if len(state_info.fanouts) > 0: # Note: this is the length after removing the become fanout 
+                        #    # We became one fanout task and removed it from fanouts, but there maybe were more fanouts
+                        #    # and we should have added the fanouts to list_of_work_queue_or_payload_fanout_values.
+                        #    if len(list_of_work_queue_or_payload_fanout_values) == 0:
+                        #       logger.error("[Error]: work loop: after process_fanouts: fanouts > 1 but no work in list_of_work_queue_or_payload_fanout_values.")
                     # else: # Config: A1, A2, A3, A4_local, A4_Remote
 
 #rhc: cluster:      # Add become task to cluster queue
@@ -4058,9 +4148,17 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # work for us we will need input, so set to True here as default.
                     #Note: setting worker_needs_input = True must be guarded by using_workers
 #rhc: cluster:
-                    #assert
-                    if cluster_queue.qsize() > 0:
-                        logger.error("[Error]: No fanouts but cluster_queue.qsize() > 0.")
+                    try:
+                        msg = "[Error]: No fanouts but cluster_queue.qsize() > 0."
+                        assert not (cluster_queue.qsize() > 0), msg
+                    except AssertionError:
+                        logger.exception("[Error]: assertion failed")
+                        if exit_program_on_exception:
+                            logging.shutdown()
+                            os._exit(0)
+                    #assertOld
+                    #if cluster_queue.qsize() > 0:
+                    #    logger.error("[Error]: No fanouts but cluster_queue.qsize() > 0.")
 #rhc: cluster:
                     #Do NOT do this.
                     #if using_workers: 
@@ -4121,17 +4219,35 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         # as multiprocessing in Python.
                         #or (run_all_tasks_locally and not using_workers and using_Lambda_Function_Simulator):
  
-                        # assert
-                        if store_fanins_faninNBs_locally:
-                            # Config: A2, A4_local
-                            logger.error("[Error]: DAG_executor_work_loop: using processes or lambdas but storing FanINNBs locally.")
+                        try:
+                            msg = "[Error]: DAG_executor_work_loop: using processes or lambdas but storing FanINNBs locally.")
+                            assert not (store_fanins_faninNBs_locally), msg
+                        except AssertionError:
+                            logger.exception("[Error]: assertion failed")
+                            if exit_program_on_exception:
+                                logging.shutdown()
+                                os._exit(0)
+                        # assertOld
+                        #if store_fanins_faninNBs_locally:
+                        #    # Config: A2, A4_local
+                        #    logger.error("[Error]: DAG_executor_work_loop: using processes or lambdas but storing FanINNBs locally.")
+                                
                         if not run_all_tasks_locally:
                             # Config: A1
     #rhc: cluster:
                             #Okay - this was set above
-                            if worker_needs_input:
-                                # Note: perhaps we csn use Lmbdas where Lambdas have two thread workers - faster?
-                                logger.error("[Error]: DAG_executor_work_loop: using lambdas, so no workers, but worker_needs_input.")
+                            try:
+                                msg = "[Error]: DAG_executor_work_loop: using lambdas, so no workers, but worker_needs_input."
+                                assert not (worker_needs_input), msg
+                            except AssertionError:
+                                logger.exception("[Error]: assertion failed")
+                                if exit_program_on_exception:
+                                    logging.shutdown()
+                                    os._exit(0)
+                            #assertOld
+                            #if worker_needs_input:
+                            #    # Note: perhaps we csn use Lmbdas where Lambdas have two thread workers - faster?
+                            #    logger.error("[Error]: DAG_executor_work_loop: using lambdas, so no workers, but worker_needs_input.")
 
 #rhc: cluster:
                         #Note: we are using worker_needs_input so it needs to have been set above
@@ -4165,7 +4281,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         logger.trace("work loop: async_call:" + str(async_call))
 
 #rhc: cluster:
-                        # for assert below
+                        # used for assert below
                         save_worker_needs_input = worker_needs_input
 
                         #Note: using worker processes - batch calls to fan_in for FaninNBs
@@ -4180,28 +4296,45 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             DAG_info.get_all_faninNB_task_names(),
                             DAG_info.get_all_faninNB_sizes())
 
-                        # assert:
-                        if worker_needs_input and not using_workers:
-                            logger.error("[Error]: after process_faninNBs_batch"
-                                + " worker_needs_input is True when not using workers.")
+                        try:
+                            msg = "[Error]: after process_faninNBs_batch" + " worker_needs_input is True when not using workers."
+                            assert not (worker_needs_input and not using_workers), msg
+                        except AssertionError:
+                            logger.exception("[Error]: assertion failed")
+                            if exit_program_on_exception:
+                                logging.shutdown()
+                                os._exit(0)
+                        # assertOld:
+                        #if worker_needs_input and not using_workers:
+                        #    logger.error("[Error]: after process_faninNBs_batch"
+                        #       + " worker_needs_input is True when not using workers.")
 
 #rhc: cluster:
-                        # assert:
-                        if using_workers and worker_needs_input != save_worker_needs_input:
-                        #    # Note: worker_needs_input was True at now it is false. 
-                        #    # Note: process_faninNBs does not set process_faninNBs to True. It
-                        #    # can only set worker_needs_input to False. So either worker_needs_input
-                        #    # statrs as True and is set to False, or it starts as False and remains
-                        #    # False. If worker_needs_input starts as True, then save_worker_needs_input
-                        #    # will be True. If process_faninNBs sets worker_needs_input to False,
-                        #    # then worker_needs_input and save_worker_needs_input will be different.
-                        #    # When process_faninNBs sets worker_needs_input to False, it is because it
-                        #    # also deposted a become task in the cluster queue, so the cluster_queue
-                        #    # shudl not be different.
-                            if cluster_queue.qsize() == 0:
-                                logger.error("[Error]: process_faninNBs_batch set"
-                                    + " worker_needs_input to False when using workers but cluster_queue"
-                                    + " size is 0.")
+
+                        try:
+                            msg = "[Error]: process_faninNBs_batch set" + " worker_needs_input to False when using workers but cluster_queue" + " size is 0."
+                            assert not (using_workers and worker_needs_input != save_worker_needs_input and not cluster_queue.qsize() == 0), msg
+                        except AssertionError:
+                            logger.exception("[Error]: assertion failed")
+                            if exit_program_on_exception:
+                                logging.shutdown()
+                                os._exit(0)
+                        # assertOld:
+                        #if using_workers and worker_needs_input != save_worker_needs_input:
+                        ##    # Note: worker_needs_input was True at now it is false. 
+                        ##    # Note: process_faninNBs does not set process_faninNBs to True. It
+                        ##    # can only set worker_needs_input to False. So either worker_needs_input
+                        ##    # statrs as True and is set to False, or it starts as False and remains
+                        ##    # False. If worker_needs_input starts as True, then save_worker_needs_input
+                        ##    # will be True. If process_faninNBs sets worker_needs_input to False,
+                        ##    # then worker_needs_input and save_worker_needs_input will be different.
+                        ##    # When process_faninNBs sets worker_needs_input to False, it is because it
+                        ##    # also deposted a become task in the cluster queue, so the cluster_queue
+                        ##    # shudl not be different.
+                        #     if cluster_queue.qsize() == 0:
+                        #        logger.error("[Error]: process_faninNBs_batch set"
+                        #           + " worker_needs_input to False when using workers but cluster_queue"
+                        #            + " size is 0.")
                     else: 
                         # Config: A2, A3, A4_local, A4_Remote
                         # using worker threads not processes, or using threads to simualate running lambdas,
@@ -4229,13 +4362,21 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             logger.error("[Error]: after process_faninNBs"
                                 + " worker_needs_input is True when not using workers.")
 #rhc: cluster:
-                        # assert:
-                        if using_workers and worker_needs_input != save_worker_needs_input:
-                        #    # Note: See comment in same assertion above.
-                            if cluster_queue.qsize() == 0:
-                                logger.error("[Error]: process_faninNBs set"
-                                    + " worker_needs_input to False when using workers but cluster_queue"
-                                    + " size is 0.")
+                        try:
+                            msg = "[Error]: process_faninNBs set" + " worker_needs_input to False when using workers but cluster_queue" + " size is 0."
+                            assert not (using_workers and worker_needs_input != save_worker_needs_input and cluster_queue.qsize() == 0), msg
+                        except AssertionError:
+                            logger.exception("[Error]: assertion failed")
+                            if exit_program_on_exception:
+                                logging.shutdown()
+                                os._exit(0)
+                        # assertOld:
+                        #if using_workers and worker_needs_input != save_worker_needs_input:
+                        ##    # Note: See comment in same assertion above.
+                        #    if cluster_queue.qsize() == 0:
+                        #        logger.error("[Error]: process_faninNBs set"
+                        #            + " worker_needs_input to False when using workers but cluster_queue"
+                        #            + " size is 0.")
 
                     # there can be faninNBs and fanouts.
 
@@ -4257,18 +4398,38 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             # piggyback list_of_work_queue_or_payload_fanout_values on the call to process_faninNBs_batch.
  
 # rhc: cluster:
-                            # assert:
-                            if cluster_queue.qsize()==0:
-                            #if worker_needs_input:
-                                # when there is at least one fanout we will become one of the fanout tasks
-                                # so we should not need work.
-                                logger.error("[Error]: work loop: fanouts but worker needs work.")
+                            try:
+                                msg = "[Error]: work loop: fanouts but worker needs work."
+                                assert not (cluster_queue.qsize()==0), msg
+                            except AssertionError:
+                                logger.exception("[Error]: assertion failed")
+                                if exit_program_on_exception:
+                                    logging.shutdown()
+                                    os._exit(0)
+                            # assertOld:
+                            #if cluster_queue.qsize()==0:
+                            ##if worker_needs_input:
+                            #    # when there is at least one fanout we will become one of the fanout tasks
+                            #    # so we should not need work.
+                            #    logger.error("[Error]: work loop: fanouts but worker needs work.")
  
                             if len(state_info.fanouts) > 1:
                                 # We became one fanout task but there were more and we should have added the 
                                 # fanouts to list_of_work_queue_or_payload_fanout_values.
-                                if len(list_of_work_queue_or_payload_fanout_values) == 0:
-                                    logger.error("[Error]: work loop: fanouts > 1 but no work in list_of_work_queue_or_payload_fanout_values.")
+                                try:
+                                    msg = "[Error]: work loop: fanouts > 1 but no work in list_of_work_queue_or_payload_fanout_values.")
+                                    assert not (len(list_of_work_queue_or_payload_fanout_values) == 0), msg
+                                except AssertionError:
+                                    logger.exception("[Error]: assertion failed")
+                                    if exit_program_on_exception:
+                                        logging.shutdown()
+                                        os._exit(0)
+                                #assertOld
+                                #if len(list_of_work_queue_or_payload_fanout_values) == 0:
+                                #    logger.error("[Error]: work loop: fanouts > 1 but no work in list_of_work_queue_or_payload_fanout_values.")
+                                #    logging.shutdown()
+                                #    os._exit(0) 
+                                                                      
                                 # since we could not piggyback on process_faninNB_batch, enqueue the fanouts
                                 # directly into the work_queue
                                 logger.trace(thread_name + " work loop: no faninNBs so enqueue fanouts directly.")
@@ -4278,10 +4439,21 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                 work_queue.put_all(list_of_work_queue_or_payload_fanout_values)
                                 # list_of_work_queue_or_payload_fanout_values is redefined on next iteration
                             else:
-                                # assert
+                                try:
+                                    msg = "[Error]: work loop: len(state_info.fanouts) is 1 but list_of_work_queue_or_payload_fanout_values is not empty."
+                                    assert len(list_of_work_queue_or_payload_fanout_values) == 0 , msg
+                                except AssertionError:
+                                    logger.exception("[Error]: assertion failed")
+                                    if exit_program_on_exception:
+                                        logging.shutdown()
+                                        os._exit(0)
+                                # assertOld:
                                 # there was one fanout so we became that one fanout and should have enqueued no fanouts
-                                if not len(list_of_work_queue_or_payload_fanout_values) == 0:
-                                    logger.error("[Error]: work loop: len(state_info.fanouts) is 1 but list_of_work_queue_or_payload_fanout_values is not empty.")
+                                #if not len(list_of_work_queue_or_payload_fanout_values) == 0:
+                                #    logger.error("[Error]: work loop: len(state_info.fanouts) is 1 but list_of_work_queue_or_payload_fanout_values is not empty.")
+                                #    logging.shutdown()
+                                #    os._exit(0)
+                                        
                     # else: # Config: A1, A2, A3, A4_local, A4_Remote
                 # If we are not using_workers and there were fanouts then continue with become 
                 # task; otherwise, this thread (simulatng a Lambda) or Lambda is done, as it has reached the
@@ -4381,7 +4553,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 # ------------------------------------------------------------------
 
             elif len(state_info.fanins) > 0:
-                # assert len(state_info.faninNBs)  + len(state_info.fanouts) + len(collapse) == 0
+                # Suggested assert len(state_info.faninNBs)  + len(state_info.fanouts) + len(collapse) == 0
                 # if faninNBs or fanouts then can be no fanins. length of faninNBs and fanouts must be 0 
                 DAG_executor_state.state = DAG_info.get_DAG_states()[state_info.fanins[0]]
                 #state = DAG_info.get_DAG_states()[state_info.fanins[0]]
@@ -4566,7 +4738,7 @@ def DAG_executor(payload):
 # there; thus we do not need the output in the payloa and we do 
 # need to add the output to the data_dict, which is something we
 # do for real lambdas (in DAG_executor_lambda).
-    #assert: the payload "input" is in the shared global data_dict
+    #The payload "input" should be in the shared global data_dict
     DAG_map = DAG_info.get_DAG_map()
     
     if not using_workers:
@@ -4580,23 +4752,50 @@ def DAG_executor(payload):
         is_leaf_task = state_info.task_name in DAG_info.get_DAG_leaf_tasks()
         logger.info("DAG_executor: state_info.task_name: " + state_info.task_name
             + " is_leaf_task: " + str(is_leaf_task))
-        # assert:
+
         if not is_leaf_task:
-            logger.trace("DAG_executor(): verify inputs are in data_dict: ")
-            # lambdas invoked with inputs. We do not add leaf task inputs to the data
-            # dictionary, we use them directly when we execute the leaf task.
-            # Also, leaf task inputs are not in a dictionary.
-            dict_of_results = payload['input']
-            for key, _value in dict_of_results.items():
-                #data_dict[key] = _value
-                value_in_dict = data_dict.get(key,None)
-                if value_in_dict == None:
-                    logger.error("[Error]: starting DAG_executor for simulated lambda"
-                        + " data_dict missing value for input key " + str(key))
+
+            def DD(dict_of_results,data_dict):
+                logger.trace("DAG_executor(): verify inputs are in data_dict: ")
+                for key, _value in dict_of_results.items():
+                    #data_dict[key] = _value
+                    value_in_dict = data_dict.get(key,None)
+                    if value_in_dict == None:
+                        logger.error("[Error]:(part of assertion error: starting DAG_executor for simulated lambda"
+                            + " data_dict missing value for input key " + str(key))
+                        #logging.shutdown()
+                        #os._exit(0)
+                        return False
+                    else:
+                        logger.trace("DAG_executor:verified: " + str(key))
+                return True
+
+            try:
+                dict_of_results = payload['input']
+                msg = "[Error]: starting DAG_executor for simulated lambda" + " data_dict missing value for input key " + str(key)
+                assert DD(dict_of_results,data_dict), msg
+            except AssertionError:
+                logger.exception("[Error]: assertion failed")
+                if exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0)
-                else:
-                    logger.trace("DAG_executor:verified: " + str(key))
+            # assertOld:
+            #logger.trace("DAG_executor(): verify inputs are in data_dict: ")
+            ## lambdas invoked with inputs. We do not add leaf task inputs to the data
+            ## dictionary, we use them directly when we execute the leaf task.
+            ## Also, leaf task inputs are not in a dictionary.
+            #dict_of_results = payload['input']
+            #for key, _value in dict_of_results.items():
+            #    #data_dict[key] = _value
+            #    value_in_dict = data_dict.get(key,None)
+            #    if value_in_dict == None:
+            #        logger.error("[Error]: starting DAG_executor for simulated lambda"
+            #            + " data_dict missing value for input key " + str(key))
+            #        logging.shutdown()
+            #        os._exit(0)
+            #    else:
+            #        logger.trace("DAG_executor:verified: " + str(key))
+                    
 #rhc:  input output
             if continued_task:
                 state_info.task_inputs = dict_of_results
@@ -4641,12 +4840,20 @@ def DAG_executor(payload):
     #else:
     #    DAG_infobuffer_monitor = wukongdnc.dag.DAG_infoBuffer_Monitor_for_threads.DAG_infobuffer_monitor
 
-    # assert: 
-    if run_all_tasks_locally and (using_workers or not using_workers) and compute_pagerank and use_incremental_DAG_generation and using_threads_not_processes:
-        if wukongdnc.dag.DAG_infoBuffer_Monitor_for_threads.DAG_infobuffer_monitor == None:
-            logger.error("[Error]: method DAG_executor: DAG_infobuffer_monitor is None.")
+    try:
+        msg = "[Error]: method DAG_executor: DAG_infobuffer_monitor is None."
+        assert not (run_all_tasks_locally and (using_workers or not using_workers) and compute_pagerank and use_incremental_DAG_generation and using_threads_not_processes and wukongdnc.dag.DAG_infoBuffer_Monitor_for_threads.DAG_infobuffer_monitor == None), msg
+    except AssertionError:
+        logger.exception("[Error]: assertion failed")
+        if exit_program_on_exception:
             logging.shutdown()
             os._exit(0)
+    # assertOld:
+    #if run_all_tasks_locally and (using_workers or not using_workers) and compute_pagerank and use_incremental_DAG_generation and using_threads_not_processes:
+    #    if wukongdnc.dag.DAG_infoBuffer_Monitor_for_threads.DAG_infobuffer_monitor == None:
+    #        logger.error("[Error]: method DAG_executor: DAG_infobuffer_monitor is None.")
+    #        logging.shutdown()
+    #        os._exit(0)
 
 #rhc: groups partitions
     # For worker proceses, we do not read all the groups/partitions

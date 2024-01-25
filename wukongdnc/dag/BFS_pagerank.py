@@ -968,16 +968,22 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
 
             pagerank_value_of_parent_node = ((shared_nodes[position_of_shadow_node].pagerank - random_jumping)  / one_minus_dumping_factor)
             #rhc shared
-            #assert
-            if not parent_of_shadow_node.pagerank == pagerank_value_of_parent_node:
-                logger.error("[Error]: " 
-                    + task_file_name + " pagerank value to be set for parent of shadow node: "
-                    + str(pagerank_value_of_parent_node)
-                    + " is not the current pagerank value of the parent node: "
-                    + str(parent_of_shadow_node.pagerank))
-            else:
-                logger.error(task_file_name + ": Foxoxoxoxoxoxoxoxoxoxoxox")
-
+            try:
+                msg = "[Error]: " + task_file_name + " pagerank value to be set for parent of shadow node: " + str(pagerank_value_of_parent_node) + " is not the current pagerank value of the parent node: " + str(parent_of_shadow_node.pagerank)
+                assert parent_of_shadow_node.pagerank == pagerank_value_of_parent_node , msg
+            except AssertionError:
+                logger.exception("[Error]: assertion failed")
+                if exit_program_on_exception:
+                    logging.shutdown()
+                    os._exit(0)
+            #assertOld
+            #if not parent_of_shadow_node.pagerank == pagerank_value_of_parent_node:
+            #    logger.error("[Error]: " 
+            #        + task_file_name + " pagerank value to be set for parent of shadow node: "
+            #        + str(pagerank_value_of_parent_node)
+            #        + " is not the current pagerank value of the parent node: "
+            #       + str(parent_of_shadow_node.pagerank))
+ 
             # set the pagerank of the parent_of_shadow_node so that when we recompute
             # the pagerank of the shadow_node we alwas get the same value.
             #parent_of_shadow_node.pagerank = (

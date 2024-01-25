@@ -269,7 +269,7 @@ class Node:
             print("process dependent " + s.get_task_name())
             enablers = s.get_pred()	# e is an enabler of s if e --> s. Note: List of enablers of s includes T   
             if len(enablers) == 1:
-                # assert: enablers[0] = T
+                # Suggested assert: enablers[0] = T
                 if len(dependents_of_T) == 1:
                     collapse.append(s.get_task_name())   				# append task_name of Node s as a collapsed task of T in List collapse
                     if not s.get_task_name() in Node.all_collapse_task_names:
@@ -311,18 +311,54 @@ class Node:
         else:
             number_dependents_of_T = len(dependents_of_T)
 		# all dependents must be accounted for
-        if len(fanouts) + len(fanins) + len(faninNBs) + len(collapse) != number_dependents_of_T:
-            print("Error 1") 
-        if len(fanins) > 0:	# can only be one fanin and no fanin or faninNB
-            if not len(fanins) == 1 and len(fanouts) == 0 and len(faninNBs) == 0:
-                print("Error 2") 
-        if len(faninNBs) > 0: # cannot be any fanins
-            if len(fanins) > 0:
-                print("Error 3")
+        try:
+            msg = "Error 1"
+            assert not (len(fanouts) + len(fanins) + len(faninNBs) + len(collapse) != number_dependents_of_T), msg
+        except AssertionError:
+            logger.exception("[Error]: assertion failed")
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
+        #assertOld:
+        #if len(fanouts) + len(fanins) + len(faninNBs) + len(collapse) != number_dependents_of_T:
+        #    print("Error 1") 
+        try:
+            msg = "Error 2"
+            assert not (len(fanins) > 0 and not (len(fanins) == 1 and len(fanouts) == 0 and len(faninNBs) == 0)), msg
+        except AssertionError:
+            logger.exception("[Error]: assertion failed")
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
+        #assertOld:
+        #if len(fanins) > 0:	# can only be one fanin and no fanin or faninNB
+        #    if not len(fanins) == 1 and len(fanouts) == 0 and len(faninNBs) == 0:
+        #        print("Error 2") 
+        try:
+            msg = "Error 3"
+            assert not (len(faninNBs) > 0 and len(fanins) > 0), msg
+        except AssertionError:
+            logger.exception("[Error]: assertion failed")
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
+        #assertOld:
+        #if len(faninNBs) > 0: # cannot be any fanins
+        #    if len(fanins) > 0:
+        #        print("Error 3")
 		# if there is a collapse then there can be no fanins, fanouts, or fanin
-        if len(collapse) > 0:	# can only be one fanin and no fanin or faninNB
-            if not len(fanins) == 0 and len(fanouts) == 0 and len(faninNBs) == 0:
-                print("Error 4") 				
+        try:
+            msg = "Error 4"
+            assert not (len(collapse) > 0 and not (len(fanins) == 0 and len(fanouts) == 0 and len(faninNBs) == 0)), msg
+        except AssertionError:
+            logger.exception("[Error]: assertion failed")
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
+        #assertOld:
+        #if len(collapse) > 0:	# can only be one fanin and no fanin or faninNB
+        #    if not len(fanins) == 0 and len(fanouts) == 0 and len(faninNBs) == 0:
+        #        print("Error 4") 				
 		# end asserts
         
         state = self.generate_state(self.get_task_name())
@@ -373,7 +409,7 @@ class Node:
         # needed for increemental DAG generation
         Node.DAG_number_of_tasks = len(Node.DAG_tasks)
 
-		#assert: Need size_of_DAG from Ben
+		#Suggested assert: Need size_of_DAG from Ben
 			# if (size_of_DAG != self.next_state-1) or (size_of_DAG  != len(DAG_map)) 
 			# 	or (size_of_DAG  != len(self.states) or (size_of_DAG != len(DAG_tasks)
 			#		print("Error 5")
@@ -638,10 +674,18 @@ def main():
     for n in DFS_nodes:  
         print("generate_ops for: " + n.get_task_name())
         n.generate_ops()
-        
-    #assert:
-    if len(Node.DAG_leaf_tasks) == 0:
-        print("Error 6")
+
+    try:
+        msg = "Error 6"
+        assert not len(Node.DAG_leaf_tasks) == 0, msg
+    except AssertionError:
+        logger.exception("[Error]: assertion failed")
+        if exit_program_on_exception:
+            logging.shutdown()
+            os._exit(0)
+    #assertOld:
+    #if len(Node.DAG_leaf_tasks) == 0:
+    #    print("Error 6")
     
         
     Node.save_DAG_info_as_dictionary()
