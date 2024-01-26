@@ -7,6 +7,7 @@ import os
 import sys
 import traceback
 from ..dag.DAG_executor_constants import run_all_tasks_locally
+from ..dag.DAG_executor_constants import exit_program_on_exception
 from ..dag.DAG_executor_State import DAG_executor_State
 #from ..dag.DAG_executor import DAG_executor
 #from wukongdnc.dag import DAG_executor
@@ -184,13 +185,23 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         # Note: cummulative_leaf_tasks gets cleared after we start the new leaf tasks
         # for debugging - all leaf tasks started so far
         self.cummulative_leaf_tasks += new_leaf_tasks
-        # assert: at most one leaf task found
-        if len(new_leaf_tasks)>1:
-            logger.error("[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas:"
-                + " deposit received more than 1 leaf task.")
-            logger.error(ex)
-            logging.shutdown()
-            os._exit(0) 
+
+        try:
+            msg = "[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas:" \
+                + " deposit received more than 1 leaf task."
+            assert not len(new_leaf_tasks)>1 , msg
+        except AssertionError:
+            logger.exception("[Error]: assertion failed")
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
+        # assertOld: at most one leaf task found
+        #if len(new_leaf_tasks)>1:
+        #    logger.error("[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas:"
+        #        + " deposit received more than 1 leaf task.")
+        #    logger.error(ex)
+        #    logging.shutdown()
+        #    os._exit(0) 
 
         logger.info("DAG_infoBuffer_Monitor_for_Lambdas: DAG_info deposited: ")
         self.print_DAG_info(self.current_version_DAG_info)

@@ -1,8 +1,6 @@
 import logging
 import cloudpickle
 import os
-import sys
-import traceback
 #import numpy as np
 from .BFS_Partition_Node import Partition_Node
 from . import BFS_Shared
@@ -281,13 +279,21 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partiti
                 logging.shutdown()
                 os._exit(0)
     else:
-        #assert
-        if groups_partitions == []:
-            logger.error("[Error]: PageRank_Function:"
-                + " groups_partitions is [].")
-            traceback.print_exc(file=sys.stderr)
-            logging.shutdown()
-            os._exit(0)
+        try:
+            msg = "[Error]: PageRank_Function:" + " groups_partitions is []."
+            assert not groups_partitions == [] , msg
+        except AssertionError:
+            logger.exception("[Error]: assertion failed")
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
+        #assertOld:
+        #if groups_partitions == []:
+        #    logger.error("[Error]: PageRank_Function:"
+        #        + " groups_partitions is [].")
+        #    traceback.print_exc(file=sys.stderr)
+        #   logging.shutdown()
+        #    os._exit(0)
 
         #print ("BFS_pagerank: groups_partitions:")
         #keys = list(groups_partitions.keys())
@@ -392,7 +398,7 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partiti
             if exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
-        # assertOld
+        # assertOld:
         #if not partition_or_group[shadow_node_index].isShadowNode:
         #    logger.error("[Error]: input tuple " + str(tup))
         #    logging.shutdown()
@@ -853,7 +859,7 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
                 if exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0)
-            # assertOld
+            # assertOld:
             #if not partition_or_group[shadow_node_index].isShadowNode:
             #if not shared_nodes[position_of_shadow_node].isShadowNode:
             #    logger.error("[Error]: input tuple " + str(tup)
@@ -928,15 +934,27 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
 # rhc: ToDo: Try with empty input tuples and output. this loop will not run since
 # no input tuples. Need to turn off output loop so PageRank_output = {} is empty.
             #rhc shared
-            if not shared_nodes[position_of_shadow_node].pagerank == pagerank_value:
-                logger.error("[Error]: " 
-                    + task_file_name + " Copied value is not equal to input value,"
-                    + " shared_nodes[position_of_shadow_node].pagerank: " 
-                    + str(shared_nodes[position_of_shadow_node].pagerank)
-                    + " pagerank_value: " + str(pagerank_value))
-            else:
-                logger.error(task_file_name + ": Fooooooooooooooooooooo")
-
+            try:
+                msg = "[Error]: " \
+                    + task_file_name + " Copied value is not equal to input value," \
+                    + " shared_nodes[position_of_shadow_node].pagerank: " \
+                    + str(shared_nodes[position_of_shadow_node].pagerank) \
+                    + " pagerank_value: " + str(pagerank_value)
+                assert shared_nodes[position_of_shadow_node].pagerank == pagerank_value , msg
+            except AssertionError:
+                logger.exception("[Error]: assertion failed")
+                if exit_program_on_exception:
+                    logging.shutdown()
+                    os._exit(0)
+            #assertOld:
+            #if not shared_nodes[position_of_shadow_node].pagerank == pagerank_value:
+            #    logger.error("[Error]: " 
+            #        + task_file_name + " Copied value is not equal to input value,"
+            #        + " shared_nodes[position_of_shadow_node].pagerank: " 
+            #        + str(shared_nodes[position_of_shadow_node].pagerank)
+            #        + " pagerank_value: " + str(pagerank_value))
+            #else:
+            #    logger.trace(task_file_name + ": Fooooooooooooooooooooo")
 
             #shared_nodes[position_of_shadow_node].pagerank = pagerank_value
             if not task_file_name.endswith('L'):
@@ -969,14 +987,16 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
             pagerank_value_of_parent_node = ((shared_nodes[position_of_shadow_node].pagerank - random_jumping)  / one_minus_dumping_factor)
             #rhc shared
             try:
-                msg = "[Error]: " + task_file_name + " pagerank value to be set for parent of shadow node: " + str(pagerank_value_of_parent_node) + " is not the current pagerank value of the parent node: " + str(parent_of_shadow_node.pagerank)
+                msg = "[Error]: " + task_file_name + " pagerank value to be set for parent of shadow node: " \
+                    + str(pagerank_value_of_parent_node) + " is not the current pagerank value of the parent node: " \
+                    + str(parent_of_shadow_node.pagerank)
                 assert parent_of_shadow_node.pagerank == pagerank_value_of_parent_node , msg
             except AssertionError:
                 logger.exception("[Error]: assertion failed")
                 if exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0)
-            #assertOld
+            #assertOld:
             #if not parent_of_shadow_node.pagerank == pagerank_value_of_parent_node:
             #    logger.error("[Error]: " 
             #        + task_file_name + " pagerank value to be set for parent of shadow node: "
@@ -1323,13 +1343,13 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
 
             if not partition_or_group_name_of_output_task.endswith('L'):
                 shared_nodes[toPosition].pagerank = shared_nodes[fromPosition].pagerank
-                logger.error(task_file_name + " copy from position " + str(fromPosition)
+                logger.info(task_file_name + " copy from position " + str(fromPosition)
                     + " the pagerank value " + str(shared_nodes[fromPosition].pagerank)
                     + " to shadow node position " + str(toPosition) 
                     + " , so the new shadow node toPosition pagerank value is " + str(shared_nodes[toPosition].pagerank))
             else:
                 shared_nodes[toPosition].prev = shared_nodes[fromPosition].pagerank
-                logger.error(task_file_name + " copy from position " + str(fromPosition)
+                logger.info(task_file_name + " copy from position " + str(fromPosition)
                     + " the pagerank value " + str(shared_nodes[fromPosition].pagerank)
                     + " to shadow node position " + str(toPosition) 
                     + " , so the new shadow node toPosition prev value is " + str(shared_nodes[toPosition].prev))

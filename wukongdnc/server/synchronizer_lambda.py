@@ -2,13 +2,14 @@
 #from .barrier import Barrier
 #from .state import State
 #from ClientNew import CallbackHandler
+import os
 import importlib
 #from pydoc import locate
 #from .synchronizer_thread import synchronizerThread
 #import boto3 
 #import json
 import cloudpickle
-
+from ..dag.DAG_executor_constants import exit_program_on_exception
 from ..wukong.invoker import invoke_lambda 
 
 #from .barrier import Barrier
@@ -606,8 +607,17 @@ class Synchronizer(object):
             restart = result[1]
             logger.trace("synchronizer_lambda: synchronizeLamba: after result_buffer.withdraw: restart " + str(restart))
             logger.trace("synchronizer_lambda: synchronizeLamba: result_buffer.withdraw: " + str(returnValue))
-            if restart: #assert
-                logger.error("synchronizer_lambda: synchronizeLamba: result_buffer.withdraw returned restart true.")
+            try:
+                msg = "synchronizer_lambda: synchronizeLamba: result_buffer.withdraw returned restart true."
+                assert not restart , msg
+            except AssertionError:
+                logger.exception("[Error]: assertion failed")
+                if exit_program_on_exception:
+                    logging.shutdown()
+                    os._exit(0)
+            #assertOld:
+            #if restart: 
+            #    logger.error("synchronizer_lambda: synchronizeLamba: result_buffer.withdraw returned restart true.")
 #5:
         else:
             # If we did not wait_for_result we do not want to return the return_value of the operation to the user since there

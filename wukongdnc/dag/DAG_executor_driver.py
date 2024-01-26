@@ -240,7 +240,7 @@
 # check the async_call changes + test with simulated lambdas.
 # check process_faninNBs_batch in tcp_servr_lambda make sure it works fo r
 # simulated and non-simulated (real) lambda callers which are the only callers
-# when objects are stored in lambdas. do asserts on asynch_call if true then rl lambdas. 
+# when objects are stored in lambdas. do assserts on asynch_call if true then rl lambdas. 
 #
 # How do we know when to stop clock for lamba simulation? We can't join any threads
 #
@@ -1686,7 +1686,7 @@ def run():
                 server.create_all_fanins_and_faninNBs_locally(DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
 
                 if using_workers:
-                    # Based on assert above, using worker threads when 
+                    # Based on asssert above, using worker threads when 
                     # using local synch objects 
                     # leaf task states (a task is identified by its state) are put in work_queue
                     for state in DAG_leaf_task_start_states:
@@ -2252,7 +2252,7 @@ def run():
                                 if exit_program_on_exception:
                                     logging.shutdown()
                                     os._exit(0)
-                            #assertOld
+                            #assertOld:
                             logger.error("[ERROR] DAG_executor_driver: reached unreachable code for starting triggered tasks")
                 
             #else we started the leaf tasks above with process_leaf_tasks_batch

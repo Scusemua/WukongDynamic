@@ -356,15 +356,25 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
 #rhc: lambda inc
         DAG_info_passed_from_DAG_exector = DAG_exec_state.keyword_arguments['DAG_info']
-        # assert: if we are doing incremental DAG generation with real Lambdas
+        try:
+            msg = "[Error]: synchronize_process_faninNBs_batch: using incremental DAG generation" \
+                    + " with real Lambdas but received None from DAG_executor process_faninNBs_batch."
+            assert not (wukongdnc.dag.DAG_executor_constants.compute_pagerank and wukongdnc.dag.DAG_executor_constants.use_incremental_DAG_generation \
+                and not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally and DAG_info_passed_from_DAG_exector == None) , msg
+        except AssertionError:
+            logger.exception("[Error]: assertion failed")
+            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
+        # assertOld: if we are doing incremental DAG generation with real Lambdas
         # then the process_faninNBs_batch method shoudl pass DAG_info since
         # tcp_server does not read DAG_info in this case.
-        if (wukongdnc.dag.DAG_executor_constants.compute_pagerank and wukongdnc.dag.DAG_executor_constants.use_incremental_DAG_generation and (
-            not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally)
-        ):
-            if DAG_info_passed_from_DAG_exector == None:
-                logger.error("[Error]: synchronize_process_faninNBs_batch: using incremental DAG generation"
-                    + " with real Lambdas but received None from DAG_executor process_faninNBs_batch.")
+        #if (wukongdnc.dag.DAG_executor_constants.compute_pagerank and wukongdnc.dag.DAG_executor_constants.use_incremental_DAG_generation and (
+        #    not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally)
+        #):
+        #    if DAG_info_passed_from_DAG_exector == None:
+        #        logger.error("[Error]: synchronize_process_faninNBs_batch: using incremental DAG generation"
+        #            + " with real Lambdas but received None from DAG_executor process_faninNBs_batch.")
 
         logger.trace("tcp_server: synchronize_process_faninNBs_batch: calling_task_name: " + calling_task_name + ": worker_needs_input: " + str(worker_needs_input)
             + " faninNBs size: " +  str(len(faninNBs)))
@@ -372,32 +382,57 @@ class TCPHandler(socketserver.StreamRequestHandler):
         logger.trace("BBBBBBBBB synchronize_process_faninNBs_batch BBBBBBBBBBBBBBBBBBBBBBB")
         logger.trace("tcp_server: synchronize_process_faninNBs_batch: calling_task_name: " + calling_task_name + ": async_call: " + str(async_call))
 
-        # assert:
-        if worker_needs_input:
-            if not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally:
-                logger.error("[Error: synchronize_process_faninNBs_batch: worker needs input but using lambdas.")
+        try:
+            msg = "[Error]: synchronize_process_faninNBs_batch: using incremental DAG generation" \
+                    + " with real Lambdas but received None from DAG_executor process_faninNBs_batch."
+            assert not (worker_needs_input and not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally) , msg
+        except AssertionError:
+            logger.exception("[Error]: assertion failed")
+            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
+        # assertOld:
+        #if worker_needs_input:
+        #    if not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally:
+        #        logger.error("[Error: synchronize_process_faninNBs_batch: worker needs input but using lambdas.")
 
-        #assert: if worker needs work then we should be using synch call so we can check the results for work
-        if worker_needs_input:
-            if async_call:
-                logger.trace("[Error]: synchronize_process_faninNBs_batch: worker_needs_input but using async_call")
+        try:
+            msg = "[Error]: synchronize_process_faninNBs_batch: worker_needs_input but using async_call"
+            assert not (worker_needs_input and async_call) , msg
+        except AssertionError:
+            logger.exception("[Error]: assertion failed")
+            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
+        #assertOld: if worker needs work then we should be using synch call so we can check the results for work
+        #if worker_needs_input:
+        #    if async_call:
+        #        logger.trace("[Error]: synchronize_process_faninNBs_batch: worker_needs_input but using async_call")
 
-        # assert:
-        if async_call:
-            # must be running real lambdas to execute tasks or running workr processes
-            # and not worker_needs_input so here we won't be sending any work back
-            # and there is no reason to wait for this process_fannNBs method to finish.
-            # Note: If we are using threads to simulate
-            # lambdas we do not call tcp_server.process_faninNBs_batch. If we are not storing objects
-            # in lamdas, we call process_fninNBs to process the faninNBs one by one. If we are
-            # storing objects in lambdas we do call process_faninNBs_batch but we will be running
-            # tcp_server_lambda so we will not call this version in tcp_server.
-            #if not (not run_all_tasks_locally):
-            # This matches the if statement in the work_loop.
-            # Note: using_workers and not using_threads_not_processes means we 
-            # will be calling process_faninNBs_batch (i.e., this method)
-            if not (not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally or (wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally and wukongdnc.dag.DAG_executor_constants.using_workers and not wukongdnc.dag.DAG_executor_constants.using_threads_not_processes and not worker_needs_input)):
-                logger.error("[Error: synchronize_process_faninNBs_batch: async_call but not (not run_all_tasks_locally).")
+        try:
+            msg = "[Error: synchronize_process_faninNBs_batch: async_call but not (not run_all_tasks_locally)."
+            assert not (async_call and not (not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally or (wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally and wukongdnc.dag.DAG_executor_constants.using_workers and not wukongdnc.dag.DAG_executor_constants.using_threads_not_processes and not worker_needs_input))) , msg
+        except AssertionError:
+            logger.exception("[Error]: assertion failed")
+            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
+        # assertOld:
+        #if async_call:
+        #    # must be running real lambdas to execute tasks or running workr processes
+        #    # and not worker_needs_input so here we won't be sending any work back
+        #    # and there is no reason to wait for this process_fannNBs method to finish.
+        #    # Note: If we are using threads to simulate
+        #    # lambdas we do not call tcp_server.process_faninNBs_batch. If we are not storing objects
+        #    # in lamdas, we call process_fninNBs to process the faninNBs one by one. If we are
+        #    # storing objects in lambdas we do call process_faninNBs_batch but we will be running
+        #    # tcp_server_lambda so we will not call this version in tcp_server.
+        #    #if not (not run_all_tasks_locally):
+        #    # This matches the if statement in the work_loop.
+        #    # Note: using_workers and not using_threads_not_processes means we 
+        #    # will be calling process_faninNBs_batch (i.e., this method)
+        #    if not (not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally or (wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally and wukongdnc.dag.DAG_executor_constants.using_workers and not wukongdnc.dag.DAG_executor_constants.using_threads_not_processes and not worker_needs_input)):
+        #       logger.error("[Error: synchronize_process_faninNBs_batch: async_call but not (not run_all_tasks_locally).")
 
         # Note: If we are using lambdas, then we are not using workers (for now) so worker_needs_input
         # must be false. Also, we are currently not piggybacking the fanouts so there should be no 
@@ -602,11 +637,6 @@ class TCPHandler(socketserver.StreamRequestHandler):
 #rhc batch
                         if not (wukongdnc.dag.DAG_executor_constants.compute_pagerank and wukongdnc.dag.DAG_executor_constants.use_incremental_DAG_generation):
                             #DAG_states = DAG_info.get_DAG_states()
-
-                            ## assert:
-                            #if not DAG_states[name] == start_state_fanin_task:
-                            #    logger.trace("[Error]: tcp_server: synchronize_process_faninNBs_batch:"
-                            #       + "DAG_states[name] != start_state_fanin_task")
                                 
                             #dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = DAG_states[name]
                             dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = start_state_fanin_task
@@ -654,7 +684,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             #all_faninNB_sizes = DAG_info.get_all_faninNB_sizes()
                             #is_fanin = name in all_fanin_task_names
 
-                            ## assert: No fanins in batch procesing - this is the code
+                            ## No fanins in batch procesing - this is the code
                             ## from synchronize_sync, which can be called for fan_in ops
                             ## on fanins and faninNBs, but we only batch process faninNBs
                             ## here so there should be no fanins. 
@@ -682,7 +712,6 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             #dummy_state_for_create_message.keyword_arguments['n'] = all_faninNB_sizes[faninNB_index]
                             dummy_state_for_create_message.keyword_arguments['n'] = faninNB_size
                             
-                            ##assert:
                             #    if not faninNB_size == all_faninNB_sizes[faninNB_index]:
                             #        logger.error("[Error]: tcp_server: synchronize_process_faninNBs_batch: "
                             #            + " not faninNB_size == all_faninNB_sizes[faninNB_index]")
@@ -736,10 +765,9 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
                             #DAG_states = DAG_info.get_DAG_states()
 
-                            # assert:
                             #if not DAG_states[name] == start_state_fanin_task:
                             #    logger.trace("[Error]: tcp_server: synchronize_process_faninNBs_batch:"
-                             #       + "DAG_states[name] != start_state_fanin_task")
+                            #       + "DAG_states[name] != start_state_fanin_task")
                                 
                             dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = start_state_fanin_task
                             dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = wukongdnc.dag.DAG_executor_constants.store_fanins_faninNBs_locally
@@ -778,7 +806,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             #all_faninNB_sizes = DAG_info.get_all_faninNB_sizes()
                             #is_fanin = name in all_fanin_task_names
 
-                            # assert: No fanins in batch procesing - this is the code
+                            # No fanins in batch procesing - this is the code
                             # from synchronize_sync, which can be called for fan_in ops
                             # on fanins and faninNBs, but we only batch process faninNBs
                             # here so there should be no fanins. 
@@ -808,7 +836,6 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             #dummy_state_for_create_message.keyword_arguments['n'] = all_faninNB_sizes[faninNB_index]
                             dummy_state_for_create_message.keyword_arguments['n'] = faninNB_size
                             
-                            #assert:
                             #if not faninNB_size == all_faninNB_sizes[faninNB_index]:
                             #    logger.error("[Error]: tcp_server: synchronize_process_faninNBs_batch: "
                             #        + " not faninNB_size == all_faninNB_sizes[faninNB_index]")
@@ -1206,7 +1233,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             # DAG_info during incremental DAG generation.
 
                             #DAG_states = DAG_info.get_DAG_states()
-                            # assert:
+
                             #if not DAG_states[name] == start_state_fanin_task:
                             #    logger.trace("[Error]: tcp_server: synchronize_process_faninNBs_batch:"
                             #       + "DAG_states[name] != start_state_fanin_task")
@@ -1278,7 +1305,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             dummy_state_for_create_message.keyword_arguments['n'] = state.keyword_arguments['n']
                             if not fanin_type == wukongdnc.dag.DAG_executor_constants.FanIn_Type:
                                 dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = state.keyword_arguments['start_state_fanin_task']
-                            #assert:
+
                             #if not faninNB_size == all_faninNB_sizes[faninNB_index]:
                             #    logger.error("[Error]: tcp_server: synchronize_process_faninNBs_batch: "
                             #        + " not faninNB_size == all_faninNB_sizes[faninNB_index]")

@@ -658,7 +658,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
     # the first partition collected on a call to BFS(), of which there 
     # may be many calls if the graph is not connected) is a leaf
     # node and thus has no senders. This is true about partition/group 1 and
-    # this is asserted by the caller (BFS()) of this method.
+    # this is assserted by the caller (BFS()) of this method.
 
     """
     Outline: 
@@ -746,9 +746,10 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         # partitions.)
 
         try:
-            assert len(groups_of_current_partition) == 1 , "[Error]: generate_DAG_info_incremental_groups"
-            + " number of groups in first partition is not 1 it is "
-            + str(len(groups_of_current_partition))
+            msg = "[Error]: generate_DAG_info_incremental_groups" \
+                + " number of groups in first partition is not 1 it is " \
+                + str(len(groups_of_current_partition))
+            assert len(groups_of_current_partition) == 1 , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
             if exit_program_on_exception:
@@ -761,9 +762,10 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         #        + str(len(groups_of_current_partition)))
 
         try:
-            assert current_partition_state == Group_next_state , "[Error]: generate_DAG_info_incremental_groups"
-            + " current_partition_state for first partition is not equal to"
-            + " Group_next_state - both should be 1."
+            msg = "[Error]: generate_DAG_info_incremental_groups" \
+                + " current_partition_state for first partition is not equal to" \
+                + " Group_next_state - both should be 1."
+            assert current_partition_state == Group_next_state , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
             if exit_program_on_exception:
@@ -784,20 +786,21 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         # the first partition collected on a call to BFS(), of which there 
         # may be many calls if the graph is not connected) are leaf
         # nodes and thus have no senders. This is true about partition 1 and
-        # this is asserted by the caller (BFS()) of this method.
+        # this is assserted by the caller (BFS()) of this method.
         
         # Group 1 is a leaf; so there is no previous partition that can 
         # send (its outputs as inputs) to the first group
 
         try:
-            assert senders == None , "[Error]: generate_DAG_info_incremental_groups"
-            + " leaf node has non-None senders."
+            msg = "[Error]: generate_DAG_info_incremental_groups" \
+                + " leaf node has non-None senders."
+            assert senders == None , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
             if exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
-        # assertOld
+        # assertOld:
         #if not senders == None:
         #    logger.error("[Error]: generate_DAG_info_incremental_groups"
         #        + " leaf node has non-None senders.")
@@ -873,7 +876,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         # in the just generated version of the DAG, which is the last parition.
         if to_be_continued:
             # len(groups_of_current_partition) must be 1 fo the first group 
-            # as asserted above.
+            # as assserted above.
             number_of_incomplete_tasks = len(groups_of_current_partition)
         else:
             number_of_incomplete_tasks = 0
@@ -905,7 +908,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
 #   group with no senders is a specail cse in tht we know no
 #   group in previous partition or current group sends to it
 #   so don;t have to add it to groups_to_consider
-# - commented out the assert #if len(senders) == 0:
+# - commented out the asssert #if len(senders) == 0:
 # 
 # Do we need the two cases? Maybe but perhaps put the edge generation in a method that both can call?
         
@@ -947,8 +950,9 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 # /partition containing 7. bfs() is called each time we start
                 # the search of a CC.
                 try:
-                    assert not len(groups_of_current_partition) > 1, "[Error]: generate_DAG_info_incremental_groups:"
-                    + " start of new connected component (i.e., called BFS()) but there is more than one group."
+                    msg = "[Error]: generate_DAG_info_incremental_groups:" \
+                        + " start of new connected component (i.e., called BFS()) but there is more than one group."
+                    assert not len(groups_of_current_partition) > 1, msg
                 except AssertionError:
                     logger.exception("[Error]: assertion failed")
                     if exit_program_on_exception:
@@ -1308,14 +1312,15 @@ def generate_DAG_info_incremental_groups(current_partition_name,
             # no senders for it yet?
             
             #try:
-            #    assert not len(receiver_set_for_previous_group) == 0 , "[Error]: generate_DAG_info_incremental_groups:"
+            #    msg = "[Error]: generate_DAG_info_incremental_groups:" \
             #    + " group " + previous_group + " has a receiver_set_for_previous_group list with length 0."
+            #    assert not len(receiver_set_for_previous_group) == 0 , msg
             #except AssertionError:
             #    logger.exception("[Error]: assertion failed")
             #    if exit_program_on_exception:
             #        logging.shutdown()
             #        os._exit(0)
-            # assertOld
+            # assertOld:
             #if len(receiver_set_for_previous_group) == 0:
             #    logger.error("[Error]: generate_DAG_info_incremental_groups:"
             #        + " group " + previous_group + " has a receiver_set_for_previous_group list with length 0.")
@@ -1383,11 +1388,22 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                         # group previous_group only sends inputs to one group (receiverY), so collapse 
                         # receiverY, i.e., previous_group becomes receiverY via a collapse.
                         logger.trace("sender " + previous_group + " --> " + receiverY + " : Collapse")
-                        if not receiverY in Group_all_collapse_task_names:
-                            Group_all_collapse_task_names.append(receiverY)
-                        else:
-                            logger.error("[Error]: generate_DAG_info_incremental_groups:"
-                                + "group " + receiverY + " is in the collapse set of two groups.")
+                        try:
+                            msg = "[Error]: generate_DAG_info_incremental_groups:" \
+                                + "group " + receiverY + " is in the collapse set of two groups."
+                            assert not receiverY in Group_all_collapse_task_names , msg
+                        except AssertionError:
+                            logger.exception("[Error]: assertion failed")
+                            if exit_program_on_exception:
+                                logging.shutdown()
+                                os._exit(0)
+                        #if not receiverY in Group_all_collapse_task_names:
+                        Group_all_collapse_task_names.append(receiverY)
+                        #else:
+                        #    # assertOld
+                        #    logger.error("[Error]: generate_DAG_info_incremental_groups:"
+                        #        + "group " + receiverY + " is in the collapse set of two groups.")
+                            
                         # we are generating the sets of collapse/fanin/fanout/faninNB
                         # of previous_group
                         collapse.append(receiverY)
@@ -1458,14 +1474,27 @@ def generate_DAG_info_incremental_groups(current_partition_name,
 
             logger.trace("before update to TBC and fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued"
                 + " for previous_group " + previous_group + " state_info_of_previous_group: " + str(state_info_of_previous_group))
-            if state_info_of_previous_group == None:
-                logger.error("[Error]: generate_DAG_info_incremental_groups: state_info_of_previous_group: "
-                    + "state_info_of_previous_group is None.")
+            try:
+                msg = "[Error]: generate_DAG_info_incremental_groups: state_info_of_previous_group: " \
+                    + "state_info_of_previous_group is None."
+                assert not state_info_of_previous_group == None , msg
+            except AssertionError:
+                logger.exception("[Error]: assertion failed")
                 logger.error("DAG_map:")
                 for key, value in Group_DAG_map.items():
                     logger.trace(str(key) + ' : ' + str(value))
-                logging.shutdown()
-                os._exit(0)
+                if exit_program_on_exception:
+                    logging.shutdown()
+                    os._exit(0)            
+            #assertOld:
+            #if state_info_of_previous_group == None:
+            #    logger.error("[Error]: generate_DAG_info_incremental_groups: state_info_of_previous_group: "
+            #        + "state_info_of_previous_group is None.")
+            #    logger.error("DAG_map:")
+            #    for key, value in Group_DAG_map.items():
+            #       logger.trace(str(key) + ' : ' + str(value))
+            #    logging.shutdown()
+            #    os._exit(0)
 
             # The fanouts/fanins/faninNBs/collapses in state_info are 
             # empty so just add the fanouts/fanins/faninNBs/collapses that

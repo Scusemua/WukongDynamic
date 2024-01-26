@@ -1,6 +1,6 @@
 import logging
 import cloudpickle
-#import os
+import os
 
 from .DAG_info import DAG_Info
 from .DFS_visit import state_info
@@ -10,6 +10,7 @@ from .DAG_executor_constants import use_shared_partitions_groups, use_page_rank_
 from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
 #from .DAG_executor_constants import using_threads_not_processes, use_multithreaded_multiprocessing
 from .DAG_executor_constants import enable_runtime_task_clustering
+from .DAG_executor_constants import exit_program_on_exception
 logger = logging.getLogger(__name__)
 
 """
@@ -313,12 +314,23 @@ def generate_DAG_info():
             task_inputs = ()
             Partition_DAG_leaf_task_inputs.append(task_inputs)
 
-            if not senderX in leaf_tasks_of_partitions:
-                logger.error("partition " + senderX + " receives no inputs"
-                    + " but it is not in leaf_tasks_of_partitions.")
-            else:
-                # we have generated a state for leaf task senderX. 
-                leaf_tasks_of_partitions.remove(senderX)
+            try:
+                msg = "[Error]: BFS_generate_DAG_info: partition " + senderX + " receives no inputs" \
+                    + " but it is not in leaf_tasks_of_partitions."
+                assert senderX in leaf_tasks_of_partitions , msg
+            except AssertionError:
+                logger.exception("[Error]: assertion failed")
+                if exit_program_on_exception:
+                    logging.shutdown()
+                    os._exit(0)
+            #assertOld
+            #if not senderX in leaf_tasks_of_partitions:
+            #    logger.error("partition " + senderX + " receives no inputs"
+            #        + " but it is not in leaf_tasks_of_partitions.")
+            #else:
+            # we have generated a state for leaf task senderX. 
+            leaf_tasks_of_partitions.remove(senderX)
+
         else:
             # create a new set from sender_set_for_senderX. For 
             # each name in sender_set_for_senderX, qualify name by
@@ -713,12 +725,23 @@ def generate_DAG_info():
             task_inputs = ()
             Group_DAG_leaf_task_inputs.append(task_inputs)
 
-            if not senderX in leaf_tasks_of_groups:
-                logger.error("partition " + senderX + " receives no inputs"
-                    + " but it is not in leaf_tasks_of_groups.")
-            else:
-                # we have generated a state for leaf task senderX. 
-                leaf_tasks_of_groups.remove(senderX)
+            try:
+                msg = "[Error]: BFS_generate_DAG_info: partition " + senderX + " receives no inputs" \
+                    + " but it is not in leaf_tasks_of_groups."
+                assert senderX in leaf_tasks_of_groups , msg
+            except AssertionError:
+                logger.exception("[Error]: assertion failed")
+                if exit_program_on_exception:
+                    logging.shutdown()
+                    os._exit(0)
+            #assertOld
+            #if not senderX in leaf_tasks_of_groups:
+            #    logger.error("partition " + senderX + " receives no inputs"
+            #        + " but it is not in leaf_tasks_of_groups.")
+            #else:
+            # we have generated a state for leaf task senderX. 
+            leaf_tasks_of_groups.remove(senderX)
+            
         else:
             # create a new set from sender_set_for_senderX. For 
             # each name in sender_set_for_senderX, qualify name by

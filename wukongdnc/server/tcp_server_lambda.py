@@ -4,7 +4,7 @@ import traceback
 import socketserver
 import threading
 #import json
-#import os
+import os
 #import time
 
 import cloudpickle
@@ -19,6 +19,7 @@ from ..dag.DAG_executor_constants import store_sync_objects_in_lambdas, store_fa
 from ..dag.DAG_executor_constants import map_objects_to_lambda_functions, create_all_fanins_faninNBs_on_start
 from ..dag.DAG_executor_constants import FanInNB_Type, FanIn_Type
 from ..dag.DAG_executor_constants import same_output_for_all_fanout_fanin
+from ..dag.DAG_executor_constants import exit_program_on_exception
 #from ..dag.DAG_executor_constants import use_anonymous_lambda_functions
 from ..dag.DAG_Executor_lambda_function_simulator import InfiniD # , Lambda_Function_Simulator
 from ..dag.DAG_info import DAG_Info
@@ -541,10 +542,19 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # Note: if using lambdas, then we are not using workers (for now) so worker_needs_input 
         # must be false, which is asertd below.
         worker_needs_input = DAG_exec_state.keyword_arguments['worker_needs_input']
-        # assert: when using workers we use tcp_server not tcp_sever_lambda
-        if using_workers or worker_needs_input:
-            logger.error("[Error]: tcp_server_lambda: synchronize_process_faninNBs_batch: "
-            + " when using workers we should not be storing objects in lambdas and running tcp_server_lambda.")
+        try:
+            msg = "[Error]: tcp_server_lambda: synchronize_process_faninNBs_batch: " \
+            + " when using workers we should not be storing objects in lambdas and running tcp_server_lambda."
+            assert not (using_workers or worker_needs_input) , msg
+        except AssertionError:
+            logger.exception("[Error]: assertion failed")
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
+        # assertOld: when using workers we use tcp_server not tcp_sever_lambda
+        #if using_workers or worker_needs_input:
+        #    logger.error("[Error]: tcp_server_lambda: synchronize_process_faninNBs_batch: "
+        #    + " when using workers we should not be storing objects in lambdas and running tcp_server_lambda.")
         
         # Commented out: since using lambdas there are no workers and thus no work to steal
         """
@@ -1823,9 +1833,18 @@ class TCPServer(object):
     
     def start(self):
         logger.trace("tcp_server_lambda: Starting TCP Lambda server.")
-        # assert:
-        if not store_sync_objects_in_lambdas:
-            logger.error("tcp_server_lambda: store_sync_objects_in_lambdas is False.")
+        try:
+            msg = "tcp_server_lambda: store_sync_objects_in_lambdas is False."
+            assert store_sync_objects_in_lambdas , msg
+        except AssertionError:
+            logger.exception("[Error]: assertion failed")
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
+        # assertOld:
+        #if not store_sync_objects_in_lambdas:
+        #    logger.error("tcp_server_lambda: store_sync_objects_in_lambdas is False.")
+
         try:
             self.tcp_server.serve_forever()
         except Exception as ex:

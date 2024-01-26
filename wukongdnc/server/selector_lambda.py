@@ -1,7 +1,8 @@
+import os
 #from monitor_su import MonitorSU
 from .selectivewait import selectiveWait
 from .counting_semaphore import CountingSemaphore
-
+from ..dag.DAG_executor_constants import exit_program_on_exception
 from ..wukong.invoker import invoke_lambda
 
 import logging 
@@ -97,14 +98,32 @@ class Selector():
 #3: ckeck the send_result = true or false
         # number of arrivals is at least 1 since we just added one. Is this the only arrival?
         if called_entry.get_num_arrivals() > 1 or called_entry.testGuard() == False:
-            # assert:
-            if send_result:
-                # Note asynch calls always have send_result = False, whether they block or not.
-                # try-op calls have send_result True if they are not blocking
-                logger.trace("[Error]: execute: send_result is True but entry will not be accepted.") 
-            if (called_entry.get_num_arrivals() > 1) and called_entry.testGuard():
-                logger.trace("[Error]: execute: called_entry.testGuard() is True but this is not the first arrival."
-                    + " A previous arrival thus had a True guard and should have been selected earlier.")
+            try:
+                msg = "[Error]: execute: send_result is True but entry will not be accepted."
+                assert not send_result , msg
+            except AssertionError:
+                logger.exception("[Error]: assertion failed")
+                if exit_program_on_exception:
+                    logging.shutdown()
+                    os._exit(0)
+            # assertOld:
+            #if send_result:
+            #    # Note asynch calls always have send_result = False, whether they block or not.
+            #    # try-op calls have send_result True if they are not blocking
+            #    logger.error("[Error]: execute: send_result is True but entry will not be accepted.") 
+            try:
+                msg = "[Error]: execute: called_entry.testGuard() is True but this is not the first arrival." \
+                    + " A previous arrival thus had a True guard and should have been selected earlier."
+                assert not called_entry.get_num_arrivals() > 1 and called_entry.testGuard() , msg
+            except AssertionError:
+                logger.exception("[Error]: assertion failed")
+                if exit_program_on_exception:
+                    logging.shutdown()
+                    os._exit(0)
+            #assertOld:
+            #if (called_entry.get_num_arrivals() > 1) and called_entry.testGuard():
+            #    logger.error("[Error]: execute: called_entry.testGuard() is True but this is not the first arrival."
+            #        + " A previous arrival thus had a True guard and should have been selected earlier.")
                 
             # This is not the first wating arrival; guard cannot be true or the 
             # earlier arrivals would have been chosen on previous call to
@@ -174,13 +193,22 @@ class Selector():
             # has meaningless result, or the call may block and call may have meaningful result and cllient will get 
             # the result on restart.
             if send_result: # must be a non-blocking try-op (as asynch calls never wait_for_result)
-                # assert:
-                if restart:
-                    # Note asynch calls always have send_result = False, whether they block or not.
-                    # Also, only async calls can be restarted above, i.e., can have get_restart_on_noblock() is True.
-                    # So if restart is true then send_result must be False
-                    logger.trace("execute: send_result is True and restart is True, but restart can only "
-                        + "be True for aynch calls while send_result is always False for aynch calls.")             
+                try:
+                    msg = "selector_lambda: execute: send_result is True and restart is True, but restart can only " \
+                        + "be True for aynch calls while send_result is always False for aynch calls."
+                    assert not restart , msg
+                except AssertionError:
+                    logger.exception("[Error]: assertion failed")
+                    if exit_program_on_exception:
+                        logging.shutdown()
+                        os._exit(0)
+                #assertOld:
+                #if restart:
+                #    # Note asynch calls always have send_result = False, whether they block or not.
+                #    # Also, only async calls can be restarted above, i.e., can have get_restart_on_noblock() is True.
+                #    # So if restart is true then send_result must be False
+                #    logger.error("execute: send_result is True and restart is True, but restart can only "
+                #        + "be True for aynch calls while send_result is always False for aynch calls.")             
                 restart = False
                 return_tuple = (return_value, restart)
                 # will use these values in synchronize_sync to make changes to state

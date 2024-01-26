@@ -20,7 +20,6 @@ class MonitorSU(object):
 
 
     def enter_monitor(self, method_name = None):
-        # assert method_name starts with "try_" implies not self._doingTry
         _base_name_ignored, isTryMethod = isTry_and_getMethodName(method_name)
         if isTryMethod:
             # try methods always need to lock monitor 

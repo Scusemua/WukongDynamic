@@ -1,9 +1,11 @@
 import traceback
+import os
 
 from .synchronizer_lambda import Synchronizer
 from .util import decode_and_deserialize #, make_json_serializable,  isTry_and_getMethodName, isSelect 
 from ..dag.DAG_executor_constants import FanIn_Type, FanInNB_Type
 from ..dag.DAG_executor_constants import create_all_fanins_faninNBs_on_start
+from ..dag.DAG_executor_constants import exit_program_on_exception
 from ..dag.DAG_executor_State import DAG_executor_State
 from .util import decode_and_deserialize, make_json_serializable
 import uuid
@@ -218,10 +220,19 @@ class MessageHandler(object):
         """
 
         list_of_messages = message['name']
-        #assert:
-        if len(list_of_messages) == 0:
-            logger.error("[Error]: process_enqueued_fan_ins: "
-                + " length of list_of_messages is 0 but fanin size > 0.")
+        try:
+            msg = "[Error]: process_enqueued_fan_ins: " \
+                + " length of list_of_messages is 0 but fanin size > 0."
+            assert not len(list_of_messages) == 0 , msg
+        except AssertionError:
+            logger.exception("[Error]: assertion failed")
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
+        #assertOld:
+        #if len(list_of_messages) == 0:
+        #    logger.error("[Error]: process_enqueued_fan_ins: "
+        #        + " length of list_of_messages is 0 but fanin size > 0.")
 
         if not create_all_fanins_faninNBs_on_start:
             dummy_state_for_creation_message = decode_and_deserialize(message["state"])

@@ -33,7 +33,7 @@ run_all_tasks_locally = True         # vs run tasks remotely (in Lambdas)
 # handler, which is defined in handlerDAG.py. This lets us test the code
 # for real lambdas without actually creating real Lambdas.
 # Note: if this is True then run_all_tasks_locally must be False. 
-# This is asserted below.
+# This is assserted below.
 bypass_call_lambda_client_invoke = (not run_all_tasks_locally) and True
 # True if synch objects are stored locally, i.e., in the memory of the single
 # machine on which the threads are executing.  If we are using multiprocessing
@@ -50,7 +50,7 @@ store_fanins_faninNBs_locally = True
 # operations that create a synch object if it has not been created yet and then
 # execute a Fan_in operaation on the created object.
 # 
-# This must be false if we aer doing incremental_DAG_generation; this is asserted below.
+# This must be false if we aer doing incremental_DAG_generation; this is assserted below.
 create_all_fanins_faninNBs_on_start = False
 
 # True if the DAG is executed by a "pool" of threads/processes. False, if we are
@@ -189,14 +189,15 @@ except AssertionError:
     if exit_program_on_exception:
         logging.shutdown()
         os._exit(0)
-#assertOld
+#assertOld:
 #if not run_all_tasks_locally and store_fanins_faninNBs_locally:
 #    logger.error("[Error]: Configuration error: if not run_all_tasks_locally (i.e., using real lambdas) then objects cannot be stored locally.")
 #    logging.shutdown()
 #   os._exit(0) 
 
 try:
-    msg = "[Error]: Configuration error: if bypass_call_lambda_client_invoke then must be running real Lambdas" + " i.e., not run_all_tasks_locally."
+    msg = "[Error]: Configuration error: if bypass_call_lambda_client_invoke then must be running real Lambdas" \
+        + " i.e., not run_all_tasks_locally."
     assert not (bypass_call_lambda_client_invoke and run_all_tasks_locally), msg
 except AssertionError:
     logger.exception("[Error]: assertion failed")
@@ -211,7 +212,8 @@ except AssertionError:
 #    os._exit(0)  
 
 try:
-    msg = "[Error]: Configuration error: if using_workers and not using_threads_not_processes" + " then store_fanins_faninNBs_locally must be False."
+    msg = "[Error]: Configuration error: if using_workers and not using_threads_not_processes" \
+        + " then store_fanins_faninNBs_locally must be False."
     assert not (using_workers and not using_threads_not_processes), msg
 except AssertionError:
     logger.exception("[Error]: assertion failed")
@@ -294,7 +296,7 @@ except AssertionError:
 ##########################################
 
 # Indicates that we are computing pagerank and thus that the pagerank
-# options are active and pagerank asserts should hold
+# options are active and pagerank assserts should hold
 compute_pagerank = True
 # used in BFS_pagerank. For non-loops, we only need 1 iteration
 number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
@@ -333,7 +335,7 @@ except AssertionError:
     if exit_program_on_exception:
         logging.shutdown()
         os._exit(0)
-# assertOld 
+# assertOld:
 #if compute_pagerank and use_incremental_DAG_generation and create_all_fanins_faninNBs_on_start:
 #    logger.error("[Error]: Configuration error: incremental_DAG_generation"
 #        + " requires not create_all_fanins_faninNBs_on_start"
@@ -3722,14 +3724,15 @@ def check_asserts():
     #        os._exit(0)
 
     try:
-        msg = "[Error]: Configuration error: incremental_DAG_generation" + " requires not create_all_fanins_faninNBs_on_start" + " i.e., create synch objects on the fly since we don't know all of the synch objects " + " at the start (the DAG is not complete)"
+        msg = "[Error]: Configuration error: incremental_DAG_generation" + " requires not create_all_fanins_faninNBs_on_start" \
+            + " i.e., create synch objects on the fly since we don't know all of the synch objects " + " at the start (the DAG is not complete)"
         assert not (compute_pagerank and use_incremental_DAG_generation and create_all_fanins_faninNBs_on_start), msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
         if exit_program_on_exception:
             logging.shutdown()
             os._exit(0)
-    # assertOld
+    # assertOld:
     #if compute_pagerank and use_incremental_DAG_generation and create_all_fanins_faninNBs_on_start:
     #    logger.error("[Error]: Configuration error: incremental_DAG_generation"
     #        + " requires not create_all_fanins_faninNBs_on_start"
@@ -3739,7 +3742,8 @@ def check_asserts():
     #    os._exit(0) 
 
     try:
-        msg = "[Error]: Configuration error: incremental_DAG_deposit_interval" + " must be >= 1. We mod by incremental_DAG_deposit_interval so it" + " cannot be 0 and using a negative number makes no sense."
+        msg = "[Error]: Configuration error: incremental_DAG_deposit_interval" + " must be >= 1. We mod by incremental_DAG_deposit_interval so it" \
+            + " cannot be 0 and using a negative number makes no sense."
         assert not (incremental_DAG_deposit_interval < 1), msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
@@ -3814,7 +3818,7 @@ if test_number == 1:
 elif test_number == 2:
     test2()
 
-# Check asserts after setting the configuration constants
+# Check assserts after setting the configuration constants
 if not test_number == 0:
     check_asserts()
 

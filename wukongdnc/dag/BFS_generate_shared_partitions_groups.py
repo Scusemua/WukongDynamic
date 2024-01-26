@@ -66,7 +66,7 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
         if exit_program_on_exception:
             logging.shutdown()
             os._exit(0)
-    # assertOld
+    # assertOld:
     #if not use_shared_partitions_groups:
     #    logger.trace("[Error]: Called generate_shared_partitions_groups"
     #        + " but use_shared_partitions_groups is False.")

@@ -622,7 +622,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
     # the first partition collected on a call to BFS(), of which there 
     # may be many calls if the graph is not connected) is a leaf
     # node and thus has no senders. This is true about partition 1 and
-    # this is asserted by the caller (BFS()) of this method.
+    # this is assserted by the caller (BFS()) of this method.
 
     """
     Outline: 
@@ -679,8 +679,9 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         # i.e., sender
 
         try:
-            assert senders == None , "[Error]: def generate_DAG_info_incremental_partitions"
+            msg = "[Error]: def generate_DAG_info_incremental_partitions" \
             + " leaf node has non-None senders."
+            assert senders == None , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
             if exit_program_on_exception:
@@ -715,7 +716,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         Partition_DAG_leaf_task_inputs.append(task_inputs)
 
         # we will check that current_partition_name is in leaf_tasks_of_partitions
-        # (found by BFS) upon return to BFS() (as an assertion that the leaf task
+        # (found by BFS) upon return to BFS() (as an asssertion that the leaf task
         # that we found was also found by BFS as it partitioned the nodes.
 
         # generate the state info for this partition/DAG task
@@ -788,14 +789,15 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         # Note: We know this is not partition 1 based on if-condition
 
         try:
-            assert not(not senders == None and len(senders) == 0) , "[Error]: generate_DAG_info_incremental_partitions:"
-            + " partition has a senders with length 0."
+            msg = "[Error]: generate_DAG_info_incremental_partitions:" \
+                + " partition has a senders with length 0."
+            assert not(not senders == None and len(senders) == 0) , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
             if exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
-        # assertOld
+        # assertOld:
         #if not senders == None and len(senders) == 0:
         #    logger.error("[Error]: generate_DAG_info_incremental_partitions:"
         #        + " partition has a senders with length 0.")
@@ -1013,8 +1015,9 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
     else: # current_partition_number >= 2
 
         try:
-            assert not len(senders) == 0 , "[Error]: generate_DAG_info_incremental_groups:"
-            + " partition has a senders with length 0."
+            msg = "[Error]: generate_DAG_info_incremental_groups:" \
+                + " partition has a senders with length 0."
+            assert not len(senders) == 0 , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
             if exit_program_on_exception:
@@ -1028,8 +1031,9 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         # This is not the first partition and it is not a leaf partition.
 
         try:
-            assert not (len(senders) != 1) , "[Error]: generate_DAG_info_incremental_partitions: using partitions and a"
-            + " partition has more than one sending partition."
+            msg = "[Error]: generate_DAG_info_incremental_partitions: using partitions and a" \
+                + " partition has more than one sending partition."
+            assert not (len(senders) != 1) , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
             if exit_program_on_exception:
@@ -1049,8 +1053,9 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         sender = next(iter(senders)) # sender is first and only element in set
 
         try:
-            assert sender == Partition_DAG_previous_partition_name , "[Error]: generate_DAG_info_incremental_partitionsusing partitions and"
-            + " the sender for a partition is not previous_partition_name."
+            msg = "[Error]: generate_DAG_info_incremental_partitionsusing partitions and" \
+                + " the sender for a partition is not previous_partition_name."
+            assert sender == Partition_DAG_previous_partition_name , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
             if exit_program_on_exception:

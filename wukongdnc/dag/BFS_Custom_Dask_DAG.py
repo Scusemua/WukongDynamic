@@ -94,7 +94,7 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
                 if exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0)
-            # assertOld
+            # assertOld:
             #if not partition_or_group[shadow_node_index].isShadowNode:
             #    logger.trace("[Error]: input tuple " + str(tup))
                     

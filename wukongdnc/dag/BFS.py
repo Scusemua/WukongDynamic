@@ -1191,8 +1191,9 @@ def dfs_parent(visited, node):  #function for dfs
             parent_group_parent_index = pg_tuple[3]
 
             try:
-                # Note: not checking the inner assertion
-                msg = "[Error]: dfs_parent call to unvisited" + " parent resulted in parent/group partition index of -1, which means" + " a loop was detected at an unvisited parent."
+                # Note: not checking the inner asssertion
+                msg = "[Error]: dfs_parent call to unvisited" + " parent resulted in parent/group partition index of -1, which means" \
+                    + " a loop was detected at an unvisited parent."
                 assert not (parent_partition_parent_index == -1 or parent_group_parent_index == -1), msg
             except AssertionError:
                 logger.exception("[Error]: assertion failed")
@@ -1208,7 +1209,7 @@ def dfs_parent(visited, node):  #function for dfs
             # Note: this applies also for loops within loops since in such a case we must 
             # still try to visit an already visited parent.
             #if (parent_partition_parent_index == -1) or (parent_group_parent_index == -1):
-            #    # nested assert: parent group index and partition index are both -1: 
+            #    # nested assertOld: parent group index and partition index are both -1: 
             #    if not (parent_partition_parent_index == -1 and parent_group_parent_index == -1):
             #        logger.error("[Error]: dfs_parent call to unvisited"
             #            + " parent resulted in only one of parent/group partition index having "
@@ -1332,7 +1333,8 @@ def dfs_parent(visited, node):  #function for dfs
                 current_partition_isLoop = True
 
                 try:
-                    msg = "[Error]: parent_partition_parent_index is -1" + " indicating that current partition is a loop but " + " parent_group_parent_index is not -1, when the group should also be in a loop."
+                    msg = "[Error]: parent_partition_parent_index is -1" + " indicating that current partition is a loop but " \
+                        + " parent_group_parent_index is not -1, when the group should also be in a loop."
                     assert not parent_group_parent_index != -1 , msg
                 except AssertionError:
                     logger.exception("[Error]: assertion failed")
@@ -1400,6 +1402,15 @@ def dfs_parent(visited, node):  #function for dfs
         # this is also used in the else: part for debugging so declare here
         parent_partition_number = None
         parent_group_number = None
+
+        try:
+            msg = "[Error]: BFS: partition_group_tuple is None"
+            assert partition_group_tuple != None , msg
+        except AssertionError:
+            logger.exception("[Error]: assertion failed")
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
         if partition_group_tuple != None:   # if this is false it's an error (see the else-part)
             parent_partition_number = partition_group_tuple[0]
             # If parent is not in the previous partition, the parent may still
@@ -1448,7 +1459,7 @@ def dfs_parent(visited, node):  #function for dfs
             #    logging.shutdown()
             #    os._exit(0)
 
-            # parent_partition_number != -1 was asserted.
+            # parent_partition_number != -1 was assserted.
             # We know the parent was already visited. dfs_parent(parent)
             # set and saved the parent's partition number. The index of the 
             # parent may or may not be known. If node and parent are in a loop then the index of
@@ -1578,13 +1589,14 @@ def dfs_parent(visited, node):  #function for dfs
                     # Note: We detect loops above when we generate the parent_node_visited_tuples
                     # in the (for parent_index in node.parents) loop so we can use the L-based 
                     # partition/group names for partitions/groups that
-                    # have a loop. Here we just assert that the just detected loop that we found 
+                    # have a loop. Here we just asssert that the just detected loop that we found 
                     # iterating through the parent_node_visited_tuples should also
                     # have been detected above in the (for parent_index in node.parents) loop
                     # that generated the parent_node_visited_tuples.
 
                     try:
-                        msg = "[Error] detected partition loop when" + " processing parent_node_visited_tuple that was not" + " detected when generating parent_node_visited_tuple"
+                        msg = "[Error] detected partition loop when" + " processing parent_node_visited_tuple that was not" \
+                            + " detected when generating parent_node_visited_tuple"
                         assert not parent_partition_number == -1 , msg
                     except AssertionError:
                         logger.exception("[Error]: assertion failed")
@@ -1606,6 +1618,14 @@ def dfs_parent(visited, node):  #function for dfs
                 #partition_group_tuple = nodeIndex_to_partition_partitionIndex_group_groupIndex_map.get(parent_node.ID)
                 #parent_group_number = None
                 # This must be true (leave this if for now)
+                try:
+                    msg = "[Error]: BFS: partition_group_tuple is None"
+                    assert partition_group_tuple != None , msg
+                except AssertionError:
+                    logger.exception("[Error]: assertion failed")
+                    if exit_program_on_exception:
+                        logging.shutdown()
+                        os._exit(0)
                 if partition_group_tuple != None:
                     # we have visited parent, but if visit was part of a loop then 
                     # the parent may not have been assigned to a partition or group
@@ -1661,7 +1681,7 @@ def dfs_parent(visited, node):  #function for dfs
                         # of iterations for a non-loop group is 1. The name for a group
                         # or partition with a loop ends with "L".
 
-                        # Changed this to an assert. The loop should have also been
+                        # Changed this to an asssert. The loop should have also been
                         # detected above when we generated parent_node_visited_tuples.
                         # assert: already detectd loop
                         #global current_group_isLoop
@@ -1670,14 +1690,15 @@ def dfs_parent(visited, node):  #function for dfs
 
 
                         try:
-                            msg = "[Error]: detected group loop when" + " processing parent_node_visited_tuple that was not" + " detected when generating parent_node_visited_tuple"
+                            msg = "[Error]: detected group loop when" + " processing parent_node_visited_tuple that was not" \
+                                + " detected when generating parent_node_visited_tuple"
                             assert not current_group_isLoop == False , msg
                         except AssertionError:
                             logger.exception("[Error]: assertion failed")
                             if exit_program_on_exception:
                                 logging.shutdown()
                                 os._exit(0)
-                        # assertOld
+                        # assertOld:
                         #if current_group_isLoop == False:
                         #    logger.error("[Error]: detected group loop when"
                         #        + " processing parent_node_visited_tuple that was not"
@@ -1853,14 +1874,15 @@ def dfs_parent(visited, node):  #function for dfs
                         parent_group_position = len(groups) - (num_frontier_groups-parent_group_number)
                         # assert: double check
                         try:
-                            msg = "[Error]: dfs_parent: for parent " + str(parent_index) + " parent_index_in_groups_list != parent_group_position" + " parent_index_in_groups_list: " + str(parent_index_in_groups_list) + " parent_group_position: " + str(parent_group_position)
+                            msg = "[Error]: dfs_parent: for parent " + str(parent_index) + " parent_index_in_groups_list != parent_group_position" \
+                                + " parent_index_in_groups_list: " + str(parent_index_in_groups_list) + " parent_group_position: " + str(parent_group_position)
                             assert parent_index_in_groups_list == parent_group_position , msg
                         except AssertionError:
                             logger.exception("[Error]: assertion failed")
                             if exit_program_on_exception:
                                 logging.shutdown()
                                 os._exit(0)
-                        #assertOld
+                        #assertOld:
                         #if not parent_index_in_groups_list == parent_group_position:
                         #    logger.error("[Error]: dfs_parent: for parent " + str(parent_index)
                         #        + " parent_index_in_groups_list != parent_group_position"
@@ -2036,6 +2058,7 @@ def dfs_parent(visited, node):  #function for dfs
                             sender_receiver_group_patch_tuple_list.append(sender_receiver_group_patch_tuple)
 
                 else:
+                    #assertOld:
                     logger.error("[Error]: dfs_parent: partition_group_tuple " 
                         + "is None should be unreachable.")
                     logging.shutdown()
@@ -2044,6 +2067,7 @@ def dfs_parent(visited, node):  #function for dfs
 # rhc : ******* END Group
 
             else:
+                #  Note: assertion shoudl have failed.
                 # parent is in different/previous partition, (must be previous partition current_partition - 1)
                 # This means that the parent is in a different group too, i.e., it is in a group that
                 # is in the different partition. We can add a noed to the current partiton and a node
@@ -2410,6 +2434,7 @@ def dfs_parent(visited, node):  #function for dfs
                     sender_receiver_group_patch_tuple_list.append(sender_receiver_group_patch_tuple)
  
         else:
+            # Note: assertion shoudl have failed
             logger.error("[Error]: dfs_parent: partition_group_tuple" 
                 + " of parent is None should be unreachable since this is after calling "
                 + " dfs_parent() on the parent and dfs_parent puts a tuple for parent in the map.")
@@ -2452,6 +2477,17 @@ def dfs_parent(visited, node):  #function for dfs
 
         # This should not be false, i.e., we cannot dfs_parent(node) when node
         # has already been visited and put in a partition.
+
+        try:
+            msg = "[Error]: dfs_parent: when adding node to partition" \
+                + " its partition_number is not -1."
+            assert node.partition_number == -1 , msg
+        except AssertionError:
+            logger.exception("[Error]: assertion failed")
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
+
         if node.partition_number == -1:
             logger.trace ("dfs_parent add " + str(node.ID) + " to partition")
             node.partition_number = current_partition_number
@@ -2527,7 +2563,7 @@ def dfs_parent(visited, node):  #function for dfs
 
             # We set partition_number in tuple at beginning of dfs_parent to current_partition_number
             # and likewise for the group number, no need to set it here, but can do 
-            # asserts on these values.
+            # assserts on these values.
             # Suggested assert
             partition_number = current_partition_number
             # In this partition, this node is at position partition_index,
@@ -2555,6 +2591,7 @@ def dfs_parent(visited, node):  #function for dfs
             logger.trace("HHHHHHHHHHHHHHHH dfs_parent: pg_tuple(pnum,pindx,gnum,gindx,posingroupslist) generate for " + str(partition_node.ID)
                 + str(pg_tuple))
         else:
+            # Note: assertion shoudl have failed
             #logger.trace ("dfs_parent do not add " + str(node.ID) + " to partition "
             #    + current_partition_number + " since it is already in partition " 
             #   + node.partition_number)
@@ -3221,6 +3258,15 @@ def bfs(visited, node):
                     pg_tuple = nodeIndex_to_partition_partitionIndex_group_groupIndex_map[parent_index]
                     partition_index_of_parent = pg_tuple[1]
                     #group_index_of_parent = pg_tuple[3]
+                    try:
+                        msg = "BFS: global map index of " + parent_index + " is -1"
+                        assert partition_index_of_parent != -1 , msg
+                    except AssertionError:
+                        logger.exception("[Error]: assertion failed")
+                        if exit_program_on_exception:
+                            logging.shutdown()
+                            os._exit(0)
+        
                     if partition_index_of_parent != -1:
                         # Suggsted assert group_index is also -1
                         list_of_parents_of_partition_node[i] = partition_index_of_parent
@@ -3230,6 +3276,7 @@ def bfs(visited, node):
                             + " for partition node.")
                             #+ group_index_of_parent + " for group node")
                     else:
+                        #Note: assertion should have failed
                         logger.error("BFS: global map index of " + parent_index + " is -1")
 
                 # Q: where do this? After partition is done since we need to patch
@@ -4073,7 +4120,7 @@ def bfs(visited, node):
 
 #rhc:
 # 1. clear instead of re-init?
-# 2. Really need to patch groups? If no Suggested assert no patching. Note:
+# 2. Really need to patch groups? If no, Suggested assert no patching. Note:
 #       we find loops on backup and we don't do patch stuff until after
 #       we see all backups, so can we do patch stuff without knowing 
 #       about loop that will be detected later?
@@ -4796,7 +4843,7 @@ def print_BFS_stats():
                         + " but num_nodes is " + str(num_nodes))
             else:
                 pass
-                # we are not asserting anything about the length of the arrays
+                # we are not assserting anything about the length of the arrays
                 # in the struct_of_arrays. These arrays length were calculated
                 # and we are not checking that calculation here.
 
@@ -4832,7 +4879,7 @@ def print_BFS_stats():
                         + " but num_nodes is " + str(num_nodes))
             else:
                 pass
-                # we are not asserting anything about the length of the arrays
+                # we are not assserting anything about the length of the arrays
                 # in the struct_of_arrays. These arrays length were calculated
                 # and we are not checking that calculation here.
 
@@ -5294,7 +5341,7 @@ if __name__ == '__main__':
             logging.shutdown()
             os._exit(0)
     # assertOld:
-    #if len(current_partition) > 0:
+    if len(current_partition) > 0:
     #    logger.error("[Error]: bfs: len(current_partition) > 0"
     #        + " after last call to bfs.")
     #    logging.shutdown()
@@ -5382,15 +5429,25 @@ if __name__ == '__main__':
         frontier_costs.append(frontier_cost)
     else:
 
-        if len(frontier) > 0:
-            logger.error("[Error]: bfs: len(frontier) > 0"
-                + " after last call to bfs.")
-            logging.shutdown()
-            os._exit(0)
+        try:
+            msg = "[Error]: bfs: len(frontier) > 0" \
+                + " after last call to bfs."
+            assert not len(frontier) > 0 , msg
+        except AssertionError:
+            logger.exception("[Error]: assertion failed")
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
+        #assertOld:
+        #if len(frontier) > 0:
+        #    logger.error("[Error]: bfs: len(frontier) > 0"
+        #        + " after last call to bfs.")
+        #    logging.shutdown()
+        #    os._exit(0)
 
-        # Always do this - below we assert final frontier is empty.
+        # Always do this - below we asssert final frontier is empty.
         # Does not require a deepcopy.
-        # ToDo: We can stop doing this and remove the assertion
+        # ToDo: We can stop doing this and remove the asssertion
         # in print_BFS_stats().
         frontiers.append(frontier.copy())
 
