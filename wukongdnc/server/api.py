@@ -50,12 +50,12 @@ def send_object(obj, websocket):
     # send_object: len obj: 278522 needs 3 bytes
     #time.sleep(0.6)
     websocket.sendall(len(obj).to_bytes(4, byteorder='big'))
-    #logger.error("length of: len(obj).to_bytes(4, byteorder='big'): " + str(len(len(obj).to_bytes(4, byteorder='big'))))
+    #logger.trace("length of: len(obj).to_bytes(4, byteorder='big'): " + str(len(len(obj).to_bytes(4, byteorder='big'))))
     #time.sleep(0.6)
     # Next, we send the serialized object itself. 
-    #logger.error(thread_name + ": send_object: len obj: " + str(len(obj)))
+    #logger.trace(thread_name + ": send_object: len obj: " + str(len(obj)))
     websocket.sendall(obj)
-    #logger.error(thread_name + ": sent object:") 
+    #logger.trace(thread_name + ": sent object:") 
 
 def recv_object(websocket):
     """
@@ -73,12 +73,12 @@ def recv_object(websocket):
     # First, we receive the number of bytes of the incoming serialized object.
 
     #thread_name = threading.current_thread().name
-    #logger.error(thread_name + ": do receive") 
+    #logger.trace(thread_name + ": do receive") 
     data = bytearray()
     while len(data) < 4:
         #new_data = websocket.recv(4 - len(data)).strip()
         new_data = websocket.recv(4 - len(data))
-        #logger.error(thread_name + ": recv_object received") 
+        #logger.trace(thread_name + ": recv_object received") 
 
         if not new_data:
             logger.warn("Stopped reading incoming message size from socket early. Have read " + str(len(data)) + " bytes of a total expected 4 bytes.")
@@ -89,15 +89,15 @@ def recv_object(websocket):
     
     # Convert the bytes representing the size of the incoming serialized object to an integer.
     incoming_size = int.from_bytes(data, 'big')
-    #logger.error("%s : recv_object: Will receive another message of size %d bytes (%s)." % (thread_name, incoming_size, str(data)))
+    #logger.trace("%s : recv_object: Will receive another message of size %d bytes (%s)." % (thread_name, incoming_size, str(data)))
     data = bytearray()
-    #logger.error(thread_name + ": created second data object, incoming_size: " + str(incoming_size))
+    #logger.trace(thread_name + ": created second data object, incoming_size: " + str(incoming_size))
     while len(data) < incoming_size:
         # Finally, we read the serialized object itself.
-        #logger.error(thread_name + ": start recv_object rcv") 
+        #logger.trace(thread_name + ": start recv_object rcv") 
         #new_data = websocket.recv(incoming_size - len(data)).strip()
         new_data = websocket.recv(incoming_size - len(data))
-        #logger.error(thread_name + ": recv_object received") 
+        #logger.trace(thread_name + ": recv_object received") 
 
         if not new_data:
             break 
@@ -353,8 +353,8 @@ def create_all_sync_objects(websocket, op, type, name, state):
             Our current state.
     """
     msg_id = str(uuid.uuid4())
-    #logger.error("api: create_all_sync_objects: Sending 'create_all_sync_objects' message to server. Op='%s', type='%s', id='%s', state=%s" % (op, type, msg_id, state))
-    #logger.error("api: create_all_sync_objects: length name: " + str(len(name)))
+    #logger.trace("api: create_all_sync_objects: Sending 'create_all_sync_objects' message to server. Op='%s', type='%s', id='%s', state=%s" % (op, type, msg_id, state))
+    #logger.trace("api: create_all_sync_objects: length name: " + str(len(name)))
     # we set state.keyword_arguments before call to create()
     message = {
         "op": op,
@@ -363,7 +363,7 @@ def create_all_sync_objects(websocket, op, type, name, state):
         "state": make_json_serializable(state),
         "id": msg_id
     }
-    #logger.error("api: create_all_sync_objects: create_all_fanins_and_faninNBs_and_possibly_work_queue: op:" + op + " type: " + type + " state: " + str(state) + " id: " + str(id))
+    #logger.trace("api: create_all_sync_objects: create_all_fanins_and_faninNBs_and_possibly_work_queue: op:" + op + " type: " + type + " state: " + str(state) + " id: " + str(id))
     """
     message0 = name[0] 
     message1 = name[1]
@@ -379,9 +379,9 @@ def create_all_sync_objects(websocket, op, type, name, state):
     """
 
     msg = json.dumps(message).encode('utf-8')
-    #logger.error("api: create_all_sync_objects: calling send object")
+    #logger.trace("api: create_all_sync_objects: calling send object")
     send_object(msg, websocket)
-    #logger.error("create_all_sync_objects: Sent 'create_all_fanins_and_faninNBs' message to server")
+    #logger.trace("create_all_sync_objects: Sent 'create_all_fanins_and_faninNBs' message to server")
 
     # Receive data. This should just be an ACK, as the TCP server will 'ACK' our create() calls.
     ack = recv_object(websocket)

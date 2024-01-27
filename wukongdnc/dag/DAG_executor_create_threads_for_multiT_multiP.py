@@ -59,8 +59,18 @@ def create_and_run_threads_for_multiT_multiP(process_name,payload,completed_task
 
     thread_list = []
     num_threads_created_for_multiP = 0
-    if not run_all_tasks_locally:
-        logger.error("[Error]: DAG_executor_driver: create_and_run_threads_for_multiT_multiP: multithreaded multiprocessing loop but not run_all_tasks_locally")
+    try:
+        msg = "[Error]: DAG_executor_driver: create_and_run_threads_for_multiT_multiP: multithreaded multiprocessing loop but not run_all_tasks_locally"
+        assert run_all_tasks_locally , msg
+    except AssertionError:
+        logger.exception("[Error]: assertion failed")
+        if exit_program_on_exception:
+            logging.shutdown()
+            os._exit(0)
+    #assertOld:
+    #if not run_all_tasks_locally:
+    #    logger.error("[Error]: DAG_executor_driver: create_and_run_threads_for_multiT_multiP: multithreaded multiprocessing loop but not run_all_tasks_locally")
+
     logger.trace(process_name + ": DAG_executor_driver: create_and_run_threads_for_multiT_multiP: Starting threads for multhreaded multipocessing.")
     iteration = 1
     #while True:

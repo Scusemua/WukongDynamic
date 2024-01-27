@@ -88,7 +88,7 @@ class DAG_executor_FanIn(MonitorSU):
     # the last to call fan_in is expected to terminate. The last client to call fan_in will become the fan-in task.
     # no meaningful return value expected by client
     def fan_in(self, **kwargs):
-        #logger.error("fanin: " + str(DAG_executor_FanIn.num_fanins))
+        #logger.tace("fanin: " + str(DAG_executor_FanIn.num_fanins))
         #DAG_executor_FanIn.num_fanins += 1
         logger.trace("fan_in %s calling enter_monitor" % self.monitor_name)
         # if we called try_fan_in first, we still have the mutex so this enter_monitor does not do mutex.P

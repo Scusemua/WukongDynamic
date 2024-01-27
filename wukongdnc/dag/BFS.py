@@ -3458,19 +3458,39 @@ def bfs(visited, node):
                         if current_partition_number == 1:
 #rhc incremental groups
                             if not use_page_rank_group_partitions:
-                                if not partition_name in BFS_generate_DAG_info.leaf_tasks_of_partitions_incremental:
-                                    logger.error("partition " + partition_name + " is the first partition"
-                                        + " but it is not in leaf_tasks_of_partitions_incemental.")
-                                else:
-                                    # we have generated a state for leaf task partition_name. 
-                                    BFS_generate_DAG_info.leaf_tasks_of_partitions_incremental.remove(partition_name)
+                                try:
+                                    msg = "[Error]: BFS: partition " + partition_name + " is the first partition" \
+                                        + " but it is not in leaf_tasks_of_partitions_incemental."
+                                    assert partition_name in BFS_generate_DAG_info.leaf_tasks_of_partitions_incremental , msg
+                                except AssertionError:
+                                    logger.exception("[Error]: assertion failed")
+                                    if exit_program_on_exception:
+                                        logging.shutdown()
+                                        os._exit(0)
+                                #assertOld
+                                #if not partition_name in BFS_generate_DAG_info.leaf_tasks_of_partitions_incremental:
+                                #    logger.error("partition " + partition_name + " is the first partition"
+                                #        + " but it is not in leaf_tasks_of_partitions_incemental.")
+                                #else:
+                                # we have generated a state for leaf task partition_name. 
+                                BFS_generate_DAG_info.leaf_tasks_of_partitions_incremental.remove(partition_name)
                             else:
-                                if not group_name in BFS_generate_DAG_info.leaf_tasks_of_groups_incremental:
-                                    logger.error("group " + group_name + " is the first group/partition"
-                                        + " but it is not in leaf_tasks_of_groups_incemental.")
-                                else:
-                                    # we have generated a state for leaf task group_name. 
-                                    BFS_generate_DAG_info.leaf_tasks_of_groups_incremental.remove(group_name)
+                                try:
+                                    msg = "[Error]: BFS: group " + group_name + " is the first group/partition" \
+                                        + " but it is not in leaf_tasks_of_groups_incemental."
+                                    assert group_name in BFS_generate_DAG_info.leaf_tasks_of_groups_incremental , msg
+                                except AssertionError:
+                                    logger.exception("[Error]: assertion failed")
+                                    if exit_program_on_exception:
+                                        logging.shutdown()
+                                        os._exit(0)
+                                #assertOld:
+                                #if not group_name in BFS_generate_DAG_info.leaf_tasks_of_groups_incremental:
+                                #    logger.error("group " + group_name + " is the first group/partition"
+                                #        + " but it is not in leaf_tasks_of_groups_incemental.")
+                                #else:
+                                # we have generated a state for leaf task group_name. 
+                                BFS_generate_DAG_info.leaf_tasks_of_groups_incremental.remove(group_name)
 
 
                             if DAG_info.get_DAG_info_is_complete():
@@ -3756,9 +3776,20 @@ def bfs(visited, node):
                                                     #       + " task/partition for incremental DAG generation is not empty.")
                                                     
                                                     task_name = state_info_incremental.task_name
-                                                    if not task_name == name:
-                                                        logger.error("[Error]: task name of leaf task is not"
-                                                            + " name in leaf_tasks_of_partitions_incremental.")
+                                                    try:
+                                                        msg = "[Error]: BFS: task name of leaf task is not" \
+                                                            + " name in leaf_tasks_of_partitions_incremental."
+                                                        assert task_name == name , msg
+                                                    except AssertionError:
+                                                        logger.exception("[Error]: assertion failed")
+                                                        if exit_program_on_exception:
+                                                            logging.shutdown()
+                                                            os._exit(0)
+                                                    #assertOld:
+                                                    #if not task_name == name:
+                                                    #    logger.error("[Error]: task name of leaf task is not"
+                                                    #        + " name in leaf_tasks_of_partitions_incremental.")
+                    
                                                     dict_of_results_incremental =  {}
                                                     dict_of_results_incremental[task_name] = task_inputs
                                                     logger.trace("BFS: add leaf task to new_leaf_task_work_tuples: " + task_name)
@@ -3851,9 +3882,20 @@ def bfs(visited, node):
                                                     #        + " task/partition for incremental DAG generation is not empty.")
                                                     
                                                     task_name = state_info_incremental.task_name
-                                                    if not task_name == name:
-                                                        logger.error("[Error]: task name of leaf task is not"
-                                                            + " name in leaf_tasks_of_groups_incremental.")
+                                                    try:
+                                                        msg = "[Error]: BFS: task name of leaf task is not" \
+                                                            + " name in leaf_tasks_of_groups_incremental."
+                                                        assert task_name == name , msg
+                                                    except AssertionError:
+                                                        logger.exception("[Error]: assertion failed")
+                                                        if exit_program_on_exception:
+                                                            logging.shutdown()
+                                                            os._exit(0)
+                                                    #assertOld
+                                                    #if not task_name == name:
+                                                    #    logger.error("[Error]: task name of leaf task is not"
+                                                    #        + " name in leaf_tasks_of_groups_incremental.")
+                                                            
                                                     dict_of_results_incremental =  {}
                                                     dict_of_results_incremental[task_name] = task_inputs
                                                     logger.trace("BFS: add leaf task to new_leaf_task_work_tuples: " + task_name)
@@ -4259,6 +4301,15 @@ def bfs(visited, node):
                     pg_tuple = nodeIndex_to_partition_partitionIndex_group_groupIndex_map[parent_ID]
                     #partition_index_of_parent = pg_tuple[1]
                     group_index_of_parent = pg_tuple[3]
+                    try:
+                        msg = "[Error]: BFS: global map index of " + parent_index + " is -1"
+                        assert group_index_of_parent != -1, msg
+                    except AssertionError:
+                        logger.exception("[Error]: assertion failed")
+                        if exit_program_on_exception:
+                            logging.shutdown()
+                            os._exit(0)
+                    #assertOld
                     if group_index_of_parent != -1:
                         # Suggested assert group_index is also -1
                         #list_of_parents_of_partition_node[i] = partition_index_of_parent
@@ -4268,8 +4319,8 @@ def bfs(visited, node):
                             #+  " to " + partition_index_of_parent 
                             #+ " for partition node and "
                             + " to " + str(group_index_of_parent) + " for group node")
-                    else:
-                        logger.error("global map index of " + parent_index + " is -1")
+                    #else:
+                    #    logger.error("global map index of " + parent_index + " is -1")
 
                 patch_parent_mapping_for_groups = []
 
@@ -4574,9 +4625,19 @@ def input_graph():
         i += 1
     logger.trace("input_graph: num edges in graph: " + str(num_edges) + " = num child edges: " 
         + str(count_child_edges) + " + num_self_loops: " + str(num_self_loops))
-    if not ((num_edges - num_self_loops) == count_child_edges):
-        logger.error("[Error]: input_graph: num child edges in graph is " + str(count_child_edges) + " but edges in file is "
-            + str(num_edges))
+    try:
+        msg = "[Error]: input_graph: num child edges in graph is " + str(count_child_edges) + " but edges in file is " \
+            + str(num_edges)
+        assert (num_edges - num_self_loops) == count_child_edges , msg
+    except AssertionError:
+        logger.exception("[Error]: assertion failed")
+        if exit_program_on_exception:
+            logging.shutdown()
+            os._exit(0)
+    #assertOld
+    #if not ((num_edges - num_self_loops) == count_child_edges):
+    #    logger.error("[Error]: input_graph: num child edges in graph is " + str(count_child_edges) + " but edges in file is "
+    #        + str(num_edges))
 
     count_parent_edges = 0
     i = 1
@@ -4588,9 +4649,20 @@ def input_graph():
 
     logger.trace("input_graph: num_edges in graph: " + str(num_edges) + " = num parent edges: " 
         + str(count_parent_edges) + " + num_self_loops: " + str(num_self_loops))
-    if not ((num_edges - num_self_loops) == count_parent_edges):
-        logger.error("[Error]: input_graph: num parent edges in graph is " + str(count_parent_edges) + " but edges in file is "
-        + str(num_edges))
+    
+    try:
+        msg = "[Error]: input_graph: num parent edges in graph is " + str(count_parent_edges) + " but edges in file is " \
+        + str(num_edges)
+        assert (num_edges - num_self_loops) == count_parent_edges , msg
+    except AssertionError:
+        logger.exception("[Error]: assertion failed")
+        if exit_program_on_exception:
+            logging.shutdown()
+            os._exit(0)
+    #assertOld
+    #if not ((num_edges - num_self_loops) == count_parent_edges):
+    #    logger.error("[Error]: input_graph: num parent edges in graph is " + str(count_parent_edges) + " but edges in file is "
+    #    + str(num_edges))
 
     logger.trace("input_graph: num_parent_appends:" + str(num_parent_appends))
     logger.trace("input_graph: num_children_appends:" + str(num_children_appends))
@@ -4805,9 +4877,21 @@ def print_BFS_stats():
     logger.trace("input_file: generated: num_nodes: " + str(num_nodes) + " num_edges: " + str(num_edges))
     logger.trace("")
     logger.trace("visited length: " + str(len(visited)))
-    if len(visited) != num_nodes:
-        logger.error("[Error]: print_BFS_stats: visited length is " + str(len(visited))
-            + " but num_nodes is " + str(num_nodes))
+    try:
+        msg = "[Error]: print_BFS_stats: visited length is " + str(len(visited)) \
+            + " but num_nodes is " + str(num_nodes)
+        + str(num_edges)
+        assert not (len(visited) != num_nodes) , msg
+    except AssertionError:
+        logger.exception("[Error]: assertion failed")
+        if exit_program_on_exception:
+            logging.shutdown()
+            os._exit(0)
+    #assertOld:
+    #if len(visited) != num_nodes:
+    #    logger.error("[Error]: print_BFS_stats: visited length is " + str(len(visited))
+    #       + " but num_nodes is " + str(num_nodes))
+            
     print_val = ""
     for x in visited:
         print_val += str(x) + " "
@@ -4827,9 +4911,19 @@ def print_BFS_stats():
         sum_of_partition_lengths -= (total_loop_nodes_added + num_shadow_nodes_added_to_partitions)
         logger.trace("sum_of_partition_lengths (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
             + str(sum_of_partition_lengths))
-        if sum_of_partition_lengths != num_nodes:
-            logger.error("[Error]: print_BFS_stats: sum_of_partition_lengths is " + str(sum_of_partition_lengths)
-                + " but num_nodes is " + str(num_nodes))
+        try:
+            msg = "[Error]: print_BFS_stats: sum_of_partition_lengths is " + str(sum_of_partition_lengths) \
+                + " but num_nodes is " + str(num_nodes)
+            + str(num_edges)
+            assert not (sum_of_partition_lengths != num_nodes) , msg
+        except AssertionError:
+            logger.exception("[Error]: assertion failed")
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
+        #if sum_of_partition_lengths != num_nodes:
+        #    logger.error("[Error]: print_BFS_stats: sum_of_partition_lengths is " + str(sum_of_partition_lengths)
+        #        + " but num_nodes is " + str(num_nodes))
     else: # use_shared_partitions_groups so computing PageRank
         if not use_page_rank_group_partitions:
             if not use_struct_of_arrays_for_pagerank:
@@ -4838,9 +4932,20 @@ def print_BFS_stats():
                 shared_partition_length -= (total_loop_nodes_added + (2*num_shadow_nodes_added_to_partitions))
                 logger.trace("shared_partition_length (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
                     + str(shared_partition_length))
-                if shared_partition_length != num_nodes:
-                    logger.error("[Error]: print_BFS_stats: shared_partition_length is " + str(shared_partition_length)
-                        + " but num_nodes is " + str(num_nodes))
+                try:
+                    msg = "[Error]: print_BFS_stats: shared_partition_length is " + str(shared_partition_length) \
+                        + " but num_nodes is " + str(num_nodes)
+                    + str(num_edges)
+                    assert not (shared_partition_length != num_nodes) , msg
+                except AssertionError:
+                    logger.exception("[Error]: assertion failed")
+                    if exit_program_on_exception:
+                        logging.shutdown()
+                        os._exit(0)
+                #assertOld:
+                #if shared_partition_length != num_nodes:
+                #    logger.error("[Error]: print_BFS_stats: shared_partition_length is " + str(shared_partition_length)
+                #        + " but num_nodes is " + str(num_nodes))
             else:
                 pass
                 # we are not assserting anything about the length of the arrays
@@ -4860,9 +4965,19 @@ def print_BFS_stats():
         sum_of_groups_lengths -= (total_loop_nodes_added + num_shadow_nodes_added_to_groups)
         logger.trace("sum_of_groups_lengths (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
             + str(sum_of_groups_lengths))
-        if sum_of_groups_lengths != num_nodes:
-            logger.error("[Error]: print_BFS_stats: sum_of_groups_lengths is " + str(sum_of_groups_lengths)
-                + " but num_nodes is " + str(num_nodes))
+        try:
+            msg = "[Error]: print_BFS_stats: sum_of_groups_lengths is " + str(sum_of_groups_lengths) \
+                + " but num_nodes is " + str(num_nodes)
+            + str(num_edges)
+            assert not (sum_of_groups_lengths != num_nodes) , msg
+        except AssertionError:
+            logger.exception("[Error]: assertion failed")
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
+        #if sum_of_groups_lengths != num_nodes:
+        #    logger.error("[Error]: print_BFS_stats: sum_of_groups_lengths is " + str(sum_of_groups_lengths)
+        #        + " but num_nodes is " + str(num_nodes))
     else: # use_shared_partitions_groups so computing PageRank
         if use_page_rank_group_partitions:
             if not use_struct_of_arrays_for_pagerank:
@@ -4874,9 +4989,18 @@ def print_BFS_stats():
                 shared_groups_length -= (total_loop_nodes_added + (2*num_shadow_nodes_added_to_groups))
                 logger.trace("shared_groups_length (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
                     + str(shared_groups_length))
-                if shared_groups_length != num_nodes:
-                    logger.error("[Error]: print_BFS_stats: shared_groups_length is " + str(shared_groups_length)
-                        + " but num_nodes is " + str(num_nodes))
+                try:
+                    msg = "[Error]: print_BFS_stats: sum_of_groups_lengths is " + str(sum_of_groups_lengths) \
+                        + " but num_nodes is " + str(num_nodes)
+                    assert not (shared_groups_length != num_nodes) , msg
+                except AssertionError:
+                    logger.exception("[Error]: assertion failed")
+                    if exit_program_on_exception:
+                        logging.shutdown()
+                        os._exit(0)
+                #if shared_groups_length != num_nodes:
+                #    logger.error("[Error]: print_BFS_stats: shared_groups_length is " + str(shared_groups_length)
+                #       + " but num_nodes is " + str(num_nodes))
             else:
                 pass
                 # we are not assserting anything about the length of the arrays
@@ -5340,7 +5464,8 @@ if __name__ == '__main__':
         if exit_program_on_exception:
             logging.shutdown()
             os._exit(0)
-    # assertOld:
+    # assertOld: This should not be possible, assert it.
+    # If assertion fails determien how it can occur.
     if len(current_partition) > 0:
     #    logger.error("[Error]: bfs: len(current_partition) > 0"
     #        + " after last call to bfs.")

@@ -528,8 +528,17 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
                     # sync ojeccts trigger local execuions of their tasks is not allowed.
                     
                     #if not worker_needs_input:
-                    if worker_needs_input:
-                        logger.error("[Error]: " + thread_name + ": process_faninNBs: not using_workers but worker_needs_input = True")
+                    try:
+                        msg = "[Error]: " + thread_name + ": process_faninNBs: not using_workers but worker_needs_input = True"
+                        assert not worker_needs_input , msg
+                    except AssertionError:
+                        logger.exception("[Error]: assertion failed")
+                        if exit_program_on_exception:
+                            logging.shutdown()
+                            os._exit(0)
+                    #assertOld
+                    #if worker_needs_input:
+                    #    logger.error("[Error]: " + thread_name + ": process_faninNBs: not using_workers but worker_needs_input = True")
                     
                     try:
                         logger.trace(thread_name + ": process_faninNBs: starting DAG_executor thread for task " + name + " with start state " + str(start_state_fanin_task))
@@ -833,10 +842,21 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
         # (run_all_tasks_locally and using_workers and not using_threads_not_processes) or (not run_all_tasks_locally) or (run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and using_Lambda_Function_Simulators_to_Store_Objects):reads (locally) to run the fan_in tasks.)
 
 #rhc: async task ToDo: don't need to be using sims
-        if not (run_all_tasks_locally and using_workers and not using_threads_not_processes and worker_needs_input) and not (run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and (
-            using_Lambda_Function_Simulators_to_Store_Objects) and not sync_objects_in_lambdas_trigger_their_tasks):
-            logger.error("[Error]: " + thread_name + ": process_faninNBs_batch: (not using worker processes, or worker_needs_input is False) and not (storing synch objects remotely in simulated lambdas"
-                + " and using threads to simulate lambdas) but using process_faninNBs batch and we got work back from server.")
+        try:
+            msg = "[Error]: " + thread_name + ": process_faninNBs_batch: (not using worker processes, or worker_needs_input is False) and not (storing synch objects remotely in simulated lambdas" \
+                + " and using threads to simulate lambdas) but using process_faninNBs batch and we got work back from server."
+            assert (run_all_tasks_locally and using_workers and not using_threads_not_processes and worker_needs_input) and not (run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and (
+                using_Lambda_Function_Simulators_to_Store_Objects) and not sync_objects_in_lambdas_trigger_their_tasks) , msg
+        except AssertionError:
+            logger.exception("[Error]: assertion failed")
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
+        #assertOld:
+        #if not (run_all_tasks_locally and using_workers and not using_threads_not_processes and worker_needs_input) and not (run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and (
+        #    using_Lambda_Function_Simulators_to_Store_Objects) and not sync_objects_in_lambdas_trigger_their_tasks):
+        #    logger.error("[Error]: " + thread_name + ": process_faninNBs_batch: (not using worker processes, or worker_needs_input is False) and not (storing synch objects remotely in simulated lambdas"
+        #        + " and using threads to simulate lambdas) but using process_faninNBs batch and we got work back from server.")
 
         if using_workers:
             # return_value is a tuple (start state fanin task, dictionary of fanin results)
@@ -857,7 +877,18 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
                 # 
                 # This should be unreachable; leaving it for now.
                 # If we don't need work then any work from faninNBs should have been enqueued in work queue instead of being returned
-                logger.error("[Error]: " + thread_name + ": process_faninNBs_batch: got work but not worker_needs_input.")
+
+                try:
+                    msg = "[Error]: DAG_executor " + thread_name + ": process_faninNBs_batch: got work but not worker_needs_input." \
+                        + " This should be unreachable."
+                    assert False , msg
+                except AssertionError:
+                    logger.exception("[Error]: assertion failed")
+                    if exit_program_on_exception:
+                        logging.shutdown()
+                        os._exit(0)
+                #assertOld:
+                #logger.error("[Error]: " + thread_name + ": process_faninNBs_batch: got work but not worker_needs_input.")
                 
                 # Also, don't pass in the multprocessing data_dict, so will use the global data dict
                 logger.trace(thread_name + ": process_faninNBs_batch: " + calling_task_name + ": process_faninNBs_batch Results: ")
@@ -943,8 +974,17 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
 
             # if not using_workers then not worker_needs_input must be true. That is, we init worker_needs_input
             # to false and we never set it to true since setting worker_needs_input is guarded everywhere by using_workers.
-            if worker_needs_input:
-                logger.error("[Error]:" + thread_name + ": process_faninNBs_batch: not using_workers but worker_needs_input = True")
+            try:
+                msg = "[Error]:" + thread_name + ": process_faninNBs_batch: not using_workers but worker_needs_input = True"
+                assert not worker_needs_input , msg
+            except AssertionError:
+                logger.exception("[Error]: assertion failed")
+                if exit_program_on_exception:
+                    logging.shutdown()
+                    os._exit(0)
+            #assertOld
+            #if worker_needs_input:
+            #    logger.error("[Error]:" + thread_name + ": process_faninNBs_batch: not using_workers but worker_needs_input = True")
 
             list_of_work_tuples = dummy_DAG_exec_state.return_value
             # Note: On tcp_server, a work tupe is : work_tuple = (start_state_fanin_task,returned_state)
@@ -1296,7 +1336,16 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                         os._exit(0) 
 #rhc: run task
             else:
-                logger.error("[ERROR]: " + thread_name + " : process_fanouts: invalid configuration.")
+                try:
+                    msg = "[ERROR]: " + thread_name + " : process_fanouts: invalid configuration."
+                    assert False , msg
+                except AssertionError:
+                    logger.exception("[Error]: assertion failed")
+                    if exit_program_on_exception:
+                        logging.shutdown()
+                        os._exit(0)
+                #assertOld
+                #logger.error("[ERROR]: " + thread_name + " : process_fanouts: invalid configuration.")
 
     # Note: If we do not piggyback the fanouts with process_faninNBs_batch, we would add
     # all the work to the remote work queue here.
@@ -1589,11 +1638,23 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 if not DAG_info.get_DAG_info_is_complete():
                     #num_tasks_to_execute = len(DAG_tasks) - 1
                     number_of_incomplete_tasks = DAG_info.get_DAG_number_of_incomplete_tasks()
-                    if not number_of_incomplete_tasks == 1:
-                        logger.error("[Error]: DAG_executor_work_loop at start:"
-                            + " Using incremental DAG generation with partitions and"
+                    try:
+                        msg = "[Error]: DAG_executor_work_loop at start:" \
+                            + " Using incremental DAG generation with partitions and" \
                             + " DAG is incomplete but number_of_incomplete_tasks is not 1: "
-                            + str(number_of_incomplete_tasks))
+                        assert number_of_incomplete_tasks == 1 , msg
+                    except AssertionError:
+                        logger.exception("[Error]: assertion failed")
+                        if exit_program_on_exception:
+                            logging.shutdown()
+                            os._exit(0)
+                    #assertOld:
+                    #if not number_of_incomplete_tasks == 1:
+                    #    logger.error("[Error]: DAG_executor_work_loop at start:"
+                    #        + " Using incremental DAG generation with partitions and"
+                    #        + " DAG is incomplete but number_of_incomplete_tasks is not 1: "
+                    #       + str(number_of_incomplete_tasks))
+    
                     num_tasks_to_execute = DAG_number_of_tasks -1
                     logger.trace("DAG_executor_work_loop: at start: DAG_info complete num_tasks_to_execute: " + str(num_tasks_to_execute))
                 else:
@@ -2243,10 +2304,21 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # when we got the new DAG_info and there should be no more
                     # partitions in the continue queue since there can be only 
                     # one partition that is to-be-continued.
-                    if not use_page_rank_group_partitions:
-                        logger.error("[Error]: work loop: process_continue_queue but"
-                            + " using partitions so this second to be continued"
-                            + " partition/task should not be possible.")
+                    try:
+                        msg = "[Error]: work loop: process_continue_queue but" \
+                            + " using partitions so this second to be continued" \
+                            + " partition/task should not be possible."
+                        assert use_page_rank_group_partitions , msg
+                    except AssertionError:
+                        logger.exception("[Error]: assertion failed")
+                        if exit_program_on_exception:
+                            logging.shutdown()
+                            os._exit(0)
+                    #assertOld:
+                    #if not use_page_rank_group_partitions:
+                    #    logger.error("[Error]: work loop: process_continue_queue but"
+                    #       + " using partitions so this second to be continued"
+                    #        + " partition/task should not be possible.")
 #rhc: lambda inc: cq.get
                     #DAG_executor_state.state = continue_queue.get()
                     continue_tuple = continue_queue.get()
@@ -2621,11 +2693,24 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                         if not DAG_info.get_DAG_info_is_complete():
                                             #num_tasks_to_execute = len(DAG_tasks) - 1
                                             number_of_incomplete_tasks = DAG_info.get_DAG_number_of_incomplete_tasks()
-                                            if not number_of_incomplete_tasks == 1:
-                                                logger.error("[Error]: DAG_executor_work_loop:"
-                                                    + " Using incremental DAG generation with partitions and"
-                                                    + " DAG is incomplete but number_of_incomplete_tasks is not 1: "
-                                                    + str(number_of_incomplete_tasks))
+                                            try:
+                                                msg = "[Error]: DAG_executor_work_loop:" \
+                                                    + " Using incremental DAG generation with partitions and" \
+                                                    + " DAG is incomplete but number_of_incomplete_tasks is not 1: " \
+                                                    + str(number_of_incomplete_tasks)
+                                                assert number_of_incomplete_tasks == 1 , msg
+                                            except AssertionError:
+                                                logger.exception("[Error]: assertion failed")
+                                                if exit_program_on_exception:
+                                                    logging.shutdown()
+                                                    os._exit(0)
+                                            #assertOld:
+                                            #if not number_of_incomplete_tasks == 1:
+                                            #    logger.error("[Error]: DAG_executor_work_loop:"
+                                            #        + " Using incremental DAG generation with partitions and"
+                                            #        + " DAG is incomplete but number_of_incomplete_tasks is not 1: "
+                                            #        + str(number_of_incomplete_tasks))
+
                                             # This is a local variabe; each worker has their own 
                                             # num_tasks_to_execute, which could be different since 
                                             # workers may be usng differetn versions of the incremental DAG.
@@ -3519,7 +3604,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 
 #rhc cleanup
                 #for key, value in DAG_tasks.items():
-                #    logger.error(str(key) + ' : ' + str(value))
+                #    logger.trace(str(key) + ' : ' + str(value))
 
                 # using map DAG_tasks from task_name to task
                 task = DAG_tasks[state_info.task_name]
@@ -3878,10 +3963,20 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 
             elif len(state_info.collapse) > 0:
 
-                if len(state_info.fanins) + len(state_info.fanouts) + len(state_info.faninNBs) > 0:
-                    # a state with a collapse has no other fanins/fanuts.
-                    logger.error("[Error]: DAG_executor_work_loop:"
-                        + " state has a collapse but also fanins/fanouts.")
+                try:
+                    msg = "[Error]: DAG_executor_work_loop:" \
+                        + " state has a collapse but also fanins/fanouts."
+                    assert not(len(state_info.fanins) + len(state_info.fanouts) + len(state_info.faninNBs) > 0) , msg
+                except AssertionError:
+                    logger.exception("[Error]: assertion failed")
+                    if exit_program_on_exception:
+                        logging.shutdown()
+                        os._exit(0)
+                #assertOld:
+                #if len(state_info.fanins) + len(state_info.fanouts) + len(state_info.faninNBs) > 0:
+                #    # a state with a collapse has no other fanins/fanuts.
+                #    logger.error("[Error]: DAG_executor_work_loop:"
+                #        + " state has a collapse but also fanins/fanouts.")
 
                 # Note If we run-time cluster, then we may have work in the cluster queue.
                 # We can put this collapse work in the cluster queue too. If the cluster queue is
@@ -4368,9 +4463,19 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 #rhc: cluster:
                             cluster_queue)
 
-                        if worker_needs_input and not using_workers:
-                            logger.error("[Error]: after process_faninNBs"
-                                + " worker_needs_input is True when not using workers.")
+                        try:
+                            msg = "[Error]: after process_faninNBs" \
+                                + " worker_needs_input is True when not using workers."
+                            assert not(worker_needs_input and not using_workers) , msg
+                        except AssertionError:
+                            logger.exception("[Error]: assertion failed")
+                            if exit_program_on_exception:
+                                logging.shutdown()
+                                os._exit(0)
+                        #assertOld:
+                        #if worker_needs_input and not using_workers:
+                        #    logger.error("[Error]: after process_faninNBs"
+                        #        + " worker_needs_input is True when not using workers.")
 #rhc: cluster:
                         try:
                             msg = "[Error]: process_faninNBs set" + " worker_needs_input to False when using workers but cluster_queue" \
@@ -4772,7 +4877,7 @@ def DAG_executor(payload):
                     #data_dict[key] = _value
                     value_in_dict = data_dict.get(key,None)
                     if value_in_dict == None:
-                        logger.error("[Error]:(part of asssertion error: starting DAG_executor for simulated lambda"
+                        logger.error("[Error]:(part of Asssertionrror: starting DAG_executor for simulated lambda"
                             + " data_dict missing value for input key " + str(key))
                         #logging.shutdown()
                         #os._exit(0)
@@ -4933,8 +5038,17 @@ def DAG_executor_processes(payload,completed_tasks_counter,completed_workers_cou
     thread_name = threading.current_thread().name
     logger.trace("proc " + proc_name + " " + " thread " + thread_name + ": worker process started.")
 
-    if not using_workers:
-        logger.error("[Error]: DAG_executor_processes: executing multiprocesses but using_workers is false.")
+    try:
+        msg = "[Error]: DAG_executor_processes: executing multiprocesses but using_workers is false."
+        assert using_workers , msg
+    except AssertionError:
+        logger.exception("[Error]: assertion failed")
+        if exit_program_on_exception:
+            logging.shutdown()
+            os._exit(0)
+    #assertOld:
+    #if not using_workers:
+    #    logger.error("[Error]: DAG_executor_processes: executing multiprocesses but using_workers is false.")
 
     #logger = logging.getLogger('main')__name__
     #level = logging.DEBUG

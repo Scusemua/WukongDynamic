@@ -2,6 +2,8 @@
 from .monitor_su import MonitorSU
 import _thread
 import time
+import os
+from wukongdnc.dag.DAG_executor_constants import exit_program_on_exception
 
 import logging 
 
@@ -62,10 +64,9 @@ class BoundedBuffer(MonitorSU):
     def deposit(self, **kwargs):
         try:
             super(BoundedBuffer, self).enter_monitor(method_name="deposit")
-        except Exception as ex:
-            logger.error("[ERROR] Failed super(BoundedBuffer, self)")
-            logger.error("[ERROR] self: " + str(self.__class__.__name__))
-            logger.trace(ex)
+        except Exception:
+            logger.exception("[ERROR] Failed super(BoundedBuffer, self)")
+            logger.exception("[ERROR] self: " + str(self.__class__.__name__))
             return 0
 
         logger.trace(" deposit() entered monitor, len(self._notFull) ="+str(len(self._notFull))+",self._capacity="+str(self._capacity))
@@ -179,8 +180,19 @@ class BoundedBuffer(MonitorSU):
                 listOfValues.append(self._buffer[self._out])
                 self._out=(self._out+1) % int(self._capacity)
                 self._fullSlots-=1
-            if (self._fullSlots != 0):
-                logger.error("[Error]: BoundedBuffer withdraw_half _fullSlots not 0 after second withdawl: " + str(self._fullSlots))
+
+            try:
+                msg =  "[Error]: BoundedBuffer withdraw_half _fullSlots not 0 after second withdawl: " + str(self._fullSlots)
+                assert self._fullSlots != 0 , msg
+            except AssertionError:
+                logger.exception("[Error]: assertion failed")
+                if exit_program_on_exception:
+                    logging.shutdown()
+                    os._exit(0)
+            #assertOld:
+            #if (self._fullSlots != 0):
+            #    logger.error("[Error]: BoundedBuffer withdraw_half _fullSlots not 0 after second withdawl: " + str(self._fullSlots))
+                    
         restart = False
         #threading.current_thread()._restart = False
         #threading.current_thread()._returnValue=value
