@@ -1,6 +1,5 @@
 #from re import A
 import json
-import traceback
 import socketserver
 import threading
 #import json
@@ -126,13 +125,17 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 logger.trace("[HANDLER] TCPHandler: for client with ID=" + message_id + " action is: " + action)
                 self.action_handlers[action](message = json_message)
 
-            except ConnectionResetError as ex:
-                logger.error(ex)
-                logger.error(traceback.format_exc())
-                return
-            except Exception as ex:
-                logger.error(ex)
-                logger.error(traceback.format_exc())
+            except ConnectionResetError:
+                logger.exception("[Error]: TCP_server_lambda: ConnectionResetError")
+                if exit_program_on_exception:
+                    logging.shutdown()
+                    os._exit(0)
+                #return
+            except Exception:
+                logger.exception("[Error]: TCP_server_lambda: Exception")
+                if exit_program_on_exception:
+                    logging.shutdown()
+                    os._exit(0)
                 
     def _get_synchronizer_name(self, type_name = None, name = None):
         """
@@ -259,10 +262,11 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 with lambda_function_lock:
                     try:
                         return_value = simulated_lambda_function.lambda_handler(payload) 
-                    except Exception as ex:
-                        logger.error("[ERROR]: " + thread_name + ": tcp_server_lambda: invoke_lambda_synchronously: Failed to run lambda handler for synch object: " + sync_object_name)
-                        logger.error(ex)
-                        logging.exception("tcp_server_lambda: invoke_lambda_synchronously:")
+                    except Exception:
+                        logger.exception("[ERROR]: " + thread_name + ": tcp_server_lambda: invoke_lambda_synchronously: Failed to run lambda handler for synch object: " + sync_object_name)
+                        if exit_program_on_exception:
+                            logging.shutdown()
+                            os._exit(0)
             else:
                 # get the python function that is being used to simulate a lambda
                 # Note: We are not using the DAG_Orchestrator
@@ -273,10 +277,11 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 #with lambda_function_lock:
                 try:
                     return_value = simulated_lambda_function.lambda_handler(payload) 
-                except Exception as ex:
-                    logger.error("[ERROR]: " + thread_name + ": tcp_server_lambda: invoke_lambda_synchronously: Failed to run lambda handler for synch object: " + sync_object_name)
-                    logger.error(ex)
-                    logging.exception("tcp_server_lambda: invoke_lambda_synchronously:")
+                except Exception:
+                    logger.exception("[ERROR]: " + thread_name + ": tcp_server_lambda: invoke_lambda_synchronously: Failed to run lambda handler for synch object: " + sync_object_name)
+                    if exit_program_on_exception:
+                        logging.shutdown()
+                        os._exit(0)
         else:     
             # For DAG prototype, we use one real function to store process_work_queue and all fanins and faninNBs
             sync_object_name = "LambdaBoundedBuffer" 
@@ -284,11 +289,11 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 try:
                     # invoker.py's invoke_lambda_synchronously
                     return_value = invoke_lambda_synchronously(function_name = sync_object_name, payload = payload)
-                except Exception as ex:
-                    logger.error("[ERROR]: " + thread_name + ": invoke_lambda_synchronously: Failed to invoke lambda function for synch object: " + sync_object_name)
-                    logger.error(ex)
-                    logging.exception("tcp_server_lambda: invoke_lambda_synchronously:")
-            # where: lambda_client.invoke(FunctionName=function_name, InvocationType='RequestResponse', Payload=payload_json)
+                except Exception:
+                    logger.exception("[ERROR]: " + thread_name + ": invoke_lambda_synchronously: Failed to invoke lambda function for synch object: " + sync_object_name)
+                    if exit_program_on_exception:
+                        logging.shutdown()
+                        os._exit(0)           # where: lambda_client.invoke(FunctionName=function_name, InvocationType='RequestResponse', Payload=payload_json)
         
         # The return value from the Lambda function will typically be sent by tcp_server to a Lambda client of tcp_server
         return return_value
@@ -822,9 +827,19 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 all_faninNB_sizes = DAG_info.get_all_faninNB_sizes()
                 is_fanin = task_name in all_fanin_task_names
                 is_faninNB = task_name in all_faninNB_task_names
-                if not is_fanin and not is_faninNB:
-                    logger.error("[Error]: synchronize_process_faninNBs_batch:"
-                        + " sync object for synchronize_sync is neither a fanin nor a faninNB.")
+                try:
+                    msg = "[Error]: synchronize_process_faninNBs_batch:" \
+                        + " sync object for synchronize_sync is neither a fanin nor a faninNB."
+                    assert not(not is_fanin and not is_faninNB) , msg
+                except AssertionError:
+                    logger.exception("[Error]: assertion failed")
+                    if exit_program_on_exception:
+                        logging.shutdown()
+                        os._exit(0)
+                #assertOld:
+                #if not is_fanin and not is_faninNB:
+                #    logger.error("[Error]: synchronize_process_faninNBs_batch:"
+                #        + " sync object for synchronize_sync is neither a fanin nor a faninNB.")
 
                 # compute size of fanin or faninNB 
                 if is_fanin:
@@ -1012,9 +1027,11 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
             try:
                 synchronizer_method = getattr(synchClass, work_queue_method)
-            except Exception as ex:
-                logger.error("tcp_server: synchronize_process_faninNBs_batch: deposit fanin work: Failed to find method '%s' on object '%s'." % (work_queue_method, work_queue_type))
-                raise ex
+            except Exception:
+                logger.exception("tcp_server: synchronize_process_faninNBs_batch: deposit fanin work: Failed to find method '%s' on object '%s'." % (work_queue_method, work_queue_type))
+                if exit_program_on_exception:
+                    logging.shutdown()
+                    os._exit(0)
 
             # To call "deposit" instead of "deposit_all", change the work_queue_method above before you
             # generate synchronizer_method and here iterate over the list.
@@ -1266,10 +1283,11 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     logger.trace("*********************tcp_server_lambda: process_leaf_tasks_batch: called invoke_lambda_synchronously "
                         + " for leaf task: " + str(task_name) + ", returned_state_ignored: "  + str(returned_state_ignored))
 
-            except Exception as ex:
-                logger.error("[ERROR] tcp_server_lambda: process_leaf_tasks_batch: Failed to start DAG_executor Lambda.")
-                logger.error(ex)
-                logging.exception("trigger leaf task")
+            except Exception:
+                logger.exception("[ERROR] tcp_server_lambda: process_leaf_tasks_batch: Failed to start DAG_executor Lambda.")
+                if exit_program_on_exception:
+                    logging.shutdown()
+                    os._exit(0)
 
         resp = {
         "op": "ack",
@@ -1367,9 +1385,19 @@ class TCPHandler(socketserver.StreamRequestHandler):
             all_faninNB_sizes = DAG_info.get_all_faninNB_sizes()
             is_fanin = task_name in all_fanin_task_names
             is_faninNB = task_name in all_faninNB_task_names
-            if not is_fanin and not is_faninNB:
-                logger.error("[Error]: tcp_server_lambda_synchronize_sync:"
-                    + " sync object for synchronize_sync is neither a fanin nor a faninNB.")
+            try: 
+                msg = "[Error]: tcp_server_lambda_synchronize_sync:" \
+                    + " sync object for synchronize_sync is neither a fanin nor a faninNB."
+                assert not(not is_fanin and not is_faninNB) , msg
+            except AssertionError:
+                logger.exception("[Error]: assertion failed")
+                if exit_program_on_exception:
+                    logging.shutdown()
+                    os._exit(0)
+            #assertOld:
+            #if not is_fanin and not is_faninNB:
+            #    logger.error("[Error]: tcp_server_lambda_synchronize_sync:"
+            #        + " sync object for synchronize_sync is neither a fanin nor a faninNB.")
 
             # compute size of fanin or faninNB 
             if is_fanin:
@@ -1514,9 +1542,19 @@ class TCPHandler(socketserver.StreamRequestHandler):
             all_faninNB_sizes = DAG_info.get_all_faninNB_sizes()
             is_fanin = task_name in all_fanin_task_names
             is_faninNB = task_name in all_faninNB_task_names
-            if not is_fanin and not is_faninNB:
-                logger.error("[Error]: tcp_server_lambda synchronize_async:"
-                    + " sync object for synchronize_sync is neither a fanin nor a faninNB.")
+            try: 
+                msg = "[Error]: tcp_server_lambda synchronize_async:" \
+                    + " sync object for synchronize_sync is neither a fanin nor a faninNB."
+                assert not(not is_fanin and not is_faninNB) , msg
+            except AssertionError:
+                logger.exception("[Error]: assertion failed")
+                if exit_program_on_exception:
+                    logging.shutdown()
+                    os._exit(0)
+            #assertOld:
+            #if not is_fanin and not is_faninNB:
+            #    logger.error("[Error]: tcp_server_lambda synchronize_async:"
+            #        + " sync object for synchronize_sync is neither a fanin nor a faninNB.")
 
             # compute size of fanin or faninNB 
             if is_fanin:
@@ -1605,10 +1643,11 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     break 
 
                 data.extend(new_data)
-        except ConnectionAbortedError as ex:
-            logger.error("tcp_server_lambda: Established connection aborted while reading incoming size.")
-            logger.error(repr(ex))
-            return None 
+        except ConnectionAbortedError:
+            logger.exception("tcp_server_lambda: Established connection aborted while reading incoming size.")
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
 
         logger.trace("receive_object self.rfile.read(4) successful")
 
@@ -1623,7 +1662,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             return None 
         
         if incoming_size < 0:
-            logger.error("tcp_server_lambda: Incoming size < 0: " + incoming_size + ". An error might have occurred...")
+            logger.trace("tcp_server_lambda: Incoming size < 0: " + incoming_size + ". An error might have occurred...")
             return None 
 
         logger.trace("tcp_server_lambda: Will receive another message of size %d bytes" % incoming_size)
@@ -1640,10 +1679,11 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
                 data.extend(new_data)
                 logger.trace("tcp_server_lambda: Have read %d/%d bytes from remote client." % (len(data), incoming_size))
-        except ConnectionAbortedError as ex:
-            logger.error("tcp_server_lambda: Established connection aborted while reading data.")
-            logger.error(repr(ex))
-            return None 
+        except ConnectionAbortedError:
+            logger.exception("tcp_server_lambda: Established connection aborted while reading data.")
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
         
         return data 
 
@@ -1848,7 +1888,10 @@ class TCPServer(object):
         try:
             self.tcp_server.serve_forever()
         except Exception as ex:
-            logger.error("tcp_server_lambda: Exception encountered:" + repr(ex))
+            logger.exception("tcp_server_lambda: Exception encountered:" + repr(ex))
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
 
 if __name__ == "__main__":
     # Create a Server Instance

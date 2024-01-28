@@ -1,14 +1,16 @@
-from multiprocessing import synchronize
-from re import A
+#from multiprocessing import synchronize
+#from re import A
 import json
 import cloudpickle 
 import base64 
 import threading
-import traceback
+#import traceback
 import socket
-import threading
+import os
+#import threading
 
 from synchronizer import Synchronizer
+from ..dag.DAG_executor_constants import exit_program_on_exception
 
 # Set up logging.
 import logging 
@@ -89,8 +91,10 @@ class ServerThread(threading.Thread):
                 action = json_message.get("op", None)
                 self.action_handlers[action](message = json_message)
             except Exception as ex:
-                logger.error(ex)
-                logger.error(traceback.format_exc())            
+                logger.exception(ex)
+                if exit_program_on_exception:
+                    logging.shutdown()
+                    os._exit(0)          
 
 class TcpServer(socket.socket):
     def __init__(self):
@@ -103,9 +107,11 @@ class TcpServer(socket.socket):
         print("Starting server...")
         try:
             self.server_loop()
-        except Exception as ex:
-            logger.error(ex)
-            logger.error(traceback.format_exc())
+        except Exception:
+            logger.exception()
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
         finally:
             for client in self.clients:
                 client.close()

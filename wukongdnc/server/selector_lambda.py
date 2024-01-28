@@ -309,7 +309,7 @@ class Selector():
         try:
            return_value = synchronizer_method(synchronizer, **kwargs)
         except Exception as x:
-            logger.error("Caught MonitorSelect domethodcall Error >>> %s" % x)
+            logger.exception("Caught MonitorSelect domethodcall Error >>> %s" % x)
             raise ValueError("Error calling method " + entry_name + " in domethodcall of MonitorSelect")  
         return return_value
     

@@ -183,7 +183,7 @@ class BoundedBuffer(MonitorSU):
 
             try:
                 msg =  "[Error]: BoundedBuffer withdraw_half _fullSlots not 0 after second withdawl: " + str(self._fullSlots)
-                assert self._fullSlots != 0 , msg
+                assert not (self._fullSlots != 0) , msg
             except AssertionError:
                 logger.exception("[Error]: assertion failed")
                 if exit_program_on_exception:

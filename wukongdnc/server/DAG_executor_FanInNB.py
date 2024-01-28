@@ -5,7 +5,6 @@ from .monitor_su import MonitorSU
 import threading
 import time 
 from threading import Thread
-import traceback 
 import os
 
 #from DAG_executor import DAG_executor
@@ -19,6 +18,7 @@ from wukongdnc.dag.DAG_executor_constants import run_all_tasks_locally, using_wo
 from wukongdnc.dag.DAG_executor_constants import store_sync_objects_in_lambdas, sync_objects_in_lambdas_trigger_their_tasks
 from wukongdnc.dag.DAG_executor_constants import input_all_groups_partitions_at_start
 from wukongdnc.dag.DAG_executor_constants import store_fanins_faninNBs_locally
+from wukongdnc.dag.DAG_executor_constants import exit_program_on_exception
 #from wukongdnc.dag.DAG_work_queue_for_threads import thread_work_queue
 from wukongdnc.dag.DAG_executor_work_queue_for_threads import work_queue
 from wukongdnc.wukong.invoker import invoke_lambda_DAG_executor
@@ -99,10 +99,19 @@ class DAG_executor_FanInNB(MonitorSU):
             # weare using simulated lambdas (run_all_tasks_locally and not using_workers) 
             # and the FaninNB object is stored locally 
             # (store_fanins_faninNBs_locally)
-            if not run_all_tasks_locally or (run_all_tasks_locally and not using_workers and store_fanins_faninNBs_locally):
-                logger.error("Error: FanInNB: fanin_task_name: DAG_info is None for FaninNB init().")
-                logging.shutdown()
-                os._exit(0)
+            try:
+                msg =  "[Error]: FanInNB_select: fanin_task_name: DAG_info is None for FaninNB init()."
+                assert not (not run_all_tasks_locally or (run_all_tasks_locally and not using_workers and store_fanins_faninNBs_locally)) , msg
+            except AssertionError:
+                logger.exception("[Error]: assertion failed")
+                if exit_program_on_exception:
+                    logging.shutdown()
+                    os._exit(0)
+            #assertOld:
+            #if not run_all_tasks_locally or (run_all_tasks_locally and not using_workers and store_fanins_faninNBs_locally):
+            #    logger.error("Error: FanInNB: fanin_task_name: DAG_info is None for FaninNB init().")
+            #    logging.shutdown()
+            #    os._exit(0)
         else:
             logger.trace("FanInNB: fanin_task_name: DAG_info is not None for init().")
 
@@ -241,8 +250,18 @@ class DAG_executor_FanInNB(MonitorSU):
                         # No one should be calling fan_in again since this is last caller
                         return self._results, restart  # all threads have called so return results        
                 else:
-                    if self.store_fanins_faninNBs_locally:
-                        logger.error("[Error]: FaninB: using workers and processes but storing fanins locally,")
+                    try:
+                        msg = "[Error]: FaninB: using workers and processes but storing fanins locally."
+                        assert not self.store_fanins_faninNBs_locally , msg
+                    except AssertionError:
+                        logger.exception("[Error]: assertion failed")
+                        if exit_program_on_exception:
+                            logging.shutdown()
+                            os._exit(0)
+                    #assertOld:
+                    #if self.store_fanins_faninNBs_locally:
+                    #    logger.error("[Error]: FaninB: using workers and processes but storing fanins locally.")
+
                     # No signal of non-last client; they did not block and they are done executing. 
                     # does mutex.V
                     super().exit_monitor()
@@ -251,8 +270,17 @@ class DAG_executor_FanInNB(MonitorSU):
                     #return 1, restart  # all threads have called so return results
             elif self.store_fanins_faninNBs_locally and run_all_tasks_locally:
                 # Note this FaNInNBs is stored locally; using simulated lambdas
-                if not using_threads_not_processes:
-                    logger.error("[Error]: FaninB: storing fanins locally but not using threads.")
+                try:
+                    msg = "[Error]: FaninB: storing fanins locally but not using threads."
+                    assert using_threads_not_processes , msg
+                except AssertionError:
+                    logger.exception("[Error]: assertion failed")
+                    if exit_program_on_exception:
+                        logging.shutdown()
+                        os._exit(0)
+                #assertOld
+                #if not using_threads_not_processes:
+                #    logger.error("[Error]: FaninB: storing fanins locally but not using threads.")
   
                 try:
                     logger.trace("FanInNB: starting DAG_executor thread for task " + fanin_task_name + " with start state " + str(start_state_fanin_task))
@@ -291,9 +319,11 @@ class DAG_executor_FanInNB(MonitorSU):
                     thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=(thread_name_prefix+str(start_state_fanin_task)), args=(payload,))
                     thread.start()
                     #_thread.start_new_thread(DAG_executor.DAG_executor_task, (payload,))
-                except Exception as ex:
-                    logger.trace("FanInNB:[ERROR] Failed to start DAG_executor thread.")
-                    logger.trace(ex)
+                except Exception:
+                    logger.exception("FanInNB:[ERROR] Failed to start DAG_executor thread.")
+                    if exit_program_on_exception:
+                        logging.shutdown()
+                        os._exit(0)
 
                 # No signal of non-last client; they did not block and they are done executing. 
                 # does mutex.V
@@ -330,10 +360,12 @@ class DAG_executor_FanInNB(MonitorSU):
                             "DAG_info": self.DAG_info
                         }
                         DAG_executor.DAG_executor_lambda(payload)
-                    except Exception as ex:
-                        logger.error("[ERROR] DAG_executor_FanInNB_Select: Failed to start DAG_executor.DAG_executor_lambda"
+                    except Exception:
+                        logger.exception("[ERROR] DAG_executor_FanInNB_Select: Failed to start DAG_executor.DAG_executor_lambda" \
                             + " for triggered task " + fanin_task_name)
-                        logger.error(ex) 
+                        if exit_program_on_exception:
+                            logging.shutdown()
+                            os._exit(0)
                 else:      
                     try:
                         DAG_executor_state = DAG_executor_State(function_name = "WukongDivideAndConquer:"+fanin_task_name, function_instance_ID = str(uuid.uuid4()), state = start_state_fanin_task)
@@ -341,10 +373,20 @@ class DAG_executor_FanInNB(MonitorSU):
                         DAG_executor_state.return_value = self._results
                         DAG_executor_state.blocking = False            
                         logger.trace("FanInNB: starting Lambda function for task " + fanin_task_name + " with start state " + str(DAG_executor_state.state))
-                        if self.DAG_info == None:
-                            logger.error("FanInNB: fanin_task_name:" + fanin_task_name + " DAG_info is None for Lambda start.")
-                        else:
-                            logger.trace("FanInNB: fanin_task_name:" + fanin_task_name + " DAG_info is NOT None for Lambda start.")
+                        try:
+                            msg = "FanInNB: fanin_task_name:" + fanin_task_name + " DAG_info is None for Lambda start."
+                            assert not self.DAG_info == None , msg
+                        except AssertionError:
+                            logger.exception("[Error]: assertion failed")
+                            if exit_program_on_exception:
+                                logging.shutdown()
+                                os._exit(0)
+                        #assertOld:
+                        #if self.DAG_info == None:
+                        #    logger.error("FanInNB: fanin_task_name:" + fanin_task_name + " DAG_info is None for Lambda start.")
+                        #else:
+                        logger.trace("FanInNB: fanin_task_name:" + fanin_task_name + " DAG_info is NOT None for Lambda start.")
+
                         #logger.trace("DAG_executor_state: " + str(DAG_executor_state))
                         payload = {
                             #"state": int(start_state_fanin_task),
@@ -360,10 +402,11 @@ class DAG_executor_FanInNB(MonitorSU):
                         
                         ###### DAG_executor_State.function_name has not changed
                         invoke_lambda_DAG_executor(payload = payload, function_name = "WukongDivideAndConquer:"+fanin_task_name)
-                    except Exception as ex:
-                        logger.trace("FanInNB:[ERROR] Failed to start DAG_executor Lambda.")
-                        logger.trace(ex)
-                        traceback.print_exc() 
+                    except Exception:
+                        logger.exception("FanInNB:[ERROR] Failed to start DAG_executor Lambda.")
+                        if exit_program_on_exception:
+                            logging.shutdown()
+                            os._exit(0)
 
                     # No signal of non-last client; they did not block and they are done executing. 
                     # does mutex.V
@@ -394,7 +437,16 @@ class DAG_executor_FanInNB(MonitorSU):
                 return self._results, restart
 
             else:
-                logger.error("[ERROR]: FanInNB: reached else: error at end of fanin")
+                try:
+                    msg = "[ERROR]: FanInNB: reached unreachable else: error at end of fanin"
+                    assert False , msg
+                except AssertionError:
+                    logger.exception("[Error]: assertion failed")
+                    if exit_program_on_exception:
+                        logging.shutdown()
+                        os._exit(0)
+                #assertOld:
+                #   logger.error("[ERROR]: FanInNB: reached else: error at end of fanin")
 
             # No signal of non-last client; they did not block and they are done executing. 
             # does mutex.V
@@ -458,8 +510,8 @@ def main():
         callerThread1 = testThread("T1", b)
         callerThread1.start()
     except Exception as ex:
-        logger.trace("[ERROR] Failed to start first thread.")
-        logger.trace(ex)      
+        logger.exception("[ERROR] Failed to start first thread.")
+        logger.exception(ex)      
 
     #try:
     #    logger.trace("Starting first thread")
@@ -472,8 +524,8 @@ def main():
         callerThread2 = testThread("T2", b)
         callerThread2.start()
     except Exception as ex:
-        logger.trace("[ERROR] Failed to start second thread.")
-        logger.trace(ex)
+        logger.exception("[ERROR] Failed to start second thread.")
+        logger.exception(ex)
         
     callerThread1.join()
     callerThread2.join()

@@ -4,8 +4,6 @@ import threading
 import time
 import uuid
 import os
-import sys
-import traceback
 from ..dag.DAG_executor_constants import run_all_tasks_locally
 from ..dag.DAG_executor_constants import exit_program_on_exception
 from ..dag.DAG_executor_State import DAG_executor_State
@@ -126,12 +124,12 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
     def get_current_version_number_DAG_info(self):
         try:
             super(DAG_infoBuffer_Monitor_for_Lambdas, self).enter_monitor(method_name="get_current_version_number_DAG_info")
-        except Exception as ex:
-            logger.error("[ERROR]: DAG_infoBuffer_Monitor_for_Lambdas:  Failed super(DAG_infoBuffer, self)")
-            logger.error("[ERROR] self: " + str(self.__class__.__name__))
-            logger.trace(ex)
-            logging.shutdown()
-            os._exit(0) 
+        except Exception:
+            logger.exception("[ERROR]: DAG_infoBuffer_Monitor_for_Lambdas:  Failed super(DAG_infoBuffer, self)")
+            logger.exception("[ERROR] self: " + str(self.__class__.__name__))
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
         
 #rhc: lambda inc
         #logger.trace("DAG_infoBuffer_Monitor_for_Lambdas: get_current_version_number_DAG_info() entered monitor, len(self._new_version) ="+str(len(self._next_version)))
@@ -155,12 +153,12 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         # and we add new states but do not delete old states from the DAG.
         try:
             super(DAG_infoBuffer_Monitor_for_Lambdas, self).enter_monitor(method_name="deposit")
-        except Exception as ex:
-            logger.error("[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas: Failed super(DAG_infoBuffer_Monitor_for_Lambdas, self)")
-            logger.error("[ERROR] self: " + str(self.__class__.__name__))
-            logger.error(ex)
-            logging.shutdown()
-            os._exit(0) 
+        except Exception:
+            logger.exception("[ERROR]: DAG_infoBuffer_Monitor_for_Lambdas: Failed super(DAG_infoBuffer_Monitor_for_Lambdas, self)")
+            logger.exception("[ERROR] self: " + str(self.__class__.__name__))
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
 
 #rhc: lambda inc
         #logger.trace("DAG_infoBuffer_Monitor_for_Lambdas: deposit() entered monitor, len(self._new_version) ="+str(len(self._next_version)))
@@ -395,12 +393,11 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                 # complete and start a labda for it in next deposit()
                 if not DAG_info_is_complete:
                     self.continue_queue += new_leaf_tasks
-
-            except Exception as ex:
-                logger.error("[ERROR] DAG_executor_driver: Failed to start DAG_executor thread for state " + str(start_state))
-                logger.error(ex)
-                logging.shutdown()
-                os._exit(0) 
+            except Exception:
+                logger.exception("[ERROR] DAG_infoBuffer_Monitor_for_Lambdas: Failed to start DAG_executor thread for state " + str(start_state))
+                if exit_program_on_exception:
+                    logging.shutdown()
+                    os._exit(0)
         else:
             # using real lambdas
             try:
@@ -460,12 +457,12 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                             #"server": server
                         }
                         invoke_lambda_DAG_executor(payload = payload, function_name = "WukongDivideAndConquer:"+task_name)
-                    except Exception as ex:
-                        logger.error("[ERROR] DAG_executor_driver: Failed to start DAG_executor thread for state " + str(start_state))
-                        logger.error(ex)
-                        traceback.print_exc(file=sys.stderr)
-                        logging.shutdown()
-                        os._exit(0) 
+                    except Exception:
+                        logger.exception("[ERROR]: DAG_infoBuffer_Monitor_for_Lambdas: Failed to start DAG_executor thread for state " + str(start_state))
+                        if exit_program_on_exception:
+                            logging.shutdown()
+                            os._exit(0)
+
                    
                 self._buffer.clear()
                 # If the DAG_info is complete, then the leaf task is complete and
@@ -540,21 +537,19 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                 # complete and start a labda for it in next deposit()
                 if not DAG_info_is_complete:
                     self.continue_queue += new_leaf_tasks
-            except Exception as ex:
-                logger.error("[ERROR] DAG_executor_driver: Failed to start DAG_executor thread for state " + str(start_state))
-                logger.error(ex)
-                traceback.print_exc(file=sys.stderr)
-                logging.shutdown()
-                os._exit(0) 
+            except Exception:
+                logger.exception("[ERROR] DAG_infoBuffer_Monitor_for_Lambdas: Failed to start DAG_executor thread for state " + str(start_state))
+                if exit_program_on_exception:
+                    logging.shutdown()
+                    os._exit(0)
         try:
             super(DAG_infoBuffer_Monitor_for_Lambdas, self).exit_monitor()
-        except Exception as ex:
-            logger.error("[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas: deposit: exit_monitor: Failed super(DAG_infoBuffer_Monitor_for_Lambdas, self)")
-            logger.error("[ERROR] self: " + str(self.__class__.__name__))
-            logger.error(ex)
-            traceback.print_exc(file=sys.stderr)
-            logging.shutdown()
-            os._exit(0) 
+        except Exception:
+            logger.exception("[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas: deposit: exit_monitor: Failed super(DAG_infoBuffer_Monitor_for_Lambdas, self)")
+            logger.exception("[ERROR] self: " + str(self.__class__.__name__))
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
         
         return 0, restart
     
@@ -583,13 +578,12 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             #return DAG_info_and_new_leaf_task_states_tuple, restart
             try:
                 super(DAG_infoBuffer_Monitor_for_Lambdas, self).exit_monitor()
-            except Exception as ex:
-                logger.error("[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas: withdraw: exit_monitor: Failed super(DAG_infoBuffer_Monitor_for_Lambdas, self)")
-                logger.error("[ERROR] self: " + str(self.__class__.__name__))
-                logger.error(ex)
-                traceback.print_exc(file=sys.stderr)
-                logging.shutdown()
-                os._exit(0) 
+            except Exception:
+                logger.exception("[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas: withdraw: exit_monitor: Failed super(DAG_infoBuffer_Monitor_for_Lambdas, self)")
+                logger.exception("[ERROR] self: " + str(self.__class__.__name__))
+                if exit_program_on_exception:
+                    logging.shutdown()
+                    os._exit(0)
 
             return DAG_info, restart
         else:
@@ -614,13 +608,12 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
 
             try:
                 super(DAG_infoBuffer_Monitor_for_Lambdas, self).exit_monitor()
-            except Exception as ex:
-                logger.error("[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas: withdraw: exit_monitor: Failed super(DAG_infoBuffer_Monitor_for_Lambdas, self)")
-                logger.error("[ERROR] self: " + str(self.__class__.__name__))
-                logger.error(ex)
-                traceback.print_exc(file=sys.stderr)
-                logging.shutdown()
-                os._exit(0) 
+            except Exception:
+                logger.exception("[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas: withdraw: exit_monitor: Failed super(DAG_infoBuffer_Monitor_for_Lambdas, self)")
+                logger.exception("[ERROR] self: " + str(self.__class__.__name__))
+                if exit_program_on_exception:
+                    logging.shutdown()
+                    os._exit(0) 
 
             return None, restart
         
@@ -675,29 +668,29 @@ def main():
         logger.trace("Starting D thread")
         _thread.start_new_thread(taskD, (b,))
     except Exception as ex:
-        logger.trace("[ERROR] Failed to start first thread.")
-        logger.trace(ex)
+        logger.exception("[ERROR] Failed to start first thread.")
+        logger.exception(ex)
 
     try:
         logger.trace("Starting taskW1 thread")
         _thread.start_new_thread(taskW1, (b,))
     except Exception as ex:
-        logger.trace("[ERROR] Failed to start taskW1 thread.")
-        logger.trace(ex)
+        logger.exception("[ERROR] Failed to start taskW1 thread.")
+        logger.exception(ex)
 
     try:
         logger.trace("Starting first taskW2 thread")
         _thread.start_new_thread(taskW2, (b,))
     except Exception as ex:
-        logger.trace("[ERROR] Failed to start first taskW2 thread.")
-        logger.trace(ex)
+        logger.exception("[ERROR] Failed to start first taskW2 thread.")
+        logger.exception(ex)
 
     try:
         logger.trace("Starting second taskW2 thread")
         _thread.start_new_thread(taskW2, (b,))
     except Exception as ex:
-        logger.trace("[ERROR] Failed to start second taskW2 thread.")
-        logger.trace(ex)
+        logger.exception("[ERROR] Failed to start second taskW2 thread.")
+        logger.exception(ex)
 
     time.sleep(4)
     logger.trace("Done sleeping")

@@ -98,8 +98,8 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         try:
             super(DAG_infoBuffer_Monitor, self).enter_monitor(method_name="get_current_version_number_DAG_info")
         except Exception as ex:
-            logger.error("[ERROR]: DAG_infoBuffer_Monitor:  Failed super(DAG_infoBuffer_Monitor, self)")
-            logger.error("[ERROR] self: " + str(self.__class__.__name__))
+            logger.exception("[ERROR]: DAG_infoBuffer_Monitor:  Failed super(DAG_infoBuffer_Monitor, self)")
+            logger.exception("[ERROR] self: " + str(self.__class__.__name__))
             logger.trace(ex)
             return 0
         
@@ -124,8 +124,8 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         try:
             super(DAG_infoBuffer_Monitor, self).enter_monitor(method_name="deposit")
         except Exception as ex:
-            logger.error("[ERROR]: DAG_infoBuffer_Monitor: Failed super(DAG_infoBuffer_Monitor, self)")
-            logger.error("[ERROR] self: " + str(self.__class__.__name__))
+            logger.exception("[ERROR]: DAG_infoBuffer_Monitor: Failed super(DAG_infoBuffer_Monitor, self)")
+            logger.exception("[ERROR] self: " + str(self.__class__.__name__))
             logger.trace(ex)
             return 0
 
@@ -290,29 +290,29 @@ def main():
         logger.trace("Starting D thread")
         _thread.start_new_thread(taskD, (b,))
     except Exception as ex:
-        logger.trace("[ERROR] Failed to start first thread.")
-        logger.trace(ex)
+        logger.exception("[ERROR] Failed to start first thread.")
+        logger.exception(ex)
 
     try:
         logger.trace("Starting taskW1 thread")
         _thread.start_new_thread(taskW1, (b,))
     except Exception as ex:
-        logger.trace("[ERROR] Failed to start taskW1 thread.")
-        logger.trace(ex)
+        logger.exception("[ERROR] Failed to start taskW1 thread.")
+        logger.exception(ex)
 
     try:
         logger.trace("Starting first taskW2 thread")
         _thread.start_new_thread(taskW2, (b,))
     except Exception as ex:
-        logger.trace("[ERROR] Failed to start first taskW2 thread.")
-        logger.trace(ex)
+        logger.exception("[ERROR] Failed to start first taskW2 thread.")
+        logger.exception(ex)
 
     try:
         logger.trace("Starting second taskW2 thread")
         _thread.start_new_thread(taskW2, (b,))
     except Exception as ex:
-        logger.trace("[ERROR] Failed to start second taskW2 thread.")
-        logger.trace(ex)
+        logger.exception("[ERROR] Failed to start second taskW2 thread.")
+        logger.exception(ex)
 
     time.sleep(4)
     logger.trace("Done sleeping")

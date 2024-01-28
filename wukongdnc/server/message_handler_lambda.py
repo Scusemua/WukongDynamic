@@ -57,15 +57,15 @@ class MessageHandler(object):
                 
                 return_value = self.action_handlers[action](message = json_message)
             except ConnectionResetError as ex:
-                logger.error(ex)
-                logger.error(traceback.format_exc())
+                logger.exception(ex)
+                logger.exception(traceback.format_exc())
                 return_value = {
                     "msg": "ConnectionResetError encountered while executing the Lambda function.",
                     "error_msg": str(ex)
                 }
             except Exception as ex:
-                logger.error(ex)
-                logger.error(traceback.format_exc())
+                logger.exception(ex)
+                logger.exception(traceback.format_exc())
                 return_value = {
                     "msg": str(type(ex)) + " encountered while executing the Lambda function.",
                     "error_msg": str(ex)
@@ -367,9 +367,19 @@ class MessageHandler(object):
         """
         logger.trace("[MESSAGEHANDLERLAMBDA] createif_and_synchronize_sync() called.")
 
-        if create_all_fanins_faninNBs_on_start:
-            logger.error("[Error]: message_handler_lambda: createif_and_synchronize_sync: "
-                + "called createif_and_synchronize_sync but create_all_fanins_faninNBs_on_start")
+        try:
+            msg = "[Error]: message_handler_lambda: createif_and_synchronize_sync: " \
+                + "called createif_and_synchronize_sync but create_all_fanins_faninNBs_on_start"
+            assert not create_all_fanins_faninNBs_on_start , msg
+        except AssertionError:
+            logger.exception("[Error]: assertion failed")
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
+        #assertOld:
+        #if create_all_fanins_faninNBs_on_start:
+        #    logger.error("[Error]: message_handler_lambda: createif_and_synchronize_sync: "
+        #        + "called createif_and_synchronize_sync but create_all_fanins_faninNBs_on_start")
 
         messages = message['name']
         creation_message = messages[0]
@@ -474,9 +484,19 @@ class MessageHandler(object):
 
         logger.trace("[MESSAGEHANDLERLAMBDA] synchronize_async() called.")
 
-        if create_all_fanins_faninNBs_on_start:
-            logger.error("[Error]: message_handler_lambda: createif_and_synchronize_async: "
-                + "called createif_and_synchronize_async but create_all_fanins_faninNBs_on_start")
+        try:
+            msg = "[Error]: message_handler_lambda: createif_and_synchronize_async: " \
+                + "called createif_and_synchronize_async but create_all_fanins_faninNBs_on_start"
+            assert not create_all_fanins_faninNBs_on_start , msg
+        except AssertionError:
+            logger.exception("[Error]: assertion failed")
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
+        #assertOld:
+        #if create_all_fanins_faninNBs_on_start:
+        #    logger.error("[Error]: message_handler_lambda: createif_and_synchronize_async: "
+        #        + "called createif_and_synchronize_async but create_all_fanins_faninNBs_on_start")
 
         messages = message['name']
         creation_message = messages[0]

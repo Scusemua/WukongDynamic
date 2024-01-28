@@ -1,5 +1,7 @@
+import os
 #from re import L
 from .monitor_su import MonitorSU   #, ConditionVariable
+from ..dag.DAG_executor_constants import exit_program_on_exception
 #import threading
 import time 
 from threading import Thread
@@ -93,11 +95,20 @@ class FanIn(MonitorSU):
             # Last thread does not append results. It will recieve list of results of other threads and append 
             # its result locally to the returned list.
             logger.trace("Last thread in FanIn %s so not calling self._go.wait_c" % self.fanin_id)
-            
-            if (self._results is not None):
-                logger.trace("Returning (to last executor) for fan-in %s: %s" % (self.fanin_id, str(self._results)))
-            else:
-                logger.error("Result to be returned to last executor is None for fan-in %s!" % self.fanin_id)
+
+            try:
+                msg = "Result to be returned to last executor is None for fan-in %s!" % self.fanin_id
+                assert self._results is not None , msg
+            except AssertionError:
+                logger.exception("[Error]: assertion failed")
+                if exit_program_on_exception:
+                    logging.shutdown()
+                    os._exit(0)
+            #assertOld:
+            #if (self._results is not None):
+            logger.trace("Returning (to last executor) for fan-in %s: %s" % (self.fanin_id, str(self._results)))
+            #else:
+            #    logger.error("Result to be returned to last executor is None for fan-in %s!" % self.fanin_id)
 
             #threading.current_thread()._returnValue = self._results
             #threading.current_thread()._restart = False 
@@ -163,8 +174,8 @@ def main():
         callerThread1 = testThread("T1", b)
         callerThread1.start()
     except Exception as ex:
-        logger.trace("[ERROR] Failed to start first thread.")
-        logger.trace(ex)      
+        logger.exception("[ERROR] Failed to start first thread.")
+        logger.exception(ex)      
 
     #try:
     #    logger.trace("Starting first thread")
@@ -177,8 +188,8 @@ def main():
         callerThread2 = testThread("T2", b)
         callerThread2.start()
     except Exception as ex:
-        logger.trace("[ERROR] Failed to start second thread.")
-        logger.trace(ex)
+        logger.exception("[ERROR] Failed to start second thread.")
+        logger.exception(ex)
         
     callerThread1.join()
     callerThread2.join()

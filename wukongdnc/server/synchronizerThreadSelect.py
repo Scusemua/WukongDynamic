@@ -1,6 +1,8 @@
 from threading import Thread
 #from .synchronizer_thread import synchronizerThread
 import logging 
+import os
+from ..dag.DAG_executor_constants import exit_program_on_exception
 logger = logging.getLogger(__name__)
 """
 logger.setLevel(logging.DEBUG)
@@ -45,9 +47,11 @@ class SynchronizerThreadSelect(Thread):
 
         try:
             _execute = getattr(self._synchClass,"execute")
-        except Exception as ex:
+        except Exception:
             logger.error("Failed to find method 'execute' on object '%s'." % (self._synchClass))
-            raise ex
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
         # Calling execuute() which will make method call so need to pass class and method so call can be made.
         # This is different from synchromization objects that are regulr monitors as we call their methods
         # e.g., "deposit" here.

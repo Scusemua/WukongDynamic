@@ -8,8 +8,10 @@ import importlib
 #import boto3 
 #import json
 import cloudpickle
+import os
 
 from ..wukong.invoker import invoke_lambda 
+from ..dag.DAG_executor_constants import exit_program_on_exception
 #from .synchronizerThreadSelect import SynchronizerThreadSelect
 #from .bounded_buffer import BoundedBuffer
 #from .bounded_buffer_select import BoundedBuffer_Select
@@ -101,11 +103,17 @@ class Synchronizer(object):
 
         if not synchronizer_class_name in Synchronizer.synchronizers:
             logger.error("create: Invalid synchronizer class name: '%s'" % synchronizer_class_name)
-            raise ValueError("Invalid synchronizer class name: '%s'" % synchronizer_class_name)
+            logger.error("Invalid synchronizer class name: '%s'" % synchronizer_class_name)
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
         
         if not synchronizer_class_name in Synchronizer.file_map:
             logger.error("create: Could not find source file for Synchronizer '%s'" % synchronizer_class_name)
-            raise ValueError("Could not find source file for Synchronizer '%s'" % synchronizer_class_name)
+            logger.error("Could not find source file for Synchronizer '%s'" % synchronizer_class_name)
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
 
         #e.g. “Barrier_b”
         self._synchronizer_name = (str(synchronizer_class_name) + '_' + str(synchronizer_object_name))
@@ -130,7 +138,9 @@ class Synchronizer(object):
         self._synchronizer = self._synchClass(self._synchronizer_name)
         if self._synchronizer == None:
             logger.error("create: Failed to locate and create synchronizer of type %s" % synchronizer_class_name)
-            return -1
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
         
         #e.g. "b"
         self._synchronizer_object_name = synchronizer_object_name
@@ -301,7 +311,10 @@ class Synchronizer(object):
             synchronizer_method = getattr(self._synchClass,method_name)
         except Exception as x:
             logger.error("trySynchronize: Caught Error >>> %s" % x)
-            raise ValueError("Synchronizer of type %s does not have method called %s. Cannot complete trySynchronize() call." % (self._synchClass, method_name))
+            logger.error("Synchronizer of type %s does not have method called %s. Cannot complete trySynchronize() call." % (self._synchClass, method_name))
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
 
         #   
         """ replace this call 
@@ -329,7 +342,10 @@ class Synchronizer(object):
             synchronizer_method = getattr(self._synchClass, method_name)
         except Exception as x:
             logger.error("trySynchronizeSelect: Caught Error >>> %s" % x)
-            raise ValueError("Synchronizer of type %s does not have method called %s. Cannot complete trySynchronize() call." % (self._synchClass, method_name))
+            logger.error("Synchronizer of type %s does not have method called %s. Cannot complete trySynchronize() call." % (self._synchClass, method_name))
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
 
         """ replace this call 
         myPythonThreadName = "Try_callerThread" + state.function_instance_ID #str(ID_arg)
@@ -364,9 +380,11 @@ class Synchronizer(object):
             # getattr returns a function object. You invoke the function object's __call__ method with the standard
             # function-calling syntax from every programming language (args). In your case, you're passing 
             # self._synchronizer and **kwargs as arguments.
-        except Exception as ex:
+        except Exception:
             logger.error("synchronize: Failed to find method '%s' on object '%s'." % (method_name, self._synchClass))
-            raise ex
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
         
         """ replace this call 
         myPythonThreadName = "NotTrycallerThread"+str(self.threadID)
@@ -403,9 +421,11 @@ class Synchronizer(object):
         
         try:
             synchronizer_method = getattr(self._synchClass, method_name)
-        except Exception as ex:
+        except Exception:
             logger.error("synchronizeSelect: Failed to find method '%s' on object '%s'." % (method_name, self._synchClass))
-            raise ex
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
         
         """ Replacing these 4 lines, which call doMethodCallSelectExecute
         # Note: passing actual Python method reference _synchronizer_method, as well as the method_name
@@ -417,9 +437,11 @@ class Synchronizer(object):
         """ New call with doMethodCallSelectExecute unrolled  """
         try:
             execute = getattr(self._synchClass,"execute")
-        except Exception as ex:
+        except Exception:
             logger.error("synchronizeSelect: Failed to find method 'execute' on object '%s'." % (self._synchClass))
-            raise ex
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
             
         result_buffer = ResultBuffer(1, "resultBuffer")
             
@@ -638,9 +660,11 @@ class Synchronizer(object):
         
         try:
             _execute = getattr(self._synchClass,"execute")
-        except Exception as ex:
+        except Exception:
             logger.error("Failed to find method 'execute' on object '%s'." % (self._synchClass))
-            raise ex
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
             
         # Calling execuute() which will make method call so need to pass class and method so call can be made.
         # This is different from synchromization objects that are regulr monitors as we call their methods
@@ -672,9 +696,11 @@ class Synchronizer(object):
         """ New call with synchronizer_thread unrolled """
         try:
             execute = getattr(synchClass,"execute")
-        except Exception as ex:
+        except Exception:
             logger.error("doMethodCallSelectExecute: Failed to find method 'execute' on object '%s'." % (synchClass))
-            raise ex
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
             
         # Calling execuute() which will make method call so need to pass class and method so call can be made.
         # This is different from synchromization objects that are regulr monitors as we call their methods

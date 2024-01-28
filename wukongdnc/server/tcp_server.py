@@ -26,6 +26,7 @@ from ..dag.DAG_executor_State import DAG_executor_State
 
 import logging 
 from wukongdnc.dag.DAG_executor_constants import log_level
+from ..dag.DAG_executor_constants import exit_program_on_exception
 from ..dag.addLoggingLevel import addLoggingLevel
 """ How to use: https://stackoverflow.com/questions/2183233/how-to-add-a-custom-loglevel-to-pythons-logging-facility/35804945#35804945
     >>> addLoggingLevel('TRACE', logging.DEBUG - 5)
@@ -114,15 +115,18 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 logger.info("[HANDLER] action is: " + action + str(name_op))
  
                 self.action_handlers[action](message = json_message)
-            except ConnectionResetError as ex:
-                logger.error(ex)
-                logger.error("Error in tcp_handler")
-                logger.error(traceback.format_exc())
+            except ConnectionResetError:
+                logger.exception("ConnectionResetError in tcp_handler")
+                if exit_program_on_exception:
+                    logging.shutdown()
+                    os._exit(0)
                 return 
-            except Exception as ex:
-                logger.error(ex)
-                logger.error("Error in tcp_handler")
-                logger.error(traceback.format_exc())
+            except Exception:
+                logger.exception("Exception in tcp_handler")
+                if exit_program_on_exception:
+                    logging.shutdown()
+                    os._exit(0)
+                return 
 
     def _get_synchronizer_name(self, type_name = None, name = None):
         """
@@ -375,6 +379,9 @@ class TCPHandler(socketserver.StreamRequestHandler):
         #    if DAG_info_passed_from_DAG_exector == None:
         #        logger.error("[Error]: synchronize_process_faninNBs_batch: using incremental DAG generation"
         #            + " with real Lambdas but received None from DAG_executor process_faninNBs_batch.")
+        #         if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+        #            logging.shutdown()
+        #            os._exit(0)
 
         logger.trace("tcp_server: synchronize_process_faninNBs_batch: calling_task_name: " + calling_task_name + ": worker_needs_input: " + str(worker_needs_input)
             + " faninNBs size: " +  str(len(faninNBs)))
@@ -395,6 +402,9 @@ class TCPHandler(socketserver.StreamRequestHandler):
         #if worker_needs_input:
         #    if not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally:
         #        logger.error("[Error: synchronize_process_faninNBs_batch: worker needs input but using lambdas.")
+        #        if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+        #            logging.shutdown()
+        #            os._exit(0)
 
         try:
             msg = "[Error]: synchronize_process_faninNBs_batch: worker_needs_input but using async_call"
@@ -432,7 +442,10 @@ class TCPHandler(socketserver.StreamRequestHandler):
         #    # Note: using_workers and not using_threads_not_processes means we 
         #    # will be calling process_faninNBs_batch (i.e., this method)
         #    if not (not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally or (wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally and wukongdnc.dag.DAG_executor_constants.using_workers and not wukongdnc.dag.DAG_executor_constants.using_threads_not_processes and not worker_needs_input)):
-        #       logger.error("[Error: synchronize_process_faninNBs_batch: async_call but not (not run_all_tasks_locally).")
+        #        logger.error("[Error: synchronize_process_faninNBs_batch: async_call but not (not run_all_tasks_locally).")
+        #        if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+        #            logging.shutdown()
+        #            os._exit(0)
 
         # Note: If we are using lambdas, then we are not using workers (for now) so worker_needs_input
         # must be false. Also, we are currently not piggybacking the fanouts so there should be no 
@@ -469,7 +482,10 @@ class TCPHandler(socketserver.StreamRequestHandler):
             if (synchronizer is None):
                 logger.error("[Error]: tcp_server: synchronize_process_faninNBs_batch:"
                     + " could not find existing Synchronizer with name '%s'" % synchronizer_name)
-                raise ValueError("synchronize_process_faninNBs_batch: Could not find existing Synchronizer with name '%s'" % synchronizer_name)
+                logger.error("synchronize_process_faninNBs_batch: Could not find existing Synchronizer with name '%s'" % synchronizer_name)
+                if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                    logging.shutdown()
+                    os._exit(0)
 
     #rhc select then replace
                 #return_value = synchronizer.synchronize(base_name, DAG_exec_state, **work_queue_method_keyword_arguments)
@@ -545,9 +561,11 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 #synchClass = synchronizer._synchClass
                 #try:
                 #    synchronizer_method = getattr(synchClass, work_queue_method)
-                #except Exception as ex:
-                #    logger.error("tcp_server: synchronize_process_faninNBs_batch: deposit fanout work: Failed to find method '%s' on object '%s'." % (work_queue_method, work_queue_type))
-                #    raise ex
+                #except Exception:
+                #    logger.exception("tcp_server: synchronize_process_faninNBs_batch: deposit fanout work: Failed to find method '%s' on object '%s'." % (work_queue_method, work_queue_type))
+                #    if exit_program_on_exception:
+                #        logging.shutdown()
+                 #       os._exit(0)
 
                 # To call "deposit" instead of "deposit_all", change the work_queue_method above before you
                 # generate synchronizer_method and here iterate over the list.
@@ -691,11 +709,17 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             #if is_fanin:
                             #    logger.error("[Error]: tcp_server: synchronize_process_faninNBs_batch:"
                             #        + " fanin " + name + " in batch.")
+                            #     if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                            #        logging.shutdown()
+                            #        os._exit(0)
 
                             #is_faninNB = name in all_faninNB_task_names
                             #if not is_fanin and not is_faninNB:
                             #    logger.error("[Error]: tcp_server: synchronize_process_faninNBs_batch:"
                             #        + " sync object for synchronize_sync is neither a fanin nor a faninNB.")
+                            #    if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                            #       logging.shutdown()
+                            #       os._exit(0)
 
                             # compute size of fanin or faninNB 
                             # FanIn could be a non-select (monitor) or select FanIn type
@@ -715,6 +739,9 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             #    if not faninNB_size == all_faninNB_sizes[faninNB_index]:
                             #        logger.error("[Error]: tcp_server: synchronize_process_faninNBs_batch: "
                             #            + " not faninNB_size == all_faninNB_sizes[faninNB_index]")
+                            #        if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                            #            logging.shutdown()
+                            #            os._exit(0)
                             #    else:
                             #        logger.trace("EQUAL SIZES")
                         else: # incremental DAG generation
@@ -813,6 +840,9 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             #if is_fanin:
                             #    logger.error("[Error]: tcp_server: synchronize_process_faninNBs_batch:"
                             #        + " fanin " + name + " in batch.")
+                            #    if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                            #        logging.shutdown()
+                            #        os._exit(0)
 
                             #is_faninNB = True # name in all_faninNB_task_names
                             #if not is_fanin and not is_faninNB:
@@ -1168,6 +1198,9 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             if not is_fanin and not is_faninNB:
                                 logger.error("[Error]: tcp_server: synchronize_sync:"
                                     + " sync object " + synchronizer_name + " for synchronize_sync is neither a fanin nor a faninNB.")
+                                if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                                    logging.shutdown()
+                                    os._exit(0)
 
                             # compute size of fanin or faninNB 
                             # FanIn could be a non-select (monitor) or select FanIn type
@@ -1309,6 +1342,9 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             #if not faninNB_size == all_faninNB_sizes[faninNB_index]:
                             #    logger.error("[Error]: tcp_server: synchronize_process_faninNBs_batch: "
                             #        + " not faninNB_size == all_faninNB_sizes[faninNB_index]")
+                            #    if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                            #        logging.shutdown()
+                            #        os._exit(0)
                             #else:
                             #    logger.trace("EQUAL SIZES")
 
@@ -1383,9 +1419,22 @@ class TCPHandler(socketserver.StreamRequestHandler):
         """
         logger.trace("[TCPSERVER] createif_and_synchronize_sync() called.")
 
-        if wukongdnc.dag.DAG_executor_constants.create_all_fanins_faninNBs_on_start:
-            logger.error("[Error]: tcp_server: createif_and_synchronize_sync: "
-                + "called createif_and_synchronize_sync but create_all_fanins_faninNBs_on_start")
+        try:
+            msg = "[Error]: tcp_server: createif_and_synchronize_sync: " \
+                + "called createif_and_synchronize_sync but create_all_fanins_faninNBs_on_start"
+            assert not (wukongdnc.dag.DAG_executor_constants.create_all_fanins_faninNBs_on_start) , msg
+        except AssertionError:
+            logger.exception("[Error]: assertion failed")
+            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
+        #assertOld
+        #if wukongdnc.dag.DAG_executor_constants.create_all_fanins_faninNBs_on_start:
+        #    logger.error("[Error]: tcp_server: createif_and_synchronize_sync: "
+        #        + "called createif_and_synchronize_sync but create_all_fanins_faninNBs_on_start")
+        #    if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+        #        logging.shutdown()
+        #        os._exit(0)
 
         messages = message['name']
         creation_message = messages[0]
@@ -1500,12 +1549,13 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 data.extend(new_data)
 
                 logger.trace("recv_object: self.rfile.read an additional %d bytes from remote client: %s" % (len(new_data), str(new_data)))
-        except ConnectionAbortedError as ex:
-            logger.trace("Error in recv_object self.rfile.read(4) -- while reading the incoming message size.")
-            logger.trace(repr(ex))
-            logger.error("Established connection aborted while reading incoming size.")
-            logger.error(repr(ex))
-            return None 
+        except ConnectionAbortedError:
+            logger.exception("Error in recv_object self.rfile.read(4) -- while reading the incoming message size.")
+            logger.exception("Established connection aborted while reading incoming size.")
+            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
+            return None
 
         logger.trace("receive_object self.rfile.read(4) successful, len(data): %d. Bytes received: %s" % (len(data), str(data)))
 
@@ -1519,7 +1569,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             return None 
         
         if incoming_size < 0:
-            logger.error("Incoming size < 0: " + incoming_size + ". An error might have occurred...")
+            logger.trace("Incoming size < 0: " + incoming_size + ". An error might have occurred...")
             return None 
 
         logger.trace("recv_object: Will receive another message of size %d bytes" % incoming_size)
@@ -1544,9 +1594,11 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
                 data.extend(new_data)
                 logger.trace("recv_object: have read %d/%d bytes from remote client." % (len(data), incoming_size))
-        except ConnectionAbortedError as ex:
-            logger.error("Established connection aborted while reading data.")
-            logger.error(repr(ex))
+        except ConnectionAbortedError:
+            logger.exception("Established connection aborted while reading data.")
+            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
             return None 
         
         logger.trace("recv_object: received all %d bytes from remote client. bytes received: %s" % (len(data), str(data)))
@@ -1652,11 +1704,14 @@ class TCPServer(object):
         logger.trace("Starting TCP server.")
         try:
             self.tcp_server.serve_forever()
-        except Exception as ex:
-            logger.error("Exception encountered:" + repr(ex))
+        except Exception:
+            logger.exception("Exception encountered starting TCP_server.")
+            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
 
 if __name__ == "__main__":
     # Create a Server Instance
-#rhc: added tcp_server global variable at top or 
+#rhc: added tcp_server global variable at top
     tcp_server = TCPServer()
     tcp_server.start()

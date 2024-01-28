@@ -1,5 +1,7 @@
+import os
 #from re import L
 from .monitor_su import MonitorSU #, ConditionVariable
+from ..dag.DAG_executor_constants import exit_program_on_exception
 import threading
 import time 
 from threading import Thread
@@ -100,10 +102,19 @@ class FanIn(MonitorSU):
             #last thread does not append results. It will recieve list of results of other threads and append 
             #its result locally to the returned list
 
-            if (self.results is not None):
-                logger.trace("Returning (to last executor) for fan-in %s: %s" % (self.fanin_id, str(self.results)))
-            else:
-                logger.error("Result to be returned to last executor is None for fan-in %s!" % self.fanin_id)
+            try:
+                msg = "Result to be returned to last executor is None for fan-in %s!" % self.fanin_id
+                assert self._results is not None , msg
+            except AssertionError:
+                logger.exception("[Error]: assertion failed")
+                if exit_program_on_exception:
+                    logging.shutdown()
+                    os._exit(0)
+            #assetOld:
+            #if (self.results is not None):
+            logger.trace("Returning (to last executor) for fan-in %s: %s" % (self.fanin_id, str(self.results)))
+            #else:
+            #    logger.error("Result to be returned to last executor is None for fan-in %s!" % self.fanin_id)
 
             threading.current_thread()._returnValue = self.results
             
