@@ -952,7 +952,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 try:
                     msg = "[Error]: generate_DAG_info_incremental_groups:" \
                         + " start of new connected component (i.e., called BFS()) but there is more than one group."
-                    assert not len(groups_of_current_partition) > 1, msg
+                    assert not (len(groups_of_current_partition) > 1), msg
                 except AssertionError:
                     logger.exception("[Error]: assertion failed")
                     if exit_program_on_exception:
@@ -1314,7 +1314,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
             #try:
             #    msg = "[Error]: generate_DAG_info_incremental_groups:" \
             #    + " group " + previous_group + " has a receiver_set_for_previous_group list with length 0."
-            #    assert not len(receiver_set_for_previous_group) == 0 , msg
+            #    assert not (len(receiver_set_for_previous_group) == 0) , msg
             #except AssertionError:
             #    logger.exception("[Error]: assertion failed")
             #    if exit_program_on_exception:
@@ -1397,6 +1397,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                             if exit_program_on_exception:
                                 logging.shutdown()
                                 os._exit(0)
+                        #assertOld:
                         #if not receiverY in Group_all_collapse_task_names:
                         Group_all_collapse_task_names.append(receiverY)
                         #else:
@@ -1477,7 +1478,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
             try:
                 msg = "[Error]: generate_DAG_info_incremental_groups: state_info_of_previous_group: " \
                     + "state_info_of_previous_group is None."
-                assert not state_info_of_previous_group == None , msg
+                assert not (state_info_of_previous_group == None) , msg
             except AssertionError:
                 logger.exception("[Error]: assertion failed")
                 logger.error("DAG_map:")

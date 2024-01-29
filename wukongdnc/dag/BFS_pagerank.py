@@ -281,7 +281,7 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partiti
     else:
         try:
             msg = "[Error]: PageRank_Function:" + " groups_partitions is []."
-            assert not groups_partitions == [] , msg
+            assert not (groups_partitions == []) , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
             if exit_program_on_exception:

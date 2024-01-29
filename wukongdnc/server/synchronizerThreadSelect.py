@@ -43,12 +43,12 @@ class SynchronizerThreadSelect(Thread):
         
     # Override the run() function of Thread class
     def run(self):
-        #print("kwargs serverlessFunctionID: " + self._serverlessFunctionID)
+        #logger.trace("kwargs serverlessFunctionID: " + self._serverlessFunctionID)
 
         try:
             _execute = getattr(self._synchClass,"execute")
         except Exception:
-            logger.error("Failed to find method 'execute' on object '%s'." % (self._synchClass))
+            logger.exception("[Error]: syncronizerThreadSelect: Failed to find method 'execute' on object '%s'." % (self._synchClass))
             if exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)

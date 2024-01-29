@@ -1,11 +1,9 @@
 #from re import A
 import json
-import traceback
 import socketserver
 import cloudpickle
 import uuid
 import os
-import sys
 from threading import Lock
 
 from .synchronizer import Synchronizer
@@ -305,12 +303,11 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     with open(complete_task_file_name, 'rb') as handle:
                         partition_or_group = (cloudpickle.load(handle))
                 except EOFError:
-                    logger.info("[Error]: tcp_server: read_all_groups_partitions:"
+                    logger.exception("[Error]: tcp_server: read_all_groups_partitions:"
                         + " file name:" + str(complete_task_file_name))
-                    #print('Problem:', file=sys.stderr)
-                    traceback.print_exc(file=sys.stderr)
-                    logging.shutdown()
-                    os._exit(0)
+                    if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                        logging.shutdown()
+                        os._exit(0)
                 groups_partitions[task_file_name] = partition_or_group
         return groups_partitions
 
@@ -480,8 +477,6 @@ class TCPHandler(socketserver.StreamRequestHandler):
             synchronizer = tcp_server.synchronizers[synchronizer_name]
 
             if (synchronizer is None):
-                logger.error("[Error]: tcp_server: synchronize_process_faninNBs_batch:"
-                    + " could not find existing Synchronizer with name '%s'" % synchronizer_name)
                 logger.error("synchronize_process_faninNBs_batch: Could not find existing Synchronizer with name '%s'" % synchronizer_name)
                 if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
                     logging.shutdown()
@@ -666,12 +661,12 @@ class TCPHandler(socketserver.StreamRequestHandler):
                                     DAG_info = DAG_Info.DAG_info_fromfilename()
                                     logger.info("tcp_server: read DAG_info for real lambdas.")
 #rhc: DAG_info
-                                    print("tcp_server: DAG_map:")
+                                    logger.info("tcp_server: DAG_map:")
                                     # this required: # pylint: disable=E0601, E0118
                                     DAG_map = DAG_info.get_DAG_map() 
                                     for key, value in DAG_map.items():
-                                        print(key)
-                                        print(value) 
+                                        logger.info(key)
+                                        logger.info(value) 
                                 # do not understand why pyline flags this use of DAG_info as used-before-assignment (E0601)
                                 # and used-prior-global-declaration (E0118) 
                                 # this requried: pylint: disable=E0601, E0118

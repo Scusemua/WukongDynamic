@@ -104,7 +104,7 @@ class TcpServer(socket.socket):
         self.clients = []
     
     def run(self):
-        print("Starting server...")
+        logger.info("Starting server...")
         try:
             self.server_loop()
         except Exception:
@@ -118,7 +118,7 @@ class TcpServer(socket.socket):
             self.close()
 
     def server_loop(self):
-        print("Server started. Listening for clients now.")
+        logger.info("Server started. Listening for clients now.")
         while True:
             (client_socket, (address,port)) = self.accept()
 
@@ -139,5 +139,5 @@ class TcpServer(socket.socket):
 
 if __name__ == "__main__":
     tcp_server = TcpServer()
-    print("Starting TCP server")
+    logger.info("Starting TCP server")
     tcp_server.start()

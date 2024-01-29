@@ -86,24 +86,28 @@ class Synchronizer(object):
 
     def lock_synchronizer(self):
     
-        print("locking synchronizer")
-        
+        logger.trace("synchronizer_lambda: locking synchronizer")
+
         try:
             synchronizer_method = getattr(self._synchClass,"lock")
-        except Exception as ex:
-            print("lock_synchronizer: Failed to find method 'lock' on object of type '%s'." % (self._synchClass))
-            raise ex
+        except Exception:
+            logger.exception("[Error]: synchronizer_lambda: lock_synchronizer: Failed to find method 'lock' on object of type '%s'." % (self._synchClass))
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
             
         synchronizer_method(self._synchronizer)
  
     def unlock_synchronizer(self):
     
-        print("unlocking synchronizer") 
+        logger.trace("synchronizer_lambda: unlocking synchronizer") 
         try:
             synchronizer_method = getattr(self._synchClass,"unlock")
-        except Exception as ex:
-            print("unlock_synchronizer: Failed to find method 'unlock' on object of type '%s'." % (self._synchClass))
-            raise ex
+        except Exception:
+            logger.exception("synchronizer_lambda: unlock_synchronizer: Failed to find method 'unlock' on object of type '%s'." % (self._synchClass))
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
             
         synchronizer_method(self._synchronizer)
 
@@ -112,12 +116,16 @@ class Synchronizer(object):
         self._synchronizer_class_name = synchronizer_class_name
 
         if not synchronizer_class_name in Synchronizer.synchronizers:
-            logger.exception("create: Invalid synchronizer class name: '%s'" % synchronizer_class_name)
-            raise ValueError("Invalid synchronizer class name: '%s'" % synchronizer_class_name)
+            logger.error("synchronizer_lambda: create: Invalid synchronizer class name: '%s'" % synchronizer_class_name)
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
         
         if not synchronizer_class_name in Synchronizer.file_map:
-            logger.exception("create: Could not find source file for Synchronizer '%s'" % synchronizer_class_name)
-            raise ValueError("Could not find source file for Synchronizer '%s'" % synchronizer_class_name)
+            logger.error("synchronizer_lambda: create: Could not find source file for Synchronizer '%s'" % synchronizer_class_name)
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
 
         #e.g. “Barrier_b”
         self._synchronizer_name = (str(synchronizer_class_name) + '_' + str(synchronizer_object_name))
@@ -141,11 +149,11 @@ class Synchronizer(object):
         #logger.trace("got MyClass")
         self._synchronizer = self._synchClass(self._synchronizer_name)
         if self._synchronizer == None:
-            logger.error("create: Failed to locate and create synchronizer of type %s" % synchronizer_class_name)
+            logger.error("[Error]: create: Failed to locate and create synchronizer of type %s" % synchronizer_class_name)
             if exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
-                #return -1
+            #return -1
         
         #e.g. "b"
         self._synchronizer_object_name = synchronizer_object_name
@@ -283,7 +291,7 @@ class Synchronizer(object):
             # we are using the select objects
             if not (self._synchronizer_class_name == "DAG_executor_FanIn_Select" 
                 or self._synchronizer_class_name == "DAG_executor_FanInNB_Select"):
-                logger.error("Error: all synchronous operations must be try-ops")
+                logger.error("[Error]: synchronizer_lambda: synchronize_sync: all non-fanin-faninNB synchronous operations must be try-ops")
                 if exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0)
@@ -635,7 +643,7 @@ class Synchronizer(object):
                     os._exit(0)
             #assertOld:
             #if restart: 
-            #    logger.error("synchronizer_lambda: synchronizeLamba: result_buffer.withdraw returned restart true.")
+            #    logger.error("[Error]: synchronizer_lambda: synchronizeLamba: result_buffer.withdraw returned restart true.")
 #5:
         else:
             # If we did not wait_for_result we do not want to return the return_value of the operation to the user since there

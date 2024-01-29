@@ -482,14 +482,14 @@ class DAG_executor_FanInNB_Select(Selector):
             else:
                 #assertOld:
                 try:
-                    msg = "[ERROR]: DAG_executor_FanInNB_Select: fan_in: reached unreachable else: error at end of fanin"
+                    msg = "[ERROR]: DAG_executor_FanInNB_Select: fan_in: reached unreachable else: at end of fanin."
                     assert False , msg
                 except AssertionError:
                     logger.exception("[Error]: assertion failed")
                     if exit_program_on_exception:
                         logging.shutdown()
                         os._exit(0)
-                #   logger.error("[ERROR]: DAG_executor_FanInNB_Select: fan_in: reached else: error at end of fanin")
+                #   logger.error("[Error]: DAG_executor_FanInNB_Select: fan_in: reached else: error at end of fanin")
 
             # No signal of non-last client; they did not block and they are done executing. 
             # does mutex.V

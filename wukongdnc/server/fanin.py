@@ -108,7 +108,7 @@ class FanIn(MonitorSU):
             #if (self._results is not None):
             logger.trace("Returning (to last executor) for fan-in %s: %s" % (self.fanin_id, str(self._results)))
             #else:
-            #    logger.error("Result to be returned to last executor is None for fan-in %s!" % self.fanin_id)
+            #    logger.error("[Error]: Result to be returned to last executor is None for fan-in %s!" % self.fanin_id)
 
             #threading.current_thread()._returnValue = self._results
             #threading.current_thread()._restart = False 

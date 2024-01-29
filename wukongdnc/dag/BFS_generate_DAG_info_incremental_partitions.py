@@ -1017,7 +1017,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         try:
             msg = "[Error]: generate_DAG_info_incremental_groups:" \
                 + " partition has a senders with length 0."
-            assert not len(senders) == 0 , msg
+            assert not (len(senders) == 0) , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
             if exit_program_on_exception:

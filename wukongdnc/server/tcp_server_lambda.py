@@ -1883,7 +1883,7 @@ class TCPServer(object):
                 os._exit(0)
         # assertOld:
         #if not store_sync_objects_in_lambdas:
-        #    logger.error("tcp_server_lambda: store_sync_objects_in_lambdas is False.")
+        #    logger.error("[Error]: tcp_server_lambda: store_sync_objects_in_lambdas is False.")
 
         try:
             self.tcp_server.serve_forever()

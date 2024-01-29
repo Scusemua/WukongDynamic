@@ -214,7 +214,7 @@ except AssertionError:
 try:
     msg = "[Error]: Configuration error: if using_workers and not using_threads_not_processes" \
         + " then store_fanins_faninNBs_locally must be False."
-    assert not (using_workers and not using_threads_not_processes), msg
+    assert not (using_workers and not using_threads_not_processes and store_fanins_faninNBs_locally), msg
 except AssertionError:
     logger.exception("[Error]: assertion failed")
     if exit_program_on_exception:
@@ -234,7 +234,7 @@ try:
     # if create sync objects on start and executing tasks in lambdas "
     # then we must map them to function so that we can determine the 
     # function an object is in.
-    assert not (create_all_fanins_faninNBs_on_start and not run_all_tasks_locally and store_sync_objects_in_lambdas and not(not map_objects_to_lambda_functions)), msg
+    assert not (create_all_fanins_faninNBs_on_start and not run_all_tasks_locally and store_sync_objects_in_lambdas and not map_objects_to_lambda_functions), msg
 except AssertionError:
     logger.exception("[Error]: assertion failed")
     if exit_program_on_exception:
@@ -3646,7 +3646,7 @@ def check_asserts():
 
     try:
         msg = "[Error]: Configuration error: if using_workers and not using_threads_not_processes" + " then store_fanins_faninNBs_locally must be False."
-        assert not (using_workers and not using_threads_not_processes), msg
+        assert not (using_workers and (not using_threads_not_processes) and store_fanins_faninNBs_locally), msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
         if exit_program_on_exception:
@@ -3666,7 +3666,7 @@ def check_asserts():
         # if create sync objects on start and executing tasks in lambdas "
         # then we must map them to function so that we can determine the 
         # function an object is in.
-        assert not (create_all_fanins_faninNBs_on_start and not run_all_tasks_locally and store_sync_objects_in_lambdas and not(not map_objects_to_lambda_functions)), msg
+        assert not (create_all_fanins_faninNBs_on_start and not run_all_tasks_locally and store_sync_objects_in_lambdas and not map_objects_to_lambda_functions), msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
         if exit_program_on_exception:
@@ -3775,7 +3775,7 @@ def check_asserts():
 
     try:
         msg = "[Error]: Configuration error: if using a single shared array of" + " partitions or groups then must run_tasks_locally and be using_threads_not_processes."
-        assert not (compute_pagerank and (use_shared_partitions_groups and not run_all_tasks_locally)), msg
+        assert not (compute_pagerank and (use_struct_of_arrays_for_pagerank and not use_shared_partitions_groups)), msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
         if exit_program_on_exception:

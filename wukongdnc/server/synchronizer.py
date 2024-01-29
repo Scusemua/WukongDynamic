@@ -76,24 +76,27 @@ class Synchronizer(object):
 
     def lock_synchronizer(self):
     
-        print("locking synchronizer")
+        logger.trace("synchronizer: locking synchronizer")
         
         try:
             synchronizer_method = getattr(self._synchClass,"lock")
-        except Exception as ex:
-            print("lock_synchronizer: Failed to find method 'lock' on object of type '%s'." % (self._synchClass))
-            raise ex
+        except Exception:
+            logger.exception("[Error]: synchronizer: lock_synchronizer: Failed to find method 'lock' on object of type '%s'." % (self._synchClass))
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
             
         synchronizer_method(self._synchronizer)
  
     def unlock_synchronizer(self):
-    
-        print("unlocking synchronizer") 
+        logger.trace("synchronizer: unlocking synchronizer") 
         try:
             synchronizer_method = getattr(self._synchClass,"unlock")
-        except Exception as ex:
-            print("unlock_synchronizer: Failed to find method 'unlock' on object of type '%s'." % (self._synchClass))
-            raise ex
+        except Exception:
+            logger.exception("[Error]: synchronizer: unlock_synchronizer: Failed to find method 'unlock' on object of type '%s'." % (self._synchClass))
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
             
         synchronizer_method(self._synchronizer)
 
@@ -102,15 +105,15 @@ class Synchronizer(object):
         self._synchronizer_class_name = synchronizer_class_name
 
         if not synchronizer_class_name in Synchronizer.synchronizers:
-            logger.error("create: Invalid synchronizer class name: '%s'" % synchronizer_class_name)
-            logger.error("Invalid synchronizer class name: '%s'" % synchronizer_class_name)
+            logger.error("[Error]: synchronizer.py: create: Invalid synchronizer class name: '%s'" % synchronizer_class_name)
+            logger.error("[Error]: If you developed a new synch object be sure to register it in Synchronizer.synchronizers.")
             if exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
         
         if not synchronizer_class_name in Synchronizer.file_map:
-            logger.error("create: Could not find source file for Synchronizer '%s'" % synchronizer_class_name)
-            logger.error("Could not find source file for Synchronizer '%s'" % synchronizer_class_name)
+            logger.error("[Error]: synchronizer.py: create: Could not find source file for Synchronizer '%s'" % synchronizer_class_name)
+            logger.error("[Error]: If you developed a new synch object be sure to register it in Synchronizer.file_map.")
             if exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
@@ -121,33 +124,33 @@ class Synchronizer(object):
         logger.info("create: Attempting to locate class '%s'" % synchronizer_class_name)
         
         src_file = Synchronizer.file_map[synchronizer_class_name]
-        logger.info("Creating synchronizer with name '%s' by calling locate('%s.%s')"  % (self._synchronizer_name, src_file, synchronizer_class_name))
-        logger.info("create: Creating synchronizer with name '%s'" % self._synchronizer_name)
-        logger.info("src_file: " + src_file)
+        #logger.info("Creating synchronizer with name '%s' by calling locate('%s.%s')"  % (self._synchronizer_name, src_file, synchronizer_class_name))
+        #logger.info("create: Creating synchronizer with name '%s'" % self._synchronizer_name)
         # Get the class object for a synchronizer object, e.g.. Barrier
         module = importlib.import_module("wukongdnc.server." + src_file)
         #module = importlib.import_module(src_file)
-        logger.info("foo1")
         self._synchClass = getattr(module, synchronizer_class_name)
-        logger.info("foo2")
         if (self._synchClass is None):
-            raise ValueError("Failed to locate and create synchronizer of type %s" % synchronizer_class_name)
+            logger.error("[Error]: synchronizer: Failed to locate and create synchronizer of type %s" % synchronizer_class_name)
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)
 
         # Create the synchronization object
         #logger.trace("got MyClass")
         self._synchronizer = self._synchClass(self._synchronizer_name)
         if self._synchronizer == None:
-            logger.error("create: Failed to locate and create synchronizer of type %s" % synchronizer_class_name)
+            logger.error("[Error]: synchronizer: create: Failed to locate and create synchronizer of type %s" % synchronizer_class_name)
             if exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
         
         #e.g. "b"
         self._synchronizer_object_name = synchronizer_object_name
-        logger.info("create: self._sycnhronizer_object_name: " + self._synchronizer_object_name)
+        logger.info("synchronizer: create: self._sycnhronizer_object_name: " + self._synchronizer_object_name)
 
         # init the synchronzation object
-        logger.info("create: Calling _synchronizer init")
+        logger.info("synchronizer: create: Calling _synchronizer init")
         self._synchronizer.init(**kwargs)  #2
         # where Barrier init is: init(**kwargs): if len(kwargs) not == 1
 	    # logger.trace(“Error: Barrier init has too many argos”) self._n = kwargs[‘n’]
@@ -305,13 +308,12 @@ class Synchronizer(object):
     # For try-ops this method calls the try-op method defined by the user (for non-select synchronizers). 
     # Called by synchronize_synch in tcp_server
     def trySynchronize(self, method_name, state, **kwargs):
-        logger.trace("trySynchronize: starting trySynchronize, method_name: " + method_name + ", ID is: " + state.function_instance_ID)
+        logger.trace("synchronizer: trySynchronize: starting trySynchronize, method_name: " + method_name + ", ID is: " + state.function_instance_ID)
         
         try:
             synchronizer_method = getattr(self._synchClass,method_name)
-        except Exception as x:
-            logger.error("trySynchronize: Caught Error >>> %s" % x)
-            logger.error("Synchronizer of type %s does not have method called %s. Cannot complete trySynchronize() call." % (self._synchClass, method_name))
+        except Exception:            
+            logger.exception("synchronizer: trySynchronize: synchronizer of type %s does not have method called %s. Cannot complete trySynchronize() call." % (self._synchClass, method_name))
             if exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
@@ -340,9 +342,8 @@ class Synchronizer(object):
         
         try:
             synchronizer_method = getattr(self._synchClass, method_name)
-        except Exception as x:
-            logger.error("trySynchronizeSelect: Caught Error >>> %s" % x)
-            logger.error("Synchronizer of type %s does not have method called %s. Cannot complete trySynchronize() call." % (self._synchClass, method_name))
+        except Exception:
+            logger.exception("[Error]: synchronizer: Synchronizer of type %s does not have method called %s. Cannot complete trySynchronize() call." % (self._synchClass, method_name))
             if exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
@@ -381,7 +382,7 @@ class Synchronizer(object):
             # function-calling syntax from every programming language (args). In your case, you're passing 
             # self._synchronizer and **kwargs as arguments.
         except Exception:
-            logger.error("synchronize: Failed to find method '%s' on object '%s'." % (method_name, self._synchClass))
+            logger.exception("synchronize: Failed to find method '%s' on object '%s'." % (method_name, self._synchClass))
             if exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
@@ -422,7 +423,7 @@ class Synchronizer(object):
         try:
             synchronizer_method = getattr(self._synchClass, method_name)
         except Exception:
-            logger.error("synchronizeSelect: Failed to find method '%s' on object '%s'." % (method_name, self._synchClass))
+            logger.exception("synchronizeSelect: Failed to find method '%s' on object '%s'." % (method_name, self._synchClass))
             if exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
@@ -438,7 +439,7 @@ class Synchronizer(object):
         try:
             execute = getattr(self._synchClass,"execute")
         except Exception:
-            logger.error("synchronizeSelect: Failed to find method 'execute' on object '%s'." % (self._synchClass))
+            logger.exception("synchronizeSelect: Failed to find method 'execute' on object '%s'." % (self._synchClass))
             if exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
@@ -661,7 +662,7 @@ class Synchronizer(object):
         try:
             _execute = getattr(self._synchClass,"execute")
         except Exception:
-            logger.error("Failed to find method 'execute' on object '%s'." % (self._synchClass))
+            logger.exception("[Error]: synchonizer: Failed to find method 'execute' on object '%s'." % (self._synchClass))
             if exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
@@ -697,7 +698,7 @@ class Synchronizer(object):
         try:
             execute = getattr(synchClass,"execute")
         except Exception:
-            logger.error("doMethodCallSelectExecute: Failed to find method 'execute' on object '%s'." % (synchClass))
+            logger.exception("doMethodCallSelectExecute: Failed to find method 'execute' on object '%s'." % (synchClass))
             if exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)

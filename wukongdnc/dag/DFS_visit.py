@@ -681,7 +681,7 @@ def main():
 
     try:
         msg = "Error 6"
-        assert not len(Node.DAG_leaf_tasks) == 0, msg
+        assert not (len(Node.DAG_leaf_tasks) == 0), msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
         if exit_program_on_exception:

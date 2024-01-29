@@ -57,24 +57,24 @@ class selectiveWait:
         self._hasDelay = True
        
         if self.hasDelay:
-            print("Warning: A selectiveWait cannot have more than one delay alternative.")
-            print("Warning: Only one of the delay alternatives can be selected.")
+            logger.error("Warning: A selectiveWait cannot have more than one delay alternative.")
+            logger.error("Warning: Only one of the delay alternatives can be selected.")
             
         if self.hasElse: 
-            print("Warning: A selectiveWait cannot have an else alternative and a delay alternative.")
-            print("Warning: Only one of the else/delay alternatives can be selected.")
+            logger.error("Warning: A selectiveWait cannot have an else alternative and a delay alternative.")
+            logger.error("Warning: Only one of the else/delay alternatives can be selected.")
     
     def add_else(self,elsealt):
         self._else_ = elsealt
         self._hasElse = True
        
         if self.hasElse:
-            print("Warning: A selectiveWait cannot have more than one else alternative.")
-            print("Warning: Only one of the else alternatives can be selected.")
+            logger.error("Warning: A selectiveWait cannot have more than one else alternative.")
+            logger.error("Warning: Only one of the else alternatives can be selected.")
             
         if self.hasDelay:
-            print("Warning: A selectiveWait cannot have a delay alternative and an else alternative.")
-            print("Warning: Only one of the else/delay alternatives can be selected.")
+            logger.error("Warning: A selectiveWait cannot have a delay alternative and an else alternative.")
+            logger.error("Warning: Only one of the else/delay alternatives can be selected.")
 
     def remove_else(self):
         self._hasElse = False
@@ -122,7 +122,7 @@ class selectiveWait:
                 return len(self._entry_list)+1
         self.tryOpenAllWithTrueGuard()  # set the guards earlier, no set open if guard is True same for delay's guard
         if self._hasDelay and self._delay.testGuard():
-            XXX = True
+            pass
             #t.start()?
             # no waits, though have timeouts on  sem.acquire()
          # # long startTime = System.currentTimeMillis()

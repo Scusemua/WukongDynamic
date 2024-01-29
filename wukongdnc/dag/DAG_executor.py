@@ -536,7 +536,7 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
                         if exit_program_on_exception:
                             logging.shutdown()
                             os._exit(0)
-                    #assertOld
+                    #assertOld:
                     #if worker_needs_input:
                     #    logger.error("[Error]: " + thread_name + ": process_faninNBs: not using_workers but worker_needs_input = True")
                     
@@ -982,7 +982,7 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
                 if exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0)
-            #assertOld
+            #assertOld:
             #if worker_needs_input:
             #    logger.error("[Error]:" + thread_name + ": process_faninNBs_batch: not using_workers but worker_needs_input = True")
 
@@ -1344,7 +1344,7 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                     if exit_program_on_exception:
                         logging.shutdown()
                         os._exit(0)
-                #assertOld
+                #assertOld:
                 #logger.error("[ERROR]: " + thread_name + " : process_fanouts: invalid configuration.")
 
     # Note: If we do not piggyback the fanouts with process_faninNBs_batch, we would add
@@ -4220,7 +4220,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         # and piggyback the list of fanouts, or use the parallel invoker in process_fanouts.
                         try:
                             msg = "[Error]: work loop: after process_fanouts: fanouts > 1 but no work in list_of_work_queue_or_payload_fanout_values."
-                            assert not (len(list_of_work_queue_or_payload_fanout_values) == 0 and len(list_of_work_queue_or_payload_fanout_values) == 0), msg
+                            assert not (len(state_info.fanouts) > 0 and len(list_of_work_queue_or_payload_fanout_values) == 0), msg
                         except AssertionError:
                             logger.exception("[Error]: assertion failed")
                             if exit_program_on_exception:
@@ -4384,7 +4384,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         logger.trace("work loop: async_call:" + str(async_call))
 
 #rhc: cluster:
-                        # used for assert below
+                        # used for asssert below
                         save_worker_needs_input = worker_needs_input
 
                         #Note: using worker processes - batch calls to fan_in for FaninNBs
@@ -4418,7 +4418,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             msg = "[Error]: process_faninNBs_batch set" \
                                 + " worker_needs_input to False when using workers but cluster_queue" \
                                     + " size is 0."
-                            assert not (using_workers and worker_needs_input != save_worker_needs_input and not cluster_queue.qsize() == 0), msg
+                            assert not (using_workers and worker_needs_input != save_worker_needs_input and cluster_queue.qsize() == 0), msg
                         except AssertionError:
                             logger.exception("[Error]: assertion failed")
                             if exit_program_on_exception:
@@ -4526,7 +4526,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             #if cluster_queue.qsize()==0:
                             ##if worker_needs_input:
                             #    # when there is at least one fanout we will become one of the fanout tasks
-                            #    # so we should not need work.
+                            #    # by depositing the task in the cluster queue so the cluster queue should not be empty.
                             #    logger.error("[Error]: work loop: fanouts but worker needs work.")
  
                             if len(state_info.fanouts) > 1:

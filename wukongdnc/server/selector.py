@@ -1,5 +1,7 @@
 #from monitor_su import MonitorSU
+import os
 from .selectivewait import selectiveWait
+from ..dag.DAG_executor_constants import exit_program_on_exception
 # from .counting_semaphore import CountingSemaphore
 from threading import RLock
 
@@ -162,7 +164,7 @@ class Selector():
                 break  # while-loop
             elif choice > self._select.get_number_entries()+1:
                 # error
-                print("Illegal choice in selective wait: " + choice + " number of entries" + self._select.get_number_entries())
+                logger.error("Illegal choice in selective wait: " + choice + " number of entries" + self._select.get_number_entries())
                 break # while-loop
             elif choice == -1: # else or delay processing TBD
             # ToDo: on timeout we are just calling "delay" method? so no choice of delay/else
@@ -273,7 +275,10 @@ class Selector():
                 break  # while-loop
            elif choice > self._select.get_number_entries()+1:
                 # error
-                print("Illegal choice in selective wait: " + choice + " number of entries" + self._select.get_number_entries())
+                logger.error("[Error]: selector: Illegal choice in selective wait: " + choice + " number of entries" + self._select.get_number_entries())
+                if exit_program_on_exception:
+                    logging.shutdown()
+                    os._exit()
                 break # while-loop
            elif choice == -1: # else or delay
             # ToDo: on timeout we are just calling "delay" method so no choice of delay/else

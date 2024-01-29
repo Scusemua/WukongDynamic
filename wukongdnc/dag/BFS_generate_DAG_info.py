@@ -323,7 +323,7 @@ def generate_DAG_info():
                 if exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0)
-            #assertOld
+            #assertOld:
             #if not senderX in leaf_tasks_of_partitions:
             #    logger.error("partition " + senderX + " receives no inputs"
             #        + " but it is not in leaf_tasks_of_partitions.")
@@ -734,7 +734,7 @@ def generate_DAG_info():
                 if exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0)
-            #assertOld
+            #assertOld:
             #if not senderX in leaf_tasks_of_groups:
             #    logger.error("partition " + senderX + " receives no inputs"
             #        + " but it is not in leaf_tasks_of_groups.")

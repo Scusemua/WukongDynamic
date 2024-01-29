@@ -207,7 +207,7 @@ class Selector():
                 #    # Note asynch calls always have send_result = False, whether they block or not.
                 #    # Also, only async calls can be restarted above, i.e., can have get_restart_on_noblock() is True.
                 #    # So if restart is true then send_result must be False
-                #    logger.error("execute: send_result is True and restart is True, but restart can only "
+                #    logger.error([Error]: ]execute: send_result is True and restart is True, but restart can only "
                 #        + "be True for aynch calls while send_result is always False for aynch calls.")             
                 restart = False
                 return_tuple = (return_value, restart)

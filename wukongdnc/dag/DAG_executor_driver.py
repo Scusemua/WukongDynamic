@@ -1884,7 +1884,7 @@ def run():
                         if exit_program_on_exception:
                             logging.shutdown()
                             os._exit(0)
-                    #assertOld
+                    #assertOld:
                     #if run_all_tasks_locally:
                     #    logger.error("[Error]: DAG_executor_driver: interal error: DAG_executor_driver: run_all_tasks_locally shoudl be false.")
 
@@ -2009,7 +2009,7 @@ def run():
                         if exit_program_on_exception:
                             logging.shutdown()
                             os._exit(0)
-                    #assertOld
+                    #assertOld:
                     #if run_all_tasks_locally:
                     #    logger.error("[Error]: DAG_executor_driver: interal error: DAG_executor_driver: run_all_tasks_locally should be false.")
 
@@ -2339,6 +2339,7 @@ def run():
                 # more threads/processes.
                 while True:
                     logger.trace("DAG_executor_driver: Starting DAG_executor for non-leaf task.")
+                    # assserting if condition is True
                     try:
                         msg = "DAG_executor_driver: worker (pool) threads/processes must run locally (no Lambdas)"
                         assert run_all_tasks_locally , msg
@@ -2428,8 +2429,11 @@ def run():
 
                         if using_workers and num_threads_created == num_workers:
                             break 
-                    #else:
-                    #    logger.error("DAG_executor_driver: worker (pool) threads/processes must run locally (no Lambdas)")
+                    else:
+                        # above asssertion should have failed
+                        logger.error("DAG_executor_driver: worker (pool) threads/processes must run locally (no Lambdas)")
+                        logging.shutdown()
+                        os._exit(0)
 
         if use_multithreaded_multiprocessing:
             logger.info("DAG_executor_driver: num_processes_created_for_multithreaded_multiprocessing: " + str(num_processes_created_for_multithreaded_multiprocessing))

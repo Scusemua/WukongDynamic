@@ -28,7 +28,7 @@ def set_pagerank_output(state,output):
         if exit_program_on_exception:
             logging.shutdown()
             os._exit(0)
-    #assertOld
+    #assertOld:
     #if not multiple_output == None:
     #    logger.error("[Error]: set_pagerank_output:"
     #        + " more than one pagerank output for state " + str(state))

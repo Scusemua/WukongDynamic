@@ -383,7 +383,7 @@ class DAG_executor_FanInNB(MonitorSU):
                                 os._exit(0)
                         #assertOld:
                         #if self.DAG_info == None:
-                        #    logger.error("FanInNB: fanin_task_name:" + fanin_task_name + " DAG_info is None for Lambda start.")
+                        #    logger.error("[Error]: FanInNB: fanin_task_name:" + fanin_task_name + " DAG_info is None for Lambda start.")
                         #else:
                         logger.trace("FanInNB: fanin_task_name:" + fanin_task_name + " DAG_info is NOT None for Lambda start.")
 
@@ -446,7 +446,7 @@ class DAG_executor_FanInNB(MonitorSU):
                         logging.shutdown()
                         os._exit(0)
                 #assertOld:
-                #   logger.error("[ERROR]: FanInNB: reached else: error at end of fanin")
+                #   logger.error("[Error]: FanInNB: reached else: error at end of fanin")
 
             # No signal of non-last client; they did not block and they are done executing. 
             # does mutex.V
