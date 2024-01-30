@@ -148,7 +148,7 @@ class Synchronizer(object):
         # Create the synchronization object
         #logger.trace("got MyClass")
         self._synchronizer = self._synchClass(self._synchronizer_name)
-        if self._synchronizer == None:
+        if self._synchronizer is None:
             logger.error("[Error]: create: Failed to locate and create synchronizer of type %s" % synchronizer_class_name)
             if exit_program_on_exception:
                 logging.shutdown()
@@ -635,7 +635,7 @@ class Synchronizer(object):
             logger.trace("synchronizer_lambda: synchronizeLamba: result_buffer.withdraw: " + str(returnValue))
             try:
                 msg = "synchronizer_lambda: synchronizeLamba: result_buffer.withdraw returned restart true."
-                assert not restart , msg
+                assert not (restart) , msg
             except AssertionError:
                 logger.exception("[Error]: assertion failed")
                 if exit_program_on_exception:

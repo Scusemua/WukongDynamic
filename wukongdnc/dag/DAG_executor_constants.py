@@ -933,7 +933,7 @@ def test2():
 #Test 3: simulated lambdas (A2) with non-selective-wait Sync-objects,
 #         create objects on-the-fly
 def test3():
-    print("test3")
+    logger.info("test3")
     global store_sync_objects_in_lambdas
     global using_Lambda_Function_Simulators_to_Store_Objects
     global sync_objects_in_lambdas_trigger_their_tasks
@@ -3804,30 +3804,42 @@ def check_asserts():
     #    os._exit(0)
 
 test_number = 0
+
 # called by TestAll.py to run testX
 def set_test_number(number):
     global test_number
     test_number = number
+    #print("number: " + str(number))
+    #print("test_number: " + str(test_number))
 
-# Run Tests
-if not test_number == 0:
-    non_real_lambda_base()
+    # Run Tests
+    if not test_number == 0:
+        #print("call non_real_lambda_base")
+        non_real_lambda_base()
+    #else: 
+    #    print (" No call non_real_lambda_base")
 
-if test_number == 1:
-    test1()
-elif test_number == 2:
-    test2()
+    if test_number == 1:
+        test1()
+    elif test_number == 2:
+        test2()
+    elif test_number == 3:
+        test3()
+    elif test_number == 4:
+        test4()
+    else:
+        print("foo")
 
-# Check assserts after setting the configuration constants
-if not test_number == 0:
-    check_asserts()
+    # Check assserts after setting the configuration constants
+    if not test_number == 0:
+        check_asserts()
 
 
-# Note: Running this script in the Wndows PowerShell X to run the 
+# Note: Running the script below in the Wndows PowerShell X to run the 
 # tests one-by-one. This is the command line "Windows Powershell"
 # not the "Windows Powershell ISE". The latter gives and error 
 # message when runnging python. (See the comment below.)
-
+#
 # This script is also in file TestAllPowerShellCommands.txt in
 # directory C:\Users\benrc\Desktop\Executor\DAG\WukongDynamic
 
@@ -3839,7 +3851,7 @@ if not test_number == 0:
 #    Read-Host "Enter any input to continue"
 #}
 
-# Copy the script and paste it into PowerSshell and hit enter twice.
+# Copy the script and paste it into PowerShell and hit enter twice.
 
 # The error when runnging Powershell ISE is:
 """'

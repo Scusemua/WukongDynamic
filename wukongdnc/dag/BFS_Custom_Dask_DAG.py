@@ -254,7 +254,7 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
                     #partition_or_group_name = "PR"+str(partition_number)+"_"+str(group_number)
                     partition_or_group_name = frontier_parent[3]
                     output_list = PageRank_output.get(partition_or_group_name)
-                    if output_list == None:
+                    if output_list is None:
                         output_list = []
                     output_tuple = (parent_or_group_index,partition_or_group[i].pagerank)
                     output_list.append(output_tuple)

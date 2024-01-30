@@ -187,7 +187,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         try:
             msg = "[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas:" \
                 + " deposit received more than 1 leaf task."
-            assert not len(new_leaf_tasks)>1 , msg
+            assert not (len(new_leaf_tasks)>1) , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
             if exit_program_on_exception:

@@ -614,7 +614,7 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partiti
                 # keeping a list of outputs for each partition_or_group_name that 
                 # this just computed task outputs to
                 output_list = PageRank_output.get(partition_or_group_name)
-                if output_list == None:
+                if output_list is None:
                     output_list = []
                 # list of tuples: index of shadow node to receive the parent pagerank
                 # value, and the pagerank value of parent.
@@ -1272,7 +1272,7 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
                     #partition_or_group_name = "PR"+str(partition_number)+"_"+str(group_number)
                     partition_or_group_name = frontier_parent_tuple[3]
                     output_list = PageRank_output.get(partition_or_group_name)
-                    if output_list == None:
+                    if output_list is None:
                         output_list = []
                     #rhc shared
                     output_tuple = (parent_or_group_index,shared_nodes[node_index].pagerank)
@@ -1295,7 +1295,7 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
         # if task task_file_name has no frontier tuples then list_of_frontier_tuples
         # will be None.
         list_of_frontier_tuples = shared_frontier_map.get(task_file_name)
-        if list_of_frontier_tuples == None:
+        if list_of_frontier_tuples is None:
             list_of_frontier_tuples = []
         for frontier_parent_tuple in list_of_frontier_tuples:
             # Each frontier tuple represents a pagerank value of this task that should
@@ -1387,7 +1387,7 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
 
             partition_or_group_name_of_output_task = frontier_parent_tuple[3]
             #output_list = PageRank_output.get(partition_or_group_name_of_output_task)
-            #if output_list == None:
+            #if output_list is None:
             #    output_list = []
             #rhc shared
             #output_tuple = (parent_or_group_index,shared_nodes[node_index].pagerank)

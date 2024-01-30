@@ -242,7 +242,7 @@ def generate_DAG_info():
         # inputs from other tasks except leaf tasks)
         for receiverY in receiver_set_for_senderX:
             receiver_set_for_receiverY = Partition_senders.get(receiverY)
-            if receiver_set_for_receiverY == None:
+            if receiver_set_for_receiverY is None:
                 # receiverY does not send any inputs so it is a sink
                 Partition_sink_set.add(receiverY)
             # tasks that send inputs to receiverY
@@ -307,7 +307,7 @@ def generate_DAG_info():
 
         # get the tasks that send to senderX, i.e., provide inputs for senderX
         sender_set_for_senderX = Partition_receivers.get(senderX)
-        if sender_set_for_senderX == None:
+        if sender_set_for_senderX is None:
             # senderX is a leaf task since it is not a receiver
             Partition_DAG_leaf_tasks.append(senderX)
             Partition_DAG_leaf_task_start_states.append(state)
@@ -649,7 +649,7 @@ def generate_DAG_info():
         receiver_set_for_senderX = Group_senders[senderX]
         for receiverY in receiver_set_for_senderX:
             receiver_set_for_receiverY = Group_senders.get(receiverY)
-            if receiver_set_for_receiverY == None:
+            if receiver_set_for_receiverY is None:
                 # receiverY does not send any inputs so it is a sink
                 Group_sink_set.add(receiverY)
             sender_set_for_receiverY = Group_receivers[receiverY]
@@ -718,7 +718,7 @@ def generate_DAG_info():
 
         # get the tasks that send to senderX, i.e., provide inputs for senderX
         sender_set_for_senderX = Group_receivers.get(senderX)
-        if sender_set_for_senderX == None:
+        if sender_set_for_senderX is None:
             # senderX is a leaf task since it is not a receiver
             Group_DAG_leaf_tasks.append(senderX)
             Group_DAG_leaf_task_start_states.append(state)
@@ -1197,7 +1197,7 @@ def OLD_generate_DAG_info_incremental_partitions(partition_name,current_partitio
         receiverY = receiver_set_for_senderX[0]
 
         receiver_set_for_receiverY = Partition_senders.get(receiverY)
-        if receiver_set_for_receiverY == None:
+        if receiver_set_for_receiverY is None:
             # receiverY does not send any inputs so it is a sink.
             # This is the last partition
             Partition_sink_set.add(receiverY)

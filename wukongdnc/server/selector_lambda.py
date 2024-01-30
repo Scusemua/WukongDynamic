@@ -25,7 +25,7 @@ class Selector():
         self._restart_on_block = None 
         self._restart_on_unblock = None
         self._restart_on_noblock = None
-        if selector_name == None:
+        if selector_name is None:
             selector_name == ""
         self._mutex = CountingSemaphore(initial_permits = 1, semaphore_name = "Selector-" + str(selector_name) + "-mutex-CountingSemaphore") 
 
@@ -100,7 +100,7 @@ class Selector():
         if called_entry.get_num_arrivals() > 1 or called_entry.testGuard() == False:
             try:
                 msg = "[Error]: execute: send_result is True but entry will not be accepted."
-                assert not send_result , msg
+                assert not (send_result) , msg
             except AssertionError:
                 logger.exception("[Error]: assertion failed")
                 if exit_program_on_exception:
@@ -114,7 +114,7 @@ class Selector():
             try:
                 msg = "[Error]: execute: called_entry.testGuard() is True but this is not the first arrival." \
                     + " A previous arrival thus had a True guard and should have been selected earlier."
-                assert not called_entry.get_num_arrivals() > 1 and called_entry.testGuard() , msg
+                assert not (called_entry.get_num_arrivals() > 1 and called_entry.testGuard()) , msg
             except AssertionError:
                 logger.exception("[Error]: assertion failed")
                 if exit_program_on_exception:
@@ -196,7 +196,7 @@ class Selector():
                 try:
                     msg = "selector_lambda: execute: send_result is True and restart is True, but restart can only " \
                         + "be True for aynch calls while send_result is always False for aynch calls."
-                    assert not restart , msg
+                    assert not (restart) , msg
                 except AssertionError:
                     logger.exception("[Error]: assertion failed")
                     if exit_program_on_exception:
@@ -273,7 +273,7 @@ class Selector():
 #     And since the try determined the call would block, send_result was False. All async calls 
 #    use send_result = false, so no client is waiting for a return and neither is the MessageHandler. 
 
-# ToConsider: we could save the send_result value in the Arrival and check/assert here? send_result should be False.
+# ToConsider: we could save the send_result value in the Arrival and check/asssert here? send_result should be False.
 
                 # Note: synchronizeSelect works for this case. That is, for asynch always terminate. If we 
                 # allow terminate and set restart_on_no_block = True, and restart if restart_on_no_block it

@@ -139,7 +139,7 @@ class Synchronizer(object):
         # Create the synchronization object
         #logger.trace("got MyClass")
         self._synchronizer = self._synchClass(self._synchronizer_name)
-        if self._synchronizer == None:
+        if self._synchronizer is None:
             logger.error("[Error]: synchronizer: create: Failed to locate and create synchronizer of type %s" % synchronizer_class_name)
             if exit_program_on_exception:
                 logging.shutdown()

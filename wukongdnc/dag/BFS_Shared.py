@@ -649,7 +649,7 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
                     #partition_or_group_name = "PR"+str(partition_number)+"_"+str(group_number)
                     partition_or_group_name = frontier_parent_tuple[3]
                     output_list = PageRank_output.get(partition_or_group_name)
-                    if output_list == None:
+                    if output_list is None:
                         output_list = []
                     #rhc shared
                     output_tuple = (parent_or_group_index,shared_nodes[node_index].pagerank)
@@ -673,7 +673,7 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
         # If task task_file_name has no frontier tuples then list_of_frontier_tuples
         # will be None.
         list_of_frontier_tuples = shared_frontier_map.get(task_file_name)
-        if list_of_frontier_tuples == None:
+        if list_of_frontier_tuples is None:
             list_of_frontier_tuples = []
         for frontier_parent_tuple in list_of_frontier_tuples:
             # Each frontier tuple represents a pagerank value of this task that should
@@ -791,7 +791,7 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
             #        + str(pagerank[index]))
 
             #output_list = PageRank_output.get(partition_or_group_name_of_output_task)
-            #if output_list == None:
+            #if output_list is None:
             #    output_list = []
             #rhc shared
             #output_tuple = (parent_or_group_index,shared_nodes[node_index].pagerank)

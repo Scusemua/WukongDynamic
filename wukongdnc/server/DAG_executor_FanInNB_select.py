@@ -94,7 +94,7 @@ class DAG_executor_FanInNB_Select(Selector):
         self.store_fanins_faninNBs_locally = kwargs['store_fanins_faninNBs_locally']
         self.DAG_info = kwargs['DAG_info'] 
 
-        if self.DAG_info == None:
+        if self.DAG_info is None:
             # When running real lambdas, DAG_info must be non-null since
             # the FaninNB will start a real lambda to excute its fanin task
             # and pass the DAG_info on the payload. For simulated lambdas
@@ -325,9 +325,10 @@ class DAG_executor_FanInNB_Select(Selector):
                         "input": self._results,
                         "DAG_executor_state": DAG_executor_state,
                         # Using threads to simulate lambdas and th threads
-                        # just read ADG_info locally, we do not need to pass it 
+                        # just read DAG_info locally, we do not need to pass it 
                         # to each Lambda.
-                        #"DAG_info": self.DAG_info,
+                        # passing DAG_info to be consistent with real lambdas
+                        "DAG_info": self.DAG_info,
                         "server": server
                     }
                     thread_name_prefix = "Thread_leaf_"
@@ -480,7 +481,7 @@ class DAG_executor_FanInNB_Select(Selector):
                 #work_tuple = (start_state_fanin_task,self._results)
                 #return work_tuple 
             else:
-                #assertOld:
+                #assertOld: This should be unreachable
                 try:
                     msg = "[ERROR]: DAG_executor_FanInNB_Select: fan_in: reached unreachable else: at end of fanin."
                     assert False , msg

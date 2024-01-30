@@ -22,14 +22,14 @@ def set_pagerank_output(state,output):
     try:
         msg = "[Error]: set_pagerank_output:" \
             + " more than one pagerank output for state " + str(state)
-        assert multiple_output == None , msg
+        assert multiple_output is None , msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
         if exit_program_on_exception:
             logging.shutdown()
             os._exit(0)
     #assertOld:
-    #if not multiple_output == None:
+    #if multiple_output is not None:
     #    logger.error("[Error]: set_pagerank_output:"
     #        + " more than one pagerank output for state " + str(state))
 

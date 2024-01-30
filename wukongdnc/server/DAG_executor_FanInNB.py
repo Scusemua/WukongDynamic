@@ -82,7 +82,7 @@ class DAG_executor_FanInNB(MonitorSU):
         self.store_fanins_faninNBs_locally = kwargs['store_fanins_faninNBs_locally']
         self.DAG_info = kwargs['DAG_info'] 
 
-        if self.DAG_info == None:
+        if self.DAG_info is None:
             # When running real lambdas, DAG_info must be non-null since
             # the FaninNB will start a real lambda to excute its fanin task
             # and pass the DAG_info on the payload. For simulated lambdas
@@ -375,14 +375,14 @@ class DAG_executor_FanInNB(MonitorSU):
                         logger.trace("FanInNB: starting Lambda function for task " + fanin_task_name + " with start state " + str(DAG_executor_state.state))
                         try:
                             msg = "FanInNB: fanin_task_name:" + fanin_task_name + " DAG_info is None for Lambda start."
-                            assert not self.DAG_info == None , msg
+                            assert self.DAG_info is not None , msg
                         except AssertionError:
                             logger.exception("[Error]: assertion failed")
                             if exit_program_on_exception:
                                 logging.shutdown()
                                 os._exit(0)
                         #assertOld:
-                        #if self.DAG_info == None:
+                        #if self.DAG_info is None:
                         #    logger.error("[Error]: FanInNB: fanin_task_name:" + fanin_task_name + " DAG_info is None for Lambda start.")
                         #else:
                         logger.trace("FanInNB: fanin_task_name:" + fanin_task_name + " DAG_info is NOT None for Lambda start.")
@@ -437,6 +437,7 @@ class DAG_executor_FanInNB(MonitorSU):
                 return self._results, restart
 
             else:
+                # This should be unreachable
                 try:
                     msg = "[ERROR]: FanInNB: reached unreachable else: error at end of fanin"
                     assert False , msg

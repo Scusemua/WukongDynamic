@@ -1786,7 +1786,7 @@ class TCPServer(object):
             # reads from default file './DAG_info.pickle'
             DAG_info = DAG_Info.DAG_info_fromfilename()
             # debug
-            #if DAG_info == None:
+            #if DAG_info is None:
             #    logger.trace("DAG_info is None.")
             #else:
             #    logger.trace("DAG_info is not None.")
@@ -1818,7 +1818,7 @@ class TCPServer(object):
                 # true. if not create objects on start then we can still be mapping objects
                 # to functions but we we will create the objects on the fly in the function
                 # they are mapped to.
-                # Note: we assert not use_anonymous_lambda_functions is true when 
+                # Note: we asssert not use_anonymous_lambda_functions is true when 
                 # map_objects_to_lambda_functions is True in the constants file.
                 # Note: These are real python functions we are creating to 
                 # simulate lamnda functions. When we use real lambdas, we do not 
@@ -1847,7 +1847,7 @@ class TCPServer(object):
             # a function. Eventually may map multiple names (i.e. objects) to a function.
 
             if map_objects_to_lambda_functions:
-                # Note: we assert not use_anonymous_lambda_functions is true when 
+                # Note: we asssert not use_anonymous_lambda_functions is true when 
                 # map_objects_to_lambda_functions is True in the constants file.
                 # Note: The functions need not have been created in the case
                 # that we are using real lambdas. We can map an object to 

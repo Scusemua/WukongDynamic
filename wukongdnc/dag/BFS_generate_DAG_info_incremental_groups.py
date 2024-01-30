@@ -701,7 +701,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
     If the interval n between incremental DAGs (i.e., add n partitions before
     publishng the new DAG) then it may be rare to have such a partition.
 
-    2. (senders == None): This is a leaf group, which could be group 2 or any 
+    2. (senders is None): This is a leaf group, which could be group 2 or any 
     group after that. This means that the current group is the first group
     of a new connected component. We will add this leaf group to a list of leaf
     groups so that when we return we can make sure this leaf group is 
@@ -794,14 +794,14 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         try:
             msg = "[Error]: generate_DAG_info_incremental_groups" \
                 + " leaf node has non-None senders."
-            assert senders == None , msg
+            assert senders is None , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
             if exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
         # assertOld:
-        #if not senders == None:
+        #if senders is not None:
         #    logger.error("[Error]: generate_DAG_info_incremental_groups"
         #        + " leaf node has non-None senders.")
 
@@ -931,7 +931,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
             # and their mapped values. The values for PRX_1 will be obtained from 
             # the map using keys "PRY_1-PRX_1" and "PRZ_1-PRX-1" and used
             # to execute task PRX_1.
-            if (senders == None):
+            if (senders is None):
                 # This is a leaf group since it gets no inputs from any other groups.
                 # This means group_name is the only group in groups_of_current_partition.
                 # (So no group in any other partition or in this current partition outputs
@@ -1339,7 +1339,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 # Here we check whether rceiverY is a sink, i.e., it does not
                 # send inputs to any other group.
                 receiver_set_for_receiverY = Group_senders.get(receiverY)
-                if receiver_set_for_receiverY == None:  # None is default
+                if receiver_set_for_receiverY is None:  # None is default
                     # receiverY does not send any inputs to other groups
                     # so it is a sink.
                     # 
@@ -1478,7 +1478,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
             try:
                 msg = "[Error]: generate_DAG_info_incremental_groups: state_info_of_previous_group: " \
                     + "state_info_of_previous_group is None."
-                assert not (state_info_of_previous_group == None) , msg
+                assert not (state_info_of_previous_group is None) , msg
             except AssertionError:
                 logger.exception("[Error]: assertion failed")
                 logger.error("DAG_map:")
@@ -1488,7 +1488,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                     logging.shutdown()
                     os._exit(0)            
             #assertOld:
-            #if state_info_of_previous_group == None:
+            #if state_info_of_previous_group is None:
             #    logger.error("[Error]: generate_DAG_info_incremental_groups: state_info_of_previous_group: "
             #        + "state_info_of_previous_group is None.")
             #    logger.error("DAG_map:")

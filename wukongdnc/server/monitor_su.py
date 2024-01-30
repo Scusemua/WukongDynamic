@@ -51,7 +51,7 @@ class MonitorSU(object):
     # else this is exit_monitor for try_foo, so keep the mutex lock for foo's enter_monitor, i..e., do nothing.
 
     def is_blocking(self, condition):
-        #assert self._doingTry
+        #Suggested asssert self._doingTry
 
         # called by try_foo(). Setting _doingTry to true ensures
         # no attempt to do mutex.P when exit_monitor of try_foo

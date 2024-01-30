@@ -33,11 +33,11 @@ The TCP server that uses synchronization objects stored in AWS Lambda functions 
 
 ## Running the Dask DAG Experiments
 
-The configuration parameters are in DAG_executor_constants.py. There you can configure
-for workers threads or processes or Lambdas (real or simulated), non-pagerank DAG
-execution (i.e., Dask DAGS), pagerank DAGs, and a host of other parameters. There is 
-a test.txt file in WukongDynamic that exercises the various paramters and illustrates
-the most likely configurations.
+The configuration parameters are in DAG_executor_constants.py. There you can configurefor workers threads or processes or Lambdas (real or simulated), non-pagerank DAG
+execution (i.e., Dask DAGS), pagerank DAGs, and a host of other parameters. DAG_executor_constants defines tests
+that exerciss the various parameters and illustrates the most likely configurations. See TestAll.py for a procedure to 
+run a test. It also descripts a PowerShell script for running
+all of the tests one-by-one (hitting enter between tests).
 
 To generate the necessary DAG_info.pickle file for non-pagerank DAGs first edit wukongdnc.dag.dask_dag and uncomment the name of the program you want to generate 
 a DAG for. Then execute the following command:

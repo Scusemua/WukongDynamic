@@ -23,8 +23,8 @@ from ..dag.DAG_info import DAG_Info
 from ..dag.DAG_executor_State import DAG_executor_State
 
 import logging 
-from wukongdnc.dag.DAG_executor_constants import log_level
-from ..dag.DAG_executor_constants import exit_program_on_exception
+#from wukongdnc.dag.DAG_executor_constants import log_level
+#from ..dag.DAG_executor_constants import exit_program_on_exception
 from ..dag.addLoggingLevel import addLoggingLevel
 """ How to use: https://stackoverflow.com/questions/2183233/how-to-add-a-custom-loglevel-to-pythons-logging-facility/35804945#35804945
     >>> addLoggingLevel('TRACE', logging.DEBUG - 5)
@@ -36,7 +36,7 @@ from ..dag.addLoggingLevel import addLoggingLevel
 # Set up logging.
 addLoggingLevel('TRACE', logging.DEBUG - 5)
 
-logging.basicConfig(encoding='utf-8',level=log_level, format='[%(asctime)s][%(module)s][%(processName)s][%(threadName)s]: %(message)s')
+logging.basicConfig(encoding='utf-8',level=wukongdnc.dag.DAG_executor_constants.log_level, format='[%(asctime)s][%(module)s][%(processName)s][%(threadName)s]: %(message)s')
 # Added this to suppress the logging message:
 #   credentials - MainProcess - MainThread: Found credentials in shared credentials file: ~/.aws/credentials
 # But it appears that we could see other things liek this:
@@ -115,13 +115,13 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 self.action_handlers[action](message = json_message)
             except ConnectionResetError:
                 logger.exception("ConnectionResetError in tcp_handler")
-                if exit_program_on_exception:
+                if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0)
                 return 
             except Exception:
                 logger.exception("Exception in tcp_handler")
-                if exit_program_on_exception:
+                if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0)
                 return 
@@ -292,7 +292,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
  
     def read_all_groups_partitions():
         groups_partitions = {}
-        if wukongdnc.dag.DAG_1executor_constants.compute_pagerank and not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally and not wukongdnc.dag.DAG_executor_constants.bypass_call_lambda_client_invoke and not wukongdnc.dag.DAG_executor_constants.use_incremental_DAG_generation:
+        if wukongdnc.dag.DAG_executor_constants.compute_pagerank and not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally and not wukongdnc.dag.DAG_executor_constants.bypass_call_lambda_client_invoke and not wukongdnc.dag.DAG_executor_constants.use_incremental_DAG_generation:
             # hardcoded for testing rel lambdas. May want to enabe this generally in
             # which case we will need the partition/group names, which BFS could
             # write to a file.
@@ -361,7 +361,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             msg = "[Error]: synchronize_process_faninNBs_batch: using incremental DAG generation" \
                     + " with real Lambdas but received None from DAG_executor process_faninNBs_batch."
             assert not (wukongdnc.dag.DAG_executor_constants.compute_pagerank and wukongdnc.dag.DAG_executor_constants.use_incremental_DAG_generation \
-                and not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally and DAG_info_passed_from_DAG_exector == None) , msg
+                and not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally and DAG_info_passed_from_DAG_exector is None) , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
             if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
@@ -373,7 +373,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         #if (wukongdnc.dag.DAG_executor_constants.compute_pagerank and wukongdnc.dag.DAG_executor_constants.use_incremental_DAG_generation and (
         #    not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally)
         #):
-        #    if DAG_info_passed_from_DAG_exector == None:
+        #    if DAG_info_passed_from_DAG_exector is None:
         #        logger.error("[Error]: synchronize_process_faninNBs_batch: using incremental DAG generation"
         #            + " with real Lambdas but received None from DAG_executor process_faninNBs_batch.")
         #         if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
@@ -558,7 +558,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 #    synchronizer_method = getattr(synchClass, work_queue_method)
                 #except Exception:
                 #    logger.exception("tcp_server: synchronize_process_faninNBs_batch: deposit fanout work: Failed to find method '%s' on object '%s'." % (work_queue_method, work_queue_type))
-                #    if exit_program_on_exception:
+                #    if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
                 #        logging.shutdown()
                  #       os._exit(0)
 
@@ -806,7 +806,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
                                 dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info_passed_from_DAG_exector
 #rhc: DAG_info          
-                                if DAG_info_passed_from_DAG_exector == None: 
+                                if DAG_info_passed_from_DAG_exector is None: 
                                     logger.trace(": DAG_info is None for synchronize_process_faninNBs_batch create on fly: " + synchronizer_name)
                                 else:
                                     logger.trace("FanInNB: fanin_task_name: DAG_info is NOT None for synchronize_process_faninNBs_batch create on fly :"  + synchronizer_name )

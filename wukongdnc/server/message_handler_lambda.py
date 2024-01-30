@@ -223,7 +223,7 @@ class MessageHandler(object):
         try:
             msg = "[Error]: process_enqueued_fan_ins: " \
                 + " length of list_of_messages is 0 but fanin size > 0."
-            assert not len(list_of_messages) == 0 , msg
+            assert not (len(list_of_messages) == 0) , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
             if exit_program_on_exception:
@@ -370,7 +370,7 @@ class MessageHandler(object):
         try:
             msg = "[Error]: message_handler_lambda: createif_and_synchronize_sync: " \
                 + "called createif_and_synchronize_sync but create_all_fanins_faninNBs_on_start"
-            assert not create_all_fanins_faninNBs_on_start , msg
+            assert not (create_all_fanins_faninNBs_on_start) , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
             if exit_program_on_exception:
@@ -487,7 +487,7 @@ class MessageHandler(object):
         try:
             msg = "[Error]: message_handler_lambda: createif_and_synchronize_async: " \
                 + "called createif_and_synchronize_async but create_all_fanins_faninNBs_on_start"
-            assert not create_all_fanins_faninNBs_on_start , msg
+            assert not (create_all_fanins_faninNBs_on_start) , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
             if exit_program_on_exception:

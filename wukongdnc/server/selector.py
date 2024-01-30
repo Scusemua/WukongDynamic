@@ -26,7 +26,7 @@ class Selector():
         # self._restart_on_block = True #None 
         # self._restart_on_unblock = True
         # self._restart_on_noblock = True #None
-        if selector_name == None:
+        if selector_name is None:
             selector_name == ""
         self._mutex = RLock() #self._mutex = CountingSemaphore(initial_permits = 1, semaphore_name = "Selector-" + str(selector_name) + "-mutex-CountingSemaphore") 
 

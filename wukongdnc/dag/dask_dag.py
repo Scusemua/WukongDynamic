@@ -83,54 +83,42 @@ if __name__ == "__main__":
   def add(x, y):
     sum = x + y
     logger.info("")
-    logger.info("xxxxxxxxx")
-    logger.info("add:"+str(x)+"+"+str(y)+"=" + str(sum))
-    logger.info("xxxxxxxxx")
+    logger.info("xxxxxxxxxx add:"+str(x)+"+"+str(y)+"=" + str(sum))
     logger.info("")
     return sum
 
   def twox_add(x, y):
     twox_add = 2 * (x+y)
     logger.info("")
-    logger.info("xxxxxxxxxxxxx")
-    logger.info("twox_add:2*("+str(x)+"+"+str(y)+")=" + str(twox_add))
-    logger.info("xxxxxxxxxxxxx")
+    logger.info("xxxxxxxxxx twox_add:2*("+str(x)+"+"+str(y)+")=" + str(twox_add))
     logger.info("")
     return twox_add
 
   def triple(x):
     triple = x*3
     logger.info("")
-    logger.info("xxxxxxxxxxxx")
-    logger.info("triple:"+str(x)+"*3=" + str(triple))
-    logger.info("xxxxxxxxxxxx")
+    logger.info("xxxxxxxxxx  triple:"+str(x)+"*3=" + str(triple))
     logger.info("")
     return triple
 
   def square(x):
     square = x ** 2
     logger.info("")
-    logger.info("xxxxxxxxxxxx")
-    logger.info("square:"+str(x)+"*"+str(x)+"=" + str(square))
-    logger.info("xxxxxxxxxxxx")
+    logger.info("xxxxxxxxxx square:"+str(x)+"*"+str(x)+"=" + str(square))
     logger.info("")
     return square
 
   def multiply(x, y, z):
     product = x * y * z
     logger.info("")
-    logger.info("xxxxxxxxxxxxxxxxx")
-    logger.info("multiply:"+str(x)+"*"+str(y)+"*"+str(z)+"=" + str(product))
-    logger.info("xxxxxxxxxxxxxxxxx")
+    logger.info("xxxxxxxxxx multiply:"+str(x)+"*"+str(y)+"*"+str(z)+"=" + str(product))
     logger.info("")
     return product
 
   def multiply_pair(x, y):
     product = x * y
     logger.info("")
-    logger.info("xxxxxxxxxxxxx")
-    logger.info("multiply_pair:"+str(x)+"*"+str(y)+"=" + str(product))
-    logger.info("xxxxxxxxxxxxx")
+    logger.info("xxxxxxxxxx multiply_pair:"+str(x)+"*"+str(y)+"=" + str(product))
     logger.info("")
     return product
 
@@ -157,18 +145,14 @@ if __name__ == "__main__":
   def increment(x):
     sum = x + 1
     logger.info("")
-    logger.info("xxxxxxxxxxxxxxx")
-    logger.info("increment:" + str(x)+"+1=" + str(sum))
-    logger.info("xxxxxxxxxxxxxxx")
+    logger.info("xxxxxxxxxx increment:" + str(x)+"+1=" + str(sum))
     logger.info("")
     return sum
 
   def half_of_product(x,y):
     half_product = (x * y) / 2
     logger.info("")
-    logger.info("xxxxxxxxxxxxx")
-    logger.info("half_of_product:(" + str(x)+"*" + str(y) + "/2=" + str(half_product))
-    logger.info("xxxxxxxxxxxxx")
+    logger.info("xxxxxxxxxx half_of_product:(" + str(x)+"*" + str(y) + "/2=" + str(half_product))
     logger.info("")
     # intend for x to be result of increment(1) = 2, so result is 2 / 2 = 1.0
     return half_product
@@ -176,9 +160,7 @@ if __name__ == "__main__":
   def product(x,y):
     product = x * y
     logger.info("")
-    logger.info("xxxxxxxxxxxxx")
-    logger.info("product:(" + str(x)+"*" + str(y) + "=" + str(product))
-    logger.info("xxxxxxxxxxxxx")
+    logger.info("xxxxxxxxxx product:(" + str(x)+"*" + str(y) + "=" + str(product))
     logger.info("")
     return product
 

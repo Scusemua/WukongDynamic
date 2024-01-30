@@ -656,7 +656,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
     end with a partition that is the last partition in its connected compoent.
     If the interval n between incremental DAGs (i.e., add n partitions before
     publishng the new DAG) then it may be rare to have such a partition.
-    2. (senders == None): This is a leaf node, which could be partition 2 or any 
+    2. (senders is None): This is a leaf node, which could be partition 2 or any 
     partition after that. This measn that the current partition is the first partition
     of a new connected component. We will add this leaf partition to a list of leaf
     partitions so that when we return we can mke sure this leaf partition is 
@@ -681,14 +681,14 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         try:
             msg = "[Error]: def generate_DAG_info_incremental_partitions" \
             + " leaf node has non-None senders."
-            assert senders == None , msg
+            assert senders is None , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
             if exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
         #assertOld:
-        #if not senders == None:
+        #if senders is not None:
         #    logger.error("[Error]: def generate_DAG_info_incremental_partitions"
         #        + " leaf node has non-None senders.")
         
@@ -781,7 +781,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         
         return DAG_info
 
-    elif (senders == None):
+    elif (senders is None):
         # (Note: Don't think we can have a length 0 senders, 
         # for current_partition_name. That is, we only create a 
         # senders when we get the first sender.
@@ -791,14 +791,14 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         try:
             msg = "[Error]: generate_DAG_info_incremental_partitions:" \
                 + " partition has a senders with length 0."
-            assert not(not senders == None and len(senders) == 0) , msg
+            assert not(senders is not None and len(senders) == 0) , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
             if exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
         # assertOld:
-        #if not senders == None and len(senders) == 0:
+        #if senders is not None and len(senders) == 0:
         #    logger.error("[Error]: generate_DAG_info_incremental_partitions:"
         #        + " partition has a senders with length 0.")
 

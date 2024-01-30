@@ -217,6 +217,8 @@ class Node:
     # set after the DAG has been constructed
     DAG_number_of_tasks = 0
     DAG_number_of_incomplete_tasks = 0
+
+    DAG_num_nodes_in_graph = 0
     
     # map of all the (above) DAG information, which is a map from String to list/map. The lists/maps in DAG_info
     # are essentially the class members above. This DAG_info will be input by the DAG_executor to execute the DAG.
@@ -310,7 +312,7 @@ class Node:
                     Node.num_fanins += 1
 
         # asserts
-        if dependents_of_T == None:
+        if dependents_of_T is None:
             number_dependents_of_T = 0
         else:
             number_dependents_of_T = len(dependents_of_T)
@@ -488,6 +490,7 @@ class Node:
         Node.DAG_info["DAG_is_complete"]  = Node.DAG_is_complete
         Node.DAG_info["DAG_number_of_tasks"]  = Node.DAG_number_of_tasks
         Node.DAG_info["DAG_number_of_incomplete_tasks"]  = Node.DAG_number_of_incomplete_tasks
+        Node.DAG_info["DAG_num_nodes_in_graph"]  = Node.DAG_num_nodes_in_graph
 
         #with open('DAG_info.pickle', 'wb') as handle:
         #    pickle.dump(DAG_info, handle, protocol=pickle.HIGHEST_PROTOCOL)

@@ -1976,7 +1976,7 @@ def dfs_parent(visited, node):  #function for dfs
                             # and copy then to the child positions identified in the tuples
                             # (child_index_in_current_group).
                             list_of_parent_frontier_tuples = BFS_Shared.shared_groups_frontier_parents_map.get(task_name_of_parent_group)
-                            if list_of_parent_frontier_tuples == None:
+                            if list_of_parent_frontier_tuples is None:
                                 list_of_parent_frontier_tuples = []
                             logger.trace("groupOGOGOGOGOGOGOGOG add shared tuple to parent group: ")
                             for n in parent_group:
@@ -2038,13 +2038,13 @@ def dfs_parent(visited, node):  #function for dfs
                         #receiving_group = "PR"+str(current_partition_number)+"_"+str(num_frontier_groups)
                         # get the set of receivers for sending_group
                         sender_set = BFS_generate_DAG_info.Group_senders.get(sending_group)
-                        if sender_set == None:
+                        if sender_set is None:
                             BFS_generate_DAG_info.Group_senders[sending_group] = set()
                         # add receiving group as another group sending_group sends to 
                         BFS_generate_DAG_info.Group_senders[sending_group].add(receiving_group)
                         # these are the senders that send to receiver receiving_group
                         receiver_set = BFS_generate_DAG_info.Group_receivers.get(receiving_group)
-                        if receiver_set == None:
+                        if receiver_set is None:
                             BFS_generate_DAG_info.Group_receivers[receiving_group] = set()
                         # add sending_group as another sender that sends to receiving_group
                         BFS_generate_DAG_info.Group_receivers[receiving_group].add(sending_group)
@@ -2291,7 +2291,7 @@ def dfs_parent(visited, node):  #function for dfs
                     # and copy then to the child positions identified in the tuples
                     # (child_index_in_current_group).
                     list_of_parent_frontier_tuples = BFS_Shared.shared_partition_frontier_parents_map.get(task_name_of_parent_partition)
-                    if list_of_parent_frontier_tuples == None:
+                    if list_of_parent_frontier_tuples is None:
                         list_of_parent_frontier_tuples = []
                     logger.trace("groupOPOPOPOPOPOP add shared tuple to parent group: ")
                     for n in parent_group:
@@ -2344,7 +2344,7 @@ def dfs_parent(visited, node):  #function for dfs
                     #task_name_of_parent = "PR" + str(parent_partition_number) + "_" + str(parent_group_number)
                     shared_frontier_parent_tuple = (current_partition_number,num_frontier_groups,child_index_in_current_group,current_group_name,parent_group_parent_index)
                     list_of_parent_frontier_tuples = BFS_Shared.shared_groups_frontier_parents_map.get(task_name_of_parent_group)
-                    if list_of_parent_frontier_tuples == None:
+                    if list_of_parent_frontier_tuples is None:
                         list_of_parent_frontier_tuples = []
                     logger.trace("groupOGPOGPOGPOGPOGPOGPOGP add shared tuple to parent group: ")
                     for n in parent_group:
@@ -2393,13 +2393,13 @@ def dfs_parent(visited, node):  #function for dfs
                 receiving_partition = current_partition_name
                 # sender set is the partitions that receive from the sender
                 sender_set = BFS_generate_DAG_info.Partition_senders.get(sending_partition)
-                if sender_set == None:
+                if sender_set is None:
                     BFS_generate_DAG_info.Partition_senders[sending_partition] = set()
                 # add the receiving_partition to the sender set of the sending partition
                 BFS_generate_DAG_info.Partition_senders[sending_partition].add(receiving_partition)
                 # receiver set is the partitions that send to the receiver
                 receiver_set = BFS_generate_DAG_info.Partition_receivers.get(receiving_partition)
-                if receiver_set == None:
+                if receiver_set is None:
                     BFS_generate_DAG_info.Partition_receivers[receiving_partition] = set()
                 # add the sending_partition to the receievr set of the receiving_partition
                 BFS_generate_DAG_info.Partition_receivers[receiving_partition].add(sending_partition)
@@ -2425,12 +2425,12 @@ def dfs_parent(visited, node):  #function for dfs
                 receiving_group = current_group_name
                 # sender set is the groups that receive from the sender
                 sender_set = BFS_generate_DAG_info.Group_senders.get(sending_group)
-                if sender_set == None:
+                if sender_set is None:
                     BFS_generate_DAG_info.Group_senders[sending_group] = set()
                 BFS_generate_DAG_info.Group_senders[sending_group].add(receiving_group)
                 # receiver set is the groups that send to the receiver
                 receiver_set = BFS_generate_DAG_info.Group_receivers.get(receiving_group)
-                if receiver_set == None:
+                if receiver_set is None:
                     BFS_generate_DAG_info.Group_receivers[receiving_group] = set()
                 # add the sending_partition to the receievr set of the receiving_partition
                 BFS_generate_DAG_info.Group_receivers[receiving_group].add(sending_group)
