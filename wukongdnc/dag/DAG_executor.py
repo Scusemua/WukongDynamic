@@ -186,7 +186,7 @@ def faninNB_remotely(websocket,**keyword_arguments):
     #DAG_info = keyword_arguments['DAG_info']
     thread_name = threading.current_thread().name
 
-    logger.trace (thread_name + ": faninNB_remotely: calling_task_name: " + keyword_arguments['calling_task_name'] + "calling faninNB with fanin_task_name: " + keyword_arguments['fanin_task_name'])
+    logger.info (thread_name + ": faninNB_remotely: calling_task_name: " + keyword_arguments['calling_task_name'] + ", calling faninNB with fanin_task_name: " + keyword_arguments['fanin_task_name'])
     #logger.trace("faninNB_remotely: DAG_executor_state.keyword_arguments[fanin_task_name]: " + str(DAG_executor_state.keyword_arguments['fanin_task_name']))
     #FanInNB = server.synchronizers[fanin_task_name]
 
@@ -441,7 +441,7 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
             #if DAG_exec_state.blocking:
             # using the "else" after the return, even though we don't need it
             logger.trace(thread_name + ": process_faninNBs:  faninNB_remotely dummy_DAG_exec_state: " + str(dummy_DAG_exec_state))
-            logger.trace(thread_name + ": process_faninNBs:  faninNB_remotely dummy_DAG_exec_state.return_value: " + str(dummy_DAG_exec_state.return_value))
+            logger.info(thread_name + ": process_faninNBs:  faninNB_remotely dummy_DAG_exec_state.return_value: " + str(dummy_DAG_exec_state.return_value))
             if dummy_DAG_exec_state.return_value == 0:
                 pass
             else:
@@ -557,6 +557,7 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
                             "DAG_info": DAG_info,
                             #"server": server
                         }
+                        logger.info(thread_name + ": process_faninNBs: starting DAG_executor thread for task " + name + " with payload input " + str(dummy_DAG_exec_state.return_value))
                         thread_name_prefix = "Thread_faninNB_"
                         thread = threading.Thread(target=DAG_executor_task, name=(thread_name_prefix+str(start_state_fanin_task)), args=(payload,))
                         thread.start()
@@ -4869,7 +4870,8 @@ def DAG_executor(payload):
         if not is_leaf_task:
 
             def DD(dict_of_results,data_dict):
-                logger.trace("DAG_executor(): verify inputs are in data_dict: ")
+                logger.info("DAG_executor(): DD: verify inputs are in data_dict: ")
+                logger.info("DAG_executor(): DD: dict_of_results: " + str(dict_of_results))
                 for key, _value in dict_of_results.items():
                     #data_dict[key] = _value
                     value_in_dict = data_dict.get(key,None)
@@ -4886,6 +4888,7 @@ def DAG_executor(payload):
             try:
                 dict_of_results = payload['input']
                 msg = "[Error]: starting DAG_executor for simulated lambda" + " data_dict missing value for input key."
+                logger.info("DAG_executor(): before call to DD for " + state_info.task_name + " : dict_of_results: " + str(dict_of_results)) 
                 assert DD(dict_of_results,data_dict), msg
             except AssertionError:
                 logger.exception("[Error]: assertion failed")

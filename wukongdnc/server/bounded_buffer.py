@@ -3,7 +3,9 @@ from .monitor_su import MonitorSU
 import _thread
 import time
 import os
-from wukongdnc.dag.DAG_executor_constants import exit_program_on_exception
+
+#from wukongdnc.dag.DAG_executor_constants import exit_program_on_exception
+import wukongdnc.dag.DAG_executor_constants
 
 import logging 
 
@@ -186,7 +188,7 @@ class BoundedBuffer(MonitorSU):
                 assert not (self._fullSlots != 0) , msg
             except AssertionError:
                 logger.exception("[Error]: assertion failed")
-                if exit_program_on_exception:
+                if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0)
             #assertOld:

@@ -2,7 +2,10 @@ import os
 #from monitor_su import MonitorSU
 from .selectivewait import selectiveWait
 from .counting_semaphore import CountingSemaphore
-from ..dag.DAG_executor_constants import exit_program_on_exception
+
+#from ..dag.DAG_executor_constants import exit_program_on_exception
+import wukongdnc.dag.DAG_executor_constants
+
 from ..wukong.invoker import invoke_lambda
 
 import logging 
@@ -103,7 +106,7 @@ class Selector():
                 assert not (send_result) , msg
             except AssertionError:
                 logger.exception("[Error]: assertion failed")
-                if exit_program_on_exception:
+                if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0)
             # assertOld:
@@ -117,7 +120,7 @@ class Selector():
                 assert not (called_entry.get_num_arrivals() > 1 and called_entry.testGuard()) , msg
             except AssertionError:
                 logger.exception("[Error]: assertion failed")
-                if exit_program_on_exception:
+                if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0)
             #assertOld:
@@ -199,7 +202,7 @@ class Selector():
                     assert not (restart) , msg
                 except AssertionError:
                     logger.exception("[Error]: assertion failed")
-                    if exit_program_on_exception:
+                    if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
                         logging.shutdown()
                         os._exit(0)
                 #assertOld:

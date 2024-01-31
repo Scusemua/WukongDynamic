@@ -1,5 +1,4 @@
 from ..constants import SERVERLESS_SYNC
-from wukongdnc.dag.DAG_executor_constants import using_threads_not_processes, use_multithreaded_multiprocessing
 
 if SERVERLESS_SYNC:
     from .selector_lambda import Selector
@@ -118,7 +117,7 @@ class DAG_executor_FanIn_Select(Selector):
             #threading.current_thread()._restart = False
             #threading.current_thread()._returnValue = 0
             #restart = False
-            logger.trace(" FanIn_Select: !!!!! non-last Client " + calling_task_name + " exiting FanIn fan_in id = %s" % self.selector_name)
+            logger.info(" FanIn_Select: !!!!! non-last Client " + calling_task_name + " exiting FanIn fan_in id = %s" % self.selector_name)
             # Note: Typcally we would return 1 when try_fan_in returns block is True, but the Fanin currently
             # used by wukong D&C is expecting a return value of 0 for this case.
             return 0
@@ -137,7 +136,7 @@ class DAG_executor_FanIn_Select(Selector):
             #threading.current_thread()._returnValue = self._results
             #threading.current_thread()._restart = False 
             #restart = False
-            logger.trace(" FanIn_Select: !!!!! last Client: " + calling_task_name + " exiting FanIn fan_in id=%s!!!!!" % self.selector_name)
+            logger.info(" FanIn_Select: !!!!! last Client: " + calling_task_name + " exiting FanIn fan_in id=%s!!!!!" % self.selector_name)
             # No signal of non-last client; they did not block and they are done executing. 
             # does mutex.
             

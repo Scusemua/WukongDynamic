@@ -1,4 +1,4 @@
-import uuid
+#import uuid
 
 # Class State represents the state of a running serverless function. State objects 
 # are pickeled and sent to the server. The server can then restart a serverless

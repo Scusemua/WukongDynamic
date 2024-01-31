@@ -1,5 +1,7 @@
+import os
 from threading import RLock
 from .DAG_executor_constants import store_fanins_faninNBs_locally, FanIn_Type, FanInNB_Type
+from .DAG_executor_constants import exit_program_on_exception
 #from .DAG_executor_constants import using_threads_not_processes, use_multithreaded_multiprocessing
 
 from ..server import DAG_executor_FanInNB, DAG_executor_FanInNB_select
@@ -391,9 +393,13 @@ class DAG_executor_Synchronizer(object):
 
         # return is: None, restart, where restart is always 0 and return_value is None; and makes no change to DAG_executor_State	
         # Not using "asynch" here as no way to implement "asynch" locally.
-        
-        _return_value_ignored, _restart_value_ignored = FanInNB.fan_in(**keyword_arguments)
-
+        try:
+            _return_value_ignored, _restart_value_ignored = FanInNB.fan_in(**keyword_arguments)
+        except Exception:
+            logger.exception("faninNB_select: synchronizer: exception callling FanInNB.fan_in().")
+            if exit_program_on_exception:
+                logging.shutdown()
+                os._exit(0)  
         #if we decide we always wan to return a state, we can use this:
         """
         DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))

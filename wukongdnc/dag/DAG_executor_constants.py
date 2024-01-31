@@ -43,7 +43,7 @@ bypass_call_lambda_client_invoke = (not run_all_tasks_locally) and True
 # has a collapse to partition i+1, so there are no synch objects
 # needed when we are using partitions, so it does not matter
 # whether we set store_fanins_faninNBs_locally to True or False.
-store_fanins_faninNBs_locally = True
+store_fanins_faninNBs_locally = False
 # True when all FanIn and FanInNB objects are created locally or on the
 # tcp_server or IniniX all at once at the start of the DAG execution. If
 # False, synch objects are created on the fly, i.e, we execute create-and-fanin
@@ -915,7 +915,8 @@ def test2():
     global process_work_queue_Type
 
     run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = True 
+    # rhc: changed this
+    store_fanins_faninNBs_locally = False
     create_all_fanins_faninNBs_on_start = True
     using_workers = False
     using_threads_not_processes = True
@@ -926,6 +927,7 @@ def test2():
     #FanIn_Type = "DAG_executor_FanIn"
     #FanInNB_Type = "DAG_executor_FanInNB"
     #process_work_queue_Type = "BoundedBuffer"
+    # rhc: changd this
     FanIn_Type = "DAG_executor_FanIn_Select"
     FanInNB_Type = "DAG_executor_FanInNB_Select"
     process_work_queue_Type = "BoundedBuffer_Select"

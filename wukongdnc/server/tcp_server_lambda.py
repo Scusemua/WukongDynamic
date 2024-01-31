@@ -11,15 +11,18 @@ import cloudpickle
 from .util import decode_and_deserialize, make_json_serializable
 import uuid
 from ..wukong.invoker import invoke_lambda_synchronously
-from ..dag.DAG_executor_constants import using_Lambda_Function_Simulators_to_Store_Objects, using_single_lambda_function
-from ..dag.DAG_executor_constants import using_DAG_orchestrator, run_all_tasks_locally
-from ..dag.DAG_executor_constants import using_workers, sync_objects_in_lambdas_trigger_their_tasks
-from ..dag.DAG_executor_constants import store_sync_objects_in_lambdas, store_fanins_faninNBs_locally
-from ..dag.DAG_executor_constants import map_objects_to_lambda_functions, create_all_fanins_faninNBs_on_start
-from ..dag.DAG_executor_constants import FanInNB_Type, FanIn_Type
-from ..dag.DAG_executor_constants import same_output_for_all_fanout_fanin
-from ..dag.DAG_executor_constants import exit_program_on_exception
-#from ..dag.DAG_executor_constants import use_anonymous_lambda_functions
+
+#from ..dag.DAG_executor_constants import using_Lambda_Function_Simulators_to_Store_Objects, using_single_lambda_function
+#from ..dag.DAG_executor_constants import using_DAG_orchestrator, run_all_tasks_locally
+#from ..dag.DAG_executor_constants import using_workers, sync_objects_in_lambdas_trigger_their_tasks
+##from ..dag.DAG_executor_constants import store_sync_objects_in_lambdas, store_fanins_faninNBs_locally
+#from ..dag.DAG_executor_constants import map_objects_to_lambda_functions, create_all_fanins_faninNBs_on_start
+#from ..dag.DAG_executor_constants import FanInNB_Type, FanIn_Type
+#from ..dag.DAG_executor_constants import same_output_for_all_fanout_fanin
+#from ..dag.DAG_executor_constants import exit_program_on_exception
+#from wukongdnc.dag.DAG_executor_constants import log_level
+import wukongdnc.dag.DAG_executor_constants
+
 from ..dag.DAG_Executor_lambda_function_simulator import InfiniD # , Lambda_Function_Simulator
 from ..dag.DAG_info import DAG_Info
 from ..dag.DAG_executor_State import DAG_executor_State
@@ -37,8 +40,8 @@ from ..dag.addLoggingLevel import addLoggingLevel
 """
 # Set up logging.
 addLoggingLevel('TRACE', logging.DEBUG - 5)
-from wukongdnc.dag.DAG_executor_constants import log_level
-logging.basicConfig(encoding='utf-8',level=log_level, format='[%(asctime)s][%(module)s][%(processName)s][%(threadName)s]: %(message)s')
+
+logging.basicConfig(encoding='utf-8',level=wukongdnc.dag.DAG_executor_constants.log_level, format='[%(asctime)s][%(module)s][%(processName)s][%(threadName)s]: %(message)s')
 # Added this to suppress the logging message:
 #   credentials - MainProcess - MainThread: Found credentials in shared credentials file: ~/.aws/credentials
 # But it appears that we could see other things liek this:
@@ -127,13 +130,13 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
             except ConnectionResetError:
                 logger.exception("[Error]: TCP_server_lambda: ConnectionResetError")
-                if exit_program_on_exception:
+                if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0)
                 #return
             except Exception:
                 logger.exception("[Error]: TCP_server_lambda: Exception")
-                if exit_program_on_exception:
+                if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0)
                 
@@ -181,7 +184,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         payload = {"json_message": json_message}
         return_value = None
         # return_value = invoke_lambda_synchronously(payload = payload, function_name = function_name)
-        if using_Lambda_Function_Simulators_to_Store_Objects:
+        if wukongdnc.dag.DAG_executor_constants.using_Lambda_Function_Simulators_to_Store_Objects:
 # ToDo: when out each fanin/faninNb/fanout in simulated lambda, need to use the name from json_message
 # instead of single_function.
 # Also, use infiniX.enqueue() to "call fanin" instead of invoking the simulated lambda directly.
@@ -191,7 +194,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
 # each message to its mapped simulated function? The tcp_server_lambda interepts calls to
 # fan_in and issues enqueue() instad?
 
-            if using_single_lambda_function:
+            if wukongdnc.dag.DAG_executor_constants.using_single_lambda_function:
                 # for function simulator prototype, using a single function to store all the fanins/faninNBs
                 # i.e., all fanin/faninNBs mapped under the name 'single_function'
                 sync_object_name = "single_function"
@@ -252,7 +255,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             # Note: fanina and task names are in DAG_info, which can be read at startup: DAG_info = DAG_Info()
             #lambda_function = tcp_server.function_map[object_name]
 
-            if map_objects_to_lambda_functions:
+            if wukongdnc.dag.DAG_executor_constants.map_objects_to_lambda_functions:
                 # get the python function that is being used to simulate a lambda
                 # Note: We are not using the DAG_Orchestrator
                 simulated_lambda_function = tcp_server.infiniD.get_simulated_lambda_function(sync_object_name)
@@ -264,7 +267,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                         return_value = simulated_lambda_function.lambda_handler(payload) 
                     except Exception:
                         logger.exception("[ERROR]: " + thread_name + ": tcp_server_lambda: invoke_lambda_synchronously: Failed to run lambda handler for synch object: " + sync_object_name)
-                        if exit_program_on_exception:
+                        if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
                             logging.shutdown()
                             os._exit(0)
             else:
@@ -279,7 +282,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     return_value = simulated_lambda_function.lambda_handler(payload) 
                 except Exception:
                     logger.exception("[ERROR]: " + thread_name + ": tcp_server_lambda: invoke_lambda_synchronously: Failed to run lambda handler for synch object: " + sync_object_name)
-                    if exit_program_on_exception:
+                    if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
                         logging.shutdown()
                         os._exit(0)
         else:     
@@ -291,7 +294,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     return_value = invoke_lambda_synchronously(function_name = sync_object_name, payload = payload)
                 except Exception:
                     logger.exception("[ERROR]: " + thread_name + ": invoke_lambda_synchronously: Failed to invoke lambda function for synch object: " + sync_object_name)
-                    if exit_program_on_exception:
+                    if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
                         logging.shutdown()
                         os._exit(0)           # where: lambda_client.invoke(FunctionName=function_name, InvocationType='RequestResponse', Payload=payload_json)
         
@@ -432,7 +435,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         if len(faninNB_messages) > 0:
             logger.trace("tcp_server_lambda: create_all_sync_objects: created faninNBs")
 
-        if sync_objects_in_lambdas_trigger_their_tasks:
+        if wukongdnc.dag.DAG_executor_constants.sync_objects_in_lambdas_trigger_their_tasks:
             fanout_messages = messages[2]
             #logger.trace("fanout_messages: " + str(fanout_messages))
             for msg in fanout_messages:
@@ -534,7 +537,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # Todo: we may use the parallel invoker to do the fanouts when using Wukong stylr
         # fanouts.
         fanouts = None
-        if sync_objects_in_lambdas_trigger_their_tasks:
+        if wukongdnc.dag.DAG_executor_constants.sync_objects_in_lambdas_trigger_their_tasks:
             fanouts = DAG_exec_state.keyword_arguments['fanouts']
 
         #faninNB_sizes = DAG_exec_state.keyword_arguments['faninNB_sizes']
@@ -550,10 +553,10 @@ class TCPHandler(socketserver.StreamRequestHandler):
         try:
             msg = "[Error]: tcp_server_lambda: synchronize_process_faninNBs_batch: " \
             + " when using workers we should not be storing objects in lambdas and running tcp_server_lambda."
-            assert not (using_workers or worker_needs_input) , msg
+            assert not (wukongdnc.dag.DAG_executor_constants.using_workers or worker_needs_input) , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
-            if exit_program_on_exception:
+            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
         # assertOld: when using workers we use tcp_server not tcp_sever_lambda
@@ -632,9 +635,9 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # tasks this is not applicable until we implement storing synch
         # objects in real lambdas and having the objects trigger their tasks
         # in the same lambas.
-        if not run_all_tasks_locally and not using_workers and (
-            not store_fanins_faninNBs_locally) and store_sync_objects_in_lambdas and (
-                sync_objects_in_lambdas_trigger_their_tasks):
+        if not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally and not wukongdnc.dag.DAG_executor_constants.using_workers and (
+            not wukongdnc.dag.DAG_executor_constants.store_fanins_faninNBs_locally) and wukongdnc.dag.DAG_executor_constants.store_sync_objects_in_lambdas and (
+                wukongdnc.dag.DAG_executor_constants.sync_objects_in_lambdas_trigger_their_tasks):
 
             for task_name in fanouts:
                 # Note: In DAG_executor process_fanouts , if each fanout has its own output then
@@ -660,7 +663,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
                 control_message = None
 #rhc: ToDo: not create on start
-                if not create_all_fanins_faninNBs_on_start:
+                if not wukongdnc.dag.DAG_executor_constants.create_all_fanins_faninNBs_on_start:
                     dummy_state_for_create_message = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()))
                     # passing to the created faninNB object:
                     # its size
@@ -674,13 +677,13 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     #global DAG_info
                     DAG_states = DAG_info.get_DAG_states()
                     dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = DAG_states[task_name]
-                    dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
+                    dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = wukongdnc.dag.DAG_executor_constants.store_fanins_faninNBs_locally
                     dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info
 
                     msg_id = str(uuid.uuid4())	# for debugging
                     creation_message = {
                         "op": "create",
-                        "type": FanInNB_Type,
+                        "type": wukongdnc.dag.DAG_executor_constants.FanInNB_Type,
                         "name": task_name,
                         "state": make_json_serializable(dummy_state_for_create_message),	
                         "id": msg_id
@@ -717,7 +720,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 # Note: We never invoke a fanout to get its "return value". When fanouts are in lambdas 
                 # we are simply passng the results for the fanned out task to the fanout object and it is
                 # triggering its fanout task.
-                if using_Lambda_Function_Simulators_to_Store_Objects and using_DAG_orchestrator:
+                if wukongdnc.dag.DAG_executor_constants.using_Lambda_Function_Simulators_to_Store_Objects and wukongdnc.dag.DAG_executor_constants.using_DAG_orchestrator:
                     logger.trace("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": calling infiniD.enqueue(message)."
                         + " for fanout task: " + str(task_name))
                     # calls: returned_state = tcp_server.infiniD.enqueue(json_message)
@@ -730,7 +733,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     #return_value = synchronizer.synchronize(base_name, DAG_exec_state, **DAG_exec_state.keyword_arguments)
                     #returned_state_ignored = self.invoke_lambda_synchronously(message)
 
-                    if create_all_fanins_faninNBs_on_start:
+                    if wukongdnc.dag.DAG_executor_constants.create_all_fanins_faninNBs_on_start:
                         # call synchronize_sync on the alrfeady created object
                         _returned_state_ignored = self.invoke_lambda_synchronously(message)
                     else:
@@ -760,7 +763,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # as the task_inputs, instad of just using "S", which is the Dask way.
         output = None
         calling_task_name = ""
-        if not same_output_for_all_fanout_fanin:
+        if not wukongdnc.dag.DAG_executor_constants.same_output_for_all_fanout_fanin:
             output = DAG_exec_state.keyword_arguments['result']
             calling_task_name = DAG_exec_state.keyword_arguments['calling_task_name']
 
@@ -786,7 +789,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             DAG_exec_state.keyword_arguments['fanin_task_name'] = task_name
             DAG_exec_state.keyword_arguments['start_state_fanin_task'] = start_state_fanin_task
 
-            if same_output_for_all_fanout_fanin:
+            if wukongdnc.dag.DAG_executor_constants.same_output_for_all_fanout_fanin:
                 # the result outptu and the callng task name have alrady 
                 # been set accordingly - same output to all faninNBS.
                 # Note: For DAG generation, for each state we execute a task and 
@@ -813,13 +816,13 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 "id": msg_id
             }
 
-            if not create_all_fanins_faninNBs_on_start:
+            if not wukongdnc.dag.DAG_executor_constants.create_all_fanins_faninNBs_on_start:
                 dummy_state_for_create_message = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()))
                 # passing to the created faninNB object:
                 #global DAG_info
                 DAG_states = DAG_info.get_DAG_states()
                 dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = DAG_states[task_name]
-                dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
+                dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = wukongdnc.dag.DAG_executor_constants.store_fanins_faninNBs_locally
                 dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info
                 all_fanin_task_names = DAG_info.get_all_fanin_task_names()
                 all_fanin_sizes = DAG_info.get_all_fanin_sizes()
@@ -833,7 +836,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     assert not(not is_fanin and not is_faninNB) , msg
                 except AssertionError:
                     logger.exception("[Error]: assertion failed")
-                    if exit_program_on_exception:
+                    if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
                         logging.shutdown()
                         os._exit(0)
                 #assertOld:
@@ -843,14 +846,14 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
                 # compute size of fanin or faninNB 
                 if is_fanin:
-                    fanin_type = FanIn_Type
+                    fanin_type = wukongdnc.dag.DAG_executor_constants.FanIn_Type
                     fanin_index = all_fanin_task_names.index(task_name)
                     # The name of a fanin/faninNB is the name of its fanin task.
                     # The index of taskname in the list of task_names is the same as the
                     # index of the corresponding size of the fanin/fanout
                     dummy_state_for_create_message.keyword_arguments['n'] = all_fanin_sizes[fanin_index]
                 else:
-                    fanin_type = FanInNB_Type
+                    fanin_type = wukongdnc.dag.DAG_executor_constants.FanInNB_Type
                     faninNB_index = all_faninNB_task_names.index(task_name)
                     dummy_state_for_create_message.keyword_arguments['n'] = all_faninNB_sizes[faninNB_index]
 
@@ -889,7 +892,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             # the caller does not need to wait for the return value, which will be 0 indicating there is 
             # nothing to do.)
             returned_state = None
-            if using_Lambda_Function_Simulators_to_Store_Objects and using_DAG_orchestrator:
+            if wukongdnc.dag.DAG_executor_constants.using_Lambda_Function_Simulators_to_Store_Objects and wukongdnc.dag.DAG_executor_constants.using_DAG_orchestrator:
                 logger.trace("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": calling infiniD.enqueue(message)."
                     + " start_state_fanin_task: " + str(start_state_fanin_task))
                 # calls: returned_state = tcp_server.infiniD.enqueue(json_message)
@@ -901,7 +904,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     + " start_state_fanin_task: " + str(start_state_fanin_task))
                 #return_value = synchronizer.synchronize(base_name, DAG_exec_state, **DAG_exec_state.keyword_arguments)
                 #returned_state = self.invoke_lambda_synchronously(message)
-                if create_all_fanins_faninNBs_on_start:
+                if wukongdnc.dag.DAG_executor_constants.create_all_fanins_faninNBs_on_start:
                     # call synchronize_sync on the alrfeady created object
                     _returned_state_ignored = self.invoke_lambda_synchronously(message)
                 else:
@@ -913,7 +916,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 logger.trace("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: " + calling_task_name + ": called invoke_lambda_synchronously ")
                     # + "returned_state: " + str(returned_state))
 
-            if (run_all_tasks_locally):
+            if (wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally):
                 # using threads to simulate lambdas for executing tasks and storing sync
                 # objects in lambdas; this means we will be running tcp_serverlambdas.
                 # The faninNBs will not start new lambdas to execut the fanin_tasks,
@@ -1098,7 +1101,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
 # store synch objects do/do not, using real lambdas do not, 
         # No return value is sent back to client for async call
 
-        if run_all_tasks_locally:
+        if wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally:
             logger.trace("*********************tcp_server_lambda: synchronize_process_faninNBs_batch: sending back "
                 + " list of work_tuples, len is: " + str(len(list_of_work_tuples))
                 + " got_work: " + str(got_work)
@@ -1201,7 +1204,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 # to be given to create() and the control message to b given
                 # to createif_and_synchronize_sync
                 control_message = None
-                if not create_all_fanins_faninNBs_on_start:
+                if not wukongdnc.dag.DAG_executor_constants.create_all_fanins_faninNBs_on_start:
                     dummy_state_for_create_message = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()))
                     # passing to the created faninNB object:
                     # its size
@@ -1213,13 +1216,13 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     # call fanin will put the start state of the fanin task in the work_queue. (FaninNb
                     # cannot do this since the faninNB will be on the tcp_server.)
                     dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = DAG_states[task_name]
-                    dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
+                    dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = wukongdnc.dag.DAG_executor_constants.store_fanins_faninNBs_locally
                     dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info
 
                     msg_id = str(uuid.uuid4())	# for debugging
                     creation_message = {
                         "op": "create",
-                        "type": FanInNB_Type,
+                        "type": wukongdnc.dag.DAG_executor_constants.FanInNB_Type,
                         "name": task_name,
                         "state": make_json_serializable(dummy_state_for_create_message),	
                         "id": msg_id
@@ -1259,7 +1262,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 # the enqueue path will check whether we create objects on start
                 # and if not will generate the create message and control message
                 # in message_handler_lambda process_enqueued_fan_ins()
-                if using_Lambda_Function_Simulators_to_Store_Objects and using_DAG_orchestrator:
+                if wukongdnc.dag.DAG_executor_constants.using_Lambda_Function_Simulators_to_Store_Objects and wukongdnc.dag.DAG_executor_constants.using_DAG_orchestrator:
                     logger.trace("*********************tcp_server_lambda: process_leaf_tasks_batch: calling infiniD.enqueue(message)."
                         + " for leaf task: " + str(task_name))
                     # calls: returned_state = tcp_server.infiniD.enqueue(json_message)
@@ -1271,7 +1274,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                         +  " for leaf task: " + str(task_name))
                     #return_value = synchronizer.synchronize(base_name, DAG_exec_state, **DAG_exec_state.keyword_arguments)
 #rhc: ToDo:
-                    if create_all_fanins_faninNBs_on_start:
+                    if wukongdnc.dag.DAG_executor_constants.create_all_fanins_faninNBs_on_start:
                         # call synchronize_sync on the alrfeady created object
                         returned_state_ignored = self.invoke_lambda_synchronously(message)
                     else:
@@ -1285,7 +1288,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
             except Exception:
                 logger.exception("[ERROR] tcp_server_lambda: process_leaf_tasks_batch: Failed to start DAG_executor Lambda.")
-                if exit_program_on_exception:
+                if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0)
 
@@ -1363,7 +1366,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
         """
         control_message = None
-        if not create_all_fanins_faninNBs_on_start:
+        if not wukongdnc.dag.DAG_executor_constants.create_all_fanins_faninNBs_on_start:
             dummy_state_for_create_message = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()))
             # passing to the created fanin or faninNB object:
             # its size, which is computed below.
@@ -1377,7 +1380,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             #global DAG_info
             DAG_states = DAG_info.get_DAG_states()
             dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = DAG_states[task_name]
-            dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
+            dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = wukongdnc.dag.DAG_executor_constants.store_fanins_faninNBs_locally
             dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info
             all_fanin_task_names = DAG_info.get_all_fanin_task_names()
             all_fanin_sizes = DAG_info.get_all_fanin_sizes()
@@ -1391,7 +1394,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 assert not(not is_fanin and not is_faninNB) , msg
             except AssertionError:
                 logger.exception("[Error]: assertion failed")
-                if exit_program_on_exception:
+                if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0)
             #assertOld:
@@ -1401,14 +1404,14 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
             # compute size of fanin or faninNB 
             if is_fanin:
-                fanin_type = FanIn_Type
+                fanin_type = wukongdnc.dag.DAG_executor_constants.FanIn_Type
                 fanin_index = all_fanin_task_names.index(task_name)
                 # The name of a fanin/faninNB is the name of its fanin task.
                 # The index of taskname in the list of task_names is the same as the
                 # index of the corresponding size of the fanin/fanout
                 dummy_state_for_create_message.keyword_arguments['n'] = all_fanin_sizes[fanin_index]
             else:
-                fanin_type = FanInNB_Type
+                fanin_type = wukongdnc.dag.DAG_executor_constants.FanInNB_Type
                 faninNB_index = all_faninNB_task_names.index(task_name)
                 dummy_state_for_create_message.keyword_arguments['n'] = all_faninNB_sizes[faninNB_index]
 
@@ -1437,7 +1440,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
        
         logger.trace("tcp_server_lambda: calling server.synchronize_sync().")
 #rhc: run task: ToDo:  changes for trigger tasks - using this or async for fanin
-        if using_Lambda_Function_Simulators_to_Store_Objects and using_DAG_orchestrator:
+        if wukongdnc.dag.DAG_executor_constants.using_Lambda_Function_Simulators_to_Store_Objects and wukongdnc.dag.DAG_executor_constants.using_DAG_orchestrator:
             logger.trace("*********************tcp_server_lambda: synchronize_sync: " + calling_task_name + ": calling infiniD.enqueue(message).")
             returned_state = self.enqueue_and_invoke_lambda_synchronously(message)
             logger.trace("*********************tcp_server_lambda: synchronize_sync: " + calling_task_name + ": called infiniD.enqueue(message) "
@@ -1447,7 +1450,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             #return_value = synchronizer.synchronize(base_name, DAG_exec_state, **DAG_exec_state.keyword_arguments)
             #returned_state = self.invoke_lambda_synchronously(message)
 
-            if create_all_fanins_faninNBs_on_start:
+            if wukongdnc.dag.DAG_executor_constants.create_all_fanins_faninNBs_on_start:
                 # call synchronize_sync on the alrfeady created object
                 returned_state = self.invoke_lambda_synchronously(message)
             else:
@@ -1520,7 +1523,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         task_name = message["name"]
 
         control_message = None
-        if not create_all_fanins_faninNBs_on_start:
+        if not wukongdnc.dag.DAG_executor_constants.create_all_fanins_faninNBs_on_start:
             dummy_state_for_create_message = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()))
             # passing to the created faninNB object:
             # its size, which is computed below.
@@ -1534,7 +1537,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             #global DAG_info
             DAG_states = DAG_info.get_DAG_states()
             dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = DAG_states[task_name]
-            dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
+            dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = wukongdnc.dag.DAG_executor_constants.store_fanins_faninNBs_locally
             dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info
             all_fanin_task_names = DAG_info.get_all_fanin_task_names()
             all_fanin_sizes = DAG_info.get_all_fanin_sizes()
@@ -1548,7 +1551,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 assert not(not is_fanin and not is_faninNB) , msg
             except AssertionError:
                 logger.exception("[Error]: assertion failed")
-                if exit_program_on_exception:
+                if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0)
             #assertOld:
@@ -1558,14 +1561,14 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
             # compute size of fanin or faninNB 
             if is_fanin:
-                fanin_type = FanIn_Type
+                fanin_type = wukongdnc.dag.DAG_executor_constants.FanIn_Type
                 fanin_index = all_fanin_task_names.index(task_name)
                 # The name of a fanin/faninNB is the name of its fanin task.
                 # The index of taskname in the list of task_names is the same as the
                 # index of the corresponding size of the fanin/fanout
                 dummy_state_for_create_message.keyword_arguments['n'] = all_fanin_sizes[fanin_index]
             else:
-                fanin_type = FanInNB_Type
+                fanin_type = wukongdnc.dag.DAG_executor_constants.FanInNB_Type
                 faninNB_index = all_faninNB_task_names.index(task_name)
                 dummy_state_for_create_message.keyword_arguments['n'] = all_faninNB_sizes[faninNB_index]
 
@@ -1604,7 +1607,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
         #returned_value_ignored = self.invoke_lambda_synchronously(message)
 
-        if create_all_fanins_faninNBs_on_start:
+        if wukongdnc.dag.DAG_executor_constants.create_all_fanins_faninNBs_on_start:
             logger.trace("*********************tcp_server_lambda: synchronize_async: " + calling_task_name + ": calling invoke_lambda_synchronously.")
             # call synchronize_sync on the alrfeady created object
             returned_value = self.invoke_lambda_synchronously(message)
@@ -1645,7 +1648,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 data.extend(new_data)
         except ConnectionAbortedError:
             logger.exception("tcp_server_lambda: Established connection aborted while reading incoming size.")
-            if exit_program_on_exception:
+            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
 
@@ -1681,7 +1684,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 logger.trace("tcp_server_lambda: Have read %d/%d bytes from remote client." % (len(data), incoming_size))
         except ConnectionAbortedError:
             logger.exception("tcp_server_lambda: Established connection aborted while reading data.")
-            if exit_program_on_exception:
+            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
         
@@ -1764,7 +1767,7 @@ class TCPServer(object):
         self.tcp_server = socketserver.ThreadingTCPServer(self.server_address, TCPHandler)
         self.infiniD = None
 
-        if using_Lambda_Function_Simulators_to_Store_Objects:
+        if wukongdnc.dag.DAG_executor_constants.using_Lambda_Function_Simulators_to_Store_Objects:
             """
             self.DAG_info = DAG_Info()
             # using regular functions instead of real lambda functions for storing synch objects 
@@ -1812,8 +1815,8 @@ class TCPServer(object):
             # create list of simulator functions, number of functions
             # is the number of fanins + faaninNBs + fanouts
 
-            if create_all_fanins_faninNBs_on_start or map_objects_to_lambda_functions and (
-                using_Lambda_Function_Simulators_to_Store_Objects):
+            if wukongdnc.dag.DAG_executor_constants.create_all_fanins_faninNBs_on_start or wukongdnc.dag.DAG_executor_constants.map_objects_to_lambda_functions and (
+                wukongdnc.dag.DAG_executor_constants.using_Lambda_Function_Simulators_to_Store_Objects):
                 # if create objects on start then map_objects_to_lambda_functions must be 
                 # true. if not create objects on start then we can still be mapping objects
                 # to functions but we we will create the objects on the fly in the function
@@ -1846,7 +1849,7 @@ class TCPServer(object):
             # after creating the simulated functions, we map the fanin/fanout/faninNB names to 
             # a function. Eventually may map multiple names (i.e. objects) to a function.
 
-            if map_objects_to_lambda_functions:
+            if wukongdnc.dag.DAG_executor_constants.map_objects_to_lambda_functions:
                 # Note: we asssert not use_anonymous_lambda_functions is true when 
                 # map_objects_to_lambda_functions is True in the constants file.
                 # Note: The functions need not have been created in the case
@@ -1875,10 +1878,10 @@ class TCPServer(object):
         logger.trace("tcp_server_lambda: Starting TCP Lambda server.")
         try:
             msg = "tcp_server_lambda: store_sync_objects_in_lambdas is False."
-            assert store_sync_objects_in_lambdas , msg
+            assert wukongdnc.dag.DAG_executor_constants.store_sync_objects_in_lambdas , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
-            if exit_program_on_exception:
+            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
         # assertOld:
@@ -1889,7 +1892,7 @@ class TCPServer(object):
             self.tcp_server.serve_forever()
         except Exception as ex:
             logger.exception("tcp_server_lambda: Exception encountered:" + repr(ex))
-            if exit_program_on_exception:
+            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
 
