@@ -268,6 +268,8 @@ class Synchronizer(object):
                 return_value = self.synchronize(base_name, state, **state.keyword_arguments)
                 
             state.return_value = return_value
+            # not a try-op so caller is not interested in blocking
+            # and we set it to False.
             state.blocking = False 
             
             # release lock before TCP sending the result to client.
@@ -276,7 +278,7 @@ class Synchronizer(object):
 
             logger.info("synchronizerXXX: synchronize_sync: %s sending return_value %s back for method %s." % (synchronizer_name, str(return_value), method_name))
             logger.info("synchronizerYYY: synchronize_sync: %s sending state %s back for method %s." % (synchronizer_name, str(state), method_name))
-           
+            
             tcp_handler.send_serialized_object(cloudpickle.dumps(state))
             
         return 0
@@ -470,9 +472,9 @@ class Synchronizer(object):
         returnValue = result[0]
         restart = result[1] 
         
-        logger.trace("synchronizeSelect: restart " + str(restart))
+        logger.info("synchronizeSelect: restart " + str(restart))
         logger.info("synchronizeSelect: returnValue " + str(returnValue))
-
+        logger.info("synchronizeSelect: type of returnValue " + str(type(returnValue)))
         # if the method returns restart True, restart the serverless function and pass it its saved state.
         if restart:
             state.restart = True 

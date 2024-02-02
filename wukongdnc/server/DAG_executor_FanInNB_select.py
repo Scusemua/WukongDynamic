@@ -191,11 +191,11 @@ class DAG_executor_FanInNB_Select(Selector):
     # the last to call fan_in is expected to terminate. The last client to call fan_in will become the fan-in task.
     # no meaningful return value expected by client
     def fan_in(self, **kwargs):
-        try: 
-            # if we called try_fan_in first, we still have the mutex so this enter_monitor does not do mutex.P
-            logger.info("DAG_executor_FanInNB_Select: fan_in: entered fan_in()")
-            
-            if self._num_calling < (self._n - 1):
+        if self._num_calling < (self._n - 1):
+            try: 
+                # if we called try_fan_in first, we still have the mutex so this enter_monitor does not do mutex.P
+                logger.info("DAG_executor_FanInNB_Select: fan_in: entered fan_in()")
+
                 self._num_calling += 1
 
                 # No need to block non-last thread since we are done with them - they will terminate and not restart.
@@ -214,12 +214,13 @@ class DAG_executor_FanInNB_Select(Selector):
                     + " exiting FanInNB fan_in")
                 # Note: Typically we would return 1 when try_fan_in returns block is True, but the Fanin currently
                 # used by wukong D&C is expecting a return value of 0 for this case.
-                return 0, False
-        except Exception:
-            logger.exception("faninNB_select: fanin: exception processing non-last caller.")
-            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
-                logging.shutdown()
-                os._exit(0)
+                # Do not return the restart value here.
+                return 0
+            except Exception:
+                logger.exception("faninNB_select: fanin: exception processing non-last caller.")
+                if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                    logging.shutdown()
+                    os._exit(0)
         else:  
             try:
                 # Last thread does synchronize_synch and will not wait for result since this is fanin NB.
@@ -273,11 +274,9 @@ class DAG_executor_FanInNB_Select(Selector):
                             work_tuple = (start_state_fanin_task,self._results)
                             work_queue.put(work_tuple)
                             #work_queue.put(start_state_fanin_task)
-            
-                            # No signal of non-last client; they did not block and they are done executing. 
-                            # does mutex.V
 
                             # no one should be calling fan_in again since this is last caller
+                            # Do not return the restart value here.
                             return self._results  # all threads have called so return results
                             #return 1, restart  # all threads have called so return results
                         else:
@@ -286,6 +285,7 @@ class DAG_executor_FanInNB_Select(Selector):
                             # and in this case, we return the results dictionary, not a work tuple.
                             # the caller process_faninNBs() will create a work tuple and add it to the work queue.                        super().exit_monitor()
                             # No one should be calling fan_in again since this is last caller
+                            # Do not return the restart value here.
                             return self._results  # all threads have called so return results        
                     else:
                         try:
@@ -299,8 +299,6 @@ class DAG_executor_FanInNB_Select(Selector):
                         #assertOld:
                         #if self.store_fanins_faninNBs_locally:
                         #    logger.error("[Error]: DAG_executor_FanInNB_Select: fan_in: using workers and processes but storing fanins locally.")
-                        # No signal of non-last client; they did not block and they are done executing. 
-                        # does mutex.V
 
                         # no one should be calling fan_in again since this is last calle
                         return self._results  # all threads have called so return results
@@ -353,10 +351,15 @@ class DAG_executor_FanInNB_Select(Selector):
                             logging.shutdown()
                             os._exit(0)
 
-                    # No signal of non-last client; they did not block and they are done executing. 
-                    # does mutex.V
-                    # no one should be calling fan_in again since this is last caller
-                    return self._results, False  # all threads have called so return results
+                    # no one should be calling fan_in again since this is last caller.
+                    # This value returned to calling thread (simuated lamba) is 
+                    # not used - here we start a lambda to execute the fanin 
+                    # task so the calling lambda/thread does not have to do it.
+                    # If we start this fanin select remotely, it cannot start 
+                    # a new thread since the thread would run on the tcp_server
+                    # not the local host where the simulated lambas all run.
+                    # Do not return the restart value here.
+                    return self._results   # all threads have called so return results
                     #return 1, restart  # all threads have called so return results  
                 elif not self.store_fanins_faninNBs_locally and not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally:
                     # Note: not run_all_tasks_locally ==> not self.store_fanins_faninNBs_locally
@@ -427,12 +430,12 @@ class DAG_executor_FanInNB_Select(Selector):
                                 logging.shutdown()
                                 os._exit(0)
 
-                    # No signal of non-last client; they did not block and they are done executing. 
-                    # does mutex.V. No one should be calling fan_in again since this is last caller
+                    # No one should be calling fan_in again since this is last caller
                     # results given to invoked lambda so nothing to return; can't return results
                     # to tcp_serve \r or tcp_server might try to put them in the non-existent 
                     # work_queue.   
                     #return self._results, restart  # all threads have called so return results
+                    # Do not return the restart value here.
                     return 0
                     #return 1, restart  # all threads have called so return results
                 
@@ -490,7 +493,8 @@ class DAG_executor_FanInNB_Select(Selector):
                         + " case where simuated lambdas with threads and storing objects remotely, "
                         + " possibly in lambas (simulated or real) and not triggering tasks:"
                         + " self._results: " + str(self._results))
-                    return self._results, False
+                    # Do not return the restart value here.
+                    return self._results 
                     #work_tuple = (start_state_fanin_task,self._results)
                     #return work_tuple 
                 else:
@@ -509,9 +513,7 @@ class DAG_executor_FanInNB_Select(Selector):
                 if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0)
-            # No signal of non-last client; they did not block and they are done executing. 
-            # does mutex.V
-            #super().exit_monitor()
+
             
             #return self._results, restart  # all threads have called so return results
             #return 1, restart  # all threads have called so return results

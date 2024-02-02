@@ -115,6 +115,21 @@ class Selector():
             # restart is only true if this is an asynch call after which the caller always terminates, blocking call or not.
             restart = called_entry.get_restart_on_noblock() # restart = self._restart_on_noblock
             logger.trace("Value of 'called_entry.get_restart_on_noblock()' in execute() [line 106]: " + str(restart))
+            # Note: the return value shoould not be a tuple, e.g., if 
+            # the method returns "return_value, restart" then return_value
+            # here will be a tuple (X,Y) but we don't get the restart 
+            # value as a rturned value from the method, we get it using the
+            # call to called_entry.get_restart_on_noblock() and then 
+            # we deposit a tuple (return_value, restart) and when we 
+            # withdraw the tuple we use return_value = tuple[0] and 
+            # restart = tuple[1]. For example, for fanin ops, the return 
+            # value is 0 for callers that are not the last caller and 
+            # or the return value is a dictionary of the fanin results
+            # for the last caller. For the latter case, we want the retrun 
+            # value to be the dictionary of results, which fanin returns as 
+            # return self._results - if fanin does return self._results, restart
+            # then the value withdrawn from the buffer will be a tuple
+            # (results,restart), which is not want we wan to send back to the caller.
             return_tuple = (return_value, restart)
             # return value is deposited into a bounded buffer for withdraw by the tcp_server thread that
             # is handling the client lambda's call. This value will be ignored for all asynch calls and for

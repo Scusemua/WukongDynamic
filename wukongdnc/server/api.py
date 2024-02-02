@@ -158,7 +158,7 @@ def synchronize_sync(websocket, op, name, method_name, state):
 
     state_from_server = cloudpickle.loads(data) # `state_from_server` is of type State
     logger.trace(thread_name+ ": synchronize_sync: successful")
-    #logger.trace("Fan-in ID %s received return value from server in synchronize_sync: %s" % (name, str(state_from_server.return_value)))
+    logger.info("Fan-in ID %s received return value from server in synchronize_sync: %s" % (name, str(state_from_server.return_value)))
 
     return state_from_server
 

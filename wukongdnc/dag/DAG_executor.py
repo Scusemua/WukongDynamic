@@ -300,7 +300,7 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
             keyword_arguments['calling_task_name'] = calling_task_name
         else:
             
-            logger.trace("**********************" + thread_name + ": process_faninNBs:  for " + calling_task_name + " faninNB "  + name+ " output is :" + str(output))
+            logger.info("**********************" + thread_name + ": process_faninNBs:  for " + calling_task_name + " faninNB "  + name+ " output is :" + str(output))
 
             #if name.endswith('L'):  
             #    keyword_arguments['result'] = output[name[:-1]]
@@ -440,11 +440,13 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
 
             #if DAG_exec_state.blocking:
             # using the "else" after the return, even though we don't need it
-            logger.trace(thread_name + ": process_faninNBs:  faninNB_remotely dummy_DAG_exec_state: " + str(dummy_DAG_exec_state))
-            logger.info(thread_name + ": process_faninNBs:  faninNB_remotely dummy_DAG_exec_state.return_value: " + str(dummy_DAG_exec_state.return_value))
+            logger.trace(thread_name + ": process_faninNBs:  faninNB_remotely: dummy_DAG_exec_state: " + str(dummy_DAG_exec_state))
+            logger.info(thread_name + ": process_faninNBs:  faninNB_remotely: before if: dummy_DAG_exec_state.return_value: " + str(dummy_DAG_exec_state.return_value))
             if dummy_DAG_exec_state.return_value == 0:
+                logger.info(thread_name + ": process_faninNBs:  faninNB_remotely: then after if: dummy_DAG_exec_state.return_value: " + str(dummy_DAG_exec_state.return_value))
                 pass
             else:
+                logger.info(thread_name + ": process_faninNBs:  faninNB_remotely: else after if: dummy_DAG_exec_state.return_value: " + str(dummy_DAG_exec_state.return_value))
                 # Note: When we aer using_workers we now call process_fsninNBs_batch
                 # so this code is not currently being used. Batch processing processes
                 # all the faninNBs at once on the server, rather than calling 
@@ -541,7 +543,7 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
                     #    logger.error("[Error]: " + thread_name + ": process_faninNBs: not using_workers but worker_needs_input = True")
                     
                     try:
-                        logger.trace(thread_name + ": process_faninNBs: starting DAG_executor thread for task " + name + " with start state " + str(start_state_fanin_task))
+                        logger.info(thread_name + ": process_faninNBs: starting DAG_executor thread for task " + name + " with start state " + str(start_state_fanin_task))
                         #server = kwargs['server']
                         #DAG_executor_state =  kwargs['DAG_executor_State']
                         #DAG_executor_state.state = int(start_state_fanin_task)
@@ -579,7 +581,7 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
                 #return worker_needs_input
     # return value not used; will process any fanouts next; no change to DAG_executor_State
     #return 0
-    logger.trace(thread_name + ": process_faninNBs:  returning worker_needs_input: " + str(worker_needs_input))
+    logger.info(thread_name + ": process_faninNBs:  returning worker_needs_input: " + str(worker_needs_input))
     return worker_needs_input
 
 #def faninNB_remotely_batch(websocket, faninNBs, faninNB_sizes, calling_task_name, DAG_states, 
@@ -4872,6 +4874,11 @@ def DAG_executor(payload):
             def DD(dict_of_results,data_dict):
                 logger.info("DAG_executor(): DD: verify inputs are in data_dict: ")
                 logger.info("DAG_executor(): DD: dict_of_results: " + str(dict_of_results))
+                logger.info("DAG_executor(): DD: type of dict_of_results: " + str(type(dict_of_results)))
+                #for i in range ( len(dict_of_results) ):
+                #    print( str(type(dict_of_results [i])) )
+                #for i in range ( len(dict_of_results) ):
+                #    print( dict_of_results [i] )
                 for key, _value in dict_of_results.items():
                     #data_dict[key] = _value
                     value_in_dict = data_dict.get(key,None)

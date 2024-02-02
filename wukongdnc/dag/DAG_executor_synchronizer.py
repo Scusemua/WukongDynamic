@@ -394,13 +394,17 @@ class DAG_executor_Synchronizer(object):
         # return is: None, restart, where restart is always 0 and return_value is None; and makes no change to DAG_executor_State	
         # Not using "asynch" here as no way to implement "asynch" locally.
         try:
-            _return_value_ignored, _restart_value_ignored = FanInNB.fan_in(**keyword_arguments)
+            # fanin dos not return a restart value; it returns 
+            # either 0 or the fanin results for when the caller
+            # is not or is, respectively, the last caller for fanin
+            #_return_value_ignored, _restart_value_ignored = FanInNB.fan_in(**keyword_arguments)
+            _return_value_ignored = FanInNB.fan_in(**keyword_arguments)
         except Exception:
             logger.exception("faninNB_select: synchronizer: exception callling FanInNB.fan_in().")
             if exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)  
-        #if we decide we always wan to return a state, we can use this:
+        #if we decide we always want to return a state, we can use this:
         """
         DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
         #DAG_exec_state = keyword_arguments['DAG_executor_State']
