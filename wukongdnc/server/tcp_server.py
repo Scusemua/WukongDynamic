@@ -1707,7 +1707,7 @@ class TCPServer(object):
 
 import sys
 import getopt
-def configure(argv):
+def configure_test(argv):
     test_number = ''
     opts, _args = getopt.getopt(argv, "ht:",["test="])
     for opt, arg in opts:
@@ -1716,13 +1716,11 @@ def configure(argv):
             sys.exit()
         elif opt in ("-t", "--test"):
             test_number = arg
-
-    wukongdnc.dag.DAG_executor_constants.set_test_number(int(test_number))
-    print("store_fanins_faninNBs_locally: " + str(wukongdnc.dag.DAG_executor_constants.store_fanins_faninNBs_locally))
+            wukongdnc.dag.DAG_executor_constants.set_test_number(int(test_number))
 
 if __name__ == "__main__":
     # configure test, if -t option was specified
-    configure(sys.argv[1:])
+    configure_test(sys.argv[1:])
     # Create a Server Instance
 #rhc: added tcp_server global variable at top
     tcp_server = TCPServer()

@@ -1896,7 +1896,41 @@ class TCPServer(object):
                 logging.shutdown()
                 os._exit(0)
 
+import sys
+import getopt
+def configure_test(argv):
+    test_number = ''
+    opts, _args = getopt.getopt(argv, "ht:",["test="])
+    for opt, arg in opts:
+        if opt == '-h':
+            print ('To run a test: tcp_server.py -t <test number>')
+            sys.exit()
+        elif opt in ("-t", "--test"):
+            test_number = arg
+            wukongdnc.dag.DAG_executor_constants.set_test_number(int(test_number))
+
 if __name__ == "__main__":
+    # configure test, if -t option was specified
+    configure_test(sys.argv[1:])
     # Create a Server Instance
     tcp_server = TCPServer()
     tcp_server.start()
+
+"""
+Note: instead of stopping and restarting tcp_server for each
+test case, perhaps we can reload module DAG_executor_constants
+between tests, somehow.
+
+You can re-import a module in python, by using the importlib and its function reload. 
+
+    import importlib
+
+    importlib.reload(some_module)
+
+If you are using python 3.2 or 3.3 you can use the following code:-
+
+    import imp
+
+    imp.reload(module)
+    
+"""

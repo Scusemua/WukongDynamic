@@ -37,12 +37,12 @@ class DAG_executor_FanIn_Select(Selector):
         logger.trace("Setting value of FanIn n to " + str(value))
         self._n = value
 
-    # inherit from parent
-    def lock(self):
-        pass
+    # inherit from parent Selector
+    #def lock(self):
+    #    pass
         
-    def unlock(self):
-        pass
+    #def unlock(self):
+    #    pass
 
     def init(self, **kwargs):
         #logger.trace(kwargs)

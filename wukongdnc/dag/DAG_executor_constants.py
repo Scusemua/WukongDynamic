@@ -738,14 +738,14 @@ if not_A1s and not_A2 and not_A3s and not_A4s and not_A5 and not_A6:
 # Suggested Assert using_DAG_orchestrator ==> not run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally
 
 ##########################################
-###### Tests start here ######
+###### Configuration tests start here ######
 ##########################################
 
 #################################################
-###### Non-Pageran tests (using Dask DAGs) ######
+###### Non-Pageranl tests (using Dask DAGs) ######
 #################################################
 
-#running non-pagerank test: python -m wukongdnc.dag.DAG_executor_driver and python -m wukongdnc.server.tcp_server or (tcp_server_lambda)
+#running non-pagerank test: python -m wukongdnc.dag.TestAll -t n and python -m wukongdnc.server.tcp_server -t n or (use tcp_server_lambda)
 
 def non_real_lambda_base():
     global exit_program_on_exception
@@ -831,6 +831,8 @@ def non_real_lambda_base():
     use_struct_of_arrays_for_pagerank = compute_pagerank and False
     use_multithreaded_BFS = compute_pagerank and False
 
+# local objects 
+    
 #Test1: simulated lambdas (A2) with non-selective-wait Sync-objects,
 # create objects at the start
 def test1():
@@ -1039,8 +1041,11 @@ def test4():
     FanInNB_Type = "DAG_executor_FanInNB_Select"
     process_work_queue_Type = "BoundedBuffer_Select"
 
+# remote objects
+    
 #Test5: simulated lambdas (A2) with non-selective-wait Sync-objects,
 # create objects at the start, store_fanins_faninNBs_locally = False 
+# Note: tcp_server must be running: tcp_server -t 5
 def test5():
     print("test5")
     global store_sync_objects_in_lambdas
@@ -1093,6 +1098,7 @@ def test5():
 
 #Test6: simulated lambdas (A2) with selective-wait Sync-objects,
 #        create objects at the start, store_fanins_faninNBs_locally = False 
+# Note: tcp_server must be running: tcp_server -t 6
 def test6():
     print("test6")
     global store_sync_objects_in_lambdas
@@ -1145,6 +1151,7 @@ def test6():
 
 #Test 7: simulated lambdas (A2) with non-selective-wait Sync-objects,
 #         create objects on-the-fly, store_fanins_faninNBs_locally = False 
+# Note: tcp_server must be running: tcp_server -t 7
 def test7():
     logger.info("test7")
     global store_sync_objects_in_lambdas
@@ -1197,6 +1204,7 @@ def test7():
 
 #Test 8: simulated lambdas (A2) with selective-wait Sync-objects,
 #         create objects on-the-fly, store_fanins_faninNBs_locally = False 
+# Note: tcp_server must be running: tcp_server -t 8
 def test8():
     print("test8")
     global store_sync_objects_in_lambdas
@@ -1247,6 +1255,8 @@ def test8():
     FanInNB_Type = "DAG_executor_FanInNB_Select"
     process_work_queue_Type = "BoundedBuffer_Select"
 
+# workers
+# threads
 # local objects
 
 #Test9: worker threads (A2) with non-selective-wait Sync-objects, 
@@ -1510,12 +1520,14 @@ def test13():
     process_work_queue_Type = "BoundedBuffer_Select"
 
 
-# remote objects with worker threads
+# workers
+# threads
+# remote  objects
 
 #Test14: worker threads (A2) with non-selective-wait Sync-objects, 
 #        1 worker, Sync-objects stored remotely (on tcp_server)
 #        create objects at the start
-# Note: tcp_server must be running
+# Note: tcp_server must be running: tcp_server -t 14
 def test14():
     print("test14")
     global store_sync_objects_in_lambdas
@@ -1569,7 +1581,7 @@ def test14():
 #Test15: worker threads (A2) with non-selective-wait Sync-objects, 
 #        2 workers, Sync-objects stored remotely (on tcp_server)
 #        create objects at the start
-# Note: tcp_server must be running
+# Note: tcp_server must be running: tcp_server -t 15
 def test15():
     print("test15")
     global store_sync_objects_in_lambdas
@@ -1623,7 +1635,7 @@ def test15():
 #Test16: worker threads (A2) with non-selective-wait Sync-objects, 
 #        2 workers, Sync-objects stored remotely (on tcp_server)
 #        create objects on-the-fly
-# Note: tcp_server must be running
+# Note: tcp_server must be running: tcp_server -t 16
 def test16():
     print("test16")
     global store_sync_objects_in_lambdas
@@ -1677,7 +1689,7 @@ def test16():
 #Test17: worker threads (A2) with selective-wait Sync-objects, 
 #        2 workers, Sync-objects stored remotely (on tcp_server)
 #        create objects at the start
-# Note: tcp_server must be running
+# Note: tcp_server must be running: tcp_server -t 17
 def test17():
     print("test17")
     global store_sync_objects_in_lambdas
@@ -1731,7 +1743,7 @@ def test17():
 #Test18: worker threads (A2) with selective-wait Sync-objects, 
 #        2 workers, Sync-objects stored remotely (on tcp_server)
 #        create objects on-the-fly
-# Note: tcp_server must be running
+# Note: tcp_server must be running: tcp_server -t 18
 def test18():
     print("test18")
     global store_sync_objects_in_lambdas
@@ -1787,7 +1799,7 @@ def test18():
 #Test19: worker processes (A2) with non-selective-wait Sync-objects, 
 #        1 worker, Sync-objects stored remotely (on tcp_server)
 #        create objects at the start
-# Note: tcp_server must be running
+# Note: tcp_server must be running: tcp_server -t 19
 def test19():
     print("test19")
     global store_sync_objects_in_lambdas
@@ -1841,7 +1853,7 @@ def test19():
 #Test20: worker processes (A2) with non-selective-wait Sync-objects, 
 #        2 workers, Sync-objects stored remotely (on tcp_server)
 #        create objects at the start
-# Note: tcp_server must be running
+# Note: tcp_server must be running: tcp_server -t 20
 def test20():
     print("test20")
     global store_sync_objects_in_lambdas
@@ -1895,7 +1907,7 @@ def test20():
 #Test21: worker processes (A2) with non-selective-wait Sync-objects, 
 #        2 workers, Sync-objects stored remotely (on tcp_server)
 #        create objects on-the-fly
-# Note: tcp_server must be running
+# Note: tcp_server must be running: tcp_server -t 21
 def test21():
     print("test21")
     global store_sync_objects_in_lambdas
@@ -1949,7 +1961,7 @@ def test21():
 #Test22: worker processes (A2) with selective-wait Sync-objects, 
 #        2 workers, Sync-objects stored remotely (on tcp_server)
 #        create objects at the start
-# Note: tcp_server must be running
+# Note: tcp_server must be running: tcp_server -t 22
 def test22():
     print("test22")
     global store_sync_objects_in_lambdas
@@ -2003,7 +2015,7 @@ def test22():
 #Test23: worker processes (A2) with selective-wait Sync-objects, 
 #        2 workers, Sync-objects stored remotely (on tcp_server)
 #        create objects on-the-fly
-# Note: tcp_server must be running
+# Note: tcp_server must be running: tcp_server -t 23
 def test23():
     print("test23")
     global store_sync_objects_in_lambdas
@@ -2057,7 +2069,7 @@ def test23():
 #Test24: multithreaded worker processes (A2) with non-selective-wait Sync-objects, 
 #        1 thread for the worker process, Sync-objects stored remotely (on tcp_server)
 #        create objects at the start
-# Note: tcp_server must be running
+# Note: tcp_server must be running: tcp_server -t 24
 def test24():
     print("test24")
     global store_sync_objects_in_lambdas
@@ -2111,7 +2123,7 @@ def test24():
 #Test25: multithreaded worker processes (A2) with non-selective-wait Sync-objects, 
 #        2 threads for the worker process, Sync-objects stored remotely (on tcp_server)
 #        create objects at the start
-# Note: tcp_server must be running
+# Note: tcp_server must be running: tcp_server -t 25
 def test25():
     print("test25")
     global store_sync_objects_in_lambdas
@@ -2165,7 +2177,7 @@ def test25():
 #Test26: multithreaded worker processes (A2) with non-selective-wait Sync-objects, 
 #        2 threads for each of 2 worker process, Sync-objects stored remotely (on tcp_server)
 #        create objects at the start
-# Note: tcp_server must be running
+# Note: tcp_server must be running: tcp_server -t 26
 def test26():
     print("test26")
     global store_sync_objects_in_lambdas
@@ -2219,7 +2231,7 @@ def test26():
 #Test27: multithreaded worker processes (A2) with selective-wait Sync-objects, 
 #        2 threads for the worker process, Sync-objects stored remotely (on tcp_server)
 #        create objects at the start
-# Note: tcp_server must be running
+# Note: tcp_server must be running: tcp_server -t 27
 def test27():
     print("test27")
     global store_sync_objects_in_lambdas
@@ -2273,7 +2285,7 @@ def test27():
 #Test28: multithreaded worker processes (A2) with selective-wait Sync-objects, 
 #        2 threads for each of 2 worker process, Sync-objects stored remotely (on tcp_server)
 #        create objects at the start
-# Note: tcp_server must be running
+# Note: tcp_server must be running: tcp_server -t 28
 def test28():
     print("test28")
     global store_sync_objects_in_lambdas
@@ -2326,10 +2338,11 @@ def test28():
 
 #Test store_sync_objects_in_lambdas
 
-#Test29: multithreaded worker processes (A2) with selective-wait Sync-objects, 
-#        2 threads for each of 2 worker process, Sync-objects stored remotely (on tcp_server)
-#        create objects at the start
-# Note: tcp_server must be running
+#Test29: worker threads (A2) with selective-wait Sync-objects, 
+#        Sync-objects stored remotely (on tcp_server)
+#        create objects at the start.
+#        store_sync_objects_in_lambdas
+# Note: tcp_server must be running: tcp_server -t 29
 def test29():
     print("test29")
     global store_sync_objects_in_lambdas
@@ -2392,11 +2405,12 @@ map_objects_to_lambda_functions = True
 use_anonymous_lambda_functions = False
 using_single_lambda_function = False
 
-#Test30: multithreaded worker processes (A2) with selective-wait Sync-objects, 
-#        2 threads for each of 2 worker process, Sync-objects stored remotely (on tcp_server)
+#Test30: worker threads (A2) with selective-wait Sync-objects, 
+#        Sync-objects stored remotely (on tcp_server)
 #        create objects at the start
+#        store_sync_objects_in_lambdas
 #        Variation: a. change D_O to T, 
-# Note: tcp_server must be running
+# Note: tcp_server must be running: tcp_server -t 30
 def test30():
     print("test30")
     global store_sync_objects_in_lambdas
@@ -2455,12 +2469,13 @@ def test30():
     use_anonymous_lambda_functions = False
     using_single_lambda_function = False
 
-#Test31: multithreaded worker processes (A2) with selective-wait Sync-objects, 
-#        2 threads for each of 2 worker process, Sync-objects stored remotely (on tcp_server)
+#Test31: worker threads (A2) with selective-wait Sync-objects, 
+#        Sync-objects stored remotely (on tcp_server)
 #        create objects at the start
+#        store_sync_objects_in_lambdas
 #        Variation: a. change D_O to T, 
 #                   b. change map to F, and anon to T:
-# Note: tcp_server must be running
+# Note: tcp_server must be running: tcp_server -t 31
 def test31():
     print("test31")
     global store_sync_objects_in_lambdas
@@ -2519,13 +2534,14 @@ def test31():
     use_anonymous_lambda_functions = True
     using_single_lambda_function = False
 
-#Test32: multithreaded worker processes (A2) with selective-wait Sync-objects, 
-#        2 threads for each of 2 worker process, Sync-objects stored remotely (on tcp_server)
+#Test32: worker threads (A2) with selective-wait Sync-objects, 
+#        Sync-objects stored remotely (on tcp_server)
 #        create objects at the start
+#        store_sync_objects_in_lambdas
 #        Variation: a. change D_O to T, 
 #                   b. change map to F, and anon to T:
 #                   c. change D_O to F, map F, anon T:
-# Note: tcp_server must be running
+# Note: tcp_server must be running: tcp_server -t 32
 def test32():
     print("test32")
     global store_sync_objects_in_lambdas
@@ -2584,10 +2600,11 @@ def test32():
     use_anonymous_lambda_functions = True
     using_single_lambda_function = False
 
-#Test33: multithreaded worker processes (A2) with selective-wait Sync-objects, 
-#        2 threads for each of 2 worker process, Sync-objects stored remotely (on tcp_server)
+#Test33: worker threads (A2) with selective-wait Sync-objects, 
+#        Sync-objects stored remotely (on tcp_server)
 #        create objects at the start
-# Note: tcp_server must be running
+#        store_sync_objects_in_lambdas
+# Note: tcp_server must be running: tcp_server_lambda -t 33
 # Note: output is in tcp_server_lambda window, not DAG_executor window
 def test33():
 
@@ -2660,9 +2677,10 @@ def test33():
 # Note: output is in tcp_server_lambda window, not DAG_executor window
 
 #Test34: multithreaded worker processes (A2) with selective-wait Sync-objects, 
-#        2 threads for each of 2 worker process, Sync-objects stored remotely (on tcp_server)
+#        Sync-objects stored remotely (on tcp_server)
 #        create objects at the start
-# Note: tcp_server must be running
+#        store_sync_objects_in_lambdas
+# Note: tcp_server must be running: tcp_server_lambda -t 34
 # Note: output is in tcp_server_lambda window, not DAG_executor window
 def test34():
 
@@ -2734,10 +2752,11 @@ def test34():
 
 # Note: output is in tcp_server_lambda window, not DAG_executor window
 
-#Test35: multithreaded worker processes (A2) with selective-wait Sync-objects, 
-#        2 threads for each of 2 worker process, Sync-objects stored remotely (on tcp_server)
+#Test35: worker threads (A2) with selective-wait Sync-objects, 
+#        Sync-objects stored remotely (on tcp_server)
 #        create objects at the start
-# Note: tcp_server must be running
+#        store_sync_objects_in_lambdas
+# Note: tcp_server must be running: tcp_server_lambda -t 35
 # Note: output is in tcp_server_lambda window, not DAG_executor window
 def test35():
 
@@ -3129,6 +3148,7 @@ def test39():
 #        create objects at the start
 #        use pagerank groups
 #        use shared
+# Note: tcp_server must be running: tcp_server -t 40
 def test40():
     print("test40")
     global store_sync_objects_in_lambdas
@@ -3205,6 +3225,7 @@ def test40():
 #        create objects at the start
 #        use pagerank partitions
 #        use shared
+# Note: tcp_server must be running: tcp_server -t 41
 def test41():
     print("test41")
     global store_sync_objects_in_lambdas
@@ -3282,6 +3303,7 @@ def test41():
 #        use pagerank groups
 #        use shared
 #        use array of structs
+# Note: tcp_server must be running: tcp_server -t 42
 def test42():
     print("test42")
     global store_sync_objects_in_lambdas
@@ -3359,6 +3381,7 @@ def test42():
 #        use pagerank partitions
 #        use shared
 #        use array of structs
+# Note: tcp_server must be running: tcp_server -t 43
 def test43():
     print("test43")
     global store_sync_objects_in_lambdas
@@ -3434,6 +3457,7 @@ def test43():
 #        2 worker processes, Sync-objects stored remotely
 #        use pagerank groups
 #        use shared
+# Note: tcp_server must be running: tcp_server -t 44
 def test44():
     print("test44")
     global store_sync_objects_in_lambdas
@@ -3510,6 +3534,7 @@ def test44():
 #        create objects at the start
 #        use pagerank partitions
 #        use shared
+# Note: tcp_server must be running: tcp_server -t 45
 def test45():
     print("test45")
     global store_sync_objects_in_lambdas
@@ -3587,6 +3612,7 @@ def test45():
 #        use pagerank groups
 #        use shared
 #        use array of structs
+# Note: tcp_server must be running: tcp_server -t 46
 def test46():
     print("test46")
     global store_sync_objects_in_lambdas
@@ -3664,6 +3690,7 @@ def test46():
 #        use pagerank partitions
 #        use shared
 #        use array of structs
+# Note: tcp_server must be running: tcp_server -t 47
 def test47():
     print("test47")
     global store_sync_objects_in_lambdas
@@ -4029,19 +4056,18 @@ def set_test_number(number):
     if not test_number == 0:
         #print("call non_real_lambda_base")
         non_real_lambda_base()
-    #else: 
-    #    print (" No call non_real_lambda_base")
 
-    if test_number == 1:
-        test1()
-    elif test_number == 2:
-        test2()
-    elif test_number == 3:
-        test3()
-    elif test_number == 4:
-        test4()
-    else:
-        print("foo")
+    # call method testi() to configure test 
+    test_method_name = "test"+str(test_number)
+
+    # can also use getattr() - how to specify this DAG_executor_constants module?
+    # https://stackoverflow.com/questions/3061/calling-a-function-of-a-module-by-using-its-name-a-string
+    try:
+        globals()[test_method_name]()
+    except Exception:
+        print("[Error]: test " + test_method_name + "() not found.")
+        logging.shutdown()
+        os._exit(0)
 
     # Check assserts after setting the configuration constants
     if not test_number == 0:

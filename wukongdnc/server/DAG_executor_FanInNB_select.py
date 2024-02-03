@@ -69,12 +69,11 @@ class DAG_executor_FanInNB_Select(Selector):
         logger.trace("Setting value of FanIn n to " + str(value))
         self._n = value
 
-    # inherit from parent
-    def lock(self):
-        pass
-        
-    def unlock(self):
-        pass
+    # inherit from parent Selector
+    #def lock(self):
+    #    pass  
+    #def unlock(self):
+    #    pass
 
     def init(self, **kwargs):
         #logger.trace(kwargs)
@@ -193,8 +192,9 @@ class DAG_executor_FanInNB_Select(Selector):
     def fan_in(self, **kwargs):
         if self._num_calling < (self._n - 1):
             try: 
+                fanin_task_name = kwargs['fanin_task_name']
                 # if we called try_fan_in first, we still have the mutex so this enter_monitor does not do mutex.P
-                logger.info("DAG_executor_FanInNB_Select: fan_in: entered fan_in()")
+                logger.info("DAG_executor_FanInNB_Select: fan_in: entered FanInNB.fan_in() for task " + fanin_task_name)
 
                 self._num_calling += 1
 

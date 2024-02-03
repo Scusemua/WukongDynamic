@@ -3,9 +3,11 @@ import cloudpickle
 import copy
 from .DAG_executor_constants import use_incremental_DAG_generation
 
+import logging
+logger = logging.getLogger(__name__)
 # called below in the DAG_info __init__ method
 def input_DAG_info(file_name = './DAG_info.pickle'):
-    print("Reading DAG info from file: \"%s\"" % file_name)
+    logger.info("Reading DAG info from file: \"%s\"" % file_name)
     with open(file_name, 'rb') as handle:
         DAG_info = cloudpickle.load(handle)
     return DAG_info

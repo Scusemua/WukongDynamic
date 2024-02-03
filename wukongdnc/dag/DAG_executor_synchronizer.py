@@ -211,6 +211,7 @@ class DAG_executor_Synchronizer(object):
         #logger.trace("calling_task_name: " + calling_task_name + " FanIn: try_return_value: " + str(try_return_value))
         logger.trace("fanin_task_name: " + keyword_arguments['fanin_task_name'] + " try_return_value: " + str(try_return_value))
 
+        # for fanin, try_return_value always retuns False, so we will always execute the else-part
         if try_return_value:   # synchronize op will execute wait so tell client to terminate
             DAG_exec_state.blocking = True 
             DAG_exec_state.return_value = 0 
@@ -226,14 +227,16 @@ class DAG_executor_Synchronizer(object):
                 return_value = FanIn.fan_in(**keyword_arguments)
                 FanIn.unlock()
             else:
-                return_value, _restart_value_ignored = FanIn.fan_in(**keyword_arguments)
+                #return_value, _restart_value_ignored = FanIn.fan_in(**keyword_arguments)
+                return_value = FanIn.fan_in(**keyword_arguments)
         else:
             if is_select:
                 #FanIn.lock()
                 return_value = FanIn.fan_in(**keyword_arguments)
                 FanIn.unlock()
             else:
-                return_value, _restart_value_ignored = FanIn.fan_in(**keyword_arguments)
+                #return_value, _restart_value_ignored = FanIn.fan_in(**keyword_arguments)
+                return_value = FanIn.fan_in(**keyword_arguments)
 
             logger.trace("calling_task_name:" + keyword_arguments['calling_task_name'])
             # try_fan_in never returns true. If we are not the last fan_in then we
@@ -393,17 +396,25 @@ class DAG_executor_Synchronizer(object):
 
         # return is: None, restart, where restart is always 0 and return_value is None; and makes no change to DAG_executor_State	
         # Not using "asynch" here as no way to implement "asynch" locally.
+        is_select = (FanInNB_Type == "DAG_executor_FanInNB_Select")
+        logger.info("is_select: " + str(is_select))
         try:
+            if is_select:
+                logger.info("call lock")
+                FanInNB.lock()
             # fanin dos not return a restart value; it returns 
             # either 0 or the fanin results for when the caller
             # is not or is, respectively, the last caller for fanin
             #_return_value_ignored, _restart_value_ignored = FanInNB.fan_in(**keyword_arguments)
             _return_value_ignored = FanInNB.fan_in(**keyword_arguments)
+            if is_select:
+                logger.info("call unlock")
+                FanInNB.unlock()
         except Exception:
             logger.exception("faninNB_select: synchronizer: exception callling FanInNB.fan_in().")
             if exit_program_on_exception:
                 logging.shutdown()
-                os._exit(0)  
+                os._exit(0)
         #if we decide we always want to return a state, we can use this:
         """
         DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))

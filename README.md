@@ -100,3 +100,9 @@ remotely) start the tcp_server first:
 
 Note: To capture all output in windows DOS box: command > logfile 2>&1
 (STDIN is file descriptor #0. STDOUT is file descriptor #1. STDERR is file descriptor #2. Just as "command > file" redirects STDOUT to a file, you may also redirect arbitrary file descriptors to each other. The ">&" operator redirects between file descriptors. So, "2 >& 1" redirects all STDERR output to STDOUT.)
+
+Rub the tests:
+- TestAll.py
+- TestAll -t n   # where nis the test number, see DAG_executor_constants.py
+- tcp_server -t n # # where nis the test number, see DAG_executor_constants.py
+- the test numbers for TestAl and tcpservr should be the same
