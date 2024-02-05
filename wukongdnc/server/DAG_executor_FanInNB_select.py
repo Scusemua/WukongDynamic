@@ -71,9 +71,7 @@ class DAG_executor_FanInNB_Select(Selector):
 
     # inherit from parent Selector
     #def lock(self):
-    #    pass  
     #def unlock(self):
-    #    pass
 
     def init(self, **kwargs):
         #logger.trace(kwargs)

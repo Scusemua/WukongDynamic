@@ -27,8 +27,15 @@ def main(argv):
     from . import DAG_executor_constants
     DAG_executor_constants.set_test_number(int(test_number))
     
+#rhc: 
+# ToDo: 
+    # if not testing pagerank:
     from . import DAG_executor_driver
     DAG_executor_driver.run()
+    #else:
+    #    from . import BFS
+    #    BFS.main()
+# ToDo: put top-level constants in noTest()
 
 if __name__ == "__main__":
    main(sys.argv[1:])

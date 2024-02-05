@@ -12,7 +12,11 @@ from . import BFS_Shared
 from .DAG_executor_create_threads_for_multiT_multiP import create_and_run_threads_for_multiT_multiP
 
 import logging 
+
 logger = logging.getLogger(__name__)
+
+
+
 
 """
 if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
@@ -27,11 +31,11 @@ if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
 #def create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,counter,process_work_queue,data_dict,log_queue,worker_configurer):
 #def create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,counter,log_queue,worker_configurer):
 def create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,completed_tasks_counter,completed_workers_counter,log_queue,worker_configurer):
-
-    logger.trace("DAG_executor_driver: Starting multi processors for multhreaded multipocessing.")
+    print("foo")
+    logger.info("DAG_executor_driver: Starting multi processors for multhreaded multipocessing.")
     iteration = 1
     while True:
-        logger.trace("create processes iteration: " + str(iteration))
+        logger.info("create processes iteration: " + str(iteration))
         iteration += 1
         try:
             msg = "[Error]: multithreaded multiprocessing loop but not run_all_tasks_locally"

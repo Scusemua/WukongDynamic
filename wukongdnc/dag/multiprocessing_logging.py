@@ -1,5 +1,6 @@
 import logging
 import logging.handlers
+import os
 
 from .DAG_executor_constants import exit_program_on_exception
 
@@ -102,11 +103,19 @@ MESSAGES = [
 # Note that on Windows you can't rely on fork semantics, so each process
 # will run the logging configuration code when it starts.
 def worker_configurer(queue):
+    from .addLoggingLevel import addLoggingLevel
+    #if not compute_pagerank:
+    addLoggingLevel('TRACE', logging.DEBUG - 5)
+    #logging.basicConfig(encoding='utf-8',level=log_level, format='[%(asctime)s][%(module)s][%(processName)s][%(threadName)s]: %(message)s')
+
     h = logging.handlers.QueueHandler(queue)  # Just the one handler needed
     root = logging.getLogger()
     root.addHandler(h)
     # send all messages, for demo; no other level or filter logic applied.
     root.setLevel(logging.DEBUG)
+
+
+
 
 # Testing the above:
 # This is the worker process top-level loop, which just logs ten events with

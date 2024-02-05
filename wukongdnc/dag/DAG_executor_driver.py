@@ -1,3 +1,4 @@
+print("DAG_executor_driver")
 # pylint: disable=pointless-string-statement
 # pylint: disable=logging-not-lazy
 # pylint: disable=trailing-whitespace
@@ -323,19 +324,19 @@ import os
 import logging 
 import cloudpickle
 
-from wukongdnc.dag.DAG_executor_constants import log_level
+from .DAG_executor_constants import log_level
 
-from .DAG_executor_constants import run_all_tasks_locally, store_fanins_faninNBs_locally, use_multithreaded_multiprocessing #, num_threads_for_multithreaded_multiprocessing
-from .DAG_executor_constants import create_all_fanins_faninNBs_on_start, using_workers
-from .DAG_executor_constants import num_workers,using_threads_not_processes
-from .DAG_executor_constants import FanIn_Type, FanInNB_Type, process_work_queue_Type
-from .DAG_executor_constants import store_sync_objects_in_lambdas, sync_objects_in_lambdas_trigger_their_tasks
-from .DAG_executor_constants import use_shared_partitions_groups,use_page_rank_group_partitions
-from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
-from .DAG_executor_constants import compute_pagerank
-from .DAG_executor_constants import input_all_groups_partitions_at_start
-from .DAG_executor_constants import exit_program_on_exception
-
+#from .DAG_executor_constants import run_all_tasks_locally, store_fanins_faninNBs_locally, use_multithreaded_multiprocessing #, num_threads_for_multithreaded_multiprocessing
+#from .DAG_executor_constants import create_all_fanins_faninNBs_on_start, using_workers
+#from .DAG_executor_constants import num_workers,using_threads_not_processes
+#from .DAG_executor_constants import FanIn_Type, FanInNB_Type, process_work_queue_Type
+#from .DAG_executor_constants import store_sync_objects_in_lambdas, sync_objects_in_lambdas_trigger_their_tasks
+#from .DAG_executor_constants #import use_shared_partitions_groups,use_page_rank_group_partitions
+#from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
+#from .DAG_executor_constants import compute_pagerank
+#from .DAG_executor_constants import input_all_groups_partitions_at_start
+#from .DAG_executor_constants import exit_program_on_exception
+from . import DAG_executor_constants
 from .addLoggingLevel import addLoggingLevel
 
 #   How to use: https://stackoverflow.com/questions/2183233/how-to-add-a-custom-loglevel-to-pythons-logging-facility/35804945#35804945
@@ -352,7 +353,7 @@ from .addLoggingLevel import addLoggingLevel
 # Note that we start DAG execution either by running BFS or
 # DAG_excutor_driver, so one of them will addLoggingLevel(trace).
 # No other module executes addLoggingLevel.
-if not compute_pagerank:
+if not DAG_executor_constants.compute_pagerank:
     addLoggingLevel('TRACE', logging.DEBUG - 5)
     logging.basicConfig(encoding='utf-8',level=log_level, format='[%(asctime)s][%(module)s][%(processName)s][%(threadName)s]: %(message)s')
     # Added this to suppress the logging message:
@@ -1551,10 +1552,10 @@ def run():
     #asserts on configuration:
     try:
         msg = "[Error]: DAG_executor_driver: if using_workers then run_fanout_tasks_locally must also be true."
-        assert not (using_workers and not run_all_tasks_locally) , msg
+        assert not (DAG_executor_constants.using_workers and not DAG_executor_constants.run_all_tasks_locally) , msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
-        if exit_program_on_exception:
+        if DAG_executor_constants.exit_program_on_exception:
             logging.shutdown()
             os._exit(0)
     #assertOld:
@@ -1592,7 +1593,7 @@ def run():
 
     # Note: if we are using_lambdas, we null out DAG_leaf_task_inputs after we get it here
     # (by calling DAG_info.set_DAG_leaf_task_inputs_to_None() below). So make a copy.
-    if run_all_tasks_locally:
+    if DAG_executor_constants.run_all_tasks_locally:
         DAG_leaf_task_inputs = DAG_info.get_DAG_leaf_task_inputs()
     else:
         DAG_leaf_task_inputs = copy.copy(DAG_info.get_DAG_leaf_task_inputs())
@@ -1672,14 +1673,14 @@ def run():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
 
         # synch_objects are stored in local memory or on the tcp_Server or in InfinX Executors
-        if store_fanins_faninNBs_locally:
+        if DAG_executor_constants.store_fanins_faninNBs_locally:
             try:
                 msg = "[Error]: DAG_executor_driver - Configuration Error: DAG_executor_driver: store objects locally but using worker processes," \
                     + " which must use remote objects (on server)."
-                assert not(using_workers and not using_threads_not_processes) , msg
+                assert not(DAG_executor_constants.using_workers and not DAG_executor_constants.using_threads_not_processes) , msg
             except AssertionError:
                 logger.exception("[Error]: assertion failed")
-                if exit_program_on_exception:
+                if DAG_executor_constants.exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0)
             #assertOld:
@@ -1689,13 +1690,13 @@ def run():
             #       + " which must use remote objects (on server).")
             # cannot be multiprocessing, may or may not be pooling, running all tasks locally (no Lambdas)
             # server is global variable obtained: from .DAG_executor_synchronizer import server
-            if create_all_fanins_faninNBs_on_start:
+            if DAG_executor_constants.create_all_fanins_faninNBs_on_start:
                 # create fanins and faninNBs using all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes
                 # server is a global variable in DAG_executor_synchronizer.py - it is used to simulate the
                 # tcp_server when running locally.
                 server.create_all_fanins_and_faninNBs_locally(DAG_map,DAG_states, DAG_info, all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes)
 
-                if using_workers:
+                if DAG_executor_constants.using_workers:
                     # Based on asssert above, using worker threads when 
                     # using local synch objects 
                     # leaf task states (a task is identified by its state) are put in work_queue
@@ -1714,7 +1715,7 @@ def run():
 
                 #else: Nothing to do; we do not use a work_queue if we are not using workers
             else:
-                if using_workers:
+                if DAG_executor_constants.using_workers:
                     # leaf task states (a task is identified by its state) are put in work_queue
                     for state in DAG_leaf_task_start_states:
                         #thread_work_queue.put(state)
@@ -1740,7 +1741,7 @@ def run():
             # locally, in which case we can read the group/partition file objects
             # from local files.
 #rhc: group partitions
-            if input_all_groups_partitions_at_start:
+            if DAG_executor_constants.input_all_groups_partitions_at_start:
             # hardcoded for testing rel lambdas. May want to enabe this generally in
             # which case we will need the partition/group names, which BFS could
             # write to a file.
@@ -1758,7 +1759,7 @@ def run():
                     except EOFError:
                         logger.exception("[Error]: PageRank_Function: EOFError:"
                             + " complete_task_file_name:" + str(complete_task_file_name))
-                        if exit_program_on_exception:
+                        if DAG_executor_constants.exit_program_on_exception:
                             logging.shutdown()
                             os._exit(0)
 
@@ -1777,13 +1778,13 @@ def run():
             logger.trace("DAG_executor_driver: Connecting to TCP Server at %s." % str(TCP_SERVER_IP))
             websocket.connect(TCP_SERVER_IP)
             logger.trace("DAG_executor_driver: Successfully connected to TCP Server.")
-            if create_all_fanins_faninNBs_on_start:
+            if DAG_executor_constants.create_all_fanins_faninNBs_on_start:
                 # create fanins and faninNbs on tcp_server or in InfiniX lambdas 
                 # all at the start of driver execution
-                if run_all_tasks_locally and using_workers:
+                if DAG_executor_constants.run_all_tasks_locally and DAG_executor_constants.using_workers:
                     # if not stored locally, i.e., and either threads or process workers, then create a remote 
                     # process queue if using processs and use a local work queue for the threads.
-                    if not using_threads_not_processes:
+                    if not DAG_executor_constants.using_threads_not_processes:
                         #Note: using workers and processes means not store_fanins_faninNBs_locally
                         #Need to create the process_work_queue; do it in the same batch
                         # of fanin and faninNB creates
@@ -1840,16 +1841,16 @@ def run():
                 # Note: This configuration is never used: (not run_all_tasks_locally) and using_workers
                 # as not run_all_tasks_locally means we are using lambdas and we do not use workers
                 # when we are using lambdas.
-                elif run_all_tasks_locally and not using_workers:
+                elif DAG_executor_constants.run_all_tasks_locally and not DAG_executor_constants.using_workers:
                     # not using workers, use threads to simulate lambdas. no work queue so do not
                     # put leaf node start states in work queue. threads are created to execute
                     # fanout tasks and fanin tasks (like lambdas)
                     try:
                         msg = "[Error]: DAG_executor_driver: not using_workers but using processes."
-                        assert using_threads_not_processes, msg
+                        assert DAG_executor_constants.using_threads_not_processes, msg
                     except AssertionError:
                         logger.exception("[Error]: assertion failed")
-                        if exit_program_on_exception:
+                        if DAG_executor_constants.exit_program_on_exception:
                             logging.shutdown()
                             os._exit(0)
                     #assertOld:
@@ -1867,10 +1868,10 @@ def run():
                     # (not run_all_tasks_locally) and using_workers is never used in that case.)
                     try:
                         msg = "[Error]: DAG_executor_driver: using_workers but using lambdas."
-                        assert not using_workers, msg
+                        assert not DAG_executor_constants.using_workers, msg
                     except AssertionError:
                         logger.exception("[Error]: assertion failed")
-                        if exit_program_on_exception:
+                        if DAG_executor_constants.exit_program_on_exception:
                             logging.shutdown()
                             os._exit(0)
                     #assertOld:
@@ -1878,10 +1879,10 @@ def run():
                     #    logger.error("[Error]: DAG_executor_driver: using_workers but using lambdas.")
                     try:
                         msg = "[Error]: DAG_executor_driver: interal error: DAG_executor_driver: run_all_tasks_locally shoudl be false."
-                        assert not run_all_tasks_locally, msg
+                        assert not DAG_executor_constants.run_all_tasks_locally, msg
                     except AssertionError:
                         logger.exception("[Error]: assertion failed")
-                        if exit_program_on_exception:
+                        if DAG_executor_constants.exit_program_on_exception:
                             logging.shutdown()
                             os._exit(0)
                     #assertOld:
@@ -1891,7 +1892,7 @@ def run():
                     # not run_all_tasks_locally so using lambdas (real or simulatd)
                     # So do not put leaf tasks in work queue
 #rhc: groups partitions
-                    if not run_all_tasks_locally and store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks:
+                    if not DAG_executor_constants.run_all_tasks_locally and DAG_executor_constants.store_sync_objects_in_lambdas and DAG_executor_constants.sync_objects_in_lambdas_trigger_their_tasks:
                         # storing sync objects in lambdas and snc objects trigger their tasks
                         create_fanins_and_faninNBs_and_fanouts(websocket,DAG_map,DAG_states,DAG_info,
                             all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes,
@@ -1930,8 +1931,8 @@ def run():
                 # going to create fanin and faninNBs on demand, i.e., as we execute
                 # operations on them. But still want to create process_work_queue
                 # by itself at the beginning of drivr execuion.
-                if run_all_tasks_locally and using_workers:
-                    if not using_threads_not_processes:
+                if DAG_executor_constants.run_all_tasks_locally and DAG_executor_constants.using_workers:
+                    if not DAG_executor_constants.using_threads_not_processes:
                         #Note: using workers means not store_fanins_faninNBs_locally
                         #Need to create the process_work_queue
                         #manager = Manager()
@@ -1973,16 +1974,16 @@ def run():
                 # Note: This configuration is never used: (not run_all_tasks_locally) and using_workers
                 # as not run_all_tasks_locally means we are using lambdas and we do not use workers
                 # when we are using lambdas.
-                elif run_all_tasks_locally and not using_workers:
+                elif DAG_executor_constants.run_all_tasks_locally and not DAG_executor_constants.using_workers:
                     # not using workers, use threads to simulate lambdas. no work queue so do not
                     # put leaf node start states in work queue. threads are created to execute
                     # fanout tasks and fanin tasks (like lambdas)
                     try:
                         msg = "[Error]: DAG_executor_driver: not using_workers but using processes."
-                        assert using_threads_not_processes , msg
+                        assert DAG_executor_constants.using_threads_not_processes , msg
                     except AssertionError:
                         logger.exception("[Error]: assertion failed")
-                        if exit_program_on_exception:
+                        if DAG_executor_constants.exit_program_on_exception:
                             logging.shutdown()
                             os._exit(0)
                     #if not using_threads_not_processes:
@@ -1992,10 +1993,10 @@ def run():
                     # (not run_all_tasks_locally) and using_workers is never used.
                     try:
                         msg = "[Error]: DAG_executor_driver: using_workers but using lambdas."
-                        assert not using_workers, msg
+                        assert not DAG_executor_constants.using_workers, msg
                     except AssertionError:
                         logger.exception("[Error]: assertion failed")
-                        if exit_program_on_exception:
+                        if DAG_executor_constants.exit_program_on_exception:
                             logging.shutdown()
                             os._exit(0)
                     #assertOld:
@@ -2003,10 +2004,10 @@ def run():
                     #    logger.error("[Error]: DAG_executor_driver: using_workers but using lambdas.")
                     try:
                         msg = "[Error]: DAG_executor_driver: interal error: DAG_executor_driver: run_all_tasks_locally shoudl be false."
-                        assert not run_all_tasks_locally, msg
+                        assert not DAG_executor_constants.run_all_tasks_locally, msg
                     except AssertionError:
                         logger.exception("[Error]: assertion failed")
-                        if exit_program_on_exception:
+                        if DAG_executor_constants.exit_program_on_exception:
                             logging.shutdown()
                             os._exit(0)
                     #assertOld:
@@ -2015,7 +2016,7 @@ def run():
 
                     # not run_all_tasks_locally so using lambdas, which do not use a work queue 
                     # So do not put leaf tasks in work queue and do not create a work queue
-                    if not run_all_tasks_locally and store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks:
+                    if not DAG_executor_constants.run_all_tasks_locally and DAG_executor_constants.store_sync_objects_in_lambdas and DAG_executor_constants.sync_objects_in_lambdas_trigger_their_tasks:
                         # storing sync objects in lambdas and snc objects trigger their tasks
                         #create_fanins_and_faninNBs_and_fanouts(websocket,DAG_map,DAG_states,DAG_info,
                         #    all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes,
@@ -2069,20 +2070,20 @@ def run():
         # if we are using_workers. We will create some number of threads if we are simulating the 
         # use of creating Lambdas, e.g., at fan-out points.
         # We use a different counter if use_multithreaded_multiprocessing
-        if run_all_tasks_locally and not use_multithreaded_multiprocessing:
+        if DAG_executor_constants.run_all_tasks_locally and not DAG_executor_constants.use_multithreaded_multiprocessing:
             num_threads_created = 0
 
         # dfined befre used - but we only use these for multiprocessing
         completed_tasks_counter = None
         completed_workers_counter = None
 
-        if run_all_tasks_locally and not using_threads_not_processes:
+        if DAG_executor_constants.run_all_tasks_locally and not DAG_executor_constants.using_threads_not_processes:
             try:
                 msg = "[Error]: DAG_executor_driver: not using_workers but using processes."
-                assert using_workers, msg
+                assert DAG_executor_constants.using_workers, msg
             except AssertionError:
                 logger.exception("[Error]: assertion failed")
-                if exit_program_on_exception:
+                if DAG_executor_constants.exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0)
             #assertOld:
@@ -2102,7 +2103,7 @@ def run():
             listener = multiprocessing.Process(target=listener_process, args=(log_queue, listener_configurer))
             listener.start()    # joined at the end
 
-        if use_multithreaded_multiprocessing:
+        if DAG_executor_constants.use_multithreaded_multiprocessing:
             # Config: A6
             # keep list of threads/processes in pool so we can join() them
             multithreaded_multiprocessing_process_list = []
@@ -2122,7 +2123,7 @@ def run():
             # leaf tasks than workers, but that is okay since we put all the leaf task states in the 
             # work queue and the created workers will withdraw them.
 
-            if not (not run_all_tasks_locally and store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks):
+            if not (not DAG_executor_constants.run_all_tasks_locally and DAG_executor_constants.DAG_executor_constants.store_sync_objects_in_lambdas and DAG_executor_constants.sync_objects_in_lambdas_trigger_their_tasks):
                 # we are not having sync objects trigger their tasks in lambdas
                 for start_state, task_name, inp in zip(DAG_leaf_task_start_states, DAG_leaf_tasks, DAG_leaf_task_inputs):
                     # The state of a DAG executor contains only one application specific member, which is the
@@ -2131,7 +2132,7 @@ def run():
                     DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()), state = start_state)
                     logger.trace("DAG_executor_driver: Starting DAG_executor for task " + task_name)
 
-                    if run_all_tasks_locally:
+                    if DAG_executor_constants.run_all_tasks_locally:
                         #Note: If we are using partitions, the number of worker threads should be
                         #  1 unless there are multiple connected components (#CC), in which case
                         # we can use up to #CC workers since CC leaf tasks can be processed in parallel.
@@ -2139,10 +2140,10 @@ def run():
                         # Large graphs have many CCs?
                         
                         # not using Lambdas
-                        if using_threads_not_processes: # create threads
+                        if DAG_executor_constants.using_threads_not_processes: # create threads
                             # Config: A4_local, A4_Remote
                             try:
-                                if not using_workers:
+                                if not DAG_executor_constants.using_workers:
                                     # pass the state/task the thread is to execute at the start of its DFS path
                                     # Note: continued_task defaults to False for DAG_exec_state
                                     DAG_exec_state = DAG_executor_State(function_name = "DAG_executor:"+task_name, function_instance_ID = str(uuid.uuid4()), state = start_state)
@@ -2185,12 +2186,12 @@ def run():
                                 # thread = current_thread()
                                 # report the name of the thread
                                 # print(thread.name)
-                                if using_workers:
+                                if DAG_executor_constants.using_workers:
                                     thread_name_prefix = "Worker_Thread_leaf_"
                                 else:
                                     thread_name_prefix = "Thread_leaf_"
                                 thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=(thread_name_prefix+"ss"+str(start_state)), args=(payload,))
-                                if using_workers:
+                                if DAG_executor_constants.using_workers:
                                     thread_proc_list.append(thread)
                                 else: 
                                     thread.start()
@@ -2198,14 +2199,14 @@ def run():
                             except Exception:
                                 logger.exception("[ERROR] DAG_executor_driver: Failed to start DAG_executor thread for state." 
                                     + str(start_state))
-                                if exit_program_on_exception:
+                                if DAG_executor_constants.exit_program_on_exception:
                                     logging.shutdown()
                                     os._exit(0)
 
                         else:   # multiprocessing - must be using a process pool
                             # Config: A5
                             try:
-                                if not using_workers:
+                                if not DAG_executor_constants.using_workers:
                                     logger.trace("[ERROR] DAG_executor_driver: Starting multi process leaf tasks but using_workers is false.")
 
                                 logger.trace("DAG_executor_driver: Starting DAG_executor process for leaf task " + task_name)
@@ -2218,7 +2219,7 @@ def run():
                                 # processes share these objects: counter,process_work_queue,data_dict,log_queue,worker_configurer.
                                 # The worker_configurer() funcion is used for multiprocess logging
                                 #proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,counter,process_work_queue,data_dict,log_queue,worker_configurer,))
-                                if not (compute_pagerank and use_shared_partitions_groups):
+                                if not (DAG_executor_constants.compute_pagerank and DAG_executor_constants.use_shared_partitions_groups):
     #rhc: counter 
     # tasks_completed_counter, workers_completed_counter
                                     #proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,completed_tasks_counter,log_queue,worker_configurer,
@@ -2228,7 +2229,7 @@ def run():
                                 else: 
                                     #Note: In DAG_executor_constants, we use: use_shared_partitions_groups = compute_pagerank and True
                                     # So if use_shared_partitions_groups is True then compute_pagerank is True
-                                    if use_page_rank_group_partitions:
+                                    if DAG_executor_constants.use_page_rank_group_partitions:
                                         shared_nodes = BFS_Shared.shared_groups
                                         shared_map = BFS_Shared.shared_groups_map
                                         shared_frontier_map = BFS_Shared.shared_groups_frontier_parents_map
@@ -2237,7 +2238,7 @@ def run():
                                         shared_map = BFS_Shared.shared_partition_map
                                         shared_frontier_map = BFS_Shared.shared_partition_frontier_parents_map
 
-                                    if use_struct_of_arrays_for_pagerank:
+                                    if DAG_executor_constants.use_struct_of_arrays_for_pagerank:
     #rhc: counter 
     # tasks_completed_counter, workers_completed_counter
                                         #proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,completed_tasks_counter,log_queue,worker_configurer,
@@ -2262,14 +2263,14 @@ def run():
                             except Exception:
                                 logger.exception("[ERROR] DAG_executor_driver: Failed to start DAG_executor process for state " 
                                     + str(start_state))
-                                if exit_program_on_exception:
+                                if DAG_executor_constants.exit_program_on_exception:
                                     logging.shutdown()
                                     os._exit(0)   
 
-                        if using_workers and num_threads_created == num_workers:
+                        if DAG_executor_constants.using_workers and num_threads_created == DAG_executor_constants.num_workers:
                             break
                     else:
-                        if not sync_objects_in_lambdas_trigger_their_tasks:
+                        if not DAG_executor_constants.sync_objects_in_lambdas_trigger_their_tasks:
                             # Config: A1
                             try:
                                 logger.trace("DAG_executor_driver: Starting DAG_Executor_Lambda for leaf task " + task_name)
@@ -2304,13 +2305,13 @@ def run():
                                 #logging.shutdown()
                                 #os._exit(0)
 
-                                if input_all_groups_partitions_at_start:
+                                if DAG_executor_constants.input_all_groups_partitions_at_start:
                                     payload["groups_partitions"] = groups_partitions
 
                                 invoke_lambda_DAG_executor(payload = payload, function_name = "WukongDivideAndConquer:" + task_name)
                             except Exception:
                                 logger.exception("[ERROR] DAG_executor_driver: Failed to start DAG_executor Lambda.")
-                                if exit_program_on_exception:
+                                if DAG_executor_constants.exit_program_on_exception:
                                     logging.shutdown()
                                     os._exit(0)  
                         else:
@@ -2325,7 +2326,7 @@ def run():
                                 assert False , msg
                             except AssertionError:
                                 logger.exception("[Error]: assertion failed")
-                                if exit_program_on_exception:
+                                if DAG_executor_constants.exit_program_on_exception:
                                     logging.shutdown()
                                     os._exit(0)
                             #assertOld:
@@ -2334,7 +2335,7 @@ def run():
             #else we started the leaf tasks above with process_leaf_tasks_batch
 
             # if the number of leaf tasks is less than number_workers, we need to create more workers
-            if run_all_tasks_locally and using_workers and num_threads_created < num_workers:
+            if DAG_executor_constants.run_all_tasks_locally and DAG_executor_constants.using_workers and num_threads_created < DAG_executor_constants.num_workers:
                 # starting leaf tasks did not start num_workers workers so start num_workers-num_threads_created
                 # more threads/processes.
                 while True:
@@ -2342,15 +2343,15 @@ def run():
                     # assserting if condition is True
                     try:
                         msg = "DAG_executor_driver: worker (pool) threads/processes must run locally (no Lambdas)"
-                        assert run_all_tasks_locally , msg
+                        assert DAG_executor_constants.run_all_tasks_locally , msg
                     except AssertionError:
                         logger.exception("[Error]: assertion failed")
-                        if exit_program_on_exception:
+                        if DAG_executor_constants.exit_program_on_exception:
                             logging.shutdown()
                             os._exit(0)
                     #assertOld:
-                    if run_all_tasks_locally:
-                        if using_threads_not_processes:
+                    if DAG_executor_constants.run_all_tasks_locally:
+                        if DAG_executor_constants.using_threads_not_processes:
                             try:
                                 # Using workers so do not pass to them a start_state (use state = 0); 
                                 # they get their start state from the work_queue
@@ -2368,12 +2369,12 @@ def run():
                             except Exception:
                                 logger.exception("[ERROR] DAG_executor_driver: Failed to start DAG_executor worker thread for non-leaf task " 
                                     + task_name)
-                                if exit_program_on_exception:
+                                if DAG_executor_constants.exit_program_on_exception:
                                     logging.shutdown()
                                     os._exit(0) 
                         else:
                             try:
-                                if not using_workers:
+                                if not DAG_executor_constants.using_workers:
                                     logger.trace("[ERROR] DAG_executor_driver: Starting multi process non-leaf tasks but using_workers is false.")
                                 
                                 logger.trace("DAG_executor_driver: Starting DAG_executor process for non-leaf task " + task_name)
@@ -2383,14 +2384,14 @@ def run():
                                 proc_name_prefix = "Worker_process_non-leaf_"
                                 #proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"p"+str(num_threads_created + 1)), args=(payload,counter,process_work_queue,data_dict,log_queue,worker_configurer,))
 
-                                if not (compute_pagerank and use_shared_partitions_groups):
+                                if not (DAG_executor_constants.compute_pagerank and DAG_executor_constants.use_shared_partitions_groups):
     #rhc: counter 
     # tasks_completed_counter, workers_completed_counter
                                     #proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"p"+str(num_threads_created + 1)), args=(payload,completed_tasks_counter,log_queue,worker_configurer,
                                     proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"p"+str(num_threads_created + 1)), args=(payload,completed_tasks_counter,completed_workers_counter,log_queue,worker_configurer,
                                         None,None,None,None,None,None,None,None,None,None))
                                 else:
-                                    if use_page_rank_group_partitions:
+                                    if DAG_executor_constants.use_page_rank_group_partitions:
                                         shared_nodes = BFS_Shared.shared_groups
                                         shared_map = BFS_Shared.shared_groups_map
                                         shared_frontier_map = BFS_Shared.shared_groups_frontier_parents_map
@@ -2399,7 +2400,7 @@ def run():
                                         shared_map = BFS_Shared.shared_partition_map
                                         shared_frontier_map = BFS_Shared.shared_partition_frontier_parents_map
                                     
-                                    if use_struct_of_arrays_for_pagerank:
+                                    if DAG_executor_constants.use_struct_of_arrays_for_pagerank:
     #rhc: counter 
     # tasks_completed_counter, workers_completed_counter
 
@@ -2423,11 +2424,11 @@ def run():
                             except Exception:
                                 logger.exception("[ERROR] DAG_executor_driver: Failed to start DAG_executor worker process for non-leaf task " 
                                     + task_name)
-                                if exit_program_on_exception:
+                                if DAG_executor_constants.exit_program_on_exception:
                                     logging.shutdown()
                                     os._exit(0) 
 
-                        if using_workers and num_threads_created == num_workers:
+                        if DAG_executor_constants.using_workers and num_threads_created == DAG_executor_constants.num_workers:
                             break 
                     else:
                         # above asssertion should have failed
@@ -2435,31 +2436,32 @@ def run():
                         logging.shutdown()
                         os._exit(0)
 
-        if use_multithreaded_multiprocessing:
+        if DAG_executor_constants.use_multithreaded_multiprocessing:
             logger.info("DAG_executor_driver: num_processes_created_for_multithreaded_multiprocessing: " + str(num_processes_created_for_multithreaded_multiprocessing))
-        elif run_all_tasks_locally:
+        elif DAG_executor_constants.run_all_tasks_locally:
             logger.info("DAG_executor_driver: num_threads/processes_created: " + str(num_threads_created))
 
-        if not use_multithreaded_multiprocessing:
+        if not DAG_executor_constants.use_multithreaded_multiprocessing:
             start_time = time.time()
-            if run_all_tasks_locally:
-                if using_workers:
+            if DAG_executor_constants.run_all_tasks_locally:
+                if DAG_executor_constants.using_workers:
                     for thread_proc in thread_proc_list:
                         thread_proc.start()
 
-        if run_all_tasks_locally:
+        if DAG_executor_constants.run_all_tasks_locally:
             # Do joins if not using lambdas
-            if not use_multithreaded_multiprocessing:
-                if using_workers:
+            if not DAG_executor_constants.use_multithreaded_multiprocessing:
+                if DAG_executor_constants.using_workers:
                     logger.info("DAG_executor_driver: joining workers.")
                     for thread in thread_proc_list:
                         thread.join()	
 
-                if not using_threads_not_processes:
+                if not DAG_executor_constants.using_threads_not_processes:
                     # using processes and special process logger
                     logger.info("DAG_executor_driver: joining log_queue listener process.")
                     log_queue.put_nowait(None)
                     listener.join()
+                    logger.info("DAG_executor_driver: join.")
 
                 # Note: If we are using simukated lambdas, we are not
                 # using workers and we are using threads, so neither
@@ -2499,7 +2501,7 @@ def run():
         # since they already exist, which will not work as, e.g.,
         # exisiting "old" fanin/fanout objects will have already
         # been triggered.
-        if not store_fanins_faninNBs_locally:
+        if not DAG_executor_constants.store_fanins_faninNBs_locally:
             logger.info("DAG_executor_driver: close all.")
             close_all(websocket)
                 
@@ -2546,7 +2548,7 @@ def create_fanin_and_faninNB_messages(DAG_map,DAG_states,DAG_info,all_fanin_task
 
         message = {
             "op": "create",
-            "type": FanIn_Type,
+            "type": DAG_executor_constants.FanIn_Type,
             "name": fanin_name,
             "state": make_json_serializable(dummy_state),	
             "id": msg_id
@@ -2570,9 +2572,9 @@ def create_fanin_and_faninNB_messages(DAG_map,DAG_states,DAG_info,all_fanin_task
         # call fanin will put the start state of the fanin task in the work_queue. (FaninNb
         # cannot do this since the faninNB will be on the tcp_server.)
         dummy_state.keyword_arguments['start_state_fanin_task'] = DAG_states[fanin_nameNB]
-        dummy_state.keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
+        dummy_state.keyword_arguments['store_fanins_faninNBs_locally'] = DAG_executor_constants.store_fanins_faninNBs_locally
         # Only need DAG_info if not run_all_tasks_locally, as we pass DAG_info to Lambas
-        if not run_all_tasks_locally:
+        if not DAG_executor_constants.run_all_tasks_locally:
             dummy_state.keyword_arguments['DAG_info'] = DAG_info
         else:
             dummy_state.keyword_arguments['DAG_info'] = None
@@ -2582,7 +2584,7 @@ def create_fanin_and_faninNB_messages(DAG_map,DAG_states,DAG_info,all_fanin_task
 
         message = {
             "op": "create",
-            "type": FanInNB_Type,
+            "type": DAG_executor_constants.FanInNB_Type,
             "name": fanin_nameNB,
             "state": make_json_serializable(dummy_state),	
             "id": msg_id
@@ -2626,7 +2628,7 @@ def create_fanin_and_faninNB_and_fanout_messages(DAG_map,DAG_states,DAG_info,all
 
         message = {
             "op": "create",
-            "type": FanIn_Type,
+            "type": DAG_executor_constants.FanIn_Type,
             "name": fanin_name,
             "state": make_json_serializable(dummy_state),	
             "id": msg_id
@@ -2650,9 +2652,9 @@ def create_fanin_and_faninNB_and_fanout_messages(DAG_map,DAG_states,DAG_info,all
         # call fanin will put the start state of the fanin task in the work_queue. (FaninNb
         # cannot do this since the faninNB will be on the tcp_server.)
         dummy_state.keyword_arguments['start_state_fanin_task'] = DAG_states[fanin_nameNB]
-        dummy_state.keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
+        dummy_state.keyword_arguments['store_fanins_faninNBs_locally'] = DAG_executor_constants.store_fanins_faninNBs_locally
         # Only need DAG_info if not run_all_tasks_locally, as we pass DAG_info to Lambas
-        if not run_all_tasks_locally:
+        if not DAG_executor_constants.run_all_tasks_locally:
             dummy_state.keyword_arguments['DAG_info'] = DAG_info
         else:
             dummy_state.keyword_arguments['DAG_info'] = None
@@ -2664,7 +2666,7 @@ def create_fanin_and_faninNB_and_fanout_messages(DAG_map,DAG_states,DAG_info,all
 
         message = {
             "op": "create",
-            "type": FanInNB_Type,
+            "type": DAG_executor_constants.FanInNB_Type,
             "name": fanin_nameNB,
             "state": make_json_serializable(dummy_state),	
             "id": msg_id
@@ -2691,9 +2693,9 @@ def create_fanin_and_faninNB_and_fanout_messages(DAG_map,DAG_states,DAG_info,all
         # call fanin will put the start state of the fanin task in the work_queue. (FaninNb
         # cannot do this since the faninNB will be on the tcp_server.)
         dummy_state.keyword_arguments['start_state_fanin_task'] = leaf_task_start_state
-        dummy_state.keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
+        dummy_state.keyword_arguments['store_fanins_faninNBs_locally'] = DAG_executor_constants.store_fanins_faninNBs_locally
         # Only need DAG_info if not run_all_tasks_locally, as we pass DAG_info to Lambas
-        if not run_all_tasks_locally:
+        if not DAG_executor_constants.run_all_tasks_locally:
             dummy_state.keyword_arguments['DAG_info'] = DAG_info
         else:
             dummy_state.keyword_arguments['DAG_info'] = None
@@ -2702,7 +2704,7 @@ def create_fanin_and_faninNB_and_fanout_messages(DAG_map,DAG_states,DAG_info,all
         message = {
             "op": "create",
             # fanouts are just FanIns of size 1
-            "type": FanInNB_Type,
+            "type": DAG_executor_constants.FanInNB_Type,
             "name": leaf_task_name,
             "state": make_json_serializable(dummy_state),	
             "id": msg_id
@@ -2723,9 +2725,9 @@ def create_fanin_and_faninNB_and_fanout_messages(DAG_map,DAG_states,DAG_info,all
         # call fanin will put the start state of the fanin task in the work_queue. (FaninNb
         # cannot do this since the faninNB will be on the tcp_server.)
         dummy_state.keyword_arguments['start_state_fanin_task'] = DAG_states[fanout_name]
-        dummy_state.keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
+        dummy_state.keyword_arguments['store_fanins_faninNBs_locally'] = DAG_executor_constants.store_fanins_faninNBs_locally
         # Only need DAG_info if not run_all_tasks_locally, as we pass DAG_info to Lambas
-        if not run_all_tasks_locally:
+        if not DAG_executor_constants.run_all_tasks_locally:
             dummy_state.keyword_arguments['DAG_info'] = DAG_info
         else:
             dummy_state.keyword_arguments['DAG_info'] = None
@@ -2734,7 +2736,7 @@ def create_fanin_and_faninNB_and_fanout_messages(DAG_map,DAG_states,DAG_info,all
         message = {
             "op": "create",
             # fanouts are just FanIns of size 1
-            "type": FanInNB_Type,
+            "type": DAG_executor_constants.FanInNB_Type,
             "name": fanout_name,
             "state": make_json_serializable(dummy_state),	
             "id": msg_id
@@ -2789,7 +2791,7 @@ def create_fanins_and_faninNBs_and_work_queue(websocket,number_of_tasks,DAG_map,
 
     work_queue_message = {
         "op": "create",
-        "type": process_work_queue_Type,
+        "type": DAG_executor_constants.process_work_queue_Type,
         "name": "process_work_queue",
         "state": make_json_serializable(dummy_state),	
         "id": msg_id

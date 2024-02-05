@@ -1,4 +1,4 @@
-
+print("DAG_executor XXX")
 import threading
 import _thread
 import time
@@ -25,20 +25,26 @@ from .DAG_info import DAG_Info
 from wukongdnc.server.api import synchronize_sync, synchronize_process_faninNBs_batch
 
 from wukongdnc.constants import TCP_SERVER_IP
-from .DAG_executor_constants import run_all_tasks_locally, store_fanins_faninNBs_locally 
-from .DAG_executor_constants import create_all_fanins_faninNBs_on_start, using_workers 
-from .DAG_executor_constants import using_threads_not_processes, use_multithreaded_multiprocessing
-from .DAG_executor_constants import process_work_queue_Type, FanInNB_Type, using_Lambda_Function_Simulators_to_Store_Objects
-from .DAG_executor_constants import sync_objects_in_lambdas_trigger_their_tasks, store_sync_objects_in_lambdas
-from .DAG_executor_constants import tasks_use_result_dictionary_parameter, same_output_for_all_fanout_fanin
-from .DAG_executor_constants import compute_pagerank, use_shared_partitions_groups, use_page_rank_group_partitions
-from .DAG_executor_constants import use_struct_of_arrays_for_pagerank, using_workers
-from .DAG_executor_constants import use_incremental_DAG_generation, name_of_first_groupOrpartition_in_DAG
-from .DAG_executor_constants import input_all_groups_partitions_at_start
-from .DAG_executor_constants import work_queue_size_for_incremental_DAG_generation_with_worker_processes
+
+#from .DAG_executor_constants import run_all_tasks_locally, store_fanins_faninNBs_locally 
+#from .DAG_executor_constants import create_all_fanins_faninNBs_on_start, using_workers 
+#from .DAG_executor_constants import using_threads_not_processes, use_multithreaded_multiprocessing
+#from .DAG_executor_constants import process_work_queue_Type, FanInNB_Type, using_Lambda_Function_Simulators_to_Store_Objects
+#from .DAG_executor_constants import sync_objects_in_lambdas_trigger_their_tasks, store_sync_objects_in_lambdas
+#from .DAG_executor_constants import tasks_use_result_dictionary_parameter, same_output_for_all_fanout_fanin
+#from .DAG_executor_constants import compute_pagerank, use_shared_partitions_groups, use_page_rank_group_partitions
+#from .DAG_executor_constants import use_struct_of_arrays_for_pagerank, using_workers
+#from .DAG_executor_constants import use_incremental_DAG_generation, name_of_first_groupOrpartition_in_DAG
+#from .DAG_executor_constants import input_all_groups_partitions_at_startfrom .DAG_executor_constants import work_queue_size_for_incremental_DAG_generation_with_worker_processes
 #rhc: counter:
-from .DAG_executor_constants import num_workers
-from .DAG_executor_constants import exit_program_on_exception
+#from .DAG_executor_constants import num_workers
+#from .DAG_executor_constants import exit_program_on_exception
+#from .DAG_executor_constants import check_pagerank_output
+##from .DAG_executor_constants import log_level
+from . import DAG_executor_constants
+print("DAG_executor YYY DAG_executor_constants.using_workers: " + str(DAG_executor_constants.using_workers))
+
+
 #from .DAG_work_queue_for_threads import thread_work_queue
 from .DAG_executor_work_queue_for_threads import work_queue
 from .DAG_data_dict_for_threads import data_dict
@@ -72,9 +78,7 @@ import  wukongdnc.dag.DAG_infoBuffer_Monitor_for_threads
 #from .Shared import shared_partition, shared_groups, shared_partition_map,  shared_groups_map
 from . import BFS_Shared
 from .DAG_executor_output_checker import set_pagerank_output
-from .DAG_executor_constants import check_pagerank_output
 
-#from .DAG_executor_constants import log_level
 logger = logging.getLogger(__name__)
 #if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
     #logger.setLevel("TRACE")
@@ -295,7 +299,7 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
         # task_inputs as "sending task - receiving task". So a sending task
         # S might send outputs to fanouts A and B so we use "S-A" and "S-B"
         # as the task_inputs, instad of just using "S", which is the Dask way.
-        if same_output_for_all_fanout_fanin:
+        if DAG_executor_constants.same_output_for_all_fanout_fanin:
             keyword_arguments['result'] = output
             keyword_arguments['calling_task_name'] = calling_task_name
         else:
@@ -367,7 +371,7 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
         # Note: not run_all_tasks_locally means we are using 
         # real lambdas. When run_all_tasks_locally and 
         # not using_workers means we are usin simulated lambdas.
-        if not run_all_tasks_locally or (run_all_tasks_locally and not using_workers and store_fanins_faninNBs_locally):
+        if not DAG_executor_constants.run_all_tasks_locally or (DAG_executor_constants.run_all_tasks_locally and not DAG_executor_constants.using_workers and DAG_executor_constants.store_fanins_faninNBs_locally):
             keyword_arguments['DAG_info'] = DAG_info
         else:
             keyword_arguments['DAG_info'] = None
@@ -379,21 +383,21 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
 		#Q: kwargs put in DAG_executor_State keywords and on server it gets keywords from state and passes to create and fanin
 
         if store_fanins_faninNBs_locally:
-            if not using_workers:
+            if not DAG_executor_constants.using_workers:
                 # Note: We start a thread to make the fan-in call and we don't wait for it to finish.
                 # So this is like an asynch call to tcp_server. The faninNB will start a new 
                 # thread to execute the fanin task so the callers do not need to do anything.
                 # Again, "NB" is "No Become" so no caller will become the executor of the fanin task.
                 # keyword_arguments['DAG_executor_State'] = new_DAG_exec_state 
                 # given to the thread/lambda that executes the fanin task.
-                if not create_all_fanins_faninNBs_on_start:
+                if not DAG_executor_constants.create_all_fanins_faninNBs_on_start:
                     try:
                         logger.trace(thread_name + ": process_faninNBs: Starting asynch simulation create_and_fanin task for faninNB " + name)
                         NBthread = threading.Thread(target=create_and_faninNB_task_locally, name=("create_and_faninNB_task_"+name), args=(keyword_arguments,))
                         NBthread.start()
                     except Exception:
                         logger.exception("[ERROR]:" + thread_name + ": process_faninNBs: Failed to start create_and_faninNB_task thread.")
-                        if exit_program_on_exception:
+                        if DAG_executor_constants.exit_program_on_exception:
                             logging.shutdown()
                             os._exit(0) 
                 else:
@@ -404,14 +408,14 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
                     except Exception:
                         logger.exception("[ERROR]:" + thread_name 
                             + ": process_faninNBs: Failed to start faninNB_task thread.")
-                        if exit_program_on_exception:
+                        if DAG_executor_constants.exit_program_on_exception:
                             logging.shutdown()
                             os._exit(0) 
             else:
                 # When we are using workers, we use this faster code which calls the
                 # faninNB locally directly instead of starting a thread to do it. (Starting
                 # a thread simulates calling fanin asynchronously.)
-                if not create_all_fanins_faninNBs_on_start:
+                if not DAG_executor_constants.create_all_fanins_faninNBs_on_start:
                     logger.trace(thread_name + ": process_faninNBs: call create_and_faninNB_locally")
                     #server = kwargs['server']
                     # Not using return_value from faninNB since faninNB starts the fanin task, i.e., there is No Become
@@ -433,7 +437,7 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
             # the server, i.e., move the create logic down from the server.
             # Note: keyword_arguments are used to create DAG_executor_state/keyword_arguments
             # in faninNB_remotely.
-            if not create_all_fanins_faninNBs_on_start:
+            if not DAG_executor_constants.create_all_fanins_faninNBs_on_start:
                 dummy_DAG_exec_state = create_and_faninNB_remotely(websocket,**keyword_arguments)
             else:
                 dummy_DAG_exec_state = faninNB_remotely(websocket,**keyword_arguments)
@@ -451,7 +455,7 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
                 # so this code is not currently being used. Batch processing processes
                 # all the faninNBs at once on the server, rather than calling 
                 # the server to process the faninnbs one by one.
-                if using_workers:
+                if DAG_executor_constants.using_workers:
                     # this caller could be a thread or a process
                     
                     dict_of_results = dummy_DAG_exec_state.return_value
@@ -480,7 +484,7 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
 # processes, not threads. 
 
                         #thread_work_queue.put(start_state_fanin_task)
-                        if not using_threads_not_processes:
+                        if not DAG_executor_constants.using_threads_not_processes:
                             work_tuple = (start_state_fanin_task,dict_of_results)
                             #work_queue.put(start_state_fanin_task)
                             work_queue.put(work_tuple)
@@ -535,7 +539,7 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
                         assert not worker_needs_input , msg
                     except AssertionError:
                         logger.exception("[Error]: assertion failed")
-                        if exit_program_on_exception:
+                        if DAG_executor_constants.exit_program_on_exception:
                             logging.shutdown()
                             os._exit(0)
                     #assertOld:
@@ -566,7 +570,7 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
                         #_thread.start_new_thread(DAG_executor.DAG_executor_task, (payload,))
                     except Exception:
                         logger.exception("[ERROR]:" + thread_name + ": process_faninNBs: Failed to start DAG_executor thread.")
-                        if exit_program_on_exception:
+                        if DAG_executor_constants.exit_program_on_exception:
                             logging.shutdown()
                             os._exit(0) 
 
@@ -640,8 +644,8 @@ def faninNB_remotely_batch(websocket, **keyword_arguments):
     #
     # default value
     DAG_exec_state.keyword_arguments['DAG_info'] = None
-    if not run_all_tasks_locally:
-        if compute_pagerank and use_incremental_DAG_generation:
+    if not DAG_executor_constants.run_all_tasks_locally:
+        if DAG_executor_constants.compute_pagerank and DAG_executor_constants.use_incremental_DAG_generation:
             # Note: When faninNB start a Lambda, DAG_info will be in the payload so pass DAG_info to faninNBs.
             # (Worker Threads and processes read DAG_info from disk. Real Lambdas can read DAG_info from
             # disk on the tcp_server but not when incremental DAG generation is used.
@@ -673,7 +677,7 @@ def faninNB_remotely_batch(websocket, **keyword_arguments):
     # Note: for lambdas, we use the same synchronize_process_faninNBs_batch method but just
     # pass worker_needs_input = False. FaninNBs will start Lambdas and no work will be returned and
     # we can ignore the results, same as for workers.
-    DAG_exec_state = synchronize_process_faninNBs_batch(websocket, "synchronize_process_faninNBs_batch", FanInNB_Type, "fan_in", DAG_exec_state)
+    DAG_exec_state = synchronize_process_faninNBs_batch(websocket, "synchronize_process_faninNBs_batch", DAG_executor_constants.FanInNB_Type, "fan_in", DAG_exec_state)
     return DAG_exec_state
 
 # Called when we are storing fanins and faninNBs remotely and we are using_workers and we are 
@@ -706,7 +710,7 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
         assert not (worker_needs_input and async_call) , msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
-        if exit_program_on_exception:
+        if DAG_executor_constants.exit_program_on_exception:
             logging.shutdown()
             os._exit(0)
     #assertOld: if worker needs work then we should be using synch call so we can check the results for work
@@ -738,7 +742,7 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
     # the faninNB will pass the results to the lambda that is ivoked to execut the fanin task.
     keyword_arguments['result'] = output
     keyword_arguments['calling_task_name'] = calling_task_name
-    keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
+    keyword_arguments['store_fanins_faninNBs_locally'] = DAG_executor_constants.store_fanins_faninNBs_locally
     # Need on tcp_server to process the faninNBs
     keyword_arguments['faninNBs'] = faninNBs
 # rhc: run task
@@ -748,7 +752,7 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
     keyword_arguments['worker_needs_input'] = worker_needs_input  
     keyword_arguments['work_queue_name'] = "process_work_queue"
     # defined in DAG_executor_constants: either select or non-select version
-    keyword_arguments['work_queue_type'] = process_work_queue_Type 
+    keyword_arguments['work_queue_type'] = DAG_executor_constants.process_work_queue_Type 
     keyword_arguments['work_queue_method'] = "deposit_all"
     keyword_arguments['work_queue_op'] = "synchronize_async"
     # faninNB_remotely_batch not necessarily sending this to the tcp_server batch processing method.
@@ -816,8 +820,8 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
     # on the tcp_server. If we store_sync_objects_in_lambdas and 
     # not create_all_fanins_faninNBs_on_start the tcp_server_lambda or
     # or the lambdas themselves will create the object to be stored in them.
-    if not create_all_fanins_faninNBs_on_start and (
-            not store_sync_objects_in_lambdas):
+    if not DAG_executor_constants.create_all_fanins_faninNBs_on_start and (
+            not DAG_executor_constants.store_sync_objects_in_lambdas):
         # create_and_faninNB_remotely_batch simply calls faninNB_remotely_batch(websocket,**keyword_arguments)
         # All the create logic is on the server, so we call faninNB_remotely_batch in
         # either case. We leave this call to create_and_faninNB_remotely_batch 
@@ -848,11 +852,11 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
         try:
             msg = "[Error]: " + thread_name + ": process_faninNBs_batch: (not using worker processes, or worker_needs_input is False) and not (storing synch objects remotely in simulated lambdas" \
                 + " and using threads to simulate lambdas) but using process_faninNBs batch and we got work back from server."
-            assert (run_all_tasks_locally and using_workers and not using_threads_not_processes and worker_needs_input) and not (run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and (
-                using_Lambda_Function_Simulators_to_Store_Objects) and not sync_objects_in_lambdas_trigger_their_tasks) , msg
+            assert (DAG_executor_constants.run_all_tasks_locally and DAG_executor_constants.using_workers and not DAG_executor_constants.using_threads_not_processes and worker_needs_input) and not (DAG_executor_constants.run_all_tasks_locally and not DAG_executor_constants.using_workers and not DAG_executor_constants.store_fanins_faninNBs_locally and (
+                DAG_executor_constants.using_Lambda_Function_Simulators_to_Store_Objects) and not DAG_executor_constants.sync_objects_in_lambdas_trigger_their_tasks) , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
-            if exit_program_on_exception:
+            if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
         #assertOld:
@@ -861,7 +865,7 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
         #    logger.error("[Error]: " + thread_name + ": process_faninNBs_batch: (not using worker processes, or worker_needs_input is False) and not (storing synch objects remotely in simulated lambdas"
         #        + " and using threads to simulate lambdas) but using process_faninNBs batch and we got work back from server.")
 
-        if using_workers:
+        if DAG_executor_constants.using_workers:
             # return_value is a tuple (start state fanin task, dictionary of fanin results)
             start_state_fanin_task = dummy_DAG_exec_state.return_value[0]
             fanin_task_name = DAG_info.get_DAG_map()[start_state_fanin_task].task_name
@@ -887,7 +891,7 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
                     assert False , msg
                 except AssertionError:
                     logger.exception("[Error]: assertion failed")
-                    if exit_program_on_exception:
+                    if DAG_executor_constants.exit_program_on_exception:
                         logging.shutdown()
                         os._exit(0)
                 #assertOld:
@@ -898,7 +902,7 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
                 for key, value in dict_of_results.items():
                     logger.trace(str(key) + " -> " + str(value))
                 #thread_work_queue.put(start_state_fanin_task)
-                if not using_threads_not_processes:
+                if not DAG_executor_constants.using_threads_not_processes:
                     work_tuple = (start_state_fanin_task,dict_of_results)
                     #work_queue.put(start_state_fanin_task)
                     work_queue.put(work_tuple)
@@ -982,7 +986,7 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
                 assert not worker_needs_input , msg
             except AssertionError:
                 logger.exception("[Error]: assertion failed")
-                if exit_program_on_exception:
+                if DAG_executor_constants.exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0)
             #assertOld:
@@ -1041,7 +1045,7 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
                     #_thread.start_new_thread(DAG_executor.DAG_executor_task, (payload,))
                 except Exception:
                     logger.exception("[ERROR]: " + thread_name + ": process_faninNBs_batch: Failed to start DAG_executor thread.")
-                    if exit_program_on_exception:
+                    if DAG_executor_constants.exit_program_on_exception:
                         logging.shutdown()
                         os._exit(0) 
 
@@ -1095,14 +1099,14 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
     logger.trace(thread_name + ": process_fanouts: new fanouts after remove:" + str(fanouts))
 
     # process rest of fanouts
-    logger.trace(thread_name + ": process_fanouts: run_all_tasks_locally:" + str(run_all_tasks_locally))
+    logger.trace(thread_name + ": process_fanouts: run_all_tasks_locally:" + str(DAG_executor_constants.run_all_tasks_locally))
 
     for name in fanouts:
-        if using_workers:
+        if DAG_executor_constants.using_workers:
             #thread_work_queue.put(DAG_states[name])
-            if not using_threads_not_processes: # using processes
+            if not DAG_executor_constants.using_threads_not_processes: # using processes
                 dict_of_results =  {}
-                if same_output_for_all_fanout_fanin:
+                if DAG_executor_constants.same_output_for_all_fanout_fanin:
                     # each fanout of a task gets the same output, i.e., 
                     # the output of the task.
                     dict_of_results[calling_task_name] = output
@@ -1165,7 +1169,7 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                 # S might send outputs to fanouts A and B so we use "S-A" and "S-B"
                 # as the task_inputs, instad of just using "S", which is the Dask way.
                 dict_of_results =  {}
-                if same_output_for_all_fanout_fanin:
+                if DAG_executor_constants.same_output_for_all_fanout_fanin:
                     # each fanout of a task gets the same output, i.e., 
                     # the output of the task.
                     dict_of_results[calling_task_name] = output
@@ -1191,13 +1195,13 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                 work_queue.put(work_tuple)
         else:
 #rhc run tasks
-            if (not run_all_tasks_locally) and store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks:
+            if (not DAG_executor_constants.run_all_tasks_locally) and DAG_executor_constants.store_sync_objects_in_lambdas and DAG_executor_constants.sync_objects_in_lambdas_trigger_their_tasks:
             #if (run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks):
                 # Nothing to do. When we are sync_objects_in_lambdas_trigger_their_tasks we will
                 # pass the fanouts (set) to process_faninNBs_batch and it will process the 
                 # fanouts by invoking real python functions that execute the fanout tasks.
                 pass
-            elif run_all_tasks_locally:
+            elif DAG_executor_constants.run_all_tasks_locally:
             #elif (run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and not (store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks)):
                 # (run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and using_Lambda_Function_Simulators_to_Store_Objects):
                 # or (run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and using_Lambda_Function_Simulators_to_Store_Objects and sync_objects_in_lambdas_trigger_their_tasks):
@@ -1218,7 +1222,7 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                     # as in:
 
                     dict_of_results =  {}
-                    if same_output_for_all_fanout_fanin:
+                    if DAG_executor_constants.same_output_for_all_fanout_fanin:
                         # each fanout of a task gets the same output, i.e., 
                         # the output of the task.
                         dict_of_results[calling_task_name] = output
@@ -1266,11 +1270,11 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                 except Exception:
                     logger.exception("[ERROR] " + thread_name + ": process_fanouts: Failed to start DAG_executor thread for " 
                         + name)
-                    if exit_program_on_exception:
+                    if DAG_executor_constants.exit_program_on_exception:
                         logging.shutdown()
                         os._exit(0) 
 #rhc run tasks changed to elif so can use else to check whether we aer missing a case
-            elif not run_all_tasks_locally:
+            elif not DAG_executor_constants.run_all_tasks_locally:
                 try:
                     logger.trace(thread_name + ": process_fanouts: Starting fanout DAG_executor Lambda for " + name)
                     fanout_task_start_state = DAG_states[name]
@@ -1284,7 +1288,7 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                     #logger.trace("lambda_DAG_executor_State: " + str(lambda_DAG_executor_State))
 
                     dict_of_results =  {}
-                    if same_output_for_all_fanout_fanin:
+                    if DAG_executor_constants.same_output_for_all_fanout_fanin:
                         # each fanout of a task gets the same output, i.e., 
                         # the output of the task.
                         dict_of_results[calling_task_name] = output
@@ -1327,14 +1331,14 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                         #"server": server   # used to mock server during testing
                     }
 
-                    if input_all_groups_partitions_at_start:
+                    if DAG_executor_constants.input_all_groups_partitions_at_start:
                         payload["groups_partitions"] = groups_partitions
                     
                     ###### DAG_executor_State.function_name has not changed
                     invoke_lambda_DAG_executor(payload = payload, function_name = "WukongDivideAndConquer:"+name)
                 except Exception:
                     logger.exception("[ERROR]: " + thread_name + " process_fanouts: Failed to start DAG_executor Lambda.")
-                    if exit_program_on_exception:
+                    if DAG_executor_constants.exit_program_on_exception:
                         logging.shutdown()
                         os._exit(0) 
 #rhc: run task
@@ -1344,7 +1348,7 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                     assert False , msg
                 except AssertionError:
                     logger.exception("[Error]: assertion failed")
-                    if exit_program_on_exception:
+                    if DAG_executor_constants.exit_program_on_exception:
                         logging.shutdown()
                         os._exit(0)
                 #assertOld:
@@ -1438,7 +1442,7 @@ def process_fanins(websocket,fanins, faninNB_sizes, calling_task_name, DAG_state
     #keyword_arguments['start_state_fanin_task'] = DAG_states[fanins[0]]
     #keyword_arguments['result'] = output
     #keyword_arguments['calling_task_name'] = calling_task_name
-    if same_output_for_all_fanout_fanin:
+    if DAG_executor_constants.same_output_for_all_fanout_fanin:
         keyword_arguments['result'] = output
         keyword_arguments['calling_task_name'] = calling_task_name
     else:
@@ -1459,7 +1463,7 @@ def process_fanins(websocket,fanins, faninNB_sizes, calling_task_name, DAG_state
     #keyword_arguments['DAG_executor_State'] = DAG_exec_state
     keyword_arguments['server'] = server
 
-    if not store_fanins_faninNBs_locally:
+    if not DAG_executor_constants.store_fanins_faninNBs_locally:
         # These DAG_exec_state keyword_arguments are passed to the fan_in 
         # operation when we use remote fanin objects
         DAG_exec_state.keyword_arguments = {}
@@ -1467,7 +1471,7 @@ def process_fanins(websocket,fanins, faninNB_sizes, calling_task_name, DAG_state
         DAG_exec_state.keyword_arguments['n'] = faninNB_sizes[0]
         #DAG_exec_state.keyword_arguments['result'] = output
         #DAG_exec_state.keyword_arguments['calling_task_name'] = calling_task_name
-        if same_output_for_all_fanout_fanin:
+        if DAG_executor_constants.same_output_for_all_fanout_fanin:
             DAG_exec_state.keyword_arguments['result'] = output
             DAG_exec_state.keyword_arguments['calling_task_name'] = calling_task_name
         else:
@@ -1493,12 +1497,12 @@ def process_fanins(websocket,fanins, faninNB_sizes, calling_task_name, DAG_state
         # a fanin/faninNB
         DAG_exec_state.keyword_arguments['fanin_type'] = "fanin"
 
-    if store_fanins_faninNBs_locally:
+    if DAG_executor_constants.store_fanins_faninNBs_locally:
         #ToDo:
         #keyword_arguments['DAG_executor_State'] = DAG_exec_state
         # The keyword arguments aer passed to the local fanin 
         # no the DAG_executor_state
-        if not create_all_fanins_faninNBs_on_start:
+        if not DAG_executor_constants.create_all_fanins_faninNBs_on_start:
             DAG_exec_state = server.create_and_fanin_locally(DAG_exec_state,keyword_arguments)
         else:
             logger.trace(thread_name + ": process_fanins: " + calling_task_name + ": call server.fanin_locally")
@@ -1511,7 +1515,7 @@ def process_fanins(websocket,fanins, faninNB_sizes, calling_task_name, DAG_state
 # create in msg_handler's synchronize sync to be consistent (rather
 # than in tcp_server?)
 
-        if not create_all_fanins_faninNBs_on_start:
+        if not DAG_executor_constants.create_all_fanins_faninNBs_on_start:
             # Note: might want to send the result for debugging
             #if not using_lambdas:
                 # if we call a remote fanin and locally we are not using lambdas,
@@ -1607,7 +1611,6 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
     # and added to the payloags of the real lambdas started for fanouts.
     # tcp_server can also read group_partitions and make.
     # IF we are not using real lambdas this list is empty.
-
     DAG_map = DAG_info.get_DAG_map()
     DAG_tasks = DAG_info.get_DAG_tasks()
     DAG_number_of_tasks = DAG_info.get_DAG_number_of_tasks()
@@ -1622,7 +1625,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
     num_tasks_to_execute = -1
 #rhc: lambda inc:
     continued_task = False
-    if (not using_workers):
+    if (not DAG_executor_constants.using_workers):
         # not actually using this value when using real or simulated lambdas.
         # this values tells workers when there are no more tasks to execute
         #num_tasks_to_execute = len(DAG_tasks)
@@ -1632,11 +1635,11 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
         logger.info("DAG_executor_work_loop: at start: lambda executes a continued task: " + str(continued_task)
             + " for state " + str(DAG_executor_state.state))
     else:
-        if not (compute_pagerank and use_incremental_DAG_generation):
+        if not (DAG_executor_constants.compute_pagerank and DAG_executor_constants.use_incremental_DAG_generation):
             #num_tasks_to_execute = len(DAG_tasks)
             num_tasks_to_execute = DAG_number_of_tasks
         else: # using incremental DAG generation
-            if not use_page_rank_group_partitions:
+            if not DAG_executor_constants.use_page_rank_group_partitions:
                 # using partitions
                 if not DAG_info.get_DAG_info_is_complete():
                     #num_tasks_to_execute = len(DAG_tasks) - 1
@@ -1648,7 +1651,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         assert number_of_incomplete_tasks == 1 , msg
                     except AssertionError:
                         logger.exception("[Error]: assertion failed")
-                        if exit_program_on_exception:
+                        if DAG_executor_constants.exit_program_on_exception:
                             logging.shutdown()
                             os._exit(0)
                     #assertOld:
@@ -1677,12 +1680,12 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     num_tasks_to_execute = DAG_number_of_tasks
                     logger.trace("DAG_executor_work_loop: at start: DAG_info complete num_tasks_to_execute: " + str(num_tasks_to_execute))
 
-    logger.trace("DAG_executor: length of DAG_tasks: " + str(DAG_number_of_tasks)
+    logger.info("DAG_executor: length of DAG_tasks: " + str(DAG_number_of_tasks)
         + " number of tasks in DAG to execute: " + str(num_tasks_to_execute))
     #server = payload['server']
     proc_name = multiprocessing.current_process().name
     thread_name = threading.current_thread().name
-    logger.trace("DAG_executor_work_loop: proc " + proc_name + " " + " thread " + thread_name + ": started.")
+    logger.info("DAG_executor_work_loop: proc " + proc_name + " " + " thread " + thread_name + ": started.")
 
     #ToDo:
     #if input is None:
@@ -1691,17 +1694,17 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as websocket:
         global store_fanins_faninNBs_locally
         # Config: A1, A4_remote, A5, A6
-        if not store_fanins_faninNBs_locally:
-            logger.trace("DAG_executor " + thread_name + " connecting to TCP Server at %s." % str(TCP_SERVER_IP))
+        if not DAG_executor_constants.store_fanins_faninNBs_locally:
+            logger.info("DAG_executor " + thread_name + " connecting to TCP Server at %s." % str(TCP_SERVER_IP))
             websocket.connect(TCP_SERVER_IP)
-            logger.trace("DAG_executor " + thread_name + " successfully connected to TCP Server.")
+            logger.info("DAG_executor " + thread_name + " successfully connected to TCP Server.")
         # else: # Config: A2, A4_local
         # on the client side
         #print("socketname: " + websocket.getsockname())   # ->  (127.0.0.1,26386)
         #print(websocket.getpeername())   # ->  (127.0.0.1, 8888)
 
         # ... unless its this work_queue when we use processes. (Lambdas do not use a work_queue, for now):)
-        if (run_all_tasks_locally and using_workers and not using_threads_not_processes): 
+        if (DAG_executor_constants.run_all_tasks_locally and DAG_executor_constants.using_workers and not DAG_executor_constants.using_threads_not_processes): 
             # Config: A5, A6
             # sent the create() for work_queue to the tcp server in the DAG_executor_driver
             #
@@ -1713,11 +1716,11 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             # we are only using incremental_DAG_generation when we
             # are computing pagerank, so far. Pagerank DAGS are the
             # only DAGS we generate ourselves, so far.
-            if compute_pagerank and use_incremental_DAG_generation:
+            if DAG_executor_constants.compute_pagerank and DAG_executor_constants.use_incremental_DAG_generation:
                 # Note: we are using_workers with worker processes
                 DAG_infobuffer_monitor = Remote_Client_for_DAG_infoBuffer_Monitor(websocket)
                 # Note: BFS calls DAG_infobuffer_monitor.create() so no call should be made here
-                estimated_num_tasks_to_execute = work_queue_size_for_incremental_DAG_generation_with_worker_processes
+                estimated_num_tasks_to_execute = DAG_executor_constants.work_queue_size_for_incremental_DAG_generation_with_worker_processes
                 work_queue = Work_Queue_Client(websocket,estimated_num_tasks_to_execute)        
                 logger.info("DAG_executor_work_loop: created Work_Queue_Client for work queue.")
 
@@ -1738,7 +1741,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # each thread in multithreading multiprocesssing needs its own socket.
                 # each process when single threaded multiprocessing needs its own socket.
                 work_queue = Work_Queue_Client(websocket,2*num_tasks_to_execute)
-        elif not run_all_tasks_locally and compute_pagerank and use_incremental_DAG_generation:
+        elif not DAG_executor_constants.run_all_tasks_locally and DAG_executor_constants.compute_pagerank and DAG_executor_constants.use_incremental_DAG_generation:
             #websocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             #websocket.connect(TCP_SERVER_IP)
             DAG_infobuffer_monitor = Remote_Client_for_DAG_infoBuffer_Monitor_for_Lambdas(websocket)
@@ -1771,7 +1774,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
         # DAG generation. Real lambdas use the continue queue when they are executing 
         # a restarted task for incremental DAG generation but only on the very frist
         # iteration of the work loop.
-        if compute_pagerank and use_incremental_DAG_generation:
+        if DAG_executor_constants.compute_pagerank and DAG_executor_constants.use_incremental_DAG_generation:
             continue_queue = queue.Queue()
 #hrc lambda inc:
         # True if we are executing the first iteration of the work loop
@@ -1809,12 +1812,12 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
         #
         # Note: As the next step, we will immediately retrieve the task from from the continue_queue
         # or the cluster_queue. 
-        if (run_all_tasks_locally and not using_workers) or not run_all_tasks_locally:
+        if (DAG_executor_constants.run_all_tasks_locally and not DAG_executor_constants.using_workers) or not DAG_executor_constants.run_all_tasks_locally:
             # simulated or real lambdas are started with a payload that has a state,
             # put this state in the cluster_queue or the continue_queue
 #rhc: lambda inc:
             first_iteration_of_work_loop_for_lambda == True
-            if compute_pagerank and use_incremental_DAG_generation and continued_task:
+            if DAG_executor_constants.compute_pagerank and DAG_executor_constants.use_incremental_DAG_generation and continued_task:
 #rhc: lambda inc: cq.put
                 # On first iteration of lambda a continued_task is truly a continued_task.
                 # For leaf tasks, continued_task is False.
@@ -2253,7 +2256,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             #execute task ...
             """
         while (True): # main work loop: iterate until worker/lambda is finished
-            if using_workers:
+            if DAG_executor_constants.using_workers:
                 # Config: A4_local, A4_Remote, A5, A6
 #rhc continue 
                 # We will get work from the continue_queue (if incremental
@@ -2292,10 +2295,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 if process_continue_queue:
                     try:
                         msg = "[Error]: work loop: process_continue_queue but" +  " not compute_pagerank or not use_incremental_DAG_generation."
-                        assert compute_pagerank and use_incremental_DAG_generation , msg
+                        assert DAG_executor_constants.compute_pagerank and DAG_executor_constants.use_incremental_DAG_generation , msg
                     except AssertionError:
                         logger.exception("[Error]: assertion failed")
-                        if exit_program_on_exception:
+                        if DAG_executor_constants.exit_program_on_exception:
                             logging.shutdown()
                             os._exit(0)
                     # assertOld:
@@ -2311,10 +2314,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         msg = "[Error]: work loop: process_continue_queue but" \
                             + " using partitions so this second to be continued" \
                             + " partition/task should not be possible."
-                        assert use_page_rank_group_partitions , msg
+                        assert DAG_executor_constants.use_page_rank_group_partitions , msg
                     except AssertionError:
                         logger.exception("[Error]: assertion failed")
-                        if exit_program_on_exception:
+                        if DAG_executor_constants.exit_program_on_exception:
                             logging.shutdown()
                             os._exit(0)
                     #assertOld:
@@ -2410,12 +2413,12 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             # queue (and thus are made available to workers) only after *every* 
                             # worker has obtained their next incremental DAG. 
 
-                            logger.trace("DAG_executor_work_loop: cluster_queue.qsize() == 0 so"
+                            logger.info("DAG_executor_work_loop: cluster_queue.qsize() == 0 so"
                                 + " get work")
                             
-                            if not using_threads_not_processes: # using worker processes
+                            if not DAG_executor_constants.using_threads_not_processes: # using worker processes
                                 # Config: A5, A6
-                                logger.trace("DAG_executor_work_loop: proc " + proc_name + " " + " thread " + thread_name + ": get work.")
+                                logger.info("DAG_executor_work_loop: proc " + proc_name + " " + " thread " + thread_name + ": get work.")
                                 work_tuple = work_queue.get()
                                 DAG_executor_state.state = work_tuple[0]
                                 dict_of_results = work_tuple[1]
@@ -2434,16 +2437,16 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                 #else: dict_of_results is None 
                                 #  Suggest assert state is -1
 
-                                logger.trace("DAG_executor_work_loop: got work/-1 for thread " + thread_name
+                                logger.info("DAG_executor_work_loop: got work/-1 for thread " + thread_name
                                     + " state is " + str(DAG_executor_state.state))
-                                if not (compute_pagerank and use_incremental_DAG_generation):
+                                if not (DAG_executor_constants.compute_pagerank and DAG_executor_constants.use_incremental_DAG_generation):
                                     # got work from the work queue so break the while(True)
                                     # loop and check if it's -1
                                     break # while(True) loop
                                 else: # using incremental DAG generation
                                     # work could be a -1, or a non-leaf task or leaf task. The leaf task
                                     # might be unexecutable until we get a new incremental DAG
-                                    if (not use_page_rank_group_partitions) or use_page_rank_group_partitions:
+                                    if (not DAG_executor_constants.use_page_rank_group_partitions) or DAG_executor_constants.use_page_rank_group_partitions:
                                         if not DAG_executor_state.state == -1:
                                             # try to get the state_info for the work task (state).
                                             # this may return None
@@ -2498,7 +2501,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                                 # and for any new leaf tasks in the deposited DAG_info. A new
                                                 # leaf task(s) will be identified for each new connected component
                                                 # discovered in the new incremental DAG.
-                                                if using_workers:
+                                                if DAG_executor_constants.using_workers:
 #rhc: lambda inc: cq.put
                                                     # An unexecutable leaf task should be executed so 
                                                     # it is not truly a continued task (i.e., with TBC fanins/fanouts/collpases)
@@ -2538,12 +2541,12 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                     # so there is no need to do it again here, when getting work from the work_queue.
                                     #for key, value in dict_of_results.items():
                                     #    data_dict[key] = value 
-                                if not (compute_pagerank and use_incremental_DAG_generation):
+                                if not (DAG_executor_constants.compute_pagerank and DAG_executor_constants.use_incremental_DAG_generation):
                                     break # while(True) loop
                                 else: # incremental DAG generation
                                     # Work could be a -1, or a non-leaf task or leaf task. The leaf task
                                     # might be unexecutable until we get a new incremental DAG.
-                                    if (not use_page_rank_group_partitions) or use_page_rank_group_partitions: 
+                                    if (not DAG_executor_constants.use_page_rank_group_partitions) or DAG_executor_constants.use_page_rank_group_partitions: 
                                         # work could be a -1, or a non-leaf task or leaf task. The leaf task
                                         # might be unexecutable until we get a new incremental DAG
                                         if not DAG_executor_state.state == -1:
@@ -2572,7 +2575,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                                 # DAG. Note: each leaf task is the start of a new connected component
                                                 # in the graph (you cannot reach one CC from another CC.) and the 
                                                 # partitions of the connected components can be executed in parallel
-                                                if using_workers:
+                                                if DAG_executor_constants.using_workers:
 #rhc: lambda inc: cq.put                            # An unexecutable leaf task should be executed so 
                                                     # it is not truly a continued task (i.e., with TBC fanins/fanouts/collpases)
                                                     continue_tuple = (DAG_executor_state.state,False)
@@ -2599,7 +2602,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                         pass # finish for groups
                         # end of while(True) get work from work_queue
 
-                        logger.trace("**********************DAG_executor_work_loop: withdrawn state for thread: " + thread_name + " :" + str(DAG_executor_state.state))
+                        logger.info("**********************DAG_executor_work_loop: withdrawn state for thread: " + thread_name + " :" + str(DAG_executor_state.state))
 
                         if DAG_executor_state.state == -1:
                             # Note: we are not passing the DAG_executor_state of this 
@@ -2614,26 +2617,26 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 
                             # Keep track of how many workers have returned and when this equals num_workers
                             # then do not add a -1 to the work queue.
-                            if not using_threads_not_processes:
+                            if not DAG_executor_constants.using_threads_not_processes:
     #rhc: counter:
                                 # maintain a count of completed workers. Each worker
                                 # that gets s -1 from the work_queue will put another
                                 # -1 in the work queue if there are workers that have
                                 # not received their -1 yet
                                 completed_workers = completed_workers_counter.increment_and_get()
-                                if completed_workers < num_workers:
-                                    logger.trace("DAG_executor_work_loop: workers_completed:  " + str(completed_workers)
+                                if completed_workers < DAG_executor_constants.num_workers:
+                                    logger.info("DAG_executor_work_loop: workers_completed:  " + str(completed_workers)
                                         + " put -1 in work queue.")
                                     # Config: A5, A6
                                     work_tuple = (-1,None)
                                     work_queue.put(work_tuple)
                                 else:
-                                    logger.trace("DAG_executor_work_loop: completed_workers:  " + str(completed_workers)
+                                    logger.info("DAG_executor_work_loop: completed_workers:  " + str(completed_workers)
                                         + " do not put -1 in work queue.")
                             else:
     #rhc: counter:
                                 completed_workers = completed_workers_counter.increment_and_get()
-                                if completed_workers < num_workers:
+                                if completed_workers < DAG_executor_constants.num_workers:
                                     logger.trace("DAG_executor_work_loop: workers_completed:  " + str(completed_workers)
                                         + " put -1 in work queue.")
 
@@ -2651,7 +2654,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             # queues were empty since they they only try to get work from the work queue when their
                             # cluster_queue is empty.
 
-                            if compute_pagerank and use_incremental_DAG_generation:
+                            if DAG_executor_constants.compute_pagerank and DAG_executor_constants.use_incremental_DAG_generation:
                                 if not DAG_info.get_DAG_info_is_complete():
                                     requested_current_version_number = DAG_info.get_DAG_version_number() + 1
                                     # withdraw() returns a new DAG_info. The DAG_infobuffer_monitor object is either
@@ -2689,7 +2692,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                     # we have a new DAG_info which means we have a new
                                     # number of tasks to execute (more tasks were added 
                                     # to the incremental DAG). 
-                                    if not use_page_rank_group_partitions:
+                                    if not DAG_executor_constants.use_page_rank_group_partitions:
                                         # using partitions.
                                         # If the new DAG is still incomplete, then the last
                                         # partition is incomplete (cannot be executed)
@@ -2704,7 +2707,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                                 assert number_of_incomplete_tasks == 1 , msg
                                             except AssertionError:
                                                 logger.exception("[Error]: assertion failed")
-                                                if exit_program_on_exception:
+                                                if DAG_executor_constants.exit_program_on_exception:
                                                     logging.shutdown()
                                                     os._exit(0)
                                             #assertOld:
@@ -2838,7 +2841,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             assert cluster_queue.qsize() == 0 , msg
                         except AssertionError:
                             logger.exception("[Error]: assertion failed")
-                            if exit_program_on_exception:
+                            if DAG_executor_constants.exit_program_on_exception:
                                 logging.shutdown()
                                 os._exit(0)
                         #assertOld:
@@ -2880,7 +2883,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             assert cluster_queue.qsize() == 0, msg
                         except AssertionError:
                             logger.exception("[Error]: assertion failed")
-                            if exit_program_on_exception:
+                            if DAG_executor_constants.exit_program_on_exception:
                                 logging.shutdown()
                                 os._exit(0)
                         #assertOld:
@@ -2898,12 +2901,12 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # we have a task to execute - we got it from the work queue
                 # or the cluster queue or the continue queue.
 
-                incremental_dag_generation_with_groups = compute_pagerank and use_incremental_DAG_generation and use_page_rank_group_partitions
+                incremental_dag_generation_with_groups = DAG_executor_constants.compute_pagerank and DAG_executor_constants.use_incremental_DAG_generation and DAG_executor_constants.use_page_rank_group_partitions
                 continued_task_state_info = DAG_map[DAG_executor_state.state]
                 logger.trace(thread_name + " DAG_executor_work_loop: checking whether to inc num tasks executed: incremental_dag_generation_with_groups: "
                     + str(incremental_dag_generation_with_groups)
                     + " continued_task: " + str(continued_task)
-                    + " continued_task_state_info.task_name == PR1_1: " + str(continued_task_state_info.task_name == name_of_first_groupOrpartition_in_DAG)
+                    + " continued_task_state_info.task_name == PR1_1: " + str(continued_task_state_info.task_name == DAG_executor_constants.name_of_first_groupOrpartition_in_DAG)
                     + " (not continued_task_state_info.task_name in DAG_info.get_DAG_leaf_tasks(): "
                     + str((not continued_task_state_info.task_name in DAG_info.get_DAG_leaf_tasks())))
                 
@@ -2979,9 +2982,9 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         # a new version of the increnetal DAG. Eventuallly, the DAG will 
                         # be complete and the workers will return (i.e., terminate) instead of 
                         # calling DAG_infobufer_Monitor.withdraw.
-                        if not using_threads_not_processes:
+                        if not DAG_executor_constants.using_threads_not_processes:
                             # Config: A5, A6
-                            logger.trace(thread_name + ": DAG_executor: num_tasks_executed == num_tasks_to_execute: depositing -1 in work queue.")
+                            logger.info(thread_name + ": DAG_executor: num_tasks_executed == num_tasks_to_execute: depositing -1 in work queue.")
                             work_tuple = (-1,None)
                             # for the next worker
                             work_queue.put(work_tuple)
@@ -3056,10 +3059,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 try:
                     msg = "[Error]: DAG_executor_work_loop:" + " first_iteration_of_work_loop_for_lambda and not continued_task" \
                         + " but cluster_queue.qsize() is 0; the state of a lambda that has" + " not been restarted for incremental DAG generation shoudl be added" + " to the cluster_queue at the start of the work loop."
-                    assert not (first_iteration_of_work_loop_for_lambda and not (compute_pagerank and use_incremental_DAG_generation and continued_task) and cluster_queue.qsize() == 0) , msg
+                    assert not (first_iteration_of_work_loop_for_lambda and not (DAG_executor_constants.compute_pagerank and DAG_executor_constants.use_incremental_DAG_generation and continued_task) and cluster_queue.qsize() == 0) , msg
                 except AssertionError:
                     logger.exception("[Error]: assertion failed")
-                    if exit_program_on_exception:
+                    if DAG_executor_constants.exit_program_on_exception:
                         logging.shutdown()
                         os._exit(0)
                 #assertOld:
@@ -3071,14 +3074,14 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 #            + " not been restarted for incremental DAG generation shoudl be added"
                 #            + " to the cluster_queue at the start of the work loop.")
 #rhc: lambda inc:
-                if compute_pagerank and use_incremental_DAG_generation and continued_task and continue_queue.qsize() > 0:
+                if DAG_executor_constants.compute_pagerank and DAG_executor_constants.use_incremental_DAG_generation and continued_task and continue_queue.qsize() > 0:
                     try:
                         msg = "[Error]: DAG_executor_work_loop:" + " continue_queue.qsize() is > 0 for lambda but not" \
                             + " first_iteration_of_work_loop_for_lambda."
                         assert first_iteration_of_work_loop_for_lambda , msg
                     except AssertionError:
                         logger.exception("[Error]: assertion failed")
-                        if exit_program_on_exception:
+                        if DAG_executor_constants.exit_program_on_exception:
                             logging.shutdown()
                             os._exit(0)
                     # assertOld: For lambdas, we never put anything in the continue_queue
@@ -3102,7 +3105,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         assert continued_due_to_TBC , msg
                     except AssertionError:
                         logger.exception("[Error]: assertion failed")
-                        if exit_program_on_exception:
+                        if DAG_executor_constants.exit_program_on_exception:
                             logging.shutdown()
                             os._exit(0)
                     # assertOld: continued_due_to_TBC must be True since
@@ -3135,7 +3138,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         assert cluster_queue.qsize() == 0 , msg
                     except AssertionError:
                         logger.exception("[Error]: assertion failed")
-                        if exit_program_on_exception:
+                        if DAG_executor_constants.exit_program_on_exception:
                             logging.shutdown()
                             os._exit(0)
                     #assertOld:
@@ -3217,7 +3220,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             # since we would then be stucj with excuting all of them - it seems better to proces them
             # as normal (e.g., start a lamba for each one, or put them in the work queue) so they are
             # distributed among multiple lambdas/workers, as usual.
-            incremental_dag_generation_with_groups = compute_pagerank and use_incremental_DAG_generation and use_page_rank_group_partitions
+            incremental_dag_generation_with_groups = DAG_executor_constants.compute_pagerank and DAG_executor_constants.use_incremental_DAG_generation and DAG_executor_constants.use_page_rank_group_partitions
 
             #logger.trace(thread_name + " DAG_executor_work_loop: incremental_dag_generation_with_groups: "
             #    + str(incremental_dag_generation_with_groups) + " continued_task: "
@@ -3241,7 +3244,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 + " incremental_dag_generation_with_groups: "
                 + str(incremental_dag_generation_with_groups)
                 + " continued_task: " + str(continued_task)
-                + " is state_info.task_name == name_of_first_groupOrpartition_in_DAG: " + str(state_info.task_name == name_of_first_groupOrpartition_in_DAG)
+                + " is state_info.task_name == name_of_first_groupOrpartition_in_DAG: " + str(state_info.task_name == DAG_executor_constants.name_of_first_groupOrpartition_in_DAG)
                 + " (not state_info.task_name in DAG_info.get_DAG_leaf_tasks(): "
                 + str((not state_info.task_name in DAG_info.get_DAG_leaf_tasks())))
 
@@ -3290,7 +3293,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 
                 #if not using_workers:
                 #output = input
-                if not using_workers:
+                if not DAG_executor_constants.using_workers:
                     logger.info("here2: state_info.task_inputs: "
                         + str(state_info.task_inputs))
                     output = state_info.task_inputs
@@ -3317,7 +3320,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # when we get the tuple for such a task it will indicate that we should 
                 # set continued_task to False, so that we treat the leaf task as a non-continued
                 # task that needs to be executed.
-                incremental_dag_generation_with_partitions = compute_pagerank and use_incremental_DAG_generation and not use_page_rank_group_partitions
+                incremental_dag_generation_with_partitions = DAG_executor_constants.compute_pagerank and DAG_executor_constants.use_incremental_DAG_generation and not DAG_executor_constants.use_page_rank_group_partitions
 
                 # This is not a continued task that is a group. It may be a continued task that is a 
                 # partition or it may be a non-continued leaf task.
@@ -3366,7 +3369,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # task that has not been executed. T[0] is the state of the task and T[1] is the saved output.
                     # There is no saved output for a leaf task like PR4_1 since PR4_1 has not been executed yet,
                     # i.ee., we aer not really continuing it.
-                    if state_info.task_name == name_of_first_groupOrpartition_in_DAG or (not state_info.task_name in DAG_info.get_DAG_leaf_tasks()):
+                    if state_info.task_name == DAG_executor_constants.name_of_first_groupOrpartition_in_DAG or (not state_info.task_name in DAG_info.get_DAG_leaf_tasks()):
                         # task is a leaf task but its the first leaf task in the ADG (PR1_1) or it is not a leaf task.
                         # Process its fanins/fanouts/collapse by grabbing the collapse as there are no fanins/fanouts.
                         # Next we will execute the collapse task, which we now was added to the new incremental DAG.
@@ -3386,7 +3389,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         assert not continued_task , msg
                     except AssertionError:
                         logger.exception("[Error]: assertion failed")
-                        if exit_program_on_exception:
+                        if DAG_executor_constants.exit_program_on_exception:
                             logging.shutdown()
                             os._exit(0)
                     # assertOld: continued_task should be set to False if we get a tuple from the continue_queue
@@ -3522,7 +3525,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # task_inputs is a tuple of task_names
                     args = pack_data(task_inputs, data_dict)
                     logger.trace(thread_name + " argsX: " + str(args))
-                    if tasks_use_result_dictionary_parameter:
+                    if DAG_executor_constants.tasks_use_result_dictionary_parameter:
                         # task_inputs = ('task1','task2'), args = (1,2) results in a resultDictionary
                         # where resultDictionary['task1'] = 1 and resultDictionary['task2'] = 2.
                         # We pass resultDictionary of inputs instead of the tuple (1,2).
@@ -3572,7 +3575,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 else:
                     logger.trace("for leaf task args is task_inputs.")
                     # if not triggering tasks in lambdas task_inputs is a tuple of input values, e.g., (1,)
-                    if not (store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks):
+                    if not (DAG_executor_constants.store_sync_objects_in_lambdas and DAG_executor_constants.sync_objects_in_lambdas_trigger_their_tasks):
                         args = task_inputs
                     else:
                         # else the leaf task was triggered by a fanin operation on the fanin object
@@ -3588,7 +3591,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         args = task_inputs['DAG_executor_driver']
                         logger.trace(thread_name + " argsY: " + str(args))
 
-                    if tasks_use_result_dictionary_parameter:
+                    if DAG_executor_constants.tasks_use_result_dictionary_parameter:
                         # Passing an empty input tuple to the PageRank task,
                         # This results in a result_dictionary
                         # of "DAG_executor_driver_0" --> (), where
@@ -3619,12 +3622,12 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 num_nodes_in_graph = DAG_info.get_DAG_num_nodes_in_graph()
                 logger.trace("execute task: num_nodes_in_graph: " + str(num_nodes_in_graph))
 
-                if not tasks_use_result_dictionary_parameter:
+                if not DAG_executor_constants.tasks_use_result_dictionary_parameter:
                     # we will call the task with tuple args and unfold args: task(*args)
                     output = execute_task(task,args)
                 else:
                     #def PageRank_Function_Driver_Shared(task_file_name,total_num_nodes,results_dictionary,shared_map,shared_nodes):
-                    if not use_shared_partitions_groups:
+                    if not DAG_executor_constants.use_shared_partitions_groups:
                         # we will call the task with: task(task_name,resultDictionary)
 #rhc: groups partitions
                         #output = execute_task_with_result_dictionary(task,state_info.task_name,20,result_dictionary)
@@ -3632,7 +3635,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         output, result_tuple_list = execute_task_with_result_dictionary(task,state_info.task_name,num_nodes_in_graph,result_dictionary,
                             groups_partitions)
                     else:
-                        if use_page_rank_group_partitions:
+                        if DAG_executor_constants.use_page_rank_group_partitions:
                             output, result_tuple_list = execute_task_with_result_dictionary_shared(task,state_info.task_name,num_nodes_in_graph,result_dictionary,BFS_Shared.shared_groups_map,BFS_Shared.shared_groups)
                         else: # use the partition partitions
                             output, result_tuple_list = execute_task_with_result_dictionary_shared(task,state_info.task_name,num_nodes_in_graph,result_dictionary,BFS_Shared.shared_partition_map,BFS_Shared.shared_partition)
@@ -3657,7 +3660,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # have to sav the results/outputs remotely. 
                     # We might want to do that, i.e., create a map synchronzation
                     # object stored on the tcp_server and send the outputs/results to it.
-                    if check_pagerank_output:
+                    if DAG_executor_constants.check_pagerank_output:
                         # We can save the task's outputs or the pagerank values
                         # it computed, for debugging.
                         #set_pagerank_output(DAG_executor_state.state,output)
@@ -3734,7 +3737,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 logger.trace(thread_name + " executed task " + state_info.task_name + "'s output: " + str(output))
 
                 
-                if same_output_for_all_fanout_fanin:
+                if DAG_executor_constants.same_output_for_all_fanout_fanin:
                     data_dict[state_info.task_name] = output
                 else:
                 #   Example: task PR1_1 producs an output for fanouts PR2_1
@@ -3821,8 +3824,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             # so we cannot process T's fanouts/fanins/collapse. In this case, T becomes a contiued
             # task and we deal with t accordingly.
             #logger.trace("output2: " + str(output))
-            if not using_workers and compute_pagerank and use_incremental_DAG_generation and (
-                use_page_rank_group_partitions and state_info.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued
+            if not DAG_executor_constants.using_workers and DAG_executor_constants.compute_pagerank and DAG_executor_constants.use_incremental_DAG_generation and (
+                DAG_executor_constants.use_page_rank_group_partitions and state_info.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued
             ):
                 # This task now becomes a continued task. We are not using workers, i.e., we are using 
                 # lamdas, so we do not put T in the continue queue. Instead we try to get a new 
@@ -3883,8 +3886,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # we can do (i.e., we cannot execute this groups fanins/fanouts
                     # so we can stop.)
             else:
-                if not using_workers and compute_pagerank and use_incremental_DAG_generation and (
-                    use_page_rank_group_partitions
+                if not DAG_executor_constants.using_workers and DAG_executor_constants.compute_pagerank and DAG_executor_constants.use_incremental_DAG_generation and (
+                    DAG_executor_constants.use_page_rank_group_partitions
                 ):
                     # this task is complete, i.e., it has completed fannis/fanouts/collpase so we will
                     # process the fanins/fanouts/collapse next.
@@ -3893,8 +3896,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     #os._exit(0)
             
             #logger.info("output3: " + str(output))
-            if (compute_pagerank and use_incremental_DAG_generation and (
-                    use_page_rank_group_partitions and state_info.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued)
+            if (DAG_executor_constants.compute_pagerank and DAG_executor_constants.use_incremental_DAG_generation and (
+                    DAG_executor_constants.use_page_rank_group_partitions and state_info.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued)
                 ):
                 # Group has fanouts/fanins/faninNBs/collapses that are TBC
                 # so workers will put this state in the continue_queue and lambdas
@@ -3909,7 +3912,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # no continud fanouts/fanins/faninNBs/collapses.
                 # Note: we save the output in the tuple so we'll have it
                 # when we continue processing the task's fanins/fanouts.
-                if using_workers:
+                if DAG_executor_constants.using_workers:
                     #continue_queue.put(DAG_executor_state.state)
                     #logger.trace("DAG_executor_work_loop: put TBC collapsed work in continue_queue:"
                     #    + " state is " + str(DAG_executor_state.state))
@@ -3969,7 +3972,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     assert not(len(state_info.fanins) + len(state_info.fanouts) + len(state_info.faninNBs) > 0) , msg
                 except AssertionError:
                     logger.exception("[Error]: assertion failed")
-                    if exit_program_on_exception:
+                    if DAG_executor_constants.exit_program_on_exception:
                         logging.shutdown()
                         os._exit(0)
                 #assertOld:
@@ -4014,7 +4017,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # current task out of the continue_queue, we process is fanouts/fanins/collapse by 
                 # grabbing its collapse (partitions have no fanins/fanouts). We will execute the collapsed
                 # task using the output of the current task as the input to the collapse task.
-                if not(compute_pagerank and use_incremental_DAG_generation) or (compute_pagerank and use_incremental_DAG_generation and use_page_rank_group_partitions):
+                if not(DAG_executor_constants.compute_pagerank and DAG_executor_constants.use_incremental_DAG_generation) or (DAG_executor_constants.compute_pagerank and DAG_executor_constants.use_incremental_DAG_generation and DAG_executor_constants.use_page_rank_group_partitions):
 #rhc: cluster:
                     # get the state of the collapsed partition/group (task)
                     # and put the collapsed task in the cluster_queue for execution.
@@ -4052,7 +4055,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             assert state_info.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued , msg
                         except AssertionError:
                             logger.exception("[Error]: assertion failed")
-                            if exit_program_on_exception:
+                            if DAG_executor_constants.exit_program_on_exception:
                                 logging.shutdown()
                                 os._exit(0)
                         # assertOld: if P has a collapsed task C and C's state_info says C is TBC then 
@@ -4068,7 +4071,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         # process its collapse task C, which means we will set the current state to the 
                         # collapse task C. We will then execute the current state as usual, which will be 
                         # collapse task C.
-                        if using_workers:
+                        if DAG_executor_constants.using_workers:
                             #continue_queue.put(DAG_executor_state.state)
                             #logger.trace("DAG_executor_work_loop: put TBC collapsed work in continue_queue:"
                             #    + " state is " + str(DAG_executor_state.state))
@@ -4147,7 +4150,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         assert state_info.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued == state_info_of_collapse_task.ToBeContinued , msg
                     except AssertionError:
                         logger.exception("[Error]: assertion failed")
-                        if exit_program_on_exception:
+                        if DAG_executor_constants.exit_program_on_exception:
                             logging.shutdown()
                             os._exit(0)
                     # assertOld:
@@ -4207,7 +4210,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # piggyback this list on the call to process_faninNBs_batch if there are faninnbs.
                     # if not, we will call work_queueu.put_all() directly.
 
-                    if using_workers and not using_threads_not_processes:
+                    if DAG_executor_constants.using_workers and not DAG_executor_constants.using_threads_not_processes:
                         # Config: A5, A6
                         # We piggyback fanouts if we are using worker processes. In that case, if we have
                         # more than one fanout, the first wil be a become task, which will be removed from
@@ -4223,7 +4226,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             assert not (len(state_info.fanouts) > 0 and len(list_of_work_queue_or_payload_fanout_values) == 0), msg
                         except AssertionError:
                             logger.exception("[Error]: assertion failed")
-                            if exit_program_on_exception:
+                            if DAG_executor_constants.exit_program_on_exception:
                                 logging.shutdown()
                                 os._exit(0)
                         # assertOld:
@@ -4256,7 +4259,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         assert not (cluster_queue.qsize() > 0), msg
                     except AssertionError:
                         logger.exception("[Error]: assertion failed")
-                        if exit_program_on_exception:
+                        if DAG_executor_constants.exit_program_on_exception:
                             logging.shutdown()
                             os._exit(0)
                     #assertOld:
@@ -4271,7 +4274,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     ## else: Config: A1, A2, A3
 
 #rhc: cluster:
-                if using_workers:
+                if DAG_executor_constants.using_workers:
                     # Need worker_needs input to be set corrctly in case len(state_info.faninNBs) is 0
                     worker_needs_input = cluster_queue.qsize()==0
                     logger.trace("DAG_executor_work_loop: check cluster_queue size before processing faninNBs:"
@@ -4284,8 +4287,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # from the fanouts) or we are running tasks in lambdas then do batch processing
                     # Note: we haven't implemented real lamdba version yet, but we do 
                     # not distinguish here between real and simulated lambdas
-                    if (run_all_tasks_locally and using_workers and not using_threads_not_processes) or (
-                        not run_all_tasks_locally):
+                    if (DAG_executor_constants.run_all_tasks_locally and DAG_executor_constants.using_workers and not DAG_executor_constants.using_threads_not_processes) or (
+                        not DAG_executor_constants.run_all_tasks_locally):
                         # We do batch processing when we use lambdas to execute tasks, real or simulated.
                         # So this condition, which specifies the "sync objects trigger their tasks" case
                         # is not needed.
@@ -4324,10 +4327,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
  
                         try:
                             msg = "[Error]: DAG_executor_work_loop: using processes or lambdas but storing FanINNBs locally."
-                            assert not (store_fanins_faninNBs_locally), msg
+                            assert not (DAG_executor_constants.store_fanins_faninNBs_locally), msg
                         except AssertionError:
                             logger.exception("[Error]: assertion failed")
-                            if exit_program_on_exception:
+                            if DAG_executor_constants.exit_program_on_exception:
                                 logging.shutdown()
                                 os._exit(0)
                         # assertOld:
@@ -4335,7 +4338,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         #    # Config: A2, A4_local
                         #    logger.error("[Error]: DAG_executor_work_loop: using processes or lambdas but storing FanINNBs locally.")
                                 
-                        if not run_all_tasks_locally:
+                        if not DAG_executor_constants.run_all_tasks_locally:
                             # Config: A1
     #rhc: cluster:
                             #Okay - this was set above
@@ -4344,7 +4347,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                 assert not (worker_needs_input), msg
                             except AssertionError:
                                 logger.exception("[Error]: assertion failed")
-                                if exit_program_on_exception:
+                                if DAG_executor_constants.exit_program_on_exception:
                                     logging.shutdown()
                                     os._exit(0)
                             #assertOld:
@@ -4354,7 +4357,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 
 #rhc: cluster:
                         #Note: we are using worker_needs_input so it needs to have been set above
-                        if not run_all_tasks_locally or (run_all_tasks_locally and using_workers and not using_threads_not_processes and not worker_needs_input):
+                        if not DAG_executor_constants.run_all_tasks_locally or (DAG_executor_constants.run_all_tasks_locally and DAG_executor_constants.using_workers and not DAG_executor_constants.using_threads_not_processes and not worker_needs_input):
 #rhc: run tasks
 # Note: this will not be async when we allow lambdas to run tasks and then have local fanin(NB) objects
 # since process_faninNBs_batch will return 0 or the preceeding results if caller is become task.
@@ -4401,10 +4404,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 
                         try:
                             msg = "[Error]: after process_faninNBs_batch" + " worker_needs_input is True when not using workers."
-                            assert not (worker_needs_input and not using_workers), msg
+                            assert not (worker_needs_input and not DAG_executor_constants.using_workers), msg
                         except AssertionError:
                             logger.exception("[Error]: assertion failed")
-                            if exit_program_on_exception:
+                            if DAG_executor_constants.exit_program_on_exception:
                                 logging.shutdown()
                                 os._exit(0)
                         # assertOld:
@@ -4418,10 +4421,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             msg = "[Error]: process_faninNBs_batch set" \
                                 + " worker_needs_input to False when using workers but cluster_queue" \
                                     + " size is 0."
-                            assert not (using_workers and worker_needs_input != save_worker_needs_input and cluster_queue.qsize() == 0), msg
+                            assert not (DAG_executor_constants.using_workers and worker_needs_input != save_worker_needs_input and cluster_queue.qsize() == 0), msg
                         except AssertionError:
                             logger.exception("[Error]: assertion failed")
-                            if exit_program_on_exception:
+                            if DAG_executor_constants.exit_program_on_exception:
                                 logging.shutdown()
                                 os._exit(0)
                         # assertOld:
@@ -4466,10 +4469,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         try:
                             msg = "[Error]: after process_faninNBs" \
                                 + " worker_needs_input is True when not using workers."
-                            assert not(worker_needs_input and not using_workers) , msg
+                            assert not(worker_needs_input and not DAG_executor_constants.using_workers) , msg
                         except AssertionError:
                             logger.exception("[Error]: assertion failed")
-                            if exit_program_on_exception:
+                            if DAG_executor_constants.exit_program_on_exception:
                                 logging.shutdown()
                                 os._exit(0)
                         #assertOld:
@@ -4480,10 +4483,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         try:
                             msg = "[Error]: process_faninNBs set" + " worker_needs_input to False when using workers but cluster_queue" \
                                 + " size is 0."
-                            assert not (using_workers and worker_needs_input != save_worker_needs_input and cluster_queue.qsize() == 0), msg
+                            assert not (DAG_executor_constants.using_workers and worker_needs_input != save_worker_needs_input and cluster_queue.qsize() == 0), msg
                         except AssertionError:
                             logger.exception("[Error]: assertion failed")
-                            if exit_program_on_exception:
+                            if DAG_executor_constants.exit_program_on_exception:
                                 logging.shutdown()
                                 os._exit(0)
                         # assertOld:
@@ -4506,7 +4509,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # in the work queue. For Lambdas, we will want to send the fanouts to the tcp_server
                     # for parallel invocation. For worker threads, we processed fanouts in process_fanouts()
                     # by adding the fanout tasks to the work queue.
-                    if run_all_tasks_locally and using_workers and not using_threads_not_processes:
+                    if DAG_executor_constants.run_all_tasks_locally and DAG_executor_constants.using_workers and not DAG_executor_constants.using_threads_not_processes:
                         # Config: A5, A6
                         # we are batching faninNBs and piggybacking fanouts on process_faninNB_batch
                         if len(state_info.fanouts) > 0:
@@ -4519,7 +4522,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                 assert not (cluster_queue.qsize()==0), msg
                             except AssertionError:
                                 logger.exception("[Error]: assertion failed")
-                                if exit_program_on_exception:
+                                if DAG_executor_constants.exit_program_on_exception:
                                     logging.shutdown()
                                     os._exit(0)
                             # assertOld:
@@ -4537,7 +4540,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                     assert not (len(list_of_work_queue_or_payload_fanout_values) == 0), msg
                                 except AssertionError:
                                     logger.exception("[Error]: assertion failed")
-                                    if exit_program_on_exception:
+                                    if DAG_executor_constants.exit_program_on_exception:
                                         logging.shutdown()
                                         os._exit(0)
                                 #assertOld:
@@ -4560,7 +4563,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                     assert len(list_of_work_queue_or_payload_fanout_values) == 0 , msg
                                 except AssertionError:
                                     logger.exception("[Error]: assertion failed")
-                                    if exit_program_on_exception:
+                                    if DAG_executor_constants.exit_program_on_exception:
                                         logging.shutdown()
                                         os._exit(0)
                                 # assertOld:
@@ -4612,7 +4615,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # fanouts will become 0 when we remove the become task 
                 #if (not using_workers) and len(state_info.fannouts) == 0:
 
-                if (not using_workers) and starting_number_of_fanouts == 0:
+                if (not DAG_executor_constants.using_workers) and starting_number_of_fanouts == 0:
                     # Config: A1, A2, A3
                     # we are a thread simulating a lambda or a real lamda and there
                     # were no fanout tasks (and by definition of using lambdas the 
@@ -4688,7 +4691,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 #rhc: cluster:
                     #Do not do this.
                     #Note: setting worker_needs_input = True must be guarded by using_workers
-                    if using_workers:
+                    if DAG_executor_constants.using_workers:
                         ## Config: A4_local, A4_Remote, A5, A6
                         logger.trace(thread_name + ": After call to process_fanin: return value is 0; using workers so get more work.")
                         #worker_needs_input = True
@@ -4699,7 +4702,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         logger.trace(thread_name + ": After call to process_fanin: return value is 0; not using workers so lamba (thread or real) returns.")
                         return
                 else:
-                    if (run_all_tasks_locally and using_workers) or not run_all_tasks_locally:
+                    if (DAG_executor_constants.run_all_tasks_locally and DAG_executor_constants.using_workers) or not DAG_executor_constants.run_all_tasks_locally:
                         # Config: A1, A4_local, A4_Remote, A5, A6
                         # when using workers, threads or processes, each worker has its own local
                         # data dictionay. If we are the become task for a fanin, we receive the 
@@ -4754,7 +4757,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 # ------------------------------------------------------------------
             else:
                 #Note: setting worker_needs_input = True must be guarded by using_workers
-                if using_workers:
+                if DAG_executor_constants.using_workers:
                     # Config: A4_local, A4_Remote, A5, A6
                     logger.trace(thread_name + ": state " + str(DAG_executor_state.state) + " after executing task " 
                         +  state_info.task_name + " has no collapse, fanouts, fanins, or faninNBs; using workers so no return.")
@@ -4796,14 +4799,14 @@ def DAG_executor(payload):
     # to execute_task in the proper form.
 		
 	# use DAG_executor_state.state
-    if not using_workers:
+    if not DAG_executor_constants.using_workers:
         DAG_exec_state = payload['DAG_executor_state']
     else:
         DAG_exec_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
     ##state = payload['state'] # refers to state var, not the usual State of DAG_executor 
     ##logger.trace("state:" + str(state))
     ##DAG_executor_state.state = payload['state']
-    if not using_workers:
+    if not DAG_executor_constants.using_workers:
         # Config: A2
         logger.trace("DAG_executor(): payload state:" + str(DAG_exec_state.state))
     # For leaf task, we get  ['input': inp]; this is passed to the executed task using:
@@ -4818,7 +4821,7 @@ def DAG_executor(payload):
 #rhc: lambda inc: need to get input from payload when incremental DAG generation
 # instead of always getting it at start from file, as passing DAG_infos on
 # restart as part of payload (i.e., no reread DAG_info from file).
-    if using_workers:
+    if DAG_executor_constants.using_workers:
         DAG_info = DAG_Info.DAG_info_fromfilename()
     else:
         DAG_info = payload['DAG_info']
@@ -4857,7 +4860,7 @@ def DAG_executor(payload):
     #The payload "input" should be in the shared global data_dict
     DAG_map = DAG_info.get_DAG_map()
     
-    if not using_workers:
+    if not DAG_executor_constants.using_workers:
         state_info = DAG_map[DAG_exec_state.state]
         logger.info("DAG_executor: simulated lambda (thread) starting for " + state_info.task_name)
 
@@ -4899,7 +4902,7 @@ def DAG_executor(payload):
                 assert DD(dict_of_results,data_dict), msg
             except AssertionError:
                 logger.exception("[Error]: assertion failed")
-                if exit_program_on_exception:
+                if DAG_executor_constants.exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0)
             # assertOld:
@@ -4965,10 +4968,10 @@ def DAG_executor(payload):
 
     try:
         msg = "[Error]: method DAG_executor: DAG_infobuffer_monitor is None."
-        assert not (run_all_tasks_locally and (using_workers or not using_workers) and compute_pagerank and use_incremental_DAG_generation and using_threads_not_processes and wukongdnc.dag.DAG_infoBuffer_Monitor_for_threads.DAG_infobuffer_monitor is None), msg
+        assert not (DAG_executor_constants.run_all_tasks_locally and (DAG_executor_constants.using_workers or not DAG_executor_constants.using_workers) and DAG_executor_constants.compute_pagerank and DAG_executor_constants.use_incremental_DAG_generation and DAG_executor_constants.using_threads_not_processes and wukongdnc.dag.DAG_infoBuffer_Monitor_for_threads.DAG_infobuffer_monitor is None), msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
-        if exit_program_on_exception:
+        if DAG_executor_constants.exit_program_on_exception:
             logging.shutdown()
             os._exit(0)
     # assertOld:
@@ -5007,7 +5010,7 @@ def DAG_executor_processes(payload,completed_tasks_counter,completed_workers_cou
     # use_multithreaded_multiprocessing it is a queue; otheriwise it is a logger.
 
     #- read DAG_info, create DAG_exec_state, thread_work_queue is parm
-    if not use_multithreaded_multiprocessing:
+    if not DAG_executor_constants.use_multithreaded_multiprocessing:
         # Config: A5
         #global logger
 #rhc: logging
@@ -5022,9 +5025,9 @@ def DAG_executor_processes(payload,completed_tasks_counter,completed_workers_cou
         # log_queue_or_logger is the logger, which was passed to each thread
         logger = log_queue_or_logger
 
-    if compute_pagerank and use_shared_partitions_groups:
+    if DAG_executor_constants.compute_pagerank and DAG_executor_constants.use_shared_partitions_groups:
         #print(str(pagerank_sent_to_processes[:10]))
-        if use_page_rank_group_partitions:
+        if DAG_executor_constants.use_page_rank_group_partitions:
             BFS_Shared.shared_groups = shared_nodes
             BFS_Shared.shared_groups_map = shared_map
             BFS_Shared.shared_groups_frontier_parents_map = shared_frontier_map
@@ -5032,7 +5035,7 @@ def DAG_executor_processes(payload,completed_tasks_counter,completed_workers_cou
             BFS_Shared.shared_partition = shared_nodes
             BFS_Shared.shared_partition_map = shared_map
             BFS_Shared.shared_partition_frontier_parents_map = shared_frontier_map
-        if use_struct_of_arrays_for_pagerank:
+        if DAG_executor_constants.use_struct_of_arrays_for_pagerank:
             BFS_Shared.pagerank = pagerank_sent_to_processes
             BFS_Shared.previous = previous_sent_to_processes
             BFS_Shared.number_of_children = number_of_children_sent_to_processes
@@ -5043,16 +5046,18 @@ def DAG_executor_processes(payload,completed_tasks_counter,completed_workers_cou
         
     proc_name = multiprocessing.current_process().name
     thread_name = threading.current_thread().name
-    logger.trace("proc " + proc_name + " " + " thread " + thread_name + ": worker process started.")
+    logger.info("proc " + proc_name + " " + " thread " + thread_name + ": worker process started.")
 
     try:
         msg = "[Error]: DAG_executor_processes: executing multiprocesses but using_workers is false."
-        assert using_workers , msg
+        assert DAG_executor_constants.using_workers , msg
     except AssertionError:
+        print("using_workers: " + str(DAG_executor_constants.using_workers))
         logger.exception("[Error]: assertion failed")
-        if exit_program_on_exception:
+        if DAG_executor_constants.exit_program_on_exception:
             logging.shutdown()
             os._exit(0)
+
     #assertOld:
     #if not using_workers:
     #    logger.error("[Error]: DAG_executor_processes: executing multiprocesses but using_workers is false.")
@@ -5109,6 +5114,7 @@ def DAG_executor_processes(payload,completed_tasks_counter,completed_workers_cou
     #DAG_executor_work_loop(logger, server, counter, process_work_queue, DAG_exec_state, DAG_info, data_dict)
 #rhc: counter
 # tasks_completed_counter, workers_completed_counter
+
     DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_workers_counter, DAG_exec_state, DAG_info, 
 #rhc continue
         work_queue, DAG_infobuffer_monitor,
@@ -5120,7 +5126,7 @@ def DAG_executor_processes(payload,completed_tasks_counter,completed_workers_cou
 def DAG_executor_lambda(payload):
     logger.info("Lambda: started.")
 
-    if not (store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks):
+    if not (DAG_executor_constants.store_sync_objects_in_lambdas and DAG_executor_constants.sync_objects_in_lambdas_trigger_their_tasks):
         DAG_exec_state = cloudpickle.loads(base64.b64decode(payload['DAG_executor_state']))
         DAG_info = cloudpickle.loads(base64.b64decode(payload['DAG_info']))
     else:
@@ -5136,7 +5142,7 @@ def DAG_executor_lambda(payload):
     # tcp_server can also read group_partitions and make it available
     # to the faninNBs, which also start real lambdas.
     groups_partitions = []
-    if input_all_groups_partitions_at_start:
+    if DAG_executor_constants.input_all_groups_partitions_at_start:
         groups_partitions = cloudpickle.loads(base64.b64decode(payload['groups_partitions']))
 
         #print("groups_partitions:")
@@ -5202,11 +5208,11 @@ def DAG_executor_lambda(payload):
     # Then we add ("PR1_1-PR2_1",X) to the data_dict; lkewise, when 
     # we do the fanout for "PR2_1", we retrieve its input (which was 
     # an output of "PR1_1") using the key "PR1_1-PR2_1" for the data_dict.
-    if not is_leaf_task or (compute_pagerank and use_incremental_DAG_generation and continued_task):
+    if not is_leaf_task or (DAG_executor_constants.compute_pagerank and DAG_executor_constants.use_incremental_DAG_generation and continued_task):
         # Real lambdas are invoked with inputs. We do not add leaf task inputs to the data
         # dictionary, we use them directly when we execute the leaf task.
         # Also, leaf task inputs are not in a dictionary.
-        if not (store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks):
+        if not (DAG_executor_constants.store_sync_objects_in_lambdas and DAG_executor_constants.sync_objects_in_lambdas_trigger_their_tasks):
             dict_of_results = cloudpickle.loads(base64.b64decode(payload['input']))
         else:
             dict_of_results = payload['input']
@@ -5262,7 +5268,7 @@ def DAG_executor_lambda(payload):
         # pass this leaf task input as part of the DAG_info to all the 
         # non-leaf tasks.
         logger.info("DAG_executor_lambda(): " + state_info.task_name + " is leaf task.")
-        if not (store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks):
+        if not (DAG_executor_constants.store_sync_objects_in_lambdas and DAG_executor_constants.sync_objects_in_lambdas_trigger_their_tasks):
             inp = cloudpickle.loads(base64.b64decode(payload['input']))
         else:
             inp = payload['input']
@@ -5428,7 +5434,7 @@ def main():
         _thread.start_new_thread(DAG_executor_task, (payload,))
     except Exception:
         logger.exception("[ERROR] Failed to start DAG_executor thread for state 1")
-        if exit_program_on_exception:
+        if DAG_executor_constants.exit_program_on_exception:
             logging.shutdown()
             os._exit(0) 
         
@@ -5444,7 +5450,7 @@ def main():
         _thread.start_new_thread(DAG_executor_task, (payload,))
     except Exception:
         logger.exception("[ERROR] Failed to start DAG_executor thread for state 3")
-        if exit_program_on_exception:
+        if DAG_executor_constants.exit_program_on_exception:
             logging.shutdown()
             os._exit(0) 
         

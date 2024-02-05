@@ -5403,7 +5403,7 @@ def print_BFS_stats():
         logger.trace("")
 
 
-
+#rhc: ToDo: put this code in main() so TestAll can call BFS.main()
 if __name__ == '__main__':
 
     if use_page_rank_group_partitions:

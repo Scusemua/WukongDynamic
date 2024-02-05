@@ -1,3 +1,4 @@
+print("DAG_executor_constants XXX")
 """
 Important: Thsi file incudes many tests at the end which illustrate 
 all the configurations and how to set the confguration flags below.
@@ -58,26 +59,26 @@ create_all_fanins_faninNBs_on_start = False
 # case, instead of, e.g., starting a Lambda at fan_out operations, we start a thread.
 # This results in the creation of many threads and is only use to test the logic 
 # of the Lambda code.
-using_workers = False
+using_workers = True
 # True when we are not using Lambas and tasks are executed by threads instead of processes. 
 # False when we are not using lambdas and are using multiprocesssing 
-using_threads_not_processes = True
+using_threads_not_processes = False
 # When using_workers, this is how many threads or processes in the pool.
 # When not using workers, this value is ignored.
 num_workers = 2
 # Use one or more worker processes (num_workers) with one or more threads
-use_multithreaded_multiprocessing = False
+use_multithreaded_multiprocessing = True
 num_threads_for_multithreaded_multiprocessing = 2
 
 # if using lambdas to store synch objects, run tcp_server_lambda.
 # if store in regular python functions instead of real Lambdas
 # set using_Lambda_Function_Simulator = True
-FanIn_Type = "DAG_executor_FanIn"
-FanInNB_Type = "DAG_executor_FanInNB"
-process_work_queue_Type = "BoundedBuffer"
-#FanIn_Type = "DAG_executor_FanIn_Select"
-#FanInNB_Type = "DAG_executor_FanInNB_Select"
-#process_work_queue_Type = "BoundedBuffer_Select"
+#FanIn_Type = "DAG_executor_FanIn"
+#FanInNB_Type = "DAG_executor_FanInNB"
+#process_work_queue_Type = "BoundedBuffer"
+FanIn_Type = "DAG_executor_FanIn_Select"
+FanInNB_Type = "DAG_executor_FanInNB_Select"
+process_work_queue_Type = "BoundedBuffer_Select"
 
 # if running real lambdas or storing synch objects in real lambdas:
 #   Set SERVERLESS_SYNC to True or False in wukongdnc constants !!!!!!!!!!!!!!
@@ -297,7 +298,7 @@ except AssertionError:
 
 # Indicates that we are computing pagerank and thus that the pagerank
 # options are active and pagerank assserts should hold
-compute_pagerank = True
+compute_pagerank = False
 # used in BFS_pagerank. For non-loops, we only need 1 iteration
 number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
 name_of_first_groupOrpartition_in_DAG = "PR1_1"
@@ -1849,6 +1850,7 @@ def test19():
     #FanIn_Type = "DAG_executor_FanIn_Select"
     #FanInNB_Type = "DAG_executor_FanInNB_Select"
     #process_work_queue_Type = "BoundedBuffer_Select"
+    print("test19 end")
 
 #Test20: worker processes (A2) with non-selective-wait Sync-objects, 
 #        2 workers, Sync-objects stored remotely (on tcp_server)
@@ -2067,7 +2069,7 @@ def test23():
     process_work_queue_Type = "BoundedBuffer_Select"
 
 #Test24: multithreaded worker processes (A2) with non-selective-wait Sync-objects, 
-#        1 thread for the worker process, Sync-objects stored remotely (on tcp_server)
+#        1 thread for the 1 worker process, Sync-objects stored remotely (on tcp_server)
 #        create objects at the start
 # Note: tcp_server must be running: tcp_server -t 24
 def test24():
@@ -2121,7 +2123,7 @@ def test24():
     #process_work_queue_Type = "BoundedBuffer_Select"
 
 #Test25: multithreaded worker processes (A2) with non-selective-wait Sync-objects, 
-#        2 threads for the worker process, Sync-objects stored remotely (on tcp_server)
+#        2 threads for the 1 worker process, Sync-objects stored remotely (on tcp_server)
 #        create objects at the start
 # Note: tcp_server must be running: tcp_server -t 25
 def test25():
@@ -2229,7 +2231,7 @@ def test26():
     #process_work_queue_Type = "BoundedBuffer_Select"
 
 #Test27: multithreaded worker processes (A2) with selective-wait Sync-objects, 
-#        2 threads for the worker process, Sync-objects stored remotely (on tcp_server)
+#        2 threads for the 1 worker process, Sync-objects stored remotely (on tcp_server)
 #        create objects at the start
 # Note: tcp_server must be running: tcp_server -t 27
 def test27():
