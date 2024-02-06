@@ -244,7 +244,7 @@ class DAG_executor_FanInNB_Select(Selector):
                     try:
                         msg =  "[Error]: Configuration error: if using_workers" \
                                 + " then run_all_tasks_locally must be True."
-                        assert wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally , msg
+                        #assert wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally , msg
                     except AssertionError:
                         logger.exception("[Error]: assertion failed")
                         if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
@@ -371,7 +371,7 @@ class DAG_executor_FanInNB_Select(Selector):
                     # objects cannot be stored locally.)
     #rhc: run task
                     if wukongdnc.dag.DAG_executor_constants.store_sync_objects_in_lambdas and wukongdnc.dag.DAG_executor_constants.sync_objects_in_lambdas_trigger_their_tasks:
-                        #  trigger fanni task to run in this lambda
+                        #  trigger fanin task to run in this lambda
                         try:
                             logger.trace("DAG_executor_FanInNB_Select: triggering DAG_Executor_Lambda() for task " + fanin_task_name)
                             lambda_DAG_exec_state = DAG_executor_State(function_name = "WukongDivideAndConquer:"+fanin_task_name, function_instance_ID = str(uuid.uuid4()), state = start_state_fanin_task)

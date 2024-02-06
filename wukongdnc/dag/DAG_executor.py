@@ -319,7 +319,7 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
         #ToDo: Don't do/need this?
         #keyword_arguments['DAG_executor_State'] = new_DAG_exec_state # given to the thread/lambda that executes the fanin task.
         keyword_arguments['server'] = server
-        keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
+        keyword_arguments['store_fanins_faninNBs_locally'] = DAG_executor_constants.store_fanins_faninNBs_locally
         # Note: This process_faninNBs method is only called when we are 
         # running locally, i.e., we are not using real lambdas. 
         #
@@ -382,7 +382,7 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
 
 		#Q: kwargs put in DAG_executor_State keywords and on server it gets keywords from state and passes to create and fanin
 
-        if store_fanins_faninNBs_locally:
+        if DAG_executor_constants.store_fanins_faninNBs_locally:
             if not DAG_executor_constants.using_workers:
                 # Note: We start a thread to make the fan-in call and we don't wait for it to finish.
                 # So this is like an asynch call to tcp_server. The faninNB will start a new 

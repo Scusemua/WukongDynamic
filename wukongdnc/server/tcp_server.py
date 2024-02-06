@@ -1479,7 +1479,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         return return_value
 
     # Note: We do not use asynch calls to fanin/faninNB objects. Also,
-    # we do not crate objects on the fly (yet) for non-fanin/faninNB
+    # we do not create objects on the fly (yet) for non-fanin/faninNB
     # objects so we do not have any code in here for create objects
     # on the fly. See the "On-the-fly" comment in synchronize_sync.
     def synchronize_async(self, message = None):

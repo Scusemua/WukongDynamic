@@ -52,7 +52,7 @@ store_fanins_faninNBs_locally = False
 # execute a Fan_in operaation on the created object.
 # 
 # This must be false if we aer doing incremental_DAG_generation; this is assserted below.
-create_all_fanins_faninNBs_on_start = False
+create_all_fanins_faninNBs_on_start = True
 
 # True if the DAG is executed by a "pool" of threads/processes. False, if we are
 # using Lambdas or we are using threads to simulate the use of Lambdas. In the latter
@@ -62,12 +62,12 @@ create_all_fanins_faninNBs_on_start = False
 using_workers = True
 # True when we are not using Lambas and tasks are executed by threads instead of processes. 
 # False when we are not using lambdas and are using multiprocesssing 
-using_threads_not_processes = False
+using_threads_not_processes = True
 # When using_workers, this is how many threads or processes in the pool.
 # When not using workers, this value is ignored.
 num_workers = 2
 # Use one or more worker processes (num_workers) with one or more threads
-use_multithreaded_multiprocessing = True
+use_multithreaded_multiprocessing = False
 num_threads_for_multithreaded_multiprocessing = 2
 
 # if using lambdas to store synch objects, run tcp_server_lambda.
@@ -100,8 +100,8 @@ debug_DAG_executor_create_threads_for_multiT_multiP = False
 debug_DAG_executor_synchronizer = False
 
 # Currently, this is for storing synch objects in simulated lambdas;
-store_sync_objects_in_lambdas = False
-using_Lambda_Function_Simulators_to_Store_Objects = False
+store_sync_objects_in_lambdas = True
+using_Lambda_Function_Simulators_to_Store_Objects = True
 sync_objects_in_lambdas_trigger_their_tasks = False
 # use orchestrator to invoke functions (e.g., when all fanin/fanout results are available)
 using_DAG_orchestrator = False
@@ -112,7 +112,7 @@ using_DAG_orchestrator = False
 # we will just have to create the object in the funtion on the first function
 # invocation. If we do not map objects, then we will/can only invoke tge
 # function that contains the possibly pre-created object once. 
-map_objects_to_lambda_functions = False
+map_objects_to_lambda_functions = True
 # We can use an anonymous simulated function or a single named lambda deployment.
 # In this case, we can invoke the function only once snce we cannot
 # refer to a function instance by name, i.e., by index for simuated functions and 
@@ -2395,17 +2395,17 @@ def test29():
     FanInNB_Type = "DAG_executor_FanInNB_Select"
     process_work_queue_Type = "BoundedBuffer_Select"
 
-# TTFFTFF: no trigger and no DAG_orchestrator, but map objects 
-# (anon is false) and create objects on start and
-# do not using_single_lambda_function
+    # TTFFTFF: no trigger and no DAG_orchestrator, but map objects 
+    # (anon is false) and create objects on start and
+    # do not using_single_lambda_function
 
-store_sync_objects_in_lambdas = True
-using_Lambda_Function_Simulators_to_Store_Objects = True
-sync_objects_in_lambdas_trigger_their_tasks = False
-using_DAG_orchestrator = False
-map_objects_to_lambda_functions = True
-use_anonymous_lambda_functions = False
-using_single_lambda_function = False
+    store_sync_objects_in_lambdas = True
+    using_Lambda_Function_Simulators_to_Store_Objects = True
+    sync_objects_in_lambdas_trigger_their_tasks = False
+    using_DAG_orchestrator = False
+    map_objects_to_lambda_functions = True
+    use_anonymous_lambda_functions = False
+    using_single_lambda_function = False
 
 #Test30: worker threads (A2) with selective-wait Sync-objects, 
 #        Sync-objects stored remotely (on tcp_server)
@@ -2611,6 +2611,12 @@ def test32():
 def test33():
 
 	#       run_all_tasks_locally = False, create objects on start = True:
+    #       using_workers = False. The faninNB_Select calls DAG_executor.DAG_executor_lambda
+    #       so we are not using real or simulated lambdas or even workers,
+    #       instead, the synch objects on tcp_server trigger their tasks,
+    #       which eans in this case the object is executing the fanin task.
+    #       This can be extended so that the synch object will start a new
+    #       real lambda to execute the task.
 	#       Note: not running real lambdas yet, so need TTT, i.e., not using threads
 	#       to simulate lambdas and not running real lambdas yet, so need to
 	#       trigger lambdas, which means store objects in lambdas and they call
@@ -2655,7 +2661,7 @@ def test33():
     run_all_tasks_locally = False 
     store_fanins_faninNBs_locally = False 
     create_all_fanins_faninNBs_on_start = True
-    using_workers = True
+    using_workers = False
     using_threads_not_processes = True
     num_workers = 2
     use_multithreaded_multiprocessing = False
@@ -2684,17 +2690,23 @@ def test33():
 #        store_sync_objects_in_lambdas
 # Note: tcp_server must be running: tcp_server_lambda -t 34
 # Note: output is in tcp_server_lambda window, not DAG_executor window
+#
+#Issue: This is just like test29() but using worker processes instead
+# of worker threads. The issue is that worker processes use a work queue
+# that is on the server, but when we store_sync_objects_in_lambdas we 
+# do not want to store the work queue in a lambda - we need the work queue
+# to be stored on tcp_server as a regular synch object, i.e., not in
+# a lambda. 
+# Also, in tcp_server_lambda, synchronize_async assumes synch objects
+# are in lambdas but we don't call fanins/fanouts asynch so not really
+# using this asynch but we do call work_queue.deposit asynch so:
+# maybe let this be the same as tcp_server synchronous_async and driver
+# creates a work_queue as ususal and this call to wrork_queue.deposit
+# will work. But: withdraw is synchronous and we need it to access the 
+# work_queue not in a lambda. 
+# So: work_queue need to be treated differently from the fanin/fanout 
+# objects when the latter are stored in lambdas.
 def test34():
-
-	#       run_all_tasks_locally = False, create objects on start = True:
-	#       Note: not running real lambdas yet, so need TTT, i.e., not using threads
-	#       to simulate lambdas and not running real lambdas yet, so need to
-	#       trigger lambdas, which means store objects in lambdas and they call
-	#       DAG_excutor_Lambda to execute task (i.e., "trigger task to run in 
-	#       the same lambda"). Eventually we'll have tests for use real 
-	#       non-triggered lambdas to run tasks (invoked at fanouts/faninNBS)
-	#       and objects stored in lambdas or on server.
-	#       a. change map to F, and anon to T and create on start to F:
     print("test34")
     global store_sync_objects_in_lambdas
     global using_Lambda_Function_Simulators_to_Store_Objects
@@ -2728,11 +2740,22 @@ def test34():
     global FanInNB_Type
     global process_work_queue_Type
 
+    """
     run_all_tasks_locally = False 
     store_fanins_faninNBs_locally = False 
     create_all_fanins_faninNBs_on_start = False
     using_workers = True
     using_threads_not_processes = True
+    num_workers = 2
+    use_multithreaded_multiprocessing = False
+    num_threads_for_multithreaded_multiprocessing = 1
+    """
+
+    run_all_tasks_locally = True 
+    store_fanins_faninNBs_locally = False 
+    create_all_fanins_faninNBs_on_start = True
+    using_workers = True
+    using_threads_not_processes = False
     num_workers = 2
     use_multithreaded_multiprocessing = False
     num_threads_for_multithreaded_multiprocessing = 1
@@ -2744,6 +2767,7 @@ def test34():
     FanInNB_Type = "DAG_executor_FanInNB_Select"
     process_work_queue_Type = "BoundedBuffer_Select"
 
+    """
     store_sync_objects_in_lambdas = True
     using_Lambda_Function_Simulators_to_Store_Objects = True
     sync_objects_in_lambdas_trigger_their_tasks = True
@@ -2751,84 +2775,17 @@ def test34():
     map_objects_to_lambda_functions = False
     use_anonymous_lambda_functions = True
     using_single_lambda_function = False
-
-# Note: output is in tcp_server_lambda window, not DAG_executor window
-
-#Test35: worker threads (A2) with selective-wait Sync-objects, 
-#        Sync-objects stored remotely (on tcp_server)
-#        create objects at the start
-#        store_sync_objects_in_lambdas
-# Note: tcp_server must be running: tcp_server_lambda -t 35
-# Note: output is in tcp_server_lambda window, not DAG_executor window
-def test35():
-
-	#       run_all_tasks_locally = False, create objects on start = True:
-	#       Note: not running real lambdas yet, so need TTT, i.e., not using threads
-	#       to simulate lambdas and not running real lambdas yet, so need to
-	#       trigger lambdas, which means store objects in lambdas and they call
-	#       DAG_excutor_Lambda to execute task (i.e., "trigger task to run in 
-	#       the same lambda"). Eventually we'll have tests for use real 
-	#       non-triggered lambdas to run tasks (invoked at fanouts/faninNBS)
-	#       and objects stored in lambdas or on server.
-	#       a. change map to F, and anon to T and create on start to F:
-	#       b. change DAG_orchestrator to F (so not going through enqueue so will
-	#          create on fly in other places besides equeue)
-    print("test35")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
-
-    run_all_tasks_locally = False 
-    store_fanins_faninNBs_locally = False 
-    create_all_fanins_faninNBs_on_start = False
-    using_workers = True
-    using_threads_not_processes = True
-    num_workers = 2
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
-
-    #FanIn_Type = "DAG_executor_FanIn"
-    #FanInNB_Type = "DAG_executor_FanInNB"
-    #process_work_queue_Type = "BoundedBuffer"
-    FanIn_Type = "DAG_executor_FanIn_Select"
-    FanInNB_Type = "DAG_executor_FanInNB_Select"
-    process_work_queue_Type = "BoundedBuffer_Select"
+    """
 
     store_sync_objects_in_lambdas = True
     using_Lambda_Function_Simulators_to_Store_Objects = True
-    sync_objects_in_lambdas_trigger_their_tasks = True
+    sync_objects_in_lambdas_trigger_their_tasks = False
     using_DAG_orchestrator = False
-    map_objects_to_lambda_functions = False
-    use_anonymous_lambda_functions = True
+    map_objects_to_lambda_functions = True
+    use_anonymous_lambda_functions = False
     using_single_lambda_function = False
+
+# Note: output is in tcp_server_lambda window, not DAG_executor window
 
 # Note: output is in tcp_server_lambda window, not DAG_executor window
 
@@ -2842,12 +2799,12 @@ def test35():
 #running: python -m wukongdnc.dag.BFS using "fname = "graph_24N_3CC_fanin"  in BFS.input_graph()
 """
 
-#Test36: worker threads (A2) with non-selective-wait Sync-objects, 
+#Test35: worker threads (A2) with non-selective-wait Sync-objects, 
 #        2 worker threads, Sync-objects stored locally
 #        create objects at the start
 #        use pagerank groups
-def test36():
-    print("test36")
+def test35():
+    print("test35")
     global store_sync_objects_in_lambdas
     global using_Lambda_Function_Simulators_to_Store_Objects
     global sync_objects_in_lambdas_trigger_their_tasks
@@ -2917,12 +2874,12 @@ def test36():
     use_page_rank_group_partitions = compute_pagerank and True
     use_struct_of_arrays_for_pagerank = compute_pagerank and False
 
-#Test37: worker threads (A2) with non-selective-wait Sync-objects, 
+#Test36: worker threads (A2) with non-selective-wait Sync-objects, 
 #        2 worker threads, Sync-objects stored locally
 #        create objects at the start
 #        use pagerank partitions
-def test37():
-    print("test37")
+def test36():
+    print("test36")
     global store_sync_objects_in_lambdas
     global using_Lambda_Function_Simulators_to_Store_Objects
     global sync_objects_in_lambdas_trigger_their_tasks
@@ -2992,12 +2949,12 @@ def test37():
     use_page_rank_group_partitions = compute_pagerank and False
     use_struct_of_arrays_for_pagerank = compute_pagerank and False
 
-#Test38: worker processes (A2) with non-selective-wait Sync-objects, 
+#Test37: worker processes (A2) with non-selective-wait Sync-objects, 
 #        2 worker processes, Sync-objects stored locally
 #        create objects at the start
 #        use pagerank groups
-def test38():
-    print("test38")
+def test37():
+    print("test37")
     global store_sync_objects_in_lambdas
     global using_Lambda_Function_Simulators_to_Store_Objects
     global sync_objects_in_lambdas_trigger_their_tasks
@@ -3067,12 +3024,12 @@ def test38():
     use_page_rank_group_partitions = compute_pagerank and True
     use_struct_of_arrays_for_pagerank = compute_pagerank and False
 
-#Test39: worker processes (A2) with non-selective-wait Sync-objects, 
+#Test38: worker processes (A2) with non-selective-wait Sync-objects, 
 #        2 worker processes, Sync-objects stored locally
 #        create objects at the start
 #        use pagerank partitions
-def test39():
-    print("test39")
+def test38():
+    print("test38")
     global store_sync_objects_in_lambdas
     global using_Lambda_Function_Simulators_to_Store_Objects
     global sync_objects_in_lambdas_trigger_their_tasks
@@ -3145,12 +3102,89 @@ def test39():
 #test workers share memory. worker threads share a global array. 
 #worker processes share Shared Memory
 
-#Test40: worker threads (A2) with non-selective-wait Sync-objects, 
+#Test39: worker threads (A2) with non-selective-wait Sync-objects, 
 #        2 worker threads, Sync-objects stored remotely
 #        create objects at the start
 #        use pagerank groups
 #        use shared
 # Note: tcp_server must be running: tcp_server -t 40
+def test39():
+    print("test39")
+    global store_sync_objects_in_lambdas
+    global using_Lambda_Function_Simulators_to_Store_Objects
+    global sync_objects_in_lambdas_trigger_their_tasks
+    global using_DAG_orchestrator
+    global map_objects_to_lambda_functions
+    global use_anonymous_lambda_functions
+    global using_single_lambda_function
+    global compute_pagerank
+    global check_pagerank_output
+    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
+    global name_of_first_groupOrpartition_in_DAG
+    global same_output_for_all_fanout_fanin
+    global use_incremental_DAG_generation
+    global incremental_DAG_deposit_interval
+    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
+    global tasks_use_result_dictionary_parameter
+    global use_shared_partitions_groups
+    global use_page_rank_group_partitions
+    global use_struct_of_arrays_for_pagerank
+    global run_all_tasks_locally
+    global bypass_call_lambda_client_invoke
+    global store_fanins_faninNBs_locally
+    global create_all_fanins_faninNBs_on_start
+    global using_workers
+    global using_threads_not_processes
+    global num_workers
+    global use_multithreaded_multiprocessing
+    global num_threads_for_multithreaded_multiprocessing
+    global FanIn_Type
+    global FanInNB_Type
+    global process_work_queue_Type
+
+    run_all_tasks_locally = False 
+    store_fanins_faninNBs_locally = False 
+    create_all_fanins_faninNBs_on_start = True
+    using_workers = True
+    using_threads_not_processes = True
+    num_workers = 2
+    use_multithreaded_multiprocessing = False
+    num_threads_for_multithreaded_multiprocessing = 1
+
+    #FanIn_Type = "DAG_executor_FanIn"
+    #FanInNB_Type = "DAG_executor_FanInNB"
+    #process_work_queue_Type = "BoundedBuffer"
+    FanIn_Type = "DAG_executor_FanIn_Select"
+    FanInNB_Type = "DAG_executor_FanInNB_Select"
+    process_work_queue_Type = "BoundedBuffer_Select"
+
+    store_sync_objects_in_lambdas = False
+    using_Lambda_Function_Simulators_to_Store_Objects = False
+    sync_objects_in_lambdas_trigger_their_tasks = False
+    using_DAG_orchestrator = False
+    map_objects_to_lambda_functions = False
+    use_anonymous_lambda_functions = False
+    using_single_lambda_function = False
+
+    compute_pagerank = True
+    check_pagerank_output = compute_pagerank and run_all_tasks_locally and using_workers and using_threads_not_processes and True
+    name_of_first_groupOrpartition_in_DAG = "PR1_1"
+    number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
+    same_output_for_all_fanout_fanin = not compute_pagerank
+    use_incremental_DAG_generation = compute_pagerank and False
+    incremental_DAG_deposit_interval = 2
+    work_queue_size_for_incremental_DAG_generation_with_worker_processes =  2**10-1
+    tasks_use_result_dictionary_parameter = compute_pagerank and True
+    use_shared_partitions_groups = compute_pagerank and True
+    use_page_rank_group_partitions = compute_pagerank and True
+    use_struct_of_arrays_for_pagerank = compute_pagerank and False
+
+#Test40: worker threads (A2) with non-selective-wait Sync-objects, 
+#        2 worker threads, Sync-objects stored remotely
+#        create objects at the start
+#        use pagerank partitions
+#        use shared
+# Note: tcp_server must be running: tcp_server -t 41
 def test40():
     print("test40")
     global store_sync_objects_in_lambdas
@@ -3219,15 +3253,16 @@ def test40():
     work_queue_size_for_incremental_DAG_generation_with_worker_processes =  2**10-1
     tasks_use_result_dictionary_parameter = compute_pagerank and True
     use_shared_partitions_groups = compute_pagerank and True
-    use_page_rank_group_partitions = compute_pagerank and True
+    use_page_rank_group_partitions = compute_pagerank and False
     use_struct_of_arrays_for_pagerank = compute_pagerank and False
 
-#Test41: worker threads (A2) with non-selective-wait Sync-objects, 
+#Test 41: worker threads (A2) with non-selective-wait Sync-objects, 
 #        2 worker threads, Sync-objects stored remotely
 #        create objects at the start
-#        use pagerank partitions
+#        use pagerank groups
 #        use shared
-# Note: tcp_server must be running: tcp_server -t 41
+#        use array of structs
+# Note: tcp_server must be running: tcp_server -t 42
 def test41():
     print("test41")
     global store_sync_objects_in_lambdas
@@ -3296,16 +3331,16 @@ def test41():
     work_queue_size_for_incremental_DAG_generation_with_worker_processes =  2**10-1
     tasks_use_result_dictionary_parameter = compute_pagerank and True
     use_shared_partitions_groups = compute_pagerank and True
-    use_page_rank_group_partitions = compute_pagerank and False
-    use_struct_of_arrays_for_pagerank = compute_pagerank and False
+    use_page_rank_group_partitions = compute_pagerank and True
+    use_struct_of_arrays_for_pagerank = compute_pagerank and True
 
-#Test 38: worker threads (A2) with non-selective-wait Sync-objects, 
+#Test42: worker threads (A2) with non-selective-wait Sync-objects, 
 #        2 worker threads, Sync-objects stored remotely
 #        create objects at the start
-#        use pagerank groups
+#        use pagerank partitions
 #        use shared
 #        use array of structs
-# Note: tcp_server must be running: tcp_server -t 42
+# Note: tcp_server must be running: tcp_server -t 43
 def test42():
     print("test42")
     global store_sync_objects_in_lambdas
@@ -3374,16 +3409,14 @@ def test42():
     work_queue_size_for_incremental_DAG_generation_with_worker_processes =  2**10-1
     tasks_use_result_dictionary_parameter = compute_pagerank and True
     use_shared_partitions_groups = compute_pagerank and True
-    use_page_rank_group_partitions = compute_pagerank and True
+    use_page_rank_group_partitions = compute_pagerank and False
     use_struct_of_arrays_for_pagerank = compute_pagerank and True
 
-#Test43: worker threads (A2) with non-selective-wait Sync-objects, 
-#        2 worker threads, Sync-objects stored remotely
-#        create objects at the start
-#        use pagerank partitions
+#Test43: worker processes (A2) with non-selective-wait Sync-objects, 
+#        2 worker processes, Sync-objects stored remotely
+#        use pagerank groups
 #        use shared
-#        use array of structs
-# Note: tcp_server must be running: tcp_server -t 43
+# Note: tcp_server must be running: tcp_server -t 44
 def test43():
     print("test43")
     global store_sync_objects_in_lambdas
@@ -3422,7 +3455,7 @@ def test43():
     store_fanins_faninNBs_locally = False 
     create_all_fanins_faninNBs_on_start = True
     using_workers = True
-    using_threads_not_processes = True
+    using_threads_not_processes = False
     num_workers = 2
     use_multithreaded_multiprocessing = False
     num_threads_for_multithreaded_multiprocessing = 1
@@ -3452,14 +3485,15 @@ def test43():
     work_queue_size_for_incremental_DAG_generation_with_worker_processes =  2**10-1
     tasks_use_result_dictionary_parameter = compute_pagerank and True
     use_shared_partitions_groups = compute_pagerank and True
-    use_page_rank_group_partitions = compute_pagerank and False
-    use_struct_of_arrays_for_pagerank = compute_pagerank and True
+    use_page_rank_group_partitions = compute_pagerank and True
+    use_struct_of_arrays_for_pagerank = compute_pagerank and False
 
 #Test44: worker processes (A2) with non-selective-wait Sync-objects, 
 #        2 worker processes, Sync-objects stored remotely
-#        use pagerank groups
+#        create objects at the start
+#        use pagerank partitions
 #        use shared
-# Note: tcp_server must be running: tcp_server -t 44
+# Note: tcp_server must be running: tcp_server -t 45
 def test44():
     print("test44")
     global store_sync_objects_in_lambdas
@@ -3528,95 +3562,18 @@ def test44():
     work_queue_size_for_incremental_DAG_generation_with_worker_processes =  2**10-1
     tasks_use_result_dictionary_parameter = compute_pagerank and True
     use_shared_partitions_groups = compute_pagerank and True
-    use_page_rank_group_partitions = compute_pagerank and True
-    use_struct_of_arrays_for_pagerank = compute_pagerank and False
-
-#Test45: worker processes (A2) with non-selective-wait Sync-objects, 
-#        2 worker processes, Sync-objects stored remotely
-#        create objects at the start
-#        use pagerank partitions
-#        use shared
-# Note: tcp_server must be running: tcp_server -t 45
-def test45():
-    print("test45")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
-
-    run_all_tasks_locally = False 
-    store_fanins_faninNBs_locally = False 
-    create_all_fanins_faninNBs_on_start = True
-    using_workers = True
-    using_threads_not_processes = False
-    num_workers = 2
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
-
-    #FanIn_Type = "DAG_executor_FanIn"
-    #FanInNB_Type = "DAG_executor_FanInNB"
-    #process_work_queue_Type = "BoundedBuffer"
-    FanIn_Type = "DAG_executor_FanIn_Select"
-    FanInNB_Type = "DAG_executor_FanInNB_Select"
-    process_work_queue_Type = "BoundedBuffer_Select"
-
-    store_sync_objects_in_lambdas = False
-    using_Lambda_Function_Simulators_to_Store_Objects = False
-    sync_objects_in_lambdas_trigger_their_tasks = False
-    using_DAG_orchestrator = False
-    map_objects_to_lambda_functions = False
-    use_anonymous_lambda_functions = False
-    using_single_lambda_function = False
-
-    compute_pagerank = True
-    check_pagerank_output = compute_pagerank and run_all_tasks_locally and using_workers and using_threads_not_processes and True
-    name_of_first_groupOrpartition_in_DAG = "PR1_1"
-    number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
-    same_output_for_all_fanout_fanin = not compute_pagerank
-    use_incremental_DAG_generation = compute_pagerank and False
-    incremental_DAG_deposit_interval = 2
-    work_queue_size_for_incremental_DAG_generation_with_worker_processes =  2**10-1
-    tasks_use_result_dictionary_parameter = compute_pagerank and True
-    use_shared_partitions_groups = compute_pagerank and True
     use_page_rank_group_partitions = compute_pagerank and False
     use_struct_of_arrays_for_pagerank = compute_pagerank and False
 
-#Test46: worker processes (A2) with non-selective-wait Sync-objects, 
+#Test45: worker processes (A2) with non-selective-wait Sync-objects, 
 #        2 worker processes, Sync-objects stored remotely
 #        create objects at the start
 #        use pagerank groups
 #        use shared
 #        use array of structs
 # Note: tcp_server must be running: tcp_server -t 46
-def test46():
-    print("test46")
+def test45():
+    print("test45")
     global store_sync_objects_in_lambdas
     global using_Lambda_Function_Simulators_to_Store_Objects
     global sync_objects_in_lambdas_trigger_their_tasks
@@ -3686,15 +3643,15 @@ def test46():
     use_page_rank_group_partitions = compute_pagerank and True
     use_struct_of_arrays_for_pagerank = compute_pagerank and True
 
-#Test47: worker processes (A2) with non-selective-wait Sync-objects, 
+#Test46: worker processes (A2) with non-selective-wait Sync-objects, 
 #        2 worker processes, Sync-objects stored remotely
 #        create objects at the start
 #        use pagerank partitions
 #        use shared
 #        use array of structs
 # Note: tcp_server must be running: tcp_server -t 47
-def test47():
-    print("test47")
+def test46():
+    print("test46")
     global store_sync_objects_in_lambdas
     global using_Lambda_Function_Simulators_to_Store_Objects
     global sync_objects_in_lambdas_trigger_their_tasks
@@ -3766,12 +3723,12 @@ def test47():
 
 # Test Pagerank with increental DAG generation
 
-#Test48: worker threads (A2) with non-selective-wait Sync-objects, 
+#Test47: worker threads (A2) with non-selective-wait Sync-objects, 
 #        2 worker threads, Sync-objects stored locally
 #        create objects on-the-fly (required for incremenal DAG generation)
 #        use pagerank groups
-def test48():
-    print("test48")
+def test47():
+    print("test47")
     global store_sync_objects_in_lambdas
     global using_Lambda_Function_Simulators_to_Store_Objects
     global sync_objects_in_lambdas_trigger_their_tasks

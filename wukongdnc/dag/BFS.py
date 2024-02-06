@@ -4313,7 +4313,7 @@ def bfs(visited, node):
                     #partition_index_of_parent = pg_tuple[1]
                     group_index_of_parent = pg_tuple[3]
 
-                    #asserting if condition is True
+                    #assserting if condition is True
                     try:
                         msg = "[Error]: BFS: global map index of " + parent_index + " is -1"
                         assert group_index_of_parent != -1, msg

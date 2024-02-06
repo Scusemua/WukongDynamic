@@ -103,10 +103,6 @@ MESSAGES = [
 # Note that on Windows you can't rely on fork semantics, so each process
 # will run the logging configuration code when it starts.
 def worker_configurer(queue):
-    from .addLoggingLevel import addLoggingLevel
-    #if not compute_pagerank:
-    addLoggingLevel('TRACE', logging.DEBUG - 5)
-    #logging.basicConfig(encoding='utf-8',level=log_level, format='[%(asctime)s][%(module)s][%(processName)s][%(threadName)s]: %(message)s')
 
     h = logging.handlers.QueueHandler(queue)  # Just the one handler needed
     root = logging.getLogger()

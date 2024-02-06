@@ -1549,7 +1549,7 @@ def run():
     #   - if not using multithreaded worker processes, join the thread/process workers
     #   - if using multithreaded worker processes. workers will start and join their threads
     #     then we join the multithreaded worker processes. 
-    #asserts on configuration:
+    #assserts on configuration:
     try:
         msg = "[Error]: DAG_executor_driver: if using_workers then run_fanout_tasks_locally must also be true."
         assert not (DAG_executor_constants.using_workers and not DAG_executor_constants.run_all_tasks_locally) , msg
@@ -2123,7 +2123,7 @@ def run():
             # leaf tasks than workers, but that is okay since we put all the leaf task states in the 
             # work queue and the created workers will withdraw them.
 
-            if not (not DAG_executor_constants.run_all_tasks_locally and DAG_executor_constants.DAG_executor_constants.store_sync_objects_in_lambdas and DAG_executor_constants.sync_objects_in_lambdas_trigger_their_tasks):
+            if not (not DAG_executor_constants.run_all_tasks_locally and DAG_executor_constants.store_sync_objects_in_lambdas and DAG_executor_constants.sync_objects_in_lambdas_trigger_their_tasks):
                 # we are not having sync objects trigger their tasks in lambdas
                 for start_state, task_name, inp in zip(DAG_leaf_task_start_states, DAG_leaf_tasks, DAG_leaf_task_inputs):
                     # The state of a DAG executor contains only one application specific member, which is the

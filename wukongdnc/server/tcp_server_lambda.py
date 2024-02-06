@@ -1504,10 +1504,10 @@ class TCPHandler(socketserver.StreamRequestHandler):
         self.send_serialized_object(returned_state)
 
         # return value not assigned
-        return 0
+        return 0    
 
     # TBD what to do with this when we are using lambdas possibly with an orchestrator.
-    # Not clar what "async" means in that case.
+    # Not clear what "async" means in that case.
     def synchronize_async(self, message = None):
         """
         Asynchronous synchronization.
@@ -1518,8 +1518,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 The payload from the AWS Lambda function.
         """ 
 
-        DAG_exec_state = decode_and_deserialize(message["state"])
-        calling_task_name = DAG_exec_state.keyword_arguments['calling_task_name'] 
+        #DAG_exec_state = decode_and_deserialize(message["state"])
+        #calling_task_name = DAG_exec_state.keyword_arguments['calling_task_name'] 
         task_name = message["name"]
 
         control_message = None
@@ -1608,11 +1608,11 @@ class TCPHandler(socketserver.StreamRequestHandler):
         #returned_value_ignored = self.invoke_lambda_synchronously(message)
 
         if wukongdnc.dag.DAG_executor_constants.create_all_fanins_faninNBs_on_start:
-            logger.trace("*********************tcp_server_lambda: synchronize_async: " + calling_task_name + ": calling invoke_lambda_synchronously.")
+            #logger.trace("*********************tcp_server_lambda: synchronize_async: " + calling_task_name + ": calling invoke_lambda_synchronously.")
             # call synchronize_sync on the alrfeady created object
             returned_value = self.invoke_lambda_synchronously(message)
         else:
-            logger.trace("*********************tcp_server_lambda: synchronize_async: " + calling_task_name + ": calling invoke_lambda_synchronously.")
+            #logger.trace("*********************tcp_server_lambda: synchronize_async: " + calling_task_name + ": calling invoke_lambda_synchronously.")
             # call createif_and_synchronize_sync to create object
             # and call synchronize_sync on it. the control_message
             # has the creation_message and the message for snchronize_sync
