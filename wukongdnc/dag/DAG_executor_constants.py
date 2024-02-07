@@ -44,7 +44,7 @@ bypass_call_lambda_client_invoke = (not run_all_tasks_locally) and True
 # has a collapse to partition i+1, so there are no synch objects
 # needed when we are using partitions, so it does not matter
 # whether we set store_fanins_faninNBs_locally to True or False.
-store_fanins_faninNBs_locally = False
+store_fanins_faninNBs_locally = True
 # True when all FanIn and FanInNB objects are created locally or on the
 # tcp_server or IniniX all at once at the start of the DAG execution. If
 # False, synch objects are created on the fly, i.e, we execute create-and-fanin
@@ -68,7 +68,7 @@ using_threads_not_processes = True
 num_workers = 2
 # Use one or more worker processes (num_workers) with one or more threads
 use_multithreaded_multiprocessing = False
-num_threads_for_multithreaded_multiprocessing = 2
+num_threads_for_multithreaded_multiprocessing = 1
 
 # if using lambdas to store synch objects, run tcp_server_lambda.
 # if store in regular python functions instead of real Lambdas
@@ -100,8 +100,8 @@ debug_DAG_executor_create_threads_for_multiT_multiP = False
 debug_DAG_executor_synchronizer = False
 
 # Currently, this is for storing synch objects in simulated lambdas;
-store_sync_objects_in_lambdas = True
-using_Lambda_Function_Simulators_to_Store_Objects = True
+store_sync_objects_in_lambdas = False
+using_Lambda_Function_Simulators_to_Store_Objects = False
 sync_objects_in_lambdas_trigger_their_tasks = False
 # use orchestrator to invoke functions (e.g., when all fanin/fanout results are available)
 using_DAG_orchestrator = False
@@ -112,7 +112,7 @@ using_DAG_orchestrator = False
 # we will just have to create the object in the funtion on the first function
 # invocation. If we do not map objects, then we will/can only invoke tge
 # function that contains the possibly pre-created object once. 
-map_objects_to_lambda_functions = True
+map_objects_to_lambda_functions = False
 # We can use an anonymous simulated function or a single named lambda deployment.
 # In this case, we can invoke the function only once snce we cannot
 # refer to a function instance by name, i.e., by index for simuated functions and 
@@ -298,7 +298,7 @@ except AssertionError:
 
 # Indicates that we are computing pagerank and thus that the pagerank
 # options are active and pagerank assserts should hold
-compute_pagerank = False
+compute_pagerank = True
 # used in BFS_pagerank. For non-loops, we only need 1 iteration
 number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
 name_of_first_groupOrpartition_in_DAG = "PR1_1"
@@ -326,7 +326,7 @@ same_output_for_all_fanout_fanin = not compute_pagerank
 use_incremental_DAG_generation = compute_pagerank and False
 
 # True if we are clustering fanouts that satisfy the cluster criteria
-enable_runtime_task_clustering = compute_pagerank and True
+enable_runtime_task_clustering = compute_pagerank and False
 
 try:
     msg = "[Error]: Configuration error: incremental_DAG_generation" + " requires not create_all_fanins_faninNBs_on_start" + " i.e., create synch objects on the fly since we don't know all of the synch objects " + " at the start (the DAG is not complete)"
@@ -2706,7 +2706,20 @@ def test33():
 # work_queue not in a lambda. 
 # So: work_queue need to be treated differently from the fanin/fanout 
 # objects when the latter are stored in lambdas.
-def test34():
+# Note: driver creates fanins/fanouts and the work queue but tcp_server_lambda
+# does not actually create the work_queue since it assumes we are using
+# lambdas and lambdas do not use work_queue. So tcp_server_lambda needs
+# to create the work_queue as a regular synch object (not stored in a lambda)
+# and we need to be able to all an asynch for deposit and a synch for
+# withdraw that access the work queue as a regular object. Perhaps
+# have "work_queue" versions of the synchronize sync/async methods
+# in the top level operations of tcp_server_lambda - this is a nuisance
+# since the DAG_executor would have to choose the operation to call.
+# An alternative is to let tcp_server figure out wha to do based on the 
+# name of the operation, e.g., if "process_work_queue"  then so this 
+# regular op for work queue else do op for fanin/fanout. (Could
+# pass call to synchronize_synch_work_queue() method else do current code.)
+def test34XXX():
     print("test34")
     global store_sync_objects_in_lambdas
     global using_Lambda_Function_Simulators_to_Store_Objects
@@ -2837,21 +2850,21 @@ def test35():
     global FanInNB_Type
     global process_work_queue_Type
 
-    run_all_tasks_locally = False 
-    store_fanins_faninNBs_locally = False 
-    create_all_fanins_faninNBs_on_start = False
+    run_all_tasks_locally = True 
+    store_fanins_faninNBs_locally = True 
+    create_all_fanins_faninNBs_on_start = True
     using_workers = True
     using_threads_not_processes = True
     num_workers = 2
     use_multithreaded_multiprocessing = False
     num_threads_for_multithreaded_multiprocessing = 1
 
-    #FanIn_Type = "DAG_executor_FanIn"
-    #FanInNB_Type = "DAG_executor_FanInNB"
-    #process_work_queue_Type = "BoundedBuffer"
-    FanIn_Type = "DAG_executor_FanIn_Select"
-    FanInNB_Type = "DAG_executor_FanInNB_Select"
-    process_work_queue_Type = "BoundedBuffer_Select"
+    FanIn_Type = "DAG_executor_FanIn"
+    FanInNB_Type = "DAG_executor_FanInNB"
+    process_work_queue_Type = "BoundedBuffer"
+    #FanIn_Type = "DAG_executor_FanIn_Select"
+    #FanInNB_Type = "DAG_executor_FanInNB_Select"
+    #process_work_queue_Type = "BoundedBuffer_Select"
 
     store_sync_objects_in_lambdas = False
     using_Lambda_Function_Simulators_to_Store_Objects = False
@@ -2912,21 +2925,21 @@ def test36():
     global FanInNB_Type
     global process_work_queue_Type
 
-    run_all_tasks_locally = False 
-    store_fanins_faninNBs_locally = False 
-    create_all_fanins_faninNBs_on_start = False
+    run_all_tasks_locally = True 
+    store_fanins_faninNBs_locally = True 
+    create_all_fanins_faninNBs_on_start = True
     using_workers = True
     using_threads_not_processes = True
     num_workers = 2
     use_multithreaded_multiprocessing = False
     num_threads_for_multithreaded_multiprocessing = 1
 
-    #FanIn_Type = "DAG_executor_FanIn"
-    #FanInNB_Type = "DAG_executor_FanInNB"
-    #process_work_queue_Type = "BoundedBuffer"
-    FanIn_Type = "DAG_executor_FanIn_Select"
-    FanInNB_Type = "DAG_executor_FanInNB_Select"
-    process_work_queue_Type = "BoundedBuffer_Select"
+    FanIn_Type = "DAG_executor_FanIn"
+    FanInNB_Type = "DAG_executor_FanInNB"
+    process_work_queue_Type = "BoundedBuffer"
+    #FanIn_Type = "DAG_executor_FanIn_Select"
+    #FanInNB_Type = "DAG_executor_FanInNB_Select"
+    #process_work_queue_Type = "BoundedBuffer_Select"
 
     store_sync_objects_in_lambdas = False
     using_Lambda_Function_Simulators_to_Store_Objects = False
@@ -2987,21 +3000,21 @@ def test37():
     global FanInNB_Type
     global process_work_queue_Type
 
-    run_all_tasks_locally = False 
-    store_fanins_faninNBs_locally = False 
-    create_all_fanins_faninNBs_on_start = False
+    run_all_tasks_locally = True 
+    store_fanins_faninNBs_locally = True 
+    create_all_fanins_faninNBs_on_start = True
     using_workers = True
     using_threads_not_processes = False
     num_workers = 2
     use_multithreaded_multiprocessing = False
     num_threads_for_multithreaded_multiprocessing = 1
 
-    #FanIn_Type = "DAG_executor_FanIn"
-    #FanInNB_Type = "DAG_executor_FanInNB"
-    #process_work_queue_Type = "BoundedBuffer"
-    FanIn_Type = "DAG_executor_FanIn_Select"
-    FanInNB_Type = "DAG_executor_FanInNB_Select"
-    process_work_queue_Type = "BoundedBuffer_Select"
+    FanIn_Type = "DAG_executor_FanIn"
+    FanInNB_Type = "DAG_executor_FanInNB"
+    process_work_queue_Type = "BoundedBuffer"
+    #FanIn_Type = "DAG_executor_FanIn_Select"
+    #FanInNB_Type = "DAG_executor_FanInNB_Select"
+    #process_work_queue_Type = "BoundedBuffer_Select"
 
     store_sync_objects_in_lambdas = False
     using_Lambda_Function_Simulators_to_Store_Objects = False
@@ -3062,21 +3075,21 @@ def test38():
     global FanInNB_Type
     global process_work_queue_Type
 
-    run_all_tasks_locally = False 
-    store_fanins_faninNBs_locally = False 
-    create_all_fanins_faninNBs_on_start = False
+    run_all_tasks_locally = True 
+    store_fanins_faninNBs_locally = True 
+    create_all_fanins_faninNBs_on_start = True
     using_workers = True
     using_threads_not_processes = False
     num_workers = 2
     use_multithreaded_multiprocessing = False
     num_threads_for_multithreaded_multiprocessing = 1
 
-    #FanIn_Type = "DAG_executor_FanIn"
-    #FanInNB_Type = "DAG_executor_FanInNB"
-    #process_work_queue_Type = "BoundedBuffer"
-    FanIn_Type = "DAG_executor_FanIn_Select"
-    FanInNB_Type = "DAG_executor_FanInNB_Select"
-    process_work_queue_Type = "BoundedBuffer_Select"
+    FanIn_Type = "DAG_executor_FanIn"
+    FanInNB_Type = "DAG_executor_FanInNB"
+    process_work_queue_Type = "BoundedBuffer"
+    #FanIn_Type = "DAG_executor_FanIn_Select"
+    #FanInNB_Type = "DAG_executor_FanInNB_Select"
+    #process_work_queue_Type = "BoundedBuffer_Select"
 
     store_sync_objects_in_lambdas = False
     using_Lambda_Function_Simulators_to_Store_Objects = False
@@ -3142,8 +3155,8 @@ def test39():
     global FanInNB_Type
     global process_work_queue_Type
 
-    run_all_tasks_locally = False 
-    store_fanins_faninNBs_locally = False 
+    run_all_tasks_locally = True 
+    store_fanins_faninNBs_locally = True 
     create_all_fanins_faninNBs_on_start = True
     using_workers = True
     using_threads_not_processes = True
@@ -3151,12 +3164,12 @@ def test39():
     use_multithreaded_multiprocessing = False
     num_threads_for_multithreaded_multiprocessing = 1
 
-    #FanIn_Type = "DAG_executor_FanIn"
-    #FanInNB_Type = "DAG_executor_FanInNB"
-    #process_work_queue_Type = "BoundedBuffer"
-    FanIn_Type = "DAG_executor_FanIn_Select"
-    FanInNB_Type = "DAG_executor_FanInNB_Select"
-    process_work_queue_Type = "BoundedBuffer_Select"
+    FanIn_Type = "DAG_executor_FanIn"
+    FanInNB_Type = "DAG_executor_FanInNB"
+    process_work_queue_Type = "BoundedBuffer"
+    #FanIn_Type = "DAG_executor_FanIn_Select"
+    #FanInNB_Type = "DAG_executor_FanInNB_Select"
+    #process_work_queue_Type = "BoundedBuffer_Select"
 
     store_sync_objects_in_lambdas = False
     using_Lambda_Function_Simulators_to_Store_Objects = False
@@ -3219,8 +3232,8 @@ def test40():
     global FanInNB_Type
     global process_work_queue_Type
 
-    run_all_tasks_locally = False 
-    store_fanins_faninNBs_locally = False 
+    run_all_tasks_locally = True 
+    store_fanins_faninNBs_locally = True 
     create_all_fanins_faninNBs_on_start = True
     using_workers = True
     using_threads_not_processes = True
@@ -3228,12 +3241,12 @@ def test40():
     use_multithreaded_multiprocessing = False
     num_threads_for_multithreaded_multiprocessing = 1
 
-    #FanIn_Type = "DAG_executor_FanIn"
-    #FanInNB_Type = "DAG_executor_FanInNB"
-    #process_work_queue_Type = "BoundedBuffer"
-    FanIn_Type = "DAG_executor_FanIn_Select"
-    FanInNB_Type = "DAG_executor_FanInNB_Select"
-    process_work_queue_Type = "BoundedBuffer_Select"
+    FanIn_Type = "DAG_executor_FanIn"
+    FanInNB_Type = "DAG_executor_FanInNB"
+    process_work_queue_Type = "BoundedBuffer"
+    #FanIn_Type = "DAG_executor_FanIn_Select"
+    #FanInNB_Type = "DAG_executor_FanInNB_Select"
+    #process_work_queue_Type = "BoundedBuffer_Select"
 
     store_sync_objects_in_lambdas = False
     using_Lambda_Function_Simulators_to_Store_Objects = False
@@ -3297,8 +3310,8 @@ def test41():
     global FanInNB_Type
     global process_work_queue_Type
 
-    run_all_tasks_locally = False 
-    store_fanins_faninNBs_locally = False 
+    run_all_tasks_locally = True 
+    store_fanins_faninNBs_locally = True 
     create_all_fanins_faninNBs_on_start = True
     using_workers = True
     using_threads_not_processes = True
@@ -3306,12 +3319,12 @@ def test41():
     use_multithreaded_multiprocessing = False
     num_threads_for_multithreaded_multiprocessing = 1
 
-    #FanIn_Type = "DAG_executor_FanIn"
-    #FanInNB_Type = "DAG_executor_FanInNB"
-    #process_work_queue_Type = "BoundedBuffer"
-    FanIn_Type = "DAG_executor_FanIn_Select"
-    FanInNB_Type = "DAG_executor_FanInNB_Select"
-    process_work_queue_Type = "BoundedBuffer_Select"
+    FanIn_Type = "DAG_executor_FanIn"
+    FanInNB_Type = "DAG_executor_FanInNB"
+    process_work_queue_Type = "BoundedBuffer"
+    #FanIn_Type = "DAG_executor_FanIn_Select"
+    #FanInNB_Type = "DAG_executor_FanInNB_Select"
+    #process_work_queue_Type = "BoundedBuffer_Select"
 
     store_sync_objects_in_lambdas = False
     using_Lambda_Function_Simulators_to_Store_Objects = False
@@ -3375,8 +3388,8 @@ def test42():
     global FanInNB_Type
     global process_work_queue_Type
 
-    run_all_tasks_locally = False 
-    store_fanins_faninNBs_locally = False 
+    run_all_tasks_locally = True 
+    store_fanins_faninNBs_locally = True 
     create_all_fanins_faninNBs_on_start = True
     using_workers = True
     using_threads_not_processes = True
@@ -3384,12 +3397,12 @@ def test42():
     use_multithreaded_multiprocessing = False
     num_threads_for_multithreaded_multiprocessing = 1
 
-    #FanIn_Type = "DAG_executor_FanIn"
-    #FanInNB_Type = "DAG_executor_FanInNB"
-    #process_work_queue_Type = "BoundedBuffer"
-    FanIn_Type = "DAG_executor_FanIn_Select"
-    FanInNB_Type = "DAG_executor_FanInNB_Select"
-    process_work_queue_Type = "BoundedBuffer_Select"
+    FanIn_Type = "DAG_executor_FanIn"
+    FanInNB_Type = "DAG_executor_FanInNB"
+    process_work_queue_Type = "BoundedBuffer"
+    #FanIn_Type = "DAG_executor_FanIn_Select"
+    #FanInNB_Type = "DAG_executor_FanInNB_Select"
+    #process_work_queue_Type = "BoundedBuffer_Select"
 
     store_sync_objects_in_lambdas = False
     using_Lambda_Function_Simulators_to_Store_Objects = False
@@ -3451,8 +3464,8 @@ def test43():
     global FanInNB_Type
     global process_work_queue_Type
 
-    run_all_tasks_locally = False 
-    store_fanins_faninNBs_locally = False 
+    run_all_tasks_locally = True 
+    store_fanins_faninNBs_locally = True 
     create_all_fanins_faninNBs_on_start = True
     using_workers = True
     using_threads_not_processes = False
@@ -3460,12 +3473,12 @@ def test43():
     use_multithreaded_multiprocessing = False
     num_threads_for_multithreaded_multiprocessing = 1
 
-    #FanIn_Type = "DAG_executor_FanIn"
-    #FanInNB_Type = "DAG_executor_FanInNB"
-    #process_work_queue_Type = "BoundedBuffer"
-    FanIn_Type = "DAG_executor_FanIn_Select"
-    FanInNB_Type = "DAG_executor_FanInNB_Select"
-    process_work_queue_Type = "BoundedBuffer_Select"
+    FanIn_Type = "DAG_executor_FanIn"
+    FanInNB_Type = "DAG_executor_FanInNB"
+    process_work_queue_Type = "BoundedBuffer"
+    #FanIn_Type = "DAG_executor_FanIn_Select"
+    #FanInNB_Type = "DAG_executor_FanInNB_Select"
+    #process_work_queue_Type = "BoundedBuffer_Select"
 
     store_sync_objects_in_lambdas = False
     using_Lambda_Function_Simulators_to_Store_Objects = False
@@ -3528,8 +3541,8 @@ def test44():
     global FanInNB_Type
     global process_work_queue_Type
 
-    run_all_tasks_locally = False 
-    store_fanins_faninNBs_locally = False 
+    run_all_tasks_locally = True 
+    store_fanins_faninNBs_locally = True 
     create_all_fanins_faninNBs_on_start = True
     using_workers = True
     using_threads_not_processes = False
@@ -3537,12 +3550,12 @@ def test44():
     use_multithreaded_multiprocessing = False
     num_threads_for_multithreaded_multiprocessing = 1
 
-    #FanIn_Type = "DAG_executor_FanIn"
-    #FanInNB_Type = "DAG_executor_FanInNB"
-    #process_work_queue_Type = "BoundedBuffer"
-    FanIn_Type = "DAG_executor_FanIn_Select"
-    FanInNB_Type = "DAG_executor_FanInNB_Select"
-    process_work_queue_Type = "BoundedBuffer_Select"
+    FanIn_Type = "DAG_executor_FanIn"
+    FanInNB_Type = "DAG_executor_FanInNB"
+    process_work_queue_Type = "BoundedBuffer"
+    #FanIn_Type = "DAG_executor_FanIn_Select"
+    #FanInNB_Type = "DAG_executor_FanInNB_Select"
+    #process_work_queue_Type = "BoundedBuffer_Select"
 
     store_sync_objects_in_lambdas = False
     using_Lambda_Function_Simulators_to_Store_Objects = False
@@ -3606,8 +3619,8 @@ def test45():
     global FanInNB_Type
     global process_work_queue_Type
 
-    run_all_tasks_locally = False 
-    store_fanins_faninNBs_locally = False 
+    run_all_tasks_locally = True 
+    store_fanins_faninNBs_locally = True 
     create_all_fanins_faninNBs_on_start = True
     using_workers = True
     using_threads_not_processes = False
@@ -3615,12 +3628,12 @@ def test45():
     use_multithreaded_multiprocessing = False
     num_threads_for_multithreaded_multiprocessing = 1
 
-    #FanIn_Type = "DAG_executor_FanIn"
-    #FanInNB_Type = "DAG_executor_FanInNB"
-    #process_work_queue_Type = "BoundedBuffer"
-    FanIn_Type = "DAG_executor_FanIn_Select"
-    FanInNB_Type = "DAG_executor_FanInNB_Select"
-    process_work_queue_Type = "BoundedBuffer_Select"
+    FanIn_Type = "DAG_executor_FanIn"
+    FanInNB_Type = "DAG_executor_FanInNB"
+    process_work_queue_Type = "BoundedBuffer"
+    #FanIn_Type = "DAG_executor_FanIn_Select"
+    #FanInNB_Type = "DAG_executor_FanInNB_Select"
+    #process_work_queue_Type = "BoundedBuffer_Select"
 
     store_sync_objects_in_lambdas = False
     using_Lambda_Function_Simulators_to_Store_Objects = False
@@ -3684,8 +3697,8 @@ def test46():
     global FanInNB_Type
     global process_work_queue_Type
 
-    run_all_tasks_locally = False 
-    store_fanins_faninNBs_locally = False 
+    run_all_tasks_locally = True 
+    store_fanins_faninNBs_locally = True 
     create_all_fanins_faninNBs_on_start = True
     using_workers = True
     using_threads_not_processes = False
@@ -3693,12 +3706,12 @@ def test46():
     use_multithreaded_multiprocessing = False
     num_threads_for_multithreaded_multiprocessing = 1
 
-    #FanIn_Type = "DAG_executor_FanIn"
-    #FanInNB_Type = "DAG_executor_FanInNB"
-    #process_work_queue_Type = "BoundedBuffer"
-    FanIn_Type = "DAG_executor_FanIn_Select"
-    FanInNB_Type = "DAG_executor_FanInNB_Select"
-    process_work_queue_Type = "BoundedBuffer_Select"
+    FanIn_Type = "DAG_executor_FanIn"
+    FanInNB_Type = "DAG_executor_FanInNB"
+    process_work_queue_Type = "BoundedBuffer"
+    #FanIn_Type = "DAG_executor_FanIn_Select"
+    #FanInNB_Type = "DAG_executor_FanInNB_Select"
+    #process_work_queue_Type = "BoundedBuffer_Select"
 
     store_sync_objects_in_lambdas = False
     using_Lambda_Function_Simulators_to_Store_Objects = False
@@ -3761,21 +3774,21 @@ def test47():
     global FanInNB_Type
     global process_work_queue_Type
 
-    run_all_tasks_locally = False 
+    run_all_tasks_locally = True 
     store_fanins_faninNBs_locally = True 
-    create_all_fanins_faninNBs_on_start = False
+    create_all_fanins_faninNBs_on_start = True
     using_workers = True
     using_threads_not_processes = True
     num_workers = 2
     use_multithreaded_multiprocessing = False
     num_threads_for_multithreaded_multiprocessing = 1
 
-    #FanIn_Type = "DAG_executor_FanIn"
-    #FanInNB_Type = "DAG_executor_FanInNB"
-    #process_work_queue_Type = "BoundedBuffer"
-    FanIn_Type = "DAG_executor_FanIn_Select"
-    FanInNB_Type = "DAG_executor_FanInNB_Select"
-    process_work_queue_Type = "BoundedBuffer_Select"
+    FanIn_Type = "DAG_executor_FanIn"
+    FanInNB_Type = "DAG_executor_FanInNB"
+    process_work_queue_Type = "BoundedBuffer"
+    #FanIn_Type = "DAG_executor_FanIn_Select"
+    #FanInNB_Type = "DAG_executor_FanInNB_Select"
+    #process_work_queue_Type = "BoundedBuffer_Select"
 
     store_sync_objects_in_lambdas = False
     using_Lambda_Function_Simulators_to_Store_Objects = False
@@ -3799,6 +3812,8 @@ def test47():
     use_struct_of_arrays_for_pagerank = compute_pagerank and False
 
 """
+ToDo: test48: mutlithtreaded DAG use_incremental_DAG_generation
+
 ToDo: So no logger stuff if using processes?
 if not using threads:
   logger stuff

@@ -2068,15 +2068,16 @@ def dfs_parent(visited, node):  #function for dfs
 # rhc : ******* END Group
 
             else:
-                # Note: assertion above should have failed.
+                ## Note: assertion above should have failed.
+
                 # parent is in different/previous partition, (must be previous partition current_partition - 1)
                 # This means that the parent is in a different group too, i.e., it is in a group that
                 # is in the different partition. We can add a noed to the current partiton and a node
                 # to the current group (depending on which we are collecting)
-                logger.error("[Error]: dfs_parent: parent_partition_number != current_partition_number "
-                    + " should be unreachable.")
-                logging.shutdown()
-                os._exit(0)
+                #logger.error("[Error]: dfs_parent: parent_partition_number != current_partition_number "
+                #    + " should be unreachable.")
+                #logging.shutdown()
+                #os._exit(0)
 
                 logger.trace ("dfs_parent: parent in different partition/group: parent_partition_number: " 
                     + str(parent_partition_number) 
@@ -3268,7 +3269,7 @@ def bfs(visited, node):
 
                     # assserting if condition is True
                     try:
-                        msg = "BFS: global map index of " + parent_index + " is -1"
+                        msg = "BFS: global map index of " + str(parent_index) + " is -1"
                         assert partition_index_of_parent != -1 , msg
                     except AssertionError:
                         logger.exception("[Error]: assertion failed")
@@ -3286,7 +3287,7 @@ def bfs(visited, node):
                             #+ group_index_of_parent + " for group node")
                     else:
                         #Note: assertion should have failed
-                        logger.error("BFS: global map index of " + parent_index + " is -1")
+                        logger.error("BFS: global map index of " + str(parent_index) + " is -1")
                         logging.shutdown()
                         os._exit(0)
 
@@ -4315,7 +4316,7 @@ def bfs(visited, node):
 
                     #assserting if condition is True
                     try:
-                        msg = "[Error]: BFS: global map index of " + parent_index + " is -1"
+                        msg = "[Error]: group_index_of_parent is -1"
                         assert group_index_of_parent != -1, msg
                     except AssertionError:
                         logger.exception("[Error]: assertion failed")
@@ -4334,7 +4335,7 @@ def bfs(visited, node):
                             + " to " + str(group_index_of_parent) + " for group node")
                     else:
                         # assertion above should have failed
-                        logger.error("BFS: global map index of " + parent_index + " is -1")
+                        logger.error("BFS: group_index_of_parent is -1")
                         logging.shutdown()
                         os._exit(0)
 
@@ -4896,7 +4897,6 @@ def print_BFS_stats():
     try:
         msg = "[Error]: print_BFS_stats: visited length is " + str(len(visited)) \
             + " but num_nodes is " + str(num_nodes)
-        + str(num_edges)
         assert not (len(visited) != num_nodes) , msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
@@ -4930,7 +4930,6 @@ def print_BFS_stats():
         try:
             msg = "[Error]: print_BFS_stats: sum_of_partition_lengths is " + str(sum_of_partition_lengths) \
                 + " but num_nodes is " + str(num_nodes)
-            + str(num_edges)
             assert not (sum_of_partition_lengths != num_nodes) , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
@@ -4984,7 +4983,6 @@ def print_BFS_stats():
         try:
             msg = "[Error]: print_BFS_stats: sum_of_groups_lengths is " + str(sum_of_groups_lengths) \
                 + " but num_nodes is " + str(num_nodes)
-            + str(num_edges)
             assert not (sum_of_groups_lengths != num_nodes) , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
@@ -5402,14 +5400,14 @@ def print_BFS_stats():
         logger.trace("-- (" + str(len(BFS_generate_DAG_info.Group_receivers)) + ")")
         logger.trace("")
 
-
-#rhc: ToDo: put this code in main() so TestAll can call BFS.main()
-if __name__ == '__main__':
-
+def main():
     if use_page_rank_group_partitions:
         logger.info("BFS: using groups")
     else:
         logger.info("BFS: using partitions.")
+
+#0
+    global num_nodes
 
     logger.trace("BFS: Following is the Breadth-First Search")
     input_graph()
@@ -5447,6 +5445,9 @@ if __name__ == '__main__':
             DAG_infobuffer_monitor.create_Remote_Client()
             logger.trace("BFS: created Remote DAG_infobuffer_monitor_for_lambdas.")
 
+#00
+    global visited
+    global nodes
     #bfs(visited, graph, '5')    # function calling
     # example: num_nodes = 100, so Nodes in nodes[1] to nodes[100]
     # i start = 1 as nodes[0] not used, i end is (num_nodes+1) - 1  = 100
@@ -5472,6 +5473,8 @@ if __name__ == '__main__':
     #      
     # Do last partition/group if there is one.
 
+#1
+    global current_partition
     try:
         msg = "[Error]: bfs: len(current_partition) > 0" + " after last call to bfs."
         assert not (len(current_partition) > 0), msg
@@ -5491,11 +5494,16 @@ if __name__ == '__main__':
 
         logger.trace("BFS: create final sub-partition")
         # does not require a deepcopy
+#2
+        global partitions
+        global current_partition_number
         partitions.append(current_partition.copy())
 
         #rhc shared: added all the name stuff - should have been there
         partition_name = "PR" + str(current_partition_number) + "_1"
         #global current_partition_isLoop
+#3
+        global current_partition_isLoop
         if current_partition_isLoop:
             # These are the names of the partitions that have a loop. In the 
             # DAG, we will append an 'L' to the name. Not using this anymore.
@@ -5503,6 +5511,8 @@ if __name__ == '__main__':
             Partition_loops.add(partition_name)
 
         current_partition_isLoop = False
+#4
+        global partition_names
         partition_names.append(partition_name)
 
 #rhc: clustering
@@ -5510,6 +5520,11 @@ if __name__ == '__main__':
         # Need to know the number of shadow nodes when clustering in order
         # to compute the number of non-shadow nodes (nodies-shadow_nodes = non-shadow nodes)
         #if use_shared_partitions_groups:
+#5
+        global partitions_num_shadow_nodes_list
+        global end_num_shadow_nodes_for_partitions
+        global start_num_shadow_nodes_for_partitions
+        global num_shadow_nodes_added_to_partitions
         if use_shared_partitions_groups or enable_runtime_task_clustering:
             #rhc shared
             end_num_shadow_nodes_for_partitions = num_shadow_nodes_added_to_partitions
@@ -5524,6 +5539,14 @@ if __name__ == '__main__':
 
 # rhc : ******* Group
 # ToDo: if len(current_group) > 0:
+        
+#6
+        global groups
+        global current_group
+        global current_group_number
+        global current_group_isLoop
+        global Group_loops
+        global group_names
         groups.append(current_group)
 
         group_name = "PR" + str(current_partition_number) + "_" + str(current_group_number)
@@ -5539,6 +5562,11 @@ if __name__ == '__main__':
         current_group_isLoop = False
         group_names.append(group_name)
 
+#7
+        global end_num_shadow_nodes_for_groups
+        global groups_num_shadow_nodes_list
+        global start_num_shadow_nodes_for_groups
+        global num_shadow_nodes_added_to_groups
 #rhc: clustering
         # Note: need the group name here.
         #if use_shared_partitions_groups:
@@ -5552,6 +5580,11 @@ if __name__ == '__main__':
             # not needed here since we are done but kept to be consisent with use above
             start_num_shadow_nodes_for_groups = num_shadow_nodes_added_to_groups
 
+#8
+        global nodeIndex_to_partitionIndex_maps
+        global nodeIndex_to_partitionIndex_map
+        global nodeIndex_to_groupIndex_maps
+        global nodeIndex_to_groupIndex_map
         current_group = []
 
         nodeIndex_to_partitionIndex_maps.append(nodeIndex_to_partitionIndex_map)
@@ -5559,6 +5592,11 @@ if __name__ == '__main__':
         nodeIndex_to_groupIndex_maps.append(nodeIndex_to_groupIndex_map)
         nodeIndex_to_groupIndex_map = {}
 
+#9
+        global total_loop_nodes_added
+        global frontiers
+        global frontier
+        global frontier_costs
         #global total_loop_nodes_added
         # if we didn't call dfs_parent() can this be non-zero?
         total_loop_nodes_added += loop_nodes_added
@@ -5595,6 +5633,8 @@ if __name__ == '__main__':
     # generate shared array of partitions/groups if using multithreaded workers
     # or threads to simulate lambdas
 
+#10
+    global num_parent_appends
     if use_shared_partitions_groups:
         generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,partition_names,
             partitions_num_shadow_nodes_list,num_shadow_nodes_added_to_partitions,
@@ -5649,13 +5689,16 @@ if __name__ == '__main__':
             try:
                 BFS_Shared.close_shared_memory()
                 BFS_Shared.unlink_shared_memory()
-            except Exception as ex:
+            except Exception:
                 logger.exception("[Error]: PageRank_Function:"
                     + " BFS: Failed to close or unlink shared memory.")
                 if exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0)
     else:
+#11
+        global invoker_thread_for_DAG_executor_driver
+
         # bfs generates the DAG incrementally, i.e., the DAG_executor
         # and bfs() overlap their executions. bfs depsoits incremental
         # DAGs in a bounded buffer that DAG_executor withdraws.
@@ -5675,9 +5718,9 @@ if __name__ == '__main__':
             number_of_groups_or_partitions = len(groups)
         else:
             number_of_groups_or_partitions = len(partitions) 
-        verified = verify_pagerank_outputs(number_of_groups_or_partitions)
+        _verified = verify_pagerank_outputs(number_of_groups_or_partitions)
         
-        #if not verified:
+        #if not _verified:
         #   might do somethig with this
 
         logger.info("")
@@ -5693,7 +5736,12 @@ if __name__ == '__main__':
         else:
             for (k,v) in sorted_pagerank_outputs.items():
                 logger.info(str(k) + ":" + partition_names[k-1] + ":" +str(v))
-     
+
+
+
+#rhc: ToDo: put this code in main() so TestAll can call BFS.main()
+if __name__ == '__main__':
+    main()
 
 """
 logger.trace("Sorted simple cycles:")

@@ -238,7 +238,8 @@ class DAG_executor_Synchronizer(object):
                 #return_value, _restart_value_ignored = FanIn.fan_in(**keyword_arguments)
                 return_value = FanIn.fan_in(**keyword_arguments)
 
-            logger.trace("calling_task_name:" + keyword_arguments['calling_task_name'])
+            logger.info("calling_task_name: " + keyword_arguments['calling_task_name'])
+            logger.info("return_value: " + str(return_value))
             # try_fan_in never returns true. If we are not the last fan_in then we
             # get a return_value of 0; otherwise, we get the other fan_in results,
             # which do not include ours.

@@ -14,27 +14,33 @@ logger = logging.getLogger(__name__)
 # python -m wukongdnc.dag.TestAll test#, e.g., TestAll 1
 log_level = "INFO"
 
+pagerank_tests_start = 35
+pagerank_tests_end = 47
 def main(argv):
-    test_number = ''
+    test_number_string = ''
+    test_number = -1
     opts, _args = getopt.getopt(argv, "ht:",["test="])
     for opt, arg in opts:
         if opt == '-h':
             print ('TestAll.py -t <test number>')
             sys.exit()
         elif opt in ("-t", "--test"):
-            test_number = arg
+            test_number_string = arg
+            test_number = int(test_number_string)
 
-    from . import DAG_executor_constants
-    DAG_executor_constants.set_test_number(int(test_number))
+        from . import DAG_executor_constants
+        DAG_executor_constants.set_test_number(test_number)
+
     
 #rhc: 
 # ToDo: 
-    # if not testing pagerank:
-    from . import DAG_executor_driver
-    DAG_executor_driver.run()
-    #else:
-    #    from . import BFS
-    #    BFS.main()
+    if not (test_number >= pagerank_tests_start and test_number <= pagerank_tests_end):
+        from . import DAG_executor_driver
+        DAG_executor_driver.run()
+    else:
+        from . import BFS
+        BFS.main()
+
 # ToDo: put top-level constants in noTest()
 
 if __name__ == "__main__":
