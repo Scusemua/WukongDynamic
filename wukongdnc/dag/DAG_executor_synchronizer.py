@@ -219,24 +219,41 @@ class DAG_executor_Synchronizer(object):
 			#FanInNB gets DAG_executor_State in kwargs when it starts a new executor to execute the fanin task.
 			#FanIn does not access the DAG_executor_State in kwargs
 
-			# return is: self._results, restart, where restart is always 0 and results is 0 or a map
+            # For non-select, fanin returns the result and restart as a tuple. 
+            # Here, we are making a local call, so we receive this tuple. When remote,
+            # a non-select fanin returns a DAG_exec_state with the return value (no restart,
+            # no tuple). For select, fanin returns just the return value.
+            # Here, we are making a local call so we receive this return value.
+            # For remote, fanin selects returns only the return_value, execute() computes
+            # the restart value which gets returned through a bounded buffer as
+            # a tuple, but tcp_server creates a DAG_executor_state with the return_value
+            # only, not the restart, and the DAG_executor_State gets returned. (This is
+            # for worker pocesses and real lambdas, which must store fanin/faninNB
+            # sync objects on the tcp_server, i.e., they are stored remotely.)
+            # Note: these values are ignored , i.e., we do not return them to 
+            # the process_faninNBs caller since we do not use them, i.e., the
+            # faninNB started a local simulated lamda to execute the fanin task with 
+            # the return value in the payload or it put the fanin task (with retrun_value)
+            # in the work_queue for the worker threads. (Real lambdas and worker
+            # processes do not call process_faninNbs, they use the batch method.)
+
             if is_select:
-                # Note: we are maing try_fan_in and fan_in atomic so we already hold the lock aquired
+                # Note: we are making try_fan_in and fan_in atomic so we already hold the lock aquired
                 # before the call to try_fan_in. Release the lock when fan_in returns.
                 #FanIn.lock()
                 return_value = FanIn.fan_in(**keyword_arguments)
                 FanIn.unlock()
             else:
-                #return_value, _restart_value_ignored = FanIn.fan_in(**keyword_arguments)
-                return_value = FanIn.fan_in(**keyword_arguments)
+                return_value, _restart_value_ignored = FanIn.fan_in(**keyword_arguments)
+                #return_value = FanIn.fan_in(**keyword_arguments)
         else:
             if is_select:
                 #FanIn.lock()
                 return_value = FanIn.fan_in(**keyword_arguments)
                 FanIn.unlock()
             else:
-                #return_value, _restart_value_ignored = FanIn.fan_in(**keyword_arguments)
-                return_value = FanIn.fan_in(**keyword_arguments)
+                return_value, _restart_value_ignored = FanIn.fan_in(**keyword_arguments)
+                #return_value = FanIn.fan_in(**keyword_arguments)
 
             logger.info("calling_task_name: " + keyword_arguments['calling_task_name'])
             logger.info("return_value: " + str(return_value))
@@ -403,11 +420,28 @@ class DAG_executor_Synchronizer(object):
             if is_select:
                 logger.info("call lock")
                 FanInNB.lock()
-            # fanin dos not return a restart value; it returns 
-            # either 0 or the fanin results for when the caller
-            # is not or is, respectively, the last caller for fanin
-            #_return_value_ignored, _restart_value_ignored = FanInNB.fan_in(**keyword_arguments)
-            _return_value_ignored = FanInNB.fan_in(**keyword_arguments)
+            # For non-select, fanin returns the result and restart as a tuple. 
+            # Here, we are making a local call, so we receive this tuple. When remote,
+            # a non-select fanin returns a DAG_exec_state with the return value (no restart,
+            # no tuple). For select, fanin returns just the return value.
+            # Here, we are making a local call so we receive this return value.
+            # For remote, fanin selects returns only the return_value, execute() computes
+            # the restart value which gets returned through a bounded buffer as
+            # a tuple, but tcp_server creates a DAG_executor_state with the return_value
+            # only, not the restart, and the DAG_executor_State gets returned. (This is
+            # for worker pocesses and real lambdas, which must store fanin/faninNB
+            # sync objects on the tcp_server, i.e., they are stored remotely.)
+            # Note: these values are ignored , i.e., we do not return them to 
+            # the process_faninNBs caller since we do not use them, i.e., the
+            # faninNB started a local simulated lamda to execute the fanin task with 
+            # the return value in the payload or it put the fanin task (with retrun_value)
+            # in the work_queue for the worker threads. (Real lambdas and worker
+            # processes do not call process_faninNbs, they use the batch method.)
+            if is_select:
+                _return_value_ignored = FanInNB.fan_in(**keyword_arguments)
+            else:
+                _return_value_ignored, _restart_value_ignored = FanInNB.fan_in(**keyword_arguments)
+
             if is_select:
                 logger.info("call unlock")
                 FanInNB.unlock()

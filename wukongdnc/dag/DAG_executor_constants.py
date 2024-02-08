@@ -44,7 +44,7 @@ bypass_call_lambda_client_invoke = (not run_all_tasks_locally) and True
 # has a collapse to partition i+1, so there are no synch objects
 # needed when we are using partitions, so it does not matter
 # whether we set store_fanins_faninNBs_locally to True or False.
-store_fanins_faninNBs_locally = True
+store_fanins_faninNBs_locally = False
 # True when all FanIn and FanInNB objects are created locally or on the
 # tcp_server or IniniX all at once at the start of the DAG execution. If
 # False, synch objects are created on the fly, i.e, we execute create-and-fanin
@@ -62,7 +62,7 @@ create_all_fanins_faninNBs_on_start = True
 using_workers = True
 # True when we are not using Lambas and tasks are executed by threads instead of processes. 
 # False when we are not using lambdas and are using multiprocesssing 
-using_threads_not_processes = True
+using_threads_not_processes = False
 # When using_workers, this is how many threads or processes in the pool.
 # When not using workers, this value is ignored.
 num_workers = 2
@@ -73,12 +73,12 @@ num_threads_for_multithreaded_multiprocessing = 1
 # if using lambdas to store synch objects, run tcp_server_lambda.
 # if store in regular python functions instead of real Lambdas
 # set using_Lambda_Function_Simulator = True
-#FanIn_Type = "DAG_executor_FanIn"
-#FanInNB_Type = "DAG_executor_FanInNB"
-#process_work_queue_Type = "BoundedBuffer"
-FanIn_Type = "DAG_executor_FanIn_Select"
-FanInNB_Type = "DAG_executor_FanInNB_Select"
-process_work_queue_Type = "BoundedBuffer_Select"
+FanIn_Type = "DAG_executor_FanIn"
+FanInNB_Type = "DAG_executor_FanInNB"
+process_work_queue_Type = "BoundedBuffer"
+#FanIn_Type = "DAG_executor_FanIn_Select"
+#FanInNB_Type = "DAG_executor_FanInNB_Select"
+#process_work_queue_Type = "BoundedBuffer_Select"
 
 # if running real lambdas or storing synch objects in real lambdas:
 #   Set SERVERLESS_SYNC to True or False in wukongdnc constants !!!!!!!!!!!!!!
@@ -446,7 +446,7 @@ except AssertionError:
 # For PageRank:
 # Execute page rank partitions or execute page rank groups
 # If True use groups else use partitions
-use_page_rank_group_partitions = compute_pagerank and True
+use_page_rank_group_partitions = compute_pagerank and False
 
 # For PageRank:
 # Use a struct of arrays to improve cache performance
@@ -2963,7 +2963,7 @@ def test36():
     use_struct_of_arrays_for_pagerank = compute_pagerank and False
 
 #Test37: worker processes (A2) with non-selective-wait Sync-objects, 
-#        2 worker processes, Sync-objects stored locally
+#        2 worker processes, Sync-objects stored remotely
 #        create objects at the start
 #        use pagerank groups
 def test37():
@@ -3001,7 +3001,7 @@ def test37():
     global process_work_queue_Type
 
     run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = True 
+    store_fanins_faninNBs_locally = False 
     create_all_fanins_faninNBs_on_start = True
     using_workers = True
     using_threads_not_processes = False
@@ -3076,7 +3076,7 @@ def test38():
     global process_work_queue_Type
 
     run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = True 
+    store_fanins_faninNBs_locally = False 
     create_all_fanins_faninNBs_on_start = True
     using_workers = True
     using_threads_not_processes = False

@@ -212,7 +212,10 @@ class DAG_executor_FanInNB_Select(Selector):
                     + " exiting FanInNB fan_in")
                 # Note: Typically we would return 1 when try_fan_in returns block is True, but the Fanin currently
                 # used by wukong D&C is expecting a return value of 0 for this case.
-                # Do not return the restart value here.
+                # Do not return the restart value here. When calling
+                # remotely, the restart value is computed by execute()
+                # and a DAG_executor_State is returned with it's return
+                # value set to return_value. When local 
                 return 0
             except Exception:
                 logger.exception("faninNB_select: fanin: exception processing non-last caller.")

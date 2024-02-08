@@ -695,15 +695,19 @@ import copy
 # we are not computing pagernk, DAG_executor_driver will addLoggingLevel TRACE.
 
 import logging
-from wukongdnc.dag.DAG_executor_constants import log_level
-from .addLoggingLevel import addLoggingLevel
-addLoggingLevel('TRACE', logging.DEBUG - 5)
-logging.basicConfig(encoding='utf-8',level=log_level, format='[%(asctime)s][%(module)s][%(processName)s][%(threadName)s]: %(message)s')
-# Added this to suppress the logging message:
-#   credentials - MainProcess - MainThread: Found credentials in shared credentials file: ~/.aws/credentials
-# But it appears that we could see other things liek this:
-# https://stackoverflow.com/questions/1661275/disable-boto-logging-without-modifying-the-boto-files
-logging.getLogger('botocore').setLevel(logging.CRITICAL)
+
+try:
+    from wukongdnc.dag.DAG_executor_constants import log_level
+    from .addLoggingLevel import addLoggingLevel
+    addLoggingLevel('TRACE', logging.DEBUG - 5)
+    logging.basicConfig(encoding='utf-8',level=log_level, format='[%(asctime)s][%(module)s][%(processName)s][%(threadName)s]: %(message)s')
+    # Added this to suppress the logging message:
+    #   credentials - MainProcess - MainThread: Found credentials in shared credentials file: ~/.aws/credentials
+    # But it appears that we could see other things liek this:
+    # https://stackoverflow.com/questions/1661275/disable-boto-logging-without-modifying-the-boto-files
+    logging.getLogger('botocore').setLevel(logging.CRITICAL)
+except AttributeError:
+    print("Already did addLoggingLevel in TestAll so skip it here.")
 
 """ How to use: https://stackoverflow.com/questions/2183233/how-to-add-a-custom-loglevel-to-pythons-logging-facility/35804945#35804945
     >>> addLoggingLevel('TRACE', logging.DEBUG - 5)
@@ -5401,6 +5405,7 @@ def print_BFS_stats():
         logger.trace("")
 
 def main():
+
     if use_page_rank_group_partitions:
         logger.info("BFS: using groups")
     else:

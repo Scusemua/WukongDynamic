@@ -5,6 +5,16 @@ import getopt
 #from .addLoggingLevel import addLoggingLevel
 #import wukongdnc.dag.DAG_executor_constants
 
+from wukongdnc.dag.DAG_executor_constants import log_level
+from .addLoggingLevel import addLoggingLevel
+addLoggingLevel('TRACE', logging.DEBUG - 5)
+logging.basicConfig(encoding='utf-8',level=log_level, format='[%(asctime)s][%(module)s][%(processName)s][%(threadName)s]: %(message)s')
+# Added this to suppress the logging message:
+#   credentials - MainProcess - MainThread: Found credentials in shared credentials file: ~/.aws/credentials
+# But it appears that we could see other things liek this:
+# https://stackoverflow.com/questions/1661275/disable-boto-logging-without-modifying-the-boto-files
+logging.getLogger('botocore').setLevel(logging.CRITICAL)
+
 logger = logging.getLogger(__name__)
 
 # if running real lambdas or storing synch objects in real lambdas:
@@ -12,7 +22,6 @@ logger = logging.getLogger(__name__)
 
 # Runs a single test with the command:
 # python -m wukongdnc.dag.TestAll test#, e.g., TestAll 1
-log_level = "INFO"
 
 pagerank_tests_start = 35
 pagerank_tests_end = 47
