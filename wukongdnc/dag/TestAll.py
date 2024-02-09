@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 # python -m wukongdnc.dag.TestAll test#, e.g., TestAll 1
 
 pagerank_tests_start = 35
-pagerank_tests_end = 47
+pagerank_tests_end = 48
 def main(argv):
     test_number_string = ''
     test_number = -1

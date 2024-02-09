@@ -696,6 +696,10 @@ import copy
 
 import logging
 
+# if we run TestAll.py then it will addLoggingLevel so this will 
+# be a second addLoggingLevel and it will fail. If we run 
+# this BFS.py file, we need to addLoggingLevel. We intend to 
+# always use TestAll.
 try:
     from wukongdnc.dag.DAG_executor_constants import log_level
     from .addLoggingLevel import addLoggingLevel
@@ -707,6 +711,7 @@ try:
     # https://stackoverflow.com/questions/1661275/disable-boto-logging-without-modifying-the-boto-files
     logging.getLogger('botocore').setLevel(logging.CRITICAL)
 except AttributeError:
+    # comment this out
     print("Already did addLoggingLevel in TestAll so skip it here.")
 
 """ How to use: https://stackoverflow.com/questions/2183233/how-to-add-a-custom-loglevel-to-pythons-logging-facility/35804945#35804945
@@ -4954,7 +4959,6 @@ def print_BFS_stats():
                 try:
                     msg = "[Error]: print_BFS_stats: shared_partition_length is " + str(shared_partition_length) \
                         + " but num_nodes is " + str(num_nodes)
-                    + str(num_edges)
                     assert not (shared_partition_length != num_nodes) , msg
                 except AssertionError:
                     logger.exception("[Error]: assertion failed")

@@ -1094,9 +1094,9 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
     # change state for this thread so that this thread will become the new task, i.e., execute another iteration with the new state
     DAG_exec_State.state = DAG_states[become_task]
 
-    logger.trace (thread_name + ": process_fanouts: fanout for " + calling_task_name + " become_task state is " + str(become_start_state))
+    logger.info (thread_name + ": process_fanouts: fanout for " + calling_task_name + " become_task state is " + str(become_start_state))
     fanouts.remove(become_task)
-    logger.trace(thread_name + ": process_fanouts: new fanouts after remove:" + str(fanouts))
+    logger.info(thread_name + ": process_fanouts: new fanouts after remove:" + str(fanouts))
 
     # process rest of fanouts
     logger.trace(thread_name + ": process_fanouts: run_all_tasks_locally:" + str(DAG_executor_constants.run_all_tasks_locally))
@@ -1188,7 +1188,7 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                     dict_of_results[qualfied_name] = output[name]
 
                     #dict_of_results[qualfied_name] = output[name]
-                logger.trace(thread_name + ": process_fanouts: dict_of_results for fanout " + name)
+                logger.info(thread_name + ": process_fanouts: dict_of_results for fanout " + name)
                 logger.trace(str(dict_of_results))
                 work_tuple = (DAG_states[name],dict_of_results)
                 #work_queue.put(DAG_states[name])
@@ -2527,11 +2527,11 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                         pass # finish for groups
                             else: # using worker threads
                                 # Config: A4_local, A4_Remote
-                                logger.trace("DAG_executor_work_loop:: get work for thread " + thread_name)
+                                logger.info("DAG_executor_work_loop:: get work for thread " + thread_name)
                                 work_tuple = work_queue.get()
                                 DAG_executor_state.state = work_tuple[0]
                                 dict_of_results = work_tuple[1]
-                                logger.trace("DAG_executor_work_loop: got work for thread " + thread_name
+                                logger.info("DAG_executor_work_loop: got work for thread " + thread_name
                                     + " state from work tuple is " + str(DAG_executor_state.state))
                                 if dict_of_results != None:
                                     logger.trace("DAG_executor_work_loop: dict_of_results from work_tuple: ")
@@ -2903,7 +2903,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 
                 incremental_dag_generation_with_groups = DAG_executor_constants.compute_pagerank and DAG_executor_constants.use_incremental_DAG_generation and DAG_executor_constants.use_page_rank_group_partitions
                 continued_task_state_info = DAG_map[DAG_executor_state.state]
-                logger.trace(thread_name + " DAG_executor_work_loop: checking whether to inc num tasks executed: incremental_dag_generation_with_groups: "
+                logger.info(thread_name + " DAG_executor_work_loop: checking whether to inc num tasks executed: incremental_dag_generation_with_groups: "
                     + str(incremental_dag_generation_with_groups)
                     + " continued_task: " + str(continued_task)
                     + " continued_task_state_info.task_name == PR1_1: " + str(continued_task_state_info.task_name == DAG_executor_constants.name_of_first_groupOrpartition_in_DAG)
@@ -3010,7 +3010,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # continud task.
 
                     # We will not excute the task so do not inc num_tasks_executed
-                    logger.trace("DAG_executor_work_loop: " + thread_name + " before processing " + str(DAG_executor_state.state) 
+                    logger.info("DAG_executor_work_loop: " + thread_name + " before processing " + str(DAG_executor_state.state) 
                         + " did not increment num_tasks_executed for continued task " 
                         + " so num_tasks_executed: " + str(num_tasks_executed) 
                         + " num_tasks_to_execute: " + str(num_tasks_to_execute)
@@ -3822,7 +3822,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             # be incomplete, i.e., its fanouts/fanins/collapse are to be continued (which means that 
             # state_info.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued is True) 
             # so we cannot process T's fanouts/fanins/collapse. In this case, T becomes a contiued
-            # task and we deal with t accordingly.
+            # task and we deal with T accordingly.
             #logger.trace("output2: " + str(output))
             if not DAG_executor_constants.using_workers and DAG_executor_constants.compute_pagerank and DAG_executor_constants.use_incremental_DAG_generation and (
                 DAG_executor_constants.use_page_rank_group_partitions and state_info.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued
@@ -3901,7 +3901,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 ):
                 # Group has fanouts/fanins/faninNBs/collapses that are TBC
                 # so workers will put this state in the continue_queue and lambdas
-                # will terminaet. Note that the lambda called withdraw() above abd passed 
+                # will terminate. 
+                # Note that the lambda called withdraw() above and passed 
                 # the task sate and output in case no new DAG was available in which case 
                 # the (state,output) will have been saved by withdraw(), When we get a new DAG
                 # we will get this state from the continue queue. We have already
@@ -3909,7 +3910,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # the continued fanouts/fanins/faninNBs/collapses. Note that when
                 # we get a new DAG that this group that had continued 
                 # fanouts/fanins/faninNBs/collapses now is complete, i.e., it has
-                # no continud fanouts/fanins/faninNBs/collapses.
+                # no continued fanouts/fanins/faninNBs/collapses.
                 # Note: we save the output in the tuple so we'll have it
                 # when we continue processing the task's fanins/fanouts.
                 if DAG_executor_constants.using_workers:

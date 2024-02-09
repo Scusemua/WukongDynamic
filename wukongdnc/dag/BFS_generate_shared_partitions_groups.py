@@ -59,8 +59,8 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
     groups, group_names,groups_num_shadow_nodes_list,num_shadow_nodes_added_to_groups):
     
     try:
-        assert use_shared_partitions_groups , "[Error]: Called generate_shared_partitions_groups"
-        + " but use_shared_partitions_groups is False."
+        assert use_shared_partitions_groups , "[Error]: Called generate_shared_partitions_groups" \
+            + " but use_shared_partitions_groups is False."
     except AssertionError:
         logger.exception("[Error]: assertion failed")
         if exit_program_on_exception:

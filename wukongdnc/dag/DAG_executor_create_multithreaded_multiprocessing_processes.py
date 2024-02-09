@@ -31,7 +31,6 @@ if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
 #def create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,counter,process_work_queue,data_dict,log_queue,worker_configurer):
 #def create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,counter,log_queue,worker_configurer):
 def create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,completed_tasks_counter,completed_workers_counter,log_queue,worker_configurer):
-    print("foo")
     logger.info("DAG_executor_driver: Starting multi processors for multhreaded multipocessing.")
     iteration = 1
     while True:

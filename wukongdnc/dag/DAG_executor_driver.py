@@ -353,14 +353,24 @@ from .addLoggingLevel import addLoggingLevel
 # Note that we start DAG execution either by running BFS or
 # DAG_excutor_driver, so one of them will addLoggingLevel(trace).
 # No other module executes addLoggingLevel.
+#
+# If we run TestAll.py then it will addLoggingLevel, so if
+# this will be a second addLoggingLevel and it will fail. If we run 
+# this DAG_executor.py file, we need to addLoggingLevel. We intend to 
+# always use TestAll.
 if not DAG_executor_constants.compute_pagerank:
-    addLoggingLevel('TRACE', logging.DEBUG - 5)
-    logging.basicConfig(encoding='utf-8',level=log_level, format='[%(asctime)s][%(module)s][%(processName)s][%(threadName)s]: %(message)s')
-    # Added this to suppress the logging message:
-    #   credentials - MainProcess - MainThread: Found credentials in shared credentials file: ~/.aws/credentials
-    # But it appears that we could see other things like this:
-    # https://stackoverflow.com/questions/1661275/disable-boto-logging-without-modifying-the-boto-files
-    logging.getLogger('botocore').setLevel(logging.CRITICAL)
+    try:
+        addLoggingLevel('TRACE', logging.DEBUG - 5)
+        logging.basicConfig(encoding='utf-8',level=log_level, format='[%(asctime)s][%(module)s][%(processName)s][%(threadName)s]: %(message)s')
+        # Added this to suppress the logging message:
+        #   credentials - MainProcess - MainThread: Found credentials in shared credentials file: ~/.aws/credentials
+        # But it appears that we could see other things like this:
+        # https://stackoverflow.com/questions/1661275/disable-boto-logging-without-modifying-the-boto-files
+        logging.getLogger('botocore').setLevel(logging.CRITICAL)
+    except AttributeError:
+        # comment this out
+        print("Already did addLoggingLevel in TestAll so skip it here.")
+
     
 
 ##Function to initialize the logger, notice that it takes 2 arguments
