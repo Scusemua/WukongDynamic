@@ -77,6 +77,14 @@ class DAG_Info(object):
         self.DAG_version_number = DAG_info_dictionary["DAG_version_number"]
         self.DAG_is_complete = DAG_info_dictionary["DAG_is_complete"]
         self.DAG_number_of_tasks = DAG_info_dictionary["DAG_number_of_tasks"]
+        # This is used during incremental DAG generation. A DAG may have n tasks/groups/partitions
+        # but if it has m incomplete groups/partitions, then at most n-m of then
+        # can be excuted before a new incremental DAG must be requested. (Also,
+        # see the note below about XXXXXXXXXXXXX.) This is used at the statr of the work
+        # loop in DAG_executor to detemine how many tasks can be executed before a new
+        # DAG should be requested. Likewise, it us used after a new incremental DAG is 
+        # obtained to detemrine how many tasks in the new DAG can be executed before a 
+        # another new DAG should be requested. 
         if not use_incremental_DAG_generation:
             self.DAG_number_of_incomplete_tasks = 0
         else:

@@ -19,7 +19,10 @@ class Counter(object):
         with self._lock:
             self.value -= 1
             return self.value
-
+        
+    def get(self):
+        with self._lock:
+            return self.value
 #rhc: counter 
 # tasks_completed_counter
 

@@ -1622,6 +1622,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
     # version i includes all the tasks of earlier version i-1, i-2, etc.
     # A later version has 1 or more complete tasks that were incomplete
     # in an earlier version. This is set next.
+    # Lambdas do not use this (see the note below where we set this.)
     num_tasks_to_execute = -1
 #rhc: lambda inc:
     continued_task = False
@@ -1629,6 +1630,25 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
         # not actually using this value when using real or simulated lambdas.
         # this values tells workers when there are no more tasks to execute
         #num_tasks_to_execute = len(DAG_tasks)
+        # Note: This is a Lambda, it does not try to excute all of the tasks
+        # in the DAG, it ensures that the tasks on the path that starts with 
+        # the current state/task are executed, either by it or some other
+        # lambda for a fanout task or a fanin/faninNB. That is it will execute
+        # the become task of a fanout an start other lambds for the other fanout
+        # tests, or it can become the excutor of a fanin (when it is the last 
+        # executor to call fanin). It des not exexecure the fanin task for a 
+        # faninNB as a faninNB starts a new lambda to execute the faninNBs fanin task.
+        # Note: We ar not using num_tasks_to_execute and number_of_tasks_executed
+        # the way workers use them, i.e,, to determine when using incremental DAG 
+        # generation whether it is time to get a new incremental DAG. Lambdas
+        # get a new incremental DAG when the get to "the end" of the current DAG
+        # so they need a new DAG to continue along the path they are on (i.e.,
+        # they executed a task and need a new DAG befoer they can process the 
+        # fanouts/fanins/collapses of this task. thelmabda then will continue
+        # by executing a become task of the fanouts or a fanin or it will stop.)
+        # Note: not using this for Lambdas - num_tasks_to_execute for the lambda
+        # is not known, the lambda executes tasks until it does not become 
+        # any task (of a set of fanout tasks or a fnin task) then it stops.
         num_tasks_to_execute = DAG_number_of_tasks
 #rhc: lambda inc:
         continued_task = DAG_executor_state.continued_task
@@ -2751,8 +2771,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                             # in an earlier version.
                                             num_tasks_to_execute = DAG_number_of_tasks - number_of_incomplete_tasks
                                             logger.info("DAG_executor_work_loop: after withdraw: DAG_info not complete: new num_tasks_to_execute: " 
-                                                + str(num_tasks_to_execute) + " with number_of_incomplete_tasks "
-                                                + str(number_of_incomplete_tasks))
+                                                + str(num_tasks_to_execute) + " with "
+                                                + str(number_of_incomplete_tasks) + " other incomplete tasks.")
                                         else:
                                             #num_tasks_to_execute = len(DAG_tasks)
                                             # This is a local variabe; each worker has their own 
@@ -2908,7 +2928,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     + " continued_task: " + str(continued_task)
                     + " continued_task_state_info.task_name == PR1_1: " + str(continued_task_state_info.task_name == DAG_executor_constants.name_of_first_groupOrpartition_in_DAG)
                     + " (not continued_task_state_info.task_name in DAG_info.get_DAG_leaf_tasks(): "
-                    + str((not continued_task_state_info.task_name in DAG_info.get_DAG_leaf_tasks())))
+                    + str((not continued_task_state_info.task_name in DAG_info.get_DAG_leaf_tasks()))
+                    + " num_tasks_executed *before* inc: " + str(completed_tasks_counter.get()))
                 
 #rhc lambda inc
                 if not (incremental_dag_generation_with_groups and continued_task):
@@ -2930,15 +2951,15 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # else needs to provide the barrier.
 
                     # Increment num tasks executed and see if this is the last 
-                    # task to execute. If so, start the terminattion process or
+                    # task to execute. If so, start the termination process or
                     # if we are doing incremental DAG generation (so this is the 
                     # last task in the current version of the DAG)) workers need
                     # to get the next DAG (instead of terminating).
 
                     num_tasks_executed = completed_tasks_counter.increment_and_get()
-                    logger.trace("DAG_executor_work_loop: " + thread_name + " increment num_tasks_executed, now check if executed all tasks: "
-                        + " num_tasks_executed: " + str(num_tasks_executed) 
-                        + " num_tasks_to_execute: " + str(num_tasks_to_execute))
+                    #logger.trace("DAG_executor_work_loop: " + thread_name + " increment num_tasks_executed, now check if executed all tasks: "
+                    #    + " num_tasks_executed: " + str(num_tasks_executed) 
+                    #    + " num_tasks_to_execute: " + str(num_tasks_to_execute))
 
                     # Remember that workers are calling get work and if they get -1 they 
                     # might add another -1 but then they will call withdraw. They

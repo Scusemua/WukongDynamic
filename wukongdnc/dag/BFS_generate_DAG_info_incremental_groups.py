@@ -267,7 +267,9 @@ Group_DAG_num_nodes_in_graph = 0
 
 # Called by generate_DAG_info_incremental_partitions below to generate 
 # the DAG_info object when we are using partitions.
-def generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks):
+def generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks,
+#rhc: bug_fix:                    
+     number_of_groups_of_previous_partition_that_cannot_be_executed):
     global Group_all_fanout_task_names
     global Group_all_fanin_task_names
     global Group_all_faninNB_task_names
@@ -1137,18 +1139,18 @@ def generate_DAG_info_incremental_groups(current_partition_name,
 #rhc: Problem: If not to_be_Continued then there is no next partition 
 # of groups to process, e.g., for th white board we have partition 3
 # with groups 3_1, 3_2, and 3_3, where 3_1 has a faninB to 3_2.
-# We won;t get a chance to compuet this faninNB uness we do it 
-# now, i.e., can;t wait until next partition since there is no next
-# partition .So if not to be continued, we need to look at 
+# We wontt get a chance to compute this faninNB unless we do it 
+# now, i.e., can't wait until next partition since there is no next
+# partition. So if not to be continued, we need to look at 
 # groups within partition.
-# No? When current partition is 3, we look at groups n partition 2,
+# When current partition is 3, we look at groups in partition 2,
 # which is fine for seeing the PR2_2L has a faninNB to PR3_2,
 # but we fail to detect that PR3_1 has a faninNB to PR3_2. 
 # This is because we only look at the groups in the previous
 # partition, like for using partitions, but we should also "Add"
 # groups in the current partition that are before group_name in 
 # that list (assuming groups are added left to right in this list
-# as the are detected.)
+# as they are detected.)
 #rhc: ToDo: fixes bug
         
 #rhc: undo 2
@@ -1179,9 +1181,6 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         if not to_be_continued:
             groups_to_consider += groups_of_previous_partition
             groups_to_consider += groups_of_current_partition
-            #groups_of_previous_partition += groups_of_current_partition 
-            # add current groups to groups_of_previous_partition so we will
-            # ad edges to DAG for their outputs too.
         else:
             groups_to_consider += groups_of_previous_partition
 
@@ -1272,6 +1271,30 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         # Consider taking the Do one time code out of the loops.
         #first_previous_previous_group = True
 #rhc: undo 3
+        
+#rhc: bug fix: Q: So we are adding the urrent partition and 
+# setting info for current and previous and previous previous
+# and generating DAG but we might not have to publish this
+# new DAG so when called again with nwe current we will
+# generate a new DAG in which previous becomes previous previous
+# and current becomes previous so this list will be reset to [].
+#
+# So if we will not publish this extension are we wasting
+# time generating the new DAG_info? Note that bfs() gets the 
+# rturned DAG_info and decides whatto do with it - we can move
+# all this bfs() code out of bfs() and into this dag 
+# generator code. So bfs() calls generate_incremental_groups()
+# and generate_incremental_groups calls this method which returns
+# DAG_info to generate_incremental_groups, which does what 
+# bfs() currently does, i.e., decides what to do with the 
+# DAG_info. (We would need to make sure DAG_info is not generated
+# if we are not going to use it - either generate_incremental_groups
+# tells this method whether to generate DAG_info or this
+# method doesn;t ever do it and generate_incremental_groups 
+# decides whether to generate the new DAG_info. Note this method
+# does stuff with DAG_info after generating it.)
+        previous_groups_with_TBC_faninsfanoutscollapses = []
+
         for previous_group in groups_to_consider:
         #for previous_group in groups_of_previous_partition:
             # sink nodes, i.e., nodes that do not send any outputs to other nodes
@@ -1298,12 +1321,12 @@ def generate_DAG_info_incremental_groups(current_partition_name,
 
             logger.trace("generate_DAG_info_incremental_groups: previous_group: " + previous_group)
 
-            # get groups that previous group sends inputs to. These
-            # groups "receive" inputs from the sender
+            # get groups that previous_group sends inputs to. These
+            # groups "receive" inputs from the sender (which is previous_group)
 
             #receiver_set_for_previous_group = Group_senders[previous_group]
             receiver_set_for_previous_group = Group_senders.get(previous_group,[])
-
+ 
             # (Note: Not sure whether we can have a length 0 Group_senders list, 
             # for current_partition_name. That is, we only create a 
             # Group_senders set when we get the first sender.)
@@ -1336,6 +1359,39 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 # to know whether receiverY is a task for a fanin/fanout/faniNB/collapse
                 # of previous_group.
 
+#rhc: bug fix:
+                # if not to_be_continued, groups_to_consider contains
+                # groups from groups_of_previous_partition and groups from
+                # groups_of_current_partition. That is, previous_group
+                # can be from groups_of_previous_partition or 
+                # groups_of_current_partition. Group receiverY can be 
+                # a group in groups_of_previous_partition (i.e., it is a 
+                # group in the same partition as previous_group) or a 
+                # group in groups_of_current_partition. Ee need to know 
+                # whether previous_group and receiverY are both in
+                # groups_of_previous_partition.
+                if previous_group in groups_of_previous_partition  \
+                and receiverY in groups_of_previous_partition:
+                    # previous_group sends output to receiverY
+                    # and both are in groups_of_previous_partition
+                    if to_be_continued:
+                        # receiverY will have to-be-continued fanouts/fanins/collapses
+                        # so previous_group will have to-be-continued fanouts/fanins/collapses
+                        # and thus it will be continued. This means we cannnot execute 
+                        # reveiverY so there is one less task that must be executed before we
+                        # run out of tasks and need to get a new incrememtal DAG.
+                        # Add receiverY to the *set* of previous groups that have TBC
+                        # fanouts/fanins/collapses. This coul create more than one
+                        # receiverY in the list so we remove duplicates at the end.
+                        previous_groups_with_TBC_faninsfanoutscollapses.append(receiverY)
+#rhc: bug fix: possible optimization: But the whole optimization is probebly too 
+# much since we can;t do it lft to right, i.e., we won't know the final values until
+# we process the rightmost group.
+                # elif previous_group in groups_of_previous_partition  \
+                # and receiverY in groups_of_current_partition:
+                #   if to_be_continued:
+                #       previous_groups_with_faninsfanoutscollapses_to_groups_in_current_partition.append(previous_groups)
+                
                 # Here we check whether rceiverY is a sink, i.e., it does not
                 # send inputs to any other group.
                 receiver_set_for_receiverY = Group_senders.get(receiverY)
@@ -1529,19 +1585,29 @@ def generate_DAG_info_incremental_groups(current_partition_name,
             # previous_group is not to_be_continued and so can be 
             # executed.
             state_info_of_previous_group.ToBeContinued = False
-            # if the current partition is to_be_continued then previous_group has incomplete
-            # groups so we set fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued of the previous
+#rhc: bug fix: No the previous group may not have any fanins/fanouts/collapses
+# to the current partition. In that case using to_be_continued is weak, i.e., it will work 
+# but it may prevent an executable task from being executed. Also, note that 
+# above we are adding receiverY to the list of previous_groups_with_TBC_faninsfanoutscollapses
+# when it might not have TBC_faninsfanoutscollapses. We would have to remove it when we fnd
+# it actually has no TBC_faninsfanoutscollapses to groups in the current partition, which 
+# seems like we would detect when receiverY is previous_group, i.e., track whether previous
+# group ssends its outputs to a group that is not in groups_of_previous_partition (or is in
+# groups_of_current_partition.)
+            # if the current partition is to_be_continued then previous_group has TBC fanins/fanouts/colapses to
+            # (current groups) so we set fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued of the previous
             # groups to True; otherwise, we set fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued to False.
             # Note: state_info_of_previous_group.ToBeContinued = False inicates that the
             # previous groups are not to be continued, while
             # state_info_of_previous_group.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued indicates
-            # whether the previous groups have fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued 
-            # that are to be continued, i.e., the fanout_fanin_faninNB_collapse are 
+            # whether the previous groups have fanout/fanin/faninNB/collapse groups/partitions
+            # that are to be continued, i.e., the fanout/fanin/faninNB/collapse are 
             # to groups in this current partition and whether these groups in the current
-            # partiton are to be continued is indicated by parameter to_be_continued.
+            # partition are to be continued is indicated by parameter to_be_continued.
             # (When bfs() calls this method it may determine that some of the graph
             # nodes have not yet been assigned to any partition so the DAG is
-            # still incomplete and thus to_be_continued = True )
+            # still incomplete and thus to_be_continued = True, whicch means that one or more
+            # partitions need to be added to the DAG.
             state_info_of_previous_group.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued = to_be_continued
 
             # Say that the current partition is C , which has a 
@@ -1553,7 +1619,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
             # of A to True, to indicate that A has fanins/fanouts/faninNBs/collapses
             # to incomplete groups (of B). When we process C, we can set B to complete
             # and C to incomplete but we can also reset fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued
-            # to False since B is complete so all of A's fanins/fanouts/faninNBs/collpases
+            # of A to False since B is complete so all of A's fanins/fanouts/faninNBs/collpases
             # are to complete groups. That means if C is group_name, then B
             # is a previous_group, and C is a previous_previous_group.
             #
@@ -1635,12 +1701,18 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         logger.trace("generate_DAG_info_incremental_groups: generate_DAG_info_incremental_groups for"
             + " group " + str(group_name))
 
+#rhc: bug_fix:
         # Generate the new DAG_info
+        number_of_groups_of_previous_partition_that_cannot_be_executed = 0
         if to_be_continued:
             number_of_incomplete_tasks = len(groups_of_current_partition)
+            duplicates_removed = list(set(previous_groups_with_TBC_faninsfanoutscollapses))
+            number_of_groups_of_previous_partition_that_cannot_be_executed = len(duplicates_removed)
         else:
-            number_of_incomplete_tasks = 0               
-        DAG_info = generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks)
+            number_of_incomplete_tasks = 0        
+            number_of_groups_of_previous_partition_that_cannot_be_executed = 0       
+        DAG_info = generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks,
+            number_of_groups_of_previous_partition_that_cannot_be_executed)
 
         # We are adding state_info objects for the groups of the current
         # partition to the DAG as incmplete (to_be_continued). They will 
@@ -1806,4 +1878,9 @@ def generate_DAG_info_incremental_groups(current_partition_name,
     #    logging.shutdown()
     #    os._exit(0)
 
+#rhc: bug_fix: perhaps also return number_of_groups_of_previous_partition_that_cannot_be_executed
+# for debugging, i.e., it;s not in DAG like the number of incomplete
+# tasks so return it. Q: can we do the same for number of 
+# incomplete taks? i.e., do we need to put it in DAG? That 
+# is, do we use it anywhere else besides upon return?
     return DAG_info
