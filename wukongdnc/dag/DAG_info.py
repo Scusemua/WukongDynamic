@@ -89,6 +89,12 @@ class DAG_Info(object):
             self.DAG_number_of_incomplete_tasks = 0
         else:
             self.DAG_number_of_incomplete_tasks = DAG_info_dictionary["DAG_number_of_incomplete_tasks"]
+#rhc: bug fix:
+        if not use_incremental_DAG_generation:
+            self.DAG_number_of_groups_of_previous_partition_that_cannot_be_executed = 0
+        else:
+            self.DAG_number_of_groups_of_previous_partition_that_cannot_be_executed = DAG_info_dictionary["DAG_number_of_groups_of_previous_partition_that_cannot_be_executed"]
+
 #rhc: num_nodes
         self.DAG_num_nodes_in_graph = DAG_info_dictionary["DAG_num_nodes_in_graph"]
 
@@ -110,6 +116,8 @@ class DAG_Info(object):
         DAG_info_dictionary["DAG_is_complete"] = self.DAG_is_complete
         DAG_info_dictionary["DAG_number_of_tasks"] = self.DAG_number_of_tasks
         DAG_info_dictionary["DAG_number_of_incomplete_tasks"] = self.DAG_number_of_incomplete_tasks
+#rhc: bug fix:
+        DAG_info_dictionary["DAG_number_of_groups_of_previous_partition_that_cannot_be_executed"] = self.DAG_number_of_groups_of_previous_partition_that_cannot_be_executed
 #rhc: num_nodes
         DAG_info_dictionary["DAG_num_nodes_in_graph"] = self.DAG_num_nodes_in_graph
         return DAG_info_dictionary
@@ -149,6 +157,8 @@ class DAG_Info(object):
         return self.DAG_number_of_tasks
     def get_DAG_number_of_incomplete_tasks(self):
         return self.DAG_number_of_incomplete_tasks
+    def get_DAG_number_of_groups_of_previous_partition_that_cannot_be_executed(self):
+        return self.DAG_number_of_groups_of_previous_partition_that_cannot_be_executed
 #rhc: num_nodes
     def get_DAG_num_nodes_in_graph(self):
         return self.DAG_num_nodes_in_graph
