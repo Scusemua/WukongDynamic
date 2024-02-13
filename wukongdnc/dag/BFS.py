@@ -4465,14 +4465,14 @@ def input_graph():
     networkX_lines = []
     #fname = "graph_3000"
     # whiteboard graph
-    # fname = "graph_WB"
+    #fname = "graph_WB"
     # These are whiteboard graphs with various extensions
     # that, e.g., add connected components (CC)
     #fname = "graph_22N_2CC"
     #fname = "graph_23N"
     #fname = "graph_24N_3CC"
 
-    fname = "graph_24N_3CC_fanin"   # fanin at end
+    fname = "graph_24N_3CC_fanin"   # extended wb w/ 3CC and fanin at end
 
     #fname = "graph_2N_2CC"  # 2 nodes (CCs) no edges
     #fname = "graph_3N_3CC"  # 3 nodes (CCs) no edges

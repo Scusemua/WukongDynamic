@@ -21,6 +21,7 @@ from wukongdnc.dag.DAG_executor_State import DAG_executor_State
 #from wukongdnc.dag.DAG_executor_constants import store_fanins_faninNBs_locally
 #from wukongdnc.dag.DAG_executor_constants import exit_program_on_exception
 import wukongdnc.dag.DAG_executor_constants
+#Try: from ..dag import DAG_executor_constants and see if DAG_executor_constants imported once
 
 #from wukongdnc.dag.DAG_work_queue_for_threads import thread_work_queue
 from wukongdnc.dag.DAG_executor_work_queue_for_threads import work_queue

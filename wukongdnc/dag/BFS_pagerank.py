@@ -24,7 +24,7 @@ if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
     logger.addHandler(ch)
 """
 
-debug_pagerank = True
+debug_pagerank = False
 
 """
 
@@ -267,8 +267,9 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partiti
         # so we make this check esy by having 'L' at the end (endswith)
         # instead of having to parse ("PR1_1.pickle")
         complete_task_file_name = './'+task_file_name+'.pickle'
-        #logger.info("PageRank_Function: complete_task_file_name:" 
-        #    + str(complete_task_file_name))
+        if debug_pagerank:
+            logger.info("PageRank_Function: complete_task_file_name:" 
+                + str(complete_task_file_name))
         try:
             with open(complete_task_file_name, 'rb') as handle:
                 partition_or_group = (cloudpickle.load(handle))
@@ -373,7 +374,8 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partiti
         logging.shutdown()
         os._exit(0)
     """
-    logger.info("PageRank_Function: total_num_nodes: " + str(total_num_nodes))
+    if debug_pagerank:
+        logger.info("PageRank_Function: total_num_nodes: " + str(total_num_nodes))
 
     damping_factor=0.15
     random_jumping = damping_factor / total_num_nodes
@@ -387,7 +389,8 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partiti
 
     i=0
     for tup in input_tuples:
-        logger.info("PageRank_Function: input tuple:" + str(tup))
+        if debug_pagerank:
+            logger.info("PageRank_Function: input tuple:" + str(tup))
         shadow_node_index = tup[0]
         pagerank_value = tup[1]
         try:
@@ -1343,16 +1346,16 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
 
             if not partition_or_group_name_of_output_task.endswith('L'):
                 shared_nodes[toPosition].pagerank = shared_nodes[fromPosition].pagerank
-                logger.info(task_file_name + " copy from position " + str(fromPosition)
-                    + " the pagerank value " + str(shared_nodes[fromPosition].pagerank)
-                    + " to shadow node position " + str(toPosition) 
-                    + " , so the new shadow node toPosition pagerank value is " + str(shared_nodes[toPosition].pagerank))
+                #logger.info(task_file_name + " copy from position " + str(fromPosition)
+                #    + " the pagerank value " + str(shared_nodes[fromPosition].pagerank)
+                #    + " to shadow node position " + str(toPosition) 
+                #    + " , so the new shadow node toPosition pagerank value is " + str(shared_nodes[toPosition].pagerank))
             else:
                 shared_nodes[toPosition].prev = shared_nodes[fromPosition].pagerank
-                logger.info(task_file_name + " copy from position " + str(fromPosition)
-                    + " the pagerank value " + str(shared_nodes[fromPosition].pagerank)
-                    + " to shadow node position " + str(toPosition) 
-                    + " , so the new shadow node toPosition prev value is " + str(shared_nodes[toPosition].prev))
+                #logger.info(task_file_name + " copy from position " + str(fromPosition)
+                #    + " the pagerank value " + str(shared_nodes[fromPosition].pagerank)
+                #    + " to shadow node position " + str(toPosition) 
+                #    + " , so the new shadow node toPosition prev value is " + str(shared_nodes[toPosition].prev))
                 logger.trace("shared_nodes[toPosition].prev: " + str(shared_nodes[toPosition].prev))
             
             logger.trace("shared_nodes[toPosition].prev: " + str(shared_nodes[toPosition].prev))

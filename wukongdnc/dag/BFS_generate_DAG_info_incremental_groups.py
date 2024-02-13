@@ -404,7 +404,7 @@ def generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks,
 
     # for debugging
     if show_generated_DAG_info:
-        logger.trace("DAG_map:")
+        logger.trace("generate_DAG_for_groups: DAG_map:")
         for key, value in Group_DAG_map.items():
             logger.trace(str(key) + ' : ' + str(value))
         logger.trace("")
@@ -549,7 +549,7 @@ def generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks,
             logger.trace("")
 #rhc: bug fix:
             logger.trace("DAG_number_of_groups_of_previous_partition_that_cannot_be_executed:")
-            logger.trace(Group_DAG_number_of_groups_of_previous_partition_that_cannot_be_executed)
+            logger.trace(DAG_number_of_groups_of_previous_partition_that_cannot_be_executed)
             logger.trace("")
 #rhc: num_nodes
             logger.trace("DAG_num_nodes_in_graph:")
@@ -897,7 +897,11 @@ def generate_DAG_info_incremental_groups(current_partition_name,
             number_of_incomplete_tasks = len(groups_of_current_partition)
         else:
             number_of_incomplete_tasks = 0
-        DAG_info = generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks)
+        # first DAG generated has one current group (group 1) and no previous group
+        number_of_groups_of_previous_partition_that_cannot_be_executed = 0
+        DAG_info = generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks,
+    #rhc: bug fix:
+                    number_of_groups_of_previous_partition_that_cannot_be_executed)
 
         logger.trace("generate_DAG_info_incremental_groups: returning from generate_DAG_info_incremental_groups for"
             + " group " + str(name_of_first_group_in_DAG))
@@ -1450,7 +1454,12 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                         # Note: We are assuming every previous group has 
                         # to-be-continued fanouts/fanins/collapses. This is not necessarily
                         # the case. An optimization is to not assume this.
+                        logger.info("generate_DAG_for_groups: add " + str(receiverY) + " to previous_groups_with_TBC_faninsfanoutscollapses"
+                            + " previous_group: " + str(previous_group)
+                            + " receiverY: " + str(receiverY))
                         previous_groups_with_TBC_faninsfanoutscollapses.append(receiverY)
+                    else:
+                        logger.info("generate_DAG_for_groups: do not add " + str(receiverY) + " to previous_groups_with_TBC_faninsfanoutscollapses since to_be_continued is False.")
 #rhc: bug fix: possible optimization: But the whole optimization requries non-trivial changes
 # since we can't do it left to right, i.e., we won't know the final values until
 # we process the rightmost group. So perhaps do the loop
@@ -1781,9 +1790,13 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         else:
             number_of_incomplete_tasks = 0        
             number_of_groups_of_previous_partition_that_cannot_be_executed = 0       
-
+        logger.info("generate_DAG_for_groups: number_of_groups_of_previous_partition_that_cannot_be_executed:"
+            + str(number_of_groups_of_previous_partition_that_cannot_be_executed))
         DAG_info = generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks,
             number_of_groups_of_previous_partition_that_cannot_be_executed)
+        #if current_partition_number == 3:
+        #    logging.shutdown()
+        #    os._exit(0)
 
         # We are adding state_info objects for the groups of the current
         # partition to the DAG as incmplete (to_be_continued). They will 
