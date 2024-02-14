@@ -36,56 +36,33 @@ Consider the group-based DAG for the whiteboard example:
         G5----> G6    G7
 
 To construct the DAG incrementally:
-- generate the first group G1. This group is 5 --> 17 --> 1
-  (note: B --> A means B is the parent of A) where we added 
-  1 to the bfs queue at the start, then we dequeued 1 and 
-  did dfs(1) to get the parent 17 of 1 and the parent 5 of 17.
+- generate the first group G1. This group is 5 --> 17 --> 1 (note: B --> A means B is the parent of A) where we added 
+  1 to the bfs queue at the start, then we dequeued 1 and  did dfs(1) to get the parent 17 of 1 and the parent 5 of 17.
 - This first group is also the first partition (which has one group)
-- We know the nodes of group 1 but group 1 is incomplete since
-  we do not know which groups have parent nodes that are in 
-  group 1. We say group 1 is "to-be-continued". the BFS queue
-  will contain 5, 17 an 1 (there are added to the bfs queueu
-  in the reverse order that they weer visited since dfs is 
-  recursive and they are added as the recursion unwinds).
-  We will visit the child of 5, 17, and 1, in that order
-  to get the groups of partition 2. These groups are G2,
+- We know the nodes of group 1 but group 1 is incomplete since we do not know which groups have parent nodes that are in 
+  group 1. We say group 1 is "to-be-continued". the BFS queue will contain 5, 17 an 1 (there are added to the bfs queueu
+  in the reverse order that they weer visited since dfs is recursive and they are added as the recursion unwinds).
+  We will visit the child of 5, 17, and 1, in that order to get the groups of partition 2. These groups are G2,
   G3L ('L' since G3 contains a cycle of nodes), and G4.
-- At this point, group 1 is now complete - we know its nodes 
-  and we know the edges from group 1 to the other groups,
-  which are all in partition 2. the groups G3, G3L, and G4
-  are all incomplete, since we know their nodes but we have 
-  not visited the childen of these nodes, which will all
-  be nodes in (the group of) partition 3. 
-- In general, as we identify the nodes/groups in partition i, we 
-  complete the groups in partition i-1.
-Note: When we execute the DAG, a group Gi wil be executed by 
-a lambda/worker process. After execution, we will process all 
-the pagerank values of of the nodes that are parent nodes to 
-nodes that are in another group . For example, for group G1
-above, ndoe 5 in G1 is the parent of node 16 in G2, so group
-G2 needs the pagerank value computed for 5 in order to compute
-the pagerank value for 16. (Noet that 16 has two parents 10
-and 5 and 10's value is local to group G2) Since G1 has a fanout
-to G2, G1 will send the pagerank value of 5 to G2 as part
-of the fanout from G1 to G2. G1 will also send its pagerank
-(output) value for node 17 in G1 to group G3L as part of the
-fanin from G1 to G3L. (This is actally a FaninNB ("NB" = No Become)
-since G1 also has fanouts to G2 and G4 so G1 cannot "become" G3L)
-So communication between lammbdas/workers executing groups happen
-through the synchronization objects (fanin or faninNB) or through
-fanouts. The values communicated are the pagerank values of the
-parent nodes that are needed by children nodes in other groups.
-Note: Group G2 in partition 2 has the parent value of node 2
+- At this point, group 1 is now complete - we know its nodes and we know the edges from group 1 to the other groups,
+  which are all in partition 2. the groups G3, G3L, and G4 are all incomplete, since we know their nodes but we have 
+  not visited the childen of these nodes, which will all be nodes in (the group of) partition 3. 
+- In general, as we identify the nodes/groups in partition i, we complete the groups in partition i-1.
+Note: When we execute the DAG, a group Gi wil be executed by a lambda/worker process. After execution, we will process all 
+the pagerank values of of the nodes that are parent nodes to nodes that are in another group . For example, for group G1
+above, ndoe 5 in G1 is the parent of node 16 in G2, so group G2 needs the pagerank value computed for 5 in order to compute
+the pagerank value for 16. (Noet that 16 has two parents 10 and 5 and 10's value is local to group G2) Since G1 has a fanout
+to G2, G1 will send the pagerank value of 5 to G2 as part of the fanout from G1 to G2. G1 will also send its pagerank
+(output) value for node 17 in G1 to group G3L as part of the fanin from G1 to G3L. (This is actally a FaninNB ("NB" = No Become)
+since G1 also has fanouts to G2 and G4 so G1 cannot "become" G3L) So communication between lammbdas/workers executing groups happen
+through the synchronization objects (fanin or faninNB) or through fanouts. The values communicated are the pagerank values of the
+parent nodes that are needed by children nodes in other groups. Note: Group G2 in partition 2 has the parent value of node 2
 that is needed by node 20 in group G3L.
 
-An expanded version of the above whiteboard DAG that shows all
-the nodes is shown below. The parent edges between nodes in a group 
-are not shown, e.g., 5-->17 as 5 is the paretn of 17. The edges
-shown are edges between groups/tasks in the DAG, whcih are formed
-from child edhes between the nodes, e.g., G1 --> G2 since 5
-in G1 has a child 16 in G2. So we visit 1 then 17 then 5, add 
-them to the bfs queue in rverse order 5, 17, 1. Visit the
-child 16 of 5 to get G2, visit the child 19 of 17 to get G2L,
+An expanded version of the above whiteboard DAG that shows all the nodes is shown below. The parent edges between nodes in a group 
+are not shown, e.g., 5-->17 as 5 is the paretn of 17. The edges shown are edges between groups/tasks in the DAG, whcih are formed
+from child edhes between the nodes, e.g., G1 --> G2 since 5 in G1 has a child 16 in G2. So we visit 1 then 17 then 5, add 
+them to the bfs queue in rverse order 5, 17, 1. Visit the child 16 of 5 to get G2, visit the child 19 of 17 to get G2L,
 and visit the child 12 of 1 to get G4. 
 
                  G1: 5       17               1
@@ -105,97 +82,150 @@ and visit the child 12 of 1 to get G4.
 
 In the code below, we add the groups of the current partition to the DAG.s
 
-The first partition has one group G1. It is added as an incomplete
-group, i.e., it is to-be-continued.
+The first partition has one group G1. It is added as an incomplete group, i.e., it is to-be-continued.
 
-For the remaining groups/partition, when bfs() identifies the
-current groups in the current partition Pi, we:
-- add each group of Pi as an incomplete group. Essentially, this mans that 
-  the fanins/fanouts for the group are empty since we only
-  identify these fanins/fanouts when we generate the groups 
-  in the next partition Pi+1. At that point. Pi+1 will be the 
-  current partition and Pi will be the previous partition. Note also
-  that Pi-1 is the previous-previous partition.
-- The groups in the previous partition Pi-1 are now complete.
-  Thus we mark the groups is Pi-1 as complete groups. We also 
-  generate the fanin/fanout sets for these groups since we
-  identified all the edges between the groups of the previous
-  partition and the groups of the current partition when we 
-  generated the groups of the current partition. For example, 
-  in the whiteboard DAg above, G1 is incomplete. We identify
-  groups G2, G3L and G4 and the edges between G1 and these
-  groups. So we mark G1 as complete and fill in it fanout/
-  fanin sets as fanouts = {G2, G4}, fanins = {}, faninNBs={G3L}.
-  Note that G1's collapse = {}. A collapse is the case where
-  a group S has one out edge anf that edge is to a group T 
-  where T has one in edge which is from S. In the whiteboard
-  DAG, G4 has a collapse to G7; this is a cluster that is done
-  when we generate the ADAG instead of at runtime. So the 
-  worker/lambda that executes G4 will clster G7, i.e., this 
-  lambda/worker will also execute G7. G4 has two parent pagerank
-  values that are needed by the child nodes in G7.
-- As we just said, when we process current partition Pi,
-  we compute the fanins/fanout/collapse of Pi-1 and mark
-  Pi-1 as complete (so not to-be-continued). We also 
-  track for each group G, in addition to whether or not it
-  is complete, whether it has fanins/fanouts/collapse to 
-  groups that are incomplete. For example, when we process
-  the groups G2, G3L, and G4 in the current partition P2,
-  we set G1 to complete, but G1 has fanins/fanouts/collapse
-  (that are crrently unknown) to the incomplete groups G2,
-  G3L, G4 in P2. So G2 is marked as complete but we also 
+For the remaining groups/partition, when bfs() identifies the current groups in the current partition Pi, we:
+- add each group of Pi as an incomplete group. Essentially, this mans that the fanins/fanouts for the group are empty since we only
+  identify these fanins/fanouts when we generate the groups in the next partition Pi+1. At that point. Pi+1 will be the 
+  current partition and Pi will be the previous partition. Note alsothat Pi-1 is the previous-previous partition.
+- The groups in the previous partition Pi-1 are now complete. Thus we mark the groups is Pi-1 as complete groups. We also 
+  generate the fanin/fanout sets for these groups since we identified all the edges between the groups of the previous
+  partition and the groups of the current partition when we  generated the groups of the current partition. For example, 
+  in the whiteboard DAg above, G1 is incomplete. We identify groups G2, G3L and G4 and the edges between G1 and these
+  groups. So we mark G1 as complete and fill in it fanout/ fanin sets as fanouts = {G2, G4}, fanins = {}, faninNBs={G3L}.
+  Note that G1's collapse = {}. A collapse is the case where a group S has one out edge anf that edge is to a group T 
+  where T has one in edge which is from S. In the whiteboard DAG, G4 has a collapse to G7; this is a cluster that is done
+  when we generate the ADAG instead of at runtime. So the worker/lambda that executes G4 will clster G7, i.e., this 
+  lambda/worker will also execute G7. G4 has two parent pagerank values that are needed by the child nodes in G7.
+- As we just said, when we process current partition Pi, we compute the fanins/fanout/collapse of Pi-1 and mark
+  Pi-1 as complete (so not to-be-continued). We also track for each group G, in addition to whether or not it
+  is complete, whether it has fanins/fanouts/collapse to groups that are incomplete. For example, when we process
+  the groups G2, G3L, and G4 in the current partition P2,we set G1 to complete, but G1 has fanins/fanouts/collapse
+  (that are crrently unknown) to the incomplete groups G2, G3L, G4 in P2. So G2 is marked as complete but we also 
   mark G1 as having fanins/fanouts/collapses to incomplete
-  groups (in this case G2, G3L and G4). Note that when 
-  we process current group Pi, we set all the groups
-  in Pi-1 to complete (as described in the previous step).
-  We also set all the groups in partition Pi-2 to have 
-  NO fanins/fanouts/collapse to incomplete groups, since
-  the groups in Pi-1 were set to complete. For example, when we
-  process partition 3 above, we set the groups G2, G3L, and G4
-  to complete, and we set group G1 to have no complete 
+  groups (in this case G2, G3L and G4). Note that when  we process current group Pi, we set all the groups
+  in Pi-1 to complete (as described in the previous step). We also set all the groups in partition Pi-2 to have 
+  NO fanins/fanouts/collapse to incomplete groups, since the groups in Pi-1 were set to complete. For example, when we
+  process partition 3 above, we set the groups G2, G3L, and G4 to complete, and we set group G1 to have no complete 
   fanins/fanouts/collapse.
-Complication: Note that partition 3 is the last partition
-in the DAG. We will see this since all of the nodes will have
-been added to some partition P1, P2, or P#. Thus, when 
-we process partition 3, we can set its groups to be complete as none
-of the nodes in th groups of this partition have any child 
-edges to nodes in another partition (as there are no more partitons). 
-This means we also can set the groups in partition 2 to be compete
-(as usual) but also we can set the groups in partition 2 to have
-no fanins/fanouts/collapse to an incomplete group. Lkewise as 
-usual for the group in partition 1. The complication is that 
-the groups in partition 3, while not having any edges to 
-groups in the next partition (as there is no next partition) do 
-have intra-partition edges, e.g., G2-->G3L. In the normal case,
-these intra-partition dges would be detected when we processed
-partition 4, i.e., we would find the intra-partition edges between
-the groups of partition 3, and the inter-partition edges between 
-parttiton 3 and partiton 4, when we processed partition 4. But there
-is no partition 4 so we need to ensure that the intra-partition
-edges of partition 3 aer detected when we process partition 3
-as the current partition. When processing the current partiton, 
-the code for detecting edges would typically only consider the 
-groups in the previous partition, since we just detected the
-edges between the groups in the previous partition and the 
-groups in the current partition. But we also detectd the 
-intra-partiton edges between the groups in the current 
-partition. So to handle this complication, we compute a 
-set of "groups to consider" which is normally the groups 
-in the previous partition but when the current partition 
-is the last partition in the DAG we also add the groups
-of the current partition to the "groups to consider". 
-For exmapl, when partitin 3 is the current partition, it
-is the last partiton in the DAG. Thus we need to compute
-the fanins/fanouts/collapse of the groups G3, G3L, and G4
-in previous partition 2 (based on the edges that were 
-idetified by bfs() when it generated current partition 3)
-and we need to compute the fanous/fanins/collapse of the 
-groups G5, G6, and G7 in current partition P3. We do this
-by letting "groups to consider" be the groups G2, G3L,and 
-G4 plus the groups G5, G6, and G7. This ensures that G5
-will have a faninNB to G6. (G3L also has a faninNB to G6., 
+Complication: Note that partition 3 is the last partition in the DAG. We will see this since all of the nodes will have
+been added to some partition P1, P2, or P#. Thus, when we process partition 3, we can set its groups to be complete as none
+of the nodes in th groups of this partition have any child edges to nodes in another partition (as there are no more partitons). 
+This means we also can set the groups in partition 2 to be compete (as usual) but also we can set the groups in partition 2 to have
+no fanins/fanouts/collapse to an incomplete group. Lkewise as usual for the group in partition 1. The complication is that 
+the groups in partition 3, while not having any edges to groups in the next partition (as there is no next partition) do 
+have intra-partition edges, e.g., G2-->G3L. In the normal case, these intra-partition dges would be detected when we processed
+partition 4, i.e., we would find the intra-partition edges between, the groups of partition 3, and the inter-partition edges between 
+parttiton 3 and partiton 4, when we processed partition 4. But there, is no partition 4 so we need to ensure that the intra-partition
+edges of partition 3 aer detected when we process partition 3 as the current partition. When processing the current partiton, 
+the code for detecting edges would typically only consider the groups in the previous partition, since we just detected the
+edges between the groups in the previous partition and the groups in the current partition. But we also detectd the 
+intra-partiton edges between the groups in the current partition. So to handle this complication, we compute a 
+set of "groups to consider" which is normally the groups in the previous partition but when the current partition 
+is the last partition in the DAG we also add the groups of the current partition to the "groups to consider". 
+For exmaple, when partitin 3 is the current partition, it is the last partiton in the DAG. Thus we need to compute
+the fanins/fanouts/collapse of the groups G3, G3L, and G4 in previous partition 2 (based on the edges that were 
+idetified by bfs() when it generated current partition 3) and we need to compute the fanous/fanins/collapse of the 
+groups G5, G6, and G7 in current partition P3. We do this by letting "groups to consider" be the groups G2, G3L,and 
+G4 plus the groups G5, G6, and G7. This ensures that G5 will have a faninNB to G6. (G3L also has a faninNB to G6., 
 as well as a fanout to G5.)
-                               
+Complication:
+We need to detect the edges between the groups in the previous partition (the previous groups) and between
+the groups in the previous partition and the groups in the current partition (and as described above, possibly
+between the groups of the current partition.) If not to_be_continued, groups_to_consider contains groups from 
+groups_of_previous_partition and groups from groups_of_current_partition. We have:
+    for previous_group in groups_to_consider:
+        # get groups that previous_group sends inputs to. These
+        # groups "receive" inputs from the sender (which is previous_group)
+        #receiver_set_for_previous_group = Group_senders[previous_group]
+        receiver_set_for_previous_group = Group_senders.get(previous_group,[])
+        for receiverY in receiver_set_for_previous_group:
+
+Here, previous_group can be from groups_of_previous_partition or groups_of_current_partition. Group receiverY can 
+be a group in groups_of_previous_partition (i.e., it is a group in the same partition as previous_group) or a group in 
+# groups_of_current_partition. We need to know whether previous_group and receiverY are both in groups_of_previous_partition. Thus:
+    if previous_group in groups_of_previous_partition  \
+    and receiverY in groups_of_previous_partition:
+    # previous_group sends output to receiverY
+    # and both are in groups_of_previous_partition
+    if to_be_continued:
+        previous_groups_with_TBC_faninsfanoutscollapses.append(receiverY)
+# The previous_group and group receiverY are both in groups_of_previous_partition. They both assumed
+# to have fanins/fanouts/collapses to groups in the current partition, and the groups in the current partition
+# are incomplete (i.e., they are to-be-continued (TBC)). This the groups in the previous partition (including previous
+# group and receiverY are marked as having fanins/fanouts to TBC groups (i.e., to the groups in the current 
+# partition).This is a simplifying assumption - a group in the previous partition might not have a fanin/fanout
+# to a group in the current partition. Note that the previous groups are processed left to right in the 
+# previous partition, and the leftmost previous group will either be a fanout of the previous previous group or
+# a fanin/faninNB of groups in the previous previous group. The point is that there can be no edge from
+# some other previous group to the leftmost previous group. Thus, when we execute the fanins/fanouts of the
+# previous previous groups, the left most previous group will be excuted. For example, in the white board 
+# DAG, group PR2_1 is the left most group of partition 2. It is a fanout of group PR1_1 in partition 1. When
+# we execute the fanouts of group PR1_1, group PR2_1 is a fanout of PR1_1 so group PR2_1 will get executed.
+# After previous group is excuted, we check whether we can excute its fanouts/fanins. IF previous group
+# has fanouts/fanins to groups that are incomplete, we cannot execute those fanouts/fanins; instead, we
+# make previous_group a continued task. This means we will process the fanis/fanouts of previous_group after
+# we obtains a new incremental DAG. Fron the if-statement above, previous_group has a fanout/fanin to receiverY 
+# which means we will not process this fanin/fanout and group reveiverY will not be executed until after
+# we obtain a new incremental DAG. 
+# For example, in the extended whiteboard DAG (with extra connected components 4->5 and 6-7) the first DAG 
+# has group PR1_1 and the groups PR2_1, PR2_2L, and PR2_3. PR1_1 will be continued since it has TBC fanouts 
+# and a faninN to PR2_1 and PE2_3 and to PR2_2L, respectively. (That is, groups PR2_1, PR2_2L, and PR2_3
+@ are incomplete (to-be-continued (TBC)) so PR1_1 has fanins/fanouts to TBC groups.) When the new DAG
+# is published with the groups in partition 3, PR1_1 will be continued which means its fanout and faninNB are 
+# executed. PR2_3 is a fanout task so PR1_1 will fanout PR2_3 and PR2_3 will be executed. Group PR2_2L is a 
+# faninNB so PR1_1 will execute a fanin for PR2_2L and since this is not the last fanin (which will be 
+# done later by PR2_1) group/task PR2_2L (i.e., the fanin task of PR2_2L) is not executed. Group PR2_1 is 
+# the become task for PR1_1 (one of PR1_1's fanout tasks is the become task for PR1_1) so PR2_1 is executed. 
+# Note the PR2_1 has a faninNB to group PR2_2L in the same partition. PR2_1, since it is a previous group
+# is assumed to have fanins/fanouts to incomplete/TBC groups. (These incomplete/TBC groups are groups
+# in the current partition. PR2_1 may not actually have fanins/fanouts to groups in the current partition
+# and in the extended WB grsph it does not. The assumption simplifies things.) Since PR2_1 is marked as
+# having fanins/fanouts to TBC groups, we cannot process these fanins/fanouts of PR2_1 so PR2_1 is 
+# saved as a continued task. (When we get a new DAG, we will process the fanins/fanouts of all the 
+# continued tasks, whcih no longer will have fanins/fanouts to TBC groups. Note that the current partition 
+# in the current DAG becomes the previous partition in the next DAG and the groups in the previous partiton
+# of the next DAG all become complete. By adding the current partition to the incremental DAG, all of the
+# edges from the groups in the previous partition to the groups in the current partition became known 
+# (like PR2_2L --> PR3_2) and the (lists of edges for the) groups in the previous partition are now complete. 
+# This includes the edges between groups of the previous partition like PR2_1 --> PR2_2L.) This means 
+# PR2_1 will execute its fanin on PR2_2L when the next incremental DAG is generated. Note that whwn 
+# PR1_1 was continued, it did execute all of its fanouts (PR2_1 and PR2_3) and its fanin to PR2_2L, 
+# but PR2_2L is a faninNB so this single fanin from PR1_1 was not enough to execute PR2_2L (the fanin from
+# PR2_1 is also required before PR2_2L can be executed.) Then when PR2_1 was executed we could not do 
+# its fanin to PR2_2L since PR2_1 is assumed to have TBC fanins/fanouts (to groups in the current 
+# partition which will be partiton 3.) In this case, it really is okay to execute PR2_2L, but we cannot see 
+# that without looking closer at the DAG. That is, we assumed PR2_1 has TBC fanins/fanouts to partition
+# 3, and maybe it does or maybe it doesn't (in the extended white board example it does not), but this 
+# means we cannot process its fanins/fanouts, including the fanin the PR2_2L, even though PR2_2L is 
+# not a TBC group. One possible optimization is to see that PR2_2L is not incomplete and thus exexcute
+# the fanin to PR2_2L. Then when we saved PR2_1 as a continued task, we would have to rememeber that 
+# we did process its fanin to PR2_2L, so that when we continued PR2_1 (after getting a new DAG) we don't
+# process this fanin to PR2_2L again. (Of course, PR2_1 in this case has no other fanins/faninNBs so 
+# we do not actually have to continue it, and on and on ... Likewise, PR2_1 actually has no fanins/fanouts
+# to partition 3 so we do not actually have to mark it as having such fanins/fanouts, which is another
+# possible optimization. It is not clear that these optimizations would be worth the extra work.
+# Note that in the original whiteboard example, partition 3 is the last partition of the DAG, so partition 3 is 
+# marked as complete (i.e., not TBC) thus group PR2_2L does not have any TBC fanouts/fanins (as the groups in partition 3 are 
+# not TBC (they are complete)). So PR2_1 will do its fanin for PR2_2L and PR2_2L will execute and do 
+# its fanout to PR3_1 and its fanin to faninNB PR3_2. Also, consider the extended white board example.
+# If the second incremental DAG has not just partitions 1 - 3 but also partition 4 (and possibly 
+# partition 5, 6, and 7) then groups PR2_1, PR2_2L, and PR2_3 and all the groups in partition 3 will be 
+# complete and none of the groups in partition 2 will have TBC fanouts/fanins to any grroup in 
+# partition 3 (since partition 3 will be complete). So the above scenario involving PR2_1 and R2_2L
+# does not occur at all unless the are "previous groups", i.e., the current partition (last partition 
+# added to the incrmental DAG) is partition 3.
+#
+# This means we cannnot execute 
+# reveiverY so there is one less task that must be executed before we
+# run out of tasks and need to get a new incrememtal DAG.
+# Add receiverY to the list of previous groups that have TBC
+# fanouts/fanins/collapses. This could create more than one
+# receiverY in the list so we remove duplicates at the end.
+# Note: We are assuming every previous group has 
+# to-be-continued fanouts/fanins/collapses. This is not necessarily
+# the case. An optimization is to not assume this.
+        
                                
 """
 
@@ -1155,52 +1185,62 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         # Positions in groups_of_partitions start at 0.
         previous_partition_state = current_partition_state - 1
         groups_of_previous_partition = groups_of_partitions[previous_partition_state-1]
-#rhc: Problem: If not to_be_Continued then there is no next partition 
-# of groups to process, e.g., for th white board we have partition 3
-# with groups 3_1, 3_2, and 3_3, where 3_1 has a faninB to 3_2.
-# We wontt get a chance to compute this faninNB unless we do it 
-# now, i.e., can't wait until next partition since there is no next
-# partition. So if not to be continued, we need to look at 
-# groups within partition.
-# When current partition is 3, we look at groups in partition 2,
-# which is fine for seeing the PR2_2L has a faninNB to PR3_2,
-# but we fail to detect that PR3_1 has a faninNB to PR3_2. 
-# This is because we only look at the groups in the previous
-# partition, like for using partitions, but we should also "Add"
-# groups in the current partition that are before group_name in 
-# that list (assuming groups are added left to right in this list
-# as they are detected.)
-#rhc: ToDo: fixes bug
+
+        # If not to_be_Continued then there is no next partition 
+        # of groups to process, e.g., for the white board we have partition 3
+        # with groups 3_1, 3_2, and 3_3, where 3_1 has a faninB to 3_2.
+        # We won't get a chance to compute this faninNB unless we do it 
+        # now, i.e., we can't wait until the next partition since there is no next
+        # partition. So if not to be continued, we need to look at  the
+        # groups within the current partition too.
+        # When current partition is 3, we look at the previous groups, whch are in partition
+        # 2, which is fine for seeing the PR2_2L has a faninNB to PR3_2,
+        # but if we only looked at the prvious groups, we would fail to detect that PR3_1 
+        # has a faninNB to PR3_2. So we should also look at the groups in the current partition.
         
 #rhc: undo 2
         # Note: if the current group/partition is a leaf group/partition (that is not the first
         # group in the DAG PR1_1) then it has no senders, i.e., no task sends its output
-        # to it; it is the only group in its partititon; and if not to_be_continued then
-        # it has no receivers, i.e., since it is the only group in the last partition in the 
-        # DAG. So groups_of_current_partition is this single group, and when not to_be_continued
+        # to it; it is the only group in its (current) partititon; and if not to_be_continued then
+        # it has no receivers, i.e., it does not send its output to any other group, since it is 
+        # the only group in the last partition in the DAG. 
+        # So groups_of_current_partition is this single group, and when not to_be_continued
         # we add it to groups_to_consider. We will get groups that this group sends inputs to
         # and since this will be empty, we will not generate any edges for this group in the 
         # DAG, which is correct since it does not send any outputs to any other group.
         # This requires only the execution of one if-statement so we do not try to avoid adding this group.
         # Note that groups_to_consider are the groups for which we are identifying edges,
         # i.e., adding an edge for a group G in groups_to_consider to the groups that G
-        # sends outputs to (which are in the same partition as G or are groups in the 
-        # current partition). The edges always go from the previous groups to the 
-        # current groups, or the edges go from left to right for the groups in a partition since
+        # sends outputs to (which are in the same (previous or current) partition as G or are groups in the 
+        # current partition (where G is in the previous partition). The edges always go from the previous groups to the 
+        # current groups, or the edges go from left to right for the groups in the same partition since
         # if node P is a parent of node C in the same partition, then P has an index in the partition (list) 
         # that is less than the index of C, and the edges go in the parent to child direction, i.e., left to right.
         # The general idea is that the parent nodes of a node C are always either in the same partition
         # (at a position with a smaller index than C (so "to the left of C in the list of nodes")) or are in the
         # prevous partition (but no other partition). This restricts the flow of parent values 
-        # to: between one partition and the next partition, or between grooups in the same partition.
+        # to: between one partition and the next partition, or between groups in the same partition.
         # As opposed to one group can send to any other groups in the DAG, so we try to have communication of
-        # parent values (say, between Lambdas executing pagerank tasks) that is "one group/task/lambda
+        # parent values (between Lambdas executing different pagerank tasks) that is "one group/task/lambda
         # to a few groups/tasks/lambdas" instead of "one group/task/lambda to many groups/tasks/lambdas".
+        # If a graph with n nodes has one node N with an edge to each of the other n-1 nodes then N will 
+        # send its paent pagerank value to all the other nodes. We would generate one group with node N in 
+        # partition 1 and a partition 2 having n-1 groops each with 1 node. For this case we would might want 
+        # to use task clustering to cluster all of the groups together, either at runtime or compile time.
         groups_to_consider = []
         if not to_be_continued:
+            # determine the edges beween the groups in the previous and current partitions. Edges can be
+            # between grooups in the same partition (previous to previous or current to current) or in
+            # different partitions (previous to current).
             groups_to_consider += groups_of_previous_partition
             groups_to_consider += groups_of_current_partition
         else:
+            # determine the edges beween the groups in the previous and current partitions. Edges can be
+            # between groups in the same partition (previous to previous) or in
+            # different partitions (previous to current). We are not looking for current to current edges.
+            # These will be determined on the DAG extension when the current partition becomes the 
+            # previous partition.
+   
             groups_to_consider += groups_of_previous_partition
 
         logger.trace("generate_DAG_info_incremental_groups: current_partition_state: " 
@@ -1291,27 +1331,28 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         #first_previous_previous_group = True
 #rhc: undo 3
         
-#rhc: bug fix: 
-# So if we will not publish this extension are we wasting
-# time generating the new DAG_info? Note that bfs() gets the 
-# returned DAG_info and decides what to do with it - we can move
-# all this bfs() code out of bfs() and into this dag 
-# generator code. So bfs() can call generate_incremental_groups()
-# and generate_incremental_groups calls this method 
-# generate_DAG_info_incremental_groups, which returns
-# DAG_info to generate_incremental_groups, which does what 
-# bfs() currently does, i.e., decides what to do with the new
-# DAG_info. (We would need to make sure DAG_info is not generated
-# if we are not going to use it - either generate_incremental_groups
-# tells this method whether to generate DAG_info or this
-# method doesn't ever do it and instead generate_incremental_groups 
-# decides whether to generate the new DAG_info. Note this method
-# does stuff with DAG_info after generating it.)
-# Note: If we are not publshing this DAG then we do not need to 
-# generate previous_groups_with_TBC_faninsfanoutscollapses and all the rest
-# since we only need it for the previous_groups of a published DAG. 
-# The groups preceding previous_groups in a published DAg are all
-# complete and have no fanins/fanouts/collapes to TBC groups.
+        # Note: Possible Optimzation:
+        # If we will not publish this extension are we wasting
+        # time generating the new DAG_info? Note that bfs() gets the 
+        # returned DAG_info and decides what to do with it - we can move
+        # all this bfs() decision code out of bfs() and into this dag 
+        # generator code. So bfs() can call a new method generate_incremental_groups()
+        # and generate_incremental_groups calls this method 
+        # generate_DAG_info_incremental_groups, which returns
+        # DAG_info to generate_incremental_groups, which does what 
+        # bfs() currently does, i.e., decides what to do with the new
+        # DAG_info. (We would need to make sure DAG_info is not generated
+        # if we are not going to use it - either generate_incremental_groups
+        # tells this method generate_DAG_info_incremental_groups whether to 
+        # generate DAG_info or generate_DAG_info_incremental_groups
+        # doesn't ever generate DAG_info and instead generate_incremental_groups 
+        # decides whether to generate the new DAG_info. Note generate_DAG_info_incremental_groups
+        # does stuff with DAG_info after generating it so considr this code too.)
+        # Note: If we are not publshing this DAG then we do not need to 
+        # generate previous_groups_with_TBC_faninsfanoutscollapses and all the rest
+        # since we only need it for the previous_groups of a published DAG. 
+        # The groups preceding previous_groups in a published DAG are all
+        # complete and have no fanins/fanouts/collapes to TBC groups.
         
         # this list is intialized to [] on every call to 
         # generate_DAG_info_incremental_groups
@@ -1399,7 +1440,11 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                     if to_be_continued:
                         # receiverY will have to-be-continued fanouts/fanins/collapses
                         # so previous_group will have to-be-continued fanouts/fanins/collapses
-                        # and thus it will be continued. For example, in the extended whiteboard DAG
+                        # and thus previous_group will be continued and receiverY is not executed
+                        # until the next incremental DAG is obtained and previous_group is continued,
+                        # i.e., we process the fanins/fanouts of previous_group, which was executed
+                        # before it as continued. 
+                        # For example, in the extended whiteboard DAG
                         # (with extra connected components 4->5 and 6-7)
                         # the first DAG has group PR1_1 and the groups PR2_1, PR2_2L, and 
                         # PR2_3. PR1_1 will be continued since it has TBC fanouts and a faninNB
