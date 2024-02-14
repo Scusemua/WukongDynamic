@@ -216,17 +216,14 @@ be a group in groups_of_previous_partition (i.e., it is a group in the same part
 # does not occur at all unless the are "previous groups", i.e., the current partition (last partition 
 # added to the incrmental DAG) is partition 3.
 #
-# This means we cannnot execute 
-# reveiverY so there is one less task that must be executed before we
-# run out of tasks and need to get a new incrememtal DAG.
-# Add receiverY to the list of previous groups that have TBC
-# fanouts/fanins/collapses. This could create more than one
-# receiverY in the list so we remove duplicates at the end.
-# Note: We are assuming every previous group has 
-# to-be-continued fanouts/fanins/collapses. This is not necessarily
-# the case. An optimization is to not assume this.
-        
-                               
+# So in the above scenario, receiverY (e.g., PR2_2L) cannot be executed even though it is not incomplete.
+# When we get a new incremental DAG, we compute the number of tasks (groups or partitions) that can be 
+# executed befre we need to get a new incremental DAG. (This is needed when we ar using worker threads
+# or processes). The number of tasks that can be executed is the number of tasks in the incremental
+# DAG minus the number of incomplete tasks minus the number of coomplete tasks like receiverY that
+# cannot be executed. We track a list of such tasks (groups or partitions) so we can compute the
+# number of such tasks (as the length of this list)
+                   
 """
 
 logger = logging.getLogger(__name__)
@@ -1438,82 +1435,14 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                     # previous_group sends output to receiverY
                     # and both are in groups_of_previous_partition
                     if to_be_continued:
-                        # receiverY will have to-be-continued fanouts/fanins/collapses
-                        # so previous_group will have to-be-continued fanouts/fanins/collapses
-                        # and thus previous_group will be continued and receiverY is not executed
-                        # until the next incremental DAG is obtained and previous_group is continued,
-                        # i.e., we process the fanins/fanouts of previous_group, which was executed
-                        # before it as continued. 
-                        # For example, in the extended whiteboard DAG
-                        # (with extra connected components 4->5 and 6-7)
-                        # the first DAG has group PR1_1 and the groups PR2_1, PR2_2L, and 
-                        # PR2_3. PR1_1 will be continued since it has TBC fanouts and a faninNB
-                        # to PR2_1 and PE2_3 and to PR2_2L, respectively. When the new DAG
-                        # is published with the groups in partition 3, PR1_1 will be continued
-                        # which means its fanout and faninNB are executed. PR2_3 is a 
-                        # fanout task so PR1_! will fanout PR2_3 and PR2_3 will be executed.
-                        # Group PR2_2L is a faninNB so PR1_1 will execute a fanin for PR2_2L
-                        # and since this is no the last fanin (which will be done by PR2_1)
-                        # group/task PR2_2L is not executed. Group PR2_1 is the become task
-                        # for PR1_1 so PR2_1 is executed. Note the PR2_1 has a faninNB to
-                        # group PR2_2L in the same partition. PR2_2L has fanouts to a group
-                        # in partition 3 so PR2_1 must be continued, i.e., PR2_1 cannot
-                        # execute its fanin op on PR2_2L so PR2_1 becomes a continued task.
-                        # This means PR2_1 will execute its fanin on PR2_2L when the next
-                        # incrmental DAG is generated - in the new DAG, PR2_2L does not 
-                        # have any fanins/fanouts to TBC groups. Net that whwn PR1_1 was 
-                        # continued, it did execute all of its fanouts (PR2_1 and PR2_3)
-                        # and its faninNB to PR2_2L, but PR2_@L is a faninNB so this fanin
-                        # from PR1_1 was not enough to execute PR2_2L. Then when PR2_1 was
-                        # executed we could not do its fanin to PR2_2L since PR2_2L had
-                        # TBC fanouts. In this case, it really is okay to execute PR2_2L,
-                        # but we cannot see that without looking closer at the DAG. It is 
-                        # not clear that this optimization would be worth the extra work. 
-                        # Another optimization: consider the case in which PR2_2L has no 
-                        # fanins/fanouts to groups in partition 3. Then PR2_2L does not 
-                        # have TBC fanouts/fanins, i.e., the assumption that it does is
-                        # weak. This optimization is discussd below - again, it might not 
-                        # be worth the time it takes to do it. Also, in the original whiteboard
-                        # example, partition 3 is the last partition, so partition 3 is 
-                        # marked as complete (i.e., not TBC) thus group PR2_2L dos not
-                        # have any TBC fanouts/fanins (as the groups in partition 3 are 
-                        # not TBC (they are complete)). So PR2_1 will do its fanin for 
-                        # PR2_2L and PR2_2L will execute and do its fanout to PR3_1 and
-                        # its fanin to faninNB PR3_2. Also, if the second incremental
-                        # DAG has not just partitions 1 - 3 but also partition 4 (and 
-                        # possibly partition 5, 6, and 7) then groups PR2_1, PR2_2L,
-                        # and PR2_3 and all the groups in partition 3 will be complete
-                        # and none of the groups in partition 2 will have TBC fanouts/
-                        # fanins to any grroup in partition 3 (since partition 3 will
-                        # be complete). So the above scenario involving PR2_1 and R2_2L
-                        # does not occur at all unless the are "previous groups", i.e.,
-                        # the current partition (last partition added to the DAG) is
-                        # partition 3.
-                        #
-                        # This means we cannnot execute 
-                        # reveiverY so there is one less task that must be executed before we
-                        # run out of tasks and need to get a new incrememtal DAG.
-                        # Add receiverY to the list of previous groups that have TBC
-                        # fanouts/fanins/collapses. This could create more than one
-                        # receiverY in the list so we remove duplicates at the end.
-                        # Note: We are assuming every previous group has 
-                        # to-be-continued fanouts/fanins/collapses. This is not necessarily
-                        # the case. An optimization is to not assume this.
+                        # receiverY is not incomplete but it cannot be executed. Track these complete
+                        # but unexecutable tasks so we can compute the number of these tasks at the end.
                         logger.info("generate_DAG_for_groups: add " + str(receiverY) + " to previous_groups_with_TBC_faninsfanoutscollapses"
                             + " previous_group: " + str(previous_group)
                             + " receiverY: " + str(receiverY))
                         previous_groups_with_TBC_faninsfanoutscollapses.append(receiverY)
                     else:
                         logger.info("generate_DAG_for_groups: do not add " + str(receiverY) + " to previous_groups_with_TBC_faninsfanoutscollapses since to_be_continued is False.")
-#rhc: bug fix: possible optimization: But the whole optimization requries non-trivial changes
-# since we can't do it left to right, i.e., we won't know the final values until
-# we process the rightmost group. So perhaps do the loop
-# "for receiverY in receiver_set_for_previous_group" in reverse order.
-# We might want to know this:
-                # elif previous_group in groups_of_previous_partition  \
-                # and receiverY in groups_of_current_partition:
-                #   if to_be_continued:
-                #       previous_groups_with_faninsfanoutscollapses_to_groups_in_current_partition.append(previous_groups)
                 
                 # Here we check whether rceiverY is a sink, i.e., it does not
                 # send inputs to any other group.
