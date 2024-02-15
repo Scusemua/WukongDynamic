@@ -2,11 +2,11 @@ import os
 
 from multiprocessing import Process #, Manager
 
-from .DAG_executor_constants import run_all_tasks_locally,  using_workers, num_workers 
-from .DAG_executor_constants import compute_pagerank, use_shared_partitions_groups,use_page_rank_group_partitions
-from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
-from .DAG_executor_constants import exit_program_on_exception
-#from .DAG_executor_constants import using_threads_not_processes, use_multithreaded_multiprocessing
+#from .DAG_executor_constants import run_all_tasks_locally,  using_workers, num_workers 
+#from .DAG_executor_constants import compute_pagerank, use_shared_partitions_groups,use_page_rank_group_partitions
+#from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
+#from .DAG_executor_constants import exit_program_on_exception
+from . import DAG_executor_constants
 
 from . import BFS_Shared
 from .DAG_executor_create_threads_for_multiT_multiP import create_and_run_threads_for_multiT_multiP
@@ -38,10 +38,10 @@ def create_multithreaded_multiprocessing_processes(num_processes_created_for_mul
         iteration += 1
         try:
             msg = "[Error]: multithreaded multiprocessing loop but not run_all_tasks_locally"
-            assert run_all_tasks_locally , msg
+            assert DAG_executor_constants.run_all_tasks_locally , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
-            if exit_program_on_exception:
+            if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
         #assertOld:
@@ -49,10 +49,10 @@ def create_multithreaded_multiprocessing_processes(num_processes_created_for_mul
         #    logger.error("[Error]: multithreaded multiprocessing loop but not run_all_tasks_locally")
         try:
             msg = "[Error]: DAG_executor_driver: Starting multi processes for multithreaded multiprocessing but using_workers is false."
-            assert using_workers , msg
+            assert DAG_executor_constants.using_workers , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
-            if exit_program_on_exception:
+            if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
         #assertOld:
@@ -66,11 +66,11 @@ def create_multithreaded_multiprocessing_processes(num_processes_created_for_mul
             #proc = Process(target=create_and_run_threads_for_multiT_multiP, name=(process_name), args=(process_name,payload,counter,process_work_queue,data_dict,log_queue,worker_configurer,))
             #proc = Process(target=create_and_run_threads_for_multiT_multiP, name=(process_name), args=(process_name,payload,counter,log_queue,worker_configurer,))
 
-            if not (compute_pagerank and use_shared_partitions_groups):
+            if not (DAG_executor_constants.compute_pagerank and DAG_executor_constants.use_shared_partitions_groups):
                 proc = Process(target=create_and_run_threads_for_multiT_multiP, name=(process_name), args=(process_name,payload,completed_tasks_counter,completed_workers_counter,log_queue,worker_configurer,
                     None,None,None,None,None,None,None,None,None,None))
             else:
-                if use_page_rank_group_partitions:
+                if DAG_executor_constants.use_page_rank_group_partitions:
                     shared_nodes = BFS_Shared.shared_groups
                     shared_map = BFS_Shared.shared_groups_map
                     shared_frontier_map = BFS_Shared.shared_groups_frontier_parents_map
@@ -79,7 +79,7 @@ def create_multithreaded_multiprocessing_processes(num_processes_created_for_mul
                     shared_map = BFS_Shared.shared_partition_map
                     shared_frontier_map = BFS_Shared.shared_partition_frontier_parents_map
 
-                if use_struct_of_arrays_for_pagerank:
+                if DAG_executor_constants.use_struct_of_arrays_for_pagerank:
                     #proc = Process(target=create_and_run_threads_for_multiT_multiP, name=(process_name), args=(process_name,payload,counter,log_queue,worker_configurer,
                     proc = Process(target=create_and_run_threads_for_multiT_multiP, name=(process_name), args=(process_name,payload,completed_tasks_counter,completed_workers_counter,log_queue,worker_configurer,
                         shared_nodes,shared_map,shared_frontier_map,
@@ -98,8 +98,8 @@ def create_multithreaded_multiprocessing_processes(num_processes_created_for_mul
             num_processes_created_for_multithreaded_multiprocessing += 1                      
 
             logger.trace("num_processes_created_for_multithreaded_multiprocessing: " + str(num_processes_created_for_multithreaded_multiprocessing)
-                + " num_workers: " + str(num_workers))
-            if num_processes_created_for_multithreaded_multiprocessing == num_workers:
+                + " num_workers: " + str(DAG_executor_constants.num_workers))
+            if num_processes_created_for_multithreaded_multiprocessing == DAG_executor_constants.num_workers:
                 logger.trace("process creation loop breaking")
                 break 
 
@@ -108,7 +108,7 @@ def create_multithreaded_multiprocessing_processes(num_processes_created_for_mul
                 + " DAG_executor_driver: Failed to start worker process for multithreaded multiprocessing " 
                 + "Worker_process_multithreaded_multiproc_" 
                 + str(num_processes_created_for_multithreaded_multiprocessing + 1))
-            if exit_program_on_exception:
+            if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
 

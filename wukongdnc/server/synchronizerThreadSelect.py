@@ -4,7 +4,8 @@ import logging
 import os
 
 #from ..dag.DAG_executor_constants import exit_program_on_exception
-import wukongdnc.dag.DAG_executor_constants
+#import wukongdnc.dag.DAG_executor_constants
+from ..dag import DAG_executor_constants
 
 logger = logging.getLogger(__name__)
 """
@@ -52,7 +53,7 @@ class SynchronizerThreadSelect(Thread):
             _execute = getattr(self._synchClass,"execute")
         except Exception:
             logger.exception("[Error]: syncronizerThreadSelect: Failed to find method 'execute' on object '%s'." % (self._synchClass))
-            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
         # Calling execuute() which will make method call so need to pass class and method so call can be made.

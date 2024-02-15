@@ -1,8 +1,8 @@
 import os
 from threading import RLock
-from .DAG_executor_constants import store_fanins_faninNBs_locally, FanIn_Type, FanInNB_Type
-from .DAG_executor_constants import exit_program_on_exception
-#from .DAG_executor_constants import using_threads_not_processes, use_multithreaded_multiprocessing
+#from .DAG_executor_constants import store_fanins_faninNBs_locally, FanIn_Type, FanInNB_Type
+#from .DAG_executor_constants import exit_program_on_exception
+from . import DAG_executor_constants
 
 from ..server import DAG_executor_FanInNB, DAG_executor_FanInNB_select
 from ..server import DAG_executor_FanIn, DAG_executor_FanIn_select
@@ -64,7 +64,7 @@ class DAG_executor_Synchronizer(object):
         if not inmap: 	# fanin_task_name in self.synchronizers:
             # Note: When we create FanIn objects locally, we are always using DAG_executor_FanIn.DAG_executor_FanIn.
             # We never use the "select" version.
-            is_select = (FanIn_Type == "DAG_executor_FanIn_Select")
+            is_select = (DAG_executor_constants.FanIn_Type == "DAG_executor_FanIn_Select")
             if not is_select:
                 FanIn = DAG_executor_FanIn.DAG_executor_FanIn(fanin_task_name) # initial_n = 0, monitor_name = None
             else:
@@ -84,7 +84,7 @@ class DAG_executor_Synchronizer(object):
         logger.trace ("calling_task_name: " + calling_task_name + " fanin_task_name: " + fanin_task_name + " inmap after possible create: " + str(inmap))
         FanIn = self.synchronizers[fanin_task_name]  
 
-        is_select = (FanIn_Type == "DAG_executor_FanIn_Select")
+        is_select = (DAG_executor_constants.FanIn_Type == "DAG_executor_FanIn_Select")
         if is_select:
             # For fanin, try_return_value always retuns False, so we will always 
             # execute the else-part. ************* We use it here so we
@@ -195,7 +195,7 @@ class DAG_executor_Synchronizer(object):
         # Note: try_fan_in and fan_in are coordinated in monitorS.enter_monitor() so that they are atomic.
         # If we use the "select" version of FanInNB, we need to lock this ourselves.
 
-        is_select = (FanIn_Type == "DAG_executor_FanIn_Select")
+        is_select = (DAG_executor_constants.FanIn_Type == "DAG_executor_FanIn_Select")
         if is_select:
             # for fanin, try_return_value always retuns False, so we will always execute the else-part
             FanIn.lock()
@@ -325,7 +325,7 @@ class DAG_executor_Synchronizer(object):
         self.mutex.acquire()
         inmap = fanin_task_name in self.synchronizers
         logger.trace ("calling_task_name: " + calling_task_name + " fanin_task_name: " + fanin_task_name + " inmap: " + str(inmap))
-        is_select = (FanIn_Type == "DAG_executor_FanIn_Select")
+        is_select = (DAG_executor_constants.FanIn_Type == "DAG_executor_FanIn_Select")
         if not inmap: 	# fanin_task_name in self.synchronizers:
             if not is_select:
                 FanInNB = DAG_executor_FanInNB.DAG_executor_FanInNB(fanin_task_name) # initial_n = 0, monitor_name = None
@@ -414,7 +414,7 @@ class DAG_executor_Synchronizer(object):
 
         # return is: None, restart, where restart is always 0 and return_value is None; and makes no change to DAG_executor_State	
         # Not using "asynch" here as no way to implement "asynch" locally.
-        is_select = (FanInNB_Type == "DAG_executor_FanInNB_Select")
+        is_select = (DAG_executor_constants.FanInNB_Type == "DAG_executor_FanInNB_Select")
         logger.info("is_select: " + str(is_select))
         try:
             if is_select:
@@ -447,7 +447,7 @@ class DAG_executor_Synchronizer(object):
                 FanInNB.unlock()
         except Exception:
             logger.exception("faninNB_select: synchronizer: exception callling FanInNB.fan_in().")
-            if exit_program_on_exception:
+            if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
         #if we decide we always want to return a state, we can use this:
@@ -474,7 +474,7 @@ class DAG_executor_Synchronizer(object):
             msg_id = str(uuid.uuid4())	# for debugging
             message = {
                 "op": "create",
-                "type": FanIn_Type,
+                "type": DAG_executor_constants.FanIn_Type,
                 "name": fanin_name,
                 "state": dummy_state,	
                 "id": msg_id
@@ -493,7 +493,7 @@ class DAG_executor_Synchronizer(object):
             msg_id = str(uuid.uuid4())
             message = {
                 "op": "create",
-                "type": FanInNB_Type,
+                "type": DAG_executor_constants.FanInNB_Type,
                 "name": fanin_nameNB,
                 "state": dummy_state,	
                 "id": msg_id
@@ -524,7 +524,7 @@ class DAG_executor_Synchronizer(object):
             logger.trace (" inmap before: " + str(inmap))
             #if not fanin_task_name in DAG_executor_Synchronizer.synchronizers:
             if not inmap: 	# fanin_task_name in self.synchronizers:
-                is_select = (FanIn_Type == "DAG_executor_FanIn_Select")
+                is_select = (DAG_executor_constants.FanIn_Type == "DAG_executor_FanIn_Select")
                 if not is_select:
                     FanIn = DAG_executor_FanIn.DAG_executor_FanIn(fanin_task_name) # initial_n = 0, monitor_name = None
                 else:
@@ -545,7 +545,7 @@ class DAG_executor_Synchronizer(object):
             logger.trace (" inmap before: " + str(inmap))
             #if not fanin_task_name in DAG_executor_Synchronizer.synchronizers:
             if not inmap: 	# faninNB_task_name in self.synchronizers:
-                is_select = (FanIn_Type == "DAG_executor_FanIn_Select")
+                is_select = (DAG_executor_constants.FanIn_Type == "DAG_executor_FanIn_Select")
                 if not is_select:
                     FanInNB = DAG_executor_FanInNB.DAG_executor_FanInNB(faninNB_task_name) # initial_n = 0, monitor_name = None
                 else:
@@ -561,5 +561,5 @@ class DAG_executor_Synchronizer(object):
         return 0
 
 server = None
-if store_fanins_faninNBs_locally:
+if DAG_executor_constants.store_fanins_faninNBs_locally:
     server = DAG_executor_Synchronizer()

@@ -3,8 +3,9 @@ import numpy as np
 #import os
 from multiprocessing import shared_memory
 
-from .DAG_executor_constants import use_page_rank_group_partitions, using_threads_not_processes
-#from .DAG_executor_constants import use_multithreaded_multiprocessing
+#from .DAG_executor_constants import use_page_rank_group_partitions, using_threads_not_processes
+from . import DAG_executor_constants
+
 #from .BFS import num_nodes
 logger = logging.getLogger(__name__)
 
@@ -661,7 +662,7 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
         if debug_pagerank:
             logger.trace("Copy frontier values:")
 
-        if use_page_rank_group_partitions:
+        if DAG_executor_constants.use_page_rank_group_partitions:
             shared_frontier_map = shared_groups_frontier_parents_map
         else:
             shared_frontier_map = shared_partition_frontier_parents_map
@@ -832,7 +833,7 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
         print("")
 
         #if (debug_pagerank):
-        if not using_threads_not_processes:
+        if not DAG_executor_constants.using_threads_not_processes:
             logger.trace("PageRank output tuples for " + task_file_name + ": ")
             print_val = ""
             for k, v in PageRank_output.items():
@@ -864,7 +865,7 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
         print("pagerank:")
         print(str(pagerank))
 
-        if not using_threads_not_processes:
+        if not DAG_executor_constants.using_threads_not_processes:
             #rhc shared
             print_val = "XXPageRank result for " + task_file_name + ": " # + "\n"
             for node_index in range (starting_position_in_partition_group,starting_position_in_partition_group+num_nodes_for_pagerank_computation):

@@ -7,17 +7,20 @@ import os
 
 #from ..dag.DAG_executor_constants import run_all_tasks_locally
 #from ..dag.DAG_executor_constants import exit_program_on_exception
-import wukongdnc.dag.DAG_executor_constants
+#import wukongdnc.dag.DAG_executor_constants
+from ..dag import DAG_executor_constants
 
 from ..dag.DAG_executor_State import DAG_executor_State
 #from ..dag.DAG_executor import DAG_executor
 #from wukongdnc.dag import DAG_executor
 # needs to invoke method DAG_executor()
-import wukongdnc.dag.DAG_executor
+#import wukongdnc.dag.DAG_executor
+from ..dag import DAG_executor
 # Note: avoiding circular imports:
 # https://stackoverflow.com/questions/744373/what-happens-when-using-mutual-or-circular-cyclic-imports
 
-from wukongdnc.wukong.invoker import invoke_lambda_DAG_executor
+#from wukongdnc.wukong.invoker import invoke_lambda_DAG_executor
+from ..wukong.invoker import invoke_lambda_DAG_executor
 
 import logging 
 
@@ -130,7 +133,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         except Exception:
             logger.exception("[ERROR]: DAG_infoBuffer_Monitor_for_Lambdas:  Failed super(DAG_infoBuffer, self)")
             logger.exception("[ERROR] self: " + str(self.__class__.__name__))
-            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
         
@@ -159,7 +162,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         except Exception:
             logger.exception("[ERROR]: DAG_infoBuffer_Monitor_for_Lambdas: Failed super(DAG_infoBuffer_Monitor_for_Lambdas, self)")
             logger.exception("[ERROR] self: " + str(self.__class__.__name__))
-            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
 
@@ -193,7 +196,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             assert not (len(new_leaf_tasks)>1) , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
-            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
         # assertOld: at most one leaf task found
@@ -224,7 +227,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
 #rhc: lanbda inc: start lambdas for all continued states in buffer and leaf tasks
         #self._next_version.signal_c_and_exit_monitor()
 
-        if wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally:
+        if DAG_executor_constants.run_all_tasks_locally:
             # not using real lambdas
             try:
                 # start simulated lambdas that with the new DAG_info
@@ -279,7 +282,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     # report the name of the thread
                     #    print(thread.name)
                     thread_name_prefix = "Thread_leaf_"
-                    thread = threading.Thread(target=wukongdnc.dag.DAG_executor.DAG_executor_task, name=(thread_name_prefix+"ss"+str(start_state)), args=(payload,))
+                    thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=(thread_name_prefix+"ss"+str(start_state)), args=(payload,))
                     thread.start()
                 self._buffer.clear()
 
@@ -387,7 +390,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     # report the name of the thread
                     #    print(thread.name)
                     thread_name_prefix = "Thread_leaf_"
-                    thread = threading.Thread(target=wukongdnc.dag.DAG_executor.DAG_executor_task, name=(thread_name_prefix+"ss"+str(start_state)), args=(payload,))
+                    thread = threading.Thread(target=DAG_executor.DAG_executor_task, name=(thread_name_prefix+"ss"+str(start_state)), args=(payload,))
                     thread.start()
                 #self.current_version_new_leaf_tasks.clear()
                 # clear the started leaf tasks
@@ -398,7 +401,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     self.continue_queue += new_leaf_tasks
             except Exception:
                 logger.exception("[ERROR] DAG_infoBuffer_Monitor_for_Lambdas: Failed to start DAG_executor thread for state " + str(start_state))
-                if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                if DAG_executor_constants.exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0)
         else:
@@ -462,7 +465,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                         invoke_lambda_DAG_executor(payload = payload, function_name = "WukongDivideAndConquer:"+task_name)
                     except Exception:
                         logger.exception("[ERROR]: DAG_infoBuffer_Monitor_for_Lambdas: Failed to start DAG_executor thread for state " + str(start_state))
-                        if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                        if DAG_executor_constants.exit_program_on_exception:
                             logging.shutdown()
                             os._exit(0)
 
@@ -542,7 +545,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                     self.continue_queue += new_leaf_tasks
             except Exception:
                 logger.exception("[ERROR] DAG_infoBuffer_Monitor_for_Lambdas: Failed to start DAG_executor thread for state " + str(start_state))
-                if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                if DAG_executor_constants.exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0)
         try:
@@ -550,7 +553,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         except Exception:
             logger.exception("[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas: deposit: exit_monitor: Failed super(DAG_infoBuffer_Monitor_for_Lambdas, self)")
             logger.exception("[ERROR] self: " + str(self.__class__.__name__))
-            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
         
@@ -584,7 +587,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             except Exception:
                 logger.exception("[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas: withdraw: exit_monitor: Failed super(DAG_infoBuffer_Monitor_for_Lambdas, self)")
                 logger.exception("[ERROR] self: " + str(self.__class__.__name__))
-                if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                if DAG_executor_constants.exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0)
 
@@ -614,7 +617,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             except Exception:
                 logger.exception("[ERROR]:DAG_infoBuffer_Monitor_for_Lambdas: withdraw: exit_monitor: Failed super(DAG_infoBuffer_Monitor_for_Lambdas, self)")
                 logger.exception("[ERROR] self: " + str(self.__class__.__name__))
-                if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                if DAG_executor_constants.exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0) 
 

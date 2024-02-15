@@ -1,5 +1,6 @@
 import threading
-from .DAG_executor_constants import using_threads_not_processes, using_workers
+#from .DAG_executor_constants import using_threads_not_processes, using_workers
+from . import DAG_executor_constants
 
 # When using threads, this is a global counter used to atomically count the number
 # of tasks that have been executed. When using multiprocessing, the DAG_executor_driver
@@ -27,11 +28,11 @@ class Counter(object):
 # tasks_completed_counter
 
 completed_tasks_counter = None
-if using_workers and using_threads_not_processes:
+if DAG_executor_constants.using_workers and DAG_executor_constants.using_threads_not_processes:
     completed_tasks_counter = Counter(0)
 
 #rhc: counter 
 # completed_workers_counter
 completed_workers_counter = None
-if using_workers and using_threads_not_processes:
+if DAG_executor_constants.using_workers and DAG_executor_constants.using_threads_not_processes:
     completed_workers_counter = Counter(0)

@@ -7,7 +7,8 @@ from .util import decode_and_deserialize #, make_json_serializable,  isTry_and_g
 #from ..dag.DAG_executor_constants import FanIn_Type, FanInNB_Type
 #from ..dag.DAG_executor_constants import create_all_fanins_faninNBs_on_start
 #from ..dag.DAG_executor_constants import exit_program_on_exception
-import wukongdnc.dag.DAG_executor_constants
+#import wukongdnc.dag.DAG_executor_constants
+from ..dag import DAG_executor_constants
 
 from ..dag.DAG_executor_State import DAG_executor_State
 from .util import decode_and_deserialize, make_json_serializable
@@ -229,7 +230,7 @@ class MessageHandler(object):
             assert not (len(list_of_messages) == 0) , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
-            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
         #assertOld:
@@ -237,14 +238,14 @@ class MessageHandler(object):
         #    logger.error("[Error]: process_enqueued_fan_ins: "
         #        + " length of list_of_messages is 0 but fanin size > 0.")
 
-        if not wukongdnc.dag.DAG_executor_constants.create_all_fanins_faninNBs_on_start:
+        if not DAG_executor_constants.create_all_fanins_faninNBs_on_start:
             dummy_state_for_creation_message = decode_and_deserialize(message["state"])
             fanin_name = dummy_state_for_creation_message.keyword_arguments['fanin_name']
             is_fanin = dummy_state_for_creation_message.keyword_arguments['is_fanin']
             if is_fanin:
-                fanin_type = wukongdnc.dag.DAG_executor_constants.FanIn_Type
+                fanin_type = DAG_executor_constants.FanIn_Type
             else:
-                fanin_type = wukongdnc.dag.DAG_executor_constants.FanInNB_Type
+                fanin_type = DAG_executor_constants.FanInNB_Type
 
             msg_id = str(uuid.uuid4())	# for debugging
             creation_message = {
@@ -275,7 +276,7 @@ class MessageHandler(object):
             # We are doing all the fan_in ops one-by-one in the order they were called by clients
             # The return value of last call is the fanin results; return those to client
 #rhc: ToDo:
-            if wukongdnc.dag.DAG_executor_constants.create_all_fanins_faninNBs_on_start:
+            if DAG_executor_constants.create_all_fanins_faninNBs_on_start:
                 # call synchronize_sync on the already created object
                 return_value = self.synchronize_sync(msg)
             else:
@@ -373,10 +374,10 @@ class MessageHandler(object):
         try:
             msg = "[Error]: message_handler_lambda: createif_and_synchronize_sync: " \
                 + "called createif_and_synchronize_sync but create_all_fanins_faninNBs_on_start"
-            assert not (wukongdnc.dag.DAG_executor_constants.create_all_fanins_faninNBs_on_start) , msg
+            assert not (DAG_executor_constants.create_all_fanins_faninNBs_on_start) , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
-            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
         #assertOld:
@@ -490,10 +491,10 @@ class MessageHandler(object):
         try:
             msg = "[Error]: message_handler_lambda: createif_and_synchronize_async: " \
                 + "called createif_and_synchronize_async but create_all_fanins_faninNBs_on_start"
-            assert not (wukongdnc.dag.DAG_executor_constants.create_all_fanins_faninNBs_on_start) , msg
+            assert not (DAG_executor_constants.create_all_fanins_faninNBs_on_start) , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
-            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
         #assertOld:

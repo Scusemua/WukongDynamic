@@ -2,7 +2,9 @@ from distributed import LocalCluster, Client
 import dask
 import dask.array as da
 from collections import defaultdict
-from .DFS_visit import Node
+print("dask_dg import DFS_visit Node")
+#from .DFS_visit import Node
+from . import DFS_visit
 
 from dask import delayed
 import time
@@ -225,26 +227,27 @@ if __name__ == "__main__":
     return graph, result
 
   def tree_reduction(n = 1024):
-    """
-      n (int):
-        Size of the array on which to perform tree reduction.
-      
-      Returns
-      -------
-        Tuple where first element is the Dask HighLevelGraph object (or whatever the type is),
-        and the second element is the result of running the tree reduction computation on Dask proper.
-    """
-    print("==== GENERATING TREE REDUCTION (n = %d)" % n)
-    """ OLD
-    L = range(n) # 1,024 
-    while len(L) > 1:
-      L = list(map(dask.delayed(add), L[0::2], L[1::2]))
     
-    graph = L[0].__dask_graph__()
-    result = L[0].compute()
+    #  n (int):
+    #    Size of the array on which to perform tree reduction.
+      
+    #  Returns
+    #  -------
+    #    Tuple where first element is the Dask HighLevelGraph object (or whatever the type is),
+    #    and the second element is the result of running the tree reduction computation on Dask proper.
+    
+    print("==== GENERATING TREE REDUCTION (n = %d)" % n)
 
-    return graph, result 
-    """
+    #OLD
+    #L = range(n) # 1,024 
+    #while len(L) > 1:
+    #  L = list(map(dask.delayed(add), L[0::2], L[1::2]))
+    
+    #graph = L[0].__dask_graph__()
+    #result = L[0].compute()
+
+    #return graph, result 
+  
     # New
     L = range(n)
     while len(L) > 1:
@@ -262,19 +265,19 @@ if __name__ == "__main__":
     return graph, result 
   
   def mat_mul(n = 10, c = 2):
-    """
-      n (int):
-        We will multiply two n x n matrices.
+  
+    #  n (int):
+    #    We will multiply two n x n matrices.
       
-      c (int):
-        The size of the chunks into which the matrices will be partitioned
-        when parallelizing the matrix multiplication operation.
+    #  c (int):
+    #    The size of the chunks into which the matrices will be partitioned
+    #    when parallelizing the matrix multiplication operation.
       
-      Returns
-      -------
-        Tuple where first element is the Dask HighLevelGraph object (or whatever the type is),
-        and the second element is the result of running the tree reduction computation on Dask proper.
-    """
+    #  Returns
+    #  -------
+    #    Tuple where first element is the Dask HighLevelGraph object (or whatever the type is),
+    #   and the second element is the result of running the tree reduction computation on Dask proper.
+  
     print("==== GENERATING MATRIX MULTIPLICATION (n = %d, c = %d)" % (n, c))
     x = da.random.random((n, n), chunks = (c, c))
     y = da.random.random((n, n), chunks = (c, c))
@@ -285,7 +288,9 @@ if __name__ == "__main__":
     graph = z.__dask_graph__()
     result = z.compute() 
 
-    return graph, result    
+    return graph, result
+
+
   
   graph, result = manual_dag()
   # graph, result = manual_dag_test_batch_faninNBs()
@@ -351,7 +356,7 @@ if __name__ == "__main__":
     print("Task %s has %d dependencies." % (task_key, len(current_dependencies)))
     print("Task %s has %d dependents." % (task_key, len(current_dependents)))
 
-    node = Node(pred = current_dependencies, succ = current_dependents, 
+    node = DFS_visit.Node(pred = current_dependencies, succ = current_dependents, 
       task_name = task_key, task = task_obj[0], task_inputs = task_obj[1:])
     nodes_map[task_key] = node 
     nodes.append(node)
@@ -377,13 +382,13 @@ if __name__ == "__main__":
   #       else:
   #         current_dependents = []
 
-  #       node = Node(pred = current_dependencies, succ = current_dependents, 
+  #       node = DFS_visit.Node(pred = current_dependencies, succ = current_dependents, 
   #         task_name = task_key, task = task_obj[0], task_inputs = task_obj[1:])
   #       nodes_map[task_key] = node 
   #       nodes.append(node)
   #   elif type(layer) is dask.blockwise.Blockwise:
   #     print("Processing Blockwise now...")
-  #     node = Node(pred = list(dependencies[task]), succ = dependents[task], 
+  #     node = DFS_visit.Node(pred = list(dependencies[task]), succ = dependents[task], 
   #       task_name = task, task = layer.dsk[task][0], task_inputs = layer.dsk[task][1:])
   #     nodes_map[task] = node 
   #     nodes.append(node)
@@ -402,9 +407,9 @@ if __name__ == "__main__":
   #for node in nodes:
   #  node.generate_ops()
 
-  # Then at the end, call Node.save_DAG_info(), which saves a 
+  # Then at the end, call DFS_visit.Node.save_DAG_info(), which saves a 
   # pickle() file of stuff that was accumulated during DFS search.
-  # Node.save_DAG_info()
+  # DFS_visit.Node.save_DAG_info()
 
   # Uncomment this line to generate an image showing the DAG.
   # dag_image = div.visualize("dag.png")
@@ -491,7 +496,7 @@ if __name__ == "__main__":
     print("generate_ops for: " + n.get_task_name())
     n.generate_ops()
       
-  Node.save_DAG_info_as_dictionary() 
+  DFS_visit.Node.save_DAG_info_as_dictionary() 
 
 
 """

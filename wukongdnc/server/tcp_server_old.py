@@ -12,7 +12,8 @@ import os
 from synchronizer import Synchronizer
 
 #from ..dag.DAG_executor_constants import exit_program_on_exception
-import wukongdnc.dag.DAG_executor_constants
+#import wukongdnc.dag.DAG_executor_constants
+from ..dag import DAG_executor_constants
 
 # Set up logging.
 import logging 
@@ -94,7 +95,7 @@ class ServerThread(threading.Thread):
                 self.action_handlers[action](message = json_message)
             except Exception as ex:
                 logger.exception(ex)
-                if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                if DAG_executor_constants.exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0)          
 
@@ -111,7 +112,7 @@ class TcpServer(socket.socket):
             self.server_loop()
         except Exception:
             logger.exception()
-            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
         finally:

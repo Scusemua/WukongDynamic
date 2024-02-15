@@ -12,12 +12,14 @@ from wukongdnc.server.message_handler_lambda import MessageHandler
 from .DAG_executor_State import DAG_executor_State
 #from .DAG_info import DAG_Info
 from wukongdnc.server.util import make_json_serializable
-from .DAG_executor_constants import store_fanins_faninNBs_locally 
-from .DAG_executor_constants import FanIn_Type, FanInNB_Type
-from .DAG_executor_constants import using_single_lambda_function
-from .DAG_executor_constants import create_all_fanins_faninNBs_on_start, map_objects_to_lambda_functions
-from .DAG_executor_constants import exit_program_on_exception
-from .DAG_executor_constants import exit_program_on_exception
+#from .DAG_executor_constants import store_fanins_faninNBs_locally 
+#from .DAG_executor_constants import FanIn_Type, FanInNB_Type
+#from .DAG_executor_constants import using_single_lambda_function
+#from .DAG_executor_constants import create_all_fanins_faninNBs_on_start, map_objects_to_lambda_functions
+#from .DAG_executor_constants import exit_program_on_exception
+#from .DAG_executor_constants import exit_program_on_exception
+from . import DAG_executor_constants
+
 import logging 
 logger = logging.getLogger(__name__)
 
@@ -124,7 +126,7 @@ class DAG_orchestrator:
 
 			message = {
 				"op": "create",
-				"type": FanIn_Type,
+				"type": DAG_executor_constants.FanIn_Type,
 				"name": fanin_name,
 				"state": make_json_serializable(dummy_state),	
 				"id": msg_id
@@ -148,13 +150,13 @@ class DAG_orchestrator:
 			# call fanin will put the start state of the fanin task in the work_queue. (FaninNb
 			# cannot do this since the faninNB will be on the tcp_server.)
 			dummy_state.keyword_arguments['start_state_fanin_task'] = DAG_states[fanin_nameNB]
-			dummy_state.keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
+			dummy_state.keyword_arguments['store_fanins_faninNBs_locally'] = DAG_executor_constants.store_fanins_faninNBs_locally
 			dummy_state.keyword_arguments['DAG_info'] = DAG_info
 			msg_id = str(uuid.uuid4())
 
 			message = {
 				"op": "create",
-				"type": FanInNB_Type,
+				"type": DAG_executor_constants.FanInNB_Type,
 				"name": fanin_nameNB,
 				"state": make_json_serializable(dummy_state),	
 				"id": msg_id
@@ -284,7 +286,7 @@ class DAG_orchestrator:
 			logger.trace("DAG_Orchestrator: Triggered: Sending 'process_enqueued_fan_ins' message to lambda function for " + sync_object_name)
 			logger.trace("SDAG_Orchestrator: length of enqueue's list: " + str(len(list_of_fan_in_ops)))
 			
-			if not create_all_fanins_faninNBs_on_start:
+			if not DAG_executor_constants.create_all_fanins_faninNBs_on_start:
 				# we will invoke a lambda that stores the fanin object but this object will be created
 				# on the fly.
 				# This object is either a true fanin object or it is a fanout object that we are treating
@@ -309,7 +311,7 @@ class DAG_orchestrator:
 					# call fanin will put the start state of the fanin task in the work_queue. (FaninNb
 					# cannot do this since the faninNB will be on the tcp_server.)
 					dummy_state.keyword_arguments['start_state_fanin_task'] = self.DAG_states[sync_object_name]
-					dummy_state.keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
+					dummy_state.keyword_arguments['store_fanins_faninNBs_locally'] = DAG_executor_constants.store_fanins_faninNBs_locally
 					dummy_state.keyword_arguments['DAG_info'] = self.DAG_info
 				else: # fanin
 					# passing to the fanin object:
@@ -381,7 +383,7 @@ class DAG_orchestrator:
 
 			return_value = None
 			
-			if map_objects_to_lambda_functions:
+			if DAG_executor_constants.map_objects_to_lambda_functions:
 				# Do not allow parallel invocations. We may invoke the function
 				# more than once, e.g., two or more sync ojects mapped to the
 				# same function, or the object is a semaphore and we make 
@@ -406,7 +408,7 @@ class DAG_orchestrator:
 					except Exception:
 						logger.exception("[ERROR]: " + thread_name + ": invoke_lambda_synchronously: Failed to run lambda handler for synch object: " 
 					   		+ sync_object_name)
-						if exit_program_on_exception:
+						if DAG_executor_constants.exit_program_on_exception:
 							logging.shutdown()
 							os._exit(0) 
 			else:
@@ -430,7 +432,7 @@ class DAG_orchestrator:
 					logger.trace("DAG_Orchestrator: called simulated_lambda_function.lambda_handler(payload)")
 				except Exception:
 					logger.exception("[ERROR]: " + thread_name + ": invoke_lambda_synchronously: Failed to run lambda handler for synch object: " + sync_object_name)
-					if exit_program_on_exception:
+					if DAG_executor_constants.exit_program_on_exception:
 						logging.shutdown()
 						os._exit(0) 					
 
@@ -494,7 +496,7 @@ class InfiniD:
 			self.list_of_Lambda_Function_Simulators.append(Lambda_Function_Simulator())	
 			self.list_of_function_locks.append(Lock())
 			# if using a single function to store all objects, break the loop at one funnction
-			if using_single_lambda_function:
+			if DAG_executor_constants.using_single_lambda_function:
 				break
 
 	# map an object using its function name to one of the functions via the function's indez
@@ -510,13 +512,13 @@ class InfiniD:
 	# function with the saved state.
 	# Note: This is all for simulated functions, for now.
 	def get_simulated_lambda_function(self, object_name):
-		if map_objects_to_lambda_functions:
+		if DAG_executor_constants.map_objects_to_lambda_functions:
 			return self.list_of_Lambda_Function_Simulators[self.function_map[object_name]]
 		else:
 			# anonymous fnction
 			return Lambda_Function_Simulator()
 	def get_function_lock(self, object_name):
-		if map_objects_to_lambda_functions:
+		if DAG_executor_constants.map_objects_to_lambda_functions:
 			return self.list_of_function_locks[self.function_map[object_name]]
 		else:
 			# anonyous functions called only once so no need to lock them
@@ -525,7 +527,7 @@ class InfiniD:
 	def get_real_lambda_function(self, object_name):
 		# returns the deployment name that object_name is mapped to. Here we 
 		# assume that the function with index i is mapped to deployment "DAG_executor_i"
-		if map_objects_to_lambda_functions:
+		if DAG_executor_constants.map_objects_to_lambda_functions:
 			i = self.function_map[object_name]
 			deployment_name = "DAG_executor_"+str(i)
 			return deployment_name
@@ -560,7 +562,7 @@ class InfiniD:
 			# Note: we can use deployment names "DAG_executor_i" so we can still map to
 			# an index i.
 			self.map_synchronization_object(object_name,i)
-			if not using_single_lambda_function:
+			if not DAG_executor_constants.using_single_lambda_function:
 				i += 1
 			# Each name is mapped to a pair, which is (empty_list,n). The 
 			# list collects results for the fan_in and fanin/fanout size n is 
@@ -571,17 +573,17 @@ class InfiniD:
 
 		for object_name in self.all_fanin_task_names:
 			self.map_synchronization_object(object_name,i)
-			if not using_single_lambda_function:
+			if not DAG_executor_constants.using_single_lambda_function:
 				i += 1
 
 		for object_name in self.all_fanout_task_names:
 			self.map_synchronization_object(object_name,i)
-			if not using_single_lambda_function:
+			if not DAG_executor_constants.using_single_lambda_function:
 				i += 1
 
 		for object_name in self.DAG_leaf_tasks:
 			self.map_synchronization_object(object_name,i)
-			if not using_single_lambda_function:
+			if not DAG_executor_constants.using_single_lambda_function:
 				i += 1
 
 	# map the fanins/fanouts/faninNBs to a trigger, which is a pair pair (empty_list,n).

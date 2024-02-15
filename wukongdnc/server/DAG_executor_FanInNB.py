@@ -6,28 +6,30 @@ import threading
 import time 
 from threading import Thread
 import os
-
-#from DAG_executor import DAG_executor
-#from wukongdnc.dag 
+import uuid
 
 #from wukongdnc.dag.DAG_executor import DAG_executor
 #from . import DAG_executor_driver
 #from .DAG_executor_State import DAG_executor_State
-from wukongdnc.dag.DAG_executor_State import DAG_executor_State
+#from wukongdnc.dag.DAG_executor_State import DAG_executor_State
+from ..dag.DAG_executor_State import DAG_executor_State
 
 #from wukongdnc.dag.DAG_executor_constants import run_all_tasks_locally, using_workers, using_threads_not_processes
 #from wukongdnc.dag.DAG_executor_constants import store_sync_objects_in_lambdas, sync_objects_in_lambdas_trigger_their_tasks
 #from wukongdnc.dag.DAG_executor_constants import input_all_groups_partitions_at_start
 #from wukongdnc.dag.DAG_executor_constants import store_fanins_faninNBs_locally
 #from wukongdnc.dag.DAG_executor_constants import exit_program_on_exception
-import wukongdnc.dag.DAG_executor_constants
-#Try: from ..dag import DAG_executor_constants and see if DAG_executor_constants imported once
+#import wukongdnc.dag.DAG_executor_constants
+from ..dag import DAG_executor_constants
 
 #from wukongdnc.dag.DAG_work_queue_for_threads import thread_work_queue
-from wukongdnc.dag.DAG_executor_work_queue_for_threads import work_queue
-from wukongdnc.wukong.invoker import invoke_lambda_DAG_executor
-import uuid
-from wukongdnc.dag import DAG_executor
+#from wukongdnc.dag.DAG_executor_work_queue_for_threads import work_queue
+from ..dag.DAG_executor_work_queue_for_threads import work_queue
+#from wukongdnc.wukong.invoker import invoke_lambda_DAG_executor
+from ..wukong.invoker import invoke_lambda_DAG_executor
+
+#from wukongdnc.dag import DAG_executor
+from ..dag import DAG_executor
 
 import logging 
 
@@ -105,10 +107,10 @@ class DAG_executor_FanInNB(MonitorSU):
             # (store_fanins_faninNBs_locally)
             try:
                 msg =  "[Error]: FanInNB_select: fanin_task_name: DAG_info is None for FaninNB init()."
-                assert not ((not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally) or (wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally and not wukongdnc.dag.DAG_executor_constants.using_workers and wukongdnc.dag.DAG_executor_constants.store_fanins_faninNBs_locally)) , msg
+                assert not ((not DAG_executor_constants.run_all_tasks_locally) or (DAG_executor_constants.run_all_tasks_locally and not DAG_executor_constants.using_workers and DAG_executor_constants.store_fanins_faninNBs_locally)) , msg
             except AssertionError:
                 logger.exception("[Error]: assertion failed")
-                if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                if DAG_executor_constants.exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0)
             #assertOld:
@@ -134,7 +136,7 @@ class DAG_executor_FanInNB(MonitorSU):
         # and if we are creating fanins/faninNB on the fly, we pass 
         # groups_partitions to the create().
         # 
-        if wukongdnc.dag.DAG_executor_constants.input_all_groups_partitions_at_start:
+        if DAG_executor_constants.input_all_groups_partitions_at_start:
             self.groups_partitions = kwargs['groups_partitions'] 
 
             #print("groups_partitions:")
@@ -220,8 +222,8 @@ class DAG_executor_FanInNB(MonitorSU):
             # for debugging
             fanin_task_name = kwargs['fanin_task_name']
 
-            if wukongdnc.dag.DAG_executor_constants.using_workers:
-                if wukongdnc.dag.DAG_executor_constants.using_threads_not_processes:
+            if DAG_executor_constants.using_workers:
+                if DAG_executor_constants.using_threads_not_processes:
                     if self.store_fanins_faninNBs_locally:
                         # if using worker pools of threads, add fanin task's state to the work_queue.
                         # Note: if we are using worker pools of processes, then the process will call fan_in and
@@ -259,7 +261,7 @@ class DAG_executor_FanInNB(MonitorSU):
                         assert not self.store_fanins_faninNBs_locally , msg
                     except AssertionError:
                         logger.exception("[Error]: assertion failed")
-                        if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                        if DAG_executor_constants.exit_program_on_exception:
                             logging.shutdown()
                             os._exit(0)
                     #assertOld:
@@ -272,14 +274,14 @@ class DAG_executor_FanInNB(MonitorSU):
                     # no one should be calling fan_in again since this is last calle
                     return self._results, restart  # all threads have called so return results
                     #return 1, restart  # all threads have called so return results
-            elif self.store_fanins_faninNBs_locally and wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally:
+            elif self.store_fanins_faninNBs_locally and DAG_executor_constants.run_all_tasks_locally:
                 # Note this FaNInNBs is stored locally; using simulated lambdas
                 try:
                     msg = "[Error]: FaninB: storing fanins locally but not using threads."
-                    assert wukongdnc.dag.DAG_executor_constants.using_threads_not_processes , msg
+                    assert DAG_executor_constants.using_threads_not_processes , msg
                 except AssertionError:
                     logger.exception("[Error]: assertion failed")
-                    if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                    if DAG_executor_constants.exit_program_on_exception:
                         logging.shutdown()
                         os._exit(0)
                 #assertOld
@@ -325,7 +327,7 @@ class DAG_executor_FanInNB(MonitorSU):
                     #_thread.start_new_thread(DAG_executor.DAG_executor_task, (payload,))
                 except Exception:
                     logger.exception("FanInNB:[ERROR] Failed to start DAG_executor thread.")
-                    if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                    if DAG_executor_constants.exit_program_on_exception:
                         logging.shutdown()
                         os._exit(0)
 
@@ -337,7 +339,7 @@ class DAG_executor_FanInNB(MonitorSU):
                 return self._results, restart  # all threads have called so return results
                 #return 1, restart  # all threads have called so return results
                     
-            elif not self.store_fanins_faninNBs_locally and not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally:
+            elif not self.store_fanins_faninNBs_locally and not DAG_executor_constants.run_all_tasks_locally:
                 # using real lambdas to execure DAGs Wukong style
 #rhc: run task
                 # Note: we are store_sync_objects_in_lambdas so usually we would not 
@@ -349,7 +351,7 @@ class DAG_executor_FanInNB(MonitorSU):
                 # do not have to worry about a proxy thread blocking during a 
                 # fan_in op, which would prebent the Lmabda from terminatng (which 
                 # is why we have the select version of FanInNB.)
-                if wukongdnc.dag.DAG_executor_constants.store_sync_objects_in_lambdas and wukongdnc.dag.DAG_executor_constants.sync_objects_in_lambdas_trigger_their_tasks:
+                if DAG_executor_constants.store_sync_objects_in_lambdas and DAG_executor_constants.sync_objects_in_lambdas_trigger_their_tasks:
                     try:
                         logger.info("DAG_executor_FanInNB_Select: triggering DAG_Executor_Lambda() for task " + fanin_task_name)
                         lambda_DAG_exec_state = DAG_executor_State(function_name = "WukongDivideAndConquer:"+fanin_task_name, function_instance_ID = str(uuid.uuid4()), state = start_state_fanin_task)
@@ -367,7 +369,7 @@ class DAG_executor_FanInNB(MonitorSU):
                     except Exception:
                         logger.exception("[ERROR] DAG_executor_FanInNB_Select: Failed to start DAG_executor.DAG_executor_lambda" \
                             + " for triggered task " + fanin_task_name)
-                        if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                        if DAG_executor_constants.exit_program_on_exception:
                             logging.shutdown()
                             os._exit(0)
                 else:      
@@ -382,7 +384,7 @@ class DAG_executor_FanInNB(MonitorSU):
                             assert self.DAG_info is not None , msg
                         except AssertionError:
                             logger.exception("[Error]: assertion failed")
-                            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                            if DAG_executor_constants.exit_program_on_exception:
                                 logging.shutdown()
                                 os._exit(0)
                         #assertOld:
@@ -400,7 +402,7 @@ class DAG_executor_FanInNB(MonitorSU):
                             #"server": server   # used to mock server during testing; we use tcp_server with ral lambdas
                         }
 
-                        if wukongdnc.dag.DAG_executor_constants.input_all_groups_partitions_at_start:
+                        if DAG_executor_constants.input_all_groups_partitions_at_start:
                             # add the groups_partitions to payload 
                             payload['groups_partitions'] = self.groups_partitions 
                         
@@ -408,7 +410,7 @@ class DAG_executor_FanInNB(MonitorSU):
                         invoke_lambda_DAG_executor(payload = payload, function_name = "WukongDivideAndConquer:"+fanin_task_name)
                     except Exception:
                         logger.exception("FanInNB:[ERROR] Failed to start DAG_executor Lambda.")
-                        if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                        if DAG_executor_constants.exit_program_on_exception:
                             logging.shutdown()
                             os._exit(0)
 
@@ -424,7 +426,7 @@ class DAG_executor_FanInNB(MonitorSU):
                     return 0, restart
                     #return 1, restart  # all threads have called so return results
            
-            elif not self.store_fanins_faninNBs_locally and wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally:
+            elif not self.store_fanins_faninNBs_locally and DAG_executor_constants.run_all_tasks_locally:
                 # not using workers and using threads to simulate lambdas. Here
                 # there is nothing to do since a thread will be created localy
                 # in DAG work loop. (Can't create threads here or it would run here
@@ -447,7 +449,7 @@ class DAG_executor_FanInNB(MonitorSU):
                     assert False , msg
                 except AssertionError:
                     logger.exception("[Error]: assertion failed")
-                    if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                    if DAG_executor_constants.exit_program_on_exception:
                         logging.shutdown()
                         os._exit(0)
                 #assertOld:

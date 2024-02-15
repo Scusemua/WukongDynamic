@@ -4,11 +4,11 @@ import numpy as np
 import os
 
 from . import BFS_Shared
-from .DAG_executor_constants import use_shared_partitions_groups, use_page_rank_group_partitions
-from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
-from .DAG_executor_constants import using_threads_not_processes
-from .DAG_executor_constants import exit_program_on_exception
-#from .DAG_executor_constants import use_multithreaded_multiprocessing
+#from .DAG_executor_constants import use_shared_partitions_groups, use_page_rank_group_partitions
+#from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
+#from .DAG_executor_constants import using_threads_not_processes
+#from .DAG_executor_constants import exit_program_on_exception
+from . import DAG_executor_constants
 
 from .BFS_Partition_Node import Partition_Node
 
@@ -59,11 +59,11 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
     groups, group_names,groups_num_shadow_nodes_list,num_shadow_nodes_added_to_groups):
     
     try:
-        assert use_shared_partitions_groups , "[Error]: Called generate_shared_partitions_groups" \
+        assert DAG_executor_constants.use_shared_partitions_groups , "[Error]: Called generate_shared_partitions_groups" \
             + " but use_shared_partitions_groups is False."
     except AssertionError:
         logger.exception("[Error]: assertion failed")
-        if exit_program_on_exception:
+        if DAG_executor_constants.exit_program_on_exception:
             logging.shutdown()
             os._exit(0)
     # assertOld:
@@ -75,9 +75,9 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
     # Partition_Node in a single shared array, or we have multiple
     # arrays, one for each of the needed values, e.g., array of 
     # num_children values, array of num_parents values, etc.
-    if not use_struct_of_arrays_for_pagerank:
+    if not DAG_executor_constants.use_struct_of_arrays_for_pagerank:
         #rhc shared
-        if not use_page_rank_group_partitions:
+        if not DAG_executor_constants.use_page_rank_group_partitions:
             next = 0
             for name, partition, num_shadow_nodes in zip(partition_names, partitions, partitions_num_shadow_nodes_list):
                 partition_position = next
@@ -220,7 +220,7 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
         # will be random.
         int_padding = np.array([-4,-4,-4,-4, -4,-4,-4,-4, -4,-4,-4,-4, -4,-4,-4,-4])
         logger.trace("int padding: " + str(int_padding))
-        if not use_page_rank_group_partitions:
+        if not DAG_executor_constants.use_page_rank_group_partitions:
             # size of pagerank and previos is n floats, where n is the number of 
             # nodes in the input graph + the number of shadow nodes and their 
             # parent nodes (2*num_shadow_nodes_added_to_partitions) plus 
@@ -247,7 +247,7 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
             logger.trace("np_arrays_size_for_shared_partition_parents: "
                 + str(np_arrays_size_for_shared_partition_parents))
             # 1/num_nodes is used for the initial value of pagerank
-            if using_threads_not_processes:
+            if DAG_executor_constants.using_threads_not_processes:
                 BFS_Shared.initialize_struct_of_arrays(num_nodes, 
                     np_arrays_size_for_shared_partition,
                     np_arrays_size_for_shared_partition_parents)
@@ -278,7 +278,7 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
             # for j in (parent_index,num_parents) parent = parents[j]
             BFS_Shared.parents = np.empty(np_arrays_size_for_shared_partition_parents,dtype=np.intc)
             """
-            if using_threads_not_processes:
+            if DAG_executor_constants.using_threads_not_processes:
                 num_partitions_processed = 0
                 for name, partition, num_shadow_nodes in zip(partition_names, partitions, partitions_num_shadow_nodes_list):
                     logger.trace("name: " + name)
@@ -562,7 +562,7 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
             logger.trace("num_parent_appends: " + str(num_parent_appends)
                 + " ((len(groups)-1)*16): " + str(((len(groups)-1)*16)))
 
-            if using_threads_not_processes:
+            if DAG_executor_constants.using_threads_not_processes:
                 BFS_Shared.initialize_struct_of_arrays(num_nodes, 
                     np_arrays_size_for_shared_groups,
                     np_arrays_size_for_shared_groups_parents)
@@ -594,7 +594,7 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
             # for j in (parent_index,num_parents) parent = parents[j]
             BFS_Shared.parents = np.empty(np_arrays_size_for_shared_groups,dtype=np.intc)
             """
-            if using_threads_not_processes:
+            if DAG_executor_constants.using_threads_not_processes:
                 next = 0
                 next_parent_index = 0
                 num_groups_processed = 0

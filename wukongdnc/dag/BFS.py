@@ -701,10 +701,11 @@ import logging
 # this BFS.py file, we need to addLoggingLevel. We intend to 
 # always use TestAll.
 try:
-    from wukongdnc.dag.DAG_executor_constants import log_level
+    #from wukongdnc.dag.DAG_executor_constants import log_level
+    from . import DAG_executor_constants
     from .addLoggingLevel import addLoggingLevel
     addLoggingLevel('TRACE', logging.DEBUG - 5)
-    logging.basicConfig(encoding='utf-8',level=log_level, format='[%(asctime)s][%(module)s][%(processName)s][%(threadName)s]: %(message)s')
+    logging.basicConfig(encoding='utf-8',level=DAG_executor_constants.log_level, format='[%(asctime)s][%(module)s][%(processName)s][%(threadName)s]: %(message)s')
     # Added this to suppress the logging message:
     #   credentials - MainProcess - MainThread: Found credentials in shared credentials file: ~/.aws/credentials
     # But it appears that we could see other things liek this:
@@ -722,16 +723,18 @@ except AttributeError:
     >>> logging.TRACE
 """
 
-from .DAG_executor_constants import use_shared_partitions_groups, use_page_rank_group_partitions
-from .DAG_executor_constants import use_struct_of_arrays_for_pagerank, compute_pagerank
-from .DAG_executor_constants import use_incremental_DAG_generation, using_workers
-from .DAG_executor_constants import run_all_tasks_locally, using_threads_not_processes
-from .DAG_executor_constants import incremental_DAG_deposit_interval
-from .DAG_executor_constants import check_pagerank_output
-from .DAG_executor_constants import using_threads_not_processes
-from .DAG_executor_constants import use_multithreaded_BFS
-from .DAG_executor_constants import enable_runtime_task_clustering
-from .DAG_executor_constants import exit_program_on_exception
+#from .DAG_executor_constants import use_shared_partitions_groups, use_page_rank_group_partitions
+#from .DAG_executor_constants import use_struct_of_arrays_for_pagerank, compute_pagerank
+#from .DAG_executor_constants import use_incremental_DAG_generation, using_workers
+#from .DAG_executor_constants import run_all_tasks_locally, using_threads_not_processes
+#from .DAG_executor_constants import incremental_DAG_deposit_interval
+#from .DAG_executor_constants import check_pagerank_output
+#from .DAG_executor_constants import using_threads_not_processes
+#from .DAG_executor_constants import use_multithreaded_BFS
+#from .DAG_executor_constants import enable_runtime_task_clustering
+#from .DAG_executor_constants import exit_program_on_exception
+from . import DAG_executor_constants
+
 from .BFS_Node import Node
 from .BFS_Partition_Node import Partition_Node
 from . import BFS_generate_DAG_info_incremental_partitions
@@ -1206,7 +1209,7 @@ def dfs_parent(visited, node):  #function for dfs
                 assert not (parent_partition_parent_index == -1 or parent_group_parent_index == -1), msg
             except AssertionError:
                 logger.exception("[Error]: assertion failed")
-                if exit_program_on_exception:
+                if DAG_executor_constants.exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0)
             # assertOld: The index values are not -1, which is the value of the 
@@ -1347,7 +1350,7 @@ def dfs_parent(visited, node):  #function for dfs
                     assert not (parent_group_parent_index != -1) , msg
                 except AssertionError:
                     logger.exception("[Error]: assertion failed")
-                    if exit_program_on_exception:
+                    if DAG_executor_constants.exit_program_on_exception:
                         logging.shutdown()
                         os._exit(0)
                 # assertOld:
@@ -1418,7 +1421,7 @@ def dfs_parent(visited, node):  #function for dfs
             assert partition_group_tuple != None , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
-            if exit_program_on_exception:
+            if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
         if partition_group_tuple != None:   # if this is false it's an error (see the else-part)
@@ -1442,7 +1445,7 @@ def dfs_parent(visited, node):  #function for dfs
                 assert not (parent_partition_number == -1) , msg
             except AssertionError:
                 logger.exception("[Error]: assertion failed")
-                if exit_program_on_exception:
+                if DAG_executor_constants.exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0)
             # assertOld: parent_partition_number != -1. We set the parent's partition number
@@ -1610,7 +1613,7 @@ def dfs_parent(visited, node):  #function for dfs
                         assert not (current_partition_isLoop == False) , msg
                     except AssertionError:
                         logger.exception("[Error]: assertion failed")
-                        if exit_program_on_exception:
+                        if DAG_executor_constants.exit_program_on_exception:
                             logging.shutdown()
                             os._exit(0)
                     # assertOld: we should have detected a loop above. 
@@ -1633,7 +1636,7 @@ def dfs_parent(visited, node):  #function for dfs
                     assert partition_group_tuple != None , msg
                 except AssertionError:
                     logger.exception("[Error]: assertion failed")
-                    if exit_program_on_exception:
+                    if DAG_executor_constants.exit_program_on_exception:
                         logging.shutdown()
                         os._exit(0)
                 if partition_group_tuple != None:
@@ -1705,7 +1708,7 @@ def dfs_parent(visited, node):  #function for dfs
                             assert not (current_group_isLoop == False) , msg
                         except AssertionError:
                             logger.exception("[Error]: assertion failed")
-                            if exit_program_on_exception:
+                            if DAG_executor_constants.exit_program_on_exception:
                                 logging.shutdown()
                                 os._exit(0)
                         # assertOld:
@@ -1889,7 +1892,7 @@ def dfs_parent(visited, node):  #function for dfs
                             assert parent_index_in_groups_list == parent_group_position , msg
                         except AssertionError:
                             logger.exception("[Error]: assertion failed")
-                            if exit_program_on_exception:
+                            if DAG_executor_constants.exit_program_on_exception:
                                 logging.shutdown()
                                 os._exit(0)
                         #assertOld:
@@ -1973,7 +1976,7 @@ def dfs_parent(visited, node):  #function for dfs
                         # See BFS_Shared.py
 
                         # if True: 
-                        if use_shared_partitions_groups:
+                        if DAG_executor_constants.use_shared_partitions_groups:
                             # this is the key for the map
                             task_name_of_parent_group = group_names[parent_index_in_groups_list]
                             #task_name_of_parent = "PR" + str(parent_partition_number) + "_" + str(parent_group_number)
@@ -2288,7 +2291,7 @@ def dfs_parent(visited, node):  #function for dfs
 
 # rhc : ******* Partition
                 #if True: # 
-                if use_shared_partitions_groups:
+                if DAG_executor_constants.use_shared_partitions_groups:
                     # shared partitions frontier code:
                     # this is the key for the map
                     task_name_of_parent_partition = partition_names[parent_partition_number-1]
@@ -2347,7 +2350,7 @@ def dfs_parent(visited, node):  #function for dfs
 
 # rhc : ******* Group
                 #if True: # 
-                if use_shared_partitions_groups:
+                if DAG_executor_constants.use_shared_partitions_groups:
                     # See the comments immed. above for partition case.
                     # shared groups frontier code:
                     task_name_of_parent_group = group_names[parent_index_in_groups_list]
@@ -2501,7 +2504,7 @@ def dfs_parent(visited, node):  #function for dfs
             assert node.partition_number == -1 , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
-            if exit_program_on_exception:
+            if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
 
@@ -2685,7 +2688,7 @@ def bfs(visited, node):
     dfs_parent_loop_nodes_added_start = loop_nodes_added
 
 #rhc shared
-    if use_shared_partitions_groups or enable_runtime_task_clustering:
+    if DAG_executor_constants.use_shared_partitions_groups or DAG_executor_constants.enable_runtime_task_clustering:
         # we keep a count of the total number of shadow nodes added to a group
         # or partition. Then we track the start and end values of this counter
         # at the start of dfs_parent() so we can identify the number end-start
@@ -2837,7 +2840,7 @@ def bfs(visited, node):
     group_names.append(group_name)
 
 #rhc: incremental groups
-    if compute_pagerank and (use_incremental_DAG_generation or use_multithreaded_BFS):
+    if DAG_executor_constants.compute_pagerank and (DAG_executor_constants.use_incremental_DAG_generation or DAG_executor_constants.use_multithreaded_BFS):
         # For incremental DAG generation, we track the groups in the current
         # partition. We will need to iterate through these groups.
         groups_of_current_partition.append(group_name)
@@ -2859,7 +2862,7 @@ def bfs(visited, node):
     # Need to know the number of shadow nodes when clustering in order
     # to compute the number of non-shadow nodes (nodies-shadow_nodes = non-shadow nodes)
     #if use_shared_partitions_groups:
-    if use_shared_partitions_groups or enable_runtime_task_clustering:
+    if DAG_executor_constants.use_shared_partitions_groups or DAG_executor_constants.enable_runtime_task_clustering:
         # we are using worker processes/threads and we are putting all the 
         # groups in one shared array in an order that minimizes cache 
         # misses during the pagerank computation.
@@ -2872,7 +2875,7 @@ def bfs(visited, node):
             assert change_in_shadow_nodes_for_groups == 0 , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
-            if exit_program_on_exception:
+            if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
         # assertOld:
@@ -2939,7 +2942,7 @@ def bfs(visited, node):
                     assert not (ID == -1) , msg
                 except AssertionError:
                     logger.exception("[Error]: assertion failed")
-                    if exit_program_on_exception:
+                    if DAG_executor_constants.exit_program_on_exception:
                         logging.shutdown()
                         os._exit(0)
                 #assertOld: 
@@ -3033,7 +3036,7 @@ def bfs(visited, node):
                 # Need to know the number of shadow nodes when clustering in order
                 # to compute the number of non-shadow nodes (nodies-shadow_nodes = non-shadow nodes)
                 #if use_shared_partitions_groups:
-                if use_shared_partitions_groups or enable_runtime_task_clustering:
+                if DAG_executor_constants.use_shared_partitions_groups or DAG_executor_constants.enable_runtime_task_clustering:
                     # tracking the number of shadow nodes added to current partition.
                     # num_shadow_nodes_added_to_partitions is grand total of shadow
                     # nodes added to the partitions. We got the start value of this 
@@ -3057,7 +3060,7 @@ def bfs(visited, node):
                 current_partition = []
 
 #rhc: incremental groups
-                if compute_pagerank and (use_incremental_DAG_generation or use_multithreaded_BFS):
+                if DAG_executor_constants.compute_pagerank and (DAG_executor_constants.use_incremental_DAG_generation or DAG_executor_constants.use_multithreaded_BFS):
                     # For incremental DAG generation, we need to know the 
                     # groups that each partition contains. That is, when we process
                     # the groups of the current_partion, which is being added to the 
@@ -3140,7 +3143,7 @@ def bfs(visited, node):
                 # When we use shared partitions/groups, all of the partitions/groups
                 # are put into one shared array.
                 # The logic for patching is the same as above.
-                if use_shared_partitions_groups:
+                if DAG_executor_constants.use_shared_partitions_groups:
                     # Given:
                     # shared_frontier_parent_partition_patch_tuple = (task_name_of_parent,position_in_list_of_parent_frontier_tuples)
                     if current_partition_isLoop:
@@ -3282,7 +3285,7 @@ def bfs(visited, node):
                         assert partition_index_of_parent != -1 , msg
                     except AssertionError:
                         logger.exception("[Error]: assertion failed")
-                        if exit_program_on_exception:
+                        if DAG_executor_constants.exit_program_on_exception:
                             logging.shutdown()
                             os._exit(0)
         
@@ -3431,7 +3434,7 @@ def bfs(visited, node):
                 # statr the DAG_executor_driver (which will read the DAG_info object) and start
                 # the workers (which will eecute the partition/group 1 task) or statr a lambda to 
                 # execute partition/group 1.)
-                if compute_pagerank and use_incremental_DAG_generation:
+                if DAG_executor_constants.compute_pagerank and DAG_executor_constants.use_incremental_DAG_generation:
                     # partitioning is over when all graph nodes have been
                     # put in some partition
                     num_graph_nodes_in_partitions = num_nodes_in_partitions - num_shadow_nodes_added_to_partitions
@@ -3444,8 +3447,8 @@ def bfs(visited, node):
                         + " num_nodes: " + str(num_nodes) + " to_be_continued: "
                         + str(to_be_continued))
 
-                    if using_workers or not using_workers:
-                        if not use_page_rank_group_partitions:
+                    if DAG_executor_constants.using_workers or not DAG_executor_constants.using_workers:
+                        if not DAG_executor_constants.use_page_rank_group_partitions:
                             logger.info("BFS: calling generate_DAG_info_incremental_partitions for"
                                 + " partition " + str(partition_name) + " using workers.")
                             DAG_info = BFS_generate_DAG_info_incremental_partitions.generate_DAG_info_incremental_partitions(partition_name,current_partition_number,to_be_continued)
@@ -3478,14 +3481,14 @@ def bfs(visited, node):
                         # A DAG with a single partition, and hence a single group is a special case.
                         if current_partition_number == 1:
 #rhc incremental groups
-                            if not use_page_rank_group_partitions:
+                            if not DAG_executor_constants.use_page_rank_group_partitions:
                                 try:
                                     msg = "[Error]: BFS: partition " + partition_name + " is the first partition" \
                                         + " but it is not in leaf_tasks_of_partitions_incemental."
                                     assert partition_name in BFS_generate_DAG_info.leaf_tasks_of_partitions_incremental , msg
                                 except AssertionError:
                                     logger.exception("[Error]: assertion failed")
-                                    if exit_program_on_exception:
+                                    if DAG_executor_constants.exit_program_on_exception:
                                         logging.shutdown()
                                         os._exit(0)
                                 #assertOld:
@@ -3502,7 +3505,7 @@ def bfs(visited, node):
                                     assert group_name in BFS_generate_DAG_info.leaf_tasks_of_groups_incremental , msg
                                 except AssertionError:
                                     logger.exception("[Error]: assertion failed")
-                                    if exit_program_on_exception:
+                                    if DAG_executor_constants.exit_program_on_exception:
                                         logging.shutdown()
                                         os._exit(0)
                                 #assertOld:
@@ -3525,7 +3528,7 @@ def bfs(visited, node):
                                 # the DAG_executor woudld just wait for another incremental DAG. Hard to say
                                 # what N should be.
                         
-                                if not use_page_rank_group_partitions:
+                                if not DAG_executor_constants.use_page_rank_group_partitions:
                                     # output partition 1, which is complete
                                     with open('./'+partition_name + '.pickle', 'wb') as handle:
                                         # partition indices in partitions[] start with 0, so current partition i
@@ -3615,7 +3618,7 @@ def bfs(visited, node):
                             #
                             # Note: For groups, we may still key off partitions, i.e., when 
                             # we complete a partition, we generate the groups in this partition.
-                            if not use_page_rank_group_partitions or use_page_rank_group_partitions:
+                            if not DAG_executor_constants.use_page_rank_group_partitions or DAG_executor_constants.use_page_rank_group_partitions:
                                 #previous_partition_name = "PR"+str(current_partition_number-1)+"_1"
                             
                                 # Previous partition is complete so save partition to a file
@@ -3632,7 +3635,7 @@ def bfs(visited, node):
                                 # e.g., name for the partition 2 that is previous to current partition
                                 # 3 is position 1, which is 3-2.
 
-                                if not use_page_rank_group_partitions:
+                                if not DAG_executor_constants.use_page_rank_group_partitions:
                                     # always output the previous partition of nodes
                                     with open('./'+partition_names[current_partition_number-2] + '.pickle', 'wb') as handle:
                                         # partition indices in partitions[] start with 0, so current partition i
@@ -3746,7 +3749,7 @@ def bfs(visited, node):
 #rhc leaf tasks
                                     new_leaf_task_work_tuples = []           
 #rhc incremental groups
-                                    if not use_page_rank_group_partitions:
+                                    if not DAG_executor_constants.use_page_rank_group_partitions:
                                         if len(BFS_generate_DAG_info.leaf_tasks_of_partitions_incremental) > 0:
                                             # New leaf task partitions have been generated. Since no task
                                             # will fanout/fanin these leaf tasks, we must ensure they 
@@ -3776,7 +3779,7 @@ def bfs(visited, node):
                                             #DAG_leaf_task_start_states_incremental = DAG_info.get_DAG_leaf_task_start_states()
                                             DAG_map_incremental = DAG_info.get_DAG_map()
 
-                                            if using_workers or not using_workers:
+                                            if DAG_executor_constants.using_workers or not DAG_executor_constants.using_workers:
                                                 # leaf task states (a task is identified by its state) are put in work_queue
                                                 for name in BFS_generate_DAG_info.leaf_tasks_of_partitions_incremental:
                                                     state_incremental = DAG_states_incremental[name]
@@ -3788,7 +3791,7 @@ def bfs(visited, node):
                                                         assert not (len(task_inputs) != 0) , msg
                                                     except AssertionError:
                                                         logger.exception("[Error]: assertion failed")
-                                                        if exit_program_on_exception:
+                                                        if DAG_executor_constants.exit_program_on_exception:
                                                             logging.shutdown()
                                                             os._exit(0)
                                                     # assertOld:
@@ -3803,7 +3806,7 @@ def bfs(visited, node):
                                                         assert task_name == name , msg
                                                     except AssertionError:
                                                         logger.exception("[Error]: assertion failed")
-                                                        if exit_program_on_exception:
+                                                        if DAG_executor_constants.exit_program_on_exception:
                                                             logging.shutdown()
                                                             os._exit(0)
                                                     #assertOld:
@@ -3882,7 +3885,7 @@ def bfs(visited, node):
                                             DAG_map_incremental = DAG_info.get_DAG_map()
 
 #rhc: issue: don't do this for lambdas?
-                                            if using_workers or not using_workers:
+                                            if DAG_executor_constants.using_workers or not DAG_executor_constants.using_workers:
                                                 # leaf task states (a task is identified by its state) are put in work_queue
                                                 for name in BFS_generate_DAG_info.leaf_tasks_of_groups_incremental:
                                                     state_incremental = DAG_states_incremental[name]
@@ -3894,7 +3897,7 @@ def bfs(visited, node):
                                                         assert not (len(task_inputs) != 0) , msg
                                                     except AssertionError:
                                                         logger.exception("[Error]: assertion failed")
-                                                        if exit_program_on_exception:
+                                                        if DAG_executor_constants.exit_program_on_exception:
                                                             logging.shutdown()
                                                             os._exit(0)
                                                     # assertOld:
@@ -3909,7 +3912,7 @@ def bfs(visited, node):
                                                         assert task_name == name , msg
                                                     except AssertionError:
                                                         logger.exception("[Error]: assertion failed")
-                                                        if exit_program_on_exception:
+                                                        if DAG_executor_constants.exit_program_on_exception:
                                                             logging.shutdown()
                                                             os._exit(0)
                                                     #assertOld:
@@ -4021,7 +4024,7 @@ def bfs(visited, node):
                     else:
                         pass # complete this code for lambdas
  
-                elif compute_pagerank and use_multithreaded_BFS:
+                elif DAG_executor_constants.compute_pagerank and DAG_executor_constants.use_multithreaded_BFS:
                     # partitioning is over when all graph nodes have been
                     # put in some partition
                     num_graph_nodes_in_partitions = num_nodes_in_partitions - num_shadow_nodes_added_to_partitions
@@ -4033,8 +4036,8 @@ def bfs(visited, node):
                         + " num_graph_nodes_in_partitions: " + str(num_graph_nodes_in_partitions)
                         + " num_nodes: " + str(num_nodes) + " to_be_continued: "
                         + str(to_be_continued))
-                    if using_workers or not using_workers:
-                        if not use_page_rank_group_partitions:
+                    if DAG_executor_constants.using_workers or not DAG_executor_constants.using_workers:
+                        if not DAG_executor_constants.use_page_rank_group_partitions:
                             #logger.trace("BFS: calling deposit for"
                             #    + " partition " + str(partition_name) + " using workers.")
                             # All of these parameters are immutable: string, int, boolean
@@ -4153,7 +4156,7 @@ def bfs(visited, node):
                 # Note: group_name is collected below
 
 #rhc: incremental groups
-                if compute_pagerank and (use_incremental_DAG_generation or use_multithreaded_BFS):
+                if DAG_executor_constants.compute_pagerank and (DAG_executor_constants.use_incremental_DAG_generation or DAG_executor_constants.use_multithreaded_BFS):
                     groups_of_current_partition.append(group_name)
                     logger.trace("BFS: add " + group_name + "for partition number " 
                         + str(current_partition_number) 
@@ -4165,7 +4168,7 @@ def bfs(visited, node):
                 # to compute the number of non-shadow nodes (nodies-shadow_nodes = non-shadow nodes)
 
                 #if use_shared_partitions_groups:
-                if use_shared_partitions_groups or enable_runtime_task_clustering:
+                if DAG_executor_constants.use_shared_partitions_groups or DAG_executor_constants.enable_runtime_task_clustering:
                     #rhc shared
                     end_num_shadow_nodes_for_groups = num_shadow_nodes_added_to_groups
                     change_in_shadow_nodes_for_groups = end_num_shadow_nodes_for_groups - start_num_shadow_nodes_for_groups
@@ -4223,7 +4226,7 @@ def bfs(visited, node):
 
                 frontier_parent_group_patch_tuple_list.clear()
 
-                if use_shared_partitions_groups:
+                if DAG_executor_constants.use_shared_partitions_groups:
                     # Given:
                     # shared_frontier_parent_partition_patch_tuple = (task_name_of_parent,position_in_list_of_parent_frontier_tuples)
                     if current_group_isLoop:
@@ -4329,7 +4332,7 @@ def bfs(visited, node):
                         assert group_index_of_parent != -1, msg
                     except AssertionError:
                         logger.exception("[Error]: assertion failed")
-                        if exit_program_on_exception:
+                        if DAG_executor_constants.exit_program_on_exception:
                             logging.shutdown()
                             os._exit(0)
                     #assertOld:
@@ -4526,12 +4529,12 @@ def input_graph():
     # save number of graph nodes in BFS_generate_DAG_info
     # which is where the DAG_info is built. num_nodes_in_graph
     # is now a field in DAG_info.
-    if not use_incremental_DAG_generation:
+    if not DAG_executor_constants.use_incremental_DAG_generation:
         BFS_generate_DAG_info.num_nodes_in_graph = num_nodes
         logger.info("input_graph: set BFS_generate_DAG_info.num_nodes_in_graph to "
             + str(BFS_generate_DAG_info.num_nodes_in_graph))
     else:
-        if use_page_rank_group_partitions:
+        if DAG_executor_constants.use_page_rank_group_partitions:
             BFS_generate_DAG_info_incremental_groups.num_nodes_in_graph = num_nodes
             logger.info("input_graph: set BFS_generate_DAG_info_incemental_groups.num_nodes_in_graph to "
                 + str(BFS_generate_DAG_info.num_nodes_in_graph))
@@ -4657,7 +4660,7 @@ def input_graph():
         assert (num_edges - num_self_loops) == count_child_edges , msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
-        if exit_program_on_exception:
+        if DAG_executor_constants.exit_program_on_exception:
             logging.shutdown()
             os._exit(0)
     #assertOld:
@@ -4682,7 +4685,7 @@ def input_graph():
         assert (num_edges - num_self_loops) == count_parent_edges , msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
-        if exit_program_on_exception:
+        if DAG_executor_constants.exit_program_on_exception:
             logging.shutdown()
             os._exit(0)
     #assertOld:
@@ -4733,7 +4736,7 @@ def input_graph():
         """ 
 
 def output_partitions():
-    if use_page_rank_group_partitions:
+    if DAG_executor_constants.use_page_rank_group_partitions:
         for name, group in zip(group_names, groups):
             with open('./'+name + '.pickle', 'wb') as handle:
                 cloudpickle.dump(group, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
@@ -4743,7 +4746,7 @@ def output_partitions():
                 cloudpickle.dump(partition, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
 
 def input_partitions():
-    if use_page_rank_group_partitions:
+    if DAG_executor_constants.use_page_rank_group_partitions:
         group_inputs = []
         for name in group_names:
             with open('./'+name+'.pickle', 'rb') as handle:
@@ -4909,7 +4912,7 @@ def print_BFS_stats():
         assert not (len(visited) != num_nodes) , msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
-        if exit_program_on_exception:
+        if DAG_executor_constants.exit_program_on_exception:
             logging.shutdown()
             os._exit(0)
     #assertOld:
@@ -4932,7 +4935,7 @@ def print_BFS_stats():
         logger.trace(str(i) + ":length of partition: " + str(len(x)))
         i += 1
     logger.trace("shadow_nodes_added: " + str(num_shadow_nodes_added_to_partitions))
-    if not use_shared_partitions_groups:
+    if not DAG_executor_constants.use_shared_partitions_groups:
         sum_of_partition_lengths -= (total_loop_nodes_added + num_shadow_nodes_added_to_partitions)
         logger.trace("sum_of_partition_lengths (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
             + str(sum_of_partition_lengths))
@@ -4942,15 +4945,15 @@ def print_BFS_stats():
             assert not (sum_of_partition_lengths != num_nodes) , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
-            if exit_program_on_exception:
+            if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
         #if sum_of_partition_lengths != num_nodes:
         #    logger.error("[Error]: print_BFS_stats: sum_of_partition_lengths is " + str(sum_of_partition_lengths)
         #        + " but num_nodes is " + str(num_nodes))
     else: # use_shared_partitions_groups so computing PageRank
-        if not use_page_rank_group_partitions:
-            if not use_struct_of_arrays_for_pagerank:
+        if not DAG_executor_constants.use_page_rank_group_partitions:
+            if not DAG_executor_constants.use_struct_of_arrays_for_pagerank:
                 shared_partition_length = len(BFS_Shared.shared_partition)
                 # added shadow nodes and their parents
                 shared_partition_length -= (total_loop_nodes_added + (2*num_shadow_nodes_added_to_partitions))
@@ -4962,7 +4965,7 @@ def print_BFS_stats():
                     assert not (shared_partition_length != num_nodes) , msg
                 except AssertionError:
                     logger.exception("[Error]: assertion failed")
-                    if exit_program_on_exception:
+                    if DAG_executor_constants.exit_program_on_exception:
                         logging.shutdown()
                         os._exit(0)
                 #assertOld:
@@ -4983,7 +4986,7 @@ def print_BFS_stats():
         logger.trace(str(i) + ": length of group: " + str(len(x)))
         i+=1
     logger.trace("num_shadow_nodes_added_to_groups: " + str(num_shadow_nodes_added_to_groups))
-    if not use_shared_partitions_groups:
+    if not DAG_executor_constants.use_shared_partitions_groups:
         logger.trace("total_loop_nodes_added : " + str(total_loop_nodes_added))
         sum_of_groups_lengths -= (total_loop_nodes_added + num_shadow_nodes_added_to_groups)
         logger.trace("sum_of_groups_lengths (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
@@ -4994,15 +4997,15 @@ def print_BFS_stats():
             assert not (sum_of_groups_lengths != num_nodes) , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
-            if exit_program_on_exception:
+            if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
         #if sum_of_groups_lengths != num_nodes:
         #    logger.error("[Error]: print_BFS_stats: sum_of_groups_lengths is " + str(sum_of_groups_lengths)
         #        + " but num_nodes is " + str(num_nodes))
     else: # use_shared_partitions_groups so computing PageRank
-        if use_page_rank_group_partitions:
-            if not use_struct_of_arrays_for_pagerank:
+        if DAG_executor_constants.use_page_rank_group_partitions:
+            if not DAG_executor_constants.use_struct_of_arrays_for_pagerank:
                 shared_groups_length = len(BFS_Shared.shared_groups)
                 logger.trace("shared_groups_length first value: " + str(shared_groups_length))
                 # added shadow nodes and their parents
@@ -5017,7 +5020,7 @@ def print_BFS_stats():
                     assert not (shared_groups_length != num_nodes) , msg
                 except AssertionError:
                     logger.exception("[Error]: assertion failed")
-                    if exit_program_on_exception:
+                    if DAG_executor_constants.exit_program_on_exception:
                         logging.shutdown()
                         os._exit(0)
                 #if shared_groups_length != num_nodes:
@@ -5101,7 +5104,7 @@ def print_BFS_stats():
         assert not len(frontiers[frontiers_length-1]) != 0 , msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
-        if exit_program_on_exception:
+        if DAG_executor_constants.exit_program_on_exception:
             logging.shutdown()
             os._exit(0)
     # assertOld: 
@@ -5141,7 +5144,7 @@ def print_BFS_stats():
         else:
             logger.info("-- (" + str(len(x)) + ")")
     logger.info("")
-    if use_shared_partitions_groups:
+    if DAG_executor_constants.use_shared_partitions_groups:
         logger.trace("Number of shadow nodes (when use_shared_partitions_groups):")
         for num in partitions_num_shadow_nodes_list:
             logger.trace(num)
@@ -5164,7 +5167,7 @@ def print_BFS_stats():
         else:
             logger.info("-- (" + str(len(g)) + ")")
     logger.info("")
-    if use_shared_partitions_groups:
+    if DAG_executor_constants.use_shared_partitions_groups:
         logger.trace("Number of shadow nodes (when use_shared_partitions_groups):")
         for num in groups_num_shadow_nodes_list:
             logger.trace(num)
@@ -5287,13 +5290,13 @@ def print_BFS_stats():
     logger.trace("Average number of frontier groups: " + (str(frontier_groups_sum / (len(frontiers)-1))))
     logger.trace("")
     i#f True: # 
-    if use_shared_partitions_groups: 
+    if DAG_executor_constants.use_shared_partitions_groups: 
         logger.trace("Shared partition map frontier_parent_tuples:")                 
         for (k,v) in BFS_Shared.shared_partition_frontier_parents_map.items():
             logger.trace(str(k) + ": " + str(v))
         logger.trace("")
     #if True: # 
-    if use_shared_partitions_groups:  
+    if DAG_executor_constants.use_shared_partitions_groups:  
         logger.trace("Shared groups map frontier_parent_tuples:")                  
         for (k,v) in BFS_Shared.shared_groups_frontier_parents_map.items():
             logger.trace(str(k) + ": " + str(v))
@@ -5410,7 +5413,7 @@ def print_BFS_stats():
 
 def main():
 
-    if use_page_rank_group_partitions:
+    if DAG_executor_constants.use_page_rank_group_partitions:
         logger.info("BFS: using groups")
     else:
         logger.info("BFS: using partitions.")
@@ -5426,10 +5429,10 @@ def main():
 
     #rhc: Int BFS_shared before starting BFS. If we add to struct of arrays
     # during dfs_parent, we will eventually need those inits earlier too.
-    if use_shared_partitions_groups:
+    if DAG_executor_constants.use_shared_partitions_groups:
         BFS_Shared.initialize()
 
-    if use_multithreaded_BFS:
+    if DAG_executor_constants.use_multithreaded_BFS:
         global DAG_generator_for_multithreaded_DAG_generation
         DAG_generator_for_multithreaded_DAG_generation = DAG_Generator_Multithreaded()
         DAG_generator_for_multithreaded_DAG_generation.start_thread()
@@ -5437,9 +5440,9 @@ def main():
     # we are only using incremental_DAG_generation when we
     # are computing pagerank, so far. Pagerank DAGS are the
     # only DAGS we generate ourselves, so far.
-    if compute_pagerank and use_incremental_DAG_generation:
+    if DAG_executor_constants.compute_pagerank and DAG_executor_constants.use_incremental_DAG_generation:
         # create the connections to tcp_server needed for  
-        if (run_all_tasks_locally and using_workers and not using_threads_not_processes): 
+        if (DAG_executor_constants.run_all_tasks_locally and DAG_executor_constants.using_workers and not DAG_executor_constants.using_threads_not_processes): 
             # Config: A5, A6
             # sent the create() for work_queue to the tcp server in the DAG_executor_driver
             websocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -5447,7 +5450,7 @@ def main():
             DAG_infobuffer_monitor = Remote_Client_for_DAG_infoBuffer_Monitor(websocket)
             DAG_infobuffer_monitor.create()
             logger.info("BFS: created Remote DAG_infobuffer_monitor.")
-        elif not run_all_tasks_locally:
+        elif not DAG_executor_constants.run_all_tasks_locally:
             websocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             websocket.connect(TCP_SERVER_IP)
             DAG_infobuffer_monitor = Remote_Client_for_DAG_infoBuffer_Monitor_for_Lambdas(websocket)
@@ -5489,7 +5492,7 @@ def main():
         assert not (len(current_partition) > 0), msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
-        if exit_program_on_exception:
+        if DAG_executor_constants.exit_program_on_exception:
             logging.shutdown()
             os._exit(0)
 
@@ -5534,7 +5537,7 @@ def main():
         global end_num_shadow_nodes_for_partitions
         global start_num_shadow_nodes_for_partitions
         global num_shadow_nodes_added_to_partitions
-        if use_shared_partitions_groups or enable_runtime_task_clustering:
+        if DAG_executor_constants.use_shared_partitions_groups or DAG_executor_constants.enable_runtime_task_clustering:
             #rhc shared
             end_num_shadow_nodes_for_partitions = num_shadow_nodes_added_to_partitions
             change_in_shadow_nodes_for_partitions = end_num_shadow_nodes_for_partitions - start_num_shadow_nodes_for_partitions
@@ -5579,7 +5582,7 @@ def main():
 #rhc: clustering
         # Note: need the group name here.
         #if use_shared_partitions_groups:
-        if use_shared_partitions_groups or enable_runtime_task_clustering:
+        if DAG_executor_constants.use_shared_partitions_groups or DAG_executor_constants.enable_runtime_task_clustering:
             #rhc shared
             end_num_shadow_nodes_for_groups = num_shadow_nodes_added_to_groups
             change_in_shadow_nodes_for_groups = end_num_shadow_nodes_for_groups - start_num_shadow_nodes_for_groups
@@ -5623,7 +5626,7 @@ def main():
             assert not (len(frontier) > 0) , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
-            if exit_program_on_exception:
+            if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
         #assertOld:
@@ -5644,15 +5647,15 @@ def main():
 
 #10
     global num_parent_appends
-    if use_shared_partitions_groups:
+    if DAG_executor_constants.use_shared_partitions_groups:
         generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,partition_names,
             partitions_num_shadow_nodes_list,num_shadow_nodes_added_to_partitions,
             groups, group_names,groups_num_shadow_nodes_list,num_shadow_nodes_added_to_groups)
 
 #rhc incremental
-    if not use_incremental_DAG_generation:
+    if not DAG_executor_constants.use_incremental_DAG_generation:
 
-        if not use_multithreaded_BFS:
+        if not DAG_executor_constants.use_multithreaded_BFS:
             print_BFS_stats()
             #logging.shutdown()
             #os._exit(0)
@@ -5693,7 +5696,7 @@ def main():
 
         run()
 
-        if use_struct_of_arrays_for_pagerank and use_shared_partitions_groups and not using_threads_not_processes:
+        if DAG_executor_constants.use_struct_of_arrays_for_pagerank and DAG_executor_constants.use_shared_partitions_groups and not DAG_executor_constants.using_threads_not_processes:
             logger.trace("\nBFS:Close and unlink shared memory.")
             try:
                 BFS_Shared.close_shared_memory()
@@ -5701,7 +5704,7 @@ def main():
             except Exception:
                 logger.exception("[Error]: PageRank_Function:"
                     + " BFS: Failed to close or unlink shared memory.")
-                if exit_program_on_exception:
+                if DAG_executor_constants.exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0)
     else:
@@ -5720,10 +5723,10 @@ def main():
     
         print_BFS_stats()
 
-    if check_pagerank_output:
+    if DAG_executor_constants.check_pagerank_output:
         # True when: comuting pagerank and using thread workers/lambdas
         # compute_pagerank and run_all_tasks_locally and (using_workers or not using_workers) and using_threads_not_processes
-        if use_page_rank_group_partitions:
+        if DAG_executor_constants.use_page_rank_group_partitions:
             number_of_groups_or_partitions = len(groups)
         else:
             number_of_groups_or_partitions = len(partitions) 
@@ -5739,7 +5742,7 @@ def main():
         output_keys = list(pr_outputs.keys())
         output_keys.sort()
         sorted_pagerank_outputs = {i: pr_outputs[i] for i in output_keys}
-        if use_page_rank_group_partitions:
+        if DAG_executor_constants.use_page_rank_group_partitions:
             for (k,v) in sorted_pagerank_outputs.items():
                 logger.info(str(k) + ":" + group_names[k-1] + ":" +str(v))
         else:

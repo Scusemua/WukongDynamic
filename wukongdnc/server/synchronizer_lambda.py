@@ -11,7 +11,8 @@ import importlib
 import cloudpickle
 
 #from ..dag.DAG_executor_constants import exit_program_on_exception
-import wukongdnc.dag.DAG_executor_constants
+#import wukongdnc.dag.DAG_executor_constants
+from ..dag import DAG_executor_constants
 
 from ..wukong.invoker import invoke_lambda 
 
@@ -95,7 +96,7 @@ class Synchronizer(object):
             synchronizer_method = getattr(self._synchClass,"lock")
         except Exception:
             logger.exception("[Error]: synchronizer_lambda: lock_synchronizer: Failed to find method 'lock' on object of type '%s'." % (self._synchClass))
-            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
             
@@ -108,7 +109,7 @@ class Synchronizer(object):
             synchronizer_method = getattr(self._synchClass,"unlock")
         except Exception:
             logger.exception("synchronizer_lambda: unlock_synchronizer: Failed to find method 'unlock' on object of type '%s'." % (self._synchClass))
-            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
             
@@ -120,13 +121,13 @@ class Synchronizer(object):
 
         if not synchronizer_class_name in Synchronizer.synchronizers:
             logger.error("synchronizer_lambda: create: Invalid synchronizer class name: '%s'" % synchronizer_class_name)
-            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
         
         if not synchronizer_class_name in Synchronizer.file_map:
             logger.error("synchronizer_lambda: create: Could not find source file for Synchronizer '%s'" % synchronizer_class_name)
-            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
 
@@ -153,7 +154,7 @@ class Synchronizer(object):
         self._synchronizer = self._synchClass(self._synchronizer_name)
         if self._synchronizer is None:
             logger.error("[Error]: create: Failed to locate and create synchronizer of type %s" % synchronizer_class_name)
-            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
             #return -1
@@ -295,7 +296,7 @@ class Synchronizer(object):
             if not (self._synchronizer_class_name == "DAG_executor_FanIn_Select" 
                 or self._synchronizer_class_name == "DAG_executor_FanInNB_Select"):
                 logger.error("[Error]: synchronizer_lambda: synchronize_sync: all non-fanin-faninNB synchronous operations must be try-ops")
-                if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                if DAG_executor_constants.exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0)
             
@@ -403,7 +404,7 @@ class Synchronizer(object):
         except Exception as x:
             logger.exception("trySynchronize: Caught Error >>> %s" % x)
             logger.exception("Synchronizer of type %s does not have method called %s. Cannot complete trySynchronize() call." % (self._synchClass, method_name))
-            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
 
@@ -435,7 +436,7 @@ class Synchronizer(object):
         except Exception as x:
             logger.exception("trySynchronizeSelect: Caught Error >>> %s" % x)
             logger.exception("Synchronizer of type %s does not have method called %s. Cannot complete trySynchronize() call." % (self._synchClass, method_name))
-            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
 
@@ -474,7 +475,7 @@ class Synchronizer(object):
             # self._synchronizer and **kwargs as arguments.
         except Exception:
             logger.exception("synchronize: Failed to find method '%s' on object '%s'." % (method_name, self._synchClass))
-            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
         
@@ -510,7 +511,7 @@ class Synchronizer(object):
             synchronizer_method = getattr(self._synchClass, method_name)
         except Exception:
             logger.exception("synchronizeSelect: Failed to find method '%s' on object '%s'." % (method_name, self._synchClass))
-            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
         
@@ -527,7 +528,7 @@ class Synchronizer(object):
             execute = getattr(self._synchClass,"execute")
         except Exception:
             logger.exception("synchronizeSelect: Failed to find method 'execute' on object '%s'." % (self._synchClass))
-            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
             
@@ -595,7 +596,7 @@ class Synchronizer(object):
             execute = getattr(self._synchClass,"execute")
         except Exception:
             logger.exception("synchronizer_lambda: synchronizeLamba: Failed to find method 'execute' on object '%s'." % (self._synchClass))
-            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
            
@@ -641,7 +642,7 @@ class Synchronizer(object):
                 assert not (restart) , msg
             except AssertionError:
                 logger.exception("[Error]: assertion failed")
-                if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                if DAG_executor_constants.exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0)
             #assertOld:

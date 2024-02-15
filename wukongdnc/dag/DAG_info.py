@@ -1,7 +1,8 @@
 import cloudpickle
 #import os
 import copy
-from .DAG_executor_constants import use_incremental_DAG_generation
+#from .DAG_executor_constants import use_incremental_DAG_generation
+from . import DAG_executor_constants
 
 import logging
 logger = logging.getLogger(__name__)
@@ -48,7 +49,7 @@ class DAG_Info(object):
         # for this state in the two DAG_maps. This is the state that can be 
         # modified while the DAG is executing.
 
-        if not use_incremental_DAG_generation:
+        if not DAG_executor_constants.use_incremental_DAG_generation:
             self.DAG_map = DAG_info_dictionary["DAG_map"]
         else:
             # Q: this is the same as DAG_info_dictionary["DAG_map"].copy()?
@@ -85,12 +86,12 @@ class DAG_Info(object):
         # DAG should be requested. Likewise, it us used after a new incremental DAG is 
         # obtained to detemrine how many tasks in the new DAG can be executed before a 
         # another new DAG should be requested. 
-        if not use_incremental_DAG_generation:
+        if not DAG_executor_constants.use_incremental_DAG_generation:
             self.DAG_number_of_incomplete_tasks = 0
         else:
             self.DAG_number_of_incomplete_tasks = DAG_info_dictionary["DAG_number_of_incomplete_tasks"]
 #rhc: bug fix:
-        if not use_incremental_DAG_generation:
+        if not DAG_executor_constants.use_incremental_DAG_generation:
             self.DAG_number_of_groups_of_previous_partition_that_cannot_be_executed = 0
         else:
             self.DAG_number_of_groups_of_previous_partition_that_cannot_be_executed = DAG_info_dictionary["DAG_number_of_groups_of_previous_partition_that_cannot_be_executed"]

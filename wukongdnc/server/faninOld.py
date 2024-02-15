@@ -3,7 +3,8 @@ import os
 from .monitor_su import MonitorSU #, ConditionVariable
 
 #from ..dag.DAG_executor_constants import exit_program_on_exception
-import wukongdnc.dag.DAG_executor_constants
+#import wukongdnc.dag.DAG_executor_constants
+from ..dag import DAG_executor_constants
 
 import threading
 import time 
@@ -110,7 +111,7 @@ class FanIn(MonitorSU):
                 assert self._results is not None , msg
             except AssertionError:
                 logger.exception("[Error]: assertion failed")
-                if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                if DAG_executor_constants.exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0)
             #assetOld:

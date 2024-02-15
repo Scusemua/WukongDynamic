@@ -7,11 +7,11 @@ from .DAG_info import DAG_Info
 from .DFS_visit import state_info
 from .BFS_pagerank import PageRank_Function_Driver, PageRank_Function_Driver_Shared
 from .BFS_Shared import PageRank_Function_Driver_Shared_Fast
-from .DAG_executor_constants import use_shared_partitions_groups
-from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
-#from .DAG_executor_constants import using_threads_not_processes, use_multithreaded_multiprocessing
-from .DAG_executor_constants import enable_runtime_task_clustering
-from .DAG_executor_constants import exit_program_on_exception
+#from .DAG_executor_constants import use_shared_partitions_groups
+#from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
+#from .DAG_executor_constants import enable_runtime_task_clustering
+#from .DAG_executor_constants import exit_program_on_exception
+from . import DAG_executor_constants
 
 from .BFS_generate_DAG_info import Group_senders, Group_receivers
 from .BFS_generate_DAG_info import leaf_tasks_of_groups_incremental
@@ -796,7 +796,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
             assert len(groups_of_current_partition) == 1 , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
-            if exit_program_on_exception:
+            if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
         #assertOld:
@@ -812,7 +812,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
             assert current_partition_state == Group_next_state , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
-            if exit_program_on_exception:
+            if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
         #assertOld:
@@ -841,7 +841,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
             assert senders is None , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
-            if exit_program_on_exception:
+            if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
         # assertOld:
@@ -888,7 +888,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         Group_DAG_states[name_of_first_group_in_DAG] = Group_next_state
 
         # identify the function that will be used to execute this task
-        if not use_shared_partitions_groups:
+        if not DAG_executor_constants.use_shared_partitions_groups:
             # the partition of graph nodes for this task will be read 
             # from a file when the task is executed. 
             Group_DAG_tasks[name_of_first_group_in_DAG] = PageRank_Function_Driver
@@ -899,7 +899,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
             # For worker processes, the shared array uses Python Shared Memory
             # from the mutiprocessing lib.
             # The shared array is essentially an array of structs
-            if not use_struct_of_arrays_for_pagerank:
+            if not DAG_executor_constants.use_struct_of_arrays_for_pagerank:
                 # using struct of arrays for fast cache access, one array
                 # for each Node member, e.g., array of IDs, array of pagerank values
                 # array of previous values. 
@@ -1003,7 +1003,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                     assert not (len(groups_of_current_partition) > 1), msg
                 except AssertionError:
                     logger.exception("[Error]: assertion failed")
-                    if exit_program_on_exception:
+                    if DAG_executor_constants.exit_program_on_exception:
                         logging.shutdown()
                         os._exit(0)
                 # assertOld:
@@ -1081,10 +1081,10 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 Group_DAG_states[group_name] = Group_next_state
 
                 # identify the function that will be used to execute this task
-                if not use_shared_partitions_groups:
+                if not DAG_executor_constants.use_shared_partitions_groups:
                     Group_DAG_tasks[group_name] = PageRank_Function_Driver
                 else:
-                    if not use_struct_of_arrays_for_pagerank:
+                    if not DAG_executor_constants.use_struct_of_arrays_for_pagerank:
                         Group_DAG_tasks[group_name] = PageRank_Function_Driver_Shared 
                     else:
                         Group_DAG_tasks[group_name] = PageRank_Function_Driver_Shared_Fast  
@@ -1163,10 +1163,10 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 Group_DAG_states[group_name] = Group_next_state
 
                 # identify function used to execute this pagerank task (see comments above)
-                if not use_shared_partitions_groups:
+                if not DAG_executor_constants.use_shared_partitions_groups:
                     Group_DAG_tasks[group_name] = PageRank_Function_Driver
                 else:
-                    if not use_struct_of_arrays_for_pagerank:
+                    if not DAG_executor_constants.use_struct_of_arrays_for_pagerank:
                         Group_DAG_tasks[group_name] = PageRank_Function_Driver_Shared 
                     else:
                         Group_DAG_tasks[group_name] = PageRank_Function_Driver_Shared_Fast  
@@ -1502,7 +1502,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                             assert not receiverY in Group_all_collapse_task_names , msg
                         except AssertionError:
                             logger.exception("[Error]: assertion failed")
-                            if exit_program_on_exception:
+                            if DAG_executor_constants.exit_program_on_exception:
                                 logging.shutdown()
                                 os._exit(0)
                         #assertOld:
@@ -1527,7 +1527,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                         # of previous_group
                         fanouts.append(receiverY)
 #rhc: clustering
-                        if enable_runtime_task_clustering:
+                        if DAG_executor_constants.enable_runtime_task_clustering:
                             num_shadow_nodes = groups_num_shadow_nodes_map[receiverY]
                             logger.trace("number of shadow nodes for " + receiverY + " is " + str(num_shadow_nodes)) 
                             fanout_partition_group_sizes.append(num_shadow_nodes)
@@ -1592,7 +1592,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 logger.error("DAG_map:")
                 for key, value in Group_DAG_map.items():
                     logger.trace(str(key) + ' : ' + str(value))
-                if exit_program_on_exception:
+                if DAG_executor_constants.exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0)            
             #assertOld:

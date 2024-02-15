@@ -35,7 +35,8 @@ from wukongdnc.constants import TCP_SERVER_IP
 #from .DAG_executor_constants import compute_pagerank, use_shared_partitions_groups, use_page_rank_group_partitions
 #from .DAG_executor_constants import use_struct_of_arrays_for_pagerank, using_workers
 #from .DAG_executor_constants import use_incremental_DAG_generation, name_of_first_groupOrpartition_in_DAG
-#from .DAG_executor_constants import input_all_groups_partitions_at_startfrom .DAG_executor_constants import work_queue_size_for_incremental_DAG_generation_with_worker_processes
+#from .DAG_executor_constants import input_all_groups_partitions_at_start
+#from .DAG_executor_constants import work_queue_size_for_incremental_DAG_generation_with_worker_processes
 #rhc: counter:
 #from .DAG_executor_constants import num_workers
 #from .DAG_executor_constants import exit_program_on_exception

@@ -1,6 +1,7 @@
 from .DAG_executor_State import DAG_executor_State
 from ..server.api import create, synchronize_async, synchronize_sync 
-from .DAG_executor_constants import process_work_queue_Type
+#from .DAG_executor_constants import process_work_queue_Type
+from . import DAG_executor_constants
 
 #from .DAG_executor_constants import using_threads_not_processes, use_multithreaded_multiprocessing
 
@@ -31,7 +32,7 @@ class Work_Queue_Client:
         )
         
         #create(self.websocket, "create", "BoundedBuffer", "process_work_queue", state)
-        create(self.websocket, "create", process_work_queue_Type, "process_work_queue", state)
+        create(self.websocket, "create", DAG_executor_constants.process_work_queue_Type, "process_work_queue", state)
 
     def get(self,block = True):
         # bounded buffer is blocking; using same interface as Manager.Queue

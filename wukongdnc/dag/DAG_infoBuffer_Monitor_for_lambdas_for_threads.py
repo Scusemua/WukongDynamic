@@ -3,8 +3,10 @@ Not using this. Using wukongdnc/dag/DAG_infoBuffer_Monitor_for_threads.py.
 We essentially copied this there and used an if-statement that checks
 whether we are using workers or lambdas.
 """
-from .DAG_executor_constants import using_threads_not_processes, using_workers, run_all_tasks_locally
-from .DAG_executor_constants import compute_pagerank, use_incremental_DAG_generation
+#from .DAG_executor_constants import using_threads_not_processes, using_workers, run_all_tasks_locally
+#from .DAG_executor_constants import compute_pagerank, use_incremental_DAG_generation
+from . import DAG_executor_constants
+
 from .Local_Client_for_DAG_infoBuffer_Monitor_for_Lambdas import Local_Client_for_DAG_infoBuffer_Monitor_for_Lambdas
 #from wukongdnc.server.DAG_infoBuffer_Monitor_for_Lambdas import DAG_infoBuffer_Monitor_for_Lambdas
 import wukongdnc.server.DAG_infoBuffer_Monitor_for_Lambdas
@@ -13,7 +15,7 @@ import wukongdnc.server.DAG_infoBuffer_Monitor_for_Lambdas
 # DAG_infobuffer_monitor to deposit a new DAG and clients
 # call (blocking) withdraw to get a new DAG.
 DAG_infobuffer_monitor = None
-if run_all_tasks_locally and not using_workers and compute_pagerank and use_incremental_DAG_generation and using_threads_not_processes:
+if DAG_executor_constants.run_all_tasks_locally and not DAG_executor_constants.using_workers and DAG_executor_constants.compute_pagerank and DAG_executor_constants.use_incremental_DAG_generation and DAG_executor_constants.using_threads_not_processes:
     # Wrapping a DAG_infobuffer_monitor in a Local_Client_for_DAG_infoBuffer_Monitor.
     # This wrapper deals with the keword argument parameters
     # that need to be sent to the DAG_infoBuffer_Monitor

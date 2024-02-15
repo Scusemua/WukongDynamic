@@ -6,11 +6,11 @@ from .DAG_info import DAG_Info
 from .DFS_visit import state_info
 from .BFS_pagerank import PageRank_Function_Driver, PageRank_Function_Driver_Shared
 from .BFS_Shared import PageRank_Function_Driver_Shared_Fast
-from .DAG_executor_constants import use_shared_partitions_groups, use_page_rank_group_partitions
-from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
-#from .DAG_executor_constants import using_threads_not_processes, use_multithreaded_multiprocessing
-from .DAG_executor_constants import enable_runtime_task_clustering
-from .DAG_executor_constants import exit_program_on_exception
+#from .DAG_executor_constants import use_shared_partitions_groups, use_page_rank_group_partitions
+#from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
+#from .DAG_executor_constants import enable_runtime_task_clustering
+#from .DAG_executor_constants import exit_program_on_exception
+from . import DAG_executor_constants
 logger = logging.getLogger(__name__)
 
 """
@@ -270,7 +270,7 @@ def generate_DAG_info():
                         Partition_all_fanout_task_names.append(receiverY)
                     fanouts.append(receiverY)
 #rhc: clustering
-                    if enable_runtime_task_clustering:
+                    if DAG_executor_constants.enable_runtime_task_clustering:
                         num_shadow_nodes = partitions_num_shadow_nodes_map[receiverY]
                         fanout_partition_group_sizes.append(num_shadow_nodes)
             else:
@@ -320,7 +320,7 @@ def generate_DAG_info():
                 assert senderX in leaf_tasks_of_partitions , msg
             except AssertionError:
                 logger.exception("[Error]: assertion failed")
-                if exit_program_on_exception:
+                if DAG_executor_constants.exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0)
             #assertOld:
@@ -432,11 +432,11 @@ def generate_DAG_info():
     # about to execuet the task. The pagerank function is the same 
     # for all tasks, so there is no need to package the same function
     # in all the states of the DAG.
-    if not use_shared_partitions_groups:
+    if not DAG_executor_constants.use_shared_partitions_groups:
         for key in Partition_DAG_states:
             Partition_DAG_tasks[key] = PageRank_Function_Driver
     else:
-        if not use_struct_of_arrays_for_pagerank:
+        if not DAG_executor_constants.use_struct_of_arrays_for_pagerank:
             for key in Partition_DAG_states:
                 Partition_DAG_tasks[key] = PageRank_Function_Driver_Shared 
         else:
@@ -473,7 +473,7 @@ def generate_DAG_info():
     with open(file_name, 'wb') as handle:
         cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
 
-    if not use_page_rank_group_partitions:
+    if not DAG_executor_constants.use_page_rank_group_partitions:
         file_name = "./DAG_info.pickle"
         with open(file_name, 'wb') as handle:
             cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
@@ -676,7 +676,7 @@ def generate_DAG_info():
                         Group_all_fanout_task_names.append(receiverY)
                     fanouts.append(receiverY)
 #rhc: clustering
-                    if enable_runtime_task_clustering:
+                    if DAG_executor_constants.enable_runtime_task_clustering:
                         num_shadow_nodes = groups_num_shadow_nodes_map[receiverY]
                         #logger.trace("number of shadow nodes for " + receiverY + " is " + str(num_shadow_nodes)) 
                         fanout_partition_group_sizes.append(num_shadow_nodes)
@@ -731,7 +731,7 @@ def generate_DAG_info():
                 assert senderX in leaf_tasks_of_groups , msg
             except AssertionError:
                 logger.exception("[Error]: assertion failed")
-                if exit_program_on_exception:
+                if DAG_executor_constants.exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0)
             #assertOld:
@@ -836,11 +836,11 @@ def generate_DAG_info():
             Group_DAG_states[receiverY] = state
             state += 1
 
-    if not use_shared_partitions_groups:
+    if not DAG_executor_constants.use_shared_partitions_groups:
         for key in Group_DAG_states:
             Group_DAG_tasks[key] = PageRank_Function_Driver
     else:
-        if not use_struct_of_arrays_for_pagerank:
+        if not DAG_executor_constants.use_struct_of_arrays_for_pagerank:
             for key in Group_DAG_states:
                 Group_DAG_tasks[key] = PageRank_Function_Driver_Shared 
         else:
@@ -877,7 +877,7 @@ def generate_DAG_info():
     with open(file_name, 'wb') as handle:
         cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
 
-    if use_page_rank_group_partitions:
+    if DAG_executor_constants.use_page_rank_group_partitions:
         file_name = "./DAG_info.pickle"
         with open(file_name, 'wb') as handle:
             cloudpickle.dump(DAG_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
@@ -1058,7 +1058,7 @@ def generate_DAG_info():
 
     logger.trace("")
     
-    if not use_shared_partitions_groups:
+    if not DAG_executor_constants.use_shared_partitions_groups:
         driver = "PageRank_Function_Driver"
     else:
         driver = "PageRank_Function_Driver_Shared"

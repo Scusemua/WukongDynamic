@@ -3,7 +3,8 @@ import os
 from .selectivewait import selectiveWait
 
 #from ..dag.DAG_executor_constants import exit_program_on_exception
-import wukongdnc.dag.DAG_executor_constants
+#import wukongdnc.dag.DAG_executor_constants
+from ..dag import DAG_executor_constants
 
 # from .counting_semaphore import CountingSemaphore
 from threading import RLock
@@ -294,7 +295,7 @@ class Selector():
            elif choice > self._select.get_number_entries()+1:
                 # error
                 logger.error("[Error]: selector: Illegal choice in selective wait: " + choice + " number of entries" + self._select.get_number_entries())
-                if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                if DAG_executor_constants.exit_program_on_exception:
                     logging.shutdown()
                     os._exit()
                 break # while-loop

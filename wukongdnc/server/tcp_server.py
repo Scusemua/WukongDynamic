@@ -11,19 +11,20 @@ from .util import decode_and_deserialize
 #from ..dag.DAG_executor_State import DAG_executor_State
 from .util import decode_and_deserialize, isTry_and_getMethodName, isSelect, make_json_serializable
 
-import wukongdnc.dag.DAG_executor_constants
+
 #from ..dag.DAG_executor_constants import run_all_tasks_locally, process_work_queue_Type
 #from ..dag.DAG_executor_constants import create_all_fanins_faninNBs_on_start
 #from ..dag.DAG_executor_constants import FanInNB_Type, FanIn_Type, store_fanins_faninNBs_locally
 #from ..dag.DAG_executor_constants import same_output_for_all_fanout_fanin
 #from ..dag.DAG_executor_constants import using_workers, using_threads_not_processes
 #from ..dag.DAG_executor_constants import compute_pagerank, use_incremental_DAG_generation
+#import wukongdnc.dag.DAG_executor_constants
+from ..dag import DAG_executor_constants
 
 from ..dag.DAG_info import DAG_Info
 from ..dag.DAG_executor_State import DAG_executor_State
 
 import logging 
-#from wukongdnc.dag.DAG_executor_constants import log_level
 #from ..dag.DAG_executor_constants import exit_program_on_exception
 from ..dag.addLoggingLevel import addLoggingLevel
 """ How to use: https://stackoverflow.com/questions/2183233/how-to-add-a-custom-loglevel-to-pythons-logging-facility/35804945#35804945
@@ -36,7 +37,7 @@ from ..dag.addLoggingLevel import addLoggingLevel
 # Set up logging.
 addLoggingLevel('TRACE', logging.DEBUG - 5)
 
-logging.basicConfig(encoding='utf-8',level=wukongdnc.dag.DAG_executor_constants.log_level, format='[%(asctime)s][%(module)s][%(processName)s][%(threadName)s]: %(message)s')
+logging.basicConfig(encoding='utf-8',level=DAG_executor_constants.log_level, format='[%(asctime)s][%(module)s][%(processName)s][%(threadName)s]: %(message)s')
 # Added this to suppress the logging message:
 #   credentials - MainProcess - MainThread: Found credentials in shared credentials file: ~/.aws/credentials
 # But it appears that we could see other things liek this:
@@ -115,13 +116,13 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 self.action_handlers[action](message = json_message)
             except ConnectionResetError:
                 logger.exception("ConnectionResetError in tcp_handler")
-                if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                if DAG_executor_constants.exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0)
                 return 
             except Exception:
                 logger.exception("Exception in tcp_handler")
-                if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                if DAG_executor_constants.exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0)
                 return 
@@ -292,7 +293,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
  
     def read_all_groups_partitions():
         groups_partitions = {}
-        if wukongdnc.dag.DAG_executor_constants.compute_pagerank and not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally and not wukongdnc.dag.DAG_executor_constants.bypass_call_lambda_client_invoke and not wukongdnc.dag.DAG_executor_constants.use_incremental_DAG_generation:
+        if DAG_executor_constants.compute_pagerank and not DAG_executor_constants.run_all_tasks_locally and not DAG_executor_constants.bypass_call_lambda_client_invoke and not DAG_executor_constants.use_incremental_DAG_generation:
             # hardcoded for testing rel lambdas. May want to enabe this generally in
             # which case we will need the partition/group names, which BFS could
             # write to a file.
@@ -305,7 +306,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 except EOFError:
                     logger.exception("[Error]: tcp_server: read_all_groups_partitions:"
                         + " file name:" + str(complete_task_file_name))
-                    if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                    if DAG_executor_constants.exit_program_on_exception:
                         logging.shutdown()
                         os._exit(0)
                 groups_partitions[task_file_name] = partition_or_group
@@ -360,23 +361,23 @@ class TCPHandler(socketserver.StreamRequestHandler):
         try:
             msg = "[Error]: synchronize_process_faninNBs_batch: using incremental DAG generation" \
                     + " with real Lambdas but received None from DAG_executor process_faninNBs_batch."
-            assert not (wukongdnc.dag.DAG_executor_constants.compute_pagerank and wukongdnc.dag.DAG_executor_constants.use_incremental_DAG_generation \
-                and not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally and DAG_info_passed_from_DAG_exector is None) , msg
+            assert not (DAG_executor_constants.compute_pagerank and DAG_executor_constants.use_incremental_DAG_generation \
+                and not DAG_executor_constants.run_all_tasks_locally and DAG_info_passed_from_DAG_exector is None) , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
-            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
         # assertOld: if we are doing incremental DAG generation with real Lambdas
         # then the process_faninNBs_batch method shoudl pass DAG_info since
         # tcp_server does not read DAG_info in this case.
-        #if (wukongdnc.dag.DAG_executor_constants.compute_pagerank and wukongdnc.dag.DAG_executor_constants.use_incremental_DAG_generation and (
-        #    not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally)
+        #if (DAG_executor_constants.compute_pagerank and DAG_executor_constants.use_incremental_DAG_generation and (
+        #    not DAG_executor_constants.run_all_tasks_locally)
         #):
         #    if DAG_info_passed_from_DAG_exector is None:
         #        logger.error("[Error]: synchronize_process_faninNBs_batch: using incremental DAG generation"
         #            + " with real Lambdas but received None from DAG_executor process_faninNBs_batch.")
-        #         if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+        #         if DAG_executor_constants.exit_program_on_exception:
         #            logging.shutdown()
         #            os._exit(0)
 
@@ -389,17 +390,17 @@ class TCPHandler(socketserver.StreamRequestHandler):
         try:
             msg = "[Error]: synchronize_process_faninNBs_batch: using incremental DAG generation" \
                     + " with real Lambdas but received None from DAG_executor process_faninNBs_batch."
-            assert not (worker_needs_input and not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally) , msg
+            assert not (worker_needs_input and not DAG_executor_constants.run_all_tasks_locally) , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
-            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
         # assertOld:
         #if worker_needs_input:
-        #    if not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally:
+        #    if not DAG_executor_constants.run_all_tasks_locally:
         #        logger.error("[Error: synchronize_process_faninNBs_batch: worker needs input but using lambdas.")
-        #        if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+        #        if DAG_executor_constants.exit_program_on_exception:
         #            logging.shutdown()
         #            os._exit(0)
 
@@ -408,7 +409,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             assert not (worker_needs_input and async_call) , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
-            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
         #assertOld: if worker needs work then we should be using synch call so we can check the results for work
@@ -418,10 +419,10 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
         try:
             msg = "[Error: synchronize_process_faninNBs_batch: async_call but not (not run_all_tasks_locally)."
-            assert not (async_call and not (not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally or (wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally and wukongdnc.dag.DAG_executor_constants.using_workers and not wukongdnc.dag.DAG_executor_constants.using_threads_not_processes and not worker_needs_input))) , msg
+            assert not (async_call and not (not DAG_executor_constants.run_all_tasks_locally or (DAG_executor_constants.run_all_tasks_locally and DAG_executor_constants.using_workers and not DAG_executor_constants.using_threads_not_processes and not worker_needs_input))) , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
-            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
         # assertOld:
@@ -438,9 +439,9 @@ class TCPHandler(socketserver.StreamRequestHandler):
         #    # This matches the if statement in the work_loop.
         #    # Note: using_workers and not using_threads_not_processes means we 
         #    # will be calling process_faninNBs_batch (i.e., this method)
-        #    if not (not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally or (wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally and wukongdnc.dag.DAG_executor_constants.using_workers and not wukongdnc.dag.DAG_executor_constants.using_threads_not_processes and not worker_needs_input)):
+        #    if not (not DAG_executor_constants.run_all_tasks_locally or (DAG_executor_constants.run_all_tasks_locally and DAG_executor_constants.using_workers and not DAG_executor_constants.using_threads_not_processes and not worker_needs_input)):
         #        logger.error("[Error: synchronize_process_faninNBs_batch: async_call but not (not run_all_tasks_locally).")
-        #        if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+        #        if DAG_executor_constants.exit_program_on_exception:
         #            logging.shutdown()
         #            os._exit(0)
 
@@ -462,7 +463,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # processing method.
         # We are leaving this code here in case we need it here or 
         # somewhere else later.
-        if False and wukongdnc.dag.DAG_executor_constants.compute_pagerank and wukongdnc.dag.DAG_executor_constants.use_incremental_DAG_generation:
+        if False and DAG_executor_constants.compute_pagerank and DAG_executor_constants.use_incremental_DAG_generation:
             DAG_infoBuffer_monitor_method_keyword_arguments = {}
             # call DAG_infoBuffer_monitor (bounded buffer) get_current_version_number_DAG_info()
             logger.trace("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": get DAG_info version number.")
@@ -478,7 +479,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
             if (synchronizer is None):
                 logger.error("synchronize_process_faninNBs_batch: Could not find existing Synchronizer with name '%s'" % synchronizer_name)
-                if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                if DAG_executor_constants.exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0)
 
@@ -504,7 +505,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
             DAG_info = most_recently_generated_DAG_info
 
-        if not wukongdnc.dag.DAG_executor_constants.create_all_fanins_faninNBs_on_start:
+        if not DAG_executor_constants.create_all_fanins_faninNBs_on_start:
             # create the work_queue used by workers (when using worker pools
             # to execute the DAG instad of lambdas. When the workers are processes
             # the work queue is on the server so all the worker processes can access it.)
@@ -516,7 +517,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     msg_id = str(uuid.uuid4())	# for debugging
                     creation_message = {
                         "op": "create",
-                        "type": wukongdnc.dag.DAG_executor_constants.process_work_queue_Type,   # probably a bounded_buffer
+                        "type": DAG_executor_constants.process_work_queue_Type,   # probably a bounded_buffer
                         "name": "process_work_queue",
                         "state": make_json_serializable(dummy_state),	
                         "id": msg_id
@@ -548,7 +549,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             # work queue. If we are using workers, we already used one fanout as a become task
             # so these fanouts can be put in the work queue.
             # If we are using lambdas, then we can use the parallel invoker to invoke the fanout lambdas
-            if wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally:
+            if DAG_executor_constants.run_all_tasks_locally:
                 # work_queue.deposit_all(list_of_work_queue_or_payload_fanout_values)
 
                 synchronizer = tcp_server.synchronizers[work_queue_name]
@@ -558,7 +559,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 #    synchronizer_method = getattr(synchClass, work_queue_method)
                 #except Exception:
                 #    logger.exception("tcp_server: synchronize_process_faninNBs_batch: deposit fanout work: Failed to find method '%s' on object '%s'." % (work_queue_method, work_queue_type))
-                #    if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                #    if DAG_executor_constants.exit_program_on_exception:
                 #        logging.shutdown()
                  #       os._exit(0)
 
@@ -619,7 +620,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # as the task_inputs, instad of just using "S", which is the Dask way.
         output = None
         calling_task_name = ""
-        if not wukongdnc.dag.DAG_executor_constants.same_output_for_all_fanout_fanin:
+        if not DAG_executor_constants.same_output_for_all_fanout_fanin:
             output = DAG_exec_state.keyword_arguments['result']
             calling_task_name = DAG_exec_state.keyword_arguments['calling_task_name']
 
@@ -634,7 +635,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 + ": Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
             
             #synchronizer = tcp_server.synchronizers[synchronizer_name]
-            if not wukongdnc.dag.DAG_executor_constants.create_all_fanins_faninNBs_on_start:
+            if not DAG_executor_constants.create_all_fanins_faninNBs_on_start:
                 # This is one lock for all creates; we could have one lock 
                 # per object: get object names from DAG_nfo and create
                 # a map of object name to lock at the start of tcp_server,
@@ -648,13 +649,13 @@ class TCPHandler(socketserver.StreamRequestHandler):
                         dummy_state_for_create_message = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()))
                         # passing to the created faninNB object:
 #rhc batch
-                        if not (wukongdnc.dag.DAG_executor_constants.compute_pagerank and wukongdnc.dag.DAG_executor_constants.use_incremental_DAG_generation):
+                        if not (DAG_executor_constants.compute_pagerank and DAG_executor_constants.use_incremental_DAG_generation):
                             #DAG_states = DAG_info.get_DAG_states()
                                 
                             #dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = DAG_states[name]
                             dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = start_state_fanin_task
-                            dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = wukongdnc.dag.DAG_executor_constants.store_fanins_faninNBs_locally
-                            if not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally: 
+                            dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = DAG_executor_constants.store_fanins_faninNBs_locally
+                            if not DAG_executor_constants.run_all_tasks_locally: 
                                 if read_DAG_info:
                                     # we are locked by create_synchronization_object_lock
                                     read_DAG_info = False
@@ -673,7 +674,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                                 dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info 
 #rhc groups partitions
                                 groups_partitions = []
-                                if wukongdnc.dag.DAG_executor_constants.compute_pagerank and not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally and not wukongdnc.dag.DAG_executor_constants.bypass_call_lambda_client_invoke and not wukongdnc.dag.DAG_executor_constants.use_incremental_DAG_generation:
+                                if DAG_executor_constants.compute_pagerank and not DAG_executor_constants.run_all_tasks_locally and not DAG_executor_constants.bypass_call_lambda_client_invoke and not DAG_executor_constants.use_incremental_DAG_generation:
                                     if read_groups_partitions:
                                         read_groups_partitions = False
                                         groups_partitions = self.read_all_groups_partitions()
@@ -704,7 +705,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             #if is_fanin:
                             #    logger.error("[Error]: tcp_server: synchronize_process_faninNBs_batch:"
                             #        + " fanin " + name + " in batch.")
-                            #     if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                            #     if DAG_executor_constants.exit_program_on_exception:
                             #        logging.shutdown()
                             #        os._exit(0)
 
@@ -712,7 +713,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             #if not is_fanin and not is_faninNB:
                             #    logger.error("[Error]: tcp_server: synchronize_process_faninNBs_batch:"
                             #        + " sync object for synchronize_sync is neither a fanin nor a faninNB.")
-                            #    if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                            #    if DAG_executor_constants.exit_program_on_exception:
                             #       logging.shutdown()
                             #       os._exit(0)
 
@@ -726,7 +727,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             #    # index of the corresponding size of the fanin/fanout
                             #    dummy_state_for_create_message.keyword_arguments['n'] = all_fanin_sizes[fanin_index]
                             #else:
-                            fanin_type = wukongdnc.dag.DAG_executor_constants.FanInNB_Type
+                            fanin_type = DAG_executor_constants.FanInNB_Type
                             #faninNB_index = all_faninNB_task_names.index(name)
                             #dummy_state_for_create_message.keyword_arguments['n'] = all_faninNB_sizes[faninNB_index]
                             dummy_state_for_create_message.keyword_arguments['n'] = faninNB_size
@@ -734,7 +735,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             #    if not faninNB_size == all_faninNB_sizes[faninNB_index]:
                             #        logger.error("[Error]: tcp_server: synchronize_process_faninNBs_batch: "
                             #            + " not faninNB_size == all_faninNB_sizes[faninNB_index]")
-                            #        if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                            #        if DAG_executor_constants.exit_program_on_exception:
                             #            logging.shutdown()
                             #            os._exit(0)
                             #    else:
@@ -792,8 +793,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             #       + "DAG_states[name] != start_state_fanin_task")
                                 
                             dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = start_state_fanin_task
-                            dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = wukongdnc.dag.DAG_executor_constants.store_fanins_faninNBs_locally
-                            if not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally:
+                            dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = DAG_executor_constants.store_fanins_faninNBs_locally
+                            if not DAG_executor_constants.run_all_tasks_locally:
                                 # using real lambdas
                                 # Note: When faninNB start a Lambda, DAG_info will be in the payload so pass DAG_info to faninNBs.
                                 # (Worker Threads and processes read DAG_info from disk. When incremental DAG generation is used.
@@ -835,7 +836,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             #if is_fanin:
                             #    logger.error("[Error]: tcp_server: synchronize_process_faninNBs_batch:"
                             #        + " fanin " + name + " in batch.")
-                            #    if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                            #    if DAG_executor_constants.exit_program_on_exception:
                             #        logging.shutdown()
                             #        os._exit(0)
 
@@ -856,7 +857,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             #   dummy_state_for_create_message.keyword_arguments['n'] = -1
                             #else:
 
-                            fanin_type = wukongdnc.dag.DAG_executor_constants.FanInNB_Type
+                            fanin_type = DAG_executor_constants.FanInNB_Type
                             #faninNB_index = all_faninNB_task_names.index(name)
                             #dummy_state_for_create_message.keyword_arguments['n'] = all_faninNB_sizes[faninNB_index]
                             dummy_state_for_create_message.keyword_arguments['n'] = faninNB_size
@@ -898,7 +899,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             DAG_exec_state.keyword_arguments['fanin_task_name'] = name
             DAG_exec_state.keyword_arguments['start_state_fanin_task'] = start_state_fanin_task
    
-            if wukongdnc.dag.DAG_executor_constants.same_output_for_all_fanout_fanin:
+            if DAG_executor_constants.same_output_for_all_fanout_fanin:
                 # the result output and the callng task name have alrady 
                 # been set accordingly - same output to all faninNBS.
                 # Note: For DAG generation, for each state we execute a task and 
@@ -1093,9 +1094,9 @@ class TCPHandler(socketserver.StreamRequestHandler):
         logger.trace("tcp_server: synchronize_sync: Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
 
         logger.trace("tcp_server: synchronize_sync: create_all_fanins_faninNBs_on_start:" 
-            + str(wukongdnc.dag.DAG_executor_constants.create_all_fanins_faninNBs_on_start))
+            + str(DAG_executor_constants.create_all_fanins_faninNBs_on_start))
         #synchronizer = tcp_server.synchronizers[synchronizer_name]
-        if not wukongdnc.dag.DAG_executor_constants.create_all_fanins_faninNBs_on_start:
+        if not DAG_executor_constants.create_all_fanins_faninNBs_on_start:
             # This is one lock for all creates; we could have one lock 
             # per object: get object names from DAG_nfo and create
             # a map of object name to lock at the start of tcp_server,
@@ -1119,7 +1120,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     if method_name == "fan_in":
 #rhc batch
                         # Note: we used to have 
-                        #   if not (wukongdnc.dag.DAG_executor_constants.compute_pagerank and wukongdnc.dag.DAG_executor_constants.use_incremental_DAG_generation):
+                        #   if not (DAG_executor_constants.compute_pagerank and DAG_executor_constants.use_incremental_DAG_generation):
                         # but it endup up that both branches weer the same, i.e., we did the same thing whether we were using 
                         # incremental DAG generation for compute pagerank, or not. So we disabled one of the branches with 
                         #   if False and not ....
@@ -1147,14 +1148,14 @@ class TCPHandler(socketserver.StreamRequestHandler):
 # though we read partial DAG_info we do not use it in these cases? Do we pass DAG_info to synch?
 # perhaps no since we don't use it as faninNB doesn't need it in synch cases?
 
-                        if False and not (wukongdnc.dag.DAG_executor_constants.compute_pagerank and wukongdnc.dag.DAG_executor_constants.use_incremental_DAG_generation):
+                        if False and not (DAG_executor_constants.compute_pagerank and DAG_executor_constants.use_incremental_DAG_generation):
                             dummy_state_for_create_message = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
                             # passing to the created faninNB object:
     
                             #DAG_states = DAG_info.get_DAG_states()
                             #dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = DAG_states[synchronizer_name]
-                            dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = wukongdnc.dag.DAG_executor_constants.store_fanins_faninNBs_locally
-                            if False: # not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally:  
+                            dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = DAG_executor_constants.store_fanins_faninNBs_locally
+                            if False: # not DAG_executor_constants.run_all_tasks_locally:  
                                 if read_DAG_info: 
                                     read_DAG_info = False
                                 
@@ -1193,7 +1194,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             if not is_fanin and not is_faninNB:
                                 logger.error("[Error]: tcp_server: synchronize_sync:"
                                     + " sync object " + synchronizer_name + " for synchronize_sync is neither a fanin nor a faninNB.")
-                                if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                                if DAG_executor_constants.exit_program_on_exception:
                                     logging.shutdown()
                                     os._exit(0)
 
@@ -1213,12 +1214,12 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             """
 #rhc batch
                             if state.keyword_arguments['fanin_type'] == "faninNB":
-                                fanin_type = wukongdnc.dag.DAG_executor_constants.FanInNB_Type
+                                fanin_type = DAG_executor_constants.FanInNB_Type
                             else: # fanin_type is "fanin"
-                                fanin_type = wukongdnc.dag.DAG_executor_constants.FanIn_Type
+                                fanin_type = DAG_executor_constants.FanIn_Type
 
                             dummy_state_for_create_message.keyword_arguments['n'] = state.keyword_arguments['n']
-                            if not fanin_type == wukongdnc.dag.DAG_executor_constants.FanIn_Type:
+                            if not fanin_type == DAG_executor_constants.FanIn_Type:
                                 dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = state.keyword_arguments['start_state_fanin_task']
 
                             #msg_id = str(uuid.uuid4())	# for debugging
@@ -1272,8 +1273,8 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             #DAG_exec_state.keyword_arguments['start_state_fanin_task'] = keyword_arguments['start_state_fanin_task']
 #rhc batch
                             dummy_state_for_create_message = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
-                            dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = wukongdnc.dag.DAG_executor_constants.store_fanins_faninNBs_locally
-                            if False: # not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally:
+                            dummy_state_for_create_message.keyword_arguments['store_fanins_faninNBs_locally'] = DAG_executor_constants.store_fanins_faninNBs_locally
+                            if False: # not DAG_executor_constants.run_all_tasks_locally:
                                 if read_DAG_info:
                                     read_DAG_info = False 
                                     DAG_info = DAG_Info.DAG_info_fromfilename()
@@ -1321,9 +1322,9 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             #else:
 #rhc batch
                             if state.keyword_arguments['fanin_type'] == "faninNB":
-                                fanin_type = wukongdnc.dag.DAG_executor_constants.FanInNB_Type
+                                fanin_type = DAG_executor_constants.FanInNB_Type
                             else: # fanin_type is "fanin"
-                                fanin_type = wukongdnc.dag.DAG_executor_constants.FanIn_Type
+                                fanin_type = DAG_executor_constants.FanIn_Type
                             # where in DAG_executor_constants:
                             #FanIn_Type = "DAG_executor_FanIn"
                             #FanInNB_Type = "DAG_executor_FanInNB"
@@ -1331,13 +1332,13 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             #faninNB_index = all_faninNB_task_names.index(name)
                             #dummy_state_for_create_message.keyword_arguments['n'] = all_faninNB_sizes[faninNB_index]
                             dummy_state_for_create_message.keyword_arguments['n'] = state.keyword_arguments['n']
-                            if not fanin_type == wukongdnc.dag.DAG_executor_constants.FanIn_Type:
+                            if not fanin_type == DAG_executor_constants.FanIn_Type:
                                 dummy_state_for_create_message.keyword_arguments['start_state_fanin_task'] = state.keyword_arguments['start_state_fanin_task']
 
                             #if not faninNB_size == all_faninNB_sizes[faninNB_index]:
                             #    logger.error("[Error]: tcp_server: synchronize_process_faninNBs_batch: "
                             #        + " not faninNB_size == all_faninNB_sizes[faninNB_index]")
-                            #    if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+                            #    if DAG_executor_constants.exit_program_on_exception:
                             #        logging.shutdown()
                             #        os._exit(0)
                             #else:
@@ -1417,17 +1418,17 @@ class TCPHandler(socketserver.StreamRequestHandler):
         try:
             msg = "[Error]: tcp_server: createif_and_synchronize_sync: " \
                 + "called createif_and_synchronize_sync but create_all_fanins_faninNBs_on_start"
-            assert not (wukongdnc.dag.DAG_executor_constants.create_all_fanins_faninNBs_on_start) , msg
+            assert not (DAG_executor_constants.create_all_fanins_faninNBs_on_start) , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
-            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
         #assertOld
-        #if wukongdnc.dag.DAG_executor_constants.create_all_fanins_faninNBs_on_start:
+        #if DAG_executor_constants.create_all_fanins_faninNBs_on_start:
         #    logger.error("[Error]: tcp_server: createif_and_synchronize_sync: "
         #        + "called createif_and_synchronize_sync but create_all_fanins_faninNBs_on_start")
-        #    if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+        #    if DAG_executor_constants.exit_program_on_exception:
         #        logging.shutdown()
         #        os._exit(0)
 
@@ -1547,7 +1548,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         except ConnectionAbortedError:
             logger.exception("Error in recv_object self.rfile.read(4) -- while reading the incoming message size.")
             logger.exception("Established connection aborted while reading incoming size.")
-            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
             return None
@@ -1591,7 +1592,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 logger.trace("recv_object: have read %d/%d bytes from remote client." % (len(data), incoming_size))
         except ConnectionAbortedError:
             logger.exception("Established connection aborted while reading data.")
-            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
             return None 
@@ -1675,7 +1676,7 @@ class TCPServer(object):
         self.server_address = ("0.0.0.0",25565)
         self.tcp_server = socketserver.ThreadingTCPServer(self.server_address, TCPHandler)
 
-        if not wukongdnc.dag.DAG_executor_constants.create_all_fanins_faninNBs_on_start or not wukongdnc.dag.DAG_executor_constants.run_all_tasks_locally:
+        if not DAG_executor_constants.create_all_fanins_faninNBs_on_start or not DAG_executor_constants.run_all_tasks_locally:
             # We need DAG_info on tcp_server if we are creating objects on their first
             # use or synch objects will be invoking lambdas (as lambdas need
             # the DAG_info).
@@ -1701,7 +1702,7 @@ class TCPServer(object):
             self.tcp_server.serve_forever()
         except Exception:
             logger.exception("Exception encountered starting TCP_server.")
-            if wukongdnc.dag.DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
 
@@ -1716,7 +1717,7 @@ def configure_test(argv):
             sys.exit()
         elif opt in ("-t", "--test"):
             test_number = arg
-            wukongdnc.dag.DAG_executor_constants.set_test_number(int(test_number))
+            DAG_executor_constants.set_test_number(int(test_number))
 
 if __name__ == "__main__":
     # configure test, if -t option was specified

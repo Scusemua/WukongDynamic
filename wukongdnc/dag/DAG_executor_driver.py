@@ -324,8 +324,7 @@ import os
 import logging 
 import cloudpickle
 
-from .DAG_executor_constants import log_level
-
+#from .DAG_executor_constants import log_level
 #from .DAG_executor_constants import run_all_tasks_locally, store_fanins_faninNBs_locally, use_multithreaded_multiprocessing #, num_threads_for_multithreaded_multiprocessing
 #from .DAG_executor_constants import create_all_fanins_faninNBs_on_start, using_workers
 #from .DAG_executor_constants import num_workers,using_threads_not_processes
@@ -361,7 +360,7 @@ from .addLoggingLevel import addLoggingLevel
 if not DAG_executor_constants.compute_pagerank:
     try:
         addLoggingLevel('TRACE', logging.DEBUG - 5)
-        logging.basicConfig(encoding='utf-8',level=log_level, format='[%(asctime)s][%(module)s][%(processName)s][%(threadName)s]: %(message)s')
+        logging.basicConfig(encoding='utf-8',level=DAG_executor_constants.log_level, format='[%(asctime)s][%(module)s][%(processName)s][%(threadName)s]: %(message)s')
         # Added this to suppress the logging message:
         #   credentials - MainProcess - MainThread: Found credentials in shared credentials file: ~/.aws/credentials
         # But it appears that we could see other things like this:

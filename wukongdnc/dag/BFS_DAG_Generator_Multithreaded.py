@@ -6,7 +6,8 @@ import os
 
 from . import BFS_generate_DAG_info_incremental_partitions
 from . import BFS_generate_DAG_info_incremental_groups
-from .DAG_executor_constants import use_page_rank_group_partitions
+#from .DAG_executor_constants import use_page_rank_group_partitions
+from . import DAG_executor_constants
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +66,7 @@ def generator_thread(DAG_generator_for_multithreaded_DAG_generation,buffer):
         # See the comment on deposit() below.
         next_partition_or_group = buffer.get()
         logger.info(thread_name + "generator_thread: called get."
-            + " use_page_rank_group_partitions: " + str(use_page_rank_group_partitions))
+            + " use_page_rank_group_partitions: " + str(DAG_executor_constants.use_page_rank_group_partitions))
 
         if use_page_rank_group_partitions:
             # tuple was created as:
