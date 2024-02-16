@@ -3,8 +3,8 @@ import os
 from multiprocessing import Process #, Manager
 
 #from .DAG_executor_constants import RUN_ALL_TASKS_LOCALLY,  USING_WORKERS, NUM_WORKERS 
-#from .DAG_executor_constants import compute_pagerank, use_shared_partitions_groups,use_page_rank_group_partitions
-#from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
+#from .DAG_executor_constants import COMPUTE_PAGERANK, USE_SHARED_PARTITIONS_GROUPS,USE_PAGERANK_GROUPS_PARTITIONS
+#from .DAG_executor_constants import USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
 #from .DAG_executor_constants import EXIT_PROGRAM_ON_EXCEPTION
 from . import DAG_executor_constants
 
@@ -66,11 +66,11 @@ def create_multithreaded_multiprocessing_processes(num_processes_created_for_mul
             #proc = Process(target=create_and_run_threads_for_multiT_multiP, name=(process_name), args=(process_name,payload,counter,process_work_queue,data_dict,log_queue,worker_configurer,))
             #proc = Process(target=create_and_run_threads_for_multiT_multiP, name=(process_name), args=(process_name,payload,counter,log_queue,worker_configurer,))
 
-            if not (DAG_executor_constants.compute_pagerank and DAG_executor_constants.use_shared_partitions_groups):
+            if not (DAG_executor_constants.COMPUTE_PAGERANK and DAG_executor_constants.USE_SHARED_PARTITIONS_GROUPS):
                 proc = Process(target=create_and_run_threads_for_multiT_multiP, name=(process_name), args=(process_name,payload,completed_tasks_counter,completed_workers_counter,log_queue,worker_configurer,
                     None,None,None,None,None,None,None,None,None,None))
             else:
-                if DAG_executor_constants.use_page_rank_group_partitions:
+                if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
                     shared_nodes = BFS_Shared.shared_groups
                     shared_map = BFS_Shared.shared_groups_map
                     shared_frontier_map = BFS_Shared.shared_groups_frontier_parents_map
@@ -79,7 +79,7 @@ def create_multithreaded_multiprocessing_processes(num_processes_created_for_mul
                     shared_map = BFS_Shared.shared_partition_map
                     shared_frontier_map = BFS_Shared.shared_partition_frontier_parents_map
 
-                if DAG_executor_constants.use_struct_of_arrays_for_pagerank:
+                if DAG_executor_constants.USE_STRUCT_OF_ARRAYS_FOR_PAGERANK:
                     #proc = Process(target=create_and_run_threads_for_multiT_multiP, name=(process_name), args=(process_name,payload,counter,log_queue,worker_configurer,
                     proc = Process(target=create_and_run_threads_for_multiT_multiP, name=(process_name), args=(process_name,payload,completed_tasks_counter,completed_workers_counter,log_queue,worker_configurer,
                         shared_nodes,shared_map,shared_frontier_map,

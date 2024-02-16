@@ -15,9 +15,9 @@ else:
 
 
 # This is the code involving task execution. The option
-# "tasks_use_result_dictionary_parameter" is true when we
+# "TASKS_USE_RESULT_DICTIONARY_PARAMETER" is true when we
 # are running pagerank tasks. 
-# Also option "same_output_for_all_fanout_fanin" is true when 
+# Also option "SAME_OUTPUT_FOR_ALL_FANOUT_FANIN" is true when 
 # we are splitting a task;s output into separate outputs for
 # each fanin/fanout.
           
@@ -55,7 +55,7 @@ if not is_leaf_task:
     # task_inputs is a tuple of task_names
     args = pack_data(task_inputs, data_dict)
     logger.info(thread_name + " argsX: " + str(args))
-    if tasks_use_result_dictionary_parameter:
+    if TASKS_USE_RESULT_DICTIONARY_PARAMETER:
         logger.info("Foo1a")
         # task_inputs = ('task1','task2'), args = (1,2) results in a result_dictionary
         # where result_dictionary['task1'] = 1 and result_dictionary['task2'] = 2.
@@ -72,7 +72,7 @@ if not is_leaf_task:
 
 else:
     args = task_inputs
-    if tasks_use_result_dictionary_parameter:
+    if TASKS_USE_RESULT_DICTIONARY_PARAMETER:
         # Passing am emoty inut tuple to the PageRank task,
         # This results in a rresult_dictionary
         # of "DAG_executor_driver_0" --> (), where
@@ -87,7 +87,7 @@ logger.info(thread_name + " result_dictionaryZ: " + str(result_dictionary))
 
 # using the map DAG_tasks to map from from task_name to task
 task = DAG_tasks[state_info.task_name]
-if not tasks_use_result_dictionary_parameter:
+if not TASKS_USE_RESULT_DICTIONARY_PARAMETER:
     # we will call the task with tuple args and unfold args: task(*args)
     output = execute_task(task,args)
 else:
@@ -129,7 +129,7 @@ output whose key is "PR2_1".
 `  """
 
 logger.info(thread_name + " executed task " + state_info.task_name + "'s output: " + str(output))
-if same_output_for_all_fanout_fanin:
+if SAME_OUTPUT_FOR_ALL_FANOUT_FANIN:
     # do not split the output - each fanout/fanin gets all of the output
     data_dict[state_info.task_name] = output
 else:
@@ -187,7 +187,7 @@ PageRank result for PR2_3: 4:0.0075 6:0.010687499999999999 14:0.0120421874999999
 # of T's output:
 
 dict_of_results =  {}
-if same_output_for_all_fanout_fanin:
+if SAME_OUTPUT_FOR_ALL_FANOUT_FANIN:
     # each fanout of a task T gets the same output, i.e., 
     # the entire output of T. Here, calling_task_name would be T
     dict_of_results[calling_task_name] = output

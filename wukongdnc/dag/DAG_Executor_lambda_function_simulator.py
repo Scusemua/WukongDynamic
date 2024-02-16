@@ -14,8 +14,8 @@ from .DAG_executor_State import DAG_executor_State
 from wukongdnc.server.util import make_json_serializable
 #from .DAG_executor_constants import STORE_FANINS_FANINNBS_LOCALLY 
 #from .DAG_executor_constants import FANIN_TYPE, FANINNB_TYPE
-#from .DAG_executor_constants import using_single_lambda_function
-#from .DAG_executor_constants import CREATE_ALL_FANINS_FANINNBS_ON_START, map_objects_to_lambda_functions
+#from .DAG_executor_constants import USE_SINGLE_LAMBDA_FUNCTION
+#from .DAG_executor_constants import CREATE_ALL_FANINS_FANINNBS_ON_START, MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
 #from .DAG_executor_constants import EXIT_PROGRAM_ON_EXCEPTION
 #from .DAG_executor_constants import EXIT_PROGRAM_ON_EXCEPTION
 from . import DAG_executor_constants
@@ -383,7 +383,7 @@ class DAG_orchestrator:
 
 			return_value = None
 			
-			if DAG_executor_constants.map_objects_to_lambda_functions:
+			if DAG_executor_constants.MAP_OBJECTS_TO_LAMBDA_FUNCTIONS:
 				# Do not allow parallel invocations. We may invoke the function
 				# more than once, e.g., two or more sync ojects mapped to the
 				# same function, or the object is a semaphore and we make 
@@ -496,7 +496,7 @@ class InfiniD:
 			self.list_of_Lambda_Function_Simulators.append(Lambda_Function_Simulator())	
 			self.list_of_function_locks.append(Lock())
 			# if using a single function to store all objects, break the loop at one funnction
-			if DAG_executor_constants.using_single_lambda_function:
+			if DAG_executor_constants.USE_SINGLE_LAMBDA_FUNCTION:
 				break
 
 	# map an object using its function name to one of the functions via the function's indez
@@ -512,13 +512,13 @@ class InfiniD:
 	# function with the saved state.
 	# Note: This is all for simulated functions, for now.
 	def get_simulated_lambda_function(self, object_name):
-		if DAG_executor_constants.map_objects_to_lambda_functions:
+		if DAG_executor_constants.MAP_OBJECTS_TO_LAMBDA_FUNCTIONS:
 			return self.list_of_Lambda_Function_Simulators[self.function_map[object_name]]
 		else:
 			# anonymous fnction
 			return Lambda_Function_Simulator()
 	def get_function_lock(self, object_name):
-		if DAG_executor_constants.map_objects_to_lambda_functions:
+		if DAG_executor_constants.MAP_OBJECTS_TO_LAMBDA_FUNCTIONS:
 			return self.list_of_function_locks[self.function_map[object_name]]
 		else:
 			# anonyous functions called only once so no need to lock them
@@ -527,7 +527,7 @@ class InfiniD:
 	def get_real_lambda_function(self, object_name):
 		# returns the deployment name that object_name is mapped to. Here we 
 		# assume that the function with index i is mapped to deployment "DAG_executor_i"
-		if DAG_executor_constants.map_objects_to_lambda_functions:
+		if DAG_executor_constants.MAP_OBJECTS_TO_LAMBDA_FUNCTIONS:
 			i = self.function_map[object_name]
 			deployment_name = "DAG_executor_"+str(i)
 			return deployment_name
@@ -562,7 +562,7 @@ class InfiniD:
 			# Note: we can use deployment names "DAG_executor_i" so we can still map to
 			# an index i.
 			self.map_synchronization_object(object_name,i)
-			if not DAG_executor_constants.using_single_lambda_function:
+			if not DAG_executor_constants.USE_SINGLE_LAMBDA_FUNCTION:
 				i += 1
 			# Each name is mapped to a pair, which is (empty_list,n). The 
 			# list collects results for the fan_in and fanin/fanout size n is 
@@ -573,17 +573,17 @@ class InfiniD:
 
 		for object_name in self.all_fanin_task_names:
 			self.map_synchronization_object(object_name,i)
-			if not DAG_executor_constants.using_single_lambda_function:
+			if not DAG_executor_constants.USE_SINGLE_LAMBDA_FUNCTION:
 				i += 1
 
 		for object_name in self.all_fanout_task_names:
 			self.map_synchronization_object(object_name,i)
-			if not DAG_executor_constants.using_single_lambda_function:
+			if not DAG_executor_constants.USE_SINGLE_LAMBDA_FUNCTION:
 				i += 1
 
 		for object_name in self.DAG_leaf_tasks:
 			self.map_synchronization_object(object_name,i)
-			if not DAG_executor_constants.using_single_lambda_function:
+			if not DAG_executor_constants.USE_SINGLE_LAMBDA_FUNCTION:
 				i += 1
 
 	# map the fanins/fanouts/faninNBs to a trigger, which is a pair pair (empty_list,n).

@@ -7,9 +7,9 @@ from .DAG_info import DAG_Info
 from .DFS_visit import state_info
 from .BFS_pagerank import PageRank_Function_Driver, PageRank_Function_Driver_Shared
 from .BFS_Shared import PageRank_Function_Driver_Shared_Fast
-#from .DAG_executor_constants import use_shared_partitions_groups
-#from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
-#from .DAG_executor_constants import enable_runtime_task_clustering
+#from .DAG_executor_constants import USE_SHARED_PARTITIONS_GROUPS
+#from .DAG_executor_constants import USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
+#from .DAG_executor_constants import ENABLE_RUNTIME_TASK_CLUSTERING
 #from .DAG_executor_constants import EXIT_PROGRAM_ON_EXCEPTION
 from . import DAG_executor_constants
 
@@ -592,7 +592,7 @@ DAG_info object is obtained from its DAG_info_dictionary.
 
     def __init__(self,DAG_info_dictionary,file_name = './DAG_info.pickle'):
         self.file_name = file_name
-        if not use_incremental_DAG_generation:
+        if not USE_INCREMENTAL_DAG_GENERATION:
             self.DAG_map = DAG_info_dictionary["DAG_map"]
         else:
             # Q: this is the same as DAG_info_dictionary["DAG_map"].copy()?
@@ -888,7 +888,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         Group_DAG_states[name_of_first_group_in_DAG] = Group_next_state
 
         # identify the function that will be used to execute this task
-        if not DAG_executor_constants.use_shared_partitions_groups:
+        if not DAG_executor_constants.USE_SHARED_PARTITIONS_GROUPS:
             # the partition of graph nodes for this task will be read 
             # from a file when the task is executed. 
             Group_DAG_tasks[name_of_first_group_in_DAG] = PageRank_Function_Driver
@@ -899,7 +899,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
             # For worker processes, the shared array uses Python Shared Memory
             # from the mutiprocessing lib.
             # The shared array is essentially an array of structs
-            if not DAG_executor_constants.use_struct_of_arrays_for_pagerank:
+            if not DAG_executor_constants.USE_STRUCT_OF_ARRAYS_FOR_PAGERANK:
                 # using struct of arrays for fast cache access, one array
                 # for each Node member, e.g., array of IDs, array of pagerank values
                 # array of previous values. 
@@ -1081,10 +1081,10 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 Group_DAG_states[group_name] = Group_next_state
 
                 # identify the function that will be used to execute this task
-                if not DAG_executor_constants.use_shared_partitions_groups:
+                if not DAG_executor_constants.USE_SHARED_PARTITIONS_GROUPS:
                     Group_DAG_tasks[group_name] = PageRank_Function_Driver
                 else:
-                    if not DAG_executor_constants.use_struct_of_arrays_for_pagerank:
+                    if not DAG_executor_constants.USE_STRUCT_OF_ARRAYS_FOR_PAGERANK:
                         Group_DAG_tasks[group_name] = PageRank_Function_Driver_Shared 
                     else:
                         Group_DAG_tasks[group_name] = PageRank_Function_Driver_Shared_Fast  
@@ -1163,10 +1163,10 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 Group_DAG_states[group_name] = Group_next_state
 
                 # identify function used to execute this pagerank task (see comments above)
-                if not DAG_executor_constants.use_shared_partitions_groups:
+                if not DAG_executor_constants.USE_SHARED_PARTITIONS_GROUPS:
                     Group_DAG_tasks[group_name] = PageRank_Function_Driver
                 else:
-                    if not DAG_executor_constants.use_struct_of_arrays_for_pagerank:
+                    if not DAG_executor_constants.USE_STRUCT_OF_ARRAYS_FOR_PAGERANK:
                         Group_DAG_tasks[group_name] = PageRank_Function_Driver_Shared 
                     else:
                         Group_DAG_tasks[group_name] = PageRank_Function_Driver_Shared_Fast  
@@ -1527,7 +1527,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                         # of previous_group
                         fanouts.append(receiverY)
 #rhc: clustering
-                        if DAG_executor_constants.enable_runtime_task_clustering:
+                        if DAG_executor_constants.ENABLE_RUNTIME_TASK_CLUSTERING:
                             num_shadow_nodes = groups_num_shadow_nodes_map[receiverY]
                             logger.trace("number of shadow nodes for " + receiverY + " is " + str(num_shadow_nodes)) 
                             fanout_partition_group_sizes.append(num_shadow_nodes)
@@ -1833,7 +1833,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
 
                 # Note: in DAG_info __init__:
                 """
-                if not use_incremental_DAG_generation:
+                if not USE_INCREMENTAL_DAG_GENERATION:
                     self.DAG_map = DAG_info_dictionary["DAG_map"]
                 else:
                     # Q: this is the same as DAG_info_dictionary["DAG_map"].copy()?

@@ -148,7 +148,7 @@ print("DAG_executor_driver")
 #                "id": msg_id
 #            }
 #
-#        if using_Lambda_Function_Simulators_to_Store_Objects and using_DAG_orchestrator:
+#        if USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS and USING_DAG_ORCHESTRATOR:
 #            # The enqueue_and_invoke_lambda_synchronously will generte the creae message
 #            logger.trace("*********************tcp_server_lambda: synchronize_sync: " + calling_task_name + ": calling infiniD.enqueue(message).")
 #            returned_state = self.enqueue_and_invoke_lambda_synchronously(message)
@@ -185,9 +185,9 @@ print("DAG_executor_driver")
 #
 # - In work loop, need condition for process faninNBs batch
 #   and for async. Not using run_locally now, so need "not run_locally" for process faninNBs batch
-#   but when not "run locally" may or may not be sync_objects_in_lambdas_trigger_their_tasks
+#   but when not "run locally" may or may not be SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
 #   but async_call is true in either case? i.e., nothing comes back to lamba. 
-# - Check other conditions involving sync_objects_in_lambdas_trigger_their_tasks. This includes the
+# - Check other conditions involving SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS. This includes the
 #   process_faninNBS_batch in tcp_server_lambda, which needs "not run locally" for triggering.
 #   Note: LOOKS LIKE GETTING QUOTIENT since although the faninNBS could not start tasks, the regular 
 #   run_locally code started a new thread for running the task?
@@ -227,9 +227,9 @@ print("DAG_executor_driver")
 #    so it will be sync unless we create a thread to do the invoke?
 #
 # what is condition for sync objects trigger tasks? e.g., in process_fanouts
-#     if (not RUN_ALL_TASKS_LOCALLY) and store_sync_objects_in_lambdas and sync_objects_in_lambdas_trigger_their_tasks:
+#     if (not RUN_ALL_TASKS_LOCALLY) and STORE_SYNC_OBJECTS_IN_LAMBDAS and SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS:
 # so not using workers and not RUN_ALL_TASKS_LOCALLY, which is like Wukong but to flip off
-# of Wukong we need sync_objects_in_lambdas_trigger_their_tasks, which may be too strong.
+# of Wukong we need SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS, which may be too strong.
 #
 # No: use batch processing when we are using threads to simulate workers and objects
 # are remote on the server, not just remote in lambdas, so that the condiditiom
@@ -329,11 +329,11 @@ import cloudpickle
 #from .DAG_executor_constants import CREATE_ALL_FANINS_FANINNBS_ON_START, USING_WORKERS
 #from .DAG_executor_constants import NUM_WORKERS,USING_THREADS_NOT_PROCESSES
 #from .DAG_executor_constants import FANIN_TYPE, FANINNB_TYPE, PROCESS_WORK_QUEUE_TYPE
-#from .DAG_executor_constants import store_sync_objects_in_lambdas, sync_objects_in_lambdas_trigger_their_tasks
-#from .DAG_executor_constants #import use_shared_partitions_groups,use_page_rank_group_partitions
-#from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
-#from .DAG_executor_constants import compute_pagerank
-#from .DAG_executor_constants import input_all_groups_partitions_at_start
+#from .DAG_executor_constants import STORE_SYNC_OBJECTS_IN_LAMBDAS, SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+#from .DAG_executor_constants #import USE_SHARED_PARTITIONS_GROUPS,USE_PAGERANK_GROUPS_PARTITIONS
+#from .DAG_executor_constants import USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
+#from .DAG_executor_constants import COMPUTE_PAGERANK
+#from .DAG_executor_constants import INPUT_ALL_GROUPS_PARTITIONS_AT_START
 #from .DAG_executor_constants import EXIT_PROGRAM_ON_EXCEPTION
 from . import DAG_executor_constants
 from .addLoggingLevel import addLoggingLevel
@@ -357,7 +357,7 @@ from .addLoggingLevel import addLoggingLevel
 # this will be a second addLoggingLevel and it will fail. If we run 
 # this DAG_executor.py file, we need to addLoggingLevel. We intend to 
 # always use TestAll.
-if not DAG_executor_constants.compute_pagerank:
+if not DAG_executor_constants.COMPUTE_PAGERANK:
     try:
         addLoggingLevel('TRACE', logging.DEBUG - 5)
         logging.basicConfig(encoding='utf-8',level=DAG_executor_constants.LOG_LEVEL, format='[%(asctime)s][%(module)s][%(processName)s][%(threadName)s]: %(message)s')
@@ -411,9 +411,9 @@ if not DAG_executor_constants.compute_pagerank:
 ## DAG_excutor_driver, so one of them will addLoggingLevel(trace).
 ## No other module executes addLoggingLevel.
 #from .addLoggingLevel import addLoggingLevel
-#from .DAG_executor_constants import compute_pagerank
+#from .DAG_executor_constants import COMPUTE_PAGERANK
 #logger = None
-#if not (compute_pagerank):
+#if not (COMPUTE_PAGERANK):
 #    addLoggingLevel('TRACE', logging.DEBUG - 5)
 
     #setup the logger as below with mylogger being the name of the #logger and myloggerfile.log being the name of the logfile
@@ -939,9 +939,9 @@ DAG_orchestrator
             not running tasks in lambdas
 ==> (a) not using threads to simulate lambdas for running threads when using the 
     DAG ochestrator. And not using workers.
-==> not RUN_ALL_TASKS_LOCALLY and store_sync_objects_in_lambdas
-    and using_Lambda_Function_Simulators_to_Store_Objects = True or False
-    and sync_objects_in_lambdas_trigger_their_tasks = True or False
+==> not RUN_ALL_TASKS_LOCALLY and STORE_SYNC_OBJECTS_IN_LAMBDAS
+    and USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS = True or False
+    and SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS = True or False
 So when we are using the DAG orchestrator it is another way to manage and 
 access the lambdas (simulated or not) that store objects. And so can be used
 with all the various ways of running tasks (threads to simulate lambdas, 
@@ -966,10 +966,10 @@ So use async_call = True for p_f_b when no work can be returned
     using worker processes but worker_needs_input == False
     !RUN_ALL_TASKS_LOCALLY so using real lambdas so no threads for simulation  
 
-Q: In code  dag-98: if (RUN_ALL_TASKS_LOCALLY and USING_WORKERS and not USING_THREADS_NOT_PROCESSES) or (not RUN_ALL_TASKS_LOCALLY) or (RUN_ALL_TASKS_LOCALLY and not USING_WORKERS and not STORE_FANINS_FANINNBS_LOCALLY and using_Lambda_Function_Simulators_to_Store_Objects):
+Q: In code  dag-98: if (RUN_ALL_TASKS_LOCALLY and USING_WORKERS and not USING_THREADS_NOT_PROCESSES) or (not RUN_ALL_TASKS_LOCALLY) or (RUN_ALL_TASKS_LOCALLY and not USING_WORKERS and not STORE_FANINS_FANINNBS_LOCALLY and USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS):
         # Config: A1, A3, A5, A6
         # Note: calling process_faninNBs_batch when using threads to simulate lambdas and storing objects remotely
-        # and using_Lambda_Function_Simulators_to_Store_Objects. 
+        # and USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS. 
     So what if using threads to simulate lambdas and store sync objects remotely 
     but not using simulated objects to store lambdas?
     Then we are not using batch? Since calling tcp_server and it does not handle
@@ -1750,7 +1750,7 @@ def run():
             # locally, in which case we can read the group/partition file objects
             # from local files.
 #rhc: group partitions
-            if DAG_executor_constants.input_all_groups_partitions_at_start:
+            if DAG_executor_constants.INPUT_ALL_GROUPS_PARTITIONS_AT_START:
             # hardcoded for testing rel lambdas. May want to enabe this generally in
             # which case we will need the partition/group names, which BFS could
             # write to a file.
@@ -1901,7 +1901,7 @@ def run():
                     # not RUN_ALL_TASKS_LOCALLY so using lambdas (real or simulatd)
                     # So do not put leaf tasks in work queue
 #rhc: groups partitions
-                    if not DAG_executor_constants.RUN_ALL_TASKS_LOCALLY and DAG_executor_constants.store_sync_objects_in_lambdas and DAG_executor_constants.sync_objects_in_lambdas_trigger_their_tasks:
+                    if not DAG_executor_constants.RUN_ALL_TASKS_LOCALLY and DAG_executor_constants.STORE_SYNC_OBJECTS_IN_LAMBDAS and DAG_executor_constants.SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS:
                         # storing sync objects in lambdas and snc objects trigger their tasks
                         create_fanins_and_faninNBs_and_fanouts(websocket,DAG_map,DAG_states,DAG_info,
                             all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes,
@@ -2025,7 +2025,7 @@ def run():
 
                     # not RUN_ALL_TASKS_LOCALLY so using lambdas, which do not use a work queue 
                     # So do not put leaf tasks in work queue and do not create a work queue
-                    if not DAG_executor_constants.RUN_ALL_TASKS_LOCALLY and DAG_executor_constants.store_sync_objects_in_lambdas and DAG_executor_constants.sync_objects_in_lambdas_trigger_their_tasks:
+                    if not DAG_executor_constants.RUN_ALL_TASKS_LOCALLY and DAG_executor_constants.STORE_SYNC_OBJECTS_IN_LAMBDAS and DAG_executor_constants.SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS:
                         # storing sync objects in lambdas and snc objects trigger their tasks
                         #create_fanins_and_faninNBs_and_fanouts(websocket,DAG_map,DAG_states,DAG_info,
                         #    all_fanin_task_names,all_fanin_sizes,all_faninNB_task_names,all_faninNB_sizes,
@@ -2132,7 +2132,7 @@ def run():
             # leaf tasks than workers, but that is okay since we put all the leaf task states in the 
             # work queue and the created workers will withdraw them.
 
-            if not (not DAG_executor_constants.RUN_ALL_TASKS_LOCALLY and DAG_executor_constants.store_sync_objects_in_lambdas and DAG_executor_constants.sync_objects_in_lambdas_trigger_their_tasks):
+            if not (not DAG_executor_constants.RUN_ALL_TASKS_LOCALLY and DAG_executor_constants.STORE_SYNC_OBJECTS_IN_LAMBDAS and DAG_executor_constants.SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS):
                 # we are not having sync objects trigger their tasks in lambdas
                 for start_state, task_name, inp in zip(DAG_leaf_task_start_states, DAG_leaf_tasks, DAG_leaf_task_inputs):
                     # The state of a DAG executor contains only one application specific member, which is the
@@ -2228,7 +2228,7 @@ def run():
                                 # processes share these objects: counter,process_work_queue,data_dict,log_queue,worker_configurer.
                                 # The worker_configurer() funcion is used for multiprocess logging
                                 #proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,counter,process_work_queue,data_dict,log_queue,worker_configurer,))
-                                if not (DAG_executor_constants.compute_pagerank and DAG_executor_constants.use_shared_partitions_groups):
+                                if not (DAG_executor_constants.COMPUTE_PAGERANK and DAG_executor_constants.USE_SHARED_PARTITIONS_GROUPS):
     #rhc: counter 
     # tasks_completed_counter, workers_completed_counter
                                     #proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,completed_tasks_counter,log_queue,worker_configurer,
@@ -2236,9 +2236,9 @@ def run():
                                         None,None,None,None,None,None,None,None,None,None))
 
                                 else: 
-                                    #Note: In DAG_executor_constants, we use: use_shared_partitions_groups = compute_pagerank and True
-                                    # So if use_shared_partitions_groups is True then compute_pagerank is True
-                                    if DAG_executor_constants.use_page_rank_group_partitions:
+                                    #Note: In DAG_executor_constants, we use: USE_SHARED_PARTITIONS_GROUPS = COMPUTE_PAGERANK and True
+                                    # So if USE_SHARED_PARTITIONS_GROUPS is True then COMPUTE_PAGERANK is True
+                                    if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
                                         shared_nodes = BFS_Shared.shared_groups
                                         shared_map = BFS_Shared.shared_groups_map
                                         shared_frontier_map = BFS_Shared.shared_groups_frontier_parents_map
@@ -2247,7 +2247,7 @@ def run():
                                         shared_map = BFS_Shared.shared_partition_map
                                         shared_frontier_map = BFS_Shared.shared_partition_frontier_parents_map
 
-                                    if DAG_executor_constants.use_struct_of_arrays_for_pagerank:
+                                    if DAG_executor_constants.USE_STRUCT_OF_ARRAYS_FOR_PAGERANK:
     #rhc: counter 
     # tasks_completed_counter, workers_completed_counter
                                         #proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,completed_tasks_counter,log_queue,worker_configurer,
@@ -2279,7 +2279,7 @@ def run():
                         if DAG_executor_constants.USING_WORKERS and num_threads_created == DAG_executor_constants.NUM_WORKERS:
                             break
                     else:
-                        if not DAG_executor_constants.sync_objects_in_lambdas_trigger_their_tasks:
+                        if not DAG_executor_constants.SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS:
                             # Config: A1
                             try:
                                 logger.trace("DAG_executor_driver: Starting DAG_Executor_Lambda for leaf task " + task_name)
@@ -2314,7 +2314,7 @@ def run():
                                 #logging.shutdown()
                                 #os._exit(0)
 
-                                if DAG_executor_constants.input_all_groups_partitions_at_start:
+                                if DAG_executor_constants.INPUT_ALL_GROUPS_PARTITIONS_AT_START:
                                     payload["groups_partitions"] = groups_partitions
 
                                 invoke_lambda_DAG_executor(payload = payload, function_name = "WukongDivideAndConquer:" + task_name)
@@ -2324,7 +2324,7 @@ def run():
                                     logging.shutdown()
                                     os._exit(0)  
                         else:
-                            # sync_objects_in_lambdas_trigger_their_tasks == True so
+                            # SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS == True so
                             # above we called tcp_server_lambda.process_leaf_tasks_batch
                             # to trigger the leaf tasks.
                             # assert: this should be unreachble - if trigger tassk in their 
@@ -2393,14 +2393,14 @@ def run():
                                 proc_name_prefix = "Worker_process_non-leaf_"
                                 #proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"p"+str(num_threads_created + 1)), args=(payload,counter,process_work_queue,data_dict,log_queue,worker_configurer,))
 
-                                if not (DAG_executor_constants.compute_pagerank and DAG_executor_constants.use_shared_partitions_groups):
+                                if not (DAG_executor_constants.COMPUTE_PAGERANK and DAG_executor_constants.USE_SHARED_PARTITIONS_GROUPS):
     #rhc: counter 
     # tasks_completed_counter, workers_completed_counter
                                     #proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"p"+str(num_threads_created + 1)), args=(payload,completed_tasks_counter,log_queue,worker_configurer,
                                     proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"p"+str(num_threads_created + 1)), args=(payload,completed_tasks_counter,completed_workers_counter,log_queue,worker_configurer,
                                         None,None,None,None,None,None,None,None,None,None))
                                 else:
-                                    if DAG_executor_constants.use_page_rank_group_partitions:
+                                    if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
                                         shared_nodes = BFS_Shared.shared_groups
                                         shared_map = BFS_Shared.shared_groups_map
                                         shared_frontier_map = BFS_Shared.shared_groups_frontier_parents_map
@@ -2409,7 +2409,7 @@ def run():
                                         shared_map = BFS_Shared.shared_partition_map
                                         shared_frontier_map = BFS_Shared.shared_partition_frontier_parents_map
                                     
-                                    if DAG_executor_constants.use_struct_of_arrays_for_pagerank:
+                                    if DAG_executor_constants.USE_STRUCT_OF_ARRAYS_FOR_PAGERANK:
     #rhc: counter 
     # tasks_completed_counter, workers_completed_counter
 

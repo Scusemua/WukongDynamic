@@ -5,10 +5,10 @@ import os
 from .BFS_Partition_Node import Partition_Node
 from . import BFS_Shared
 #from .BFS import num_nodes
-#from .DAG_executor_constants import use_page_rank_group_partitions, USING_THREADS_NOT_PROCESSES
-#from .DAG_executor_constants import number_of_pagerank_iterations_for_partitions_groups_with_loops
+#from .DAG_executor_constants import USE_PAGERANK_GROUPS_PARTITIONS, USING_THREADS_NOT_PROCESSES
+#from .DAG_executor_constants import NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS
 #from .DAG_executor_constants import EXIT_PROGRAM_ON_EXCEPTION
-#from .DAG_executor_constants import input_all_groups_partitions_at_start
+#from .DAG_executor_constants import INPUT_ALL_GROUPS_PARTITIONS_AT_START
 from . import DAG_executor_constants
 
 logger = logging.getLogger(__name__)
@@ -139,11 +139,11 @@ def PageRank_Function_one_iter(partition_or_group,damping_factor,
 - regular pagerank with no shared array
 - shared array with array of structs
 - shared arrays using srruct of arrays, cache optimized
-    if not use_shared_partitions_groups:
+    if not USE_SHARED_PARTITIONS_GROUPS:
         for key in Partition_DAG_states:
             Partition_DAG_tasks[key] = PageRank_Function_Driver
     else:
-        if not use_struct_of_arrays_for_pagerank:
+        if not USE_STRUCT_OF_ARRAYS_FOR_PAGERANK:
             for key in Partition_DAG_states:
                 Partition_DAG_tasks[key] = PageRank_Function_Driver_Shared 
         else:
@@ -158,7 +158,7 @@ def PageRank_Function_one_iter(partition_or_group,damping_factor,
 # In the DAG_executor, we call this method to execute the pagerank task. For
 # leaf tasks, which have no inputs, we prepare the dictionary of results:
 """
-    if tasks_use_result_dictionary_parameter:
+    if TASKS_USE_RESULT_DICTIONARY_PARAMETER:
         # Passing an empty input tuple to the PageRank task,
         # This results in a result_dictionary
         # of "DAG_executor_driver_0" --> (), where
@@ -176,7 +176,7 @@ def PageRank_Function_one_iter(partition_or_group,damping_factor,
         # task_inputs is a tuple of task_names - pack_data is Dask:
         args = pack_data(task_inputs, data_dict)
         logger.trace(thread_name + " argsX: " + str(args))
-        if tasks_use_result_dictionary_parameter:
+        if TASKS_USE_RESULT_DICTIONARY_PARAMETER:
             logger.trace("Foo1a")
             # task_inputs = ('task1','task2'), args = (1,2) results in a resultDictionary
             # where resultDictionary['task1'] = 1 and resultDictionary['task2'] = 2.
@@ -188,11 +188,11 @@ def PageRank_Function_one_iter(partition_or_group,damping_factor,
 """
 # Shown above, we call the pagerank function (once selected) using: 
 """
-    if not use_shared_partitions_groups:
+    if not USE_SHARED_PARTITIONS_GROUPS:
         # we will call the task with: task(task_name,resultDictionary)
         output = execute_task_with_result_dictionary(task,state_info.task_name,20,result_dictionary)
     else:
-        if use_page_rank_group_partitions:
+        if USE_PAGERANK_GROUPS_PARTITIONS:
             output = execute_task_with_result_dictionary_shared(task,state_info.task_name,20,result_dictionary,BFS_Shared.shared_groups_map,BFS_Shared.shared_groups)
         else: # use the partition partitions
             output = execute_task_with_result_dictionary_shared(task,state_info.task_name,20,result_dictionary,BFS_Shared.shared_partition_map,BFS_Shared.shared_partition)
@@ -261,7 +261,7 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partiti
 
 #rhc: groups partitions
     partition_or_group = None
-    if not DAG_executor_constants.input_all_groups_partitions_at_start:
+    if not DAG_executor_constants.INPUT_ALL_GROUPS_PARTITIONS_AT_START:
         # task_file_name is, e.g., "PR1_1" not "PR1_1.pickle"
         # We check for task_file_name ending with "L" for loop below,
         # so we make this check esy by having 'L' at the end (endswith)
@@ -385,7 +385,7 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partiti
     if not task_file_name.endswith('L'):
         iterations = int(1)
     else:
-        iterations = int(DAG_executor_constants.number_of_pagerank_iterations_for_partitions_groups_with_loops)
+        iterations = int(DAG_executor_constants.NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS)
 
     i=0
     for tup in input_tuples:
@@ -839,7 +839,7 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
         if not task_file_name.endswith('L'):
             iteration = int(1)
         else:
-            iteration = int(DAG_executor_constants.number_of_pagerank_iterations_for_partitions_groups_with_loops)
+            iteration = int(DAG_executor_constants.NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS)
 
         #shared:
         # for non-sharedm, we used i as increment past the end of the partition/group for the 
@@ -1286,7 +1286,7 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
 
         # NEW:
         logger.trace("Copy frontier values:")
-        if DAG_executor_constants.use_page_rank_group_partitions:
+        if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
             shared_frontier_map = BFS_Shared.shared_groups_frontier_parents_map
         else:
             shared_frontier_map = BFS_Shared.shared_partition_frontier_parents_map

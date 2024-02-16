@@ -100,11 +100,11 @@ debug_DAG_executor_create_threads_for_multiT_multiP = False
 debug_DAG_executor_synchronizer = False
 
 # Currently, this is for storing synch objects in simulated lambdas;
-store_sync_objects_in_lambdas = False
-using_Lambda_Function_Simulators_to_Store_Objects = False
-sync_objects_in_lambdas_trigger_their_tasks = False
+STORE_SYNC_OBJECTS_IN_LAMBDAS = False
+USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS = False
+SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS = False
 # use orchestrator to invoke functions (e.g., when all fanin/fanout results are available)
-using_DAG_orchestrator = False
+USING_DAG_ORCHESTRATOR = False
 # map ech synch object by name to the function it resided in. if we create
 # all objects on start we msut map the objects to function so we can get the
 # function an onject is in. If we do not create objects on start then
@@ -112,21 +112,21 @@ using_DAG_orchestrator = False
 # we will just have to create the object in the funtion on the first function
 # invocation. If we do not map objects, then we will/can only invoke tge
 # function that contains the possibly pre-created object once. 
-map_objects_to_lambda_functions = False
+MAP_OBJECTS_TO_LAMBDA_FUNCTIONS = False
 # We can use an anonymous simulated function or a single named lambda deployment.
 # In this case, we can invoke the function only once snce we cannot
 # refer to a function instance by name, i.e., by index for simuated functions and 
 # by uniqueu deploment name for real lambda functions. For simuated functions
 # we do not create an indexed list of functions, and for real Lambdas we
 # just have one deployment. 
-# Note: if map_objects_to_lambda_functions then use_anonymous_lambda_functions 
+# Note: if MAP_OBJECTS_TO_LAMBDA_FUNCTIONS then USE_ANONYMOUS_LAMBDA_FUNCTIONS 
 # must be False. We map objects to function so we can invoke a function instance 
 # more than once when we access an object more than once. If we 
-# use_anonymous_lambda_functions then we cannot access a specific function
+# USE_ANONYMOUS_LAMBDA_FUNCTIONS then we cannot access a specific function
 # (by name or by index).
-# ToDo: integrate using_single_lambda_function with this mapping stuff. that
+# ToDo: integrate USE_SINGLE_LAMBDA_FUNCTION with this mapping stuff. that
 # is, map names to lambda functions, and sometimes there is only one function.
-use_anonymous_lambda_functions = False
+USE_ANONYMOUS_LAMBDA_FUNCTIONS = False
 # So if create on start then must map objects and cannot use anonymous functions.
 # If want to use anonymous functions then no create objects on statr and no mapping.
 
@@ -134,7 +134,7 @@ use_anonymous_lambda_functions = False
 # to make an easy test case. This cannot be used when using the function 
 # simulators or using the DAG_orchestrator.
 # Using this is ToDo - search for it and see comments
-using_single_lambda_function = False
+USE_SINGLE_LAMBDA_FUNCTION = False
 
 # For all: remote objects, using select objects:
 # 1. RUN_ALL_TASKS_LOCALLY = True, create objects on start = True:
@@ -235,15 +235,15 @@ try:
     # if create sync objects on start and executing tasks in lambdas "
     # then we must map them to function so that we can determine the 
     # function an object is in.
-    assert not (CREATE_ALL_FANINS_FANINNBS_ON_START and not RUN_ALL_TASKS_LOCALLY and store_sync_objects_in_lambdas and not map_objects_to_lambda_functions), msg
+    assert not (CREATE_ALL_FANINS_FANINNBS_ON_START and not RUN_ALL_TASKS_LOCALLY and STORE_SYNC_OBJECTS_IN_LAMBDAS and not MAP_OBJECTS_TO_LAMBDA_FUNCTIONS), msg
 except AssertionError:
     logger.exception("[Error]: assertion failed")
     if EXIT_PROGRAM_ON_EXCEPTION:
         logging.shutdown()
         os._exit(0)
 #assertOld:
-#if CREATE_ALL_FANINS_FANINNBS_ON_START and not RUN_ALL_TASKS_LOCALLY and store_sync_objects_in_lambdas:
-#    if not map_objects_to_lambda_functions:
+#if CREATE_ALL_FANINS_FANINNBS_ON_START and not RUN_ALL_TASKS_LOCALLY and STORE_SYNC_OBJECTS_IN_LAMBDAS:
+#    if not MAP_OBJECTS_TO_LAMBDA_FUNCTIONS:
 #        # if create sync objects on start and executing tasks in lambdas "
 #        # then we must map them to function so that we can determine the 
 #        # function an object is in.
@@ -253,41 +253,41 @@ except AssertionError:
 #        os._exit(0)
 
 try:
-    msg = "[Error]: Configuration error: if map_objects_to_lambda_functions" + " then use_anonymous_lambda_functions must be False."
+    msg = "[Error]: Configuration error: if MAP_OBJECTS_TO_LAMBDA_FUNCTIONS" + " then USE_ANONYMOUS_LAMBDA_FUNCTIONS must be False."
     # if create sync objects on start then we must map them to function so
     # that we can determine the function an object is in.
-    assert not (map_objects_to_lambda_functions and use_anonymous_lambda_functions), msg
+    assert not (MAP_OBJECTS_TO_LAMBDA_FUNCTIONS and USE_ANONYMOUS_LAMBDA_FUNCTIONS), msg
 except AssertionError:
     logger.exception("[Error]: assertion failed")
     if EXIT_PROGRAM_ON_EXCEPTION:
         logging.shutdown()
         os._exit(0)
 #assertOld:
-#if map_objects_to_lambda_functions:
-#    if use_anonymous_lambda_functions:
+#if MAP_OBJECTS_TO_LAMBDA_FUNCTIONS:
+#    if USE_ANONYMOUS_LAMBDA_FUNCTIONS:
 #        # if create sync objects on start then we must map them to function so
 #        # that we can determine the function an object is in.
-#        logger.error("[Error]: Configuration error: if map_objects_to_lambda_functions"
-#            + " then use_anonymous_lambda_functions must be False.")
+#        logger.error("[Error]: Configuration error: if MAP_OBJECTS_TO_LAMBDA_FUNCTIONS"
+#            + " then USE_ANONYMOUS_LAMBDA_FUNCTIONS must be False.")
 #        logging.shutdown()
 #        os._exit(0)
 
 try:
-    msg = "[Error]: Configuration error: if sync_objects_in_lambdas_trigger_their_tasks" + " then not RUN_ALL_TASKS_LOCALLY must be True."
+    msg = "[Error]: Configuration error: if SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS" + " then not RUN_ALL_TASKS_LOCALLY must be True."
     # if create sync objects on start then we must map them to function so
     # that we can determine the function an object is in.
-    assert not (sync_objects_in_lambdas_trigger_their_tasks and RUN_ALL_TASKS_LOCALLY), msg
+    assert not (SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS and RUN_ALL_TASKS_LOCALLY), msg
 except AssertionError:
     logger.exception("[Error]: assertion failed")
     if EXIT_PROGRAM_ON_EXCEPTION:
         logging.shutdown()
         os._exit(0)
 #assertOld:
-#if sync_objects_in_lambdas_trigger_their_tasks:
+#if SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS:
 #    if RUN_ALL_TASKS_LOCALLY:
 #        # if create sync objects on start then we must map them to function so
 #        # that we can determine the function an object is in.
-#        logger.error("[Error]: Configuration error: if sync_objects_in_lambdas_trigger_their_tasks"
+#        logger.error("[Error]: Configuration error: if SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS"
 #            + " then not RUN_ALL_TASKS_LOCALLY must be True.")
 #        logging.shutdown()
  #       os._exit(0)
@@ -298,16 +298,16 @@ except AssertionError:
 
 # Indicates that we are computing pagerank and thus that the pagerank
 # options are active and pagerank assserts should hold
-compute_pagerank = True
+COMPUTE_PAGERANK = True
 # used in BFS_pagerank. For non-loops, we only need 1 iteration
-number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
-name_of_first_groupOrpartition_in_DAG = "PR1_1"
+NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS = 10
+NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG = "PR1_1"
 
 # pagerank values will be saved so we can check them after execution
 # in DAG_executor_check_pagerank.py
 
 #rhc: ToDo: requires a global pagerank result so need worker threads?
-check_pagerank_output = compute_pagerank and RUN_ALL_TASKS_LOCALLY and (USING_WORKERS or not USING_WORKERS) and USING_THREADS_NOT_PROCESSES and True
+CHECK_PAGERANK_OUTPUT = COMPUTE_PAGERANK and RUN_ALL_TASKS_LOCALLY and (USING_WORKERS or not USING_WORKERS) and USING_THREADS_NOT_PROCESSES and True
 
 # a task that has multiple fanouts/faninNBs sends the same output
 # to all of them; otherwise, the task sends a possibly different 
@@ -320,24 +320,24 @@ check_pagerank_output = compute_pagerank and RUN_ALL_TASKS_LOCALLY and (USING_WO
 # task_inputs as "sending task - receiving task". So a sending task
 # S might send outputs to fanouts A and B so we use "S-A" and "S-B"
 # as the task_inputs, instad of just using "S", which is the Dask way.
-same_output_for_all_fanout_fanin = not compute_pagerank
+SAME_OUTPUT_FOR_ALL_FANOUT_FANIN = not COMPUTE_PAGERANK
 
 # True if DAG generation and DAG_execution are overlapped. 
-use_incremental_DAG_generation = compute_pagerank and True
+USE_INCREMENTAL_DAG_GENERATION = COMPUTE_PAGERANK and True
 
 # True if we are clustering fanouts that satisfy the cluster criteria
-enable_runtime_task_clustering = compute_pagerank and False
+ENABLE_RUNTIME_TASK_CLUSTERING = COMPUTE_PAGERANK and False
 
 try:
     msg = "[Error]: Configuration error: incremental_DAG_generation" + " requires not CREATE_ALL_FANINS_FANINNBS_ON_START" + " i.e., create synch objects on the fly since we don't know all of the synch objects " + " at the start (the DAG is not complete)"
-    assert not (compute_pagerank and use_incremental_DAG_generation and CREATE_ALL_FANINS_FANINNBS_ON_START), msg
+    assert not (COMPUTE_PAGERANK and USE_INCREMENTAL_DAG_GENERATION and CREATE_ALL_FANINS_FANINNBS_ON_START), msg
 except AssertionError:
     logger.exception("[Error]: assertion failed")
     if EXIT_PROGRAM_ON_EXCEPTION:
         logging.shutdown()
         os._exit(0)
 # assertOld:
-#if compute_pagerank and use_incremental_DAG_generation and CREATE_ALL_FANINS_FANINNBS_ON_START:
+#if COMPUTE_PAGERANK and USE_INCREMENTAL_DAG_GENERATION and CREATE_ALL_FANINS_FANINNBS_ON_START:
 #    logger.error("[Error]: Configuration error: incremental_DAG_generation"
 #        + " requires not CREATE_ALL_FANINS_FANINNBS_ON_START"
 #        + " i.e., create synch objects on the fly since we don't know all of the synch objects "
@@ -356,7 +356,7 @@ except AssertionError:
 # next DAG with complete paritions 1 and 2 and incomplete
 # partition 3 and we increment num_DAGs_generated to 1. we will 
 # publish the next generated DAG again when num_DAGs_generated mod
-# incremental_DAG_deposit_interval is 0. So if incremental_DAG_deposit_interval
+# INCREMENTAL_DAG_DEPOSIT_INTERVAL is 0. So if INCREMENTAL_DAG_DEPOSIT_INTERVAL
 # is 2, we will not publish the DAg with complete partitions 1 and 2
 # and incomplete partition 3 (since 1 mod 2 is not 0), but we will
 # publish the next DAG generated which has complete parititions 1, 2, and 3
@@ -370,20 +370,20 @@ except AssertionError:
 # incomplete DAG with complete partitin 1 and incomplete partition 
 # 2, but the next DAG publshed will be the complete DAG, which is 
 # the last DAG generated.)
-incremental_DAG_deposit_interval = 2
+INCREMENTAL_DAG_DEPOSIT_INTERVAL = 2
 
 try:
-    msg = "[Error]: Configuration error: incremental_DAG_deposit_interval" + " must be >= 1. We mod by incremental_DAG_deposit_interval so it" + " cannot be 0 and using a negative number makes no sense."
-    assert not (incremental_DAG_deposit_interval < 1), msg
+    msg = "[Error]: Configuration error: INCREMENTAL_DAG_DEPOSIT_INTERVAL" + " must be >= 1. We mod by INCREMENTAL_DAG_DEPOSIT_INTERVAL so it" + " cannot be 0 and using a negative number makes no sense."
+    assert not (INCREMENTAL_DAG_DEPOSIT_INTERVAL < 1), msg
 except AssertionError:
     logger.exception("[Error]: assertion failed")
     if EXIT_PROGRAM_ON_EXCEPTION:
         logging.shutdown()
         os._exit(0)
 #assertOld:
-#if incremental_DAG_deposit_interval < 1:
-#    logger.error("[Error]: Configuration error: incremental_DAG_deposit_interval"
-#         + " must be >= 1. We mod by incremental_DAG_deposit_interval so it"
+#if INCREMENTAL_DAG_DEPOSIT_INTERVAL < 1:
+#    logger.error("[Error]: Configuration error: INCREMENTAL_DAG_DEPOSIT_INTERVAL"
+#         + " must be >= 1. We mod by INCREMENTAL_DAG_DEPOSIT_INTERVAL so it"
 #         + " cannot be 0 and using a negative number makes no sense.")
 #    logging.shutdown()
 #    os._exit(0)
@@ -391,33 +391,33 @@ except AssertionError:
 #rhc: ToDo: what should this be? Used as capacity of boundedbuffer
 # Note: Pythin has no max Int
 # rhc: ToDo: Make a bounded_buffer with a dynamic buffer 
-work_queue_size_for_incremental_DAG_generation_with_worker_processes =  2**10-1
+WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES =  2**10-1
 
 try:
-    msg = "[Error]: Configuration error: if same_output_for_all_fanout_fanin" + " then must be computing pagerank."
-    assert not (not same_output_for_all_fanout_fanin and not compute_pagerank), msg
+    msg = "[Error]: Configuration error: if SAME_OUTPUT_FOR_ALL_FANOUT_FANIN" + " then must be computing pagerank."
+    assert not (not SAME_OUTPUT_FOR_ALL_FANOUT_FANIN and not COMPUTE_PAGERANK), msg
 except AssertionError:
     logger.exception("[Error]: assertion failed")
     if EXIT_PROGRAM_ON_EXCEPTION:
         logging.shutdown()
         os._exit(0)
 #assertOld:
-#if not same_output_for_all_fanout_fanin and not compute_pagerank:
-#    logger.error("[Error]: Configuration error: if same_output_for_all_fanout_fanin"
+#if not SAME_OUTPUT_FOR_ALL_FANOUT_FANIN and not COMPUTE_PAGERANK:
+#    logger.error("[Error]: Configuration error: if SAME_OUTPUT_FOR_ALL_FANOUT_FANIN"
 #        + " then must be computing pagerank.")
 #    logging.shutdown()
 #    os._exit(0)
 
 # For PageRank:
-# set tasks_use_result_dictionary_parameter = True
-# and same_output_for_all_fanout_fanin = False.
+# set TASKS_USE_RESULT_DICTIONARY_PARAMETER = True
+# and SAME_OUTPUT_FOR_ALL_FANOUT_FANIN = False.
 #
 # True when executed task uses a dictionary parameter that contains its inputs
 # instead of a tuple Dask-style. This is True for the PageRank. For pagerank
 # we use a single pagerank task and, if using lambdas, a single lambda excutor.
 # PageRank tasks have varying numbers of inputs (for fanoins/faninNBs) that are
 # passed to the PageRank task in a dictionary.
-tasks_use_result_dictionary_parameter = compute_pagerank and True
+TASKS_USE_RESULT_DICTIONARY_PARAMETER = COMPUTE_PAGERANK and True
 
 # For PageRank:
 # When we run_tasks_locally and we use threads to simulate lambdas or
@@ -425,19 +425,19 @@ tasks_use_result_dictionary_parameter = compute_pagerank and True
 # when the task suns, we have one global shared array with all the 
 # partitions/groups and the threads access that array when they do their
 # tasks.
-use_shared_partitions_groups = compute_pagerank and False
+USE_SHARED_PARTITIONS_GROUPS = COMPUTE_PAGERANK and False
 
 try:
     msg = "[Error]: Configuration error: if using a single shared array of" + " partitions or groups then must run_tasks_locally and be USING_THREADS_NOT_PROCESSES."
-    assert not (compute_pagerank and (use_shared_partitions_groups and not RUN_ALL_TASKS_LOCALLY)), msg
+    assert not (COMPUTE_PAGERANK and (USE_SHARED_PARTITIONS_GROUPS and not RUN_ALL_TASKS_LOCALLY)), msg
 except AssertionError:
     logger.exception("[Error]: assertion failed")
     if EXIT_PROGRAM_ON_EXCEPTION:
         logging.shutdown()
         os._exit(0)
 #assertOld:
-#if compute_pagerank and (use_shared_partitions_groups and not RUN_ALL_TASKS_LOCALLY)):#
-#if compute_pagerank and (use_shared_partitions_groups and not RUN_ALL_TASKS_LOCALLY):
+#if COMPUTE_PAGERANK and (USE_SHARED_PARTITIONS_GROUPS and not RUN_ALL_TASKS_LOCALLY)):#
+#if COMPUTE_PAGERANK and (USE_SHARED_PARTITIONS_GROUPS and not RUN_ALL_TASKS_LOCALLY):
 #    logger.error("[Error]: Configuration error: if using a single shared array of"
 #        + " partitions or groups then must run_tasks_locally and be USING_THREADS_NOT_PROCESSES.")
 #    logging.shutdown()
@@ -446,11 +446,11 @@ except AssertionError:
 # For PageRank:
 # Execute page rank partitions or execute page rank groups
 # If True use groups else use partitions
-use_page_rank_group_partitions = compute_pagerank and True
+USE_PAGERANK_GROUPS_PARTITIONS = COMPUTE_PAGERANK and True
 
 # For PageRank:
 # Use a struct of arrays to improve cache performance
-use_struct_of_arrays_for_pagerank = compute_pagerank and False
+USE_STRUCT_OF_ARRAYS_FOR_PAGERANK = COMPUTE_PAGERANK and False
 
 # For PageRank:
 # Use a multithreaded BFS where bfs() is generating the next group
@@ -460,37 +460,37 @@ use_struct_of_arrays_for_pagerank = compute_pagerank and False
 # with generating the DAG_info object. This is not to be confused with 
 # incremental DAG generation in which the DAG is executed concurrently 
 # with bfs() generating the partitions/groups and the DAG_info object.
-# Consider also the combination of use_incremental_DAG_generation and 
-# use_multithreaded_BFS. 
-use_multithreaded_BFS = compute_pagerank and False
+# Consider also the combination of USE_INCREMENTAL_DAG_GENERATION and 
+# USE_MUTLITHREADED_BFS. 
+USE_MUTLITHREADED_BFS = COMPUTE_PAGERANK and False
 
 try:
-    msg = "[Error]: Configuration error: if use_multithreaded_BFS" + " then must not use_incremental_DAG_generation ."
-    assert not (use_multithreaded_BFS and use_incremental_DAG_generation), msg
+    msg = "[Error]: Configuration error: if USE_MUTLITHREADED_BFS" + " then must not USE_INCREMENTAL_DAG_GENERATION ."
+    assert not (USE_MUTLITHREADED_BFS and USE_INCREMENTAL_DAG_GENERATION), msg
 except AssertionError:
     logger.exception("[Error]: assertion failed")
     if EXIT_PROGRAM_ON_EXCEPTION:
         logging.shutdown()
         os._exit(0)
 #assertOld:
-#if use_multithreaded_BFS and use_incremental_DAG_generation:
-#    logger.error("[Error]: Configuration error: if use_multithreaded_BFS"
-#        + " then must not use_incremental_DAG_generation .")
+#if USE_MUTLITHREADED_BFS and USE_INCREMENTAL_DAG_GENERATION:
+#    logger.error("[Error]: Configuration error: if USE_MUTLITHREADED_BFS"
+#        + " then must not USE_INCREMENTAL_DAG_GENERATION .")
 #    logging.shutdown()
 #    os._exit(0)
 
 try:
-    msg = "[Error]: Configuration error: if use_struct_of_arrays_for_pagerank" + " then must use_shared_partitions_groups."
-    assert not (compute_pagerank and (use_struct_of_arrays_for_pagerank and not use_shared_partitions_groups)), msg
+    msg = "[Error]: Configuration error: if USE_STRUCT_OF_ARRAYS_FOR_PAGERANK" + " then must USE_SHARED_PARTITIONS_GROUPS."
+    assert not (COMPUTE_PAGERANK and (USE_STRUCT_OF_ARRAYS_FOR_PAGERANK and not USE_SHARED_PARTITIONS_GROUPS)), msg
 except AssertionError:
     logger.exception("[Error]: assertion failed")
     if EXIT_PROGRAM_ON_EXCEPTION:
         logging.shutdown()
         os._exit(0)
 #assertOld:
-#if compute_pagerank and (use_struct_of_arrays_for_pagerank and not use_shared_partitions_groups):
-#    logger.error("[Error]: Configuration error: if use_struct_of_arrays_for_pagerank"
-#        + " then must use_shared_partitions_groups.")
+#if COMPUTE_PAGERANK and (USE_STRUCT_OF_ARRAYS_FOR_PAGERANK and not USE_SHARED_PARTITIONS_GROUPS):
+#    logger.error("[Error]: Configuration error: if USE_STRUCT_OF_ARRAYS_FOR_PAGERANK"
+#        + " then must USE_SHARED_PARTITIONS_GROUPS.")
 #    logging.shutdown()
 #    os._exit(0)
 
@@ -503,13 +503,13 @@ except AssertionError:
 
 # Note: Use this when running real lambdas and avoiding cloud storage 
 # for I/O of the groups or partitions.
-input_all_groups_partitions_at_start = compute_pagerank and (
-   not RUN_ALL_TASKS_LOCALLY and (not BYPASS_CALL_LAMBDA_CLIENT_INVOKE) and (not use_incremental_DAG_generation)
+INPUT_ALL_GROUPS_PARTITIONS_AT_START = COMPUTE_PAGERANK and (
+   not RUN_ALL_TASKS_LOCALLY and (not BYPASS_CALL_LAMBDA_CLIENT_INVOKE) and (not USE_INCREMENTAL_DAG_GENERATION)
    ) and True
 
 # Note: Use this to test real lambda code locally without using real lambdas
-# input_all_groups_partitions_at_start = compute_pagerank and (
-#     not RUN_ALL_TASKS_LOCALLY and (BYPASS_CALL_LAMBDA_CLIENT_INVOKE) and (not use_incremental_DAG_generation)
+# INPUT_ALL_GROUPS_PARTITIONS_AT_START = COMPUTE_PAGERANK and (
+#     not RUN_ALL_TASKS_LOCALLY and (BYPASS_CALL_LAMBDA_CLIENT_INVOKE) and (not USE_INCREMENTAL_DAG_GENERATION)
 #     ) and True
 
 A1 = A1_Server = A1_FunctionSimulator = A1_SingleFunction = A1_Orchestrator = False
@@ -519,13 +519,13 @@ A4_L = A4_R = False
 A5 = A6 = False
 
 # These are used to shorten the expressions in the configurations
-not_using_lambda_options =  not using_Lambda_Function_Simulators_to_Store_Objects and (
-    not sync_objects_in_lambdas_trigger_their_tasks) and (
-    not using_DAG_orchestrator) and (
-    not using_single_lambda_function)
-# Note: using_DAG_orchestrator while sync_objects_in_lambdas_trigger_their_tasks
+not_using_lambda_options =  not USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS and (
+    not SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS) and (
+    not USING_DAG_ORCHESTRATOR) and (
+    not USE_SINGLE_LAMBDA_FUNCTION)
+# Note: USING_DAG_ORCHESTRATOR while SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
 # is a non-Wukong scheme for managing lambdas - sync objects are stored in Lambdas 
-# and when using sync_objects_in_lambdas_trigger_their_tasks the objects
+# and when using SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS the objects
 # trigger their tasks to run within the same lambda. A1_Wukong uses
 # lambas to run tasks at fanouts/faninNBs, and stores synch objects on the 
 # server or in lambdas. A1_Wukong may use the DAG_orchestrator to manage the 
@@ -538,31 +538,31 @@ not_using_lambda_options =  not using_Lambda_Function_Simulators_to_Store_Object
 # objects can be stored on the tcp server or in lambdas
 A1_Wukong = not RUN_ALL_TASKS_LOCALLY and not USING_WORKERS and not STORE_FANINS_FANINNBS_LOCALLY
 
-A1_Wukong_ObjectsOnServer = A1_Wukong and not store_sync_objects_in_lambdas and (
+A1_Wukong_ObjectsOnServer = A1_Wukong and not STORE_SYNC_OBJECTS_IN_LAMBDAS and (
     not not_using_lambda_options)
 # This is Wukong style with sync objects stored on Server
 # FANIN_TYPE = "DAG_executor_FanIn"
 # FANINNB_TYPE = "DAG_executor_FanInNB"
 # run tcp_server
 # Set SERVERLESS_SYNC to True in wukongdnc constants
-A1_Wukong_ObjectsInRealLambdas_UseManyLambdaFunction = A1_Wukong and store_sync_objects_in_lambdas and (
+A1_Wukong_ObjectsInRealLambdas_UseManyLambdaFunction = A1_Wukong and STORE_SYNC_OBJECTS_IN_LAMBDAS and (
     not not_using_lambda_options)
 # This is Wukong style with sync objects stored in two or more Lambdas to balance the load.
 # Not using lamba simulators, just mapping objects (names) to lambdas.
-# If using_single_lambda_function then there is a single lambda that stores all sync objects
+# If USE_SINGLE_LAMBDA_FUNCTION then there is a single lambda that stores all sync objects
 # which makes setup on AWS simpler (i.e., using one distribution).
 # FANIN_TYPE = "DAG_executor_FanIn_Select"
 # FANINNB_TYPE = "DAG_executor_FanInNB_Select"
 # run tcp_server_lambda
 # Set SERVERLESS_SYNC to True in wukongdnc constants
-A1_Wukong_ObjectsInRealLambdas_UseSingleLambdaFunction = A1_Wukong and store_sync_objects_in_lambdas and (
-    using_single_lambda_function) and (
-    not using_Lambda_Function_Simulators_to_Store_Objects) and (
-    not sync_objects_in_lambdas_trigger_their_tasks) and (
-    not using_DAG_orchestrator)
+A1_Wukong_ObjectsInRealLambdas_UseSingleLambdaFunction = A1_Wukong and STORE_SYNC_OBJECTS_IN_LAMBDAS and (
+    USE_SINGLE_LAMBDA_FUNCTION) and (
+    not USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS) and (
+    not SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS) and (
+    not USING_DAG_ORCHESTRATOR)
 # This is Wukong style with all sync objects stored in a single Lambda function 
 #   to make AWS setup easier,
-# Note: We do not use using_single_lambda_function when we use simulated lambdas to store objects.
+# Note: We do not use USE_SINGLE_LAMBDA_FUNCTION when we use simulated lambdas to store objects.
 #   Using a single function is handy when we have to run lambdas on AWS, i.e., we only need
 #   one deployment. With simulated lambdas, having multiple "deployments" is not painful
 #   (to create the deployments, which aer just seperate Python functions.) 
@@ -570,52 +570,52 @@ A1_Wukong_ObjectsInRealLambdas_UseSingleLambdaFunction = A1_Wukong and store_syn
 # FANINNB_TYPE = "DAG_executor_FanInNB_Select"
 # run tcp_server_lambda
 # Set SERVERLESS_SYNC to True in wukongdnc constants
-A1_Wukong_ObjectsInRealLambdas_UsingOrchestator = A1_Wukong and store_sync_objects_in_lambdas and (
-    not using_Lambda_Function_Simulators_to_Store_Objects) and (
-    not sync_objects_in_lambdas_trigger_their_tasks) and (
-    not using_single_lambda_function) 
+A1_Wukong_ObjectsInRealLambdas_UsingOrchestator = A1_Wukong and STORE_SYNC_OBJECTS_IN_LAMBDAS and (
+    not USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS) and (
+    not SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS) and (
+    not USE_SINGLE_LAMBDA_FUNCTION) 
 # This is Wukong style with all sync objects stored in a lambda functions and orchestrated.
 # FANIN_TYPE = "DAG_executor_FanIn_Select"
 # FANINNB_TYPE = "DAG_executor_FanInNB_Select"
 # run tcp_server_lambda
 # Set SERVERLESS_SYNC to True in wukongdnc constants
-A1_Wukong_ObjectInSimulatedLambdas = A1_Wukong and store_sync_objects_in_lambdas and (
-    using_Lambda_Function_Simulators_to_Store_Objects) and (
-    not sync_objects_in_lambdas_trigger_their_tasks) and (
-    not using_single_lambda_function) and (
-    not using_DAG_orchestrator)
+A1_Wukong_ObjectInSimulatedLambdas = A1_Wukong and STORE_SYNC_OBJECTS_IN_LAMBDAS and (
+    USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS) and (
+    not SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS) and (
+    not USE_SINGLE_LAMBDA_FUNCTION) and (
+    not USING_DAG_ORCHESTRATOR)
 # FANIN_TYPE = "DAG_executor_FanIn_Select"
 # FANINNB_TYPE = "DAG_executor_FanInNB_Select"
 # run tcp_server_lambda
 # Set SERVERLESS_SYNC to True in wukongdnc constants
-A1_Wukong_ObjectInSimulatedLambdas_UsingOrchestator = A1_Wukong and store_sync_objects_in_lambdas and (
-    using_Lambda_Function_Simulators_to_Store_Objects) and (
-    using_DAG_orchestrator) and (
-    not sync_objects_in_lambdas_trigger_their_tasks) and (
-    not using_single_lambda_function) 
+A1_Wukong_ObjectInSimulatedLambdas_UsingOrchestator = A1_Wukong and STORE_SYNC_OBJECTS_IN_LAMBDAS and (
+    USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS) and (
+    USING_DAG_ORCHESTRATOR) and (
+    not SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS) and (
+    not USE_SINGLE_LAMBDA_FUNCTION) 
 # FANIN_TYPE = "DAG_executor_FanIn_Select"
 # FANINNB_TYPE = "DAG_executor_FanInNB_Select"
 # run tcp_server_lambda
 # Set SERVERLESS_SYNC to True in wukongdnc constants
 
-# Note: Currently we are assuming using_Lambda_Function_Simulators_to_Store_Objects is True
+# Note: Currently we are assuming USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS is True
 # when we use the orchestrator. 
 A1_Orchestrate_SyncObjectsandTasksinRealLambdas = not RUN_ALL_TASKS_LOCALLY and not USING_WORKERS and not STORE_FANINS_FANINNBS_LOCALLY and (
-    store_sync_objects_in_lambdas) and (
-    using_DAG_orchestrator) and (
-    not using_Lambda_Function_Simulators_to_Store_Objects) and (
-    not sync_objects_in_lambdas_trigger_their_tasks) and (
-    not using_single_lambda_function)
+    STORE_SYNC_OBJECTS_IN_LAMBDAS) and (
+    USING_DAG_ORCHESTRATOR) and (
+    not USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS) and (
+    not SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS) and (
+    not USE_SINGLE_LAMBDA_FUNCTION)
 # FANIN_TYPE = "DAG_executor_FanIn_Select"
 # FANINNB_TYPE = "DAG_executor_FanInNB_Select"
 # run tcp_server_lambda
 # Set SERVERLESS_SYNC to True in wukongdnc constants
 
 A1_Orchestrate_SyncObjectsandTasksinSimulatedLambdas = not RUN_ALL_TASKS_LOCALLY and not USING_WORKERS and not STORE_FANINS_FANINNBS_LOCALLY and (
-    store_sync_objects_in_lambdas) and (
-    using_DAG_orchestrator) and (
-    using_Lambda_Function_Simulators_to_Store_Objects) and sync_objects_in_lambdas_trigger_their_tasks and (
-    not using_single_lambda_function)
+    STORE_SYNC_OBJECTS_IN_LAMBDAS) and (
+    USING_DAG_ORCHESTRATOR) and (
+    USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS) and SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS and (
+    not USE_SINGLE_LAMBDA_FUNCTION)
 # FANIN_TYPE = "DAG_executor_FanIn_Select"
 # FANINNB_TYPE = "DAG_executor_FanInNB_Select"
 # run tcp_server_lambda
@@ -637,45 +637,45 @@ A3_ObjectsOnServer = A3 and not_using_lambda_options
 # set FANIN_TYPE = = "DAG_executor_FanIn_Select" or "DAG_executor_FanIn"
 # set FANINNB_TYPE = "DAG_executor_FanInNB_Select" or "DAG_executor_FanInNB"
 # Set SERVERLESS_SYNC to False in wukongdnc constants
-A3_ObjectsInRealLambdas_UseManyLambdaFunction = A3 and store_sync_objects_in_lambdas and (
+A3_ObjectsInRealLambdas_UseManyLambdaFunction = A3 and STORE_SYNC_OBJECTS_IN_LAMBDAS and (
     not not_using_lambda_options)
 # FANIN_TYPE = "DAG_executor_FanIn_Select"
 # FANINNB_TYPE = "DAG_executor_FanInNB_Select"
 # run tcp_server_lambda
 # Set SERVERLESS_SYNC to False in wukongdnc constants    
-A3_ObjectsInRealLambdas_UseSingleLambdaFunction = A3 and store_sync_objects_in_lambdas and (
-    using_single_lambda_function) and (
-    not using_Lambda_Function_Simulators_to_Store_Objects) and (
-    not sync_objects_in_lambdas_trigger_their_tasks) and (
-    not using_DAG_orchestrator)
+A3_ObjectsInRealLambdas_UseSingleLambdaFunction = A3 and STORE_SYNC_OBJECTS_IN_LAMBDAS and (
+    USE_SINGLE_LAMBDA_FUNCTION) and (
+    not USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS) and (
+    not SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS) and (
+    not USING_DAG_ORCHESTRATOR)
 # FANIN_TYPE = "DAG_executor_FanIn_Select"
 # FANINNB_TYPE = "DAG_executor_FanInNB_Select"
 # run tcp_server_lambda
 # Set SERVERLESS_SYNC to False in wukongdnc constants 
-A3_ObjectsInRealLambdas_UsingOrchestator = A3 and store_sync_objects_in_lambdas and (
-    not using_Lambda_Function_Simulators_to_Store_Objects) and (
-    not sync_objects_in_lambdas_trigger_their_tasks) and (
-    not using_single_lambda_function) 
+A3_ObjectsInRealLambdas_UsingOrchestator = A3 and STORE_SYNC_OBJECTS_IN_LAMBDAS and (
+    not USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS) and (
+    not SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS) and (
+    not USE_SINGLE_LAMBDA_FUNCTION) 
 # This is Wukong style with all sync objects stored in a lambda functions and orchestrated.
 # FANIN_TYPE = "DAG_executor_FanIn_Select"
 # FANINNB_TYPE = "DAG_executor_FanInNB_Select"
 # run tcp_server_lambda
 # Set SERVERLESS_SYNC to True in wukongdnc constants
 
-A3_ObjectInSimulatedLambdas = A3 and store_sync_objects_in_lambdas and (
-    using_Lambda_Function_Simulators_to_Store_Objects) and (
-    not sync_objects_in_lambdas_trigger_their_tasks) and (
-    not using_single_lambda_function) and (
-    not using_DAG_orchestrator)
+A3_ObjectInSimulatedLambdas = A3 and STORE_SYNC_OBJECTS_IN_LAMBDAS and (
+    USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS) and (
+    not SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS) and (
+    not USE_SINGLE_LAMBDA_FUNCTION) and (
+    not USING_DAG_ORCHESTRATOR)
 # FANIN_TYPE = "DAG_executor_FanIn_Select"
 # FANINNB_TYPE = "DAG_executor_FanInNB_Select"
 # run tcp_server_lambda
 # Set SERVERLESS_SYNC to False in wukongdnc constants
-A3_ObjectInSimulatedLambdas_UsingOrchestator = A3 and store_sync_objects_in_lambdas and (
-    using_Lambda_Function_Simulators_to_Store_Objects) and (
-    using_DAG_orchestrator) and (
-    not sync_objects_in_lambdas_trigger_their_tasks) and (
-    not using_single_lambda_function) 
+A3_ObjectInSimulatedLambdas_UsingOrchestator = A3 and STORE_SYNC_OBJECTS_IN_LAMBDAS and (
+    USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS) and (
+    USING_DAG_ORCHESTRATOR) and (
+    not SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS) and (
+    not USE_SINGLE_LAMBDA_FUNCTION) 
 # FANIN_TYPE = "DAG_executor_FanIn_Select"
 # FANINNB_TYPE = "DAG_executor_FanInNB_Select"
 # run tcp_server_lambda
@@ -683,12 +683,12 @@ A3_ObjectInSimulatedLambdas_UsingOrchestator = A3 and store_sync_objects_in_lamb
 
 A4 = RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES
 A4_ObjectsStoredLocally = A4 and STORE_FANINS_FANINNBS_LOCALLY and (
-    not store_sync_objects_in_lambdas) and not_using_lambda_options
+    not STORE_SYNC_OBJECTS_IN_LAMBDAS) and not_using_lambda_options
 # set NUM_WORKERS
 # no tcp_server since storing locally
 # Set SERVERLESS_SYNC to False in wukongdnc constants
 A4_ObjectsStoredRemotely = A4 and not STORE_FANINS_FANINNBS_LOCALLY and (
-    not store_sync_objects_in_lambdas) and not_using_lambda_options
+    not STORE_SYNC_OBJECTS_IN_LAMBDAS) and not_using_lambda_options
 # set NUM_WORKERS
 # set FANIN_TYPE = "DAG_executor_FanIn_Select" or "DAG_executor_FanIn"
 # set FANINNB_TYPE = "DAG_executor_FanInNB_Select" or "DAG_executor_FanInNB"
@@ -703,7 +703,7 @@ A4_ObjectsStoredRemotely = A4 and not STORE_FANINS_FANINNBS_LOCALLY and (
 
 A5 = RUN_ALL_TASKS_LOCALLY and USING_WORKERS and not USING_THREADS_NOT_PROCESSES
 A5_ObjectsStoredRemotely = A5 and not STORE_FANINS_FANINNBS_LOCALLY and (
-    not store_sync_objects_in_lambdas) and not_using_lambda_options
+    not STORE_SYNC_OBJECTS_IN_LAMBDAS) and not_using_lambda_options
 # set NUM_WORKERS
 # set FANIN_TYPE = "DAG_executor_FanIn_Select" or "DAG_executor_FanIn"
 # set FANINNB_TYPE = "DAG_executor_FanInNB_Select" or "DAG_executor_FanInNB"
@@ -734,9 +734,9 @@ if not_A1s and not_A2 and not_A3s and not_A4s and not_A5 and not_A6:
 """
 
 # Suggested Assert using worker processes  ==> store objects remotely
-# Suggested Assert sync_objects_in_lambdas_trigger_their_tasks ==> using_DAG_orchestrator
+# Suggested Assert SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS ==> USING_DAG_ORCHESTRATOR
 # Suggested Assert using a lambda option ==> store objects in Lambdas 
-# Suggested Assert using_DAG_orchestrator ==> not RUN_ALL_TASKS_LOCALLY and not USING_WORKERS and not STORE_FANINS_FANINNBS_LOCALLY
+# Suggested Assert USING_DAG_ORCHESTRATOR ==> not RUN_ALL_TASKS_LOCALLY and not USING_WORKERS and not STORE_FANINS_FANINNBS_LOCALLY
 
 ##########################################
 ###### Configuration tests start here ######
@@ -750,27 +750,27 @@ if not_A1s and not_A2 and not_A3s and not_A4s and not_A5 and not_A6:
 
 def non_real_lambda_base():
     global EXIT_PROGRAM_ON_EXCEPTION
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global enable_runtime_task_clustering
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
-    global use_multithreaded_BFS
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global ENABLE_RUNTIME_TASK_CLUSTERING
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
+    global USE_MUTLITHREADED_BFS
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -786,13 +786,13 @@ def non_real_lambda_base():
     
     EXIT_PROGRAM_ON_EXCEPTION = True
 
-    store_sync_objects_in_lambdas = False
-    using_Lambda_Function_Simulators_to_Store_Objects = False
-    sync_objects_in_lambdas_trigger_their_tasks = False
-    using_DAG_orchestrator = False
-    map_objects_to_lambda_functions = False
-    use_anonymous_lambda_functions = False
-    using_single_lambda_function = False
+    STORE_SYNC_OBJECTS_IN_LAMBDAS = False
+    USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS = False
+    SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS = False
+    USING_DAG_ORCHESTRATOR = False
+    MAP_OBJECTS_TO_LAMBDA_FUNCTIONS = False
+    USE_ANONYMOUS_LAMBDA_FUNCTIONS = False
+    USE_SINGLE_LAMBDA_FUNCTION = False
 
     # For all: remote objects, using select objects:
     # 1. RUN_ALL_TASKS_LOCALLY = True, create objects on start = True:
@@ -817,20 +817,20 @@ def non_real_lambda_base():
     # - change DAG_orchestrator to F - so not going through enqueue so will
     #   create on fly in other places besides equeue.
 
-    compute_pagerank = False # True
-    number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
-    name_of_first_groupOrpartition_in_DAG = "PR1_1"
-    check_pagerank_output = compute_pagerank and True
-    same_output_for_all_fanout_fanin = not compute_pagerank
-    use_incremental_DAG_generation = compute_pagerank and False
-    enable_runtime_task_clustering = compute_pagerank and True
-    incremental_DAG_deposit_interval = 2
-    work_queue_size_for_incremental_DAG_generation_with_worker_processes =  2**10-1
-    tasks_use_result_dictionary_parameter = compute_pagerank and True
-    use_shared_partitions_groups = compute_pagerank and False
-    use_page_rank_group_partitions = compute_pagerank and True
-    use_struct_of_arrays_for_pagerank = compute_pagerank and False
-    use_multithreaded_BFS = compute_pagerank and False
+    COMPUTE_PAGERANK = False # True
+    NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS = 10
+    NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG = "PR1_1"
+    CHECK_PAGERANK_OUTPUT = COMPUTE_PAGERANK and True
+    SAME_OUTPUT_FOR_ALL_FANOUT_FANIN = not COMPUTE_PAGERANK
+    USE_INCREMENTAL_DAG_GENERATION = COMPUTE_PAGERANK and False
+    ENABLE_RUNTIME_TASK_CLUSTERING = COMPUTE_PAGERANK and True
+    INCREMENTAL_DAG_DEPOSIT_INTERVAL = 2
+    WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES =  2**10-1
+    TASKS_USE_RESULT_DICTIONARY_PARAMETER = COMPUTE_PAGERANK and True
+    USE_SHARED_PARTITIONS_GROUPS = COMPUTE_PAGERANK and False
+    USE_PAGERANK_GROUPS_PARTITIONS = COMPUTE_PAGERANK and True
+    USE_STRUCT_OF_ARRAYS_FOR_PAGERANK = COMPUTE_PAGERANK and False
+    USE_MUTLITHREADED_BFS = COMPUTE_PAGERANK and False
 
 # local objects 
     
@@ -838,25 +838,25 @@ def non_real_lambda_base():
 # create objects at the start
 def test1():
     print("test1")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -890,25 +890,25 @@ def test1():
 #        create objects at the start
 def test2():
     print("test2")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -942,25 +942,25 @@ def test2():
 #         create objects on-the-fly
 def test3():
     logger.info("test3")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -994,25 +994,25 @@ def test3():
 #         create objects on-the-fly
 def test4():
     print("test4")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -1049,25 +1049,25 @@ def test4():
 # Note: tcp_server must be running: tcp_server -t 5
 def test5():
     print("test5")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -1102,25 +1102,25 @@ def test5():
 # Note: tcp_server must be running: tcp_server -t 6
 def test6():
     print("test6")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -1155,25 +1155,25 @@ def test6():
 # Note: tcp_server must be running: tcp_server -t 7
 def test7():
     logger.info("test7")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -1208,25 +1208,25 @@ def test7():
 # Note: tcp_server must be running: tcp_server -t 8
 def test8():
     print("test8")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -1264,25 +1264,25 @@ def test8():
 #       1 worker, Sync-objects stored locally, create objects at the start
 def test9():
     print("test9")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -1316,25 +1316,25 @@ def test9():
 #       2 workers, Sync-objects stored locally, create objects at the start
 def test10():
     print("test10")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -1368,25 +1368,25 @@ def test10():
 #       2 workers, Sync-objects stored locally, create objects at the start
 def test11():
     print("test11")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -1420,25 +1420,25 @@ def test11():
 #       2 workers, Sync-objects stored locally, create objects on-the-fly
 def test12():
     print("test12")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -1472,25 +1472,25 @@ def test12():
 #       2 workers, Sync-objects stored locally, create objects on-the-fly
 def test13():
     print("test13")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -1531,25 +1531,25 @@ def test13():
 # Note: tcp_server must be running: tcp_server -t 14
 def test14():
     print("test14")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -1585,25 +1585,25 @@ def test14():
 # Note: tcp_server must be running: tcp_server -t 15
 def test15():
     print("test15")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -1639,25 +1639,25 @@ def test15():
 # Note: tcp_server must be running: tcp_server -t 16
 def test16():
     print("test16")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -1693,25 +1693,25 @@ def test16():
 # Note: tcp_server must be running: tcp_server -t 17
 def test17():
     print("test17")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -1747,25 +1747,25 @@ def test17():
 # Note: tcp_server must be running: tcp_server -t 18
 def test18():
     print("test18")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -1803,25 +1803,25 @@ def test18():
 # Note: tcp_server must be running: tcp_server -t 19
 def test19():
     print("test19")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -1858,25 +1858,25 @@ def test19():
 # Note: tcp_server must be running: tcp_server -t 20
 def test20():
     print("test20")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -1912,25 +1912,25 @@ def test20():
 # Note: tcp_server must be running: tcp_server -t 21
 def test21():
     print("test21")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -1966,25 +1966,25 @@ def test21():
 # Note: tcp_server must be running: tcp_server -t 22
 def test22():
     print("test22")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -2020,25 +2020,25 @@ def test22():
 # Note: tcp_server must be running: tcp_server -t 23
 def test23():
     print("test23")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -2074,25 +2074,25 @@ def test23():
 # Note: tcp_server must be running: tcp_server -t 24
 def test24():
     print("test24")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -2128,25 +2128,25 @@ def test24():
 # Note: tcp_server must be running: tcp_server -t 25
 def test25():
     print("test25")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -2182,25 +2182,25 @@ def test25():
 # Note: tcp_server must be running: tcp_server -t 26
 def test26():
     print("test26")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -2236,25 +2236,25 @@ def test26():
 # Note: tcp_server must be running: tcp_server -t 27
 def test27():
     print("test27")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -2290,25 +2290,25 @@ def test27():
 # Note: tcp_server must be running: tcp_server -t 28
 def test28():
     print("test28")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -2338,34 +2338,34 @@ def test28():
     FANINNB_TYPE = "DAG_executor_FanInNB_Select"
     PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
-#Test store_sync_objects_in_lambdas
+#Test STORE_SYNC_OBJECTS_IN_LAMBDAS
 
 #Test29: worker threads (A2) with selective-wait Sync-objects, 
 #        Sync-objects stored remotely (on tcp_server)
 #        create objects at the start.
-#        store_sync_objects_in_lambdas
+#        STORE_SYNC_OBJECTS_IN_LAMBDAS
 # Note: tcp_server must be running: tcp_server -t 29
 def test29():
     print("test29")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -2397,43 +2397,43 @@ def test29():
 
     # TTFFTFF: no trigger and no DAG_orchestrator, but map objects 
     # (anon is false) and create objects on start and
-    # do not using_single_lambda_function
+    # do not USE_SINGLE_LAMBDA_FUNCTION
 
-    store_sync_objects_in_lambdas = True
-    using_Lambda_Function_Simulators_to_Store_Objects = True
-    sync_objects_in_lambdas_trigger_their_tasks = False
-    using_DAG_orchestrator = False
-    map_objects_to_lambda_functions = True
-    use_anonymous_lambda_functions = False
-    using_single_lambda_function = False
+    STORE_SYNC_OBJECTS_IN_LAMBDAS = True
+    USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS = True
+    SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS = False
+    USING_DAG_ORCHESTRATOR = False
+    MAP_OBJECTS_TO_LAMBDA_FUNCTIONS = True
+    USE_ANONYMOUS_LAMBDA_FUNCTIONS = False
+    USE_SINGLE_LAMBDA_FUNCTION = False
 
 #Test30: worker threads (A2) with selective-wait Sync-objects, 
 #        Sync-objects stored remotely (on tcp_server)
 #        create objects at the start
-#        store_sync_objects_in_lambdas
+#        STORE_SYNC_OBJECTS_IN_LAMBDAS
 #        Variation: a. change D_O to T, 
 # Note: tcp_server must be running: tcp_server -t 30
 def test30():
     print("test30")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -2463,42 +2463,42 @@ def test30():
     FANINNB_TYPE = "DAG_executor_FanInNB_Select"
     PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
-    store_sync_objects_in_lambdas = True
-    using_Lambda_Function_Simulators_to_Store_Objects = True
-    sync_objects_in_lambdas_trigger_their_tasks = False
-    using_DAG_orchestrator = True
-    map_objects_to_lambda_functions = True
-    use_anonymous_lambda_functions = False
-    using_single_lambda_function = False
+    STORE_SYNC_OBJECTS_IN_LAMBDAS = True
+    USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS = True
+    SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS = False
+    USING_DAG_ORCHESTRATOR = True
+    MAP_OBJECTS_TO_LAMBDA_FUNCTIONS = True
+    USE_ANONYMOUS_LAMBDA_FUNCTIONS = False
+    USE_SINGLE_LAMBDA_FUNCTION = False
 
 #Test31: worker threads (A2) with selective-wait Sync-objects, 
 #        Sync-objects stored remotely (on tcp_server)
 #        create objects at the start
-#        store_sync_objects_in_lambdas
+#        STORE_SYNC_OBJECTS_IN_LAMBDAS
 #        Variation: a. change D_O to T, 
 #                   b. change map to F, and anon to T:
 # Note: tcp_server must be running: tcp_server -t 31
 def test31():
     print("test31")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -2528,43 +2528,43 @@ def test31():
     FANINNB_TYPE = "DAG_executor_FanInNB_Select"
     PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
-    store_sync_objects_in_lambdas = True
-    using_Lambda_Function_Simulators_to_Store_Objects = True
-    sync_objects_in_lambdas_trigger_their_tasks = False
-    using_DAG_orchestrator = True
-    map_objects_to_lambda_functions = False
-    use_anonymous_lambda_functions = True
-    using_single_lambda_function = False
+    STORE_SYNC_OBJECTS_IN_LAMBDAS = True
+    USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS = True
+    SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS = False
+    USING_DAG_ORCHESTRATOR = True
+    MAP_OBJECTS_TO_LAMBDA_FUNCTIONS = False
+    USE_ANONYMOUS_LAMBDA_FUNCTIONS = True
+    USE_SINGLE_LAMBDA_FUNCTION = False
 
 #Test32: worker threads (A2) with selective-wait Sync-objects, 
 #        Sync-objects stored remotely (on tcp_server)
 #        create objects at the start
-#        store_sync_objects_in_lambdas
+#        STORE_SYNC_OBJECTS_IN_LAMBDAS
 #        Variation: a. change D_O to T, 
 #                   b. change map to F, and anon to T:
 #                   c. change D_O to F, map F, anon T:
 # Note: tcp_server must be running: tcp_server -t 32
 def test32():
     print("test32")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -2594,18 +2594,18 @@ def test32():
     FANINNB_TYPE = "DAG_executor_FanInNB_Select"
     PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
-    store_sync_objects_in_lambdas = True
-    using_Lambda_Function_Simulators_to_Store_Objects = True
-    sync_objects_in_lambdas_trigger_their_tasks = False
-    using_DAG_orchestrator = False
-    map_objects_to_lambda_functions = False
-    use_anonymous_lambda_functions = True
-    using_single_lambda_function = False
+    STORE_SYNC_OBJECTS_IN_LAMBDAS = True
+    USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS = True
+    SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS = False
+    USING_DAG_ORCHESTRATOR = False
+    MAP_OBJECTS_TO_LAMBDA_FUNCTIONS = False
+    USE_ANONYMOUS_LAMBDA_FUNCTIONS = True
+    USE_SINGLE_LAMBDA_FUNCTION = False
 
 #Test33: worker threads (A2) with selective-wait Sync-objects, 
 #        Sync-objects stored remotely (on tcp_server)
 #        create objects at the start
-#        store_sync_objects_in_lambdas
+#        STORE_SYNC_OBJECTS_IN_LAMBDAS
 # Note: tcp_server must be running: tcp_server_lambda -t 33
 # Note: output is in tcp_server_lambda window, not DAG_executor window
 def test33():
@@ -2626,25 +2626,25 @@ def test33():
 	#       and objects stored in lambdas or on server.
 	#       TTTTTFF: trigger and DAG_orchestrator, map objects true, anon is false, and create objects on start
     print("test33")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -2674,26 +2674,26 @@ def test33():
     FANINNB_TYPE = "DAG_executor_FanInNB_Select"
     PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
-    store_sync_objects_in_lambdas = True
-    using_Lambda_Function_Simulators_to_Store_Objects = True
-    sync_objects_in_lambdas_trigger_their_tasks = True
-    using_DAG_orchestrator = True
-    map_objects_to_lambda_functions = True
-    use_anonymous_lambda_functions = False
-    using_single_lambda_function = False
+    STORE_SYNC_OBJECTS_IN_LAMBDAS = True
+    USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS = True
+    SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS = True
+    USING_DAG_ORCHESTRATOR = True
+    MAP_OBJECTS_TO_LAMBDA_FUNCTIONS = True
+    USE_ANONYMOUS_LAMBDA_FUNCTIONS = False
+    USE_SINGLE_LAMBDA_FUNCTION = False
 
 # Note: output is in tcp_server_lambda window, not DAG_executor window
 
 #Test34: multithreaded worker processes (A2) with selective-wait Sync-objects, 
 #        Sync-objects stored remotely (on tcp_server)
 #        create objects at the start
-#        store_sync_objects_in_lambdas
+#        STORE_SYNC_OBJECTS_IN_LAMBDAS
 # Note: tcp_server must be running: tcp_server_lambda -t 34
 # Note: output is in tcp_server_lambda window, not DAG_executor window
 #
 #Issue: This is just like test29() but using worker processes instead
 # of worker threads. The issue is that worker processes use a work queue
-# that is on the server, but when we store_sync_objects_in_lambdas we 
+# that is on the server, but when we STORE_SYNC_OBJECTS_IN_LAMBDAS we 
 # do not want to store the work queue in a lambda - we need the work queue
 # to be stored on tcp_server as a regular synch object, i.e., not in
 # a lambda. 
@@ -2721,25 +2721,25 @@ def test33():
 # pass call to synchronize_synch_work_queue() method else do current code.)
 def test34XXX():
     print("test34")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -2781,22 +2781,22 @@ def test34XXX():
     PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
     """
-    store_sync_objects_in_lambdas = True
-    using_Lambda_Function_Simulators_to_Store_Objects = True
-    sync_objects_in_lambdas_trigger_their_tasks = True
-    using_DAG_orchestrator = True
-    map_objects_to_lambda_functions = False
-    use_anonymous_lambda_functions = True
-    using_single_lambda_function = False
+    STORE_SYNC_OBJECTS_IN_LAMBDAS = True
+    USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS = True
+    SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS = True
+    USING_DAG_ORCHESTRATOR = True
+    MAP_OBJECTS_TO_LAMBDA_FUNCTIONS = False
+    USE_ANONYMOUS_LAMBDA_FUNCTIONS = True
+    USE_SINGLE_LAMBDA_FUNCTION = False
     """
 
-    store_sync_objects_in_lambdas = True
-    using_Lambda_Function_Simulators_to_Store_Objects = True
-    sync_objects_in_lambdas_trigger_their_tasks = False
-    using_DAG_orchestrator = False
-    map_objects_to_lambda_functions = True
-    use_anonymous_lambda_functions = False
-    using_single_lambda_function = False
+    STORE_SYNC_OBJECTS_IN_LAMBDAS = True
+    USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS = True
+    SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS = False
+    USING_DAG_ORCHESTRATOR = False
+    MAP_OBJECTS_TO_LAMBDA_FUNCTIONS = True
+    USE_ANONYMOUS_LAMBDA_FUNCTIONS = False
+    USE_SINGLE_LAMBDA_FUNCTION = False
 
 # Note: output is in tcp_server_lambda window, not DAG_executor window
 
@@ -2818,25 +2818,25 @@ def test34XXX():
 #        use pagerank groups
 def test35():
     print("test35")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -2866,26 +2866,26 @@ def test35():
     #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
     #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
-    store_sync_objects_in_lambdas = False
-    using_Lambda_Function_Simulators_to_Store_Objects = False
-    sync_objects_in_lambdas_trigger_their_tasks = False
-    using_DAG_orchestrator = False
-    map_objects_to_lambda_functions = False
-    use_anonymous_lambda_functions = False
-    using_single_lambda_function = False
+    STORE_SYNC_OBJECTS_IN_LAMBDAS = False
+    USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS = False
+    SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS = False
+    USING_DAG_ORCHESTRATOR = False
+    MAP_OBJECTS_TO_LAMBDA_FUNCTIONS = False
+    USE_ANONYMOUS_LAMBDA_FUNCTIONS = False
+    USE_SINGLE_LAMBDA_FUNCTION = False
 
-    compute_pagerank = True
-    check_pagerank_output = compute_pagerank and RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES and True
-    name_of_first_groupOrpartition_in_DAG = "PR1_1"
-    number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
-    same_output_for_all_fanout_fanin = not compute_pagerank
-    use_incremental_DAG_generation = compute_pagerank and False
-    incremental_DAG_deposit_interval = 2
-    work_queue_size_for_incremental_DAG_generation_with_worker_processes =  2**10-1
-    tasks_use_result_dictionary_parameter = compute_pagerank and True
-    use_shared_partitions_groups = compute_pagerank and False
-    use_page_rank_group_partitions = compute_pagerank and True
-    use_struct_of_arrays_for_pagerank = compute_pagerank and False
+    COMPUTE_PAGERANK = True
+    CHECK_PAGERANK_OUTPUT = COMPUTE_PAGERANK and RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES and True
+    NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG = "PR1_1"
+    NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS = 10
+    SAME_OUTPUT_FOR_ALL_FANOUT_FANIN = not COMPUTE_PAGERANK
+    USE_INCREMENTAL_DAG_GENERATION = COMPUTE_PAGERANK and False
+    INCREMENTAL_DAG_DEPOSIT_INTERVAL = 2
+    WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES =  2**10-1
+    TASKS_USE_RESULT_DICTIONARY_PARAMETER = COMPUTE_PAGERANK and True
+    USE_SHARED_PARTITIONS_GROUPS = COMPUTE_PAGERANK and False
+    USE_PAGERANK_GROUPS_PARTITIONS = COMPUTE_PAGERANK and True
+    USE_STRUCT_OF_ARRAYS_FOR_PAGERANK = COMPUTE_PAGERANK and False
 
 #Test36: worker threads (A2) with non-selective-wait Sync-objects, 
 #        2 worker threads, Sync-objects stored locally
@@ -2893,25 +2893,25 @@ def test35():
 #        use pagerank partitions
 def test36():
     print("test36")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -2941,26 +2941,26 @@ def test36():
     #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
     #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
-    store_sync_objects_in_lambdas = False
-    using_Lambda_Function_Simulators_to_Store_Objects = False
-    sync_objects_in_lambdas_trigger_their_tasks = False
-    using_DAG_orchestrator = False
-    map_objects_to_lambda_functions = False
-    use_anonymous_lambda_functions = False
-    using_single_lambda_function = False
+    STORE_SYNC_OBJECTS_IN_LAMBDAS = False
+    USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS = False
+    SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS = False
+    USING_DAG_ORCHESTRATOR = False
+    MAP_OBJECTS_TO_LAMBDA_FUNCTIONS = False
+    USE_ANONYMOUS_LAMBDA_FUNCTIONS = False
+    USE_SINGLE_LAMBDA_FUNCTION = False
 
-    compute_pagerank = True
-    check_pagerank_output = compute_pagerank and RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES and True
-    name_of_first_groupOrpartition_in_DAG = "PR1_1"
-    number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
-    same_output_for_all_fanout_fanin = not compute_pagerank
-    use_incremental_DAG_generation = compute_pagerank and False
-    incremental_DAG_deposit_interval = 2
-    work_queue_size_for_incremental_DAG_generation_with_worker_processes =  2**10-1
-    tasks_use_result_dictionary_parameter = compute_pagerank and True
-    use_shared_partitions_groups = compute_pagerank and False
-    use_page_rank_group_partitions = compute_pagerank and False
-    use_struct_of_arrays_for_pagerank = compute_pagerank and False
+    COMPUTE_PAGERANK = True
+    CHECK_PAGERANK_OUTPUT = COMPUTE_PAGERANK and RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES and True
+    NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG = "PR1_1"
+    NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS = 10
+    SAME_OUTPUT_FOR_ALL_FANOUT_FANIN = not COMPUTE_PAGERANK
+    USE_INCREMENTAL_DAG_GENERATION = COMPUTE_PAGERANK and False
+    INCREMENTAL_DAG_DEPOSIT_INTERVAL = 2
+    WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES =  2**10-1
+    TASKS_USE_RESULT_DICTIONARY_PARAMETER = COMPUTE_PAGERANK and True
+    USE_SHARED_PARTITIONS_GROUPS = COMPUTE_PAGERANK and False
+    USE_PAGERANK_GROUPS_PARTITIONS = COMPUTE_PAGERANK and False
+    USE_STRUCT_OF_ARRAYS_FOR_PAGERANK = COMPUTE_PAGERANK and False
 
 #Test37: worker processes (A2) with non-selective-wait Sync-objects, 
 #        2 worker processes, Sync-objects stored remotely
@@ -2968,25 +2968,25 @@ def test36():
 #        use pagerank groups
 def test37():
     print("test37")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -3016,26 +3016,26 @@ def test37():
     #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
     #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
-    store_sync_objects_in_lambdas = False
-    using_Lambda_Function_Simulators_to_Store_Objects = False
-    sync_objects_in_lambdas_trigger_their_tasks = False
-    using_DAG_orchestrator = False
-    map_objects_to_lambda_functions = False
-    use_anonymous_lambda_functions = False
-    using_single_lambda_function = False
+    STORE_SYNC_OBJECTS_IN_LAMBDAS = False
+    USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS = False
+    SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS = False
+    USING_DAG_ORCHESTRATOR = False
+    MAP_OBJECTS_TO_LAMBDA_FUNCTIONS = False
+    USE_ANONYMOUS_LAMBDA_FUNCTIONS = False
+    USE_SINGLE_LAMBDA_FUNCTION = False
 
-    compute_pagerank = True
-    check_pagerank_output = compute_pagerank and RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES and True
-    name_of_first_groupOrpartition_in_DAG = "PR1_1"
-    number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
-    same_output_for_all_fanout_fanin = not compute_pagerank
-    use_incremental_DAG_generation = compute_pagerank and False
-    incremental_DAG_deposit_interval = 2
-    work_queue_size_for_incremental_DAG_generation_with_worker_processes =  2**10-1
-    tasks_use_result_dictionary_parameter = compute_pagerank and True
-    use_shared_partitions_groups = compute_pagerank and False
-    use_page_rank_group_partitions = compute_pagerank and True
-    use_struct_of_arrays_for_pagerank = compute_pagerank and False
+    COMPUTE_PAGERANK = True
+    CHECK_PAGERANK_OUTPUT = COMPUTE_PAGERANK and RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES and True
+    NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG = "PR1_1"
+    NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS = 10
+    SAME_OUTPUT_FOR_ALL_FANOUT_FANIN = not COMPUTE_PAGERANK
+    USE_INCREMENTAL_DAG_GENERATION = COMPUTE_PAGERANK and False
+    INCREMENTAL_DAG_DEPOSIT_INTERVAL = 2
+    WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES =  2**10-1
+    TASKS_USE_RESULT_DICTIONARY_PARAMETER = COMPUTE_PAGERANK and True
+    USE_SHARED_PARTITIONS_GROUPS = COMPUTE_PAGERANK and False
+    USE_PAGERANK_GROUPS_PARTITIONS = COMPUTE_PAGERANK and True
+    USE_STRUCT_OF_ARRAYS_FOR_PAGERANK = COMPUTE_PAGERANK and False
 
 #Test38: worker processes (A2) with non-selective-wait Sync-objects, 
 #        2 worker processes, Sync-objects stored locally
@@ -3043,25 +3043,25 @@ def test37():
 #        use pagerank partitions
 def test38():
     print("test38")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -3091,26 +3091,26 @@ def test38():
     #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
     #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
-    store_sync_objects_in_lambdas = False
-    using_Lambda_Function_Simulators_to_Store_Objects = False
-    sync_objects_in_lambdas_trigger_their_tasks = False
-    using_DAG_orchestrator = False
-    map_objects_to_lambda_functions = False
-    use_anonymous_lambda_functions = False
-    using_single_lambda_function = False
+    STORE_SYNC_OBJECTS_IN_LAMBDAS = False
+    USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS = False
+    SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS = False
+    USING_DAG_ORCHESTRATOR = False
+    MAP_OBJECTS_TO_LAMBDA_FUNCTIONS = False
+    USE_ANONYMOUS_LAMBDA_FUNCTIONS = False
+    USE_SINGLE_LAMBDA_FUNCTION = False
 
-    compute_pagerank = True
-    check_pagerank_output = compute_pagerank and RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES and True
-    name_of_first_groupOrpartition_in_DAG = "PR1_1"
-    number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
-    same_output_for_all_fanout_fanin = not compute_pagerank
-    use_incremental_DAG_generation = compute_pagerank and False
-    incremental_DAG_deposit_interval = 2
-    work_queue_size_for_incremental_DAG_generation_with_worker_processes =  2**10-1
-    tasks_use_result_dictionary_parameter = compute_pagerank and True
-    use_shared_partitions_groups = compute_pagerank and False
-    use_page_rank_group_partitions = compute_pagerank and False
-    use_struct_of_arrays_for_pagerank = compute_pagerank and False
+    COMPUTE_PAGERANK = True
+    CHECK_PAGERANK_OUTPUT = COMPUTE_PAGERANK and RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES and True
+    NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG = "PR1_1"
+    NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS = 10
+    SAME_OUTPUT_FOR_ALL_FANOUT_FANIN = not COMPUTE_PAGERANK
+    USE_INCREMENTAL_DAG_GENERATION = COMPUTE_PAGERANK and False
+    INCREMENTAL_DAG_DEPOSIT_INTERVAL = 2
+    WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES =  2**10-1
+    TASKS_USE_RESULT_DICTIONARY_PARAMETER = COMPUTE_PAGERANK and True
+    USE_SHARED_PARTITIONS_GROUPS = COMPUTE_PAGERANK and False
+    USE_PAGERANK_GROUPS_PARTITIONS = COMPUTE_PAGERANK and False
+    USE_STRUCT_OF_ARRAYS_FOR_PAGERANK = COMPUTE_PAGERANK and False
 
 #Test39: real lambda code with the call to invoke real AWS lambdas 
 #        bypassed, with non-selective-wait Sync-objects, 
@@ -3119,25 +3119,25 @@ def test38():
 #        use pagerank partitions
 def test39():
     print("test39")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -3168,26 +3168,26 @@ def test39():
     #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
     #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
-    store_sync_objects_in_lambdas = False
-    using_Lambda_Function_Simulators_to_Store_Objects = False
-    sync_objects_in_lambdas_trigger_their_tasks = False
-    using_DAG_orchestrator = False
-    map_objects_to_lambda_functions = False
-    use_anonymous_lambda_functions = False
-    using_single_lambda_function = False
+    STORE_SYNC_OBJECTS_IN_LAMBDAS = False
+    USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS = False
+    SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS = False
+    USING_DAG_ORCHESTRATOR = False
+    MAP_OBJECTS_TO_LAMBDA_FUNCTIONS = False
+    USE_ANONYMOUS_LAMBDA_FUNCTIONS = False
+    USE_SINGLE_LAMBDA_FUNCTION = False
 
-    compute_pagerank = True
-    check_pagerank_output = compute_pagerank and RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES and True
-    name_of_first_groupOrpartition_in_DAG = "PR1_1"
-    number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
-    same_output_for_all_fanout_fanin = not compute_pagerank
-    use_incremental_DAG_generation = compute_pagerank and False
-    incremental_DAG_deposit_interval = 2
-    work_queue_size_for_incremental_DAG_generation_with_worker_processes =  2**10-1
-    tasks_use_result_dictionary_parameter = compute_pagerank and True
-    use_shared_partitions_groups = compute_pagerank and False
-    use_page_rank_group_partitions = compute_pagerank and True
-    use_struct_of_arrays_for_pagerank = compute_pagerank and False
+    COMPUTE_PAGERANK = True
+    CHECK_PAGERANK_OUTPUT = COMPUTE_PAGERANK and RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES and True
+    NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG = "PR1_1"
+    NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS = 10
+    SAME_OUTPUT_FOR_ALL_FANOUT_FANIN = not COMPUTE_PAGERANK
+    USE_INCREMENTAL_DAG_GENERATION = COMPUTE_PAGERANK and False
+    INCREMENTAL_DAG_DEPOSIT_INTERVAL = 2
+    WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES =  2**10-1
+    TASKS_USE_RESULT_DICTIONARY_PARAMETER = COMPUTE_PAGERANK and True
+    USE_SHARED_PARTITIONS_GROUPS = COMPUTE_PAGERANK and False
+    USE_PAGERANK_GROUPS_PARTITIONS = COMPUTE_PAGERANK and True
+    USE_STRUCT_OF_ARRAYS_FOR_PAGERANK = COMPUTE_PAGERANK and False
 
 #test workers share memory. worker threads share a global array. 
 #worker processes share Shared Memory
@@ -3200,25 +3200,25 @@ def test39():
 # Note: tcp_server must be running: tcp_server -t 40
 def test40():
     print("test40")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -3248,26 +3248,26 @@ def test40():
     #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
     #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
-    store_sync_objects_in_lambdas = False
-    using_Lambda_Function_Simulators_to_Store_Objects = False
-    sync_objects_in_lambdas_trigger_their_tasks = False
-    using_DAG_orchestrator = False
-    map_objects_to_lambda_functions = False
-    use_anonymous_lambda_functions = False
-    using_single_lambda_function = False
+    STORE_SYNC_OBJECTS_IN_LAMBDAS = False
+    USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS = False
+    SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS = False
+    USING_DAG_ORCHESTRATOR = False
+    MAP_OBJECTS_TO_LAMBDA_FUNCTIONS = False
+    USE_ANONYMOUS_LAMBDA_FUNCTIONS = False
+    USE_SINGLE_LAMBDA_FUNCTION = False
 
-    compute_pagerank = True
-    check_pagerank_output = compute_pagerank and RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES and True
-    name_of_first_groupOrpartition_in_DAG = "PR1_1"
-    number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
-    same_output_for_all_fanout_fanin = not compute_pagerank
-    use_incremental_DAG_generation = compute_pagerank and False
-    incremental_DAG_deposit_interval = 2
-    work_queue_size_for_incremental_DAG_generation_with_worker_processes =  2**10-1
-    tasks_use_result_dictionary_parameter = compute_pagerank and True
-    use_shared_partitions_groups = compute_pagerank and True
-    use_page_rank_group_partitions = compute_pagerank and True
-    use_struct_of_arrays_for_pagerank = compute_pagerank and False
+    COMPUTE_PAGERANK = True
+    CHECK_PAGERANK_OUTPUT = COMPUTE_PAGERANK and RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES and True
+    NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG = "PR1_1"
+    NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS = 10
+    SAME_OUTPUT_FOR_ALL_FANOUT_FANIN = not COMPUTE_PAGERANK
+    USE_INCREMENTAL_DAG_GENERATION = COMPUTE_PAGERANK and False
+    INCREMENTAL_DAG_DEPOSIT_INTERVAL = 2
+    WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES =  2**10-1
+    TASKS_USE_RESULT_DICTIONARY_PARAMETER = COMPUTE_PAGERANK and True
+    USE_SHARED_PARTITIONS_GROUPS = COMPUTE_PAGERANK and True
+    USE_PAGERANK_GROUPS_PARTITIONS = COMPUTE_PAGERANK and True
+    USE_STRUCT_OF_ARRAYS_FOR_PAGERANK = COMPUTE_PAGERANK and False
 
 #Test41: worker threads (A2) with non-selective-wait Sync-objects, 
 #        2 worker threads, Sync-objects stored locally
@@ -3277,25 +3277,25 @@ def test40():
 # Note: tcp_server must be running: tcp_server -t 41
 def test41():
     print("test41")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -3325,26 +3325,26 @@ def test41():
     #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
     #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
-    store_sync_objects_in_lambdas = False
-    using_Lambda_Function_Simulators_to_Store_Objects = False
-    sync_objects_in_lambdas_trigger_their_tasks = False
-    using_DAG_orchestrator = False
-    map_objects_to_lambda_functions = False
-    use_anonymous_lambda_functions = False
-    using_single_lambda_function = False
+    STORE_SYNC_OBJECTS_IN_LAMBDAS = False
+    USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS = False
+    SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS = False
+    USING_DAG_ORCHESTRATOR = False
+    MAP_OBJECTS_TO_LAMBDA_FUNCTIONS = False
+    USE_ANONYMOUS_LAMBDA_FUNCTIONS = False
+    USE_SINGLE_LAMBDA_FUNCTION = False
 
-    compute_pagerank = True
-    check_pagerank_output = compute_pagerank and RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES and True
-    name_of_first_groupOrpartition_in_DAG = "PR1_1"
-    number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
-    same_output_for_all_fanout_fanin = not compute_pagerank
-    use_incremental_DAG_generation = compute_pagerank and False
-    incremental_DAG_deposit_interval = 2
-    work_queue_size_for_incremental_DAG_generation_with_worker_processes =  2**10-1
-    tasks_use_result_dictionary_parameter = compute_pagerank and True
-    use_shared_partitions_groups = compute_pagerank and True
-    use_page_rank_group_partitions = compute_pagerank and False
-    use_struct_of_arrays_for_pagerank = compute_pagerank and False
+    COMPUTE_PAGERANK = True
+    CHECK_PAGERANK_OUTPUT = COMPUTE_PAGERANK and RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES and True
+    NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG = "PR1_1"
+    NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS = 10
+    SAME_OUTPUT_FOR_ALL_FANOUT_FANIN = not COMPUTE_PAGERANK
+    USE_INCREMENTAL_DAG_GENERATION = COMPUTE_PAGERANK and False
+    INCREMENTAL_DAG_DEPOSIT_INTERVAL = 2
+    WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES =  2**10-1
+    TASKS_USE_RESULT_DICTIONARY_PARAMETER = COMPUTE_PAGERANK and True
+    USE_SHARED_PARTITIONS_GROUPS = COMPUTE_PAGERANK and True
+    USE_PAGERANK_GROUPS_PARTITIONS = COMPUTE_PAGERANK and False
+    USE_STRUCT_OF_ARRAYS_FOR_PAGERANK = COMPUTE_PAGERANK and False
 
 #Test 42: worker threads (A2) with non-selective-wait Sync-objects, 
 #        2 worker threads, Sync-objects stored remotely
@@ -3355,25 +3355,25 @@ def test41():
 # Note: tcp_server must be running: tcp_server -t 42
 def test42():
     print("test42")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -3403,26 +3403,26 @@ def test42():
     #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
     #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
-    store_sync_objects_in_lambdas = False
-    using_Lambda_Function_Simulators_to_Store_Objects = False
-    sync_objects_in_lambdas_trigger_their_tasks = False
-    using_DAG_orchestrator = False
-    map_objects_to_lambda_functions = False
-    use_anonymous_lambda_functions = False
-    using_single_lambda_function = False
+    STORE_SYNC_OBJECTS_IN_LAMBDAS = False
+    USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS = False
+    SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS = False
+    USING_DAG_ORCHESTRATOR = False
+    MAP_OBJECTS_TO_LAMBDA_FUNCTIONS = False
+    USE_ANONYMOUS_LAMBDA_FUNCTIONS = False
+    USE_SINGLE_LAMBDA_FUNCTION = False
 
-    compute_pagerank = True
-    check_pagerank_output = compute_pagerank and RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES and True
-    name_of_first_groupOrpartition_in_DAG = "PR1_1"
-    number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
-    same_output_for_all_fanout_fanin = not compute_pagerank
-    use_incremental_DAG_generation = compute_pagerank and False
-    incremental_DAG_deposit_interval = 2
-    work_queue_size_for_incremental_DAG_generation_with_worker_processes =  2**10-1
-    tasks_use_result_dictionary_parameter = compute_pagerank and True
-    use_shared_partitions_groups = compute_pagerank and True
-    use_page_rank_group_partitions = compute_pagerank and True
-    use_struct_of_arrays_for_pagerank = compute_pagerank and True
+    COMPUTE_PAGERANK = True
+    CHECK_PAGERANK_OUTPUT = COMPUTE_PAGERANK and RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES and True
+    NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG = "PR1_1"
+    NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS = 10
+    SAME_OUTPUT_FOR_ALL_FANOUT_FANIN = not COMPUTE_PAGERANK
+    USE_INCREMENTAL_DAG_GENERATION = COMPUTE_PAGERANK and False
+    INCREMENTAL_DAG_DEPOSIT_INTERVAL = 2
+    WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES =  2**10-1
+    TASKS_USE_RESULT_DICTIONARY_PARAMETER = COMPUTE_PAGERANK and True
+    USE_SHARED_PARTITIONS_GROUPS = COMPUTE_PAGERANK and True
+    USE_PAGERANK_GROUPS_PARTITIONS = COMPUTE_PAGERANK and True
+    USE_STRUCT_OF_ARRAYS_FOR_PAGERANK = COMPUTE_PAGERANK and True
 
 #Test43: worker threads (A2) with non-selective-wait Sync-objects, 
 #        2 worker threads, Sync-objects stored remotely
@@ -3433,25 +3433,25 @@ def test42():
 # Note: tcp_server must be running: tcp_server -t 43
 def test43():
     print("test43")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -3481,26 +3481,26 @@ def test43():
     #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
     #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
-    store_sync_objects_in_lambdas = False
-    using_Lambda_Function_Simulators_to_Store_Objects = False
-    sync_objects_in_lambdas_trigger_their_tasks = False
-    using_DAG_orchestrator = False
-    map_objects_to_lambda_functions = False
-    use_anonymous_lambda_functions = False
-    using_single_lambda_function = False
+    STORE_SYNC_OBJECTS_IN_LAMBDAS = False
+    USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS = False
+    SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS = False
+    USING_DAG_ORCHESTRATOR = False
+    MAP_OBJECTS_TO_LAMBDA_FUNCTIONS = False
+    USE_ANONYMOUS_LAMBDA_FUNCTIONS = False
+    USE_SINGLE_LAMBDA_FUNCTION = False
 
-    compute_pagerank = True
-    check_pagerank_output = compute_pagerank and RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES and True
-    name_of_first_groupOrpartition_in_DAG = "PR1_1"
-    number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
-    same_output_for_all_fanout_fanin = not compute_pagerank
-    use_incremental_DAG_generation = compute_pagerank and False
-    incremental_DAG_deposit_interval = 2
-    work_queue_size_for_incremental_DAG_generation_with_worker_processes =  2**10-1
-    tasks_use_result_dictionary_parameter = compute_pagerank and True
-    use_shared_partitions_groups = compute_pagerank and True
-    use_page_rank_group_partitions = compute_pagerank and False
-    use_struct_of_arrays_for_pagerank = compute_pagerank and True
+    COMPUTE_PAGERANK = True
+    CHECK_PAGERANK_OUTPUT = COMPUTE_PAGERANK and RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES and True
+    NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG = "PR1_1"
+    NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS = 10
+    SAME_OUTPUT_FOR_ALL_FANOUT_FANIN = not COMPUTE_PAGERANK
+    USE_INCREMENTAL_DAG_GENERATION = COMPUTE_PAGERANK and False
+    INCREMENTAL_DAG_DEPOSIT_INTERVAL = 2
+    WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES =  2**10-1
+    TASKS_USE_RESULT_DICTIONARY_PARAMETER = COMPUTE_PAGERANK and True
+    USE_SHARED_PARTITIONS_GROUPS = COMPUTE_PAGERANK and True
+    USE_PAGERANK_GROUPS_PARTITIONS = COMPUTE_PAGERANK and False
+    USE_STRUCT_OF_ARRAYS_FOR_PAGERANK = COMPUTE_PAGERANK and True
 
 #Test44: worker processes (A2) with non-selective-wait Sync-objects, 
 #        2 worker processes, Sync-objects stored remotely
@@ -3509,25 +3509,25 @@ def test43():
 # Note: tcp_server must be running: tcp_server -t 44
 def test44():
     print("test44")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -3557,26 +3557,26 @@ def test44():
     #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
     #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
-    store_sync_objects_in_lambdas = False
-    using_Lambda_Function_Simulators_to_Store_Objects = False
-    sync_objects_in_lambdas_trigger_their_tasks = False
-    using_DAG_orchestrator = False
-    map_objects_to_lambda_functions = False
-    use_anonymous_lambda_functions = False
-    using_single_lambda_function = False
+    STORE_SYNC_OBJECTS_IN_LAMBDAS = False
+    USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS = False
+    SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS = False
+    USING_DAG_ORCHESTRATOR = False
+    MAP_OBJECTS_TO_LAMBDA_FUNCTIONS = False
+    USE_ANONYMOUS_LAMBDA_FUNCTIONS = False
+    USE_SINGLE_LAMBDA_FUNCTION = False
 
-    compute_pagerank = True
-    check_pagerank_output = compute_pagerank and RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES and True
-    name_of_first_groupOrpartition_in_DAG = "PR1_1"
-    number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
-    same_output_for_all_fanout_fanin = not compute_pagerank
-    use_incremental_DAG_generation = compute_pagerank and False
-    incremental_DAG_deposit_interval = 2
-    work_queue_size_for_incremental_DAG_generation_with_worker_processes =  2**10-1
-    tasks_use_result_dictionary_parameter = compute_pagerank and True
-    use_shared_partitions_groups = compute_pagerank and True
-    use_page_rank_group_partitions = compute_pagerank and True
-    use_struct_of_arrays_for_pagerank = compute_pagerank and False
+    COMPUTE_PAGERANK = True
+    CHECK_PAGERANK_OUTPUT = COMPUTE_PAGERANK and RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES and True
+    NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG = "PR1_1"
+    NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS = 10
+    SAME_OUTPUT_FOR_ALL_FANOUT_FANIN = not COMPUTE_PAGERANK
+    USE_INCREMENTAL_DAG_GENERATION = COMPUTE_PAGERANK and False
+    INCREMENTAL_DAG_DEPOSIT_INTERVAL = 2
+    WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES =  2**10-1
+    TASKS_USE_RESULT_DICTIONARY_PARAMETER = COMPUTE_PAGERANK and True
+    USE_SHARED_PARTITIONS_GROUPS = COMPUTE_PAGERANK and True
+    USE_PAGERANK_GROUPS_PARTITIONS = COMPUTE_PAGERANK and True
+    USE_STRUCT_OF_ARRAYS_FOR_PAGERANK = COMPUTE_PAGERANK and False
 
 #Test45: worker processes (A2) with non-selective-wait Sync-objects, 
 #        2 worker processes, Sync-objects stored remotely
@@ -3586,25 +3586,25 @@ def test44():
 # Note: tcp_server must be running: tcp_server -t 45
 def test45():
     print("test45")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -3634,26 +3634,26 @@ def test45():
     #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
     #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
-    store_sync_objects_in_lambdas = False
-    using_Lambda_Function_Simulators_to_Store_Objects = False
-    sync_objects_in_lambdas_trigger_their_tasks = False
-    using_DAG_orchestrator = False
-    map_objects_to_lambda_functions = False
-    use_anonymous_lambda_functions = False
-    using_single_lambda_function = False
+    STORE_SYNC_OBJECTS_IN_LAMBDAS = False
+    USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS = False
+    SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS = False
+    USING_DAG_ORCHESTRATOR = False
+    MAP_OBJECTS_TO_LAMBDA_FUNCTIONS = False
+    USE_ANONYMOUS_LAMBDA_FUNCTIONS = False
+    USE_SINGLE_LAMBDA_FUNCTION = False
 
-    compute_pagerank = True
-    check_pagerank_output = compute_pagerank and RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES and True
-    name_of_first_groupOrpartition_in_DAG = "PR1_1"
-    number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
-    same_output_for_all_fanout_fanin = not compute_pagerank
-    use_incremental_DAG_generation = compute_pagerank and False
-    incremental_DAG_deposit_interval = 2
-    work_queue_size_for_incremental_DAG_generation_with_worker_processes =  2**10-1
-    tasks_use_result_dictionary_parameter = compute_pagerank and True
-    use_shared_partitions_groups = compute_pagerank and True
-    use_page_rank_group_partitions = compute_pagerank and False
-    use_struct_of_arrays_for_pagerank = compute_pagerank and False
+    COMPUTE_PAGERANK = True
+    CHECK_PAGERANK_OUTPUT = COMPUTE_PAGERANK and RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES and True
+    NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG = "PR1_1"
+    NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS = 10
+    SAME_OUTPUT_FOR_ALL_FANOUT_FANIN = not COMPUTE_PAGERANK
+    USE_INCREMENTAL_DAG_GENERATION = COMPUTE_PAGERANK and False
+    INCREMENTAL_DAG_DEPOSIT_INTERVAL = 2
+    WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES =  2**10-1
+    TASKS_USE_RESULT_DICTIONARY_PARAMETER = COMPUTE_PAGERANK and True
+    USE_SHARED_PARTITIONS_GROUPS = COMPUTE_PAGERANK and True
+    USE_PAGERANK_GROUPS_PARTITIONS = COMPUTE_PAGERANK and False
+    USE_STRUCT_OF_ARRAYS_FOR_PAGERANK = COMPUTE_PAGERANK and False
 
 #Test46: worker processes (A2) with non-selective-wait Sync-objects, 
 #        2 worker processes, Sync-objects stored remotely
@@ -3664,25 +3664,25 @@ def test45():
 # Note: tcp_server must be running: tcp_server -t 46
 def test46():
     print("test46")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -3712,26 +3712,26 @@ def test46():
     #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
     #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
-    store_sync_objects_in_lambdas = False
-    using_Lambda_Function_Simulators_to_Store_Objects = False
-    sync_objects_in_lambdas_trigger_their_tasks = False
-    using_DAG_orchestrator = False
-    map_objects_to_lambda_functions = False
-    use_anonymous_lambda_functions = False
-    using_single_lambda_function = False
+    STORE_SYNC_OBJECTS_IN_LAMBDAS = False
+    USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS = False
+    SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS = False
+    USING_DAG_ORCHESTRATOR = False
+    MAP_OBJECTS_TO_LAMBDA_FUNCTIONS = False
+    USE_ANONYMOUS_LAMBDA_FUNCTIONS = False
+    USE_SINGLE_LAMBDA_FUNCTION = False
 
-    compute_pagerank = True
-    check_pagerank_output = compute_pagerank and RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES and True
-    name_of_first_groupOrpartition_in_DAG = "PR1_1"
-    number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
-    same_output_for_all_fanout_fanin = not compute_pagerank
-    use_incremental_DAG_generation = compute_pagerank and False
-    incremental_DAG_deposit_interval = 2
-    work_queue_size_for_incremental_DAG_generation_with_worker_processes =  2**10-1
-    tasks_use_result_dictionary_parameter = compute_pagerank and True
-    use_shared_partitions_groups = compute_pagerank and True
-    use_page_rank_group_partitions = compute_pagerank and True
-    use_struct_of_arrays_for_pagerank = compute_pagerank and True
+    COMPUTE_PAGERANK = True
+    CHECK_PAGERANK_OUTPUT = COMPUTE_PAGERANK and RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES and True
+    NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG = "PR1_1"
+    NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS = 10
+    SAME_OUTPUT_FOR_ALL_FANOUT_FANIN = not COMPUTE_PAGERANK
+    USE_INCREMENTAL_DAG_GENERATION = COMPUTE_PAGERANK and False
+    INCREMENTAL_DAG_DEPOSIT_INTERVAL = 2
+    WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES =  2**10-1
+    TASKS_USE_RESULT_DICTIONARY_PARAMETER = COMPUTE_PAGERANK and True
+    USE_SHARED_PARTITIONS_GROUPS = COMPUTE_PAGERANK and True
+    USE_PAGERANK_GROUPS_PARTITIONS = COMPUTE_PAGERANK and True
+    USE_STRUCT_OF_ARRAYS_FOR_PAGERANK = COMPUTE_PAGERANK and True
 
 #Test47: worker processes (A2) with non-selective-wait Sync-objects, 
 #        2 worker processes, Sync-objects stored remotely
@@ -3742,25 +3742,25 @@ def test46():
 # Note: tcp_server must be running: tcp_server -t 47
 def test47():
     print("test47")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -3790,26 +3790,26 @@ def test47():
     #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
     #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
-    store_sync_objects_in_lambdas = False
-    using_Lambda_Function_Simulators_to_Store_Objects = False
-    sync_objects_in_lambdas_trigger_their_tasks = False
-    using_DAG_orchestrator = False
-    map_objects_to_lambda_functions = False
-    use_anonymous_lambda_functions = False
-    using_single_lambda_function = False
+    STORE_SYNC_OBJECTS_IN_LAMBDAS = False
+    USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS = False
+    SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS = False
+    USING_DAG_ORCHESTRATOR = False
+    MAP_OBJECTS_TO_LAMBDA_FUNCTIONS = False
+    USE_ANONYMOUS_LAMBDA_FUNCTIONS = False
+    USE_SINGLE_LAMBDA_FUNCTION = False
 
-    compute_pagerank = True
-    check_pagerank_output = compute_pagerank and RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES and True
-    name_of_first_groupOrpartition_in_DAG = "PR1_1"
-    number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
-    same_output_for_all_fanout_fanin = not compute_pagerank
-    use_incremental_DAG_generation = compute_pagerank and False
-    incremental_DAG_deposit_interval = 2
-    work_queue_size_for_incremental_DAG_generation_with_worker_processes =  2**10-1
-    tasks_use_result_dictionary_parameter = compute_pagerank and True
-    use_shared_partitions_groups = compute_pagerank and True
-    use_page_rank_group_partitions = compute_pagerank and False
-    use_struct_of_arrays_for_pagerank = compute_pagerank and True
+    COMPUTE_PAGERANK = True
+    CHECK_PAGERANK_OUTPUT = COMPUTE_PAGERANK and RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES and True
+    NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG = "PR1_1"
+    NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS = 10
+    SAME_OUTPUT_FOR_ALL_FANOUT_FANIN = not COMPUTE_PAGERANK
+    USE_INCREMENTAL_DAG_GENERATION = COMPUTE_PAGERANK and False
+    INCREMENTAL_DAG_DEPOSIT_INTERVAL = 2
+    WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES =  2**10-1
+    TASKS_USE_RESULT_DICTIONARY_PARAMETER = COMPUTE_PAGERANK and True
+    USE_SHARED_PARTITIONS_GROUPS = COMPUTE_PAGERANK and True
+    USE_PAGERANK_GROUPS_PARTITIONS = COMPUTE_PAGERANK and False
+    USE_STRUCT_OF_ARRAYS_FOR_PAGERANK = COMPUTE_PAGERANK and True
 
 # Test Pagerank with increental DAG generation
 
@@ -3819,25 +3819,25 @@ def test47():
 #        use pagerank groups
 def test48():
     print("test48")
-    global store_sync_objects_in_lambdas
-    global using_Lambda_Function_Simulators_to_Store_Objects
-    global sync_objects_in_lambdas_trigger_their_tasks
-    global using_DAG_orchestrator
-    global map_objects_to_lambda_functions
-    global use_anonymous_lambda_functions
-    global using_single_lambda_function
-    global compute_pagerank
-    global check_pagerank_output
-    global number_of_pagerank_iterations_for_partitions_groups_with_loops 
-    global name_of_first_groupOrpartition_in_DAG
-    global same_output_for_all_fanout_fanin
-    global use_incremental_DAG_generation
-    global incremental_DAG_deposit_interval
-    global work_queue_size_for_incremental_DAG_generation_with_worker_processes
-    global tasks_use_result_dictionary_parameter
-    global use_shared_partitions_groups
-    global use_page_rank_group_partitions
-    global use_struct_of_arrays_for_pagerank
+    global STORE_SYNC_OBJECTS_IN_LAMBDAS
+    global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
+    global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+    global USING_DAG_ORCHESTRATOR
+    global MAP_OBJECTS_TO_LAMBDA_FUNCTIONS
+    global USE_ANONYMOUS_LAMBDA_FUNCTIONS
+    global USE_SINGLE_LAMBDA_FUNCTION
+    global COMPUTE_PAGERANK
+    global CHECK_PAGERANK_OUTPUT
+    global NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS 
+    global NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG
+    global SAME_OUTPUT_FOR_ALL_FANOUT_FANIN
+    global USE_INCREMENTAL_DAG_GENERATION
+    global INCREMENTAL_DAG_DEPOSIT_INTERVAL
+    global WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES
+    global TASKS_USE_RESULT_DICTIONARY_PARAMETER
+    global USE_SHARED_PARTITIONS_GROUPS
+    global USE_PAGERANK_GROUPS_PARTITIONS
+    global USE_STRUCT_OF_ARRAYS_FOR_PAGERANK
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -3867,29 +3867,29 @@ def test48():
     #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
     #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
-    store_sync_objects_in_lambdas = False
-    using_Lambda_Function_Simulators_to_Store_Objects = False
-    sync_objects_in_lambdas_trigger_their_tasks = False
-    using_DAG_orchestrator = False
-    map_objects_to_lambda_functions = False
-    use_anonymous_lambda_functions = False
-    using_single_lambda_function = False
+    STORE_SYNC_OBJECTS_IN_LAMBDAS = False
+    USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS = False
+    SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS = False
+    USING_DAG_ORCHESTRATOR = False
+    MAP_OBJECTS_TO_LAMBDA_FUNCTIONS = False
+    USE_ANONYMOUS_LAMBDA_FUNCTIONS = False
+    USE_SINGLE_LAMBDA_FUNCTION = False
 
-    compute_pagerank = True
-    check_pagerank_output = compute_pagerank and RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES and True
-    name_of_first_groupOrpartition_in_DAG = "PR1_1"
-    number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
-    same_output_for_all_fanout_fanin = not compute_pagerank
-    use_incremental_DAG_generation = compute_pagerank and True
-    incremental_DAG_deposit_interval = 1
-    work_queue_size_for_incremental_DAG_generation_with_worker_processes =  2**10-1
-    tasks_use_result_dictionary_parameter = compute_pagerank and True
-    use_shared_partitions_groups = compute_pagerank and False
-    use_page_rank_group_partitions = compute_pagerank and True
-    use_struct_of_arrays_for_pagerank = compute_pagerank and False
+    COMPUTE_PAGERANK = True
+    CHECK_PAGERANK_OUTPUT = COMPUTE_PAGERANK and RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES and True
+    NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG = "PR1_1"
+    NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS = 10
+    SAME_OUTPUT_FOR_ALL_FANOUT_FANIN = not COMPUTE_PAGERANK
+    USE_INCREMENTAL_DAG_GENERATION = COMPUTE_PAGERANK and True
+    INCREMENTAL_DAG_DEPOSIT_INTERVAL = 1
+    WORK_QUEUE_SIZE_FOR_INCREMENTAL_DAG_GENERATION_WITH_WORKER_PROCESSES =  2**10-1
+    TASKS_USE_RESULT_DICTIONARY_PARAMETER = COMPUTE_PAGERANK and True
+    USE_SHARED_PARTITIONS_GROUPS = COMPUTE_PAGERANK and False
+    USE_PAGERANK_GROUPS_PARTITIONS = COMPUTE_PAGERANK and True
+    USE_STRUCT_OF_ARRAYS_FOR_PAGERANK = COMPUTE_PAGERANK and False
 
 """
-ToDo: test49: mutlithtreaded DAG use_incremental_DAG_generation
+ToDo: test49: mutlithtreaded DAG USE_INCREMENTAL_DAG_GENERATION
 
 ToDo: So no logger stuff if using processes?
 if not using threads:
@@ -3957,15 +3957,15 @@ def check_asserts():
         # if create sync objects on start and executing tasks in lambdas "
         # then we must map them to function so that we can determine the 
         # function an object is in.
-        assert not (CREATE_ALL_FANINS_FANINNBS_ON_START and not RUN_ALL_TASKS_LOCALLY and store_sync_objects_in_lambdas and not map_objects_to_lambda_functions), msg
+        assert not (CREATE_ALL_FANINS_FANINNBS_ON_START and not RUN_ALL_TASKS_LOCALLY and STORE_SYNC_OBJECTS_IN_LAMBDAS and not MAP_OBJECTS_TO_LAMBDA_FUNCTIONS), msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
         if EXIT_PROGRAM_ON_EXCEPTION:
             logging.shutdown()
             os._exit(0)
     #assertOld:
-    #if CREATE_ALL_FANINS_FANINNBS_ON_START and not RUN_ALL_TASKS_LOCALLY and store_sync_objects_in_lambdas:
-    #    if not map_objects_to_lambda_functions:
+    #if CREATE_ALL_FANINS_FANINNBS_ON_START and not RUN_ALL_TASKS_LOCALLY and STORE_SYNC_OBJECTS_IN_LAMBDAS:
+    #    if not MAP_OBJECTS_TO_LAMBDA_FUNCTIONS:
     #        # if create sync objects on start and executing tasks in lambdas "
     #        # then we must map them to function so that we can determine the 
     #        # function an object is in.
@@ -3975,41 +3975,41 @@ def check_asserts():
     #        os._exit(0)
 
     try:
-        msg = "[Error]: Configuration error: if map_objects_to_lambda_functions" + " then use_anonymous_lambda_functions must be False."
+        msg = "[Error]: Configuration error: if MAP_OBJECTS_TO_LAMBDA_FUNCTIONS" + " then USE_ANONYMOUS_LAMBDA_FUNCTIONS must be False."
         # if create sync objects on start then we must map them to function so
         # that we can determine the function an object is in.
-        assert not (map_objects_to_lambda_functions and use_anonymous_lambda_functions), msg
+        assert not (MAP_OBJECTS_TO_LAMBDA_FUNCTIONS and USE_ANONYMOUS_LAMBDA_FUNCTIONS), msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
         if EXIT_PROGRAM_ON_EXCEPTION:
             logging.shutdown()
             os._exit(0)
     #assertOld:
-    #if map_objects_to_lambda_functions:
-    #    if use_anonymous_lambda_functions:
+    #if MAP_OBJECTS_TO_LAMBDA_FUNCTIONS:
+    #    if USE_ANONYMOUS_LAMBDA_FUNCTIONS:
     #        # if create sync objects on start then we must map them to function so
     #        # that we can determine the function an object is in.
-    #        logger.error("[Error]: Configuration error: if map_objects_to_lambda_functions"
-    #            + " then use_anonymous_lambda_functions must be False.")
+    #        logger.error("[Error]: Configuration error: if MAP_OBJECTS_TO_LAMBDA_FUNCTIONS"
+    #            + " then USE_ANONYMOUS_LAMBDA_FUNCTIONS must be False.")
     #        logging.shutdown()
     #        os._exit(0)
 
     try:
-        msg = "[Error]: Configuration error: if sync_objects_in_lambdas_trigger_their_tasks" + " then not RUN_ALL_TASKS_LOCALLY must be True."
+        msg = "[Error]: Configuration error: if SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS" + " then not RUN_ALL_TASKS_LOCALLY must be True."
         # if create sync objects on start then we must map them to function so
         # that we can determine the function an object is in.
-        assert not (sync_objects_in_lambdas_trigger_their_tasks and RUN_ALL_TASKS_LOCALLY), msg
+        assert not (SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS and RUN_ALL_TASKS_LOCALLY), msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
         if EXIT_PROGRAM_ON_EXCEPTION:
             logging.shutdown()
             os._exit(0)
     #assertOld:
-    #if sync_objects_in_lambdas_trigger_their_tasks:
+    #if SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS:
     #    if RUN_ALL_TASKS_LOCALLY:
     #        # if create sync objects on start then we must map them to function so
     #        # that we can determine the function an object is in.
-    #        logger.error("[Error]: Configuration error: if sync_objects_in_lambdas_trigger_their_tasks"
+    #        logger.error("[Error]: Configuration error: if SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS"
     #            + " then not RUN_ALL_TASKS_LOCALLY must be True.")
     #        logging.shutdown()
     #        os._exit(0)
@@ -4017,14 +4017,14 @@ def check_asserts():
     try:
         msg = "[Error]: Configuration error: incremental_DAG_generation" + " requires not CREATE_ALL_FANINS_FANINNBS_ON_START" \
             + " i.e., create synch objects on the fly since we don't know all of the synch objects " + " at the start (the DAG is not complete)"
-        assert not (compute_pagerank and use_incremental_DAG_generation and CREATE_ALL_FANINS_FANINNBS_ON_START), msg
+        assert not (COMPUTE_PAGERANK and USE_INCREMENTAL_DAG_GENERATION and CREATE_ALL_FANINS_FANINNBS_ON_START), msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
         if EXIT_PROGRAM_ON_EXCEPTION:
             logging.shutdown()
             os._exit(0)
     # assertOld:
-    #if compute_pagerank and use_incremental_DAG_generation and CREATE_ALL_FANINS_FANINNBS_ON_START:
+    #if COMPUTE_PAGERANK and USE_INCREMENTAL_DAG_GENERATION and CREATE_ALL_FANINS_FANINNBS_ON_START:
     #    logger.error("[Error]: Configuration error: incremental_DAG_generation"
     #        + " requires not CREATE_ALL_FANINS_FANINNBS_ON_START"
     #        + " i.e., create synch objects on the fly since we don't know all of the synch objects "
@@ -4033,64 +4033,64 @@ def check_asserts():
     #    os._exit(0) 
 
     try:
-        msg = "[Error]: Configuration error: incremental_DAG_deposit_interval" + " must be >= 1. We mod by incremental_DAG_deposit_interval so it" \
+        msg = "[Error]: Configuration error: INCREMENTAL_DAG_DEPOSIT_INTERVAL" + " must be >= 1. We mod by INCREMENTAL_DAG_DEPOSIT_INTERVAL so it" \
             + " cannot be 0 and using a negative number makes no sense."
-        assert not (incremental_DAG_deposit_interval < 1), msg
+        assert not (INCREMENTAL_DAG_DEPOSIT_INTERVAL < 1), msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
         if EXIT_PROGRAM_ON_EXCEPTION:
             logging.shutdown()
             os._exit(0)
     #assertOld:
-    #if incremental_DAG_deposit_interval < 1:
-    #    logger.error("[Error]: Configuration error: incremental_DAG_deposit_interval"
-    #        + " must be >= 1. We mod by incremental_DAG_deposit_interval so it"
+    #if INCREMENTAL_DAG_DEPOSIT_INTERVAL < 1:
+    #    logger.error("[Error]: Configuration error: INCREMENTAL_DAG_DEPOSIT_INTERVAL"
+    #        + " must be >= 1. We mod by INCREMENTAL_DAG_DEPOSIT_INTERVAL so it"
     #        + " cannot be 0 and using a negative number makes no sense.")
     #    logging.shutdown()
     #    os._exit(0) 
 
     try:
-        msg = "[Error]: Configuration error: if same_output_for_all_fanout_fanin" + " then must be computing pagerank."
-        assert not (not same_output_for_all_fanout_fanin and not compute_pagerank), msg
+        msg = "[Error]: Configuration error: if SAME_OUTPUT_FOR_ALL_FANOUT_FANIN" + " then must be computing pagerank."
+        assert not (not SAME_OUTPUT_FOR_ALL_FANOUT_FANIN and not COMPUTE_PAGERANK), msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
         if EXIT_PROGRAM_ON_EXCEPTION:
             logging.shutdown()
             os._exit(0)
     #assertOld:
-    #if not same_output_for_all_fanout_fanin and not compute_pagerank:
-    #    logger.error("[Error]: Configuration error: if same_output_for_all_fanout_fanin"
+    #if not SAME_OUTPUT_FOR_ALL_FANOUT_FANIN and not COMPUTE_PAGERANK:
+    #    logger.error("[Error]: Configuration error: if SAME_OUTPUT_FOR_ALL_FANOUT_FANIN"
     #        + " then must be computing pagerank.")
     #    logging.shutdown()
     #    os._exit(0)
 
     try:
         msg = "[Error]: Configuration error: if using a single shared array of" + " partitions or groups then must run_tasks_locally and be USING_THREADS_NOT_PROCESSES."
-        assert not (compute_pagerank and (use_struct_of_arrays_for_pagerank and not use_shared_partitions_groups)), msg
+        assert not (COMPUTE_PAGERANK and (USE_STRUCT_OF_ARRAYS_FOR_PAGERANK and not USE_SHARED_PARTITIONS_GROUPS)), msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
         if EXIT_PROGRAM_ON_EXCEPTION:
             logging.shutdown()
             os._exit(0)
     #assertOld:
-    #if compute_pagerank and (use_struct_of_arrays_for_pagerank and not use_shared_partitions_groups):
-    #    logger.error("[Error]: Configuration error: if use_struct_of_arrays_for_pagerank"
-    #        + " then must use_shared_partitions_groups.")
+    #if COMPUTE_PAGERANK and (USE_STRUCT_OF_ARRAYS_FOR_PAGERANK and not USE_SHARED_PARTITIONS_GROUPS):
+    #    logger.error("[Error]: Configuration error: if USE_STRUCT_OF_ARRAYS_FOR_PAGERANK"
+    #        + " then must USE_SHARED_PARTITIONS_GROUPS.")
     #    logging.shutdown()
     #    os._exit(0)
 
     try:
-        msg = "[Error]: Configuration error: if use_struct_of_arrays_for_pagerank" + " then must use_shared_partitions_groups."
-        assert not (compute_pagerank and (use_struct_of_arrays_for_pagerank and not use_shared_partitions_groups)), msg
+        msg = "[Error]: Configuration error: if USE_STRUCT_OF_ARRAYS_FOR_PAGERANK" + " then must USE_SHARED_PARTITIONS_GROUPS."
+        assert not (COMPUTE_PAGERANK and (USE_STRUCT_OF_ARRAYS_FOR_PAGERANK and not USE_SHARED_PARTITIONS_GROUPS)), msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
         if EXIT_PROGRAM_ON_EXCEPTION:
             logging.shutdown()
             os._exit(0)
     #assertOld:
-    #if compute_pagerank and (use_struct_of_arrays_for_pagerank and not use_shared_partitions_groups):
-    #    logger.error("[Error]: Configuration error: if use_struct_of_arrays_for_pagerank"
-    #        + " then must use_shared_partitions_groups.")
+    #if COMPUTE_PAGERANK and (USE_STRUCT_OF_ARRAYS_FOR_PAGERANK and not USE_SHARED_PARTITIONS_GROUPS):
+    #    logger.error("[Error]: Configuration error: if USE_STRUCT_OF_ARRAYS_FOR_PAGERANK"
+    #        + " then must USE_SHARED_PARTITIONS_GROUPS.")
     #    logging.shutdown()
     #    os._exit(0)
 
