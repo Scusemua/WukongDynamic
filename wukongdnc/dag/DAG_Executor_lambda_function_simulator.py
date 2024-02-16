@@ -12,12 +12,12 @@ from wukongdnc.server.message_handler_lambda import MessageHandler
 from .DAG_executor_State import DAG_executor_State
 #from .DAG_info import DAG_Info
 from wukongdnc.server.util import make_json_serializable
-#from .DAG_executor_constants import store_fanins_faninNBs_locally 
-#from .DAG_executor_constants import FanIn_Type, FanInNB_Type
+#from .DAG_executor_constants import STORE_FANINS_FANINNBS_LOCALLY 
+#from .DAG_executor_constants import FANIN_TYPE, FANINNB_TYPE
 #from .DAG_executor_constants import using_single_lambda_function
-#from .DAG_executor_constants import create_all_fanins_faninNBs_on_start, map_objects_to_lambda_functions
-#from .DAG_executor_constants import exit_program_on_exception
-#from .DAG_executor_constants import exit_program_on_exception
+#from .DAG_executor_constants import CREATE_ALL_FANINS_FANINNBS_ON_START, map_objects_to_lambda_functions
+#from .DAG_executor_constants import EXIT_PROGRAM_ON_EXCEPTION
+#from .DAG_executor_constants import EXIT_PROGRAM_ON_EXCEPTION
 from . import DAG_executor_constants
 
 import logging 
@@ -126,7 +126,7 @@ class DAG_orchestrator:
 
 			message = {
 				"op": "create",
-				"type": DAG_executor_constants.FanIn_Type,
+				"type": DAG_executor_constants.FANIN_TYPE,
 				"name": fanin_name,
 				"state": make_json_serializable(dummy_state),	
 				"id": msg_id
@@ -150,13 +150,13 @@ class DAG_orchestrator:
 			# call fanin will put the start state of the fanin task in the work_queue. (FaninNb
 			# cannot do this since the faninNB will be on the tcp_server.)
 			dummy_state.keyword_arguments['start_state_fanin_task'] = DAG_states[fanin_nameNB]
-			dummy_state.keyword_arguments['store_fanins_faninNBs_locally'] = DAG_executor_constants.store_fanins_faninNBs_locally
+			dummy_state.keyword_arguments['STORE_FANINS_FANINNBS_LOCALLY'] = DAG_executor_constants.STORE_FANINS_FANINNBS_LOCALLY
 			dummy_state.keyword_arguments['DAG_info'] = DAG_info
 			msg_id = str(uuid.uuid4())
 
 			message = {
 				"op": "create",
-				"type": DAG_executor_constants.FanInNB_Type,
+				"type": DAG_executor_constants.FANINNB_TYPE,
 				"name": fanin_nameNB,
 				"state": make_json_serializable(dummy_state),	
 				"id": msg_id
@@ -286,7 +286,7 @@ class DAG_orchestrator:
 			logger.trace("DAG_Orchestrator: Triggered: Sending 'process_enqueued_fan_ins' message to lambda function for " + sync_object_name)
 			logger.trace("SDAG_Orchestrator: length of enqueue's list: " + str(len(list_of_fan_in_ops)))
 			
-			if not DAG_executor_constants.create_all_fanins_faninNBs_on_start:
+			if not DAG_executor_constants.CREATE_ALL_FANINS_FANINNBS_ON_START:
 				# we will invoke a lambda that stores the fanin object but this object will be created
 				# on the fly.
 				# This object is either a true fanin object or it is a fanout object that we are treating
@@ -311,7 +311,7 @@ class DAG_orchestrator:
 					# call fanin will put the start state of the fanin task in the work_queue. (FaninNb
 					# cannot do this since the faninNB will be on the tcp_server.)
 					dummy_state.keyword_arguments['start_state_fanin_task'] = self.DAG_states[sync_object_name]
-					dummy_state.keyword_arguments['store_fanins_faninNBs_locally'] = DAG_executor_constants.store_fanins_faninNBs_locally
+					dummy_state.keyword_arguments['STORE_FANINS_FANINNBS_LOCALLY'] = DAG_executor_constants.STORE_FANINS_FANINNBS_LOCALLY
 					dummy_state.keyword_arguments['DAG_info'] = self.DAG_info
 				else: # fanin
 					# passing to the fanin object:
@@ -408,7 +408,7 @@ class DAG_orchestrator:
 					except Exception:
 						logger.exception("[ERROR]: " + thread_name + ": invoke_lambda_synchronously: Failed to run lambda handler for synch object: " 
 					   		+ sync_object_name)
-						if DAG_executor_constants.exit_program_on_exception:
+						if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
 							logging.shutdown()
 							os._exit(0) 
 			else:
@@ -432,7 +432,7 @@ class DAG_orchestrator:
 					logger.trace("DAG_Orchestrator: called simulated_lambda_function.lambda_handler(payload)")
 				except Exception:
 					logger.exception("[ERROR]: " + thread_name + ": invoke_lambda_synchronously: Failed to run lambda handler for synch object: " + sync_object_name)
-					if DAG_executor_constants.exit_program_on_exception:
+					if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
 						logging.shutdown()
 						os._exit(0) 					
 
@@ -660,7 +660,7 @@ Scheme: The Lambda_Function_Simulator(), which stores a sych object does:
 				raise ValueError("Error - FanIn init has too many args.")
 			self._n = kwargs['n']
 			self.start_state_fanin_task = kwargs['start_state_fanin_task']
-			self.store_fanins_faninNBs_locally = kwargs['store_fanins_faninNBs_locally']
+			self.STORE_FANINS_FANINNBS_LOCALLY = kwargs['STORE_FANINS_FANINNBS_LOCALLY']
 			self.DAG_info = kwargs['DAG_info'] 
 	for Fanin and Fanin_Select: only ref kwargs['n']
 
@@ -696,7 +696,7 @@ Scheme: The Lambda_Function_Simulator(), which stores a sych object does:
 		except Exception as ex: 
 			logger.exception("[ERROR] DAG_executor_FanInNB_Select: Failed to start DAG_executor.DAG_executor_lambda"
 				+ " for triggered task " + fanin_task_name)
-			if exit_program_on_exception:
+			if EXIT_PROGRAM_ON_EXCEPTION:
 				logging.shutdown()
 				os._exit(0) 
 
@@ -742,7 +742,7 @@ control message that is passed to the lambda.
 		# (i.e., the becomes task) this result will be non-zero and the server will put the 
 		# start state of the fanin task in the work_queue, which is also on the server.
 		dummy_state.keyword_arguments['start_state_fanin_task'] = DAG_states[fanin_nameNB]
-		dummy_state.keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
+		dummy_state.keyword_arguments['STORE_FANINS_FANINNBS_LOCALLY'] = STORE_FANINS_FANINNBS_LOCALLY
 		dummy_state.keyword_arguments['DAG_info'] = DAG_info
 	This is the info that must be passed to init() when an object is created. But now 
 	the create is being initiated on-the-fly, when the object is first needed, not by 
@@ -751,7 +751,7 @@ control message that is passed to the lambda.
 	The information above, and where we can get it is:
 	- DAG_info, which is input by the tcp_server_lambda (and tcp_server) so we don't
 	  have to input it on the clients or the driver and pass it to the tcp_server(lambda).
-	- store_fanins_faninNBs_locally is false, by definition, i.e., we are storing objects
+	- STORE_FANINS_FANINNBS_LOCALLY is false, by definition, i.e., we are storing objects
 	  in lambdas which means "remotely". (Storing objects on the tc_server is also "remotely.")
 	- n we can get from the pair list_n_pair, which is used by the DAG_orchestrator. (The 
 	  lits is the list of fanin messages, and n is the size of the fanin.)
@@ -898,7 +898,7 @@ into a message.
 	logger.trace("DAG_Orchestrator: Triggered: Sending 'process_enqueued_fan_ins' message to lambda function for " + sync_object_name)
 	logger.trace("SDAG_Orchestrator: length of enqueue's list: " + str(len(list_of_fan_in_ops)))
 	
-	if not create_all_fanins_faninNBs_on_start:
+	if not CREATE_ALL_FANINS_FANINNBS_ON_START:
 		# we will invoke a lambda that stores the fanin object but this object will be created
 		# on the fly.
 		# This object is either a true fanin object or it is a fanout object that we are treating
@@ -923,7 +923,7 @@ into a message.
 			# call fanin will put the start state of the fanin task in the work_queue. (FaninNb
 			# cannot do this since the faninNB will be on the tcp_server.)
 			dummy_state.keyword_arguments['start_state_fanin_task'] = self.DAG_states[sync_object_name]
-			dummy_state.keyword_arguments['store_fanins_faninNBs_locally'] = store_fanins_faninNBs_locally
+			dummy_state.keyword_arguments['STORE_FANINS_FANINNBS_LOCALLY'] = STORE_FANINS_FANINNBS_LOCALLY
 			dummy_state.keyword_arguments['DAG_info'] = self.DAG_info
 		else: # fanin
 			# passing to the fanin object:
@@ -967,19 +967,19 @@ def process_enqueued_fan_ins(self,message=None):
 	....
 	list_of_messages = message['name']
 
-	if not create_all_fanins_faninNBs_on_start:
+	if not CREATE_ALL_FANINS_FANINNBS_ON_START:
 		dummy_state_for_creation_message = decode_and_deserialize(message["state"])
 		fanin_name = dummy_state_for_creation_message.keyword_arguments['fanin_name']
 		is_fanin = dummy_state_for_creation_message.keyword_arguments['is_fanin']
 		if is_fanin:
-			fanin_type = FanIn_Type
+			FANIN_TYPE = FANIN_TYPE
 		else:
-			fanin_type = FanInNB_Type
+			FANIN_TYPE = FANINNB_TYPE
 
 		msg_id = str(uuid.uuid4())	# for debugging
 		 = {
 			"op": "create",
-			"type": fanin_type,
+			"type": FANIN_TYPE,
 			"name": fanin_name,
 			"state": make_json_serializable(dummy_state_for_creation_message),	
 			"id": msg_id

@@ -1,8 +1,8 @@
-#from .DAG_executor_constants import run_all_tasks_locally #, using_threads_not_processes
+#from .DAG_executor_constants import RUN_ALL_TASKS_LOCALLY #, USING_THREADS_NOT_PROCESSES
 from . import DAG_executor_constants
 
 # data dictionary for task results
 data_dict = None
-#if using_threads_not_processes and run_all_tasks_locally:
-if DAG_executor_constants.run_all_tasks_locally or not DAG_executor_constants.run_all_tasks_locally:
+#if USING_THREADS_NOT_PROCESSES and RUN_ALL_TASKS_LOCALLY:
+if DAG_executor_constants.RUN_ALL_TASKS_LOCALLY or not DAG_executor_constants.RUN_ALL_TASKS_LOCALLY:
     data_dict = {}

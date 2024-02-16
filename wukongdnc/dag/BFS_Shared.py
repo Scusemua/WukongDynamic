@@ -3,14 +3,14 @@ import numpy as np
 #import os
 from multiprocessing import shared_memory
 
-#from .DAG_executor_constants import use_page_rank_group_partitions, using_threads_not_processes
+#from .DAG_executor_constants import use_page_rank_group_partitions, USING_THREADS_NOT_PROCESSES
 from . import DAG_executor_constants
 
 #from .BFS import num_nodes
 logger = logging.getLogger(__name__)
 
 """
-if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
+if not (not USING_THREADS_NOT_PROCESSES or USE_MULTITHREADED_MULTIPROCESSING):
     logger.setLevel(logging.ERROR)
     formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
     ch = logging.StreamHandler()
@@ -833,7 +833,7 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
         print("")
 
         #if (debug_pagerank):
-        if not DAG_executor_constants.using_threads_not_processes:
+        if not DAG_executor_constants.USING_THREADS_NOT_PROCESSES:
             logger.trace("PageRank output tuples for " + task_file_name + ": ")
             print_val = ""
             for k, v in PageRank_output.items():
@@ -865,7 +865,7 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
         print("pagerank:")
         print(str(pagerank))
 
-        if not DAG_executor_constants.using_threads_not_processes:
+        if not DAG_executor_constants.USING_THREADS_NOT_PROCESSES:
             #rhc shared
             print_val = "XXPageRank result for " + task_file_name + ": " # + "\n"
             for node_index in range (starting_position_in_partition_group,starting_position_in_partition_group+num_nodes_for_pagerank_computation):

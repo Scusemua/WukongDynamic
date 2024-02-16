@@ -1,5 +1,5 @@
 import threading
-#from .DAG_executor_constants import using_threads_not_processes, using_workers
+#from .DAG_executor_constants import USING_THREADS_NOT_PROCESSES, USING_WORKERS
 from . import DAG_executor_constants
 
 # When using threads, this is a global counter used to atomically count the number
@@ -28,11 +28,11 @@ class Counter(object):
 # tasks_completed_counter
 
 completed_tasks_counter = None
-if DAG_executor_constants.using_workers and DAG_executor_constants.using_threads_not_processes:
+if DAG_executor_constants.USING_WORKERS and DAG_executor_constants.USING_THREADS_NOT_PROCESSES:
     completed_tasks_counter = Counter(0)
 
 #rhc: counter 
 # completed_workers_counter
 completed_workers_counter = None
-if DAG_executor_constants.using_workers and DAG_executor_constants.using_threads_not_processes:
+if DAG_executor_constants.USING_WORKERS and DAG_executor_constants.USING_THREADS_NOT_PROCESSES:
     completed_workers_counter = Counter(0)

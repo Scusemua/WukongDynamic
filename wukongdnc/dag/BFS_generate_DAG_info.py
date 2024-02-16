@@ -9,12 +9,12 @@ from .BFS_Shared import PageRank_Function_Driver_Shared_Fast
 #from .DAG_executor_constants import use_shared_partitions_groups, use_page_rank_group_partitions
 #from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
 #from .DAG_executor_constants import enable_runtime_task_clustering
-#from .DAG_executor_constants import exit_program_on_exception
+#from .DAG_executor_constants import EXIT_PROGRAM_ON_EXCEPTION
 from . import DAG_executor_constants
 logger = logging.getLogger(__name__)
 
 """
-if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
+if not (not USING_THREADS_NOT_PROCESSES or USE_MULTITHREADED_MULTIPROCESSING):
     logger.setLevel(logging.ERROR)
     formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
     ch = logging.StreamHandler()
@@ -320,7 +320,7 @@ def generate_DAG_info():
                 assert senderX in leaf_tasks_of_partitions , msg
             except AssertionError:
                 logger.exception("[Error]: assertion failed")
-                if DAG_executor_constants.exit_program_on_exception:
+                if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                     logging.shutdown()
                     os._exit(0)
             #assertOld:
@@ -731,7 +731,7 @@ def generate_DAG_info():
                 assert senderX in leaf_tasks_of_groups , msg
             except AssertionError:
                 logger.exception("[Error]: assertion failed")
-                if DAG_executor_constants.exit_program_on_exception:
+                if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                     logging.shutdown()
                     os._exit(0)
             #assertOld:

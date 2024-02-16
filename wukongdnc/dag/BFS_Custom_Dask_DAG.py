@@ -4,7 +4,7 @@ import os
 # May want to use numpy arrays eventually for better cache performance
 #import numpy as np
 from .BFS_Partition_Node import Partition_Node
-#from .DAG_executor_constants import exit_program_on_exception
+#from .DAG_executor_constants import EXIT_PROGRAM_ON_EXCEPTION
 from . import DAG_executor_constants
 
 logger = logging.getLogger(__name__)
@@ -92,7 +92,7 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
                 assert partition_or_group[shadow_node_index].isShadowNode , "[Error]: node is not a shadow node"
             except AssertionError:
                 logger.exception("[Error]: assertion failed")
-                if DAG_executor_constants.exit_program_on_exception:
+                if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                     logging.shutdown()
                     os._exit(0)
             # assertOld:
@@ -217,7 +217,7 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples):
                     partition_or_group[index].prev = partition_or_group[index].pagerank
         
         """
-        if run_all_tasks_locally and using_threads_not_processes:
+        if RUN_ALL_TASKS_LOCALLY and USING_THREADS_NOT_PROCESSES:
             logger.trace("PageRanks: ")
             for i in range(num_nodes_for_pagerank_computation):
                 if not partition_or_group[i].isShadowNode:

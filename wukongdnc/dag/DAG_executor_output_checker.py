@@ -1,5 +1,5 @@
 import os
-#from wukongdnc.dag.DAG_executor_constants import exit_program_on_exception
+#from wukongdnc.dag.DAG_executor_constants import EXIT_PROGRAM_ON_EXCEPTION
 from . import DAG_executor_constants
 
 import logging
@@ -26,7 +26,7 @@ def set_pagerank_output(state,output):
         assert multiple_output is None , msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
-        if DAG_executor_constants.exit_program_on_exception:
+        if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
             logging.shutdown()
             os._exit(0)
     #assertOld:

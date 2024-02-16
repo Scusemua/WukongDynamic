@@ -10,7 +10,7 @@ from .BFS_Shared import PageRank_Function_Driver_Shared_Fast
 #from .DAG_executor_constants import use_shared_partitions_groups
 #from .DAG_executor_constants import use_struct_of_arrays_for_pagerank
 #from .DAG_executor_constants import enable_runtime_task_clustering
-#from .DAG_executor_constants import exit_program_on_exception
+#from .DAG_executor_constants import EXIT_PROGRAM_ON_EXCEPTION
 from . import DAG_executor_constants
 
 from .BFS_generate_DAG_info import Group_senders, Group_receivers
@@ -229,7 +229,7 @@ be a group in groups_of_previous_partition (i.e., it is a group in the same part
 logger = logging.getLogger(__name__)
 
 """
-if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
+if not (not USING_THREADS_NOT_PROCESSES or USE_MULTITHREADED_MULTIPROCESSING):
     logger.setLevel(logging.ERROR)
     formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
     ch = logging.StreamHandler()
@@ -796,7 +796,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
             assert len(groups_of_current_partition) == 1 , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
-            if DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                 logging.shutdown()
                 os._exit(0)
         #assertOld:
@@ -812,7 +812,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
             assert current_partition_state == Group_next_state , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
-            if DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                 logging.shutdown()
                 os._exit(0)
         #assertOld:
@@ -841,7 +841,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
             assert senders is None , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
-            if DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                 logging.shutdown()
                 os._exit(0)
         # assertOld:
@@ -1003,7 +1003,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                     assert not (len(groups_of_current_partition) > 1), msg
                 except AssertionError:
                     logger.exception("[Error]: assertion failed")
-                    if DAG_executor_constants.exit_program_on_exception:
+                    if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                         logging.shutdown()
                         os._exit(0)
                 # assertOld:
@@ -1400,7 +1400,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
             #    assert not (len(receiver_set_for_previous_group) == 0) , msg
             #except AssertionError:
             #    logger.exception("[Error]: assertion failed")
-            #    if exit_program_on_exception:
+            #    if EXIT_PROGRAM_ON_EXCEPTION:
             #        logging.shutdown()
             #        os._exit(0)
             # assertOld:
@@ -1502,7 +1502,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                             assert not receiverY in Group_all_collapse_task_names , msg
                         except AssertionError:
                             logger.exception("[Error]: assertion failed")
-                            if DAG_executor_constants.exit_program_on_exception:
+                            if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                                 logging.shutdown()
                                 os._exit(0)
                         #assertOld:
@@ -1592,7 +1592,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 logger.error("DAG_map:")
                 for key, value in Group_DAG_map.items():
                     logger.trace(str(key) + ' : ' + str(value))
-                if DAG_executor_constants.exit_program_on_exception:
+                if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                     logging.shutdown()
                     os._exit(0)            
             #assertOld:

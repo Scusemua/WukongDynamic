@@ -701,11 +701,11 @@ import logging
 # this BFS.py file, we need to addLoggingLevel. We intend to 
 # always use TestAll.
 try:
-    #from wukongdnc.dag.DAG_executor_constants import log_level
+    #from wukongdnc.dag.DAG_executor_constants import LOG_LEVEL
     from . import DAG_executor_constants
     from .addLoggingLevel import addLoggingLevel
     addLoggingLevel('TRACE', logging.DEBUG - 5)
-    logging.basicConfig(encoding='utf-8',level=DAG_executor_constants.log_level, format='[%(asctime)s][%(module)s][%(processName)s][%(threadName)s]: %(message)s')
+    logging.basicConfig(encoding='utf-8',level=DAG_executor_constants.LOG_LEVEL, format='[%(asctime)s][%(module)s][%(processName)s][%(threadName)s]: %(message)s')
     # Added this to suppress the logging message:
     #   credentials - MainProcess - MainThread: Found credentials in shared credentials file: ~/.aws/credentials
     # But it appears that we could see other things liek this:
@@ -725,14 +725,14 @@ except AttributeError:
 
 #from .DAG_executor_constants import use_shared_partitions_groups, use_page_rank_group_partitions
 #from .DAG_executor_constants import use_struct_of_arrays_for_pagerank, compute_pagerank
-#from .DAG_executor_constants import use_incremental_DAG_generation, using_workers
-#from .DAG_executor_constants import run_all_tasks_locally, using_threads_not_processes
+#from .DAG_executor_constants import use_incremental_DAG_generation, USING_WORKERS
+#from .DAG_executor_constants import RUN_ALL_TASKS_LOCALLY, USING_THREADS_NOT_PROCESSES
 #from .DAG_executor_constants import incremental_DAG_deposit_interval
 #from .DAG_executor_constants import check_pagerank_output
-#from .DAG_executor_constants import using_threads_not_processes
+#from .DAG_executor_constants import USING_THREADS_NOT_PROCESSES
 #from .DAG_executor_constants import use_multithreaded_BFS
 #from .DAG_executor_constants import enable_runtime_task_clustering
-#from .DAG_executor_constants import exit_program_on_exception
+#from .DAG_executor_constants import EXIT_PROGRAM_ON_EXCEPTION
 from . import DAG_executor_constants
 
 from .BFS_Node import Node
@@ -753,7 +753,7 @@ from .BFS_generate_shared_partitions_groups import generate_shared_partitions_gr
 # This will either be a DAG_infoBuffer_Monitor or a DAG_infoBuffer_Monitor_for_Lambdas
 from .DAG_infoBuffer_Monitor_for_threads import DAG_infobuffer_monitor
 from .BFS_DAG_Generator_Multithreaded import DAG_Generator_Multithreaded
-#if not using_workers:
+#if not USING_WORKERS:
 #    import wukongdnc.dag.DAG_infoBuffer_Monitor_for_lambdas_for_threads 
 #    DAG_infobuffer_monitor = wukongdnc.dag.DAG_infoBuffer_Monitor_for_lambdas_for_threads .DAG_infobuffer_monitor
 #else:
@@ -774,10 +774,10 @@ from .DAG_executor_output_checker import verify_pagerank_outputs
 from wukongdnc.constants import TCP_SERVER_IP
 
 logger = logging.getLogger(__name__)
-#if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
+#if not (not USING_THREADS_NOT_PROCESSES or USE_MULTITHREADED_MULTIPROCESSING):
     #logger.setLevel(logging.DEBUG)
     #logger.setLevel("TRACE")
-    #logger.setLevel(log_level)
+    #logger.setLevel(LOG_LEVEL)
 
     #formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
     #ch = logging.StreamHandler()
@@ -1209,7 +1209,7 @@ def dfs_parent(visited, node):  #function for dfs
                 assert not (parent_partition_parent_index == -1 or parent_group_parent_index == -1), msg
             except AssertionError:
                 logger.exception("[Error]: assertion failed")
-                if DAG_executor_constants.exit_program_on_exception:
+                if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                     logging.shutdown()
                     os._exit(0)
             # assertOld: The index values are not -1, which is the value of the 
@@ -1350,7 +1350,7 @@ def dfs_parent(visited, node):  #function for dfs
                     assert not (parent_group_parent_index != -1) , msg
                 except AssertionError:
                     logger.exception("[Error]: assertion failed")
-                    if DAG_executor_constants.exit_program_on_exception:
+                    if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                         logging.shutdown()
                         os._exit(0)
                 # assertOld:
@@ -1421,7 +1421,7 @@ def dfs_parent(visited, node):  #function for dfs
             assert partition_group_tuple != None , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
-            if DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                 logging.shutdown()
                 os._exit(0)
         if partition_group_tuple != None:   # if this is false it's an error (see the else-part)
@@ -1445,7 +1445,7 @@ def dfs_parent(visited, node):  #function for dfs
                 assert not (parent_partition_number == -1) , msg
             except AssertionError:
                 logger.exception("[Error]: assertion failed")
-                if DAG_executor_constants.exit_program_on_exception:
+                if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                     logging.shutdown()
                     os._exit(0)
             # assertOld: parent_partition_number != -1. We set the parent's partition number
@@ -1613,7 +1613,7 @@ def dfs_parent(visited, node):  #function for dfs
                         assert not (current_partition_isLoop == False) , msg
                     except AssertionError:
                         logger.exception("[Error]: assertion failed")
-                        if DAG_executor_constants.exit_program_on_exception:
+                        if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                             logging.shutdown()
                             os._exit(0)
                     # assertOld: we should have detected a loop above. 
@@ -1636,7 +1636,7 @@ def dfs_parent(visited, node):  #function for dfs
                     assert partition_group_tuple != None , msg
                 except AssertionError:
                     logger.exception("[Error]: assertion failed")
-                    if DAG_executor_constants.exit_program_on_exception:
+                    if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                         logging.shutdown()
                         os._exit(0)
                 if partition_group_tuple != None:
@@ -1708,7 +1708,7 @@ def dfs_parent(visited, node):  #function for dfs
                             assert not (current_group_isLoop == False) , msg
                         except AssertionError:
                             logger.exception("[Error]: assertion failed")
-                            if DAG_executor_constants.exit_program_on_exception:
+                            if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                                 logging.shutdown()
                                 os._exit(0)
                         # assertOld:
@@ -1892,7 +1892,7 @@ def dfs_parent(visited, node):  #function for dfs
                             assert parent_index_in_groups_list == parent_group_position , msg
                         except AssertionError:
                             logger.exception("[Error]: assertion failed")
-                            if DAG_executor_constants.exit_program_on_exception:
+                            if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                                 logging.shutdown()
                                 os._exit(0)
                         #assertOld:
@@ -2504,7 +2504,7 @@ def dfs_parent(visited, node):  #function for dfs
             assert node.partition_number == -1 , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
-            if DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                 logging.shutdown()
                 os._exit(0)
 
@@ -2875,7 +2875,7 @@ def bfs(visited, node):
             assert change_in_shadow_nodes_for_groups == 0 , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
-            if DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                 logging.shutdown()
                 os._exit(0)
         # assertOld:
@@ -2942,7 +2942,7 @@ def bfs(visited, node):
                     assert not (ID == -1) , msg
                 except AssertionError:
                     logger.exception("[Error]: assertion failed")
-                    if DAG_executor_constants.exit_program_on_exception:
+                    if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                         logging.shutdown()
                         os._exit(0)
                 #assertOld: 
@@ -3285,7 +3285,7 @@ def bfs(visited, node):
                         assert partition_index_of_parent != -1 , msg
                     except AssertionError:
                         logger.exception("[Error]: assertion failed")
-                        if DAG_executor_constants.exit_program_on_exception:
+                        if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                             logging.shutdown()
                             os._exit(0)
         
@@ -3447,7 +3447,7 @@ def bfs(visited, node):
                         + " num_nodes: " + str(num_nodes) + " to_be_continued: "
                         + str(to_be_continued))
 
-                    if DAG_executor_constants.using_workers or not DAG_executor_constants.using_workers:
+                    if DAG_executor_constants.USING_WORKERS or not DAG_executor_constants.USING_WORKERS:
                         if not DAG_executor_constants.use_page_rank_group_partitions:
                             logger.info("BFS: calling generate_DAG_info_incremental_partitions for"
                                 + " partition " + str(partition_name) + " using workers.")
@@ -3488,7 +3488,7 @@ def bfs(visited, node):
                                     assert partition_name in BFS_generate_DAG_info.leaf_tasks_of_partitions_incremental , msg
                                 except AssertionError:
                                     logger.exception("[Error]: assertion failed")
-                                    if DAG_executor_constants.exit_program_on_exception:
+                                    if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                                         logging.shutdown()
                                         os._exit(0)
                                 #assertOld:
@@ -3505,7 +3505,7 @@ def bfs(visited, node):
                                     assert group_name in BFS_generate_DAG_info.leaf_tasks_of_groups_incremental , msg
                                 except AssertionError:
                                     logger.exception("[Error]: assertion failed")
-                                    if DAG_executor_constants.exit_program_on_exception:
+                                    if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                                         logging.shutdown()
                                         os._exit(0)
                                 #assertOld:
@@ -3779,7 +3779,7 @@ def bfs(visited, node):
                                             #DAG_leaf_task_start_states_incremental = DAG_info.get_DAG_leaf_task_start_states()
                                             DAG_map_incremental = DAG_info.get_DAG_map()
 
-                                            if DAG_executor_constants.using_workers or not DAG_executor_constants.using_workers:
+                                            if DAG_executor_constants.USING_WORKERS or not DAG_executor_constants.USING_WORKERS:
                                                 # leaf task states (a task is identified by its state) are put in work_queue
                                                 for name in BFS_generate_DAG_info.leaf_tasks_of_partitions_incremental:
                                                     state_incremental = DAG_states_incremental[name]
@@ -3791,7 +3791,7 @@ def bfs(visited, node):
                                                         assert not (len(task_inputs) != 0) , msg
                                                     except AssertionError:
                                                         logger.exception("[Error]: assertion failed")
-                                                        if DAG_executor_constants.exit_program_on_exception:
+                                                        if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                                                             logging.shutdown()
                                                             os._exit(0)
                                                     # assertOld:
@@ -3806,7 +3806,7 @@ def bfs(visited, node):
                                                         assert task_name == name , msg
                                                     except AssertionError:
                                                         logger.exception("[Error]: assertion failed")
-                                                        if DAG_executor_constants.exit_program_on_exception:
+                                                        if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                                                             logging.shutdown()
                                                             os._exit(0)
                                                     #assertOld:
@@ -3885,7 +3885,7 @@ def bfs(visited, node):
                                             DAG_map_incremental = DAG_info.get_DAG_map()
 
 #rhc: issue: don't do this for lambdas?
-                                            if DAG_executor_constants.using_workers or not DAG_executor_constants.using_workers:
+                                            if DAG_executor_constants.USING_WORKERS or not DAG_executor_constants.USING_WORKERS:
                                                 # leaf task states (a task is identified by its state) are put in work_queue
                                                 for name in BFS_generate_DAG_info.leaf_tasks_of_groups_incremental:
                                                     state_incremental = DAG_states_incremental[name]
@@ -3897,7 +3897,7 @@ def bfs(visited, node):
                                                         assert not (len(task_inputs) != 0) , msg
                                                     except AssertionError:
                                                         logger.exception("[Error]: assertion failed")
-                                                        if DAG_executor_constants.exit_program_on_exception:
+                                                        if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                                                             logging.shutdown()
                                                             os._exit(0)
                                                     # assertOld:
@@ -3912,7 +3912,7 @@ def bfs(visited, node):
                                                         assert task_name == name , msg
                                                     except AssertionError:
                                                         logger.exception("[Error]: assertion failed")
-                                                        if DAG_executor_constants.exit_program_on_exception:
+                                                        if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                                                             logging.shutdown()
                                                             os._exit(0)
                                                     #assertOld:
@@ -4036,7 +4036,7 @@ def bfs(visited, node):
                         + " num_graph_nodes_in_partitions: " + str(num_graph_nodes_in_partitions)
                         + " num_nodes: " + str(num_nodes) + " to_be_continued: "
                         + str(to_be_continued))
-                    if DAG_executor_constants.using_workers or not DAG_executor_constants.using_workers:
+                    if DAG_executor_constants.USING_WORKERS or not DAG_executor_constants.USING_WORKERS:
                         if not DAG_executor_constants.use_page_rank_group_partitions:
                             #logger.trace("BFS: calling deposit for"
                             #    + " partition " + str(partition_name) + " using workers.")
@@ -4332,7 +4332,7 @@ def bfs(visited, node):
                         assert group_index_of_parent != -1, msg
                     except AssertionError:
                         logger.exception("[Error]: assertion failed")
-                        if DAG_executor_constants.exit_program_on_exception:
+                        if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                             logging.shutdown()
                             os._exit(0)
                     #assertOld:
@@ -4426,7 +4426,7 @@ def bfs(visited, node):
         except ValueError:
             logger.exception("[Error]: PageRank_Function: ValueError:"
                 + "*******bfs: " + str(node.ID)+ " not in frontier.")
-            if exit_program_on_exception:
+            if EXIT_PROGRAM_ON_EXCEPTION:
                 logging.shutdown()
                 os._exit(0)
 
@@ -4660,7 +4660,7 @@ def input_graph():
         assert (num_edges - num_self_loops) == count_child_edges , msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
-        if DAG_executor_constants.exit_program_on_exception:
+        if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
             logging.shutdown()
             os._exit(0)
     #assertOld:
@@ -4685,7 +4685,7 @@ def input_graph():
         assert (num_edges - num_self_loops) == count_parent_edges , msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
-        if DAG_executor_constants.exit_program_on_exception:
+        if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
             logging.shutdown()
             os._exit(0)
     #assertOld:
@@ -4912,7 +4912,7 @@ def print_BFS_stats():
         assert not (len(visited) != num_nodes) , msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
-        if DAG_executor_constants.exit_program_on_exception:
+        if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
             logging.shutdown()
             os._exit(0)
     #assertOld:
@@ -4945,7 +4945,7 @@ def print_BFS_stats():
             assert not (sum_of_partition_lengths != num_nodes) , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
-            if DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                 logging.shutdown()
                 os._exit(0)
         #if sum_of_partition_lengths != num_nodes:
@@ -4965,7 +4965,7 @@ def print_BFS_stats():
                     assert not (shared_partition_length != num_nodes) , msg
                 except AssertionError:
                     logger.exception("[Error]: assertion failed")
-                    if DAG_executor_constants.exit_program_on_exception:
+                    if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                         logging.shutdown()
                         os._exit(0)
                 #assertOld:
@@ -4997,7 +4997,7 @@ def print_BFS_stats():
             assert not (sum_of_groups_lengths != num_nodes) , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
-            if DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                 logging.shutdown()
                 os._exit(0)
         #if sum_of_groups_lengths != num_nodes:
@@ -5020,7 +5020,7 @@ def print_BFS_stats():
                     assert not (shared_groups_length != num_nodes) , msg
                 except AssertionError:
                     logger.exception("[Error]: assertion failed")
-                    if DAG_executor_constants.exit_program_on_exception:
+                    if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                         logging.shutdown()
                         os._exit(0)
                 #if shared_groups_length != num_nodes:
@@ -5104,7 +5104,7 @@ def print_BFS_stats():
         assert not len(frontiers[frontiers_length-1]) != 0 , msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
-        if DAG_executor_constants.exit_program_on_exception:
+        if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
             logging.shutdown()
             os._exit(0)
     # assertOld: 
@@ -5442,7 +5442,7 @@ def main():
     # only DAGS we generate ourselves, so far.
     if DAG_executor_constants.compute_pagerank and DAG_executor_constants.use_incremental_DAG_generation:
         # create the connections to tcp_server needed for  
-        if (DAG_executor_constants.run_all_tasks_locally and DAG_executor_constants.using_workers and not DAG_executor_constants.using_threads_not_processes): 
+        if (DAG_executor_constants.RUN_ALL_TASKS_LOCALLY and DAG_executor_constants.USING_WORKERS and not DAG_executor_constants.USING_THREADS_NOT_PROCESSES): 
             # Config: A5, A6
             # sent the create() for work_queue to the tcp server in the DAG_executor_driver
             websocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -5450,7 +5450,7 @@ def main():
             DAG_infobuffer_monitor = Remote_Client_for_DAG_infoBuffer_Monitor(websocket)
             DAG_infobuffer_monitor.create()
             logger.info("BFS: created Remote DAG_infobuffer_monitor.")
-        elif not DAG_executor_constants.run_all_tasks_locally:
+        elif not DAG_executor_constants.RUN_ALL_TASKS_LOCALLY:
             websocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             websocket.connect(TCP_SERVER_IP)
             DAG_infobuffer_monitor = Remote_Client_for_DAG_infoBuffer_Monitor_for_Lambdas(websocket)
@@ -5492,7 +5492,7 @@ def main():
         assert not (len(current_partition) > 0), msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
-        if DAG_executor_constants.exit_program_on_exception:
+        if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
             logging.shutdown()
             os._exit(0)
 
@@ -5626,7 +5626,7 @@ def main():
             assert not (len(frontier) > 0) , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
-            if DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                 logging.shutdown()
                 os._exit(0)
         #assertOld:
@@ -5696,7 +5696,7 @@ def main():
 
         run()
 
-        if DAG_executor_constants.use_struct_of_arrays_for_pagerank and DAG_executor_constants.use_shared_partitions_groups and not DAG_executor_constants.using_threads_not_processes:
+        if DAG_executor_constants.use_struct_of_arrays_for_pagerank and DAG_executor_constants.use_shared_partitions_groups and not DAG_executor_constants.USING_THREADS_NOT_PROCESSES:
             logger.trace("\nBFS:Close and unlink shared memory.")
             try:
                 BFS_Shared.close_shared_memory()
@@ -5704,7 +5704,7 @@ def main():
             except Exception:
                 logger.exception("[Error]: PageRank_Function:"
                     + " BFS: Failed to close or unlink shared memory.")
-                if DAG_executor_constants.exit_program_on_exception:
+                if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                     logging.shutdown()
                     os._exit(0)
     else:
@@ -5725,7 +5725,7 @@ def main():
 
     if DAG_executor_constants.check_pagerank_output:
         # True when: comuting pagerank and using thread workers/lambdas
-        # compute_pagerank and run_all_tasks_locally and (using_workers or not using_workers) and using_threads_not_processes
+        # compute_pagerank and RUN_ALL_TASKS_LOCALLY and (USING_WORKERS or not USING_WORKERS) and USING_THREADS_NOT_PROCESSES
         if DAG_executor_constants.use_page_rank_group_partitions:
             number_of_groups_or_partitions = len(groups)
         else:

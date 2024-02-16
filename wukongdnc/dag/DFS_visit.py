@@ -17,7 +17,7 @@ import copy
 import logging 
 import os
 
-#from .DAG_executor_constants import exit_program_on_exception
+#from .DAG_executor_constants import EXIT_PROGRAM_ON_EXCEPTION
 print("DFS_visit import DEC")
 from . import DAG_executor_constants
 
@@ -323,7 +323,7 @@ class Node:
             assert not (len(fanouts) + len(fanins) + len(faninNBs) + len(collapse) != number_dependents_of_T), msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
-            if DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                 logging.shutdown()
                 os._exit(0)
         #assertOld:
@@ -334,7 +334,7 @@ class Node:
             assert not (len(fanins) > 0 and not (len(fanins) == 1 and len(fanouts) == 0 and len(faninNBs) == 0)), msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
-            if DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                 logging.shutdown()
                 os._exit(0)
         #assertOld:
@@ -346,7 +346,7 @@ class Node:
             assert not (len(faninNBs) > 0 and len(fanins) > 0), msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
-            if DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                 logging.shutdown()
                 os._exit(0)
         #assertOld:
@@ -359,7 +359,7 @@ class Node:
             assert not (len(collapse) > 0 and not (len(fanins) == 0 and len(fanouts) == 0 and len(faninNBs) == 0)), msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
-            if DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                 logging.shutdown()
                 os._exit(0)
         #assertOld:
@@ -688,7 +688,7 @@ def main():
         assert not (len(Node.DAG_leaf_tasks) == 0), msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
-        if DAG_executor_constants.exit_program_on_exception:
+        if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
             logging.shutdown()
             os._exit(0)
     #assertOld:

@@ -2,7 +2,7 @@ import logging
 import logging.handlers
 import os
 
-#from .DAG_executor_constants import exit_program_on_exception
+#from .DAG_executor_constants import EXIT_PROGRAM_ON_EXCEPTION
 from . import DAG_executor_constants
 
 # https://docs.python.org/3/howto/logging-cookbook.html
@@ -80,7 +80,7 @@ def listener_process(queue, configurer):
             logger.handle(record)  # No level or filter logic applied - just do it!
         except Exception:
             logger.exception("[ERROR] Problen with listener_process.")
-            if DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                 logging.shutdown()
                 os._exit(0) 
 

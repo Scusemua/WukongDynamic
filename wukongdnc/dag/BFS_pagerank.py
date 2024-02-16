@@ -5,16 +5,16 @@ import os
 from .BFS_Partition_Node import Partition_Node
 from . import BFS_Shared
 #from .BFS import num_nodes
-#from .DAG_executor_constants import use_page_rank_group_partitions, using_threads_not_processes
+#from .DAG_executor_constants import use_page_rank_group_partitions, USING_THREADS_NOT_PROCESSES
 #from .DAG_executor_constants import number_of_pagerank_iterations_for_partitions_groups_with_loops
-#from .DAG_executor_constants import exit_program_on_exception
+#from .DAG_executor_constants import EXIT_PROGRAM_ON_EXCEPTION
 #from .DAG_executor_constants import input_all_groups_partitions_at_start
 from . import DAG_executor_constants
 
 logger = logging.getLogger(__name__)
 
 """
-if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
+if not (not USING_THREADS_NOT_PROCESSES or USE_MULTITHREADED_MULTIPROCESSING):
     logger.setLevel(logging.ERROR)
     formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
     ch = logging.StreamHandler()
@@ -276,7 +276,7 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partiti
         except EOFError:
             logger.exception("[Error]: PageRank_Function: EOFError:"
                 + " complete_task_file_name:" + str(complete_task_file_name))
-            if DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                 logging.shutdown()
                 os._exit(0)
     else:
@@ -285,7 +285,7 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partiti
             assert not (groups_partitions == []) , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
-            if DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                 logging.shutdown()
                 os._exit(0)
         #assertOld:
@@ -398,7 +398,7 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partiti
             assert partition_or_group[shadow_node_index].isShadowNode , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
-            if DAG_executor_constants.exit_program_on_exception:
+            if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                 logging.shutdown()
                 os._exit(0)
         # assertOld:
@@ -564,7 +564,7 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partiti
                 partition_or_group[index].prev = partition_or_group[index].pagerank
     
     """
-    if run_all_tasks_locally and using_threads_not_processes:
+    if RUN_ALL_TASKS_LOCALLY and USING_THREADS_NOT_PROCESSES:
         logger.trace("PageRanks: ")
         for i in range(num_nodes_for_pagerank_computation):
             if not partition_or_group[i].isShadowNode:
@@ -628,14 +628,14 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partiti
 
     #if (debug_pagerank):
     print("XXPageRank output tuples for " + task_file_name + ":")
-    if not DAG_executor_constants.using_threads_not_processes:
+    if not DAG_executor_constants.USING_THREADS_NOT_PROCESSES:
         logger.trace("XXPageRank output tuples for " + task_file_name + ": ")
     print_val = ""
     for k, v in PageRank_output.items():
-        if not DAG_executor_constants.using_threads_not_processes:
+        if not DAG_executor_constants.USING_THREADS_NOT_PROCESSES:
             print_val += "(%s, %s) " % (k, v)
         print((k, v),end=" ")
-    if not DAG_executor_constants.using_threads_not_processes:
+    if not DAG_executor_constants.USING_THREADS_NOT_PROCESSES:
         logger.trace(print_val)
         logger.trace("")
         logger.trace("")
@@ -645,17 +645,17 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partiti
 
     result_tuple_list = []
     print("XXPageRank result for " + task_file_name + ":", end=" ")
-    if not DAG_executor_constants.using_threads_not_processes:
+    if not DAG_executor_constants.USING_THREADS_NOT_PROCESSES:
         logger.trace("XXPageRank result for " + task_file_name + ": ")
     print_val = ""
     for i in range(num_nodes_for_pagerank_computation):
         if not partition_or_group[i].isShadowNode:
-            if not DAG_executor_constants.using_threads_not_processes:
+            if not DAG_executor_constants.USING_THREADS_NOT_PROCESSES:
                 print_val += "%s:%s " % (partition_or_group[i].ID, partition_or_group[i].pagerank)
             result_tuple = (partition_or_group[i].ID,partition_or_group[i].pagerank)
             result_tuple_list.append(result_tuple)
             print(str(partition_or_group[i].ID) + ":" + str(partition_or_group[i].pagerank),end=" ")
-    if not DAG_executor_constants.using_threads_not_processes:
+    if not DAG_executor_constants.USING_THREADS_NOT_PROCESSES:
         logger.trace(print_val)
         logger.trace("")
         logger.trace("")
@@ -859,7 +859,7 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
                 assert shared_nodes[position_of_shadow_node].isShadowNodee , msg
             except AssertionError:
                 logger.exception("[Error]: assertion failed")
-                if DAG_executor_constants.exit_program_on_exception:
+                if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                     logging.shutdown()
                     os._exit(0)
             # assertOld:
@@ -946,7 +946,7 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
                 assert shared_nodes[position_of_shadow_node].pagerank == pagerank_value , msg
             except AssertionError:
                 logger.exception("[Error]: assertion failed")
-                if DAG_executor_constants.exit_program_on_exception:
+                if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                     logging.shutdown()
                     os._exit(0)
             #assertOld:
@@ -996,7 +996,7 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
                 assert parent_of_shadow_node.pagerank == pagerank_value_of_parent_node , msg
             except AssertionError:
                 logger.exception("[Error]: assertion failed")
-                if DAG_executor_constants.exit_program_on_exception:
+                if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                     logging.shutdown()
                     os._exit(0)
             #assertOld:
@@ -1192,7 +1192,7 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
                     shared_nodes[node_index].prev = shared_nodes[node_index].pagerank
         
         """
-        if run_all_tasks_locally and using_threads_not_processes:
+        if RUN_ALL_TASKS_LOCALLY and USING_THREADS_NOT_PROCESSES:
             logger.trace("PageRanks: ")
             for i in range(num_nodes_for_pagerank_computation):
                 if not partition_or_group[i].isShadowNode:
@@ -1411,15 +1411,15 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
 
         #if (debug_pagerank):
         print("XXPageRank output tuples for " + task_file_name + ":")
-        if not DAG_executor_constants.using_threads_not_processes:
+        if not DAG_executor_constants.USING_THREADS_NOT_PROCESSES:
             logger.trace("XXPageRank output tuples for " + task_file_name + ": ")
 
         print_val = ""
         for k, v in PageRank_output.items():
-            if not DAG_executor_constants.using_threads_not_processes:
+            if not DAG_executor_constants.USING_THREADS_NOT_PROCESSES:
                 print_val += "(%s, %s) " % (k, v)
             print((k, v),end=" ")
-        if not DAG_executor_constants.using_threads_not_processes:
+        if not DAG_executor_constants.USING_THREADS_NOT_PROCESSES:
             logger.trace(print_val)
             logger.trace("")
             logger.trace("")        
@@ -1431,7 +1431,7 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
         # pagerank value, so we can return it to DAG_executor.
         result_tuple_list = []
         print("XXPageRank result for " + task_file_name + ":", end=" ")
-        if not DAG_executor_constants.using_threads_not_processes:
+        if not DAG_executor_constants.USING_THREADS_NOT_PROCESSES:
             logger.trace("XXPageRank result for " + task_file_name + ": ")
 
         #rhc shared
@@ -1448,10 +1448,10 @@ def PageRank_Function_Shared(task_file_name,total_num_nodes,input_tuples,shared_
                 result_tuple = (node_ID,node_pagerank)
                 result_tuple_list.append(result_tuple)
                 print(str(node_ID) + ":" + str(node_pagerank),end=" ")
-                if not DAG_executor_constants.using_threads_not_processes:
+                if not DAG_executor_constants.USING_THREADS_NOT_PROCESSES:
                     print_val += "%s:%s " % (shared_nodes[node_index].ID, shared_nodes[node_index].pagerank)
 
-        if not DAG_executor_constants.using_threads_not_processes:
+        if not DAG_executor_constants.USING_THREADS_NOT_PROCESSES:
             logger.trace(print_val)
             logger.trace("")
             logger.trace("")

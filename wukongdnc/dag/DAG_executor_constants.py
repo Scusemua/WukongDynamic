@@ -7,8 +7,8 @@ all the configurations and how to set the confguration flags below.
 import logging
 import os
 
-# log_level = logging.INFO
-log_level = "INFO"
+# LOG_LEVEL = logging.INFO
+LOG_LEVEL = "INFO"
 logger = logging.getLogger(__name__)
 
 # using INFO level for this constants file - no logger.trace() calls
@@ -20,22 +20,22 @@ ch.setLevel(logging.INFO)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
-exit_program_on_exception = True
+EXIT_PROGRAM_ON_EXCEPTION = True
 
 # Configuraion:
 #
 # True if we are not using Lambdas, i.e., executing tasks with threads or processes
 # local, i.e., on one machine.
-run_all_tasks_locally = True         # vs run tasks remotely (in Lambdas)
+RUN_ALL_TASKS_LOCALLY = True         # vs run tasks remotely (in Lambdas)
 # True if we want to bypass the call to lambda_client.invoke() so that we
 # do not actually create a real Lambda; instead, invoke_lambda_DAG_executor()
 # in invoker.y will call lambda_handler(payload_json,None) directly, where
 # lambda_handler() is defned locally in invoker.py, i.e., is not the actual
 # handler, which is defined in handlerDAG.py. This lets us test the code
 # for real lambdas without actually creating real Lambdas.
-# Note: if this is True then run_all_tasks_locally must be False. 
+# Note: if this is True then RUN_ALL_TASKS_LOCALLY must be False. 
 # This is assserted below.
-bypass_call_lambda_client_invoke = (not run_all_tasks_locally) and True
+BYPASS_CALL_LAMBDA_CLIENT_INVOKE = (not RUN_ALL_TASKS_LOCALLY) and True
 # True if synch objects are stored locally, i.e., in the memory of the single
 # machine on which the threads are executing.  If we are using multiprocessing
 # or Lambdas, this must be False. When False, the synch objects are stored
@@ -43,8 +43,8 @@ bypass_call_lambda_client_invoke = (not run_all_tasks_locally) and True
 # Note: When using partitions instead of groups, partition i 
 # has a collapse to partition i+1, so there are no synch objects
 # needed when we are using partitions, so it does not matter
-# whether we set store_fanins_faninNBs_locally to True or False.
-store_fanins_faninNBs_locally = True
+# whether we set STORE_FANINS_FANINNBS_LOCALLY to True or False.
+STORE_FANINS_FANINNBS_LOCALLY = True
 # True when all FanIn and FanInNB objects are created locally or on the
 # tcp_server or IniniX all at once at the start of the DAG execution. If
 # False, synch objects are created on the fly, i.e, we execute create-and-fanin
@@ -52,33 +52,33 @@ store_fanins_faninNBs_locally = True
 # execute a Fan_in operaation on the created object.
 # 
 # This must be false if we aer doing incremental_DAG_generation; this is assserted below.
-create_all_fanins_faninNBs_on_start = False
+CREATE_ALL_FANINS_FANINNBS_ON_START = False
 
 # True if the DAG is executed by a "pool" of threads/processes. False, if we are
 # using Lambdas or we are using threads to simulate the use of Lambdas. In the latter
 # case, instead of, e.g., starting a Lambda at fan_out operations, we start a thread.
 # This results in the creation of many threads and is only use to test the logic 
 # of the Lambda code.
-using_workers = True
+USING_WORKERS = True
 # True when we are not using Lambas and tasks are executed by threads instead of processes. 
 # False when we are not using lambdas and are using multiprocesssing 
-using_threads_not_processes = True
-# When using_workers, this is how many threads or processes in the pool.
+USING_THREADS_NOT_PROCESSES = True
+# When USING_WORKERS, this is how many threads or processes in the pool.
 # When not using workers, this value is ignored.
-num_workers = 2
-# Use one or more worker processes (num_workers) with one or more threads
-use_multithreaded_multiprocessing = False
-num_threads_for_multithreaded_multiprocessing = 1
+NUM_WORKERS = 2
+# Use one or more worker processes (NUM_WORKERS) with one or more threads
+USE_MULTITHREADED_MULTIPROCESSING = False
+NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
 # if using lambdas to store synch objects, run tcp_server_lambda.
 # if store in regular python functions instead of real Lambdas
 # set using_Lambda_Function_Simulator = True
-FanIn_Type = "DAG_executor_FanIn"
-FanInNB_Type = "DAG_executor_FanInNB"
-process_work_queue_Type = "BoundedBuffer"
-#FanIn_Type = "DAG_executor_FanIn_Select"
-#FanInNB_Type = "DAG_executor_FanInNB_Select"
-#process_work_queue_Type = "BoundedBuffer_Select"
+FANIN_TYPE = "DAG_executor_FanIn"
+FANINNB_TYPE = "DAG_executor_FanInNB"
+PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+#FANIN_TYPE = "DAG_executor_FanIn_Select"
+#FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+#PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
 # if running real lambdas or storing synch objects in real lambdas:
 #   Set SERVERLESS_SYNC to True or False in wukongdnc constants !!!!!!!!!!!!!!
@@ -137,7 +137,7 @@ use_anonymous_lambda_functions = False
 using_single_lambda_function = False
 
 # For all: remote objects, using select objects:
-# 1. run_all_tasks_locally = True, create objects on start = True:
+# 1. RUN_ALL_TASKS_LOCALLY = True, create objects on start = True:
 # TTFFTF: no trigger and no DAG_orchestrator, but map objects 
 # (anon is false) and create objects on start
 # variations:
@@ -145,7 +145,7 @@ using_single_lambda_function = False
 # b. change map to F, and anon to T: Note: no function lock since anon caled only once
 # c. change D_O to F, map F, anon T: Note: no function lock since anon caled only once
 #
-# 2. run_all_tasks_locally = False (s0 using_workers = False), create objects on start = True:
+# 2. RUN_ALL_TASKS_LOCALLY = False (s0 USING_WORKERS = False), create objects on start = True:
 # Note: not running real lambdas yet, so need TTT, i.e., not using threads
 #       to simulate lambdas and not running real lambdas yet, so need to
 #       trigger lambdas, which means store objects in lambdas and they call
@@ -169,85 +169,85 @@ using_single_lambda_function = False
 #    invoke the function to do an op on the object more than once.
 
 try:
-    msg = "[Error]: Configuration error: if using_workers then must run_all_tasks_locally."
-    assert not (using_workers and not run_all_tasks_locally), msg
+    msg = "[Error]: Configuration error: if USING_WORKERS then must RUN_ALL_TASKS_LOCALLY."
+    assert not (USING_WORKERS and not RUN_ALL_TASKS_LOCALLY), msg
 except AssertionError:
     logger.exception("[Error]: assertion failed")
-    if exit_program_on_exception:
+    if EXIT_PROGRAM_ON_EXCEPTION:
         logging.shutdown()
         os._exit(0)
 #assertOld:
-#if using_workers and not run_all_tasks_locally:
-#    logger.error("[Error]: Configuration error: if using_workers then must run_all_tasks_locally.")
+#if USING_WORKERS and not RUN_ALL_TASKS_LOCALLY:
+#    logger.error("[Error]: Configuration error: if USING_WORKERS then must RUN_ALL_TASKS_LOCALLY.")
 #    logging.shutdown()
 #    os._exit(0)  
 
 try:
-    msg = "[Error]: Configuration error: if not run_all_tasks_locally (i.e., using real lambdas) then objects cannot be stored locally."
-    assert not (not run_all_tasks_locally and store_fanins_faninNBs_locally), msg
+    msg = "[Error]: Configuration error: if not RUN_ALL_TASKS_LOCALLY (i.e., using real lambdas) then objects cannot be stored locally."
+    assert not (not RUN_ALL_TASKS_LOCALLY and STORE_FANINS_FANINNBS_LOCALLY), msg
 except AssertionError:
     logger.exception("[Error]: assertion failed")
-    if exit_program_on_exception:
+    if EXIT_PROGRAM_ON_EXCEPTION:
         logging.shutdown()
         os._exit(0)
 #assertOld:
-#if not run_all_tasks_locally and store_fanins_faninNBs_locally:
-#    logger.error("[Error]: Configuration error: if not run_all_tasks_locally (i.e., using real lambdas) then objects cannot be stored locally.")
+#if not RUN_ALL_TASKS_LOCALLY and STORE_FANINS_FANINNBS_LOCALLY:
+#    logger.error("[Error]: Configuration error: if not RUN_ALL_TASKS_LOCALLY (i.e., using real lambdas) then objects cannot be stored locally.")
 #    logging.shutdown()
 #   os._exit(0) 
 
 try:
-    msg = "[Error]: Configuration error: if bypass_call_lambda_client_invoke then must be running real Lambdas" \
-        + " i.e., not run_all_tasks_locally."
-    assert not (bypass_call_lambda_client_invoke and run_all_tasks_locally), msg
+    msg = "[Error]: Configuration error: if BYPASS_CALL_LAMBDA_CLIENT_INVOKE then must be running real Lambdas" \
+        + " i.e., not RUN_ALL_TASKS_LOCALLY."
+    assert not (BYPASS_CALL_LAMBDA_CLIENT_INVOKE and RUN_ALL_TASKS_LOCALLY), msg
 except AssertionError:
     logger.exception("[Error]: assertion failed")
-    if exit_program_on_exception:
+    if EXIT_PROGRAM_ON_EXCEPTION:
         logging.shutdown()
         os._exit(0)
 #assertOld:
-#if bypass_call_lambda_client_invoke and run_all_tasks_locally:
-#   logger.error("[Error]: Configuration error: if bypass_call_lambda_client_invoke then must be running real Lambdas"
-#       + " i.e., not run_all_tasks_locally.")
+#if BYPASS_CALL_LAMBDA_CLIENT_INVOKE and RUN_ALL_TASKS_LOCALLY:
+#   logger.error("[Error]: Configuration error: if BYPASS_CALL_LAMBDA_CLIENT_INVOKE then must be running real Lambdas"
+#       + " i.e., not RUN_ALL_TASKS_LOCALLY.")
 #    logging.shutdown()
 #    os._exit(0)  
 
 try:
-    msg = "[Error]: Configuration error: if using_workers and not using_threads_not_processes" \
-        + " then store_fanins_faninNBs_locally must be False."
-    assert not (using_workers and not using_threads_not_processes and store_fanins_faninNBs_locally), msg
+    msg = "[Error]: Configuration error: if USING_WORKERS and not USING_THREADS_NOT_PROCESSES" \
+        + " then STORE_FANINS_FANINNBS_LOCALLY must be False."
+    assert not (USING_WORKERS and not USING_THREADS_NOT_PROCESSES and STORE_FANINS_FANINNBS_LOCALLY), msg
 except AssertionError:
     logger.exception("[Error]: assertion failed")
-    if exit_program_on_exception:
+    if EXIT_PROGRAM_ON_EXCEPTION:
         logging.shutdown()
         os._exit(0)
 #assertOld:
-#if using_workers and not using_threads_not_processes:
-#    if store_fanins_faninNBs_locally:
+#if USING_WORKERS and not USING_THREADS_NOT_PROCESSES:
+#    if STORE_FANINS_FANINNBS_LOCALLY:
 #        # When using worker processed, synch objects must be stored remoely
-#        logger.error("[Error]: Configuration error: if using_workers and not using_threads_not_processes"
-#            + " then store_fanins_faninNBs_locally must be False.")
+#        logger.error("[Error]: Configuration error: if USING_WORKERS and not USING_THREADS_NOT_PROCESSES"
+#            + " then STORE_FANINS_FANINNBS_LOCALLY must be False.")
 #        logging.shutdown()
 #       os._exit(0)
 
 try:
-    msg = "[Error]: Configuration error: if create_all_fanins_faninNBs_on_start" + " then map_objects_to_functions must be True."
+    msg = "[Error]: Configuration error: if CREATE_ALL_FANINS_FANINNBS_ON_START" + " then map_objects_to_functions must be True."
     # if create sync objects on start and executing tasks in lambdas "
     # then we must map them to function so that we can determine the 
     # function an object is in.
-    assert not (create_all_fanins_faninNBs_on_start and not run_all_tasks_locally and store_sync_objects_in_lambdas and not map_objects_to_lambda_functions), msg
+    assert not (CREATE_ALL_FANINS_FANINNBS_ON_START and not RUN_ALL_TASKS_LOCALLY and store_sync_objects_in_lambdas and not map_objects_to_lambda_functions), msg
 except AssertionError:
     logger.exception("[Error]: assertion failed")
-    if exit_program_on_exception:
+    if EXIT_PROGRAM_ON_EXCEPTION:
         logging.shutdown()
         os._exit(0)
 #assertOld:
-#if create_all_fanins_faninNBs_on_start and not run_all_tasks_locally and store_sync_objects_in_lambdas:
+#if CREATE_ALL_FANINS_FANINNBS_ON_START and not RUN_ALL_TASKS_LOCALLY and store_sync_objects_in_lambdas:
 #    if not map_objects_to_lambda_functions:
 #        # if create sync objects on start and executing tasks in lambdas "
 #        # then we must map them to function so that we can determine the 
 #        # function an object is in.
-#        logger.error("[Error]: Configuration error: if create_all_fanins_faninNBs_on_start"
+#        logger.error("[Error]: Configuration error: if CREATE_ALL_FANINS_FANINNBS_ON_START"
 #            + " then map_objects_to_functions must be True.")
 #        logging.shutdown()
 #        os._exit(0)
@@ -259,7 +259,7 @@ try:
     assert not (map_objects_to_lambda_functions and use_anonymous_lambda_functions), msg
 except AssertionError:
     logger.exception("[Error]: assertion failed")
-    if exit_program_on_exception:
+    if EXIT_PROGRAM_ON_EXCEPTION:
         logging.shutdown()
         os._exit(0)
 #assertOld:
@@ -273,22 +273,22 @@ except AssertionError:
 #        os._exit(0)
 
 try:
-    msg = "[Error]: Configuration error: if sync_objects_in_lambdas_trigger_their_tasks" + " then not run_all_tasks_locally must be True."
+    msg = "[Error]: Configuration error: if sync_objects_in_lambdas_trigger_their_tasks" + " then not RUN_ALL_TASKS_LOCALLY must be True."
     # if create sync objects on start then we must map them to function so
     # that we can determine the function an object is in.
-    assert not (sync_objects_in_lambdas_trigger_their_tasks and run_all_tasks_locally), msg
+    assert not (sync_objects_in_lambdas_trigger_their_tasks and RUN_ALL_TASKS_LOCALLY), msg
 except AssertionError:
     logger.exception("[Error]: assertion failed")
-    if exit_program_on_exception:
+    if EXIT_PROGRAM_ON_EXCEPTION:
         logging.shutdown()
         os._exit(0)
 #assertOld:
 #if sync_objects_in_lambdas_trigger_their_tasks:
-#    if run_all_tasks_locally:
+#    if RUN_ALL_TASKS_LOCALLY:
 #        # if create sync objects on start then we must map them to function so
 #        # that we can determine the function an object is in.
 #        logger.error("[Error]: Configuration error: if sync_objects_in_lambdas_trigger_their_tasks"
-#            + " then not run_all_tasks_locally must be True.")
+#            + " then not RUN_ALL_TASKS_LOCALLY must be True.")
 #        logging.shutdown()
  #       os._exit(0)
 
@@ -307,7 +307,7 @@ name_of_first_groupOrpartition_in_DAG = "PR1_1"
 # in DAG_executor_check_pagerank.py
 
 #rhc: ToDo: requires a global pagerank result so need worker threads?
-check_pagerank_output = compute_pagerank and run_all_tasks_locally and (using_workers or not using_workers) and using_threads_not_processes and True
+check_pagerank_output = compute_pagerank and RUN_ALL_TASKS_LOCALLY and (USING_WORKERS or not USING_WORKERS) and USING_THREADS_NOT_PROCESSES and True
 
 # a task that has multiple fanouts/faninNBs sends the same output
 # to all of them; otherwise, the task sends a possibly different 
@@ -329,17 +329,17 @@ use_incremental_DAG_generation = compute_pagerank and True
 enable_runtime_task_clustering = compute_pagerank and False
 
 try:
-    msg = "[Error]: Configuration error: incremental_DAG_generation" + " requires not create_all_fanins_faninNBs_on_start" + " i.e., create synch objects on the fly since we don't know all of the synch objects " + " at the start (the DAG is not complete)"
-    assert not (compute_pagerank and use_incremental_DAG_generation and create_all_fanins_faninNBs_on_start), msg
+    msg = "[Error]: Configuration error: incremental_DAG_generation" + " requires not CREATE_ALL_FANINS_FANINNBS_ON_START" + " i.e., create synch objects on the fly since we don't know all of the synch objects " + " at the start (the DAG is not complete)"
+    assert not (compute_pagerank and use_incremental_DAG_generation and CREATE_ALL_FANINS_FANINNBS_ON_START), msg
 except AssertionError:
     logger.exception("[Error]: assertion failed")
-    if exit_program_on_exception:
+    if EXIT_PROGRAM_ON_EXCEPTION:
         logging.shutdown()
         os._exit(0)
 # assertOld:
-#if compute_pagerank and use_incremental_DAG_generation and create_all_fanins_faninNBs_on_start:
+#if compute_pagerank and use_incremental_DAG_generation and CREATE_ALL_FANINS_FANINNBS_ON_START:
 #    logger.error("[Error]: Configuration error: incremental_DAG_generation"
-#        + " requires not create_all_fanins_faninNBs_on_start"
+#        + " requires not CREATE_ALL_FANINS_FANINNBS_ON_START"
 #        + " i.e., create synch objects on the fly since we don't know all of the synch objects "
 #        + " at the start (the DAG is not complete)")
 #    logging.shutdown()
@@ -377,7 +377,7 @@ try:
     assert not (incremental_DAG_deposit_interval < 1), msg
 except AssertionError:
     logger.exception("[Error]: assertion failed")
-    if exit_program_on_exception:
+    if EXIT_PROGRAM_ON_EXCEPTION:
         logging.shutdown()
         os._exit(0)
 #assertOld:
@@ -398,7 +398,7 @@ try:
     assert not (not same_output_for_all_fanout_fanin and not compute_pagerank), msg
 except AssertionError:
     logger.exception("[Error]: assertion failed")
-    if exit_program_on_exception:
+    if EXIT_PROGRAM_ON_EXCEPTION:
         logging.shutdown()
         os._exit(0)
 #assertOld:
@@ -428,18 +428,18 @@ tasks_use_result_dictionary_parameter = compute_pagerank and True
 use_shared_partitions_groups = compute_pagerank and False
 
 try:
-    msg = "[Error]: Configuration error: if using a single shared array of" + " partitions or groups then must run_tasks_locally and be using_threads_not_processes."
-    assert not (compute_pagerank and (use_shared_partitions_groups and not run_all_tasks_locally)), msg
+    msg = "[Error]: Configuration error: if using a single shared array of" + " partitions or groups then must run_tasks_locally and be USING_THREADS_NOT_PROCESSES."
+    assert not (compute_pagerank and (use_shared_partitions_groups and not RUN_ALL_TASKS_LOCALLY)), msg
 except AssertionError:
     logger.exception("[Error]: assertion failed")
-    if exit_program_on_exception:
+    if EXIT_PROGRAM_ON_EXCEPTION:
         logging.shutdown()
         os._exit(0)
 #assertOld:
-#if compute_pagerank and (use_shared_partitions_groups and not run_all_tasks_locally)):#
-#if compute_pagerank and (use_shared_partitions_groups and not run_all_tasks_locally):
+#if compute_pagerank and (use_shared_partitions_groups and not RUN_ALL_TASKS_LOCALLY)):#
+#if compute_pagerank and (use_shared_partitions_groups and not RUN_ALL_TASKS_LOCALLY):
 #    logger.error("[Error]: Configuration error: if using a single shared array of"
-#        + " partitions or groups then must run_tasks_locally and be using_threads_not_processes.")
+#        + " partitions or groups then must run_tasks_locally and be USING_THREADS_NOT_PROCESSES.")
 #    logging.shutdown()
 #    os._exit(0)
 
@@ -469,7 +469,7 @@ try:
     assert not (use_multithreaded_BFS and use_incremental_DAG_generation), msg
 except AssertionError:
     logger.exception("[Error]: assertion failed")
-    if exit_program_on_exception:
+    if EXIT_PROGRAM_ON_EXCEPTION:
         logging.shutdown()
         os._exit(0)
 #assertOld:
@@ -484,7 +484,7 @@ try:
     assert not (compute_pagerank and (use_struct_of_arrays_for_pagerank and not use_shared_partitions_groups)), msg
 except AssertionError:
     logger.exception("[Error]: assertion failed")
-    if exit_program_on_exception:
+    if EXIT_PROGRAM_ON_EXCEPTION:
         logging.shutdown()
         os._exit(0)
 #assertOld:
@@ -504,12 +504,12 @@ except AssertionError:
 # Note: Use this when running real lambdas and avoiding cloud storage 
 # for I/O of the groups or partitions.
 input_all_groups_partitions_at_start = compute_pagerank and (
-   not run_all_tasks_locally and (not bypass_call_lambda_client_invoke) and (not use_incremental_DAG_generation)
+   not RUN_ALL_TASKS_LOCALLY and (not BYPASS_CALL_LAMBDA_CLIENT_INVOKE) and (not use_incremental_DAG_generation)
    ) and True
 
 # Note: Use this to test real lambda code locally without using real lambdas
 # input_all_groups_partitions_at_start = compute_pagerank and (
-#     not run_all_tasks_locally and (bypass_call_lambda_client_invoke) and (not use_incremental_DAG_generation)
+#     not RUN_ALL_TASKS_LOCALLY and (BYPASS_CALL_LAMBDA_CLIENT_INVOKE) and (not use_incremental_DAG_generation)
 #     ) and True
 
 A1 = A1_Server = A1_FunctionSimulator = A1_SingleFunction = A1_Orchestrator = False
@@ -531,18 +531,18 @@ not_using_lambda_options =  not using_Lambda_Function_Simulators_to_Store_Object
 # server or in lambdas. A1_Wukong may use the DAG_orchestrator to manage the 
 # sync objects/lambdas. 
 
-# Note: for all configurations, set create_all_fanins_faninNBs_on_start = True/False
+# Note: for all configurations, set CREATE_ALL_FANINS_FANINNBS_ON_START = True/False
 
 # Configurations:
 
 # objects can be stored on the tcp server or in lambdas
-A1_Wukong = not run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally
+A1_Wukong = not RUN_ALL_TASKS_LOCALLY and not USING_WORKERS and not STORE_FANINS_FANINNBS_LOCALLY
 
 A1_Wukong_ObjectsOnServer = A1_Wukong and not store_sync_objects_in_lambdas and (
     not not_using_lambda_options)
 # This is Wukong style with sync objects stored on Server
-# FanIn_Type = "DAG_executor_FanIn"
-# FanInNB_Type = "DAG_executor_FanInNB"
+# FANIN_TYPE = "DAG_executor_FanIn"
+# FANINNB_TYPE = "DAG_executor_FanInNB"
 # run tcp_server
 # Set SERVERLESS_SYNC to True in wukongdnc constants
 A1_Wukong_ObjectsInRealLambdas_UseManyLambdaFunction = A1_Wukong and store_sync_objects_in_lambdas and (
@@ -551,8 +551,8 @@ A1_Wukong_ObjectsInRealLambdas_UseManyLambdaFunction = A1_Wukong and store_sync_
 # Not using lamba simulators, just mapping objects (names) to lambdas.
 # If using_single_lambda_function then there is a single lambda that stores all sync objects
 # which makes setup on AWS simpler (i.e., using one distribution).
-# FanIn_Type = "DAG_executor_FanIn_Select"
-# FanInNB_Type = "DAG_executor_FanInNB_Select"
+# FANIN_TYPE = "DAG_executor_FanIn_Select"
+# FANINNB_TYPE = "DAG_executor_FanInNB_Select"
 # run tcp_server_lambda
 # Set SERVERLESS_SYNC to True in wukongdnc constants
 A1_Wukong_ObjectsInRealLambdas_UseSingleLambdaFunction = A1_Wukong and store_sync_objects_in_lambdas and (
@@ -566,8 +566,8 @@ A1_Wukong_ObjectsInRealLambdas_UseSingleLambdaFunction = A1_Wukong and store_syn
 #   Using a single function is handy when we have to run lambdas on AWS, i.e., we only need
 #   one deployment. With simulated lambdas, having multiple "deployments" is not painful
 #   (to create the deployments, which aer just seperate Python functions.) 
-# FanIn_Type = "DAG_executor_FanIn_Select"
-# FanInNB_Type = "DAG_executor_FanInNB_Select"
+# FANIN_TYPE = "DAG_executor_FanIn_Select"
+# FANINNB_TYPE = "DAG_executor_FanInNB_Select"
 # run tcp_server_lambda
 # Set SERVERLESS_SYNC to True in wukongdnc constants
 A1_Wukong_ObjectsInRealLambdas_UsingOrchestator = A1_Wukong and store_sync_objects_in_lambdas and (
@@ -575,8 +575,8 @@ A1_Wukong_ObjectsInRealLambdas_UsingOrchestator = A1_Wukong and store_sync_objec
     not sync_objects_in_lambdas_trigger_their_tasks) and (
     not using_single_lambda_function) 
 # This is Wukong style with all sync objects stored in a lambda functions and orchestrated.
-# FanIn_Type = "DAG_executor_FanIn_Select"
-# FanInNB_Type = "DAG_executor_FanInNB_Select"
+# FANIN_TYPE = "DAG_executor_FanIn_Select"
+# FANINNB_TYPE = "DAG_executor_FanInNB_Select"
 # run tcp_server_lambda
 # Set SERVERLESS_SYNC to True in wukongdnc constants
 A1_Wukong_ObjectInSimulatedLambdas = A1_Wukong and store_sync_objects_in_lambdas and (
@@ -584,8 +584,8 @@ A1_Wukong_ObjectInSimulatedLambdas = A1_Wukong and store_sync_objects_in_lambdas
     not sync_objects_in_lambdas_trigger_their_tasks) and (
     not using_single_lambda_function) and (
     not using_DAG_orchestrator)
-# FanIn_Type = "DAG_executor_FanIn_Select"
-# FanInNB_Type = "DAG_executor_FanInNB_Select"
+# FANIN_TYPE = "DAG_executor_FanIn_Select"
+# FANINNB_TYPE = "DAG_executor_FanInNB_Select"
 # run tcp_server_lambda
 # Set SERVERLESS_SYNC to True in wukongdnc constants
 A1_Wukong_ObjectInSimulatedLambdas_UsingOrchestator = A1_Wukong and store_sync_objects_in_lambdas and (
@@ -593,54 +593,54 @@ A1_Wukong_ObjectInSimulatedLambdas_UsingOrchestator = A1_Wukong and store_sync_o
     using_DAG_orchestrator) and (
     not sync_objects_in_lambdas_trigger_their_tasks) and (
     not using_single_lambda_function) 
-# FanIn_Type = "DAG_executor_FanIn_Select"
-# FanInNB_Type = "DAG_executor_FanInNB_Select"
+# FANIN_TYPE = "DAG_executor_FanIn_Select"
+# FANINNB_TYPE = "DAG_executor_FanInNB_Select"
 # run tcp_server_lambda
 # Set SERVERLESS_SYNC to True in wukongdnc constants
 
 # Note: Currently we are assuming using_Lambda_Function_Simulators_to_Store_Objects is True
 # when we use the orchestrator. 
-A1_Orchestrate_SyncObjectsandTasksinRealLambdas = not run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and (
+A1_Orchestrate_SyncObjectsandTasksinRealLambdas = not RUN_ALL_TASKS_LOCALLY and not USING_WORKERS and not STORE_FANINS_FANINNBS_LOCALLY and (
     store_sync_objects_in_lambdas) and (
     using_DAG_orchestrator) and (
     not using_Lambda_Function_Simulators_to_Store_Objects) and (
     not sync_objects_in_lambdas_trigger_their_tasks) and (
     not using_single_lambda_function)
-# FanIn_Type = "DAG_executor_FanIn_Select"
-# FanInNB_Type = "DAG_executor_FanInNB_Select"
+# FANIN_TYPE = "DAG_executor_FanIn_Select"
+# FANINNB_TYPE = "DAG_executor_FanInNB_Select"
 # run tcp_server_lambda
 # Set SERVERLESS_SYNC to True in wukongdnc constants
 
-A1_Orchestrate_SyncObjectsandTasksinSimulatedLambdas = not run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally and (
+A1_Orchestrate_SyncObjectsandTasksinSimulatedLambdas = not RUN_ALL_TASKS_LOCALLY and not USING_WORKERS and not STORE_FANINS_FANINNBS_LOCALLY and (
     store_sync_objects_in_lambdas) and (
     using_DAG_orchestrator) and (
     using_Lambda_Function_Simulators_to_Store_Objects) and sync_objects_in_lambdas_trigger_their_tasks and (
     not using_single_lambda_function)
-# FanIn_Type = "DAG_executor_FanIn_Select"
-# FanInNB_Type = "DAG_executor_FanInNB_Select"
+# FANIN_TYPE = "DAG_executor_FanIn_Select"
+# FANINNB_TYPE = "DAG_executor_FanInNB_Select"
 # run tcp_server_lambda
 # Set SERVERLESS_SYNC to True in wukongdnc constants
 
-using_threads_to_simulate_lambdas = run_all_tasks_locally and not using_workers
+using_threads_to_simulate_lambdas = RUN_ALL_TASKS_LOCALLY and not USING_WORKERS
 
 # using threads to simulate lambdas and store sync objects locally (not on server or in lambdas)
-A2 = using_threads_to_simulate_lambdas and store_fanins_faninNBs_locally and not_using_lambda_options
-# set FanIn_Type = "DAG_executor_FanIn_Select" or "DAG_executor_FanIn"
-# set FanInNB_Type = "DAG_executor_FanInNB_Select" or "DAG_executor_FanInNB"
+A2 = using_threads_to_simulate_lambdas and STORE_FANINS_FANINNBS_LOCALLY and not_using_lambda_options
+# set FANIN_TYPE = "DAG_executor_FanIn_Select" or "DAG_executor_FanIn"
+# set FANINNB_TYPE = "DAG_executor_FanInNB_Select" or "DAG_executor_FanInNB"
 # Set SERVERLESS_SYNC to False in wukongdnc constants
 
 # using threads to simulate lambdas that execute tasks and store sync objects remotely (on server or in lambdas)
 # Note: All tasks executed by Wukong style lambdas that are invoked at fanouts/fanins.
-A3 = using_threads_to_simulate_lambdas and not store_fanins_faninNBs_locally
+A3 = using_threads_to_simulate_lambdas and not STORE_FANINS_FANINNBS_LOCALLY
 
 A3_ObjectsOnServer = A3 and not_using_lambda_options
-# set FanIn_Type = = "DAG_executor_FanIn_Select" or "DAG_executor_FanIn"
-# set FanInNB_Type = "DAG_executor_FanInNB_Select" or "DAG_executor_FanInNB"
+# set FANIN_TYPE = = "DAG_executor_FanIn_Select" or "DAG_executor_FanIn"
+# set FANINNB_TYPE = "DAG_executor_FanInNB_Select" or "DAG_executor_FanInNB"
 # Set SERVERLESS_SYNC to False in wukongdnc constants
 A3_ObjectsInRealLambdas_UseManyLambdaFunction = A3 and store_sync_objects_in_lambdas and (
     not not_using_lambda_options)
-# FanIn_Type = "DAG_executor_FanIn_Select"
-# FanInNB_Type = "DAG_executor_FanInNB_Select"
+# FANIN_TYPE = "DAG_executor_FanIn_Select"
+# FANINNB_TYPE = "DAG_executor_FanInNB_Select"
 # run tcp_server_lambda
 # Set SERVERLESS_SYNC to False in wukongdnc constants    
 A3_ObjectsInRealLambdas_UseSingleLambdaFunction = A3 and store_sync_objects_in_lambdas and (
@@ -648,8 +648,8 @@ A3_ObjectsInRealLambdas_UseSingleLambdaFunction = A3 and store_sync_objects_in_l
     not using_Lambda_Function_Simulators_to_Store_Objects) and (
     not sync_objects_in_lambdas_trigger_their_tasks) and (
     not using_DAG_orchestrator)
-# FanIn_Type = "DAG_executor_FanIn_Select"
-# FanInNB_Type = "DAG_executor_FanInNB_Select"
+# FANIN_TYPE = "DAG_executor_FanIn_Select"
+# FANINNB_TYPE = "DAG_executor_FanInNB_Select"
 # run tcp_server_lambda
 # Set SERVERLESS_SYNC to False in wukongdnc constants 
 A3_ObjectsInRealLambdas_UsingOrchestator = A3 and store_sync_objects_in_lambdas and (
@@ -657,8 +657,8 @@ A3_ObjectsInRealLambdas_UsingOrchestator = A3 and store_sync_objects_in_lambdas 
     not sync_objects_in_lambdas_trigger_their_tasks) and (
     not using_single_lambda_function) 
 # This is Wukong style with all sync objects stored in a lambda functions and orchestrated.
-# FanIn_Type = "DAG_executor_FanIn_Select"
-# FanInNB_Type = "DAG_executor_FanInNB_Select"
+# FANIN_TYPE = "DAG_executor_FanIn_Select"
+# FANINNB_TYPE = "DAG_executor_FanInNB_Select"
 # run tcp_server_lambda
 # Set SERVERLESS_SYNC to True in wukongdnc constants
 
@@ -667,8 +667,8 @@ A3_ObjectInSimulatedLambdas = A3 and store_sync_objects_in_lambdas and (
     not sync_objects_in_lambdas_trigger_their_tasks) and (
     not using_single_lambda_function) and (
     not using_DAG_orchestrator)
-# FanIn_Type = "DAG_executor_FanIn_Select"
-# FanInNB_Type = "DAG_executor_FanInNB_Select"
+# FANIN_TYPE = "DAG_executor_FanIn_Select"
+# FANINNB_TYPE = "DAG_executor_FanInNB_Select"
 # run tcp_server_lambda
 # Set SERVERLESS_SYNC to False in wukongdnc constants
 A3_ObjectInSimulatedLambdas_UsingOrchestator = A3 and store_sync_objects_in_lambdas and (
@@ -676,23 +676,23 @@ A3_ObjectInSimulatedLambdas_UsingOrchestator = A3 and store_sync_objects_in_lamb
     using_DAG_orchestrator) and (
     not sync_objects_in_lambdas_trigger_their_tasks) and (
     not using_single_lambda_function) 
-# FanIn_Type = "DAG_executor_FanIn_Select"
-# FanInNB_Type = "DAG_executor_FanInNB_Select"
+# FANIN_TYPE = "DAG_executor_FanIn_Select"
+# FANINNB_TYPE = "DAG_executor_FanInNB_Select"
 # run tcp_server_lambda
 # Set SERVERLESS_SYNC to True in wukongdnc constants
 
-A4 = run_all_tasks_locally and using_workers and using_threads_not_processes
-A4_ObjectsStoredLocally = A4 and store_fanins_faninNBs_locally and (
+A4 = RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES
+A4_ObjectsStoredLocally = A4 and STORE_FANINS_FANINNBS_LOCALLY and (
     not store_sync_objects_in_lambdas) and not_using_lambda_options
-# set num_workers
+# set NUM_WORKERS
 # no tcp_server since storing locally
 # Set SERVERLESS_SYNC to False in wukongdnc constants
-A4_ObjectsStoredRemotely = A4 and not store_fanins_faninNBs_locally and (
+A4_ObjectsStoredRemotely = A4 and not STORE_FANINS_FANINNBS_LOCALLY and (
     not store_sync_objects_in_lambdas) and not_using_lambda_options
-# set num_workers
-# set FanIn_Type = "DAG_executor_FanIn_Select" or "DAG_executor_FanIn"
-# set FanInNB_Type = "DAG_executor_FanInNB_Select" or "DAG_executor_FanInNB"
-# set process_work_queue_Type = "BoundedBuffer"
+# set NUM_WORKERS
+# set FANIN_TYPE = "DAG_executor_FanIn_Select" or "DAG_executor_FanIn"
+# set FANINNB_TYPE = "DAG_executor_FanInNB_Select" or "DAG_executor_FanInNB"
+# set PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
 # run tcp_server
 # Set SERVERLESS_SYNC to False in wukongdnc constants
 # Note: We do not run tcp_server_lambda so while we can use the "Select" 
@@ -701,13 +701,13 @@ A4_ObjectsStoredRemotely = A4 and not store_fanins_faninNBs_locally and (
 # Note about A4: For A4, we are using worker threads, which is not going to 
 # generate speedup in Python.
 
-A5 = run_all_tasks_locally and using_workers and not using_threads_not_processes
-A5_ObjectsStoredRemotely = A5 and not store_fanins_faninNBs_locally and (
+A5 = RUN_ALL_TASKS_LOCALLY and USING_WORKERS and not USING_THREADS_NOT_PROCESSES
+A5_ObjectsStoredRemotely = A5 and not STORE_FANINS_FANINNBS_LOCALLY and (
     not store_sync_objects_in_lambdas) and not_using_lambda_options
-# set num_workers
-# set FanIn_Type = "DAG_executor_FanIn_Select" or "DAG_executor_FanIn"
-# set FanInNB_Type = "DAG_executor_FanInNB_Select" or "DAG_executor_FanInNB"
-# set process_work_queue_Type = "BoundedBuffer_Select" or process_work_queue_Type = "BoundedBuffer"
+# set NUM_WORKERS
+# set FANIN_TYPE = "DAG_executor_FanIn_Select" or "DAG_executor_FanIn"
+# set FANINNB_TYPE = "DAG_executor_FanInNB_Select" or "DAG_executor_FanInNB"
+# set PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select" or PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
 # run tcp_server.
 # Set SERVERLESS_SYNC to False in wukongdnc constants
 # Note: We do not run tcp_server_lambda so while we can use the "Select" 
@@ -716,10 +716,10 @@ A5_ObjectsStoredRemotely = A5 and not store_fanins_faninNBs_locally and (
 # Note about A5: For A5, we are using worker processes, which requires sync objects to be
 # stored remotely. Objects can only be stored on the server.
 
-A6 = run_all_tasks_locally and use_multithreaded_multiprocessing and using_workers and not using_threads_not_processes and not store_fanins_faninNBs_locally and not_using_lambda_options
-# set num_threads_for_multithreaded_multiprocessing
-# set FanIn_Type = "DAG_executor_FanIn_Select" or "DAG_executor_FanIn"
-# set FanInNB_Type = "DAG_executor_FanInNB_Select" or "DAG_executor_FanInNB"
+A6 = RUN_ALL_TASKS_LOCALLY and USE_MULTITHREADED_MULTIPROCESSING and USING_WORKERS and not USING_THREADS_NOT_PROCESSES and not STORE_FANINS_FANINNBS_LOCALLY and not_using_lambda_options
+# set NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+# set FANIN_TYPE = "DAG_executor_FanIn_Select" or "DAG_executor_FanIn"
+# set FANINNB_TYPE = "DAG_executor_FanInNB_Select" or "DAG_executor_FanInNB"
 # run tcp_server
 
 """
@@ -736,7 +736,7 @@ if not_A1s and not_A2 and not_A3s and not_A4s and not_A5 and not_A6:
 # Suggested Assert using worker processes  ==> store objects remotely
 # Suggested Assert sync_objects_in_lambdas_trigger_their_tasks ==> using_DAG_orchestrator
 # Suggested Assert using a lambda option ==> store objects in Lambdas 
-# Suggested Assert using_DAG_orchestrator ==> not run_all_tasks_locally and not using_workers and not store_fanins_faninNBs_locally
+# Suggested Assert using_DAG_orchestrator ==> not RUN_ALL_TASKS_LOCALLY and not USING_WORKERS and not STORE_FANINS_FANINNBS_LOCALLY
 
 ##########################################
 ###### Configuration tests start here ######
@@ -749,7 +749,7 @@ if not_A1s and not_A2 and not_A3s and not_A4s and not_A5 and not_A6:
 #running non-pagerank test: python -m wukongdnc.dag.TestAll -t n and python -m wukongdnc.server.tcp_server -t n or (use tcp_server_lambda)
 
 def non_real_lambda_base():
-    global exit_program_on_exception
+    global EXIT_PROGRAM_ON_EXCEPTION
     global store_sync_objects_in_lambdas
     global using_Lambda_Function_Simulators_to_Store_Objects
     global sync_objects_in_lambdas_trigger_their_tasks
@@ -771,20 +771,20 @@ def non_real_lambda_base():
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
     global use_multithreaded_BFS
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
     
-    exit_program_on_exception = True
+    EXIT_PROGRAM_ON_EXCEPTION = True
 
     store_sync_objects_in_lambdas = False
     using_Lambda_Function_Simulators_to_Store_Objects = False
@@ -795,7 +795,7 @@ def non_real_lambda_base():
     using_single_lambda_function = False
 
     # For all: remote objects, using select objects:
-    # 1. run_all_tasks_locally = True, create objects on start = True:
+    # 1. RUN_ALL_TASKS_LOCALLY = True, create objects on start = True:
     # TTFFTF: no trigger and no DAG_orchestrator, but map objects 
     # (anon is false) and create objects on start
     # variations:
@@ -803,7 +803,7 @@ def non_real_lambda_base():
     # - change map to F, and anon to T: Note: no function lock since anon caled only once
     # - change D_O to F, map F, anon T: Note: no function lock since anon caled only once
     #
-    # 2. run_all_tasks_locally = False, create objects on start = True:
+    # 2. RUN_ALL_TASKS_LOCALLY = False, create objects on start = True:
     # Note: not running real lambdas yet, so need TTT, i.e., not using threads
     #       to simulate lambdas and not running real lambdas yet, so need to
     #       trigger lambdas, which means store objects in lambdas and they call
@@ -857,34 +857,34 @@ def test1():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True
-    store_fanins_faninNBs_locally = True 
-    create_all_fanins_faninNBs_on_start = True
-    using_workers = False
-    using_threads_not_processes = True
-    num_workers = 1
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = True
+    STORE_FANINS_FANINNBS_LOCALLY = True 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = True
+    USING_WORKERS = False
+    USING_THREADS_NOT_PROCESSES = True
+    NUM_WORKERS = 1
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    FanIn_Type = "DAG_executor_FanIn"
-    FanInNB_Type = "DAG_executor_FanInNB"
-    process_work_queue_Type = "BoundedBuffer"
-    #FanIn_Type = "DAG_executor_FanIn_Select"
-    #FanInNB_Type = "DAG_executor_FanInNB_Select"
-    #process_work_queue_Type = "BoundedBuffer_Select"
+    FANIN_TYPE = "DAG_executor_FanIn"
+    FANINNB_TYPE = "DAG_executor_FanInNB"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    #FANIN_TYPE = "DAG_executor_FanIn_Select"
+    #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
 #Test2: simulated lambdas (A2) with selective-wait Sync-objects,
 #        create objects at the start
@@ -909,34 +909,34 @@ def test2():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = True
-    create_all_fanins_faninNBs_on_start = True
-    using_workers = False
-    using_threads_not_processes = True
-    num_workers = 1
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = True
+    CREATE_ALL_FANINS_FANINNBS_ON_START = True
+    USING_WORKERS = False
+    USING_THREADS_NOT_PROCESSES = True
+    NUM_WORKERS = 1
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    #FanIn_Type = "DAG_executor_FanIn"
-    #FanInNB_Type = "DAG_executor_FanInNB"
-    #process_work_queue_Type = "BoundedBuffer"
-    FanIn_Type = "DAG_executor_FanIn_Select"
-    FanInNB_Type = "DAG_executor_FanInNB_Select"
-    process_work_queue_Type = "BoundedBuffer_Select"
+    #FANIN_TYPE = "DAG_executor_FanIn"
+    #FANINNB_TYPE = "DAG_executor_FanInNB"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    FANIN_TYPE = "DAG_executor_FanIn_Select"
+    FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
 #Test3: simulated lambdas (A2) with non-selective-wait Sync-objects,
 #         create objects on-the-fly
@@ -961,34 +961,34 @@ def test3():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 	
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = True 
-    create_all_fanins_faninNBs_on_start = False
-    using_workers = False
-    using_threads_not_processes = True
-    num_workers = 1
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = True 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = False
+    USING_WORKERS = False
+    USING_THREADS_NOT_PROCESSES = True
+    NUM_WORKERS = 1
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    FanIn_Type = "DAG_executor_FanIn"
-    FanInNB_Type = "DAG_executor_FanInNB"
-    process_work_queue_Type = "BoundedBuffer"
-    #FanIn_Type = "DAG_executor_FanIn_Select"
-    #FanInNB_Type = "DAG_executor_FanInNB_Select"
-    #process_work_queue_Type = "BoundedBuffer_Select"
+    FANIN_TYPE = "DAG_executor_FanIn"
+    FANINNB_TYPE = "DAG_executor_FanInNB"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    #FANIN_TYPE = "DAG_executor_FanIn_Select"
+    #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
 #Test4: simulated lambdas (A2) with selective-wait Sync-objects,
 #         create objects on-the-fly
@@ -1013,39 +1013,39 @@ def test4():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = True 
-    create_all_fanins_faninNBs_on_start = False
-    using_workers = False
-    using_threads_not_processes = True
-    num_workers = 1
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = True 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = False
+    USING_WORKERS = False
+    USING_THREADS_NOT_PROCESSES = True
+    NUM_WORKERS = 1
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    #FanIn_Type = "DAG_executor_FanIn"
-    #FanInNB_Type = "DAG_executor_FanInNB"
-    #process_work_queue_Type = "BoundedBuffer"
-    FanIn_Type = "DAG_executor_FanIn_Select"
-    FanInNB_Type = "DAG_executor_FanInNB_Select"
-    process_work_queue_Type = "BoundedBuffer_Select"
+    #FANIN_TYPE = "DAG_executor_FanIn"
+    #FANINNB_TYPE = "DAG_executor_FanInNB"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    FANIN_TYPE = "DAG_executor_FanIn_Select"
+    FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
 # remote objects
     
 #Test5: simulated lambdas (A2) with non-selective-wait Sync-objects,
-# create objects at the start, store_fanins_faninNBs_locally = False 
+# create objects at the start, STORE_FANINS_FANINNBS_LOCALLY = False 
 # Note: tcp_server must be running: tcp_server -t 5
 def test5():
     print("test5")
@@ -1068,37 +1068,37 @@ def test5():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True
-    store_fanins_faninNBs_locally = False 
-    create_all_fanins_faninNBs_on_start = True
-    using_workers = False
-    using_threads_not_processes = True
-    num_workers = 1
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = True
+    STORE_FANINS_FANINNBS_LOCALLY = False 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = True
+    USING_WORKERS = False
+    USING_THREADS_NOT_PROCESSES = True
+    NUM_WORKERS = 1
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    FanIn_Type = "DAG_executor_FanIn"
-    FanInNB_Type = "DAG_executor_FanInNB"
-    process_work_queue_Type = "BoundedBuffer"
-    #FanIn_Type = "DAG_executor_FanIn_Select"
-    #FanInNB_Type = "DAG_executor_FanInNB_Select"
-    #process_work_queue_Type = "BoundedBuffer_Select"
+    FANIN_TYPE = "DAG_executor_FanIn"
+    FANINNB_TYPE = "DAG_executor_FanInNB"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    #FANIN_TYPE = "DAG_executor_FanIn_Select"
+    #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
 #Test6: simulated lambdas (A2) with selective-wait Sync-objects,
-#        create objects at the start, store_fanins_faninNBs_locally = False 
+#        create objects at the start, STORE_FANINS_FANINNBS_LOCALLY = False 
 # Note: tcp_server must be running: tcp_server -t 6
 def test6():
     print("test6")
@@ -1121,37 +1121,37 @@ def test6():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = False
-    create_all_fanins_faninNBs_on_start = True
-    using_workers = False
-    using_threads_not_processes = True
-    num_workers = 1
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = False
+    CREATE_ALL_FANINS_FANINNBS_ON_START = True
+    USING_WORKERS = False
+    USING_THREADS_NOT_PROCESSES = True
+    NUM_WORKERS = 1
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    #FanIn_Type = "DAG_executor_FanIn"
-    #FanInNB_Type = "DAG_executor_FanInNB"
-    #process_work_queue_Type = "BoundedBuffer"
-    FanIn_Type = "DAG_executor_FanIn_Select"
-    FanInNB_Type = "DAG_executor_FanInNB_Select"
-    process_work_queue_Type = "BoundedBuffer_Select"
+    #FANIN_TYPE = "DAG_executor_FanIn"
+    #FANINNB_TYPE = "DAG_executor_FanInNB"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    FANIN_TYPE = "DAG_executor_FanIn_Select"
+    FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
 #Test 7: simulated lambdas (A2) with non-selective-wait Sync-objects,
-#         create objects on-the-fly, store_fanins_faninNBs_locally = False 
+#         create objects on-the-fly, STORE_FANINS_FANINNBS_LOCALLY = False 
 # Note: tcp_server must be running: tcp_server -t 7
 def test7():
     logger.info("test7")
@@ -1174,37 +1174,37 @@ def test7():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 	
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = False 
-    create_all_fanins_faninNBs_on_start = False
-    using_workers = False
-    using_threads_not_processes = True
-    num_workers = 1
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = False 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = False
+    USING_WORKERS = False
+    USING_THREADS_NOT_PROCESSES = True
+    NUM_WORKERS = 1
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    FanIn_Type = "DAG_executor_FanIn"
-    FanInNB_Type = "DAG_executor_FanInNB"
-    process_work_queue_Type = "BoundedBuffer"
-    #FanIn_Type = "DAG_executor_FanIn_Select"
-    #FanInNB_Type = "DAG_executor_FanInNB_Select"
-    #process_work_queue_Type = "BoundedBuffer_Select"
+    FANIN_TYPE = "DAG_executor_FanIn"
+    FANINNB_TYPE = "DAG_executor_FanInNB"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    #FANIN_TYPE = "DAG_executor_FanIn_Select"
+    #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
 #Test 8: simulated lambdas (A2) with selective-wait Sync-objects,
-#         create objects on-the-fly, store_fanins_faninNBs_locally = False 
+#         create objects on-the-fly, STORE_FANINS_FANINNBS_LOCALLY = False 
 # Note: tcp_server must be running: tcp_server -t 8
 def test8():
     print("test8")
@@ -1227,34 +1227,34 @@ def test8():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = False 
-    create_all_fanins_faninNBs_on_start = False
-    using_workers = False
-    using_threads_not_processes = True
-    num_workers = 1
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = False 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = False
+    USING_WORKERS = False
+    USING_THREADS_NOT_PROCESSES = True
+    NUM_WORKERS = 1
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    #FanIn_Type = "DAG_executor_FanIn"
-    #FanInNB_Type = "DAG_executor_FanInNB"
-    #process_work_queue_Type = "BoundedBuffer"
-    FanIn_Type = "DAG_executor_FanIn_Select"
-    FanInNB_Type = "DAG_executor_FanInNB_Select"
-    process_work_queue_Type = "BoundedBuffer_Select"
+    #FANIN_TYPE = "DAG_executor_FanIn"
+    #FANINNB_TYPE = "DAG_executor_FanInNB"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    FANIN_TYPE = "DAG_executor_FanIn_Select"
+    FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
 # workers
 # threads
@@ -1283,34 +1283,34 @@ def test9():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = True 
-    create_all_fanins_faninNBs_on_start = True
-    using_workers = True
-    using_threads_not_processes = True
-    num_workers = 1
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = True 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = True
+    USING_WORKERS = True
+    USING_THREADS_NOT_PROCESSES = True
+    NUM_WORKERS = 1
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    FanIn_Type = "DAG_executor_FanIn"
-    FanInNB_Type = "DAG_executor_FanInNB"
-    process_work_queue_Type = "BoundedBuffer"
-    #FanIn_Type = "DAG_executor_FanIn_Select"
-    #FanInNB_Type = "DAG_executor_FanInNB_Select"
-    #process_work_queue_Type = "BoundedBuffer_Select"
+    FANIN_TYPE = "DAG_executor_FanIn"
+    FANINNB_TYPE = "DAG_executor_FanInNB"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    #FANIN_TYPE = "DAG_executor_FanIn_Select"
+    #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
 #Test10: worker threads (A2) with non-selective-wait Sync-objects, 
 #       2 workers, Sync-objects stored locally, create objects at the start
@@ -1335,34 +1335,34 @@ def test10():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = True 
-    create_all_fanins_faninNBs_on_start = True
-    using_workers = True
-    using_threads_not_processes = True
-    num_workers = 2
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = True 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = True
+    USING_WORKERS = True
+    USING_THREADS_NOT_PROCESSES = True
+    NUM_WORKERS = 2
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    FanIn_Type = "DAG_executor_FanIn"
-    FanInNB_Type = "DAG_executor_FanInNB"
-    process_work_queue_Type = "BoundedBuffer"
-    #FanIn_Type = "DAG_executor_FanIn_Select"
-    #FanInNB_Type = "DAG_executor_FanInNB_Select"
-    #process_work_queue_Type = "BoundedBuffer_Select"
+    FANIN_TYPE = "DAG_executor_FanIn"
+    FANINNB_TYPE = "DAG_executor_FanInNB"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    #FANIN_TYPE = "DAG_executor_FanIn_Select"
+    #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
 #Test11: worker threads (A2) with selective-wait Sync-objects, 
 #       2 workers, Sync-objects stored locally, create objects at the start
@@ -1387,34 +1387,34 @@ def test11():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = True 
-    create_all_fanins_faninNBs_on_start = True
-    using_workers = True
-    using_threads_not_processes = True
-    num_workers = 2
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = True 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = True
+    USING_WORKERS = True
+    USING_THREADS_NOT_PROCESSES = True
+    NUM_WORKERS = 2
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    #FanIn_Type = "DAG_executor_FanIn"
-    #FanInNB_Type = "DAG_executor_FanInNB"
-    #process_work_queue_Type = "BoundedBuffer"
-    FanIn_Type = "DAG_executor_FanIn_Select"
-    FanInNB_Type = "DAG_executor_FanInNB_Select"
-    process_work_queue_Type = "BoundedBuffer_Select"
+    #FANIN_TYPE = "DAG_executor_FanIn"
+    #FANINNB_TYPE = "DAG_executor_FanInNB"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    FANIN_TYPE = "DAG_executor_FanIn_Select"
+    FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
 #Test12: worker threads (A2) with non-selective-wait Sync-objects, 
 #       2 workers, Sync-objects stored locally, create objects on-the-fly
@@ -1439,34 +1439,34 @@ def test12():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = True 
-    create_all_fanins_faninNBs_on_start = False
-    using_workers = True
-    using_threads_not_processes = True
-    num_workers = 2
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = True 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = False
+    USING_WORKERS = True
+    USING_THREADS_NOT_PROCESSES = True
+    NUM_WORKERS = 2
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    FanIn_Type = "DAG_executor_FanIn"
-    FanInNB_Type = "DAG_executor_FanInNB"
-    process_work_queue_Type = "BoundedBuffer"
-    #FanIn_Type = "DAG_executor_FanIn_Select"
-    #FanInNB_Type = "DAG_executor_FanInNB_Select"
-    #process_work_queue_Type = "BoundedBuffer_Select"
+    FANIN_TYPE = "DAG_executor_FanIn"
+    FANINNB_TYPE = "DAG_executor_FanInNB"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    #FANIN_TYPE = "DAG_executor_FanIn_Select"
+    #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
 #Test13: worker threads (A2) with selective-wait Sync-objects, 
 #       2 workers, Sync-objects stored locally, create objects on-the-fly
@@ -1491,34 +1491,34 @@ def test13():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = True 
-    create_all_fanins_faninNBs_on_start = False
-    using_workers = True
-    using_threads_not_processes = True
-    num_workers = 2
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = True 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = False
+    USING_WORKERS = True
+    USING_THREADS_NOT_PROCESSES = True
+    NUM_WORKERS = 2
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    #FanIn_Type = "DAG_executor_FanIn"
-    #FanInNB_Type = "DAG_executor_FanInNB"
-    #process_work_queue_Type = "BoundedBuffer"
-    FanIn_Type = "DAG_executor_FanIn_Select"
-    FanInNB_Type = "DAG_executor_FanInNB_Select"
-    process_work_queue_Type = "BoundedBuffer_Select"
+    #FANIN_TYPE = "DAG_executor_FanIn"
+    #FANINNB_TYPE = "DAG_executor_FanInNB"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    FANIN_TYPE = "DAG_executor_FanIn_Select"
+    FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
 
 # workers
@@ -1550,34 +1550,34 @@ def test14():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = False 
-    create_all_fanins_faninNBs_on_start = True
-    using_workers = True
-    using_threads_not_processes = True
-    num_workers = 1
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = False 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = True
+    USING_WORKERS = True
+    USING_THREADS_NOT_PROCESSES = True
+    NUM_WORKERS = 1
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    FanIn_Type = "DAG_executor_FanIn"
-    FanInNB_Type = "DAG_executor_FanInNB"
-    process_work_queue_Type = "BoundedBuffer"
-    #FanIn_Type = "DAG_executor_FanIn_Select"
-    #FanInNB_Type = "DAG_executor_FanInNB_Select"
-    #process_work_queue_Type = "BoundedBuffer_Select"
+    FANIN_TYPE = "DAG_executor_FanIn"
+    FANINNB_TYPE = "DAG_executor_FanInNB"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    #FANIN_TYPE = "DAG_executor_FanIn_Select"
+    #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
 #Test15: worker threads (A2) with non-selective-wait Sync-objects, 
 #        2 workers, Sync-objects stored remotely (on tcp_server)
@@ -1604,34 +1604,34 @@ def test15():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = False 
-    create_all_fanins_faninNBs_on_start = True
-    using_workers = True
-    using_threads_not_processes = True
-    num_workers = 2
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = False 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = True
+    USING_WORKERS = True
+    USING_THREADS_NOT_PROCESSES = True
+    NUM_WORKERS = 2
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    FanIn_Type = "DAG_executor_FanIn"
-    FanInNB_Type = "DAG_executor_FanInNB"
-    process_work_queue_Type = "BoundedBuffer"
-    #FanIn_Type = "DAG_executor_FanIn_Select"
-    #FanInNB_Type = "DAG_executor_FanInNB_Select"
-    #process_work_queue_Type = "BoundedBuffer_Select"
+    FANIN_TYPE = "DAG_executor_FanIn"
+    FANINNB_TYPE = "DAG_executor_FanInNB"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    #FANIN_TYPE = "DAG_executor_FanIn_Select"
+    #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
 #Test16: worker threads (A2) with non-selective-wait Sync-objects, 
 #        2 workers, Sync-objects stored remotely (on tcp_server)
@@ -1658,34 +1658,34 @@ def test16():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = False 
-    create_all_fanins_faninNBs_on_start = False
-    using_workers = True
-    using_threads_not_processes = True
-    num_workers = 2
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = False 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = False
+    USING_WORKERS = True
+    USING_THREADS_NOT_PROCESSES = True
+    NUM_WORKERS = 2
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    FanIn_Type = "DAG_executor_FanIn"
-    FanInNB_Type = "DAG_executor_FanInNB"
-    process_work_queue_Type = "BoundedBuffer"
-    #FanIn_Type = "DAG_executor_FanIn_Select"
-    #FanInNB_Type = "DAG_executor_FanInNB_Select"
-    #process_work_queue_Type = "BoundedBuffer_Select"
+    FANIN_TYPE = "DAG_executor_FanIn"
+    FANINNB_TYPE = "DAG_executor_FanInNB"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    #FANIN_TYPE = "DAG_executor_FanIn_Select"
+    #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
 #Test17: worker threads (A2) with selective-wait Sync-objects, 
 #        2 workers, Sync-objects stored remotely (on tcp_server)
@@ -1712,34 +1712,34 @@ def test17():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = False 
-    create_all_fanins_faninNBs_on_start = True
-    using_workers = True
-    using_threads_not_processes = True
-    num_workers = 2
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = False 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = True
+    USING_WORKERS = True
+    USING_THREADS_NOT_PROCESSES = True
+    NUM_WORKERS = 2
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    #FanIn_Type = "DAG_executor_FanIn"
-    #FanInNB_Type = "DAG_executor_FanInNB"
-    #process_work_queue_Type = "BoundedBuffer"
-    FanIn_Type = "DAG_executor_FanIn_Select"
-    FanInNB_Type = "DAG_executor_FanInNB_Select"
-    process_work_queue_Type = "BoundedBuffer_Select"
+    #FANIN_TYPE = "DAG_executor_FanIn"
+    #FANINNB_TYPE = "DAG_executor_FanInNB"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    FANIN_TYPE = "DAG_executor_FanIn_Select"
+    FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
 #Test18: worker threads (A2) with selective-wait Sync-objects, 
 #        2 workers, Sync-objects stored remotely (on tcp_server)
@@ -1766,34 +1766,34 @@ def test18():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = False 
-    create_all_fanins_faninNBs_on_start = False
-    using_workers = True
-    using_threads_not_processes = True
-    num_workers = 2
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = False 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = False
+    USING_WORKERS = True
+    USING_THREADS_NOT_PROCESSES = True
+    NUM_WORKERS = 2
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    #FanIn_Type = "DAG_executor_FanIn"
-    #FanInNB_Type = "DAG_executor_FanInNB"
-    #process_work_queue_Type = "BoundedBuffer"
-    FanIn_Type = "DAG_executor_FanIn_Select"
-    FanInNB_Type = "DAG_executor_FanInNB_Select"
-    process_work_queue_Type = "BoundedBuffer_Select"
+    #FANIN_TYPE = "DAG_executor_FanIn"
+    #FANINNB_TYPE = "DAG_executor_FanInNB"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    FANIN_TYPE = "DAG_executor_FanIn_Select"
+    FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
 # remote objects with worker processes
 
@@ -1822,34 +1822,34 @@ def test19():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = False 
-    create_all_fanins_faninNBs_on_start = True
-    using_workers = True
-    using_threads_not_processes = False
-    num_workers = 1
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = False 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = True
+    USING_WORKERS = True
+    USING_THREADS_NOT_PROCESSES = False
+    NUM_WORKERS = 1
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    FanIn_Type = "DAG_executor_FanIn"
-    FanInNB_Type = "DAG_executor_FanInNB"
-    process_work_queue_Type = "BoundedBuffer"
-    #FanIn_Type = "DAG_executor_FanIn_Select"
-    #FanInNB_Type = "DAG_executor_FanInNB_Select"
-    #process_work_queue_Type = "BoundedBuffer_Select"
+    FANIN_TYPE = "DAG_executor_FanIn"
+    FANINNB_TYPE = "DAG_executor_FanInNB"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    #FANIN_TYPE = "DAG_executor_FanIn_Select"
+    #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
     print("test19 end")
 
 #Test20: worker processes (A2) with non-selective-wait Sync-objects, 
@@ -1877,34 +1877,34 @@ def test20():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = False 
-    create_all_fanins_faninNBs_on_start = True
-    using_workers = True
-    using_threads_not_processes = False
-    num_workers = 2
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = False 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = True
+    USING_WORKERS = True
+    USING_THREADS_NOT_PROCESSES = False
+    NUM_WORKERS = 2
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    FanIn_Type = "DAG_executor_FanIn"
-    FanInNB_Type = "DAG_executor_FanInNB"
-    process_work_queue_Type = "BoundedBuffer"
-    #FanIn_Type = "DAG_executor_FanIn_Select"
-    #FanInNB_Type = "DAG_executor_FanInNB_Select"
-    #process_work_queue_Type = "BoundedBuffer_Select"
+    FANIN_TYPE = "DAG_executor_FanIn"
+    FANINNB_TYPE = "DAG_executor_FanInNB"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    #FANIN_TYPE = "DAG_executor_FanIn_Select"
+    #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
 #Test21: worker processes (A2) with non-selective-wait Sync-objects, 
 #        2 workers, Sync-objects stored remotely (on tcp_server)
@@ -1931,34 +1931,34 @@ def test21():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = False 
-    create_all_fanins_faninNBs_on_start = False
-    using_workers = True
-    using_threads_not_processes = False
-    num_workers = 2
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = False 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = False
+    USING_WORKERS = True
+    USING_THREADS_NOT_PROCESSES = False
+    NUM_WORKERS = 2
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    FanIn_Type = "DAG_executor_FanIn"
-    FanInNB_Type = "DAG_executor_FanInNB"
-    process_work_queue_Type = "BoundedBuffer"
-    #FanIn_Type = "DAG_executor_FanIn_Select"
-    #FanInNB_Type = "DAG_executor_FanInNB_Select"
-    #process_work_queue_Type = "BoundedBuffer_Select"
+    FANIN_TYPE = "DAG_executor_FanIn"
+    FANINNB_TYPE = "DAG_executor_FanInNB"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    #FANIN_TYPE = "DAG_executor_FanIn_Select"
+    #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
 #Test22: worker processes (A2) with selective-wait Sync-objects, 
 #        2 workers, Sync-objects stored remotely (on tcp_server)
@@ -1985,34 +1985,34 @@ def test22():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = False 
-    create_all_fanins_faninNBs_on_start = True
-    using_workers = True
-    using_threads_not_processes = False
-    num_workers = 2
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = False 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = True
+    USING_WORKERS = True
+    USING_THREADS_NOT_PROCESSES = False
+    NUM_WORKERS = 2
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    #FanIn_Type = "DAG_executor_FanIn"
-    #FanInNB_Type = "DAG_executor_FanInNB"
-    #process_work_queue_Type = "BoundedBuffer"
-    FanIn_Type = "DAG_executor_FanIn_Select"
-    FanInNB_Type = "DAG_executor_FanInNB_Select"
-    process_work_queue_Type = "BoundedBuffer_Select"
+    #FANIN_TYPE = "DAG_executor_FanIn"
+    #FANINNB_TYPE = "DAG_executor_FanInNB"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    FANIN_TYPE = "DAG_executor_FanIn_Select"
+    FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
 #Test23: worker processes (A2) with selective-wait Sync-objects, 
 #        2 workers, Sync-objects stored remotely (on tcp_server)
@@ -2039,34 +2039,34 @@ def test23():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = False 
-    create_all_fanins_faninNBs_on_start = False
-    using_workers = True
-    using_threads_not_processes = False
-    num_workers = 2
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = False 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = False
+    USING_WORKERS = True
+    USING_THREADS_NOT_PROCESSES = False
+    NUM_WORKERS = 2
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    #FanIn_Type = "DAG_executor_FanIn"
-    #FanInNB_Type = "DAG_executor_FanInNB"
-    #process_work_queue_Type = "BoundedBuffer"
-    FanIn_Type = "DAG_executor_FanIn_Select"
-    FanInNB_Type = "DAG_executor_FanInNB_Select"
-    process_work_queue_Type = "BoundedBuffer_Select"
+    #FANIN_TYPE = "DAG_executor_FanIn"
+    #FANINNB_TYPE = "DAG_executor_FanInNB"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    FANIN_TYPE = "DAG_executor_FanIn_Select"
+    FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
 #Test24: multithreaded worker processes (A2) with non-selective-wait Sync-objects, 
 #        1 thread for the 1 worker process, Sync-objects stored remotely (on tcp_server)
@@ -2093,34 +2093,34 @@ def test24():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = False 
-    create_all_fanins_faninNBs_on_start = True
-    using_workers = True
-    using_threads_not_processes = False
-    num_workers = 1
-    use_multithreaded_multiprocessing = True
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = False 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = True
+    USING_WORKERS = True
+    USING_THREADS_NOT_PROCESSES = False
+    NUM_WORKERS = 1
+    USE_MULTITHREADED_MULTIPROCESSING = True
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    FanIn_Type = "DAG_executor_FanIn"
-    FanInNB_Type = "DAG_executor_FanInNB"
-    process_work_queue_Type = "BoundedBuffer"
-    #FanIn_Type = "DAG_executor_FanIn_Select"
-    #FanInNB_Type = "DAG_executor_FanInNB_Select"
-    #process_work_queue_Type = "BoundedBuffer_Select"
+    FANIN_TYPE = "DAG_executor_FanIn"
+    FANINNB_TYPE = "DAG_executor_FanInNB"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    #FANIN_TYPE = "DAG_executor_FanIn_Select"
+    #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
 #Test25: multithreaded worker processes (A2) with non-selective-wait Sync-objects, 
 #        2 threads for the 1 worker process, Sync-objects stored remotely (on tcp_server)
@@ -2147,34 +2147,34 @@ def test25():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = False 
-    create_all_fanins_faninNBs_on_start = True
-    using_workers = True
-    using_threads_not_processes = False
-    num_workers = 1
-    use_multithreaded_multiprocessing = True
-    num_threads_for_multithreaded_multiprocessing = 2
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = False 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = True
+    USING_WORKERS = True
+    USING_THREADS_NOT_PROCESSES = False
+    NUM_WORKERS = 1
+    USE_MULTITHREADED_MULTIPROCESSING = True
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 2
 
-    FanIn_Type = "DAG_executor_FanIn"
-    FanInNB_Type = "DAG_executor_FanInNB"
-    process_work_queue_Type = "BoundedBuffer"
-    #FanIn_Type = "DAG_executor_FanIn_Select"
-    #FanInNB_Type = "DAG_executor_FanInNB_Select"
-    #process_work_queue_Type = "BoundedBuffer_Select"
+    FANIN_TYPE = "DAG_executor_FanIn"
+    FANINNB_TYPE = "DAG_executor_FanInNB"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    #FANIN_TYPE = "DAG_executor_FanIn_Select"
+    #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
 #Test26: multithreaded worker processes (A2) with non-selective-wait Sync-objects, 
 #        2 threads for each of 2 worker process, Sync-objects stored remotely (on tcp_server)
@@ -2201,34 +2201,34 @@ def test26():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = False 
-    create_all_fanins_faninNBs_on_start = True
-    using_workers = True
-    using_threads_not_processes = False
-    num_workers = 2
-    use_multithreaded_multiprocessing = True
-    num_threads_for_multithreaded_multiprocessing = 2
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = False 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = True
+    USING_WORKERS = True
+    USING_THREADS_NOT_PROCESSES = False
+    NUM_WORKERS = 2
+    USE_MULTITHREADED_MULTIPROCESSING = True
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 2
 
-    FanIn_Type = "DAG_executor_FanIn"
-    FanInNB_Type = "DAG_executor_FanInNB"
-    process_work_queue_Type = "BoundedBuffer"
-    #FanIn_Type = "DAG_executor_FanIn_Select"
-    #FanInNB_Type = "DAG_executor_FanInNB_Select"
-    #process_work_queue_Type = "BoundedBuffer_Select"
+    FANIN_TYPE = "DAG_executor_FanIn"
+    FANINNB_TYPE = "DAG_executor_FanInNB"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    #FANIN_TYPE = "DAG_executor_FanIn_Select"
+    #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
 #Test27: multithreaded worker processes (A2) with selective-wait Sync-objects, 
 #        2 threads for the 1 worker process, Sync-objects stored remotely (on tcp_server)
@@ -2255,34 +2255,34 @@ def test27():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = False 
-    create_all_fanins_faninNBs_on_start = True
-    using_workers = True
-    using_threads_not_processes = False
-    num_workers = 1
-    use_multithreaded_multiprocessing = True
-    num_threads_for_multithreaded_multiprocessing = 2
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = False 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = True
+    USING_WORKERS = True
+    USING_THREADS_NOT_PROCESSES = False
+    NUM_WORKERS = 1
+    USE_MULTITHREADED_MULTIPROCESSING = True
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 2
 
-    #FanIn_Type = "DAG_executor_FanIn"
-    #FanInNB_Type = "DAG_executor_FanInNB"
-    #process_work_queue_Type = "BoundedBuffer"
-    FanIn_Type = "DAG_executor_FanIn_Select"
-    FanInNB_Type = "DAG_executor_FanInNB_Select"
-    process_work_queue_Type = "BoundedBuffer_Select"
+    #FANIN_TYPE = "DAG_executor_FanIn"
+    #FANINNB_TYPE = "DAG_executor_FanInNB"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    FANIN_TYPE = "DAG_executor_FanIn_Select"
+    FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
 #Test28: multithreaded worker processes (A2) with selective-wait Sync-objects, 
 #        2 threads for each of 2 worker process, Sync-objects stored remotely (on tcp_server)
@@ -2309,34 +2309,34 @@ def test28():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = False 
-    create_all_fanins_faninNBs_on_start = True
-    using_workers = True
-    using_threads_not_processes = False
-    num_workers = 2
-    use_multithreaded_multiprocessing = True
-    num_threads_for_multithreaded_multiprocessing = 2
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = False 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = True
+    USING_WORKERS = True
+    USING_THREADS_NOT_PROCESSES = False
+    NUM_WORKERS = 2
+    USE_MULTITHREADED_MULTIPROCESSING = True
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 2
 
-    #FanIn_Type = "DAG_executor_FanIn"
-    #FanInNB_Type = "DAG_executor_FanInNB"
-    #process_work_queue_Type = "BoundedBuffer"
-    FanIn_Type = "DAG_executor_FanIn_Select"
-    FanInNB_Type = "DAG_executor_FanInNB_Select"
-    process_work_queue_Type = "BoundedBuffer_Select"
+    #FANIN_TYPE = "DAG_executor_FanIn"
+    #FANINNB_TYPE = "DAG_executor_FanInNB"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    FANIN_TYPE = "DAG_executor_FanIn_Select"
+    FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
 #Test store_sync_objects_in_lambdas
 
@@ -2366,34 +2366,34 @@ def test29():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = False 
-    create_all_fanins_faninNBs_on_start = True
-    using_workers = True
-    using_threads_not_processes = True
-    num_workers = 2
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = False 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = True
+    USING_WORKERS = True
+    USING_THREADS_NOT_PROCESSES = True
+    NUM_WORKERS = 2
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    #FanIn_Type = "DAG_executor_FanIn"
-    #FanInNB_Type = "DAG_executor_FanInNB"
-    #process_work_queue_Type = "BoundedBuffer"
-    FanIn_Type = "DAG_executor_FanIn_Select"
-    FanInNB_Type = "DAG_executor_FanInNB_Select"
-    process_work_queue_Type = "BoundedBuffer_Select"
+    #FANIN_TYPE = "DAG_executor_FanIn"
+    #FANINNB_TYPE = "DAG_executor_FanInNB"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    FANIN_TYPE = "DAG_executor_FanIn_Select"
+    FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
     # TTFFTFF: no trigger and no DAG_orchestrator, but map objects 
     # (anon is false) and create objects on start and
@@ -2434,34 +2434,34 @@ def test30():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = False 
-    create_all_fanins_faninNBs_on_start = True
-    using_workers = True
-    using_threads_not_processes = True
-    num_workers = 2
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = False 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = True
+    USING_WORKERS = True
+    USING_THREADS_NOT_PROCESSES = True
+    NUM_WORKERS = 2
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    #FanIn_Type = "DAG_executor_FanIn"
-    #FanInNB_Type = "DAG_executor_FanInNB"
-    #process_work_queue_Type = "BoundedBuffer"
-    FanIn_Type = "DAG_executor_FanIn_Select"
-    FanInNB_Type = "DAG_executor_FanInNB_Select"
-    process_work_queue_Type = "BoundedBuffer_Select"
+    #FANIN_TYPE = "DAG_executor_FanIn"
+    #FANINNB_TYPE = "DAG_executor_FanInNB"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    FANIN_TYPE = "DAG_executor_FanIn_Select"
+    FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
     store_sync_objects_in_lambdas = True
     using_Lambda_Function_Simulators_to_Store_Objects = True
@@ -2499,34 +2499,34 @@ def test31():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = False 
-    create_all_fanins_faninNBs_on_start = True
-    using_workers = True
-    using_threads_not_processes = True
-    num_workers = 2
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = False 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = True
+    USING_WORKERS = True
+    USING_THREADS_NOT_PROCESSES = True
+    NUM_WORKERS = 2
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    #FanIn_Type = "DAG_executor_FanIn"
-    #FanInNB_Type = "DAG_executor_FanInNB"
-    #process_work_queue_Type = "BoundedBuffer"
-    FanIn_Type = "DAG_executor_FanIn_Select"
-    FanInNB_Type = "DAG_executor_FanInNB_Select"
-    process_work_queue_Type = "BoundedBuffer_Select"
+    #FANIN_TYPE = "DAG_executor_FanIn"
+    #FANINNB_TYPE = "DAG_executor_FanInNB"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    FANIN_TYPE = "DAG_executor_FanIn_Select"
+    FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
     store_sync_objects_in_lambdas = True
     using_Lambda_Function_Simulators_to_Store_Objects = True
@@ -2565,34 +2565,34 @@ def test32():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = False 
-    create_all_fanins_faninNBs_on_start = True
-    using_workers = True
-    using_threads_not_processes = True
-    num_workers = 2
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = False 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = True
+    USING_WORKERS = True
+    USING_THREADS_NOT_PROCESSES = True
+    NUM_WORKERS = 2
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    #FanIn_Type = "DAG_executor_FanIn"
-    #FanInNB_Type = "DAG_executor_FanInNB"
-    #process_work_queue_Type = "BoundedBuffer"
-    FanIn_Type = "DAG_executor_FanIn_Select"
-    FanInNB_Type = "DAG_executor_FanInNB_Select"
-    process_work_queue_Type = "BoundedBuffer_Select"
+    #FANIN_TYPE = "DAG_executor_FanIn"
+    #FANINNB_TYPE = "DAG_executor_FanInNB"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    FANIN_TYPE = "DAG_executor_FanIn_Select"
+    FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
     store_sync_objects_in_lambdas = True
     using_Lambda_Function_Simulators_to_Store_Objects = True
@@ -2610,8 +2610,8 @@ def test32():
 # Note: output is in tcp_server_lambda window, not DAG_executor window
 def test33():
 
-	#       run_all_tasks_locally = False, create objects on start = True:
-    #       using_workers = False. The faninNB_Select calls DAG_executor.DAG_executor_lambda
+	#       RUN_ALL_TASKS_LOCALLY = False, create objects on start = True:
+    #       USING_WORKERS = False. The faninNB_Select calls DAG_executor.DAG_executor_lambda
     #       so we are not using real or simulated lambdas or even workers,
     #       instead, the synch objects on tcp_server trigger their tasks,
     #       which eans in this case the object is executing the fanin task.
@@ -2645,34 +2645,34 @@ def test33():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = False 
-    store_fanins_faninNBs_locally = False 
-    create_all_fanins_faninNBs_on_start = True
-    using_workers = False
-    using_threads_not_processes = True
-    num_workers = 2
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = False 
+    STORE_FANINS_FANINNBS_LOCALLY = False 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = True
+    USING_WORKERS = False
+    USING_THREADS_NOT_PROCESSES = True
+    NUM_WORKERS = 2
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    #FanIn_Type = "DAG_executor_FanIn"
-    #FanInNB_Type = "DAG_executor_FanInNB"
-    #process_work_queue_Type = "BoundedBuffer"
-    FanIn_Type = "DAG_executor_FanIn_Select"
-    FanInNB_Type = "DAG_executor_FanInNB_Select"
-    process_work_queue_Type = "BoundedBuffer_Select"
+    #FANIN_TYPE = "DAG_executor_FanIn"
+    #FANINNB_TYPE = "DAG_executor_FanInNB"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    FANIN_TYPE = "DAG_executor_FanIn_Select"
+    FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
     store_sync_objects_in_lambdas = True
     using_Lambda_Function_Simulators_to_Store_Objects = True
@@ -2740,45 +2740,45 @@ def test34XXX():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
     """
-    run_all_tasks_locally = False 
-    store_fanins_faninNBs_locally = False 
-    create_all_fanins_faninNBs_on_start = False
-    using_workers = True
-    using_threads_not_processes = True
-    num_workers = 2
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = False 
+    STORE_FANINS_FANINNBS_LOCALLY = False 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = False
+    USING_WORKERS = True
+    USING_THREADS_NOT_PROCESSES = True
+    NUM_WORKERS = 2
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
     """
 
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = False 
-    create_all_fanins_faninNBs_on_start = True
-    using_workers = True
-    using_threads_not_processes = False
-    num_workers = 2
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = False 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = True
+    USING_WORKERS = True
+    USING_THREADS_NOT_PROCESSES = False
+    NUM_WORKERS = 2
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    #FanIn_Type = "DAG_executor_FanIn"
-    #FanInNB_Type = "DAG_executor_FanInNB"
-    #process_work_queue_Type = "BoundedBuffer"
-    FanIn_Type = "DAG_executor_FanIn_Select"
-    FanInNB_Type = "DAG_executor_FanInNB_Select"
-    process_work_queue_Type = "BoundedBuffer_Select"
+    #FANIN_TYPE = "DAG_executor_FanIn"
+    #FANINNB_TYPE = "DAG_executor_FanInNB"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    FANIN_TYPE = "DAG_executor_FanIn_Select"
+    FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
     """
     store_sync_objects_in_lambdas = True
@@ -2837,34 +2837,34 @@ def test35():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = True 
-    create_all_fanins_faninNBs_on_start = True
-    using_workers = True
-    using_threads_not_processes = True
-    num_workers = 2
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = True 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = True
+    USING_WORKERS = True
+    USING_THREADS_NOT_PROCESSES = True
+    NUM_WORKERS = 2
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    FanIn_Type = "DAG_executor_FanIn"
-    FanInNB_Type = "DAG_executor_FanInNB"
-    process_work_queue_Type = "BoundedBuffer"
-    #FanIn_Type = "DAG_executor_FanIn_Select"
-    #FanInNB_Type = "DAG_executor_FanInNB_Select"
-    #process_work_queue_Type = "BoundedBuffer_Select"
+    FANIN_TYPE = "DAG_executor_FanIn"
+    FANINNB_TYPE = "DAG_executor_FanInNB"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    #FANIN_TYPE = "DAG_executor_FanIn_Select"
+    #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
     store_sync_objects_in_lambdas = False
     using_Lambda_Function_Simulators_to_Store_Objects = False
@@ -2875,7 +2875,7 @@ def test35():
     using_single_lambda_function = False
 
     compute_pagerank = True
-    check_pagerank_output = compute_pagerank and run_all_tasks_locally and using_workers and using_threads_not_processes and True
+    check_pagerank_output = compute_pagerank and RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES and True
     name_of_first_groupOrpartition_in_DAG = "PR1_1"
     number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
     same_output_for_all_fanout_fanin = not compute_pagerank
@@ -2912,34 +2912,34 @@ def test36():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = True 
-    create_all_fanins_faninNBs_on_start = True
-    using_workers = True
-    using_threads_not_processes = True
-    num_workers = 2
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = True 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = True
+    USING_WORKERS = True
+    USING_THREADS_NOT_PROCESSES = True
+    NUM_WORKERS = 2
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    FanIn_Type = "DAG_executor_FanIn"
-    FanInNB_Type = "DAG_executor_FanInNB"
-    process_work_queue_Type = "BoundedBuffer"
-    #FanIn_Type = "DAG_executor_FanIn_Select"
-    #FanInNB_Type = "DAG_executor_FanInNB_Select"
-    #process_work_queue_Type = "BoundedBuffer_Select"
+    FANIN_TYPE = "DAG_executor_FanIn"
+    FANINNB_TYPE = "DAG_executor_FanInNB"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    #FANIN_TYPE = "DAG_executor_FanIn_Select"
+    #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
     store_sync_objects_in_lambdas = False
     using_Lambda_Function_Simulators_to_Store_Objects = False
@@ -2950,7 +2950,7 @@ def test36():
     using_single_lambda_function = False
 
     compute_pagerank = True
-    check_pagerank_output = compute_pagerank and run_all_tasks_locally and using_workers and using_threads_not_processes and True
+    check_pagerank_output = compute_pagerank and RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES and True
     name_of_first_groupOrpartition_in_DAG = "PR1_1"
     number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
     same_output_for_all_fanout_fanin = not compute_pagerank
@@ -2987,34 +2987,34 @@ def test37():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = False 
-    create_all_fanins_faninNBs_on_start = True
-    using_workers = True
-    using_threads_not_processes = False
-    num_workers = 2
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = False 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = True
+    USING_WORKERS = True
+    USING_THREADS_NOT_PROCESSES = False
+    NUM_WORKERS = 2
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    FanIn_Type = "DAG_executor_FanIn"
-    FanInNB_Type = "DAG_executor_FanInNB"
-    process_work_queue_Type = "BoundedBuffer"
-    #FanIn_Type = "DAG_executor_FanIn_Select"
-    #FanInNB_Type = "DAG_executor_FanInNB_Select"
-    #process_work_queue_Type = "BoundedBuffer_Select"
+    FANIN_TYPE = "DAG_executor_FanIn"
+    FANINNB_TYPE = "DAG_executor_FanInNB"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    #FANIN_TYPE = "DAG_executor_FanIn_Select"
+    #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
     store_sync_objects_in_lambdas = False
     using_Lambda_Function_Simulators_to_Store_Objects = False
@@ -3025,7 +3025,7 @@ def test37():
     using_single_lambda_function = False
 
     compute_pagerank = True
-    check_pagerank_output = compute_pagerank and run_all_tasks_locally and using_workers and using_threads_not_processes and True
+    check_pagerank_output = compute_pagerank and RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES and True
     name_of_first_groupOrpartition_in_DAG = "PR1_1"
     number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
     same_output_for_all_fanout_fanin = not compute_pagerank
@@ -3062,34 +3062,34 @@ def test38():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = False 
-    create_all_fanins_faninNBs_on_start = True
-    using_workers = True
-    using_threads_not_processes = False
-    num_workers = 2
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = False 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = True
+    USING_WORKERS = True
+    USING_THREADS_NOT_PROCESSES = False
+    NUM_WORKERS = 2
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    FanIn_Type = "DAG_executor_FanIn"
-    FanInNB_Type = "DAG_executor_FanInNB"
-    process_work_queue_Type = "BoundedBuffer"
-    #FanIn_Type = "DAG_executor_FanIn_Select"
-    #FanInNB_Type = "DAG_executor_FanInNB_Select"
-    #process_work_queue_Type = "BoundedBuffer_Select"
+    FANIN_TYPE = "DAG_executor_FanIn"
+    FANINNB_TYPE = "DAG_executor_FanInNB"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    #FANIN_TYPE = "DAG_executor_FanIn_Select"
+    #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
     store_sync_objects_in_lambdas = False
     using_Lambda_Function_Simulators_to_Store_Objects = False
@@ -3100,7 +3100,7 @@ def test38():
     using_single_lambda_function = False
 
     compute_pagerank = True
-    check_pagerank_output = compute_pagerank and run_all_tasks_locally and using_workers and using_threads_not_processes and True
+    check_pagerank_output = compute_pagerank and RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES and True
     name_of_first_groupOrpartition_in_DAG = "PR1_1"
     number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
     same_output_for_all_fanout_fanin = not compute_pagerank
@@ -3138,35 +3138,35 @@ def test39():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = False 
-    bypass_call_lambda_client_invoke = (not run_all_tasks_locally) and True
-    store_fanins_faninNBs_locally = False 
-    create_all_fanins_faninNBs_on_start = True
-    using_workers = False
-    using_threads_not_processes = True
-    num_workers = 2
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = False 
+    BYPASS_CALL_LAMBDA_CLIENT_INVOKE = (not RUN_ALL_TASKS_LOCALLY) and True
+    STORE_FANINS_FANINNBS_LOCALLY = False 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = True
+    USING_WORKERS = False
+    USING_THREADS_NOT_PROCESSES = True
+    NUM_WORKERS = 2
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    FanIn_Type = "DAG_executor_FanIn"
-    FanInNB_Type = "DAG_executor_FanInNB"
-    process_work_queue_Type = "BoundedBuffer"
-    #FanIn_Type = "DAG_executor_FanIn_Select"
-    #FanInNB_Type = "DAG_executor_FanInNB_Select"
-    #process_work_queue_Type = "BoundedBuffer_Select"
+    FANIN_TYPE = "DAG_executor_FanIn"
+    FANINNB_TYPE = "DAG_executor_FanInNB"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    #FANIN_TYPE = "DAG_executor_FanIn_Select"
+    #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
     store_sync_objects_in_lambdas = False
     using_Lambda_Function_Simulators_to_Store_Objects = False
@@ -3177,7 +3177,7 @@ def test39():
     using_single_lambda_function = False
 
     compute_pagerank = True
-    check_pagerank_output = compute_pagerank and run_all_tasks_locally and using_workers and using_threads_not_processes and True
+    check_pagerank_output = compute_pagerank and RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES and True
     name_of_first_groupOrpartition_in_DAG = "PR1_1"
     number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
     same_output_for_all_fanout_fanin = not compute_pagerank
@@ -3219,34 +3219,34 @@ def test40():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = True 
-    create_all_fanins_faninNBs_on_start = True
-    using_workers = True
-    using_threads_not_processes = True
-    num_workers = 2
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = True 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = True
+    USING_WORKERS = True
+    USING_THREADS_NOT_PROCESSES = True
+    NUM_WORKERS = 2
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    FanIn_Type = "DAG_executor_FanIn"
-    FanInNB_Type = "DAG_executor_FanInNB"
-    process_work_queue_Type = "BoundedBuffer"
-    #FanIn_Type = "DAG_executor_FanIn_Select"
-    #FanInNB_Type = "DAG_executor_FanInNB_Select"
-    #process_work_queue_Type = "BoundedBuffer_Select"
+    FANIN_TYPE = "DAG_executor_FanIn"
+    FANINNB_TYPE = "DAG_executor_FanInNB"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    #FANIN_TYPE = "DAG_executor_FanIn_Select"
+    #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
     store_sync_objects_in_lambdas = False
     using_Lambda_Function_Simulators_to_Store_Objects = False
@@ -3257,7 +3257,7 @@ def test40():
     using_single_lambda_function = False
 
     compute_pagerank = True
-    check_pagerank_output = compute_pagerank and run_all_tasks_locally and using_workers and using_threads_not_processes and True
+    check_pagerank_output = compute_pagerank and RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES and True
     name_of_first_groupOrpartition_in_DAG = "PR1_1"
     number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
     same_output_for_all_fanout_fanin = not compute_pagerank
@@ -3296,34 +3296,34 @@ def test41():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = True 
-    create_all_fanins_faninNBs_on_start = True
-    using_workers = True
-    using_threads_not_processes = True
-    num_workers = 2
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = True 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = True
+    USING_WORKERS = True
+    USING_THREADS_NOT_PROCESSES = True
+    NUM_WORKERS = 2
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    FanIn_Type = "DAG_executor_FanIn"
-    FanInNB_Type = "DAG_executor_FanInNB"
-    process_work_queue_Type = "BoundedBuffer"
-    #FanIn_Type = "DAG_executor_FanIn_Select"
-    #FanInNB_Type = "DAG_executor_FanInNB_Select"
-    #process_work_queue_Type = "BoundedBuffer_Select"
+    FANIN_TYPE = "DAG_executor_FanIn"
+    FANINNB_TYPE = "DAG_executor_FanInNB"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    #FANIN_TYPE = "DAG_executor_FanIn_Select"
+    #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
     store_sync_objects_in_lambdas = False
     using_Lambda_Function_Simulators_to_Store_Objects = False
@@ -3334,7 +3334,7 @@ def test41():
     using_single_lambda_function = False
 
     compute_pagerank = True
-    check_pagerank_output = compute_pagerank and run_all_tasks_locally and using_workers and using_threads_not_processes and True
+    check_pagerank_output = compute_pagerank and RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES and True
     name_of_first_groupOrpartition_in_DAG = "PR1_1"
     number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
     same_output_for_all_fanout_fanin = not compute_pagerank
@@ -3374,34 +3374,34 @@ def test42():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = True 
-    create_all_fanins_faninNBs_on_start = True
-    using_workers = True
-    using_threads_not_processes = True
-    num_workers = 2
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = True 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = True
+    USING_WORKERS = True
+    USING_THREADS_NOT_PROCESSES = True
+    NUM_WORKERS = 2
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    FanIn_Type = "DAG_executor_FanIn"
-    FanInNB_Type = "DAG_executor_FanInNB"
-    process_work_queue_Type = "BoundedBuffer"
-    #FanIn_Type = "DAG_executor_FanIn_Select"
-    #FanInNB_Type = "DAG_executor_FanInNB_Select"
-    #process_work_queue_Type = "BoundedBuffer_Select"
+    FANIN_TYPE = "DAG_executor_FanIn"
+    FANINNB_TYPE = "DAG_executor_FanInNB"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    #FANIN_TYPE = "DAG_executor_FanIn_Select"
+    #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
     store_sync_objects_in_lambdas = False
     using_Lambda_Function_Simulators_to_Store_Objects = False
@@ -3412,7 +3412,7 @@ def test42():
     using_single_lambda_function = False
 
     compute_pagerank = True
-    check_pagerank_output = compute_pagerank and run_all_tasks_locally and using_workers and using_threads_not_processes and True
+    check_pagerank_output = compute_pagerank and RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES and True
     name_of_first_groupOrpartition_in_DAG = "PR1_1"
     number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
     same_output_for_all_fanout_fanin = not compute_pagerank
@@ -3452,34 +3452,34 @@ def test43():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = True 
-    create_all_fanins_faninNBs_on_start = True
-    using_workers = True
-    using_threads_not_processes = True
-    num_workers = 2
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = True 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = True
+    USING_WORKERS = True
+    USING_THREADS_NOT_PROCESSES = True
+    NUM_WORKERS = 2
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    FanIn_Type = "DAG_executor_FanIn"
-    FanInNB_Type = "DAG_executor_FanInNB"
-    process_work_queue_Type = "BoundedBuffer"
-    #FanIn_Type = "DAG_executor_FanIn_Select"
-    #FanInNB_Type = "DAG_executor_FanInNB_Select"
-    #process_work_queue_Type = "BoundedBuffer_Select"
+    FANIN_TYPE = "DAG_executor_FanIn"
+    FANINNB_TYPE = "DAG_executor_FanInNB"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    #FANIN_TYPE = "DAG_executor_FanIn_Select"
+    #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
     store_sync_objects_in_lambdas = False
     using_Lambda_Function_Simulators_to_Store_Objects = False
@@ -3490,7 +3490,7 @@ def test43():
     using_single_lambda_function = False
 
     compute_pagerank = True
-    check_pagerank_output = compute_pagerank and run_all_tasks_locally and using_workers and using_threads_not_processes and True
+    check_pagerank_output = compute_pagerank and RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES and True
     name_of_first_groupOrpartition_in_DAG = "PR1_1"
     number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
     same_output_for_all_fanout_fanin = not compute_pagerank
@@ -3528,34 +3528,34 @@ def test44():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = False 
-    create_all_fanins_faninNBs_on_start = True
-    using_workers = True
-    using_threads_not_processes = False
-    num_workers = 2
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = False 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = True
+    USING_WORKERS = True
+    USING_THREADS_NOT_PROCESSES = False
+    NUM_WORKERS = 2
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    FanIn_Type = "DAG_executor_FanIn"
-    FanInNB_Type = "DAG_executor_FanInNB"
-    process_work_queue_Type = "BoundedBuffer"
-    #FanIn_Type = "DAG_executor_FanIn_Select"
-    #FanInNB_Type = "DAG_executor_FanInNB_Select"
-    #process_work_queue_Type = "BoundedBuffer_Select"
+    FANIN_TYPE = "DAG_executor_FanIn"
+    FANINNB_TYPE = "DAG_executor_FanInNB"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    #FANIN_TYPE = "DAG_executor_FanIn_Select"
+    #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
     store_sync_objects_in_lambdas = False
     using_Lambda_Function_Simulators_to_Store_Objects = False
@@ -3566,7 +3566,7 @@ def test44():
     using_single_lambda_function = False
 
     compute_pagerank = True
-    check_pagerank_output = compute_pagerank and run_all_tasks_locally and using_workers and using_threads_not_processes and True
+    check_pagerank_output = compute_pagerank and RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES and True
     name_of_first_groupOrpartition_in_DAG = "PR1_1"
     number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
     same_output_for_all_fanout_fanin = not compute_pagerank
@@ -3605,34 +3605,34 @@ def test45():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = False 
-    create_all_fanins_faninNBs_on_start = True
-    using_workers = True
-    using_threads_not_processes = False
-    num_workers = 2
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = False 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = True
+    USING_WORKERS = True
+    USING_THREADS_NOT_PROCESSES = False
+    NUM_WORKERS = 2
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    FanIn_Type = "DAG_executor_FanIn"
-    FanInNB_Type = "DAG_executor_FanInNB"
-    process_work_queue_Type = "BoundedBuffer"
-    #FanIn_Type = "DAG_executor_FanIn_Select"
-    #FanInNB_Type = "DAG_executor_FanInNB_Select"
-    #process_work_queue_Type = "BoundedBuffer_Select"
+    FANIN_TYPE = "DAG_executor_FanIn"
+    FANINNB_TYPE = "DAG_executor_FanInNB"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    #FANIN_TYPE = "DAG_executor_FanIn_Select"
+    #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
     store_sync_objects_in_lambdas = False
     using_Lambda_Function_Simulators_to_Store_Objects = False
@@ -3643,7 +3643,7 @@ def test45():
     using_single_lambda_function = False
 
     compute_pagerank = True
-    check_pagerank_output = compute_pagerank and run_all_tasks_locally and using_workers and using_threads_not_processes and True
+    check_pagerank_output = compute_pagerank and RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES and True
     name_of_first_groupOrpartition_in_DAG = "PR1_1"
     number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
     same_output_for_all_fanout_fanin = not compute_pagerank
@@ -3683,34 +3683,34 @@ def test46():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = False 
-    create_all_fanins_faninNBs_on_start = True
-    using_workers = True
-    using_threads_not_processes = False
-    num_workers = 2
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = False 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = True
+    USING_WORKERS = True
+    USING_THREADS_NOT_PROCESSES = False
+    NUM_WORKERS = 2
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    FanIn_Type = "DAG_executor_FanIn"
-    FanInNB_Type = "DAG_executor_FanInNB"
-    process_work_queue_Type = "BoundedBuffer"
-    #FanIn_Type = "DAG_executor_FanIn_Select"
-    #FanInNB_Type = "DAG_executor_FanInNB_Select"
-    #process_work_queue_Type = "BoundedBuffer_Select"
+    FANIN_TYPE = "DAG_executor_FanIn"
+    FANINNB_TYPE = "DAG_executor_FanInNB"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    #FANIN_TYPE = "DAG_executor_FanIn_Select"
+    #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
     store_sync_objects_in_lambdas = False
     using_Lambda_Function_Simulators_to_Store_Objects = False
@@ -3721,7 +3721,7 @@ def test46():
     using_single_lambda_function = False
 
     compute_pagerank = True
-    check_pagerank_output = compute_pagerank and run_all_tasks_locally and using_workers and using_threads_not_processes and True
+    check_pagerank_output = compute_pagerank and RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES and True
     name_of_first_groupOrpartition_in_DAG = "PR1_1"
     number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
     same_output_for_all_fanout_fanin = not compute_pagerank
@@ -3761,34 +3761,34 @@ def test47():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = False 
-    create_all_fanins_faninNBs_on_start = True
-    using_workers = True
-    using_threads_not_processes = False
-    num_workers = 2
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = False 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = True
+    USING_WORKERS = True
+    USING_THREADS_NOT_PROCESSES = False
+    NUM_WORKERS = 2
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    FanIn_Type = "DAG_executor_FanIn"
-    FanInNB_Type = "DAG_executor_FanInNB"
-    process_work_queue_Type = "BoundedBuffer"
-    #FanIn_Type = "DAG_executor_FanIn_Select"
-    #FanInNB_Type = "DAG_executor_FanInNB_Select"
-    #process_work_queue_Type = "BoundedBuffer_Select"
+    FANIN_TYPE = "DAG_executor_FanIn"
+    FANINNB_TYPE = "DAG_executor_FanInNB"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    #FANIN_TYPE = "DAG_executor_FanIn_Select"
+    #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
     store_sync_objects_in_lambdas = False
     using_Lambda_Function_Simulators_to_Store_Objects = False
@@ -3799,7 +3799,7 @@ def test47():
     using_single_lambda_function = False
 
     compute_pagerank = True
-    check_pagerank_output = compute_pagerank and run_all_tasks_locally and using_workers and using_threads_not_processes and True
+    check_pagerank_output = compute_pagerank and RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES and True
     name_of_first_groupOrpartition_in_DAG = "PR1_1"
     number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
     same_output_for_all_fanout_fanin = not compute_pagerank
@@ -3838,34 +3838,34 @@ def test48():
     global use_shared_partitions_groups
     global use_page_rank_group_partitions
     global use_struct_of_arrays_for_pagerank
-    global run_all_tasks_locally
-    global bypass_call_lambda_client_invoke
-    global store_fanins_faninNBs_locally
-    global create_all_fanins_faninNBs_on_start
-    global using_workers
-    global using_threads_not_processes
-    global num_workers
-    global use_multithreaded_multiprocessing
-    global num_threads_for_multithreaded_multiprocessing
-    global FanIn_Type
-    global FanInNB_Type
-    global process_work_queue_Type
+    global RUN_ALL_TASKS_LOCALLY
+    global BYPASS_CALL_LAMBDA_CLIENT_INVOKE
+    global STORE_FANINS_FANINNBS_LOCALLY
+    global CREATE_ALL_FANINS_FANINNBS_ON_START
+    global USING_WORKERS
+    global USING_THREADS_NOT_PROCESSES
+    global NUM_WORKERS
+    global USE_MULTITHREADED_MULTIPROCESSING
+    global NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING
+    global FANIN_TYPE
+    global FANINNB_TYPE
+    global PROCESS_WORK_QUEUE_TYPE
 
-    run_all_tasks_locally = True 
-    store_fanins_faninNBs_locally = True 
-    create_all_fanins_faninNBs_on_start = False
-    using_workers = True
-    using_threads_not_processes = True
-    num_workers = 2
-    use_multithreaded_multiprocessing = False
-    num_threads_for_multithreaded_multiprocessing = 1
+    RUN_ALL_TASKS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = True 
+    CREATE_ALL_FANINS_FANINNBS_ON_START = False
+    USING_WORKERS = True
+    USING_THREADS_NOT_PROCESSES = True
+    NUM_WORKERS = 2
+    USE_MULTITHREADED_MULTIPROCESSING = False
+    NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 
-    FanIn_Type = "DAG_executor_FanIn"
-    FanInNB_Type = "DAG_executor_FanInNB"
-    process_work_queue_Type = "BoundedBuffer"
-    #FanIn_Type = "DAG_executor_FanIn_Select"
-    #FanInNB_Type = "DAG_executor_FanInNB_Select"
-    #process_work_queue_Type = "BoundedBuffer_Select"
+    FANIN_TYPE = "DAG_executor_FanIn"
+    FANINNB_TYPE = "DAG_executor_FanInNB"
+    PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer"
+    #FANIN_TYPE = "DAG_executor_FanIn_Select"
+    #FANINNB_TYPE = "DAG_executor_FanInNB_Select"
+    #PROCESS_WORK_QUEUE_TYPE = "BoundedBuffer_Select"
 
     store_sync_objects_in_lambdas = False
     using_Lambda_Function_Simulators_to_Store_Objects = False
@@ -3876,7 +3876,7 @@ def test48():
     using_single_lambda_function = False
 
     compute_pagerank = True
-    check_pagerank_output = compute_pagerank and run_all_tasks_locally and using_workers and using_threads_not_processes and True
+    check_pagerank_output = compute_pagerank and RUN_ALL_TASKS_LOCALLY and USING_WORKERS and USING_THREADS_NOT_PROCESSES and True
     name_of_first_groupOrpartition_in_DAG = "PR1_1"
     number_of_pagerank_iterations_for_partitions_groups_with_loops = 10
     same_output_for_all_fanout_fanin = not compute_pagerank
@@ -3898,7 +3898,7 @@ so no double output in OS boxes. puts debug lines in mplog file but not DOS box;
 If do logger stuff then get double print to DOS box of ebug stuff, not sure why
 
 #####
-Test real lambda code with bypass_call_lambda_client_invoke = not run_all_tasks_locally and True
+Test real lambda code with BYPASS_CALL_LAMBDA_CLIENT_INVOKE = not RUN_ALL_TASKS_LOCALLY and True
 ######
 Test PR in Lambdas?
 ######
@@ -3906,70 +3906,70 @@ Test PR in Lambdas?
 
 def check_asserts():
     try:
-        msg = "[Error]: Configuration error: if using_workers then must run_all_tasks_locally."
-        assert not (using_workers and not run_all_tasks_locally), msg
+        msg = "[Error]: Configuration error: if USING_WORKERS then must RUN_ALL_TASKS_LOCALLY."
+        assert not (USING_WORKERS and not RUN_ALL_TASKS_LOCALLY), msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
-        if exit_program_on_exception:
+        if EXIT_PROGRAM_ON_EXCEPTION:
             logging.shutdown()
             os._exit(0)
     #assertOld:
-    #if using_workers and not run_all_tasks_locally:
-    #    logger.error("[Error]: Configuration error: if using_workers then must run_all_tasks_locally.")
+    #if USING_WORKERS and not RUN_ALL_TASKS_LOCALLY:
+    #    logger.error("[Error]: Configuration error: if USING_WORKERS then must RUN_ALL_TASKS_LOCALLY.")
     #    logging.shutdown()
     #    os._exit(0)     
 
 
     try:
-        msg = "[Error]: Configuration error: if bypass_call_lambda_client_invoke then must be running real Lambdas" + " i.e., not run_all_tasks_locally."
-        assert not (bypass_call_lambda_client_invoke and run_all_tasks_locally), msg
+        msg = "[Error]: Configuration error: if BYPASS_CALL_LAMBDA_CLIENT_INVOKE then must be running real Lambdas" + " i.e., not RUN_ALL_TASKS_LOCALLY."
+        assert not (BYPASS_CALL_LAMBDA_CLIENT_INVOKE and RUN_ALL_TASKS_LOCALLY), msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
-        if exit_program_on_exception:
+        if EXIT_PROGRAM_ON_EXCEPTION:
             logging.shutdown()
             os._exit(0)
     #assertOld:
-    #if bypass_call_lambda_client_invoke and run_all_tasks_locally:
-    #    logger.error("[Error]: Configuration error: if bypass_call_lambda_client_invoke then must be running real Lambdas"
-    #        + " i.e., not run_all_tasks_locally.")
+    #if BYPASS_CALL_LAMBDA_CLIENT_INVOKE and RUN_ALL_TASKS_LOCALLY:
+    #    logger.error("[Error]: Configuration error: if BYPASS_CALL_LAMBDA_CLIENT_INVOKE then must be running real Lambdas"
+    #        + " i.e., not RUN_ALL_TASKS_LOCALLY.")
     #    logging.shutdown()
     #    os._exit(0)  
 
     try:
-        msg = "[Error]: Configuration error: if using_workers and not using_threads_not_processes" + " then store_fanins_faninNBs_locally must be False."
-        assert not (using_workers and (not using_threads_not_processes) and store_fanins_faninNBs_locally), msg
+        msg = "[Error]: Configuration error: if USING_WORKERS and not USING_THREADS_NOT_PROCESSES" + " then STORE_FANINS_FANINNBS_LOCALLY must be False."
+        assert not (USING_WORKERS and (not USING_THREADS_NOT_PROCESSES) and STORE_FANINS_FANINNBS_LOCALLY), msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
-        if exit_program_on_exception:
+        if EXIT_PROGRAM_ON_EXCEPTION:
             logging.shutdown()
             os._exit(0)
     #assertOld:
-    #if using_workers and not using_threads_not_processes:
-    #    if store_fanins_faninNBs_locally:
+    #if USING_WORKERS and not USING_THREADS_NOT_PROCESSES:
+    #    if STORE_FANINS_FANINNBS_LOCALLY:
     #        # When using worker processed, synch objects must be stored remoely
-    #        logger.error("[Error]: Configuration error: if using_workers and not using_threads_not_processes"
-    #            + " then store_fanins_faninNBs_locally must be False.")
+    #        logger.error("[Error]: Configuration error: if USING_WORKERS and not USING_THREADS_NOT_PROCESSES"
+    #            + " then STORE_FANINS_FANINNBS_LOCALLY must be False.")
     #        logging.shutdown()
     #        os._exit(0)
 
     try:
-        msg = "[Error]: Configuration error: if create_all_fanins_faninNBs_on_start" + " then map_objects_to_functions must be True."
+        msg = "[Error]: Configuration error: if CREATE_ALL_FANINS_FANINNBS_ON_START" + " then map_objects_to_functions must be True."
         # if create sync objects on start and executing tasks in lambdas "
         # then we must map them to function so that we can determine the 
         # function an object is in.
-        assert not (create_all_fanins_faninNBs_on_start and not run_all_tasks_locally and store_sync_objects_in_lambdas and not map_objects_to_lambda_functions), msg
+        assert not (CREATE_ALL_FANINS_FANINNBS_ON_START and not RUN_ALL_TASKS_LOCALLY and store_sync_objects_in_lambdas and not map_objects_to_lambda_functions), msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
-        if exit_program_on_exception:
+        if EXIT_PROGRAM_ON_EXCEPTION:
             logging.shutdown()
             os._exit(0)
     #assertOld:
-    #if create_all_fanins_faninNBs_on_start and not run_all_tasks_locally and store_sync_objects_in_lambdas:
+    #if CREATE_ALL_FANINS_FANINNBS_ON_START and not RUN_ALL_TASKS_LOCALLY and store_sync_objects_in_lambdas:
     #    if not map_objects_to_lambda_functions:
     #        # if create sync objects on start and executing tasks in lambdas "
     #        # then we must map them to function so that we can determine the 
     #        # function an object is in.
-    #        logger.error("[Error]: Configuration error: if create_all_fanins_faninNBs_on_start"
+    #        logger.error("[Error]: Configuration error: if CREATE_ALL_FANINS_FANINNBS_ON_START"
     #            + " then map_objects_to_functions must be True.")
     #        logging.shutdown()
     #        os._exit(0)
@@ -3981,7 +3981,7 @@ def check_asserts():
         assert not (map_objects_to_lambda_functions and use_anonymous_lambda_functions), msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
-        if exit_program_on_exception:
+        if EXIT_PROGRAM_ON_EXCEPTION:
             logging.shutdown()
             os._exit(0)
     #assertOld:
@@ -3995,38 +3995,38 @@ def check_asserts():
     #        os._exit(0)
 
     try:
-        msg = "[Error]: Configuration error: if sync_objects_in_lambdas_trigger_their_tasks" + " then not run_all_tasks_locally must be True."
+        msg = "[Error]: Configuration error: if sync_objects_in_lambdas_trigger_their_tasks" + " then not RUN_ALL_TASKS_LOCALLY must be True."
         # if create sync objects on start then we must map them to function so
         # that we can determine the function an object is in.
-        assert not (sync_objects_in_lambdas_trigger_their_tasks and run_all_tasks_locally), msg
+        assert not (sync_objects_in_lambdas_trigger_their_tasks and RUN_ALL_TASKS_LOCALLY), msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
-        if exit_program_on_exception:
+        if EXIT_PROGRAM_ON_EXCEPTION:
             logging.shutdown()
             os._exit(0)
     #assertOld:
     #if sync_objects_in_lambdas_trigger_their_tasks:
-    #    if run_all_tasks_locally:
+    #    if RUN_ALL_TASKS_LOCALLY:
     #        # if create sync objects on start then we must map them to function so
     #        # that we can determine the function an object is in.
     #        logger.error("[Error]: Configuration error: if sync_objects_in_lambdas_trigger_their_tasks"
-    #            + " then not run_all_tasks_locally must be True.")
+    #            + " then not RUN_ALL_TASKS_LOCALLY must be True.")
     #        logging.shutdown()
     #        os._exit(0)
 
     try:
-        msg = "[Error]: Configuration error: incremental_DAG_generation" + " requires not create_all_fanins_faninNBs_on_start" \
+        msg = "[Error]: Configuration error: incremental_DAG_generation" + " requires not CREATE_ALL_FANINS_FANINNBS_ON_START" \
             + " i.e., create synch objects on the fly since we don't know all of the synch objects " + " at the start (the DAG is not complete)"
-        assert not (compute_pagerank and use_incremental_DAG_generation and create_all_fanins_faninNBs_on_start), msg
+        assert not (compute_pagerank and use_incremental_DAG_generation and CREATE_ALL_FANINS_FANINNBS_ON_START), msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
-        if exit_program_on_exception:
+        if EXIT_PROGRAM_ON_EXCEPTION:
             logging.shutdown()
             os._exit(0)
     # assertOld:
-    #if compute_pagerank and use_incremental_DAG_generation and create_all_fanins_faninNBs_on_start:
+    #if compute_pagerank and use_incremental_DAG_generation and CREATE_ALL_FANINS_FANINNBS_ON_START:
     #    logger.error("[Error]: Configuration error: incremental_DAG_generation"
-    #        + " requires not create_all_fanins_faninNBs_on_start"
+    #        + " requires not CREATE_ALL_FANINS_FANINNBS_ON_START"
     #        + " i.e., create synch objects on the fly since we don't know all of the synch objects "
     #        + " at the start (the DAG is not complete)")
     #    logging.shutdown()
@@ -4038,7 +4038,7 @@ def check_asserts():
         assert not (incremental_DAG_deposit_interval < 1), msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
-        if exit_program_on_exception:
+        if EXIT_PROGRAM_ON_EXCEPTION:
             logging.shutdown()
             os._exit(0)
     #assertOld:
@@ -4054,7 +4054,7 @@ def check_asserts():
         assert not (not same_output_for_all_fanout_fanin and not compute_pagerank), msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
-        if exit_program_on_exception:
+        if EXIT_PROGRAM_ON_EXCEPTION:
             logging.shutdown()
             os._exit(0)
     #assertOld:
@@ -4065,11 +4065,11 @@ def check_asserts():
     #    os._exit(0)
 
     try:
-        msg = "[Error]: Configuration error: if using a single shared array of" + " partitions or groups then must run_tasks_locally and be using_threads_not_processes."
+        msg = "[Error]: Configuration error: if using a single shared array of" + " partitions or groups then must run_tasks_locally and be USING_THREADS_NOT_PROCESSES."
         assert not (compute_pagerank and (use_struct_of_arrays_for_pagerank and not use_shared_partitions_groups)), msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
-        if exit_program_on_exception:
+        if EXIT_PROGRAM_ON_EXCEPTION:
             logging.shutdown()
             os._exit(0)
     #assertOld:
@@ -4084,7 +4084,7 @@ def check_asserts():
         assert not (compute_pagerank and (use_struct_of_arrays_for_pagerank and not use_shared_partitions_groups)), msg
     except AssertionError:
         logger.exception("[Error]: assertion failed")
-        if exit_program_on_exception:
+        if EXIT_PROGRAM_ON_EXCEPTION:
             logging.shutdown()
             os._exit(0)
     #assertOld:
