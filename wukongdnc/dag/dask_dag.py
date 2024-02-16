@@ -2,9 +2,7 @@ from distributed import LocalCluster, Client
 import dask
 import dask.array as da
 from collections import defaultdict
-print("dask_dg import DFS_visit Node")
-#from .DFS_visit import Node
-from . import DFS_visit
+
 
 from dask import delayed
 import time
@@ -81,7 +79,6 @@ if __name__ == "__main__":
   lc = LocalCluster(n_workers = 1, threads_per_worker = 4)
   c = Client(lc)
   s = lc.scheduler
-
   def add(x, y):
     sum = x + y
     logger.info("")
@@ -290,8 +287,6 @@ if __name__ == "__main__":
 
     return graph, result
 
-
-  
   graph, result = manual_dag()
   # graph, result = manual_dag_test_batch_faninNBs()
   # graph, result = manual_dag_test_batch_two_faninNBs()
@@ -337,6 +332,11 @@ if __name__ == "__main__":
 
   print("\nProcessing layers now...\n")
   task_objects_map = {}      # Map from Task ID to the task objects.
+
+  # Used to be at top - moved here since having ot at top resulted
+  # in two imports of DFS_visit and thus two imports of 
+  # DAG_executor_constants. Not sure why.
+  from . import DFS_visit
 
   # TODO(ben): iterate over tasks via graph.to_dict() rather than layer-by-layer.
   for task_key, task_obj in graph.to_dict().items():

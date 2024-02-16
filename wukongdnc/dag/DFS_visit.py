@@ -1,4 +1,3 @@
-
 #Algorithm: 
 # During DFS create and compute a Node for each Dask_node in the Dask DAG.
 # Comptute a Node simply by setting succ, pred, and task_name for the Node.
@@ -18,7 +17,6 @@ import logging
 import os
 
 #from .DAG_executor_constants import EXIT_PROGRAM_ON_EXCEPTION
-print("DFS_visit import DEC")
 from . import DAG_executor_constants
 
 #from .addLoggingLevel import addLoggingLevel
