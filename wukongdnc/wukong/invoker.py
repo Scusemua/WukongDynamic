@@ -21,10 +21,9 @@ from ..server.api import create
 import logging 
 logger = logging.getLogger(__name__)
 
-from ..dag.DAG_executor_constants import bypass_call_lambda_client_invoke
-from ..dag.DAG_executor_constants import run_all_tasks_locally, bypass_call_lambda_client_invoke
+from ..dag import DAG_executor_constants
 
-if run_all_tasks_locally and not bypass_call_lambda_client_invoke:
+if DAG_executor_constants.RUN_ALL_TASKS_LOCALLY and not DAG_executor_constants.BYPASS_CALL_LAMBDA_CLIENT_INVOKE:
     #logger.trace("invoker: AWS_PROFILE: " + AWS_PROFILE)
     session = boto3.session.Session(profile_name = AWS_PROFILE)
     lambda_client = session.client('lambda', region_name = "us-east-1")
@@ -33,7 +32,7 @@ else:
     lambda_client = None 
     session = None
 
-# Note: DAG_executor_constants.bypass_call_lambda_client_invoke is TRUE 
+# Note: DAG_executor_constants.BYPASS_CALL_LAMBDA_CLIENT_INVOKE is TRUE 
 # if we are testing the real lambd code by bypassing the 
 # call to start a real lambda on AWS Lambda. i.e., the 
 # invoke_lambda_DAG_executor called by the DAG app does not call
@@ -279,8 +278,8 @@ def invoke_lambda_DAG_executor(
     logger.info("invoke_lambda_DAG_executor: Invoking AWS Lambda function '" + function_name + "' with payload containing " + str(len(payload)) + " key(s).")
     s = time.time()
     
-    # bypass_call_lambda_client_invoke is a global constant. 
-    if not bypass_call_lambda_client_invoke:
+    # BYPASS_CALL_LAMBDA_CLIENT_INVOKE is a global constant. 
+    if not DAG_executor_constants.BYPASS_CALL_LAMBDA_CLIENT_INVOKE:
     # This is the call to the AWS API that actually invokes the Lambda.
         try:
             # If we passed a "debugging" function name, then throw away everything up to and including the ':' character.

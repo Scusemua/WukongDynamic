@@ -150,7 +150,7 @@ class DAG_orchestrator:
 			# call fanin will put the start state of the fanin task in the work_queue. (FaninNb
 			# cannot do this since the faninNB will be on the tcp_server.)
 			dummy_state.keyword_arguments['start_state_fanin_task'] = DAG_states[fanin_nameNB]
-			dummy_state.keyword_arguments['STORE_FANINS_FANINNBS_LOCALLY'] = DAG_executor_constants.STORE_FANINS_FANINNBS_LOCALLY
+			dummy_state.keyword_arguments['store_fanins_faninNBs_locally'] = DAG_executor_constants.STORE_FANINS_FANINNBS_LOCALLY
 			dummy_state.keyword_arguments['DAG_info'] = DAG_info
 			msg_id = str(uuid.uuid4())
 
@@ -311,7 +311,7 @@ class DAG_orchestrator:
 					# call fanin will put the start state of the fanin task in the work_queue. (FaninNb
 					# cannot do this since the faninNB will be on the tcp_server.)
 					dummy_state.keyword_arguments['start_state_fanin_task'] = self.DAG_states[sync_object_name]
-					dummy_state.keyword_arguments['STORE_FANINS_FANINNBS_LOCALLY'] = DAG_executor_constants.STORE_FANINS_FANINNBS_LOCALLY
+					dummy_state.keyword_arguments['store_fanins_faninNBs_locally'] = DAG_executor_constants.STORE_FANINS_FANINNBS_LOCALLY
 					dummy_state.keyword_arguments['DAG_info'] = self.DAG_info
 				else: # fanin
 					# passing to the fanin object:
@@ -660,7 +660,7 @@ Scheme: The Lambda_Function_Simulator(), which stores a sych object does:
 				raise ValueError("Error - FanIn init has too many args.")
 			self._n = kwargs['n']
 			self.start_state_fanin_task = kwargs['start_state_fanin_task']
-			self.STORE_FANINS_FANINNBS_LOCALLY = kwargs['STORE_FANINS_FANINNBS_LOCALLY']
+			self.STORE_FANINS_FANINNBS_LOCALLY = kwargs['store_fanins_faninNBs_locally']
 			self.DAG_info = kwargs['DAG_info'] 
 	for Fanin and Fanin_Select: only ref kwargs['n']
 
@@ -742,7 +742,7 @@ control message that is passed to the lambda.
 		# (i.e., the becomes task) this result will be non-zero and the server will put the 
 		# start state of the fanin task in the work_queue, which is also on the server.
 		dummy_state.keyword_arguments['start_state_fanin_task'] = DAG_states[fanin_nameNB]
-		dummy_state.keyword_arguments['STORE_FANINS_FANINNBS_LOCALLY'] = STORE_FANINS_FANINNBS_LOCALLY
+		dummy_state.keyword_arguments['store_fanins_faninNBs_locally'] = STORE_FANINS_FANINNBS_LOCALLY
 		dummy_state.keyword_arguments['DAG_info'] = DAG_info
 	This is the info that must be passed to init() when an object is created. But now 
 	the create is being initiated on-the-fly, when the object is first needed, not by 
@@ -923,7 +923,7 @@ into a message.
 			# call fanin will put the start state of the fanin task in the work_queue. (FaninNb
 			# cannot do this since the faninNB will be on the tcp_server.)
 			dummy_state.keyword_arguments['start_state_fanin_task'] = self.DAG_states[sync_object_name]
-			dummy_state.keyword_arguments['STORE_FANINS_FANINNBS_LOCALLY'] = STORE_FANINS_FANINNBS_LOCALLY
+			dummy_state.keyword_arguments['store_fanins_faninNBs_locally'] = STORE_FANINS_FANINNBS_LOCALLY
 			dummy_state.keyword_arguments['DAG_info'] = self.DAG_info
 		else: # fanin
 			# passing to the fanin object:

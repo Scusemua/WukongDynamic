@@ -11,7 +11,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 """
-if not (not using_threads_not_processes or use_multithreaded_multiprocessing):
+if not (not USING_THREADS_NOT_PROCESSES or use_multithreaded_multiprocessing):
     logger.setLevel(logging.ERROR)
     formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
     ch = logging.StreamHandler()

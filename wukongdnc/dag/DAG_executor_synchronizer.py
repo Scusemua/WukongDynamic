@@ -180,7 +180,7 @@ class DAG_executor_Synchronizer(object):
         #DAG_executor_state = keyword_arguments['DAG_executor_State']
         #server = keyword_arguments['server']
 		# used by FanInNB:
-        # STORE_FANINS_FANINNBS_LOCALLY = keyword_arguments['STORE_FANINS_FANINNBS_LOCALLY']  # option set in DAG_executor
+        # STORE_FANINS_FANINNBS_LOCALLY = keyword_arguments['store_fanins_faninNBs_locally']  # option set in DAG_executor
 
         #st = time.time()
 
@@ -398,7 +398,7 @@ class DAG_executor_Synchronizer(object):
         #calling_task_name = keyword_arguments['calling_task_name']
         #DAG_executor_state = keyword_arguments['DAG_executor_State']
         #server = keyword_arguments['server']
-        #STORE_FANINS_FANINNBS_LOCALLY = keyword_arguments['STORE_FANINS_FANINNBS_LOCALLY']  # option set in DAG_executor
+        #STORE_FANINS_FANINNBS_LOCALLY = keyword_arguments['store_fanins_faninNBs_locally']  # option set in DAG_executor
         #DAG_info = keyword_arguments['DAG_info']
         
         logger.trace ("calling_task_name: " + keyword_arguments['calling_task_name'] + "calling faninNB with fanin_task_name: " + keyword_arguments['fanin_task_name'])
@@ -488,7 +488,7 @@ class DAG_executor_Synchronizer(object):
 			# keywword_argumments used in init()
             dummy_state.keyword_arguments['n'] = size
             dummy_state.keyword_arguments['start_state_fanin_task'] = DAG_states[fanin_nameNB]
-            dummy_state.keyword_arguments['STORE_FANINS_FANINNBS_LOCALLY'] = True
+            dummy_state.keyword_arguments['store_fanins_faninNBs_locally'] = True
             dummy_state.keyword_arguments['DAG_info'] = DAG_info
             msg_id = str(uuid.uuid4())
             message = {

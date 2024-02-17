@@ -26,7 +26,7 @@ EXIT_PROGRAM_ON_EXCEPTION = True
 #
 # True if we are not using Lambdas, i.e., executing tasks with threads or processes
 # local, i.e., on one machine.
-RUN_ALL_TASKS_LOCALLY = True         # vs run tasks remotely (in Lambdas)
+RUN_ALL_TASKS_LOCALLY = False         # vs run tasks remotely (in Lambdas)
 # True if we want to bypass the call to lambda_client.invoke() so that we
 # do not actually create a real Lambda; instead, invoke_lambda_DAG_executor()
 # in invoker.y will call lambda_handler(payload_json,None) directly, where
@@ -44,7 +44,7 @@ BYPASS_CALL_LAMBDA_CLIENT_INVOKE = (not RUN_ALL_TASKS_LOCALLY) and True
 # has a collapse to partition i+1, so there are no synch objects
 # needed when we are using partitions, so it does not matter
 # whether we set STORE_FANINS_FANINNBS_LOCALLY to True or False.
-STORE_FANINS_FANINNBS_LOCALLY = True
+STORE_FANINS_FANINNBS_LOCALLY = False
 # True when all FanIn and FanInNB objects are created locally or on the
 # tcp_server or IniniX all at once at the start of the DAG execution. If
 # False, synch objects are created on the fly, i.e, we execute create-and-fanin
@@ -52,14 +52,14 @@ STORE_FANINS_FANINNBS_LOCALLY = True
 # execute a Fan_in operaation on the created object.
 # 
 # This must be false if we aer doing incremental_DAG_generation; this is assserted below.
-CREATE_ALL_FANINS_FANINNBS_ON_START = False
+CREATE_ALL_FANINS_FANINNBS_ON_START = True
 
 # True if the DAG is executed by a "pool" of threads/processes. False, if we are
 # using Lambdas or we are using threads to simulate the use of Lambdas. In the latter
 # case, instead of, e.g., starting a Lambda at fan_out operations, we start a thread.
 # This results in the creation of many threads and is only use to test the logic 
 # of the Lambda code.
-USING_WORKERS = True
+USING_WORKERS = False
 # True when we are not using Lambas and tasks are executed by threads instead of processes. 
 # False when we are not using lambdas and are using multiprocesssing 
 USING_THREADS_NOT_PROCESSES = True
@@ -296,9 +296,25 @@ except AssertionError:
 ###### PageRank settings start here ######
 ##########################################
 
+#fname = "graph_3000"
+# whiteboard graph:
+# pagerank_graph_file_name = "graph_WB"
+# These are whiteboard graphs with various extensions
+# that, e.g., add connected components (CC)
+# pagerank_graph_file_name = "graph_22N_2CC"
+# pagerank_graph_file_name = "graph_23N"
+# pagerank_graph_file_name = "graph_24N_3CC"
+pagerank_graph_file_name = "graph_24N_3CC_fanin"   # extended wb w/ 3CC and fanin at end
+# pagerank_graph_file_name = "graph_2N_2CC"  # 2 nodes (CCs) no edges
+# pagerank_graph_file_name = "graph_3N_3CC"  # 3 nodes (CCs) no edges
+# pagerank_graph_file_name = "graph_2N"
+# pagerank_graph_file_name = "graph_1N"
+# pagerank_graph_file_name = "graph_3P"
+# pagerank_graph_file_name = "graph_27_loops"
+
 # Indicates that we are computing pagerank and thus that the pagerank
 # options are active and pagerank assserts should hold
-COMPUTE_PAGERANK = True
+COMPUTE_PAGERANK = False
 # used in BFS_pagerank. For non-loops, we only need 1 iteration
 NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS = 10
 NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG = "PR1_1"
@@ -323,7 +339,7 @@ CHECK_PAGERANK_OUTPUT = COMPUTE_PAGERANK and RUN_ALL_TASKS_LOCALLY and (USING_WO
 SAME_OUTPUT_FOR_ALL_FANOUT_FANIN = not COMPUTE_PAGERANK
 
 # True if DAG generation and DAG_execution are overlapped. 
-USE_INCREMENTAL_DAG_GENERATION = COMPUTE_PAGERANK and True
+USE_INCREMENTAL_DAG_GENERATION = COMPUTE_PAGERANK and False
 
 # True if we are clustering fanouts that satisfy the cluster criteria
 ENABLE_RUNTIME_TASK_CLUSTERING = COMPUTE_PAGERANK and False
@@ -3920,6 +3936,7 @@ def check_asserts():
     #    os._exit(0)     
 
 
+    """
     try:
         msg = "[Error]: Configuration error: if BYPASS_CALL_LAMBDA_CLIENT_INVOKE then must be running real Lambdas" + " i.e., not RUN_ALL_TASKS_LOCALLY."
         assert not (BYPASS_CALL_LAMBDA_CLIENT_INVOKE and RUN_ALL_TASKS_LOCALLY), msg
@@ -3934,6 +3951,7 @@ def check_asserts():
     #        + " i.e., not RUN_ALL_TASKS_LOCALLY.")
     #    logging.shutdown()
     #    os._exit(0)  
+    """
 
     try:
         msg = "[Error]: Configuration error: if USING_WORKERS and not USING_THREADS_NOT_PROCESSES" + " then STORE_FANINS_FANINNBS_LOCALLY must be False."

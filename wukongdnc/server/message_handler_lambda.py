@@ -5,7 +5,7 @@ from .synchronizer_lambda import Synchronizer
 from .util import decode_and_deserialize #, make_json_serializable,  isTry_and_getMethodName, isSelect 
 
 #from ..dag.DAG_executor_constants import FanIn_Type, FanInNB_Type
-#from ..dag.DAG_executor_constants import create_all_fanins_faninNBs_on_start
+#from ..dag.DAG_executor_constants import CREATE_ALL_FANINS_FANINNBS_ON_START
 #from ..dag.DAG_executor_constants import exit_program_on_exception
 #import wukongdnc.dag.DAG_executor_constants
 from ..dag import DAG_executor_constants
@@ -238,14 +238,14 @@ class MessageHandler(object):
         #    logger.error("[Error]: process_enqueued_fan_ins: "
         #        + " length of list_of_messages is 0 but fanin size > 0.")
 
-        if not DAG_executor_constants.create_all_fanins_faninNBs_on_start:
+        if not DAG_executor_constants.CREATE_ALL_FANINS_FANINNBS_ON_START:
             dummy_state_for_creation_message = decode_and_deserialize(message["state"])
             fanin_name = dummy_state_for_creation_message.keyword_arguments['fanin_name']
             is_fanin = dummy_state_for_creation_message.keyword_arguments['is_fanin']
             if is_fanin:
-                fanin_type = DAG_executor_constants.FanIn_Type
+                fanin_type = DAG_executor_constants.FANIN_TYPE
             else:
-                fanin_type = DAG_executor_constants.FanInNB_Type
+                fanin_type = DAG_executor_constants.FANINNB_TYPE
 
             msg_id = str(uuid.uuid4())	# for debugging
             creation_message = {
@@ -276,7 +276,7 @@ class MessageHandler(object):
             # We are doing all the fan_in ops one-by-one in the order they were called by clients
             # The return value of last call is the fanin results; return those to client
 #rhc: ToDo:
-            if DAG_executor_constants.create_all_fanins_faninNBs_on_start:
+            if DAG_executor_constants.CREATE_ALL_FANINS_FANINNBS_ON_START:
                 # call synchronize_sync on the already created object
                 return_value = self.synchronize_sync(msg)
             else:
@@ -373,17 +373,17 @@ class MessageHandler(object):
 
         try:
             msg = "[Error]: message_handler_lambda: createif_and_synchronize_sync: " \
-                + "called createif_and_synchronize_sync but create_all_fanins_faninNBs_on_start"
-            assert not (DAG_executor_constants.create_all_fanins_faninNBs_on_start) , msg
+                + "called createif_and_synchronize_sync but CREATE_ALL_FANINS_FANINNBS_ON_START"
+            assert not (DAG_executor_constants.CREATE_ALL_FANINS_FANINNBS_ON_START) , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
             if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
         #assertOld:
-        #if create_all_fanins_faninNBs_on_start:
+        #if CREATE_ALL_FANINS_FANINNBS_ON_START:
         #    logger.error("[Error]: message_handler_lambda: createif_and_synchronize_sync: "
-        #        + "called createif_and_synchronize_sync but create_all_fanins_faninNBs_on_start")
+        #        + "called createif_and_synchronize_sync but CREATE_ALL_FANINS_FANINNBS_ON_START")
 
         messages = message['name']
         creation_message = messages[0]
@@ -490,17 +490,17 @@ class MessageHandler(object):
 
         try:
             msg = "[Error]: message_handler_lambda: createif_and_synchronize_async: " \
-                + "called createif_and_synchronize_async but create_all_fanins_faninNBs_on_start"
-            assert not (DAG_executor_constants.create_all_fanins_faninNBs_on_start) , msg
+                + "called createif_and_synchronize_async but CREATE_ALL_FANINS_FANINNBS_ON_START"
+            assert not (DAG_executor_constants.CREATE_ALL_FANINS_FANINNBS_ON_START) , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
             if DAG_executor_constants.exit_program_on_exception:
                 logging.shutdown()
                 os._exit(0)
         #assertOld:
-        #if create_all_fanins_faninNBs_on_start:
+        #if CREATE_ALL_FANINS_FANINNBS_ON_START:
         #    logger.error("[Error]: message_handler_lambda: createif_and_synchronize_async: "
-        #        + "called createif_and_synchronize_async but create_all_fanins_faninNBs_on_start")
+        #        + "called createif_and_synchronize_async but CREATE_ALL_FANINS_FANINNBS_ON_START")
 
         messages = message['name']
         creation_message = messages[0]

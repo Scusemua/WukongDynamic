@@ -4466,6 +4466,8 @@ def input_graph():
     # usd to convert the gaph to networkX format so we can run networkX 
     # algorithms on it, e.g., fnd_cycle, diameter.
     networkX_lines = []
+    
+    # Moved setting fname to DAG_executor_constants.py
     #fname = "graph_3000"
     # whiteboard graph
     #fname = "graph_WB"
@@ -4474,9 +4476,7 @@ def input_graph():
     #fname = "graph_22N_2CC"
     #fname = "graph_23N"
     #fname = "graph_24N_3CC"
-
-    fname = "graph_24N_3CC_fanin"   # extended wb w/ 3CC and fanin at end
-
+    #fname = "graph_24N_3CC_fanin"   # extended wb w/ 3CC and fanin at end
     #fname = "graph_2N_2CC"  # 2 nodes (CCs) no edges
     #fname = "graph_3N_3CC"  # 3 nodes (CCs) no edges
     #fname = "graph_2N"
@@ -4485,6 +4485,8 @@ def input_graph():
     #fname = "graph_27_loops"
     #graph_file = open(fname, 'r')
     #graph_file = open(fname, 'r')
+
+    fname = DAG_executor_constants.pagerank_graph_file_name
     graph_file = open(fname+".gr", 'r')
     #graph_file = open(fname, 'r')
     count = 0

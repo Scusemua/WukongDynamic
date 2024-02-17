@@ -187,7 +187,7 @@ def faninNB_remotely(websocket,**keyword_arguments):
     #ToDo
     #DAG_executor_state = keyword_arguments['DAG_executor_State']
     #server = keyword_arguments['server']
-    #STORE_FANINS_FANINNBS_LOCALLY = keyword_arguments['STORE_FANINS_FANINNBS_LOCALLY']  # option set in DAG_executor
+    #STORE_FANINS_FANINNBS_LOCALLY = keyword_arguments['store_fanins_faninNBs_locally']  # option set in DAG_executor
     #DAG_info = keyword_arguments['DAG_info']
     thread_name = threading.current_thread().name
 
@@ -213,7 +213,7 @@ def faninNB_remotely(websocket,**keyword_arguments):
     #ToDo: Don't do/need this?
     #keyword_arguments['DAG_executor_State'] = new_DAG_exec_state # given to the thread/lambda that executes the fanin task.
     #DAG_exec_state.keyword_arguments['server'] = keyword_arguments['server']
-    DAG_exec_state.keyword_arguments['STORE_FANINS_FANINNBS_LOCALLY'] = keyword_arguments['STORE_FANINS_FANINNBS_LOCALLY']
+    DAG_exec_state.keyword_arguments['store_fanins_faninNBs_locally'] = keyword_arguments['store_fanins_faninNBs_locally']
 #rhc batch
     DAG_exec_state.keyword_arguments['FANIN_TYPE'] = keyword_arguments['FANIN_TYPE']
     # Note: This faninNB_remotely method is only called when we are 
@@ -320,7 +320,7 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
         #ToDo: Don't do/need this?
         #keyword_arguments['DAG_executor_State'] = new_DAG_exec_state # given to the thread/lambda that executes the fanin task.
         keyword_arguments['server'] = server
-        keyword_arguments['STORE_FANINS_FANINNBS_LOCALLY'] = DAG_executor_constants.STORE_FANINS_FANINNBS_LOCALLY
+        keyword_arguments['store_fanins_faninNBs_locally'] = DAG_executor_constants.STORE_FANINS_FANINNBS_LOCALLY
         # Note: This process_faninNBs method is only called when we are 
         # running locally, i.e., we are not using real lambdas. 
         #
@@ -606,7 +606,7 @@ def faninNB_remotely_batch(websocket, **keyword_arguments):
     #DAG_exec_state.keyword_arguments['start_state_fanin_task'] = keyword_arguments['start_state_fanin_task']
     DAG_exec_state.keyword_arguments['result'] = keyword_arguments['result']
     DAG_exec_state.keyword_arguments['calling_task_name'] = keyword_arguments['calling_task_name']
-    DAG_exec_state.keyword_arguments['STORE_FANINS_FANINNBS_LOCALLY'] = keyword_arguments['STORE_FANINS_FANINNBS_LOCALLY']
+    DAG_exec_state.keyword_arguments['store_fanins_faninNBs_locally'] = keyword_arguments['store_fanins_faninNBs_locally']
     # Need these on tcp_server to process the faninNBs
     DAG_exec_state.keyword_arguments['faninNBs'] = keyword_arguments['faninNBs']
     # rhc: run task
@@ -743,7 +743,7 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
     # the faninNB will pass the results to the lambda that is ivoked to execut the fanin task.
     keyword_arguments['result'] = output
     keyword_arguments['calling_task_name'] = calling_task_name
-    keyword_arguments['STORE_FANINS_FANINNBS_LOCALLY'] = DAG_executor_constants.STORE_FANINS_FANINNBS_LOCALLY
+    keyword_arguments['store_fanins_faninNBs_locally'] = DAG_executor_constants.STORE_FANINS_FANINNBS_LOCALLY
     # Need on tcp_server to process the faninNBs
     keyword_arguments['faninNBs'] = faninNBs
 # rhc: run task
@@ -1376,7 +1376,7 @@ def fanin_remotely(websocket, DAG_exec_state,**keyword_arguments):
     #calling_task_name = keyword_arguments['calling_task_name']
     #DAG_executor_state = keyword_arguments['DAG_executor_State']
     #server = keyword_arguments['server']
-    #STORE_FANINS_FANINNBS_LOCALLY = keyword_arguments['STORE_FANINS_FANINNBS_LOCALLY']  # option set in DAG_executor
+    #STORE_FANINS_FANINNBS_LOCALLY = keyword_arguments['store_fanins_faninNBs_locally']  # option set in DAG_executor
     #DAG_info = keyword_arguments['DAG_info']
 
     thread_name = threading.current_thread().name

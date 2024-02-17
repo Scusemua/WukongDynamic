@@ -15,11 +15,11 @@ import os
 #from wukongdnc.dag.DAG_executor_State import DAG_executor_State
 from ..dag.DAG_executor_State import DAG_executor_State
 
-#from wukongdnc.dag.DAG_executor_constants import run_all_tasks_locally, using_workers, using_threads_not_processes
-#from wukongdnc.dag.DAG_executor_constants import sync_objects_in_lambdas_trigger_their_tasks
-#from wukongdnc.dag.DAG_executor_constants import store_sync_objects_in_lambdas
-#from wukongdnc.dag.DAG_executor_constants import input_all_groups_partitions_at_start
-#from wukongdnc.dag.DAG_executor_constants import store_fanins_faninNBs_locally
+#from wukongdnc.dag.DAG_executor_constants import RUN_ALL_TASKS_LOCALLY, USING_WORKERS, USING_THREADS_NOT_PROCESSES
+#from wukongdnc.dag.DAG_executor_constants import SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
+#from wukongdnc.dag.DAG_executor_constants import STORE_SYNC_OBJECTS_IN_LAMBDAS
+#from wukongdnc.dag.DAG_executor_constants import INPUT_ALL_GROUPS_PARTITIONS_AT_START
+#from wukongdnc.dag.DAG_executor_constants import STORE_FANINS_FANINNBS_LOCALLY
 #from wukongdnc.dag.DAG_executor_constants import exit_program_on_exception
 #import wukongdnc.dag.DAG_executor_constants
 from ..dag import DAG_executor_constants
@@ -97,7 +97,7 @@ class DAG_executor_FanInNB_Select(Selector):
             # When running real lambdas, DAG_info must be non-null since
             # the FaninNB will start a real lambda to excute its fanin task
             # and pass the DAG_info on the payload. For simulated lambdas
-            # (run_all_tasks_locally and not using_workers), when this 
+            # (RUN_ALL_TASKS_LOCALLY and not USING_WORKERS), when this 
             # FaninNB is stored on the tcp_servr, the fanin task will be executed 
             # by a new simulated lambda thread that is started by the simulated 
             # lambda that was the last simulated lambda to called fanin on the faninNB. 
@@ -106,21 +106,21 @@ class DAG_executor_FanInNB_Select(Selector):
             # this FaninNB is stored locally, it does start a new simulated
             # lambda to execute the fanin task and it puts DG_info in the
             # payload of he simulated lambda. Thus, DAG_info is needed 
-            # when we are using real lambdas (not run_all_tasks_locally) or
-            # weare using simulated lambdas (run_all_tasks_locally and not using_workers) 
+            # when we are using real lambdas (not RUN_ALL_TASKS_LOCALLY) or
+            # weare using simulated lambdas (RUN_ALL_TASKS_LOCALLY and not USING_WORKERS) 
             # and the FaninNB object is stored locally 
-            # (store_fanins_faninNBs_locally)
+            # (STORE_FANINS_FANINNBS_LOCALLY)
             try:
                 msg =  "[Error]: FanInNB_select: fanin_task_name: DAG_info is None for FaninNB init()" \
-                    + " and store_fanins_faninNBs_locally: " + str(DAG_executor_constants.store_fanins_faninNBs_locally)
-                assert not ((not DAG_executor_constants.run_all_tasks_locally) or (DAG_executor_constants.run_all_tasks_locally and not DAG_executor_constants.using_workers and DAG_executor_constants.store_fanins_faninNBs_locally)) , msg
+                    + " and STORE_FANINS_FANINNBS_LOCALLY: " + str(DAG_executor_constants.STORE_FANINS_FANINNBS_LOCALLY)
+                assert not ((not DAG_executor_constants.RUN_ALL_TASKS_LOCALLY) or (DAG_executor_constants.RUN_ALL_TASKS_LOCALLY and not DAG_executor_constants.USING_WORKERS and DAG_executor_constants.STORE_FANINS_FANINNBS_LOCALLY)) , msg
             except AssertionError:
                 logger.exception("[Error]: assertion failed")
                 if DAG_executor_constants.exit_program_on_exception:
                     logging.shutdown()
                     os._exit(0)
             #assertOld
-            #if (not run_all_tasks_locally) or (run_all_tasks_locally and not using_workers and store_fanins_faninNBs_locally):
+            #if (not RUN_ALL_TASKS_LOCALLY) or (RUN_ALL_TASKS_LOCALLY and not USING_WORKERS and STORE_FANINS_FANINNBS_LOCALLY):
             #    logger.error("[Error]: FanInNB: fanin_task_name: DAG_info is None for FaninNB init().")
             #    logging.shutdown()
             #    os._exit(0)
@@ -143,9 +143,8 @@ class DAG_executor_FanInNB_Select(Selector):
         # and if we are creating fanins/faninNB on the fly, we pass 
         # groups_partitions to the create().
         # 
-        if DAG_executor_constants.input_all_groups_partitions_at_start:
+        if DAG_executor_constants.INPUT_ALL_GROUPS_PARTITIONS_AT_START:
             self.groups_partitions = kwargs['groups_partitions'] 
-
 
         # this is the enty that is selected when its guard is true
         self._fan_in = selectableEntry("fan_in")
@@ -241,21 +240,21 @@ class DAG_executor_FanInNB_Select(Selector):
                 # for debugging
                 fanin_task_name = kwargs['fanin_task_name']
 
-                if DAG_executor_constants.using_workers:
+                if DAG_executor_constants.USING_WORKERS:
                     try:
-                        msg =  "[Error]: Configuration error: if using_workers" \
-                                + " then run_all_tasks_locally must be True."
-                        #assert DAG_executor_constants.run_all_tasks_locally , msg
+                        msg =  "[Error]: Configuration error: if USING_WORKERS" \
+                                + " then RUN_ALL_TASKS_LOCALLY must be True."
+                        #assert DAG_executor_constants.RUN_ALL_TASKS_LOCALLY , msg
                     except AssertionError:
                         logger.exception("[Error]: assertion failed")
                         if DAG_executor_constants.exit_program_on_exception:
                             logging.shutdown()
                             os._exit(0)
                     #assertOld:
-                    #if not (run_all_tasks_locally):
-                    #    logger.error("[Error]: Configuration error: if using_workers"
-                    #            + " then run_all_tasks_locally must be True.")
-                    if DAG_executor_constants.using_threads_not_processes:
+                    #if not (RUN_ALL_TASKS_LOCALLY):
+                    #    logger.error("[Error]: Configuration error: if USING_WORKERS"
+                    #            + " then RUN_ALL_TASKS_LOCALLY must be True.")
+                    if DAG_executor_constants.USING_THREADS_NOT_PROCESSES:
                         if self.store_fanins_faninNBs_locally:
                             # if using worker pools of threads, add fanin task's state to the work_queue.
                             # Note: if we are using worker pools of processes, then the process will call fan_in and
@@ -268,7 +267,7 @@ class DAG_executor_FanInNB_Select(Selector):
                             # a new thread/process or add a sate to the processes work_queue.
                             # If we are batching calls to fan_in, we are storing FanInNBs remotely so we cannot
                             # start a thread (on the tcp_server)
-                            logger.trace("DAG_executor_FanInNB_Select: fan_in: using_workers and threads so add start state of fanin task to thread_work_queue.")
+                            logger.trace("DAG_executor_FanInNB_Select: fan_in: USING_WORKERS and threads so add start state of fanin task to thread_work_queue.")
                             #thread_work_queue.put(start_state_fanin_task)
                             work_tuple = (start_state_fanin_task,self._results)
                             work_queue.put(work_tuple)
@@ -302,20 +301,20 @@ class DAG_executor_FanInNB_Select(Selector):
                         # no one should be calling fan_in again since this is last calle
                         return self._results  # all threads have called so return results
                         #return 1, restart  # all threads have called so return results
-                elif self.store_fanins_faninNBs_locally and DAG_executor_constants.run_all_tasks_locally:
-                    # we store_fanins_faninNBs_locally means the the threasd that simulate lambdas
+                elif self.store_fanins_faninNBs_locally and DAG_executor_constants.RUN_ALL_TASKS_LOCALLY:
+                    # we STORE_FANINS_FANINNBS_LOCALLY means the the threasd that simulate lambdas
                     # executing tasks and the sync objects are both running locally, i.e., the 
                     # sync objects are not on the server or in lambdas. We are not using workers either.
                     try:
                         msg = "[Error]: DAG_executor_FanInNB_Select: fan_in:  storing fanins locally but not using threads."
-                        assert DAG_executor_constants.using_threads_not_processes , msg
+                        assert DAG_executor_constants.USING_THREADS_NOT_PROCESSES , msg
                     except AssertionError:
                         logger.exception("[Error]: assertion failed")
                         if DAG_executor_constants.exit_program_on_exception:
                             logging.shutdown()
                             os._exit(0)
                     #assertOld
-                    #if not using_threads_not_processes:
+                    #if not USING_THREADS_NOT_PROCESSES:
                     #    logger.error("[Error]: DAG_executor_FanInNB_Select: fan_in:  storing fanins locally but not using threads.")
     
                     try:
@@ -360,8 +359,8 @@ class DAG_executor_FanInNB_Select(Selector):
                     # Do not return the restart value here.
                     return self._results   # all threads have called so return results
                     #return 1, restart  # all threads have called so return results  
-                elif not self.store_fanins_faninNBs_locally and not DAG_executor_constants.run_all_tasks_locally:
-                    # Note: not run_all_tasks_locally ==> not self.store_fanins_faninNBs_locally
+                elif not self.store_fanins_faninNBs_locally and not DAG_executor_constants.RUN_ALL_TASKS_LOCALLY:
+                    # Note: not RUN_ALL_TASKS_LOCALLY ==> not self.store_fanins_faninNBs_locally
                     # that is, if we run tasks in lambdas then we store sync objects remotely.
                     # we are executing tasks in lambdas. The sync objects can be stored on the
                     # tcp_server or in lambdas. If this object, which is a select object, is on the 
@@ -371,7 +370,7 @@ class DAG_executor_FanInNB_Select(Selector):
                     # the task by simply callng it. (Note: When we are using lambdas, the sync 
                     # objects cannot be stored locally.)
     #rhc: run task
-                    if DAG_executor_constants.store_sync_objects_in_lambdas and DAG_executor_constants.sync_objects_in_lambdas_trigger_their_tasks:
+                    if DAG_executor_constants.STORE_SYNC_OBJECTS_IN_LAMBDAS and DAG_executor_constants.SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS:
                         #  trigger fanin task to run in this lambda
                         try:
                             logger.trace("DAG_executor_FanInNB_Select: triggering DAG_Executor_Lambda() for task " + fanin_task_name)
@@ -416,7 +415,7 @@ class DAG_executor_FanInNB_Select(Selector):
                                 #"server": server   # used to mock server during testing
                             }
 
-                            if DAG_executor_constants.input_all_groups_partitions_at_start:
+                            if DAG_executor_constants.INPUT_ALL_GROUPS_PARTITIONS_AT_START:
                                 # add the groups_partitions to payload 
                                 payload['groups_partitions'] = self.groups_partitions 
 
@@ -438,8 +437,8 @@ class DAG_executor_FanInNB_Select(Selector):
                     return 0
                     #return 1, restart  # all threads have called so return results
                 
-                elif not self.store_fanins_faninNBs_locally and DAG_executor_constants.run_all_tasks_locally:
-                    # When not self.store_fanins_faninNBs_locally and run_all_tasks_locally we 
+                elif not self.store_fanins_faninNBs_locally and DAG_executor_constants.RUN_ALL_TASKS_LOCALLY:
+                    # When not self.store_fanins_faninNBs_locally and RUN_ALL_TASKS_LOCALLY we 
                     # are simulating lambdas with threads and synch objects are stored remotely. 
                     # The objects could be stored on the server or in real lambdas or simulated
                     # lambdas. For:

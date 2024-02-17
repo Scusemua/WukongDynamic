@@ -5,7 +5,7 @@ import time
 import uuid
 import os
 
-#from ..dag.DAG_executor_constants import run_all_tasks_locally
+#from ..dag.DAG_executor_constants import RUN_ALL_TASKS_LOCALLY
 #from ..dag.DAG_executor_constants import exit_program_on_exception
 #import wukongdnc.dag.DAG_executor_constants
 from ..dag import DAG_executor_constants
@@ -227,7 +227,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
 #rhc: lanbda inc: start lambdas for all continued states in buffer and leaf tasks
         #self._next_version.signal_c_and_exit_monitor()
 
-        if DAG_executor_constants.run_all_tasks_locally:
+        if DAG_executor_constants.RUN_ALL_TASKS_LOCALLY:
             # not using real lambdas
             try:
                 # start simulated lambdas that with the new DAG_info

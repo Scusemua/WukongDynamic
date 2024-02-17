@@ -2581,7 +2581,7 @@ def create_fanin_and_faninNB_messages(DAG_map,DAG_states,DAG_info,all_fanin_task
         # call fanin will put the start state of the fanin task in the work_queue. (FaninNb
         # cannot do this since the faninNB will be on the tcp_server.)
         dummy_state.keyword_arguments['start_state_fanin_task'] = DAG_states[fanin_nameNB]
-        dummy_state.keyword_arguments['STORE_FANINS_FANINNBS_LOCALLY'] = DAG_executor_constants.STORE_FANINS_FANINNBS_LOCALLY
+        dummy_state.keyword_arguments['store_fanins_faninNBs_locally'] = DAG_executor_constants.STORE_FANINS_FANINNBS_LOCALLY
         # Only need DAG_info if not RUN_ALL_TASKS_LOCALLY, as we pass DAG_info to Lambas
         if not DAG_executor_constants.RUN_ALL_TASKS_LOCALLY:
             dummy_state.keyword_arguments['DAG_info'] = DAG_info
@@ -2661,7 +2661,7 @@ def create_fanin_and_faninNB_and_fanout_messages(DAG_map,DAG_states,DAG_info,all
         # call fanin will put the start state of the fanin task in the work_queue. (FaninNb
         # cannot do this since the faninNB will be on the tcp_server.)
         dummy_state.keyword_arguments['start_state_fanin_task'] = DAG_states[fanin_nameNB]
-        dummy_state.keyword_arguments['STORE_FANINS_FANINNBS_LOCALLY'] = DAG_executor_constants.STORE_FANINS_FANINNBS_LOCALLY
+        dummy_state.keyword_arguments['store_fanins_faninNBs_locally'] = DAG_executor_constants.STORE_FANINS_FANINNBS_LOCALLY
         # Only need DAG_info if not RUN_ALL_TASKS_LOCALLY, as we pass DAG_info to Lambas
         if not DAG_executor_constants.RUN_ALL_TASKS_LOCALLY:
             dummy_state.keyword_arguments['DAG_info'] = DAG_info
@@ -2702,7 +2702,7 @@ def create_fanin_and_faninNB_and_fanout_messages(DAG_map,DAG_states,DAG_info,all
         # call fanin will put the start state of the fanin task in the work_queue. (FaninNb
         # cannot do this since the faninNB will be on the tcp_server.)
         dummy_state.keyword_arguments['start_state_fanin_task'] = leaf_task_start_state
-        dummy_state.keyword_arguments['STORE_FANINS_FANINNBS_LOCALLY'] = DAG_executor_constants.STORE_FANINS_FANINNBS_LOCALLY
+        dummy_state.keyword_arguments['store_fanins_faninNBs_locally'] = DAG_executor_constants.STORE_FANINS_FANINNBS_LOCALLY
         # Only need DAG_info if not RUN_ALL_TASKS_LOCALLY, as we pass DAG_info to Lambas
         if not DAG_executor_constants.RUN_ALL_TASKS_LOCALLY:
             dummy_state.keyword_arguments['DAG_info'] = DAG_info
@@ -2734,7 +2734,7 @@ def create_fanin_and_faninNB_and_fanout_messages(DAG_map,DAG_states,DAG_info,all
         # call fanin will put the start state of the fanin task in the work_queue. (FaninNb
         # cannot do this since the faninNB will be on the tcp_server.)
         dummy_state.keyword_arguments['start_state_fanin_task'] = DAG_states[fanout_name]
-        dummy_state.keyword_arguments['STORE_FANINS_FANINNBS_LOCALLY'] = DAG_executor_constants.STORE_FANINS_FANINNBS_LOCALLY
+        dummy_state.keyword_arguments['store_fanins_faninNBs_locally'] = DAG_executor_constants.STORE_FANINS_FANINNBS_LOCALLY
         # Only need DAG_info if not RUN_ALL_TASKS_LOCALLY, as we pass DAG_info to Lambas
         if not DAG_executor_constants.RUN_ALL_TASKS_LOCALLY:
             dummy_state.keyword_arguments['DAG_info'] = DAG_info
