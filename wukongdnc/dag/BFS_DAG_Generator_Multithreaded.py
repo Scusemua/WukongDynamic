@@ -2,7 +2,6 @@ import logging
 import cloudpickle
 import threading
 import queue
-import os
 
 from . import BFS_generate_DAG_info_incremental_partitions
 from . import BFS_generate_DAG_info_incremental_groups
@@ -68,7 +67,7 @@ def generator_thread(DAG_generator_for_multithreaded_DAG_generation,buffer):
         logger.info(thread_name + "generator_thread: called get."
             + " USE_PAGERANK_GROUPS_PARTITIONS: " + str(DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS))
 
-        if USE_PAGERANK_GROUPS_PARTITIONS:
+        if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
             # tuple was created as:
             # group_tuple = (partition_name,current_partition_number,
             # copy_of_groups_of_current_partition,copy_of_groups_of_partitions, to_be_continued)
@@ -142,7 +141,7 @@ class DAG_Generator_Multithreaded:
             groups_of_partitions,
             to_be_continued)
         
-        logger.info("here")
+        logger.trce("generate_DAG_info_multithreaded_groups: returned DAG_info:")
         DAG_map = DAG_info.get_DAG_map()
         DAG_states = DAG_info.get_DAG_states()
         DAG_leaf_tasks = DAG_info.get_DAG_leaf_tasks()
@@ -150,6 +149,7 @@ class DAG_Generator_Multithreaded:
         DAG_version_number = DAG_info.get_DAG_version_number()
         DAG_is_complete = DAG_info.get_DAG_info_is_complete()
         DAG_number_of_tasks = DAG_info.get_DAG_number_of_tasks()
+        DAG_num_nodes_in_graph = DAG_info.get_DAG_num_nodes_in_graph()
         # FYI:
         logger.info("DAG_executor_driver: DAG_map:")
         for key, value in DAG_map.items():
@@ -176,10 +176,8 @@ class DAG_Generator_Multithreaded:
         logger.info("")
         logger.info("DAG_number_of_tasks: " + str(DAG_number_of_tasks))
         logger.info("")
-
-        if DAG_number_of_tasks > 1:
-            logging.shutdown()
-            os._exit(0)
+        logger.info("DAG_num_nodes_in_graph: " + str(DAG_num_nodes_in_graph))
+        logger.info("")
         
         return DAG_info
     

@@ -4486,7 +4486,7 @@ def input_graph():
     #graph_file = open(fname, 'r')
     #graph_file = open(fname, 'r')
 
-    fname = DAG_executor_constants.pagerank_graph_file_name
+    fname = DAG_executor_constants.PAGERANK_GRAPH_FILE_NAME
     graph_file = open(fname+".gr", 'r')
     #graph_file = open(fname, 'r')
     count = 0
@@ -4531,7 +4531,7 @@ def input_graph():
     # save number of graph nodes in BFS_generate_DAG_info
     # which is where the DAG_info is built. num_nodes_in_graph
     # is now a field in DAG_info.
-    if not DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION:
+    if not DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION and not DAG_executor_constants.USE_MUTLITHREADED_BFS:
         BFS_generate_DAG_info.num_nodes_in_graph = num_nodes
         logger.info("input_graph: set BFS_generate_DAG_info.num_nodes_in_graph to "
             + str(BFS_generate_DAG_info.num_nodes_in_graph))

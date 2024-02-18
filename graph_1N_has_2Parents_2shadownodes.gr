@@ -1,0 +1,11 @@
+c FILE                  :graph_1N_has_2Parents_2shadownodes.gr
+c No. of vertices       :3
+c No. of edges          :3
+c Max. weight           :1
+c Min. weight           :1
+c Min. edge             :1
+c Max. edge             :3
+p sp 3 3
+a 1 3 1
+a 2 1 1 
+a 2 3 1
