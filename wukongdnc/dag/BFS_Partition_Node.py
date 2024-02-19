@@ -138,7 +138,7 @@ class Partition_Node:
             logger.info("")
 
     
-#rhc shared
+#brc: shared
 
     # called on a Partition_Node by BFS_pagerank.py or BFS_Shared.py to compute its pagerank value.
     # Node is not in a loop. Passing position_size_tuple so we can get the statr of the partition/

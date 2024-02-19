@@ -1622,7 +1622,7 @@ def run():
             state_info = DAG_map[start_state]
             state_info.task_inputs = None
 
-#rhc cleanup
+#brc: cleanup
     output_DAG = True
     # add-0bec4d19-bce6-4394-ad62-9b0eab3081a9
     if output_DAG:
@@ -1664,7 +1664,7 @@ def run():
         logger.info("")
         
 
-#rhc cleanup
+#brc: cleanup
         #from . import BFS_Shared
         #logger.trace("shared_groups_mapDDDD:")
         #for (k,v) in BFS_Shared.shared_groups_map.items():
@@ -1749,7 +1749,7 @@ def run():
             # bypassing the call to invoke real AWS Lambdas and running the code
             # locally, in which case we can read the group/partition file objects
             # from local files.
-#rhc: group partitions
+#brc: group partitions
             if DAG_executor_constants.INPUT_ALL_GROUPS_PARTITIONS_AT_START:
             # hardcoded for testing rel lambdas. May want to enabe this generally in
             # which case we will need the partition/group names, which BFS could
@@ -1900,7 +1900,7 @@ def run():
 
                     # not RUN_ALL_TASKS_LOCALLY so using lambdas (real or simulatd)
                     # So do not put leaf tasks in work queue
-#rhc: groups partitions
+#brc: groups partitions
                     if not DAG_executor_constants.RUN_ALL_TASKS_LOCALLY and DAG_executor_constants.STORE_SYNC_OBJECTS_IN_LAMBDAS and DAG_executor_constants.SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS:
                         # storing sync objects in lambdas and snc objects trigger their tasks
                         create_fanins_and_faninNBs_and_fanouts(websocket,DAG_map,DAG_states,DAG_info,
@@ -2103,7 +2103,7 @@ def run():
             # and uses this counter to determine when all tasks have been excuted so workers can stop (by 
             # putting -1 in the work_queue - when worker gets -1 it puts -1 for the next worker. So execution
             # ends with -1 in the work queue, which is put there by the last worker to stop.)
-    #rhc: counter
+    #brc: counter
             completed_tasks_counter = CounterMP()
             completed_workers_counter = CounterMP()
             # used by a logger for multiprocessing
@@ -2118,7 +2118,7 @@ def run():
             multithreaded_multiprocessing_process_list = []
             num_processes_created_for_multithreaded_multiprocessing = 0
             #num_processes_created_for_multithreaded_multiprocessing = create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,counter,process_work_queue,data_dict,log_queue,worker_configurer)
-    #rhc: counter
+    #brc: counter
     # # tasks_completed_counter, workers_completed_counter
             #num_processes_created_for_multithreaded_multiprocessing = create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,completed_tasks_counter,log_queue,worker_configurer)
             num_processes_created_for_multithreaded_multiprocessing = create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,completed_tasks_counter,completed_workers_counter,log_queue,worker_configurer)
@@ -2160,7 +2160,7 @@ def run():
                                     # workers withdraw their work, i.e., starting state, from the work_queue
                                     DAG_exec_state = None
                                 logger.trace("DAG_executor_driver: Starting DAG_executor thread for leaf task " + task_name)
-#rhc: lambda inc: will be reading DAG_info from payload as we need to do that for
+#brc: lambda inc: will be reading DAG_info from payload as we need to do that for
 # incremental DAG generation since pass DAG_info in payload on restarting continued tasks.
 # SO ssimulated lambdas use DAG_info parm instead of reading DAG_info from file.
 # The latter works when non incremental DAG generation since can read the complete DAG
@@ -2229,7 +2229,7 @@ def run():
                                 # The worker_configurer() funcion is used for multiprocess logging
                                 #proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,counter,process_work_queue,data_dict,log_queue,worker_configurer,))
                                 if not (DAG_executor_constants.COMPUTE_PAGERANK and DAG_executor_constants.USE_SHARED_PARTITIONS_GROUPS):
-    #rhc: counter 
+    #brc: counter 
     # tasks_completed_counter, workers_completed_counter
                                     #proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,completed_tasks_counter,log_queue,worker_configurer,
                                     proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,completed_tasks_counter,completed_workers_counter,log_queue,worker_configurer,
@@ -2248,7 +2248,7 @@ def run():
                                         shared_frontier_map = BFS_Shared.shared_partition_frontier_parents_map
 
                                     if DAG_executor_constants.USE_STRUCT_OF_ARRAYS_FOR_PAGERANK:
-    #rhc: counter 
+    #brc: counter 
     # tasks_completed_counter, workers_completed_counter
                                         #proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,completed_tasks_counter,log_queue,worker_configurer,
                                         proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,completed_tasks_counter,completed_workers_counter,log_queue,worker_configurer,
@@ -2257,7 +2257,7 @@ def run():
                                             BFS_Shared.number_of_parents_sent_to_processes,BFS_Shared.starting_indices_of_parents_sent_to_processes,
                                             BFS_Shared.parents_sent_to_processes,BFS_Shared.IDs_sent_to_processes,))
                                     else:
-    #rhc: counter 
+    #brc: counter 
     # tasks_completed_counter, workers_completed_counter
                                         #proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,completed_tasks_counter,log_queue,worker_configurer,
                                         proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,completed_tasks_counter,completed_workers_counter,log_queue,worker_configurer,
@@ -2303,7 +2303,7 @@ def run():
                                     "DAG_executor_state": lambda_DAG_exec_state,
                                     "DAG_info": DAG_info
                                 }
-#rhc: group partitions
+#brc: group partitions
                                 #print("groups_partitions:")
                                 #keys = list(groups_partitions.keys())
                                 #for key in keys:
@@ -2394,7 +2394,7 @@ def run():
                                 #proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"p"+str(num_threads_created + 1)), args=(payload,counter,process_work_queue,data_dict,log_queue,worker_configurer,))
 
                                 if not (DAG_executor_constants.COMPUTE_PAGERANK and DAG_executor_constants.USE_SHARED_PARTITIONS_GROUPS):
-    #rhc: counter 
+    #brc: counter 
     # tasks_completed_counter, workers_completed_counter
                                     #proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"p"+str(num_threads_created + 1)), args=(payload,completed_tasks_counter,log_queue,worker_configurer,
                                     proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"p"+str(num_threads_created + 1)), args=(payload,completed_tasks_counter,completed_workers_counter,log_queue,worker_configurer,
@@ -2410,7 +2410,7 @@ def run():
                                         shared_frontier_map = BFS_Shared.shared_partition_frontier_parents_map
                                     
                                     if DAG_executor_constants.USE_STRUCT_OF_ARRAYS_FOR_PAGERANK:
-    #rhc: counter 
+    #brc: counter 
     # tasks_completed_counter, workers_completed_counter
 
                                         #proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"p"+str(num_threads_created + 1)), args=(payload,completed_tasks_counter,log_queue,worker_configurer,
@@ -2420,7 +2420,7 @@ def run():
                                             BFS_Shared.number_of_parents_sent_to_processes,BFS_Shared.starting_indices_of_parents_sent_to_processes,
                                             BFS_Shared.parents_sent_to_processes,BFS_Shared.IDs_sent_to_processes,))
                                     else:
-    #rhc: counter 
+    #brc: counter 
     # tasks_completed_counter, workers_completed_counter
                                         #proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"p"+str(num_threads_created + 1)), args=(payload,completed_tasks_counter,log_queue,worker_configurer,
                                         proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"p"+str(num_threads_created + 1)), args=(payload,completed_tasks_counter,completed_workers_counter,log_queue,worker_configurer,
@@ -2522,7 +2522,7 @@ def run():
 def create_fanin_and_faninNB_messages(DAG_map,DAG_states,DAG_info,all_fanin_task_names,all_fanin_sizes,
     all_faninNB_task_names,all_faninNB_sizes,
     groups_partitions):
-#rhc: groups partitions
+#brc: groups partitions
     # For pagerank computation we need to read a partition of 
     # nodes. For real lambdas, this could be from an S3 bucket
     # or somewhere. To avoid this, we can let this DAG_executor_driver
@@ -2549,7 +2549,7 @@ def create_fanin_and_faninNB_messages(DAG_map,DAG_states,DAG_info,all_fanin_task
     # create a list of "create" messages, one for each fanin
     for fanin_name, size in zip(all_fanin_task_names,all_fanin_sizes):
         #logger.trace("iterate fanin: fanin_name: " + fanin_name + " size: " + str(size))
-        # rhc: DES
+        # brc: DES
         dummy_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
         # we will create the fanin object and call fanin.init(**keyword_arguments)
         dummy_state.keyword_arguments['n'] = size
@@ -2569,7 +2569,7 @@ def create_fanin_and_faninNB_messages(DAG_map,DAG_states,DAG_info,all_fanin_task
      # create a list of "create" messages, one for each faninNB
     for fanin_nameNB, size in zip(all_faninNB_task_names,all_faninNB_sizes):
         #logger.trace("iterate faninNB: fanin_nameNB: " + fanin_nameNB + " size: " + str(size))
-        # rhc: DES
+        # brc: DES
         dummy_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
         # passing to the fninNB object:
         # it size
@@ -2587,7 +2587,7 @@ def create_fanin_and_faninNB_messages(DAG_map,DAG_states,DAG_info,all_fanin_task
             dummy_state.keyword_arguments['DAG_info'] = DAG_info
         else:
             dummy_state.keyword_arguments['DAG_info'] = None
-#rhc groups partitions
+#brc: groups partitions
         dummy_state.keyword_arguments['groups_partitions'] = groups_partitions
         msg_id = str(uuid.uuid4())
 
@@ -2611,7 +2611,7 @@ def create_fanin_and_faninNB_and_fanout_messages(DAG_map,DAG_states,DAG_info,all
     all_fanin_sizes,all_faninNB_task_names, all_faninNB_sizes,
     all_fanout_task_names,DAG_leaf_tasks,DAG_leaf_task_start_states,
     groups_partitions):
-#rhc groups partitions
+#brc: groups partitions
     # we are not using real lambdas to execute tasks so 
     # groups_partitions is []
 
@@ -2629,7 +2629,7 @@ def create_fanin_and_faninNB_and_fanout_messages(DAG_map,DAG_states,DAG_info,all
     # create a list of "create" messages, one for each fanin
     for fanin_name, size in zip(all_fanin_task_names,all_fanin_sizes):
         #logger.trace("iterate fanin: fanin_name: " + fanin_name + " size: " + str(size))
-        # rhc: DES
+        # brc: DES
         dummy_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
         # we will create the fanin object and call fanin.init(**keyword_arguments)
         dummy_state.keyword_arguments['n'] = size
@@ -2649,7 +2649,7 @@ def create_fanin_and_faninNB_and_fanout_messages(DAG_map,DAG_states,DAG_info,all
      # create a list of "create" messages, one for each faninNB
     for fanin_nameNB, size in zip(all_faninNB_task_names,all_faninNB_sizes):
         #logger.trace("iterate faninNB: fanin_nameNB: " + fanin_nameNB + " size: " + str(size))
-        # rhc: DES
+        # brc: DES
         dummy_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
         # passing to the fninNB object:
         # it size
@@ -2668,7 +2668,7 @@ def create_fanin_and_faninNB_and_fanout_messages(DAG_map,DAG_states,DAG_info,all
         else:
             dummy_state.keyword_arguments['DAG_info'] = None
 
-#rhc groups partitions
+#brc: groups partitions
         dummy_state.keyword_arguments['groups_partitions'] = groups_partitions
 
         msg_id = str(uuid.uuid4())
@@ -2690,7 +2690,7 @@ def create_fanin_and_faninNB_and_fanout_messages(DAG_map,DAG_states,DAG_info,all
     # treated as a fanout.
     for leaf_task_name, leaf_task_start_state in zip(DAG_leaf_tasks,DAG_leaf_task_start_states):
         #logger.trace("iterate fanin: fanin_name: " + fanin_name + " size: " + str(size))
-        # rhc: DES
+        # brc: DES
         dummy_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
         # we will create the fanin object and call fanin.init(**keyword_arguments)
         # Note: a fanout is a fann of size 1
@@ -2722,7 +2722,7 @@ def create_fanin_and_faninNB_and_fanout_messages(DAG_map,DAG_states,DAG_info,all
 
     for fanout_name in all_fanout_task_names:
         #logger.trace("iterate fanin: fanin_name: " + fanin_name + " size: " + str(size))
-        # rhc: DES
+        # brc: DES
         dummy_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
         # we will create the fanin object and call fanin.init(**keyword_arguments)
         # Note: a fanout is a fann of size 1
@@ -2791,7 +2791,7 @@ def create_work_queue(websocket,number_of_tasks):
 def create_fanins_and_faninNBs_and_work_queue(websocket,number_of_tasks,DAG_map,DAG_states,DAG_info,all_fanin_task_names,all_fanin_sizes,
     all_faninNB_task_names,all_faninNB_sizes,
     groups_partitions):
-#rhc: groups partitions 
+#brc: groups partitions 
 # We ar not using real lambdas to excute tasks so groups_partitions is []
     dummy_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
     # we will create the fanin object and call fanin.init(**keyword_arguments)
@@ -2828,7 +2828,7 @@ def create_fanins_and_faninNBs_and_fanouts(websocket,DAG_map,DAG_states,DAG_info
     all_faninNB_task_names,all_faninNB_sizes,all_fanout_task_names, 
     DAG_leaf_tasks, DAG_leaf_task_start_states,
     groups_partitions):
-#rhc groups partitions
+#brc: groups partitions
     # we are not using real lambdas to execute tasks so groups_partitions is []
 
     fanin_messages, faninNB_messages, fanout_messages = create_fanin_and_faninNB_and_fanout_messages(DAG_map,DAG_states,DAG_info,
@@ -2851,7 +2851,7 @@ def create_fanins_and_faninNBs_and_fanouts(websocket,DAG_map,DAG_states,DAG_info
 def create_fanins_and_faninNBs(websocket,DAG_map,DAG_states,DAG_info,all_fanin_task_names,all_fanin_sizes,
     all_faninNB_task_names,all_faninNB_sizes,
     groups_partitions):
-#rhc: groups partitions
+#brc: groups partitions
     # For pagerank computation we need to read a partition of 
     # nodes. For real lambdas, this could be from an S3 bucket
     # or somewhere. To avoid this, we can let this DAG_executor_driver

@@ -23,7 +23,7 @@ class Node:
         self.parents = []
         self.children = []
         self.num_children  = 0
-#rhc: ToDo
+#brc: ToDo
         # this will be in Partition_Node not here
         self.pagerank = 0.00
         # Same for prev - we have these here so we can compute PageRank over all Nodes.
@@ -40,14 +40,14 @@ class Node:
         # in the partition. The pagerank value of this node was computer by 
         # the previous parition and sent to this partition so the child in this
         # partition can use it for their pagerank computation.
-#rhc: ToDo
+#brc: ToDo
         # this will be in Partition_Node not here
         self.isShadowNode = False
 
     def __eq__(self,other):
         return self.ID == other.ID
 
-#rhc: ToDo
+#brc: ToDo
     # change this if move shadow node
     def __str__(self):
         shadow = ""

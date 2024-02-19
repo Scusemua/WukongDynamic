@@ -118,7 +118,7 @@ class DAG_orchestrator:
 		# create a list of "create" messages, one for each fanin
 		for fanin_name, size in zip(all_fanin_task_names,all_fanin_sizes):
 			#logger.trace("iterate fanin: fanin_name: " + fanin_name + " size: " + str(size))
-			# rhc: DES
+			# brc: DES
 			dummy_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
 			# we will create the fanin object and call fanin.init(**keyword_arguments)
 			dummy_state.keyword_arguments['n'] = size
@@ -138,7 +138,7 @@ class DAG_orchestrator:
 		# create a list of "create" messages, one for each faninNB
 		for fanin_nameNB, size in zip(all_faninNB_task_names,all_faninNB_sizes):
 			#logger.trace("iterate faninNB: fanin_nameNB: " + fanin_nameNB + " size: " + str(size))
-			# rhc: DES
+			# brc: DES
 			dummy_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
 			# passing to the fninNB object:
 			# it size

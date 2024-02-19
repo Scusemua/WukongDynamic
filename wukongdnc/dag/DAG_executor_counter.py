@@ -24,14 +24,14 @@ class Counter(object):
     def get(self):
         with self._lock:
             return self.value
-#rhc: counter 
+#brc: counter 
 # tasks_completed_counter
 
 completed_tasks_counter = None
 if DAG_executor_constants.USING_WORKERS and DAG_executor_constants.USING_THREADS_NOT_PROCESSES:
     completed_tasks_counter = Counter(0)
 
-#rhc: counter 
+#brc: counter 
 # completed_workers_counter
 completed_workers_counter = None
 if DAG_executor_constants.USING_WORKERS and DAG_executor_constants.USING_THREADS_NOT_PROCESSES:

@@ -163,7 +163,7 @@ current partition Pi:
 
 """
 
-#rhc: num_nodes
+#brc: num_nodes
 # this is set BFS.input_graph when doing non-incremental DAG generation with partitions
 num_nodes_in_graph = 0
 
@@ -204,7 +204,7 @@ Partition_DAG_number_of_tasks = 0
 # incrementally published. For partitions this is 1 or 0.
 Partition_DAG_number_of_incomplete_tasks = 0
 
-#rhc: num_nodes: 
+#brc: num_nodes: 
 Partition_DAG_num_nodes_in_graph = 0
 
 # Called by generate_DAG_info_incremental_partitions below to generate 
@@ -233,7 +233,7 @@ def generate_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks):
     global Partition_DAG_previous_partition_name
     global Partition_DAG_number_of_tasks
     global Partition_DAG_number_of_incomplete_tasks
-#rhc: num_nodes
+#brc: num_nodes
     global Partition_DAG_num_nodes_in_graph
 
     # for debugging
@@ -308,7 +308,7 @@ def generate_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks):
     # of groups, there may be many groups in the incomplete last
     # partition and they will all be considered to be incomplete.
     Partition_DAG_number_of_incomplete_tasks = number_of_incomplete_tasks
-#rhc: num_nodes
+#brc: num_nodes
     # The value of num_nodes_in_graph is set by BFS_input_graph
     # at the beginning of execution, which is before we start
     # DAG generation.  This value does not change.
@@ -318,10 +318,10 @@ def generate_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks):
     DAG_info_dictionary["DAG_is_complete"] = Partition_DAG_is_complete
     DAG_info_dictionary["DAG_number_of_tasks"] = Partition_DAG_number_of_tasks
     DAG_info_dictionary["DAG_number_of_incomplete_tasks"] = Partition_DAG_number_of_incomplete_tasks
-#rhc: num_nodes:
+#brc: num_nodes:
     DAG_info_dictionary["DAG_num_nodes_in_graph"] = Partition_DAG_num_nodes_in_graph
 
-#rhc: Note: we are saving all the incemental DAG_info files for debugging but 
+#brc: Note: we are saving all the incemental DAG_info files for debugging but 
 #     we probably want to turn this off otherwise.
 
     # filename is based on version number - Note: for partition, say 3, we
@@ -397,7 +397,7 @@ def generate_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks):
         logger.trace("DAG_number_of_incomplete_tasks:")
         logger.trace(Partition_DAG_number_of_incomplete_tasks)
         logger.trace("")
-    #rhc: num_nodes
+    #brc: num_nodes
         logger.trace("DAG_num_nodes_in_graph:")
         logger.trace(Partition_DAG_num_nodes_in_graph)
         logger.trace("")
@@ -427,7 +427,7 @@ def generate_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks):
         DAG_version_number = DAG_info_Partition_read.get_DAG_version_number()
         DAG_number_of_tasks = DAG_info_Partition_read.get_DAG_number_of_tasks()
         DAG_number_of_incomplete_tasks = DAG_info_Partition_read.get_DAG_number_of_incomplete_tasks()
-#rhc: num_nodes
+#brc: num_nodes
         DAG_num_nodes_in_graph = DAG_info_Partition_read.get_DAG_num_nodes_in_graph()
         logger.trace("")
         logger.trace("DAG_info partition after read:")
@@ -476,7 +476,7 @@ def generate_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks):
             logger.trace("DAG_number_of_incomplete_tasks:")
             logger.trace(DAG_number_of_incomplete_tasks)
             logger.trace("")
-#rhc: num_nodes
+#brc: num_nodes
             logger.trace("DAG_num_nodes_in_graph:")
             logger.trace(DAG_num_nodes_in_graph)
             logger.trace("")
@@ -557,7 +557,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
     global Partition_DAG_previous_partition_name
     global Partition_DAG_number_of_tasks
 
-#rhc_ num_nodes
+#brc: num_nodes
     # This was set above and will not be changed in this method
     global Partition_DAG_num_nodes_in_graph
 

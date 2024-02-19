@@ -466,7 +466,7 @@ class DAG_executor_Synchronizer(object):
     def create_all_fanins_and_faninNBs_locally(self,DAG_map,DAG_states,DAG_info,all_fanin_task_names, all_fanin_sizes, all_faninNB_task_names, all_faninNB_sizes):                                                 
         fanin_messages = []
         for fanin_name, size in zip(all_fanin_task_names,all_fanin_sizes):
-            # rhc: DES
+            # brc: DES
             dummy_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
 			# keywword_argumments used in init()
             dummy_state.keyword_arguments['n'] = size
@@ -483,7 +483,7 @@ class DAG_executor_Synchronizer(object):
 
         faninNB_messages = []
         for fanin_nameNB, size in zip(all_faninNB_task_names,all_faninNB_sizes):
-            # rhc: DES
+            # brc: DES
             dummy_state = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
 			# keywword_argumments used in init()
             dummy_state.keyword_arguments['n'] = size

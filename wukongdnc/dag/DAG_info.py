@@ -34,11 +34,11 @@ class DAG_Info(object):
     def __init__(self,DAG_info_dictionary,file_name = './DAG_info.pickle'):
         self.file_name = file_name
 
-#rhc incremental
+#brc: incremental
 # Q: Get rid of this? Or useful for getting latest info?
         #self.DAG_info_dictionary = DAG_info_dictionary
 
-#rhc: incremental
+#brc: incremental
         # if we are using incremental DAG generation, the 
         # DAG_info_dictionary DAG_map can be modified by
         # the DAG generator while we are executing the DAG.
@@ -90,13 +90,13 @@ class DAG_Info(object):
             self.DAG_number_of_incomplete_tasks = 0
         else:
             self.DAG_number_of_incomplete_tasks = DAG_info_dictionary["DAG_number_of_incomplete_tasks"]
-#rhc: bug fix:
+#brc: bug fix:
         if not DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION:
             self.DAG_number_of_groups_of_previous_partition_that_cannot_be_executed = 0
         else:
             self.DAG_number_of_groups_of_previous_partition_that_cannot_be_executed = DAG_info_dictionary["DAG_number_of_groups_of_previous_partition_that_cannot_be_executed"]
 
-#rhc: num_nodes
+#brc: num_nodes
         self.DAG_num_nodes_in_graph = DAG_info_dictionary["DAG_num_nodes_in_graph"]
 
     def get_DAG_info_dictionary(self):
@@ -117,9 +117,9 @@ class DAG_Info(object):
         DAG_info_dictionary["DAG_is_complete"] = self.DAG_is_complete
         DAG_info_dictionary["DAG_number_of_tasks"] = self.DAG_number_of_tasks
         DAG_info_dictionary["DAG_number_of_incomplete_tasks"] = self.DAG_number_of_incomplete_tasks
-#rhc: bug fix:
+#brc: bug fix:
         DAG_info_dictionary["DAG_number_of_groups_of_previous_partition_that_cannot_be_executed"] = self.DAG_number_of_groups_of_previous_partition_that_cannot_be_executed
-#rhc: num_nodes
+#brc: num_nodes
         DAG_info_dictionary["DAG_num_nodes_in_graph"] = self.DAG_num_nodes_in_graph
         return DAG_info_dictionary
 
@@ -147,7 +147,7 @@ class DAG_Info(object):
         return self.DAG_leaf_task_inputs
     def get_DAG_tasks(self):
         return self.DAG_tasks
-#rhc: continue
+#brc: continue
 # Assuming we set version_number and DAG_info_is_complete when we 
 # generate DAG. Default is version_number=1. DAG_info_is_complete=True
     def get_DAG_version_number(self):
@@ -160,7 +160,7 @@ class DAG_Info(object):
         return self.DAG_number_of_incomplete_tasks
     def get_DAG_number_of_groups_of_previous_partition_that_cannot_be_executed(self):
         return self.DAG_number_of_groups_of_previous_partition_that_cannot_be_executed
-#rhc: num_nodes
+#brc: num_nodes
     def get_DAG_num_nodes_in_graph(self):
         return self.DAG_num_nodes_in_graph
     

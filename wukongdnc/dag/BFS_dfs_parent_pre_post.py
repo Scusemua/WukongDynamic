@@ -64,10 +64,10 @@ def dfs_parent_pre_parent_traversal(node,visited,list_of_unvisited_children):
             check_list_of_unvisited_chldren_after_visiting_parents = True
             logger.trace("dfs_parent_pre: set check_list_of_unvisited_chldren True")
             logger.trace("dfs_parent_pre: list_of_unvisited_children:" + str(list_of_unvisited_children))
-#rhc: un
+#brc: un
             node.unvisited_children = list_of_unvisited_children
 
-#rhc: un
+#brc: un
     for neighbor_index in node.parents:
         parent_node = nodes[neighbor_index]
         if parent_node.ID in visited:
@@ -102,7 +102,7 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
                 logger.trace("unvisited child " + str(child_node.ID) + " not visited during parent traversal")
                 # Did not visit this unvsited child when visiting parents
                 unvisited_children_after_parent_loop.append(child_node.ID)
-#rhc: un
+#brc: un
         node.unvisited_children = unvisited_children_after_parent_loop
     logger.trace(str(len(unvisited_children_after_parent_loop)) + " children remain unvisited")
 
@@ -173,7 +173,7 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
 
     if len(unvisited_children_after_parent_loop) > 0:
         # There remains some unvisited children
-#rhc: ToDo: check for singleton
+#brc: ToDo: check for singleton
         if IDENTIFY_SINGLETONS and (
         len(unvisited_children_after_parent_loop)) == 1:
             # in fact, there is only one unvisited child
@@ -182,7 +182,7 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
             unvisited_child_index = unvisited_children_after_parent_loop[0]
             logger.trace("unvisited_child_index: " + str(unvisited_child_index))
             unvisited_child = nodes[unvisited_child_index]
-#rhc: ToDo: node may have more than 1 child, but if there is only one 
+#brc: ToDo: node may have more than 1 child, but if there is only one 
 #  unvisited child only_child and it has no children and node is only_child's
 #  only parent then we could mark only_child as visited. 
 #  Note that in this case only_child would not be a singleton.

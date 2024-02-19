@@ -121,7 +121,7 @@ class DAG_executor_FanInNB(MonitorSU):
         else:
             logger.trace("FanInNB: fanin_task_name: DAG_info is not None for init().")
 
-#rhc: groups partitions
+#brc: groups partitions
         # When running real lambdas, in order to avoid reading the 
         # individual groups/partitions when testing pagerank with 
         # real lambdas, the DAG_executor_driver can input all the 
@@ -149,7 +149,7 @@ class DAG_executor_FanInNB(MonitorSU):
             #logging.shutdown()
             #os._exit(0)
 
-#rhc: groups partitions
+#brc: groups partitions
         # get it if real lambdas etc
         # also, in select version
 
@@ -341,7 +341,7 @@ class DAG_executor_FanInNB(MonitorSU):
                     
             elif not self.store_fanins_faninNBs_locally and not DAG_executor_constants.RUN_ALL_TASKS_LOCALLY:
                 # using real lambdas to execure DAGs Wukong style
-#rhc: run task
+#brc: run task
                 # Note: we are STORE_SYNC_OBJECTS_IN_LAMBDAS so usually we would not 
                 # use a non-select faninNB in this case as we use select faninNBs when 
                 # we store sync objects in Lambdas. But if the non-select sync object

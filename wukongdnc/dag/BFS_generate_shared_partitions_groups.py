@@ -76,7 +76,7 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
     # arrays, one for each of the needed values, e.g., array of 
     # num_children values, array of num_parents values, etc.
     if not DAG_executor_constants.USE_STRUCT_OF_ARRAYS_FOR_PAGERANK:
-        #rhc shared
+        #brc: shared
         if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
             next = 0
             for name, partition, num_shadow_nodes in zip(partition_names, partitions, partitions_num_shadow_nodes_list):
@@ -207,7 +207,7 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
         global IDs
         global parents
         """
-        #rhc shared
+        #brc: shared
         #if not USE_PAGERANK_GROUPS_PARTITIONS:
         next = 0
         next_parent_index = 0
@@ -265,7 +265,7 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
             # prev[i] is previous pagerank value of i
             BFS_Shared.previous = np.full(np_arrays_size_for_shared_partition,float((1/num_nodes)))
             # num_chldren[i] is number of child nodes of node i
-            # rhc: Q: make these short or something shorter than int?
+            # brc: Q: make these short or something shorter than int?
             BFS_Shared.number_of_children = np.empty(np_arrays_size_for_shared_partition,dtype=np.intc)
             # numParents[i] is number of parent nodes of node i
             BFS_Shared.number_of_parents = np.empty(np_arrays_size_for_shared_partition,dtype=np.intc)
@@ -379,7 +379,7 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
                             BFS_Shared.number_of_parents[next] = int_padding[j]
                             BFS_Shared.starting_indices_of_parents[next] = int_padding[j]
                             BFS_Shared.IDs[next] = int_padding[j]
-                            # rhc: It is possible that a root node of BFS (there may be more than one)
+                            # brc: It is possible that a root node of BFS (there may be more than one)
                             # does not have any parents, whcih happens if it is the only node in its
                             # partition/group. Then we will still add padding between the zero parents
                             # of the root partition/group and the parents of the next partition/group.
@@ -581,7 +581,7 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
             # prev[i] is previous pagerank value of i
             BFS_Shared.previous = np.full(np_arrays_size_for_shared_groups_pagerank_and_previous,float((1/num_nodes)))
             # num_chldren[i] is number of child nodes of node i
-            # rhc: Q: make these short or something shorter than int?
+            # brc: Q: make these short or something shorter than int?
             BFS_Shared.number_of_children = np.empty(np_arrays_size_for_shared_groups,dtype=np.intc)
             # numParents[i] is number of parent nodes of node i
             BFS_Shared.number_of_parents = np.empty(np_arrays_size_for_shared_groups,dtype=np.intc)
@@ -653,7 +653,7 @@ def generate_shared_partitions_groups(num_nodes,num_parent_appends,partitions,pa
                             BFS_Shared.number_of_parents[next] = int_padding[j]
                             BFS_Shared.starting_indices_of_parents[next] = int_padding[j]
                             BFS_Shared.IDs[next] = int_padding[j]
-                            # rhc: It is possible that a root node of BFS (there may be more than one)
+                            # brc: It is possible that a root node of BFS (there may be more than one)
                             # does not have any parents, whcih happens if it is the only node in its
                             # partition/group. Then we will still add padding between the zero parents
                             # of the root partition/group and the parents of the next partition/group.

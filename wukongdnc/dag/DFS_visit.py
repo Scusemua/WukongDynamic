@@ -41,15 +41,15 @@ logger.addHandler(ch)
 class state_info:
     def __init__(self, task_name, fanouts = None, fanins = None, faninNBs = None, collapse = None,
         fanin_sizes = None, faninNB_sizes = None, task_inputs = None,
-#rhc continue
+#brc: continue
         ToBeContinued = False,
         fanout_fanin_faninNB_collapse_groups_partitions=False,
-#rhc: clustering
+#brc: clustering
         fanout_partition_group_sizes = None):
 
         self.task_name = task_name
         self.fanouts = fanouts      # see comment below for examples
-#rhc: clustering
+#brc: clustering
         self.fanout_partition_group_sizes = fanout_partition_group_sizes
         self.fanins = fanins
         self.faninNBs = faninNBs
@@ -57,7 +57,7 @@ class state_info:
         self.faninNB_sizes = faninNB_sizes
         self.collapse = collapse
         self.task_inputs = task_inputs
-#rhc continue
+#brc: continue
         # True if we are using incremental DAG_info generation, which is 
         # currently only for pagerank.  For Dask Dags, we use DFS_visit.py
         # to convert DASK Dags to our DAGs. For pagerank, we have a seperate
@@ -72,10 +72,10 @@ class state_info:
         state_info_cls = state_info_object
         return cls(state_info_cls.task_name, state_info_cls.fanouts, state_info_cls.fanins, state_info_cls.faninNBs, state_info_cls.collapse,
             state_info_cls.fanin_sizes, state_info_cls.faninNB_sizes, state_info_cls.task_inputs,
-#rhc: continue
+#brc: continue
             state_info_cls.ToBeContinued,
             state_info_cls.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued,
-#rhc: clustering
+#brc: clustering
             state_info_cls.fanout_partition_group_sizes)
 
     def __str__(self):
@@ -107,7 +107,7 @@ class state_info:
             task_inputs_string = str(self.task_inputs)
         else:
             task_inputs_string = "None"
-#rhc: clustering
+#brc: clustering
         if self.fanout_partition_group_sizes != None:
             fanout_partition_group_sizes_string = str(self.fanout_partition_group_sizes)
         else:
@@ -118,9 +118,9 @@ class state_info:
         return (" task: " + self.task_name + ", fanouts:" + fanouts_string + ", fanins:" + fanins_string + ", faninsNB:" + faninNBs_string
             + ", collapse:" + collapse_string + ", fanin_sizes:" + fanin_sizes_string
             + ", faninNB_sizes:" + faninNB_sizes_string + ", task_inputs:" + task_inputs_string
-#rhc: clustering
+#brc: clustering
             + ", fanout_partition_group_sizes:" + fanout_partition_group_sizes_string
-#rhc continue
+#brc: continue
             + ", ToBeContinued:" + ToBeContinued_string
             + ", fanout_fanin_faninNB_collapse_groups_are_ToBeContinued:" + fanout_fanin_faninNB_collapse_groups_partitions_string)
 
@@ -129,7 +129,7 @@ class state_info:
             self.fanouts, self.fanins, self.faninNBs, self.fanin_sizes,
             self.faninNB_sizes, self.collapse, self.task_inputs, self.ToBeContinued,
             self.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued,
-#rhc: clustering
+#brc: clustering
             self.fanout_partition_group_sizes)
         new_instance.__dict__.update(self.__dict__)
         new_instance.task_name = copy.deepcopy(self.task_name, memodict)
@@ -142,7 +142,7 @@ class state_info:
         new_instance.task_inputs = copy.deepcopy(self.task_inputs, memodict)
         new_instance.ToBeContinued = copy.deepcopy(self.ToBeContinued, memodict)
         new_instance.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued = copy.deepcopy(self.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued, memodict)
-#rhc: clusteting
+#brc: clusteting
         new_instance.fanout_partition_group_sizes = copy.deepcopy(self.fanout_partition_group_sizes, memodict)
         
         return new_instance
@@ -370,7 +370,7 @@ class Node:
 		
         # if T previously encountered as a dependent, now we add T's information for executing T
         Node.DAG_map[state] = state_info(self.get_task_name(), fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, self.get_task_inputs(),
-#rhc continue : For DASK DAGS we do not generate incremental DAGs - a DAG contains
+#brc: continue : For DASK DAGS we do not generate incremental DAGs - a DAG contains
             # all the tasks.
             False)
         Node.DAG_states[self.get_task_name()] = state

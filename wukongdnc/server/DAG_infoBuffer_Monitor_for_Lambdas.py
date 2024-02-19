@@ -41,7 +41,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         # For testing, if we havn't called init() then version number will be 1
         self.current_version_DAG_info = None
         self.current_version_number_DAG_info = 1
-#rhc leaf tasks
+#brc leaf tasks
         # The initial DAG has the initial leaf task(s) in it. As later we find
         # more leaf tasks (that start new connected components), we supply them 
         # with the DAG so the leaf tasks can be added to the continue_queue,
@@ -53,9 +53,9 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         self.continue_queue = []
         # For debugging, track all of the leaf tasks we have seen.
         self.cummulative_leaf_tasks = []
-#rhc: lambda inc:
+#brc: lambda inc:
         #self._next_version=super().get_condition_variable(condition_name="_next_version")
-#rhc: lambda inc
+#brc: lambda inc
         #self._capacity = kwargs["n"]
         # Need there to be an element at buffer[i]. Cannot use insert() since it will shift elements down.
         # If we set buffer[0] we need an element to be at position 0 or we get an out of range error.
@@ -70,7 +70,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         # initialize with a DAG_info object. This will be version 1 of the DAG
         #self.current_version_DAG_info = kwargs['current_version_DAG_info']
         #self.current_version_number_DAG_info = self.current_version_DAG_info.get_version_number()
-#rhc leaf tasks
+#brc leaf tasks
         # The initial DAG has the initial leaf task(s) in it. As later we find
         # more leaf tasks (tht start new connected components), we supply them 
         # with the DAG so the leaf tasks can be aded to the work_queue and
@@ -137,7 +137,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                 logging.shutdown()
                 os._exit(0)
         
-#rhc: lambda inc
+#brc: lambda inc
         #logger.trace("DAG_infoBuffer_Monitor_for_Lambdas: get_current_version_number_DAG_info() entered monitor, len(self._new_version) ="+str(len(self._next_version)))
         logger.trace("DAG_infoBuffer_Monitor_for_Lambdas: get_current_version_number_DAG_info() entered monitor")
 
@@ -166,12 +166,12 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                 logging.shutdown()
                 os._exit(0)
 
-#rhc: lambda inc
+#brc: lambda inc
         #logger.trace("DAG_infoBuffer_Monitor_for_Lambdas: deposit() entered monitor, len(self._new_version) ="+str(len(self._next_version)))
         logger.info("DAG_infoBuffer_Monitor_for_Lambdas: deposit() entered monitor")
         self.current_version_DAG_info = kwargs['new_current_version_DAG_info']
         self.current_version_number_DAG_info = self.current_version_DAG_info.get_DAG_version_number()
-#rhc leaf tasks
+#brc leaf tasks
         # For lambdas, we can't start a leaf task when we get it in list of leaf tasks
         # as it is not complete. So we put it in the continue queue and start it when 
         # we get the next deposit() - the leaf task will be complete in the next deposit.
@@ -210,7 +210,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         logger.info("DAG_infoBuffer_Monitor_for_Lambdas: DAG_info deposited: ")
         self.print_DAG_info(self.current_version_DAG_info)
 
-#rhc leaf tasks
+#brc leaf tasks
         # debugging:
         if len(new_leaf_tasks) > 0:
             logger.info("DAG_infoBuffer_Monitor_for_Lambdas: new leaf task states deposited: ")
@@ -224,7 +224,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
 
         restart = False
 
-#rhc: lanbda inc: start lambdas for all continued states in buffer and leaf tasks
+#brc: lanbda inc: start lambdas for all continued states in buffer and leaf tasks
         #self._next_version.signal_c_and_exit_monitor()
 
         if DAG_executor_constants.RUN_ALL_TASKS_LOCALLY:
@@ -321,7 +321,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
                 # a leaf task currently in the continue queue that will also be 
                 # started in this deposit().
 
-#rhc: ToDo: If the DAG_info is complete then we can start the leaf task 
+#brc: ToDo: If the DAG_info is complete then we can start the leaf task 
 # as it is also complete. We can also start a leaf task if we know it 
 # is the last group/partition of a component even if the DAG_nfo is 
 # not complete. For a partition (and the groups therein) we can track
@@ -567,7 +567,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         # the next version of the DAG, which hasn't been generated yet.
         super().enter_monitor(method_name = "withdraw")
         requested_current_version_number = kwargs['requested_current_version_number']
-#rhc: lambad inc
+#brc: lambad inc
         logger.info("DAG_infoBuffer_Monitor_for_Lambdas: withdraw() entered monitor, requested_current_version_number = "
             + str(requested_current_version_number))
 
@@ -576,11 +576,11 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         if requested_current_version_number <= self.current_version_number_DAG_info:
             DAG_info = self.current_version_DAG_info
             logger.info("DAG_infoBuffer_Monitor_for_Lambdas: withdraw return None")
-#rhc leaf tasks
+#brc leaf tasks
 
-#rhc: lambda inc: 
+#brc: lambda inc: 
             # For lambdas, we do not return leaf tasks, deposit is starting them instead.
-#rhc: lambda inc: 
+#brc: lambda inc: 
             #return DAG_info_and_new_leaf_task_states_tuple, restart
             try:
                 super(DAG_infoBuffer_Monitor_for_Lambdas, self).exit_monitor()
@@ -594,11 +594,11 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             return DAG_info, restart
         else:
 
-#rhc: lambda inc: 
+#brc: lambda inc: 
             # For lambdas, we are not waiting for a new DAG_info to be 
             # deposited; instead lambda stops then is (re)startd by deposit
 
-#rhc: lambda inc
+#brc: lambda inc
             # save start tuple which deposit wil use to restart lambda
             value = kwargs["value"]
             logger.info("DAG_infoBuffer_Monitor_for_Lambdas: withdraw: value to deposit: " + str(value))
@@ -608,7 +608,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
             #self._in=(self._in+1) % int(self._capacity)
             
             logger.info("DAG_infoBuffer_Monitor_for_Lambdas: withdraw return None")
-#rhc: lambda inc
+#brc: lambda inc
             # For lambdas, we do not return leaf tasks, deposit is starting them instead.
             #return DAG_info_and_new_leaf_task_states_tuple, restart
 

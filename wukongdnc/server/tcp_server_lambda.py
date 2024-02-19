@@ -531,7 +531,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
         DAG_exec_state = decode_and_deserialize(message["state"])
         faninNBs = DAG_exec_state.keyword_arguments['faninNBs']
-#rhc: run task
+#brc: run task
         # If sync objects trigger their fanout/fanin tasks to run in the same lambda
         # then we will process the fanouts here.
         # Todo: we may use the parallel invoker to do the fanouts when using Wukong stylr
@@ -578,11 +578,11 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # fanouts to the orchestrator. Note: we cannot be using threads to simulate
         # lambdas since tasks will run in lambdas (triggered by the task's synch object)
 
-#rhc: async batch
+#brc: async batch
         async_call = DAG_exec_state.keyword_arguments['async_call']
         logger.trace("tcp_server_lambda: synchronize_process_faninNBs_batch: calling_task_name: " + calling_task_name 
             + ": worker_needs_input: " + str(worker_needs_input) + " faninNBs size: " +  str(len(faninNBs)))
-#rhc: async batch
+#brc: async batch
         logger.trace("tcp_server_lambda: synchronize_process_faninNBs_batch: calling_task_name: " + calling_task_name 
             + ": async_call: " + str(async_call))
 
@@ -616,7 +616,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # there are no workers. That is, we do not deposit fanouts into a work
         # queue.
 
-#rhc: run task
+#brc: run task
 # ToDo: Need to allow create_if. Currently doing mappings of objects to functions.
 
         # process fanouts
@@ -662,7 +662,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 }
 
                 control_message = None
-#rhc: ToDo: not create on start
+#brc: ToDo: not create on start
                 if not DAG_executor_constants.CREATE_ALL_FANINS_FANINNBS_ON_START:
                     dummy_state_for_create_message = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()))
                     # passing to the created faninNB object:
@@ -688,11 +688,11 @@ class TCPHandler(socketserver.StreamRequestHandler):
                         "state": make_json_serializable(dummy_state_for_create_message),	
                         "id": msg_id
                     }
-#rhc: ToDo:
+#brc: ToDo:
                     #logger.trace("message_handler_lambda: process_enqueued_fan_ins: "
                     #   + "create sync object " + fanin_name + "on the fly")
                     #self.create_obj(creation_message)
-#rhc: ToDo:
+#brc: ToDo:
                     messages = (creation_message, message)
                     dummy_state_for_control_message = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()))
                     control_message = {
@@ -865,11 +865,11 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     "state": make_json_serializable(dummy_state_for_create_message),	
                     "id": msg_id
                 }
-#rhc: ToDo:
+#brc: ToDo:
                 #logger.trace("message_handler_lambda: process_enqueued_fan_ins: "
                 #   + "create sync object " + fanin_name + "on the fly")
                 #self.create_obj(creation_message)
-#rhc: ToDo:
+#brc: ToDo:
                 messages = (creation_message, message)
                 dummy_state_for_control_message = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()))
                 control_message = {
@@ -880,7 +880,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     "id": msg_id
                 }
 
-#rhc: run task: toDo: no work returned if we are running tasks in python functions, for now 
+#brc: run task: toDo: no work returned if we are running tasks in python functions, for now 
 # at least since we are not yet allowing dag_executor to do succeeding ops locally.; 
             # if we are RUN_ALL_TASKS_LOCALLY, the returned_state's return_value is the faninNB results 
             # if our call to fan_in is the last call (i.e., we are the become task); otherwise, the 
@@ -1149,7 +1149,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # We could pass DAG_info from the DAG_executor_drver to ths method
         # but we read it instead.
 
-#rhc: ToDo: make DAG_info global and read it in init().
+#brc: ToDo: make DAG_info global and read it in init().
 #   will make InfiniD and DAG_orchestrator separate files so still pass to them
         #global DAG_info
         #DAG_info is read in TCP_Sever init()
@@ -1199,7 +1199,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     "id": msg_id
                 }
 
-#rhc: Todo: Added all this
+#brc: Todo: Added all this
                 # if not creatin objects at start, create the create_message
                 # to be given to create() and the control message to b given
                 # to createif_and_synchronize_sync
@@ -1227,11 +1227,11 @@ class TCPHandler(socketserver.StreamRequestHandler):
                         "state": make_json_serializable(dummy_state_for_create_message),	
                         "id": msg_id
                     }
-#rhc: ToDo:
+#brc: ToDo:
                     #logger.trace("message_handler_lambda: process_enqueued_fan_ins: "
                     #   + "create sync object " + fanin_name + "on the fly")
                     #self.create_obj(creation_message)
-#rhc: ToDo:
+#brc: ToDo:
                     messages = (creation_message, message)
                     dummy_state_for_control_message = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()))
                     control_message = {
@@ -1273,7 +1273,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     logger.trace("*********************tcp_server_lambda: process_leaf_tasks_batch: calling invoke_lambda_synchronously."
                         +  " for leaf task: " + str(task_name))
                     #return_value = synchronizer.synchronize(base_name, DAG_exec_state, **DAG_exec_state.keyword_arguments)
-#rhc: ToDo:
+#brc: ToDo:
                     if DAG_executor_constants.CREATE_ALL_FANINS_FANINNBS_ON_START:
                         # call synchronize_sync on the alrfeady created object
                         returned_state_ignored = self.invoke_lambda_synchronously(message)
@@ -1423,11 +1423,11 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 "state": make_json_serializable(dummy_state_for_create_message),	
                 "id": msg_id
             }
-#rhc: ToDo:
+#brc: ToDo:
             #logger.trace("message_handler_lambda: process_enqueued_fan_ins: "
             #   + "create sync object " + fanin_name + "on the fly")
             #self.create_obj(creation_message)
-#rhc: ToDo:
+#brc: ToDo:
             messages = (creation_message, message)
             dummy_state_for_control_message = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()))
             control_message = {
@@ -1439,7 +1439,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             }
        
         logger.trace("tcp_server_lambda: calling server.synchronize_sync().")
-#rhc: run task: ToDo:  changes for trigger tasks - using this or async for fanin
+#brc: run task: ToDo:  changes for trigger tasks - using this or async for fanin
         if DAG_executor_constants.USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS and DAG_executor_constants.USING_DAG_ORCHESTRATOR:
             logger.trace("*********************tcp_server_lambda: synchronize_sync: " + calling_task_name + ": calling infiniD.enqueue(message).")
             returned_state = self.enqueue_and_invoke_lambda_synchronously(message)
@@ -1580,11 +1580,11 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 "state": make_json_serializable(dummy_state_for_create_message),	
                 "id": msg_id
             }
-#rhc: ToDo:
+#brc: ToDo:
             #logger.trace("message_handler_lambda: process_enqueued_fan_ins: "
             #   + "create sync object " + fanin_name + "on the fly")
             #self.create_obj(creation_message)
-#rhc: ToDo:
+#brc: ToDo:
             messages = (creation_message, message)
             dummy_state_for_control_message = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()))
             control_message = {
@@ -1595,7 +1595,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 "id": msg_id
             }
  
-#rhc: run task: ToDo:  changes for trigeger tasks - using this or async for fanin       
+#brc: run task: ToDo:  changes for trigeger tasks - using this or async for fanin       
 # But not using async for DAGS? Or we use asynch calls for process this ir
 # that batch but not for indiv. fanin/fanout ops.
 # In general, we could have an OP_orchestrator that would handle DAG stuff

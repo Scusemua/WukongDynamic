@@ -37,7 +37,7 @@ class BoundedBuffer(MonitorSU):
         logger.trace(kwargs)
         self._in=0
         self._out=0
-        #rhc: exp
+        #brc: exp
         # used by withdraw half
         self.first = True
 		
@@ -154,7 +154,7 @@ class BoundedBuffer(MonitorSU):
         self._notFull.signal_c_and_exit_monitor()
         return value, restart
 
-#rhc exp
+#brc exp
     # workers can get an initial batch of work. Here we experiment with giving ech of 
     # two workers half of the leaf nodes. In this experiment for TR, the workers run
     # with fanins stored locally excect for the last fanin which is shared by both

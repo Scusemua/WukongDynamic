@@ -29,7 +29,7 @@ def create_and_run_threads_for_multiT_multiP(process_name,payload,completed_task
 #def create_and_run_threads_for_multiT_multiP(process_name,payload,counter,process_work_queue,data_dict,log_queue,worker_configurer):
 
     #global logger
-#rhc: logging
+#brc: logging
     #
     # This is the start of the process code - get logger for multiprocessing.
     # Note that this logger is passed to the threads for each process:

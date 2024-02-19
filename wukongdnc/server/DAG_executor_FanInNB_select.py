@@ -128,7 +128,7 @@ class DAG_executor_FanInNB_Select(Selector):
             logger.trace("FanInNB: fanin_task_name: DAG_info is not None for init().")
 
 
-#rhc: groups partitions
+#brc: groups partitions
         # When running real lambdas, in order to avoid reading the 
         # individual groups/partitions when testing pagerank with 
         # real lambdas, the DAG_executor_driver can input all the 
@@ -369,7 +369,7 @@ class DAG_executor_FanInNB_Select(Selector):
                     # Either this object starts a new lambda to execute the fanin task or we trigger 
                     # the task by simply callng it. (Note: When we are using lambdas, the sync 
                     # objects cannot be stored locally.)
-    #rhc: run task
+    #brc: run task
                     if DAG_executor_constants.STORE_SYNC_OBJECTS_IN_LAMBDAS and DAG_executor_constants.SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS:
                         #  trigger fanin task to run in this lambda
                         try:

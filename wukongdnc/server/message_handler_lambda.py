@@ -258,9 +258,9 @@ class MessageHandler(object):
 
             #logger.trace("message_handler_lambda: process_enqueued_fan_ins: "
             #   + "create sync object " + fanin_name + "on the fly")
-#rhc: Note: Not so big difference is craete in createif instead of here.
+#brc: Note: Not so big difference is craete in createif instead of here.
             #self.create_obj(creation_message)
-#rhc: ToDo:
+#brc: ToDo:
             dummy_state_for_control_message = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()))
             control_message = {
                 "op": "createif_and_synchronize_sync",
@@ -275,7 +275,7 @@ class MessageHandler(object):
         for msg in list_of_messages:
             # We are doing all the fan_in ops one-by-one in the order they were called by clients
             # The return value of last call is the fanin results; return those to client
-#rhc: ToDo:
+#brc: ToDo:
             if DAG_executor_constants.CREATE_ALL_FANINS_FANINNBS_ON_START:
                 # call synchronize_sync on the already created object
                 return_value = self.synchronize_sync(msg)
@@ -400,7 +400,7 @@ class MessageHandler(object):
         # check if already created
         logger.trace("message_handler_lambda: createif_and_synchronize_sync: Trying to retrieve existing Synchronizer '%s'" % synchronizer_name)
         #synchronizer = MessageHandler.synchronizers[synchronizer_name]
-#rhc: ToDo: This needs to be locked? When can create calls be concurrent
+#brc: ToDo: This needs to be locked? When can create calls be concurrent
 # For example, never if using D_O? Is this cal implcitly already
 # locked previosly? Not if using moitors? yes if using select? and we are
 # using select unless we know it's one shot, etc.?

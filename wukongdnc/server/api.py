@@ -415,7 +415,7 @@ def synchronize_process_faninNBs_batch(websocket, op, type, name, DAG_exec_state
 
     thread_name = threading.current_thread().name
 
-#rhc: async_call
+#brc: async_call
     async_call = DAG_exec_state.keyword_arguments['async_call']
  
     msg_id = str(uuid.uuid4())

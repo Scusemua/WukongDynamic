@@ -22,7 +22,7 @@ logger.addHandler(ch)
 # which is not used. It calls server.api methods to make remote
 # calls to the DAG_infoBuffer_Monitor.
 #
-# rhc: ToDo: Should we close this at end?
+# brc: ToDo: Should we close this at end?
 class Remote_Client_for_DAG_infoBuffer_Monitor_for_Lambdas:
     def __init__(self,websocket):
         self.websocket = websocket

@@ -23,7 +23,7 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         # For testing, if we havn't called init() then version number will be 1
         self.current_version_DAG_info = None
         self.current_version_number_DAG_info = 1
-#rhc leaf tasks
+#brc leaf tasks
         # The initial DAG has the initial leaf task(s) in it. As later we find
         # more leaf tasks (tht start new connected components), we supply them 
         # with the DAG so the leaf tasks can be aded to the work_queue and
@@ -37,7 +37,7 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         # initialize with a DAG_info object. This will be version 1 of the DAG
         #self.current_version_DAG_info = kwargs['current_version_DAG_info']
         #self.current_version_number_DAG_info = self.current_version_DAG_info.get_version_number()
-#rhc leaf tasks
+#brc leaf tasks
         # The initial DAG has the initial leaf task(s) in it. As later we find
         # more leaf tasks (tht start new connected components), we supply them 
         # with the DAG so the leaf tasks can be aded to the work_queue and
@@ -132,13 +132,13 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         logger.trace("DAG_infoBuffer_Monitor: deposit() entered monitor, len(self._new_version) ="+str(len(self._next_version)))
         self.current_version_DAG_info = kwargs['new_current_version_DAG_info']
         self.current_version_number_DAG_info = self.current_version_DAG_info.get_DAG_version_number()
-#rhc leaf tasks
+#brc leaf tasks
         new_leaf_tasks = kwargs['new_current_version_new_leaf_tasks']
         self.current_version_new_leaf_tasks += new_leaf_tasks
         logger.info("DAG_infoBuffer_Monitor: DAG_info deposited: ")
         self.print_DAG_info(self.current_version_DAG_info)
 
-#rhc leaf tasks
+#brc leaf tasks
         logger.trace("DAG_infoBuffer_Monitor: new leaf task states deposited: ")
         for work_tuple in new_leaf_tasks:
             leaf_task_state = work_tuple[0]
@@ -165,7 +165,7 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         restart = False
         if requested_current_version_number <= self.current_version_number_DAG_info:
             DAG_info = self.current_version_DAG_info
-#rhc leaf tasks
+#brc leaf tasks
             new_leaf_task_states = copy.copy(self.current_version_new_leaf_tasks)
             self.current_version_new_leaf_tasks.clear()
 
@@ -184,13 +184,13 @@ class DAG_infoBuffer_Monitor(MonitorSU):
             # deposit.
             #logger.trace("DAG_infoBuffer_Monitor: DAG_info withdrawn: ")
             #self.print_DAG_info(self.current_version_DAG_info)
-#rhc leaf tasks
+#brc leaf tasks
             logger.trace("DAG_infoBuffer_Monitor: withdraw: new leaf task states returned: ")
             for work_tuple in new_leaf_task_states:
                 leaf_task_state = work_tuple[0]
                 logger.trace(str(leaf_task_state))
             super().exit_monitor()
-#rhc leaf tasks
+#brc leaf tasks
             DAG_info_and_new_leaf_task_states_tuple = (DAG_info,new_leaf_task_states)
             #return DAG_info, new_leaf_task_states, restart
             return DAG_info_and_new_leaf_task_states_tuple, restart
@@ -198,7 +198,7 @@ class DAG_infoBuffer_Monitor(MonitorSU):
             logger.info("DAG_infoBuffer_Monitor: withdraw waiting for version " + str(requested_current_version_number))
             self._next_version.wait_c()
             DAG_info = self.current_version_DAG_info
-#rhc leaf tasks
+#brc leaf tasks
             new_leaf_task_states = copy.copy(self.current_version_new_leaf_tasks)
             self.current_version_new_leaf_tasks.clear()
             # cascaded wakeup, i.e., if there are more than one worker waiting,
@@ -227,14 +227,14 @@ class DAG_infoBuffer_Monitor(MonitorSU):
                 + str(DAG_info.get_DAG_version_number()))
             #logger.trace("DAG_infoBuffer_Monitor: DAG_info withdrawn: ")
             #self.print_DAG_info(self.current_version_DAG_info)
-#rhc leaf tasks
+#brc leaf tasks
             logger.trace("DAG_infoBuffer_Monitor: withdraw: new leaf task states to return: ")
             for work_tuple in new_leaf_task_states:
                 leaf_task_state = work_tuple[0]
                 logger.trace(str(leaf_task_state))
 
             self._next_version.signal_c_and_exit_monitor()
-#rhc leaf tasks
+#brc leaf tasks
             DAG_info_and_new_leaf_task_states_tuple = (DAG_info,new_leaf_task_states)
             #return DAG_info, new_leaf_task_states, restart
             logger.trace("DAG_infoBuffer_Monitor: return.")

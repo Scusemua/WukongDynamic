@@ -19,7 +19,7 @@ if not (not USING_THREADS_NOT_PROCESSES or USE_MULTITHREADED_MULTIPROCESSING):
     logger.addHandler(ch)
 """
 
-#rhc: shm moved globals up
+#brc: shm moved globals up
 shm_pagerank = None
 shm_previous = None
 shm_number_of_children = None
@@ -83,8 +83,8 @@ def initialize_struct_of_arrays(num_nodes, np_arrays_size_for_shared_partition,
     global parents
     global IDs
 
-#rhc: ToDo: we can use empty instead of full but full is easier to debug for now.
-#rhc: Also, empty can init array elelent with "nan" and if this element is 
+#brc: ToDo: we can use empty instead of full but full is easier to debug for now.
+#brc: Also, empty can init array elelent with "nan" and if this element is 
 #     part of padding, when we print it we will see "nan"
 
     #pagerank = np.empty(np_arrays_size_for_shared_partition,dtype=np.double)
@@ -93,7 +93,7 @@ def initialize_struct_of_arrays(num_nodes, np_arrays_size_for_shared_partition,
     # using parameter num_nodes not global variable
     previous = np.full(np_arrays_size_for_shared_partition,float((1/num_nodes)))
     # num_chldren[i] is number of child nodes of node i
-    # rhc: Q: make these short or something shorter than int?
+    # brc: Q: make these short or something shorter than int?
     #number_of_children = np.empty(np_arrays_size_for_shared_partition,dtype=np.intc)
     number_of_children = np.full(np_arrays_size_for_shared_partition, -3,dtype=np.intc)
     # numParents[i] is number of parent nodes of node i
@@ -111,9 +111,9 @@ def initialize_struct_of_arrays(num_nodes, np_arrays_size_for_shared_partition,
 def initialize_struct_of_arrays_shared_memory(num_nodes, np_arrays_size_for_shared_partition,
         np_arrays_size_for_shared_partition_parents):
 
-#rhc: ToDo: we can use empty instead of full but full is easier to debug for now.
-#rhc: ToDo: we can use empty instead of full but full is easier to debug for now.
-#rhc: Also, empty can init array elelent with "nan" and if this element is 
+#brc: ToDo: we can use empty instead of full but full is easier to debug for now.
+#brc: ToDo: we can use empty instead of full but full is easier to debug for now.
+#brc: Also, empty can init array elelent with "nan" and if this element is 
 #     part of padding, when we print it we will see "nan"
 
     global nonshared_pagerank
@@ -129,7 +129,7 @@ def initialize_struct_of_arrays_shared_memory(num_nodes, np_arrays_size_for_shar
     # using parameter num_nodes not global variable
     nonshared_previous = np.full(np_arrays_size_for_shared_partition,float((1/num_nodes)))
     # num_chldren[i] is number of child nodes of node i
-    # rhc: Q: make these short or something shorter than int?
+    # brc: Q: make these short or something shorter than int?
     #number_of_children = np.empty(np_arrays_size_for_shared_partition,dtype=np.intc)
     nonshared_number_of_children = np.full(np_arrays_size_for_shared_partition, -3,dtype=np.intc)
     # numParents[i] is number of parent nodes of node i
@@ -558,10 +558,10 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
         """
         if task_file_name.endswith('L'):
             # init prev for loops
-            #rhc shared
+            #brc: shared
             for node_index in range (starting_position_in_partition_group,starting_position_in_partition_group+num_nodes_for_pagerank_computation):
             #for index in range(num_nodes_for_pagerank_computation):
-                #rhc shared
+                #brc: shared
                 if not shared_nodes[node_index].isShadowNode:
                     shared_nodes[node_index].prev = (1/total_num_nodes)
                 #partition_or_group[index].prev = (1/total_num_nodes)
@@ -583,7 +583,7 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
         if (debug_pagerank):
             logger.trace("")
             logger.trace("Frontier Parents:")
-            #rhc shared
+            #brc: shared
             for node_index in range (starting_position_in_partition_group,starting_position_in_partition_group+size_of_partition_group):
                 if not shared_nodes[node_index].isShadowNode:
                     # for parent nodes, ID is e.g., "n-s-p", for non-parent "n" and
@@ -624,7 +624,7 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
         #shared: we are not sending task output to the dependent tasks like we did
         # for the non-fast shared function. We use the copy scheme decribed below,
         """
-        #rhc shared
+        #brc: shared
         # For the non-fast shared version, each non shadow node has a possibly
         # empty list of frontier tuples. There is a frontier tuple for
         # each output of the task. If the task has a pagerank value in position p that 
@@ -636,10 +636,10 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
         # the receiving task (where there is a shadow node in this position).
         for node_index in range (starting_position_in_partition_group,starting_position_in_partition_group+size_of_partition_group):
         #for i in range(len(partition_or_group)):
-            #rhc shared
+            #brc: shared
             if len(shared_nodes[node_index].frontier_parents) > 0:
             #if len(partition_or_group[i].frontier_parents) > 0:
-                #rhc shared
+                #brc: shared
                 for frontier_parent_tuple in shared_nodes[node_index].frontier_parents:
                 #for frontier_parent in partition_or_group[i].frontier_parents:
                     #partition_number = frontier_parent[0]
@@ -652,7 +652,7 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
                     output_list = PageRank_output.get(partition_or_group_name)
                     if output_list is None:
                         output_list = []
-                    #rhc shared
+                    #brc: shared
                     output_tuple = (parent_or_group_index,shared_nodes[node_index].pagerank)
                     #output_tuple = (parent_or_group_index,partition_or_group[i].pagerank)
                     output_list.append(output_tuple)
@@ -781,7 +781,7 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
             # shared: FYI: This is what we did in the non-fast shared function to set the 
             # parent value.
             #parent_of_shadow_node.pagerank = (
-            #    #rhc shared
+            #    #brc: shared
             #    (pagerank_of_shadow_node - random_jumping)  / one_minus_dumping_factor)
             #    #(partition_or_group[shadow_node_index].pagerank - random_jumping)  / one_minus_dumping_factor)
 
@@ -794,7 +794,7 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
             #output_list = PageRank_output.get(partition_or_group_name_of_output_task)
             #if output_list is None:
             #    output_list = []
-            #rhc shared
+            #brc: shared
             #output_tuple = (parent_or_group_index,shared_nodes[node_index].pagerank)
             ##output_tuple = (parent_or_group_index,partition_or_group[i].pagerank)
             #output_list.append(output_tuple)
@@ -842,18 +842,18 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
             logger.trace("")
             logger.trace("")
 
-#rhc: ToDo: print array values
+#brc: ToDo: print array values
         # generate a list of results, which is for each node its
         # pagerank value, so we can return it to DAG_executor.
         result_tuple_list = []
         print("XXPageRank result for " + task_file_name + ":", end=" ")
-        #rhc shared
+        #brc: shared
         for node_index in range (starting_position_in_partition_group,starting_position_in_partition_group+num_nodes_for_pagerank_computation):
         #for i in range(num_nodes_for_pagerank_computation):
-            #rhc shared
+            #brc: shared
             #if not partition_or_group[i].isShadowNode:
             #if not shared_nodes[node_index].isShadowNode:
-            #rhc shared
+            #brc: shared
             #print(str(partition_or_group[i].ID) + ":" + str(partition_or_group[i].pagerank),end=" ")
             node_ID = IDs[node_index]
             node_pagerank = pagerank[node_index]
@@ -866,14 +866,14 @@ def PageRank_Function_Shared_Fast(task_file_name,total_num_nodes,input_tuples,sh
         print(str(pagerank))
 
         if not DAG_executor_constants.USING_THREADS_NOT_PROCESSES:
-            #rhc shared
+            #brc: shared
             print_val = "XXPageRank result for " + task_file_name + ": " # + "\n"
             for node_index in range (starting_position_in_partition_group,starting_position_in_partition_group+num_nodes_for_pagerank_computation):
             #for i in range(num_nodes_for_pagerank_computation):
-                #rhc shared
+                #brc: shared
                 #if not partition_or_group[i].isShadowNode:
                 #if not shared_nodes[node_index].isShadowNode:
-                #rhc shared
+                #brc: shared
                 #print(str(partition_or_group[i].ID) + ":" + str(partition_or_group[i].pagerank),end=" ")
                 print_val += str(IDs[node_index]) + ":" + str(pagerank[node_index])+" "
                 #logger.trace(str(IDs[node_index]) + ":" + str(pagerank[node_index]),end=" ")
@@ -936,9 +936,9 @@ def update_PageRank_of_PageRank_Function_Shared_Fast(task_file_name,
 
         """
         print("XXPageRank result for " + task_file_name + ":", end=" ")
-        #rhc shared
+        #brc: shared
         for node_index in range (starting_position_in_partition_group,starting_position_in_partition_group+num_nodes_for_pagerank_computation):
-            #rhc shared
+            #brc: shared
             print(str(IDs[node_index]) + ":" + str(pagerank[node_index]),end=" ")
         print()
         print()
@@ -994,15 +994,15 @@ def update_PageRank_of_PageRank_Function_loop_Shared_Fast(task_file_name,
                 logger.trace("")
 
         # save current pagerank in prev
-        #rhc shared
+        #brc: shared
         for node_index in range (starting_position_in_partition_group,starting_position_in_partition_group+num_nodes_for_pagerank_computation):
             previous[node_index] = pagerank[node_index]
 
     """
     print("XXPageRank result for " + task_file_name + ":", end=" ")
-    #rhc shared
+    #brc: shared
     for node_index in range (starting_position_in_partition_group,starting_position_in_partition_group+num_nodes_for_pagerank_computation):
-        #rhc shared
+        #brc: shared
         print(str(IDs[node_index]) + ":" + str(pagerank[node_index]),end=" ")
     print()
     print()

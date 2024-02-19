@@ -440,12 +440,12 @@ def dfs_parent(visited, node)
 # (PR(i-1)) or a group PR(i-1)_k of PR(i-1). This means that all of the edges
 # from partition Pi, if any, are to partition Pi+1.
 
-    # rhc : ******* Partition
+    # brc: ******* Partition
         partition_node = Partition_Node(node.ID)
         partition_node.ID = node.ID
         list_of_parents_in_previous_partition = []
 
-    # rhc : ******* Group
+    # brc: ******* Group
         group_node = Partition_Node(node.ID)
         group_node.ID = node.ID
         list_of_parents_in_previous_group = []
@@ -488,9 +488,9 @@ def dfs_parent(visited, node)
                 # the regular Nodes in a graph. e.g., Partition_nodes don't
                 # have a list of children since we don't need this list when
                 # we compute pagerank; we only need a list of the node's parents.
-    # rhc : ******* Partition
+    # brc: ******* Partition
                 partition_node.parents.append(parent_partition_parent_index)
-    # rhc : ******* Group
+    # brc: ******* Group
                 group_node.parents.append(parent_group_parent_index)
 
             else:
@@ -518,9 +518,9 @@ def dfs_parent(visited, node)
                 # shadow node SN and used to compute the pagerank of N.
                 # It's also possible that parent P is in a loop with N so we
                 # don't yet know what to do with P.
-    # rhc : ******* Partition
+    # brc: ******* Partition
                 partition_node.parents.append(-1)
-    # rhc : ******* Group
+    # brc: ******* Group
                 group_node.parents.append(-1)
         
                 # parent node has been processed so get its info and determine whether
@@ -555,11 +555,11 @@ def dfs_parent(visited, node)
                 if parent_partition_parent_index == -1:
                     logger.trace("XXXXXXXXXXXXXXXXX dfs_parent: Loop Detected: "
                         + "PR" + str(current_partition_number) + "_" + str(num_frontier_groups))
-    # rhc : ******* Partition
+    # brc: ******* Partition
                     global current_partition_isLoop
                     current_partition_isLoop = True
 
-    # rhc : ******* Group
+    # brc: ******* Group
                     global current_group_isLoop
                     current_group_isLoop = True
                 else:
@@ -576,12 +576,12 @@ def dfs_parent(visited, node)
 # end of the group is reached. So it is possible that current_partition_isLoop is
 # True and current_group_isLoop is False.
 
-# rhc : ******* Partition
+# brc: ******* Partition
     current_partition_name = "PR" + str(current_partition_number) + "_1"
     if current_partition_isLoop:
         current_partition_name += "L"
 
-# rhc : ******* Group
+# brc: ******* Group
     current_group_name = "PR" + str(current_partition_number) + "_" + str(num_frontier_groups)
     if current_group_isLoop:
         current_group_name += "L"
@@ -760,7 +760,7 @@ from .BFS_DAG_Generator_Multithreaded import DAG_Generator_Multithreaded
 #    import wukongdnc.dag.DAG_infoBuffer_Monitor_for_threads 
 #    DAG_infobuffer_monitor = wukongdnc.dag.DAG_infoBuffer_Monitor_for_threads .DAG_infobuffer_monitor
 
-#rhc shared
+#brc: shared
 #from .DAG_executor import shared_partition, shared_groups
 #from .DAG_executor import shared_partition_map, shared_groups_map
 #from .Shared import shared_partition, shared_groups, shared_partition_map,  shared_groups_map
@@ -956,7 +956,7 @@ websocket = None
 # one with P1 and P2, and one with P!, P2, P3, and P4.
 num_incremental_DAGs_generated = 0
 
-#rhc incremental
+#brc: incremental
     # total number of graph nodes that have been added to the 
     # partitions generated so far. When all nodes have been 
     # added to a partition, the partitions are complete.
@@ -965,7 +965,7 @@ num_incremental_DAGs_generated = 0
     # number of partitions we have seen.
 num_nodes_in_partitions = 0
 
-#rhc: incremental groups
+#brc: incremental groups
 # used for incremental DAG generation.
 # groups in current partition
 groups_of_current_partition = []
@@ -1015,11 +1015,11 @@ def dfs_parent(visited, node):  #function for dfs
     # while parent ID is in position ID in the nodes[] list, it is not in position ID in 
     # the partition/group. The position in the partition/group is where it happens to be added.
 
-#rhc : ******* Partition
+#brc: ******* Partition
     partition_node = Partition_Node(node.ID)
     partition_node.ID = node.ID
 
-#rhc : ******* Group
+#brc: ******* Group
     group_node = Partition_Node(node.ID)
     group_node.ID = node.ID
 
@@ -1048,7 +1048,7 @@ def dfs_parent(visited, node):  #function for dfs
         check_list_of_unvisited_chldren_after_visiting_parents = dfs_parent_pre_parent_traversal(node,visited,list_of_unvisited_children)
         logger.trace("after pre: list_of_unvisited_children: " + str(list_of_unvisited_children))
     else:
-#rhc: If not doing child stuff do we mark node visited here or when we enqueue 
+#brc: If not doing child stuff do we mark node visited here or when we enqueue 
 # node in dfs_parent path?
         visited.append(node.ID)
 
@@ -1059,7 +1059,7 @@ def dfs_parent(visited, node):  #function for dfs
     # if the child has been visited we will not be resetting the pg_tuple here of 
     # such a child.
 
-# rhc : ******* Partition and Group
+# brc: ******* Partition and Group
     # A global map that maps a node to its partition and group numbers and the positions
 
     # Note: we know the partition number and group number so we fill them in now.
@@ -1094,12 +1094,12 @@ def dfs_parent(visited, node):  #function for dfs
 
     # list of node's parents that are in the previos partition. A parent can be in the 
     # same partition as node or in the previous partition,
-# rhc : ******* Partition
+# brc: ******* Partition
     #parents_in_previous_partition = False
     # visit parents
     list_of_parents_in_previous_partition = []
 
-# rhc : ******* Group
+# brc: ******* Group
     #parents_in_previous_group = False
     # visit parents
     list_of_parents_in_previous_group = []
@@ -1144,7 +1144,7 @@ def dfs_parent(visited, node):  #function for dfs
             logger.trace ("dfs_parent visit parent node " + str(parent_node.ID))
             dfs_parent(visited, parent_node)
 
-#rhc: case: since we have not visited parent previously, node and parent_node will both b in
+#brc: case: since we have not visited parent previously, node and parent_node will both b in
 # this same partition/group and thus no shadow node will be added as a proxy for
 # parent_node. We only add a shadow node to this partition for parent_node if parent_node 
 # is not in the same partition/group as node. To be in a different partition group 
@@ -1238,9 +1238,9 @@ def dfs_parent(visited, node):  #function for dfs
             # such an append for each parent when the call to dfs_parent(parent) returns.
             # Note: we may not know the value of the index in which case we append -1
             # and patch it with the actual value later.
-# rhc : ******* Partition
+# brc: ******* Partition
             partition_node.parents.append(parent_partition_parent_index)
-# rhc : ******* Group
+# brc: ******* Group
             group_node.parents.append(parent_group_parent_index)
         else:
             # parent already visited. Node and parent may or may not be in a loop.
@@ -1279,9 +1279,9 @@ def dfs_parent(visited, node):  #function for dfs
             already_visited_parents.append(parent_node_visited_tuple)
             # use -1 for the unknown parent index value. Later we will 
             # correct/patch this value.
-# rhc : ******* Partition
+# brc: ******* Partition
             partition_node.parents.append(-1)
-# rhc : ******* Group
+# brc: ******* Group
             group_node.parents.append(-1)
     
             # This tracking of partition loops generates debug information 
@@ -1296,7 +1296,7 @@ def dfs_parent(visited, node):  #function for dfs
             # this info indicates a loop
             pg_tuple = nodeIndex_to_partition_partitionIndex_group_groupIndex_map[parent_index]
             parent_partition_parent_index = pg_tuple[1]
-# rhc : ******* Partition
+# brc: ******* Partition
             # global constant
             if TRACK_PARTITION_LOOPS:
                 if parent_partition_parent_index == -1:
@@ -1317,7 +1317,7 @@ def dfs_parent(visited, node):  #function for dfs
                         + ", loop indicator: " + loop_indicator)
                     global loop_nodes_added
                     loop_nodes_added += 1
-# rhc : ******* end Partition - only track loops for partitions, for now
+# brc: ******* end Partition - only track loops for partitions, for now
 
             # We try to deect a loop as early as possible so that we can use the
             # correct partition name, e.g., "PR2_1L" instead of "PR2_1" when we use the 
@@ -1338,7 +1338,7 @@ def dfs_parent(visited, node):  #function for dfs
                 # Set a flag to indicate a loop was detected.
                 logger.trace("XXXXXXXXXXXXXXXXX dfs_parent: Loop Detected: "
                     + "PR" + str(current_partition_number) + "_" + str(num_frontier_groups))
-# rhc : ******* Partition
+# brc: ******* Partition
                 # Set a flag indicating that a loop was detected in the
                 # current partition.
                 global current_partition_isLoop
@@ -1358,7 +1358,7 @@ def dfs_parent(visited, node):  #function for dfs
                 #    logger.error("[Error]: parent_partition_parent_index is -1"
                 #        + " indicating that current partition is a loop but "
                 #        + " parent_group_parent_index is not -1, when the group should also be in a loop.") 
-# rhc : ******* Group
+# brc: ******* Group
                 # Set a flag indicating that a loop was detected in the
                 # current group.
                 global current_group_isLoop
@@ -1384,12 +1384,12 @@ def dfs_parent(visited, node):  #function for dfs
     # has a loop. If so we add an 'L' to the end of the name.
     # Example: "PR2_2" becomes "PR2_2L".
 
-# rhc : ******* Partition
+# brc: ******* Partition
     current_partition_name = "PR" + str(current_partition_number) + "_1"
     if current_partition_isLoop:
         current_partition_name += "L"
 
-# rhc : ******* Group
+# brc: ******* Group
     current_group_name = "PR" + str(current_partition_number) + "_" + str(num_frontier_groups)
     if current_group_isLoop:
         current_group_name += "L"
@@ -1568,9 +1568,9 @@ def dfs_parent(visited, node):  #function for dfs
                     # the shadow node. 
                     #
                     # Suggested assert group_index is also -1
-# rhc : ******* Partition
+# brc: ******* Partition
                     partition_node.parents[index_of_parent] = parent_partition_parent_index
-# rhc : ******* Group
+# brc: ******* Group
                     group_node.parents[index_of_parent] = parent_group_parent_index
                 else:
                     # need to patch the parent index, i.e., since parent_partition_parent_index
@@ -1578,20 +1578,20 @@ def dfs_parent(visited, node):  #function for dfs
                     # is until the dfs search unwns back to the parent. Here, we set the parent's
                     # index in the partition/group to -1. Later we will path this value with the 
                     # actual value assigned to parent_partition_parent_index.
-# rhc : ******* Partition
+# brc: ******* Partition
                     partition_node.parents[index_of_parent] = -1
-# rhc : ******* Group
+# brc: ******* Group
                     group_node.parents[index_of_parent] = -1
                     # finish this partition_node and group_node parent mapping 
                     # when the parent/group has finished and all parents have been mapped.
                     # This tuple tell us which position in the parents list needs to be patched.
                     patch_tuple = (parent_index,partition_node.parents,group_node.parents,index_of_parent,node.ID)
                     logger.trace("patch_tuple: " +str(patch_tuple))
-# rhc : ******* Partition
+# brc: ******* Partition
                     # save all the patch tuples for later porcessing when the 
                     # actual parent index positions are known.
                     patch_parent_mapping_for_partitions.append(patch_tuple)
-# rhc : ******* Group
+# brc: ******* Group
                     patch_parent_mapping_for_groups.append(patch_tuple)
 
                     # Detected loop. When we compute pagerank for a group, the number
@@ -1627,7 +1627,7 @@ def dfs_parent(visited, node):  #function for dfs
                 partition_node.parents[index_of_parent] = parent_partition_parent_index
                 """
 
-# rhc : ******* Group
+# brc: ******* Group
                 #partition_group_tuple = nodeIndex_to_partition_partitionIndex_group_groupIndex_map.get(parent_node.ID)
                 #parent_group_number = None
                 # This must be true (leave this if for now)
@@ -1671,7 +1671,7 @@ def dfs_parent(visited, node):  #function for dfs
                             + ", current_group_number: " + str(current_group_number)
                             + ", parent ID: " + str(parent_index)) 
 
-# rhc: case: visited parent before and it is is same group.  So no shadow node and 
+# brc: case: visited parent before and it is is same group.  So no shadow node and 
 # we already checked to see if parent partition index indicates a loop has been detected.
 
                         # Note: The parent is in the same group and could indicate
@@ -1683,7 +1683,7 @@ def dfs_parent(visited, node):  #function for dfs
                         # group.). If the check showed a loop in the partition
                         # then we created a path tuple for the partition and group.
                         #
-# rhc : ******* Partition/Group
+# brc: ******* Partition/Group
                         # Note: if we change code so that we either do partitions or groups 
                         # but not both then make sure we still detect loops for groups, i.e.,
                         # if we disbale partition code and it is detecting group loops then
@@ -1778,14 +1778,14 @@ def dfs_parent(visited, node):  #function for dfs
                         # to indicate it is a shadow node. For example, noed 20 has a parent of 2
                         # so the shadow node for node 20 has ID "2-s"
                         logger.trace("dfs_parent: add shadow node: " + str(visited_parent_node.ID) + "-s")
-#rhc: ToDo:
+#brc: ToDo:
                         # If parent and child nodes are in different group but same partition 
                         # then no shadow node is needed in he partition as no need to send 
                         # parent's pagerank value. Thus we only do the group append here.
 
                         current_group.append(shadow_node)
 
-# rhc: case: visited parent before and it is is same partition so set the parent
+# brc: case: visited parent before and it is is same partition so set the parent
 # at index index_of_parent to parent_partition_parent_index = partition_group_tuple[0]
                         """
                         parent_group_parent_index = len(current_group)-1
@@ -1802,7 +1802,7 @@ def dfs_parent(visited, node):  #function for dfs
                         # position in the group and one of n's parents will be the shadow
                         # node so we need its position in the group.
 
-                        #rhc: make one of group node's parents be this shadow node
+                        #brc: make one of group node's parents be this shadow node
                         group_node.parents[index_of_parent] = len(current_group)-1
 
                         global num_shadow_nodes_added_to_groups
@@ -2077,7 +2077,7 @@ def dfs_parent(visited, node):  #function for dfs
                     logging.shutdown()
                     os._exit(0)
                 # SCC 2
-# rhc : ******* END Group
+# brc: ******* END Group
 
             else:
                 ## Note: assertion above should have failed.
@@ -2100,7 +2100,7 @@ def dfs_parent(visited, node):  #function for dfs
                 # has a loop. If so we add an 'L' to the end of the name.
                 # Example: "PR2_2" becomes "PR2_2L".
 
-# rhc : ******* Partition
+# brc: ******* Partition
                 #parents_in_previous_partition = True
                 list_of_parents_in_previous_partition.append(visited_parent_node.ID)
 
@@ -2119,14 +2119,14 @@ def dfs_parent(visited, node):  #function for dfs
                 # add shadow node to partition
                 current_partition.append(shadow_node)
 
-# rhc: case: visited parent before and it is is same partition so set the parent
+# brc: case: visited parent before and it is is same partition so set the parent
 # at index index_of_parent to parent_partition_parent_index = partition_group_tuple[0]
                 """
                 parent_partition_parent_index = len(current_partition)-1
                 partition_node.parents[index_of_parent] = parent_partition_parent_index
                 """
 
-#rhc: ToDo:
+#brc: ToDo:
                 # only do part/group if using part/group or option to do both
                 # for debugging? If in differet partition then if using parts then
                 # add to part and if using group then add to group and if using 
@@ -2137,25 +2137,25 @@ def dfs_parent(visited, node):  #function for dfs
                 # number if using partitions? (when forming function names)
                 # Or just use group number of 0 when using partitions?
 
-# rhc : ******* Group
+# brc: ******* Group
                 # This is the index of the shadow node in group.
                 child_index_in_current_group = len(current_group)
                 # add shadow node to group.
                 current_group.append(copy.deepcopy(shadow_node))
                 logger.trace("dfs_parent: add shadow node to group: " + str(visited_parent_node.ID) + "-s")
-# rhc: case: visited parent before and it is is same partition so set the parent
+# brc: case: visited parent before and it is is same partition so set the parent
 # at index index_of_parent to parent_partition_parent_index = partition_group_tuple[0]
                 """
                 parent_group_parent_index = len(current_group)-1
                 partition_node.parents[index_of_parent] = parent_group_parent_index
                 """
 
-# rhc : ******* Partition
+# brc: ******* Partition
                 global nodeIndex_to_partitionIndex_map
                 #global nodeIndex_to_groupIndex_map
                 nodeIndex_to_partitionIndex_map[shadow_node.ID] = len(current_partition)-1
-#rhc: ToDo:
-# rhc : ******* Group
+#brc: ToDo:
+# brc: ******* Group
                 # only do part/group if using part/group or option to do both
                 # for debugging?
                 nodeIndex_to_groupIndex_map[shadow_node.ID] = len(current_group)-1
@@ -2166,29 +2166,29 @@ def dfs_parent(visited, node):  #function for dfs
                 # position in the group and one of n's parents will be the shadow
                 # node so we need its position in the group.
 
-# rhc : ******* Partition
-                #rhc: make node's parent be this shadow node as it is a proxy for parent
+# brc: ******* Partition
+                #brc: make node's parent be this shadow node as it is a proxy for parent
                 partition_node.parents[index_of_parent] = len(current_partition)-1
-# rhc : ******* Group
+# brc: ******* Group
                 group_node.parents[index_of_parent] = len(current_group)-1
             
-# rhc : ******* Partition
+# brc: ******* Partition
                 global num_shadow_nodes_added_to_partitions
                 #global shadow_nodes_added_to_groups
-# rhc : ******* Partition or Group
+# brc: ******* Partition or Group
                 num_shadow_nodes_added_to_partitions += 1
                 num_shadow_nodes_added_to_groups += 1
 
-# rhc : ******* Partition
+# brc: ******* Partition
                 # remember where the frontier_parent node should be placed when the 
                 # partition the PageRank task sends it to receives it. 
                 logger.trace ("num partitions: " + str(current_partition_number) + ", child_index_in_current_partition: " + str(child_index_in_current_partition))
-# rhc : ******* Group
+# brc: ******* Group
                 logger.trace ("num_frontier_groups: " + str(num_frontier_groups) + ", child_index_in_current_group: " + str(child_index_in_current_group))
 
 # STOP
 
-# rhc: ToDo: if we are using partition then we just need partition number and index
+# brc: ToDo: if we are using partition then we just need partition number and index
 # but we won't use group number? That is, the names aer PR1, PR2, etc, so we ignore'
 # the group number when we form partition name for target funtion with shadow nodes?
 # Actually, we use the name of the partition instead of the partition and group numbers
@@ -2204,10 +2204,10 @@ def dfs_parent(visited, node):  #function for dfs
                 # Note: Added a partition/group name field to the tuple since we need an 'L'
                 # in the name of the current partition/group if it is a loop. We probably won't
                 # need the current_partition_number/num_frontier_groups but it's available for now for debugging.
-# rhc : ******* Partition
+# brc: ******* Partition
                 frontier_parent_partition_tuple = (current_partition_number,1,child_index_in_current_partition,current_partition_name)
                 logger.trace ("bfs frontier_parent_partition_tuple (pnum,1,childindx,pname): " + str(frontier_parent_partition_tuple))
-# rhc : ******* Group
+# brc: ******* Group
                 frontier_parent_group_tuple = (current_partition_number,num_frontier_groups,child_index_in_current_group,current_group_name)
                 logger.trace ("bfs frontier_parent_group_tuple: (pnum,gnum,chldinx,gname) " + str(frontier_parent_group_tuple))
  
@@ -2234,7 +2234,7 @@ def dfs_parent(visited, node):  #function for dfs
                 # but this is not necessarily the 2nd group identified overall.
                 parent_index_in_groups_list = partition_group_tuple[4]
 
-# rhc : ******* Partition
+# brc: ******* Partition
                 logger.trace ("partition_group_tuple of parent from global map: " + str(visited_parent_node.ID) + " (pnum,pindx,gnum,gindx,posingroupslist): " + str(partition_group_tuple))
                 # partition numbers start at 1 not 0
                 logger.trace ("add frontier tuple to parent partition")
@@ -2242,7 +2242,7 @@ def dfs_parent(visited, node):  #function for dfs
                 parent_partition = partitions[parent_partition_number-1]
                 # add tuple to parent node in parent;s partition
                 parent_partition[parent_partition_parent_index].frontier_parents.append(frontier_parent_partition_tuple)
-# rhc : ******* Group
+# brc: ******* Group
                 logger.trace ("add frontier tuple to parent group")
                 #parent_group = groups[parent_group_number-1]
                 parent_group = groups[parent_index_in_groups_list]
@@ -2257,13 +2257,13 @@ def dfs_parent(visited, node):  #function for dfs
                 # so that when the partition ends, if we find current_partition_name is True we
                 # can iterate through this list and make the changes. If no loop is dected then 
                 # no changes need to be made.
-# rhc : ******* Partition
+# brc: ******* Partition
                 if not current_partition_isLoop:
                     position_in_frontier_parents_partition_list = len(parent_partition[parent_partition_parent_index].frontier_parents)-1
                     frontier_parent_partition_patch_tuple = (parent_partition_number,parent_partition_parent_index,position_in_frontier_parents_partition_list)
                     frontier_parent_partition_patch_tuple_list.append(frontier_parent_partition_patch_tuple)
 
-# rhc : ******* Group
+# brc: ******* Group
                 # Note: in white board group 2_2, when 20 sees 2 it has detected no loop
                 # so we will use "PR2_2" but then it sees 19 and we detect a loop, so 20 uses "PR2_2L" as
                 # the name of its group. We'll need to patch the name "PR2_1" so we remember
@@ -2289,7 +2289,7 @@ def dfs_parent(visited, node):  #function for dfs
                 add frontier tuple to parent group
                 """
 
-# rhc : ******* Partition
+# brc: ******* Partition
                 #if True: # 
                 if DAG_executor_constants.USE_SHARED_PARTITIONS_GROUPS:
                     # shared partitions frontier code:
@@ -2348,7 +2348,7 @@ def dfs_parent(visited, node):  #function for dfs
                         shared_frontier_parent_partition_patch_tuple = (task_name_of_parent_partition,position_in_list_of_parent_frontier_tuples)
                         shared_frontier_parent_partition_patch_tuple_list.append(shared_frontier_parent_partition_patch_tuple)
 
-# rhc : ******* Group
+# brc: ******* Group
                 #if True: # 
                 if DAG_executor_constants.USE_SHARED_PARTITIONS_GROUPS:
                     # See the comments immed. above for partition case.
@@ -2399,7 +2399,7 @@ def dfs_parent(visited, node):  #function for dfs
                 # node C in N was in the previous partition P. Then P was
                 # the sending partition and N is a partition that receives
                 # from P. 
-# rhc : ******* Partition
+# brc: ******* Partition
                 
                 sending_partition = partition_names[parent_partition_number-1]
                 #receiving_partition = "PR"+str(current_partition_number)+"_1"
@@ -2429,7 +2429,7 @@ def dfs_parent(visited, node):  #function for dfs
                     sender_receiver_partition_patch_tuple = (parent_partition_number,receiving_partition)
                     sender_receiver_partition_patch_tuple_list.append(sender_receiver_partition_patch_tuple)
 
-# rhc : ******* Group
+# brc: ******* Group
                 # generate dependency in DAG
                 #sending_group = "PR"+str(parent_partition_number)+"_"+str(parent_group_number)
                 # index in groups list is the actual index, sarting with index 0
@@ -2513,7 +2513,7 @@ def dfs_parent(visited, node):  #function for dfs
             node.partition_number = current_partition_number
             logger.trace("set " + str(node.ID) + " partition number to " + str(node.partition_number))
 
-#rhc: Todo: Can we do this as part of for each parent loop? instead of looping again?
+#brc: Todo: Can we do this as part of for each parent loop? instead of looping again?
 # Note: parent remaps to different index depending on partiton or group!!
 # Note: node can have multiple parents in previous partition or group therein or in
 #   different group in this partition. So need to add all shadow nodes before
@@ -2537,7 +2537,7 @@ def dfs_parent(visited, node):  #function for dfs
 #     these parents *before* we push the partition node. The 
 #     partition node's parents should include all of these shadow
 #     nodes.
-#rhc: handle multiple shadow nodes? Note that we do not push the 
+#brc: handle multiple shadow nodes? Note that we do not push the 
 #     partition/group node until after we process all the parents
 #     So?
 #   
@@ -2545,29 +2545,29 @@ def dfs_parent(visited, node):  #function for dfs
 #   append partition/group index to parents[]
 
             #partition_node.parents = node.parents
-# rhc : ******* Partition    
+# brc: ******* Partition    
             partition_node.num_children = len(node.children)
             # these are the default values so we do not need these assignments 
             partition_node.pagerank = 0.0
             partition_node.isShadowNode = False
             partition_node.frontier_parents = []
 
-# rhc : ******* Group
+# brc: ******* Group
             group_node.num_children = len(node.children)
             # these are the default values so we do not need these assignments 
             group_node.pagerank = 0.0
             group_node.isShadowNode = False
             group_node.frontier_parents = []
 
-# rhc : ******* Partition
+# brc: ******* Partition
             current_partition.append(partition_node)
-# rhc : ******* Group
+# brc: ******* Group
             current_group.append(group_node)
 
             # partition_node.ID and group_node.ID are the same
-# rhc : ******* Partition
+# brc: ******* Partition
             nodeIndex_to_partitionIndex_map[partition_node.ID] = len(current_partition)-1
-# rhc : ******* Group
+# brc: ******* Group
             nodeIndex_to_groupIndex_map[partition_node.ID] = len(current_group)-1
             
             # Note: if node's parent is in different partition then we'll add a 
@@ -2577,7 +2577,7 @@ def dfs_parent(visited, node):  #function for dfs
             # But if a node's parent is in a different group but same partition then 
             # we only add a shadow node to the group in a position right before node in the group. 
 
-# rhc : ******* Partition
+# brc: ******* Partition
             # information for this partition node
             # There are n partitions, this node is in partition partition_number
 
@@ -2589,7 +2589,7 @@ def dfs_parent(visited, node):  #function for dfs
             # In this partition, this node is at position partition_index,
             # where we just added the node to current_partition
             partition_index = len(current_partition)-1
-# rhc : ******* Group
+# brc: ******* Group
             # Likewise for groups
             group_number = current_group_number
             group_index = len(current_group)-1
@@ -2636,7 +2636,7 @@ def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, 
 # are in the previous partition that we collected.
 def bfs(visited, node): 
     logger.trace ("bfs mark " + str(node.ID) + " as visited and add to bfs queue")
-    #rhc: add to visited is done in dfs_parent
+    #brc: add to visited is done in dfs_parent
     #visited.append(node.ID)
     # dfs_parent will add a node to the current partition and also add 
     # its unvisited parent nodes. Some parent nodes may have been added to the 
@@ -2650,7 +2650,7 @@ def bfs(visited, node):
     global dfs_parent_end_partition_size
     global dfs_parent_loop_nodes_added_end
     global dfs_parent_end_frontier_size
-    #rhc shared
+    #brc: shared
     global start_num_shadow_nodes_for_partitions
     global end_num_shadow_nodes_for_partitions
     global start_num_shadow_nodes_for_groups
@@ -2670,13 +2670,13 @@ def bfs(visited, node):
     # incremental DAG generation stops
     global num_nodes_in_partitions
 
-#rhc: incremental groups
+#brc: incremental groups
     # for each partition, we create a list of the groups in the 
     # current partition and add this list to the list groups_of_partitions
     global groups_of_partitions
     global groups_of_current_partition
 
-#rhc:
+#brc:
     # These are per dfs_parent() stats not per partition.
     # These lengths should be 0 at the start
     dfs_parent_start_partition_size = len(current_partition)
@@ -2687,7 +2687,7 @@ def bfs(visited, node):
     global loop_nodes_added
     dfs_parent_loop_nodes_added_start = loop_nodes_added
 
-#rhc shared
+#brc: shared
     if DAG_executor_constants.USE_SHARED_PARTITIONS_GROUPS or DAG_executor_constants.ENABLE_RUNTIME_TASK_CLUSTERING:
         # we keep a count of the total number of shadow nodes added to a group
         # or partition. Then we track the start and end values of this counter
@@ -2711,7 +2711,7 @@ def bfs(visited, node):
     #dfs_p(visited, graph, node)
     #dfs_p_new(visited, graph, node)
 
-#rhc: 
+#brc: 
     # start with -1 in the bfs queue; after call to dfs_parent, which will 
     # collect a node and its unvisited ancestors (parents, parents of parents, etc),
     # we will pop the -1 fron the queue, marking the end the current partition.
@@ -2791,7 +2791,7 @@ def bfs(visited, node):
     # list of collected groups
     global groups
     
-# rhc : ******* Group
+# brc: ******* Group
     # in dfs_parent(), we add a node to either list partitions or list
     # groups. Note that the nodes of partition 1 ere also the nodes of
     # group 1. We collect the first group here. We collect the first
@@ -2803,13 +2803,13 @@ def bfs(visited, node):
     global nodeIndex_to_groupIndex_map
     nodeIndex_to_groupIndex_maps.append(nodeIndex_to_groupIndex_map)
     nodeIndex_to_groupIndex_map = {}
-# rhc : ******* end Group
+# brc: ******* end Group
 
     # these start with 1 not 0. 
     global current_partition_number
     global current_group_number
 
-# rhc : ******* Group
+# brc: ******* Group
     # First partition/group is "PR1_1".
     # Next group is first group of partition 2: "PR2_1", etc.
     group_name = "PR" + str(current_partition_number) + "_" + str(current_group_number)
@@ -2839,7 +2839,7 @@ def bfs(visited, node):
     # next partition and use current_group_number+1=2 as the group number.
     group_names.append(group_name)
 
-#rhc: incremental groups
+#brc: incremental groups
     if DAG_executor_constants.COMPUTE_PAGERANK and (DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION or DAG_executor_constants.USE_MUTLITHREADED_BFS):
         # For incremental DAG generation, we track the groups in the current
         # partition. We will need to iterate through these groups.
@@ -2857,7 +2857,7 @@ def bfs(visited, node):
     BFS_generate_DAG_info.leaf_tasks_of_groups_incremental.append(group_name)
     is_leaf_node = True
 
-#rhc: clustering
+#brc: clustering
     # Note: need the group name here.
     # Need to know the number of shadow nodes when clustering in order
     # to compute the number of non-shadow nodes (nodies-shadow_nodes = non-shadow nodes)
@@ -2866,7 +2866,7 @@ def bfs(visited, node):
         # we are using worker processes/threads and we are putting all the 
         # groups in one shared array in an order that minimizes cache 
         # misses during the pagerank computation.
-#rhc shared
+#brc: shared
         # compute number of shadow nodes added to first group
         end_num_shadow_nodes_for_groups = num_shadow_nodes_added_to_groups
         change_in_shadow_nodes_for_groups = end_num_shadow_nodes_for_groups - start_num_shadow_nodes_for_groups
@@ -2901,7 +2901,7 @@ def bfs(visited, node):
 
     current_group = []
     
-# rhc : ******* end Group
+# brc: ******* end Group
 
     # tracking the groups with loops that we found if TRACK_PARTITION_LOOPS
     dfs_parent_loop_nodes_added_end = loop_nodes_added
@@ -2910,13 +2910,13 @@ def bfs(visited, node):
     # after the calls to dfs_parent() below.
     #
     # First group is also the first partition
-# rhc : ******* Partition
+# brc: ******* Partition
     dfs_parent_end_partition_size = len(current_partition)
     dfs_parent_change_in_partition_size = (dfs_parent_end_partition_size - dfs_parent_start_partition_size) - (
         dfs_parent_loop_nodes_added_end - dfs_parent_loop_nodes_added_start)
     dfs_parent_changes_in_partiton_size.append(dfs_parent_change_in_partition_size)
     logger.trace("dfs_parent(root)_change_in_partition_size: " + str(dfs_parent_change_in_partition_size))
-# rhc : ******* end Partition
+# brc: ******* end Partition
 
     dfs_parent_end_frontier_size = len(frontier)
     dfs_parent_change_in_frontier_size = (dfs_parent_end_frontier_size - dfs_parent_start_frontier_size) - (
@@ -2925,7 +2925,7 @@ def bfs(visited, node):
     logger.trace("dfs_parent(root)_change_in_frontier_size: " + str(dfs_parent_change_in_frontier_size))
 
     # queue.append(node) and frontier.append(node) done optionally in dfs_parent
-#rhc
+#brc
     end_of_current_frontier = False
     while BFS_queue:          # Creating loop to visit each node in BFS_queue
         # queue of int IDs not Node objects. Node for int ID is in Nodes[ID]
@@ -3002,7 +3002,7 @@ def bfs(visited, node):
             logger.trace("BFS: end_of_current_frontier")
             end_of_current_frontier = False
 
-# rhc : ******* Partition
+# brc: ******* Partition
             # end of partition
             if len(current_partition) > 0:
             #if len(current_partition) >= num_nodes/5:
@@ -3010,7 +3010,7 @@ def bfs(visited, node):
                 # save the current partition in list of partitions.
                 # This does not require a deepcopy.
                 partitions.append(current_partition.copy())
-#rhc incremental:   
+#brc: incremental:   
                 # this includes regulat nodes and shadow nodes
                 num_nodes_in_partitions += len(current_partition)
                 # reset current_partition
@@ -3031,7 +3031,7 @@ def bfs(visited, node):
 
                 # Note: partition_name is collected below
 
-#rhc: clustering
+#brc: clustering
                  # Note: need the partition name here.
                 # Need to know the number of shadow nodes when clustering in order
                 # to compute the number of non-shadow nodes (nodies-shadow_nodes = non-shadow nodes)
@@ -3049,7 +3049,7 @@ def bfs(visited, node):
                     # For clustering, we need to know the number of nodes in the 
                     # partition/group so we need to subtract the number of shadow 
                     # nodes from the number of nodes in the partition/group.
-#rhc shared
+#brc: shared
                     end_num_shadow_nodes_for_partitions = num_shadow_nodes_added_to_partitions
                     change_in_shadow_nodes_for_partitions = end_num_shadow_nodes_for_partitions - start_num_shadow_nodes_for_partitions
                     partitions_num_shadow_nodes_list.append(change_in_shadow_nodes_for_partitions)
@@ -3059,7 +3059,7 @@ def bfs(visited, node):
 
                 current_partition = []
 
-#rhc: incremental groups
+#brc: incremental groups
                 if DAG_executor_constants.COMPUTE_PAGERANK and (DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION or DAG_executor_constants.USE_MUTLITHREADED_BFS):
                     # For incremental DAG generation, we need to know the 
                     # groups that each partition contains. That is, when we process
@@ -3323,7 +3323,7 @@ def bfs(visited, node):
                 # thus, we could remove them from the map, where partition i-1 is 
                 # saved in partitions[] so we can get the nodes in partition i-1.
 
-# rhc : ******* end Partition Group
+# brc: ******* end Partition Group
 
                 global total_loop_nodes_added
                 total_loop_nodes_added += loop_nodes_added
@@ -3333,7 +3333,7 @@ def bfs(visited, node):
 
                 # SCC 7
 
-#rhc: Q: 
+#brc: Q: 
 # - So some nodes are in current_partition. Some of these nodes that are in the 
 # current_partition are in the frontier and some aer not in the frontier. For example, 
 # a node N with lots of children may be added to the partition, but N will stay on
@@ -3370,7 +3370,7 @@ def bfs(visited, node):
                 frontier_costs.append(frontier_cost)
                 frontier.clear()
 
-#rhc incremental     
+#brc: incremental     
                 # outline: call generate_DAG_info_incremental_partitions  
                 # or BFS_generate_DAG_info_incremental_groups to add another
                 # partition or the groups in a partition to the incremental DAG,
@@ -3453,7 +3453,7 @@ def bfs(visited, node):
                                 + " partition " + str(partition_name) + " using workers.")
                             DAG_info = BFS_generate_DAG_info_incremental_partitions.generate_DAG_info_incremental_partitions(partition_name,current_partition_number,to_be_continued)
                         else:
-#rhc increnetal groups
+#brc: increnetal groups
                             # avoiding circular import - above: from . import FS_generate_DAG_info_incremental_groups
                             # then use FS_generate_DAG_info_incremental_groups.generate_DAG_info_incremental_groups(...)
                             logger.info("BFS: calling generate_DAG_info_incremental_groups for"
@@ -3480,7 +3480,7 @@ def bfs(visited, node):
                         
                         # A DAG with a single partition, and hence a single group is a special case.
                         if current_partition_number == 1:
-#rhc incremental groups
+#brc: incremental groups
                             if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
                                 try:
                                     msg = "[Error]: BFS: partition " + partition_name + " is the first partition" \
@@ -3551,7 +3551,7 @@ def bfs(visited, node):
                                         + " current_group_number: " + str(1))
                                         # The only group in a complete DAG with one group is group 1
 
-    #rhc: leaf tasks
+    #brc: leaf tasks
                                 # Deposit complete DAG_info for workers. Note that we have 
                                 # not started the DAG_executor_driver yet, so this deposited
                                 # DAG_info will not ever be withdrawn - the leaf task
@@ -3746,9 +3746,9 @@ def bfs(visited, node):
                                     num_incremental_DAGs_generated % INCREMENTAL_DAG_DEPOSIT_INTERVAL == 0
                                     )):
                             
-#rhc leaf tasks
+#brc: leaf tasks
                                     new_leaf_task_work_tuples = []           
-#rhc incremental groups
+#brc: incremental groups
                                     if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
                                         if len(BFS_generate_DAG_info.leaf_tasks_of_partitions_incremental) > 0:
                                             # New leaf task partitions have been generated. Since no task
@@ -3818,7 +3818,7 @@ def bfs(visited, node):
                                                     dict_of_results_incremental[task_name] = task_inputs
                                                     logger.trace("BFS: add leaf task to new_leaf_task_work_tuples: " + task_name)
                                                     work_tuple = (state_incremental,dict_of_results_incremental)
-    #rhc leaf tasks
+    #brc: leaf tasks
                                                     #work_queue.put(work_tuple)
                                                     new_leaf_task_work_tuples.append(work_tuple)
                                             else:
@@ -3845,7 +3845,7 @@ def bfs(visited, node):
                                             # create the work that is added to the work_queue.
    
     # (Same comment applies in mirrored code above.)                                            
-    #rhc: put them in work_queue after deposit? 
+    #brc: put them in work_queue after deposit? 
     # so we know that whoever gets the lead tasks as work has a DAG that contains the tasks?
     # No? since some workers may get this leaf work and then will not need to call withdraw()
     # to get a DAG?
@@ -3884,7 +3884,7 @@ def bfs(visited, node):
                                             #DAG_leaf_task_start_states_incremental = DAG_info.get_DAG_leaf_task_start_states()
                                             DAG_map_incremental = DAG_info.get_DAG_map()
 
-#rhc: issue: don't do this for lambdas?
+#brc: issue: don't do this for lambdas?
                                             if DAG_executor_constants.USING_WORKERS or not DAG_executor_constants.USING_WORKERS:
                                                 # leaf task states (a task is identified by its state) are put in work_queue
                                                 for name in BFS_generate_DAG_info.leaf_tasks_of_groups_incremental:
@@ -3924,7 +3924,7 @@ def bfs(visited, node):
                                                     dict_of_results_incremental[task_name] = task_inputs
                                                     logger.trace("BFS: add leaf task to new_leaf_task_work_tuples: " + task_name)
                                                     work_tuple = (state_incremental,dict_of_results_incremental)
-    #rhc leaf tasks
+    #brc: leaf tasks
                                                     #work_queue.put(work_tuple)
                                                     new_leaf_task_work_tuples.append(work_tuple)
                                             else:
@@ -3948,7 +3948,7 @@ def bfs(visited, node):
                                     # if not current_partition_number == 2:
                                     #     logging.shutdown()
                                     #     os._exit(0) 
-#rhc leaf tasks
+#brc: leaf tasks
                                     DAG_info_is_complete = DAG_info.get_DAG_info_is_complete()
                                     # If current_partition_number is 2 this partition/group 2 may be the 
                                     # start of a new component, i.e., a leaf task. But if so then the 
@@ -3988,7 +3988,7 @@ def bfs(visited, node):
                                     # or it will be read by the DAG_executor_driver and given
                                     # to the real/simulated (leaf) lambdas as part of their payload.
                                     file_name = "./DAG_info.pickle"
-#rhc: incremental
+#brc: incremental
                                     #DAG_info_dictionary = DAG_info.DAG_info_dictionary
                                     DAG_info_dictionary = DAG_info.get_DAG_info_dictionary()
                                     with open(file_name, 'wb') as handle:
@@ -3997,7 +3997,7 @@ def bfs(visited, node):
                                     # Need to call DAG_executor_driver.run() but it has to be invoked asynch
                                     thread_name = "DAG_executor_driver_Invoker"
                                     logger.trace("BFS: Starting DAG_executor_driver_Invoker_Thread for incrmental DAG generation.")
-#rhc: incremental
+#brc: incremental
                                     # Note: BFS joins this thread. This is a global.
                                     invoker_thread_for_DAG_executor_driver = threading.Thread(target=DAG_executor_driver_Invoker_Thread, name=(thread_name), args=())
 
@@ -4045,7 +4045,7 @@ def bfs(visited, node):
                             partition_tuple = (partition_name, current_partition_number,to_be_continued)
                             DAG_info = DAG_generator_for_multithreaded_DAG_generation.deposit(partition_tuple)
                         else:
-#rhc increnetal groups
+#brc: increnetal groups
                             # avoiding circular import - above: from . import FS_generate_DAG_info_incremental_groups
                             # then use FS_generate_DAG_info_incremental_groups.generate_DAG_info_incremental_groups(...)
                             #logger.info("BFS: calling deposit for"
@@ -4139,7 +4139,7 @@ def bfs(visited, node):
                 nodes[node.ID].frontier_parents.append(frontier_parent_tuple)
                 """
 
-# rhc : ******* Group
+# brc: ******* Group
                 # Note: append() uses a shallow copy.
                 groups.append(current_group)
 
@@ -4155,21 +4155,21 @@ def bfs(visited, node):
 
                 # Note: group_name is collected below
 
-#rhc: incremental groups
+#brc: incremental groups
                 if DAG_executor_constants.COMPUTE_PAGERANK and (DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION or DAG_executor_constants.USE_MUTLITHREADED_BFS):
                     groups_of_current_partition.append(group_name)
                     logger.trace("BFS: add " + group_name + "for partition number " 
                         + str(current_partition_number) 
                         + " to groups_of_current_partition: " + str(groups_of_current_partition))
 
-#rhc: clustering
+#brc: clustering
                 # Note: need the group name here.
                 # Need to know the number of shadow nodes when clustering in order
                 # to compute the number of non-shadow nodes (nodies-shadow_nodes = non-shadow nodes)
 
                 #if USE_SHARED_PARTITIONS_GROUPS:
                 if DAG_executor_constants.USE_SHARED_PARTITIONS_GROUPS or DAG_executor_constants.ENABLE_RUNTIME_TASK_CLUSTERING:
-                    #rhc shared
+                    #brc: shared
                     end_num_shadow_nodes_for_groups = num_shadow_nodes_added_to_groups
                     change_in_shadow_nodes_for_groups = end_num_shadow_nodes_for_groups - start_num_shadow_nodes_for_groups
                     groups_num_shadow_nodes_list.append(change_in_shadow_nodes_for_groups)
@@ -4184,7 +4184,7 @@ def bfs(visited, node):
                 # this is a list of partition_nodes in the current group
                 current_group = []
 
-#rhc:
+#brc:
 # 1. clear instead of re-init?
 # 2. Really need to patch groups? If no, Suggested assert no patching. Note:
 #       we find loops on backup and we don't do patch stuff until after
@@ -4379,7 +4379,7 @@ def bfs(visited, node):
                 logger.trace("")
                 """
 
-# rhc : ******* end Group
+# brc: ******* end Group
                 # Tracking changes to partition size and frontier size
                 # for every call to dfs_parent. So these are after
                 # dfs_parent() calls. They are not when we end a frontier
@@ -4389,7 +4389,7 @@ def bfs(visited, node):
 
                 dfs_parent_loop_nodes_added_end = loop_nodes_added
 
-# rhc : ******* Partition
+# brc: ******* Partition
                 dfs_parent_end_partition_size = len(current_partition)
                 dfs_parent_change_in_partition_size = (dfs_parent_end_partition_size - dfs_parent_start_partition_size) - (
                     dfs_parent_loop_nodes_added_end - dfs_parent_loop_nodes_added_start)
@@ -4527,7 +4527,7 @@ def input_graph():
     num_nodes = int(words[2])
     global num_edges
 
-#rhc: num_nodes
+#brc: num_nodes
     # save number of graph nodes in BFS_generate_DAG_info
     # which is where the DAG_info is built. num_nodes_in_graph
     # is now a field in DAG_info.
@@ -4578,7 +4578,7 @@ def input_graph():
         #logger.trace("target:" + str(target))
         #if target == 101:
         #    logger.trace("target is 101")
-        #rhc: 101 is a sink, i.e., it has no children so it will not appear as a source
+        #brc: 101 is a sink, i.e., it has no children so it will not appear as a source
         # in the file. Need to append a new node if target is out of range, actually 
         # append target - num_nodes. Is this just a coincidence that sink is node 100+1
         # where the gaph is supposed to have 100 nodes?
@@ -4645,7 +4645,7 @@ def input_graph():
     while i <= num_nodes:
         node = nodes[i]
 
-#rhc: Too: Note: nodes has num_children so we can use the same pagerank
+#brc: Too: Note: nodes has num_children so we can use the same pagerank
 # computation on a Node that we do on a partition_node. A Node does not 
 # really need num_children.
         node.num_children = len(node.children)
@@ -5429,7 +5429,7 @@ def main():
     #visualize()
     #input('Press <ENTER> to continue')
 
-    #rhc: Int BFS_shared before starting BFS. If we add to struct of arrays
+    #brc: Int BFS_shared before starting BFS. If we add to struct of arrays
     # during dfs_parent, we will eventually need those inits earlier too.
     if DAG_executor_constants.USE_SHARED_PARTITIONS_GROUPS:
         BFS_Shared.initialize()
@@ -5471,7 +5471,7 @@ def main():
             #bfs(visited, graph, nodes[i])    # function calling
             bfs(visited, nodes[i])    # function calling
 
-# rhc : ******* Partition
+# brc: ******* Partition
 
     # This should never happen? If it can, we need to add the 
     # partition/group to incremental DAG if we are generating
@@ -5513,7 +5513,7 @@ def main():
         global current_partition_number
         partitions.append(current_partition.copy())
 
-        #rhc shared: added all the name stuff - should have been there
+        #brc: shared: added all the name stuff - should have been there
         partition_name = "PR" + str(current_partition_number) + "_1"
         #global current_partition_isLoop
 #3
@@ -5529,7 +5529,7 @@ def main():
         global partition_names
         partition_names.append(partition_name)
 
-#rhc: clustering
+#brc: clustering
         # Note: need the partition name here.
         # Need to know the number of shadow nodes when clustering in order
         # to compute the number of non-shadow nodes (nodies-shadow_nodes = non-shadow nodes)
@@ -5540,7 +5540,7 @@ def main():
         global start_num_shadow_nodes_for_partitions
         global num_shadow_nodes_added_to_partitions
         if DAG_executor_constants.USE_SHARED_PARTITIONS_GROUPS or DAG_executor_constants.ENABLE_RUNTIME_TASK_CLUSTERING:
-            #rhc shared
+            #brc: shared
             end_num_shadow_nodes_for_partitions = num_shadow_nodes_added_to_partitions
             change_in_shadow_nodes_for_partitions = end_num_shadow_nodes_for_partitions - start_num_shadow_nodes_for_partitions
             partitions_num_shadow_nodes_list.append(change_in_shadow_nodes_for_partitions)
@@ -5551,7 +5551,7 @@ def main():
 
         current_partition = []
 
-# rhc : ******* Group
+# brc: ******* Group
 # ToDo: if len(current_group) > 0:
         
 #6
@@ -5581,11 +5581,11 @@ def main():
         global groups_num_shadow_nodes_list
         global start_num_shadow_nodes_for_groups
         global num_shadow_nodes_added_to_groups
-#rhc: clustering
+#brc: clustering
         # Note: need the group name here.
         #if USE_SHARED_PARTITIONS_GROUPS:
         if DAG_executor_constants.USE_SHARED_PARTITIONS_GROUPS or DAG_executor_constants.ENABLE_RUNTIME_TASK_CLUSTERING:
-            #rhc shared
+            #brc: shared
             end_num_shadow_nodes_for_groups = num_shadow_nodes_added_to_groups
             change_in_shadow_nodes_for_groups = end_num_shadow_nodes_for_groups - start_num_shadow_nodes_for_groups
             groups_num_shadow_nodes_list.append(change_in_shadow_nodes_for_groups)
@@ -5654,7 +5654,7 @@ def main():
             partitions_num_shadow_nodes_list,num_shadow_nodes_added_to_partitions,
             groups, group_names,groups_num_shadow_nodes_list,num_shadow_nodes_added_to_groups)
 
-#rhc incremental
+#brc: incremental
     if not DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION:
 
         if not DAG_executor_constants.USE_MUTLITHREADED_BFS:
@@ -5753,7 +5753,7 @@ def main():
 
 
 
-#rhc: ToDo: put this code in main() so TestAll can call BFS.main()
+#brc: ToDo: put this code in main() so TestAll can call BFS.main()
 if __name__ == '__main__':
     main()
 

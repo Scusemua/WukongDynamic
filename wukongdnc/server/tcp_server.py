@@ -340,7 +340,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # For debuggng
         calling_task_name = DAG_exec_state.keyword_arguments['calling_task_name'] 
         DAG_states_of_faninNBs_fanouts = DAG_exec_state.keyword_arguments['DAG_states_of_faninNBs_fanouts'] 
-#rhc batch:
+#brc: batch:
         all_faninNB_sizes_of_faninNBs = DAG_exec_state.keyword_arguments['all_faninNB_sizes_of_faninNBs'] 
         # This is included here for ompleteness but we are not batch procesing
         # fanins
@@ -353,10 +353,10 @@ class TCPHandler(socketserver.StreamRequestHandler):
         # used to calculate size of work queue (2 * number of tasks in DAG)
         number_of_tasks = DAG_exec_state.keyword_arguments['number_of_tasks']
         list_of_fanout_values = DAG_exec_state.keyword_arguments['list_of_work_queue_or_payload_fanout_values']
-#rhc: async batch
+#brc: async batch
         async_call = DAG_exec_state.keyword_arguments['async_call']
 
-#rhc: lambda inc
+#brc: lambda inc
         DAG_info_passed_from_DAG_exector = DAG_exec_state.keyword_arguments['DAG_info']
         try:
             msg = "[Error]: synchronize_process_faninNBs_batch: using incremental DAG generation" \
@@ -383,7 +383,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
         logger.trace("tcp_server: synchronize_process_faninNBs_batch: calling_task_name: " + calling_task_name + ": worker_needs_input: " + str(worker_needs_input)
             + " faninNBs size: " +  str(len(faninNBs)))
-#rhc: async batch
+#brc: async batch
         logger.trace("BBBBBBBBB synchronize_process_faninNBs_batch BBBBBBBBBBBBBBBBBBBBBBB")
         logger.trace("tcp_server: synchronize_process_faninNBs_batch: calling_task_name: " + calling_task_name + ": async_call: " + str(async_call))
 
@@ -483,16 +483,16 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     logging.shutdown()
                     os._exit(0)
 
-    #rhc select then replace
+    #brc: select then replace
                 #return_value = synchronizer.synchronize(base_name, DAG_exec_state, **work_queue_method_keyword_arguments)
-    #rhc select with
+    #brc: select with
             if is_select:
                 #self.lock_synchronizer()
                 synchronizer.lock_synchronizer()
             
             if is_select:
                 wait_for_return = True
-                # rhc: DES
+                # brc: DES
                 #return_value = self.synchronizeSelect(base_name, DAG_exec_state, wait_for_return, **DAG_exec_state.keyword_arguments)
                 # This is return value of deposit_all which is 0 and is not used
                 most_recently_generated_DAG_info = synchronizer.synchronizeSelect(base_name, DAG_exec_state, wait_for_return, **DAG_infoBuffer_monitor_method_keyword_arguments)
@@ -575,24 +575,24 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 work_queue_method_keyword_arguments['list_of_values'] = list_of_fanout_values
                 # call work_queue (bounded buffer) deposit_all(list_of_work_queue_or_payload_fanout_values)
                 logger.trace("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": deposit all fanout work.")
-    #rhc select first, replace
+    #brc: select first, replace
                 #returnValue, restart = synchronizer_method(synchronizer._synchronizer, **work_queue_method_keyword_arguments) 
-    #rhc select with
+    #brc: select with
                 base_name, isTryMethod = isTry_and_getMethodName(work_queue_method)
                 is_select = isSelect(work_queue_type)
                 logger.trace("tcp_server: synchronize_process_faninNBs_batch: method_name: " + work_queue_method + ", base_name: " + base_name + ", isTryMethod: " + str(isTryMethod))
                 logger.trace("tcp_server: synchronize_process_faninNBs_batch: synchronizer_class_name: : " + work_queue_type + ", is_select: " + str(is_select))
 
-    #rhc select then replace
+    #brc: select then replace
                 #return_value = synchronizer.synchronize(base_name, DAG_exec_state, **work_queue_method_keyword_arguments)
-    #rhc select with
+    #brc: select with
                 if is_select:
                     #self.lock_synchronizer()
                     synchronizer.lock_synchronizer()
             
                 if is_select:
                     wait_for_return = True
-                    # rhc: DES
+                    # brc: DES
                     #return_value = self.synchronizeSelect(base_name, DAG_exec_state, wait_for_return, **DAG_exec_state.keyword_arguments)
                     # This is return value of deposit_all which is 0 and is not used
                     return_value_ignored = synchronizer.synchronizeSelect(base_name, DAG_exec_state, wait_for_return, **work_queue_method_keyword_arguments)
@@ -627,7 +627,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
         name_index = 0
         for name in faninNBs:
             start_state_fanin_task  = DAG_states_of_faninNBs_fanouts[name]
-#rhc batch
+#brc: batch
             # the size for fannNB[i] is all_faninNB_sizes_of_faninNBs[i]
             faninNB_size = all_faninNB_sizes_of_faninNBs[name_index]
             synchronizer_name = self._get_synchronizer_name(type_name = None, name = name)
@@ -648,7 +648,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     if (synchronizer is None):
                         dummy_state_for_create_message = DAG_executor_State(function_name = "DAG_executor.DAG_executor_lambda", function_instance_ID = str(uuid.uuid4()))
                         # passing to the created faninNB object:
-#rhc batch
+#brc: batch
                         if not (DAG_executor_constants.COMPUTE_PAGERANK and DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION):
                             #DAG_states = DAG_info.get_DAG_states()
                                 
@@ -661,7 +661,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                                     read_DAG_info = False
                                     DAG_info = DAG_Info.DAG_info_fromfilename()
                                     logger.info("tcp_server: read DAG_info for real lambdas.")
-#rhc: DAG_info
+#brc: DAG_info
                                     logger.info("tcp_server: DAG_map:")
                                     # this required: # pylint: disable=E0601, E0118
                                     DAG_map = DAG_info.get_DAG_map() 
@@ -672,7 +672,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                                 # and used-prior-global-declaration (E0118) 
                                 # this requried: pylint: disable=E0601, E0118
                                 dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info 
-#rhc groups partitions
+#brc: groups partitions
                                 groups_partitions = []
                                 if DAG_executor_constants.COMPUTE_PAGERANK and not DAG_executor_constants.RUN_ALL_TASKS_LOCALLY and not DAG_executor_constants.BYPASS_CALL_LAMBDA_CLIENT_INVOKE and not DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION:
                                     if read_groups_partitions:
@@ -806,7 +806,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                                 # the DAG_info from file.
 
                                 dummy_state_for_create_message.keyword_arguments['DAG_info'] = DAG_info_passed_from_DAG_exector
-#rhc: DAG_info          
+#brc: DAG_info          
                                 if DAG_info_passed_from_DAG_exector is None: 
                                     logger.trace(": DAG_info is None for synchronize_process_faninNBs_batch create on fly: " + synchronizer_name)
                                 else:
@@ -918,9 +918,9 @@ class TCPHandler(socketserver.StreamRequestHandler):
 
 
             logger.info("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": calling synchronizer.synchronize.")
-#rhc: select replace this
+#brc: select replace this
             #return_value = synchronizer.synchronize(base_name, DAG_exec_state, **DAG_exec_state.keyword_arguments)
-#rhc: select with this
+#brc: select with this
 # Need to call the select version if using selects
             if is_select:
                 #self.lock_synchronizer()
@@ -931,7 +931,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 # return excute's result, with no restart (by definition of synchronous non-try-op)
                 # (Send result to client below.)
                 wait_for_return = True
-                # rhc: DES
+                # brc: DES
                 #return_value = self.synchronizeSelect(base_name, DAG_exec_state, wait_for_return, **DAG_exec_state.keyword_arguments)
                 return_value = synchronizer.synchronizeSelect(base_name, DAG_exec_state, wait_for_return, **DAG_exec_state.keyword_arguments)
             else:
@@ -1005,17 +1005,17 @@ class TCPHandler(socketserver.StreamRequestHandler):
             work_queue_method_keyword_arguments['list_of_values'] = list_of_work
             # call work_queue (bounded buffer) deposit_all(list_of_work)
             logger.trace("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": deposit_all FanInNB work, list_of_work size: " + str(len(list_of_work)))
-#rhc select first, replace
+#brc: select first, replace
             #returnValue, restart = synchronizer_method(synchronizer._synchronizer, **work_queue_method_keyword_arguments) 
-#rhc select with
+#brc: select with
             base_name, isTryMethod = isTry_and_getMethodName(work_queue_method)
             is_select = isSelect(work_queue_type)
             logger.trace("tcp_server: synchronize_process_faninNBs_batch: method_name: " + work_queue_method + ", base_name: " + base_name + ", isTryMethod: " + str(isTryMethod))
             logger.trace("tcp_server: synchronize_process_faninNBs_batch: synchronizer_class_name: : " + work_queue_type + ", is_select: " + str(is_select))
 
-#rhc select then replace
+#brc: select then replace
             #return_value = synchronizer.synchronize(base_name, DAG_exec_state, **work_queue_method_keyword_arguments)
-#rhc select with
+#brc: select with
             if is_select:
                 #self.lock_synchronizer()
                 synchronizer.lock_synchronizer()
@@ -1025,7 +1025,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                 # return excute's result, with no restart (by definition of synchronous non-try-op)
                 # (Send result to client below.)
                 wait_for_return = True
-                # rhc: DES
+                # brc: DES
                 #return_value = self.synchronizeSelect(base_name, DAG_exec_state, wait_for_return, **DAG_exec_state.keyword_arguments)
                 return_value_ignored = synchronizer.synchronizeSelect(base_name, DAG_exec_state, wait_for_return, **work_queue_method_keyword_arguments)
             else:
@@ -1037,7 +1037,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             logger.trace("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": " + str(work_queue_method) + ", return_Value " + str(return_value_ignored))
             logger.trace("tcp_server: synchronize_process_faninNBs_batch: " + calling_task_name + ": " + str(work_queue_method) + ", successfully called work_queue method. ")
 
-#rhc: async batch
+#brc: async batch
         if not got_work and not async_call:
             # if we didn't need work or we did need work but we did not get any above, 
             # then we return 0 to indicate that we didn't get work. Note if we needed 
@@ -1061,7 +1061,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
             # via self.send_serialized_object(work)
             #logger.trace("tcp_server: synchronize_process_faninNBs_batch: returning work in DAG_exec_state.") 
 
-#rhc: async batch
+#brc: async batch
         #debugging
         if async_call:
             logger.trace("CCCCCCCCCCCCCCCCCCCCCCCC")
@@ -1118,7 +1118,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                     #  any program, considering scope this would be odd, but our objects have
                     #  "server scope"? which is global, so ...
                     if method_name == "fan_in":
-#rhc batch
+#brc: batch
                         # Note: we used to have 
                         #   if not (DAG_executor_constants.COMPUTE_PAGERANK and DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION):
                         # but it endup up that both branches weer the same, i.e., we did the same thing whether we were using 
@@ -1137,7 +1137,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                         # Note: We could: run BFS, start tcp_server, then run DAG_excutor_driver; then DAG_info would be 
                         # written by BFS before we start tcp_server (when we are not doing incremental DAG generation.)
 
-#rhc: issue: Why read DAG_info if we are doing incremental? it is not complete. 
+#brc: issue: Why read DAG_info if we are doing incremental? it is not complete. 
 # - If incremental and not running locally then objects remote:  
 # - if incremental and running locally and objects remote:
 # - if incremental and running locally and objects local:
@@ -1161,7 +1161,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                                 
                                     DAG_info = DAG_Info.DAG_info_fromfilename()
                                     logger.trace("tcp_server: read DAG_info for real lambdas.")
-    #rhc: DAG_info
+    #brc: DAG_info
                                     logger.trace("tcp_server: DAG_map:")
                                     # do not understand why pyline flags this use of DAG_info as used-before-assignment (E0601)
                                     # and used-prior-global-declaration (E0118)
@@ -1212,7 +1212,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                                 faninNB_index = all_faninNB_task_names.index(synchronizer_name)
                                 dummy_state_for_create_message.keyword_arguments['n'] = all_faninNB_sizes[faninNB_index]
                             """
-#rhc batch
+#brc: batch
                             if state.keyword_arguments['fanin_type'] == "faninNB":
                                 fanin_type = DAG_executor_constants.FanInNB_Type
                             else: # fanin_type is "fanin"
@@ -1271,7 +1271,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             # that is passed here:
                             #DAG_exec_state.keyword_arguments['n'] = keyword_arguments['n']
                             #DAG_exec_state.keyword_arguments['start_state_fanin_task'] = keyword_arguments['start_state_fanin_task']
-#rhc batch
+#brc: batch
                             dummy_state_for_create_message = DAG_executor_State(function_name = "DAG_executor", function_instance_ID = str(uuid.uuid4()))
                             dummy_state_for_create_message.keyword_arguments['STORE_FANINS_FANINNBS_LOCALLY'] = DAG_executor_constants.STORE_FANINS_FANINNBS_LOCALLY
                             if False: # not DAG_executor_constants.RUN_ALL_TASKS_LOCALLY:
@@ -1279,7 +1279,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                                     read_DAG_info = False 
                                     DAG_info = DAG_Info.DAG_info_fromfilename()
                                     logger.info("tcp_server: read DAG_info for real lambdas.")
-#rhc: DAG_info
+#brc: DAG_info
                                     logger.trace("tcp_server: DAG_map:")
                                     DAG_map = DAG_info.get_DAG_map()
                                     for key, value in DAG_map.items():
@@ -1320,7 +1320,7 @@ class TCPHandler(socketserver.StreamRequestHandler):
                             #    #dummy_state_for_create_message.keyword_arguments['n'] = all_fanin_sizes[fanin_index]
                             #   dummy_state_for_create_message.keyword_arguments['n'] = -1
                             #else:
-#rhc batch
+#brc: batch
                             if state.keyword_arguments['fanin_type'] == "faninNB":
                                 fanin_type = DAG_executor_constants.FanInNB_Type
                             else: # fanin_type is "fanin"
@@ -1723,7 +1723,7 @@ if __name__ == "__main__":
     # configure test, if -t option was specified
     configure_test(sys.argv[1:])
     # Create a Server Instance
-#rhc: added tcp_server global variable at top
+#brc: added tcp_server global variable at top
     tcp_server = TCPServer()
     tcp_server.start()
 

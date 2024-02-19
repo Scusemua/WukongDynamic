@@ -263,7 +263,7 @@ class Synchronizer(object):
                 # return excute's result, with no restart (by definition of synchronous non-try-op)
                 # (Send result to client below.)
                 wait_for_return = True
-                # rhc: DES
+                # brc: DES
                 return_value = self.synchronizeSelect(base_name, state, wait_for_return, **state.keyword_arguments)
             else:
                 return_value = self.synchronize(base_name, state, **state.keyword_arguments)

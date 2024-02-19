@@ -239,7 +239,7 @@ if not (not USING_THREADS_NOT_PROCESSES or USE_MULTITHREADED_MULTIPROCESSING):
     logger.addHandler(ch)
 """
 
-#rhc: num_nodes
+#brc: num_nodes
 # this is set BFS.input_graph when doing non-incremental DAG generation with groups
 num_nodes_in_graph = 0
 
@@ -269,7 +269,7 @@ Group_DAG_tasks = {}
 # version of DAG, incremented for each DAG generated
 Group_DAG_version_number = 0
 
-#rhc: ToDo: Not using this for groups - we have to get *all* the groups
+#brc: ToDo: Not using this for groups - we have to get *all* the groups
 # of previous partition and iterate through them.
 
 ## Saving current_partition_name as previous_partition_name at the 
@@ -289,13 +289,13 @@ Group_DAG_number_of_incomplete_tasks = 0
 # used to generate IDs; starting with 1, not 0
 Group_next_state = 1
 
-#rhc: num_nodes:
+#brc: num_nodes:
 Group_DAG_num_nodes_in_graph = 0
 
 # Called by generate_DAG_info_incremental_partitions below to generate 
 # the DAG_info object when we are using partitions.
 def generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks,
-#rhc: bug_fix:                    
+#brc: bug_fix:                    
     number_of_groups_of_previous_partition_that_cannot_be_executed):
     global Group_all_fanout_task_names
     global Group_all_fanin_task_names
@@ -323,9 +323,9 @@ def generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks,
 
     global Group_DAG_number_of_tasks
     global Group_DAG_number_of_incomplete_tasks
-#rhc: bug fix:
+#brc: bug fix:
     global Group_DAG_number_of_groups_of_previous_partition_that_cannot_be_executed
-#rhc: num_nodes
+#brc: num_nodes
     global Group_DAG_num_nodes_in_graph
 
     # used for debugging
@@ -396,9 +396,9 @@ def generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks,
     # of groups, there may be many groups in the incomplete last
     # partition and they will all be considered to be incomplete.
     Group_DAG_number_of_incomplete_tasks = number_of_incomplete_tasks # parameter of method
-#rhc: bug fix:
+#brc: bug fix:
     Group_DAG_number_of_groups_of_previous_partition_that_cannot_be_executed = number_of_groups_of_previous_partition_that_cannot_be_executed
-#rhc: num_nodes
+#brc: num_nodes
     # The value of num_nodes_in_graph is set by BFS_input_graph
     # at the beginning of execution, which is before we start
     # DAG generation. This value does not change.
@@ -407,9 +407,9 @@ def generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks,
     DAG_info_dictionary["DAG_is_complete"] = Group_DAG_is_complete
     DAG_info_dictionary["DAG_number_of_tasks"] = Group_DAG_number_of_tasks
     DAG_info_dictionary["DAG_number_of_incomplete_tasks"] = Group_DAG_number_of_incomplete_tasks
-#rhc: bug_fix:
+#brc: bug_fix:
     DAG_info_dictionary["DAG_number_of_groups_of_previous_partition_that_cannot_be_executed"] = Group_DAG_number_of_groups_of_previous_partition_that_cannot_be_executed
-#rhc: num_nodes:
+#brc: num_nodes:
     DAG_info_dictionary["DAG_num_nodes_in_graph"] = Group_DAG_num_nodes_in_graph
 
     # Note: we are saving all the incemental DAG_info files for debugging but 
@@ -489,11 +489,11 @@ def generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks,
         logger.trace("DAG_number_of_incomplete_tasks:")
         logger.trace(Group_DAG_number_of_incomplete_tasks)
         logger.trace("")
-#rhc: bug fix:
+#brc: bug fix:
         logger.trace("DAG_number_of_groups_of_previous_partition_that_cannot_be_executed:")
         logger.trace(Group_DAG_number_of_groups_of_previous_partition_that_cannot_be_executed)
         logger.trace("")
-#rhc: num_nodes
+#brc: num_nodes
         logger.trace("DAG_num_nodes_in_graph:")
         logger.trace(Group_DAG_num_nodes_in_graph)
         logger.trace("")
@@ -522,9 +522,9 @@ def generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks,
         DAG_version_number = DAG_info_Group_read.get_DAG_version_number()
         DAG_number_of_tasks = DAG_info_Group_read.get_DAG_number_of_tasks()
         DAG_number_of_incomplete_tasks = DAG_info_Group_read.get_DAG_number_of_incomplete_tasks()
-#rhc: bug fix:
+#brc: bug fix:
         DAG_number_of_groups_of_previous_partition_that_cannot_be_executed = DAG_info_Group_read.get_DAG_number_of_groups_of_previous_partition_that_cannot_be_executed()
-#rhc: num_nodes
+#brc: num_nodes
         DAG_num_nodes_in_graph = DAG_info_Group_read.get_DAG_num_nodes_in_graph()
 
         logger.trace("")
@@ -574,11 +574,11 @@ def generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks,
             logger.trace("DAG_number_of_incomplete_tasks:")
             logger.trace(DAG_number_of_incomplete_tasks)
             logger.trace("")
-#rhc: bug fix:
+#brc: bug fix:
             logger.trace("DAG_number_of_groups_of_previous_partition_that_cannot_be_executed:")
             logger.trace(DAG_number_of_groups_of_previous_partition_that_cannot_be_executed)
             logger.trace("")
-#rhc: num_nodes
+#brc: num_nodes
             logger.trace("DAG_num_nodes_in_graph:")
             logger.trace(DAG_num_nodes_in_graph)
             logger.trace("")
@@ -649,7 +649,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
     # used to generate IDs; state for next group added to DAG
     global Group_next_state 
 
-    #rhc_ num_nodes
+    #brc: num_nodes
     # This was set above and will not be changed in this method
     global Group_DAG_num_nodes_in_graph
 
@@ -864,7 +864,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         # upon return to BFS() (when we see tht leaf tasks have been added to the DAG)
 
         fanouts = []
-#rhc: clustering
+#brc: clustering
         fanout_partition_group_sizes = []
         faninNBs = []
         fanins = []
@@ -882,7 +882,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
             # that are incomplete. If to_be_continued is True then we set fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued
             # to True but we may change this value when we process partition 2.
             to_be_continued,
-#rhc: clustering
+#brc: clustering
             fanout_partition_group_sizes)
 
         Group_DAG_states[name_of_first_group_in_DAG] = Group_next_state
@@ -927,7 +927,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         # first DAG generated has one current group (group 1) and no previous group
         number_of_groups_of_previous_partition_that_cannot_be_executed = 0
         DAG_info = generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks,
-    #rhc: bug fix:
+    #brc: bug fix:
                     number_of_groups_of_previous_partition_that_cannot_be_executed)
 
         logger.trace("generate_DAG_info_incremental_groups: returning from generate_DAG_info_incremental_groups for"
@@ -943,7 +943,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         # previous partition. Used and reset below.
         #first_previous_group = True
 
-#rhc: undo 1
+#brc: undo 1
 # Possible fix:
 # - Take these out of original place
 # - get rid of sender_set_for_group_name
@@ -1057,7 +1057,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 Group_DAG_leaf_task_inputs.append(task_inputs)
 
                 fanouts = []
-#rhc: clustering
+#brc: clustering
                 fanout_partition_group_sizes = []
                 faninNBs = []
                 fanins = []
@@ -1075,7 +1075,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                     # that are incomplete. If to_be_continued is True then we set fanout_fanin_faninNB_collapse_groups_are_ToBeContinued_are_ToBeContinued
                     # to True but we may change this value when we process partition 2.
                     to_be_continued,
-#rhc: clustering
+#brc: clustering
                     fanout_partition_group_sizes)
                 
                 Group_DAG_states[group_name] = Group_next_state
@@ -1140,7 +1140,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 # incomplete and we will complete it when we process
                 # the (groups in the) next partition.
                 fanouts = []
-#rhc: clustering
+#brc: clustering
                 fanout_partition_group_sizes = []
                 faninNBs = []
                 fanins = []
@@ -1157,7 +1157,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                     # that are incomplete. If to_be_continued is True then we set fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued
                     # to True but we may change this value when we process partition 2.
                     to_be_continued,
-#rhc: clustering
+#brc: clustering
                     fanout_partition_group_sizes)
                 
                 Group_DAG_states[group_name] = Group_next_state
@@ -1195,7 +1195,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         # but if we only looked at the prvious groups, we would fail to detect that PR3_1 
         # has a faninNB to PR3_2. So we should also look at the groups in the current partition.
         
-#rhc: undo 2
+#brc: undo 2
         # Note: if the current group/partition is a leaf group/partition (that is not the first
         # group in the DAG PR1_1) then it has no senders, i.e., no task sends its output
         # to it; it is the only group in its (current) partititon; and if not to_be_continued then
@@ -1326,7 +1326,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         #  nothing special about the first iteration.
         # Consider taking the Do one time code out of the loops.
         #first_previous_previous_group = True
-#rhc: undo 3
+#brc: undo 3
         
         # Note: Possible Optimzation:
         # If we will not publish this extension are we wasting
@@ -1365,7 +1365,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
             Group_sink_set = set()
 
             fanouts = []
-#rhc: clustering
+#brc: clustering
             fanout_partition_group_sizes = []
             fanins = []
             faninNBs = []
@@ -1419,7 +1419,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 # to know whether receiverY is a task for a fanin/fanout/faniNB/collapse
                 # of previous_group.
 
-#rhc: bug fix:
+#brc: bug fix:
                 # if not to_be_continued, groups_to_consider contains
                 # groups from groups_of_previous_partition and groups from
                 # groups_of_current_partition. That is, previous_group
@@ -1526,7 +1526,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                         # we are generating the sets of collapse/fanin/fanout/faninNB
                         # of previous_group
                         fanouts.append(receiverY)
-#rhc: clustering
+#brc: clustering
                         if DAG_executor_constants.ENABLE_RUNTIME_TASK_CLUSTERING:
                             num_shadow_nodes = groups_num_shadow_nodes_map[receiverY]
                             logger.trace("number of shadow nodes for " + receiverY + " is " + str(num_shadow_nodes)) 
@@ -1637,7 +1637,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
             # previous_group is not to_be_continued and so can be 
             # executed.
             state_info_of_previous_group.ToBeContinued = False
-#rhc: bug fix: Note: the previous group may not have any fanins/fanouts/collapses
+#brc: bug fix: Note: the previous group may not have any fanins/fanouts/collapses
 # to the current partition. In that case using to_be_continued is weak, i.e., it will work 
 # but it may prevent an executable task from being executed. Also, note that 
 # above we are adding receiverY to the list of previous_groups_with_TBC_faninsfanoutscollapses
@@ -1754,7 +1754,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         logger.trace("generate_DAG_info_incremental_groups: generate_DAG_info_incremental_groups for"
             + " group " + str(group_name))
 
-#rhc: bug_fix:
+#brc: bug_fix:
         # Generate the new DAG_info
         number_of_groups_of_previous_partition_that_cannot_be_executed = 0
         if to_be_continued:
@@ -1936,7 +1936,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
     #    logging.shutdown()
     #    os._exit(0)
 
-#rhc: bug_fix: perhaps also return number_of_groups_of_previous_partition_that_cannot_be_executed
+#brc: bug_fix: perhaps also return number_of_groups_of_previous_partition_that_cannot_be_executed
 # for debugging, i.e., it;s not in DAG like the number of incomplete
 # tasks so return it. Q: can we do the same for number of 
 # incomplete taks? i.e., do we need to put it in DAG? That 

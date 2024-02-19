@@ -436,7 +436,7 @@ def dfs_p(visited, graph, node):
     fanin_sizes = [] # sizes of fanins by position in fanins
     faninNB_sizes = [1] # sizes of faninNBs by position in faninNBs  
     
-#rhc: No, PageRank needs to generate its outputs by idntifying the dependents and
+#brc: No, PageRank needs to generate its outputs by idntifying the dependents and
     #grouping them by fanout followed by fanins.
 
     fanout1 = [5]
