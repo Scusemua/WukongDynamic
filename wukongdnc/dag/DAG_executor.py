@@ -1067,7 +1067,7 @@ def process_faninNBs_batch(websocket,faninNBs, faninNB_sizes, calling_task_name,
 
 #def process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State, output, DAG_info, server):
 def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State, 
-    output, DAG_info, server, work_queue, list_of_work_queue_values,
+    output, DAG_info, server, work_queue, list_of_work_queue_or_payload_fanout_values,
     groups_partitions):
     # Not using server, which "simuates" tcp_server when we are storing 
     # sync objects locally - server only handles fanins and faninNBs.
@@ -1092,13 +1092,55 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
     # as long as we do not generate faninNBs and a fanin for the same state/task. We could optimize so that we can have
     # a fanin (with a become task and one or more faninNBs.
     become_start_state = DAG_states[become_task]
-    # change state for this thread so that this thread will become the new task, i.e., execute another iteration with the new state
-    DAG_exec_State.state = DAG_states[become_task]
 
     logger.info (thread_name + ": process_fanouts: fanout for " + calling_task_name + " become_task state is " + str(become_start_state))
     fanouts.remove(become_task)
+
+#brc: cluster: 1. pass fanout_partition_group_sizes and remove the first size if enable runtime clustering
+# fanout_partition_group_sizes.pop(0)  
+ 
     logger.info(thread_name + ": process_fanouts: new fanouts after remove:" + str(fanouts))
 
+#brc:cluster: 2. Declare min_partition_group_size_for_clustering
+    def cluster_condition(fanout_partition_group_size,size_of_output_to_fanout_task):
+        # not using size_of_output_to_fanout_task - perhaps cluster task if
+        # size_of_output_to_fanout_task > DAG_executor_constants.max_size_of_output_to_fanout_task 
+        return fanout_partition_group_size < DAG_executor_constants.min_partition_group_fanout_size_for_clustering
+
+    def do_task_clustering(fanouts,fanout_partition_group_sizes,clustered_tasks,
+        calling_task_name, output):                 
+        # assert len(fanouts) == len(fanout_partition_group_sizes)  
+        new_fanouts = []
+        new_fanout_partition_group_sizes = []
+        for fanout_task_name, fanout_partition_group_size in zip(fanouts,fanout_partition_group_sizes):
+            qualfied_name = str(calling_task_name) + "-" + str(fanout_task_name)
+            dict_of_results = {}
+            dict_of_results[qualfied_name] = output[fanout_task_name]
+            size_of_output_to_fanout_task = len(dict_of_results[qualfied_name])
+            if cluster_condition(fanout_partition_group_size,size_of_output_to_fanout_task):
+                clustered_task_start_state = DAG_states[become_task]
+                clustered_tasks.append(clustered_task_start_state)
+            else:
+                new_fanouts.append(fanout_task_name)
+                new_fanout_partition_group_sizes.append(fanout_output_size)
+        fanouts.clear()
+        fanouts = new_fanouts.copy()
+        fanout_partition_group_sizes.clear()
+        fanout_partition_group_sizes = new_fanout_partition_group_sizes.copy()
+
+    clustered_tasks = []
+    if DAG_executor_constants.ENABLE_RUNTIME_TASK_CLUSTERING
+        #   assert: len(fanouts) > 0  - if become was only task then it should have been collapsed
+        do_task_clustering(fanouts,fanout_partition_group_sizes,clustered_tasks,
+            calling_task_name, otuput)
+    #   Note: fanouts may be empty. If so, list_of_work_queue_or_payload_fanout_values is empty too
+    #     and clustered_tasks is not empty and contains at least one task (based on assertion)
+    #   Note: if fanouts is not empty, clustered_tasks may or may not be empty. 
+    #     We can return become task and clustered_tasks can be a parameter. Upon return,
+    #     we will put the become task and possbly the clustered tasks in the cluster queue.
+
+#brc:cluster: 3. also return clustered_tasks
+    
     # process rest of fanouts
     logger.trace(thread_name + ": process_fanouts: RUN_ALL_TASKS_LOCALLY:" + str(DAG_executor_constants.RUN_ALL_TASKS_LOCALLY))
 
@@ -1148,7 +1190,7 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                 # we could check at the end of this method whether there are any
                 # faninNBs and if, not, call work_queue.put.
 
-                list_of_work_queue_values.append(work_tuple)
+                list_of_work_queue_or_payload_fanout_values.append(work_tuple)
             else: 
                 # using threads and using workers. Even if the FanInNBs are stored remotely,
                 # we may still be using threads. When we use threads, the work_queue is stored
@@ -1274,7 +1316,7 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                     if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                         logging.shutdown()
                         os._exit(0) 
-#brc: run tasks changed to elif so can use else to check whether we aer missing a case
+#brc: run tasks changed to elif so can use else to check whether we are missing a case
             elif not DAG_executor_constants.RUN_ALL_TASKS_LOCALLY:
                 try:
                     logger.trace(thread_name + ": process_fanouts: Starting fanout DAG_executor Lambda for " + name)
@@ -4228,6 +4270,9 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # if deposit in synchronizer need to pass synchronizer name in payload. If synchronizer stored
                     # in Lambda, then fanout task executed in that Lambda.
 #brc: run tasks changes in process_fanouts
+#brc: cluster: 4. receive clustered_tasks too, mod/new assertions,
+# add clustered_tasks states to the cluster_queue as DAG_executor_states
+                    
                     DAG_executor_state.state = process_fanouts(state_info.fanouts, state_info.task_name, DAG_info.get_DAG_states(), DAG_executor_state, 
                         output, DAG_info, server,work_queue,list_of_work_queue_or_payload_fanout_values,
                         groups_partitions)
@@ -4267,7 +4312,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 
 #brc: cluster:      # Add become task to cluster queue
                     cluster_queue.put(DAG_executor_state.state)
-                    logger.trace("DAG_executor_work_loop: put fanout bcome task in cluster_queue:"
+                    logger.trace("DAG_executor_work_loop: put fanout become task in cluster_queue:"
                         + " state is " + str(DAG_executor_state.state))
 #brc: cluster:
                     #Do NOT do this.
@@ -4279,8 +4324,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     ## else: Config: A1, A2, A3
                 else:
                     # No fanouts so no become task and if faninNBs do not generate
-                    # work for us we will need input, so set to True here as default.
-                    #Note: setting worker_needs_input = True must be guarded by USING_WORKERS
+                    # work for us we will need input.
 #brc: cluster:
                     try:
                         msg = "[Error]: No fanouts but cluster_queue.qsize() > 0."
@@ -4295,6 +4339,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     #    logger.error("[Error]: No fanouts but cluster_queue.qsize() > 0.")
 #brc: cluster:
                     #Do NOT do this.
+                    #Note: setting worker_needs_input = True must be guarded by USING_WORKERS
                     #if USING_WORKERS: 
                     #    # Config: A4_local, A4_Remote, A5, A6
                     #    worker_needs_input = True
