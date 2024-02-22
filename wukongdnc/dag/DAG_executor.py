@@ -1129,12 +1129,12 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                 + str(output[fanout_task_name]))
             size_of_output_to_fanout_task = len(dict_of_results[qualfied_name])
             logger.info(thread_name + ": process_fanouts: calling cluster_condition for qualified fanout task name " + qualfied_name
-                + ": fanout_partition_group_size: " + str(fanout_partition_group_size)
-                + ", size_of_output_to_fanout_task: " + str(size_of_output_to_fanout_task))
+                + ": fanout_partition_group_size : " + str(fanout_partition_group_size)
+                + ", size_of_output_to_fanout_task : " + str(size_of_output_to_fanout_task))
             if cluster_condition(fanout_partition_group_size,size_of_output_to_fanout_task):
                 clustered_task_start_state = DAG_states[fanout_task_name]
                 clustered_tasks.append(clustered_task_start_state)
-                logger.info(thread_name + ": process_fanouts: add to clustered_tasks: "
+                logger.info(thread_name + ": process_fanouts: add to clustered_tasks task state : "
                     + str(clustered_task_start_state))
             else:
                 new_fanouts.append(fanout_task_name)
@@ -1150,25 +1150,22 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
             + " fanout_partition_group_sizes: " + str(fanout_partition_group_sizes)
             + " clustered_tasks: " + str(clustered_tasks))
 
-
-    clustered_tasks = []
     if DAG_executor_constants.ENABLE_RUNTIME_TASK_CLUSTERING:
         #   assert: len(fanouts) > 0  - if become was only task then it should have been collapsed
         do_task_clustering(fanouts,fanout_partition_group_sizes,clustered_tasks,calling_task_name, output)
-    #   Note: fanouts may be empty. If so, list_of_work_queue_or_payload_fanout_values is empty too
-    #     and clustered_tasks is not empty and contains at least one task (based on assertion)
-    #   Note: if fanouts is not empty, clustered_tasks may or may not be empty. 
-    #     We can return become task and clustered_tasks can be a parameter. Upon return,
-    #     we will put the become task and possbly the clustered tasks in the cluster queue.
-        logging.shutdown()
-        os._exit(0)
+        #   Note: fanouts may be empty. If so, list_of_work_queue_or_payload_fanout_values is empty too
+        #     and clustered_tasks is not empty and contains at least one task (based on assertion)
+        #   Note: if fanouts is not empty, clustered_tasks may or may not be empty. 
+        #     We can return become task and clustered_tasks can be a parameter. Upon return,
+        #     we will put the become task and possbly the clustered tasks in the cluster queue.
 
     # process rest of fanouts
     logger.trace(thread_name + ": process_fanouts: RUN_ALL_TASKS_LOCALLY:" + str(DAG_executor_constants.RUN_ALL_TASKS_LOCALLY))
 
     for name in fanouts:
         if DAG_executor_constants.USING_WORKERS:
-            #thread_work_queue.put(DAG_states[name])
+            # using worker processes: put fanout task in 
+            # list_of_work_queue_or_payload_fanout_values as a work_tuple
             if not DAG_executor_constants.USING_THREADS_NOT_PROCESSES: # using processes
                 dict_of_results =  {}
                 if DAG_executor_constants.SAME_OUTPUT_FOR_ALL_FANOUT_FANIN:
@@ -1337,8 +1334,7 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                         + name)
                     if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                         logging.shutdown()
-                        os._exit(0) 
-#brc: run tasks changed to elif so can use else to check whether we are missing a case
+                        os._exit(0)
             elif not DAG_executor_constants.RUN_ALL_TASKS_LOCALLY:
                 try:
                     logger.trace(thread_name + ": process_fanouts: Starting fanout DAG_executor Lambda for " + name)
@@ -2968,9 +2964,11 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 
     #brc: cluster:
                         try:
-                            msg = "[Error]: DAG_executor_work_loop: cluster_queue contained" + \
-                                " more than one item of work - queue size > 0 after cluster_queue.get"
-                            assert cluster_queue.qsize() == 0, msg
+                            msg = "[Error]: DAG_executor_work_loop: cluster_queue contained" \
+                                + " more than one item of work - queue size > 0 after cluster_queue.get" \
+                                + " but we are not using runtime clustering (which adds tasks to the" \
+                                + " cluster_queue so there can be more than one tasl in the cluster_queue."
+                            assert not (not DAG_executor_constants.ENABLE_RUNTIME_TASK_CLUSTERING and cluster_queue.qsize() > 0), msg
                         except AssertionError:
                             logger.exception("[Error]: assertion failed")
                             if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
@@ -4312,6 +4310,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # if not, we will call work_queueu.put_all() directly.
 
                     if DAG_executor_constants.USING_WORKERS and not DAG_executor_constants.USING_THREADS_NOT_PROCESSES:
+                        # Check some assertions on process_fanouts
                         # Config: A5, A6
                         # We piggyback fanouts if we are using worker processes. In that case, if we have
                         # more than one fanout, the first wil be a become task, which will be removed from
@@ -4321,12 +4320,17 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         # except the become should be in the list_of_work_queue_or_payload_fanout_values.
                         # Note: We are not currently piggybacking this list whn we use lambdas; instead,
                         # process_fanouts start the lambdas. We may use the parallel invoker on tcp_server 
-                        # and piggyback the list of fanouts, or use the parallel invoker in process_fanouts.
+                        # afterwe piggyback the list of fanouts (as part of process_faninNBs_batch) to tcp_server, 
+                        # or just use the parallel invoker in process_fanouts.
                         try:
+                            # Note: this assertion is valid when not runtime clustering (see above) and also 
+                            # when runtime clustering: we may cluster some or all of the fanout tasks that 
+                            # are not the become task. If we cluster all of the non-become tasks then length
+                            # of fanouts will be 0; otherwise, the fanouts that are not clustered will be
+                            # added to list_of_work_queue_or_payload_fanout_values so the latter should not
+                            # have length 0 (when fanouts > 0)
                             msg = "[Error]: work loop: after process_fanouts: fanouts > 1 but no work in list_of_work_queue_or_payload_fanout_values."
-#brc: clustering II: this assertion is valid when not runtime clustering:
-# maybe: if runtime clustering: chck this assert lse check that assert
-                            assert not ((not DAG_executor_constants.ENABLE_RUNTIME_TASK_CLUSTERING) and len(state_info.fanouts) > 0 and len(list_of_work_queue_or_payload_fanout_values) == 0), msg
+                            assert not (len(state_info.fanouts) > 0 and len(list_of_work_queue_or_payload_fanout_values) == 0), msg
                         except AssertionError:
                             logger.exception("[Error]: assertion failed")
                             if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
@@ -4338,17 +4342,102 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         #    # and we should have added the fanouts to list_of_work_queue_or_payload_fanout_values.
                         #    if len(list_of_work_queue_or_payload_fanout_values) == 0:
                         #       logger.error("[Error]: work loop: after process_fanouts: fanouts > 1 but no work in list_of_work_queue_or_payload_fanout_values.")
-                    # else: # Config: A1, A2, A3, A4_local, A4_Remote
+
+                        if not DAG_executor_constants.ENABLE_RUNTIME_TASK_CLUSTERING:
+                            try:
+                                msg = "[Error]: work loop: after process_fanouts: len(fanouts) != len(list_of_work_queue_or_payload_fanout_values) + 1."
+                                assert len(state_info.fanouts) == len(list_of_work_queue_or_payload_fanout_values) + 1, msg
+                            except AssertionError:
+                                logger.exception("[Error]: assertion failed")
+                                if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+                                    logging.shutdown()
+                                    os._exit(0)
+                            try:
+                                # We add fanout tasks to list_of_work_queue_or_payload_fanout_values but we do 
+                                # not modify fanouts other than to remove the become task.
+                                # Note that wheb we do runtime task clustering we will remove
+                                # from tanouts any tasks that we add to clutered_tasks.
+                                msg = "[Error]: work loop: after process_fanouts: len(fanouts) != starting_number_of_fanouts - 1."
+                                assert len(state_info.fanouts) == starting_number_of_fanouts - 1, msg
+                            except AssertionError:
+                                logger.exception("[Error]: assertion failed")
+                                if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+                                    logging.shutdown()
+                                    os._exit(0)
+                        else: # runtime task clustering
+                            try:
+                                # For the original fanout tasks, 1 is the become task, and the remaining tasks aer either
+                                # clustered or added to list_of_work_queue_or_payload_fanout_values.
+                                msg = "[Error]: work loop: after process_fanouts: starting_number_of_fanouts != len(list_of_work_queue_or_payload_fanout_values) + len(clustered_tasks) + 1."
+                                assert starting_number_of_fanouts == len(list_of_work_queue_or_payload_fanout_values) + len(clustered_tasks) + 1, msg
+                            except AssertionError:
+                                logger.exception("[Error]: assertion failed")
+                                if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+                                    logging.shutdown()
+                                    os._exit(0) 
+                            try:
+                                # the number of clustered tasks is less than or equal to the original
+                                # number of fanouts minus 1, since we ermove the become task from 
+                                # fanouts and all of the remaining tasks in fanout can possibly
+                                # be clustered. (Note: we remove clusterd tasks from fanout.)
+                                msg = "[Error]: work loop: after process_fanouts: not(len(clustered_tasks) <= starting_number_of_fanouts - 1)."
+                                assert len(clustered_tasks) <= starting_number_of_fanouts - 1, msg
+                            except AssertionError:
+                                logger.exception("[Error]: assertion failed")
+                                if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+                                    logging.shutdown()
+                                    os._exit(0)   
+                    else:
+                        # Config: A1, A2, A3, A4_local, A4_Remote
+                        # We are not using worker processes. In this case, we get the become task and process
+                        # the fanouts. for worker threads, we put the remaining fanouts in the work queue.
+                        # For real or simulated lambda, we start real or simulated lambdas to execute the
+                        # fanout tasks.
+                        # Check assertions on process_fanouts
+                        if not DAG_executor_constants.ENABLE_RUNTIME_TASK_CLUSTERING:
+                            try:
+                                msg = "[Error]: work loop: after process_fanouts: len(fanouts) != len(list_of_work_queue_or_payload_fanout_values) + 1."
+                                assert len(state_info.fanouts) == starting_number_of_fanouts - 1, msg
+                            except AssertionError:
+                                logger.exception("[Error]: assertion failed")
+                                if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+                                    logging.shutdown()
+                                    os._exit(0)
+                        else: # runtime task clustering
+                            try:
+                                # the number of clustered tasks is less than or equal to the original
+                                # number of fanouts minus 1, since we ermove the become task from 
+                                # fanouts and all of the remaining tasks in fanout can possibly
+                                # be clustered. (Note: we remove clusterd tasks from fanout.)
+                                msg = "[Error]: work loop: after process_fanouts: not(len(clustered_tasks) <= starting_number_of_fanouts - 1)."
+                                assert len(clustered_tasks) <= starting_number_of_fanouts - 1, msg
+                            except AssertionError:
+                                logger.exception("[Error]: assertion failed")
+                                if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+                                    logging.shutdown()
+                                    os._exit(0)  
+                            try:
+                                msg = "[Error]: work loop: after process_fanouts: len(fanouts) != len(list_of_work_queue_or_payload_fanout_values) + len(clustered_tasks) + 1."
+                                assert len(state_info.fanouts) == starting_number_of_fanouts - len(clustered_tasks) - 1, msg
+                            except AssertionError:
+                                logger.exception("[Error]: assertion failed")
+                                if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+                                    logging.shutdown()
+                                    os._exit(0) 
 
 #brc: cluster:      # Add become task to cluster queue
                     cluster_queue.put(DAG_executor_state.state)
+                    logger.info("DAG_executor_work_loop: put fanout become task in cluster_queue:"
+                        + " state is " + str(DAG_executor_state.state))
 #brc: cluster II
                     if DAG_executor_constants.ENABLE_RUNTIME_TASK_CLUSTERING:
                         for clustered_task_state in clustered_tasks:
                             cluster_queue.put(clustered_task_state)
+                            logger.info("DAG_executor_work_loop: put fanout clustered task in cluster_queue:"
+                                + " state is " + str(clustered_task_state))
 
-                    logger.trace("DAG_executor_work_loop: put fanout become task in cluster_queue:"
-                        + " state is " + str(DAG_executor_state.state))
+                    #logging.shutdown()
+                    #os._exit(0)
 #brc: cluster:
                     #Do NOT do this.
                     ## We get new state_info and then state_info.task_inputs when we iterate
