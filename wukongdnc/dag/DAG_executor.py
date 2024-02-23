@@ -4805,6 +4805,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                 #    os._exit(0)
                                         
                     # else: # Config: A1, A2, A3, A4_local, A4_Remote
+
                 # If we are not USING_WORKERS and there were fanouts then continue with become 
                 # task; otherwise, this thread (simulatng a Lambda) or Lambda is done, as it has reached the
                 # end of its DFS path. (Note: if using workers and there are no fanouts and no
@@ -4819,33 +4820,40 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # brc: If we are not using workers then this is a thread simulating
                 # a lambda or a real lambda. The faninNBs started a thread or a 
                 # real lambda to execute the faninNB task, i.e, we never become a faninNB
-                # task as all the faninNB tasks are execute by strting  new lambda.
+                # task as all the faninNB tasks are execute by starting  new lambda.
                 # So we (the simulated or real lambda) may or may not have more work to do,
                 # epending on whether or not we became a fanout task. If we are the 
                 # become task of a fanout then we have more work to do. In that case, 
-                # the DAG_executor_state.state is the state of the become task (a fanout task) 
-                # so we can just keep going and this state will be used
-                # in the next iteration of the work loop. 
+                # the become task (a fanout task) was put in the cluster_queue, whch is 
+                # now non-empty so we can just keep going and this become task will be
+                # retrieved from the cluster_queue in the next iteration of the work loop. 
                 # 
-                # We will execute a become task if we started this iteration with len(state_info.fanouts) > 0. 
-                # This is because when there are more than one fanouts we grab the first
-                # one as the become task. (The situation where the ADG has only one
-                # fanout task and no faninNB tasks is handled by making this fanout 
-                # task the "collapse task" so the number of collapse tasks in the state
-                # will be > 0 and the number of fanout tasks will be 0). 
+                # We will execute a become task if we started this iteration with 
+                # len(state_info.fanouts) > 0. This is because when there are more than one 
+                # fanouts we grab the first one as the become task. (The situation where the 
+                # DAG has only one fanout task and no faninNB tasks is handled by making this 
+                # fanout task the "collapse task" so the number of collapse tasks in the state
+                # will be > 0 and the number of fanout tasks will be 0). The become
+                # task is added to the cluster_queue. (It may be added after 0, 1 or
+                # more runtime clustered tasks in the cluster_queue.)
+                #
+                # Even if len(state_info.fanouts) was 0, so we did a fanin or faninNB,
+                # we may have previously runtime clustered several tasks so the 
+                # cluster_queue may be non-empty
                 # 
                 # When we take a become task, we remove it from state_info.fanouts
                 # and there may not be any other fanouts (there are faninNBs since we are 
                 # here) so len(state_info.fanouts) will become 0. Thus, we capture the length of 
                 # fanouts at the begining in starting_number_of_fanouts. If starting_number_of_fanouts
                 # was > 0, then we made one fanout the become task and we should 
-                # not return here, i.e., we should continue and execute the become task.
+                # not return here, i.e., we should continue and execute the become task,
+                # which we can get from the non-empty cluster_queue.
                 # Note: without this check of starting_number_of_fanouts,
                 # we will return prematurley in the case that there is 
                 # one fanout and one or more faninNBs, as the number of 
                 # fanouts will become 0 when we remove the become task 
+                                        
                 #if (not USING_WORKERS) and len(state_info.fannouts) == 0:
-
                 #if (not DAG_executor_constants.USING_WORKERS) and starting_number_of_fanouts == 0:
                 if (not DAG_executor_constants.USING_WORKERS) and cluster_queue.qsize()==0:
                     # Config: A1, A2, A3
@@ -4991,6 +4999,9 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 #Note: setting worker_needs_input = True must be guarded by USING_WORKERS
                 if DAG_executor_constants.USING_WORKERS:
                     # Config: A4_local, A4_Remote, A5, A6
+                    # do another iteration of the work loop - get work from the 
+                    # continue_queue or cluster_queue, or if they are empty try to get
+                    # worj from thr work_queue
                     logger.trace(thread_name + ": state " + str(DAG_executor_state.state) + " after executing task " 
                         +  state_info.task_name + " has no collapse, fanouts, fanins, or faninNBs; using workers so no return.")
 #brc: cluster:
@@ -4998,9 +5009,15 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     #logger.trace(thread_name + " set worker_needs_input to true")
                     #worker_needs_input = True
                 else:
+l                   logger.info(thread_name + ": for state " + str(DAG_executor_state.state) + " after executing task " +  state_info.task_name + " state has no collapse, fanouts, fanins, or faninNBs.")
                     # Config: A1, A2, A3
-                    logger.trace(thread_name + ": state " + str(DAG_executor_state.state) + " after executing task " +  state_info.task_name + " has no collapse, fanouts, fanins, or faninNBs; not a worker so return.")
-                    return
+                    if cluster_queue.qsize()==0:
+                        logger.info(thread_name + ": And cluster_queue.qsize()==0; since we are a lambda not a worker, we return.")
+                        return
+                    else:
+                        logger.info(thread_name + ": And cluster_queue.qsize()!=0 so lambda does not return.")
+                        return
+
         # end while (True)
 
 
