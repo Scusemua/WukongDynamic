@@ -23,14 +23,17 @@ logger = logging.getLogger(__name__)
 
 from ..dag import DAG_executor_constants
 
-if DAG_executor_constants.RUN_ALL_TASKS_LOCALLY and not DAG_executor_constants.BYPASS_CALL_LAMBDA_CLIENT_INVOKE:
-    #logger.trace("invoker: AWS_PROFILE: " + AWS_PROFILE)
-    session = boto3.session.Session(profile_name = AWS_PROFILE)
-    lambda_client = session.client('lambda', region_name = "us-east-1")
-else:
-    # not using when bypassing calls to invoke AWS lambdas
-    lambda_client = None 
-    session = None
+if DAG_executor_constants.SERVERLESS_PLATFORM_IS_AWS:
+    if DAG_executor_constants.RUN_ALL_TASKS_LOCALLY and not DAG_executor_constants.BYPASS_CALL_LAMBDA_CLIENT_INVOKE:
+        #logger.trace("invoker: AWS_PROFILE: " + AWS_PROFILE)
+        session = boto3.session.Session(profile_name = AWS_PROFILE)
+        lambda_client = session.client('lambda', region_name = "us-east-1")
+    else:
+        # not using when bypassing calls to invoke AWS lambdas
+        lambda_client = None 
+        session = None
+else: # using Junction
+    pass
 
 # Note: DAG_executor_constants.BYPASS_CALL_LAMBDA_CLIENT_INVOKE is TRUE 
 # if we are testing the real lambd code by bypassing the 
@@ -230,7 +233,7 @@ def invoke_lambda(
 # DAG_executor_lambda) it returns to the lambda_handler() which returns
 # back to the invoker's invoke_lambda_DAG_executor.
 def invoke_lambda_DAG_executor(
-    function_name: str = "WukongDivideAndConquer",
+    function_name: str = "DAG_executor",
     payload: dict = None
 ):
     """
@@ -245,7 +248,7 @@ def invoke_lambda_DAG_executor(
             Dictionary to be serialized and sent via the AWS Lambda invocation payload.
             This is typically expected to contain a "state" entry with a state object.
     """
-    logger.trace("invoke_lambda_DAG_executor: Creating AWS Lambda invocation payload for function '%s'" % function_name)
+    logger.trace("invoke_lambda_DAG_executor: Creating Lambda invocation payload for function '%s'" % function_name)
     #logger.trace("Provided payload: " + str(payload))
     DAG_exec_state = payload['DAG_executor_state']
     inp = payload['input']
@@ -273,37 +276,48 @@ def invoke_lambda_DAG_executor(
         _payload[k] = base64.b64encode(cloudpickle.dumps(v)).decode('utf-8')
 											
     payload_json = json.dumps(_payload)
-    logger.trace("invoke_lambda_DAG_executor: Finished creating AWS Lambda invocation payload in %f ms." % ((time.time() - s) * 1000.0))
+    logger.trace("invoke_lambda_DAG_executor: Finished creating Lambda invocation payload in %f ms." % ((time.time() - s) * 1000.0))
 
-    logger.info("invoke_lambda_DAG_executor: Invoking AWS Lambda function '" + function_name + "' with payload containing " + str(len(payload)) + " key(s).")
+    logger.info("invoke_lambda_DAG_executor: Invoking Lambda function '" + function_name + "' with payload containing " + str(len(payload)) + " key(s).")
     s = time.time()
     
     # BYPASS_CALL_LAMBDA_CLIENT_INVOKE is a global constant. 
     if not DAG_executor_constants.BYPASS_CALL_LAMBDA_CLIENT_INVOKE:
     # This is the call to the AWS API that actually invokes the Lambda.
-        try:
-            # If we passed a "debugging" function name, then throw away everything up to and including the ':' character.
-            if ":" in function_name:
-                adjusted_function_name = function_name.split(":")[0]
-                logger.info("invoke_lambda_DAG_executor: Adjusted AWS Lambda function name from \"%s\" to \"%s\" prior to invoking.", function_name, adjusted_function_name)
-            else:
-                adjusted_function_name = function_name
-            
-            status_code = lambda_client.invoke(
-                FunctionName = adjusted_function_name, 
-                InvocationType = 'Event',
-                Payload = payload_json) 
-        except Exception as ex:
-            logger.error("invoke_lambda_DAG_executor: Failed to invoke AWS Lambda function \"%s\"" % adjusted_function_name)
-            logger.error("invoke_lambda_DAG_executor: Error: %s" % repr(ex))
-            exit(1)
+        if DAG_executor_constants.SERVERLESS_PLATFORM_IS_AWS:
+            try:
+                    # If we passed a "debugging" function name, then throw away everything up to and including the ':' character.
+                    if ":" in function_name:
+                        adjusted_function_name = function_name.split(":")[0]
+                        logger.info("invoke_lambda_DAG_executor: Adjusted Lambda function name from \"%s\" to \"%s\" prior to invoking.", function_name, adjusted_function_name)
+                    else:
+                        adjusted_function_name = function_name
+                    
+                    status_code = lambda_client.invoke(
+                        FunctionName = adjusted_function_name, 
+                        InvocationType = 'Event',
+                        Payload = payload_json) 
+
+            except Exception:
+                logger.exception("invoke_lambda_DAG_executor: Failed to invoke AWS Lambda function \"%s\"" % adjusted_function_name)
+                logging.shutdown()
+                os._exit(0) 
+        else: # using Junction
+            try:
+                pass
+                # ****Note: might not be using adjusted_function_name****
+            except Exception:
+                logger.exception("invoke_lambda_DAG_executor: Failed to invoke Junction Lambda function \"%s\"" % adjusted_function_name)
+                logging.shutdown()
+                os._exit(0)                
+            pass
     else:
         # bridge around the call to lambda_client.invoke() to test th real LAmbda
         # logic without creating real Lambdas.
         status_code = -1
         lambda_handler(payload_json,None)
     										
-    logger.trace("invoke_lambda_DAG_executor: Invoked AWS Lambda function '%s' in %f ms. Status: %s." % (function_name, (time.time() - s) * 1000.0, str(status_code)))
+    logger.trace("invoke_lambda_DAG_executor: Invoked Lambda function '%s' in %f ms. Status: %s." % (function_name, (time.time() - s) * 1000.0, str(status_code)))
 
 
 #############################################################

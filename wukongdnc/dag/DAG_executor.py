@@ -5009,7 +5009,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     #logger.trace(thread_name + " set worker_needs_input to true")
                     #worker_needs_input = True
                 else:
-l                   logger.info(thread_name + ": for state " + str(DAG_executor_state.state) + " after executing task " +  state_info.task_name + " state has no collapse, fanouts, fanins, or faninNBs.")
+                    logger.info(thread_name + ": for state " + str(DAG_executor_state.state) + " after executing task " +  state_info.task_name + " state has no collapse, fanouts, fanins, or faninNBs.")
                     # Config: A1, A2, A3
                     if cluster_queue.qsize()==0:
                         logger.info(thread_name + ": And cluster_queue.qsize()==0; since we are a lambda not a worker, we return.")

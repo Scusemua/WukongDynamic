@@ -20,9 +20,11 @@ ch.setLevel(logging.INFO)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
-EXIT_PROGRAM_ON_EXCEPTION = True
+
 
 # Configuraion:
+EXIT_PROGRAM_ON_EXCEPTION = True
+SERVERLESS_PLATFORM_IS_AWS = True
 #
 # True if we are not using Lambdas, i.e., executing tasks with threads or processes
 # local, i.e., on one machine.

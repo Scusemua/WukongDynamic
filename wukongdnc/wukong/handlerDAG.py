@@ -43,22 +43,29 @@ if root.handlers:
         handler.setFormatter(formatter)
 """
 
+# Extra information just for fun
 warm_resources = {
 	'cold_start_time': time.time(),
 	'invocation_count': 0,
 }
 
 def lambda_handler(event, context):
+    # Calls DAG_executor_lambda(event)
+
+    # Extra information
     invocation_time = time.time()
     warm_resources['invocation_count'] = warm_resources['invocation_count'] + 1
     logger.debug(f'Invocation count: {warm_resources["invocation_count"]}, Seconds since cold start: {round(invocation_time - warm_resources["cold_start_time"], 1)}')
-
     start_time = time.time()
     # rc = redis.Redis(host = REDIS_IP_PRIVATE, port = 6379)
-
     logger.debug("lambda_handler: Invocation received. Starting DAG_executor_lambda: event/payload is: " + str(event))
+
+    #############################################################################
+    # Note: This call is the only thing that the handler is really required to do
     DAG_executor_lambda(event)
-				 
+    #############################################################################
+
+    # Extra information		 
     end_time = time.time()
     duration = end_time - start_time
     logger.debug("lambda_handler: DAG_executor_lambda finished. Time elapsed: %f seconds." % duration)
