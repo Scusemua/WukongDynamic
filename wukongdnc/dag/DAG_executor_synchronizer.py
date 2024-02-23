@@ -184,7 +184,7 @@ class DAG_executor_Synchronizer(object):
 
         #st = time.time()
 
-        logger.trace ("calling_task_name: " + keyword_arguments['calling_task_name'] + " calling fanin for " + " fanin_task_name: " + keyword_arguments['fanin_task_name'])
+        logger.trace ("fanin_locally: calling_task_name: " + keyword_arguments['calling_task_name'] + " calling fanin for " + " fanin_task_name: " + keyword_arguments['fanin_task_name'])
         FanIn = self.synchronizers[keyword_arguments['fanin_task_name']]  
 
         # Note: fan_in does not block - if the caller is not the last to fan_in, it does not block, 0 is
@@ -209,7 +209,7 @@ class DAG_executor_Synchronizer(object):
         else:
             try_return_value = FanIn.try_fan_in(**keyword_arguments)
         #logger.trace("calling_task_name: " + calling_task_name + " FanIn: try_return_value: " + str(try_return_value))
-        logger.trace("fanin_task_name: " + keyword_arguments['fanin_task_name'] + " try_return_value: " + str(try_return_value))
+        logger.trace("fanin_locally: fanin_task_name: " + keyword_arguments['fanin_task_name'] + " try_return_value: " + str(try_return_value))
 
         # for fanin, try_return_value always retuns False, so we will always execute the else-part
         if try_return_value:   # synchronize op will execute wait so tell client to terminate
@@ -255,19 +255,19 @@ class DAG_executor_Synchronizer(object):
                 return_value, _restart_value_ignored = FanIn.fan_in(**keyword_arguments)
                 #return_value = FanIn.fan_in(**keyword_arguments)
 
-            logger.info("calling_task_name: " + keyword_arguments['calling_task_name'])
-            logger.info("return_value: " + str(return_value))
+            logger.info("fanin_locally: calling_task_name: " + keyword_arguments['calling_task_name'])
+            logger.info("fanin_locally: return_value: " + str(return_value))
             # try_fan_in never returns true. If we are not the last fan_in then we
             # get a return_value of 0; otherwise, we get the other fan_in results,
             # which do not include ours.
             if return_value == 0:
-                logger.trace("calling_task_name:" + keyword_arguments['calling_task_name'] 
+                logger.trace("fanin_locally: calling_task_name:" + keyword_arguments['calling_task_name'] 
                     + " return value of fan_in is 0.")
                 DAG_exec_state.return_value = 0
                 DAG_exec_state.blocking = False 
             else:
                 # Add our result to the results (instead of sending our result to the fanin on the server and server sending it back
-                logger.trace("fanin become task output, which was our result (to add to results dict.):" + str(keyword_arguments['result']))
+                logger.trace("fanin_locally: fanin become task output, which was our result (to add to results dict.):" + str(keyword_arguments['result']))
                 return_value[keyword_arguments['calling_task_name']] = keyword_arguments['result']
                 DAG_exec_state.return_value = return_value
                 DAG_exec_state.blocking = False 

@@ -17,6 +17,10 @@ class CounterMP(object):
         with self.val.get_lock():
             self.val.value -= n
             return self.value
+        
+    def get(self):
+        with self.val.get_lock():
+            return self.value
 
     @property
     def value(self):

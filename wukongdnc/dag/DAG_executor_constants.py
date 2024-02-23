@@ -26,7 +26,7 @@ EXIT_PROGRAM_ON_EXCEPTION = True
 #
 # True if we are not using Lambdas, i.e., executing tasks with threads or processes
 # local, i.e., on one machine.
-RUN_ALL_TASKS_LOCALLY = False         # vs run tasks remotely (in Lambdas)
+RUN_ALL_TASKS_LOCALLY = True         # vs run tasks remotely (in Lambdas)
 # True if we want to bypass the call to lambda_client.invoke() so that we
 # do not actually create a real Lambda; instead, invoke_lambda_DAG_executor()
 # in invoker.y will call lambda_handler(payload_json,None) directly, where
@@ -59,10 +59,10 @@ CREATE_ALL_FANINS_FANINNBS_ON_START = True
 # case, instead of, e.g., starting a Lambda at fan_out operations, we start a thread.
 # This results in the creation of many threads and is only use to test the logic 
 # of the Lambda code.
-USING_WORKERS = False
+USING_WORKERS = True
 # True when we are not using Lambas and tasks are executed by threads instead of processes. 
 # False when we are not using lambdas and are using multiprocesssing 
-USING_THREADS_NOT_PROCESSES = True
+USING_THREADS_NOT_PROCESSES = False
 # When USING_WORKERS, this is how many threads or processes in the pool.
 # When not using workers, this value is ignored.
 NUM_WORKERS = 2
@@ -314,7 +314,7 @@ PAGERANK_GRAPH_FILE_NAME = "graph_24N_3CC_fanin"   # extended wb w/ 3CC and fani
 
 # Indicates that we are computing pagerank and thus that the pagerank
 # options are active and pagerank assserts should hold
-COMPUTE_PAGERANK = False
+COMPUTE_PAGERANK = True
 # used in BFS_pagerank. For non-loops, we only need 1 iteration
 NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS = 10
 NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG = "PR1_1"
@@ -909,7 +909,7 @@ def test1():
 
     RUN_ALL_TASKS_LOCALLY = True
     BYPASS_CALL_LAMBDA_CLIENT_INVOKE = (not RUN_ALL_TASKS_LOCALLY) and True
-    STORE_FANINS_FANINNBS_LOCALLY = True 
+    STORE_FANINS_FANINNBS_LOCALLY = Tru
     CREATE_ALL_FANINS_FANINNBS_ON_START = True
     USING_WORKERS = False
     USING_THREADS_NOT_PROCESSES = True
@@ -3193,7 +3193,7 @@ def test35():
     BYPASS_CALL_LAMBDA_CLIENT_INVOKE = (not RUN_ALL_TASKS_LOCALLY) and True 
     STORE_FANINS_FANINNBS_LOCALLY = True 
     CREATE_ALL_FANINS_FANINNBS_ON_START = True
-    USING_WORKERS = True
+    USING_WORKERS = False
     USING_THREADS_NOT_PROCESSES = True
     NUM_WORKERS = 2
     USE_MULTITHREADED_MULTIPROCESSING = False

@@ -257,8 +257,8 @@ def process_faninNBs(websocket,faninNBs, faninNB_sizes, calling_task_name, DAG_s
 #brc: cluster:
     cluster_queue):
     thread_name = threading.current_thread().name
-    logger.trace(thread_name + ": process_faninNBs")
-    logger.trace(thread_name + ": process_faninNBs: worker_needs_input: " + str(worker_needs_input))
+    logger.info(thread_name + ": process_faninNBs")
+    logger.info(thread_name + ": process_faninNBs: worker_needs_input: " + str(worker_needs_input))
 	# There may be multiple faninNBs; we cannot become one, by definition.
 	# Note: This thread cannot become since it may need to become a fanout.
 	# Or: faninNB is asynch wo/terminate, so create a thread that does the
@@ -1109,8 +1109,29 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
 
 #brc: cluster: 
     def cluster_condition(fanout_partition_group_size,size_of_output_to_fanout_task):
-        # not using size_of_output_to_fanout_task - perhaps cluster task if
-        # size_of_output_to_fanout_task > DAG_executor_constants.max_size_of_output_to_fanout_task 
+        # Note that fanout_partition_group_size includes any shadow_nodes in the 
+        # group or partition. The size not including shadow nodes is 
+        # fanout_partition_group_size - size_of_output_to_fanout_task, since the 
+        # number of shadow nodes equals size_of_output_to_fanout_task. 
+        # Recall: if node N needs the parent pagerank value for node P,
+        # then the "executor" of P's pagerank value "gives" (sends/writes)
+        # this value to the "executor" that computes N's pagerank. This 
+        # value is stord in the shadow_node for P that is in the partition/
+        # group of N. So there is a shadow node for each parent value that
+        # is needed to compute the pagerank of a given node. So the 
+        # size_of_output_to_fanout_task is the number of parent values that 
+        # are being given to the fanout task which equals the number of 
+        # shadow nodes.
+        # Note also that we do compute the pagerank for shadow nodes; this is 
+        # not necessary since the pagerank value of a shadow node is the 
+        # pagerank value of a parent node P and there is no need to recompute
+        # the pagerank value of P when computing the pagerank value of a 
+        # child of P. But recomputing the pagerank of shadow nodes allows
+        # us to treat shadow and non-shadow nodes the same, i.e., no 
+        # if-statements. Thus, we can store pageranks consecutively 
+        # in a a shared array and write a cache-friendly loop with no 
+        # if-statements to compute the pageranks. (See BFS_Shared.py and the
+        # update_PageRank_of_PageRank_Function_Shared_Fast method.)
         ret = fanout_partition_group_size < DAG_executor_constants.MIN_PARTITION_GROUP_SIZE_FOR_CLUSTERING \
             or size_of_output_to_fanout_task > DAG_executor_constants.MAX_SIZE_OF_OUTPUT_TO_FANOUT_TASK
         logger.info(thread_name + ": process_fanouts: cluster_condition: return " + str(ret))
@@ -2967,7 +2988,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             msg = "[Error]: DAG_executor_work_loop: cluster_queue contained" \
                                 + " more than one item of work - queue size > 0 after cluster_queue.get" \
                                 + " but we are not using runtime clustering (which adds tasks to the" \
-                                + " cluster_queue so there can be more than one tasl in the cluster_queue."
+                                + " cluster_queue so there can be more than one task in the cluster_queue.)"
                             assert not (not DAG_executor_constants.ENABLE_RUNTIME_TASK_CLUSTERING and cluster_queue.qsize() > 0), msg
                         except AssertionError:
                             logger.exception("[Error]: assertion failed")
@@ -3139,15 +3160,17 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # be executed.) 
                 # When processing the tasks, we may
                 # or may not add become tasks for fanouts and fanins and 
-                # collapsed tasks to the custer_queue, so the cluster_queue
-                # may be empty on later checks.
+                # collapsed tasks and clustered tasks to the cluster_queue, 
+                # so the cluster_queue may be empty on later checks.
 #brc: lambda inc:   
                 logger.trace("work_loop: first_iteration_of_work_loop_for_lambda: "
                     + str(first_iteration_of_work_loop_for_lambda))
                 # Note: not USING_WORKERS is True
                 try:
                     msg = "[Error]: DAG_executor_work_loop:" + " first_iteration_of_work_loop_for_lambda and not continued_task" \
-                        + " but cluster_queue.qsize() is 0; the state of a lambda that has" + " not been restarted for incremental DAG generation shoudl be added" + " to the cluster_queue at the start of the work loop."
+                        + " but cluster_queue.qsize() is 0; the state of a lambda that has" \
+                        + " not been restarted for incremental DAG generation should be added" \
+                        + " to the cluster_queue at the start of the work loop."
                     assert not (first_iteration_of_work_loop_for_lambda and not (DAG_executor_constants.COMPUTE_PAGERANK and DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION and continued_task) and cluster_queue.qsize() == 0) , msg
                 except AssertionError:
                     logger.exception("[Error]: assertion failed")
@@ -3222,9 +3245,11 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         + " for task name " + dummy_state_info.task_name)
 #brc: cluster:
                     try:
-                        msg = "[Error]: DAG_executor_work_loop: simulated or real lambda:" \
-                            + " cluster_queue contained more than one item of work - queue size > 0 after cluster_queue.get"
-                        assert cluster_queue.qsize() == 0 , msg
+                        msg = "[Error]: DAG_executor_work_loop: cluster_queue contained" \
+                            + " more than one item of work - queue size > 0 after cluster_queue.get" \
+                            + " but we are not using runtime clustering (which adds tasks to the" \
+                            + " cluster_queue so there can be more than one task in the cluster_queue.)"
+                        assert not (not DAG_executor_constants.ENABLE_RUNTIME_TASK_CLUSTERING and cluster_queue.qsize() > 0), msg
                     except AssertionError:
                         logger.exception("[Error]: assertion failed")
                         if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
@@ -4303,7 +4328,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         clustered_tasks)
                     logger.info(thread_name + " work_loop: become state:" + str(DAG_executor_state.state))
                     logger.trace(thread_name + " work_loop: list_of_work_queue_payload fanout_values length:" + str(len(list_of_work_queue_or_payload_fanout_values)))
-                    logger.info(thread_name + " work_loop: clustered_tasks: " + str(clustered_tasks))
+                    logger.info(thread_name + " work_loop: clustered_tasks (states): " + str(clustered_tasks))
 
                     # at this point list_of_work_queue_or_payload_fanout_values may or may not be empty. We wll
                     # piggyback this list on the call to process_faninNBs_batch if there are faninnbs.
@@ -4345,8 +4370,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 
                         if not DAG_executor_constants.ENABLE_RUNTIME_TASK_CLUSTERING:
                             try:
-                                msg = "[Error]: work loop: after process_fanouts: len(fanouts) != len(list_of_work_queue_or_payload_fanout_values) + 1."
-                                assert len(state_info.fanouts) == len(list_of_work_queue_or_payload_fanout_values) + 1, msg
+                                msg = "[Error]: work loop: after process_fanouts: len(fanouts) != len(list_of_work_queue_or_payload_fanout_values) + 1" \
+                                    + " len(state_info.fanouts): " + str(len(state_info.fanouts)) \
+                                    + " list_of_work_queue_or_payload_fanout_values: " + str(len(list_of_work_queue_or_payload_fanout_values))
+                                assert len(state_info.fanouts) == len(list_of_work_queue_or_payload_fanout_values), msg
                             except AssertionError:
                                 logger.exception("[Error]: assertion failed")
                                 if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
@@ -4474,7 +4501,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 if DAG_executor_constants.USING_WORKERS:
                     # Need worker_needs input to be set corrctly in case len(state_info.faninNBs) is 0
                     worker_needs_input = cluster_queue.qsize()==0
-                    logger.trace("DAG_executor_work_loop: check cluster_queue size before processing faninNBs:"
+                    logger.info("DAG_executor_work_loop: check cluster_queue size before processing faninNBs:"
                         + " cluster_queue.qsize(): " + str(cluster_queue.qsize()))
 
                 if len(state_info.faninNBs) > 0:
@@ -4656,7 +4683,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         # for asssert below
                         save_worker_needs_input = worker_needs_input
 
-                        # Note: ignorning worker_needs_input if we are not using workers.
+                        # Note: ignoring worker_needs_input if we are not using workers.
                         worker_needs_input = process_faninNBs(websocket,state_info.faninNBs, state_info.faninNB_sizes, 
                             state_info.task_name, DAG_info.get_DAG_states(), DAG_executor_state, 
                             output, DAG_info, server,work_queue,worker_needs_input,
@@ -4718,7 +4745,9 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
  
 # brc: cluster:
                             try:
-                                msg = "[Error]: work loop: fanouts but worker needs work."
+                                # when there is at least one fanout we will become one of the fanout tasks
+                                # depositing the become task in the cluster queue so the cluster queue should not be empty.
+                                msg = "[Error]: work loop: len(state_info.fanouts) > 0 but worker needs work."
                                 assert not (cluster_queue.qsize()==0), msg
                             except AssertionError:
                                 logger.exception("[Error]: assertion failed")
@@ -4759,6 +4788,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                 # list_of_work_queue_or_payload_fanout_values is redefined on next iteration
                             else:
                                 try:
+                                    # there was one fanout so we became that one fanout (by depositing it into the 
+                                    # cluster_queue) and there were no other fanouts to add to the list_of_work_queue_or_payload_fanout_values.
                                     msg = "[Error]: work loop: len(state_info.fanouts) is 1 but list_of_work_queue_or_payload_fanout_values is not empty."
                                     assert len(list_of_work_queue_or_payload_fanout_values) == 0 , msg
                                 except AssertionError:
@@ -4815,7 +4846,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 # fanouts will become 0 when we remove the become task 
                 #if (not USING_WORKERS) and len(state_info.fannouts) == 0:
 
-                if (not DAG_executor_constants.USING_WORKERS) and starting_number_of_fanouts == 0:
+                #if (not DAG_executor_constants.USING_WORKERS) and starting_number_of_fanouts == 0:
+                if (not DAG_executor_constants.USING_WORKERS) and cluster_queue.qsize()==0:
                     # Config: A1, A2, A3
                     # we are a thread simulating a lambda or a real lamda and there
                     # were no fanout tasks (and by definition of using lambdas the 
@@ -4827,9 +4859,9 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # faninNBs, i.e., we cannot become a faninNB task since faninNB
                     # tasks are always executed by starting a new thread/lambda.
                     # Note: The whole reason we have faninNBs is because of the 
-                    # situation where we have fanouts, and so will become a fanout
-                    # task, and one or more "fanins", which means we cannot become
-                    # any of the fanin tasks. In this case we use faninNB (fanin No
+                    # situation where we have fanouts (so will become a fanout
+                    # task), and one or more "fanins", which means we cannot become
+                    # any of the fanin tasks. In this case we use faninNBs (fanin No
                     # Becomes) objects. We only use "FanIn" objects when there are
                     # no fanouts so we can become a "Fanin" task.
                     # Note: Furthermore, we only use a FanIn object when there are
@@ -4841,7 +4873,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     #   node of s, i.e., e has an output that is an input of s.
                     #   ToDo: Optimize fanins: if no fanouts, but many fanins/faninNBs, 
                     #     we can have one fanin object and many faninNB objcts. 
-                    # That would make the work llop logic more complicated,
+                    # That would make the work loop logic more complicated,
                     # Currently we either have one or more fanouts and one or more fanonNBs 
                     # or we have a single fanin. this optimization would add more
                     # cases to check for (the case where we have no fanouts but we
@@ -4851,7 +4883,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # fanin and we are using workers then we would become the 
                     # tanin task for one of the faninNBs.)
 
-                    logger.trace(thread_name + " : returning after process fanouts/faninNBs")
+                    logger.info(thread_name + " : cluster_queue empty: lambda returning after process fanouts/faninNBs")
                     return
                 else:
                     # we are a worker so even if we will not become a fanout task 
@@ -4862,7 +4894,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     # so we will become a fanout task (not starting_number_of_fanouts == 0); 
                     # thus, we should not terminate.
                     
-                    logger.trace(thread_name + ": Not returning after process fanouts/faninNBs.")
+                    logger.info(thread_name + ": cluster_queue not empty: lambda not returning after process fanouts/faninNBs.")
                 #else: # Config: A4_local, A4_Remote, A5, A6
 
 # ------------------------------------------------------------------
