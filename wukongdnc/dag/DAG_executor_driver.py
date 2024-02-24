@@ -1744,7 +1744,7 @@ def run():
             # nodes. For real lambdas, this will be from an S3 bucket
             # or somewhere. To avoid this, we can let this DAG_executor_driver
             # read the partition files and pass them to the Lambdas it starts
-            # in the Lambda's payload. When BYPASS_CALL_LAMBDA_CLIENT_INVOKE it means we 
+            # in the Lambda's payload. When BYPASS_CALL_TO_INVOKE_REAL_LAMBDA it means we 
             # are not actually running the real Lambda code on AWS, we are 
             # bypassing the call to invoke real AWS Lambdas and running the code
             # locally, in which case we can read the group/partition file objects
@@ -1931,7 +1931,7 @@ def run():
                             # read the partition files and pass them to the Lambdas it starts
                             # in the Lambda's payload. We pass groups_parition here when we create
                             # the faninNBs since the faninNBs will start real lambdas.
-                            # When BYPASS_CALL_LAMBDA_CLIENT_INVOKE it means we 
+                            # When BYPASS_CALL_TO_INVOKE_REAL_LAMBDA it means we 
                             # are not actually running the real Lambda code on AWS, we are 
                             # bypassing the call to invoke real AWS Lambdas and running the code
                             # locally, in which case we can read the group/partition file objects
@@ -2529,7 +2529,7 @@ def create_fanin_and_faninNB_messages(DAG_map,DAG_states,DAG_info,all_fanin_task
     # read the partition files and pass them to the Lambdas it starts
     # in the Lambda's payload. We pass grou_parition here when we create
     # the faninNBs since the faninNBs will start real lambdas.
-    # When BYPASS_CALL_LAMBDA_CLIENT_INVOKE it means we 
+    # When BYPASS_CALL_TO_INVOKE_REAL_LAMBDA it means we 
     # are not actually running the real Lambda code on AWS, we are 
     # bypassing the call to invoke real AWS Lambdas and running the code
     # locally, in which case we can read the group/partition file objects
@@ -2858,7 +2858,7 @@ def create_fanins_and_faninNBs(websocket,DAG_map,DAG_states,DAG_info,all_fanin_t
     # read the partition files and pass them to the Lambdas it starts
     # in the Lambda's payload. We pass grou_parition here when we create
     # the faninNBs since the faninNBs will start real lambdas.
-    # When BYPASS_CALL_LAMBDA_CLIENT_INVOKE it means we 
+    # When BYPASS_CALL_TO_INVOKE_REAL_LAMBDA it means we 
     # are not actually running the real Lambda code on AWS, we are 
     # bypassing the call to invoke real AWS Lambdas and running the code
     # locally, in which case we can read the group/partition file objects

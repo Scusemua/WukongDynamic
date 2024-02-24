@@ -1,18 +1,6 @@
 import logging 
-#import base64
-#import re 
-#import socket
 import time 
-# import redis 
-#import uuid
-
-#import cloudpickle
-#from wukongdnc.wukong.invoker import invoke_lambda
-#from wukongdnc.server.state import State 
-#from wukongdnc.server.api import synchronize_sync
-#from wukongdnc.constants import REDIS_IP_PRIVATE  #, TCP_SERVER_IP
 from wukongdnc.dag.DAG_executor import DAG_executor_lambda
-#from wukongdnc.dag.DAG_executor_constants import log_level
 from ..dag import DAG_executor_constants
 from wukongdnc.dag.addLoggingLevel import addLoggingLevel
 addLoggingLevel('TRACE', logging.DEBUG - 5)
@@ -49,6 +37,7 @@ warm_resources = {
 	'invocation_count': 0,
 }
 
+# lambda handler for AWS Lambda
 def lambda_handler(event, context):
     # Calls DAG_executor_lambda(event)
 

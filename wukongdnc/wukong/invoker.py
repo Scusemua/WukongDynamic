@@ -17,25 +17,12 @@ from ..constants import TCP_SERVER_IP
 from ..constants import AWS_PROFILE
 from ..server.state import State
 from ..server.api import create
+from ..dag import DAG_executor_constants
 
 import logging 
 logger = logging.getLogger(__name__)
 
-from ..dag import DAG_executor_constants
-
-if DAG_executor_constants.SERVERLESS_PLATFORM_IS_AWS:
-    if DAG_executor_constants.RUN_ALL_TASKS_LOCALLY and not DAG_executor_constants.BYPASS_CALL_LAMBDA_CLIENT_INVOKE:
-        #logger.trace("invoker: AWS_PROFILE: " + AWS_PROFILE)
-        session = boto3.session.Session(profile_name = AWS_PROFILE)
-        lambda_client = session.client('lambda', region_name = "us-east-1")
-    else:
-        # not using when bypassing calls to invoke AWS lambdas
-        lambda_client = None 
-        session = None
-else: # using Junction
-    pass
-
-# Note: DAG_executor_constants.BYPASS_CALL_LAMBDA_CLIENT_INVOKE is TRUE 
+# Note: DAG_executor_constants.BYPASS_CALL_TO_INVOKE_REAL_LAMBDA is TRUE 
 # if we are testing the real lambd code by bypassing the 
 # call to start a real lambda on AWS Lambda. i.e., the 
 # invoke_lambda_DAG_executor called by the DAG app does not call
@@ -71,6 +58,10 @@ def invoke_lambda_synchronously(function_name: str = None, payload: dict = None)
             This is typically expected to be a message from a Client.
         
     """
+
+    session = boto3.session.Session(profile_name = AWS_PROFILE)
+    lambda_client = session.client('lambda', region_name = "us-east-1")
+
     logger.trace("invoke_lambda_synchronously: Creating AWS Lambda invocation payload for function '%s'" % function_name)
     logger.trace("invoke_lambda_synchronously: Provided payload: " + str(payload))
     s = time.time()
@@ -150,6 +141,10 @@ def invoke_lambda(
             The 'n' keyword argument to include in the State object we create.
             This is only used when `is_first_invocation` is set to True.
     """
+
+    session = boto3.session.Session(profile_name = AWS_PROFILE)
+    lambda_client = session.client('lambda', region_name = "us-east-1")
+
     logger.trace("invoke_lambda: Creating AWS Lambda invocation payload for function '%s'" % function_name)
     logger.trace("invoke_lambda: Provided payload: " + str(payload))
     s = time.time()
@@ -280,12 +275,15 @@ def invoke_lambda_DAG_executor(
 
     logger.info("invoke_lambda_DAG_executor: Invoking Lambda function '" + function_name + "' with payload containing " + str(len(payload)) + " key(s).")
     s = time.time()
-    
-    # BYPASS_CALL_LAMBDA_CLIENT_INVOKE is a global constant. 
-    if not DAG_executor_constants.BYPASS_CALL_LAMBDA_CLIENT_INVOKE:
-    # This is the call to the AWS API that actually invokes the Lambda.
+
+    # BYPASS_CALL_TO_INVOKE_REAL_LAMBDA is a global constant. 
+    if not DAG_executor_constants.BYPASS_CALL_TO_INVOKE_REAL_LAMBDA:
+    # This is the call that actually invokes the Lambda.
         if DAG_executor_constants.SERVERLESS_PLATFORM_IS_AWS:
-            try:
+            try:    
+                    session = boto3.session.Session(profile_name = AWS_PROFILE)
+                    lambda_client = session.client('lambda', region_name = "us-east-1")
+
                     # If we passed a "debugging" function name, then throw away everything up to and including the ':' character.
                     if ":" in function_name:
                         adjusted_function_name = function_name.split(":")[0]
@@ -305,14 +303,14 @@ def invoke_lambda_DAG_executor(
         else: # using Junction
             try:
                 pass
-                # ****Note: might not be using adjusted_function_name****
+                # ****Note: Junction might not be using adjusted_function_name****
             except Exception:
                 logger.exception("invoke_lambda_DAG_executor: Failed to invoke Junction Lambda function \"%s\"" % adjusted_function_name)
                 logging.shutdown()
                 os._exit(0)                
             pass
     else:
-        # bridge around the call to lambda_client.invoke() to test th real LAmbda
+        # bridge around the call to invoke a real lambda to test th real Lambda
         # logic without creating real Lambdas.
         status_code = -1
         lambda_handler(payload_json,None)
@@ -323,7 +321,7 @@ def invoke_lambda_DAG_executor(
 #############################################################
 
 # This is NOT the real lambda_handler. The real handler is in handlerDAG.py.
-# we copied it here so we can call it for TEST.
+# we copied it here so we can call it from invoke_lambda_DAG_executor for TEST.
 # If we update handlerDAG.py make the changes here too before running TEST.
 warm_resources = {
 	'cold_start_time': time.time(),
@@ -331,7 +329,8 @@ warm_resources = {
 }
 
 def lambda_handler(event, context):
-
+# We assume we would be using AWS lambda for real Lambdas but the
+# real lambda things like is_aws_env() can be skipped.
     def is_aws_env():
         function_name = os.environ.get('AWS_LAMBDA_FUNCTION_NAME')
         execution_env = os.environ.get('AWS_EXECUTION_ENV')
