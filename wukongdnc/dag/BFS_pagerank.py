@@ -306,6 +306,7 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partiti
         #logging.shutdown()
         #os._exit(0)
 
+        logger.trace("PageRank_Function: INPUT_ALL_GROUPS_PARTITIONS_AT_START")
         partition_or_group = groups_partitions[task_file_name]
 
     if (debug_pagerank):

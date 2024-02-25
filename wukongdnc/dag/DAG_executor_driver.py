@@ -1754,6 +1754,7 @@ def run():
             # hardcoded for testing rel lambdas. May want to enabe this generally in
             # which case we will need the partition/group names, which BFS could
             # write to a file.
+                logger.info("DAG_execution_driver: inputting all groups/partitions at the start.")
                 group_partition_names = ["PR1_1","PR2_1","PR2_2L","PR2_3","PR3_1","PR3_2","PR3_3","PR4_1","PR5_1","PR6_1","PR7_1"]
                 for task_file_name in group_partition_names:
                     # task_file_name is, e.g., "PR1_1" not "PR1_1.pickle"

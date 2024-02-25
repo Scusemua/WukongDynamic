@@ -330,7 +330,7 @@ warm_resources = {
 
 def lambda_handler(event, context):
 # We assume we would be using AWS lambda for real Lambdas but the
-# real lambda things like is_aws_env() can be skipped.
+# real lambda AWS things like is_aws_env() can be skipped.
     def is_aws_env():
         function_name = os.environ.get('AWS_LAMBDA_FUNCTION_NAME')
         execution_env = os.environ.get('AWS_EXECUTION_ENV')

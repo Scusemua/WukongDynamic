@@ -1146,7 +1146,8 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
             qualfied_name = str(calling_task_name) + "-" + str(fanout_task_name)
             dict_of_results = {}
             dict_of_results[qualfied_name] = output[fanout_task_name]
-            logger.info(thread_name + ": process_fanouts: output[fanout_task_name]: " 
+            logger.info(thread_name + ": process_fanouts: fanout_task_name: " + fanout_task_name
+                + " output[fanout_task_name]: " 
                 + str(output[fanout_task_name]))
             size_of_output_to_fanout_task = len(dict_of_results[qualfied_name])
             logger.info(thread_name + ": process_fanouts: calling cluster_condition for qualified fanout task name " + qualfied_name
@@ -4929,18 +4930,22 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                 if DAG_exec_state.return_value == 0:
                     # we are not the become task for the fanin
 #brc: cluster:
-                    #Do not do this.
+                    #Do not set worker_needs_input
                     #Note: setting worker_needs_input = True must be guarded by USING_WORKERS
                     if DAG_executor_constants.USING_WORKERS:
                         ## Config: A4_local, A4_Remote, A5, A6
-                        logger.trace(thread_name + ": After call to process_fanin: return value is 0; using workers so get more work.")
+                        logger.info(thread_name + ": After call to process_fanin: return value is 0; using workers so get more work.")
                         #worker_needs_input = True
                         pass
                     else:
                         # Config: A1, A2, A3
-                        # this dfs path is finished
-                        logger.trace(thread_name + ": After call to process_fanin: return value is 0; not using workers so lamba (thread or real) returns.")
-                        return
+                        if cluster_queue.qsize()==0:
+                            # this dfs path is finished
+                            logger.info(thread_name + ": After call to process_fanin: return value is 0 and cluster_queue is empty so lamba (simulated or real) returns.")
+                            return
+                        else:
+                            logger.info(thread_name + ": After call to process_fanin: return value is 0 and cluster_queue is not empty so lamba (simulated or real) does not return.")
+                            pass
                 else:
                     if (DAG_executor_constants.RUN_ALL_TASKS_LOCALLY and DAG_executor_constants.USING_WORKERS) or not DAG_executor_constants.RUN_ALL_TASKS_LOCALLY:
                         # Config: A1, A4_local, A4_Remote, A5, A6
