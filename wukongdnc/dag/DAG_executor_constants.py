@@ -1,4 +1,13 @@
 print("DAG_executor_constants XXX")
+import multiprocessing
+import threading
+proc_name = multiprocessing.current_process().name
+thread_name = threading.current_thread().name
+from inspect import currentframe
+frame = currentframe().f_back
+while frame.f_code.co_filename.startswith('<frozen'):
+    frame = frame.f_back
+print(proc_name + ":" + thread_name + ":" + frame.f_code.co_filename)
 """
 Important: Thsi file incudes many tests at the end which illustrate 
 all the configurations and how to set the confguration flags below.
@@ -46,7 +55,7 @@ BYPASS_CALL_TO_INVOKE_REAL_LAMBDA = (not RUN_ALL_TASKS_LOCALLY) and True
 # has a collapse to partition i+1, so there are no synch objects
 # needed when we are using partitions, so it does not matter
 # whether we set STORE_FANINS_FANINNBS_LOCALLY to True or False.
-STORE_FANINS_FANINNBS_LOCALLY = False
+STORE_FANINS_FANINNBS_LOCALLY = True
 # True when all FanIn and FanInNB objects are created locally or on the
 # tcp_server or IniniX all at once at the start of the DAG execution. If
 # False, synch objects are created on the fly, i.e, we execute create-and-fanin
@@ -64,13 +73,13 @@ CREATE_ALL_FANINS_FANINNBS_ON_START = True
 USING_WORKERS = True
 # True when we are not using Lambas and tasks are executed by threads instead of processes. 
 # False when we are not using lambdas and are using multiprocesssing 
-USING_THREADS_NOT_PROCESSES = False
+USING_THREADS_NOT_PROCESSES = True
 # When USING_WORKERS, this is how many threads or processes in the pool.
 # When not using workers, this value is ignored.
-NUM_WORKERS = 2
+NUM_WORKERS = 1
 # Use one or more worker processes (NUM_WORKERS) with one or more threads
 USE_MULTITHREADED_MULTIPROCESSING = False
-NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
+NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 2
 
 # if using lambdas to store synch objects, run tcp_server_lambda.
 # if store in regular python functions instead of real Lambdas
@@ -404,7 +413,7 @@ except AssertionError:
 #    os._exit(0)
 
 # True if we are clustering fanouts that satisfy the cluster criteria
-ENABLE_RUNTIME_TASK_CLUSTERING = COMPUTE_PAGERANK and True
+ENABLE_RUNTIME_TASK_CLUSTERING = COMPUTE_PAGERANK and False
 MIN_PARTITION_GROUP_SIZE_FOR_CLUSTERING  = 5
 MAX_SIZE_OF_OUTPUT_TO_FANOUT_TASK = 10000
 
@@ -2086,7 +2095,7 @@ def test20():
     CREATE_ALL_FANINS_FANINNBS_ON_START = True
     USING_WORKERS = True
     USING_THREADS_NOT_PROCESSES = False
-    NUM_WORKERS = 2
+    NUM_WORKERS = 1
     USE_MULTITHREADED_MULTIPROCESSING = False
     NUM_THREADS_FOR_MULTITHREADED_MULTIPROCESSING = 1
 

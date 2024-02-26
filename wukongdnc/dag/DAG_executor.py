@@ -1,4 +1,3 @@
-print("DAG_executor XXX")
 import threading
 import _thread
 import time
@@ -42,8 +41,9 @@ from wukongdnc.constants import TCP_SERVER_IP
 #from .DAG_executor_constants import EXIT_PROGRAM_ON_EXCEPTION
 #from .DAG_executor_constants import CHECK_PAGERANK_OUTPUT
 ##from .DAG_executor_constants import LOG_LEVEL
+print("DAG_executor before import DAG_executor_contants")
 from . import DAG_executor_constants
-print("DAG_executor YYY DAG_executor_constants.USING_WORKERS: " + str(DAG_executor_constants.USING_WORKERS))
+print("DAG_executor after import DAG_executor_contants: DAG_executor_constants.USING_THREADS_NOT_PROCESSES: " + str(DAG_executor_constants.USING_THREADS_NOT_PROCESSES))
 
 
 #from .DAG_work_queue_for_threads import thread_work_queue
@@ -5263,6 +5263,7 @@ def DAG_executor_processes(payload,completed_tasks_counter,completed_workers_cou
     # Note: log_queue_or_logger is either a queue or a logger. If not 
     # USE_MULTITHREADED_MULTIPROCESSING it is a queue; otheriwise it is a logger.
 
+    print("Worker process loaded in PID: " + str(os.getpid()))
     #- read DAG_info, create DAG_exec_state, thread_work_queue is parm
     if not DAG_executor_constants.USE_MULTITHREADED_MULTIPROCESSING:
         # Config: A5

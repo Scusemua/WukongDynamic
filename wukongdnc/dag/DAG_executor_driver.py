@@ -1754,7 +1754,7 @@ def run():
             # hardcoded for testing rel lambdas. May want to enabe this generally in
             # which case we will need the partition/group names, which BFS could
             # write to a file.
-                logger.info("DAG_execution_driver: inputting all groups/partitions at the start.")
+                logger.info("DAG_execution_driver: input all groups/partitions at the start.")
                 group_partition_names = ["PR1_1","PR2_1","PR2_2L","PR2_3","PR3_1","PR3_2","PR3_3","PR4_1","PR5_1","PR6_1","PR7_1"]
                 for task_file_name in group_partition_names:
                     # task_file_name is, e.g., "PR1_1" not "PR1_1.pickle"
@@ -2135,6 +2135,13 @@ def run():
 
             if not (not DAG_executor_constants.RUN_ALL_TASKS_LOCALLY and DAG_executor_constants.STORE_SYNC_OBJECTS_IN_LAMBDAS and DAG_executor_constants.SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS):
                 # we are not having sync objects trigger their tasks in lambdas
+                # Note: for worker threads and processes we will only create NUM_WORKERS
+                # workers, i.e., if NUM_WORKERS is less than the number of leaf tasks
+                # we will create fewer workers than leaf tasks.
+                # This is because we break this loop when 
+                # DAG_executor_constants.USING_WORKERS and num_threads_created == DAG_executor_constants.NUM_WORKERS:
+                # Also, if the number of leaf tasks is less than number_workers, we will create more workers
+                # in a loop that follows this one.
                 for start_state, task_name, inp in zip(DAG_leaf_task_start_states, DAG_leaf_tasks, DAG_leaf_task_inputs):
                     # The state of a DAG executor contains only one application specific member, which is the
                     # state number of the task to execute. Leaf task information is in DAG_leaf_task_start_states
@@ -2232,6 +2239,7 @@ def run():
                                 if not (DAG_executor_constants.COMPUTE_PAGERANK and DAG_executor_constants.USE_SHARED_PARTITIONS_GROUPS):
     #brc: counter 
     # tasks_completed_counter, workers_completed_counter
+                                    print("DAG_excution_driver: create process")
                                     #proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,completed_tasks_counter,log_queue,worker_configurer,
                                     proc = Process(target=DAG_executor.DAG_executor_processes, name=(proc_name_prefix+"ss"+str(start_state)), args=(payload,completed_tasks_counter,completed_workers_counter,log_queue,worker_configurer,
                                         None,None,None,None,None,None,None,None,None,None))
@@ -2456,6 +2464,7 @@ def run():
             if DAG_executor_constants.RUN_ALL_TASKS_LOCALLY:
                 if DAG_executor_constants.USING_WORKERS:
                     for thread_proc in thread_proc_list:
+                        print("DAG_excution_driver: start process")
                         thread_proc.start()
 
         if DAG_executor_constants.RUN_ALL_TASKS_LOCALLY:

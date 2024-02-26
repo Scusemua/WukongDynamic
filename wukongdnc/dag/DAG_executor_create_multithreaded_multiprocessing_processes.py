@@ -28,8 +28,8 @@ if not (not USING_THREADS_NOT_PROCESSES or USE_MULTITHREADED_MULTIPROCESSING):
     logger.addHandler(ch)
 """
 
-#def create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,counter,process_work_queue,data_dict,log_queue,worker_configurer):
-#def create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,counter,log_queue,worker_configurer):
+# Create the processes for multithtreaded multiprocessing. The processes
+# will create their own threads in create_and_run_threads_for_multiT_multiP()
 def create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,completed_tasks_counter,completed_workers_counter,log_queue,worker_configurer):
     logger.info("DAG_executor_driver: Starting multi processors for multhreaded multipocessing.")
     iteration = 1
