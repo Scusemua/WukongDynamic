@@ -12,6 +12,7 @@ import logging.handlers
 import multiprocessing
 import os
 
+"""
 from .DFS_visit import Node
 #from DAG_executor_FanInNB import DAG_executor_FanInNB
 #from . import  DAG_executor_FanInNB
@@ -22,8 +23,8 @@ from .DFS_visit import Node
 from .DAG_executor_State import DAG_executor_State
 from .DAG_info import DAG_Info
 from wukongdnc.server.api import synchronize_sync, synchronize_process_faninNBs_batch
-
 from wukongdnc.constants import TCP_SERVER_IP
+"""
 
 #from .DAG_executor_constants import RUN_ALL_TASKS_LOCALLY, STORE_FANINS_FANINNBS_LOCALLY 
 #from .DAG_executor_constants import CREATE_ALL_FANINS_FANINNBS_ON_START, USING_WORKERS 
@@ -44,7 +45,48 @@ from wukongdnc.constants import TCP_SERVER_IP
 print("DAG_executor before import DAG_executor_contants")
 from . import DAG_executor_constants
 print("DAG_executor after import DAG_executor_contants: DAG_executor_constants.USING_THREADS_NOT_PROCESSES: " + str(DAG_executor_constants.USING_THREADS_NOT_PROCESSES))
+# BRC: Possibly: Try to read the test number from a file that TestAll creates
+# and puts the test_number in when a mutiP test.
+"""
 
+Here:
+myfile = "/tmp/foo.txt"
+if os.path.isfile(myfile):
+    with open('myfile') as file:
+        myint = int(file.read())
+
+#In TestAll
+#!/usr/bin/python
+import os
+
+myfile = "/tmp/foo.txt"
+# If file exists, delete it.
+if os.path.isfile(myfile):
+    os.remove(myfile)
+else:
+    # If it fails, inform the user.
+    print("Error: %s file not found" % myfile)
+
+# Write the test_number
+number = 1337
+
+with open('filename.txt', 'w') as f:
+  f.write('%d' % number)
+"""
+DAG_executor_constants.set_test_number(20)
+print("DAG_executor after set_test_number: DAG_executor_constants.USING_THREADS_NOT_PROCESSES: " + str(DAG_executor_constants.USING_THREADS_NOT_PROCESSES))
+
+from .DFS_visit import Node
+#from DAG_executor_FanInNB import DAG_executor_FanInNB
+#from . import  DAG_executor_FanInNB
+#from . import  DAG_executor_FanIn
+#from wukongdnc.server import DAG_executor_FanInNB
+#from wukongdnc.server import DAG_executor_FanIn
+#from . import DAG_executor_driver
+from .DAG_executor_State import DAG_executor_State
+from .DAG_info import DAG_Info
+from wukongdnc.server.api import synchronize_sync, synchronize_process_faninNBs_batch
+from wukongdnc.constants import TCP_SERVER_IP
 
 #from .DAG_work_queue_for_threads import thread_work_queue
 from .DAG_executor_work_queue_for_threads import work_queue

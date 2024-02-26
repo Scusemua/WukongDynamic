@@ -1,6 +1,7 @@
 import logging
 import sys
 import getopt
+import os
 
 #from .addLoggingLevel import addLoggingLevel
 #import wukongdnc.dag.DAG_executor_constants
@@ -39,9 +40,11 @@ def main(argv):
             test_number_string = arg
             test_number = int(test_number_string)
 
-        from . import DAG_executor_constants
-        DAG_executor_constants.set_test_number(test_number)
-
+    test_number = 20
+    from . import DAG_executor_constants
+    logger.info("TestAll: set_test_number: " + str(test_number))
+    DAG_executor_constants.set_test_number(test_number)
+    print("TestAll loaded in PID: " + str(os.getpid()))
     
 #brc: 
 # ToDo: 
