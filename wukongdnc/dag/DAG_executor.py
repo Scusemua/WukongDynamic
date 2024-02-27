@@ -26,6 +26,22 @@ from wukongdnc.server.api import synchronize_sync, synchronize_process_faninNBs_
 from wukongdnc.constants import TCP_SERVER_IP
 """
 
+
+#if not (not USING_THREADS_NOT_PROCESSES or USE_MULTITHREADED_MULTIPROCESSING):
+    #logger.setLevel("TRACE")
+    #logger.setLevel(logging.INFO)
+
+    #logger.setLevel(LOG_LEVEL)
+    #formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
+    #ch = logging.StreamHandler()
+
+    #ch.setLevel("TRACE")
+    #ch.setLevel(logging.INFO)
+
+    #ch.setLevel(LOG_LEVEL)
+    #ch.setFormatter(formatter)
+    #logger.addHandler(ch)
+
 #from .DAG_executor_constants import RUN_ALL_TASKS_LOCALLY, STORE_FANINS_FANINNBS_LOCALLY 
 #from .DAG_executor_constants import CREATE_ALL_FANINS_FANINNBS_ON_START, USING_WORKERS 
 #from .DAG_executor_constants import USING_THREADS_NOT_PROCESSES, USE_MULTITHREADED_MULTIPROCESSING
@@ -47,34 +63,39 @@ from . import DAG_executor_constants
 print("DAG_executor after import DAG_executor_contants: DAG_executor_constants.USING_THREADS_NOT_PROCESSES: " + str(DAG_executor_constants.USING_THREADS_NOT_PROCESSES))
 # BRC: Possibly: Try to read the test number from a file that TestAll creates
 # and puts the test_number in when a mutiP test.
-"""
 
-Here:
-myfile = "/tmp/foo.txt"
-if os.path.isfile(myfile):
-    with open('myfile') as file:
-        myint = int(file.read())
+#if not (DAG_executor_constants.RUN_ALL_TASKS_LOCALLY and DAG_executor_constants.USING_WORKERS \
+#    and (not DAG_executor_constants.USING_THREADS_NOT_PROCESSES)):
+logger = logging.getLogger(__name__)
+#else:
+#    logger = logging.getLogger("multiP")
 
-#In TestAll
-#!/usr/bin/python
-import os
-
-myfile = "/tmp/foo.txt"
-# If file exists, delete it.
-if os.path.isfile(myfile):
-    os.remove(myfile)
-else:
-    # If it fails, inform the user.
-    print("Error: %s file not found" % myfile)
-
-# Write the test_number
-number = 1337
-
-with open('filename.txt', 'w') as f:
-  f.write('%d' % number)
-"""
-DAG_executor_constants.set_test_number(20)
-print("DAG_executor after set_test_number: DAG_executor_constants.USING_THREADS_NOT_PROCESSES: " + str(DAG_executor_constants.USING_THREADS_NOT_PROCESSES))
+if not (not DAG_executor_constants.RUN_ALL_TASKS_LOCALLY and (not DAG_executor_constants.BYPASS_CALL_TO_INVOKE_REAL_LAMBDA)):
+    try:
+        # check whether set_test_number has already been called.
+        # if DAG_executor_driver imported this DAG_executor module
+        # then set_test_number has already been called. This is 
+        # the case exceot when we aer using multiprocessing. In this 
+        # case, along with DAG_executor_driver importing DAG_executor,
+        # when a process is started, DAG_executor will be imported,
+        # and ADG_executor_constants before that (as part of 
+        # multiprocessing) but TestAll will not have set_test_number
+        # for this DAG_executor_constants, so we need to do it 
+        # here. this will be done for each process.)
+        if DAG_executor_constants.test_number == 0:
+            test_number_file_name = "./test_number.txt"
+            if os.path.isfile(test_number_file_name):
+                with open(test_number_file_name) as test_number_file:
+                    test_number = int(test_number_file.read())
+                logger.info("DAG_executor before set_test_number: test_number: " + str(DAG_executor_constants.test_number))
+                DAG_executor_constants.set_test_number(test_number)
+                logger.info("DAG_executor after set_test_number: DAG_executor_constants.USING_THREADS_NOT_PROCESSES: " + str(DAG_executor_constants.USING_THREADS_NOT_PROCESSES))
+    except Exception:
+        thread_name = threading.current_thread().name
+        logger.exception("[ERROR]:" + thread_name + ": DAG_executor: Failed to read test_number file.")
+        if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+            logging.shutdown()
+            os._exit(0)
 
 from .DFS_visit import Node
 #from DAG_executor_FanInNB import DAG_executor_FanInNB
@@ -122,25 +143,6 @@ import  wukongdnc.dag.DAG_infoBuffer_Monitor_for_threads
 from . import BFS_Shared
 from .DAG_executor_output_checker import set_pagerank_output
 
-logger = logging.getLogger(__name__)
-#if not (not USING_THREADS_NOT_PROCESSES or USE_MULTITHREADED_MULTIPROCESSING):
-    #logger.setLevel("TRACE")
-    #logger.setLevel(logging.INFO)
-
-    #logger.setLevel(LOG_LEVEL)
-    #formatter = logging.Formatter('[%(asctime)s] [%(module)s] [%(processName)s] [%(threadName)s]: %(message)s')
-    #ch = logging.StreamHandler()
-
-    #ch.setLevel("TRACE")
-    #ch.setLevel(logging.INFO)
-
-    #ch.setLevel(LOG_LEVEL)
-    #ch.setFormatter(formatter)
-    #logger.addHandler(ch)
-
-
-#logger = logging.getLogger('DAG_executor_logger')
-#logger.setLevel(logging.INFO)
 
 """
 #brc: shared

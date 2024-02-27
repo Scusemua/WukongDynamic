@@ -26,9 +26,23 @@ logger = logging.getLogger(__name__)
 # Runs a single test with the command:
 # python -m wukongdnc.dag.TestAll test#, e.g., TestAll 1
 
-pagerank_tests_start = 35
-pagerank_tests_end = 61
 def main(argv):
+    pagerank_tests_start = 35
+    pagerank_tests_end = 61
+    test_number_file_name = "./test_number.txt"
+    # If file exists, delete it.
+    try:
+        if os.path.isfile(test_number_file_name):
+            os.remove(test_number_file_name)
+            logger.info("TestAll: removed test number file.")
+        else:
+            logger.info("TestAll: test number file not found at start.")
+    except Exception:
+        logger.exception("[ERROR]: TestAll: Failed to remove test_number file.")
+        if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+            logging.shutdown()
+            os._exit(0)
+
     test_number_string = ''
     test_number = -1
     opts, _args = getopt.getopt(argv, "ht:",["test="])
@@ -40,11 +54,22 @@ def main(argv):
             test_number_string = arg
             test_number = int(test_number_string)
 
-    test_number = 20
-    from . import DAG_executor_constants
-    logger.info("TestAll: set_test_number: " + str(test_number))
-    DAG_executor_constants.set_test_number(test_number)
-    print("TestAll loaded in PID: " + str(os.getpid()))
+            from . import DAG_executor_constants
+            logger.info("TestAll: set_test_number: " + str(test_number))
+            DAG_executor_constants.set_test_number(test_number)
+
+            if DAG_executor_constants.RUN_ALL_TASKS_LOCALLY and DAG_executor_constants.USING_WORKERS \
+                and not DAG_executor_constants.USING_THREADS_NOT_PROCESSES:
+                try:
+                    with open(test_number_file_name, 'w') as test_number_file:
+                        test_number_file.write('%d' % test_number)
+                    logger.info("TestAll: wrote " + str(test_number) + " to test_number_file")
+                except Exception:
+                    logger.exception("[ERROR]: TestAll: Failed to write test_number file.")
+                    if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+                        logging.shutdown()
+                        os._exit(0)
+    #print("TestAll loaded in PID: " + str(os.getpid()))
     
 #brc: 
 # ToDo: 
@@ -54,6 +79,16 @@ def main(argv):
     else:
         from . import BFS
         BFS.main()
+
+    if DAG_executor_constants.RUN_ALL_TASKS_LOCALLY and DAG_executor_constants.USING_WORKERS \
+        and not DAG_executor_constants.USING_THREADS_NOT_PROCESSES:
+        if os.path.isfile(test_number_file_name):
+            os.remove(test_number_file_name)
+        else:
+            logger.error("[ERROR]: TestAll: Failed to remove test_number_file at end.")
+            if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+                logging.shutdown()
+                os._exit(0)
 
 # ToDo: put top-level constants in noTest()
 
