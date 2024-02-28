@@ -2123,6 +2123,7 @@ def run():
     #brc: counter
     # # tasks_completed_counter, workers_completed_counter
             #num_processes_created_for_multithreaded_multiprocessing = create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,completed_tasks_counter,log_queue,worker_configurer)
+            # Note: log_queue is from above
             num_processes_created_for_multithreaded_multiprocessing = create_multithreaded_multiprocessing_processes(num_processes_created_for_multithreaded_multiprocessing,multithreaded_multiprocessing_process_list,completed_tasks_counter,completed_workers_counter,log_queue,worker_configurer)
             start_time = time.time()
             for thread_proc in multithreaded_multiprocessing_process_list:

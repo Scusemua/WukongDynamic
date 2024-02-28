@@ -5826,21 +5826,27 @@ def check_asserts():
     #    logging.shutdown()
     #    os._exit(0)
 
+# global variable accessed in DAG_executor_constants. If test_number
+# is 0 and we are testing a worker process configuration then 
+# the worker process executing DAG_executor must read the test_number_file
+# written by TestAll and call DAG_executor_constants.set_test_number(test_number)
+# so that all worker processes use the test configuration.
 test_number = 0
-
 # called by TestAll.py to run testX
-def set_test_number(number):
+# the test number is verified by TestAll to be within range.
+def set_test_number_and_run_test(number):
     global test_number
     test_number = number
     #print("number: " + str(number))
     #print("test_number: " + str(test_number))
 
     # Run Tests
-    if not test_number == 0:
-        #print("call non_real_lambda_base")
-        non_pagerank_non_store_objects_in_lambda_base()
 
-    # call method testi() to configure test 
+    # Set the configuration constants one time for the tests
+    # that do not involve pagerank.
+    non_pagerank_non_store_objects_in_lambda_base()
+
+    # call method test<test_number>() to configure test 
     test_method_name = "test"+str(test_number)
 
     # can also use getattr() - how to specify this DAG_executor_constants module?
@@ -5853,8 +5859,7 @@ def set_test_number(number):
         os._exit(0)
 
     # Check assserts after setting the configuration constants
-    if not test_number == 0:
-        check_asserts()
+    check_asserts()
 
 
 # Note: Running the script below in the Wndows PowerShell X to run the 

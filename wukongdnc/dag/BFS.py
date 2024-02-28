@@ -801,34 +801,74 @@ class PageRank_results:
             print(str(i)) # +":"+str(self.results[i]),end=" ")
 """
 
-visited = [] # List for visited nodes.
-BFS_queue = []     #Initialize a queue
-partitions = []
-current_partition = []
-current_partition_number = 1
-dfs_parent_changes_in_partiton_size = []
+IDENTIFY_SINGLETONS = False
+TRACK_PARTITION_LOOPS = False
+CHECK_UNVISITED_CHILDREN = False
+DEBUG_ON = True
+PRINT_DETAILED_STATS = True
+debug_pagerank = False
+generate_networkx_file = False
+
+visited = []                    # List for nodes visited during bfs/dfs
+BFS_queue = []                  # queue of nodes for breadth-first search
+partitions = []                 # collected partitions of nodes
+groups = []                     # collected groups of nodes
+current_partition = []          # partition currently be collected
+current_partition_number = 1    # current partition number,
+current_group = []              # group currently be collected
+current_group_number = 1        # current group number, starting with 1
+partition_names = []            # names of collected partitions, e.g., PR1_1, PR2_1
+group_names = []                # names of collected groups, e.g., PR1_1, PR2_1, PR2_2 (partition2_ group2)
+
+# Statistics
+
+# track the sizes of the partitions - use this to get the avg.
+# partition size and to check that the sum of the sizes of all the
+# partitions equals the number of nodes in the graph.
+dfs_parent_changes_in_partition_size = []
+
+# remove frontier code:
 dfs_parent_changes_in_frontier_size = []
+
 # This is used in the pre/post dfs_parent code when adding L-nodes to
-# partitions.
+# partitions. Currently not using pre/post dfs_parent code.
+# when we add L-nodes we track how many we add so we will know that
+# some of a partitions/groups nodes are L-nodes and not actual graph nodes.
+# We use this when we compuet the sze of a partition (actual nodes not
+# L-nodes.)
 loop_nodes_added = 0
+total_loop_nodes_added = 0
+dfs_parent_loop_nodes_added_start = 0   # start value of loop_nodes_added
+dfs_parent_loop_nodes_added_end = 0     # end value of loop_nodes_added
+
+# compute info about shadow nodes
+# increment these when we add a shadw node to a partition/group
 num_shadow_nodes_added_to_partitions = 0
 num_shadow_nodes_added_to_groups = 0
+# To determine the number of shadow nodes added to a partition/group
+# we capture num_shadow_nodes_added_to_partitions at the start and 
+# the end of collecting a partition/group, then we compute start = end
+# to get the number of shadow nodes.
 start_num_shadow_nodes_for_partitions = 0
 end_num_shadow_nodes_for_partitions = 0
 start_num_shadow_nodes_for_groups = 0
 end_num_shadow_nodes_for_groups = 0
+
+# maintain a list of the numbers of shadow nodes added for ecach of
+# the partitions/groups
 partitions_num_shadow_nodes_list = []
 groups_num_shadow_nodes_list = []
-total_loop_nodes_added = 0
-frontier_costs = []
-frontier_cost = []
+
+# remove frontier code
+#frontier_costs = []
+#all_frontier_costs = []
+
 frontiers = []
 frontier = []
-all_frontier_costs = []
+
 frontier_groups_sum = 0
 num_frontier_groups = 0
-groups = []
-current_group = []
+
 patch_parent_mapping_for_partitions = []
 patch_parent_mapping_for_groups = []
 frontier_parent_partition_patch_tuple_list = []
@@ -837,9 +877,7 @@ shared_frontier_parent_partition_patch_tuple_list = []
 shared_frontier_parent_groups_patch_tuple_list = []
 sender_receiver_partition_patch_tuple_list = []
 sender_receiver_group_patch_tuple_list = []
-current_group_number = 1
-partition_names = []
-group_names = []
+
 current_partition_isLoop = False
 current_group_isLoop = False
 
@@ -899,23 +937,15 @@ nodeIndex_to_partition_partitionIndex_group_groupIndex_map = {}
 
 # reset dfs_parent counters
 dfs_parent_start_partition_size = 0
-dfs_parent_loop_nodes_added_start = 0
-dfs_parent_start_frontier_size = 0
 dfs_parent_end_partition_size = 0
-dfs_parent_loop_nodes_added_end = 0
-dfs_parent_end_frontier_size = 0
 
-IDENTIFY_SINGLETONS = False
-TRACK_PARTITION_LOOPS = False
-CHECK_UNVISITED_CHILDREN = False
-DEBUG_ON = True
-PRINT_DETAILED_STATS = True
-debug_pagerank = False
-generate_networkx_file = False
 
-# list of nodes in the inut graph
+#remove frontier code
+#dfs_parent_start_frontier_size = 0
+#dfs_parent_end_frontier_size = 0
+
+# list of nodes in the input graph
 nodes = []
-
 num_nodes = 0
 num_edges = 0
 # used to compute size of numPy parents array for pagerank calculation
@@ -2478,7 +2508,7 @@ def dfs_parent(visited, node):  #function for dfs
                 print_val = print_val + str(x) + " "
             logger.trace(print_val)
             logger.trace("")
-        #frontier.append(node)
+            
         frontier.append(node.ID)
         if DEBUG_ON:
             print_val = "frontier after add " + str(node.ID) + ":"
@@ -2646,10 +2676,14 @@ def bfs(visited, node):
     #various counters
     global dfs_parent_start_partition_size
     global dfs_parent_loop_nodes_added_start
-    global dfs_parent_start_frontier_size
+
     global dfs_parent_end_partition_size
     global dfs_parent_loop_nodes_added_end
-    global dfs_parent_end_frontier_size
+
+    # remove frontier code:
+    #global dfs_parent_start_frontier_size
+    #global dfs_parent_end_frontier_size
+
     #brc: shared
     global start_num_shadow_nodes_for_partitions
     global end_num_shadow_nodes_for_partitions
@@ -2680,7 +2714,9 @@ def bfs(visited, node):
     # These are per dfs_parent() stats not per partition.
     # These lengths should be 0 at the start
     dfs_parent_start_partition_size = len(current_partition)
-    dfs_parent_start_frontier_size = len(frontier)
+
+    # remove frontier code:
+    #dfs_parent_start_frontier_size = len(frontier)
 
     # Using these when we TRACK_PARTITION_LOOPS, i.e., generate information
     # about the loops we find. Only used this for debugging.
@@ -2914,15 +2950,16 @@ def bfs(visited, node):
     dfs_parent_end_partition_size = len(current_partition)
     dfs_parent_change_in_partition_size = (dfs_parent_end_partition_size - dfs_parent_start_partition_size) - (
         dfs_parent_loop_nodes_added_end - dfs_parent_loop_nodes_added_start)
-    dfs_parent_changes_in_partiton_size.append(dfs_parent_change_in_partition_size)
+    dfs_parent_changes_in_partition_size.append(dfs_parent_change_in_partition_size)
     logger.trace("dfs_parent(root)_change_in_partition_size: " + str(dfs_parent_change_in_partition_size))
 # brc: ******* end Partition
 
-    dfs_parent_end_frontier_size = len(frontier)
-    dfs_parent_change_in_frontier_size = (dfs_parent_end_frontier_size - dfs_parent_start_frontier_size) - (
-        dfs_parent_loop_nodes_added_end - dfs_parent_loop_nodes_added_start)
-    dfs_parent_changes_in_frontier_size.append(dfs_parent_change_in_frontier_size)
-    logger.trace("dfs_parent(root)_change_in_frontier_size: " + str(dfs_parent_change_in_frontier_size))
+    # remove frontier code:
+    #dfs_parent_end_frontier_size = len(frontier)
+    #dfs_parent_change_in_frontier_size = (dfs_parent_end_frontier_size - dfs_parent_start_frontier_size) - (
+    #    dfs_parent_loop_nodes_added_end - dfs_parent_loop_nodes_added_start)
+    #dfs_parent_changes_in_frontier_size.append(dfs_parent_change_in_frontier_size)
+    #logger.trace("dfs_parent(root)_change_in_frontier_size: " + str(dfs_parent_change_in_frontier_size))
 
     # queue.append(node) and frontier.append(node) done optionally in dfs_parent
 #brc
@@ -2967,12 +3004,14 @@ def bfs(visited, node):
                 break
 
         node = nodes[ID]
-        # The frontier is nodes in current partition that can have children
-        # in the next partition. Currently, the current_partition and the
-        # current frontier are the same.
-        # So we can see the frontier costs that do not correspnd to when 
-        # partitions were created, i.e., was there a better frontier for partition?
-        all_frontier_costs.append("pop-"+str(node.ID) + ":" + str(len(frontier)))
+
+        # remove frontier code:
+        ## The frontier is nodes in current partition that can have children
+        ## in the next partition. Currently, the current_partition and the
+        ## current frontier are the same.
+        ## So we can see the frontier costs that do not correspnd to when 
+        ## partitions were created, i.e., was there a better frontier for partition?
+        #all_frontier_costs.append("pop-"+str(node.ID) + ":" + str(len(frontier)))
 
         # Consider the case where the first group/partition is 5, 17, 1 and
         # 5 has a single child 6, 6 has a single parent 5, and 6 has no
@@ -3365,9 +3404,12 @@ def bfs(visited, node):
 
                 # does not require a deepcopy
                 frontiers.append(frontier.copy())
-                # Generate stats.
-                frontier_cost = "pop-"+str(node.ID) + ":" + str(len(frontier))
-                frontier_costs.append(frontier_cost)
+
+                # remove frontier code:
+                ## Generate stats.
+                #frontier_cost = "pop-"+str(node.ID) + ":" + str(len(frontier))
+                #frontier_costs.append(frontier_cost)
+
                 frontier.clear()
 
 #brc: incremental     
@@ -4106,7 +4148,9 @@ def bfs(visited, node):
 
                 dfs_parent_start_partition_size = len(current_partition)
                 dfs_parent_loop_nodes_added_start = loop_nodes_added
-                dfs_parent_start_frontier_size = len(frontier)
+
+                # remove frontier code:
+                #dfs_parent_start_frontier_size = len(frontier)
  
                 # number of groups in current partition/sum
                 num_frontier_groups += 1
@@ -4394,13 +4438,14 @@ def bfs(visited, node):
                 dfs_parent_change_in_partition_size = (dfs_parent_end_partition_size - dfs_parent_start_partition_size) - (
                     dfs_parent_loop_nodes_added_end - dfs_parent_loop_nodes_added_start)
                 logger.trace("dfs_parent("+str(node.ID) + ")_change_in_partition_size: " + str(dfs_parent_change_in_partition_size))
-                dfs_parent_changes_in_partiton_size.append(dfs_parent_change_in_partition_size)
+                dfs_parent_changes_in_partition_size.append(dfs_parent_change_in_partition_size)
               
-                dfs_parent_end_frontier_size = len(frontier)
-                dfs_parent_change_in_frontier_size = (dfs_parent_end_frontier_size - dfs_parent_start_frontier_size) - (
-                    dfs_parent_loop_nodes_added_end - dfs_parent_loop_nodes_added_start)
-                logger.trace("dfs_parent("+str(node.ID) + ")_change_in_frontier_size: " + str(dfs_parent_change_in_frontier_size))
-                dfs_parent_changes_in_frontier_size.append(dfs_parent_change_in_frontier_size)
+                # remove frontier code:
+                #dfs_parent_end_frontier_size = len(frontier)
+                #dfs_parent_change_in_frontier_size = (dfs_parent_end_frontier_size - dfs_parent_start_frontier_size) - (
+                #    dfs_parent_loop_nodes_added_end - dfs_parent_loop_nodes_added_start)
+                #logger.trace("dfs_parent("+str(node.ID) + ")_change_in_frontier_size: " + str(dfs_parent_change_in_frontier_size))
+                #dfs_parent_changes_in_frontier_size.append(dfs_parent_change_in_frontier_size)
 
                 """
                 # dfs_parent decides whether to queue the node to queue and frontier. 
@@ -5044,9 +5089,9 @@ def print_BFS_stats():
         logger.trace("")
 
     # adjusting for loop_nodes_added in dfs_p
-    sum_of_changes = sum(dfs_parent_changes_in_partiton_size)-num_shadow_nodes_added_to_partitions
-    avg_change = sum_of_changes / len(dfs_parent_changes_in_partiton_size)
-    print_val = "dfs_parent_changes_in_partiton_size length, len: " + str(len(dfs_parent_changes_in_partiton_size)) + ", sum_of_changes: " + str(sum_of_changes)
+    sum_of_changes = sum(dfs_parent_changes_in_partition_size)-num_shadow_nodes_added_to_partitions
+    avg_change = sum_of_changes / len(dfs_parent_changes_in_partition_size)
+    print_val = "dfs_parent_changes_in_partiton_size length, len: " + str(len(dfs_parent_changes_in_partition_size)) + ", sum_of_changes: " + str(sum_of_changes)
     print_val += ", average dfs_parent change: %.1f" % avg_change
     logger.trace(print_val)
     if PRINT_DETAILED_STATS:
@@ -5054,39 +5099,28 @@ def print_BFS_stats():
             logger.error("[Error]: print_BFS_stats: sum_of_changes is " + str(sum_of_changes)
                 + " but num_nodes is " + str(num_nodes))
         print_val = ""
-        for x in dfs_parent_changes_in_partiton_size:
+        for x in dfs_parent_changes_in_partition_size:
             print_val += str(x) + " "
             # print(x, end=" ")
         logger.trace(print_val)
 
     logger.trace("")
     logger.trace("")
-    if PRINT_DETAILED_STATS:
-        # adjusting for loop_nodes_added in dfs_p
-        sum_of_changes = sum(dfs_parent_changes_in_frontier_size)
-        logger.trace("dfs_parent_changes_in_frontier_size length, len: " + str(len(dfs_parent_changes_in_frontier_size))
-            + ", sum_of_changes: " + str(sum_of_changes))
-        if sum_of_changes != num_nodes:
-            logger.error("[Error]: print_BFS_stats: sum_of_changes is " + str(sum_of_changes)
-                + " but num_nodes is " + str(num_nodes))
-        for x in dfs_parent_changes_in_frontier_size:
-            print_val = str(x) + " "
-            #print(x, end=" ")
-        logger.trace(print_val)
-        logger.trace("")
-        logger.trace("")
-    #logger.trace("frontier length: " + str(len(frontier)))
-    #if len(frontier) != 0:
-    #    logger.error("[Error]: print_BFS_stats: frontier length is " + str(len(frontier))
-    #       + " but num_nodes is " + str(num_nodes))
-    #for x in frontier:
-    #    logger.trace(str(x.ID), end=" ")
-    #logger.trace("")
-    #logger.trace("frontier cost: " + str(len(frontier_cost)))
-    #for x in frontier_cost:
-    #    logger.trace(str(x), end=" ")
-    #logger.trace("")
-    # final frontier should always be empty
+    # remove frontier code:
+    #if PRINT_DETAILED_STATS:
+    #    # adjusting for loop_nodes_added in dfs_p
+    #    sum_of_changes = sum(dfs_parent_changes_in_frontier_size)
+    #    logger.trace("dfs_parent_changes_in_frontier_size length, len: " + str(len(dfs_parent_changes_in_frontier_size))
+    #        + ", sum_of_changes: " + str(sum_of_changes))
+    #    if sum_of_changes != num_nodes:
+    #        logger.error("[Error]: print_BFS_stats: sum_of_changes is " + str(sum_of_changes)
+    #            + " but num_nodes is " + str(num_nodes))
+    #    for x in dfs_parent_changes_in_frontier_size:
+    #       print_val = str(x) + " "
+    #        #print(x, end=" ")
+    #    logger.trace(print_val)
+    #    logger.trace("")
+    #    logger.trace("")
 
     try:
         logger.trace("frontiers: (final fronter should be empty), number of frontiers: " + str(len(frontiers))+ " (length):")
@@ -5206,36 +5240,38 @@ def print_BFS_stats():
         else:
             logger.trace("-- (" + str(len(m)) + ")")
     logger.trace("")
-    if PRINT_DETAILED_STATS:
-        logger.trace("frontier costs (cost=length of frontier), len: " + str(len(frontier_costs))+":")
-        print_val = ""
-        for x in frontier_costs:
-            print_val += "-- " + str(x)
-            #logger.trace("-- ",end="")
-            #logger.trace(str(x))
-        logger.trace(print_val)
-        logger.trace("")
-    sum_of_partition_costs = 0
-    for x in all_frontier_costs:
-        words = x.split(':')
-        cost = int(words[1])
-        sum_of_partition_costs += cost
-    logger.trace("all frontier costs, len: " + str(len(all_frontier_costs)) + ", sum: " 
-        + str(sum_of_partition_costs))
-    if PRINT_DETAILED_STATS:
-        i = 0
-        costs_per_line = 13
-        print_val = ""
-        for x in all_frontier_costs:
-            if (i < costs_per_line):
-                print_val = str(x) + " "
-                #print(str(x),end=" ")
-            else:
-                logger.trace(str(x))
-                i = 0
-            i += 1
-        logger.trace(print_val)
-    logger.trace("")
+
+    # remove frontier code:
+    #if PRINT_DETAILED_STATS:
+    #    logger.trace("frontier costs (cost=length of frontier), len: " + str(len(frontier_costs))+":")
+    #    print_val = ""
+    #    for x in frontier_costs:
+    #        print_val += "-- " + str(x)
+    #        #logger.trace("-- ",end="")
+    #        #logger.trace(str(x))
+    #    logger.trace(print_val)
+    #    logger.trace("")
+    #sum_of_partition_costs = 0
+    #for x in all_frontier_costs:
+    #    words = x.split(':')
+    #    cost = int(words[1])
+    #    sum_of_partition_costs += cost
+    #logger.trace("all frontier costs, len: " + str(len(all_frontier_costs)) + ", sum: " 
+    #    + str(sum_of_partition_costs))
+    #if PRINT_DETAILED_STATS:
+    #    i = 0
+    #    costs_per_line = 13
+    #    print_val = ""
+    #    for x in all_frontier_costs:
+    #        if (i < costs_per_line):
+    #            print_val = str(x) + " "
+    #            #print(str(x),end=" ")
+    #        else:
+    #            logger.trace(str(x))
+    #            i = 0
+    #        i += 1
+    #    logger.trace(print_val)
+    #logger.trace("")
     """
     # Doing this for each node in each partition now (next)
     logger.trace("")
@@ -5610,7 +5646,10 @@ def main():
         global total_loop_nodes_added
         global frontiers
         global frontier
-        global frontier_costs
+
+        # remove frontier code:
+        #global frontier_costs
+
         #global total_loop_nodes_added
         # if we didn't call dfs_parent() can this be non-zero?
         total_loop_nodes_added += loop_nodes_added
@@ -5619,8 +5658,11 @@ def main():
         #loop_nodes_added = 0
         # does not require a deepcopy
         frontiers.append(frontier.copy())
-        frontier_cost = "atEnd:" + str(len(frontier))
-        frontier_costs.append(frontier_cost)
+
+        # remove frontier code:
+        #frontier_cost = "atEnd:" + str(len(frontier))
+        #frontier_costs.append(frontier_cost)
+
     else:
         try:
             msg = "[Error]: bfs: len(frontier) > 0" \
