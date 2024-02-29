@@ -800,13 +800,19 @@ class PageRank_results:
         for i in range(1,21):
             print(str(i)) # +":"+str(self.results[i]),end=" ")
 """
-
+# Extenions to dfs_parent() that we are not using
 IDENTIFY_SINGLETONS = False
 TRACK_PARTITION_LOOPS = False
 CHECK_UNVISITED_CHILDREN = False
-DEBUG_ON = True
+
+# Method print_BFS_stats() prints stats about bfs() and some
+# detailed stats are optional.
 PRINT_DETAILED_STATS = True
-debug_pagerank = False
+# NetworkX is a Python package for the creation, manipulation, 
+# and study of the structure, dynamics, and functions of 
+# complex networks. We use it for visulizing the DAG, but only 
+# for small DAGs. This is in input_graph() where we optionally
+# build a networkX file for visualization.
 generate_networkx_file = False
 
 visited = []                    # List for nodes visited during bfs/dfs
@@ -820,6 +826,41 @@ current_group_number = 1        # current group number, starting with 1
 partition_names = []            # names of collected partitions, e.g., PR1_1, PR2_1
 group_names = []                # names of collected groups, e.g., PR1_1, PR2_1, PR2_2 (partition2_ group2)
 
+# used for incremental DAG generation.
+groups_of_current_partition = [] # groups in current partition
+# When we process the current partition we need to know the groups 
+# in it and in the previous partition and in the previous 
+# previous partition. Each groups_of_current_partition is added
+# to this list.
+groups_of_partitions = []       # list of groups of partitions.
+
+# map a node to its partition number, partition index, group number and group index.
+# A "global map"for nodes. May supercede nodeIndex_to_partitionIndex_map. 
+# We need a nodes position in its partition if we map partitions to functions and we need
+# a nodes position in its group if we map groups to functions. This map supports
+# both partition mapping and group mapping.
+#
+# Note: We do not map shadow nodes in this map.
+#
+# Consider: We can remove the nodes in Pi from this map after we have finished 
+# computing Pi+1 since we will no longer need to know this info for 
+# the nodes in Pi? We may want to remove these nodes to free the space.
+# Note: If a node is in Pi+1 all of its parents are in Pi+1 or Pi,
+# by definition, since Pi+1 contains all the children of Pi and
+# all of the parents (actually, ancestor) of these Pi+1 nodes that 
+# are not in Pi.
+nodeIndex_to_partition_partitionIndex_group_groupIndex_map = {}
+
+# Note: we are using these maps only for debugging. We can turn them off.
+# we are now using nodeIndex_to_partition_partitionIndex_group_groupIndex_map
+# which has the same information.
+use_nodeIndex_to_grouppartition_maps = True
+nodeIndex_to_partitionIndex_map = {}
+nodeIndex_to_groupIndex_map = {}
+# collection of all nodes_to_group_map maps, one for each group
+nodeIndex_to_partitionIndex_maps = []
+nodeIndex_to_groupIndex_maps = []
+
 # Statistics
 
 # track the sizes of the partitions - use this to get the avg.
@@ -827,8 +868,16 @@ group_names = []                # names of collected groups, e.g., PR1_1, PR2_1,
 # partitions equals the number of nodes in the graph.
 dfs_parent_changes_in_partition_size = []
 
+# reset dfs_parent counters
+#dfs_parent_start_partition_size = 0
+#dfs_parent_end_partition_size = 0
+
 # remove frontier code:
-dfs_parent_changes_in_frontier_size = []
+#dfs_parent_changes_in_frontier_size = []
+
+#remove frontier code
+#dfs_parent_start_frontier_size = 0
+#dfs_parent_end_frontier_size = 0
 
 # This is used in the pre/post dfs_parent code when adding L-nodes to
 # partitions. Currently not using pre/post dfs_parent code.
@@ -836,10 +885,17 @@ dfs_parent_changes_in_frontier_size = []
 # some of a partitions/groups nodes are L-nodes and not actual graph nodes.
 # We use this when we compuet the sze of a partition (actual nodes not
 # L-nodes.)
+# Note: this is per call to bfs_parent() so it is incremented in bfs_parent.
+# and it is reset after every partition is collected. We can declare it
+# in bfs() and pass it to bfs_parent, but we'll need to deal with the pass-by-value.
 loop_nodes_added = 0
+# stotal sum of loop_nodes_added collected per partition. In bfs_stats()
+# we subtract this value from the total sizes of the partitions since 
+# loop nodes are not real nodes. Note that we are not using 
+# loop node detection for now. 
 total_loop_nodes_added = 0
-dfs_parent_loop_nodes_added_start = 0   # start value of loop_nodes_added
-dfs_parent_loop_nodes_added_end = 0     # end value of loop_nodes_added
+#dfs_parent_loop_nodes_added_start = 0   # start value of loop_nodes_added
+#dfs_parent_loop_nodes_added_end = 0     # end value of loop_nodes_added
 
 # compute info about shadow nodes
 # increment these when we add a shadw node to a partition/group
@@ -849,10 +905,10 @@ num_shadow_nodes_added_to_groups = 0
 # we capture num_shadow_nodes_added_to_partitions at the start and 
 # the end of collecting a partition/group, then we compute start = end
 # to get the number of shadow nodes.
-start_num_shadow_nodes_for_partitions = 0
-end_num_shadow_nodes_for_partitions = 0
-start_num_shadow_nodes_for_groups = 0
-end_num_shadow_nodes_for_groups = 0
+#start_num_shadow_nodes_for_partitions = 0
+#end_num_shadow_nodes_for_partitions = 0
+#start_num_shadow_nodes_for_groups = 0
+#end_num_shadow_nodes_for_groups = 0
 
 # maintain a list of the numbers of shadow nodes added for ecach of
 # the partitions/groups
@@ -908,41 +964,7 @@ Group_loops = set()
 # Note: A shadow node can be added more than once, in which case the index of the 
 # shadow node will be its last index, e.g., if shadow node ID is in positions 0 and 2 its
 # index will be 2. We do not use the index of shadow node's so we don't care.
-#
-# Note: we are using these maps only for debugging. We can turn them off.
-# we ar now using nodeIndex_to_partition_partitionIndex_group_groupIndex_map
-# which has the same information.
-nodeIndex_to_partitionIndex_map = {}
-nodeIndex_to_groupIndex_map = {}
-# collection of all nodes_to_group_map maps, one for each group
-nodeIndex_to_partitionIndex_maps = []
-nodeIndex_to_groupIndex_maps = []
 
-# map a node to its partition number, partition index, group number and group index.
-# A "global map"for nodes. May supercede nodeIndex_to_partitionIndex_map. 
-# We need a nodes position in its partition if we map partitions to functions and we need
-# a nodes position in its group if we map groups to functions. This map supports
-# both partition mapping and group mapping.
-#
-# Note: We do not map shadow nodes in this map.
-#
-# Consider: We can remove the nodes in Pi from this map after we have finished 
-# computing Pi+1 since we will no longer need to know this info for 
-# the nodes in Pi? We may want to remove these nodes to free the space.
-# Note: If a node is in Pi+1 all of its parents are in Pi+1 or Pi,
-# by definition, since Pi+1 contains all the children of Pi and
-# all of the parents (actually, ancestor) of these Pi+1 nodes that 
-# are not in Pi.
-nodeIndex_to_partition_partitionIndex_group_groupIndex_map = {}
-
-# reset dfs_parent counters
-dfs_parent_start_partition_size = 0
-dfs_parent_end_partition_size = 0
-
-
-#remove frontier code
-#dfs_parent_start_frontier_size = 0
-#dfs_parent_end_frontier_size = 0
 
 # list of nodes in the input graph
 nodes = []
@@ -995,14 +1017,7 @@ num_incremental_DAGs_generated = 0
     # number of partitions we have seen.
 num_nodes_in_partitions = 0
 
-#brc: incremental groups
-# used for incremental DAG generation.
-# groups in current partition
-groups_of_current_partition = []
-# list of groups of current partitions. When we process the 
-# current partition we need to know the groups in it and in the 
-# previous partition and in the previous previous partition.
-groups_of_partitions = []
+
 
 def DAG_executor_driver_Invoker_Thread():
     time.sleep(6)
@@ -1027,15 +1042,25 @@ def visualize():
     fig.canvas.draw()
 
 # process children before parent traversal
-# Not used
+# Not used. # This code saved in a seperate file.
 def dfs_parent_pre_parent_traversal(node,visited,list_of_unvisited_children):
     return False
+
+# process children after parent traversal.
+# Not used. This code saved in a seperate file.
+def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, check_list_of_unvisited_chldren_after_visiting_parents):
+    pass
 
 #def dfs_parent(visited, graph, node):  #function for dfs 
 def dfs_parent(visited, node):  #function for dfs 
     # e.g. dfs(3) where bfs is visiting 3 as a child of enqueued node
     # so 3 is not visited yet
     logger.trace ("dfs_parent from node " + str(node.ID))
+
+    # used below in the two place we add a node to a group
+    global use_nodeIndex_to_grouppartition_maps
+    global nodeIndex_to_groupIndex_map
+    global nodeIndex_to_partitionIndex_map
 
     list_of_unvisited_children = []
     check_list_of_unvisited_chldren_after_visiting_parents = False
@@ -1824,7 +1849,8 @@ def dfs_parent(visited, node):  #function for dfs
 
                         # We appended shadow node to current_group so shadow node 
                         # position is len(current_group)-1
-                        nodeIndex_to_groupIndex_map[shadow_node.ID] = len(current_group)-1
+                        if use_nodeIndex_to_grouppartition_maps:
+                            nodeIndex_to_groupIndex_map[shadow_node.ID] = len(current_group)-1
                         # Note: We do not add shadow_node to the global 
                         # X map. But shadow_node IDs should be mapped to their positions
                         # when we are computing the group since if the shadow node
@@ -2181,20 +2207,20 @@ def dfs_parent(visited, node):  #function for dfs
                 """
 
 # brc: ******* Partition
-                global nodeIndex_to_partitionIndex_map
-                #global nodeIndex_to_groupIndex_map
-                nodeIndex_to_partitionIndex_map[shadow_node.ID] = len(current_partition)-1
+                if use_nodeIndex_to_grouppartition_maps:
+                    #global nodeIndex_to_partitionIndex_map
+                    nodeIndex_to_partitionIndex_map[shadow_node.ID] = len(current_partition)-1
 #brc: ToDo:
 # brc: ******* Group
-                # only do part/group if using part/group or option to do both
-                # for debugging?
-                nodeIndex_to_groupIndex_map[shadow_node.ID] = len(current_group)-1
-                # Note: We do not add shadow_node to the global
-                # X map. But shadow_node IDs should be mapped to their positions
-                # when we are computing the group since if the shadow node
-                # is a parent of node n then n.parents are remapped to their 
-                # position in the group and one of n's parents will be the shadow
-                # node so we need its position in the group.
+                    # only do part/group if using part/group or option to do both
+                    # for debugging?
+                    nodeIndex_to_groupIndex_map[shadow_node.ID] = len(current_group)-1
+                    # Note: We do not add shadow_node to the global
+                    # X map. But shadow_node IDs should be mapped to their positions
+                    # when we are computing the group since if the shadow node
+                    # is a parent of node n then n.parents are remapped to their 
+                    # position in the group and one of n's parents will be the shadow
+                    # node so we need its position in the group.
 
 # brc: ******* Partition
                 #brc: make node's parent be this shadow node as it is a proxy for parent
@@ -2501,23 +2527,23 @@ def dfs_parent(visited, node):  #function for dfs
         # its unvisted ancestors form a group of a partition.
         BFS_queue.append(node.ID)
         #queue.append(-1)
-        if DEBUG_ON:
-            print_val = "queue after add " + str(node.ID) + ": "
-            for x in BFS_queue:
-                #logger.trace(x.ID, end=" ")
-                print_val = print_val + str(x) + " "
-            logger.trace(print_val)
-            logger.trace("")
-            
+
+        print_val = "queue after add " + str(node.ID) + ": "
+        for x in BFS_queue:
+            #logger.trace(x.ID, end=" ")
+            print_val = print_val + str(x) + " "
+        logger.trace(print_val)
+        logger.trace("")
+
         frontier.append(node.ID)
-        if DEBUG_ON:
-            print_val = "frontier after add " + str(node.ID) + ":"
-            for x in frontier:
-                #logger.trace(x.ID, end=" ")
-                #logger.trace(x, end=" ")
-                print_val = print_val + str(x) + " "
-            logger.trace(print_val)
-            logger.trace("")
+
+        print_val = "frontier after add " + str(node.ID) + ":"
+        for x in frontier:
+            #logger.trace(x.ID, end=" ")
+            #logger.trace(x, end=" ")
+            print_val = print_val + str(x) + " "
+        logger.trace(print_val)
+        logger.trace("")
         # Note: the parennt nodes of node were added to a partition (the previous partition
         # or the current partition) before node or any of node's children. We visit 
         # unvisited ancestors of node in dfs_parent(node) and they were added to the current 
@@ -2596,9 +2622,10 @@ def dfs_parent(visited, node):  #function for dfs
 
             # partition_node.ID and group_node.ID are the same
 # brc: ******* Partition
-            nodeIndex_to_partitionIndex_map[partition_node.ID] = len(current_partition)-1
+            if use_nodeIndex_to_grouppartition_maps:
+                nodeIndex_to_partitionIndex_map[partition_node.ID] = len(current_partition)-1
 # brc: ******* Group
-            nodeIndex_to_groupIndex_map[partition_node.ID] = len(current_group)-1
+                nodeIndex_to_groupIndex_map[partition_node.ID] = len(current_group)-1
             
             # Note: if node's parent is in different partition then we'll add a 
             # shadow_node to the partition and the group in a position right before 
@@ -2650,11 +2677,6 @@ def dfs_parent(visited, node):  #function for dfs
             logging.shutdown()
             os._exit(0)
 
-# process children after parent traversal
-def dfs_parent_post_parent_traversal(node, visited, list_of_unvisited_children, check_list_of_unvisited_chldren_after_visiting_parents):
-    pass
-# this is in a seperate file
-
 # Called in BFS.py, as in:
     #for i in range(1,num_nodes+1):
     #    if i not in visited:
@@ -2674,21 +2696,30 @@ def bfs(visited, node):
     global current_partition
     
     #various counters
-    global dfs_parent_start_partition_size
-    global dfs_parent_loop_nodes_added_start
+    #global dfs_parent_start_partition_size
+    #global dfs_parent_end_partition_size
+    dfs_parent_start_partition_size = 0
+    dfs_parent_end_partition_size = 0
 
-    global dfs_parent_end_partition_size
-    global dfs_parent_loop_nodes_added_end
+    #global dfs_parent_loop_nodes_added_start
+    #global dfs_parent_loop_nodes_added_end
+    dfs_parent_loop_nodes_added_start = 0
+    dfs_parent_loop_nodes_added_end = 0
+
 
     # remove frontier code:
     #global dfs_parent_start_frontier_size
     #global dfs_parent_end_frontier_size
 
     #brc: shared
-    global start_num_shadow_nodes_for_partitions
-    global end_num_shadow_nodes_for_partitions
+    # global start_num_shadow_nodes_for_partitions
+    # global end_num_shadow_nodes_for_partitions
+    start_num_shadow_nodes_for_partitions = 0
+    end_num_shadow_nodes_for_partitions = 0
     global start_num_shadow_nodes_for_groups
     global end_num_shadow_nodes_for_groups
+    start_num_shadow_nodes_for_groups = 0
+    end_num_shadow_nodes_for_groups = 0
     global num_shadow_nodes_added_to_partitions
     global num_shadow_nodes_added_to_groups
 
@@ -2835,10 +2866,12 @@ def bfs(visited, node):
     groups.append(current_group)
 
     # this first group ends here after first dfs_parent
+    global use_nodeIndex_to_grouppartition_maps
     global nodeIndex_to_groupIndex_maps
     global nodeIndex_to_groupIndex_map
-    nodeIndex_to_groupIndex_maps.append(nodeIndex_to_groupIndex_map)
-    nodeIndex_to_groupIndex_map = {}
+    if use_nodeIndex_to_grouppartition_maps:
+        nodeIndex_to_groupIndex_maps.append(nodeIndex_to_groupIndex_map)
+        nodeIndex_to_groupIndex_map = {}
 # brc: ******* end Group
 
     # these start with 1 not 0. 
@@ -3349,9 +3382,10 @@ def bfs(visited, node):
 
                 # track partitions here; track groups after dfs_parent()
                 global nodeIndex_to_partitionIndex_maps
-                global nodeIndex_to_partitionIndex_map             
-                nodeIndex_to_partitionIndex_maps.append(nodeIndex_to_partitionIndex_map)
-                nodeIndex_to_partitionIndex_map = {}
+                global nodeIndex_to_partitionIndex_map  
+                if use_nodeIndex_to_grouppartition_maps:           
+                    nodeIndex_to_partitionIndex_maps.append(nodeIndex_to_partitionIndex_map)
+                    nodeIndex_to_partitionIndex_map = {}
 
                 # Note: we cannot clear nodeIndex_to_partition_partitionIndex_group_groupIndex_map
                 # but we do not need to have all nodes in this map. If we just finished
@@ -4397,9 +4431,10 @@ def bfs(visited, node):
 
                 patch_parent_mapping_for_groups = []
 
-                # track groups here; track partitions when frontier ends above
-                nodeIndex_to_groupIndex_maps.append(nodeIndex_to_groupIndex_map)
-                nodeIndex_to_groupIndex_map = {}
+                if use_nodeIndex_to_grouppartition_maps:
+                    # track groups here; track partitions when frontier ends above
+                    nodeIndex_to_groupIndex_maps.append(nodeIndex_to_groupIndex_map)
+                    nodeIndex_to_groupIndex_map = {}
 
                 """
                 logger.trace("")
@@ -4858,6 +4893,7 @@ G.add_edges_from(visual)
 logger.trace(nx.is_connected(G))
 """
 def PageRank_Function_Main(nodes,total_num_nodes):
+    debug_pagerank = False
     if (debug_pagerank):
         logger.trace("PageRank_Function output partition_or_group (node:parents):")
         for node in nodes:
@@ -5212,34 +5248,35 @@ def print_BFS_stats():
     for name in group_names:
         if PRINT_DETAILED_STATS:
             logger.trace("-- " + name)
-    logger.trace("")
-    logger.trace("nodes_to_partition_maps (incl. shadow nodes but only last index), len: " + str(len(nodeIndex_to_partitionIndex_maps))+":")
-    for m in nodeIndex_to_partitionIndex_maps:
-        if PRINT_DETAILED_STATS:
-            print_val = ""
-            print_val += "-- (" + str(len(m)) + "):" + " "
-            for k, v in m.items():
-                print_val += str((k, v)) + " "
-                #print((k, v),end=" ")
-            logger.trace(print_val)
-            logger.trace("")
-        else:
-            logger.trace("-- (" + str(len(m)) + ")")
-    logger.trace("")
-    logger.trace("nodes_to_group_maps, ( but only last index), len: " + str(len(nodeIndex_to_groupIndex_maps))+":")
-    for m in nodeIndex_to_groupIndex_maps:
-        if PRINT_DETAILED_STATS:
-            #print("-- (" + str(len(m)) + "):", end=" ")
-            print_val = ""
-            print_val += "-- (" + str(len(m)) + "):" + " "
-            for k, v in m.items():
-                print_val += str((k, v)) + " "
-                #print((k, v),end=" ")
-            logger.trace(print_val)
-            logger.trace("")
-        else:
-            logger.trace("-- (" + str(len(m)) + ")")
-    logger.trace("")
+    logger.info("")
+    if use_nodeIndex_to_grouppartition_maps:
+        logger.info("nodes_to_partition_maps (incl. shadow nodes but only last index), len: " + str(len(nodeIndex_to_partitionIndex_maps))+":")
+        for m in nodeIndex_to_partitionIndex_maps:
+            if PRINT_DETAILED_STATS:
+                print_val = ""
+                print_val += "-- (" + str(len(m)) + "):" + " "
+                for k, v in m.items():
+                    print_val += str((k, v)) + " "
+                    #print((k, v),end=" ")
+                logger.info(print_val)
+                logger.info("")
+            else:
+                logger.info("-- (" + str(len(m)) + ")")
+        logger.info("")
+        logger.info("nodes_to_group_maps, ( but only last index), len: " + str(len(nodeIndex_to_groupIndex_maps))+":")
+        for m in nodeIndex_to_groupIndex_maps:
+            if PRINT_DETAILED_STATS:
+                #print("-- (" + str(len(m)) + "):", end=" ")
+                print_val = ""
+                print_val += "-- (" + str(len(m)) + "):" + " "
+                for k, v in m.items():
+                    print_val += str((k, v)) + " "
+                    #print((k, v),end=" ")
+                logger.info(print_val)
+                logger.info("")
+            else:
+                logger.info("-- (" + str(len(m)) + ")")
+    logger.info("")
 
     # remove frontier code:
     #if PRINT_DETAILED_STATS:
@@ -5572,8 +5609,23 @@ def main():
         #if USE_SHARED_PARTITIONS_GROUPS:
 #5
         global partitions_num_shadow_nodes_list
-        global end_num_shadow_nodes_for_partitions
-        global start_num_shadow_nodes_for_partitions
+        #global start_num_shadow_nodes_for_partitions
+        #global end_num_shadow_nodes_for_partitions
+
+        # Note: We are now asserting:
+        # assert not (len(current_partition) > 0)
+        # so this code is unreachable. We used to have global variables
+        # for the start and end of num_shadow_nodes for partitions and 
+        # groups. When we got rid of them we needed local variables for 
+        # start and end. The local variable for end is fine, but if this
+        # code is reachable then we need the current value of 
+        # start_num_shadow_nodes_for_partitions, which is set in bfs(),
+        # so either we would need the global variable for start or we would need
+        # to get the value from bfs() as a return value or whatever.
+        # This code should be unreachable so this is likely not an issue.
+        # Note: this applies to the start and end for groups below as well.
+        start_num_shadow_nodes_for_partitions = 0
+        end_num_shadow_nodes_for_partitions = 0
         global num_shadow_nodes_added_to_partitions
         if DAG_executor_constants.USE_SHARED_PARTITIONS_GROUPS or DAG_executor_constants.ENABLE_RUNTIME_TASK_CLUSTERING:
             #brc: shared
@@ -5613,9 +5665,13 @@ def main():
         group_names.append(group_name)
 
 #7
-        global end_num_shadow_nodes_for_groups
+        #global start_num_shadow_nodes_for_groups
+        #global end_num_shadow_nodes_for_groups
+        # See the note above about the start and end for partitions
+        start_num_shadow_nodes_for_groups = 0
+        end_num_shadow_nodes_for_groups = 0 
+
         global groups_num_shadow_nodes_list
-        global start_num_shadow_nodes_for_groups
         global num_shadow_nodes_added_to_groups
 #brc: clustering
         # Note: need the group name here.
@@ -5631,16 +5687,18 @@ def main():
             start_num_shadow_nodes_for_groups = num_shadow_nodes_added_to_groups
 
 #8
+        global use_nodeIndex_to_grouppartition_maps
         global nodeIndex_to_partitionIndex_maps
         global nodeIndex_to_partitionIndex_map
         global nodeIndex_to_groupIndex_maps
         global nodeIndex_to_groupIndex_map
         current_group = []
 
-        nodeIndex_to_partitionIndex_maps.append(nodeIndex_to_partitionIndex_map)
-        nodeIndex_to_partitionIndex_map = {}
-        nodeIndex_to_groupIndex_maps.append(nodeIndex_to_groupIndex_map)
-        nodeIndex_to_groupIndex_map = {}
+        if use_nodeIndex_to_grouppartition_maps:
+            nodeIndex_to_partitionIndex_maps.append(nodeIndex_to_partitionIndex_map)
+            nodeIndex_to_partitionIndex_map = {}
+            nodeIndex_to_groupIndex_maps.append(nodeIndex_to_groupIndex_map)
+            nodeIndex_to_groupIndex_map = {}
 
 #9
         global total_loop_nodes_added
@@ -5655,6 +5713,7 @@ def main():
         total_loop_nodes_added += loop_nodes_added
         # use loop_nodes_added below when printing stats so do not reset it
         # and besides BFS is done.
+        # Update: we are not using loop_nodes_added in BFS_stats() anymore.
         #loop_nodes_added = 0
         # does not require a deepcopy
         frontiers.append(frontier.copy())
