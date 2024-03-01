@@ -4966,67 +4966,6 @@ G = nx.DiGraph()
 G.add_edges_from(visual)
 logger.trace(nx.is_connected(G))
 """
-def PageRank_Function_Main(nodes,total_num_nodes):
-    debug_pagerank = False
-    if (debug_pagerank):
-        logger.trace("PageRank_Function output partition_or_group (node:parents):")
-        for node in nodes:
-            #logger.trace(node,end=":")
-            print_val = str(node) + ":"
-            for parent in node.parents:
-                print_val += str(parent) + " "
-                #logger.trace(parent,end=" ")
-            if len(node.parents) == 0:
-                #logger.trace(",",end=" ")
-                print_val += ", "
-            else:
-                #logger.trace(",",end=" ")
-                print_val += ", "
-            logger.trace(print_val)
-        logger.trace("")
-        logger.trace("PageRank_Function output partition_or_group (node:num_children):")
-        print_val = ""
-        for node in nodes:
-            print_val += str(node)+":"+str(node.num_children) + ", "
-            # logger.trace(str(node)+":"+str(node.num_children),end=", ")
-        logger.trace(print_val)
-        logger.trace("")
-        logger.trace("")
-        # node's children set when the partition/grup node created
-
-    damping_factor=0.15
-    random_jumping = damping_factor / total_num_nodes
-    one_minus_dumping_factor = 1 - damping_factor
-
-    iteration = int(1000)
-
-    num_nodes_for_pagerank_computation = len(nodes)
-
-    for index in range(num_nodes_for_pagerank_computation):
-        nodes[index].prev = (1/total_num_nodes)
-
-    for i in range(1,iteration+1): # if 10 iterations then i ranges from 1 to 10
-        if (debug_pagerank):
-            logger.trace("***** PageRank: iteration " + str(i))
-            logger.trace("")
-
-        for index in range(1,num_nodes_for_pagerank_computation):
-            nodes[index].update_PageRank_of_PageRank_Function_loop(nodes, 
-                damping_factor,one_minus_dumping_factor,random_jumping,total_num_nodes)
-        for index in range(1,num_nodes_for_pagerank_computation):
-            nodes[index].prev = nodes[index].pagerank
-    
-    print("PageRank result:")
-    for i in range(num_nodes_for_pagerank_computation):
-        print(str(nodes[i].ID) + ":" + str(nodes[i].pagerank))
-    print()
-    print()
-
-#PageRank_Function_Main(nodes,num_nodes)
-# where if we input 20 nodes, nodes[] has Nodes in nodes[0] .. nodes[21]
-# and nodes[] has a length of 21.
-# The pagernk computation is the range:
-# for index in range(1,num_nodes) so from Node 1 to Node 20, where num_nodes is 21.
 
 #Note:
 #Informs the logging system to perform an orderly shutdown by flushing 
@@ -5050,7 +4989,6 @@ def PageRank_Function_Main(nodes,total_num_nodes):
         run_my_program()
 https://stackoverflow.com/questions/18204782/runtimeerror-on-windows-trying-python-multiprocessing
 """
-
 #Q: Should we guard the BFS.py imports in the above way?
 
 def print_BFS_stats():
@@ -5927,8 +5865,6 @@ def main():
                 logger.info(str(k) + ":" + partition_names[k-1] + ":" +str(v))
 
 
-
-#brc: ToDo: put this code in main() so TestAll can call BFS.main()
 if __name__ == '__main__':
     main()
 
@@ -5952,4 +5888,68 @@ aspl = mean([max(j.values()) for (i,j) in nx.shortest_path_length(G)])
 logger.trace("avg shortest path lengh:" + str(aspl))
 
 # (node for node, in_degree in G.in_degree() if in_degree == 0)
+"""
+
+"""
+def PageRank_Function_Main(nodes,total_num_nodes):
+    debug_pagerank = False
+    if (debug_pagerank):
+        logger.trace("PageRank_Function output partition_or_group (node:parents):")
+        for node in nodes:
+            #logger.trace(node,end=":")
+            print_val = str(node) + ":"
+            for parent in node.parents:
+                print_val += str(parent) + " "
+                #logger.trace(parent,end=" ")
+            if len(node.parents) == 0:
+                #logger.trace(",",end=" ")
+                print_val += ", "
+            else:
+                #logger.trace(",",end=" ")
+                print_val += ", "
+            logger.trace(print_val)
+        logger.trace("")
+        logger.trace("PageRank_Function output partition_or_group (node:num_children):")
+        print_val = ""
+        for node in nodes:
+            print_val += str(node)+":"+str(node.num_children) + ", "
+            # logger.trace(str(node)+":"+str(node.num_children),end=", ")
+        logger.trace(print_val)
+        logger.trace("")
+        logger.trace("")
+        # node's children set when the partition/grup node created
+
+    damping_factor=0.15
+    random_jumping = damping_factor / total_num_nodes
+    one_minus_dumping_factor = 1 - damping_factor
+
+    iteration = int(1000)
+
+    num_nodes_for_pagerank_computation = len(nodes)
+
+    for index in range(num_nodes_for_pagerank_computation):
+        nodes[index].prev = (1/total_num_nodes)
+
+    for i in range(1,iteration+1): # if 10 iterations then i ranges from 1 to 10
+        if (debug_pagerank):
+            logger.trace("***** PageRank: iteration " + str(i))
+            logger.trace("")
+
+        for index in range(1,num_nodes_for_pagerank_computation):
+            nodes[index].update_PageRank_of_PageRank_Function_loop(nodes, 
+                damping_factor,one_minus_dumping_factor,random_jumping,total_num_nodes)
+        for index in range(1,num_nodes_for_pagerank_computation):
+            nodes[index].prev = nodes[index].pagerank
+    
+    print("PageRank result:")
+    for i in range(num_nodes_for_pagerank_computation):
+        print(str(nodes[i].ID) + ":" + str(nodes[i].pagerank))
+    print()
+    print()
+
+#PageRank_Function_Main(nodes,num_nodes)
+# where if we input 20 nodes, nodes[] has Nodes in nodes[0] .. nodes[21]
+# and nodes[] has a length of 21.
+# The pagernk computation is the range:
+# for index in range(1,num_nodes) so from Node 1 to Node 20, where num_nodes is 21.
 """

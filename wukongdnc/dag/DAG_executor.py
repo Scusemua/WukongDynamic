@@ -78,17 +78,19 @@ if not (not DAG_executor_constants.RUN_ALL_TASKS_LOCALLY and (not DAG_executor_c
         # the case exceot when we aer using multiprocessing. In this 
         # case, along with DAG_executor_driver importing DAG_executor,
         # when a process is started, DAG_executor will be imported,
-        # and ADG_executor_constants before that (as part of 
+        # and DAG_executor_constants before that (as part of 
         # multiprocessing) but TestAll will not have set_test_number
         # for this DAG_executor_constants, so we need to do it 
         # here. this will be done for each process.)
         if DAG_executor_constants.test_number == 0:
+            from .addLoggingLevel import addLoggingLevel
+            addLoggingLevel('TRACE', logging.DEBUG - 5)
             test_number_file_name = "./test_number.txt"
             if os.path.isfile(test_number_file_name):
                 with open(test_number_file_name) as test_number_file:
                     test_number = int(test_number_file.read())
                 logger.info("DAG_executor before set_test_number: test_number: " + str(DAG_executor_constants.test_number))
-                DAG_executor_constants.set_test_number(test_number)
+                DAG_executor_constants.set_test_number_and_run_test(test_number)
                 logger.info("DAG_executor after set_test_number: DAG_executor_constants.USING_THREADS_NOT_PROCESSES: " + str(DAG_executor_constants.USING_THREADS_NOT_PROCESSES))
     except Exception:
         thread_name = threading.current_thread().name

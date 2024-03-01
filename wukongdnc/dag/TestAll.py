@@ -3,16 +3,7 @@ import sys
 import getopt
 import os
 
-from . import DAG_executor_constants
-from .addLoggingLevel import addLoggingLevel
-addLoggingLevel('TRACE', logging.DEBUG - 5)
-logging.basicConfig(encoding='utf-8',level=DAG_executor_constants.LOG_LEVEL, format='[%(asctime)s][%(module)s][%(processName)s][%(threadName)s]: %(message)s')
-# Added this to suppress the logging message:
-#   credentials - MainProcess - MainThread: Found credentials in shared credentials file: ~/.aws/credentials
-# But it appears that we could see other things liek this:
-# https://stackoverflow.com/questions/1661275/disable-boto-logging-without-modifying-the-boto-files
-logging.getLogger('botocore').setLevel(logging.CRITICAL)
-logger = logging.getLogger(__name__)
+
 
 # if running real lambdas or storing synch objects in real lambdas:
 #   Set SERVERLESS_SYNC to True or False in wukongdnc constants !!!!!!!!!!!!!!
@@ -21,6 +12,26 @@ logger = logging.getLogger(__name__)
 # python -m wukongdnc.dag.TestAll -t test#, e.g., TestAll -t 1
 
 def main(argv):
+#rhc: Todo: if keep this take out comment in DAG_excutor_driver. 
+#           test multiP
+    # Note: When we run a multiprocessing workers test, we start worker
+    # processes and (from link below) "On Windows the subprocesses will 
+    # import (i.e. execute) the main module at start." So we put all of 
+    # these importd and logging stuff here so it is only done when 
+    # run TestAll from the commend line.
+    # No: we want to add logging level each time so it gets done as we do not 
+    # do it in DAG_executor_driver for other processes?
+    from . import DAG_executor_constants
+    from .addLoggingLevel import addLoggingLevel
+    addLoggingLevel('TRACE', logging.DEBUG - 5)
+    logging.basicConfig(encoding='utf-8',level=DAG_executor_constants.LOG_LEVEL, format='[%(asctime)s][%(module)s][%(processName)s][%(threadName)s]: %(message)s')
+    # Added this to suppress the logging message:
+    #   credentials - MainProcess - MainThread: Found credentials in shared credentials file: ~/.aws/credentials
+    # But it appears that we could see other things liek this:
+    # https://stackoverflow.com/questions/1661275/disable-boto-logging-without-modifying-the-boto-files
+    logging.getLogger('botocore').setLevel(logging.CRITICAL)
+    logger = logging.getLogger(__name__)
+
     # When we run a pagerank test we call BFS.main(). For non-pagerank
     # tests we call DAG_executor_driver.run().
     tests_start = 1
@@ -133,8 +144,11 @@ def main(argv):
                             logging.shutdown()
                             os._exit(0)
 
-# ToDo: put top-level constants in noTest()
-
+# Note: TestAll will be the main module when we run a test for multprocessing:
+#"Make sure that the main module can be safely imported by a new Python interpreter without causing unintended side effects (such a starting a new process)."
+#... by using if __name__ == '__main__'
+# https://stackoverflow.com/questions/18204782/runtimeerror-on-windows-trying-python-multiprocessing
+                            
 if __name__ == "__main__":
    main(sys.argv[1:]) # skip argv[0] which is name of script
 

@@ -1717,7 +1717,7 @@ def configure_test(argv):
             sys.exit()
         elif opt in ("-t", "--test"):
             test_number = arg
-            DAG_executor_constants.set_test_number(int(test_number))
+            DAG_executor_constants.set_test_number_and_run_test(int(test_number))
 
 if __name__ == "__main__":
     # configure test, if -t option was specified

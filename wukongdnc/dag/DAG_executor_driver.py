@@ -370,7 +370,6 @@ if not DAG_executor_constants.COMPUTE_PAGERANK:
         # comment this out
         print("Already did addLoggingLevel in TestAll so skip it here.")
 
-    
 
 ##Function to initialize the logger, notice that it takes 2 arguments
 #logger_name and logfile
