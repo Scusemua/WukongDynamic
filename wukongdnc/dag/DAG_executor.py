@@ -58,24 +58,37 @@ from wukongdnc.constants import TCP_SERVER_IP
 #from .DAG_executor_constants import EXIT_PROGRAM_ON_EXCEPTION
 #from .DAG_executor_constants import CHECK_PAGERANK_OUTPUT
 ##from .DAG_executor_constants import LOG_LEVEL
-print("DAG_executor before import DAG_executor_contants")
 from . import DAG_executor_constants
-print("DAG_executor after import DAG_executor_contants: DAG_executor_constants.USING_THREADS_NOT_PROCESSES: " + str(DAG_executor_constants.USING_THREADS_NOT_PROCESSES))
 # BRC: Possibly: Try to read the test number from a file that TestAll creates
 # and puts the test_number in when a mutiP test.
 
-#if not (DAG_executor_constants.RUN_ALL_TASKS_LOCALLY and DAG_executor_constants.USING_WORKERS \
-#    and (not DAG_executor_constants.USING_THREADS_NOT_PROCESSES)):
 logger = logging.getLogger(__name__)
-#else:
-#    logger = logging.getLogger("multiP")
 
+# Note: We intend to run TestAll whwn we execute the program, instead
+# of either directly running DAG_executor_driver (non-pagerank) or BFS (pagerank)
+# from the command line. That is, to run the program we need to configure
+# it so we may as well set the configuration using the "-t test_number"
+# command line argument, as opposed to configuring manually.
+# If we do run DAG_executor_driver from the
+# command line, then DAG_executor_driver will have already added 
+# the TRACE logging level so the call here to addLoggingLevel will
+# raise an exception, which we catch. In this ease we just keep 
+# excuting. Note that since we didn't run TestAll from the command 
+# line TestAll did not write the test_number so the test_number file
+# would not exist and would not be read after addLoggingLevel. As we
+# sai, addLoggingLevel will raise an exception so the code to 
+# read the test_number is not reachable in that case. So it "works"
+# to run DAG_executor_driver directly but we intent to run TestAll.
+# Note: If we are running real serverless lambdas, which is what this next
+# if statement chcks, we do not want to do any of this. This code is for
+# when we are using TestAll and we are testing worker processes. When
+# we are not testing, this code "fails" but we ignore the failure.
 if not (not DAG_executor_constants.RUN_ALL_TASKS_LOCALLY and (not DAG_executor_constants.BYPASS_CALL_TO_INVOKE_REAL_LAMBDA)):
     try:
-        # check whether set_test_number has already been called.
+        # Check whether set_test_number has already been called.
         # if DAG_executor_driver imported this DAG_executor module
         # then set_test_number has already been called. This is 
-        # the case exceot when we aer using multiprocessing. In this 
+        # the case except when we are using multiprocessing. In this 
         # case, along with DAG_executor_driver importing DAG_executor,
         # when a process is started, DAG_executor will be imported,
         # and DAG_executor_constants before that (as part of 
@@ -83,21 +96,32 @@ if not (not DAG_executor_constants.RUN_ALL_TASKS_LOCALLY and (not DAG_executor_c
         # for this DAG_executor_constants, so we need to do it 
         # here. this will be done for each process.)
         if DAG_executor_constants.test_number == 0:
+            # add TRACE level for this worker process
             from .addLoggingLevel import addLoggingLevel
             addLoggingLevel('TRACE', logging.DEBUG - 5)
+            # TestAll writes the TestNumber to this file so 
+            # we can read it and set test_number for this process.
             test_number_file_name = "./test_number.txt"
             if os.path.isfile(test_number_file_name):
                 with open(test_number_file_name) as test_number_file:
                     test_number = int(test_number_file.read())
-                logger.info("DAG_executor before set_test_number: test_number: " + str(DAG_executor_constants.test_number))
-                DAG_executor_constants.set_test_number_and_run_test(test_number)
-                logger.info("DAG_executor after set_test_number: DAG_executor_constants.USING_THREADS_NOT_PROCESSES: " + str(DAG_executor_constants.USING_THREADS_NOT_PROCESSES))
-    except Exception:
-        thread_name = threading.current_thread().name
-        logger.exception("[ERROR]:" + thread_name + ": DAG_executor: Failed to read test_number file.")
-        if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
-            logging.shutdown()
-            os._exit(0)
+                    logger.info("DAG_executor before set_test_number: test_number: " + str(DAG_executor_constants.test_number))
+                    DAG_executor_constants.set_test_number_and_run_test(test_number)
+                    logger.info("DAG_executor after set_test_number: DAG_executor_constants.USING_THREADS_NOT_PROCESSES: " + str(DAG_executor_constants.USING_THREADS_NOT_PROCESSES))
+    except AttributeError:
+        pass
+        #thread_name = threading.current_thread().name
+        #logger.exception("[ERROR]:" + thread_name + ": DAG_executor: already set logging level.")
+        #if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+        #    logging.shutdown()
+        #    os._exit(0)
+    except IOError:
+        pass
+        #thread_name = threading.current_thread().name
+        #logger.exception("[ERROR]:" + thread_name + ": DAG_executor: Failed to read test_number file.")
+        #if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+        #    logging.shutdown()
+        #    os._exit(0)
 
 from .DFS_visit import Node
 #from DAG_executor_FanInNB import DAG_executor_FanInNB

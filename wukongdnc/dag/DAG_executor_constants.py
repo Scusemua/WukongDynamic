@@ -325,7 +325,7 @@ PAGERANK_GRAPH_FILE_NAME = "graph_24N_3CC_fanin"   # extended wb w/ 3CC and fani
 
 # Indicates that we are computing pagerank and thus that the pagerank
 # options are active and pagerank assserts should hold
-COMPUTE_PAGERANK = True
+COMPUTE_PAGERANK = False
 # used in BFS_pagerank. For non-loops, we only need 1 iteration
 NUMBER_OF_PAGERANK_ITERATIONS_FOR_PARTITIONS_GROUPS_WITH_LOOPS = 10
 NAME_OF_FIRST_GROUP_OR_PARTITION_IN_DAG = "PR1_1"
@@ -5826,11 +5826,12 @@ def check_asserts():
     #    logging.shutdown()
     #    os._exit(0)
 
-# global variable accessed in DAG_executor_constants. If test_number
+# Global variable accessed in DAG_executor_constants. If test_number
 # is 0 and we are testing a worker process configuration then 
 # the worker process executing DAG_executor must read the test_number_file
 # written by TestAll and call DAG_executor_constants.set_test_number(test_number)
-# so that all worker processes use the test configuration.
+# so that all worker processes use the test configuration. DAG_executor
+# reads this global variable: "if DAG_executor_constants.test_number == 0:"
 test_number = 0
 # called by TestAll.py to run testX
 # the test number is verified by TestAll to be within range.

@@ -3,8 +3,6 @@ import sys
 import getopt
 import os
 
-
-
 # if running real lambdas or storing synch objects in real lambdas:
 #   Set SERVERLESS_SYNC to True or False in wukongdnc constants !!!!!!!!!!!!!!
 
@@ -12,15 +10,15 @@ import os
 # python -m wukongdnc.dag.TestAll -t test#, e.g., TestAll -t 1
 
 def main(argv):
-#rhc: Todo: if keep this take out comment in DAG_excutor_driver. 
-#           test multiP
     # Note: When we run a multiprocessing workers test, we start worker
     # processes and (from link below) "On Windows the subprocesses will 
     # import (i.e. execute) the main module at start." So we put all of 
-    # these importd and logging stuff here so it is only done when 
-    # run TestAll from the commend line.
-    # No: we want to add logging level each time so it gets done as we do not 
-    # do it in DAG_executor_driver for other processes?
+    # these imports and logging commands here so they are only done 
+    # when we run TestAll from the command line.
+    # The main thing we are trying to avoid is duplicate console debugging
+    # messages. The multiprocesses write their output to a log file
+    # mptestNew in directory WukongDynamic. Putting these imports and 
+    # log commands here seems to help!
     from . import DAG_executor_constants
     from .addLoggingLevel import addLoggingLevel
     addLoggingLevel('TRACE', logging.DEBUG - 5)
@@ -127,7 +125,7 @@ def main(argv):
                     DAG_executor_driver.run()
                 else:
                     # pagerank tests call BFS to generate the DAG and BFS 
-                    # calss DAG_executor_driver.run().
+                    # calls DAG_executor_driver.run().
                     from . import BFS
                     BFS.main()
             except Exception:
@@ -157,15 +155,20 @@ where: in DAG_executor_constants:
 
 test_number = 0
 # called by TestAll.py to run testX
+# the test number is verified by TestAll to be within range.
 def set_test_number_and_run_test(number):
     global test_number
     test_number = number
+    #print("number: " + str(number))
+    #print("test_number: " + str(test_number))
 
     # Run Tests
-    if not test_number == 0:
-        non_pagerank_non_store_objects_in_lambda_base()
 
-    # call method testi() to configure test 
+    # Set the configuration constants one time for the tests
+    # that do not involve pagerank.
+    non_pagerank_non_store_objects_in_lambda_base()
+
+    # call method test<test_number>() to configure test, e.g., test20()
     test_method_name = "test"+str(test_number)
 
     # can also use getattr() - how to specify this DAG_executor_constants module?
@@ -178,7 +181,6 @@ def set_test_number_and_run_test(number):
         os._exit(0)
 
     # Check assserts after setting the configuration constants
-    if not test_number == 0:
-        check_asserts()
+    check_asserts()
 
 """

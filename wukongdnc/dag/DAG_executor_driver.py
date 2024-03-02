@@ -345,18 +345,23 @@ from .addLoggingLevel import addLoggingLevel
 #    >>> logging.trace('so did this')
  #   >>> logging.TRACE
 
+# When we are not running TestAll; instead we run BFS or DAG_executor_driver
+# from the command line:
 # If we are computing pageranks then we will run BFS first which will 
 # addLoggingLevel(trace) and import DAG_executor_driver,
 # so we do not want to addLoggingLevel(trace) here. If we are not
 # computing pageranks we will addLoggingLevel(trace) here.
 # Note that we start DAG execution either by running BFS or
 # DAG_excutor_driver, so one of them will addLoggingLevel(trace).
-# No other module executes addLoggingLevel.
-#
-# If we run TestAll.py then it will addLoggingLevel, so if
-# this will be a second addLoggingLevel and it will fail. If we run 
-# this DAG_executor.py file, we need to addLoggingLevel. We intend to 
-# always use TestAll.
+
+# When we aer running TestAll from the command line:
+# If we run TestAll.py then it will addLoggingLevel. If
+# we are computing pagerank, TestAll will call BFS and BFS
+# will generate the DAG and call DAG_excutor_driver. If we are not 
+# computing pagerank, TestAll calls DAG_executor_driver. In 
+# either case, TestAll adds the TRACE loggng level so when 
+# DAG_executor or BFS trid to add it again an exception will be raised.
+# 
 if not DAG_executor_constants.COMPUTE_PAGERANK:
     try:
         addLoggingLevel('TRACE', logging.DEBUG - 5)
