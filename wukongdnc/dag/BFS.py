@@ -1017,13 +1017,6 @@ num_incremental_DAGs_generated = 0
     # number of partitions we have seen.
 num_nodes_in_partitions = 0
 
-
-
-def DAG_executor_driver_Invoker_Thread():
-    time.sleep(6)
-    # call run() of the DAG_executor_driver, where: from .DAG_executor_driver import run
-    run()
-
 # visual is a list which stores all the set of edges that constitutes a graph
 # we can visualize only small graphs
 visual = []
@@ -1040,6 +1033,11 @@ def visualize():
     # comment 
     #nx.draw_planar(G,with_labels = True, alpha=0.8) #NEW FUNCTION
     fig.canvas.draw()
+
+def DAG_executor_driver_Invoker_Thread():
+    time.sleep(6)
+    # call run() of the DAG_executor_driver, where: from .DAG_executor_driver import run
+    run()
 
 # process children before parent traversal
 # Not used. # This code saved in a seperate file.
@@ -1907,7 +1905,7 @@ def dfs_parent(visited, node):  #function for dfs
                         # assigned to the corresponding shadow nodes. If we send a parent value
                         # P for child C, we assign P to a shadow node of C.
                         #
-                        # Get the group information about the parent - we needto locate the parent
+                        # Get the group information about the parent - we need to locate the parent
                         # node in the grooup it was added to.
                         partition_group_tuple = nodeIndex_to_partition_partitionIndex_group_groupIndex_map[visited_parent_node.ID]
                         # group numer of parent
@@ -3419,7 +3417,29 @@ def bfs(visited, node):
                 # a parent node in partition i but by definition not in any partition previous
                 # to partition i. So from this point on we don't need the nodes in partition i-1,;
                 # thus, we could remove them from the map, where partition i-1 is 
-                # saved in partitions[] so we can get the nodes in partition i-1.
+                # saved in partitions[] so we can get the nodes in partition i-1 and use them
+                # to clear the corresponding key-values in 
+                # nodeIndex_to_partition_partitionIndex_group_groupIndex_map
+                # Note: current_partition_number incremented below.
+                if DAG_executor_constants.CLEAR_BFS_COLLECTIONS_ON_THE_FLY:
+                    if current_partition_number > 1:
+                        # partition numbers start with 1 not 0. But the first 
+                        # partition in partitions[] is in position 0.
+                        previous_partition_number = current_partition_number - 1
+                        previous_partition = partitions[previous_partition_number-1]
+                        logger.info("bfs: clear main map for nodes in partition: " + str(previous_partition_number))
+                        for partition_node in previous_partition:
+                            if not partition_node.isShadowNode:
+                                try:
+                                    partition_node_ID = partition_node.ID
+                                    logger.info("bfs: clear from main map node ID:" + str(partition_node_ID))
+                                    del nodeIndex_to_partition_partitionIndex_group_groupIndex_map[partition_node_ID]
+                                except KeyError:
+                                    logger.exception("[Error]: bfs: attempting to delete nodes in previous"
+                                        + " partition from nodeIndex_to_partition_partitionIndex_group_groupIndex_map")
+                                    if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+                                        logging.shutdown()
+                                        os._exit(0)        
 
 # brc: ******* end Partition Group
 
@@ -4901,6 +4921,7 @@ def output_partitions():
             with open('./'+name + '.pickle', 'wb') as handle:
                 cloudpickle.dump(partition, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
 
+# currently not used
 def input_partitions():
     if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
         group_inputs = []
@@ -4992,15 +5013,16 @@ https://stackoverflow.com/questions/18204782/runtimeerror-on-windows-trying-pyth
 #Q: Should we guard the BFS.py imports in the above way?
 
 def print_BFS_stats():
-    logger.trace("BFS: print_BFS_stats: ")
+    logger.info("BFS: print_BFS_stats: ")
     #partitions.append(current_partition.copy())
     #frontiers.append(frontier.copy())
     #frontier_cost = "END" + ":" + str(len(frontier))
     #frontier_costs.append(frontier_cost)
-    logger.trace("")
-    logger.trace("input_file: generated: num_nodes: " + str(num_nodes) + " num_edges: " + str(num_edges))
-    logger.trace("")
-    logger.trace("visited length: " + str(len(visited)))
+    logger.info("")
+    logger.info("input_file: generated: num_nodes: " + str(num_nodes) + " num_edges: " + str(num_edges))
+    logger.info("")
+    logger.info("visited length: " + str(len(visited)))
+    logger.info("")
     try:
         msg = "[Error]: print_BFS_stats: visited length is " + str(len(visited)) \
             + " but num_nodes is " + str(num_nodes)
@@ -5179,10 +5201,10 @@ def print_BFS_stats():
                     #logger.trace(str(x.ID),end=" ")
                     print_val += str(x) + " "
                     #print(str(x),end=" ")
-                logger.info(print_val)
-                logger.info("")
+                logger.trace(print_val)
+                logger.trace("")
             else:
-                logger.info("-- (" + str(len(frontier_list)) + ")") 
+                logger.trace("-- (" + str(len(frontier_list)) + ")") 
         frontiers_length = len(frontiers)
         msg = "[Error]: print_BFS_stats: final frontier is not empty."
         assert not len(frontiers[frontiers_length-1]) != 0 , msg
@@ -5757,9 +5779,43 @@ def main():
                 # in print_BFS_stats().
                 frontiers.append(frontier.copy())
 
-            # generate shared array of partitions/groups if using multithreaded workers
-            # or threads to simulate lambdas
+    # Note: At this point we have deleted all of the key-value pairs
+    # from nodeIndex_to_partition_partitionIndex_group_groupIndex_map
+    # except for the keys corresponding to the node IDs in the 
+    # last partition we collected. (When we collect the current 
+    # partition, we delete the key-value pairs for the nodes in
+    # the previous partition, but we the current partition is the 
+    # last partition that wil be collected.) We can now just clear the
+    # nodeIndex_to_partition_partitionIndex_group_groupIndex_map.
+    if DAG_executor_constants.CLEAR_BFS_COLLECTIONS_ON_THE_FLY:
+        logger.info("bfs: clear main map for nodes in last partition: " + str(len(partitions)))
+        logger.info("")
+        nodeIndex_to_partition_partitionIndex_group_groupIndex_map.clear()
 
+    # Here is the code to delete the key-value pairs one by one. In 
+    # case we need to debug this:
+    """
+    last_partition_number = len(partitions)
+    # partition numbers start with 1 not 0. But the first 
+    # partition in partitions[] is in position 0.
+    last_partition = partitions[last_partition_number-1]
+    logger.info("bfs: clear main map for nodes in partition: " + str(last_partition_number))
+    for partition_node in last_partition:
+        if not partition_node.isShadowNode:
+            try:
+                partition_node_ID = partition_node.ID
+                logger.info("bfs: clear from main map node ID:" + str(partition_node_ID))
+                del nodeIndex_to_partition_partitionIndex_group_groupIndex_map[partition_node_ID]
+            except KeyError:
+                logger.exception("[Error]: bfs: attempting to delete nodes in previous"
+                    + " partition from nodeIndex_to_partition_partitionIndex_group_groupIndex_map")
+                if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+                    logging.shutdown()
+                    os._exit(0)  
+    """
+
+    # generate shared array of partitions/groups if using multithreaded workers
+    # or threads to simulate lambdas
 #10
     global num_parent_appends
     if DAG_executor_constants.USE_SHARED_PARTITIONS_GROUPS:

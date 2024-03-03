@@ -761,7 +761,7 @@ def generate_DAG_info():
             # sender_set_for_senderX provides input for senderX
             task_inputs = tuple(sender_set_for_senderX_with_qualified_names)
         
-        logger.info("fanout_partition_group_sizes for state_info: " + str(fanout_partition_group_sizes))
+        #logger.info("fanout_partition_group_sizes for state_info: " + str(fanout_partition_group_sizes))
         Group_DAG_map[state] = state_info(senderX, fanouts, fanins, faninNBs, collapse, fanin_sizes, faninNB_sizes, task_inputs,
 #brc: clustering
             False, False, fanout_partition_group_sizes)

@@ -9,6 +9,9 @@ import os
 # Runs a single test with the command:
 # python -m wukongdnc.dag.TestAll -t test#, e.g., TestAll -t 1
 
+# Note: worker (multi)processes log to file mptestNew.txt in 
+# directory WukongDynamic.
+
 def main(argv):
     # Note: When we run a multiprocessing workers test, we start worker
     # processes and (from link below) "On Windows the subprocesses will 
