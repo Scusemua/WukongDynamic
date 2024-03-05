@@ -271,8 +271,11 @@ def generate_DAG_info():
                     fanouts.append(receiverY)
 #brc: clustering
                     if DAG_executor_constants.ENABLE_RUNTIME_TASK_CLUSTERING:
-                        num_shadow_nodes = partitions_num_shadow_nodes_map[receiverY]
-                        fanout_partition_group_sizes.append(num_shadow_nodes)
+                        # num_nodes in partition/group, including shadow nodes.
+                        # When we do the fanout to receiverY, we will know the
+                        # number of its inputs, which is the number of shadow nodes.
+                        num_nodes = partitions_num_shadow_nodes_map[receiverY]
+                        fanout_partition_group_sizes.append(num_nodes)
             else:
                 # fanin or fannNB since receiverY receives inputs from multiple tasks
                 isFaninNB = False
@@ -677,9 +680,9 @@ def generate_DAG_info():
                     fanouts.append(receiverY)
 #brc: clustering
                     if DAG_executor_constants.ENABLE_RUNTIME_TASK_CLUSTERING:
-                        num_shadow_nodes = groups_num_shadow_nodes_map[receiverY]
+                        num_nodes = groups_num_shadow_nodes_map[receiverY]
                         #logger.trace("number of shadow nodes for " + receiverY + " is " + str(num_shadow_nodes)) 
-                        fanout_partition_group_sizes.append(num_shadow_nodes)
+                        fanout_partition_group_sizes.append(num_nodes)
                         #logger.trace("fanout_partition_group_sizes after append: " + str(fanout_partition_group_sizes))
 
             else:

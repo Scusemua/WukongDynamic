@@ -966,8 +966,11 @@ Group_loops = set()
 # index will be 2. We do not use the index of shadow node's so we don't care.
 
 
-# list of nodes in the input graph
-nodes = []
+# nodes in the input graph. This will be either a list or a dictionary.
+# If we are deleting graph nodes on the fly to deallocte the sapce we use
+# a dictionary for a faster delete (see DAG_executor_constants.CLEAR_BFS_GRAPH_NODES_ON_THE_FLY).
+#brc: graph on the fly
+nodes = None
 num_nodes = 0
 num_edges = 0
 # used to compute size of numPy parents array for pagerank calculation
@@ -2957,7 +2960,9 @@ def bfs(visited, node):
         #    os._exit(0)
 
         groups_num_shadow_nodes_list.append(change_in_shadow_nodes_for_groups)
-        size_of_group = len(current_group) - change_in_shadow_nodes_for_groups
+        # size of group includes shadow_nodes
+        #size_of_group = len(current_group) - change_in_shadow_nodes_for_groups
+        size_of_group = len(current_group)
         BFS_generate_DAG_info.groups_num_shadow_nodes_map[group_name] = size_of_group
         # start count it here before next call to dfs_parent but note that we 
         # may not call dfs_parent() since a node popped from bfs queue
@@ -3143,13 +3148,19 @@ def bfs(visited, node):
                     # nodes from the number of nodes in the partition/group.
                     #
                     # For clustering, we need to know the number of nodes in the 
-                    # partition/group so we need to subtract the number of shadow 
-                    # nodes from the number of nodes in the partition/group.
-#brc: shared
+                    # partition/group. This includes the shadow nodes. Note tht we compute
+                    # the pagerank of shadow nodes (the value is already known but this allows
+                    # us to treat shadow nodes and redular nodes the same, i.e., no 
+                    # if statement so no mispredicted branches, etc.
+#brc: shared        #
+                    # for shared partitions/groups
                     end_num_shadow_nodes_for_partitions = num_shadow_nodes_added_to_partitions
                     change_in_shadow_nodes_for_partitions = end_num_shadow_nodes_for_partitions - start_num_shadow_nodes_for_partitions
                     partitions_num_shadow_nodes_list.append(change_in_shadow_nodes_for_partitions)
-                    size_of_partition = len(current_partition) - change_in_shadow_nodes_for_partitions
+                    # for runtime task clustering
+                    # size of partition/group includes shadow_nodes
+                    #size_of_partition = len(current_partition) - change_in_shadow_nodes_for_partitions
+                    size_of_partition = len(current_partition)
                     BFS_generate_DAG_info.partitions_num_shadow_nodes_map[partition_name] = size_of_partition
                     start_num_shadow_nodes_for_partitions = num_shadow_nodes_added_to_partitions
 
@@ -3421,7 +3432,7 @@ def bfs(visited, node):
                 # to clear the corresponding key-values in 
                 # nodeIndex_to_partition_partitionIndex_group_groupIndex_map
                 # Note: current_partition_number incremented below.
-                if DAG_executor_constants.CLEAR_BFS_COLLECTIONS_ON_THE_FLY:
+                if DAG_executor_constants.CLEAR_BFS_MAIN_MAP_ON_THE_FLY:
                     if current_partition_number > 1:
                         # partition numbers start with 1 not 0. But the first 
                         # partition in partitions[] is in position 0.
@@ -3435,8 +3446,29 @@ def bfs(visited, node):
                                     logger.info("bfs: clear from main map node ID:" + str(partition_node_ID))
                                     del nodeIndex_to_partition_partitionIndex_group_groupIndex_map[partition_node_ID]
                                 except KeyError:
-                                    logger.exception("[Error]: bfs: attempting to delete nodes in previous"
+                                    logger.exception("[Error]: bfs: attempting to delete node ID keys in previous"
                                         + " partition from nodeIndex_to_partition_partitionIndex_group_groupIndex_map")
+                                    if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+                                        logging.shutdown()
+                                        os._exit(0)  
+#brc: graph on the fly
+                # Do the same for the nodes of the input graph.                   
+                if (DAG_executor_constants.CLEAR_BFS_GRAPH_NODES_ON_THE_FLY and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_GRAPH_NODES_ON_THE_FLY)):
+                    if current_partition_number > 1:
+                        # partition numbers start with 1 not 0. But the first 
+                        # partition in partitions[] is in position 0.
+                        previous_partition_number = current_partition_number - 1
+                        previous_partition = partitions[previous_partition_number-1]
+                        logger.info("bfs: clear graph nodes in partition: " + str(previous_partition_number))
+                        for partition_node in previous_partition:
+                            if not partition_node.isShadowNode:
+                                try:
+                                    partition_node_ID = partition_node.ID
+                                    logger.info("bfs: clear graph node ID:" + str(partition_node_ID))
+                                    del nodes[partition_node_ID]
+                                except KeyError:
+                                    logger.exception("[Error]: bfs: attempting to delete graph nodes in previous"
+                                        + " partition from nodes{}")
                                     if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                                         logging.shutdown()
                                         os._exit(0)        
@@ -4325,7 +4357,7 @@ def bfs(visited, node):
 #brc: clustering
                 # Note: need the group name here.
                 # Need to know the number of shadow nodes when clustering in order
-                # to compute the number of non-shadow nodes (nodies-shadow_nodes = non-shadow nodes)
+                # to compute the number of non-shadow nodes (nodes-shadow_nodes = non-shadow nodes)
 
                 #if USE_SHARED_PARTITIONS_GROUPS:
                 if DAG_executor_constants.USE_SHARED_PARTITIONS_GROUPS or DAG_executor_constants.ENABLE_RUNTIME_TASK_CLUSTERING:
@@ -4333,7 +4365,9 @@ def bfs(visited, node):
                     end_num_shadow_nodes_for_groups = num_shadow_nodes_added_to_groups
                     change_in_shadow_nodes_for_groups = end_num_shadow_nodes_for_groups - start_num_shadow_nodes_for_groups
                     groups_num_shadow_nodes_list.append(change_in_shadow_nodes_for_groups)
-                    size_of_group = len(current_group) - change_in_shadow_nodes_for_groups
+                    # size of group includes shadow nodes
+                    #size_of_group = len(current_group) - change_in_shadow_nodes_for_groups
+                    size_of_group = len(current_group)
                     BFS_generate_DAG_info.groups_num_shadow_nodes_map[group_name] = size_of_group
                     # call start here before next call to dfs_parents(), if any, since we 
                     # may not call dfs_parents() again as node may not have any (unvisited) children.
@@ -4699,7 +4733,15 @@ def input_graph():
     logger.trace("input_graph: nodes:" + words[2] + " edges:" + words[3])
     global num_nodes
     num_nodes = int(words[2])
-    global num_edges
+
+#brc: graph on the fly
+    # If we are deleting graph nodes on the fly to deallocte the sapce we use
+    # a dictionary. ( See DAG_executor_constants.CLEAR_BFS_GRAPH_NODES_ON_THE_FLY)
+    global nodes
+    if not (DAG_executor_constants.CLEAR_BFS_GRAPH_NODES_ON_THE_FLY and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_GRAPH_NODES_ON_THE_FLY)):
+        nodes = []
+    else:
+        nodes = {}
 
 #brc: num_nodes
     # save number of graph nodes in BFS_generate_DAG_info
@@ -4719,14 +4761,19 @@ def input_graph():
             logger.info("input_graph: set BFS_generate_DAG_info_incremental_partitions.num_nodes_in_graph to "
                 + str(BFS_generate_DAG_info.num_nodes_in_graph))
 
-
+    global num_edges
     num_edges = int(words[3])
     logger.trace("input_file: read: num_nodes:" + str(num_nodes) + " num_edges:" + str(num_edges))
 
     # if num_nodes is 100, this fills nodes[0] ... nodes[100], length of nodes is 101
     # Note: nodes[0] is not used, 
-    for x in range(num_nodes+1):
-        nodes.append(Node(x))
+#brc: graph on the fly
+    if not (DAG_executor_constants.CLEAR_BFS_GRAPH_NODES_ON_THE_FLY and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_GRAPH_NODES_ON_THE_FLY)):
+        for x in range(0,num_nodes+1):
+            nodes.append(Node(x))
+    else:
+        for x in range(0,num_nodes+1):
+            nodes[x] = Node(x)
 
     global num_parent_appends
     num_parent_appends = 0
@@ -4763,7 +4810,7 @@ def input_graph():
         #    logger.trace ("target is 101, num_nodes is " + str(num_nodes) + " len nodes is "
         #       + str(len(nodes)))
         if target > num_nodes:
-            # If len(nodes) is 101 and num_nodes is 100 and we have a tatget of
+            # If len(nodes) is 101 and num_nodes is 100 and we have a target of
             # 101, which is a sink, i.e., parents but no children, then there is 
             # no source 101. We use target+1, where 101 - num_nodes = 101 - 100 - 1
             # and target+1 = 101+1 = 102 - len(nodes) = 101 - 101 - 1, so we get 
@@ -4776,8 +4823,13 @@ def input_graph():
                 for i in range(number_of_nodes_to_append):
                     logger.trace("input_graph: Node(" + str(num_nodes+i+1) + ")")
                     # new node ID for our example is 101 = num_nodes+i+1 = 100 + 0 + 1 = 101
-                    nodes.append(Node((num_nodes+i+1)))
+                    if not (DAG_executor_constants.CLEAR_BFS_GRAPH_NODES_ON_THE_FLY and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_GRAPH_NODES_ON_THE_FLY)):
+                        nodes.append(Node((num_nodes+i+1)))
+#brc: graph on the fly
+                    else:
+                        nodes[i] = Node((num_nodes+i+1))
                 num_nodes += number_of_nodes_to_append
+
         #logger.trace ("source:" + str(source) + " target:" + str(target))
         source_node = nodes[source]
         source_node.children.append(target)
@@ -5663,10 +5715,14 @@ def main():
                 global num_shadow_nodes_added_to_partitions
                 if DAG_executor_constants.USE_SHARED_PARTITIONS_GROUPS or DAG_executor_constants.ENABLE_RUNTIME_TASK_CLUSTERING:
                     #brc: shared
+                    # for shared partitions/groups
                     end_num_shadow_nodes_for_partitions = num_shadow_nodes_added_to_partitions
                     change_in_shadow_nodes_for_partitions = end_num_shadow_nodes_for_partitions - start_num_shadow_nodes_for_partitions
                     partitions_num_shadow_nodes_list.append(change_in_shadow_nodes_for_partitions)
-                    size_of_partition = len(current_partition) - change_in_shadow_nodes_for_partitions
+                    # or runtime task clustering
+                    # size of partition/group includes shadow_nodes
+                    #size_of_partition = len(current_partition) - change_in_shadow_nodes_for_partitions
+                    size_of_partition = len(current_partition)
                     BFS_generate_DAG_info.partitions_num_shadow_nodes_map[partition_name] = size_of_partition
                     # not needed here since we are done but kept to be consisent with use above
                     start_num_shadow_nodes_for_partitions = num_shadow_nodes_added_to_partitions
@@ -5715,7 +5771,9 @@ def main():
                     end_num_shadow_nodes_for_groups = num_shadow_nodes_added_to_groups
                     change_in_shadow_nodes_for_groups = end_num_shadow_nodes_for_groups - start_num_shadow_nodes_for_groups
                     groups_num_shadow_nodes_list.append(change_in_shadow_nodes_for_groups)
-                    size_of_group = len(current_group) - change_in_shadow_nodes_for_groups
+                    # size of group includes shadow nodes
+                    #size_of_group = len(current_group) - change_in_shadow_nodes_for_groups
+                    size_of_group = len(current_group)
                     BFS_generate_DAG_info.groups_num_shadow_nodes_map[group_name] = size_of_group
                     # not needed here since we are done but kept to be consisent with use above
                     start_num_shadow_nodes_for_groups = num_shadow_nodes_added_to_groups
@@ -5787,10 +5845,16 @@ def main():
     # the previous partition, but we the current partition is the 
     # last partition that wil be collected.) We can now just clear the
     # nodeIndex_to_partition_partitionIndex_group_groupIndex_map.
-    if DAG_executor_constants.CLEAR_BFS_COLLECTIONS_ON_THE_FLY:
+    if DAG_executor_constants.CLEAR_BFS_MAIN_MAP_ON_THE_FLY:
         logger.info("bfs: clear main map for nodes in last partition: " + str(len(partitions)))
         logger.info("")
         nodeIndex_to_partition_partitionIndex_group_groupIndex_map.clear()
+#brc: graph on the fly
+    # Do the same for the nodes of the input graph
+    if (DAG_executor_constants.CLEAR_BFS_GRAPH_NODES_ON_THE_FLY and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_GRAPH_NODES_ON_THE_FLY)):
+        logger.info("bfs: clear graph nodes for nodes in last partition: " + str(len(partitions)))
+        logger.info("len(nodes): " + str(len(nodes)))
+        nodes.clear()
 
     # Here is the code to delete the key-value pairs one by one. In 
     # case we need to debug this:
@@ -5852,6 +5916,61 @@ def main():
         logger.info("Output partitions/groups")
         output_partitions()
 
+        # deallocate data structures
+        visited = None
+        global BFS_queue
+        BFS_queue = None
+        partitions = None
+        groups = None
+        current_group = None
+        partition_names = None
+        group_names = None
+        global groups_of_current_partition
+        groups_of_current_partition = None
+        global groups_of_partitions
+        groups_of_partitions = None
+
+        BFS_generate_DAG_info.Partition_senders = None
+        BFS_generate_DAG_info.Partition_receivers = None
+        BFS_generate_DAG_info.Group_senders = None
+        BFS_generate_DAG_info.Group_receivers = None
+
+        BFS_generate_DAG_info.leaf_tasks_of_partitions = None
+        BFS_generate_DAG_info.leaf_tasks_of_partitions_incremental = None
+        BFS_generate_DAG_info.leaf_tasks_of_groups = None
+        BFS_generate_DAG_info.leaf_tasks_of_groups_incremental = None
+
+        BFS_generate_DAG_info.groups_num_shadow_nodes_map = None
+        BFS_generate_DAG_info.partitions_num_shadow_nodes_map = None
+
+        BFS_generate_DAG_info_incremental_groups.Group_all_fanout_task_names = None
+        BFS_generate_DAG_info_incremental_groups.Group_all_fanin_task_names = None
+        BFS_generate_DAG_info_incremental_groups.Group_all_faninNB_task_names = None
+        BFS_generate_DAG_info_incremental_groups.Group_all_collapse_task_names = None
+        BFS_generate_DAG_info_incremental_groups.Group_all_fanin_sizes = None
+        BFS_generate_DAG_info_incremental_groups.Group_all_faninNB_sizes = None
+        BFS_generate_DAG_info_incremental_groups.Group_DAG_leaf_tasks = None
+        BFS_generate_DAG_info_incremental_groups.Group_DAG_leaf_task_start_states = None
+        BFS_generate_DAG_info_incremental_groups.Group_DAG_leaf_task_inputs = None
+        BFS_generate_DAG_info_incremental_groups.Group_DAG_states = None
+        BFS_generate_DAG_info_incremental_groups.Group_DAG_map = None
+        BFS_generate_DAG_info_incremental_groups.Group_DAG_tasks = None
+
+        """
+        BFS_generate_DAG_info_incremental_partitions.Partition_all_fanout_task_names = None
+        BFS_generate_DAG_info_incremental_partitions.Partition_all_fanin_task_names = None
+        BFS_generate_DAG_info_incremental_partitions.Partition_all_faninNB_task_names = None
+        BFS_generate_DAG_info_incremental_partitions.Partition_all_collapse_task_names = None
+        BFS_generate_DAG_info_incremental_partitions.Partition_all_fanin_sizes = None
+        BFS_generate_DAG_info_incremental_partitions.Partition_all_faninNB_sizes = None
+        BFS_generate_DAG_info_incremental_partitions.Partition_DAG_leaf_tasks = None
+        BFS_generate_DAG_info_incremental_partitions.Partition_DAG_leaf_task_start_states = None
+        BFS_generate_DAG_info_incremental_partitions.Partition_DAG_leaf_task_inputs = None
+        BFS_generate_DAG_info_incremental_partitions.Partition_DAG_states = None
+        BFS_generate_DAG_info_incremental_partitions.Partition_DAG_map = None
+        BFS_generate_DAG_info_incremental_partitions.Partition_DAG_tasks = None
+        """
+        
         # Calling the run() method of DAG_executor_driver. Assuming we have
         # already started tcp_server. The tcp_server needs DAG_info but
         # tcp_server does not read DAG_info when it starts since we can't

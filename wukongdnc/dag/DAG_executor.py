@@ -1234,7 +1234,7 @@ def  process_fanouts(fanouts, calling_task_name, DAG_states, DAG_exec_State,
                 logger.info(thread_name + ": process_fanouts: do not cluster task: "
                     + str(fanout_task_name))
         fanouts.clear()
-        fanouts = fanouts + new_fanouts
+        fanouts += new_fanouts
         fanout_partition_group_sizes.clear()
         fanout_partition_group_sizes = fanout_partition_group_sizes + new_fanout_partition_group_sizes
         logger.info(thread_name + ": process_fanouts: end of do_task_clustering:"
@@ -4400,7 +4400,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                     logger.info(thread_name + " work_loop: become state:" + str(DAG_executor_state.state))
                     logger.trace(thread_name + " work_loop: list_of_work_queue_payload fanout_values length:" + str(len(list_of_work_queue_or_payload_fanout_values)))
                     logger.info(thread_name + " work_loop: clustered_tasks (states): " + str(clustered_tasks))
-
+                    logger.info(thread_name + " state_info.fanouts: " + str(state_info.fanouts))
                     # at this point list_of_work_queue_or_payload_fanout_values may or may not be empty. We wll
                     # piggyback this list on the call to process_faninNBs_batch if there are faninnbs.
                     # if not, we will call work_queueu.put_all() directly.
@@ -4515,7 +4515,10 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                     logging.shutdown()
                                     os._exit(0)  
                             try:
-                                msg = "[Error]: work loop: after process_fanouts: len(fanouts) != len(list_of_work_queue_or_payload_fanout_values) + len(clustered_tasks) + 1."
+                                msg = thread_name + " [Error]: work loop: after process_fanouts: len(fanouts) != len(list_of_work_queue_or_payload_fanout_values) + len(clustered_tasks) - 1" \
+                                    + " len(state_info.fanouts): " + str(len(state_info.fanouts)) \
+                                    + " starting_number_of_fanouts: " + str(starting_number_of_fanouts) \
+                                    + " len(clustered_tasks): " + str(len(clustered_tasks))
                                 assert len(state_info.fanouts) == starting_number_of_fanouts - len(clustered_tasks) - 1, msg
                             except AssertionError:
                                 logger.exception("[Error]: assertion failed")
