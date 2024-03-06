@@ -207,6 +207,34 @@ Partition_DAG_number_of_incomplete_tasks = 0
 #brc: num_nodes: 
 Partition_DAG_num_nodes_in_graph = 0
 
+def destructor():
+    global Partition_all_fanout_task_names
+    global Partition_all_fanin_task_names
+    global Partition_all_faninNB_task_names
+    global Partition_all_collapse_task_names
+    global Partition_all_fanin_sizes
+    global Partition_all_faninNB_sizes
+    global Partition_DAG_leaf_tasks
+    global Partition_DAG_leaf_task_start_states
+    global Partition_DAG_leaf_task_inputs
+    global Partition_DAG_states
+    global Partition_DAG_map
+    global Partition_DAG_tasks
+
+    Partition_all_fanout_task_names = None
+    Partition_all_fanin_task_names = None
+    Partition_all_faninNB_task_names = None
+    Partition_all_collapse_task_names = None
+    Partition_all_fanin_sizes = None
+    Partition_all_faninNB_sizes = None
+    Partition_DAG_leaf_tasks = None
+    Partition_DAG_leaf_task_start_states = None
+    Partition_DAG_leaf_task_inputs = None
+    Partition_DAG_states = None
+    Partition_DAG_map = None
+    Partition_DAG_tasks = None
+
+
 # Called by generate_DAG_info_incremental_partitions below to generate 
 # the DAG_info object when we are using an incremental DAG of partitions.
 def generate_DAG_for_partitions(to_be_continued,number_of_incomplete_tasks):

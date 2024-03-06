@@ -46,6 +46,29 @@ partitions_num_shadow_nodes_map = {}
 # this is set BFS.input_graph when doing non-incremental DAG generation
 num_nodes_in_graph = 0
 
+def destructor():
+    global Partition_senders
+    global Partition_receivers
+    global Group_senders
+    global Group_receivers
+    global leaf_tasks_of_partitions
+    global leaf_tasks_of_partitions_incremental
+    global leaf_tasks_of_groups
+    global leaf_tasks_of_groups_incremental
+    global groups_num_shadow_nodes_map
+    global partitions_num_shadow_nodes_map
+    Partition_senders = None
+    Partition_receivers = None
+    Group_senders = None
+    Group_receivers = None
+    leaf_tasks_of_partitions = None
+    leaf_tasks_of_partitions_incremental = None
+    leaf_tasks_of_groups = None
+    leaf_tasks_of_groups_incremental = None
+    groups_num_shadow_nodes_map = None
+    partitions_num_shadow_nodes_map = None
+
+
 """
 get 1: DAG_info is
 state 1 ia PR1_1

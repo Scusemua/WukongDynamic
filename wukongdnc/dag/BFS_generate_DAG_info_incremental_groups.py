@@ -292,6 +292,33 @@ Group_next_state = 1
 #brc: num_nodes:
 Group_DAG_num_nodes_in_graph = 0
 
+def destructor(): 
+    global Group_all_fanout_task_names
+    global Group_all_fanin_task_names
+    global Group_all_faninNB_task_names
+    global Group_all_collapse_task_names
+    global Group_all_fanin_sizes
+    global Group_all_faninNB_sizes
+    global Group_DAG_leaf_tasks
+    global Group_DAG_leaf_task_start_states
+    global Group_DAG_leaf_task_inputs
+    global Group_DAG_states
+    global Group_DAG_map
+    global Group_DAG_tasks
+
+    Group_all_fanout_task_names = None
+    Group_all_fanin_task_names = None
+    Group_all_faninNB_task_names = None
+    Group_all_collapse_task_names = None
+    Group_all_fanin_sizes = None
+    Group_all_faninNB_sizes = None
+    Group_DAG_leaf_tasks = None
+    Group_DAG_leaf_task_start_states = None
+    Group_DAG_leaf_task_inputs = None
+    Group_DAG_states = None
+    Group_DAG_map = None
+    Group_DAG_tasks = None
+
 # Called by generate_DAG_info_incremental_partitions below to generate 
 # the DAG_info object when we are using partitions.
 def generate_DAG_for_groups(to_be_continued,number_of_incomplete_tasks,

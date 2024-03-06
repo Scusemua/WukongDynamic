@@ -1020,6 +1020,24 @@ num_incremental_DAGs_generated = 0
     # number of partitions we have seen.
 num_nodes_in_partitions = 0
 
+def destructor():
+    global visited
+    global BFS_queue
+    global partitions
+    global groups
+    global partition_names
+    global group_names
+    global groups_of_current_partition
+    global groups_of_partitions
+    visited = None
+    BFS_queue = None
+    partitions = None
+    groups = None
+    partition_names = None
+    group_names = None
+    groups_of_current_partition = None
+    groups_of_partitions = None
+
 # visual is a list which stores all the set of edges that constitutes a graph
 # we can visualize only small graphs
 visual = []
@@ -5917,60 +5935,12 @@ def main():
         output_partitions()
 
         # deallocate data structures
-        visited = None
-        global BFS_queue
-        BFS_queue = None
-        partitions = None
-        groups = None
-        current_group = None
-        partition_names = None
-        group_names = None
-        global groups_of_current_partition
-        groups_of_current_partition = None
-        global groups_of_partitions
-        groups_of_partitions = None
 
-        BFS_generate_DAG_info.Partition_senders = None
-        BFS_generate_DAG_info.Partition_receivers = None
-        BFS_generate_DAG_info.Group_senders = None
-        BFS_generate_DAG_info.Group_receivers = None
+        destructor()  # BFS.destructor
+        BFS_generate_DAG_info.destructor()
+        BFS_generate_DAG_info_incremental_partitions.destructor()
+        BFS_generate_DAG_info_incremental_groups.destructor()
 
-        BFS_generate_DAG_info.leaf_tasks_of_partitions = None
-        BFS_generate_DAG_info.leaf_tasks_of_partitions_incremental = None
-        BFS_generate_DAG_info.leaf_tasks_of_groups = None
-        BFS_generate_DAG_info.leaf_tasks_of_groups_incremental = None
-
-        BFS_generate_DAG_info.groups_num_shadow_nodes_map = None
-        BFS_generate_DAG_info.partitions_num_shadow_nodes_map = None
-
-        BFS_generate_DAG_info_incremental_groups.Group_all_fanout_task_names = None
-        BFS_generate_DAG_info_incremental_groups.Group_all_fanin_task_names = None
-        BFS_generate_DAG_info_incremental_groups.Group_all_faninNB_task_names = None
-        BFS_generate_DAG_info_incremental_groups.Group_all_collapse_task_names = None
-        BFS_generate_DAG_info_incremental_groups.Group_all_fanin_sizes = None
-        BFS_generate_DAG_info_incremental_groups.Group_all_faninNB_sizes = None
-        BFS_generate_DAG_info_incremental_groups.Group_DAG_leaf_tasks = None
-        BFS_generate_DAG_info_incremental_groups.Group_DAG_leaf_task_start_states = None
-        BFS_generate_DAG_info_incremental_groups.Group_DAG_leaf_task_inputs = None
-        BFS_generate_DAG_info_incremental_groups.Group_DAG_states = None
-        BFS_generate_DAG_info_incremental_groups.Group_DAG_map = None
-        BFS_generate_DAG_info_incremental_groups.Group_DAG_tasks = None
-
-        """
-        BFS_generate_DAG_info_incremental_partitions.Partition_all_fanout_task_names = None
-        BFS_generate_DAG_info_incremental_partitions.Partition_all_fanin_task_names = None
-        BFS_generate_DAG_info_incremental_partitions.Partition_all_faninNB_task_names = None
-        BFS_generate_DAG_info_incremental_partitions.Partition_all_collapse_task_names = None
-        BFS_generate_DAG_info_incremental_partitions.Partition_all_fanin_sizes = None
-        BFS_generate_DAG_info_incremental_partitions.Partition_all_faninNB_sizes = None
-        BFS_generate_DAG_info_incremental_partitions.Partition_DAG_leaf_tasks = None
-        BFS_generate_DAG_info_incremental_partitions.Partition_DAG_leaf_task_start_states = None
-        BFS_generate_DAG_info_incremental_partitions.Partition_DAG_leaf_task_inputs = None
-        BFS_generate_DAG_info_incremental_partitions.Partition_DAG_states = None
-        BFS_generate_DAG_info_incremental_partitions.Partition_DAG_map = None
-        BFS_generate_DAG_info_incremental_partitions.Partition_DAG_tasks = None
-        """
-        
         # Calling the run() method of DAG_executor_driver. Assuming we have
         # already started tcp_server. The tcp_server needs DAG_info but
         # tcp_server does not read DAG_info when it starts since we can't
