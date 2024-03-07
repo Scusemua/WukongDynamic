@@ -2106,7 +2106,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                     work_tuple = (-1,None)
                                     work_queue.put(work_tuple)
                         if COMPUTE_PAGERANK and USE_INCREMENTAL_DAG_GENERATION:
-                            # we are doing incremental ADG generation. The currnet 
+                            # we are doing incremental DAG generation. The currnet 
                             # DAG has no more avaailable work. If the current DAG is
                             # not complete, the workers need to get a new 
                             # version of the incremental DAG and continue.
@@ -2265,13 +2265,13 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         else:
                             # Config: A4_local, A4_Remote
                             logger.trace(thread_name + ": DAG_executor: num_tasks_executed == num_tasks_to_execute: depositing -1 in work queue.")
-                            # for the nex worker
+                            # for the next worker
                             work_tuple = (-1,None)
                             work_queue.put(work_tuple)
                 else:
                     pass 
                     # didn't increment num_tasks_executed since we are not
-                    # excuting this task (as it was already executed)
+                    # executing this task (as it was already executed)
             
                     # No return here. A worker may return when it gets a -1
                     # from the work_queue (not here when it puts a -1 in the work queue.)
@@ -2351,7 +2351,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
             # fanins/fanouts/faninNBs/collapses which means they could not be 
             # processed. Thus we put executed task C in the continue queue. Now we are
             # processing that already executed continue task C. Since we got a new
-            # DAG, C's to-be-continued anins/fanouts/faninNBs/collapses are no 
+            # DAG, C's to-be-continued fanins/fanouts/faninNBs/collapses are no 
             # longer to-be-continued so we will skip execution of C and process 
             # C's fanins/fanouts/faninNBs/collapses.
             #
@@ -2820,12 +2820,26 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                     logger.trace("DAG_executor_work_loop: completed_workers:  " + str(completed_workers)
                                         + " do not put -1 in work queue.")
 
-    #brc: continue:          If doing incremental DAG and the DAG is not complete, then do not 
+    #brc: continue: 
+                            # If doing incremental DAG and the DAG is not complete, then do not 
                             # return; instead, get a new DAG_info. All workers will call DAG_infobuffer_monitor.withdraw
                             # and receive a new DAG_info. Those with continue tasks in their continue queue will execute 
                             # these tasks instead of getting work from the work queue. Also, presumably their cluster
                             # queues were empty since they they only try to get work from the work queue when their
                             # cluster_queue is empty.
+                            # Note: No worker can get a -1 until the first -1 is deposited, which is dome by the worker
+                            # who executes the last task in the current incremental DAG (based on the number of tasks executed and 
+                            # the number of exeutable tasks in the incremental DAG.) This means that many workers may have
+                            # to wait for the last worker to finish a long running task before these workers can get a 
+                            # new incremental DAG. (Note that after the long running task completes there may be more 
+                            # executable tasks in the current incremental DAG; so this can happen when there are one or more
+                            # tasks to execute in the current incremental DAG.)
+                            # Consider: develop a scheme in which workers are not held up in this way. There would need to be
+                            # a criterion for allowing a worker to request a new DAG before all the exeutable tasks in the 
+                            # current incremental DAG have been executed. Alternately, a worker can have a background thread
+                            # that tries to get a new incremental DAG (amd does not block if one is not yet available) every 
+                            # m milliseconds. If a new incremental DAG is obtained, the workers may be able to excute their 
+                            # continued tasks and then execute the tasks in the new DAG that the continued tasks enable.
 
                             if DAG_executor_constants.COMPUTE_PAGERANK and DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION:
                                 if not DAG_info.get_DAG_info_is_complete():
