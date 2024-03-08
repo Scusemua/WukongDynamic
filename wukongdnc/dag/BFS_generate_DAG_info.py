@@ -89,13 +89,6 @@ generate state i+1 with to be continued = True
 def generate_DAG_info():
     #Given Partition_senders, Partition_receivers, Group_senders, Group_receievers
 
-#brc: ToDo: Do we want to use collapse? fanin? If so, one task will input
-# its partition/grup and then input the collapse/fanin group, etc. Need
-# to clear the old partition/group before doing next?
-# If we pre-load the partitions, thn we would want to do fanouts/faninNBs
-# so we can use the pre-loaded partition?
-
-#brc: Problem: Need lists for faninNB and fanin names
     Partition_all_fanout_task_names = []
     Partition_all_fanin_task_names = []
     Partition_all_faninNB_task_names = []

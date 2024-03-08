@@ -248,17 +248,24 @@ num_nodes_in_graph = 0
 # process the groups within the partition. Partition processing should be understood
 # before attempting to understand group partitioning.
 
+# Note: This group of names and sizes is for debugging only. We probably do not want
+# to collect these for large graphs.
 Group_all_fanout_task_names = []
 Group_all_fanin_task_names = []
 Group_all_faninNB_task_names = []
 Group_all_collapse_task_names = []
 Group_all_fanin_sizes = []
 Group_all_faninNB_sizes = []
+
+# It is not clear how large these leaf task lists can be. We mya want to delete 
+# leaf tasks from these lists on-the-fly
 Group_DAG_leaf_tasks = []
 Group_DAG_leaf_task_start_states = []
 # no inputs for leaf tasks
 Group_DAG_leaf_task_inputs = []
-# maps task name to an integer ID for that task
+
+# maps task name to an integer ID for that task.
+# We access Group_DAG_states[current_state] and Group_DAG_states[previous_state]
 Group_DAG_states = {}
 # maps integer ID of a task to the state for that task; the state 
 # contains the fanin/fanout information for the task.

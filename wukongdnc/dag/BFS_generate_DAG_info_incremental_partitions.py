@@ -172,22 +172,32 @@ num_nodes_in_graph = 0
 # Note: We generate a DAG but we may or may not publish it. That is,
 # we may only "publish" every ith DAG that is generated. Value i is
 # controlled by the global constant INCREMENTAL_DAG_DEPOSIT_INTERVAL.
+
+# Note: This group of names and sizes is for debugging only. We probably do not want
+# to collect these for large graphs.
 Partition_all_fanout_task_names = []
 Partition_all_fanin_task_names = []
 Partition_all_faninNB_task_names = []
 Partition_all_collapse_task_names = []
 Partition_all_fanin_sizes = []
 Partition_all_faninNB_sizes = []
+
+# It is not clear how large these leaf task lists wil be for large graphs. We 
+# may want to delete leaf tasks on the fly
 Partition_DAG_leaf_tasks = []
 Partition_DAG_leaf_task_start_states = []
 # no inputs for leaf tasks
 Partition_DAG_leaf_task_inputs = []
+
 # maps task name to an integer ID for that task
+# We access Partition_DAG_states for current_partition_name.
 Partition_DAG_states = {}
 # maps integer ID of a task to the state for that task; the state 
 # contains the task/function/code and the fanin/fanout information for the task.
+# We access Partition_DAG_map for current_state and previous_state and previous_previous_state
 Partition_DAG_map = {}
 # references to the code for the tasks
+# we access Partition_DAG_tasks for current state
 Partition_DAG_tasks = {}
 
 # version of DAG, incremented for each DAG generated
@@ -560,8 +570,8 @@ DAG_info object about the DAG is retrieved from the DAG_info object's DAG_info_d
 # called by bfs()
 def generate_DAG_info_incremental_partitions(current_partition_name,current_partition_number,to_be_continued):
 # to_be_continued is True if num_nodes_in_partitions < num_nodes, which means that incremeental DAG generation
-# is not complete (some gtaph nodes are not in any partition.)
-
+# is not complete (some graph nodes are not in any partition.)
+# current_partition_name generated as: "PR" + str(current_partition_number) + "_1"
     global Partition_all_fanout_task_names
     global Partition_all_fanin_task_names
     global Partition_all_faninNB_task_names
@@ -644,7 +654,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
     previous_state = current_partition_number-1
     #previous_partition_name = "PR" + str(current_partition_number-1) + "_1"
 
-    # a list of partitions that have a fanot/fanin/collapse to the 
+    # a list of partitions that have a fanout/fanin/collapse to the 
     # current partition. (They "send" to the current partition which "receives".)
     senders = Partition_receivers.get(current_partition_name)
     # Note: a partition that starts a new connected component (which is 
@@ -1079,7 +1089,8 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         #    logger.error("[Error]: generate_DAG_info_incremental_partitions: using partitions and a"
         #        + " partition has more than one sending partition.")
                 
-        sender = next(iter(senders)) # sender is first and only element in set
+        # sender is first and only element in set since a partition i is followed by (sends to) partition i+1
+        sender = next(iter(senders)) 
 
         try:
             msg = "[Error]: generate_DAG_info_incremental_partitionsusing partitions and" \
