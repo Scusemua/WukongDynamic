@@ -223,7 +223,17 @@ be a group in groups_of_previous_partition (i.e., it is a group in the same part
 # DAG minus the number of incomplete tasks minus the number of coomplete tasks like receiverY that
 # cannot be executed. We track a list of such tasks (groups or partitions) so we can compute the
 # number of such tasks (as the length of this list)
-                   
+
+Note: During incremental DAG generation, we can deallocate memory on-the-fly in the 
+data structures that hold the data collected for DAG gemeration. This is helpful when
+large DAGs need to be built. Also, we can delete input graph nodes on-the-fly also,
+which deallocate memory for storing the input graph as we allocate memory for building
+the DAG. Id the file that stores the input graph has nodes listed in the order that
+they appear in the partitions, we can stream the input graph, or read sections of it
+at a time, so that we do not need to read the entire input graph into memory before
+we start incremental DAG generation. (We might need to synchronize DAG generation with
+inputting the graph, so that we only try to build parts of the DAG that we have already input.
+S3 supports file streaming.)            
 """
 
 logger = logging.getLogger(__name__)
