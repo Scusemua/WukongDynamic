@@ -769,8 +769,7 @@ from .DAG_executor_driver import run
 #from .DAG_boundedbuffer_work_queue import Work_Queue_Client
 from .Remote_Client_for_DAG_infoBuffer_Monitor import Remote_Client_for_DAG_infoBuffer_Monitor
 from .Remote_Client_for_DAG_infoBuffer_Monitor_for_Lambdas import Remote_Client_for_DAG_infoBuffer_Monitor_for_Lambdas
-from .DAG_executor_output_checker import get_pagerank_outputs
-from .DAG_executor_output_checker import verify_pagerank_outputs
+from .DAG_executor_output_checker import get_pagerank_outputs, verify_pagerank_outputs
 from wukongdnc.constants import TCP_SERVER_IP
 
 logger = logging.getLogger(__name__)
@@ -818,7 +817,9 @@ generate_networkx_file = False
 visited = []                    # List for nodes visited during bfs/dfs
 BFS_queue = []                  # queue of nodes for breadth-first search
 partitions = []                 # collected partitions of nodes
+number_of_partitions = 0
 groups = []                     # collected groups of nodes
+number_of_groups = 0
 current_partition = []          # partition currently be collected
 current_partition_number = 1    # current partition number,
 current_group = []              # group currently be collected
@@ -2881,6 +2882,7 @@ def bfs(visited, node):
     global current_group
     # list of collected groups
     global groups
+    global number_of_groups
     
 # brc: ******* Group
     # in dfs_parent(), we add a node to either list partitions or list
@@ -2888,6 +2890,8 @@ def bfs(visited, node):
     # group 1. We collect the first group here. We collect the first
     # partition (same nodes) below.
     groups.append(current_group)
+    number_of_groups += 1
+
 
     # this first group ends here after first dfs_parent
     global use_nodeIndex_to_grouppartition_maps
@@ -3128,7 +3132,10 @@ def bfs(visited, node):
                 logger.trace("BFS: end of current partition.")
                 # save the current partition in list of partitions.
                 # This does not require a deepcopy.
+                global partitions
+                global number_of_partitions
                 partitions.append(current_partition.copy())
+                number_of_partitions += 1
 #brc: incremental:   
                 # this includes regulat nodes and shadow nodes
                 num_nodes_in_partitions += len(current_partition)
@@ -3693,11 +3700,11 @@ def bfs(visited, node):
                                 # start the DAG_excutor_driver. Otherwise, we do all of this when we get partition 2,
                                 # since when we get partition 2 partition 1 is complete and can be executed.
                                 # Note: This means for incremental DAG generation we always start execution 
-                                # after processing one partitio, if there is only 1 partition in the DAG,
-                                # or 2 partitions otherwise. We may not want to start execution unti we have
+                                # after processing one partition, if there is only 1 partition in the DAG,
+                                # or 2 partitions otherwise. We may not want to start execution until we have
                                 # n partitions, since 2 partitions might be executed very quickly and the
                                 # the DAG_executor woudld just wait for another incremental DAG. Hard to say
-                                # what N should be.
+                                # what n should be until we experiment with it.
                         
                                 if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
                                     # output partition 1, which is complete
@@ -3914,7 +3921,7 @@ def bfs(visited, node):
                                 # partition 4. So every other generated DAG would be published.
                                 if current_partition_number == 2 or (
                                     DAG_info.get_DAG_info_is_complete() or (
-                                    num_incremental_DAGs_generated % INCREMENTAL_DAG_DEPOSIT_INTERVAL == 0
+                                    num_incremental_DAGs_generated % DAG_executor_constants.INCREMENTAL_DAG_DEPOSIT_INTERVAL == 0
                                     )):
                             
 #brc: leaf tasks
@@ -4352,6 +4359,7 @@ def bfs(visited, node):
 # brc: ******* Group
                 # Note: append() uses a shallow copy.
                 groups.append(current_group)
+                number_of_groups += 1
 
                 group_name = "PR" + str(current_partition_number) + "_" + str(current_group_number)
                 if current_group_isLoop:
@@ -4660,6 +4668,7 @@ def bfs(visited, node):
     if len(current_partition) >= 0:
         logger.trace("BFS: create final sub-partition")
         partitions.append(current_partition.copy())
+        number_of_partitions += 1
         current_partition = []
         #global total_loop_nodes_added
         total_loop_nodes_added += loop_nodes_added
@@ -4787,9 +4796,12 @@ def input_graph():
     # Note: nodes[0] is not used, 
 #brc: graph on the fly
     if not (DAG_executor_constants.CLEAR_BFS_GRAPH_NODES_ON_THE_FLY and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_GRAPH_NODES_ON_THE_FLY)):
+        # using list when we are not deallocating space on the fly or we are but the DAG is not large
+        # enough to worry about space.
         for x in range(0,num_nodes+1):
             nodes.append(Node(x))
-    else:
+    else: 
+        # using dictionary when we are deallocating space on the fly and the DAG is large 
         for x in range(0,num_nodes+1):
             nodes[x] = Node(x)
 
@@ -5084,10 +5096,6 @@ https://stackoverflow.com/questions/18204782/runtimeerror-on-windows-trying-pyth
 
 def print_BFS_stats():
     logger.info("BFS: print_BFS_stats: ")
-    #partitions.append(current_partition.copy())
-    #frontiers.append(frontier.copy())
-    #frontier_cost = "END" + ":" + str(len(frontier))
-    #frontier_costs.append(frontier_cost)
     logger.info("")
     logger.info("input_file: generated: num_nodes: " + str(num_nodes) + " num_edges: " + str(num_edges))
     logger.info("")
@@ -5590,6 +5598,36 @@ def print_BFS_stats():
         logger.trace("-- (" + str(len(BFS_generate_DAG_info.Group_receivers)) + ")")
         logger.trace("")
 
+# Does not use any data structures - so dta structures can be deallocated after BFS
+# generates the DAG (before executing the DAG) and we can still check the pagerank output.
+def check_pagerank_outputs(number_of_groups_or_partitions):
+    # True when: comuting pagerank and using thread workers/lambdas
+    # COMPUTE_PAGERANK and RUN_ALL_TASKS_LOCALLY and (USING_WORKERS or not USING_WORKERS) and USING_THREADS_NOT_PROCESSES
+    #if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+    #    number_of_groups_or_partitions = len(groups)
+    #else:
+    #    number_of_groups_or_partitions = len(partitions) 
+    _verified = verify_pagerank_outputs(number_of_groups_or_partitions)
+    
+    #if not _verified:
+    #   might do somethig with this
+
+    logger.info("")
+    logger.info("")
+    logger.info("DAG_executor_outputs:")
+    pr_outputs = get_pagerank_outputs()
+    output_keys = list(pr_outputs.keys())
+    output_keys.sort()
+    sorted_pagerank_outputs = {i: pr_outputs[i] for i in output_keys}
+    if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+        for (k,v) in sorted_pagerank_outputs.items():
+            #logger.info(str(k) + ":" + group_names[k-1] + ":" +str(v))
+            logger.info(k + ":" +str(v))
+    else:
+        for (k,v) in sorted_pagerank_outputs.items():
+            #logger.info(str(k) + ":" + partition_names[k-1] + ":" +str(v))
+            logger.info(k + ":" +str(v))
+
 def main():
 
     if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
@@ -5688,7 +5726,9 @@ def main():
         #2
                 global partitions
                 global current_partition_number
+                global number_of_partitions
                 partitions.append(current_partition.copy())
+                number_of_partitions += 1
 
                 #brc: shared: added all the name stuff - should have been there
                 partition_name = "PR" + str(current_partition_number) + "_1"
@@ -5752,12 +5792,14 @@ def main():
                 
         #6
                 global groups
+                global number_of_groups
                 global current_group
                 global current_group_number
                 global current_group_isLoop
                 global Group_loops
                 global group_names
                 groups.append(current_group)
+                number_of_groups += 1
 
                 group_name = "PR" + str(current_partition_number) + "_" + str(current_group_number)
                 if current_group_isLoop:
@@ -5907,7 +5949,6 @@ def main():
 
 #brc: incremental
     if not DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION:
-
         if not DAG_executor_constants.USE_MUTLITHREADED_BFS:
             print_BFS_stats()
             #logging.shutdown()
@@ -5934,12 +5975,18 @@ def main():
         logger.info("Output partitions/groups")
         output_partitions()
 
-        # deallocate data structures
+        # get number_of_groups_or_partitions before we deallocate 
+        # because we need this value if we check the pagerank outputs below
+        #if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+        #    #number_of_groups_or_partitions = len(groups)
+        #    number_of_groups_or_partitions = number_of_groups
+        #else:
+        #    #number_of_groups_or_partitions = len(partitions) 
+        #    number_of_groups_or_partitions = number_of_partitions
 
-        destructor()  # BFS.destructor
+        # deallocate data structures for non-incemental DAG generation
         BFS_generate_DAG_info.destructor()
-        BFS_generate_DAG_info_incremental_partitions.destructor()
-        BFS_generate_DAG_info_incremental_groups.destructor()
+        destructor()  # BFS.destructor
 
         # Calling the run() method of DAG_executor_driver. Assuming we have
         # already started tcp_server. The tcp_server needs DAG_info but
@@ -5956,6 +6003,15 @@ def main():
 
         run()
 
+        if DAG_executor_constants.CHECK_PAGERANK_OUTPUT:
+            if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+                #number_of_groups_or_partitions = len(groups)
+                number_of_groups_or_partitions = number_of_groups
+            else:
+                #number_of_groups_or_partitions = len(partitions) 
+                number_of_groups_or_partitions = number_of_partitions
+            check_pagerank_outputs(number_of_groups_or_partitions)
+
         if DAG_executor_constants.USE_STRUCT_OF_ARRAYS_FOR_PAGERANK and DAG_executor_constants.USE_SHARED_PARTITIONS_GROUPS and not DAG_executor_constants.USING_THREADS_NOT_PROCESSES:
             logger.trace("\nBFS:Close and unlink shared memory.")
             try:
@@ -5969,6 +6025,9 @@ def main():
                     os._exit(0)
     else:
 #11
+        if not (DAG_executor_constants.CLEAR_BFS_GRAPH_NODES_ON_THE_FLY and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_GRAPH_NODES_ON_THE_FLY)):
+            print_BFS_stats()
+
         global invoker_thread_for_DAG_executor_driver
 
         # bfs generates the DAG incrementally, i.e., the DAG_executor
@@ -5978,37 +6037,21 @@ def main():
         # writes the first incremental DAG.
         logger.trace("\nBFS:join invoker_thread_for_DAG_executor_driver.")
         invoker_thread_for_DAG_executor_driver.join()   # global
-        # 1. perhaps invoker_thread.join() here when inc dag gen
         logger.trace("\nBFS:join after join, print BFS stats")
-    
-        print_BFS_stats()
 
-    if DAG_executor_constants.CHECK_PAGERANK_OUTPUT:
-        # True when: comuting pagerank and using thread workers/lambdas
-        # COMPUTE_PAGERANK and RUN_ALL_TASKS_LOCALLY and (USING_WORKERS or not USING_WORKERS) and USING_THREADS_NOT_PROCESSES
-        if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
-            number_of_groups_or_partitions = len(groups)
-        else:
-            number_of_groups_or_partitions = len(partitions) 
-        _verified = verify_pagerank_outputs(number_of_groups_or_partitions)
-        
-        #if not _verified:
-        #   might do somethig with this
+        if DAG_executor_constants.CHECK_PAGERANK_OUTPUT:
+            if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+                #number_of_groups_or_partitions = len(groups)
+                number_of_groups_or_partitions = number_of_groups
+            else:
+                #number_of_groups_or_partitions = len(partitions) 
+                number_of_groups_or_partitions = number_of_partitions
+            check_pagerank_outputs(number_of_groups_or_partitions)
 
-        logger.info("")
-        logger.info("")
-        logger.info("DAG_executor_outputs:")
-        pr_outputs = get_pagerank_outputs()
-        output_keys = list(pr_outputs.keys())
-        output_keys.sort()
-        sorted_pagerank_outputs = {i: pr_outputs[i] for i in output_keys}
-        if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
-            for (k,v) in sorted_pagerank_outputs.items():
-                logger.info(str(k) + ":" + group_names[k-1] + ":" +str(v))
-        else:
-            for (k,v) in sorted_pagerank_outputs.items():
-                logger.info(str(k) + ":" + partition_names[k-1] + ":" +str(v))
-
+        # deallocate data structures for incremental DAG generation
+        BFS_generate_DAG_info_incremental_partitions.destructor()
+        BFS_generate_DAG_info_incremental_groups.destructor()
+        destructor()  # BFS.destructor
 
 if __name__ == '__main__':
     main()

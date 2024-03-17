@@ -3863,7 +3863,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         # We can save the task's outputs or the pagerank values
                         # it computed, for debugging.
                         #set_pagerank_output(DAG_executor_state.state,output)
-                        set_pagerank_output(DAG_executor_state.state,result_tuple_list)
+                        set_pagerank_output(DAG_executor_state.state,state_info.task_name,result_tuple_list)
       
                 """ where:
                     def execute_task(task,args):

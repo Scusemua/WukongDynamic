@@ -18,7 +18,7 @@ logger.addHandler(ch)
 
 pagerank_outputs = {}
 
-def set_pagerank_output(state,output):
+def set_pagerank_output(state,name,output):
     multiple_output = pagerank_outputs.get(state)
     try:
         msg = "[Error]: set_pagerank_output:" \
@@ -34,7 +34,8 @@ def set_pagerank_output(state,output):
     #    logger.error("[Error]: set_pagerank_output:"
     #        + " more than one pagerank output for state " + str(state))
 
-    pagerank_outputs[state] = output
+    #pagerank_outputs[state] = output
+    pagerank_outputs[name] = output
 
 def get_pagerank_outputs():
     return pagerank_outputs
