@@ -818,6 +818,7 @@ visited = []                    # List for nodes visited during bfs/dfs
 BFS_queue = []                  # queue of nodes for breadth-first search
 partitions = []                 # collected partitions of nodes
 number_of_partitions = 0
+sum_of_partition_lengths = 0
 groups = []                     # collected groups of nodes
 number_of_groups = 0
 current_partition = []          # partition currently be collected
@@ -3134,8 +3135,11 @@ def bfs(visited, node):
                 # This does not require a deepcopy.
                 global partitions
                 global number_of_partitions
+                global sum_of_partition_lengths
                 partitions.append(current_partition.copy())
                 number_of_partitions += 1
+                sum_of_partition_lengths += len(current_partition)
+
 #brc: incremental:   
                 # this includes regulat nodes and shadow nodes
                 num_nodes_in_partitions += len(current_partition)
@@ -3188,6 +3192,20 @@ def bfs(visited, node):
                     size_of_partition = len(current_partition)
                     BFS_generate_DAG_info.partitions_num_shadow_nodes_map[partition_name] = size_of_partition
                     start_num_shadow_nodes_for_partitions = num_shadow_nodes_added_to_partitions
+
+                if not (DAG_executor_constants.COMPUTE_PAGERANK and DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION):
+                    num_graph_nodes_in_partitions = num_nodes_in_partitions - num_shadow_nodes_added_to_partitions
+                    to_be_continued = (num_graph_nodes_in_partitions < num_nodes)
+                    logger.info("bfs: num_graph_nodes_in_partitions: " + str(num_graph_nodes_in_partitions)
+                        + " num_shadow_nodes_added_to_partitions: " + str(num_shadow_nodes_added_to_partitions)
+                        + " num_nodes: " + str(num_nodes)
+                        + " to_be_continued: " + str(to_be_continued))
+                    if not to_be_continued:
+                        logger.info("bfs: output current partition: " + partition_name)
+                        with open('./'+partition_name + '.pickle', 'wb') as handle:
+                            # partition indices in partitions[] start with 0, so current partition i
+                            # is in partitions[i-1] and previous partition is partitions[i-2]
+                            cloudpickle.dump(current_partition, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
 
                 current_partition = []
 
@@ -3456,7 +3474,23 @@ def bfs(visited, node):
                 # saved in partitions[] so we can get the nodes in partition i-1 and use them
                 # to clear the corresponding key-values in 
                 # nodeIndex_to_partition_partitionIndex_group_groupIndex_map
-                # Note: current_partition_number incremented below.
+                #
+                # Note: current_partition_number is incremented below.
+                #
+                # Note: bfs() generates DAG tasks, which are partitions and groups and 
+                # it generates the edges in the ADG, which are the Sendr and Reciver sets.
+                # The Sender and Receiver sets aer used by the DAG builder routines to 
+                # build the DAG. These builder routines access Sender and Receiver but 
+                # not partitions/groups or partition/group names. So The builders deallocate
+                # Sender and Receiver and bfs() deallocates partitions/groups and 
+                # partition_names/group_names. bfs() does one deallocation for these things
+                # that covers the non-incremental and incemental cases, i.e., bfs uses
+                # the previous_partition when processing the current_partition, and after
+                # processing the current_partition, whether for non-increental or incremental
+                # DAG generation, it can deallocate the previous partition (from partitions)
+                # and the previous partition name (from partition_names). This deallocation 
+                # here is after the code for non-incremental and incremental that uses
+                # the previous partition.
                 if DAG_executor_constants.CLEAR_BFS_MAIN_MAP_ON_THE_FLY:
                     if current_partition_number > 1:
                         # partition numbers start with 1 not 0. But the first 
@@ -3478,7 +3512,7 @@ def bfs(visited, node):
                                         os._exit(0)  
 #brc: graph on the fly
                 # Do the same for the nodes of the input graph.                   
-                if (DAG_executor_constants.CLEAR_BFS_GRAPH_NODES_ON_THE_FLY and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_GRAPH_NODES_ON_THE_FLY)):
+                if (DAG_executor_constants.CLEAR_BFS_GRAPH_NODES_ON_THE_FLY and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_ON_THE_FLY)):
                     if current_partition_number > 1:
                         # partition numbers start with 1 not 0. But the first 
                         # partition in partitions[] is in position 0.
@@ -3612,6 +3646,7 @@ def bfs(visited, node):
                 # statr the DAG_executor_driver (which will read the DAG_info object) and start
                 # the workers (which will eecute the partition/group 1 task) or statr a lambda to 
                 # execute partition/group 1.)
+                to_be_continued = None
                 if DAG_executor_constants.COMPUTE_PAGERANK and DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION:
                     # partitioning is over when all graph nodes have been
                     # put in some partition
@@ -4250,6 +4285,29 @@ def bfs(visited, node):
 
                 #global frontier_groups_sum
                 #global num_frontier_groups
+
+                if current_partition_number > 1:
+                    # partition numbers start with 1 not 0. But the first 
+                    # partition in partitions[] is in position 0.
+                    previous_partition_number = current_partition_number - 1
+                    previous_partition_number_minus_one = previous_partition_number - 1
+                    logger.info("bfs: output partitions["+ str(previous_partition_number_minus_one) + "], which is partition " + str(previous_partition_number))
+                    previous_partition = partitions[previous_partition_number_minus_one]
+                    previous_partition_name = partition_names[previous_partition_number_minus_one]
+                    with open('./'+previous_partition_name + '.pickle', 'wb') as handle:
+                        # partition indices in partitions[] start with 0, so current partition i
+                        # is in partitions[i-1] and previous partition is partitions[i-2]
+                        cloudpickle.dump(previous_partition, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+
+                if DAG_executor_constants.CLEAR_BFS_PARTITIONS_GROUPS_NAMES:
+                    if current_partition_number > 1:
+                        # partition numbers start with 1 not 0. But the first 
+                        # partition in partitions[] is in position 0.
+                        previous_partition_number = current_partition_number - 1
+                        logger.info("bfs: set partitions["+ str(previous_partition_number) + "] to None.")
+                        partitions[previous_partition_number-1] = None
+                        partition_names[previous_partition_number-1] = None
+
                 logger.trace("BFS: frontier groups: " + str(num_frontier_groups))
 
                 # use this if to filter the very small numbers of groups
@@ -4765,7 +4823,7 @@ def input_graph():
     # If we are deleting graph nodes on the fly to deallocte the sapce we use
     # a dictionary. ( See DAG_executor_constants.CLEAR_BFS_GRAPH_NODES_ON_THE_FLY)
     global nodes
-    if not (DAG_executor_constants.CLEAR_BFS_GRAPH_NODES_ON_THE_FLY and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_GRAPH_NODES_ON_THE_FLY)):
+    if not (DAG_executor_constants.CLEAR_BFS_GRAPH_NODES_ON_THE_FLY and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_ON_THE_FLY)):
         nodes = []
     else:
         nodes = {}
@@ -4795,7 +4853,7 @@ def input_graph():
     # if num_nodes is 100, this fills nodes[0] ... nodes[100], length of nodes is 101
     # Note: nodes[0] is not used, 
 #brc: graph on the fly
-    if not (DAG_executor_constants.CLEAR_BFS_GRAPH_NODES_ON_THE_FLY and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_GRAPH_NODES_ON_THE_FLY)):
+    if not (DAG_executor_constants.CLEAR_BFS_GRAPH_NODES_ON_THE_FLY and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_ON_THE_FLY)):
         # using list when we are not deallocating space on the fly or we are but the DAG is not large
         # enough to worry about space.
         for x in range(0,num_nodes+1):
@@ -4853,7 +4911,7 @@ def input_graph():
                 for i in range(number_of_nodes_to_append):
                     logger.trace("input_graph: Node(" + str(num_nodes+i+1) + ")")
                     # new node ID for our example is 101 = num_nodes+i+1 = 100 + 0 + 1 = 101
-                    if not (DAG_executor_constants.CLEAR_BFS_GRAPH_NODES_ON_THE_FLY and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_GRAPH_NODES_ON_THE_FLY)):
+                    if not (DAG_executor_constants.CLEAR_BFS_GRAPH_NODES_ON_THE_FLY and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_ON_THE_FLY)):
                         nodes.append(Node((num_nodes+i+1)))
 #brc: graph on the fly
                     else:
@@ -4993,7 +5051,7 @@ def input_graph():
         nodes with eccentricity equal to the diameter.
         """ 
 
-def output_partitions():
+def output_partitions_groups():
     if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
         for name, group in zip(group_names, groups):
             with open('./'+name + '.pickle', 'wb') as handle:
@@ -5123,21 +5181,26 @@ def print_BFS_stats():
     logger.trace("")
     logger.trace("")
     logger.trace("final current_partition length: " + str(len(current_partition)-loop_nodes_added))
-    sum_of_partition_lengths = 0
-    i = 1
-    for x in partitions:
-        sum_of_partition_lengths += len(x)
-        logger.trace(str(i) + ":length of partition: " + str(len(x)))
-        i += 1
+    # If we deallocate partitions on the fly, then partitions[i] will be none for all i except
+    # the last position. So we now have a global variable sum_of_partition_lengths that we add
+    # to as we collect partitions.
+    #sum_of_partition_lengths = 0
+    #i = 1
+    #for x in partitions:
+    #    sum_of_partition_lengths += len(x)
+    #    logger.trace(str(i) + ":length of partition: " + str(len(x)))
+    #    i += 1
     logger.trace("shadow_nodes_added: " + str(num_shadow_nodes_added_to_partitions))
+
     if not DAG_executor_constants.USE_SHARED_PARTITIONS_GROUPS:
-        sum_of_partition_lengths -= (total_loop_nodes_added + num_shadow_nodes_added_to_partitions)
-        logger.trace("sum_of_partition_lengths (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
-            + str(sum_of_partition_lengths))
+        global sum_of_partition_lengths
+        modified_sum_of_partition_lengths = sum_of_partition_lengths - (total_loop_nodes_added + num_shadow_nodes_added_to_partitions)
+        logger.trace("modified_sum_of_partition_lengths (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
+            + str(modified_sum_of_partition_lengths))
         try:
-            msg = "[Error]: print_BFS_stats: sum_of_partition_lengths is " + str(sum_of_partition_lengths) \
+            msg = "[Error]: print_BFS_stats: modified_sum_of_partition_lengths is " + str(modified_sum_of_partition_lengths) \
                 + " but num_nodes is " + str(num_nodes)
-            assert not (sum_of_partition_lengths != num_nodes) , msg
+            assert not (modified_sum_of_partition_lengths != num_nodes) , msg
         except AssertionError:
             logger.exception("[Error]: assertion failed")
             if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
@@ -5741,6 +5804,11 @@ def main():
                     partition_name = partition_name + "L"
                     Partition_loops.add(partition_name)
 
+                with open('./'+partition_name + '.pickle', 'wb') as handle:
+                    # partition indices in partitions[] start with 0, so current partition i
+                    # is in partitions[i-1] and previous partition is partitions[i-2]
+                    cloudpickle.dump(current_partition, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+
                 current_partition_isLoop = False
         #4
                 global partition_names
@@ -5784,6 +5852,20 @@ def main():
                     BFS_generate_DAG_info.partitions_num_shadow_nodes_map[partition_name] = size_of_partition
                     # not needed here since we are done but kept to be consisent with use above
                     start_num_shadow_nodes_for_partitions = num_shadow_nodes_added_to_partitions
+
+                if not (DAG_executor_constants.COMPUTE_PAGERANK and DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION):
+                    num_graph_nodes_in_partitions = num_nodes_in_partitions - num_shadow_nodes_added_to_partitions
+                    to_be_continued = (num_graph_nodes_in_partitions < num_nodes)
+                    logger.info("bfs: num_graph_nodes_in_partitions: " + str(num_graph_nodes_in_partitions)
+                        + " num_shadow_nodes_added_to_partitions: " + str(num_shadow_nodes_added_to_partitions)
+                        + " num_nodes: " + str(num_nodes)
+                        + " to_be_continued: " + str(to_be_continued))
+                    if not to_be_continued:
+                        logger.info("bfs: output current partition: " + partition_name)
+                        with open('./'+partition_name + '.pickle', 'wb') as handle:
+                            # partition indices in partitions[] start with 0, so current partition i
+                            # is in partitions[i-1] and previous partition is partitions[i-2]
+                            cloudpickle.dump(current_partition, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
 
                 current_partition = []
 
@@ -5905,17 +5987,22 @@ def main():
     # the previous partition, but we the current partition is the 
     # last partition that wil be collected.) We can now just clear the
     # nodeIndex_to_partition_partitionIndex_group_groupIndex_map.
+    # Note: we print bfs_stats below after doing these deallocations. So the deallocated
+    # data structures will be empty in the stats.
     if DAG_executor_constants.CLEAR_BFS_MAIN_MAP_ON_THE_FLY:
         logger.info("bfs: clear main map for nodes in last partition: " + str(len(partitions)))
         logger.info("")
         nodeIndex_to_partition_partitionIndex_group_groupIndex_map.clear()
 #brc: graph on the fly
     # Do the same for the nodes of the input graph
-    if (DAG_executor_constants.CLEAR_BFS_GRAPH_NODES_ON_THE_FLY and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_GRAPH_NODES_ON_THE_FLY)):
+    if (DAG_executor_constants.CLEAR_BFS_GRAPH_NODES_ON_THE_FLY and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_ON_THE_FLY)):
         logger.info("bfs: clear graph nodes for nodes in last partition: " + str(len(partitions)))
         logger.info("len(nodes): " + str(len(nodes)))
         nodes.clear()
-
+    if (DAG_executor_constants.CLEAR_BFS_PARTITIONS_GROUPS_NAMES and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_ON_THE_FLY)):
+        logger.info("bfs: clear partitions (though all but the last position of partitions will previously have been set to None")
+        partitions.clear()
+        partition_names.clear()
     # Here is the code to delete the key-value pairs one by one. In 
     # case we need to debug this:
     """
@@ -5973,7 +6060,7 @@ def main():
         #input('Press <ENTER> to continue')
 
         logger.info("Output partitions/groups")
-        output_partitions()
+        #output_partitions_groups()
 
         # get number_of_groups_or_partitions before we deallocate 
         # because we need this value if we check the pagerank outputs below
@@ -6025,7 +6112,7 @@ def main():
                     os._exit(0)
     else:
 #11
-        if not (DAG_executor_constants.CLEAR_BFS_GRAPH_NODES_ON_THE_FLY and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_GRAPH_NODES_ON_THE_FLY)):
+        if not (DAG_executor_constants.CLEAR_BFS_GRAPH_NODES_ON_THE_FLY and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_ON_THE_FLY)):
             print_BFS_stats()
 
         global invoker_thread_for_DAG_executor_driver
