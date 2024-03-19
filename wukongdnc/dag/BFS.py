@@ -3193,21 +3193,29 @@ def bfs(visited, node):
                     BFS_generate_DAG_info.partitions_num_shadow_nodes_map[partition_name] = size_of_partition
                     start_num_shadow_nodes_for_partitions = num_shadow_nodes_added_to_partitions
 
+                # When we are not using incremental DAG generation we output the current partition 
+                # on the fly instead of saving the partitions and outputting them at the end (like
+                # we used to do.) This allows us to delete/deallocate the partitions on-the-fly 
+                # to save space. 
+                # Q: Here we also dump the groups of current partition? We have theeir names
+                # in groups_of_partitions[] and the groups are in groups[].
                 if not (DAG_executor_constants.COMPUTE_PAGERANK and DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION):
-                    num_graph_nodes_in_partitions = num_nodes_in_partitions - num_shadow_nodes_added_to_partitions
-                    to_be_continued = (num_graph_nodes_in_partitions < num_nodes)
-                    logger.info("bfs: num_graph_nodes_in_partitions: " + str(num_graph_nodes_in_partitions)
-                        + " num_shadow_nodes_added_to_partitions: " + str(num_shadow_nodes_added_to_partitions)
-                        + " num_nodes: " + str(num_nodes)
-                        + " to_be_continued: " + str(to_be_continued))
-                    if not to_be_continued:
-                        logger.info("bfs: output current partition: " + partition_name)
-                        with open('./'+partition_name + '.pickle', 'wb') as handle:
-                            # partition indices in partitions[] start with 0, so current partition i
-                            # is in partitions[i-1] and previous partition is partitions[i-2]
-                            cloudpickle.dump(current_partition, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+                    if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+                        num_graph_nodes_in_partitions = num_nodes_in_partitions - num_shadow_nodes_added_to_partitions
+                        to_be_continued = (num_graph_nodes_in_partitions < num_nodes)
+                        logger.info("bfs: num_graph_nodes_in_partitions: " + str(num_graph_nodes_in_partitions)
+                            + " num_shadow_nodes_added_to_partitions: " + str(num_shadow_nodes_added_to_partitions)
+                            + " num_nodes: " + str(num_nodes)
+                            + " to_be_continued: " + str(to_be_continued))
+                        if not to_be_continued:
+                            logger.info("bfs: output current partition: " + partition_name)
+                            with open('./'+partition_name + '.pickle', 'wb') as handle:
+                                # partition indices in partitions[] start with 0, so current partition i
+                                # is in partitions[i-1] and previous partition is partitions[i-2]
+                                cloudpickle.dump(current_partition, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
 
-                current_partition = []
+                # moved down to where current_partition_number is incremented
+                #current_partition = []
 
 #brc: incremental groups
                 if DAG_executor_constants.COMPUTE_PAGERANK and (DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION or DAG_executor_constants.USE_MUTLITHREADED_BFS):
@@ -4286,27 +4294,36 @@ def bfs(visited, node):
                 #global frontier_groups_sum
                 #global num_frontier_groups
 
+                # Q: Do this only if collecting partitions? 
+                # Here we want to output the groups in the previous partitions.
+                #1. the previous groups are in groups[] as are the current groups
+                #2. We save the groups of partitions in X, so we can get them based on 
+                #   their sizes.
                 if current_partition_number > 1:
-                    # partition numbers start with 1 not 0. But the first 
-                    # partition in partitions[] is in position 0.
-                    previous_partition_number = current_partition_number - 1
-                    previous_partition_number_minus_one = previous_partition_number - 1
-                    logger.info("bfs: output partitions["+ str(previous_partition_number_minus_one) + "], which is partition " + str(previous_partition_number))
-                    previous_partition = partitions[previous_partition_number_minus_one]
-                    previous_partition_name = partition_names[previous_partition_number_minus_one]
-                    with open('./'+previous_partition_name + '.pickle', 'wb') as handle:
-                        # partition indices in partitions[] start with 0, so current partition i
-                        # is in partitions[i-1] and previous partition is partitions[i-2]
-                        cloudpickle.dump(previous_partition, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
-
-                if DAG_executor_constants.CLEAR_BFS_PARTITIONS_GROUPS_NAMES:
-                    if current_partition_number > 1:
+                    if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
                         # partition numbers start with 1 not 0. But the first 
                         # partition in partitions[] is in position 0.
                         previous_partition_number = current_partition_number - 1
-                        logger.info("bfs: set partitions["+ str(previous_partition_number) + "] to None.")
-                        partitions[previous_partition_number-1] = None
-                        partition_names[previous_partition_number-1] = None
+                        previous_partition_number_minus_one = previous_partition_number - 1
+                        logger.info("bfs: output partitions["+ str(previous_partition_number_minus_one) + "], which is partition " + str(previous_partition_number))
+                        previous_partition = partitions[previous_partition_number_minus_one]
+                        previous_partition_name = partition_names[previous_partition_number_minus_one]
+                        with open('./'+previous_partition_name + '.pickle', 'wb') as handle:
+                            # partition indices in partitions[] start with 0, so current partition i
+                            # is in partitions[i-1] and previous partition is partitions[i-2]
+                            cloudpickle.dump(previous_partition, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+                    # else: # output groups
+
+                if DAG_executor_constants.CLEAR_BFS_PARTITIONS_GROUPS_NAMES:
+                    if current_partition_number > 1:
+                        if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+                            # partition numbers start with 1 not 0. But the first 
+                            # partition in partitions[] is in position 0.
+                            previous_partition_number = current_partition_number - 1
+                            logger.info("bfs: set partitions["+ str(previous_partition_number) + "] to None.")
+                            partitions[previous_partition_number-1] = None
+                            partition_names[previous_partition_number-1] = None
+                        # else: group_names
 
                 logger.trace("BFS: frontier groups: " + str(num_frontier_groups))
 
@@ -4315,6 +4332,7 @@ def bfs(visited, node):
                 # using this to determine whether parent is in current partition
                 current_partition_number += 1
                 current_group_number = 1
+                current_partition = []
                 # frontier_groups_sum += num_frontier_groups
                 logger.trace("BFS: frontier_groups_sum: " + str(frontier_groups_sum))
                 # this was incrementd in dfs_parent for each unvsited child of a 
@@ -4459,8 +4477,9 @@ def bfs(visited, node):
                     # need to have called start before then.
                     start_num_shadow_nodes_for_groups = num_shadow_nodes_added_to_groups
 
+                # moved this down to where current_group_number is incremented
                 # this is a list of partition_nodes in the current group
-                current_group = []
+                #current_group = []
 
 #brc:
 # 1. clear instead of re-init?
@@ -4566,6 +4585,7 @@ def bfs(visited, node):
                 current_group_isLoop = False
                 current_group_number += 1
                 group_names.append(group_name)
+                current_group = []
 
                 #global patch_parent_mapping_for_partitions
                 global patch_parent_mapping_for_groups
@@ -5804,10 +5824,10 @@ def main():
                     partition_name = partition_name + "L"
                     Partition_loops.add(partition_name)
 
-                with open('./'+partition_name + '.pickle', 'wb') as handle:
-                    # partition indices in partitions[] start with 0, so current partition i
-                    # is in partitions[i-1] and previous partition is partitions[i-2]
-                    cloudpickle.dump(current_partition, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+                #with open('./'+partition_name + '.pickle', 'wb') as handle:
+                #    # partition indices in partitions[] start with 0, so current partition i
+                #   # is in partitions[i-1] and previous partition is partitions[i-2]
+                #    cloudpickle.dump(current_partition, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
 
                 current_partition_isLoop = False
         #4
