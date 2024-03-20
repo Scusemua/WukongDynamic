@@ -2938,7 +2938,8 @@ def bfs(visited, node):
     group_names.append(group_name)
 
 #brc: incremental groups
-    if DAG_executor_constants.COMPUTE_PAGERANK and (DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION or DAG_executor_constants.USE_MUTLITHREADED_BFS):
+#brc: groups of
+    if True: # DAG_executor_constants.COMPUTE_PAGERANK and (DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION or DAG_executor_constants.USE_MUTLITHREADED_BFS):
         # For incremental DAG generation, we track the groups in the current
         # partition. We will need to iterate through these groups.
         groups_of_current_partition.append(group_name)
@@ -3218,7 +3219,8 @@ def bfs(visited, node):
                 #current_partition = []
 
 #brc: incremental groups
-                if DAG_executor_constants.COMPUTE_PAGERANK and (DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION or DAG_executor_constants.USE_MUTLITHREADED_BFS):
+#brc: groups of
+                if True: # DAG_executor_constants.COMPUTE_PAGERANK and (DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION or DAG_executor_constants.USE_MUTLITHREADED_BFS):
                     # For incremental DAG generation, we need to know the 
                     # groups that each partition contains. That is, when we process
                     # the groups of the current_partion, which is being added to the 
@@ -4290,6 +4292,7 @@ def bfs(visited, node):
                             #    + ", groups_of_partitions: " + str(groups_of_partitions))
 
                             pass # ToDo: if DAG_info is complete then ....
+                
 
                 #global frontier_groups_sum
                 #global num_frontier_groups
@@ -4323,7 +4326,21 @@ def bfs(visited, node):
                             logger.info("bfs: set partitions["+ str(previous_partition_number) + "] to None.")
                             partitions[previous_partition_number-1] = None
                             partition_names[previous_partition_number-1] = None
-                        # else: group_names
+                        # else: groups
+                            logger.info("current_partition_number: " + str(current_partition_number))
+                            logger.info("groups_of_current_partition: " + str(groups_of_current_partition))
+                            logger.info("length of groups_of_current_partition: " + str(len(groups_of_current_partition)))
+                            previous_partition_number = current_partition_number - 1
+                            groups_of_previous_partition = groups_of_partitions[previous_partition_number-1]
+                            logger.info("groups_of_partitions: " + str(groups_of_partitions))
+                            logger.info("length of groups_of_partitions: " + str(len(groups_of_partitions)))
+                            logger.info("groups_of_previous_partition: " + str(groups_of_previous_partition))
+                            logger.info("length of groups_of_previous_partition: " + str(len(groups_of_previous_partition)))
+                            logging.shutdown()
+                            os._exit(0)
+
+#brc: groups of
+                groups_of_current_partition.clear()                          
 
                 logger.trace("BFS: frontier groups: " + str(num_frontier_groups))
 
@@ -4450,7 +4467,8 @@ def bfs(visited, node):
                 # Note: group_name is collected below
 
 #brc: incremental groups
-                if DAG_executor_constants.COMPUTE_PAGERANK and (DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION or DAG_executor_constants.USE_MUTLITHREADED_BFS):
+#brc: groups of
+                if True: # DAG_executor_constants.COMPUTE_PAGERANK and (DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION or DAG_executor_constants.USE_MUTLITHREADED_BFS):
                     groups_of_current_partition.append(group_name)
                     logger.trace("BFS: add " + group_name + "for partition number " 
                         + str(current_partition_number) 
