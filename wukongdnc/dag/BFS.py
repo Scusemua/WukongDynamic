@@ -2939,12 +2939,22 @@ def bfs(visited, node):
 
 #brc: incremental groups
 #brc: groups of
-    if True: # DAG_executor_constants.COMPUTE_PAGERANK and (DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION or DAG_executor_constants.USE_MUTLITHREADED_BFS):
+    if DAG_executor_constants.COMPUTE_PAGERANK and (DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION or DAG_executor_constants.USE_MUTLITHREADED_BFS):
         # For incremental DAG generation, we track the groups in the current
         # partition. We will need to iterate through these groups.
         groups_of_current_partition.append(group_name)
         logger.info("BFS: add " + group_name + " to groups_of_current_partition: "
             + str(groups_of_current_partition))
+    elif not DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION:
+        # we also track groups in the current partition for non-incremental DAG generation
+        # so we can deallocate groups[] on the fly.
+        # Note: we need this for outputting the groups on the fly, which we are
+        # doing so we can deallocate on the fly. That is, we want to output 
+        # the groups on the fly even if we are not dealloating, so we do not 
+        # check the deallocation option.
+        groups_of_current_partition.append(group_name)
+        logger.info("BFS: add " + group_name + " to groups_of_current_partition: "
+            + str(groups_of_current_partition)) 
     
 
     # The first group collected by call to bfs() is a leaf node of the DAG.
@@ -3194,11 +3204,38 @@ def bfs(visited, node):
                     BFS_generate_DAG_info.partitions_num_shadow_nodes_map[partition_name] = size_of_partition
                     start_num_shadow_nodes_for_partitions = num_shadow_nodes_added_to_partitions
 
+
+#brc: incremental groups
+#brc: groups of
+                if DAG_executor_constants.COMPUTE_PAGERANK and (DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION or DAG_executor_constants.USE_MUTLITHREADED_BFS):
+                    # For incremental DAG generation, we need to know the 
+                    # groups that each partition contains. That is, when we process
+                    # the groups of the current_partion, which is being added to the 
+                    # end of the incremental DAG, we need to know the groups of the 
+                    # previous partition and the groups of the previous previous partition.
+                    # Note: we need this for outputting the partitions on the fly, which we are
+                    # doing so we can deallocate on the fly. That is, we want to output 
+                    # the partitions on the fly even if we are not dealloating, so we do not 
+                    # check the deallocation option.
+                    groups_of_partitions.append(copy.copy(groups_of_current_partition))
+
+                    logger.trace("BFS: for partition " + partition_name + " collect groups_of_current_partition: "
+                        + str(groups_of_current_partition)
+                        + ", groups_of_partitions: " + str(groups_of_partitions))
+                elif not DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION:
+                    # we also track groups_of_partitions for non-incremental DAG generation
+                    # so we can deallocate groups[] on the fly.
+                    # Note: we need this for outputting the groups on the fly, which we are
+                    # doing so we can deallocate on the fly. That is, we want to output 
+                    # the groups on the fly even if we are not dealloating, so we do not 
+                    # check the deallocation option.
+                    groups_of_partitions.append(copy.copy(groups_of_current_partition))          
+
                 # When we are not using incremental DAG generation we output the current partition 
                 # on the fly instead of saving the partitions and outputting them at the end (like
                 # we used to do.) This allows us to delete/deallocate the partitions on-the-fly 
                 # to save space. 
-                # Q: Here we also dump the groups of current partition? We have theeir names
+                # Q: Here we also dump the groups of current partition? We have their names
                 # in groups_of_partitions[] and the groups are in groups[].
                 if not (DAG_executor_constants.COMPUTE_PAGERANK and DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION):
                     if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
@@ -3209,28 +3246,44 @@ def bfs(visited, node):
                             + " num_nodes: " + str(num_nodes)
                             + " to_be_continued: " + str(to_be_continued))
                         if not to_be_continued:
-                            logger.info("bfs: output current partition: " + partition_name)
+                            logger.info("bfs: output last partition: " + partition_name)
                             with open('./'+partition_name + '.pickle', 'wb') as handle:
                                 # partition indices in partitions[] start with 0, so current partition i
                                 # is in partitions[i-1] and previous partition is partitions[i-2]
                                 cloudpickle.dump(current_partition, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+                    else:
+                        logger.info("bfs: output groups of last partition: " + partition_name)
+                        num_graph_nodes_in_partitions = num_nodes_in_partitions - num_shadow_nodes_added_to_partitions
+                        to_be_continued = (num_graph_nodes_in_partitions < num_nodes)
+                        logger.info("bfs: num_graph_nodes_in_partitions: " + str(num_graph_nodes_in_partitions)
+                            + " num_shadow_nodes_added_to_partitions: " + str(num_shadow_nodes_added_to_partitions)
+                            + " num_nodes: " + str(num_nodes)
+                            + " to_be_continued: " + str(to_be_continued))
+                        if not to_be_continued:
+                            i=0
+                            logger.info("BFS: current_partition_number: " + str(current_partition_number))
+                            logger.info("BFS: len(groups_of_partitions): " + str(len(groups_of_partitions)))                       
+                            current_partition_number_minus_one = current_partition_number - 1
+                            groups_of_current_partition = groups_of_partitions[current_partition_number_minus_one]
+                            for group_in_current_partition  in groups_of_current_partition:
+                                index_in_groups_list_of_last_group_in_current_partition = frontier_groups_sum
+                                logger.info("BFS: index_in_groups_list_of_last_group_in_current_partition: " + str(index_in_groups_list_of_last_group_in_current_partition))
+                                index_in_groups_list_of_first_group_of_current_partition = frontier_groups_sum - (len(groups_of_current_partition)-1)
+                                logger.info("BFS: index_in_groups_list_of_first_group_of_current_partition: " + str(index_in_groups_list_of_first_group_of_current_partition))
+                                index_in_groups_list_of_current_group = index_in_groups_list_of_first_group_of_current_partition + i - 1
+                                logger.info("BFS: for " + group_in_current_partition + " index_in_groups_list_of_current_group: " + str(index_in_groups_list_of_current_group))
+
+                                with open('./'+group_in_current_partition + '.pickle', 'wb') as handle:
+                                    # partition indices in partitions[] start with 0, so current partition i
+                                    # is in partitions[i-1] and previous partition is partitions[i-2]
+                                    cloudpickle.dump(groups[index_in_groups_list_of_current_group], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+
+                            i+= 1
+
 
                 # moved down to where current_partition_number is incremented
                 #current_partition = []
 
-#brc: incremental groups
-#brc: groups of
-                if True: # DAG_executor_constants.COMPUTE_PAGERANK and (DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION or DAG_executor_constants.USE_MUTLITHREADED_BFS):
-                    # For incremental DAG generation, we need to know the 
-                    # groups that each partition contains. That is, when we process
-                    # the groups of the current_partion, which is being added to the 
-                    # end of the incremental DAG, we need to know the groups of the 
-                    # previous partition an the groups of the previous previous partition.
-                    groups_of_partitions.append(copy.copy(groups_of_current_partition))
-
-                    logger.trace("BFS: for partition " + partition_name + " collect groups_of_current_partition: "
-                        + str(groups_of_current_partition)
-                        + ", groups_of_partitions: " + str(groups_of_partitions)) 
 
                 # The first partition collected by any call to BFS() is a leaf node of the DAG.
                 # There may be many calls to BFS(). We set is_leaf_node = True at the
@@ -3501,6 +3554,7 @@ def bfs(visited, node):
                 # and the previous partition name (from partition_names). This deallocation 
                 # here is after the code for non-incremental and incremental that uses
                 # the previous partition.
+#brc: groups of
                 if DAG_executor_constants.CLEAR_BFS_MAIN_MAP_ON_THE_FLY:
                     if current_partition_number > 1:
                         # partition numbers start with 1 not 0. But the first 
@@ -4315,8 +4369,29 @@ def bfs(visited, node):
                             # partition indices in partitions[] start with 0, so current partition i
                             # is in partitions[i-1] and previous partition is partitions[i-2]
                             cloudpickle.dump(previous_partition, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
-                    # else: # output groups
+                    else: # output groups
+                        i=0
+                        previous_partition_number = current_partition_number - 1
+                        previous_partition_number_minus_one = previous_partition_number - 1
+                        groups_of_previous_partition = groups_of_partitions[previous_partition_number_minus_one]
+                        for previous_group in groups_of_previous_partition:
+                            index_in_groups_list_of_last_group_in_current_partition = frontier_groups_sum
+                            logger.info("BFS: index_in_groups_list_of_last_group_in_current_partition: " + str(index_in_groups_list_of_last_group_in_current_partition))
+                            index_in_groups_list_of_first_group_of_current_partition = frontier_groups_sum - (len(groups_of_current_partition)-1)
+                            logger.info("BFS: index_in_groups_list_of_first_group_of_current_partition: " + str(index_in_groups_list_of_first_group_of_current_partition))
+                            index_in_groups_list_of_first_group_of_previous_partition = index_in_groups_list_of_first_group_of_current_partition - len(groups_of_previous_partition)
+                            logger.info("BFS: index_in_groups_list_of_first_group_of_previous_partition: " + str(index_in_groups_list_of_first_group_of_previous_partition))
+                            index_in_groups_list_of_previous_group = index_in_groups_list_of_first_group_of_previous_partition + i - 1
+                            logger.info("BFS: for " + previous_group + " index_in_groups_list_of_previous_group: " + str(index_in_groups_list_of_previous_group))
 
+                            with open('./'+previous_group + '.pickle', 'wb') as handle:
+                                # partition indices in partitions[] start with 0, so current partition i
+                                # is in partitions[i-1] and previous partition is partitions[i-2]
+                                cloudpickle.dump(groups[index_in_groups_list_of_previous_group], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+
+                            i+= 1
+     
+#brc: groups of
                 if DAG_executor_constants.CLEAR_BFS_PARTITIONS_GROUPS_NAMES:
                     if current_partition_number > 1:
                         if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
@@ -4336,8 +4411,21 @@ def bfs(visited, node):
                             logger.info("length of groups_of_partitions: " + str(len(groups_of_partitions)))
                             logger.info("groups_of_previous_partition: " + str(groups_of_previous_partition))
                             logger.info("length of groups_of_previous_partition: " + str(len(groups_of_previous_partition)))
-                            logging.shutdown()
-                            os._exit(0)
+                            # the index of the first partition/group in partitions[]/groups[] is 1 not 0.
+                            i=0
+                            for previous_group in groups_of_previous_partition:
+                                index_in_groups_list_of_last_group_in_current_partition = frontier_groups_sum
+                                logger.info("BFS: index_in_groups_list_of_last_group_in_current_partition: " + str(index_in_groups_list_of_last_group_in_current_partition))
+                                index_in_groups_list_of_first_group_of_current_partition = frontier_groups_sum - (len(groups_of_current_partition)-1)
+                                logger.info("BFS: index_in_groups_list_of_first_group_of_current_partition: " + str(index_in_groups_list_of_first_group_of_current_partition))
+                                index_in_groups_list_of_first_group_of_previous_partition = index_in_groups_list_of_first_group_of_current_partition - len(groups_of_previous_partition)
+                                logger.info("BFS: index_in_groups_list_of_first_group_of_previous_partition: " + str(index_in_groups_list_of_first_group_of_previous_partition))
+                                index_in_groups_list_of_previous_group = index_in_groups_list_of_first_group_of_previous_partition + i - 1
+                                logger.info("BFS: for " + previous_group + " index_in_groups_list_of_previous_group: " + str(index_in_groups_list_of_previous_group))
+                                i+= 1
+
+                            #logging.shutdown()
+                            #os._exit(0)
 
 #brc: groups of
                 groups_of_current_partition.clear()                          
@@ -4468,11 +4556,21 @@ def bfs(visited, node):
 
 #brc: incremental groups
 #brc: groups of
-                if True: # DAG_executor_constants.COMPUTE_PAGERANK and (DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION or DAG_executor_constants.USE_MUTLITHREADED_BFS):
+                if DAG_executor_constants.COMPUTE_PAGERANK and (DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION or DAG_executor_constants.USE_MUTLITHREADED_BFS):
                     groups_of_current_partition.append(group_name)
                     logger.trace("BFS: add " + group_name + "for partition number " 
                         + str(current_partition_number) 
                         + " to groups_of_current_partition: " + str(groups_of_current_partition))
+                elif not DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION:
+                    # we also track groups in the current partition for non-incremental DAG generation
+                    # so we can deallocate groups[] on the fly.
+                    # Note: we need this for outputting the groups on the fly, which we are
+                    # doing so we can deallocate on the fly. That is, we want to output 
+                    # the groups on the fly even if we are not dealloating, so we do not 
+                    # check the deallocation option.
+                    groups_of_current_partition.append(group_name)
+                    logger.info("BFS: add " + group_name + " to groups_of_current_partition: "
+                        + str(groups_of_current_partition)) 
 
 #brc: clustering
                 # Note: need the group name here.
@@ -5892,18 +5990,19 @@ def main():
                     start_num_shadow_nodes_for_partitions = num_shadow_nodes_added_to_partitions
 
                 if not (DAG_executor_constants.COMPUTE_PAGERANK and DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION):
-                    num_graph_nodes_in_partitions = num_nodes_in_partitions - num_shadow_nodes_added_to_partitions
-                    to_be_continued = (num_graph_nodes_in_partitions < num_nodes)
-                    logger.info("bfs: num_graph_nodes_in_partitions: " + str(num_graph_nodes_in_partitions)
-                        + " num_shadow_nodes_added_to_partitions: " + str(num_shadow_nodes_added_to_partitions)
-                        + " num_nodes: " + str(num_nodes)
-                        + " to_be_continued: " + str(to_be_continued))
-                    if not to_be_continued:
-                        logger.info("bfs: output current partition: " + partition_name)
-                        with open('./'+partition_name + '.pickle', 'wb') as handle:
-                            # partition indices in partitions[] start with 0, so current partition i
-                            # is in partitions[i-1] and previous partition is partitions[i-2]
-                            cloudpickle.dump(current_partition, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+                    if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+                        num_graph_nodes_in_partitions = num_nodes_in_partitions - num_shadow_nodes_added_to_partitions
+                        to_be_continued = (num_graph_nodes_in_partitions < num_nodes)
+                        logger.info("bfs: num_graph_nodes_in_partitions: " + str(num_graph_nodes_in_partitions)
+                            + " num_shadow_nodes_added_to_partitions: " + str(num_shadow_nodes_added_to_partitions)
+                            + " num_nodes: " + str(num_nodes)
+                            + " to_be_continued: " + str(to_be_continued))
+                        if not to_be_continued:
+                            logger.info("bfs: output current partition: " + partition_name)
+                            with open('./'+partition_name + '.pickle', 'wb') as handle:
+                                # partition indices in partitions[] start with 0, so current partition i
+                                # is in partitions[i-1] and previous partition is partitions[i-2]
+                                cloudpickle.dump(current_partition, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
 
                 current_partition = []
 
@@ -6027,6 +6126,7 @@ def main():
     # nodeIndex_to_partition_partitionIndex_group_groupIndex_map.
     # Note: we print bfs_stats below after doing these deallocations. So the deallocated
     # data structures will be empty in the stats.
+#brc: groups of
     if DAG_executor_constants.CLEAR_BFS_MAIN_MAP_ON_THE_FLY:
         logger.info("bfs: clear main map for nodes in last partition: " + str(len(partitions)))
         logger.info("")
@@ -6037,6 +6137,7 @@ def main():
         logger.info("bfs: clear graph nodes for nodes in last partition: " + str(len(partitions)))
         logger.info("len(nodes): " + str(len(nodes)))
         nodes.clear()
+#brc: groups of
     if (DAG_executor_constants.CLEAR_BFS_PARTITIONS_GROUPS_NAMES and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_ON_THE_FLY)):
         logger.info("bfs: clear partitions (though all but the last position of partitions will previously have been set to None")
         partitions.clear()
@@ -6150,6 +6251,7 @@ def main():
                     os._exit(0)
     else:
 #11
+#brc: graph on the fly
         if not (DAG_executor_constants.CLEAR_BFS_GRAPH_NODES_ON_THE_FLY and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_ON_THE_FLY)):
             print_BFS_stats()
 
