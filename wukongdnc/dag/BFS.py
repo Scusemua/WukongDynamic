@@ -820,6 +820,7 @@ partitions = []                 # collected partitions of nodes
 number_of_partitions = 0
 sum_of_partition_lengths = 0
 groups = []                     # collected groups of nodes
+sum_of_group_lengths = 0
 number_of_groups = 0
 current_partition = []          # partition currently be collected
 current_partition_number = 1    # current partition number,
@@ -967,10 +968,10 @@ Group_loops = set()
 # shadow node will be its last index, e.g., if shadow node ID is in positions 0 and 2 its
 # index will be 2. We do not use the index of shadow node's so we don't care.
 
-
+#brc: graph on the fly
 # nodes in the input graph. This will be either a list or a dictionary.
 # If we are deleting graph nodes on the fly to deallocte the sapce we use
-# a dictionary for a faster delete (see DAG_executor_constants.CLEAR_BFS_GRAPH_NODES_ON_THE_FLY).
+# a dictionary for a faster delete. (see DAG_executor_constants.CLEAR_BFS_GRAPH_NODES_ON_THE_FLY).
 #brc: graph on the fly
 nodes = None
 num_nodes = 0
@@ -2884,6 +2885,7 @@ def bfs(visited, node):
     # list of collected groups
     global groups
     global number_of_groups
+    global sum_of_group_lengths
     
 # brc: ******* Group
     # in dfs_parent(), we add a node to either list partitions or list
@@ -2892,6 +2894,7 @@ def bfs(visited, node):
     # partition (same nodes) below.
     groups.append(current_group)
     number_of_groups += 1
+    sum_of_group_lengths += len(current_group)
 
 
     # this first group ends here after first dfs_parent
@@ -2940,18 +2943,19 @@ def bfs(visited, node):
 #brc: incremental groups
 #brc: groups of
     if DAG_executor_constants.COMPUTE_PAGERANK and (DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION or DAG_executor_constants.USE_MUTLITHREADED_BFS):
-        # For incremental DAG generation, we track the groups in the current
-        # partition. We will need to iterate through these groups.
+        # For incremental DAG generation, we track the groups in the partitions. We
+        # save all of thse groups in groups_of_partitions[]. We will need to iterate through 
+        # the groups in the previous_partition and we can get them from groups_of_partitions.
         groups_of_current_partition.append(group_name)
         logger.info("BFS: add " + group_name + " to groups_of_current_partition: "
             + str(groups_of_current_partition))
-    elif not DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION:
-        # we also track groups in the current partition for non-incremental DAG generation
+    elif DAG_executor_constants.COMPUTE_PAGERANK and (not DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION):
+        # we also track the groups in each partition for non-incremental DAG generation
         # so we can deallocate groups[] on the fly.
-        # Note: we need this for outputting the groups on the fly, which we are
-        # doing so we can deallocate on the fly. That is, we want to output 
-        # the groups on the fly even if we are not dealloating, so we do not 
-        # check the deallocation option.
+        # Note: we need this for outputting groups on the fly, which we do so that
+        # we can deallocate groups on the fly. (We used to output all the groups in groups{}
+        # at the end of DAG gneration - but we output groups as we collect them now so that
+        # we can also dealloate the groups after we output them.)
         groups_of_current_partition.append(group_name)
         logger.info("BFS: add " + group_name + " to groups_of_current_partition: "
             + str(groups_of_current_partition)) 
@@ -3222,13 +3226,11 @@ def bfs(visited, node):
                     logger.trace("BFS: for partition " + partition_name + " collect groups_of_current_partition: "
                         + str(groups_of_current_partition)
                         + ", groups_of_partitions: " + str(groups_of_partitions))
-                elif not DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION:
+                elif DAG_executor_constants.COMPUTE_PAGERANK and (not DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION):
                     # we also track groups_of_partitions for non-incremental DAG generation
                     # so we can deallocate groups[] on the fly.
-                    # Note: we need this for outputting the groups on the fly, which we are
-                    # doing so we can deallocate on the fly. That is, we want to output 
-                    # the groups on the fly even if we are not dealloating, so we do not 
-                    # check the deallocation option.
+                    # Note: we need this for outputting the groups on the fly (instead of outputting
+                    # them all at the end) which we are doing so we can deallocate on the fly. 
                     groups_of_partitions.append(copy.copy(groups_of_current_partition))          
 
                 # When we are not using incremental DAG generation we output the current partition 
@@ -3541,8 +3543,8 @@ def bfs(visited, node):
                 # Note: current_partition_number is incremented below.
                 #
                 # Note: bfs() generates DAG tasks, which are partitions and groups and 
-                # it generates the edges in the ADG, which are the Sendr and Reciver sets.
-                # The Sender and Receiver sets aer used by the DAG builder routines to 
+                # it generates the edges in the DAG, which are the Sender and Receiver sets.
+                # The Sender and Receiver sets are used by the DAG builder routines to 
                 # build the DAG. These builder routines access Sender and Receiver but 
                 # not partitions/groups or partition/group names. So The builders deallocate
                 # Sender and Receiver and bfs() deallocates partitions/groups and 
@@ -3551,8 +3553,8 @@ def bfs(visited, node):
                 # the previous_partition when processing the current_partition, and after
                 # processing the current_partition, whether for non-increental or incremental
                 # DAG generation, it can deallocate the previous partition (from partitions)
-                # and the previous partition name (from partition_names). This deallocation 
-                # here is after the code for non-incremental and incremental that uses
+                # and the previous partition name (from partition_names). 
+                # Note: This deallocation here is after the code for non-incremental and incremental that uses
                 # the previous partition.
 #brc: groups of
                 if DAG_executor_constants.CLEAR_BFS_MAIN_MAP_ON_THE_FLY:
@@ -3575,7 +3577,9 @@ def bfs(visited, node):
                                         logging.shutdown()
                                         os._exit(0)  
 #brc: graph on the fly
-                # Do the same for the nodes of the input graph.                   
+                # Do the same for the nodes of the input graph. That is, we are done with graph nodes
+                # that correspond to a partition node previous_partiion. Delete each graph node using
+                # the ID of the partition node. Graph node i is stored with key i (in dictionary nodes{}).                    
                 if (DAG_executor_constants.CLEAR_BFS_GRAPH_NODES_ON_THE_FLY and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_ON_THE_FLY)):
                     if current_partition_number > 1:
                         # partition numbers start with 1 not 0. But the first 
@@ -4351,15 +4355,20 @@ def bfs(visited, node):
                 #global frontier_groups_sum
                 #global num_frontier_groups
 
-                # Q: Do this only if collecting partitions? 
-                # Here we want to output the groups in the previous partitions.
-                #1. the previous groups are in groups[] as are the current groups
-                #2. We save the groups of partitions in X, so we can get them based on 
-                #   their sizes.
+                # Here we output the groups in the previous partition.
+                # - the previous groups are in groups[] as are the current groups
+                # - We save the groups of each partitions in groups_of_partitions.
+                # We can find the position in groups[] of a group in a partition 
+                # using the number of groups in the current partition, which are
+                # at the end of groups[] and the number of groups in the previous
+                # partition.
                 if current_partition_number > 1:
                     if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
                         # partition numbers start with 1 not 0. But the first 
                         # partition in partitions[] is in position 0.
+                        # Finding the previous_partiton in partitions[] is easy since 
+                        # current_partition at at the end of partitions[] and previous
+                        # partition is in the position before that.
                         previous_partition_number = current_partition_number - 1
                         previous_partition_number_minus_one = previous_partition_number - 1
                         logger.info("bfs: output partitions["+ str(previous_partition_number_minus_one) + "], which is partition " + str(previous_partition_number))
@@ -4371,16 +4380,28 @@ def bfs(visited, node):
                             cloudpickle.dump(previous_partition, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
                     else: # output groups
                         i=0
+                        # find position of the groups of previous partitio in groups_of_partitions
                         previous_partition_number = current_partition_number - 1
                         previous_partition_number_minus_one = previous_partition_number - 1
                         groups_of_previous_partition = groups_of_partitions[previous_partition_number_minus_one]
+                        # Note: groups weer appended to groups_of_previous_partition in the order they were collected
                         for previous_group in groups_of_previous_partition:
+                            # frontier_groups_sum is the number of groups and groups are stored in groups[] starting
+                            # at position 1, not 0. So group i is in position i not i-1
                             index_in_groups_list_of_last_group_in_current_partition = frontier_groups_sum
                             logger.info("BFS: index_in_groups_list_of_last_group_in_current_partition: " + str(index_in_groups_list_of_last_group_in_current_partition))
+                            # if the number of groups is 5 then the last group is in position 5. If there are 2 groups
+                            # in the current partition, tey are in positions 5 and 4 (5 - (2-1))
                             index_in_groups_list_of_first_group_of_current_partition = frontier_groups_sum - (len(groups_of_current_partition)-1)
                             logger.info("BFS: index_in_groups_list_of_first_group_of_current_partition: " + str(index_in_groups_list_of_first_group_of_current_partition))
+                            # in previous example, 5 was the postion of the last group and 4 the first group of the current
+                            # partition. The last group of the previous partition is in position 3.
+                            # The first group of the previous partition, if this previous partition has
+                            # 2 nodes, is in 4 - 2 = 2. 
                             index_in_groups_list_of_first_group_of_previous_partition = index_in_groups_list_of_first_group_of_current_partition - len(groups_of_previous_partition)
                             logger.info("BFS: index_in_groups_list_of_first_group_of_previous_partition: " + str(index_in_groups_list_of_first_group_of_previous_partition))
+                            # The position of previous group is in the range 2 .. 3, which we get as 2+0 ... 2+1
+                            # where i takes on the values 0 and 1.
                             index_in_groups_list_of_previous_group = index_in_groups_list_of_first_group_of_previous_partition + i - 1
                             logger.info("BFS: for " + previous_group + " index_in_groups_list_of_previous_group: " + str(index_in_groups_list_of_previous_group))
 
@@ -4392,6 +4413,11 @@ def bfs(visited, node):
                             i+= 1
      
 #brc: groups of
+                # Here we are claring the partitions/groups from partitions[]/groups[] that we 
+                # no longer need. That is, the previous partition / the groups in the 
+                # previous partition. See the comments above for outputting (instead of 
+                # clearing) these partitions/groups - the calculations for their positions
+                # are the same)
                 if DAG_executor_constants.CLEAR_BFS_PARTITIONS_GROUPS_NAMES:
                     if current_partition_number > 1:
                         if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
@@ -4428,6 +4454,7 @@ def bfs(visited, node):
                             #os._exit(0)
 
 #brc: groups of
+                # clear for next partition. This is cleared after all of its uses (above)
                 groups_of_current_partition.clear()                          
 
                 logger.trace("BFS: frontier groups: " + str(num_frontier_groups))
@@ -4541,6 +4568,7 @@ def bfs(visited, node):
                 # Note: append() uses a shallow copy.
                 groups.append(current_group)
                 number_of_groups += 1
+                sum_of_group_lengths += len(current_group)
 
                 group_name = "PR" + str(current_partition_number) + "_" + str(current_group_number)
                 if current_group_isLoop:
@@ -4556,18 +4584,17 @@ def bfs(visited, node):
 
 #brc: incremental groups
 #brc: groups of
+                # We track the groups in the current partition for incremental DAG generation.
                 if DAG_executor_constants.COMPUTE_PAGERANK and (DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION or DAG_executor_constants.USE_MUTLITHREADED_BFS):
                     groups_of_current_partition.append(group_name)
                     logger.trace("BFS: add " + group_name + "for partition number " 
                         + str(current_partition_number) 
                         + " to groups_of_current_partition: " + str(groups_of_current_partition))
-                elif not DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION:
+                elif DAG_executor_constants.COMPUTE_PAGERANK and (not DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION):
                     # we also track groups in the current partition for non-incremental DAG generation
                     # so we can deallocate groups[] on the fly.
                     # Note: we need this for outputting the groups on the fly, which we are
-                    # doing so we can deallocate on the fly. That is, we want to output 
-                    # the groups on the fly even if we are not dealloating, so we do not 
-                    # check the deallocation option.
+                    # doing so we can deallocate on the fly.
                     groups_of_current_partition.append(group_name)
                     logger.info("BFS: add " + group_name + " to groups_of_current_partition: "
                         + str(groups_of_current_partition)) 
@@ -4956,13 +4983,15 @@ def input_graph():
     num_nodes = int(words[2])
 
 #brc: graph on the fly
-    # If we are deleting graph nodes on the fly to deallocte the sapce we use
-    # a dictionary. ( See DAG_executor_constants.CLEAR_BFS_GRAPH_NODES_ON_THE_FLY)
+    # If we are deleting graph nodes on the fly to deallocte the space, we use
+    # a dictionary so that we can efficently delete an arbitray node. 
+    # (See DAG_executor_constants.CLEAR_BFS_GRAPH_NODES_ON_THE_FLY)
+    # Otherwise, we use a list.
     global nodes
     if not (DAG_executor_constants.CLEAR_BFS_GRAPH_NODES_ON_THE_FLY and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_ON_THE_FLY)):
-        nodes = []
+        nodes = [] # list
     else:
-        nodes = {}
+        nodes = {}  # dictionary
 
 #brc: num_nodes
     # save number of graph nodes in BFS_generate_DAG_info
@@ -4995,7 +5024,7 @@ def input_graph():
         for x in range(0,num_nodes+1):
             nodes.append(Node(x))
     else: 
-        # using dictionary when we are deallocating space on the fly and the DAG is large 
+        # using dictionary when we are deallocating space on the fly and the DAG is "large" 
         for x in range(0,num_nodes+1):
             nodes[x] = Node(x)
 
@@ -5373,30 +5402,36 @@ def print_BFS_stats():
                 # and we are not checking that calculation here.
 
     logger.trace("")
-    sum_of_groups_lengths = 0
-    i = 1
-    for x in groups:
-        sum_of_groups_lengths += len(x)
-        logger.trace(str(i) + ": length of group: " + str(len(x)))
-        i+=1
-    logger.trace("num_shadow_nodes_added_to_groups: " + str(num_shadow_nodes_added_to_groups))
+    #sum_of_groups_lengths = 0
+    #i = 1
+    #for x in groups:
+    #    sum_of_groups_lengths += len(x)
+    #    logger.trace(str(i) + ": length of group: " + str(len(x)))
+    #    i+=1
+    logger.info("num_shadow_nodes_added_to_groups: " + str(num_shadow_nodes_added_to_groups))
     if not DAG_executor_constants.USE_SHARED_PARTITIONS_GROUPS:
-        logger.trace("total_loop_nodes_added : " + str(total_loop_nodes_added))
-        sum_of_groups_lengths -= (total_loop_nodes_added + num_shadow_nodes_added_to_groups)
-        logger.trace("sum_of_groups_lengths (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
-            + str(sum_of_groups_lengths))
-        try:
-            msg = "[Error]: print_BFS_stats: sum_of_groups_lengths is " + str(sum_of_groups_lengths) \
-                + " but num_nodes is " + str(num_nodes)
-            assert not (sum_of_groups_lengths != num_nodes) , msg
-        except AssertionError:
-            logger.exception("[Error]: assertion failed")
-            if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
-                logging.shutdown()
-                os._exit(0)
-        #if sum_of_groups_lengths != num_nodes:
-        #    logger.error("[Error]: print_BFS_stats: sum_of_groups_lengths is " + str(sum_of_groups_lengths)
-        #        + " but num_nodes is " + str(num_nodes))
+        # if we have been deallocating groups then sum_of_groups_lengths just computed is
+        # not correct since groups[] does not have all the groups in it.
+        if True: # not DAG_executor_constants.CLEAR_BFS_PARTITIONS_GROUPS_NAMES:
+            logger.info("total_loop_nodes_added : " + str(total_loop_nodes_added))
+
+            global sum_of_group_lengths
+            logger.info("sum_of_group_lengths: " + str(sum_of_group_lengths))
+            modified_sum_of_group_lengths = sum_of_group_lengths - (total_loop_nodes_added + num_shadow_nodes_added_to_groups)
+            logger.trace("sum_of_groups_lengths (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
+                + str(modified_sum_of_group_lengths))
+            try:
+                msg = "[Error]: print_BFS_stats: modified_sum_of_groups_lengths is " + str(modified_sum_of_group_lengths) \
+                    + " but num_nodes is " + str(num_nodes)
+                assert not (modified_sum_of_group_lengths != num_nodes) , msg
+            except AssertionError:
+                logger.exception("[Error]: assertion failed")
+                if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+                    logging.shutdown()
+                    os._exit(0)
+            #if sum_of_groups_lengths != num_nodes:
+            #    logger.error("[Error]: print_BFS_stats: sum_of_groups_lengths is " + str(sum_of_groups_lengths)
+            #        + " but num_nodes is " + str(num_nodes))
     else: # USE_SHARED_PARTITIONS_GROUPS so computing PageRank
         if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
             if not DAG_executor_constants.USE_STRUCT_OF_ARRAYS_FOR_PAGERANK:
@@ -5409,7 +5444,7 @@ def print_BFS_stats():
                 logger.trace("shared_groups_length (not counting total_loop_nodes_added or shadow_nodes and their parents added): " 
                     + str(shared_groups_length))
                 try:
-                    msg = "[Error]: print_BFS_stats: sum_of_groups_lengths is " + str(sum_of_groups_lengths) \
+                    msg = "[Error]: print_BFS_stats: shared_groups_length is " + str(shared_groups_length) \
                         + " but num_nodes is " + str(num_nodes)
                     assert not (shared_groups_length != num_nodes) , msg
                 except AssertionError:
@@ -5675,7 +5710,7 @@ def print_BFS_stats():
         +  str(len(frontiers)-1))
     logger.trace("Average number of frontier groups: " + (str(frontier_groups_sum / (len(frontiers)-1))))
     logger.trace("")
-    i#f True: # 
+    #if True: # 
     if DAG_executor_constants.USE_SHARED_PARTITIONS_GROUPS: 
         logger.trace("Shared partition map frontier_parent_tuples:")                 
         for (k,v) in BFS_Shared.shared_partition_frontier_parents_map.items():
@@ -6121,8 +6156,8 @@ def main():
     # except for the keys corresponding to the node IDs in the 
     # last partition we collected. (When we collect the current 
     # partition, we delete the key-value pairs for the nodes in
-    # the previous partition, but we the current partition is the 
-    # last partition that wil be collected.) We can now just clear the
+    # the previous partition, but the current partition is the 
+    # last partition that will be collected.) We can now just clear the
     # nodeIndex_to_partition_partitionIndex_group_groupIndex_map.
     # Note: we print bfs_stats below after doing these deallocations. So the deallocated
     # data structures will be empty in the stats.
@@ -6132,16 +6167,23 @@ def main():
         logger.info("")
         nodeIndex_to_partition_partitionIndex_group_groupIndex_map.clear()
 #brc: graph on the fly
-    # Do the same for the nodes of the input graph
+    # Do the same for the remaining nodes of the input graph (corresponding to the partition nodes
+    # in the current and last partition.)
     if (DAG_executor_constants.CLEAR_BFS_GRAPH_NODES_ON_THE_FLY and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_ON_THE_FLY)):
         logger.info("bfs: clear graph nodes for nodes in last partition: " + str(len(partitions)))
         logger.info("len(nodes): " + str(len(nodes)))
         nodes.clear()
 #brc: groups of
+    # Do the same for the remaining partitions in partitions[]
     if (DAG_executor_constants.CLEAR_BFS_PARTITIONS_GROUPS_NAMES and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_ON_THE_FLY)):
         logger.info("bfs: clear partitions (though all but the last position of partitions will previously have been set to None")
         partitions.clear()
         partition_names.clear()
+       # Do the same for the remaining partitions in partitions[]
+    if (DAG_executor_constants.CLEAR_BFS_PARTITIONS_GROUPS_NAMES and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_ON_THE_FLY)):
+        logger.info("bfs: clear groups (though all but the groups in the last partition will previously have been set to None")
+        groups.clear()
+        group_names.clear()
     # Here is the code to delete the key-value pairs one by one. In 
     # case we need to debug this:
     """
@@ -6176,6 +6218,13 @@ def main():
 #brc: incremental
     if not DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION:
         if not DAG_executor_constants.USE_MUTLITHREADED_BFS:
+#brc: graph on the fly
+            # Note: If we deallocate the bfs() data structures, they will be empty
+            # and many of the states are blank, but we can still call print_BFS_stats()
+            #if not ((DAG_executor_constants.CLEAR_BFS_GRAPH_NODES_ON_THE_FLY \
+            #    or DAG_executor_constants.CLEAR_BFS_MAIN_MAP_ON_THE_FLY \
+            #    or DAG_executor_constants.CLEAR_BFS_PARTITIONS_GROUPS_NAMES) \
+            #    and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_ON_THE_FLY)):
             print_BFS_stats()
             #logging.shutdown()
             #os._exit(0)
@@ -6184,6 +6233,12 @@ def main():
             # started the DAG_generator_for_multithreaded_DAG_generation
             # at the start of bfs() execution.
             DAG_generator_for_multithreaded_DAG_generation.join_thread()
+            # Note: If we deallocate the bfs() data structures, they will be empty
+            # and many of the states are blank, but we can still call print_BFS_stats()
+            #if not ((DAG_executor_constants.CLEAR_BFS_GRAPH_NODES_ON_THE_FLY \
+            #    or DAG_executor_constants.CLEAR_BFS_MAIN_MAP_ON_THE_FLY \
+            #    or DAG_executor_constants.CLEAR_BFS_PARTITIONS_GROUPS_NAMES) \
+            #    and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_ON_THE_FLY)):
             print_BFS_stats()
 
         # old: do this if not incremental dag geeration. New: 
@@ -6252,8 +6307,13 @@ def main():
     else:
 #11
 #brc: graph on the fly
-        if not (DAG_executor_constants.CLEAR_BFS_GRAPH_NODES_ON_THE_FLY and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_ON_THE_FLY)):
-            print_BFS_stats()
+        # Note: If we deallocate the bfs() data structures, they will be empty
+        # and many of the states are blank, but we can still call print_BFS_stats()
+        #if not ((DAG_executor_constants.CLEAR_BFS_GRAPH_NODES_ON_THE_FLY \
+        #    or DAG_executor_constants.CLEAR_BFS_MAIN_MAP_ON_THE_FLY \
+        #    or DAG_executor_constants.CLEAR_BFS_PARTITIONS_GROUPS_NAMES) \
+        #    and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_ON_THE_FLY)):
+        print_BFS_stats()
 
         global invoker_thread_for_DAG_executor_driver
 
