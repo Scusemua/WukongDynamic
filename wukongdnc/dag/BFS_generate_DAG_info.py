@@ -27,8 +27,25 @@ if not (not USING_THREADS_NOT_PROCESSES or USE_MULTITHREADED_MULTIPROCESSING):
 
 #For DAG generation, map sending task to list of Reveiving tasks, and 
 # map receiving task to list of Sending tasks.
+#
+# For incremental DAG generation in BFS_generate_DAG_info_incremental_partitions.py
+# This is not used - we know that each partition sends outputs only to the next 
+# partition and reeives inputs onlyt from the previous partition.
 Partition_senders = {}
+# For incremental DAG generation in BFS_generate_DAG_info_incremental_partitions.py
+# This is used: senders = Partition_receivers.get(current_partition_name)
 Partition_receivers = {}
+# Deallocation for incremental DAG generation in BFS_generate_DAG_info_incremental_partitions.py:
+# We can clear Partition_senders on each call and and del Partition_receivers[current_partition_name]:
+"""
+    if DAG_executor_constants.CLEAR_BFS_SENDERS_AND_RECEIVERS:
+        # Between calls to generate_DAG_info_incremental_partitions we add names to
+        # Partition_senders, we can clear all of them.
+        Partition_senders.clear()
+        # if current_partition_name was a key in the map then delete.
+        if not senders == None:
+            del Partition_receivers[current_partition_name]
+"""
 Group_senders = {}
 Group_receivers = {}
 

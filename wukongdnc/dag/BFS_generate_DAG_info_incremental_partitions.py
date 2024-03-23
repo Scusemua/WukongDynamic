@@ -628,6 +628,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
     # and an exceptioj is thrown when a dictionary is changed in size (i.e., an item is added or removed) 
     # while it is being iterated over in a loop. We also use copy() for thr 
     # list we are iterating over.
+    # Note: the only access of Partition_senders is here to print it.
     print("generate_DAG_info_incremental_partitions: Partition_senders:")
     for sender_name,receiver_name_set in Partition_senders.copy().items():
         print("sender:" + sender_name)
@@ -674,6 +675,29 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
     # node and thus has no senders. This is true about partition 1 and
     # this is assserted by the caller (BFS()) of this method.
 
+    if DAG_executor_constants.CLEAR_BFS_SENDERS_AND_RECEIVERS:
+        Partition_senders.clear()
+        if not senders == None:
+            del Partition_receivers[current_partition_name]
+        logger.info("here")
+        print("generate_DAG_info_incremental_partitions: Partition_senders:")
+        for sender_name,receiver_name_set in Partition_senders.copy().items():
+            print("sender:" + sender_name)
+            print("receiver_name_set:" + str(receiver_name_set))
+        print()
+        print()
+        print("generate_DAG_info_incremental_partitions: Partition_receivers:")
+        for receiver_name,sender_name_set in Partition_receivers.copy().items():
+            print("receiver:" + receiver_name)
+            print("sender_name_set:" + str(sender_name_set))
+        print()
+        print()
+        print("generate_DAG_info_incremental_partitions: Leaf nodes of partitions (incremental):")
+        for name in leaf_tasks_of_partitions_incremental.copy():
+            print(name + " ")
+        print()
+
+
     """
     Outline: 
     Each call to generate_DAG_info_incremental_partitions adds one partition to the
@@ -682,7 +706,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
     The previous partition's next partition is this current partition, which is 
     either complete or incomplete. If the current partition is incomplete then 
     the previous partition is marked as having an incomplete next partition. We also
-    comsider the previous partition of the previous partition. It was marked as complete
+    consider the previous partition of the previous partition. It was marked as complete
     when we processed the previous partition, but it was considered to have an incomplete
     next partition. Now that we marked the previous partition as complete, the prvious 
     previous partition is marked as not having an incomplete next partition.
@@ -695,7 +719,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
     the only partition in its connected component, i.e., its component has size 1,
     then it can also be marked as complete since it has no children and thus we have
     all the info we need about partition 1. To identify the last partition
-    in a conncted component (besides the partitio that is the last partition
+    in a connected component (besides the partitio that is the last partition
     to be connected in the DAG) we would have to look at all the nodes in a 
     partition and determibe whethr they had any child nodes that were not in
     the same partition (i.e., these child nodes will be i the next partition).
@@ -829,7 +853,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         logger.info("generate_DAG_info_incremental_partitions: returning from generate_DAG_info_incremental_partitions for"
             + " partition " + str(current_partition_name))
         
-        return DAG_info
+        #return DAG_info
 
     elif (senders is None):
         # (Note: Don't think we can have a length 0 senders, 
@@ -1060,7 +1084,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         logger.trace("generate_DAG_info_incremental_partitions: returning from generate_DAG_info_incremental_partitions for"
             + " partition " + str(current_partition_name))
         
-        return DAG_info
+        #return DAG_info
     
     else: # current_partition_number >= 2
 
@@ -1101,6 +1125,8 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         #        + " partition has more than one sending partition.")
                 
         # sender is first and only element in set since a partition i is followed by (sends to) partition i+1
+        # We checked above if senders is None so it is not None here. (Senders is none only for leaf tasks.)
+        # Note: We only use this in the assert the follows. We know that the sender is the previous partitio.
         sender = next(iter(senders)) 
 
         try:
@@ -1376,5 +1402,6 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         logger.info("generate_DAG_info_incremental_partitions: returning from generate_DAG_info_incremental_partitions for"
             + " partition " + str(current_partition_name))
 
-        return DAG_info
+    return DAG_info
     
+
