@@ -61,7 +61,7 @@ that is needed by node 20 in group G3L.
 
 An expanded version of the above whiteboard DAG that shows all the nodes is shown below. The parent edges between nodes in a group 
 are not shown, e.g., 5-->17 as 5 is the paretn of 17. The edges shown are edges between groups/tasks in the DAG, whcih are formed
-from child edhes between the nodes, e.g., G1 --> G2 since 5 in G1 has a child 16 in G2. So we visit 1 then 17 then 5, add 
+from child edges between the nodes, e.g., G1 --> G2 since 5 in G1 has a child 16 in G2. So we visit 1 then 17 then 5, add 
 them to the bfs queue in rverse order 5, 17, 1. Visit the child 16 of 5 to get G2, visit the child 19 of 17 to get G2L,
 and visit the child 12 of 1 to get G4. 
 
@@ -875,6 +875,11 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         # may be many calls if the graph is not connected) are leaf
         # nodes and thus have no senders. This is true about partition 1 and
         # this is assserted by the caller (BFS()) of this method.
+
+#brc: inc group deallocate
+        # Note: senders is asserted to be None since there should be no 
+        # name_of_first_group_in_DAG key in the Group_receivers dictionary.
+        # Thus there is no need to deallocate this key.
         
         # Group 1 is a leaf; so there is no previous partition that can 
         # send (its outputs as inputs) to the first group
@@ -1023,6 +1028,12 @@ def generate_DAG_info_incremental_groups(current_partition_name,
             # and their mapped values. The values for PRX_1 will be obtained from 
             # the map using keys "PRY_1-PRX_1" and "PRZ_1-PRX-1" and used
             # to execute task PRX_1.
+
+#brc: inc group dealloctate
+            # Note: senders is asserted to be None since there should be no 
+            # name_of_first_group_in_DAG key in the Group_receivers dictionary.
+            # Thus there is no need to deallocate this key.
+
             if (senders is None):
                 # This is a leaf group since it gets no inputs from any other groups.
                 # This means group_name is the only group in groups_of_current_partition.
@@ -1786,10 +1797,22 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 state_of_previous_previous_group = Group_DAG_states[previous_previous_group]
                 state_info_of_previous_previous_group = Group_DAG_map[state_of_previous_previous_group]
                 state_info_of_previous_previous_group.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued = False
-                
                 logger.trace("The state_info_of_previous_previous_group for group " 
                     + previous_previous_group + " after update fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued is: " 
                     + str(state_info_of_previous_previous_group))     
+                
+            if DAG_executor_constants.CLEAR_BFS_SENDERS_AND_RECEIVERS:
+                try:
+                    del Group_senders[previous_previous_group]
+                    logger.info("BFS_generate_DAG_info_incremental_groups: deallocate Group_senders: " + previous_previous_group)
+                except KeyError:
+                    logger.info("BFS_generate_DAG_info_incremental_groups: deallocate: Group_senders has no key: " + previous_previous_group) 
+                try:
+                    #del Group_receivers[previous_previous_group]
+                    logger.info("BFS_generate_DAG_info_incremental_groups: deallocate: Group_receivers" + previous_previous_group)
+                except KeyError:
+                    logger.info("BFS_generate_DAG_info_incremental_groups: deallocate: Group_receivers has no key: " + previous_previous_group)    
+            
         """
         Note: We handle the shared state_info objects for all the groups
         at the end of the group loop below.

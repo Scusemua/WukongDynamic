@@ -676,27 +676,12 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
     # this is assserted by the caller (BFS()) of this method.
 
     if DAG_executor_constants.CLEAR_BFS_SENDERS_AND_RECEIVERS:
+        # Between calls to generate_DAG_info_incremental_partitions we add names to
+        # Partition_senders, we can clear all of them.
         Partition_senders.clear()
+        # if current_partition_name was a key in the map then delete.
         if not senders == None:
             del Partition_receivers[current_partition_name]
-        logger.info("here")
-        print("generate_DAG_info_incremental_partitions: Partition_senders:")
-        for sender_name,receiver_name_set in Partition_senders.copy().items():
-            print("sender:" + sender_name)
-            print("receiver_name_set:" + str(receiver_name_set))
-        print()
-        print()
-        print("generate_DAG_info_incremental_partitions: Partition_receivers:")
-        for receiver_name,sender_name_set in Partition_receivers.copy().items():
-            print("receiver:" + receiver_name)
-            print("sender_name_set:" + str(sender_name_set))
-        print()
-        print()
-        print("generate_DAG_info_incremental_partitions: Leaf nodes of partitions (incremental):")
-        for name in leaf_tasks_of_partitions_incremental.copy():
-            print(name + " ")
-        print()
-
 
     """
     Outline: 
