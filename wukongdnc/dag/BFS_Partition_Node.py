@@ -1,5 +1,5 @@
 import logging 
-
+import os
 #from .BFS import nodes
 
 logger = None
@@ -88,12 +88,17 @@ class Partition_Node:
         global debug_pagerank
         #logger.trace("debug_pagerank: "  + str(debug_pagerank))
         if (debug_pagerank):
-            logger.trace("update_PageRank_of_PageRank_Function: update_pagerank: node " + my_ID)
-            logger.trace("update_PageRank_of_PageRank_Function: update_pagerank: parent_nodes: " + str(parent_nodes))
-            logger.trace("update_PageRank_of_PageRank_Function: update_pagerank: num_children: " + str(self.num_children))
+            logger.info("update_PageRank_of_PageRank_Function: update_pagerank: node " + my_ID)
+            logger.info("update_PageRank_of_PageRank_Function: update_pagerank: parent_nodes: " + str(parent_nodes))
+            logger.info("update_PageRank_of_PageRank_Function: update_pagerank: num_children: " + str(self.num_children))
         
         #Note: a parent has at least one child so num_children is not 0
-        pagerank_sum = sum((partition_or_group[node_index].pagerank / partition_or_group[node_index].num_children) for node_index in parent_nodes)
+        try:
+            pagerank_sum = sum((partition_or_group[node_index].pagerank / partition_or_group[node_index].num_children) for node_index in parent_nodes)
+        except ZeroDivisionError:
+            logger.exception("Divide by zero error.") 
+            logging.shutdown()
+            os._exit(0)
         if (debug_pagerank):
             logger.trace("update_PageRank_of_PageRank_Function: update_pagerank: pagerank_sum: " + str(pagerank_sum))
         if (debug_pagerank):

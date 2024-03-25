@@ -1803,7 +1803,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 
             if DAG_executor_constants.CLEAR_BFS_SENDERS_AND_RECEIVERS:
                 try:
-                    del Group_senders[previous_previous_group]
+                    #del Group_senders[previous_previous_group]
                     logger.info("BFS_generate_DAG_info_incremental_groups: deallocate Group_senders: " + previous_previous_group)
                 except KeyError:
                     logger.info("BFS_generate_DAG_info_incremental_groups: deallocate: Group_senders has no key: " + previous_previous_group) 

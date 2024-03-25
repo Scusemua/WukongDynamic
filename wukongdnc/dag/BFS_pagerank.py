@@ -24,7 +24,7 @@ if not (not USING_THREADS_NOT_PROCESSES or USE_MULTITHREADED_MULTIPROCESSING):
     logger.addHandler(ch)
 """
 
-debug_pagerank = False
+debug_pagerank = True
 
 """
 
@@ -252,6 +252,8 @@ def PageRank_Function_Driver(task_file_name,total_num_nodes,results_dictionary,
     # shadow nodes. Helps visualize execution during debugging.
     if (debug_pagerank):
         input_tuples.sort()
+    logger.info("PageRank_Function_Driver: length of input_tuples for " + task_file_name + ":" + str(len(input_tuples)))
+
     #output = PageRank_Function(task_file_name,total_num_nodes,input_tuples)
     output, result_tuple_list = PageRank_Function(task_file_name,total_num_nodes,input_tuples,
         groups_partitions)
@@ -279,6 +281,14 @@ def PageRank_Function(task_file_name,total_num_nodes,input_tuples,groups_partiti
             if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                 logging.shutdown()
                 os._exit(0)
+        logger.info("PageRank_Function: partition_or_group: length: " + str(len(partition_or_group)))
+        print_val = ""
+        print_val += "-- (" + str(len(partition_or_group)) + "):" + " "
+        for node in partition_or_group:
+            print_val += str(node) + " "
+            #print(node,end=" ")
+        logger.info(print_val)
+        logger.info("")
     else:
         try:
             msg = "[Error]: PageRank_Function:" + " groups_partitions is []."

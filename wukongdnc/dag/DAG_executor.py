@@ -3831,6 +3831,17 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 #brc: groups partitions
                         #output = execute_task_with_result_dictionary(task,state_info.task_name,20,result_dictionary)
                         logger.info("execute task: " + state_info.task_name)
+                        logger.info("")
+                        logger.info("groups, len: " + str(len(groups_partitions))+":")
+                        for g in groups_partitions:
+                            print_val = ""
+                            print_val += "-- (" + str(len(g)) + "):" + " "
+                            for node in g:
+                                print_val += str(node) + " "
+                                #print(node,end=" ")
+                            logger.info(print_val)
+                            logger.info("")
+                        logger.info("")
                         output, result_tuple_list = execute_task_with_result_dictionary(task,state_info.task_name,num_nodes_in_graph,result_dictionary,
                             groups_partitions)
                     else:
@@ -5115,7 +5126,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 
 # Config: A2, A3
 # called by DAG_executor_task
-def DAG_executor(payload):		 
+def DAG_executor(payload):		
     # Note: could instead use a "state" parameter. Then we have state.starting_input and state.return_value so would need
     # to know which to acccess, as in: if first_invocation, where first_invocation is in state. Or always use
     # state.return_value so we don't need to check and save first_invocation:
