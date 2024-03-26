@@ -1058,10 +1058,14 @@ def visualize():
     #nx.draw_planar(G,with_labels = True, alpha=0.8) #NEW FUNCTION
     fig.canvas.draw()
 
-def DAG_executor_driver_Invoker_Thread():
-    time.sleep(6)
+def DAG_executor_driver_Invoker_ThreadX():
+    pass
+
+def DAG_executor_driver_Invoker_ThreadY():
+    logger.info("sleepppppp 20")
+    time.sleep(20)
     # call run() of the DAG_executor_driver, where: from .DAG_executor_driver import run
-    run()
+    #run()
 
 # process children before parent traversal
 # Not used. # This code saved in a seperate file.
@@ -3253,6 +3257,7 @@ def bfs(visited, node):
                                 # partition indices in partitions[] start with 0, so current partition i
                                 # is in partitions[i-1] and previous partition is partitions[i-2]
                                 cloudpickle.dump(current_partition, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+
                     else:
                         logger.info("bfs: output groups of last partition: " + partition_name)
                         num_graph_nodes_in_partitions = num_nodes_in_partitions - num_shadow_nodes_added_to_partitions
@@ -3876,7 +3881,7 @@ def bfs(visited, node):
                                 thread_name = "DAG_executor_driver_Invoker"
                                 logger.trace("BFS: Starting DAG_executor_driver_Invoker_Thread for incrmental DAG generation.")
                                 # BFS joins this thread at the end of its execution. This ref is global.
-                                invoker_thread_for_DAG_executor_driver = threading.Thread(target=DAG_executor_driver_Invoker_Thread, name=(thread_name), args=())
+                                invoker_thread_for_DAG_executor_driver = threading.Thread(target=DAG_executor_driver_Invoker_ThreadX, name=(thread_name), args=())
                                 invoker_thread_for_DAG_executor_driver.start()
                                 # Note: BFS calls DAG_executor_driver.run() to start DAG execution
                                 # after it write the DAG_info to a file.
@@ -3930,6 +3935,7 @@ def bfs(visited, node):
                                             # partition indices in partitions[] start with 0, so current partition i
                                             # is in partitions[i-1] and previous partition is partitions[i-2]
                                             cloudpickle.dump(partitions[current_partition_number-1], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+
                                 else:
                                     previous_partition_number = current_partition_number - 1
                                     logger.trace("BFS: previous_partition_number: " + str(previous_partition_number))
@@ -3937,13 +3943,13 @@ def bfs(visited, node):
                                     #   frontier_groups_sum
                                     logger.trace("BFS: frontier_groups_sum: " + str(frontier_groups_sum))
                                     groups_of_previous_partition = groups_of_partitions[previous_partition_number-1]
-                                    logger.trace("BFS: groups_of_previous_partition: " + str(groups_of_previous_partition))
+                                    logger.info("BFS: groups_of_previous_partition: " + str(groups_of_previous_partition))
 
                                     # Using groups_of_current_partitionX instead of the global
                                     # variable groups_of_current_partition; The global was cleared
                                     # above so let's just keep this local.
                                     groups_of_current_partitionX = groups_of_partitions[current_partition_number-1]
-                                    logger.trace("BFS: groups_of_current_partitionX: " + str(groups_of_current_partitionX))
+                                    logger.info("BFS: groups_of_current_partitionX: " + str(groups_of_current_partitionX))
                                     i = 0
                                     for previous_group in groups_of_previous_partition:
                                         index_in_groups_list_of_last_group_in_current_partition = frontier_groups_sum
@@ -3961,6 +3967,58 @@ def bfs(visited, node):
                                             # partition indices in partitions[] start with 0, so current partition i
                                             # is in partitions[i-1] and previous partition is partitions[i-2]
                                             cloudpickle.dump(groups[index_in_groups_list_of_previous_group], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+                                        try:
+                                            with open(previous_group + '.pickle', 'rb') as handle:
+                                                gg = (cloudpickle.load(handle))
+                                        except EOFError:
+                                            logger.exception("[Error]: BFS: EOFError:"
+                                                + " previous_group: " + previous_group)
+                                            if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+                                                logging.shutdown()
+                                                os._exit(0)
+
+                                        logger.info("XVXVXVXVXVXVXV output group " + previous_group + " in position " + str(index_in_groups_list_of_previous_group))
+                                        
+                                        gr = groups[index_in_groups_list_of_previous_group]
+                                        for nX in gr:
+                                            #logger.trace(node,end=":")
+                                            print_val = str(nX) + ":"
+                                            for parent in nX.parents:
+                                                print_val += str(parent) + " "
+                                                #logger.trace(parent,end=" ")
+                                            logger.info(print_val)
+                                            logger.info("")
+                                        logger.info("")
+                                        logger.info("Group Nodes w/Frontier parent tuples:")
+                                        for nX in gr:
+                                            #logger.trace(node,end=":")
+                                            print_val = str(node) + ":"
+                                            for tup in nX.frontier_parents:
+                                                print_val += str(tup) + " "
+                                                # logger.trace(tup,end=" ")
+                                            logger.info(print_val)
+                                            logger.info("")
+                                        logger.info("")
+                                        logger.info("XVXVXVXVXVXVXV read group:")
+                                        for nX in gg:
+                                            #logger.trace(node,end=":")
+                                            print_val = str(nX) + ":"
+                                            for parent in nX.parents:
+                                                print_val += str(parent) + " "
+                                                #logger.trace(parent,end=" ")
+                                            logger.info(print_val)
+                                            logger.info("")
+                                        logger.info("")
+                                        logger.info("Group Nodes w/Frontier parent tuples:")
+                                        for nX in gg:
+                                            #logger.trace(node,end=":")
+                                            print_val = str(node) + ":"
+                                            for tup in nX.frontier_parents:
+                                                print_val += str(tup) + " "
+                                                # logger.trace(tup,end=" ")
+                                            logger.info(print_val)
+                                            logger.info("")
+                                        logger.info("")
                                         i += 1
 
                                     # The current partition might be the last partition in the DAG, if so
@@ -4277,13 +4335,13 @@ def bfs(visited, node):
                                     
                                     # Need to call DAG_executor_driver.run() but it has to be invoked asynch
                                     thread_name = "DAG_executor_driver_Invoker"
-                                    logger.trace("BFS: Starting DAG_executor_driver_Invoker_Thread for incrmental DAG generation.")
+                                    logger.info("BFS: Starting DAG_executor_driver_Invoker_Thread for incrmental DAG generation.")
 #brc: incremental
                                     # Note: BFS joins this thread. This is a global.
-                                    invoker_thread_for_DAG_executor_driver = threading.Thread(target=DAG_executor_driver_Invoker_Thread, name=(thread_name), args=())
+                                    invoker_thread_for_DAG_executor_driver = threading.Thread(target=DAG_executor_driver_Invoker_ThreadX, name=(thread_name), args=())
 
                                     invoker_thread_for_DAG_executor_driver.start()
-                                    time.sleep(10)
+                                    #time.sleep(13)
                                 else:
                                     # For debugging:
                                     # This is not partition 1 and it is not partition 2 so we do not 
@@ -4378,6 +4436,7 @@ def bfs(visited, node):
                             # partition indices in partitions[] start with 0, so current partition i
                             # is in partitions[i-1] and previous partition is partitions[i-2]
                             cloudpickle.dump(previous_partition, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+
                     else: # output groups
                         i=0
                         # find position of the groups of previous partitio in groups_of_partitions
@@ -6038,7 +6097,6 @@ def main():
                                 # partition indices in partitions[] start with 0, so current partition i
                                 # is in partitions[i-1] and previous partition is partitions[i-2]
                                 cloudpickle.dump(current_partition, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
-
                 current_partition = []
 
         # brc: ******* Group
