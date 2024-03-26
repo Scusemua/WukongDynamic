@@ -4486,7 +4486,7 @@ def bfs(visited, node):
                             logger.info("bfs: set partitions["+ str(previous_partition_number) + "] to None.")
                             partitions[previous_partition_number-1] = None
                             partition_names[previous_partition_number-1] = None
-                        # else: groups
+                        else: #groups
                             logger.info("current_partition_number: " + str(current_partition_number))
                             logger.info("groups_of_current_partition: " + str(groups_of_current_partition))
                             logger.info("length of groups_of_current_partition: " + str(len(groups_of_current_partition)))
@@ -4507,6 +4507,10 @@ def bfs(visited, node):
                                 logger.info("BFS: index_in_groups_list_of_first_group_of_previous_partition: " + str(index_in_groups_list_of_first_group_of_previous_partition))
                                 index_in_groups_list_of_previous_group = index_in_groups_list_of_first_group_of_previous_partition + i - 1
                                 logger.info("BFS: for " + previous_group + " index_in_groups_list_of_previous_group: " + str(index_in_groups_list_of_previous_group))
+#brc: Q : need parent_group for groups in place so delete prev prev?
+                                #groups[index_in_groups_list_of_previous_group] = None
+                                #group_names[index_in_groups_list_of_previous_group] = None
+
                                 i+= 1
 
                             #logging.shutdown()
