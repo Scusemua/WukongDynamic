@@ -682,7 +682,7 @@ import socket
 import cloudpickle
 import threading
 import os
-import time
+#import time
 #from statistics import mean
 import copy
 
@@ -2946,7 +2946,7 @@ def bfs(visited, node):
 
 #brc: incremental groups
 #brc: groups of
-    if DAG_executor_constants.COMPUTE_PAGERANK and (DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION or DAG_executor_constants.USE_MUTLITHREADED_BFS):
+    if DAG_executor_constants.COMPUTE_PAGERANK and (DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION or DAG_executor_constants.USE_MUTLITHREADED_NONINCREMENTAL_BFS):
         # For incremental DAG generation, we track the groups in the partitions. We
         # save all of thse groups in groups_of_partitions[]. We will need to iterate through 
         # the groups in the previous_partition and we can get them from groups_of_partitions.
@@ -3215,7 +3215,7 @@ def bfs(visited, node):
 
 #brc: incremental groups
 #brc: groups of
-                if DAG_executor_constants.COMPUTE_PAGERANK and (DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION or DAG_executor_constants.USE_MUTLITHREADED_BFS):
+                if DAG_executor_constants.COMPUTE_PAGERANK and (DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION or DAG_executor_constants.USE_MUTLITHREADED_NONINCREMENTAL_BFS):
                     # For incremental DAG generation, we need to know the 
                     # groups that each partition contains. That is, when we process
                     # the groups of the current_partion, which is being added to the 
@@ -4361,9 +4361,9 @@ def bfs(visited, node):
                                 # and groups so this else is never exwcuted (ee if-condition)
                         # end else #current_partition_number >=2
                     else:
-                        pass # complete this code for lambdas
+                        pass # code for workers and lambdas is the same
  
-                elif DAG_executor_constants.COMPUTE_PAGERANK and DAG_executor_constants.USE_MUTLITHREADED_BFS:
+                elif DAG_executor_constants.COMPUTE_PAGERANK and DAG_executor_constants.USE_MUTLITHREADED_NONINCREMENTAL_BFS:
                     # partitioning is over when all graph nodes have been
                     # put in some partition
                     num_graph_nodes_in_partitions = num_nodes_in_partitions - num_shadow_nodes_added_to_partitions
@@ -4393,7 +4393,6 @@ def bfs(visited, node):
                             #    + " groups_of_partitions: " + str(groups_of_partitions))
                             # these parameters are immutable: partition_name,current_partition_number, to_be_continued
 
-                            #ToDo: # Copy? Deep, shallow?
                             copy_of_groups_of_current_partition = copy.copy(groups_of_current_partition)
                             copy_of_groups_of_partitions = copy.copy(groups_of_partitions)
                             group_tuple = (partition_name,current_partition_number,
@@ -4410,66 +4409,64 @@ def bfs(visited, node):
                             pass # ToDo: if DAG_info is complete then ....
                 
 
-                #global frontier_groups_sum
-                #global num_frontier_groups
+                if not(DAG_executor_constants.COMPUTE_PAGERANK and DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION):
+                    # Here we output the groups in the previous partition.
+                    # - the previous groups are in groups[] as are the current groups
+                    # - We save the groups of each partitions in groups_of_partitions.
+                    # We can find the position in groups[] of a group in a partition 
+                    # using the number of groups in the current partition, which are
+                    # at the end of groups[] and the number of groups in the previous
+                    # partition.
+                    if current_partition_number > 1:
+                        if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+                            # partition numbers start with 1 not 0. But the first 
+                            # partition in partitions[] is in position 0.
+                            # Finding the previous_partiton in partitions[] is easy since 
+                            # current_partition at at the end of partitions[] and previous
+                            # partition is in the position before that.
+                            previous_partition_number = current_partition_number - 1
+                            previous_partition_number_minus_one = previous_partition_number - 1
+                            logger.info("bfs: output partitions["+ str(previous_partition_number_minus_one) + "], which is partition " + str(previous_partition_number))
+                            previous_partition = partitions[previous_partition_number_minus_one]
+                            previous_partition_name = partition_names[previous_partition_number_minus_one]
+                            with open('./'+previous_partition_name + '.pickle', 'wb') as handle:
+                                # partition indices in partitions[] start with 0, so current partition i
+                                # is in partitions[i-1] and previous partition is partitions[i-2]
+                                cloudpickle.dump(previous_partition, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
 
-                # Here we output the groups in the previous partition.
-                # - the previous groups are in groups[] as are the current groups
-                # - We save the groups of each partitions in groups_of_partitions.
-                # We can find the position in groups[] of a group in a partition 
-                # using the number of groups in the current partition, which are
-                # at the end of groups[] and the number of groups in the previous
-                # partition.
-                if current_partition_number > 1:
-                    if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
-                        # partition numbers start with 1 not 0. But the first 
-                        # partition in partitions[] is in position 0.
-                        # Finding the previous_partiton in partitions[] is easy since 
-                        # current_partition at at the end of partitions[] and previous
-                        # partition is in the position before that.
-                        previous_partition_number = current_partition_number - 1
-                        previous_partition_number_minus_one = previous_partition_number - 1
-                        logger.info("bfs: output partitions["+ str(previous_partition_number_minus_one) + "], which is partition " + str(previous_partition_number))
-                        previous_partition = partitions[previous_partition_number_minus_one]
-                        previous_partition_name = partition_names[previous_partition_number_minus_one]
-                        with open('./'+previous_partition_name + '.pickle', 'wb') as handle:
-                            # partition indices in partitions[] start with 0, so current partition i
-                            # is in partitions[i-1] and previous partition is partitions[i-2]
-                            cloudpickle.dump(previous_partition, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+                        else: # output groups
+                            i=0
+                            # find position of the groups of previous partitio in groups_of_partitions
+                            previous_partition_number = current_partition_number - 1
+                            previous_partition_number_minus_one = previous_partition_number - 1
+                            groups_of_previous_partition = groups_of_partitions[previous_partition_number_minus_one]
+                            # Note: groups weer appended to groups_of_previous_partition in the order they were collected
+                            for previous_group in groups_of_previous_partition:
+                                # frontier_groups_sum is the number of groups and groups are stored in groups[] starting
+                                # at position 1, not 0. So group i is in position i not i-1
+                                index_in_groups_list_of_last_group_in_current_partition = frontier_groups_sum
+                                logger.info("BFS: index_in_groups_list_of_last_group_in_current_partition: " + str(index_in_groups_list_of_last_group_in_current_partition))
+                                # if the number of groups is 5 then the last group is in position 5. If there are 2 groups
+                                # in the current partition, tey are in positions 5 and 4 (5 - (2-1))
+                                index_in_groups_list_of_first_group_of_current_partition = frontier_groups_sum - (len(groups_of_current_partition)-1)
+                                logger.info("BFS: index_in_groups_list_of_first_group_of_current_partition: " + str(index_in_groups_list_of_first_group_of_current_partition))
+                                # in previous example, 5 was the postion of the last group and 4 the first group of the current
+                                # partition. The last group of the previous partition is in position 3.
+                                # The first group of the previous partition, if this previous partition has
+                                # 2 nodes, is in 4 - 2 = 2. 
+                                index_in_groups_list_of_first_group_of_previous_partition = index_in_groups_list_of_first_group_of_current_partition - len(groups_of_previous_partition)
+                                logger.info("BFS: index_in_groups_list_of_first_group_of_previous_partition: " + str(index_in_groups_list_of_first_group_of_previous_partition))
+                                # The position of previous group is in the range 2 .. 3, which we get as 2+0 ... 2+1
+                                # where i takes on the values 0 and 1.
+                                index_in_groups_list_of_previous_group = index_in_groups_list_of_first_group_of_previous_partition + i - 1
+                                logger.info("BFS: for " + previous_group + " index_in_groups_list_of_previous_group: " + str(index_in_groups_list_of_previous_group))
 
-                    else: # output groups
-                        i=0
-                        # find position of the groups of previous partitio in groups_of_partitions
-                        previous_partition_number = current_partition_number - 1
-                        previous_partition_number_minus_one = previous_partition_number - 1
-                        groups_of_previous_partition = groups_of_partitions[previous_partition_number_minus_one]
-                        # Note: groups weer appended to groups_of_previous_partition in the order they were collected
-                        for previous_group in groups_of_previous_partition:
-                            # frontier_groups_sum is the number of groups and groups are stored in groups[] starting
-                            # at position 1, not 0. So group i is in position i not i-1
-                            index_in_groups_list_of_last_group_in_current_partition = frontier_groups_sum
-                            logger.info("BFS: index_in_groups_list_of_last_group_in_current_partition: " + str(index_in_groups_list_of_last_group_in_current_partition))
-                            # if the number of groups is 5 then the last group is in position 5. If there are 2 groups
-                            # in the current partition, tey are in positions 5 and 4 (5 - (2-1))
-                            index_in_groups_list_of_first_group_of_current_partition = frontier_groups_sum - (len(groups_of_current_partition)-1)
-                            logger.info("BFS: index_in_groups_list_of_first_group_of_current_partition: " + str(index_in_groups_list_of_first_group_of_current_partition))
-                            # in previous example, 5 was the postion of the last group and 4 the first group of the current
-                            # partition. The last group of the previous partition is in position 3.
-                            # The first group of the previous partition, if this previous partition has
-                            # 2 nodes, is in 4 - 2 = 2. 
-                            index_in_groups_list_of_first_group_of_previous_partition = index_in_groups_list_of_first_group_of_current_partition - len(groups_of_previous_partition)
-                            logger.info("BFS: index_in_groups_list_of_first_group_of_previous_partition: " + str(index_in_groups_list_of_first_group_of_previous_partition))
-                            # The position of previous group is in the range 2 .. 3, which we get as 2+0 ... 2+1
-                            # where i takes on the values 0 and 1.
-                            index_in_groups_list_of_previous_group = index_in_groups_list_of_first_group_of_previous_partition + i - 1
-                            logger.info("BFS: for " + previous_group + " index_in_groups_list_of_previous_group: " + str(index_in_groups_list_of_previous_group))
+                                with open('./'+previous_group + '.pickle', 'wb') as handle:
+                                    # partition indices in partitions[] start with 0, so current partition i
+                                    # is in partitions[i-1] and previous partition is partitions[i-2]
+                                    cloudpickle.dump(groups[index_in_groups_list_of_previous_group], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
 
-                            #with open('./'+previous_group + "X" + '.pickle', 'wb') as handle:
-                            #    # partition indices in partitions[] start with 0, so current partition i
-                            #    # is in partitions[i-1] and previous partition is partitions[i-2]
-                            #    cloudpickle.dump(groups[index_in_groups_list_of_previous_group], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
-
-                            i+= 1
+                                i+= 1
      
 #brc: groups of
                 # Here we are claring the partitions/groups from partitions[]/groups[] that we 
@@ -4648,7 +4645,7 @@ def bfs(visited, node):
 #brc: incremental groups
 #brc: groups of
                 # We track the groups in the current partition for incremental DAG generation.
-                if DAG_executor_constants.COMPUTE_PAGERANK and (DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION or DAG_executor_constants.USE_MUTLITHREADED_BFS):
+                if DAG_executor_constants.COMPUTE_PAGERANK and (DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION or DAG_executor_constants.USE_MUTLITHREADED_NONINCREMENTAL_BFS):
                     groups_of_current_partition.append(group_name)
                     logger.trace("BFS: add " + group_name + "for partition number " 
                         + str(current_partition_number) 
@@ -5060,7 +5057,7 @@ def input_graph():
     # save number of graph nodes in BFS_generate_DAG_info
     # which is where the DAG_info is built. num_nodes_in_graph
     # is now a field in DAG_info.
-    if not DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION and not DAG_executor_constants.USE_MUTLITHREADED_BFS:
+    if not DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION and not DAG_executor_constants.USE_MUTLITHREADED_NONINCREMENTAL_BFS:
         BFS_generate_DAG_info.num_nodes_in_graph = num_nodes
         logger.info("input_graph: set BFS_generate_DAG_info.num_nodes_in_graph to "
             + str(BFS_generate_DAG_info.num_nodes_in_graph))
@@ -5948,7 +5945,7 @@ def main():
     if DAG_executor_constants.USE_SHARED_PARTITIONS_GROUPS:
         BFS_Shared.initialize()
 
-    if DAG_executor_constants.USE_MUTLITHREADED_BFS:
+    if DAG_executor_constants.USE_MUTLITHREADED_NONINCREMENTAL_BFS:
         global DAG_generator_for_multithreaded_DAG_generation
         DAG_generator_for_multithreaded_DAG_generation = DAG_Generator_Multithreaded()
         DAG_generator_for_multithreaded_DAG_generation.start_thread()
@@ -6281,7 +6278,7 @@ def main():
 
 #brc: incremental
     if not DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION:
-        if not DAG_executor_constants.USE_MUTLITHREADED_BFS:
+        if not DAG_executor_constants.USE_MUTLITHREADED_NONINCREMENTAL_BFS:
 #brc: graph on the fly
             # Note: If we deallocate the bfs() data structures, they will be empty
             # and many of the states are blank, but we can still call print_BFS_stats()
