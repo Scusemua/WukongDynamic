@@ -1061,11 +1061,11 @@ def visualize():
 def DAG_executor_driver_Invoker_ThreadX():
     pass
 
-def DAG_executor_driver_Invoker_ThreadY():
-    logger.info("sleepppppp 20")
-    time.sleep(20)
-    # call run() of the DAG_executor_driver, where: from .DAG_executor_driver import run
-    #run()
+def DAG_executor_driver_Invoker_Thread():
+    #logger.info("sleepppppp 20")
+    #time.sleep(20)
+    #call run() of the DAG_executor_driver, where: from .DAG_executor_driver import run
+    run()
 
 # process children before parent traversal
 # Not used. # This code saved in a seperate file.
@@ -3881,7 +3881,7 @@ def bfs(visited, node):
                                 thread_name = "DAG_executor_driver_Invoker"
                                 logger.trace("BFS: Starting DAG_executor_driver_Invoker_Thread for incrmental DAG generation.")
                                 # BFS joins this thread at the end of its execution. This ref is global.
-                                invoker_thread_for_DAG_executor_driver = threading.Thread(target=DAG_executor_driver_Invoker_ThreadX, name=(thread_name), args=())
+                                invoker_thread_for_DAG_executor_driver = threading.Thread(target=DAG_executor_driver_Invoker_Thread, name=(thread_name), args=())
                                 invoker_thread_for_DAG_executor_driver.start()
                                 # Note: BFS calls DAG_executor_driver.run() to start DAG execution
                                 # after it write the DAG_info to a file.
@@ -4338,7 +4338,7 @@ def bfs(visited, node):
                                     logger.info("BFS: Starting DAG_executor_driver_Invoker_Thread for incrmental DAG generation.")
 #brc: incremental
                                     # Note: BFS joins this thread. This is a global.
-                                    invoker_thread_for_DAG_executor_driver = threading.Thread(target=DAG_executor_driver_Invoker_ThreadX, name=(thread_name), args=())
+                                    invoker_thread_for_DAG_executor_driver = threading.Thread(target=DAG_executor_driver_Invoker_Thread, name=(thread_name), args=())
 
                                     invoker_thread_for_DAG_executor_driver.start()
                                     #time.sleep(13)
@@ -4464,10 +4464,10 @@ def bfs(visited, node):
                             index_in_groups_list_of_previous_group = index_in_groups_list_of_first_group_of_previous_partition + i - 1
                             logger.info("BFS: for " + previous_group + " index_in_groups_list_of_previous_group: " + str(index_in_groups_list_of_previous_group))
 
-                            with open('./'+previous_group + '.pickle', 'wb') as handle:
-                                # partition indices in partitions[] start with 0, so current partition i
-                                # is in partitions[i-1] and previous partition is partitions[i-2]
-                                cloudpickle.dump(groups[index_in_groups_list_of_previous_group], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
+                            #with open('./'+previous_group + "X" + '.pickle', 'wb') as handle:
+                            #    # partition indices in partitions[] start with 0, so current partition i
+                            #    # is in partitions[i-1] and previous partition is partitions[i-2]
+                            #    cloudpickle.dump(groups[index_in_groups_list_of_previous_group], handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
 
                             i+= 1
      
@@ -5905,9 +5905,6 @@ def check_pagerank_outputs(number_of_groups_or_partitions):
     #else:
     #    number_of_groups_or_partitions = len(partitions) 
     _verified = verify_pagerank_outputs(number_of_groups_or_partitions)
-    
-    #if not _verified:
-    #   might do somethig with this
 
     logger.info("")
     logger.info("")
@@ -5924,6 +5921,11 @@ def check_pagerank_outputs(number_of_groups_or_partitions):
         for (k,v) in sorted_pagerank_outputs.items():
             #logger.info(str(k) + ":" + partition_names[k-1] + ":" +str(v))
             logger.info(k + ":" +str(v))
+
+    if not _verified:
+        if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+            logging.shutdown()
+            os._exit(0)
 
 def main():
 
@@ -6040,7 +6042,7 @@ def main():
 
                 #with open('./'+partition_name + '.pickle', 'wb') as handle:
                 #    # partition indices in partitions[] start with 0, so current partition i
-                #   # is in partitions[i-1] and previous partition is partitions[i-2]
+                #    # is in partitions[i-1] and previous partition is partitions[i-2]
                 #    cloudpickle.dump(current_partition, handle) #, protocol=pickle.HIGHEST_PROTOCOL)  
 
                 current_partition_isLoop = False
