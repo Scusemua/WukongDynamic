@@ -996,7 +996,7 @@ for x in range(num_nodes+1):
 # global object used by during incremental DAG generation to invoke the 
 # DAG_excutor_driver. A thread is created to call
 # DAG_executor_driver.run() while BFS continues with 
-# incremental ADG generation. BFS joins this thread
+# incremental DAG generation. BFS joins this thread
 # at the end of BFS; the join occurs when DAG execution is done.
 invoker_thread_for_DAG_executor_driver = None
 
@@ -6224,27 +6224,59 @@ def main():
     # data structures will be empty in the stats.
 #brc: groups of
     if DAG_executor_constants.CLEAR_BFS_MAIN_MAP_ON_THE_FLY:
-        logger.info("bfs: clear main map for nodes in last partition: " + str(len(partitions)))
+        logger.info("bfs: deallocate main map for nodes in last partition: " + str(len(partitions)))
         logger.info("")
         nodeIndex_to_partition_partitionIndex_group_groupIndex_map.clear()
 #brc: graph on the fly
     # Do the same for the remaining nodes of the input graph (corresponding to the partition nodes
     # in the current and last partition.)
     if (DAG_executor_constants.CLEAR_BFS_GRAPH_NODES_ON_THE_FLY and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_ON_THE_FLY)):
-        logger.info("bfs: clear graph nodes for nodes in last partition: " + str(len(partitions)))
+        logger.info("bfs: deallocate graph nodes for nodes in last partition: " + str(len(partitions)))
         logger.info("len(nodes): " + str(len(nodes)))
         nodes.clear()
 #brc: groups of
     # Do the same for the remaining partitions in partitions[]
     if (DAG_executor_constants.CLEAR_BFS_PARTITIONS_GROUPS_NAMES and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_ON_THE_FLY)):
-        logger.info("bfs: clear partitions (though all but the last position of partitions will previously have been set to None")
+        logger.info("bfs: deallocate partitions (though all but the last position of partitions will previously have been set to None")
         partitions.clear()
         partition_names.clear()
        # Do the same for the remaining partitions in partitions[]
     if (DAG_executor_constants.CLEAR_BFS_PARTITIONS_GROUPS_NAMES and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_ON_THE_FLY)):
-        logger.info("bfs: clear groups (though all but the groups in the last partition will previously have been set to None")
+        logger.info("bfs: deallocate groups (though all but the groups in the last partition will previously have been set to None")
         groups.clear()
         group_names.clear()
+
+    if (DAG_executor_constants.CLEAR_BFS_SENDERS_AND_RECEIVERS and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_ON_THE_FLY)):
+#brc: If we are generating partitions (groups) we do not want to generate Senders and Receivers
+# for groups (partitions)
+        logger.info("bfs: deallocate Senders and Receivers.")
+        print("generate_DAG_info_incremental_partitions: Group_senders:")
+        for sender_name,receiver_name_set in BFS_generate_DAG_info.Group_senders.copy().items():
+            print("sender:" + sender_name)
+            print("receiver_name_set:" + str(receiver_name_set))
+        print()
+        print()
+        print("generate_DAG_info_incremental_partitions: Group_receivers:")
+        for receiver_name,sender_name_set in BFS_generate_DAG_info.Group_receivers.copy().items():
+            print("receiver:" + receiver_name)
+            print("sender_name_set:" + str(sender_name_set))
+        print()
+        BFS_generate_DAG_info.Partition_senders.clear()
+        BFS_generate_DAG_info.Partition_receivers.clear()
+        BFS_generate_DAG_info.Group_senders.clear()
+        BFS_generate_DAG_info.Group_receivers.clear()
+        print("generate_DAG_info_incremental_partitions: Group_senders:")
+        for sender_name,receiver_name_set in BFS_generate_DAG_info.Group_senders.copy().items():
+            print("sender:" + sender_name)
+            print("receiver_name_set:" + str(receiver_name_set))
+        print()
+        print()
+        print("generate_DAG_info_incremental_partitions: Group_receivers:")
+        for receiver_name,sender_name_set in BFS_generate_DAG_info.Group_receivers.copy().items():
+            print("receiver:" + receiver_name)
+            print("sender_name_set:" + str(sender_name_set))
+        print()
+
     # Here is the code to delete the key-value pairs one by one. In 
     # case we need to debug this:
     """

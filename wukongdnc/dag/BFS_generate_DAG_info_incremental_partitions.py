@@ -679,7 +679,12 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         # Between calls to generate_DAG_info_incremental_partitions we add names to
         # Partition_senders, we can clear all of them.
         Partition_senders.clear()
-        # if current_partition_name was a key in the map then delete.
+        # if current_partition_name was a key in the map then delete. Note that we
+        # grabbed Partition_receivers.get(current_partition_name) above so we are
+        # done with Partition_receivers[current_partition_name] and can delete it.
+        # (We know that current_partition either received input from the previous partition 
+        # or the current_partition is a leaf task in which case it receives no input. We 
+        # use "senders" to determine whether current_partition is a leaf node. 
         if not senders == None:
             del Partition_receivers[current_partition_name]
 

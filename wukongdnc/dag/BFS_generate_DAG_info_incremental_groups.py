@@ -1801,18 +1801,18 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                     + previous_previous_group + " after update fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued is: " 
                     + str(state_info_of_previous_previous_group))     
                 
-            if DAG_executor_constants.CLEAR_BFS_SENDERS_AND_RECEIVERS:
-                try:
-                    #del Group_senders[previous_previous_group]
-                    logger.info("BFS_generate_DAG_info_incremental_groups: deallocate Group_senders: " + previous_previous_group)
-                except KeyError:
-                    logger.info("BFS_generate_DAG_info_incremental_groups: deallocate: Group_senders has no key: " + previous_previous_group) 
-                try:
-                    #del Group_receivers[previous_previous_group]
-                    logger.info("BFS_generate_DAG_info_incremental_groups: deallocate: Group_receivers" + previous_previous_group)
-                except KeyError:
-                    logger.info("BFS_generate_DAG_info_incremental_groups: deallocate: Group_receivers has no key: " + previous_previous_group)    
-            
+                if DAG_executor_constants.CLEAR_BFS_SENDERS_AND_RECEIVERS:
+                    try:
+                        del Group_senders[previous_previous_group]
+                        logger.info("BFS_generate_DAG_info_incremental_groups: deallocate Group_senders: " + previous_previous_group)
+                    except KeyError:
+                        logger.info("BFS_generate_DAG_info_incremental_groups: deallocate: Group_senders has no key: " + previous_previous_group) 
+                    try:
+                        del Group_receivers[previous_previous_group]
+                        logger.info("BFS_generate_DAG_info_incremental_groups: deallocate: Group_receivers: " + previous_previous_group)
+                    except KeyError:
+                        logger.info("BFS_generate_DAG_info_incremental_groups: deallocate: Group_receivers has no key: " + previous_previous_group)    
+                
         """
         Note: We handle the shared state_info objects for all the groups
         at the end of the group loop below.
