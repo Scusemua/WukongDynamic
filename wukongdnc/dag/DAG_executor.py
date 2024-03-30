@@ -4357,7 +4357,14 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
 
                     try:
                         msg = "[Error]: DAG_executor_work_loop:" + " fanout_fanin_faninNB_collapse_groups of current partition is not" \
-                            + " equal to ToBeContinued of collapse task (next partition)."
+                            + " equal to ToBeContinued of collapse task (next partition)." \
+                            + " state_info.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued: " \
+                            + str(state_info.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued) \
+                            + " state_info_of_collapse_task.ToBeContinued: " \
+                            + str(state_info_of_collapse_task.ToBeContinued)  \
+                            + " state_info: " + str(state_info) \
+                            + " state_info.task_name: " \
+                            + " state_info_of_collapse_task: " + str(state_info_of_collapse_task)
                         assert state_info.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued == state_info_of_collapse_task.ToBeContinued , msg
                     except AssertionError:
                         logger.exception("[Error]: assertion failed")

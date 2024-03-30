@@ -2482,57 +2482,58 @@ def dfs_parent(visited, node):  #function for dfs
                 # the sending partition and N is a partition that receives
                 # from P. 
 # brc: ******* Partition
-                
-                sending_partition = partition_names[parent_partition_number-1]
-                #receiving_partition = "PR"+str(current_partition_number)+"_1"
-                receiving_partition = current_partition_name
-                # sender set is the partitions that receive from the sender
-                sender_set = BFS_generate_DAG_info.Partition_senders.get(sending_partition)
-                if sender_set is None:
-                    BFS_generate_DAG_info.Partition_senders[sending_partition] = set()
-                # add the receiving_partition to the sender set of the sending partition
-                BFS_generate_DAG_info.Partition_senders[sending_partition].add(receiving_partition)
-                # receiver set is the partitions that send to the receiver
-                receiver_set = BFS_generate_DAG_info.Partition_receivers.get(receiving_partition)
-                if receiver_set is None:
-                    BFS_generate_DAG_info.Partition_receivers[receiving_partition] = set()
-                # add the sending_partition to the receievr set of the receiving_partition
-                BFS_generate_DAG_info.Partition_receivers[receiving_partition].add(sending_partition)
-                # It's possible that even though we have not seen a loop yet in this partition,
-                # we will. At that point current_partition_isLoop will be set to true and the 
-                # current_partition_name will become an L-name, i.e., it will have an 'L'
-                # at the end. That means the sender/receiver names used up to that point
-                # were using the wrong name and need to be "patched", i.e., corrected. So we
-                # save information about the senders/receivers that were created with (not current_partition_name)
-                # so that when the partition ends, if we find current_partition_name is True we
-                # can iterate through this list and make the changes to the sender/receiver names.
-                # If no loop is dected then no changes need to be made.
-                if not current_partition_isLoop:
-                    sender_receiver_partition_patch_tuple = (parent_partition_number,receiving_partition)
-                    sender_receiver_partition_patch_tuple_list.append(sender_receiver_partition_patch_tuple)
+                if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
+                    sending_partition = partition_names[parent_partition_number-1]
+                    #receiving_partition = "PR"+str(current_partition_number)+"_1"
+                    receiving_partition = current_partition_name
+                    # sender set is the partitions that receive from the sender
+                    sender_set = BFS_generate_DAG_info.Partition_senders.get(sending_partition)
+                    if sender_set is None:
+                        BFS_generate_DAG_info.Partition_senders[sending_partition] = set()
+                    # add the receiving_partition to the sender set of the sending partition
+                    BFS_generate_DAG_info.Partition_senders[sending_partition].add(receiving_partition)
+                    # receiver set is the partitions that send to the receiver
+                    receiver_set = BFS_generate_DAG_info.Partition_receivers.get(receiving_partition)
+                    if receiver_set is None:
+                        BFS_generate_DAG_info.Partition_receivers[receiving_partition] = set()
+                    # add the sending_partition to the receievr set of the receiving_partition
+                    BFS_generate_DAG_info.Partition_receivers[receiving_partition].add(sending_partition)
+                    # It's possible that even though we have not seen a loop yet in this partition,
+                    # we will. At that point current_partition_isLoop will be set to true and the 
+                    # current_partition_name will become an L-name, i.e., it will have an 'L'
+                    # at the end. That means the sender/receiver names used up to that point
+                    # were using the wrong name and need to be "patched", i.e., corrected. So we
+                    # save information about the senders/receivers that were created with (not current_partition_name)
+                    # so that when the partition ends, if we find current_partition_name is True we
+                    # can iterate through this list and make the changes to the sender/receiver names.
+                    # If no loop is dected then no changes need to be made.
+                    if not current_partition_isLoop:
+                        sender_receiver_partition_patch_tuple = (parent_partition_number,receiving_partition)
+                        sender_receiver_partition_patch_tuple_list.append(sender_receiver_partition_patch_tuple)
 
 # brc: ******* Group
-                # generate dependency in DAG
-                #sending_group = "PR"+str(parent_partition_number)+"_"+str(parent_group_number)
-                # index in groups list is the actual index, sarting with index 0
-                sending_group = group_names[parent_index_in_groups_list]
-                #receiving_group = "PR"+str(current_partition_number)+"_"+str(num_frontier_groups)
-                receiving_group = current_group_name
-                # sender set is the groups that receive from the sender
-                sender_set = BFS_generate_DAG_info.Group_senders.get(sending_group)
-                if sender_set is None:
-                    BFS_generate_DAG_info.Group_senders[sending_group] = set()
-                BFS_generate_DAG_info.Group_senders[sending_group].add(receiving_group)
-                # receiver set is the groups that send to the receiver
-                receiver_set = BFS_generate_DAG_info.Group_receivers.get(receiving_group)
-                if receiver_set is None:
-                    BFS_generate_DAG_info.Group_receivers[receiving_group] = set()
-                # add the sending_partition to the receievr set of the receiving_partition
-                BFS_generate_DAG_info.Group_receivers[receiving_group].add(sending_group)
-                # see the comment above for partitions
-                if not current_group_isLoop:
-                    sender_receiver_group_patch_tuple = (parent_index_in_groups_list,receiving_group)
-                    sender_receiver_group_patch_tuple_list.append(sender_receiver_group_patch_tuple)
+                else:
+                    # generate dependency in DAG
+                    #sending_group = "PR"+str(parent_partition_number)+"_"+str(parent_group_number)
+                    # index in groups list is the actual index, sarting with index 0
+                    sending_group = group_names[parent_index_in_groups_list]
+                    #receiving_group = "PR"+str(current_partition_number)+"_"+str(num_frontier_groups)
+                    receiving_group = current_group_name
+                    # sender set is the groups that receive from the sender
+                    sender_set = BFS_generate_DAG_info.Group_senders.get(sending_group)
+                    if sender_set is None:
+                        BFS_generate_DAG_info.Group_senders[sending_group] = set()
+                    BFS_generate_DAG_info.Group_senders[sending_group].add(receiving_group)
+                    # receiver set is the groups that send to the receiver
+                    receiver_set = BFS_generate_DAG_info.Group_receivers.get(receiving_group)
+                    if receiver_set is None:
+                        BFS_generate_DAG_info.Group_receivers[receiving_group] = set()
+                    # add the sending_partition to the receievr set of the receiving_partition
+                    BFS_generate_DAG_info.Group_receivers[receiving_group].add(sending_group)
+                    # see the comment above for partitions
+                    if not current_group_isLoop:
+                        sender_receiver_group_patch_tuple = (parent_index_in_groups_list,receiving_group)
+                        sender_receiver_group_patch_tuple_list.append(sender_receiver_group_patch_tuple)
  
         else:
             # Note: assertion abobe before if should have failed 
@@ -6250,32 +6251,54 @@ def main():
 #brc: If we are generating partitions (groups) we do not want to generate Senders and Receivers
 # for groups (partitions)
         logger.info("bfs: deallocate Senders and Receivers.")
-        print("generate_DAG_info_incremental_partitions: Group_senders:")
+        logger.info("generate_DAG_info_incremental_partitions: Group_senders:")
         for sender_name,receiver_name_set in BFS_generate_DAG_info.Group_senders.copy().items():
-            print("sender:" + sender_name)
-            print("receiver_name_set:" + str(receiver_name_set))
-        print()
-        print()
-        print("generate_DAG_info_incremental_partitions: Group_receivers:")
+            logger.info("sender:" + sender_name)
+            logger.info("receiver_name_set:" + str(receiver_name_set))
+        logger.info("")
+        logger.info("")
+        logger.info("generate_DAG_info_incremental_partitions: Group_receivers:")
         for receiver_name,sender_name_set in BFS_generate_DAG_info.Group_receivers.copy().items():
             print("receiver:" + receiver_name)
             print("sender_name_set:" + str(sender_name_set))
-        print()
+        logger.info("")
+        logger.info("generate_DAG_info_incremental_partitions: Partition_senders:")
+        for sender_name,receiver_name_set in BFS_generate_DAG_info.Partition_senders.copy().items():
+            logger.info("sender:" + sender_name)
+            logger.info("receiver_name_set:" + str(receiver_name_set))
+        logger.info("")
+        logger.info("")
+        logger.info("generate_DAG_info_incremental_partitions: Partition_receivers:")
+        for receiver_name,sender_name_set in BFS_generate_DAG_info.Partition_receivers.copy().items():
+            logger.info("receiver:" + receiver_name)
+            logger.info("sender_name_set:" + str(sender_name_set))
+        logger.info("")
         BFS_generate_DAG_info.Partition_senders.clear()
         BFS_generate_DAG_info.Partition_receivers.clear()
         BFS_generate_DAG_info.Group_senders.clear()
         BFS_generate_DAG_info.Group_receivers.clear()
-        print("generate_DAG_info_incremental_partitions: Group_senders:")
+        logger.info("generate_DAG_info_incremental_partitions: Group_senders:")
         for sender_name,receiver_name_set in BFS_generate_DAG_info.Group_senders.copy().items():
-            print("sender:" + sender_name)
-            print("receiver_name_set:" + str(receiver_name_set))
-        print()
-        print()
-        print("generate_DAG_info_incremental_partitions: Group_receivers:")
+            logger.info("sender:" + sender_name)
+            logger.info("receiver_name_set:" + str(receiver_name_set))
+        logger.info("")
+        logger.info("")
+        logger.info("generate_DAG_info_incremental_partitions: Group_receivers:")
         for receiver_name,sender_name_set in BFS_generate_DAG_info.Group_receivers.copy().items():
-            print("receiver:" + receiver_name)
-            print("sender_name_set:" + str(sender_name_set))
-        print()
+            logger.info("receiver:" + receiver_name)
+            logger.info("sender_name_set:" + str(sender_name_set))
+        logger.info()
+        logger.info("generate_DAG_info_incremental_partitions: Partition_senders:")
+        for sender_name,receiver_name_set in BFS_generate_DAG_info.Partition_senders.copy().items():
+            logger.info("sender:" + sender_name)
+            logger.info("receiver_name_set:" + str(receiver_name_set))
+        logger.info("")
+        logger.info("")
+        logger.info("generate_DAG_info_incremental_partitions: Partition_receivers:")
+        for receiver_name,sender_name_set in BFS_generate_DAG_info.Partition_receivers.copy().items():
+            logger.info("receiver:" + receiver_name)
+            logger.info("sender_name_set:" + str(sender_name_set))
+        logger.info("")
 
     # Here is the code to delete the key-value pairs one by one. In 
     # case we need to debug this:

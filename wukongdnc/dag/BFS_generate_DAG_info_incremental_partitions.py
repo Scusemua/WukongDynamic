@@ -1185,15 +1185,18 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         # to be processed. (If every graph node is in a partition, this parameter will
         # be set to False by BFS.)
         state_info_of_previous_partition.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued = to_be_continued
-        
+
+        logger.info("generate_DAG_info_incremental_partitions: for current partition, the previous_state_info after update collpase and TBC: " 
+            + str(state_info_of_previous_partition))
+ 
         # we track the previous partition of the previous partition
         if current_partition_number > 2:
             previous_previous_state = previous_state - 1
             state_info_of_previous_previous_partition = Partition_DAG_map[previous_previous_state]
             state_info_of_previous_previous_partition.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued = False
+            logger.info("generate_DAG_info_incremental_partitions: for current partition, the previous_previous_state_info after update collpase and TBC: " 
+                + str(state_info_of_previous_previous_partition))
 
-        logger.info("generate_DAG_info_incremental_partitions: for current partition, the previous_state_info after update collpase and TBC: " 
-            + str(state_info_of_previous_partition))
 
         # generate DAG information
         Partition_DAG_map[current_state] = state_info(current_partition_name, fanouts, fanins, faninNBs, collapse, fanin_sizes, 
@@ -1244,7 +1247,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         # we deep copy the state_info object so we have two seperate state_info
         # objects for the current_state, i.e., the state_info object read by the DAG_executor
         # is different from the state_info object in the DAG info we are maintaining
-        # for incremental ADG generation. (We add partitions to this information 
+        # for incremental DAG generation. (We add partitions to this information 
         # one by one) This ensures that the state_info object (for current_state) we write in the 
         # during next DAG generation (at which point current_state is previous_state)
         # is not the same state_info object for current_state read by DAG_executor.
@@ -1303,8 +1306,8 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
             #
             # Get the state_info from the DAG_map being given to the DAG_executor
             # (which is in the DAG_info object just created and returned below). 
-            # This state_info vaue object has the same reference in both maps so 
-            # t does not matter which map we retrieve the state_info reference from.
+            # This state_info value object has the same reference in both maps so 
+            # it does not matter which map we retrieve the state_info reference from.
             # Again, this is the state_info object for the current just processed, partition, 
             # which is incomplete (to_be_continued = True). When we process the next 
             # partition, we will set this current_partition to be complete (where
@@ -1347,6 +1350,19 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
             # and put this deep copy in DAG_info_DAG_map which is part of the DAG_info 
             # object given to the DAG_executor.
             DAG_info_DAG_map[current_state] = copy_of_state_info_of_current_state
+
+#brc: We need to do this for the previous_state too, since when we generate the incremental
+# DAG for the next state, we change the state info for the previous state and the previous
+# previous state. When we are processing the next state, the previou_state is what are
+# are now calling the current_state and the previous_previous state is what we are now
+# calling the previous_state. So when we are processing the next state, we need to make
+# sure that here in the DAG generator we are not writing the same state info object that 
+# the DAG_executor is reading for execution. (The DAG_executor, when it is executing a
+# state s that is continued, has an assertion that is compares the TBC of s and the 
+# fanin/fanout TBC of the previous state. They should be equal. But if the DAG_generator
+# changes the fanin/fanout TBC of the previous state concurrently these values may be unequal.
+# Note that we will have cloned s but not the state previous to s since here we clone
+# current state but not previous state.)
 
             # This code is used to test the deep copy - modify the state info
             # maintained by the generator and make sure this modification does 
