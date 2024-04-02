@@ -54,6 +54,7 @@ class DAG_Info(object):
         else:
             # Q: this is the same as DAG_info_dictionary["DAG_map"].copy()?
             self.DAG_map = copy.copy(DAG_info_dictionary["DAG_map"])
+            
         #where:
         """
         old_Dict = {'name': 'Bob', 'age': 25}

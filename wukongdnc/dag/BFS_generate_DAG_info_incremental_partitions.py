@@ -1114,7 +1114,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
 
             # Note: the only parts of the state info for the current state that can 
             # be changed for partitions are the collapse list and the TBC boolean. Yet 
-            # we deepcopy the entire this state_info object. This os not so bad since
+            # we deepcopy the entire this state_info object. This ss not so bad since
             # all other parts of the state info are empty for partitions (fanouts, fanins)
             # except for the pagerank function (reference)
             # Note: Each state has a reference to the Python function that
@@ -1355,13 +1355,15 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         # we track the previous partition of the previous partition
         previous_previous_state = None
         state_info_of_previous_previous_partition = None
+
         if current_partition_number > 2:
             previous_previous_state = previous_state - 1
             state_info_of_previous_previous_partition = Partition_DAG_map[previous_previous_state]
             state_info_of_previous_previous_partition.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued = False
             logger.info("generate_DAG_info_incremental_partitions: for current partition "
                 + current_partition_name + " the previous_previous_state_info after update collpase and TBC: " 
-                + str(state_info_of_previous_previous_partition))
+                + str(state_info_of_previous_previous_partition)
+                + " address of state_info_of_previous_previous_partition: " + str(hex(id(state_info_of_previous_previous_partition))))
 
         # generate DAG information
         Partition_DAG_map[current_state] = state_info(current_partition_name, fanouts, fanins, faninNBs, collapse, fanin_sizes, 
@@ -1537,16 +1539,15 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
                 logger.info("generate_DAG_info_incremental_partitions: address of copy_of_state_info_of_previous_partition: " \
                     + str(hex(id(copy_of_state_info_of_previous_partition))))
 
-            if current_partition_number > 2:
                 copy_of_state_info_of_previous_previous_partition = copy.deepcopy(state_info_of_previous_previous_partition)
                 DAG_info_DAG_map[previous_previous_state] = copy_of_state_info_of_previous_previous_partition
                 logger.info("generate_DAG_info_incremental_partitions: address of copy_of_state_info_of_previous_previous_partition: " \
                     + str(hex(id(copy_of_state_info_of_previous_previous_partition))))
+                
 
+            logger.info("generate_DAG_info_incremental_partitions: address of DAG_info_DAG_map: " \
+                    + str(hex(id(DAG_info_DAG_map))))
 
-
-
-            
             # This code is used to test the deep copy - modify the state info
             # maintained by the generator and make sure this modification does 
             # not show up in the state_info object given to the DAG_executor.
