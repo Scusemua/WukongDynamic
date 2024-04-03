@@ -131,6 +131,8 @@ class DAG_Info(object):
 
     def get_DAG_map(self):
         return self.DAG_map
+    def set_DAG_map(self, DAG_map):
+        self.DAG_map = DAG_map
     def get_DAG_states(self):
         return self.DAG_states
     def get_all_fanin_task_names(self):

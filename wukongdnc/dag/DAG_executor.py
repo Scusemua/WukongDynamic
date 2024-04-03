@@ -4365,8 +4365,8 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             + " state_info: " + str(state_info) \
                             + " state_info.task_name: " + state_info.task_name \
                             + " state_info_of_collapse_task: " + str(state_info_of_collapse_task) \
-                            + " address of state_info: " + str(hex(id(state_info))) \
-                            + " address of state_info_of_collapse_task: " + str(hex(id(state_info_of_collapse_task))) \
+                            + " XXXXXaddress of state_info: " + str(hex(id(state_info))) \
+                            + " XXXXXaddress of state_info_of_collapse_task: " + str(hex(id(state_info_of_collapse_task))) \
                             + " address of DAG_map: " + str(hex(id(DAG_map)))
                         assert state_info.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued == state_info_of_collapse_task.ToBeContinued , msg
                     except AssertionError:

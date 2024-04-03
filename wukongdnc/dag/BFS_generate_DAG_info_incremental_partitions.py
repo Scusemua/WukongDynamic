@@ -901,9 +901,15 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
             # the DAG_executor and the DAG_generator will be reading/writing different 
             # state_info objects 
             DAG_info_DAG_map[current_state] = copy_of_state_info_of_current_state
+            DAG_info.set_DAG_map(DAG_info_DAG_map)
 
-            logger.info("generate_DAG_info_incremental_partitions:: address of copy_of_state_info_of_current_state: " \
+            logger.info("XXXXXXXXXX generate_DAG_info_incremental_partitions:: address of copy_of_state_info_of_current_state for PR1_1: " \
                 + str(hex(id(copy_of_state_info_of_current_state))))
+
+            logger.info("XXXXXXXXXX generate_DAG_info_incremental_partitions:: address of state_info_of_current_state for PR1_1: " \
+                + str(hex(id(state_info_of_current_state))))
+
+                
             """
             # modify generator's state_info 
             Partition_DAG_map[current_state].fanins.append("goo")
@@ -1160,6 +1166,8 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
                 DAG_info_DAG_map[previous_previous_state] = copy_of_state_info_of_previous_previous_partition
                 logger.info("generate_DAG_info_incremental_partitions: address of copy_of_state_info_of_previous_previous_partition: " \
                     + str(hex(id(copy_of_state_info_of_previous_previous_partition))))
+                
+            DAG_info.set_DAG_map(DAG_info_DAG_map)
  
             # This used to test the deep copy - modify the state info
             # of the generator and make sure this modification does 
@@ -1360,7 +1368,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
             previous_previous_state = previous_state - 1
             state_info_of_previous_previous_partition = Partition_DAG_map[previous_previous_state]
             state_info_of_previous_previous_partition.fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued = False
-            logger.info("generate_DAG_info_incremental_partitions: for current partition "
+            logger.info("XXXXXXXXXX generate_DAG_info_incremental_partitions: for current partition "
                 + current_partition_name + " the previous_previous_state_info after update collpase and TBC: " 
                 + str(state_info_of_previous_previous_partition)
                 + " address of state_info_of_previous_previous_partition: " + str(hex(id(state_info_of_previous_previous_partition))))
@@ -1518,7 +1526,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
             # object given to the DAG_executor.
 
             DAG_info_DAG_map[current_state] = copy_of_state_info_of_current_state
-            logger.info("generate_DAG_info_incremental_partitions: address of copy_of_state_info_of_current_state: " \
+            logger.info("XXXXXXXXXX generate_DAG_info_incremental_partitions: address of copy_of_state_info_of_current_state: " \
                 + str(hex(id(copy_of_state_info_of_current_state))))
 
 #brc: We need to do this for the previous_state too, since when we generate the incremental
@@ -1536,13 +1544,15 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
             if current_partition_number > 1:
                 copy_of_state_info_of_previous_partition = copy.deepcopy(state_info_of_previous_partition)
                 DAG_info_DAG_map[previous_state] = copy_of_state_info_of_previous_partition
-                logger.info("generate_DAG_info_incremental_partitions: address of copy_of_state_info_of_previous_partition: " \
+                logger.info("XXXXXXXXXXgenerate_DAG_info_incremental_partitions: address of copy_of_state_info_of_previous_partition: " \
                     + str(hex(id(copy_of_state_info_of_previous_partition))))
 
                 copy_of_state_info_of_previous_previous_partition = copy.deepcopy(state_info_of_previous_previous_partition)
                 DAG_info_DAG_map[previous_previous_state] = copy_of_state_info_of_previous_previous_partition
-                logger.info("generate_DAG_info_incremental_partitions: address of copy_of_state_info_of_previous_previous_partition: " \
+                logger.info("XXXXXXXXXXgenerate_DAG_info_incremental_partitions: address of copy_of_state_info_of_previous_previous_partition: " \
                     + str(hex(id(copy_of_state_info_of_previous_previous_partition))))
+            
+            DAG_info.set_DAG_map(DAG_info_DAG_map)
                 
 
             logger.info("generate_DAG_info_incremental_partitions: address of DAG_info_DAG_map: " \
