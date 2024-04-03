@@ -901,13 +901,23 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
             # the DAG_executor and the DAG_generator will be reading/writing different 
             # state_info objects 
             DAG_info_DAG_map[current_state] = copy_of_state_info_of_current_state
-            DAG_info.set_DAG_map(DAG_info_DAG_map)
-
-            logger.info("XXXXXXXXXX generate_DAG_info_incremental_partitions:: address of copy_of_state_info_of_current_state for PR1_1: " \
-                + str(hex(id(copy_of_state_info_of_current_state))))
+            state_info_of_current_state_after_set = DAG_info_DAG_map[current_state]
 
             logger.info("XXXXXXXXXX generate_DAG_info_incremental_partitions:: address of state_info_of_current_state for PR1_1: " \
                 + str(hex(id(state_info_of_current_state))))
+            
+            logger.info("XXXXXXXXXX generate_DAG_info_incremental_partitions:: address of copy_of_state_info_of_current_state for PR1_1: " \
+                + str(hex(id(copy_of_state_info_of_current_state))))
+            
+            logger.info("XXXXXXXXXX generate_DAG_info_incremental_partitions:: address of state_info_of_current_state_after_set for PR1_1: " \
+                + str(hex(id(state_info_of_current_state_after_set))))
+            
+            DAG_info.set_DAG_map(DAG_info_DAG_map)
+            DAG_info_DAG_map_after_set_DAG_Map = DAG_info.get_DAG_map()
+            state_info_of_current_state_after_set_DAG_Map = DAG_info_DAG_map_after_set_DAG_Map[current_state]
+
+            logger.info("XXXXXXXXXX generate_DAG_info_incremental_partitions:: address of state_info_of_current_state_after_set_DAG_Map for PR1_1: " \
+                + str(hex(id(state_info_of_current_state_after_set_DAG_Map))))
 
                 
             """
