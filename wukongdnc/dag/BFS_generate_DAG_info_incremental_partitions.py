@@ -912,6 +912,9 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
                 
             DAG_info.set_DAG_map(DAG_info_DAG_map)
             DAG_info_DAG_map_after_set_DAG_Map = DAG_info.get_DAG_map()
+
+            logger.info("generate_DAG_info_incremental_partitions: address of DAG_info_DAG_map: " \
+                    + str(hex(id(DAG_info_DAG_map_after_set_DAG_Map))))
             state_info_of_current_state_after_set_DAG_Map = DAG_info_DAG_map_after_set_DAG_Map[current_state]
 
             logger.info("XXXXXXXXXX generate_DAG_info_incremental_partitions:: address of state_info_of_current_state_after_set_DAG_Map for PR1_1 from DAG_info_DAG_map: " \
@@ -1193,6 +1196,9 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
                     + str(hex(id(copy_of_state_info_of_previous_previous_partition))))
             
             DAG_info.set_DAG_map(DAG_info_DAG_map)
+
+            logger.info("generate_DAG_info_incremental_partitions: address of DAG_info_DAG_map: " \
+                    + str(hex(id(DAG_info_DAG_map))))
 
             state_info_of_current_state_after_set = DAG_info_DAG_map[current_state]
             if current_partition_number > 1:  

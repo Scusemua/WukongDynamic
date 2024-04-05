@@ -98,6 +98,7 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         for key, value in DAG_map.items():
             print(key)
             print(value)
+            print(str(hex(id(value)))) 
         print("  ")
         print("DAG_infoBuffer_Monitor_for_Lambdas: print_DAG_info: DAG states:")         
         for key, value in DAG_states.items():
