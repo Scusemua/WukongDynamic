@@ -2869,7 +2869,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                                     logger.info("DAG_executor_work_loop: after withdraw: workers_completed:  " + str(completed_workers))
                                     # make this explicit
                                     DAG_info = new_DAG_info
-                                    # upate DAG_ma and DAG_tasks with their new versions in DAG_info
+                                    # upate DAG_map and DAG_tasks with their new versions in DAG_info
                                     DAG_map = DAG_info.get_DAG_map()
                                     # number of tasks in the incremental DAG. Not all tasks can 
                                     # be executed if the new DAG is still imcomplete.
@@ -4305,7 +4305,7 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             # not i since i was executed previously and its output was saved.
                             # For groups, if we execute group i, i can have fanouts/fanins
                             # collapse, not just collapses. If the targets of these fanouts/fanins
-                            # collpase are incomplete then we cannot process them, so we put
+                            # collapse are incomplete then we cannot process them, so we put
                             # i and i's output in the continue queue. When we get a new DAG, 
                             # we get (i,output) from the continue queue. Now we can complete
                             # the processing of the fanouts/fanin/collapse tasks of group/task i. This
@@ -4323,16 +4323,20 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                         else:
                             # Try to get a new incrmental DAG. If we get one then the collapsed
                             # task which is TBC in the current DAG will not be TBC in the new
-                            # DAG so we can execute the collpase task (after we enqueue it in 
+                            # DAG so we can execute the collapse task (after we enqueue it in 
                             # the cluster queue and we get it from the cluster queue (after possibly 
                             # getting and executing other clustered tasks.)
                             requested_current_version_number = DAG_info.get_DAG_version_number() + 1
                             new_DAG_info = DAG_infobuffer_monitor.withdraw(requested_current_version_number,DAG_executor_state.state,output)
                             if new_DAG_info is not None:
                                 DAG_info = new_DAG_info
-                                # upate DAG_ma and DAG_tasks with their new versions in DAG_info
+                                # upate DAG_map and DAG_tasks with their new versions in DAG_info
                                 DAG_map = DAG_info.get_DAG_map()
                                 state_info = DAG_map[DAG_executor_state.state]
+#brc: Do these: 
+                                state_of_collapsed_task = DAG_info.get_DAG_states()[state_info.collapse[0]]
+                                state_info_of_collapse_task = DAG_map[state_of_collapsed_task]
+
                                 # put non-TBC states in the cluster_queue
                                 DAG_executor_state.state = DAG_info.get_DAG_states()[state_info.collapse[0]]
                                 cluster_queue.put(DAG_executor_state.state)

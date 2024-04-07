@@ -576,7 +576,8 @@ class DAG_infoBuffer_Monitor_for_Lambdas(MonitorSU):
         restart = False
         if requested_current_version_number <= self.current_version_number_DAG_info:
             DAG_info = self.current_version_DAG_info
-            logger.info("DAG_infoBuffer_Monitor_for_Lambdas: withdraw return None")
+            logger.info("DAG_infoBuffer_Monitor_for_Lambdas: withdraw return current Lambda"
+                " with version " + str(self.current_version_number_DAG_info))
 #brc leaf tasks
 
 #brc: lambda inc: 

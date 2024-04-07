@@ -1633,6 +1633,9 @@ def run():
     if output_DAG:
         logger.info("DAG_executor_driver at start: Output DAG:")
         # FYI:
+        logger.info("DAG_executor_driver at start: DAG_map[1]: " 
+            + str(DAG_map[1]) + " address DAG_map[1]: "
+            + str(hex(id(DAG_map[1]))))
         logger.info("DAG_executor_driver: DAG_map:")
         for key, value in DAG_map.items():
             logger.info(str(key))
