@@ -6287,7 +6287,7 @@ def main():
         for receiver_name,sender_name_set in BFS_generate_DAG_info.Group_receivers.copy().items():
             logger.info("receiver:" + receiver_name)
             logger.info("sender_name_set:" + str(sender_name_set))
-        logger.info()
+        logger.info("")
         logger.info("generate_DAG_info_incremental_partitions: Partition_senders:")
         for sender_name,receiver_name_set in BFS_generate_DAG_info.Partition_senders.copy().items():
             logger.info("sender:" + sender_name)
@@ -6450,7 +6450,7 @@ def main():
                 #number_of_groups_or_partitions = len(partitions) 
                 number_of_groups_or_partitions = number_of_partitions
             check_pagerank_outputs(number_of_groups_or_partitions)
-
+        logger.info("")
         # deallocate data structures for incremental DAG generation
         BFS_generate_DAG_info_incremental_partitions.destructor()
         BFS_generate_DAG_info_incremental_groups.destructor()
