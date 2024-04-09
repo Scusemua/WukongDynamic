@@ -3540,7 +3540,7 @@ def bfs(visited, node):
                 # partition i, we will next work on partition i+1 and while doing that we
                 # may need the nodes in partition i as a node in partition i+1 can have
                 # a parent node in partition i but by definition not in any partition previous
-                # to partition i. So from this point on we don't need the nodes in partition i-1,;
+                # to partition i. So from this point on we don't need the nodes in partition i-1,
                 # thus, we could remove them from the map, where partition i-1 is 
                 # saved in partitions[] so we can get the nodes in partition i-1 and use them
                 # to clear the corresponding key-values in 
@@ -3562,8 +3562,11 @@ def bfs(visited, node):
                 # and the previous partition name (from partition_names). 
                 # Note: This deallocation here is after the code for non-incremental and incremental that uses
                 # the previous partition.
+                # Note: This is per node so it works whether we are using groups or partitions. That is,
+                # the nodes of a group are in the partition of that group, so when we delete the nodes
+                # in a partition we are deleting the nodes in the groups for that partition,
 #brc: groups of
-                if DAG_executor_constants.CLEAR_BFS_MAIN_MAP_ON_THE_FLY:
+                if DAG_executor_constants.CLEAR_BFS_MAIN_MAP_ON_THE_FLY and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_ON_THE_FLY):
                     if current_partition_number > 1:
                         # partition numbers start with 1 not 0. But the first 
                         # partition in partitions[] is in position 0.
@@ -3584,7 +3587,7 @@ def bfs(visited, node):
                                         os._exit(0)  
 #brc: graph on the fly
                 # Do the same for the nodes of the input graph. That is, we are done with graph nodes
-                # that correspond to a partition node previous_partiion. Delete each graph node using
+                # that correspond to a partition node in previous_partiion. Delete each graph node using
                 # the ID of the partition node. Graph node i is stored with key i (in dictionary nodes{}).                    
                 if (DAG_executor_constants.CLEAR_BFS_GRAPH_NODES_ON_THE_FLY and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_ON_THE_FLY)):
                     if current_partition_number > 1:
@@ -3754,6 +3757,8 @@ def bfs(visited, node):
                             # Need to now number of children to know if it's end of component?
                             # We track node.num_children; we would need to check num_children==0
                             # for all of the nodes in all of the groups?
+                            # Note: We use num_nodes when we are deallocating on-the-fly - we only deallocate
+                            # when the input graph is large.
                             DAG_info = BFS_generate_DAG_info_incremental_groups.generate_DAG_info_incremental_groups(partition_name,current_partition_number,
                                 groups_of_current_partition,groups_of_partitions,
                                 to_be_continued)
@@ -4475,7 +4480,7 @@ def bfs(visited, node):
                 # previous partition. See the comments above for outputting (instead of 
                 # clearing) these partitions/groups - the calculations for their positions
                 # are the same)
-                if DAG_executor_constants.CLEAR_BFS_PARTITIONS_GROUPS_NAMES:
+                if DAG_executor_constants.CLEAR_BFS_PARTITIONS_GROUPS_NAMES and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_ON_THE_FLY):
                     if current_partition_number > 1:
                         if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
                             # partition numbers start with 1 not 0. But the first 
@@ -5948,7 +5953,7 @@ def main():
 
     if DAG_executor_constants.USE_MUTLITHREADED_NONINCREMENTAL_BFS:
         global DAG_generator_for_multithreaded_DAG_generation
-        DAG_generator_for_multithreaded_DAG_generation = DAG_Generator_Multithreaded()
+        DAG_generator_for_multithreaded_DAG_generation = DAG_Generator_Multithreaded(num_nodes)
         DAG_generator_for_multithreaded_DAG_generation.start_thread()
     
     # we are only using incremental_DAG_generation when we
@@ -6224,7 +6229,7 @@ def main():
     # Note: we print bfs_stats below after doing these deallocations. So the deallocated
     # data structures will be empty in the stats.
 #brc: groups of
-    if DAG_executor_constants.CLEAR_BFS_MAIN_MAP_ON_THE_FLY:
+    if DAG_executor_constants.CLEAR_BFS_MAIN_MAP_ON_THE_FLY and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_ON_THE_FLY):
         logger.info("bfs: deallocate main map for nodes in last partition: " + str(len(partitions)))
         logger.info("")
         nodeIndex_to_partition_partitionIndex_group_groupIndex_map.clear()
@@ -6241,15 +6246,19 @@ def main():
         logger.info("bfs: deallocate partitions (though all but the last position of partitions will previously have been set to None")
         partitions.clear()
         partition_names.clear()
-       # Do the same for the remaining partitions in partitions[]
+    # Do the same for the remaining partitions in partitions[]
     if (DAG_executor_constants.CLEAR_BFS_PARTITIONS_GROUPS_NAMES and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_ON_THE_FLY)):
         logger.info("bfs: deallocate groups (though all but the groups in the last partition will previously have been set to None")
         groups.clear()
         group_names.clear()
 
+    # Do the same for the remaining Senders and Receivers. We deallocate Senders and Receivers 
+    # in the incremental DAG generation methods. Here we deallocate the remaining Senders and Receivers.
+    # If we are not doing incremental ADG generation, we will deallocate all of the Senders and 
+    # Receivers here.
+        
+#brc: Q: for non-inc and inc?
     if (DAG_executor_constants.CLEAR_BFS_SENDERS_AND_RECEIVERS and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_ON_THE_FLY)):
-#brc: If we are generating partitions (groups) we do not want to generate Senders and Receivers
-# for groups (partitions)
         logger.info("bfs: deallocate Senders and Receivers.")
         logger.info("generate_DAG_info_incremental_partitions: Group_senders:")
         for sender_name,receiver_name_set in BFS_generate_DAG_info.Group_senders.copy().items():

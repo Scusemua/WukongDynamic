@@ -250,7 +250,7 @@ if not (not USING_THREADS_NOT_PROCESSES or USE_MULTITHREADED_MULTIPROCESSING):
 """
 
 #brc: num_nodes
-# this is set BFS.input_graph when doing non-incremental DAG generation with groups
+# this is set by BFS.input_graph when doing non-incremental DAG generation with groups
 num_nodes_in_graph = 0
 
 # See the comments in BFS_generate_DAG_info_incremental_partitions.py. Processng
@@ -666,6 +666,10 @@ def generate_DAG_info_incremental_groups(current_partition_name,
 # groups_of_current_partition is a list of groups in the current partition.
 # groups_of_partitions is a list of the groups_of_current_partition. We need
 # this to get the groups of the previous partition and th previous previous partition. 
+
+# Note: We use num_nodes_in_graph when we are deallocating on-the-fly - we only deallocate
+# when the input graph is large.
+
 
     global Group_all_fanout_task_names
     global Group_all_fanin_task_names
@@ -1801,7 +1805,7 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                     + previous_previous_group + " after update fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued is: " 
                     + str(state_info_of_previous_previous_group))     
                 
-                if DAG_executor_constants.CLEAR_BFS_SENDERS_AND_RECEIVERS:
+                if DAG_executor_constants.CLEAR_BFS_SENDERS_AND_RECEIVERS and (num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_CLEARING_ON_THE_FLY):
                     try:
                         del Group_senders[previous_previous_group]
                         logger.info("BFS_generate_DAG_info_incremental_groups: deallocate Group_senders: " + previous_previous_group)

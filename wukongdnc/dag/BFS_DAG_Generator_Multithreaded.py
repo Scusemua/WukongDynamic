@@ -120,10 +120,11 @@ def generator_thread(DAG_generator_for_multithreaded_DAG_generation,buffer):
 
 # manages multithreaded DAG generation
 class DAG_Generator_Multithreaded:
-    def __init__(self):
+    def __init__(self,num_nodes):
         # bfs deposits the net partitions/groups and the generator 
         # thread withdraws them
         self.buffer = queue.Queue()
+        self.num_nodes = num_nodes # number of nodes in input graph
         # this thrad needs a reference to seld so it can access buffer
         self.dag_generator_thread = threading.Thread(target=generator_thread, name=("dag_generator_thread"), args=(self,self.buffer,))
 
@@ -136,12 +137,13 @@ class DAG_Generator_Multithreaded:
         groups_of_partitions,
         to_be_continued):
 
+
         DAG_info = BFS_generate_DAG_info_incremental_groups.generate_DAG_info_incremental_groups(current_partition_name,
             current_partition_number, groups_of_current_partition,
             groups_of_partitions,
             to_be_continued)
         
-        logger.trce("generate_DAG_info_multithreaded_groups: returned DAG_info:")
+        logger.trace("generate_DAG_info_multithreaded_groups: returned DAG_info:")
         DAG_map = DAG_info.get_DAG_map()
         DAG_states = DAG_info.get_DAG_states()
         DAG_leaf_tasks = DAG_info.get_DAG_leaf_tasks()

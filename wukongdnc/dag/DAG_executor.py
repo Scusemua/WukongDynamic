@@ -2840,6 +2840,11 @@ def DAG_executor_work_loop(logger, server, completed_tasks_counter, completed_wo
                             # that tries to get a new incremental DAG (amd does not block if one is not yet available) every 
                             # m milliseconds. If a new incremental DAG is obtained, the workers may be able to excute their 
                             # continued tasks and then execute the tasks in the new DAG that the continued tasks enable.
+# brc: Workers are assumed to be excuting the same version of the incremental ADG, since they
+                            # use the number of unexecuted tasks in the DAG to determine whether they shoudl request a 
+                            # new DAG. Need to ensure that the DAG_infoBuffer_Monitor ensures this is true, i.e., a new
+                            # version of the DAG cannot be distributed unless all of the workers are waiting for a new DAG
+                            # or incremental DAG generation is complete.
 
                             if DAG_executor_constants.COMPUTE_PAGERANK and DAG_executor_constants.USE_INCREMENTAL_DAG_GENERATION:
                                 if not DAG_info.get_DAG_info_is_complete():
