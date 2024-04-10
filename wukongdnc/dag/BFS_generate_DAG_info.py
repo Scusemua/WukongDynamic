@@ -74,17 +74,70 @@ def destructor():
     global leaf_tasks_of_groups_incremental
     global groups_num_shadow_nodes_map
     global partitions_num_shadow_nodes_map
+
+    # Do the same for the remaining Senders and Receivers. We deallocate Senders and Receivers 
+    # in the incremental DAG generation methods. Here we deallocate the remaining Senders and Receivers.
+    # If we are not doing incremental ADG generation, we will deallocate all of the Senders and 
+    # Receivers here.
+
+    logger.trace("bfs: deallocate Senders and Receivers.")
+    logger.trace("generate_DAG_info_incremental_partitions: Group_senders:")
+    for sender_name,receiver_name_set in Group_senders.items():
+        logger.trace("sender:" + sender_name)
+        logger.trace("receiver_name_set:" + str(receiver_name_set))
+    logger.trace("")
+    logger.trace("")
+    logger.trace("generate_DAG_info_incremental_partitions: Group_receivers:")
+    for receiver_name,sender_name_set in Group_receivers.items():
+        print("receiver:" + receiver_name)
+        print("sender_name_set:" + str(sender_name_set))
+    logger.trace("")
+    logger.trace("generate_DAG_info_incremental_partitions: Partition_senders:")
+    for sender_name,receiver_name_set in Partition_senders.items():
+        logger.trace("sender:" + sender_name)
+        logger.intracefo("receiver_name_set:" + str(receiver_name_set))
+    logger.trace("")
+    logger.trace("")
+    logger.trace("generate_DAG_info_incremental_partitions: Partition_receivers:")
+    for receiver_name,sender_name_set in Partition_receivers.items():
+        logger.trace("receiver:" + receiver_name)
+        logger.trace("sender_name_set:" + str(sender_name_set))
+    logger.trace("")
+
     Partition_senders = None
     Partition_receivers = None
     Group_senders = None
     Group_receivers = None
+
+    logger.trace("generate_DAG_info_incremental_partitions: Group_senders:")
+    for sender_name,receiver_name_set in Group_senders.items():
+        logger.info("sender:" + sender_name)
+        logger.info("receiver_name_set:" + str(receiver_name_set))
+    logger.trace("")
+    logger.trace("")
+    logger.trace("generate_DAG_info_incremental_partitions: Group_receivers:")
+    for receiver_name,sender_name_set in Group_receivers.items():
+        logger.trace("receiver:" + receiver_name)
+        logger.trace("sender_name_set:" + str(sender_name_set))
+    logger.trace("")
+    logger.trace("generate_DAG_info_incremental_partitions: Partition_senders:")
+    for sender_name,receiver_name_set in Partition_senders.items():
+        logger.trace("sender:" + sender_name)
+        logger.trace("receiver_name_set:" + str(receiver_name_set))
+    logger.trace("")
+    logger.trace("")
+    logger.trace("generate_DAG_info_incremental_partitions: Partition_receivers:")
+    for receiver_name,sender_name_set in Partition_receivers.items():
+        logger.trace("receiver:" + receiver_name)
+        logger.trace("sender_name_set:" + str(sender_name_set))
+    logger.trace("")
+
     leaf_tasks_of_partitions = None
     leaf_tasks_of_partitions_incremental = None
     leaf_tasks_of_groups = None
     leaf_tasks_of_groups_incremental = None
     groups_num_shadow_nodes_map = None
     partitions_num_shadow_nodes_map = None
-
 
 """
 get 1: DAG_info is

@@ -4475,7 +4475,7 @@ def bfs(visited, node):
                                 i+= 1
      
 #brc: groups of
-                # Here we are claring the partitions/groups from partitions[]/groups[] that we 
+                # Here we are clearing the partitions/groups from partitions[]/groups[] that we 
                 # no longer need. That is, the previous partition / the groups in the 
                 # previous partition. See the comments above for outputting (instead of 
                 # clearing) these partitions/groups - the calculations for their positions
@@ -4511,8 +4511,10 @@ def bfs(visited, node):
                                 index_in_groups_list_of_previous_group = index_in_groups_list_of_first_group_of_previous_partition + i - 1
                                 logger.info("BFS: for " + previous_group + " index_in_groups_list_of_previous_group: " + str(index_in_groups_list_of_previous_group))
 #brc: Q : need parent_group for groups in place so delete prev prev?
-                                #groups[index_in_groups_list_of_previous_group] = None
-                                #group_names[index_in_groups_list_of_previous_group] = None
+# Q: For partitions, do we ever need to patch frontier groups?
+# This needs to be after use in frontier groups?
+                                groups[index_in_groups_list_of_previous_group] = None
+                                group_names[index_in_groups_list_of_previous_group] = None
 
                                 i+= 1
 
@@ -5940,6 +5942,7 @@ def main():
 #0
     global num_nodes
 
+    ##################### INPUT GRAPH ####################
     logger.trace("BFS: Following is the Breadth-First Search")
     input_graph()
     logger.trace("BFS: num_nodes after input graph: " + str(num_nodes))
@@ -5979,6 +5982,8 @@ def main():
 #00
     global visited
     global nodes
+
+    ##################### bfs ####################
     #bfs(visited, graph, '5')    # function calling
     # example: num_nodes = 100, so Nodes in nodes[1] to nodes[100]
     # i start = 1 as nodes[0] not used, i end is (num_nodes+1) - 1  = 100
@@ -6218,6 +6223,10 @@ def main():
                 # in print_BFS_stats().
                 frontiers.append(frontier.copy())
 
+    ##################### end bfs ####################
+
+
+    ##################### deallocations ####################
     # Note: At this point we have deleted all of the key-value pairs
     # from nodeIndex_to_partition_partitionIndex_group_groupIndex_map
     # except for the keys corresponding to the node IDs in the 
@@ -6251,63 +6260,6 @@ def main():
         logger.info("bfs: deallocate groups (though all but the groups in the last partition will previously have been set to None")
         groups.clear()
         group_names.clear()
-
-    # Do the same for the remaining Senders and Receivers. We deallocate Senders and Receivers 
-    # in the incremental DAG generation methods. Here we deallocate the remaining Senders and Receivers.
-    # If we are not doing incremental ADG generation, we will deallocate all of the Senders and 
-    # Receivers here.
-        
-#brc: Q: for non-inc and inc?
-    if (DAG_executor_constants.CLEAR_BFS_SENDERS_AND_RECEIVERS and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_ON_THE_FLY)):
-        logger.info("bfs: deallocate Senders and Receivers.")
-        logger.info("generate_DAG_info_incremental_partitions: Group_senders:")
-        for sender_name,receiver_name_set in BFS_generate_DAG_info.Group_senders.copy().items():
-            logger.info("sender:" + sender_name)
-            logger.info("receiver_name_set:" + str(receiver_name_set))
-        logger.info("")
-        logger.info("")
-        logger.info("generate_DAG_info_incremental_partitions: Group_receivers:")
-        for receiver_name,sender_name_set in BFS_generate_DAG_info.Group_receivers.copy().items():
-            print("receiver:" + receiver_name)
-            print("sender_name_set:" + str(sender_name_set))
-        logger.info("")
-        logger.info("generate_DAG_info_incremental_partitions: Partition_senders:")
-        for sender_name,receiver_name_set in BFS_generate_DAG_info.Partition_senders.copy().items():
-            logger.info("sender:" + sender_name)
-            logger.info("receiver_name_set:" + str(receiver_name_set))
-        logger.info("")
-        logger.info("")
-        logger.info("generate_DAG_info_incremental_partitions: Partition_receivers:")
-        for receiver_name,sender_name_set in BFS_generate_DAG_info.Partition_receivers.copy().items():
-            logger.info("receiver:" + receiver_name)
-            logger.info("sender_name_set:" + str(sender_name_set))
-        logger.info("")
-        BFS_generate_DAG_info.Partition_senders.clear()
-        BFS_generate_DAG_info.Partition_receivers.clear()
-        BFS_generate_DAG_info.Group_senders.clear()
-        BFS_generate_DAG_info.Group_receivers.clear()
-        logger.info("generate_DAG_info_incremental_partitions: Group_senders:")
-        for sender_name,receiver_name_set in BFS_generate_DAG_info.Group_senders.copy().items():
-            logger.info("sender:" + sender_name)
-            logger.info("receiver_name_set:" + str(receiver_name_set))
-        logger.info("")
-        logger.info("")
-        logger.info("generate_DAG_info_incremental_partitions: Group_receivers:")
-        for receiver_name,sender_name_set in BFS_generate_DAG_info.Group_receivers.copy().items():
-            logger.info("receiver:" + receiver_name)
-            logger.info("sender_name_set:" + str(sender_name_set))
-        logger.info("")
-        logger.info("generate_DAG_info_incremental_partitions: Partition_senders:")
-        for sender_name,receiver_name_set in BFS_generate_DAG_info.Partition_senders.copy().items():
-            logger.info("sender:" + sender_name)
-            logger.info("receiver_name_set:" + str(receiver_name_set))
-        logger.info("")
-        logger.info("")
-        logger.info("generate_DAG_info_incremental_partitions: Partition_receivers:")
-        for receiver_name,sender_name_set in BFS_generate_DAG_info.Partition_receivers.copy().items():
-            logger.info("receiver:" + receiver_name)
-            logger.info("sender_name_set:" + str(sender_name_set))
-        logger.info("")
 
     # Here is the code to delete the key-value pairs one by one. In 
     # case we need to debug this:
@@ -6353,6 +6305,7 @@ def main():
             print_BFS_stats()
             #logging.shutdown()
             #os._exit(0)
+            ##################### non-incremental generate DAG ####################
             BFS_generate_DAG_info.generate_DAG_info()
         else:
             # started the DAG_generator_for_multithreaded_DAG_generation
@@ -6390,6 +6343,7 @@ def main():
         #    #number_of_groups_or_partitions = len(partitions) 
         #    number_of_groups_or_partitions = number_of_partitions
 
+        ##################### deallocate ####################
         # deallocate data structures for non-incemental DAG generation
         BFS_generate_DAG_info.destructor()
         destructor()  # BFS.destructor
@@ -6406,9 +6360,11 @@ def main():
         # incremental DAG generation, tcp_server would call bfs() and 
         # do nothing else since in that case bfs() is calling 
         # DAG_executor_driver after bfs write the first incremental DAG.
-
+        
+        ##################### run() DAG_executor_driver ####################
         run()
 
+        ##################### check results ####################
         if DAG_executor_constants.CHECK_PAGERANK_OUTPUT:
             if DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
                 #number_of_groups_or_partitions = len(groups)
@@ -6460,6 +6416,8 @@ def main():
                 number_of_groups_or_partitions = number_of_partitions
             check_pagerank_outputs(number_of_groups_or_partitions)
         logger.info("")
+
+        ##################### deallocate ####################
         # deallocate data structures for incremental DAG generation
         BFS_generate_DAG_info_incremental_partitions.destructor()
         BFS_generate_DAG_info_incremental_groups.destructor()
