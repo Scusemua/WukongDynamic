@@ -3764,7 +3764,13 @@ def bfs(visited, node):
                                 to_be_continued)
                             # we are done with groups_of_current_partition so clear it so it is empty at start
                             # of next partition.
-                            groups_of_current_partition.clear()
+#brc: gocp
+                            # Note: We can no longer clear groups_of_current_partition here or in the 
+                            # elif below since we need groups_of_current_partition if we are deallocating
+                            # groups[] on the fly .We use groups_of_current_partition to compute the 
+                            # indices of te previous groups in groups[], which are no longer needed and can
+                            # be deallocated (to save space when the input graph is large) 
+                            #groups_of_current_partition.clear()
                             logger.trace("BFS: after calling generate_DAG_info_incremental_groups for"
                                 + " partition " + str(partition_name) + " groups_of_current_partition: "
                                 + str(groups_of_current_partition)
@@ -4406,7 +4412,8 @@ def bfs(visited, node):
                             DAG_info = DAG_generator_for_multithreaded_DAG_generation.deposit(group_tuple)
                             # we are done with groups_of_current_partition so clear it so it is empty at start
                             # of next partition.
-                            groups_of_current_partition.clear()
+#brc: gocp
+                            #groups_of_current_partition.clear()
                             #logger.trace("BFS: after calling deposit for"
                             #    + " partition " + str(partition_name) + " groups_of_current_partition: "
                             #    + str(groups_of_current_partition)
@@ -4490,15 +4497,15 @@ def bfs(visited, node):
                             partitions[previous_partition_number-1] = None
                             partition_names[previous_partition_number-1] = None
                         else: #groups
-                            logger.info("current_partition_number: " + str(current_partition_number))
-                            logger.info("groups_of_current_partition: " + str(groups_of_current_partition))
-                            logger.info("length of groups_of_current_partition: " + str(len(groups_of_current_partition)))
+                            logger.info("BFS: current_partition_number: " + str(current_partition_number))
+                            logger.info("BFS: groups_of_current_partition: " + str(groups_of_current_partition))
+                            logger.info("BFS: length of groups_of_current_partition: " + str(len(groups_of_current_partition)))
                             previous_partition_number = current_partition_number - 1
                             groups_of_previous_partition = groups_of_partitions[previous_partition_number-1]
-                            logger.info("groups_of_partitions: " + str(groups_of_partitions))
-                            logger.info("length of groups_of_partitions: " + str(len(groups_of_partitions)))
-                            logger.info("groups_of_previous_partition: " + str(groups_of_previous_partition))
-                            logger.info("length of groups_of_previous_partition: " + str(len(groups_of_previous_partition)))
+                            logger.info("BFS: groups_of_partitions: " + str(groups_of_partitions))
+                            logger.info("BFS: length of groups_of_partitions: " + str(len(groups_of_partitions)))
+                            logger.info("BFS: groups_of_previous_partition: " + str(groups_of_previous_partition))
+                            logger.info("BFS: length of groups_of_previous_partition: " + str(len(groups_of_previous_partition)))
                             # the index of the first partition/group in partitions[]/groups[] is 1 not 0.
                             i=0
                             for previous_group in groups_of_previous_partition:
@@ -4513,6 +4520,7 @@ def bfs(visited, node):
 #brc: Q : need parent_group for groups in place so delete prev prev?
 # Q: For partitions, do we ever need to patch frontier groups?
 # This needs to be after use in frontier groups?
+# Bug: groups_of_current_partition was cleared above?
                                 groups[index_in_groups_list_of_previous_group] = None
                                 group_names[index_in_groups_list_of_previous_group] = None
 
