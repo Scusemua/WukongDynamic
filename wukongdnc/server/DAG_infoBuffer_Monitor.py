@@ -4,6 +4,7 @@ import _thread
 import time
 import copy
 
+from . import DAG_executor_constants
 import logging 
 
 logger = logging.getLogger(__name__)
@@ -30,6 +31,9 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         # and executed by workers (when we are using workers).
         self.current_version_new_leaf_tasks = []
         self._next_version=super().get_condition_variable(condition_name="_next_version")
+#brc: same version
+        self.current_version_DAG_info_is_complete = False
+        self.num_waiting_workers = 0
 
     #def init(self, **kwargs):
     def init(self,**kwargs):
@@ -113,14 +117,20 @@ class DAG_infoBuffer_Monitor(MonitorSU):
     def deposit(self,**kwargs):
         # deposit a new DAG_info object. It's version number will be one more
         # than the current DAG_info object.
-        # Wake up any workes waiting for the next version of the DAG. Workers
-        # that finish the current version i of the DAG will wait for the next 
-        # version i+1. Note: a worker may be finishing an earlier versio of 
-        # the DAG. When they request a nwe version, it may be the current
-        # version or an older version that they are requesting, We will give
+        # Workers that finish their current version i of the DAG will wait for the next 
+        # version i+1. Note: a worker may be finishing an earlier version of 
+        # the DAG. When they request a new version, it may be the current
+        # version (being deposited) or an older version that they are requesting, We will give
         # them the current version, which may be newer than the version they
-        # requsted. This is fine. We assume tha tthe DAG grows incrementally
+        # requsted. This is fine. We assume tha the DAG grows incrementally
         # and we add new states but do not delete old states from the DAG.
+        # Note: all the synchronization is to ensure that all workers are
+        # using the same version of the DAG - no worker can get the next
+        # version of the DAG until all workers have requested a new version,
+        # except when the DAG is complete in whihc case we do not require all 
+        # the workers to have requested a new version (using withdraw) since
+        # they are guaranted to all get the last version (as there aer no more DAGs 
+        # deposited after that.)
         try:
             super(DAG_infoBuffer_Monitor, self).enter_monitor(method_name="deposit")
         except Exception as ex:
@@ -132,6 +142,8 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         logger.trace("DAG_infoBuffer_Monitor: deposit() entered monitor, len(self._new_version) ="+str(len(self._next_version)))
         self.current_version_DAG_info = kwargs['new_current_version_DAG_info']
         self.current_version_number_DAG_info = self.current_version_DAG_info.get_DAG_version_number()
+#brc: same version
+        self.current_version_DAG_info_is_complete = self.current_version_DAG_info.get_DAG_info_is_complete()
 #brc leaf tasks
         new_leaf_tasks = kwargs['new_current_version_new_leaf_tasks']
         self.current_version_new_leaf_tasks += new_leaf_tasks
@@ -149,7 +161,19 @@ class DAG_infoBuffer_Monitor(MonitorSU):
             logger.trace(str(leaf_task_state))
 
         restart = False
-        self._next_version.signal_c_and_exit_monitor()
+#brc: same version
+        # if all workers are waiting or this is the last DAG then wake them up.
+        # Note: If not all workers aer waiting then there is no signal. Then 
+        # the last worker may enter withdraw in which case this workers starts
+        # a cascaded wakeup of the num_workers-1 other workers.
+        # Note: If this is the last DAG then we will wakeup as many workers
+        # as are waiting; if not all of the workers aer waiting then the 
+        # waiting workers will wakeup and return the last DAG and workers
+        # that call withdraw() later will ge this same last DAG - so all workers
+        # will get the same (last) DAG.
+        if self.num_waiting_workers == DAG_executor_constants.num_workers \
+            or self.current_version_DAG_info_is_complete:
+            self._next_version.signal_c_and_exit_monitor()
         return 0, restart
 
     def withdraw(self, **kwargs):
@@ -164,6 +188,21 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         DAG_info = None
         restart = False
         if requested_current_version_number <= self.current_version_number_DAG_info:
+#brc: same version
+        # Return with the new DAG if the requested version number is less than 
+        # the current version number and this is the last worker to call witdraw
+        # for this round or the DAG is complete. Note: if the DAG is complete then 
+        # requested_current_version_number <= self.current_version_number_DAG_info
+        # since we must have deposited a new DAG for the DAG to become complete - workers
+        # will not request a new version of the DG if their current version is complete.
+        # There is no need to block a worker if the DAG is complete since this is the 
+        # last DAG to be generated so all workers will get this last DAG on this 
+        # current round.
+        #if (requested_current_version_number <= self.current_version_number_DAG_info \
+        #    and self.num_waiting_workers == DAG_executor_constants.num_workers - 1) \
+        #    or self.current_version_DAG_info_is_complete:
+        # Can assert that if self.current_version_DAG_info_is_complete then 
+        # requested_current_version_number <= self.current_version_number_DAG_info
             DAG_info = self.current_version_DAG_info
 #brc leaf tasks
             new_leaf_task_states = copy.copy(self.current_version_new_leaf_tasks)
@@ -189,12 +228,22 @@ class DAG_infoBuffer_Monitor(MonitorSU):
             for work_tuple in new_leaf_task_states:
                 leaf_task_state = work_tuple[0]
                 logger.trace(str(leaf_task_state))
+#brc same version
+            # wake up the other (if any) waiting writers - we may be using 
+            # only one writer so there may not be any other waiting writers
+            # in which case the signal has no effect.
+            # Note: this is a cascaded wakeup - the first worker wakes up the 
+            # second, etc, and a new deposit cannot be made until all workers
+            # have left the monitor.
+            #self._next_version.signal_c_and_exit_monitor()
             super().exit_monitor()
 #brc leaf tasks
             DAG_info_and_new_leaf_task_states_tuple = (DAG_info,new_leaf_task_states)
             #return DAG_info, new_leaf_task_states, restart
             return DAG_info_and_new_leaf_task_states_tuple, restart
         else:
+#brc: same version
+            #self.num_waiting_workers += 1
             logger.info("DAG_infoBuffer_Monitor: withdraw waiting for version " + str(requested_current_version_number))
             self._next_version.wait_c()
             DAG_info = self.current_version_DAG_info
@@ -222,6 +271,8 @@ class DAG_infoBuffer_Monitor(MonitorSU):
             # Note: We could use an SC monitor in which case the second deposit
             # might be allowed to enter the monitor before waiting workers, in 
             # which case the workers would get verson i+1, which is not bad.
+            # Note: However: The current design requires all workers to be using
+            # the same version number.
 
             logger.trace("DAG_infoBuffer_Monitor: withdraw: got DAG_info with version number " 
                 + str(DAG_info.get_DAG_version_number()))
@@ -233,6 +284,8 @@ class DAG_infoBuffer_Monitor(MonitorSU):
                 leaf_task_state = work_tuple[0]
                 logger.trace(str(leaf_task_state))
 
+#brc: same version
+            #self.num_waiting_workers -= 1
             self._next_version.signal_c_and_exit_monitor()
 #brc leaf tasks
             DAG_info_and_new_leaf_task_states_tuple = (DAG_info,new_leaf_task_states)
