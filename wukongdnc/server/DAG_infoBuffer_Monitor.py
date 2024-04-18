@@ -33,8 +33,16 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         self.current_version_new_leaf_tasks = []
         self._next_version=super().get_condition_variable(condition_name="_next_version")
 #brc: same version
+        # set to the is_0complete mmber of the current DAG
         self.current_version_DAG_info_is_complete = False
+        # workers request new DAGs in "rounds". In each round the 
+        # workers request a new DAG and none can receive a new
+        # DAG until all workers have made a request. Getting
+        # new DAGs ends the round.
         self.num_waiting_workers = 0
+        # We assert the the version numbers requested by the workers
+        # in a round are the same.
+        self.requested_version_number_in_this_round = -1
 
     #def init(self, **kwargs):
     def init(self,**kwargs):
@@ -176,7 +184,15 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         # will get the same (last) DAG.
         if self.num_waiting_workers == DAG_executor_constants.NUM_WORKERS \
             or self.current_version_DAG_info_is_complete:
-            logger.info("DAG_infoBuffer_Monitor: deposit() signal waiting writers.")
+            # round is over so reset self.requested_version_number_in_this_round
+            # Note: self.requested_version_number_in_this_round will have been reset
+            # before the next round, if any, starts.
+            # Note: No worker can get reenter the monitor for the next round until all
+            # the waiting workers in this round have left the monitor.
+            self.requested_version_number_in_this_round = -1
+            logger.info("DAG_infoBuffer_Monitor: deposit() signal waiting writers:"
+                + " self.requested_version_number_in_this_round: " 
+                + str(self.requested_version_number_in_this_round))
             self._next_version.signal_c_and_exit_monitor()
         else:
             super().exit_monitor()
@@ -189,8 +205,29 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         # the next version of the DAG, which hasn't been generated yet.
         super().enter_monitor(method_name = "withdraw")
         requested_current_version_number = kwargs['requested_current_version_number']
-        logger.trace("DAG_infoBuffer_Monitor: withdraw() entered monitor, requested_current_version_number = "
-            + str(requested_current_version_number) + " len(self._next_version) = " + str(len(self._next_version)))
+        logger.info("DAG_infoBuffer_Monitor: withdraw() entered monitor, requested_current_version_number = "
+            + str(requested_current_version_number) + " len(self._next_version) = " + str(len(self._next_version))
+            + " self.requested_version_number_in_this_round:" 
+            + str(self.requested_version_number_in_this_round))
+        # asssert that the worker is requesting the same version number as the 
+        # other workers, in this round.
+        if self.requested_version_number_in_this_round == -1:
+            self.requested_version_number_in_this_round = requested_current_version_number
+        else:
+            try:
+                msg = "[Error]: DAG_infoBuffer_Monitor.withdraw:" \
+                    + " requested_current_version_number is not the same as the" \
+                    + " previously requested version number(s) " \
+                    + " requested_current_version_number: " \
+                    + str(requested_current_version_number) \
+                    + " self.requested_version_number_in_this_round: " \
+                    + str(self.requested_version_number_in_this_round)
+                assert self.requested_version_number_in_this_round == requested_current_version_number , msg
+            except AssertionError:
+                logger.exception("[Error]: assertion failed")
+                if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
+                    logging.shutdown()
+                    os._exit(0)   
         DAG_info = None
         restart = False
 #brc: same version
@@ -220,6 +257,14 @@ class DAG_infoBuffer_Monitor(MonitorSU):
                 if DAG_executor_constants.EXIT_PROGRAM_ON_EXCEPTION:
                     logging.shutdown()
                     os._exit(0)
+
+            # round is over so reset self.requested_version_number_in_this_round
+            # Note: self.requested_version_number_in_this_round will have been reset
+            # before the next round, if any, starts.
+            # Note: No worker can get reenter the monitor for the next round until all
+            # the waiting workers in this round have left the monitor.
+            if self.num_waiting_workers == DAG_executor_constants.NUM_WORKERS - 1:
+                self.requested_version_number_in_this_round == -1
 
             DAG_info = self.current_version_DAG_info
 #brc leaf tasks
@@ -254,6 +299,7 @@ class DAG_infoBuffer_Monitor(MonitorSU):
             # Note: this is a cascaded wakeup - the first worker wakes up the 
             # second, wakes up the third etc, and a new deposit cannot be made 
             # until all waiting workers have been signaled and left the monitor.
+            # Note: self.requested_version_number_in_this_round was reset above
             self._next_version.signal_c_and_exit_monitor()
             #super().exit_monitor()
 #brc leaf tasks
