@@ -174,21 +174,29 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         restart = False
 #brc: same version
         # if all workers are waiting or this is the last DAG then wake them up.
-        # Note: If not all workers are waiting then there is no signal to workers. 
+        # Note: If not all workers are waiting then there is no signal below to workers. 
         # The last worker may enter withdraw in which case this workers starts
         # a cascaded wakeup of the NUM_WORKERS-1 other workers.
         # Note: If this is the last DAG then we will wakeup as many workers
-        # as are waiting; if not all of the workers are waiting then the 
+        # as are waiting; if not all of the workers are waiting, then the 
         # waiting workers will wakeup and receive the last DAG and workers
         # that call withdraw() later will get this same last DAG - so all workers
         # will get the same (last) DAG.
-        if self.num_waiting_workers == DAG_executor_constants.NUM_WORKERS \
-            or self.current_version_DAG_info_is_complete:
-            # round is over so reset self.requested_version_number_in_this_round
-            # Note: self.requested_version_number_in_this_round will have been reset
-            # before the next round, if any, starts.
+        if self.num_waiting_workers == DAG_executor_constants.NUM_WORKERS:
+            # Note: If the last version of the DAG deposited is a complete DAG,
+            # then we might want to add "or self.current_version_DAG_info_is_complete"
+            # to the if-condition, since we know that all the workers will get this
+            # last DAG next, as by definition of "last DAG" there are no other
+            # DAGs they can get. This would allow workers to return "early" with 
+            # the last DAG, and start excuting it before other workers have 
+            # called to get the last DAG. Allowing workers to ork on the penultimate
+            # DAG while workers start early on the last ADG might cause problems
+            # though since some tasks in the last DAG will not be in the penultimte
+            # (next to last) DAG.
             # Note: No worker can get reenter the monitor for the next round until all
             # the waiting workers in this round have left the monitor.
+            # Reset for the next round. Noet that if this is the last DAG
+            # there is no next round.
             self.requested_version_number_in_this_round = -1
             logger.info("DAG_infoBuffer_Monitor: deposit() signal waiting writers:"
                 + " self.requested_version_number_in_this_round: " 
@@ -244,10 +252,10 @@ class DAG_infoBuffer_Monitor(MonitorSU):
             # newer version than they requested.
         #if requested_current_version_number <= self.current_version_number_DAG_info:
         if (requested_current_version_number <= self.current_version_number_DAG_info \
-            and self.num_waiting_workers == DAG_executor_constants.NUM_WORKERS - 1) \
-            or self.current_version_DAG_info_is_complete:
+            and self.num_waiting_workers == DAG_executor_constants.NUM_WORKERS - 1):
+            # see the note in deposit() about making this condition "if (...) or self.current_version_DAG_info_is_complete"
             try:
-                msg = "[Error]: DAG_infoBuffer_Monitor.withdraw:" \
+                msg = "[Error]: DAG_infoBuffer_Monitor: withdraw:" \
                     + " DAG is complete but request version number is not <= current version number." \
                     + " requested_current_version_number: " + str(requested_current_version_number) \
                     + " self.current_version_number_DAG_info: " + str(self.current_version_number_DAG_info)
@@ -258,13 +266,12 @@ class DAG_infoBuffer_Monitor(MonitorSU):
                     logging.shutdown()
                     os._exit(0)
 
-            # round is over so reset self.requested_version_number_in_this_round
+            # Round is over so reset self.requested_version_number_in_this_round
             # Note: self.requested_version_number_in_this_round will have been reset
             # before the next round, if any, starts.
             # Note: No worker can get reenter the monitor for the next round until all
             # the waiting workers in this round have left the monitor.
-            if self.num_waiting_workers == DAG_executor_constants.NUM_WORKERS - 1:
-                self.requested_version_number_in_this_round == -1
+            self.requested_version_number_in_this_round = -1
 
             DAG_info = self.current_version_DAG_info
 #brc leaf tasks
