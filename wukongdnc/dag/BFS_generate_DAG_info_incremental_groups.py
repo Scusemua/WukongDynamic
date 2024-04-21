@@ -1780,20 +1780,27 @@ def generate_DAG_info_incremental_groups(current_partition_name,
         # are to complete groups. That means if C is group_name, then B
         # is a previous_group, and C is a previous_previous_group.
         #
-        # For the previous_group (e.g., B), we need to reset a flag 
-        # for its previous groups, hence "previous_previous"
-        # but we only need to do this once. That is, the current
-        # group group_name (e.g., A) may have many previous_groups, and these
-        # previous groups may have many previous_groups. However two
-        # previous_groups of A, say, B1 and B2 have the same previous_groups, 
-        # which are the previous previous groups of A, so when we reset
-        # the previous groups of B1 we are also resetting the previous
-        # groups of B2. So do this resetting of the previous groups 
-        # of B1 and B2 (which are the previous previous groups of A) for
-        # only one of B1 or B2. In our case, we always choose the first group
-        # in the list of groups.
+
+        # Note:This is an old comment that explains the now commnted out 
+        # if statement if first_previous_previous_group:
+        # We took this code out of the above loop through the groups of
+        # groups_of_previous_previous_partition so we do not need to 
+        # limit this loop to one iteration (which would be for the fist group).
+        ## For the previous_group (e.g., B), we need to reset a flag 
+        ## for its previous groups, hence "previous_previous"
+        ## but we only need to do this once. That is, the current
+        ## group group_name (e.g., A) may have many previous_groups, and these
+        ## previous groups may have many previous_groups. However two
+        ## previous_groups of A, say, B1 and B2 have the same previous_groups, 
+        ## which are the previous previous groups of A, so when we reset
+        ## the previous groups of B1 we are also resetting the previous
+        ## groups of B2. So do this resetting of the previous groups 
+        ## of B1 and B2 (which are the previous previous groups of A) for
+        ## only one of B1 or B2. In our case, we always choose the first group
+        ## in the list of groups.
         #if first_previous_previous_group:
         #    first_previous_previous_group = False
+
         if current_partition_number > 2:
             previous_previous_partition_state = previous_partition_state - 1
             groups_of_previous_previous_partition = groups_of_partitions[previous_previous_partition_state-1]
@@ -1805,7 +1812,8 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                     + previous_previous_group + " after update fanout_fanin_faninNB_collapse_groups_partitions_are_ToBeContinued is: " 
                     + str(state_info_of_previous_previous_group))     
                 
-                if DAG_executor_constants.CLEAR_BFS_SENDERS_AND_RECEIVERS and (num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_CLEARING_ON_THE_FLY):
+                # deallocate the Group_senders and Group_receivers for previous_previous_group
+                if DAG_executor_constants.DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY_BFS_SENDERS_AND_RECEIVERS and (num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
                     try:
                         del Group_senders[previous_previous_group]
                         logger.info("BFS_generate_DAG_info_incremental_groups: deallocate Group_senders: " + previous_previous_group)

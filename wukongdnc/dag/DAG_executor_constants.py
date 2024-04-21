@@ -34,12 +34,54 @@ logger.addHandler(ch)
 EXIT_PROGRAM_ON_EXCEPTION = True
 SERVERLESS_PLATFORM_IS_AWS = True
 # BFS collects a lot of information during DAG generation.
-# Clear this information during DAG_generation when it is no longer needed.
-CLEAR_BFS_MAIN_MAP_ON_THE_FLY = False
-CLEAR_BFS_GRAPH_NODES_ON_THE_FLY = False
-CLEAR_BFS_PARTITIONS_GROUPS_NAMES = True
-CLEAR_BFS_SENDERS_AND_RECEIVERS = False
-THRESHOLD_FOR_CLEARING_ON_THE_FLY = 1
+# Deallocate this information during DAG_generation when it is no longer needed.
+#
+# At the end_of_current_frontier in bfs() we deallocate the
+# nodeIndex_to_partition_partitionIndex_group_groupIndex_map for each 
+# npartition ode in the previous partition. (this map maintain information for 
+# each node.) When the bfs search of the entire graph is complete we clear this
+# map, i.e., the current parttion must be cleared since we will not have a chance
+# to clear it as the previous_partition in bfs() (since bfs is done) - it
+# is the only partiton whose nodes are in the map.
+DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY = False
+# Do the same for the nodes of the input graph. That is, we are done with graph nodes
+# that correspond to a partition node in previous_partition. Delete each graph node using
+# the ID of the partition node. Graph node i is stored with key i (in dictionary nodes{}). 
+# When the bfs search of the entire graph is complete we clear the remaining 
+# graph nodes, which correspond to the partition nodes in the final 
+# partition - nodes.clear(). Noet: this covers both the case where we
+# generate partitions and the case where we generate groups (as the nodes
+# in the groups of a partition are the same as the nodes in the partition.)
+DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY_BFS_GRAPH_NODES_ON_THE_FLY = False
+# Right after we generate the next incremental DAG, we deallocate, we 
+# deallocte the partitions/groups from partitions[]/groups[] that we 
+# no longer need. That is, the previous partition / the groups in the 
+# previous partition. These partition/groups have been output and we will
+# not use them again. When the bfs search of the entire graph is complete 
+# we clear the remaining partitions/groups, which correspond to the final 
+# partition/groups in the final partition - partitions.clear()/nodes.clear()
+DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY_BFS_PARTITIONS_GROUPS_NAMES = True
+# In BFS_generate_DAG_info_incremental_groups.py, we clear the Senders
+# and Receivers map for the groups in the previous previous partition
+# del Group_senders[previous_previous_group] where previous_previous_group
+# is a group in the previous previous partition. Likewise
+# del Group_receivers[previous_previous_group].
+# Partition_senders, Parttition_receievers, Group_senders, and Group_receivers
+# represent the edges in the DAG, Partition/Group senders[x] are the partition/groups
+# that receive inputs from partition/group x. Partition/Group receivers[x] are the 
+# partition/groups that send inputs to partition/group x. We use these
+# edges when we build the DAG. Durng incremental ADG generation,
+# BFS_generate_DAG_info_incremental_groups.py and
+# BFS_generate_DAG_info_incremental_partitions.py buld the ADG and 
+# deallocate the Partition/Group senders and Partition/Group receivers
+# that are no longer needed. Durng non-incremental DAG generation,
+# the DAG is built after the bfs() search concludes and then the
+# Partition/Group senders and Partition/Group receivers are deallocated.
+DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY_BFS_SENDERS_AND_RECEIVERS = False
+# We may want to do the above deallocations only for large input graphs
+# so we guard the dellocations above with 
+# (num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY)
+THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY = 1
 #
 # True if we are not using Lambdas, i.e., executing tasks with threads or processes
 # local, i.e., on one machine.
@@ -794,7 +836,7 @@ if not_A1s and not_A2 and not_A3s and not_A4s and not_A5 and not_A6:
 
 def non_pagerank_non_store_objects_in_lambda_base():
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global STORE_SYNC_OBJECTS_IN_LAMBDAS
     global USING_LAMBDA_FUNCTION_SIMULATORS_TO_STORE_OBJECTS
     global SYNC_OBJECTS_IN_LAMBDAS_TRIGGER_THEIR_TASKS
@@ -892,7 +934,7 @@ def non_pagerank_non_store_objects_in_lambda_base():
 def test1():
     print("test1")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -953,7 +995,7 @@ def test1():
 def test2():
     print("test2")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -1014,7 +1056,7 @@ def test2():
 def test3():
     logger.info("test3")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -1075,7 +1117,7 @@ def test3():
 def test4():
     print("test4")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -1139,7 +1181,7 @@ def test4():
 def test5():
     print("test5")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -1201,7 +1243,7 @@ def test5():
 def test6():
     print("test6")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -1263,7 +1305,7 @@ def test6():
 def test7():
     logger.info("test7")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -1325,7 +1367,7 @@ def test7():
 def test8():
     print("test8")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -1390,7 +1432,7 @@ def test8():
 def test9():
     print("test9")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -1451,7 +1493,7 @@ def test9():
 def test10():
     print("test10")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -1512,7 +1554,7 @@ def test10():
 def test11():
     print("test11")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -1573,7 +1615,7 @@ def test11():
 def test12():
     print("test12")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -1634,7 +1676,7 @@ def test12():
 def test13():
     print("test13")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -1702,7 +1744,7 @@ def test13():
 def test14():
     print("test14")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -1765,7 +1807,7 @@ def test14():
 def test15():
     print("test15")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -1828,7 +1870,7 @@ def test15():
 def test16():
     print("test16")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -1891,7 +1933,7 @@ def test16():
 def test17():
     print("test17")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -1954,7 +1996,7 @@ def test17():
 def test18():
     print("test18")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -2019,7 +2061,7 @@ def test18():
 def test19():
     print("test19")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -2083,7 +2125,7 @@ def test19():
 def test20():
     print("test20")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -2146,7 +2188,7 @@ def test20():
 def test21():
     print("test21")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -2209,7 +2251,7 @@ def test21():
 def test22():
     print("test22")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -2272,7 +2314,7 @@ def test22():
 def test23():
     print("test23")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -2335,7 +2377,7 @@ def test23():
 def test24():
     print("test24")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -2397,7 +2439,7 @@ def test24():
 def test25():
     print("test25")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -2460,7 +2502,7 @@ def test25():
 def test26():
     print("test26")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -2523,7 +2565,7 @@ def test26():
 def test27():
     print("test27")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -2586,7 +2628,7 @@ def test27():
 def test28():
     print("test28")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -2652,7 +2694,7 @@ def test28():
 def test29():
     print("test29")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -2729,7 +2771,7 @@ def test29():
 def test30():
     print("test30")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -2803,7 +2845,7 @@ def test30():
 def test31():
     print("test31")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -2878,7 +2920,7 @@ def test31():
 def test32():
     print("test32")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -2967,7 +3009,7 @@ def test33():
 	#       TTTTTFF: trigger and DAG_orchestrator, map objects true, anon is false, and create objects on start
     print("test33")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -3172,7 +3214,7 @@ def test34():
 def test35():
     print("test35")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -3264,7 +3306,7 @@ def test35():
 def test36():
     print("test36")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -3356,7 +3398,7 @@ def test36():
 def test37():
     print("test37")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -3448,7 +3490,7 @@ def test37():
 def test38():
     print("test38")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -3541,7 +3583,7 @@ def test38():
 def test39():
     print("test39")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -3638,7 +3680,7 @@ def test39():
 def test40():
     print("test40")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -3732,7 +3774,7 @@ def test40():
 def test41():
     print("test41")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -3827,7 +3869,7 @@ def test41():
 def test42():
     print("test42")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -3922,7 +3964,7 @@ def test42():
 def test43():
     print("test43")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -4015,7 +4057,7 @@ def test43():
 def test44():
     print("test44")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -4109,7 +4151,7 @@ def test44():
 def test45():
     print("test45")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -4204,7 +4246,7 @@ def test45():
 def test46():
     print("test46")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -4299,7 +4341,7 @@ def test46():
 def test47():
     print("test47")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -4393,7 +4435,7 @@ def test47():
 def test48():
     print("test48")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -4486,7 +4528,7 @@ def test48():
 def test49():
     print("test49")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -4578,7 +4620,7 @@ def test49():
 def test50():
     print("test50")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -4670,7 +4712,7 @@ def test50():
 def test51():
     print("test51")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -4762,7 +4804,7 @@ def test51():
 def test52():
     print("test52")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -4854,7 +4896,7 @@ def test52():
 def test53():
     print("test53")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -4947,7 +4989,7 @@ def test53():
 def test54():
     print("test54")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -5040,7 +5082,7 @@ def test54():
 def test55():
     print("test55")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -5134,7 +5176,7 @@ def test55():
 def test56():
     print("test56")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -5232,7 +5274,7 @@ def test56():
 def test57():
     print("test57")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -5325,7 +5367,7 @@ def test57():
 def test58():
     print("test58")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -5418,7 +5460,7 @@ def test58():
 def test59():
     print("test59")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -5511,7 +5553,7 @@ def test59():
 def test60():
     print("test60")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY
@@ -5606,7 +5648,7 @@ def test60():
 def test61():
     print("test61")
     global EXIT_PROGRAM_ON_EXCEPTION
-    global CLEAR_BFS_MAIN_MAP_ON_THE_FLY
+    global DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY
     global RUN_ALL_TASKS_LOCALLY
     global BYPASS_CALL_TO_INVOKE_REAL_LAMBDA
     global STORE_FANINS_FANINNBS_LOCALLY

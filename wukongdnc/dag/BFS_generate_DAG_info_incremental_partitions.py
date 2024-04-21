@@ -675,7 +675,7 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
     # node and thus has no senders. This is true about partition 1 and
     # this is assserted by the caller (BFS()) of this method.
 
-    if DAG_executor_constants.CLEAR_BFS_SENDERS_AND_RECEIVERS and (num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_CLEARING_ON_THE_FLY):
+    if DAG_executor_constants.DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY_BFS_SENDERS_AND_RECEIVERS and (num_nodes_in_graph > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
         # Between calls to generate_DAG_info_incremental_partitions we add names to
         # Partition_senders, we can clear all of them.
         Partition_senders.clear()
@@ -686,6 +686,8 @@ def generate_DAG_info_incremental_partitions(current_partition_name,current_part
         # or the current_partition is a leaf task in which case it receives no input. We 
         # use "senders" to determine whether current_partition is a leaf node. 
         if not senders == None:
+            # partitions that send to current_partition_name, which can only
+            # be the previous partition
             del Partition_receivers[current_partition_name]
 
     """

@@ -3566,7 +3566,7 @@ def bfs(visited, node):
                 # the nodes of a group are in the partition of that group, so when we delete the nodes
                 # in a partition we are deleting the nodes in the groups for that partition,
 #brc: groups of
-                if DAG_executor_constants.CLEAR_BFS_MAIN_MAP_ON_THE_FLY and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_ON_THE_FLY):
+                if DAG_executor_constants.DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
                     if current_partition_number > 1:
                         # partition numbers start with 1 not 0. But the first 
                         # partition in partitions[] is in position 0.
@@ -3589,7 +3589,7 @@ def bfs(visited, node):
                 # Do the same for the nodes of the input graph. That is, we are done with graph nodes
                 # that correspond to a partition node in previous_partiion. Delete each graph node using
                 # the ID of the partition node. Graph node i is stored with key i (in dictionary nodes{}).                    
-                if (DAG_executor_constants.CLEAR_BFS_GRAPH_NODES_ON_THE_FLY and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_ON_THE_FLY)):
+                if (DAG_executor_constants.DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY_BFS_GRAPH_NODES_ON_THE_FLY and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY)):
                     if current_partition_number > 1:
                         # partition numbers start with 1 not 0. But the first 
                         # partition in partitions[] is in position 0.
@@ -4487,7 +4487,7 @@ def bfs(visited, node):
                 # previous partition. See the comments above for outputting (instead of 
                 # clearing) these partitions/groups - the calculations for their positions
                 # are the same)
-                if DAG_executor_constants.CLEAR_BFS_PARTITIONS_GROUPS_NAMES and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_ON_THE_FLY):
+                if DAG_executor_constants.DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY_BFS_PARTITIONS_GROUPS_NAMES and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
                     if current_partition_number > 1:
                         if not DAG_executor_constants.USE_PAGERANK_GROUPS_PARTITIONS:
                             # partition numbers start with 1 not 0. But the first 
@@ -5064,7 +5064,7 @@ def input_graph():
     # (See DAG_executor_constants.CLEAR_BFS_GRAPH_NODES_ON_THE_FLY)
     # Otherwise, we use a list.
     global nodes
-    if not (DAG_executor_constants.CLEAR_BFS_GRAPH_NODES_ON_THE_FLY and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_ON_THE_FLY)):
+    if not (DAG_executor_constants.DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY_BFS_GRAPH_NODES_ON_THE_FLY and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY)):
         nodes = [] # list
     else:
         nodes = {}  # dictionary
@@ -5094,7 +5094,7 @@ def input_graph():
     # if num_nodes is 100, this fills nodes[0] ... nodes[100], length of nodes is 101
     # Note: nodes[0] is not used, 
 #brc: graph on the fly
-    if not (DAG_executor_constants.CLEAR_BFS_GRAPH_NODES_ON_THE_FLY and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_ON_THE_FLY)):
+    if not (DAG_executor_constants.DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY_BFS_GRAPH_NODES_ON_THE_FLY and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY)):
         # using list when we are not deallocating space on the fly or we are but the DAG is not large
         # enough to worry about space.
         for x in range(0,num_nodes+1):
@@ -5152,7 +5152,7 @@ def input_graph():
                 for i in range(number_of_nodes_to_append):
                     logger.trace("input_graph: Node(" + str(num_nodes+i+1) + ")")
                     # new node ID for our example is 101 = num_nodes+i+1 = 100 + 0 + 1 = 101
-                    if not (DAG_executor_constants.CLEAR_BFS_GRAPH_NODES_ON_THE_FLY and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_ON_THE_FLY)):
+                    if not (DAG_executor_constants.DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY_BFS_GRAPH_NODES_ON_THE_FLY and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY)):
                         nodes.append(Node((num_nodes+i+1)))
 #brc: graph on the fly
                     else:
@@ -6246,25 +6246,25 @@ def main():
     # Note: we print bfs_stats below after doing these deallocations. So the deallocated
     # data structures will be empty in the stats.
 #brc: groups of
-    if DAG_executor_constants.CLEAR_BFS_MAIN_MAP_ON_THE_FLY and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_ON_THE_FLY):
+    if DAG_executor_constants.DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY):
         logger.info("bfs: deallocate main map for nodes in last partition: " + str(len(partitions)))
         logger.info("")
         nodeIndex_to_partition_partitionIndex_group_groupIndex_map.clear()
 #brc: graph on the fly
     # Do the same for the remaining nodes of the input graph (corresponding to the partition nodes
     # in the current and last partition.)
-    if (DAG_executor_constants.CLEAR_BFS_GRAPH_NODES_ON_THE_FLY and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_ON_THE_FLY)):
+    if (DAG_executor_constants.DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY_BFS_GRAPH_NODES_ON_THE_FLY and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY)):
         logger.info("bfs: deallocate graph nodes for nodes in last partition: " + str(len(partitions)))
         logger.info("len(nodes): " + str(len(nodes)))
         nodes.clear()
 #brc: groups of
     # Do the same for the remaining partitions in partitions[]
-    if (DAG_executor_constants.CLEAR_BFS_PARTITIONS_GROUPS_NAMES and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_ON_THE_FLY)):
+    if (DAG_executor_constants.DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY_BFS_PARTITIONS_GROUPS_NAMES and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY)):
         logger.info("bfs: deallocate partitions (though all but the last position of partitions will previously have been set to None")
         partitions.clear()
         partition_names.clear()
     # Do the same for the remaining partitions in partitions[]
-    if (DAG_executor_constants.CLEAR_BFS_PARTITIONS_GROUPS_NAMES and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_CLEARING_ON_THE_FLY)):
+    if (DAG_executor_constants.DEALLOCATE_BFS_MAIN_MAP_ON_THE_FLY_BFS_PARTITIONS_GROUPS_NAMES and (num_nodes > DAG_executor_constants.THRESHOLD_FOR_DEALLOCATING_ON_THE_FLY)):
         logger.info("bfs: deallocate groups (though all but the groups in the last partition will previously have been set to None")
         groups.clear()
         group_names.clear()
