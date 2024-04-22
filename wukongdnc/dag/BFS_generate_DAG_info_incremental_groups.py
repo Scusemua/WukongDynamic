@@ -2004,6 +2004,42 @@ def generate_DAG_info_incremental_groups(current_partition_name,
                 
     logger.trace("generate_DAG_info_incremental_groups: returning from generate_DAG_info_incremental_groups for"
         + " group " + str(group_name))
+
+    """
+    Deallocate DAG_info for workers:
+    - workers requestversion number i
+        - first DAG workers get is ADG with complete 1 and incomplete 2
+          this is version 2?
+        - next/first request is 3, if inc is 2, then next DAG published is 4 or 6 or 8 or ..., etc
+        - Note: if workers are requesting 3, then they are requesting DAG
+          with a completed partition 3, so they need 1, 2, 3 (partitions)
+          and even if you publish 8 (partition) they stil need 1, 2, 3.
+          So if request i, they need i-2, i-1, and i, so only 1 through
+          i-3 ca n be missing from DAG.
+        ==> deallocations are based on th requested version (partition)
+
+    - if workers request 3, and get 6, they will then next request
+      7. When we see max request is 3, and we are building 10/11/12/etc
+      we cannot dellocate anything since a request of 3 means they need
+      1, 2, and 3. They will request 4, and if we see max request is
+      4 while we are , say 12, we can delete 1. We should keep track
+      of max_deallocate = 1. If they get 12, they will next request 13.
+      IF we see max request is 13 while we build 20, we can deallocate 
+      1-10, but max_deallocate is 1 so we can start deallocating with
+      max_deallocate+1 = 2, so 2-10. And set max_delete to 10. (So init
+      max_deallocate with 0?) Note if we do this then we may also see
+      max_request is 13 while we build 21 and 22, etc. Since we have 
+      already eallocated 2-10, we do not want to deallocate them again.
+      If we set max_deallocate to 10, we would try to start deleting 
+      with max_deallocate+1 = 11 and the range of deallocations would 
+      be 11 to 10 so we would not try to deallocate 2-10 again.
+    """
+    """
+    Note: for lambdas, they have their own DAG so we would need to
+    do the deallocatins per lambda - we receive their request but we 
+    would need to save they max_deallocation in the DAG_info and
+    they could send that along with their request.
+    """
     
     # To stop after DAG is completely generated, whcih is combined with 
     # a sleep at the start of the DAG_executor_driver_Invoker_Thread 
