@@ -2039,6 +2039,17 @@ def generate_DAG_info_incremental_groups(current_partition_name,
     do the deallocatins per lambda - we receive their request but we 
     would need to save they max_deallocation in the DAG_info and
     they could send that along with their request.
+    Note: Lambdas do not wait for a new DAG, they terminate. When a 
+    deposit occurs, we iterate through the lambdas that have requested
+    a new version and restatr them. We ill need to prune their 
+    DAG of old states before we restart them. if we have their
+    max_deallocation then this is a range from max_deallocation_1
+    to request - X. One idea is to sort the waiting lambdas based on 
+    their requested version. If we process the lambdas in ascending
+    order of requests, then we canmake one pass through the DAG -
+    prune for the first lambda and restart the lambda, for the 
+    second lambda, keep the pruning that we did for the first lambda
+    and prune more for the second lambda, etc. 
     """
     
     # To stop after DAG is completely generated, whcih is combined with 
