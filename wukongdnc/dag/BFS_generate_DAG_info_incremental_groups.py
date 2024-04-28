@@ -2007,64 +2007,70 @@ def generate_DAG_info_incremental_groups(current_partition_name,
 
     """
     Deallocate DAG_info for workers:
-    - workers requestversion number i
-        - first DAG workers get is ADG with complete 1 and incomplete 2
-          this is version 2?
+    - workers request version number i
+        - first DAG that workers get is DAG with complete 1 and incomplete 2.
+          This is version 2, where 2 is the current partition number
+          when this first DAG was generated.
         - next/first request is 3, if inc is 2, then next DAG published is 4 or 6 or 8 or ..., etc
         - Note: if workers are requesting 3, then they are requesting DAG
           with a completed partition 3, so they need 1, 2, 3 (partitions)
           and even if you publish 8 (partition) they stil need 1, 2, 3.
-          So if request i, they need i-2, i-1, and i, so only 1 through
-          i-3 ca n be missing from DAG.
-        ==> deallocations are based on th requested version (partition)
+          So if request i, they need i-2, i-1, and i, so only 
+          (partitions/groups in partitions) 1 through
+          i-3 can be missing from the DAG.
+        ==> deallocations are based on the requested version not the 
+        version number of the kust published DAG.
 
-    - if workers request 3, and get 6, they will then next request
-      7. When we see max request is 3, and we are building 10/11/12/etc
+    - if workers request 3, and get 6, they will then next request 7. 
+    - When we see max request is 3, and we are building 6/7/8/etc
       we cannot dellocate anything since a request of 3 means they need
-      1, 2, and 3. They will request 4, and if we see max request is
-      4 while we are , say 12, we can delete 1. We should keep track
-      of max_deallocate = 1. If they get 12, they will next request 13.
-      IF we see max request is 13 while we build 20, we can deallocate 
-      1-10, but max_deallocate is 1 so we can start deallocating with
-      max_deallocate+1 = 2, so 2-10. And set max_delete to 10. (So init
-      max_deallocate with 0?) Note if we do this then we may also see
-      max_request is 13 while we build 21 and 22, etc. Since we have 
-      already eallocated 2-10, we do not want to deallocate them again.
-      If we set max_deallocate to 10, we would try to start deleting 
-      with max_deallocate+1 = 11 and the range of deallocations would 
-      be 11 to 10 so we would not try to deallocate 2-10 again.
+      1, 2, and 3. 
+    - If they request 3 and get 3, they will next request 4, and if we 
+      see max request is 4 while we are, say building 8, we can delete 1. 
+      Since they need 2, 3, and 4.
+    - We should keep track of max_deallocate inited to 0. Suppose
+      they request 3 and get 4. We can't deallocate any. If they then request
+      5 and get get 12, we can deallocate 1 and 2 (but not 3, 4, 5). max_deallocate
+      is now 2. They will next request 13. If we see max request is 13 
+      while we build 20, we can deallocate 1-10, but max_deallocate is 2  
+      so we can start deallocating with max_deallocate+1 = 3, so 3-10. And set 
+      max_delete to 10. In general we deallocate the range max_deallocate+1
+      through max_request-3.
+      - Note if we do this then we may also see max_request is 13 while we 
+      build 21, 22, etc. Since we have already deallocated 3-10, we do not 
+      want to deallocate them again. If we set max_deallocate to 10, we would 
+      try to start deleting with max_deallocate+1 = 11 and the range of deallocations 
+      would be 11 to 13-3=10 so we would not try to deallocate 2-10 again.
     """
     """
     Note: for lambdas, they have their own DAG so we would need to
-    do the deallocatins per lambda - we receive their request but we 
+    do the deallocations per lambda - we receive their request but we 
     would need to save they max_deallocation in the DAG_info and
     they could send that along with their request.
     Note: Lambdas do not wait for a new DAG, they terminate. When a 
     deposit occurs, we iterate through the lambdas that have requested
-    a new version and restatr them. We ill need to prune their 
+    a new version and restart them. We will need to prune their 
     DAG of old states before we restart them. if we have their
-    max_deallocation then this is a range from max_deallocation_1
-    to request - X. One idea is to sort the waiting lambdas based on 
+    max_deallocation then this is a range from max_deallocation+1
+    to max_request-3. 
+    Note: One idea is to sort the waiting lambdas based on 
     their requested version. If we process the lambdas in ascending
-    order of requests, then we canmake one pass through the DAG -
+    order of requests, then we can make one pass through the DAG -
     prune for the first lambda and restart the lambda, for the 
     second lambda, keep the pruning that we did for the first lambda
-    and prune more for the second lambda, etc. 
+    and possiby prune more for the second lambda, etc. 
     """
     
-    # To stop after DAG is completely generated, whcih is combined with 
-    # a sleep at the start of the DAG_executor_driver_Invoker_Thread 
+    # Note: To stop after DAG is completely generated, use the
+    # sleep at the start of the DAG_executor_driver_Invoker_Thread 
     # so that DAG excution does not start before we get here and exit,
     #def DAG_executor_driver_Invoker_Thread():
-    #time.sleep(3)
-    #run()
+    #  time.sleep(3)
+    #  run()
+    #
+    # Here, shutdowwn when incremental DAG is complete
     #if DAG_info.get_DAG_info_is_complete():
     #    logging.shutdown()
     #    os._exit(0)
 
-#brc: bug_fix: perhaps also return number_of_groups_of_previous_partition_that_cannot_be_executed
-# for debugging, i.e., it;s not in DAG like the number of incomplete
-# tasks so return it. Q: can we do the same for number of 
-# incomplete taks? i.e., do we need to put it in DAG? That 
-# is, do we use it anywhere else besides upon return?
     return DAG_info
