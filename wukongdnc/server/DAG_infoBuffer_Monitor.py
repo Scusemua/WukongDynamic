@@ -43,6 +43,8 @@ class DAG_infoBuffer_Monitor(MonitorSU):
         # We assert the the version numbers requested by the workers
         # in a round are the same.
         self.requested_version_number_in_this_round = -1
+#brc: deallocate DAG
+        self.max_deallocation_number = 0
 
     #def init(self, **kwargs):
     def init(self,**kwargs):

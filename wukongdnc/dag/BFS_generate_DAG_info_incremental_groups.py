@@ -2007,33 +2007,42 @@ def generate_DAG_info_incremental_groups(current_partition_name,
 
     """
     Deallocate DAG_info for workers:
-    - workers request version number i
+    - workers request version number i: Note: all workers request 
+      the same next version. This is not true for Lambdas.
         - first DAG that workers get is DAG with complete 1 and incomplete 2.
           This is version 2, where 2 is the current partition number
-          when this first DAG was generated.
-        - next/first request is 3, if inc is 2, then next DAG published is 4 or 6 or 8 or ..., etc
+          when the workers' first DAG was generated.
+        - Note: a DAG tha tis version i means that the last partition
+          in the DAG is partition i. This partition i is incomplete. 
+          Partitions i-1 and i-2 are complete. Partition i-1 is complete
+          but it has fanouts/fanins to an incomplete partition i. Partition
+          i-2 is complete and it does not have any fanins/fanouts to an 
+          incomplete partition since all its fanin/fanouts are to 
+          partition i-1 and partition i-1 is complete.
+        - first actual request is 3, if inc is 2, then next DAG published is 4 or 6 or 8 or ..., etc
         - Note: if workers are requesting 3, then they are requesting DAG
           with a completed partition 3, so they need 1, 2, 3 (partitions)
-          and even if you publish 8 (partition) they stil need 1, 2, 3.
-          So if request i, they need i-2, i-1, and i, so only 
-          (partitions/groups in partitions) 1 through
-          i-3 can be missing from the DAG.
+          when they execute the DAG and even if you publish 8 (partition) they stil need 1, 2, 3
+          since they need to continue excuting the partition they were excuting.
+          So if they request version i, they need i-2, i-1, and i to be 
+          in the DAG so only (partitions/groups in partitions) 1 through
+          i-3 can be deallocated from the DAG.
         ==> deallocations are based on the requested version not the 
-        version number of the kust published DAG.
+        version number of the just published DAG.
 
     - if workers request 3, and get 6, they will then next request 7. 
     - When we see max request is 3, and we are building 6/7/8/etc
       we cannot dellocate anything since a request of 3 means they need
       1, 2, and 3. 
-    - If they request 3 and get 3, they will next request 4, and if we 
+    - If workers request 3 and get 3, they will next request 4, and if we 
       see max request is 4 while we are, say building 8, we can delete 1. 
-      Since they need 2, 3, and 4.
-    - We should keep track of max_deallocate inited to 0. Suppose
+      Since workers need 2, 3, and 4 but not 1.
+    - We should keep track of max_deallocate (inited to 0). Suppose
       they request 3 and get 4. We can't deallocate any. If they then request
       5 and get get 12, we can deallocate 1 and 2 (but not 3, 4, 5). max_deallocate
       is now 2. They will next request 13. If we see max request is 13 
       while we build 20, we can deallocate 1-10, but max_deallocate is 2  
-      so we can start deallocating with max_deallocate+1 = 3, so 3-10. And set 
+      so we can start deallocating with max_deallocate+1 = 3, so 3-10, and set 
       max_delete to 10. In general we deallocate the range max_deallocate+1
       through max_request-3.
       - Note if we do this then we may also see max_request is 13 while we 
